@@ -82,7 +82,6 @@ export type {
   WorldItemPickupResult,
 } from "./gameContextTypes";
 
-/** Feature keys surfaced on `ctx.game` (every {@link GameFeatures} key except `cosmetics`, which lives on `ctx.player`). */
 type GameFeatureKey = Exclude<keyof GameFeatures, "cosmetics">;
 
 export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(
@@ -116,7 +115,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
   };
 
-  // --- Scene installer (entities, objects, colliders, spatial, raycast, targeting) ---
   const scene = createSceneSubsystem({
     content,
     signalNotify: signal.notify,
@@ -135,7 +133,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const { spawnEntity, despawnEntity, moveEntityTowardCommit, resetAllToSpawn } = scene.lifecycle;
   const { bind, bindOf, sceneObjects } = scene.bindings;
 
-  // --- Shared game services (weapon, feed, features bag, commands, item use) ---
   const weapon = createWeaponStats((itemId) => content.itemById?.(itemId));
   const feed = createGameFeed(definition.feed);
   const lootRegistry = createLootRegistry({ rng });
@@ -199,7 +196,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   }
   const itemUse = createItemUse<GameContext>((itemId) => content.itemById?.(itemId)?.use);
 
-  // --- Player installer (inventory, wallets, pose, motion, loadout) ---
   const playerSys = createPlayerSubsystem({
     signalNotify: signal.notify,
     inventoryDeclarations: definition.inventories ?? {},
@@ -307,7 +303,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     signalNotify: signal.notify,
   });
 
-  // --- Combat installer (effects, projectiles, death, combat FX) ---
   // Command runner closes over `ctx` once assembled (same late-bind pattern as before).
   let ctxRef: GameContext | null = null;
   const { sweep, acceleration, targets, ...projectileBudgets } = definition.projectileTravel ?? {};
@@ -363,7 +358,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const authoredEnvironment = createAuthoredSimulation({ document: definition.authoredDocument, timeSeconds: time.now, particles });
   const input = createInputSnapshot();
 
-  // --- Descriptor install (single feature enable path) ---
   const featureDeps: FeatureDeps = {
     features,
     signalNotify: signal.notify,
@@ -528,7 +522,6 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     }
   }
 
-  // --- Assemble public GameContext ---
   const ctx: GameContext = {
     rng,
     wallClock: now,

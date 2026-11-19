@@ -1,4 +1,3 @@
-/** Hold activation shared by pointer, touch, keyboard and pad, using an injected clock. */
 export class RuneActivation {
   private active: { id: string; at: number; hold: number } | undefined;
   constructor(private readonly now: () => number) {}
@@ -11,7 +10,6 @@ export class RuneActivation {
   cancel(): void { this.active = undefined; }
 }
 
-/** Choose the closest control in the requested direction using native painted rectangles. */
 export function runeNextFocus<T>(current: T, controls: readonly T[], rect: (item: T) => readonly [number,number,number,number] | undefined, direction: "up" | "down" | "left" | "right"): T | undefined {
   const source = rect(current);
   if (source === undefined) return undefined;

@@ -5,20 +5,18 @@ import type { LibraryKind } from "@jgengine/assets/library/librarySources";
 import { mergeEditorAssets, type EditorAssetEntry } from "./AssetBrowser";
 import type { EditorHostApi } from "./session";
 
-/** Custom drag mime for a shared-library model or character card dragged toward the viewport. */
 export const LIBRARY_DRAG_MIME = "application/x-jgengine-library-asset";
 
-/** The fields of a library entry a drop needs to pull, credit and place it. */
 export type LibraryDragPayload = Pick<LibraryEntry, "key" | "title" | "kind" | "author" | "license">;
 
 const PLACEABLE_KINDS: readonly LibraryKind[] = ["model", "character"];
 
-/** True for library kinds the viewport can place as a mesh. @internal */
+/** @internal */
 export function isPlaceableLibraryKind(kind: LibraryKind): boolean {
   return PLACEABLE_KINDS.includes(kind);
 }
 
-/** Serializes a library entry for HTML5 drag into the viewport. @internal */
+/** @internal */
 export function encodeLibraryDragPayload(entry: LibraryDragPayload): string {
   return JSON.stringify({ key: entry.key, title: entry.title, kind: entry.kind, author: entry.author, license: entry.license });
 }
@@ -45,14 +43,12 @@ export function decodeLibraryDragPayload(raw: string): LibraryDragPayload | null
   return { key, title, kind, author, license };
 }
 
-/** Where a viewport drop landed, in world space. */
 export interface LibraryDropPoint {
   x: number;
   y: number;
   z: number;
 }
 
-/** Called by the viewport when a library card is dropped on it. */
 export type LibraryDropHandler = (payload: LibraryDragPayload, point: LibraryDropPoint) => void;
 
 /**
@@ -64,7 +60,7 @@ export interface LibraryDropTarget {
   handler: LibraryDropHandler | null;
 }
 
-/** An empty {@link LibraryDropTarget}. @internal */
+/** @internal */
 export function createLibraryDropTarget(): LibraryDropTarget {
   return { handler: null };
 }

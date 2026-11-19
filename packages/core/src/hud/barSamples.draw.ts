@@ -2,7 +2,6 @@ import type { SceneEntity, EntityPosition } from "@jgengine/core/scene/entitySto
 import { worldHealthBarAllowsRole } from "@jgengine/core/game/playableGame";
 import type { CatalogEntityRole, GameContext } from "@jgengine/core/runtime/gameContext";
 
-/** One world-anchored health or name bar projected to screen: position, fill and label. */
 export interface WorldBarSample {
   /** Live anchor id used by retained samples; omitted for caller-painted screen samples. */
   entityId?: string;
@@ -13,7 +12,6 @@ export interface WorldBarSample {
   pxPerMeter?: number;
 }
 
-/** A vector that can be set and projected through a camera, such as THREE.Vector3. */
 export interface Projectable {
   set(x: number, y: number, z: number): this;
   project(camera: { matrixWorldInverse: unknown; projectionMatrix: unknown }): this;
@@ -22,26 +20,20 @@ export interface Projectable {
   z: number;
 }
 
-/** Render camera matrices; world translation supplies the overlay's viewpoint. */
 export interface WorldOverlayCamera {
   matrixWorld: { elements: ArrayLike<number> };
   matrixWorldInverse: { elements: ArrayLike<number> };
   projectionMatrix: unknown;
-  /** Clipping distance; bounds every derived overlay range. */
   far?: number;
 }
 
-/** Sampling policy shared by health bars and nameplates. */
 export interface WorldOverlaySampleOptions {
-  /** Maximum sampled overlays and visibility rays per refresh. Default 64; unchecked entities stay hidden. */
   maxSamples?: number;
-  /** Match a renderer's visibility or membership policy. */
   isVisible?: (id: string) => boolean;
-  /** Authored display name; return null to omit the nameplate. */
   resolveName?: (entity: SceneEntity) => string | null;
 }
 
-/** True when blocking scene geometry lies between the render camera and overlay anchor. @internal */
+/** @internal */
 export function worldBarOccluded(
   ctx: GameContext,
   from: EntityPosition,
@@ -66,9 +58,7 @@ function cameraOrigin(camera: WorldOverlayCamera): EntityPosition {
   return [matrix[12]!, matrix[13]!, matrix[14]!];
 }
 
-/** Screen height at which an annotated target is still plainly visible. */
 const MIN_TARGET_PX = 18;
-/** `1 / tan(fovY / 2)` for the engine's default 55° camera, used when the projection is not perspective. */
 const FALLBACK_PROJECTION_SCALE = 1 / Math.tan((55 * Math.PI) / 360);
 
 /**
@@ -200,7 +190,7 @@ function sampleLimit(options: WorldOverlaySampleOptions): number {
   return Math.max(0, Math.min(256, Math.floor(options.maxSamples ?? 64) || 0));
 }
 
-/** Target filter mirroring the bars' own eligibility, for range diagnostics. @internal */
+/** @internal */
 export function worldBarTargetFilter(
   ctx: GameContext,
   statId: string,
@@ -211,7 +201,7 @@ export function worldBarTargetFilter(
     worldHealthBarAllowsRole(roles, resolveRole?.(entity)) && ctx.scene.entity.stats.get(entity.id, statId) !== null;
 }
 
-/** Target filter mirroring the nameplates' own eligibility, for range diagnostics. @internal */
+/** @internal */
 export function worldNameplateTargetFilter(
   roles: readonly CatalogEntityRole[] | undefined,
   resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined,
@@ -222,7 +212,7 @@ export function worldNameplateTargetFilter(
     Boolean((resolveName ?? defaultDisplayName)(entity)?.trim());
 }
 
-/** Project nearby live non-local entities carrying `statId`; occlusion defaults on. @internal */
+/** @internal */
 export function collectWorldBarSamples(
   ctx: GameContext,
   statId: string,
@@ -265,7 +255,7 @@ export function collectWorldBarSamples(
   return into.length;
 }
 
-/** Reproject retained bar anchors without a nearby query or visibility ray. @internal */
+/** @internal */
 export function refreshWorldBarSamples(
   ctx: GameContext,
   height: number,
@@ -298,7 +288,6 @@ export function refreshWorldBarSamples(
   samples.length = kept;
 }
 
-/** Projected nameplate with optional health and distance from the render camera. */
 export interface NameplateSample {
   id: string;
   name: string;
@@ -315,7 +304,7 @@ function defaultDisplayName(entity: SceneEntity): string | null {
   return name === entity.id || /^[a-z0-9_-]+$/.test(name) || /[_:/]/.test(name) ? null : name || null;
 }
 
-/** Project nearby live non-local nameplates; occlusion defaults on. @internal */
+/** @internal */
 export function collectNameplateSamples(
   ctx: GameContext,
   statId: string,

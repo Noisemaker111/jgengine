@@ -1,13 +1,11 @@
 import { hashString } from "@jgengine/core/random/rng";
 import type { SpeakOptions } from "@jgengine/core/audio/radioPlayback";
 
-/** The slice of `SpeechSynthesisVoice` the channel reads. */
 export interface SpeechVoiceLike {
   name: string;
   lang: string;
 }
 
-/** The slice of `SpeechSynthesisUtterance` the channel writes. */
 export interface SpeechUtteranceLike {
   text: string;
   voice: SpeechVoiceLike | null;
@@ -17,20 +15,16 @@ export interface SpeechUtteranceLike {
   lang: string;
 }
 
-/** The slice of `window.speechSynthesis` the channel drives; inject a fake in tests. */
 export interface SpeechSynthesisLike {
   speak(utterance: SpeechUtteranceLike): void;
   cancel(): void;
   getVoices(): readonly SpeechVoiceLike[];
 }
 
-/** What the speech channel has done, for a debug readout or capture probe. */
 export interface SpeechStats {
-  /** A synthesiser with at least one matching voice exists. */
   available: boolean;
   voices: number;
   spoken: number;
-  /** Lines asked for while no voice existed (the HUD carries the words instead). */
   dropped: number;
   last: string | null;
 }
@@ -50,7 +44,6 @@ function resolveSynth(): { synth: SpeechSynthesisLike; Utterance: UtteranceCtor 
   return { synth: scope.speechSynthesis, Utterance: scope.SpeechSynthesisUtterance };
 }
 
-/** Pick a system voice: a name hint wins, else the voice key hashes to a stable choice among the language's voices. */
 export function pickSpeechVoice(voices: readonly SpeechVoiceLike[], options: SpeakOptions = {}): SpeechVoiceLike | null {
   const lang = (options.lang ?? "en").toLowerCase();
   const matching = voices.filter((voice) => voice.lang.toLowerCase().startsWith(lang));

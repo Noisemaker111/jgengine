@@ -21,35 +21,16 @@ import { despawnObject, dispatchCrew, landed, scenarioEnded, spawnObject } from 
 import { retuneRideUpkeep, rideRunActions, rideRunFacts } from "./rideRefits";
 import { drawLoan, repayLoan } from "./sim/bank";
 
-/**
- * Brightway Park is one declaration. Every ride, stall, path and post is a kind on the park lot;
- * the till, the crowd's mood, the rating, the loan and the scenario are facts; repairs, servicing,
- * restocking, prices and the loan are actions; upkeep and litter are flows; a breakdown and a guest
- * paying are ripples. The engine runs it (`brightway.place`, `brightway.act`, `brightway.remove`)
- * and keeps it in one store, `brightway.world`, that the park save writes whole.
- *
- * What stays game code: guests and janitors walking (agents), the ride cycles and lines (the shared
- * ride sim), the coaster circuit, and the rating's blend of mood, crowd and litter.
- */
-
 export { LOT, sizeOf };
 
-/**
- * The bank: the park opens owing `start`, may borrow up to `max` in steps of `step`, and pays
- * `monthlyRate` interest on what it owes when each month closes. The loan runs on the shared loan
- * book (`sim/bank.ts`); `park.loan_owed` is the balance it publishes.
- */
 export const LOAN = { start: 10_000, max: 25_000, step: 1_000, monthlyRate: 0.04 } as const;
 
-/** This month's running total for a line of the books, and the last closed month's. */
 export const monthLine = (id: string): string => `month.${id}`;
 export const reportLine = (id: string): string => `report.${id}`;
-/** A campaign's running count (1 while it runs). */
 export const campaignFact = (id: string): string => `ads.${id}`;
 
 const ride = (def: BuildableDef) => def.ride !== undefined;
 
-/** The lot cell a structure's corner sits on when the pointer lands at (x, z): the footprint centres on it. */
 export function cellFor(kind: string, x: number, z: number): [number, number] {
   const n = sizeOf(BUILDABLES[kind]!);
   const start = -Math.floor((n - 1) / 2);
@@ -58,7 +39,6 @@ export function cellFor(kind: string, x: number, z: number): [number, number] {
   return [col, row];
 }
 
-/** The world centre of every cell a structure placed at `cell` covers (the blueprint overlay draws these). */
 export function cellCentres(kind: string, cell: readonly [number, number]): [number, number][] {
   const n = sizeOf(BUILDABLES[kind]!);
   const out: [number, number][] = [];
@@ -68,7 +48,6 @@ export function cellCentres(kind: string, cell: readonly [number, number]): [num
   return out;
 }
 
-/** The fact a lab topic sets when it is done; a kind with research is locked until then. */
 export const researched = (kind: string): string => `research.${kind}`;
 
 function kindOf(def: BuildableDef): WorldKindDecl {
@@ -104,7 +83,6 @@ function kindOf(def: BuildableDef): WorldKindDecl {
   };
 }
 
-/** How far a patrol area reaches, and the step the inspector widens or narrows it by. */
 export const PATROL = { min: 8, max: 40, step: 4 } as const;
 
 function staffActions(def: BuildableDef): Record<string, WorldActionDecl> {
@@ -114,7 +92,6 @@ function staffActions(def: BuildableDef): Record<string, WorldActionDecl> {
   };
 }
 
-/** The repair a broken ride of this kind needs: only a mechanic can do it. */
 export const repairAction = (kind: string): string => `repair_${kind}`;
 
 function rideActions(def: BuildableDef): Record<string, WorldActionDecl> {
@@ -232,10 +209,6 @@ function researchAction(def: BuildableDef): WorldActionDecl {
   };
 }
 
-/**
- * Marketing: a campaign is paid up front and runs its days in the `ads` queue; while it runs its
- * `ads.<id>` is 1 and it brings more guests to the gate (`marketingBoost`). One of each at a time.
- */
 for (const campaign of CAMPAIGNS) {
   actions[campaign.id] = {
     label: campaign.label,
@@ -249,21 +222,18 @@ for (const campaign of CAMPAIGNS) {
   };
 }
 
-/** How much running campaigns multiply the guests heading for the gate: 1 with none. */
 export function marketingBoost(w: WorldModel): number {
   let boost = 1;
   for (const campaign of CAMPAIGNS) if (w.num(campaignFact(campaign.id)) > 0) boost += campaign.boost;
   return boost;
 }
 
-/** Money in less money out across every line of the books, this month (`monthLine`) or last (`reportLine`). */
 export function linesNet(w: WorldModel, lineFact: (id: string) => string): number {
   let net = 0;
   for (const line of BOOK_LINES) net += (line.income ? 1 : -1) * w.num(lineFact(line.id));
   return net;
 }
 
-/** The books' facts: every line this month and last month, the campaigns, and the month's opening till. */
 const bookFacts: Record<string, WorldFactsDecl[string]> = {
   "month.cash_start": STARTING_CASH,
   "report.building": 0,
@@ -325,7 +295,6 @@ for (const id of BUILD_IDS) {
   }
 }
 
-/** What every payment from a guest adds to: the till, the day's takings and the scenario's. */
 const takings = { "park.cash": 1, "park.revenue_today": 1, "park.scenario_revenue": 1 };
 
 const jobs = Object.fromEntries(
@@ -424,7 +393,6 @@ export const park = defineGameSpec({
   onJob: (ctx, event) => scenarioEnded(ctx, event),
 });
 
-/** A placed structure as the guests, rides and staff read it: what it is and where it stands. */
 export interface ParkObject {
   id: string;
   kind: string;
@@ -456,40 +424,27 @@ function index(ctx: GameContext): { list: ParkObject[]; byId: Map<string, ParkOb
 export const parkObjects = (ctx: GameContext): readonly ParkObject[] => index(ctx).list;
 export const parkObject = (ctx: GameContext, id: string | null): ParkObject | undefined => (id === null ? undefined : index(ctx).byId.get(id));
 
-/** How many of a kind stand in the park. */
 export const countOf = (w: WorldModel, kind: string): number => w.num(`n.${kind}`);
 
-/** A stall's stock left, read from what it sold since its last restock. */
 export function stockOf(w: WorldModel, obj: ParkObject): number {
   return obj.def.stall === undefined ? 0 : obj.def.stall.stock - w.num(`${obj.id}.sold`);
 }
 
-/** What the park sets for a ride's ticket. */
 export const ridePrice = (w: WorldModel, kind: string): number => w.num(`price.${kind}`);
 
-/** What the park charges for one item at a shop. */
 export const stallPrice = (w: WorldModel, kind: string): number => w.num(`price.${kind}`);
 
-/** A guest pays up to this much over what they think a thing is worth before refusing it. */
 export const PRICE_TOLERANCE = 1.25;
 
-/** What a guest thinks a ride is worth: its excitement, scenery charm included. */
 export function rideValue(excitement: number): number {
   return Math.round((0.6 + excitement * 0.55) * 10) / 10;
 }
 
-/** Most a guest will pay for a ride or an item before saying it's too expensive. */
 export function fairPrice(w: WorldModel, obj: ParkObject, excitement: number): number {
   if (obj.def.stall !== undefined) return obj.def.stall.value * PRICE_TOLERANCE;
   return rideValue(excitement) * PRICE_TOLERANCE;
 }
 
-/**
- * Scenery charms the rides in its reach: each ride's `theme` is the bonus of every scenery piece
- * within that piece's radius (measured to the ride's edge), capped, and its appeal is its own plus
- * that charm and its refit's. Each ride's upkeep change from its refit and closure is written too.
- * Run after anything is built or removed, and after a refit or closure lands.
- */
 export function rethemeRides(ctx: GameContext): void {
   const w = park.of(ctx);
   const objects = parkObjects(ctx);
@@ -514,20 +469,14 @@ export function patrolRadius(w: WorldModel, postId: string): number {
   return w.num(`${postId}.patrol`);
 }
 
-/** Every placed ride. */
 export const rideObjects = (ctx: GameContext): readonly ParkObject[] => parkObjects(ctx).filter((obj) => obj.def.ride !== undefined);
 
-/**
- * A ride's chance in a hundred of running its next cycle without breaking, from its wear (runs since
- * its last service) and how fast its refit wears it (`wearScale`, 1 as built).
- */
 export function reliability(def: BuildableDef, wear: number, wearScale = 1): number {
   // The ride sim counts the run before it rolls: the next run is wear + 1.
   const odds = def.ride === undefined ? 0 : def.ride.breakdown.baseChance + def.ride.breakdown.wearChance * wearScale * (wear + 1);
   return Math.max(0, Math.round((1 - odds) * 1000) / 10);
 }
 
-/** The park as the dashboard and the rating read it: sums over every kind's totals. */
 export interface ParkMetrics {
   rides: number;
   ridesOpen: number;
@@ -535,9 +484,7 @@ export interface ParkMetrics {
   tracks: number;
   variety: number;
   totalAppeal: number;
-  /** Every structure's upkeep per day, wages included. */
   dailyUpkeep: number;
-  /** The staff share of `dailyUpkeep`. */
   wages: number;
   facilitiesUpkeep: number;
 }
@@ -580,7 +527,6 @@ export function freshWorld(ctx: GameContext, cash = STARTING_CASH): WorldModel {
   return w;
 }
 
-/** Put an authored structure down without charging the till: the starter park comes with the lot. */
 export function placeFree(w: WorldModel, kind: string, cell: readonly [number, number]): string | null {
   const result = w.place(kind, { cell }, { free: true });
   return result.ok ? result.id : null;

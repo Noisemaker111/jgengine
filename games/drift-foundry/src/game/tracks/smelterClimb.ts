@@ -1,12 +1,6 @@
 import { TRACK_OBJECT as O } from "../objects/catalog";
 import type { TrackTheme } from "./course";
 
-/**
- * Smelter Climb: up through the smelter on two long ramps and two hairpins, 26 m from the casting
- * floor to the tapping gallery. Ladles pour across the ramps on a beat. At the top, the tapping
- * floor cuts the gallery's dog-leg - through a plow wall and under one more pour. The course itself
- * is the `smelter-climb` course in editor.scene.json.
- */
 export const SMELTER_CLIMB: TrackTheme = {
   id: "smelter-climb",
   label: "Smelter Climb",

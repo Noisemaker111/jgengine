@@ -27,14 +27,7 @@ export const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true }
   jgCameraTransparent: true,
 };
 
-/**
- * Should the camera spring-arm ignore this raycast hit? Walks the object up its
- * `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true`
- * blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged
- * geometry blocks as before, so engine-owned ground/entities are unaffected.
- *
- * @capability camera-transparent-decor let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide
- */
+/** @capability camera-transparent-decor let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide */
 export function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean {
   for (let node = object ?? null; node != null; node = node.parent ?? null) {
     const data = node.userData;
@@ -52,34 +45,24 @@ export interface CameraPoint {
   z: number;
 }
 
-/** One collision question the camera asks: distance along a ray to the nearest surface that should stop it. */
 export interface CameraCollisionQuery {
-  /** Distance to the nearest blocking surface within `maxDistance`, or `null` when the ray is clear. A ray starting inside a surface reports `0`. */
   firstHit(origin: CameraPoint, direction: CameraPoint, maxDistance: number): number | null;
 }
 
-/** What a camera asks `clearCameraBoom` each frame: the boom it wants and the surfaces that may stop it. */
 export interface CameraClearanceInput {
-  /** Follow point the boom is anchored to: a shoulder, a chest, or a point behind a first-person eye. */
   pivot: CameraPoint;
-  /** Where the rig wants the camera before collision. */
   desired: CameraPoint;
   query: CameraCollisionQuery;
-  /** Gap kept between the camera and the surface it would enter; also the near-plane budget. Default 0.3. */
   clearance?: number;
-  /** Previous frame's boom length. Omit for a direct answer with no release easing. */
   previousArm?: number | null;
-  /** Frame time for the release ease; omit or `0` to snap. */
   deltaSeconds?: number;
   /** Per-second rate the boom grows back once the surface is gone. Default 8. */
   releaseRate?: number;
 }
 
-/** Clear camera position and the boom length to hand back next frame. */
 export interface CameraClearanceResult {
   /** Clear camera position: `desired` unchanged when nothing blocks, pulled toward `pivot` otherwise. */
   position: CameraPoint;
-  /** Boom length used; pass back as `previousArm` next frame. */
   arm: number;
   /** True when the desired position was rejected because collision sits on the boom. */
   pulled: boolean;

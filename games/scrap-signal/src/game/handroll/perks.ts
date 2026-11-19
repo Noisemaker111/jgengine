@@ -18,26 +18,20 @@ import { LEGENDARY_NAMES, type GunDef, type GunFamily } from "./guns";
  */
 export type PerkEvent = "gun.shot" | "gun.prehit" | "gun.hit" | "gun.kill" | "gun.reload";
 
-/** A rule without its per-gun id/owner: the runtime fills those in when the gun first fires. */
 export type PerkRuleTemplate = Omit<TriggeredRule, "id" | "owner"> & { readonly event: PerkEvent };
 
 export interface PerkDef {
   id: string;
-  /** Name shown on the card and in the proc callout. */
   name: string;
-  /** One-line read of what it does. */
   text: string;
   rules: readonly PerkRuleTemplate[];
   /** Families the perk can roll on (default: every family). Launchers never crit, so crit perks skip them. */
   families?: readonly GunFamily[];
-  /** Only rolls on a gun whose element leaves a DoT. */
   needsDot?: boolean;
-  /** Set on a named legendary's red-text perk. */
   signature?: { gun: string; flavor: string };
 }
 
 const CRIT_FAMILIES: readonly GunFamily[] = ["pistol", "smg", "shotgun", "rifle", "sniper"];
-/** "Until the counter fills" — a counter perk's stacks live this long between procs. */
 const COUNTER_MS = 600_000;
 
 function counter(event: PerkEvent, every: number, then: "crit" | "refund", rounds = 1, when?: TriggeredRule["when"]): PerkRuleTemplate {
@@ -53,7 +47,6 @@ function counter(event: PerkEvent, every: number, then: "crit" | "refund", round
 
 const crit = { eq: ["crit", true] } as const;
 
-/** The rolled pool: rare guns take one, epics one or two, legendaries may add one beside the signature. */
 export const ROLLED_PERKS: readonly PerkDef[] = [
   {
     id: "rampage",
@@ -138,7 +131,6 @@ export const ROLLED_PERKS: readonly PerkDef[] = [
   },
 ];
 
-/** One red-text perk per named legendary, keyed by its name. */
 export const SIGNATURE_PERKS: readonly PerkDef[] = [
   // Pistols
   {
@@ -254,7 +246,6 @@ export function perkById(id: string): PerkDef | undefined {
   return PERKS.get(id);
 }
 
-/** The named legendary a gun is, read off its maker and name ("Burning Sixgun" is a Blackwood Sixgun). */
 export function legendaryNameOf(gun: Pick<GunDef, "rarity" | "family" | "manufacturer" | "name">): string | null {
   if (gun.rarity !== "legendary") return null;
   const names = LEGENDARY_NAMES[gun.family] ?? [];
@@ -300,7 +291,6 @@ export function derivePerks(gun: Pick<GunDef, "id" | "rarity" | "family" | "elem
   return perks;
 }
 
-/** A gun's perks: the rolled list it carries, or (for a gun saved before perks) the same derivation. */
 export function gunPerks(gun: GunDef): readonly PerkDef[] {
   const ids = gun.perks ?? derivePerks(gun);
   return ids.map((id) => PERKS.get(id)).filter((perk): perk is PerkDef => perk !== undefined);

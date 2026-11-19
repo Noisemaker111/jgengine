@@ -1,12 +1,10 @@
 import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 
-/** One carried stack: an item id and how many of it the carrier holds. */
 export interface LoadEntry {
   itemId: string;
   quantity: number;
 }
 
-/** Resolves the per-unit mass of an item id. Injected so mass tables stay decoupled from this module. */
 export type MassResolver = (itemId: string) => number;
 
 /**
@@ -15,26 +13,15 @@ export type MassResolver = (itemId: string) => number;
  * required so a game states its own bands instead of inheriting someone else's.
  */
 export interface EncumbranceConfig {
-  /**
-   * Load fraction at/above which the carrier becomes encumbered (loses sprint & jump and
-   * starts slowing). Below it the carrier is unencumbered.
-   */
   soft: number;
-  /**
-   * Move-speed multiplier reached as load approaches full capacity (fraction → 1), the floor
-   * the progressive slow curve bottoms out at just before immobility.
-   */
   floor: number;
 }
 
-/** Coarse carry state: free-moving, slowed, or pinned in place. */
 export type EncumbranceTier = "unencumbered" | "encumbered" | "immobile";
 
-/** Serializable snapshot of a carrier's load versus capacity and the movement consequences. */
 export interface EncumbranceState {
   /** Total carried mass (never negative). */
   mass: number;
-  /** Carrying capacity this load was measured against. */
   capacity: number;
   /** `mass / capacity`, clamped to be finite and non-negative; may exceed 1 when overloaded. */
   fraction: number;
@@ -64,13 +51,7 @@ export function totalLoad(entries: readonly LoadEntry[], massOf: MassResolver): 
   return total;
 }
 
-/**
- * Progressive move-speed multiplier for a raw load fraction: 1 while at/below `soft`, a linear
- * decay from 1 down toward `floor` across the `soft..1` band, and 0 once at/over capacity.
- * Pure and side-effect free — the curve `resolveEncumbrance` reads for `moveMultiplier`.
- *
- * @capability encumbrance-move-curve progressive move-speed multiplier from a carry-load fraction
- */
+/** @capability encumbrance-move-curve progressive move-speed multiplier from a carry-load fraction */
 export function encumbranceMoveMultiplier(fraction: number, config: EncumbranceConfig): number {
   const { soft, floor } = config;
   if (fraction >= 1) return 0;

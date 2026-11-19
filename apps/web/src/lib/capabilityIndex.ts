@@ -1,11 +1,9 @@
-/** One primitive listed under an intent in a skill's generated `capabilities.md`. */
 export interface CapabilityExport {
   readonly symbol: string;
   readonly kind: string;
   readonly importLine: string;
 }
 
-/** An intent row: the thing a game needs, and the primitives that already do it. */
 export interface Capability {
   readonly skill: string;
   readonly key: string;
@@ -13,11 +11,32 @@ export interface Capability {
   readonly exports: readonly CapabilityExport[];
 }
 
+const COMPACT_ROW = /^- \*\*([^\s*]+)\*\* — (.+)$/;
 const HEADING = /^## ([^\s]+) — (.+)$/;
 const EXPORT_LINE = /^- `([^`]+)` \(([^)]+)\) · `([^`]+)`$/;
 
-/** Parses the `scripts/gen-capability-index.ts` markdown format; unknown lines are skipped. */
 export function parseCapabilityIndex(markdown: string, skill: string): Capability[] {
+  const compactRows: Capability[] = [];
+  for (const raw of markdown.split("\n")) {
+    const match = COMPACT_ROW.exec(raw.trimEnd());
+    if (match === null) continue;
+    const key = match[1]!;
+    const rest = match[2]!;
+    const splitAt = rest.indexOf(" · `import ");
+    const summary = (splitAt === -1 ? rest : rest.slice(0, splitAt)).trim();
+    const tail = splitAt === -1 ? "" : rest.slice(splitAt + 3);
+    const exports: CapabilityExport[] = [];
+    for (const imp of tail.matchAll(/`import \{([^}]+)\} from "([^"]+)"`/g)) {
+      const mod = imp[2]!;
+      for (const rawName of imp[1]!.split(",")) {
+        const symbol = rawName.trim();
+        if (symbol !== "") exports.push({ symbol, kind: "", importLine: `import { ${symbol} } from "${mod}"` });
+      }
+    }
+    if (exports.length > 0) compactRows.push({ skill, key, summary, exports });
+  }
+  if (compactRows.length > 0) return compactRows;
+
   const rows: Capability[] = [];
   let current: { key: string; summary: string; exports: CapabilityExport[] } | null = null;
   for (const raw of markdown.split("\n")) {

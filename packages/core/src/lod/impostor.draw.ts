@@ -5,13 +5,12 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 /** How sharp an impostor atlas is: `frames`×`frames` views over the upper hemisphere, `cell` pixels each. @internal */
 export interface ImpostorSettings {
-  /** View directions per atlas side; the atlas holds frames² views. */
   frames: number;
   /** Pixels per view. */
   cell: number;
 }
 
-/** Atlas resolution per tier. Low keeps impostors too: they are what makes a far forest cheap. @internal */
+/** @internal */
 export function impostorSettingsForQuality(quality: GraphicsQuality): ImpostorSettings {
   if (quality === "low") return { frames: 6, cell: 48 };
   if (quality === "medium") return { frames: 8, cell: 64 };
@@ -51,7 +50,7 @@ export function hemiOctEncode(x: number, y: number, z: number): [number, number]
   return [(px + pz) * 0.5 + 0.5, (px - pz) * 0.5 + 0.5];
 }
 
-/** Inverse of {@link hemiOctEncode}. @internal */
+/** @internal */
 export function hemiOctDecode(u: number, v: number, target = new THREE.Vector3()): THREE.Vector3 {
   const tx = u * 2 - 1;
   const ty = v * 2 - 1;
@@ -60,17 +59,16 @@ export function hemiOctDecode(u: number, v: number, target = new THREE.Vector3()
   return target.set(px, 1 - Math.abs(px) - Math.abs(pz), pz).normalize();
 }
 
-/** The up vector a bake camera looking back along `direction` uses; the shader mirrors it. @internal */
+/** @internal */
 export function impostorUp(direction: THREE.Vector3, target = new THREE.Vector3()): THREE.Vector3 {
   return Math.abs(direction.y) > 0.999 ? target.set(0, 0, -1) : target.set(0, 1, 0);
 }
 
-/** A model baked into albedo and normal atlases seen from `frames`² directions. @internal */
+/** @internal */
 export interface ImpostorAtlas {
   albedo: THREE.Texture;
   normal: THREE.Texture;
   frames: number;
-  /** Bounding sphere of the model in its own space. */
   center: THREE.Vector3;
   radius: number;
   /** The render targets a fresh bake drew into, for a build step that reads the pixels back. */
@@ -179,7 +177,6 @@ export async function bakeImpostorLinked(renderer: THREE.WebGLRenderer, sources:
   return drawBake(renderer, plan, settings);
 }
 
-/** A bake ready to draw: the model in its own scene with both passes' materials, and its bounds. */
 interface BakePlan {
   scene: THREE.Scene;
   owned: THREE.Material[];
@@ -430,15 +427,13 @@ export function impostorSwitch(distance: number, threshold: number, wasFar: bool
   return wasFar ? distance > threshold - band : distance > threshold + band;
 }
 
-/** A baked model shared by every draw of it, and its card materials. @internal */
+/** @internal */
 export interface ImpostorEntry {
-  /** Null until the bake has drawn, and after it when the model had nothing to bake. */
   atlas: ImpostorAtlas | null;
   materials: { material: THREE.MeshStandardMaterial; depth: THREE.MeshDepthMaterial } | null;
   users: number;
   /** Whether the bake has finished: its programs link off the frame first, so it lands a few frames later. */
   baked: boolean;
-  /** Resolves when the bake has finished, or was dropped. */
   ready: Promise<void>;
 }
 
@@ -524,7 +519,7 @@ export function impostorCard(atlas: ImpostorAtlas): THREE.PlaneGeometry {
   return card;
 }
 
-/** Bounding radius of a set of sources in model space, for deciding whether a model earns an impostor. @internal */
+/** @internal */
 export function sourceRadius(sources: readonly ImpostorSource[]): number {
   const box = new THREE.Box3();
   const part = new THREE.Box3();

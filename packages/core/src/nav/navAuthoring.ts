@@ -17,35 +17,22 @@ export type NavLinkKind = "door" | "ladder" | "jump" | "link";
  * `NavRuntime.applyMesh` resolves each end onto the nearest walkable polygon.
  */
 export interface AuthoredNavLink {
-  /** Stable authored id; reported by `unresolvedLinks()` when an end no longer touches the mesh. */
   id: string;
-  /** Traversal kind; prices the link when `cost` is absent. Default `"link"`. */
   kind?: NavLinkKind;
-  /** World point the agent leaves from. */
   from: Vec3;
-  /** World point the agent arrives at. */
   to: Vec3;
-  /** Path cost in world units; overrides the kind's price. Non-finite or negative falls back to the kind. */
   cost?: number;
-  /** Also crossable from `to` back to `from` at the same price. Default false. */
   bidirectional?: boolean;
 }
 
-/**
- * Volume kind of an authored nav area: a box that adds walkable floor (`walkable`) or removes it (`blocked`).
- * @capability nav-authoring author nav-mesh areas and off-mesh links (doors, ladders, jumps) in the editor scene
- */
+/** @capability nav-authoring author nav-mesh areas and off-mesh links (doors, ladders, jumps) in the editor scene */
 export const NAV_AREA_KIND = "nav_area";
-/** Path kind of an authored off-mesh link: its first point is where the agent leaves, its last where it lands. */
 export const NAV_LINK_KIND = "nav_link";
 
-/** What a nav area does to the walkable surface under it. */
 export type NavAreaMode = "walkable" | "blocked";
 
-/** Every link kind the runtime prices. */
 export const NAV_LINK_KINDS: readonly NavLinkKind[] = ["door", "ladder", "jump", "link"];
 
-/** Inspector and `meta` schema of a `nav_area` volume. */
 export const NAV_AREA_SCHEMA: ParamSchema = {
   fields: [
     {
@@ -63,7 +50,6 @@ export const NAV_AREA_SCHEMA: ParamSchema = {
   ],
 };
 
-/** Inspector and `meta` schema of a `nav_link` path. */
 export const NAV_LINK_SCHEMA: ParamSchema = {
   fields: [
     {
@@ -84,16 +70,12 @@ export const NAV_LINK_SCHEMA: ParamSchema = {
   ],
 };
 
-/** One authored nav area read off a `nav_area` box volume. */
 export interface AuthoredNavArea {
   id: string;
   mode: NavAreaMode;
-  /** Area id stamped on walkable polygons it covers, priced by `areaCosts`; 0 leaves the default price. */
   area: number;
-  /** Box corners, `center ± halfExtents`. */
   min: Vec3;
   max: Vec3;
-  /** Height of the floor a walkable area adds: the volume's `center.y`. */
   floorY: number;
 }
 
@@ -103,7 +85,6 @@ export interface NavAuthoringIssue {
   message: string;
 }
 
-/** Every nav area and link a scene authors, plus the objects that could not be read. */
 export interface NavAuthoring {
   areas: AuthoredNavArea[];
   links: AuthoredNavLink[];
@@ -112,7 +93,6 @@ export interface NavAuthoring {
 
 type NavPoint = { x: number; y: number; z: number };
 
-/** The slice of an editor volume a nav area reads (an `EditorVolume` fits). */
 export interface NavAuthoringVolume {
   id: string;
   kind: string;
@@ -122,7 +102,6 @@ export interface NavAuthoringVolume {
   meta?: Record<string, unknown> | undefined;
 }
 
-/** The slice of an editor path a nav link reads (an `EditorPath` fits). */
 export interface NavAuthoringPath {
   id: string;
   kind: string;
@@ -130,7 +109,6 @@ export interface NavAuthoringPath {
   meta?: Record<string, unknown> | undefined;
 }
 
-/** The slice of a scene document nav authoring reads (an `EditorDocument` fits). */
 export interface NavAuthoringDocument {
   volumes: readonly NavAuthoringVolume[];
   paths: readonly NavAuthoringPath[];
@@ -223,7 +201,6 @@ export function navAuthoringFromDocument(
   return { areas, links, issues };
 }
 
-/** The authored off-mesh links of a scene document, ready for `createNavRuntime`'s `links`. */
 export function navLinksFromDocument(
   document: NavDocument,
   include?: (object: NavAuthoringVolume | NavAuthoringPath) => boolean,
@@ -231,7 +208,6 @@ export function navLinksFromDocument(
   return navAuthoringFromDocument(document, include).links;
 }
 
-/** Problems that keep a scene's nav objects from being read; empty means every one is valid. */
 export function validateNavAuthoring(document: NavDocument): NavAuthoringIssue[] {
   return navAuthoringFromDocument(document).issues;
 }
@@ -240,12 +216,6 @@ function insideXZ(area: AuthoredNavArea, x: number, z: number): boolean {
   return x >= area.min[0] && x <= area.max[0] && z >= area.min[2] && z <= area.max[2];
 }
 
-/**
- * The area id authored at a ground point, for a builder whose walkable surface is a rule
- * (`navTileFromGrid`'s `areaAt`): `null` inside a blocked area, the covering walkable area's id
- * (the last one authored wins) inside a walkable one, and the builder's own answer elsewhere.
- * Blocked beats walkable where they overlap.
- */
 export function navAreaAt(areas: readonly AuthoredNavArea[], x: number, z: number, fallback: number | null): number | null {
   let walkable: number | null = null;
   for (const area of areas) {
@@ -256,7 +226,6 @@ export function navAreaAt(areas: readonly AuthoredNavArea[], x: number, z: numbe
   return walkable ?? fallback;
 }
 
-/** Indexed triangles for a recast bake, as `bakeNavMesh` takes them. */
 export interface NavBakeGeometry {
   positions: number[];
   indices: number[];
@@ -300,7 +269,6 @@ export function navAreaGeometry(areas: readonly AuthoredNavArea[]): NavBakeGeome
   return { positions, indices };
 }
 
-/** Concatenate indexed triangle sets into one, re-basing each set's indices. */
 export function mergeNavGeometry(...sets: readonly { positions: readonly number[]; indices: readonly number[] }[]): NavBakeGeometry {
   const positions: number[] = [];
   const indices: number[] = [];

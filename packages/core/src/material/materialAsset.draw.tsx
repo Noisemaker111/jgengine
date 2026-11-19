@@ -54,10 +54,7 @@ export function configureMaterialTexture(role: MaterialTextureRole, metadata: Ma
   return texture;
 }
 
-/**
- * Physical defaults adapt a declared construction; explicit authored parameters remain authoritative.
- * @capability material-assets resolve fabric and hair construction into sparse physical appearance parameters
- */
+/** @capability material-assets resolve fabric and hair construction into sparse physical appearance parameters */
 export function materialAssetSurface(asset: MaterialAsset, overrides: MaterialSurfaceParameters = {}): MaterialSurfaceParameters {
   const errors = validateMaterialAsset(asset).filter(diagnostic => diagnostic.severity === "error");
   if (errors.length > 0) throw new Error(`Material ${asset.id}: ${errors.map(error => `${error.path}: ${error.message}`).join("; ")}`);
@@ -141,10 +138,7 @@ reflectedLight.directDiffuse += directLight.color * uJgHairTint * (jgHairBack * 
   material.needsUpdate = true;
 }
 
-/**
- * Apply one reusable material's parameters, map views and construction to an imported PBR slot.
- * @capability material-assets clone and configure an imported PBR slot while retaining its omitted physical features and maps
- */
+/** @capability material-assets clone and configure an imported PBR slot while retaining its omitted physical features and maps */
 export function applyMaterialAsset(material: THREE.Material, asset: MaterialAsset, textures?: MaterialOverrideTextures, overrides?: MaterialSurfaceParameters): THREE.MeshStandardMaterial {
   const surface = materialAssetSurfaceForSlot(material, asset, overrides);
   const source = materialAssetBases.get(material) ?? material;
@@ -174,15 +168,10 @@ function materialAssetSurfaceForSlot(material: THREE.Material, asset: MaterialAs
 export interface MaterialAssignmentTargetOptions extends MaterialAssignmentValidationOptions {
   /** Coverage applied to every imported slot before named assignments; never mutates the source. */
   baseAlphaMode?: MaterialSurfaceParameters["alphaMode"];
-  /** `skip` lets a selector that matches no slot pass: a simplified variant level may have dropped that slot. */
   unmatched?: "throw" | "skip";
 }
 
-/**
- * Check selectors, PBR slots, UVs and construction prerequisites before allocating material or texture views.
- * Optional role restrictions apply only to referenced assets; imported maps remain untouched.
- * @capability material-slot-selection preflight native model assignments without allocating or changing imported resources
- */
+/** @capability material-slot-selection preflight native model assignments without allocating or changing imported resources */
 export function validateMaterialAssignmentTargets(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], options: MaterialAssignmentTargetOptions = {}): void {
   materialAssignmentTargets(root, assets, assignments, options);
 }
@@ -229,10 +218,7 @@ function materialAssignmentTargets(root: THREE.Object3D, assets: readonly Materi
   return final;
 }
 
-/**
- * Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them only after success.
- * @capability material-assets assign reusable physical assets to independent imported model slots
- */
+/** @capability material-assets assign reusable physical assets to independent imported model slots */
 export function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map(), options: Pick<MaterialAssignmentTargetOptions, "unmatched"> = {}): THREE.Material[] {
   const final = materialAssignmentTargets(root, assets, assignments, options);
   const owned: THREE.Material[] = [];
@@ -368,7 +354,6 @@ export function materialResourceMetrics(materials: readonly THREE.Material[]): {
   return { materials: unique.size, textures: textures.size, textureBytes, unknownTextureSizes, blendedMaterials, maskedMaterials, transmissionMaterials, doubleSidedMaterials, physicalMaterials };
 }
 
-/** Runtime imported-slot inventory for precise authoring selectors; indices address the mesh material array. */
 export interface ModelMaterialSlotInfo {
   mesh: string;
   slot: string;
@@ -379,10 +364,7 @@ export interface ModelMaterialSlotInfo {
   physical: boolean;
 }
 
-/**
- * Inspect imported names, local slot indices and directional/map prerequisites without mutating the source.
- * @capability material-slots discover exact imported mesh and material selectors with UV and tangent prerequisites
- */
+/** @capability material-slots discover exact imported mesh and material selectors with UV and tangent prerequisites */
 export function inspectModelMaterialSlots(root: THREE.Object3D): ModelMaterialSlotInfo[] {
   const result: ModelMaterialSlotInfo[] = [];
   root.traverse(node => {
@@ -448,7 +430,7 @@ export interface ModelMaterialTexturesLease {
 const materialTextureLoader = new MaterialTextureLoader();
 const materialTextureLoads = new Map<string, Promise<THREE.Texture>>();
 
-/** One shared decode per map URL, matching the `useLoader` cache the hook path used. @internal */
+/** @internal */
 function loadMaterialTexture(url: string): Promise<THREE.Texture> {
   let pending = materialTextureLoads.get(url);
   if (pending === undefined) {
@@ -518,10 +500,7 @@ function overrideMapEntries(maps: Partial<Record<MaterialTextureRole, string>> |
   return result;
 }
 
-/**
- * Gate the existing thin-sheet hair-card scatter by sampled local light exposure, without changing scene exposure.
- * @capability material-appearance-signals apply sampled local exposure to the hair-card backlight approximation without global lighting edits
- */
+/** @capability material-appearance-signals apply sampled local exposure to the hair-card backlight approximation without global lighting edits */
 export function setHairCardLightExposure(material: THREE.Material, exposure: number): void {
   if (!Number.isFinite(exposure)) throw new Error("Hair light exposure must be finite");
   const value = Math.max(0, Math.min(1, exposure));
@@ -590,11 +569,7 @@ export function leasedMaterialMeshDraw(options: {
   };
 }
 
-/**
- * The draw-side form of the old `MaterialAssetSurface` component: a sphere (or flat card when
- * `options.flat`) wearing the asset's leased physical material.
- * @capability material-assets draw a material asset on a sphere or flat swatch mesh
- */
+/** @capability material-assets draw a material asset on a sphere or flat swatch mesh */
 export function materialAssetSwatchDraw(
   asset: MaterialAsset,
   options: { flat?: boolean | undefined; repeatMetres?: number | undefined; shape?: SurfaceShape | undefined; overrides?: MaterialSurfaceParameters | undefined; fallback?: THREE.Material | undefined } = {},

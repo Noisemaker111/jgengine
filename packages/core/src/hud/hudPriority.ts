@@ -8,7 +8,6 @@
 import type { LayoutOrientation } from "../ui/orientation";
 import type { HudRect, HudSize } from "./hudLayout";
 
-/** The explicit composition mode a game renders for — not a scaled desktop layout. */
 export type GameLayoutMode = "desktop-wide" | "desktop-compact" | "mobile-landscape" | "mobile-portrait";
 
 /** Edge insets in CSS pixels (safe areas, reservations). */
@@ -19,7 +18,6 @@ export interface Insets {
   left: number;
 }
 
-/** All-zero insets. */
 export const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 /** Axis-aligned rectangle in CSS pixels (origin top-left). Structurally compatible with a `DOMRect`'s edge fields. */
@@ -67,35 +65,22 @@ export function overlapArea(a: LayoutRect, b: LayoutRect): number {
   return w > 0 && h > 0 ? w * h : 0;
 }
 
-/** Portrait when taller than wide, else landscape.
- * @internal
- */
+/** @internal */
 export function orientationOf(width: number, height: number): LayoutOrientation {
   return height > width ? "portrait" : "landscape";
 }
 
-/** Inputs to `resolveLayoutMode`. */
 export interface LayoutModeInput {
-  /** Live visible viewport dimensions (prefer `visualViewport`). */
   width: number;
   height: number;
-  /** Touchscreen is the primary input (`(pointer: coarse)`). */
   coarsePointer: boolean;
-  /** Does the game support phones at all (`platforms` includes `"mobile"`)? Default true. */
   mobileSupported?: boolean;
-  /** Desktop width below which the layout is "compact". Default 900. */
   compactWidth?: number;
 }
 
 const DEFAULT_COMPACT_WIDTH = 900;
 
-/**
- * Resolve the explicit composition mode. A mobile layout is not a scaled
- * desktop layout: a coarse-pointer device on a game that supports mobile is
- * always a `mobile-*` mode, split by live orientation; everything else is a
- * desktop mode split by width.
-  * @internal
-  */
+/** @internal */
 export function resolveLayoutMode(input: LayoutModeInput): GameLayoutMode {
   const orientation = orientationOf(input.width, input.height);
   const mobile = input.coarsePointer && (input.mobileSupported ?? true);
@@ -104,20 +89,14 @@ export function resolveLayoutMode(input: LayoutModeInput): GameLayoutMode {
   return input.width < compactWidth ? "desktop-compact" : "desktop-wide";
 }
 
-/** Whether a mode is one of the phone modes.
- * @internal
- */
+/** @internal */
 export function isMobileMode(mode: GameLayoutMode): boolean {
   return mode === "mobile-portrait" || mode === "mobile-landscape";
 }
 
-/** What kind of UI a registered region belongs to. */
 export type LayoutRegionKind = "hud" | "control" | "system" | "screen";
-/** How a region participates in collision reporting. */
 export type LayoutCollisionPolicy = "forbid" | "allow" | "warn";
-/** Gameplay-importance tier of a HUD element. */
 export type HudPriority = "critical" | "secondary" | "tertiary";
-/** How a HUD element adapts on phones. */
 export type MobileHudBehavior =
   | "persistent"
   | "compact"
@@ -127,21 +106,17 @@ export type MobileHudBehavior =
   | "sheet"
   | "modal";
 
-/** A physical rectangle a UI subsystem occupies, published to the shared registry. */
 export interface LayoutRegion {
   id: string;
   kind: LayoutRegionKind;
   rect: LayoutRect;
-  /** `forbid` reports any overlap, `warn` reports softly, `allow` opts this region out of collision reporting entirely. */
   collisionPolicy: LayoutCollisionPolicy;
   priority?: HudPriority | undefined;
-  /** Region ids this one may overlap without a report. */
   allowOverlapWith?: readonly string[] | undefined;
   /** Regions sharing a non-empty group never report against each other. */
   collisionGroup?: string | undefined;
 }
 
-/** One detected forbidden/warned overlap between two regions. */
 export interface LayoutCollision {
   a: string;
   b: string;
@@ -159,7 +134,6 @@ function allowsOverlap(a: LayoutRegion, b: LayoutRegion): boolean {
   return false;
 }
 
-/** Options for `detectLayoutCollisions`. */
 export interface DetectCollisionsOptions {
   /** Ignore overlaps smaller than this many px² — avoids meaningless sub-pixel warnings. Default 64. */
   minArea?: number;
@@ -167,14 +141,7 @@ export interface DetectCollisionsOptions {
 
 const DEFAULT_MIN_AREA = 64;
 
-/**
- * Every forbidden or warned rectangle intersection across the registered
- * regions. A pair is skipped when either side's policy is `allow`, when either
- * opts into the other via `allowOverlapWith`, when they share a
- * `collisionGroup`, or when the overlap is below `minArea`.
-  *
-  * @capability layout-collisions every overlapping pair of registered HUD, control and system regions
-  */
+/** @capability layout-collisions every overlapping pair of registered HUD, control and system regions */
 export function detectLayoutCollisions(
   regions: readonly LayoutRegion[],
   options?: DetectCollisionsOptions,
@@ -200,12 +167,7 @@ function withThousands(n: number): string {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-/**
- * Human-readable diagnostic block for a set of collisions (empty string when there are none), naming
- * the viewport they collided at when given.
- *
- * @capability layout-collision-report format the overlapping HUD/control regions for a development console
- */
+/** @capability layout-collision-report format the overlapping HUD/control regions for a development console */
 export function formatLayoutCollisions(collisions: readonly LayoutCollision[], viewport?: HudSize): string {
   if (collisions.length === 0) return "";
   const lines = collisions.map((c) => `${c.a} intersects ${c.b} by ${withThousands(c.area)} px²`);
@@ -213,11 +175,6 @@ export function formatLayoutCollisions(collisions: readonly LayoutCollision[], v
   return [`JGENGINE LAYOUT COLLISION${at}`, ...lines].join("\n");
 }
 
-/**
- * A rendered HUD block (`{ x, y, width, height }`, as `HudCanvas` measures it or `resolveHudLanes`
- * places it) as a `forbid` HUD region, so HUD blocks check for overlap through
- * {@link detectLayoutCollisions} like every other region.
- */
 export function hudBlockRegion(id: string, rect: HudRect): LayoutRegion {
   return {
     id,
@@ -227,12 +184,7 @@ export function hudBlockRegion(id: string, rect: HudRect): LayoutRegion {
   };
 }
 
-/**
- * The usable gameplay rectangle after reserving physical zones for touch
- * controls and system UI. Starts from the safe-area-inset viewport and carves
- * each reserved zone from whichever edge it hugs.
-  * @internal
-  */
+/** @internal */
 export function computeGameplayRect(
   viewport: LayoutRect,
   safeArea: Insets,
@@ -257,19 +209,14 @@ export function computeGameplayRect(
   return { left, top, right: Math.max(left, right), bottom: Math.max(top, bottom) };
 }
 
-/** The shared live geometry the engine allocates once and every UI subsystem reads. */
 export interface GameViewportLayout {
   /** The layout (CSS-pixel) viewport. */
   viewport: LayoutRect;
-  /** The live visible viewport (`window.visualViewport`), which excludes mobile browser chrome. */
   visualViewport: LayoutRect;
   safeArea: Insets;
   mode: GameLayoutMode;
   orientation: LayoutOrientation;
-  /** All registered regions with their live rects. */
   regions: readonly LayoutRegion[];
-  /** Rects reserved by touch controls and system UI. */
   controlZones: readonly LayoutRect[];
-  /** Usable world/gameplay area after reservations. */
   gameplayRect: LayoutRect;
 }

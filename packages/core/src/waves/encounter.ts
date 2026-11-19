@@ -7,28 +7,20 @@ import type { FightIntent } from "../ai/director/roles";
  * `unit` and `entry` are game-owned ids — the engine never resolves them.
  */
 export interface EncounterGroup {
-  /** Unit id the game's catalog knows. */
   unit: string;
-  /** Authored spawn-point key, resolved by the game against its scene. */
   entry: string;
-  /** How many enter at this open. Default `1`. */
   count?: number;
   /** Seconds into the wave before this group enters. Default `0`. */
   at?: number;
-  /** Duty the group takes when it engages. Default the encounter's `defaultIntent`. */
   intent?: FightIntent;
-  /** True when pressure may add copies of this group. Default `false`. */
   escalates?: boolean;
-  /** True when this group only exists once pressure unlocks an elite slot. Default `false`. */
   elite?: boolean;
   /** Seeded scatter of up to ±this many seconds on `at`. Default `0`. */
   jitterSeconds?: number;
 }
 
-/** One authored wave. */
 export interface EncounterWave {
   id: string;
-  /** HUD or screen label. */
   label?: string;
   groups: readonly EncounterGroup[];
   /** Seconds the wave stays open after it opens. Omit to close when the last order lands. */
@@ -41,17 +33,13 @@ export interface EncounterDefinition {
   waves: readonly EncounterWave[];
 }
 
-/** The subset of a pressure plan the encounter layer applies. */
 export interface EncounterPressure {
-  /** Extra copies for `escalates` groups. */
   countBonus?: number;
   /** Elite slots to unlock. A group marked `elite` enters only when a slot is free. */
   eliteSlots?: number;
-  /** Multiplier on authored entry delays (`< 1` sends them sooner). */
   cadenceScale?: number;
 }
 
-/** One unit the director says should enter now. */
 export interface EncounterOrder {
   /** 0-based wave index. */
   wave: number;
@@ -61,70 +49,53 @@ export interface EncounterOrder {
   intent: FightIntent;
   /** Seconds after the wave opened when this unit enters. */
   atSeconds: number;
-  /** Which authored group this order came from, for logging and tests. */
   group: number;
   /** True when pressure added this unit rather than the authored composition. */
   pressureAdded: boolean;
 }
 
-/** Serializable encounter state. */
 export interface EncounterState {
   /** 0-based index of the open wave, or of the next one before it opens. */
   wave: number;
   opened: boolean;
   /** Seconds the open wave has run. */
   elapsed: number;
-  /** Orders already emitted for the open wave. */
   emitted: number;
   completedWaves: number;
   done: boolean;
-  /** Pressure captured when the open wave opened, so re-deriving the schedule is stable. */
   countBonus: number;
   eliteSlots: number;
   cadenceScale: number;
 }
 
-/** Pooled per-frame readout of where the encounter stands. */
 export interface EncounterView {
   /** 1-based wave for display. */
   wave: number;
   totalWaves: number;
   waveId: string | null;
   label: string | null;
-  /** Orders in the open wave, authored plus pressure-added. */
   total: number;
   emitted: number;
   /** `0..1` through the open wave. */
   progress: number;
-  /** True once the open wave has landed every order and its duration has run. */
   ready: boolean;
   done: boolean;
 }
 
-/** Live encounter: opens waves, emits timed spawn orders, and round-trips through a save. */
 export interface Encounter {
-  /** Open a wave (next one by default) and return its full ordered schedule. */
   openWave(index?: number, pressure?: EncounterPressure): EncounterOrder[];
-  /** Advance the open wave and return the orders whose time has come since the last step. */
   update(dt: number): EncounterOrder[];
-  /** Mark the open wave cleared and make the next one current. */
   completeWave(): void;
-  /** The wave definition at an index, or null past the end. */
   waveAt(index: number): EncounterWave | null;
-  /** The pooled readout to render. */
   view(): EncounterView;
   snapshot(): EncounterState;
   restore(state: EncounterState): void;
 }
 
-/** Construction options for {@link createEncounter}. */
 export interface EncounterConfig {
   definition: EncounterDefinition;
-  /** Seed for the per-wave entry scatter. Default `1`. */
   seed?: number;
-  /** Duty for groups that omit `intent`. Default `"assault"`. */
   defaultIntent?: FightIntent;
-  /** Most pressure may add to one escalating group, whatever the plan says. Default `4`. */
   maxExtraPerGroup?: number;
 }
 

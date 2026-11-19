@@ -4,9 +4,8 @@ import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerServic
 import { submitInstanceCount } from "@jgengine/core/render/submittedDraws.draw";
 import { Lingering } from "@jgengine/core/run/lingering";
 
-/** One user's share of a pooled card draw: its far placements this frame. @internal */
+/** @internal */
 export interface ImpostorCardSlice {
-  /** Instance matrices, 16 floats each; only the first `count` are drawn. */
   matrices: Float32Array;
   /** Object ids in the same order, so a click on a far card still picks its object. */
   ids: string[];
@@ -38,7 +37,6 @@ export class ImpostorCardPool {
     submitInstanceCount(this.mesh, 0);
   }
 
-  /** A new empty slice that draws in this pool until {@link drop}. */
   slice(capacity: number): ImpostorCardSlice {
     const slice: ImpostorCardSlice = { matrices: new Float32Array(Math.max(1, capacity) * 16), ids: [], count: 0, version: 0 };
     this.slices.add(slice);
@@ -52,10 +50,6 @@ export class ImpostorCardPool {
     this.packedVersions = Number.NaN;
   }
 
-  /**
-   * Copies every slice into the shared mesh, once per `frame` however many users call it, and only
-   * after a slice was rewritten, joined or left: an unchanged pool keeps last frame's instances.
-   */
   pack(frame: number): void {
     if (frame === this.packedAt) return;
     this.packedAt = frame;
@@ -128,7 +122,7 @@ export function acquireImpostorCardPool(
   return shared.pool;
 }
 
-/** Drops one user of the pool for `key`. @internal */
+/** @internal */
 export function releaseImpostorCardPool(key: string, pool: ImpostorCardPool): void {
   const found = pools.get(key);
   if (found === undefined || found.pool !== pool) return;

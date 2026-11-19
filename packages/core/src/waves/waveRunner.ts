@@ -25,7 +25,6 @@ export type WaveSpawnSink = (request: SpawnRequest) => void;
  * The runner owns the director state — you never pass a `SpawnDirectorState` here.
  */
 export interface WaveRunnerConfig extends SpawnDirectorConfig {
-  /** Optional sink invoked once per spawned {@link SpawnRequest} during {@link WaveRunner.update}. */
   onSpawn?: WaveSpawnSink;
 }
 
@@ -43,19 +42,14 @@ export interface WaveView {
    * waveBudget`). A best-effort readout for a progress bar, not an exact schedule.
    */
   waveProgress: number;
-  /** Spawn budget currently banked in the director. */
   budget: number;
-  /** How many entities have spawned during the current wave. */
   spawnedThisWave: number;
-  /** How many entities have spawned across every wave so far. */
   spawnedTotal: number;
   /** Current alert level `0..1` (raised by {@link WaveRunner.raiseAlert}, decays over time). */
   alert: number;
-  /** True once the final non-looping wave has finished. */
   done: boolean;
 }
 
-/** A live, observable, serializable wave/spawn runner over a seeded spawn director. */
 export interface WaveRunner {
   /**
    * Advance the director by `dt` seconds: bank budget, roll escalation/alert, cross
@@ -66,17 +60,13 @@ export interface WaveRunner {
   update(dt: number, ctx?: DirectorContext): void;
   /** The pooled current-wave readout to render (do not retain). */
   view(): WaveView;
-  /** Force an immediate jump to the next wave (delegates to `advanceWave`). Notifies. */
   forceNextWave(): void;
   /** Raise the alert level by `amount` (clamped `0..1`), boosting spawn budget. Notifies. */
   raiseAlert(amount: number): void;
   /** The raw underlying {@link SpawnDirectorState} (0-based `wave`); read-only snapshot of internals. */
   state(): SpawnDirectorState;
-  /** Observe changes (update, forceNextWave, raiseAlert, restore). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save — the plain {@link SpawnDirectorState} object. */
   snapshot(): SpawnDirectorState;
-  /** Restore from a {@link snapshot} (a plain {@link SpawnDirectorState}). Notifies. */
   restore(snapshot: SpawnDirectorState): void;
 }
 
@@ -115,7 +105,6 @@ export function createWaveRunner(config: WaveRunnerConfig): WaveRunner {
     for (const listener of listeners) listener();
   }
 
-  /** True if any field a HUD cares about differs between two states. */
   function changed(a: SpawnDirectorState, b: SpawnDirectorState): boolean {
     return (
       a.wave !== b.wave ||

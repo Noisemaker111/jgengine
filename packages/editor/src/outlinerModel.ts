@@ -1,12 +1,10 @@
 import { editorChildren, editorRoots, type EditorDocument } from "@jgengine/core/editor/index";
 
-/** A distinct label under a kind, backing one or more object ids (×N dedup rows). */
 export interface OutlinerRow {
   label: string;
   ids: string[];
 }
 
-/** A kind group in the "By kind" outliner view. */
 export interface OutlinerGroup {
   kind: string;
   rows: OutlinerRow[];
@@ -20,8 +18,7 @@ interface OutlinerDocument {
   annotations: readonly { id: string; text: string }[];
 }
 
-/** Groups every object by kind, deduping identical labels into ×N rows.
- * @internal — outliner rendering helper. */
+/** @internal — outliner rendering helper. */
 export function buildOutlinerGroups(document: OutlinerDocument): OutlinerGroup[] {
   const byKind = new Map<string, Map<string, OutlinerRow>>();
   const push = (kind: string, label: string, id: string) => {
@@ -46,8 +43,7 @@ export function buildOutlinerGroups(document: OutlinerDocument): OutlinerGroup[]
     .sort((a, b) => a.kind.localeCompare(b.kind));
 }
 
-/** Filters groups by a case-insensitive query against kind and row labels.
- * @internal — outliner rendering helper. */
+/** @internal — outliner rendering helper. */
 export function filterOutlinerGroups(groups: readonly OutlinerGroup[], query: string): OutlinerGroup[] {
   const normalized = query.trim().toLowerCase();
   if (normalized.length === 0) return [...groups];
@@ -62,13 +58,11 @@ export function filterOutlinerGroups(groups: readonly OutlinerGroup[], query: st
     .filter((group) => group.rows.length > 0);
 }
 
-/** One rendered outliner line — a kind header, a deduped kind row, or a hierarchy tree node. */
 export type OutlinerFlatRow =
   | { type: "group"; key: string; kind: string; total: number; collapsed: boolean }
   | { type: "kindItem"; key: string; kind: string; label: string; ids: string[] }
   | { type: "treeItem"; key: string; id: string; label: string; kind: string; depth: number; hasChildren: boolean };
 
-/** How the outliner is displayed and folded — the state a flat row list is built from. */
 export interface OutlinerViewState {
   view: "kind" | "tree";
   query: string;

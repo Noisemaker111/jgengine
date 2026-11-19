@@ -8,12 +8,10 @@ import { gamePhase, setGamePhase } from "./gamePhase";
 /** Whether this page already ran a game (a second New game reloads instead of reusing the world), and seconds since the last checkpoint. */
 const session = perContext((_ctx: GameContext) => ({ ran: false, sinceSave: 0 }));
 
-/** A pane the title or pause menu shows beside its verbs. */
 export type MenuPane = "controls" | "settings" | "credits";
 
 export const MENU_PANE_STORE_KEY = "jg.menuPane";
 
-/** The pane the title or pause menu shows, or null for its default (the briefing on the title, nothing on pause). */
 export function menuPane(ctx: GameContext): MenuPane | null {
   const value = ctx.game.store.get(MENU_PANE_STORE_KEY);
   return value === "controls" || value === "settings" || value === "credits" ? value : null;
@@ -26,7 +24,6 @@ export function showMenuPane(ctx: GameContext, pane: MenuPane | null): void {
   ctx.game.store.set(MENU_PANE_STORE_KEY, pane);
 }
 
-/** Stop the clock and show the title (`"menu"` phase). */
 export function openTitle(ctx: GameContext): void {
   ctx.time.pause();
   setGamePhase(ctx, "menu");
@@ -38,7 +35,6 @@ export function runPlayed(ctx: GameContext): boolean {
   return session(ctx).ran;
 }
 
-/** Start the clock and enter the `"playing"` phase. */
 export function playGame(ctx: GameContext): void {
   session(ctx).ran = true;
   ctx.time.play();
@@ -59,10 +55,8 @@ export async function newGame(ctx: GameContext, restart?: () => void): Promise<v
   playGame(ctx);
 }
 
-/** What the active slot holds, for a title screen's Continue: `loaded` is the only one it can open. */
 export type SaveSlotState = "loaded" | "empty" | "corrupt" | "failed";
 
-/** Read the active slot without applying it. A game without a save reads as `empty`. */
 export async function readSaveSlotState(ctx: GameContext): Promise<SaveSlotState> {
   const save = ctx.game.save;
   if (save === undefined) return "empty";
@@ -77,7 +71,6 @@ export function continueHint(state: SaveSlotState): string {
   return "No save yet";
 }
 
-/** Load the save and play it; resolves `false` (and stays put, with a notice when the save was damaged or unreadable) when there is nothing to play. */
 export async function continueGame(ctx: GameContext): Promise<boolean> {
   const result = await ctx.game.save?.load();
   if (result?.kind === "loaded") {
@@ -89,7 +82,6 @@ export async function continueGame(ctx: GameContext): Promise<boolean> {
   return false;
 }
 
-/** Pause from `"playing"`, resume from `"paused"`; any other phase is left alone. */
 export function togglePause(ctx: GameContext): void {
   const phase = gamePhase(ctx);
   if (phase === "playing") {
@@ -99,14 +91,12 @@ export function togglePause(ctx: GameContext): void {
   } else if (phase === "paused") playGame(ctx);
 }
 
-/** Save now and post a "Saved" notice, or "Save failed" when the backend did not keep it. */
 export async function saveNow(ctx: GameContext, notice = "Saved"): Promise<void> {
   const result = await ctx.game.save?.save();
   if (result?.kind === "failed") ctx.game.notices.push({ text: "Save failed", tone: "deny" });
   else ctx.game.notices.push({ text: notice, tone: "success" });
 }
 
-/** Options for {@link createGameFlowSystem}. */
 export interface GameFlowOptions {
   /** Seconds of play between automatic checkpoints. Default 30; 0 turns checkpoints off. */
   checkpointEverySeconds?: number;

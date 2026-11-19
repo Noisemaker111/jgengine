@@ -13,7 +13,6 @@ export interface DragPayload<T> {
   rotation: Rotation;
 }
 
-/** What the drag layer is carrying now: the payload, the pointer and where the drag began. */
 export interface DragLayerState<T> {
   payload: DragPayload<T> | null;
   point: { x: number; y: number };

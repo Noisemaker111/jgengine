@@ -1,4 +1,3 @@
-/** Matte painted vinyl-figure palette — no pure white/black, no chrome. */
 export const LLMVILLE_CHARACTER_PALETTE = {
   cream: "#f4ecdd",
   warmGray: "#8a8478",
@@ -63,7 +62,6 @@ export const CHARACTER_SHOES_COLORS: Record<CharacterShoesColorId, { label: stri
   teal: { label: "Teal", color: LLMVILLE_CHARACTER_PALETTE.teal },
 };
 
-/** Authored base colors used as multiply-tint denominators for the fishbowl texture atlas. */
 export const CHARACTER_REGION_BASE_COLORS = {
   fish: LLMVILLE_CHARACTER_PALETTE.fishBlue,
   hoodie: LLMVILLE_CHARACTER_PALETTE.hoodieCream,

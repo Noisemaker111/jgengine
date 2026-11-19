@@ -53,36 +53,19 @@ import { EditorDocumentSaveContext, useDocumentSave } from "./useDocumentSave";
 import { PlayModeBar } from "./shell/PlayModeBar";
 import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
 
-/** Props for mounting the scene editor over a playable game. */
 export interface EditorAppProps {
   gameId: string;
   playable: PlayableGame;
   /** Layers to open. Defaults to `playable.editorLayers`, so a game shipping its document via `defineGame({ editorLayers })` needs no extra wiring. */
   layers?: EditorLayersInput | undefined;
-  /** Game-exported gameplay catalog definitions (schemas + defaults) for the Data panel / catalog RPC. */
   catalogs?: readonly EditorCatalogDefinition[] | undefined;
   save?: EditorSaveFn | undefined;
-  /** Skin for the play/walk escape chip. Omit for the default pill; pass `null` to hide it (F2+E still exits); pass a component to place the game's own. */
   modeChip?: ComponentType<{ mode: EditorRunMode; onExit: () => void }> | null | undefined;
-  /**
-   * Optional live multiplayer presence/session feed for the Network workspace.
-   * Adapter config always comes from `playable.game.multiplayer`; this only supplies real
-   * session identity and presence rows. Omit when the host has nothing live — the panel stays honest.
-   */
   networkPresence?: EditorNetworkPresenceInput | undefined;
-  /**
-   * Called to close the editor and return to the game. Passed by `GameHost` when the editor was
-   * summoned over a running game; when set, the chrome shows an "Exit to game" control. Omit for the
-   * standalone editor, which has no game to return to.
-   */
   onExitEditor?: (() => void) | undefined;
-  /** Build a fresh playable from a captured document for each isolated playtest. */
   createPlaytest?: ((document: EditorDocument) => PlayableGame) | undefined;
-  /** Reject document edits before they enter history, live sync, or saves. */
   validateDocument?: ((document: EditorDocument) => void) | undefined;
-  /** Disable developer host publication and recovery drafts for a player creator. */
   playerCreator?: boolean | undefined;
-  /** Catalog entries the player creator may place. */
   allowedAssets?: readonly string[] | undefined;
   allowedKinds?: readonly string[] | undefined;
   maxImportBytes?: number | undefined;
@@ -170,7 +153,6 @@ function savePrefs(gameId: string, prefs: StoredEditorPrefs): void {
   }
 }
 
-/** Default readout region half-extent when a world declares no terrain bounds. */
 const DEFAULT_READOUT_HALF = 64;
 
 /**
@@ -195,7 +177,6 @@ function readoutRegionFor(world: WorldFeature | undefined): GuideRegion {
 /** Idle window before the terrain overlay rebuilds off the edited field — bounds rebuild frequency during sculpting. */
 const READOUT_REBUILD_MS = 250;
 
-/** The editor's reference ground grid: 400 m across in 5 m cells, just above y=0. */
 function EditorGrid() {
   const grid = useMemo(() => {
     const helper = new GridHelper(400, 80, "#3b4252", "#20242e");
@@ -299,7 +280,6 @@ function EditorWorldOverlay({
   );
 }
 
-/** Default skin for the play/walk escape chip; swap via `EditorAppProps.modeChip`, or pass `null` to hide it (F2+E still exits). */
 function EditorModeChip({ mode, onExit }: { mode: EditorRunMode; onExit: () => void }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-2 z-50 flex justify-center">
@@ -314,8 +294,6 @@ function EditorModeChip({ mode, onExit }: { mode: EditorRunMode; onExit: () => v
   );
 }
 
-/** Headless placement: wires the F2+E exit chord and renders `chip` (the default skin, a
- * game-supplied override, or nothing when `chip` is `null`) — the chord always works either way. */
 function EditorModeChipHost({
   api,
   mode,
@@ -332,15 +310,6 @@ function EditorModeChipHost({
   return <Chip mode={mode} onExit={onExit} />;
 }
 
-/**
- * HUD-layout authoring surface, mounted in `hud` run mode over the game's real `HudCanvas`.
- * Enables drag/resize editing on every mounted HUD layout (including ones that mount after this
- * opens), so panel placement is reachable straight from the editor — no separate F2+C chord. Layout
- * edits flow through the injected `HudLayoutPersistProvider` (`onPanelCommit` → undoable
- * `setUiPanel`). When the author finishes (the canvas "Done" button, Esc, or F2+C toggles editing
- * off), HUD mode exits back to edit. F2+E also exits. Editing is turned back off for every layout on
- * unmount.
- */
 function HudLayoutEditingHost({ api }: { api: EditorHostApi }) {
   const exit = useCallback(() => api.setMode("edit"), [api]);
   useF2Chord("KeyE", exit);
@@ -391,7 +360,6 @@ function HudLayoutEditingHost({ api }: { api: EditorHostApi }) {
   );
 }
 
-/** Prefer a grounded spawn for the first shot — full-world framing clips past default far=300. */
 function resolveEditorCamera(document: EditorDocument): {
   target: { x: number; y: number; z: number };
   span: number;
@@ -428,7 +396,6 @@ function resolveEditorCamera(document: EditorDocument): {
   };
 }
 
-/** Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes. */
 export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor, createPlaytest, validateDocument, playerCreator, allowedAssets, allowedKinds, maxImportBytes, creatorPolicy }: EditorAppProps) {
   const resolvedModeChip = modeChip === undefined ? EditorModeChip : modeChip;
   const saveFn = useMemo(() => save ?? endpointSaver(gameId), [save, gameId]);

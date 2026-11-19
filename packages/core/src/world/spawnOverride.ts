@@ -15,7 +15,6 @@
  * pure query stays deterministic until a runner explicitly installs an override.
  */
 
-/** A spawn point that replaces the authored player spawn for one capture session. */
 export interface SpawnOverride {
   x: number;
   y: number;
@@ -31,12 +30,10 @@ export function installSpawnOverride(override: SpawnOverride | null): void {
   installed = override;
 }
 
-/** Clear any installed player-spawn override. */
 export function clearSpawnOverride(): void {
   installed = null;
 }
 
-/** The currently installed player-spawn override, or `null` when none is active. */
 export function readSpawnOverride(): SpawnOverride | null {
   return installed;
 }

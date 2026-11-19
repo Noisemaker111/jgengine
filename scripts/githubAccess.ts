@@ -37,7 +37,6 @@ const GITHUB_PRODUCT: readonly { prefix: string; rules: readonly string[]; why: 
 const SELF = "scripts/githubAccess.ts";
 const BUILT = /(?:^|\/)(?:node_modules|dist|\.output)\//;
 
-/** Tooling and shipped source the rule covers; tests are left out, since they plant these routes on purpose. */
 export function coveredByGitHubRule(path: string): boolean {
   if (path === SELF || BUILT.test(path)) return false;
   if (path.startsWith(".github/")) return /\.(?:ya?ml|sh)$/.test(path);
@@ -49,7 +48,6 @@ function githubWaiver(path: string, rule: string): boolean {
   return GITHUB_PRODUCT.some((waiver) => path.startsWith(waiver.prefix) && waiver.rules.includes(rule));
 }
 
-/** Every waiver in force, for the failure message. */
 export function githubWaivers(): string[] {
   return GITHUB_PRODUCT.map((waiver) => `${waiver.prefix} [${waiver.rules.join(", ")}]: ${waiver.why}`);
 }

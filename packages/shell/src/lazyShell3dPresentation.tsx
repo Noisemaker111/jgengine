@@ -38,7 +38,7 @@ function PresentationReveal({ onReveal }: { onReveal?: (() => void) | undefined 
   return null;
 }
 
-/** Loads the normal 3D implementation only for a 3D presentation. @internal */
+/** @internal */
 export function LazyShell3dPresentation({ onPresentationReveal, ...props }: Props) {
   const [Presentation] = useState(getPresentation);
   return (

@@ -6,16 +6,13 @@ type Chord = readonly [offset: number, quality: "m" | "M"];
 interface SongSpec {
   id: string;
   bpm: number;
-  /** MIDI note of the key's root in the bass octave (45 = A2). */
   root: number;
-  /** One chord per bar, cycled. */
   chords: readonly Chord[];
   drums: "four" | "half" | "brushes";
   bass: "eighths" | "offbeat" | "walk";
   lead: MusicInstrument;
   pad: MusicInstrument;
   arp?: MusicInstrument;
-  /** Brass hits on the turnaround. */
   stabs?: boolean;
   /** Melody density 0..1: the chance an eighth gets a note. */
   busy: number;
@@ -32,11 +29,6 @@ function triad(root: number, quality: "m" | "M"): number[] {
   return [root, root + (quality === "m" ? 3 : 4), root + 7];
 }
 
-/**
- * A generated radio song: drums, bass, a held pad, an optional arpeggio and a seeded pentatonic lead
- * whose two-bar motif comes back varied every four bars, over a one-chord-per-bar progression. Same
- * spec, same song, every time.
- */
 function song(spec: SongSpec): MusicTheme {
   const rng = seededRng(spec.id);
   const events: NoteEvent[] = [];
@@ -123,7 +115,6 @@ function bed(id: string, bpm: number, root: number, kind: "talk" | "news"): Musi
   return { id, bpm, bars: 8, events, trim: 0.32 };
 }
 
-/** Neon Tide 94.7's playlist plus the beds under the talk and news stations, as `audio.music` themes. */
 export const RADIO_THEMES: Record<string, MusicTheme> = Object.fromEntries(
   [
     song({ id: "song.neon_tidewater", bpm: 104, root: 45, chords: [[0, "m"], [-4, "M"], [3, "M"], [-2, "M"]], drums: "four", bass: "eighths", lead: "squareLead", pad: "pad", arp: "piano", busy: 0.55, trim: 0.75 }),

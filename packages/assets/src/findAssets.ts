@@ -8,19 +8,14 @@ import { sourceById } from "./sources";
 
 /** A model file a game already ships under its `public/` (`models/imported/creatures/trex.glb`). */
 export interface GameModelFile {
-  /** The game folder it was found in. */
   game: string;
-  /** Path under that game's `public/`, POSIX separators. */
   rel: string;
 }
 
 interface FoundBase {
-  /** What to name this match by: a `pack/model` id, a library name, a pack id or `<game>:<path>`. */
   id: string;
   title: string;
-  /** 0 (none) to 100 (exact). */
   score: number;
-  /** SPDX id or the source's own wording; `null` when the folder it came from does not say. */
   license: string | null;
   author: string | null;
   /** Whether the bytes are on disk where the game serves them from (or in the shared store, with no game named). */
@@ -29,7 +24,6 @@ interface FoundBase {
 
 /** One answer to an asset request, shaped by where its bytes come from. */
 export type FoundAsset =
-  /** A model inside a catalog pack: `url` is what a `ModelConfig` loads once the pack is in the game. */
   | (FoundBase & { kind: "model"; source: string; url: string; pull: string })
   /** A realistic library model: draw it with `libraryModel(name)`; `pull` is `null` for one a game generated and committed. */
   | (FoundBase & { kind: "library"; url: string; use: string; pull: string | null })
@@ -38,38 +32,27 @@ export type FoundAsset =
   /** A file another game (or this one) already ships: provisioning copies it to the same path in this game. */
   | (FoundBase & { kind: "game-file"; from: string; url: string });
 
-/** A free source to look on when nothing here fits, with the search already filled in. */
 export interface ElsewhereSource {
   source: string;
   url: string;
   covers: string;
 }
 
-/** Everything one request turned up. */
 export interface AssetFindResult {
   query: string;
-  /** Best first; empty when nothing scored. */
   matches: FoundAsset[];
-  /** The library's own note when it knows it has nothing realistic for this request. */
   gap: { reason: string; route: string } | null;
-  /** Filled when no match is a confident one (score under {@link CONFIDENT_SCORE}). */
   elsewhere: ElsewhereSource[];
 }
 
-/** Where to look on disk: `has(rel)` answers for a path under the game's `public/` (or the store). */
 export interface FindAssetsContext {
   has(rel: string): boolean;
-  /** Model files games already ship; see {@link GameModelFile}. */
   gameFiles: readonly GameModelFile[];
-  /** The game the paths are for, so its own files are not offered back to it as copies. */
   game?: string;
-  /** Matches per request (default 5). */
   limit?: number;
 }
 
-/** A match at or above this score is a real answer; below it the free sources are offered too. */
 export const CONFIDENT_SCORE = 60;
-/** Matches below this score are dropped as noise. */
 const MIN_SCORE = 30;
 
 const indexById = new Map<string, IndexEntry>(generatedIndex.map((entry) => [entry.id, entry]));
@@ -185,14 +168,7 @@ function elsewhere(query: string): ElsewhereSource[] {
   ];
 }
 
-/**
- * Answer one asset request from everything the engine can reach: catalog pack models and aliases,
- * the realistic model library, whole packs not indexed yet, and model files games already ship.
- * Each match carries its licence, the URL a game loads it from and whether it is on disk; a weak
- * answer also names the free sources to search, and the library's own note when it knows the gap.
- *
- * @capability find-assets look up many asset names at once: licence, game path, on-disk state and where else to look
- */
+/** @capability find-assets look up many asset names at once: licence, game path, on-disk state and where else to look */
 export function findAssets(query: string, ctx: FindAssetsContext): AssetFindResult {
   const all = [...catalogMatches(query, ctx), ...libraryMatches(query, ctx), ...gameFileMatches(query, ctx)]
     .filter((match) => match.score >= MIN_SCORE)

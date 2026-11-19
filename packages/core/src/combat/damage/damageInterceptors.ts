@@ -13,15 +13,10 @@
  * can never recurse without limit.
  */
 
-/** A damage application queued for resolution against a target. `amount` is always non-negative; healing is a separate concern. */
 export interface PendingDamage {
-  /** Instance receiving the damage. */
   target: string;
-  /** Instance dealing the damage. */
   source: string;
-  /** Damage magnitude, non-negative. */
   amount: number;
-  /** Optional caller tag (weapon id, effect id, channel) carried through for provenance and downstream routing. */
   tag?: string;
 }
 
@@ -43,7 +38,6 @@ export type InterceptDecision =
 export interface InterceptContext {
   /** Deterministic current time in milliseconds; interceptors never read a wall clock. */
   nowMs: number;
-  /** Optional current/max pool lookup for the target, enabling HP-relative clamps like anti-one-shot. */
   healthOf?(target: string): { current: number; max: number } | undefined;
 }
 
@@ -55,7 +49,6 @@ export interface DamageInterceptor {
   intercept(pending: PendingDamage, ctx: InterceptContext): InterceptDecision;
 }
 
-/** One row of provenance: which interceptor acted, what it decided, and the amount before/after it acted. */
 export interface InterceptRecord {
   interceptor: string;
   kind: InterceptDecision["kind"];
@@ -67,15 +60,11 @@ export interface InterceptRecord {
 
 /** The outcome of running a pending application through the pipeline: what to apply, what was deferred, and why each value changed. */
 export interface DamageResolution {
-  /** Final applications to commit (0..n after splits/rejections). */
   applications: PendingDamage[];
-  /** Applications held back by a `defer` decision for the caller to resubmit later. */
   deferred: PendingDamage[];
-  /** Ordered record of every interceptor decision. */
   provenance: InterceptRecord[];
 }
 
-/** Upper bound on interceptor evaluations for a single resolution; guards against runaway `split`/`redirect` loops. */
 export const MAX_INTERCEPT_STEPS = 256;
 
 /**
@@ -169,27 +158,15 @@ function normalize(pending: PendingDamage): PendingDamage {
   return pending.amount >= 0 ? pending : { ...pending, amount: 0 };
 }
 
-/** A mutable ordered interceptor chain that transitions can install into and remove from at runtime. */
 export interface DamagePipeline {
-  /** Append an interceptor, or replace an existing one with the same `id` in place. */
   install(interceptor: DamageInterceptor): void;
-  /** Remove the interceptor with `id`; returns whether one was removed. */
   remove(id: string): boolean;
-  /** Whether an interceptor with `id` is currently installed. */
   has(id: string): boolean;
-  /** Installed interceptor ids in evaluation order (serializable install record). */
   interceptorIds(): string[];
-  /** Resolve one pending application through the current chain. */
   resolve(pending: PendingDamage, ctx: InterceptContext): DamageResolution;
 }
 
-/**
- * Create a mutable damage interception chain that state transitions install into
- * and remove from — e.g. add an invulnerability interceptor on phase enter and
- * drop it on phase exit. Evaluation order is install order.
- *
- * @capability damage-pipeline install and remove ordered damage interceptors that transitions toggle at runtime
- */
+/** @capability damage-pipeline install and remove ordered damage interceptors that transitions toggle at runtime */
 export function createDamagePipeline(initial?: readonly DamageInterceptor[]): DamagePipeline {
   const interceptors: DamageInterceptor[] = initial === undefined ? [] : [...initial];
 
@@ -221,19 +198,13 @@ export function createDamagePipeline(initial?: readonly DamageInterceptor[]): Da
   };
 }
 
-/** Caller data for a flat per-hit damage cap. */
 export interface DamageClampConfig {
   /** Interceptor id; defaults to `"damage-clamp"`. */
   id?: string;
-  /** Maximum damage a single application may carry. */
   maxPerHit: number;
 }
 
-/**
- * A stateless interceptor that caps any single application at `maxPerHit`.
- *
- * @capability damage-clamp cap incoming damage per hit at a configured maximum
- */
+/** @capability damage-clamp cap incoming damage per hit at a configured maximum */
 export function createDamageClamp(config: DamageClampConfig): DamageInterceptor {
   const id = config.id ?? "damage-clamp";
   return {
@@ -245,23 +216,17 @@ export function createDamageClamp(config: DamageClampConfig): DamageInterceptor 
   };
 }
 
-/** A per-target timed immunity policy: an interceptor plus grant/query/serialize controls, toggled by transitions. */
 export interface ImmunityWindow {
-  /** The interceptor to install; rejects damage to any target whose immunity has not expired. */
   interceptor: DamageInterceptor;
   /** Make `target` immune until `untilMs` (extends, never shortens, an existing window). */
   grant(target: string, untilMs: number): void;
-  /** Make `target` immune for `durationMs` starting at `nowMs`. */
   grantFor(target: string, nowMs: number, durationMs: number): void;
-  /** Whether `target` is immune at `nowMs`. */
   active(target: string, nowMs: number): boolean;
-  /** Drop `target`'s immunity immediately. */
   clear(target: string): void;
   /** Drop every window that has expired at `nowMs` (bounded housekeeping for save size). */
   clearExpired(nowMs: number): void;
   /** Serializable snapshot: target → expiry ms. */
   snapshot(): Record<string, number>;
-  /** Restore from a snapshot. */
   restore(snap: Record<string, number>): void;
 }
 
@@ -315,23 +280,17 @@ export function createImmunityWindow(id = "immunity"): ImmunityWindow {
 export interface AntiOneShotConfig {
   /** Interceptor id; defaults to `"anti-one-shot"`. */
   id?: string;
-  /** Only intervene when the target's HP fraction is strictly above this (X). Below it, lethal hits pass. */
   guardAboveFraction: number;
-  /** HP fraction to leave the target at after an intercepted near-lethal hit (Y). */
   leaveFraction: number;
   /** Immunity granted after an intercepted hit, in milliseconds (Z). */
   recoverMs: number;
 }
 
-/** The anti-one-shot policy: an interceptor plus its serializable recovery-immunity state. */
 export interface AntiOneShotPolicy {
-  /** The interceptor to install ahead of lethal resolution. */
   interceptor: DamageInterceptor;
-  /** Whether `target` is in the post-hit recovery i-frame at `nowMs`. */
   immune(target: string, nowMs: number): boolean;
   /** Serializable snapshot: target → recovery expiry ms. */
   snapshot(): Record<string, number>;
-  /** Restore from a snapshot. */
   restore(snap: Record<string, number>): void;
 }
 

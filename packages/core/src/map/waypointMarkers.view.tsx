@@ -26,15 +26,10 @@ export function useWaypoints(source: WaypointStore | readonly WaypointEntry[]): 
   return isStore ? (source as WaypointStore).list() : (source as readonly WaypointEntry[]);
 }
 
-/** Reskin tokens for {@link WaypointMarkers}. Per-`kind` color layers on top via `kindColors`. */
 export interface WaypointMarkerTheme {
-  /** Default marker color (pin fill, arrow fill, label accent). Default reads `--jg-accent`. */
   color?: string;
-  /** Label/text color. Default near-white. */
   text?: string;
-  /** Label chip background. */
   chipBg?: string;
-  /** Font family. */
   fontFamily?: string;
   /** Pixel size of the pin dot / arrow glyph. Default `22`. */
   size?: number;
@@ -50,9 +45,7 @@ function resolveTheme(theme: WaypointMarkerTheme | undefined): Required<Waypoint
   };
 }
 
-/** Props for {@link WaypointMarkers}. */
 export interface WaypointMarkersProps {
-  /** A live {@link WaypointStore} or a plain waypoint array. */
   entries: WaypointStore | readonly WaypointEntry[];
   /**
    * World→screen projector — caller-owned, so this seam never depends on a
@@ -62,15 +55,9 @@ export interface WaypointMarkersProps {
   project: ProjectEntity;
   /** Viewport size (CSS px) markers are laid out within. */
   viewport: { width: number; height: number };
-  /**
-   * 3D distance (world units) from the camera/player to a waypoint, for the
-   * off-screen arrow's distance label. Caller-owned; return `undefined` to omit
-   * the label. When absent, no distance is shown.
-   */
   distanceOf?: (waypoint: WaypointEntry) => number | undefined;
   /** How to format {@link distanceOf}'s meters. Default `{ unit: "auto" }`. */
   distanceFormat?: DistanceFormat;
-  /** Base reskin tokens. */
   theme?: WaypointMarkerTheme;
   /**
    * Per-`kind` color keyed by the free-string `kind` a game sets ("objective",
@@ -82,7 +69,6 @@ export interface WaypointMarkersProps {
    * `layoutScreenMarker`. Default `28`.
    */
   margin?: number;
-  /** Also show a label next to on-screen pins. Default `true`. */
   showPinLabels?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -171,10 +157,6 @@ export function WaypointMarkers({
   );
 }
 
-/**
- * How a marker hangs from its point so its caption stays on screen: centred, or pinned to the
- * left or right of the point when the point is near that edge (a long label would spill off).
- */
 function hang(x: number, width: number, size: number): Pick<CSSProperties, "transform" | "alignItems"> {
   if (x < width * 0.2) return { transform: `translate(-${size / 2}px, -50%)`, alignItems: "flex-start" };
   if (x > width * 0.8) return { transform: `translate(calc(-100% + ${size / 2}px), -50%)`, alignItems: "flex-end" };
@@ -208,7 +190,6 @@ interface PinProps {
   distanceText: string | undefined;
 }
 
-/** An on-screen pin: a dot at the projected point with an optional label/distance chip above it. */
 function WaypointPin({ waypoint, x, y, width, color, theme, label, distanceText }: PinProps): ReactNode {
   const dot = theme.size * 0.7;
   const caption = [label, distanceText].filter((part) => part !== undefined).join("  ");

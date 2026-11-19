@@ -1,7 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** Fixed spots on the south beach below spawn (yaw 0 looks out to sea, +z; the waterline is near z 1355). */
 const SPOTS: readonly { name: string; at: readonly [number, number, number] }[] = [
   { name: "beach-sea", at: [229.5, 1325, 0] },
   { name: "beach-inland", at: [229.5, 1345, Math.PI] },
@@ -11,7 +10,6 @@ const SPOTS: readonly { name: string; at: readonly [number, number, number] }[] 
   { name: "shallows", at: [229.5, 1352, 0.4] },
 ];
 
-/** The south beach in first person from the same spots every run, at noon, then the shore at night. */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

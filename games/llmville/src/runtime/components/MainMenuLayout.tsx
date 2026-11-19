@@ -11,18 +11,15 @@ import { DISPLAY } from "../../ui/theme";
 
 interface MainMenuLayoutProps {
   children: ReactNode;
-  /** Optional hero column shown beside the menu on large screens (home intro, etc.). */
   intro?: ReactNode;
   backTo?: string;
   overlay?: ReactNode;
-  /** Hide the top logo / account header row (title-screen style). */
   hideHeader?: boolean;
 }
 
 const TICKER = ["TFLOP pool online", "inference queue idle", "garage tier unlocked", "co-op sync ready", "tokenizer warm", "cooling nominal"] as const;
 const PARTICLES = [[0.08, 0.22, 4], [0.18, 0.68, 3], [0.72, 0.18, 5], [0.84, 0.55, 3], [0.46, 0.78, 4], [0.58, 0.32, 3]] as const;
 
-/** Ambient lab-floor dressing behind the menu: drifting teal motes and a status ticker. */
 function Atmosphere() {
   const { width, height } = useRuneViewport();
   return <RuneView anchor="fill">
@@ -51,7 +48,6 @@ function AccountChip({ account }: { account: MainMenuAccountChipVm }) {
     : <Row padding={[6, 14, 6, 6]} radius={999} fill="#ffffff0d">{body}</Row>;
 }
 
-/** The menu pages' frame (home, about, profile), drawn with the account it is handed. */
 export function MainMenuLayoutView({ account, children, intro, backTo, overlay, hideHeader = false }: MainMenuLayoutProps & { account: MainMenuAccountChipVm }) {
   const { width, height } = useRuneViewport();
   const compact = useCompact();

@@ -14,7 +14,6 @@ interface ResourceHudProps {
   servingIncomeRate: () => number;
 }
 
-/** Cash, data tokens and serving income: the play HUD's top-left readout. Counts tween at their leaves. */
 export function ResourceHud({ money, dataTokens, servingIncomeRate }: ResourceHudProps) {
   const cash = useMemo(() => runeTween(money, 600), [money]);
   const tokens = useMemo(() => runeTween(dataTokens, 600), [dataTokens]);

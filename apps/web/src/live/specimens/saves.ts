@@ -1,9 +1,3 @@
-/**
- * Live demo: the engine's save store. A runner climbs levels on its own; every autosave flies from the
- * game into the storage it is pointed at, this browser's localStorage or a cloud backend, and every
- * Continue flies back. The cloud here is a pretend server inside this page (a `remoteSaveBackend` with a
- * delay), standing in for `createConvexSaveBackend`.
- */
 import { createSaveStore, localSaveBackend, remoteSaveBackend, type SaveBackend, type SaveStore } from "@jgengine/core/save/saveStore";
 
 import { drawPill, mountCanvas2d, takeover } from "../canvas2d";
@@ -35,7 +29,6 @@ const INITIAL: RunSave = { level: 1, coins: 0 };
 const KEY = "jgengine-site-runner";
 const CLOUD_DELAY_MS = 450;
 
-/** A pretend server that lives in this page, slow like a network. */
 const cloudRows = new Map<string, string>();
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 const pretendCloud: SaveBackend = remoteSaveBackend({

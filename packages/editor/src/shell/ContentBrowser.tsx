@@ -54,9 +54,7 @@ export function ContentBrowser({
   onSetView: (view: BrowserViewMode) => void;
   /** When set, enables Import + drop-to-import for `.glb`/`.gltf` model files. */
   onImportModels?: (files: readonly File[]) => void | Promise<void>;
-  /** True while an import is in flight (disables the Import control). */
   importBusy?: boolean;
-  /** Serves a picked shared-library asset in the game and resolves its URL (null on failure); enables "Add to game". */
   onAddLibraryAsset?: (entry: LibraryEntry) => Promise<string | null>;
 }) {
   const [query, setQuery] = useState("");

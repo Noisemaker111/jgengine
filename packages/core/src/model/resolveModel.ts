@@ -20,7 +20,6 @@ function catalogModelConfig(ref: ModelAssetRef): ModelConfig {
   };
 }
 
-/** Where a model id is being resolved (entity, object or scatter models) and under which key, for warnings. */
 export interface ModelResolveContext {
   seam: "entityModels" | "objectModels" | "scatterModels";
   key: string;
@@ -50,9 +49,7 @@ export function resolveModel(
   return catalogModelConfig(ref);
 }
 
-/** Soft lookup used when an object catalog id may double as a model asset id.
- * @internal
- */
+/** @internal */
 export function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelConfig | undefined {
   const ref = assets.resolve(id);
   if (ref === null) return undefined;
@@ -66,7 +63,7 @@ export interface ObjectModelCacheEntry {
   model: ModelConfig | undefined;
 }
 
-/** Resolve a live object's catalog and animation, retaining unchanged base model identities. @internal */
+/** @internal */
 export function resolveObjectModel(
   object: SceneObject,
   models: Record<string, string | ModelConfig> | undefined,
@@ -91,7 +88,6 @@ export interface EntityModelCacheEntry {
   model: ModelConfig | undefined;
 }
 
-/** The catalog entries an entity model's resolution reads: its own id, or its attachments' and parts' ids. */
 function entityModelRefs(value: string | ModelConfig | undefined, assets: AssetCatalog): (ModelAssetRef | null)[] {
   if (value === undefined) return [];
   if (typeof value === "string") return [assets.resolve(value)];
@@ -162,9 +158,7 @@ export type ModelPick = {
   style?: Omit<ModelConfig, "url" | "dims">;
 };
 
-/** Soft-resolve `model`, then `fallbackModel`; merge `style` when either hits.
- * @internal
- */
+/** @internal */
 export function pickModel(assets: AssetCatalog, pick: ModelPick): ModelConfig | undefined {
   if (pick.fallbackModel !== undefined && !assets.has(pick.fallbackModel)) {
     warnOnce(
@@ -181,9 +175,7 @@ export function pickModel(assets: AssetCatalog, pick: ModelPick): ModelConfig | 
   return undefined;
 }
 
-/** Build an entityModels/objectModels map from a plan; missing catalog ids drop out (primitive).
- * @internal
- */
+/** @internal */
 export function resolveModelPlan(
   assets: AssetCatalog,
   plan: Record<string, ModelPick>,

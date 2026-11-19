@@ -2,7 +2,6 @@ import { createContributionPool } from "@jgengine/core/placement/buildPermission
 
 export const COMMUNITY_LAUNCH_TARGET = 5;
 
-/** The neighbourhood goal as a contribution pool: each lab that launches a model pays one in. */
 export function communityMilestone(launchedLabs: number) {
   const pool = createContributionPool({ launchedLabs: COMMUNITY_LAUNCH_TARGET });
   pool.contribute("neighbourhood", "launchedLabs", launchedLabs);

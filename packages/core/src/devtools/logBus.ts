@@ -4,19 +4,15 @@ import type { DevtoolsLogLevel } from "./types";
 export const LOG_BUS_CAPACITY = 200;
 /** Warnings and errors also land in their own ring, so an error is never pushed out by info traffic. */
 export const LOG_BUS_SEVERE_CAPACITY = 64;
-/** Longest kept message; a longer one is cut once, at write time. */
 export const LOG_BUS_MESSAGE_MAX = 400;
 
-/** One captured line: when, how bad, which system said it, and what it said. */
 export interface LogBusEntry {
   at: number;
   level: DevtoolsLogLevel;
-  /** Owning system tag, e.g. `needs`, `nav`, `render/culling`, `console`. */
   system: string;
   message: string;
 }
 
-/** Lifetime totals per level, plus how many lines the ring dropped. */
 export interface LogBusCounts {
   log: number;
   info: number;
@@ -33,7 +29,6 @@ export interface LogBusSnapshot {
   capacity: number;
 }
 
-/** Tunables for the log ring: capacity, the severity ring's capacity, and the clock. */
 export interface LogBusOptions {
   capacity?: number;
   severeCapacity?: number;
@@ -50,14 +45,11 @@ export interface LogBusOptions {
  */
 export interface LogBus {
   write(level: DevtoolsLogLevel, system: string, message: string): void;
-  /** Oldest-to-newest entries currently held. Allocates once per read. */
   list(): readonly LogBusEntry[];
-  /** Warnings and errors only, oldest first. */
   severe(): readonly LogBusEntry[];
   counts(): LogBusCounts;
   dropped(): number;
   snapshot(): LogBusSnapshot;
-  /** Empty every ring and counter, keeping the allocation. */
   reset(): void;
 }
 

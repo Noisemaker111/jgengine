@@ -6,7 +6,6 @@ export interface LiveValue<T> {
   get(): T;
 }
 
-/** A prop that takes either a plain value or a {@link live} one. Engine UI parts take `Live<number>` for anything that can move every frame. */
 export type Live<T> = T | LiveValue<T>;
 
 /**
@@ -20,12 +19,10 @@ export function live<T>(get: () => T): LiveValue<T> {
   return { [LIVE]: true, get };
 }
 
-/** True for a value made with {@link live}. */
 export function isLive(value: unknown): value is LiveValue<unknown> {
   return typeof value === "object" && value !== null && Reflect.get(value, LIVE) === true;
 }
 
-/** The value now: a plain value as is, a {@link live} one read once. */
 export function readLive<T>(value: Live<T>): T {
   return isLiveOf(value) ? value.get() : value;
 }

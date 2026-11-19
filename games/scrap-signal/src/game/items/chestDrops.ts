@@ -1,6 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-/** How far out from a chest's centre its drops land: far enough that standing on one keeps the camera clear of the chest. */
 export const CHEST_DROP_REACH = 2.2;
 const DROP_SPACING = 0.8;
 

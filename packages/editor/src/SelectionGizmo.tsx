@@ -79,9 +79,6 @@ function gizmoUiEqual(a: GizmoUiSlice, b: GizmoUiSlice): boolean {
   );
 }
 
-/** Reads only the gizmo-relevant UI slice (mode, snap, path-point anchor) — skips re-render on
- * unrelated UI churn (sculpt/paint drags, tool switches, placement) that the old blanket
- * `ui.subscribe` force-update re-rendered the gizmo for. */
 function useGizmoUiState(ui: EditorUiStore): GizmoUiSlice {
   return useStoreSelector(ui, selectGizmoUi, gizmoUiEqual);
 }
@@ -496,11 +493,6 @@ function resolveTarget(
   return { position: pivotPos, lift: primary.lift, rotationY: primary.rotationY, kind: primary.kind };
 }
 
-/**
- * Drag-to-transform gizmo bound to the current selection, dispatching editor commands on
- * release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor
- * commands (multi-select translate, volume scale, path vertex move).
- */
 export const SelectionGizmo = memo(function SelectionGizmo({
   session,
   ui,

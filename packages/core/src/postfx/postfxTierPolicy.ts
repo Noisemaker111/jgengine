@@ -1,17 +1,14 @@
 import type { GraphicsPostStages } from "@jgengine/core/settings/graphicsProfile";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
-/** What one graphics tier may spend on the post chain. @internal */
+/** @internal */
 export interface PostfxTierPolicy {
-  /** Composer backing store as a fraction of the canvas; below 1 the OutputPass upscales the result. */
   resolutionScale: number;
-  /** GTAO's sample count, when the chain runs AO at all. */
   aoSamples: number;
   /** Ray steps per pixel for contact shadows; 0 skips the stage. */
   contactShadowSteps: number;
   /** Light-shaft samples per pixel for the atmosphere stage; 0 skips height haze and shafts. */
   atmosphereSteps: number;
-  /** Haze-bank noise taps along each view ray; 0 keeps the haze an even layer. */
   fogVariationTaps: number;
   /** Reflection ray steps per pixel; 0 skips screen-space reflections. */
   ssrSteps: number;
@@ -50,7 +47,7 @@ export const POSTFX_TIER_POLICY: Record<GraphicsQuality, PostfxTierPolicy> = {
   },
 };
 
-/** A tier's post-chain budget; `high` is the reference every lower tier is measured against. @internal */
+/** @internal */
 export function postfxTierPolicy(quality: GraphicsQuality): PostfxTierPolicy {
   return POSTFX_TIER_POLICY[quality];
 }

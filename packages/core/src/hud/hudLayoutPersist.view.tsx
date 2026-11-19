@@ -11,12 +11,7 @@ export type HudLayoutPersist = (id: string, panel: EditorUiPanelLayout) => void;
 
 const HudLayoutPersistContext = createContext<HudLayoutPersist | null>(null);
 
-/**
- * Provides {@link HudLayoutPersist} / `onPanelCommit` to descendant `useHudLayout`
- * calls. Mount around game UI when a host can accept document UI patches (editor).
- * Absent provider → canvas moves/resizes are no-ops for document writes.
- * @capability hud-layout-persist inject a host callback so canvas HUD edits commit into the scene document
- */
+/** @capability hud-layout-persist inject a host callback so canvas HUD edits commit into the scene document */
 export function HudLayoutPersistProvider({
   onPanelCommit,
   children,
@@ -29,10 +24,7 @@ export function HudLayoutPersistProvider({
   );
 }
 
-/**
- * Injected panel-commit port, or `null` when no host has provided one.
- * @capability hud-layout-persist-hook read the host panel-commit port from a HUD layout widget
- */
+/** @capability hud-layout-persist-hook read the host panel-commit port from a HUD layout widget */
 export function useHudLayoutPersist(): HudLayoutPersist | null {
   return useContext(HudLayoutPersistContext);
 }

@@ -6,7 +6,6 @@ import { bonus } from "../characters";
 import { gunById } from "./roll";
 import type { GunDef } from "./guns";
 
-/** The live mag capacity for a gun after talent `magSize` bonuses — at least one round. */
 export function effectiveMagSize(gun: GunDef): number {
   return Math.max(1, Math.round(gun.magSize * (1 + bonus("magSize"))));
 }
@@ -36,10 +35,6 @@ export function setMagazineHooks(next: MagazineHooks): void {
 /** Per-session live magazine state, keyed by gun id — reclaimed with the context (#632). */
 const magazinesOf = perContext(() => new Map<string, Magazine>());
 
-/**
- * A magazine whose reloads draw from the player's shared ammo-type stat — the reserve pool every gun
- * of that ammo class refills from, so pickups and the other guns on it are always reflected.
- */
 function buildMagazine(ctx: GameContext, gun: GunDef, capacity: number, reloadMs: number, loaded: number): Magazine {
   return createMagazine({ capacity, reloadMs, loaded, reserve: statPoolReserve(ctx.scene.entity.stats, ctx.player.userId, AMMO_STAT_IDS[gun.ammo]) });
 }
@@ -63,24 +58,20 @@ export function gunMagazine(ctx: GameContext, gun: GunDef): Magazine {
   return mag;
 }
 
-/** Rounds currently loaded in a gun's magazine. */
 export function magLoaded(ctx: GameContext, gun: GunDef): number {
   return gunMagazine(ctx, gun).loaded();
 }
 
-/** Whether a gun's reload timer is running. */
 export function isReloading(ctx: GameContext, gun: GunDef): boolean {
   return gunMagazine(ctx, gun).isReloading();
 }
 
-/** Begin reloading a gun; returns false when already full, out of reserve, or already reloading. */
 export function startReload(ctx: GameContext, gun: GunDef): boolean {
   const started = gunMagazine(ctx, gun).startReload();
   if (started) hooks.reloadStarted(ctx, gun);
   return started;
 }
 
-/** Stop a gun's reload in flight; the rounds still loaded stay and the reserve is untouched. Returns whether one was running. */
 export function cancelReload(ctx: GameContext, gun: GunDef): boolean {
   const mag = gunMagazine(ctx, gun);
   if (!mag.isReloading()) return false;
@@ -101,12 +92,10 @@ export function refundRounds(ctx: GameContext, gun: GunDef, rounds: number): num
   return mag.restore({ ...snapshot, loaded: next }) ? added : 0;
 }
 
-/** Advance every live magazine's reload timer by `dtSeconds`, completing refills from the ammo reserve. */
 export function tickReloads(ctx: GameContext, dtSeconds: number): void {
   for (const mag of magazinesOf(ctx).values()) mag.tick(dtSeconds);
 }
 
-/** Loaded rounds per live gun, as the save document stores them. */
 export function magazineSave(ctx: GameContext): { gunId: string; loaded: number }[] {
   return [...magazinesOf(ctx)].map(([gunId, mag]) => ({ gunId, loaded: mag.loaded() }));
 }

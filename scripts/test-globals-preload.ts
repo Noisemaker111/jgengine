@@ -43,7 +43,6 @@ function snapshot(): Snapshot {
   return new Map(GUARDED_GLOBALS.map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]));
 }
 
-/** Two descriptors name the same global state: both absent, or the same value and accessors. */
 export function sameGlobal(a: PropertyDescriptor | undefined, b: PropertyDescriptor | undefined): boolean {
   if (a === undefined || b === undefined) return a === b;
   return a.value === b.value && a.get === b.get && a.set === b.set;

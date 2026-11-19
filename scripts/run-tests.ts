@@ -18,7 +18,6 @@ import { planLanes, unitCommands, walkTestFiles } from "./test-shard";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
-/** Lanes a whole run uses: the most a lane may hold open on a developer PC beside the editor. */
 export const LOCAL_LANES = 4;
 
 /** The lines a red run ends with, from bun's output: the failing files, how to rerun them, where the log is. */

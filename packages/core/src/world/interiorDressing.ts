@@ -12,7 +12,6 @@ import type { DecalStyle } from "./decalKind";
 import type { Vec3 } from "./geometry";
 import { seededRng } from "../random/rng";
 
-/** One axis-aligned walkable footprint, centre and full size on the ground plane. */
 export interface InteriorRect {
   x: number;
   z: number;
@@ -32,7 +31,6 @@ export interface InteriorWallRun {
   length: number;
 }
 
-/** A box in world space, rotated about Y. `role` names what it dresses. */
 export interface InteriorBox {
   id: string;
   role: "skirting" | "rail" | "crown" | "rib" | "bracket" | "valve" | "panel" | "hatch";
@@ -41,7 +39,6 @@ export interface InteriorBox {
   rotationY: number;
 }
 
-/** A straight pipe segment between two points. */
 export interface InteriorPipe {
   id: string;
   from: Vec3;
@@ -49,23 +46,19 @@ export interface InteriorPipe {
   radius: number;
 }
 
-/** A cable hung between anchors, already sampled into a sagging polyline. */
 export interface InteriorCable {
   id: string;
   points: Vec3[];
   radius: number;
 }
 
-/** The procedural stains a dressing plan places; each is a {@link DecalStyle} with its own texture in the shell. */
 export type InteriorDecalStyle = Extract<DecalStyle, "grime" | "leak" | "rust" | "dirt" | "wet" | "paper" | "scorch" | "hazard">;
 
-/** A stain on a wall (standing, facing `normal`) or on the floor (lying flat). */
 export interface InteriorDecal {
   id: string;
   style: InteriorDecalStyle;
   surface: "wall" | "floor";
   position: Vec3;
-  /** Unit vector the decal faces: into the room for a wall, straight up for the floor. */
   normal: Vec3;
   /** Rotation in the decal's own plane, radians. */
   spin: number;
@@ -74,20 +67,15 @@ export interface InteriorDecal {
   opacity: number;
 }
 
-/** A practical lamp mounted on a wall: where its housing sits and where its light comes from. */
 export interface InteriorFixture {
   id: string;
   position: Vec3;
-  /** Where a light standing in for this fixture belongs: a little into the room from the housing. */
   light: Vec3;
-  /** Unit vector the lamp faces (into the room). */
   normal: Vec3;
   rotationY: number;
-  /** A `dead` lamp stays dark (a gap of shadow along the wall); a `flicker` one stutters. */
   state: InteriorFixtureState;
 }
 
-/** Whether a planned lamp burns steadily, stutters or has failed. */
 export type InteriorFixtureState = "lit" | "flicker" | "dead";
 
 /**
@@ -106,11 +94,9 @@ export interface InteriorDebrisSlot {
   pick: number;
 }
 
-/** A spot against a wall a game may fill with a prop of at most `depth` × `width`. */
 export interface InteriorClutterSlot {
   id: string;
   position: Vec3;
-  /** Facing into the room (a prop's front looks along +Z after this rotation). */
   rotationY: number;
   width: number;
   depth: number;
@@ -124,7 +110,6 @@ export interface InteriorClearance {
   x: number;
   z: number;
   radius: number;
-  /** Paint a hazard-stripe border on the floor around it, as round a lift cage or loading bay. */
   mark?: boolean;
 }
 
@@ -139,15 +124,9 @@ export interface InteriorDressingOptions {
    * wrecked one.
    */
   density?: number;
-  /** Spots nothing on the floor may cover: doors, lifts, pickups, spawns. */
   keepClear?: readonly InteriorClearance[];
   trims?: { skirting?: number | false; rail?: number | false; crown?: boolean; ribSpacing?: number | false; depth?: number } | false;
-  /** Pipe runs along the top of each wall: how many per wall and their radius. */
   pipes?: { perWall?: number; radius?: number; minLength?: number; bracketSpacing?: number; drops?: number } | false;
-  /**
-   * Cables hung along walls under the pipes: chance per wall and how far they sag. `floor` is the
-   * chance a wall also gets a cable that drops from the ceiling and snakes along the floor at its foot.
-   */
   cables?: { chance?: number; sag?: number; span?: number; radius?: number; floor?: number } | false;
   /**
    * Stains per metre of wall (`grime`, `leak`, `rust`, `scorch`) and per square metre of floor
@@ -174,7 +153,6 @@ export interface InteriorDressingOptions {
   clutter?: { spacing?: number; depth?: number; width?: number; passage?: number; chance?: number } | false;
 }
 
-/** Everything a dressing pass places. */
 export interface InteriorDressingPlan {
   walls: InteriorWallRun[];
   trims: InteriorBox[];
@@ -184,7 +162,6 @@ export interface InteriorDressingPlan {
   decals: InteriorDecal[];
   fixtures: InteriorFixture[];
   clutter: InteriorClutterSlot[];
-  /** Wainscot plates and access hatches standing proud of the walls. */
   panels: InteriorBox[];
   debris: InteriorDebrisSlot[];
 }
@@ -195,10 +172,6 @@ function inside(rects: readonly InteriorRect[], x: number, z: number): boolean {
   return rects.some((r) => Math.abs(x - r.x) < r.w / 2 - EPS && Math.abs(z - r.z) < r.d / 2 - EPS);
 }
 
-/**
- * The wall runs bounding a union of footprints: every boundary edge of the union, merged into the
- * longest straight runs with one inward normal each. Doorways between footprints leave no wall.
- */
 export function interiorWallRuns(rects: readonly InteriorRect[]): InteriorWallRun[] {
   for (const r of rects) {
     if (![r.x, r.z, r.w, r.d].every(Number.isFinite) || r.w <= 0 || r.d <= 0) throw new Error("Interior footprints need finite positive sizes");
@@ -247,7 +220,6 @@ export function interiorWallRuns(rects: readonly InteriorRect[]): InteriorWallRu
   return runs;
 }
 
-/** Y rotation that turns local +Z onto `inward`. */
 function facing(inward: readonly [number, number]): number {
   return Math.atan2(inward[0], inward[1]);
 }
@@ -262,7 +234,6 @@ function clear(keepClear: readonly InteriorClearance[], x: number, z: number, pa
 
 type PanelOptions = { chance: number; hatches: number; height: number; bay: number };
 
-/** Wainscot plates and access hatches for one wall run, bay by bay, a hand's width proud of it. */
 function dressPanels(plan: InteriorDressingPlan, run: InteriorWallRun, turn: number, dir: readonly [number, number], floorY: number, ceilingY: number, panels: PanelOptions, trims: { skirting?: number | false } | null, rng: () => number): void {
   const bays = Math.max(1, Math.round(run.length / panels.bay));
   const bayLength = run.length / bays;
@@ -282,7 +253,6 @@ function dressPanels(plan: InteriorDressingPlan, run: InteriorWallRun, turn: num
   }
 }
 
-/** A cable that drops from under the ceiling near one end of a wall and snakes along its foot. */
 function floorCable(run: InteriorWallRun, floorY: number, ceilingY: number, radius: number, rng: () => number): InteriorCable {
   const start = 0.08 + rng() * 0.25, end = Math.min(0.95, start + 0.35 + rng() * 0.55);
   const lie = floorY + radius;
@@ -297,7 +267,6 @@ function floorCable(run: InteriorWallRun, floorY: number, ceilingY: number, radi
   return { id: `${run.id}:floor-cable`, points, radius };
 }
 
-/** Debris at the foot of one wall and piled in its inside corners. */
 function dressDebris(plan: InteriorDressingPlan, run: InteriorWallRun, rects: readonly InteriorRect[], keepClear: readonly InteriorClearance[], floorY: number, debris: { wall: number; corners: number }, rng: () => number): void {
   const put = (id: string, at: Vec3, where: InteriorDebrisSlot["along"]) => {
     const pick = rng(), spin = rng() * Math.PI * 2, scale = 0.75 + rng() * 0.5;
@@ -515,7 +484,6 @@ export function planInteriorDressing(rects: readonly InteriorRect[], options: In
   return plan;
 }
 
-/** Fixtures closest to `eye`, nearest first, capped at `budget`: which lamps a fixed light pool lights this frame. */
 export function nearestFixtures<T extends { light: Vec3 }>(fixtures: readonly T[], eye: Vec3, budget: number, reach = Infinity): T[] {
   const scored: { fixture: T; distance: number }[] = [];
   for (const fixture of fixtures) {

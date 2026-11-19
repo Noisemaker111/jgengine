@@ -8,7 +8,6 @@
  * @capability model-sockets named attachment points read from a model
  */
 
-/** Minimal shape of a model node this reader walks — structurally satisfied by `THREE.Object3D`. */
 export interface ModelNode {
   name: string;
   position: { x: number; y: number; z: number };
@@ -21,15 +20,8 @@ export interface ModelSocket {
   offset: readonly [number, number, number];
 }
 
-/** Default socket-name matcher: "socket", "wire", "attach", "anchor", "mount", "hardpoint" (any case). */
 export const SOCKET_PATTERN = /socket|wire|attach|anchor|mount|hardpoint/i;
 
-/**
- * Depth-first collect every socket-named node's local offset, sorted by descending Y then ascending X
- * so socket indices are stable across loads (top first, left-to-right). Empty when the model tags
- * none — callers then fall back to computed offsets. Pass a custom `pattern` for a bespoke naming
- * convention.
- */
 export function readNamedSockets(root: ModelNode, pattern: RegExp = SOCKET_PATTERN): ModelSocket[] {
   const found: ModelSocket[] = [];
   const walk = (node: ModelNode) => {

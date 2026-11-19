@@ -74,7 +74,6 @@ function runSuiteTest(game: string): { ok: boolean; score: GameSuiteScore | null
   }
 }
 
-/** The entries a set of genres requires, grouped by area, each with its proof and depth. */
 function printRequired(genres: readonly string[]): number {
   const unknown = genres.filter((genre) => !SUITE_GENRES.some((known) => known.id === genre));
   if (unknown.length > 0) {

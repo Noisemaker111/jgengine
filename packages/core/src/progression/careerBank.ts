@@ -2,11 +2,6 @@
 import { fromMinorUnits, toMinorUnits, type CurrencyDefinition } from "../economy/currency";
 import { charge, createEmptyWallet, grant, type WalletState } from "../economy/wallet";
 
-/**
- * Everything a career bank stores, as plain JSON. `banked` is the persistent balance; `haul` is
- * the run in progress and is the part a failed run loses. `deposited`, `lost`, `bestHaul` and
- * `runs` are lifetime counters a results screen reads.
- */
 export interface CareerBankState {
   banked: number;
   haul: number;
@@ -16,29 +11,19 @@ export interface CareerBankState {
   runs: number;
 }
 
-/** Configuration for {@link createCareerBank}. */
 export interface CareerBankConfig {
   currency: CurrencyDefinition;
-  /** Persistent money before any run (default `0`). */
   start?: number;
-  /** Most a single run's haul can carry; omitted means no cap. */
   haulCap?: number;
-  /** Rehydrate from a prior {@link CareerBank.snapshot}. */
   state?: CareerBankState;
 }
 
-/** Persistent career money plus the run in progress, which a failed run loses. */
 export interface CareerBank {
   currency(): CurrencyDefinition;
-  /** Money kept between runs. */
   banked(): number;
-  /** Money earned this run and not yet banked or lost. */
   haul(): number;
-  /** Add to the run's haul (capped by `haulCap`); negative or non-finite is ignored. Returns the haul. */
   earn(amount: number): number;
-  /** Bank the haul: it becomes persistent and the run's haul resets. */
   cashOut(): { deposited: number; banked: number };
-  /** The run failed: the haul is gone, persistent money is untouched. */
   loseHaul(): { lost: number; banked: number };
   /** Pay from persistent money; `false` when it cannot cover the amount. */
   spend(amount: number): boolean;

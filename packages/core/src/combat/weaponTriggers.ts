@@ -1,38 +1,27 @@
 import type { Magazine, MagazineReserve } from "./magazine";
 
-/** Where a shot's rounds come from: a loaded magazine, or a reserve pool fired from directly. */
 export type WeaponAmmoSource = Magazine | MagazineReserve;
 
-/** One trigger pull, with the weapon's live numbers. Omitted `ammo` is an unlimited weapon. */
 export interface WeaponPull {
-  /** Who is shooting; cadence is kept per shooter and weapon. */
   shooter: string;
   weapon: string;
   /** The caller's clock, milliseconds. */
   nowMs: number;
   /** Minimum milliseconds between shots, with fire-rate talents and upgrades already applied. */
   intervalMs: number;
-  /** Rounds one shot takes (default `1`). `0` fires without ammo. */
   rounds?: number;
   ammo?: WeaponAmmoSource;
-  /** A shot that is gated and presented but spends nothing (a refunded or free round). */
   free?: boolean;
 }
 
 /** Why a pull resolved as it did, checked in this order: reloading, cooling, empty, fired. */
 export type WeaponPullStatus = "fired" | "cooling" | "reloading" | "empty";
 
-/**
- * One shot that left the gun: the presentation seam. Listeners turn it into muzzle feel, sound,
- * camera shake, recoil or an AI noise event, with their own numbers.
- */
 export interface WeaponTriggerShot {
   shooter: string;
   weapon: string;
   nowMs: number;
-  /** Shot number for this shooter and weapon, starting at `1`. */
   shot: number;
-  /** Rounds taken from the ammo source; `0` for a free shot or an unlimited weapon. */
   spent: number;
   free: boolean;
   /** Rounds left in the magazine after the shot, or `null` when the ammo source is not a magazine. */
@@ -55,26 +44,16 @@ export interface WeaponTriggersConfig {
   dryPull?: "free" | "cooldown";
 }
 
-/** Serializable cadence state for every shooter and weapon that has fired. */
 export interface WeaponTriggersSnapshot {
   triggers: { shooter: string; weapon: string; readyAtMs: number; shots: number }[];
 }
 
-/**
- * Per-shooter, per-weapon trigger gates on the caller's clock: cadence, the ammo spend from a
- * magazine or a reserve pool, and one listener seam that presents each shot. The caller keeps its
- * own delivery (projectiles, raycasts) and damage.
- */
 export interface WeaponTriggers {
-  /** What {@link WeaponTriggers.pull} would do now, without any effect. */
   check(pull: WeaponPull): WeaponPullStatus;
-  /** Fire when the gate, reload and ammo allow it: spend the rounds, start the interval, tell every listener. */
   pull(pull: WeaponPull): WeaponPullResult;
-  /** Present every fired shot; returns the unsubscribe. Listeners run in registration order. */
   onShot(listener: (shot: WeaponTriggerShot) => void): () => void;
   /** Clock time the next shot may leave, ms; `-Infinity` before the first. */
   readyAtMs(shooter: string, weapon: string): number;
-  /** Forget every gate (a new run). Listeners stay. */
   clear(): void;
   snapshot(): WeaponTriggersSnapshot;
   restore(snapshot: WeaponTriggersSnapshot): void;
@@ -95,13 +74,7 @@ function keyOf(shooter: string, weapon: string): string {
   return `${shooter}\u0000${weapon}`;
 }
 
-/**
- * Build a bank of {@link WeaponTriggers}. Reach for it when a weapon fires from an input or item-use
- * handler on the game clock and delivery stays with the caller; for a weapon that is plain data and
- * ticks its own delivery, use `createWeaponSystem`.
- *
- * @capability weapon-triggers gate shots per shooter and weapon on the game clock, spend ammo from a magazine or reserve pool, and present each shot through one listener seam
- */
+/** @capability weapon-triggers gate shots per shooter and weapon on the game clock, spend ammo from a magazine or reserve pool, and present each shot through one listener seam */
 export function createWeaponTriggers(config: WeaponTriggersConfig = {}): WeaponTriggers {
   const dryCooldown = config.dryPull === "cooldown";
   const states = new Map<string, TriggerState>();

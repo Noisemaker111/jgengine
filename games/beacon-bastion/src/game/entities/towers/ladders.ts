@@ -4,15 +4,6 @@ import type { UpgradePathsDecl, UpgradeStepDecl } from "@jgengine/core/worldMode
 import { editorLayers } from "../../../editorLayers";
 import { towerDef, type TowerDef } from "./catalog";
 
-/**
- * Every tower climbs two shared ranks, then commits to one of two paths that change how it fights,
- * not only how hard: a longbow outranges and pierces armor where a volley spreads fire across a
- * crowd; a mortar stuns a column where an ironshot battery strips its armor for everyone else.
- * The engine compiles each ladder into world actions (`upgradePathActions`), so price, refusal,
- * refund and save all come from the keep's world.
- */
-
-/** An upgrade costs this share of the build price, times the rank it leaves. */
 const TRUNK_SHARE = 0.75;
 /** What each shared rank adds: damage and fire rate as a share of the base, range and splash in metres. */
 const PER_RANK = { damage: 0.5, rate: 0.15, range: 0.5, splash: 0.3 } as const;
@@ -21,7 +12,6 @@ function gold(amount: number): WorldChanges {
   return { "keep.gold": -amount };
 }
 
-/** A step that pays `price`, records it on the tower (the sale reads `spent`) and changes `effect`. */
 function step(label: string, detail: string, price: number, effect: WorldChanges): UpgradeStepDecl {
   return { label, detail, cost: gold(price), effect: { ...effect, spent: price }, note: `{target}: ${label}.` };
 }
@@ -142,7 +132,6 @@ export const TOWER_LADDERS: Record<string, UpgradePathsDecl> = {
   },
 };
 
-/** The tower's live fact names beyond the ladder's own (`tier`, `branch`, `branch_tier`). */
 export const TOWER_FACTS = [
   "spent",
   "damage",
@@ -168,7 +157,6 @@ export const TOWER_FACTS = [
 ] as const;
 export type TowerFact = (typeof TOWER_FACTS)[number];
 
-/** What a fresh tower of `def` stands with, before any rank. */
 export function baseTowerFacts(def: TowerDef): Record<TowerFact, number> {
   return {
     spent: def.cost,

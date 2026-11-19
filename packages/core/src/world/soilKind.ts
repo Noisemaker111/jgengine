@@ -10,27 +10,19 @@
 import { registerSceneKind, type SceneKindObject } from "../scene/sceneKinds";
 import { type ParamSchema } from "../generator/paramSchema";
 
-/**
- * The editor volume kind marking a box as a soil crack/moss patch.
- * @capability soil-patch editor-authorable terrain crack/moss material variation
- */
+/** @capability soil-patch editor-authorable terrain crack/moss material variation */
 export const SOIL_KIND = "soil";
 
-/** Fully-defaulted soil params parsed from a volume's `meta`. */
 export interface SoilRules {
-  /** Underlying dirt/soil base tint, hex. */
   baseColor: string;
   /** Worley cell size in meters — larger cells read as bigger cracked-earth plates. */
   crackScale: number;
-  /** Crack-line color blended into the cell boundaries, hex. */
   crackColor: string;
   /** Crack blend strength, 0..1. */
   crackIntensity: number;
-  /** Moss patch color, hex. */
   mossColor: string;
   /** Fraction of the patch covered by moss, 0..1. */
   mossCoverage: number;
-  /** Seed string; same seed reproduces the same crack/moss layout. */
   seed: string;
 }
 
@@ -45,7 +37,6 @@ export const SOIL_DEFAULTS: SoilRules = {
   seed: "",
 };
 
-/** The soil parameter schema — drives the inspector and `meta` parse via the studio seam. */
 export const SOIL_SCHEMA: ParamSchema = {
   fields: [
     { type: "color", key: "baseColor", label: "base color", default: SOIL_DEFAULTS.baseColor },
@@ -68,7 +59,7 @@ function metaString(meta: Record<string, unknown> | undefined, key: string, fall
   return typeof value === "string" ? value : fallback;
 }
 
-/** Parse a volume's `meta` into fully-defaulted soil rules. @internal */
+/** @internal */
 export function readSoilRules(meta: Record<string, unknown> | undefined): SoilRules {
   return {
     baseColor: metaString(meta, "baseColor", SOIL_DEFAULTS.baseColor),
@@ -92,7 +83,7 @@ function axis(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
-/** Resolve a soil volume into an area footprint (from box half-extents / radius) at the box base. @internal */
+/** @internal */
 export function resolveSoilObject(object: SceneKindObject): ResolvedSoil | null {
   const center = object.center ?? object.position;
   if (center === undefined) return null;
@@ -108,7 +99,7 @@ export function resolveSoilObject(object: SceneKindObject): ResolvedSoil | null 
   };
 }
 
-/** Registers the `soil` scene kind (schema + resolver). Called by {@link registerBuiltinSceneKinds}. @internal */
+/** @internal */
 export function registerSoilKind(): void {
   registerSceneKind<ResolvedSoil | null>({
     kind: SOIL_KIND,

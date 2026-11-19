@@ -146,7 +146,6 @@ export const DEFAULT_BUILDING_CONFIG: BuildingConfig = {
   variants: DEFAULT_VARIANTS,
 };
 
-/** URLs of the PBR maps a building surface tiles; `buildMaterialCatalog(...).resolve(id)!.maps` fits directly. */
 export interface BuildingSurfaceMaps {
   color?: string;
   normal?: string;
@@ -155,13 +154,7 @@ export interface BuildingSurfaceMaps {
   metalness?: string;
 }
 
-/**
- * A textured building surface: a base colour plus optional tiled PBR maps. With `maps`, `color`
- * multiplies the albedo (leave it light to show the map as authored); without, it is the flat
- * colour the part has always had.
- */
 export interface BuildingSurfaceMaterial {
-  /** Base colour; the style's colour for that part kind when unset. */
   color?: string;
   maps?: BuildingSurfaceMaps;
   /**
@@ -174,7 +167,6 @@ export interface BuildingSurfaceMaterial {
   metalness?: number | undefined;
 }
 
-/** What a building part kind is painted with: a hex colour, or a colour plus tiled PBR maps. */
 export type BuildingSurface = string | BuildingSurfaceMaterial;
 
 export type BuildingPalette = Record<BuildingPartKind, BuildingSurface>;
@@ -365,7 +357,6 @@ export const BUILDING_STYLE_PROBABILITIES: Record<BuildingStyle, Partial<Buildin
   aerial: { window: 0.95, awning: 0, airConditioner: 0.3, clothesline: 0, storeSign: 0.2, roofProp: 0.6 },
 };
 
-/** Style facade probabilities with explicit overrides applied on top. */
 export function resolveBuildingProbabilities(
   style: BuildingStyle = DEFAULT_BUILDING_STYLE,
   overrides?: Partial<BuildingProbabilities>,
@@ -373,11 +364,6 @@ export function resolveBuildingProbabilities(
   return { ...BUILDING_STYLE_PROBABILITIES[style], ...overrides };
 }
 
-/**
- * Per-style facade-tone family: the wall colours a district spreads across its buildings so
- * neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's
- * own `wall`; the rest fan warmer/cooler and lighter/darker around it.
- */
 export const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]> = {
   generic: ["#9c8f80", "#736a60", "#b7a894", "#8b8a80", "#c3ac90", "#635c54", "#a1978c"],
   capital: ["#cfc5ad", "#ac9878", "#e6e0cf", "#a8a698", "#c8b48d", "#847b68", "#ded2b3"],
@@ -391,11 +377,7 @@ export const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]>
   aerial: ["#dfe7ec", "#c6d2da", "#eef3f6", "#b6c3cb", "#d3dde2", "#a7b7c0", "#e7eef1"],
 };
 
-/**
- * The facade-tone family for a style — the ramp {@link BUILDING_STYLE_WALL_TONES} keeps, falling
- * back to the style's single palette wall when a style has no ramp.
- * @internal
- */
+/** @internal */
 export function resolveBuildingWallTones(style: BuildingStyle = DEFAULT_BUILDING_STYLE): readonly string[] {
   const tones = BUILDING_STYLE_WALL_TONES[style] as readonly string[] | undefined;
   if (tones !== undefined && tones.length > 0) return tones;
@@ -447,12 +429,7 @@ function chance(seed: BuildingSeed, key: string, p: number): boolean {
   return hash01(seed, key) < probability(p);
 }
 
-/**
- * Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and
- * probabilities. Use it to inspect or adjust the resolved shape before generating.
- *
- * @capability building-generator generate seeded buildings as placed facade parts — bays, floors, roof, decor
- */
+/** @capability building-generator generate seeded buildings as placed facade parts — bays, floors, roof, decor */
 export function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig {
   return {
     id: input.id ?? DEFAULT_BUILDING_CONFIG.id,

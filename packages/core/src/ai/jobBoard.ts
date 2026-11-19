@@ -11,7 +11,6 @@ export interface JobDef {
   repeat?: boolean;
 }
 
-/** A unit of work at a station that a worker walks to and works off. */
 export interface StationJob {
   id: string;
   station: NavPoint;

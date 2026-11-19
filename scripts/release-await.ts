@@ -25,7 +25,6 @@ export interface PublishRun {
   conclusion: string | null;
   headSha: string;
   url: string;
-  /** ISO time GitHub created the run. */
   createdAt?: string | undefined;
 }
 
@@ -42,11 +41,8 @@ export interface JobStep {
 }
 
 export const PUBLISH_WORKFLOW = "publish.yml";
-/** The workflow whose verdict on the release commit gates the tag. */
 export const CI_WORKFLOW = "ci.yml";
-/** A publish run is build + pack/install/compile + 13 publishes + verify: ~11 min measured. */
 export const PUBLISH_TIMEOUT_MS = 45 * 60_000;
-/** Beta's CI on one commit: ~8 min measured, longer when runners queue. */
 export const CI_TIMEOUT_MS = 60 * 60_000;
 /** Long enough not to hammer the API, short enough that a lane never wonders if it is alive. */
 export const POLL_INTERVAL_MS = 10_000;
@@ -108,12 +104,10 @@ export async function awaitCi(options: {
   }
 }
 
-/** The jobs that failed, in the order the run ran them; the first is the cause to name. */
 export function failedJobs(jobs: readonly PublishJob[]): PublishJob[] {
   return jobs.filter((job) => job.conclusion === "failure");
 }
 
-/** `release: publish run 40107700057 failed at job "publish" (step: Verify …) <url>`. */
 export function failureLine(run: PublishRun, jobs: readonly PublishJob[], failedStep?: string | null): string {
   const failed = failedJobs(jobs);
   const job = failed[0];
@@ -123,7 +117,6 @@ export function failureLine(run: PublishRun, jobs: readonly PublishJob[], failed
   return `release: publish run ${run.databaseId} failed at ${where}${step} ${url}`;
 }
 
-/** `release: published @jgengine/core@0.38.4 (publish run 40107700057)`. */
 export function successLine(version: string, runId: number): string {
   return `release: published @jgengine/core@${version} (publish run ${runId})`;
 }
@@ -137,11 +130,8 @@ export const VERIFY_STEP = "Verify every published package installs";
  */
 export const REGISTRY_TIMEOUT_MS = 20 * 60_000;
 
-/** What the registry serves for a version. */
 export interface RegistryCheck {
-  /** The release's packages npm does not serve at `version` yet, as `name@version`. */
   unserved(version: string): Promise<string[]>;
-  /** What a consumer installing `version` would hit: the publish run's own artifact check, run here. */
   defects(version: string): Promise<string[]>;
 }
 
@@ -152,7 +142,6 @@ export const liveRegistryCheck: RegistryCheck = {
 
 export interface AwaitOptions {
   version: string;
-  /** The commit the release tag names; publish.yml runs on it. */
   sha: string;
   gh?: RunGh;
   /** The registry the release must reach before the wait answers. */
@@ -170,7 +159,6 @@ export interface AwaitOptions {
 
 export interface AwaitResult {
   ok: boolean;
-  /** The line a lane reads: the version and run, or the run and the job that failed. */
   line: string;
   runId: number | null;
   code: number;

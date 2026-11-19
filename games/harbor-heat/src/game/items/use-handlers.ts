@@ -9,7 +9,6 @@ import { landExplosion, landWeaponHit } from "../combat/hitModel";
 import { AMMO_STAT_IDS, gearById, weaponById } from "./weapons/catalog";
 import { gunIntervalScale } from "../progression/upgrades";
 
-/** What a gun shot looks and sounds like to the street: the camera kicks and the block hears it. */
 function presentGunShot(ctx: GameContext, shot: WeaponTriggerShot): void {
   const def = weaponById(shot.weapon);
   if (def?.use !== "fireGun") return;
@@ -28,7 +27,6 @@ const triggersOf = perContext((ctx): WeaponTriggers => {
   return triggers;
 });
 
-/** The weapon triggers for this world: cadence state and the per-shot presentation seam. */
 export function weaponTriggers(ctx: GameContext): WeaponTriggers {
   return triggersOf(ctx);
 }

@@ -17,26 +17,16 @@
  * object is deterministic given its declaration.
  */
 
-/** Where an editor-visible object comes from — its authorship provenance. */
 export type SceneProvenanceKind = "authored" | "generated" | "runtime" | "transient";
 
-/** A first-class entry in the scene document — the editor fully owns and persists it. */
 export interface AuthoredProvenance {
   readonly kind: "authored";
-  /** Stable id of the object in the scene document. */
   readonly documentId: string;
 }
 
-/**
- * An object derived from an authored document object — instances scattered from a
- * painted layer, walls extruded from an authored footprint. Edits belong on the
- * source object, not the generated instance.
- */
 export interface GeneratedProvenance {
   readonly kind: "generated";
-  /** Document object this instance was generated from. */
   readonly sourceDocumentId: string;
-  /** Stable id of the generated instance. */
   readonly instanceId: string;
 }
 
@@ -46,22 +36,17 @@ export interface GeneratedProvenance {
  */
 export interface RuntimeProvenance {
   readonly kind: "runtime";
-  /** Stable id of the runtime provider that owns this object. */
   readonly providerId: string;
-  /** Stable id of the object within the provider. */
   readonly instanceId: string;
 }
 
 /** An ephemeral simulation object — a spawned agent, projectile, or particle that never persists. */
 export interface TransientProvenance {
   readonly kind: "transient";
-  /** Stable id of the runtime provider that spawned this object. */
   readonly providerId: string;
-  /** Stable id of the object within the provider. */
   readonly instanceId: string;
 }
 
-/** The provenance of one editor-visible object — authored, generated, runtime, or transient. */
 export type SceneProvenance =
   | AuthoredProvenance
   | GeneratedProvenance
@@ -70,21 +55,15 @@ export type SceneProvenance =
 
 /** What a provider lets the editor do with one of its objects. Absent flags default to `false`. */
 export interface ProviderCapabilities {
-  /** Editor may select the object. */
   readonly select?: boolean;
-  /** Editor may focus/frame the camera on it. */
   readonly focus?: boolean;
-  /** Editor may hide it from the viewport. */
   readonly hide?: boolean;
-  /** Provider can emit schema-valid authored data (stable ids, undoable) to bake this object into the document. */
   readonly bake?: boolean;
 }
 
 /** A provider's explicit ownership declaration for one editor-visible object. */
 export interface SceneOwnershipDeclaration {
-  /** Where the object comes from. */
   readonly provenance: SceneProvenance;
-  /** What the provider lets the editor do with it. */
   readonly capabilities?: ProviderCapabilities;
   /**
    * Human-readable justification for why this object is not an authored document
@@ -95,48 +74,35 @@ export interface SceneOwnershipDeclaration {
   readonly reason?: string;
 }
 
-/** The boundary's resolution for one object. */
 export type OwnershipDecision = "expose" | "bake" | "reject";
 
-/** The full verdict for one object: its decision plus the flags and diagnostic the editor needs to act on it. */
 export interface OwnershipVerdict {
   /** `expose` (authorable), `bake` (offer import), or `reject` (read-only runtime content). */
   readonly decision: OwnershipDecision;
-  /** The provenance kind that produced this decision. */
   readonly provenance: SceneProvenanceKind;
   /** The editor must present the object read-only — authoring edits are not accepted. */
   readonly readOnly: boolean;
-  /** A "bake/import to document" action should be offered for this object. */
   readonly bakeable: boolean;
-  /** Diagnostic string the editor can surface next to the object. */
   readonly reason: string;
   /** Set when the declaration breaks the ownership contract; the editor and content gate should flag it. */
   readonly violation?: string | undefined;
 }
 
-/** One boundary problem found while auditing a set of declarations. */
 export interface OwnershipDiagnostic {
-  /** Key identifying the offending object (its provenance id when audited from a manifest). */
   readonly key: string;
-  /** Provenance kind of the offending object. */
   readonly provenance: SceneProvenanceKind;
-  /** The decision the object resolved to (always `reject` for a violation). */
   readonly decision: OwnershipDecision;
-  /** Human-readable violation message. */
   readonly message: string;
 }
 
 /** Serializable record of a world's ownership declarations — persisted next to the scene document or shipped by a game. */
 export interface SceneOwnershipManifest {
-  /** Schema version; currently {@link SCENE_OWNERSHIP_MANIFEST_VERSION}. */
   readonly version: 1;
-  /** Optional label for the provider/world these declarations describe. */
   readonly provider?: string;
   /** The per-object ownership declarations. */
   readonly declarations: readonly SceneOwnershipDeclaration[];
 }
 
-/** Current {@link SceneOwnershipManifest} schema version. */
 export const SCENE_OWNERSHIP_MANIFEST_VERSION = 1;
 
 /**
@@ -201,7 +167,6 @@ export function classifyOwnership(declaration: SceneOwnershipDeclaration): Owner
   };
 }
 
-/** Stable id string for a provenance — used to key diagnostics deterministically. */
 function provenanceKey(provenance: SceneProvenance): string {
   switch (provenance.kind) {
     case "authored":
@@ -213,12 +178,7 @@ function provenanceKey(provenance: SceneProvenance): string {
   }
 }
 
-/**
- * Stable identity string for a provenance (e.g. `runtime:town/building-3`), suitable
- * for keying an object in an editor tree or a diagnostics table.
- *
- * @capability scene-ownership derive a stable object key from its provenance
- */
+/** @capability scene-ownership derive a stable object key from its provenance */
 export function ownershipKey(provenance: SceneProvenance): string {
   return provenanceKey(provenance);
 }
@@ -248,14 +208,7 @@ export function collectOwnershipDiagnostics(
   return out;
 }
 
-/**
- * Audit every declaration in a manifest, keying diagnostics by each object's
- * provenance id. An empty result means the manifest declares all of its content
- * cleanly — every object is authored, generated, bakeable, or a reasoned
- * runtime/transient object.
- *
- * @capability scene-ownership audit a whole ownership manifest for boundary violations
- */
+/** @capability scene-ownership audit a whole ownership manifest for boundary violations */
 export function auditManifest(manifest: SceneOwnershipManifest): OwnershipDiagnostic[] {
   return collectOwnershipDiagnostics(
     manifest.declarations.map((declaration) => [provenanceKey(declaration.provenance), declaration] as const),
@@ -289,14 +242,7 @@ function isDeclaration(value: unknown): value is SceneOwnershipDeclaration {
   return true;
 }
 
-/**
- * Narrow unknown parsed JSON to a {@link SceneOwnershipManifest}. Structural only —
- * verifies the version, the declarations array, and each declaration's provenance
- * shape; it does not judge whether declarations satisfy the boundary (use
- * {@link auditManifest} for that).
- *
- * @capability scene-ownership validate a serialized ownership manifest loaded from disk
- */
+/** @capability scene-ownership validate a serialized ownership manifest loaded from disk */
 export function isSceneOwnershipManifest(value: unknown): value is SceneOwnershipManifest {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;

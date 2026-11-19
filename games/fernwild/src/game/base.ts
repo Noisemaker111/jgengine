@@ -15,11 +15,8 @@ import { BASE_BUILDING, BEDS, CONTAINERS, STATIONS, structureDef, TIER_COLORS } 
 import { itemLabel, itemTraits, SPOILS } from "./data/items";
 import { setScreen } from "./screens";
 
-/** ARK's build reach: the ghost sits this far in front of the survivor. */
 const BUILD_REACH = 3.5;
-/** Cursor height above the feet: between floor edges and wall tops, since no camera pitch reaches the sim. */
 const CURSOR_HEIGHT = 1.2;
-/** How far E and G reach a piece in front. */
 const USE_REACH = 4;
 /** Share of a piece's cost a demolish hands back. Ours: ark.wiki.gg's structure pages don't state one. */
 const DEMOLISH_REFUND = 0.5;
@@ -28,26 +25,17 @@ const SOLIDS_LAYER = "fernwild:base";
 interface Base {
   building: BaseBuilding;
   ghost: StructurePlan | null;
-  /** Rotate presses: quarter turns on the ground, the next snap variant when snapping. */
   turn: number;
   syncedVersion: number;
-  /** The piece in front of the survivor, for E (doors, fires), G (demolish) and the look readout. */
   aimed: string | null;
-  /** The burning station the survivor faces within reach: found by distance and facing, since a campfire sits below the eye-height ray. */
   fire: string | null;
   /** Each burning station's fire, by piece id: a fuel meter that drains while it has any. */
   fires: Map<string, Vitals>;
-  /** The container the survivor faces within reach, found as fires are. */
   store: string | null;
-  /** Each container's items, by piece id. */
   stores: Map<string, InventoryState>;
-  /** The container whose inventory is open. */
   viewing: string | null;
-  /** The spoil timers of what every container holds, each at its container's rate. */
   spoilage: Spoilage;
-  /** The crop plot the survivor faces within reach, found as fires are. */
   plot: string | null;
-  /** Each crop plot's soil, by piece id. */
   plots: Map<string, Plot>;
 }
 
@@ -55,7 +43,6 @@ const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILD
 
 const isPlot = (pieceId: string): boolean => pieceId === "crop_plot";
 
-/** A crop plot's soil, made bare the first time it is asked for. */
 function plotOf(base: Base, piece: BasePiece): Plot {
   let plot = base.plots.get(piece.id);
   if (plot === undefined) {
@@ -65,17 +52,14 @@ function plotOf(base: Base, piece: BasePiece): Plot {
   return plot;
 }
 
-/** How many of an item the survivor carries, hotbar and bag. */
 const carried = (ctx: GameContext, itemId: string): number => ctx.player.inventory.count(HOTBAR, itemId) + ctx.player.inventory.count(BAG, itemId);
 
-/** Take one of an item from the bag, else the hotbar. */
 function takeOne(ctx: GameContext, itemId: string): void {
   ctx.player.inventory.take(ctx.player.inventory.count(BAG, itemId) > 0 ? BAG : HOTBAR, itemId, 1);
 }
 
 type PlotStep = { kind: "harvest"; crop: string } | { kind: "plant"; seed: string } | { kind: "fertilize" } | { kind: "water" } | { kind: "none"; why: string };
 
-/** What E does at a plot: pick it when ripe, else plant, fertilize or water it with what the survivor carries. */
 function plotStep(ctx: GameContext, plot: Plot): PlotStep {
   if (plot.seed !== null && plot.growth >= 1) return { kind: "harvest", crop: SEEDS[plot.seed] ?? plot.seed };
   if (plot.seed === null) {
@@ -121,10 +105,8 @@ function usePlot(ctx: GameContext, base: Base, piece: BasePiece): boolean {
 
 const fireBody = (): Vitals => createVitals([{ id: "fuel", max: FUEL_MAX, start: 0, rate: -1 }]);
 
-/** Whether a piece burns fuel (a campfire, a cooking pot). */
 const burns = (pieceId: string): boolean => FUEL.sources(pieceId).length > 0;
 
-/** A burning station's fire, made empty the first time it is asked for; null for a piece that does not burn. */
 function fireOf(base: Base, piece: BasePiece): Vitals | null {
   if (!burns(piece.pieceId)) return null;
   let fire = base.fires.get(piece.id);
@@ -135,10 +117,8 @@ function fireOf(base: Base, piece: BasePiece): Vitals | null {
   return fire;
 }
 
-/** Whether a station can work: one that burns needs fuel in it. */
 const lit = (base: Base, piece: BasePiece): boolean => (fireOf(base, piece)?.value("fuel") ?? 1) > 0;
 
-/** The burning station in front of the survivor, or null. */
 function aimedFire(base: Base): BasePiece | null {
   return base.fire === null ? null : base.building.get(base.fire);
 }
@@ -146,7 +126,6 @@ function aimedFire(base: Base): BasePiece | null {
 /** Half-angle of the cone in front of the survivor that a fire must sit in to be stoked. */
 const FIRE_FACING = Math.cos(Math.PI / 3);
 
-/** The nearest piece `wanted` within reach inside the survivor's forward cone, or null: low pieces sit under the eye-height ray. */
 function facingPiece(base: Base, at: BaseVec3, yaw: number, wanted: (pieceId: string) => boolean): string | null {
   const ahead = forward(yaw);
   let best: string | null = null;
@@ -164,12 +143,10 @@ function facingPiece(base: Base, at: BaseVec3, yaw: number, wanted: (pieceId: st
   return best;
 }
 
-/** The fuel the survivor carries that a station would take next, or null. */
 function nextFuel(ctx: GameContext, pieceId: string): string | null {
   return FUEL.pick(pieceId, (itemId) => ctx.player.inventory.count(BAG, itemId) + ctx.player.inventory.count(HOTBAR, itemId) > 0);
 }
 
-/** E at a campfire or pot: one fuel from the survivor's bag or hotbar onto its fire. */
 function stoke(ctx: GameContext, base: Base, piece: BasePiece): boolean {
   const fire = fireOf(base, piece);
   const itemId = nextFuel(ctx, piece.pieceId);
@@ -203,7 +180,6 @@ export function fuelStations(ctx: GameContext, seconds: number): void {
   for (const piece of base.building.list()) fireOf(base, piece)?.change("fuel", seconds);
 }
 
-/** The model, for the world overlay. */
 export function baseBuilding(ctx: GameContext): BaseBuilding {
   return baseOf(ctx).building;
 }
@@ -285,7 +261,6 @@ const BLOCKED: Record<NonNullable<StructurePlan["reason"]>, string> = {
   "too-steep": "Ground is too steep",
 };
 
-/** Left click with a structure in hand: stand it where the ghost is and use up one from the hotbar. */
 export function placeHeld(ctx: GameContext, itemId: string, yaw: number | undefined): boolean {
   const base = baseOf(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -304,11 +279,6 @@ export function placeHeld(ctx: GameContext, itemId: string, yaw: number | undefi
   return true;
 }
 
-/**
- * Stand a closed hut of one tier 4 m in front of the survivor, its door shut and facing them: a foundation, a
- * doorframe on the near edge, walls on the other three, the door and the roof. Each piece is planned straight onto
- * its socket. For proofs and tests about what a hut does, not how it is aimed together. False if any piece will not stand.
- */
 export function buildHut(ctx: GameContext, tier: string): boolean {
   const base = baseOf(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -335,12 +305,10 @@ export function buildHut(ctx: GameContext, tier: string): boolean {
   return ok;
 }
 
-/** R: turn the ghost a quarter, or flip to the next way it can snap. */
 export function rotateBuild(ctx: GameContext): void {
   baseOf(ctx).turn += 1;
 }
 
-/** The door in front: the aimed piece itself, or the door hung in the aimed frame. */
 function aimedDoor(base: Base): BasePiece | null {
   const aimed = base.aimed === null ? null : base.building.get(base.aimed);
   if (aimed === null) return null;
@@ -349,7 +317,6 @@ function aimedDoor(base: Base): BasePiece | null {
   return base.building.list().find((piece) => openable(piece) && Math.hypot(piece.position[0] - aimed.position[0], piece.position[1] - aimed.position[1], piece.position[2] - aimed.position[2]) < 0.2) ?? null;
 }
 
-/** A container's items, made empty the first time it is asked for. */
 function storeOf(base: Base, piece: BasePiece): InventoryState | null {
   const spec = CONTAINERS[piece.pieceId];
   if (spec === undefined) return null;
@@ -361,14 +328,12 @@ function storeOf(base: Base, piece: BasePiece): InventoryState | null {
   return store;
 }
 
-/** The open container, or null. */
 function viewedStore(base: Base): { piece: BasePiece; items: InventoryState; slots: number } | null {
   const piece = base.viewing === null ? null : base.building.get(base.viewing);
   const items = piece === null ? null : storeOf(base, piece);
   return piece === null || items === null ? null : { piece, items, slots: CONTAINERS[piece.pieceId]!.slots };
 }
 
-/** What the containers hold goes off at each one's rate; what it spoils into takes its place if there is room. */
 function spoilStores(base: Base, dt: number): void {
   const stacks = [...base.stores].flatMap(([id, items]) => {
     const piece = base.building.get(id);
@@ -387,7 +352,6 @@ function spoilStores(base: Base, dt: number): void {
   }
 }
 
-/** A stack from the survivor's bag or hotbar into the open container. */
 export function storePut(ctx: GameContext, from: string, slot: number): void {
   const base = baseOf(ctx);
   const open = viewedStore(base);
@@ -407,7 +371,6 @@ export function storePut(ctx: GameContext, from: string, slot: number): void {
   ctx.touch();
 }
 
-/** A stack from the open container back into the survivor's bag. */
 export function storeTake(ctx: GameContext, slot: number): void {
   const base = baseOf(ctx);
   const open = viewedStore(base);
@@ -427,13 +390,11 @@ export function closeStore(ctx: GameContext): void {
   setScreen(ctx, null);
 }
 
-/** The open container for the screen: its label and slots; null with none open. */
 export function storeView(ctx: GameContext) {
   const open = viewedStore(baseOf(ctx));
   return open === null ? null : { id: open.piece.id, label: itemLabel(open.piece.pieceId), slots: open.items.slots };
 }
 
-/** E on a fire (stoke it), a container (open it), a crop plot (tend it), or a door or its frame (swing it). */
 export function useStructure(ctx: GameContext): boolean {
   const base = baseOf(ctx);
   const fire = aimedFire(base);
@@ -470,7 +431,6 @@ function fell(ctx: GameContext, removed: readonly BasePiece[], refund: number): 
   ctx.game.notices.push({ text: removed.length > 1 ? `${label} destroyed, ${removed.length - 1} more fell with it` : `${label} destroyed`, tone: "deny" });
 }
 
-/** G: take down the piece in front, and what it held up, for half its cost back. */
 export function demolish(ctx: GameContext): void {
   const base = baseOf(ctx);
   if (base.aimed === null) return;
@@ -480,7 +440,6 @@ export function demolish(ctx: GameContext): void {
   syncSolids(ctx, base);
 }
 
-/** A swing that lands on a structure: the tier decides what gets through. Returns false when nothing was in reach. */
 export function strikeStructure(ctx: GameContext, yaw: number, reach: number, damage: number, damageClass: string): boolean {
   const base = baseOf(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -496,7 +455,6 @@ export function strikeStructure(ctx: GameContext, yaw: number, reach: number, da
   return true;
 }
 
-/** Placed stations near enough to matter, for recipes that need one. */
 export function stations(ctx: GameContext): StationInstance[] {
   const base = baseOf(ctx);
   return base.building
@@ -505,7 +463,6 @@ export function stations(ctx: GameContext): StationInstance[] {
     .map((piece) => ({ catalogId: piece.pieceId, position: [piece.position[0], piece.position[2]] }));
 }
 
-/** E opens and shuts the door in front. */
 export function basePrompts(ctx: GameContext): PositionedPrompt[] {
   const base = baseOf(ctx);
   const fire = aimedFire(base);
@@ -536,7 +493,6 @@ export function basePrompts(ctx: GameContext): PositionedPrompt[] {
   ];
 }
 
-/** What the HUD reads: the ghost's verdict and the piece under the crosshair. */
 export function baseView(ctx: GameContext) {
   const base = baseOf(ctx);
   const aimed = base.aimed === null ? null : base.building.get(base.aimed);
@@ -549,15 +505,12 @@ export function baseView(ctx: GameContext) {
     /** Where the first foundation and doorframe stand, so a proof can measure the survivor against the hut. */
     floor: base.building.list().find((piece) => piece.pieceId === "thatch_foundation")?.position ?? null,
     doorway: base.building.list().find((piece) => piece.pieceId === "thatch_doorframe")?.position ?? null,
-    /** The faced crop plot's soil, for the look readout and proofs. */
     plot: base.plot === null ? null : (base.plots.get(base.plot) ?? null),
   };
 }
 
 export type BaseView = ReturnType<typeof baseView>;
 
-/** How many pieces whose id starts with `prefix` stand in the base (`thatch_wall`, or `thatch_` for every thatch piece). */
-/** Where a dead survivor wakes: the last bed placed, used up as they wake on it; null with none. */
 export function takeBed(ctx: GameContext): BaseVec3 | null {
   const base = baseOf(ctx);
   const bed = base.building.list().filter((piece) => BEDS.has(piece.pieceId)).at(-1);
@@ -567,7 +520,6 @@ export function takeBed(ctx: GameContext): BaseVec3 | null {
   return [bed.position[0], bed.position[1], bed.position[2]];
 }
 
-/** Where the last piece of this kind was placed, or undefined with none. */
 export function lastPiece(ctx: GameContext, pieceId: string): BaseVec3 | undefined {
   return baseOf(ctx).building.list().filter((piece) => piece.pieceId === pieceId).at(-1)?.position;
 }

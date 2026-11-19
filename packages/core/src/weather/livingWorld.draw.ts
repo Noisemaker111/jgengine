@@ -1,11 +1,6 @@
 import * as THREE from "three";
 
-/**
- * The world's weather and time facts as the renderer sees them, written once per frame by
- * `LivingWorldDriver` and read by every effect that reacts to them: foliage sway, wet surfaces,
- * birds, blowing litter and steam.
- * @internal
- */
+/** @internal */
 export interface LivingWorldState {
   /** Rain falling now, 0..1: the strongest active rain source. */
   rain: number;
@@ -20,19 +15,19 @@ export interface LivingWorldState {
 /** @internal */
 export const livingWorld: LivingWorldState = { rain: 0, wetness: 0, wind: new THREE.Vector2(), sunHeight: null };
 
-/** Shared uniform the wet-surface shader reads; one write per frame drives every patched material. @internal */
+/** @internal */
 export const wetnessUniform = { value: 0 };
 
 const rainSources = new Map<object, number>();
 const windSources = new Map<object, readonly [number, number]>();
 
-/** Report rain from one source (a rain field, a weather layer) until it is withdrawn with 0. @internal */
+/** @internal */
 export function reportRain(source: object, amount: number): void {
   if (amount > 0) rainSources.set(source, Math.min(1, amount));
   else rainSources.delete(source);
 }
 
-/** Report one source's ground wind until withdrawn with null. @internal */
+/** @internal */
 export function reportWind(source: object, wind: readonly [number, number] | null): void {
   if (wind === null) windSources.delete(source);
   else windSources.set(source, wind);
@@ -56,7 +51,7 @@ export function stepWetness(wetness: number, rain: number, delta: number): numbe
   return Math.max(target, wetness - delta / DRY_SECONDS);
 }
 
-/** Advance the shared state one frame. @internal */
+/** @internal */
 export function advanceLivingWorld(delta: number, sunHeight: number | null): void {
   let rain = 0;
   for (const amount of rainSources.values()) rain = Math.max(rain, amount);
@@ -70,7 +65,7 @@ export function advanceLivingWorld(delta: number, sunHeight: number | null): voi
   livingWorld.sunHeight = sunHeight;
 }
 
-/** Forget every reported source; for tests and world teardown. @internal */
+/** @internal */
 export function resetLivingWorld(): void {
   rainSources.clear();
   windSources.clear();

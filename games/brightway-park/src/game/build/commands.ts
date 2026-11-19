@@ -24,9 +24,7 @@ function accessReason(ctx: GameContext, id: string): string | null {
   return access === null || access.open ? null : `shut: ${access.reason}`;
 }
 
-/** Blueprints laid as a line when the pointer is dragged: press on the first cell, let go on the last. */
 export const LINE_KINDS: ReadonlySet<string> = new Set(["path_walk", "path_queue"]);
-
 
 export type PointerInput = Pick<PointerHit, "point" | "entity" | "object">;
 
@@ -45,13 +43,11 @@ const ribbonUp = (ctx: GameContext): boolean => {
   return w.fact("park.won") === true && w.fact("park.win_dismissed") !== true;
 };
 
-/** A blueprint the palette offers: the world refuses a locked one; cost and room are checked at the spot. */
 export function canBuild(ctx: GameContext, id: string): boolean {
   if (isLandTool(id)) return true;
   return Object.hasOwn(BUILDABLES, id) && park.of(ctx).canPlace(id)?.reason !== "locked";
 }
 
-/** Lay a dragged line of path or queue: every cell that can take one, as one undoable build. */
 function layLine(ctx: GameContext, kind: string, from: readonly [number, number], to: readonly [number, number]): void {
   const w = park.of(ctx);
   const ids: string[] = [];
@@ -77,7 +73,6 @@ function layLine(ctx: GameContext, kind: string, from: readonly [number, number]
   savePark(ctx);
 }
 
-/** Raise or lower every cell in the dragged area that can move, as one undoable change. */
 function shapeArea(ctx: GameContext, tool: keyof typeof LAND_TOOLS, from: readonly [number, number], to: readonly [number, number]): void {
   const w = park.of(ctx);
   const step = LAND_TOOLS[tool].step;
@@ -101,7 +96,6 @@ function shapeArea(ctx: GameContext, tool: keyof typeof LAND_TOOLS, from: readon
   savePark(ctx);
 }
 
-/** Can the land tool move this cell? The overlay tints the hovered cell from this. */
 export function landCheck(ctx: GameContext, tool: string, x: number, z: number): string | null {
   if (!isLandTool(tool)) return null;
   const [col, row] = tileAt(x, z);
@@ -116,7 +110,6 @@ function selectTool(ctx: GameContext, id: string): void {
   bump(ctx);
 }
 
-/** Read the circuit back to the player whenever its shape changes: the same numbers the ride runs on. */
 function announceCircuit(ctx: GameContext): void {
   const circuit = coasterCircuit(ctx);
   ctx.game.notices.push(circuit.closed
@@ -126,7 +119,6 @@ function announceCircuit(ctx: GameContext): void {
 
 const LAID_IN_RUNS: ReadonlySet<string> = new Set(["track", "path", "scenery"]);
 
-/** Build at the pointer: the park's track rule, then the world's own `brightway.place`. */
 function tryBuild(ctx: GameContext, input: PointerInput): void {
   const kind = sessionOf(ctx).selectedTool;
   if (kind === null || !canBuild(ctx, kind)) return;
@@ -170,7 +162,6 @@ function tryBuild(ctx: GameContext, input: PointerInput): void {
   savePark(ctx);
 }
 
-/** Drop both kinds of click selection: the park's inspected object and the engine's selected guest. */
 function clearSelection(ctx: GameContext): void {
   sessionOf(ctx).selectedObject = null;
   ctx.scene.entity.selection.clear();

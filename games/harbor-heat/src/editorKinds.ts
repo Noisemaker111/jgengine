@@ -49,7 +49,6 @@ export const TRAFFIC_INTERSECTION_KIND = definePlaceableMarkerKind({
   ],
 });
 
-/** A kerbside parking spot. The lane graph projects it onto its nearest lane and its arc. */
 export const TRAFFIC_PARKING_KIND = definePlaceableMarkerKind({
   kind: "traffic_parking",
   label: "Kerb space",
@@ -57,10 +56,6 @@ export const TRAFFIC_PARKING_KIND = definePlaceableMarkerKind({
   accent: "#8aa0b4",
 });
 
-/**
- * A place a resident's day can name: a home, a workplace, a diner. `game/world/residents.ts` reads
- * these as the routine anchors, so moving one in the editor moves where that resident goes.
- */
 export const RESIDENT_PLACE_KIND = definePlaceableMarkerKind({
   kind: "resident_place",
   label: "Resident place",
@@ -68,10 +63,6 @@ export const RESIDENT_PLACE_KIND = definePlaceableMarkerKind({
   accent: "#e8a14a",
 });
 
-/**
- * A business lot the player can buy as a front. `meta.business` names the city kind it becomes and
- * `meta.price` what it costs; the city's `fronts` slot of the same id stands here.
- */
 export const FRONT_KIND = definePlaceableMarkerKind({
   kind: "front",
   label: "Business front",
@@ -98,11 +89,6 @@ export const HIDEOUT_KIND = definePlaceableMarkerKind({
   ],
 });
 
-/**
- * A kerb or counter a side job starts or ends at. `meta.tags` lists which gigs use it, comma
- * separated: `fare` (taxi pickups and drops), `flowers` (flower-run addresses), `florist` (the shop
- * flower runs load at). `game/jobs/gigs.ts` reads them as the side-job board's spots.
- */
 export const GIG_STOP_KIND = definePlaceableMarkerKind({
   kind: "gig_stop",
   label: "Gig stop",
@@ -111,10 +97,6 @@ export const GIG_STOP_KIND = definePlaceableMarkerKind({
   fields: [{ type: "text", key: "tags", label: "Tags", default: "fare" }],
 });
 
-/**
- * A gang's block: the centre of the turf and how far it reaches. `game/city.ts` names which crew
- * holds it and which blocks it borders; moving one in the editor moves where its crew stands.
- */
 export const TURF_KIND = definePlaceableMarkerKind({
   kind: "turf",
   label: "Gang turf",

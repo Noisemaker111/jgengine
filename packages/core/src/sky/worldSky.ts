@@ -1,6 +1,5 @@
 import type { SkyEnvironmentDescriptor, WorldFeature } from "@jgengine/core/world/features";
 
-/** The engine default sky a 3D place world renders when no sky is authored in its scene document. */
 const PLACE_DEFAULT_SKY: SkyEnvironmentDescriptor = { kind: "sky", preset: "day", timeOfDay: false };
 
 /**

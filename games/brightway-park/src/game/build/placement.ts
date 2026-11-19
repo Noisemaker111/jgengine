@@ -14,7 +14,6 @@ import { levelUnder } from "./terrain";
 
 const RAIL = new Set(["track_piece", "ride_coaster"]);
 
-/** True when a 1-cell piece at `cell` sits beside the station or a laid piece. */
 export function touchesRail(w: WorldModel, cell: readonly [number, number]): boolean {
   const neighbours: [number, number][] = [
     [cell[0] + 1, cell[1]],
@@ -33,7 +32,6 @@ export function touchesRail(w: WorldModel, cell: readonly [number, number]): boo
 
 export type PlacementCheck = { ok: true; cell: [number, number] } | { ok: false; reason: string; code: string };
 
-/** Can this blueprint go down where the pointer is? The world's answer, then the track rule. */
 export function placementAt(w: WorldModel, kind: string, x: number, z: number): PlacementCheck {
   if (!Object.hasOwn(BUILDABLES, kind)) return { ok: false, reason: "Unknown blueprint", code: "unknown" };
   const cell = cellFor(kind, x, z);

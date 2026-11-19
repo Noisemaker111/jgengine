@@ -1,9 +1,5 @@
 import type { GunElement, GunFamily, Rarity } from "./guns";
 
-/**
- * A quest-reward unique: Borderlands' named blue and purple guns a side quest hands over. Its maker,
- * family, rarity and element are fixed; its numbers still roll at the player's level like any gun.
- */
 export interface UniqueGun {
   name: string;
   maker: string;

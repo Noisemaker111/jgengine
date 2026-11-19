@@ -8,7 +8,6 @@ import { BORDER, NUMERIC } from "./theme";
 
 const PERF_POLL_MS = 500;
 
-/** Shared editor-host perf poll: samples on an interval and feeds the profiler history. */
 export function usePerfSample(api: EditorHostApi, history?: PerfHistoryStore): EditorPerfSample | null {
   const [sample, setSample] = useState<EditorPerfSample | null>(null);
   useEffect(() => {
@@ -22,7 +21,6 @@ export function usePerfSample(api: EditorHostApi, history?: PerfHistoryStore): E
   return sample;
 }
 
-/** Compact triangle-count formatting (1.2M / 340k). */
 export function formatTriangles(count: number): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
   if (count >= 1_000) return `${(count / 1_000).toFixed(0)}k`;

@@ -14,41 +14,30 @@ import { clamp01 } from "../math/scalar";
 export interface DaylightCycleConfig {
   horizonColor?: string;
   zenithColor?: string;
-  /** How long the noon keyframe holds either side of noon, as a fraction of the day (0 to 0.24). Default 0. */
   dayHold?: number;
   sunIntensity?: number;
   ambientIntensity?: number;
-  /** Fixed sun placement, or the noon placement the day arc swings around. Unset keeps the engine arc. */
   sun?: SkySunConfig;
-  /** Authored noon sun colour, reddened toward the horizon by the atmosphere. Default warm white. */
   sunColor?: string;
-  /** Authored noon fog colour; dawn, dusk and night cross-fade to their own haze. Default the noon horizon. */
   fogColor?: string;
-  /** The sky's fog; under a day cycle its colour is the noon fog when `fogColor` is unset. */
   fog?: { color?: string | undefined } | undefined;
-  /** Peak moonlight as a fraction of `sunIntensity`. Default `MOONLIGHT_PEAK`. */
   moonIntensity?: number;
-  /** Moonlight colour. Default `MOONLIGHT_COLOR`. */
   moonColor?: string;
 }
 
 export interface DaylightState {
   sunPosition: [number, number, number];
   sunIntensity: number;
-  /** The sun's colour at this hour: authored tint high up, atmosphere-reddened near the horizon. */
   sunColor: string;
   ambientIntensity: number;
   skyTop: string;
   skyBottom: string;
   background: string;
-  /** Scene fog colour matched to the sky at this hour, so fogged ground meets the horizon. */
   fogColor: string;
   /** The moon's direction — the sun's arc half a day away, so it is up whenever the sun is down. */
   moonPosition: [number, number, number];
-  /** Moonlight intensity, already scaled by the authored noon sun intensity. */
   moonIntensity: number;
   moonColor: string;
-  /** Star visibility, 0 in daylight and 1 with the sun well under the horizon. */
   starOpacity: number;
 }
 
@@ -80,10 +69,8 @@ export const DEFAULT_DAY_SUN_INTENSITY = 1;
 export const DEFAULT_DAY_AMBIENT_INTENSITY = 0.6;
 export const DEFAULT_DAY_SKY_TOP = "#3fa4f2";
 export const DEFAULT_DAY_SKY_BOTTOM = "#e3f4ff";
-/** Warm-white noon sun used when the game authored no sun tint (the shell's `SUN_COLOR`). */
 export const DEFAULT_SUN_COLOR = "#fff1c9";
 
-/** Twilight's length either side of sunrise and sunset, as a fraction of the day (about 1.4 hours). */
 const TWILIGHT = 0.06;
 
 const SUN_DISTANCE = 200;
@@ -188,13 +175,7 @@ function segmentAt(
   return { from: last, to: last, localT: 0 };
 }
 
-/**
- * Samples the daylight cycle at a point in the day (0 = midnight, 0.25 = dawn, 0.5 = noon, 0.75 = dusk),
- * lerping sun position/intensity, ambient intensity, sky and fog colors through a dawn/day/dusk/night
- * keyframe table, and deriving sun tint, moonlight and star visibility from the sun's elevation.
- * `config` overrides the noon (peak-day) colors and intensities only.
- * @internal
- */
+/** @internal */
 export function daylightStateAt(dayFraction: number, config: DaylightCycleConfig = {}): DaylightState {
   const wrapped = wrapFraction(dayFraction);
   const keyframes = buildKeyframes(config);
@@ -279,7 +260,6 @@ export function bandFogColor(input: { timeOfDay: boolean; cycle: string; band: s
   return input.timeOfDay ? input.cycle : input.band;
 }
 
-/** The grey an overcast sky takes over a colour: its own brightness, dimmed and a touch cool. */
 function overcastGrey(hex: string): string {
   const [r, g, b] = hexToRgb(hex);
   const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) * 0.72;

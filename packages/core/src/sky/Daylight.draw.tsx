@@ -7,7 +7,6 @@ import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/f
 import { createBiomeFogSampler, createBiomeSkySampler } from "@jgengine/core/terrain/terrain";
 import { resolveVolumetricClouds } from "@jgengine/core/sky/volumetricClouds";
 
-
 import { DisplayColorWriter } from "@jgengine/core/render/displayColor.draw";
 import type { DaylightModulation } from "@jgengine/core/lighting/SceneLighting.draw";
 import {
@@ -25,32 +24,21 @@ import { volumetricCloudsDraw } from "./VolumetricClouds.draw";
 import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Props for the gradient sky dome: top and horizon colours, dome radius, gradient shape and an optional sun disc. */
 export interface SkyDomeProps {
   topColor?: string;
   horizonColor?: string;
   radius?: number;
   offset?: number;
   exponent?: number;
-  /** Direction toward the sun; a bright HDR sun disc + warm glow is drawn there (blooms through the post chain). Omit to skip the sun. */
   sunDirection?: readonly [number, number, number];
-  /** Sun disc/glow colour. Default warm white. */
   sunColor?: string;
-  /** Sun disc/glow intensity multiplier. Default 1. */
   sunIntensity?: number;
-  /** Direction toward the moon; a cool disc + halo is drawn there at night. Omit to skip the moon. */
   moonDirection?: readonly [number, number, number];
-  /** Moon disc/halo colour. Default cool moonlight. */
   moonColor?: string;
-  /** Moon disc/halo intensity multiplier. Default 0 (no moon). */
   moonIntensity?: number;
-  /** Star-field opacity: 0 is a day sky, 1 is a clear night. Default 0. */
   starOpacity?: number;
-  /** Horizon haze-band strength: 0 removes the dusty band, ~1 makes it heavy. Default 0.5. */
   hazeStrength?: number;
-  /** Procedural cloud-band opacity: 0 is a clear sky, 1 is heavy overcast. Default 0.35. */
   cloudiness?: number;
-  /** Sun-glow brightness multiplier around the sun disc. Default 1. */
   sunGlowStrength?: number;
   /** Exposes the created shader material so a time-of-day driver can mutate its uniforms per frame without recreating it. */
   materialRef?: MutableRefObject<THREE.ShaderMaterial | null>;
@@ -67,7 +55,7 @@ const MOON_COLOR = "#cfdcf2";
 const HEMI_SKY = "#bfe3ff";
 const HEMI_GROUND = "#4c6b34";
 
-/** Aim the dome's moon disc and dial its brightness; called per frame by the time-of-day drivers. @internal */
+/** @internal */
 export function setSkyMoon(
   material: THREE.ShaderMaterial,
   direction: readonly [number, number, number],
@@ -80,7 +68,6 @@ export function setSkyMoon(
   material.uniforms["uMoonIntensity"]!.value = intensity;
   material.uniforms["uStars"]!.value = starOpacity;
 }
-/** Props for {@link sunLightDraw}: the light's aim, live direction override, intensity and colour. */
 export interface SunLightDrawProps {
   direction: readonly [number, number, number];
   directionRef?: MutableRefObject<readonly [number, number, number]> | undefined;
@@ -91,12 +78,6 @@ export interface SunLightDrawProps {
   castShadow?: boolean;
 }
 
-/**
- * Draw-side form of {@link SunLight}: a directional light whose shadow box leads the camera each
- * frame ({@link sunShadowFocus}), so grounded shadows stay crisp and soft-edged under the player
- * anywhere in a large world. `directionRef` carries the per-frame aim time-of-day drivers write;
- * `lightRef` exposes the light the same way the JSX ref did.
- */
 export function sunLightDraw(getProps: () => SunLightDrawProps): EngineDraw {
   let light: THREE.DirectionalLight | null = null;
   let boundRef: RefObject<THREE.DirectionalLight | null> | undefined;
@@ -154,12 +135,7 @@ export function sunLightDraw(getProps: () => SunLightDrawProps): EngineDraw {
   };
 }
 
-/**
- * Shadow-casting sun whose shadow box leads the camera each frame ({@link sunShadowFocus}), so
- * grounded shadows stay crisp and soft-edged under the player anywhere in a large world. Time-of-day
- * drivers aim it through `directionRef` and retint it through `lightRef`.
- * @internal
- */
+/** @internal */
 export function SunLight(props: SunLightDrawProps) {
   const latest = useRef<SunLightDrawProps>(props);
   latest.current = props;
@@ -194,19 +170,13 @@ export function setSkyDomeColors(material: THREE.ShaderMaterial, top: THREE.Colo
   (display.bottom ??= new THREE.Color()).set(bottom);
 }
 
-/**
- * Scene fog whose color is a display color, converted through the renderer's tone mapping like the
- * dome's horizon so fogged ground meets the sky without a seam. Drivers retint it with
- * {@link setSkyFogColor}.
- * @internal
- */
+/** @internal */
 export function SkyFog({ color, near, far, fogRef }: { color: string; near: number; far: number; fogRef?: RefObject<THREE.Fog | null> }) {
   const latest = useRef({ color, near, far, fogRef });
   latest.current = { color, near, far, fogRef };
   return <EngineDrawMount create={() => skyFogDraw(() => latest.current)} deps={[]} />;
 }
 
-/** Props for {@link skyFogDraw}: the fog's display color and range, plus the ref the old JSX exposed. */
 export interface SkyFogDrawProps {
   color: string;
   near: number;
@@ -262,7 +232,7 @@ export function skyFogDraw(getProps: () => SkyFogDrawProps): EngineDraw {
   };
 }
 
-/** Sets the display color a {@link SkyFog} converts each frame. @internal */
+/** @internal */
 export function setSkyFogColor(fog: THREE.Fog, color: THREE.ColorRepresentation): void {
   const display = fogDisplayColors.get(fog);
   if (display === undefined) fogDisplayColors.set(fog, new THREE.Color(color));
@@ -282,14 +252,9 @@ const fogDisplayColors = new WeakMap<THREE.Fog, THREE.Color>();
  */
 export const SKY_RENDER_ORDER = 0.5;
 
-/** Dome radius when the sky leaves it unset. */
 const DEFAULT_SKY_RADIUS = 260;
 
-/**
- * The dome's radius: the authored one, else the default pulled inside a short camera far plane, which
- * shapes the gradient the way an interior or close-camera game has always shown it.
- * @internal
- */
+/** @internal */
 export function skyDomeRadius(authored: number | undefined, far: number | undefined): number {
   if (authored !== undefined) return authored;
   if (typeof far !== "number" || !Number.isFinite(far) || far <= 0) return DEFAULT_SKY_RADIUS;
@@ -508,57 +473,31 @@ export function skyDomeDraw(getProps: () => SkyDomeProps): EngineDraw {
   };
 }
 
-/**
- * @internal
- */
+/** @internal */
 export function SkyDome(props: SkyDomeProps = {}) {
   const latest = useRef<SkyDomeProps>(props);
   latest.current = props;
   return <EngineDrawMount create={() => skyDomeDraw(() => latest.current)} deps={[]} />;
 }
 
-/** Points the dome's sun glow at `position` and keeps the disc lit; called per frame by the time-of-day drivers. */
 function aimSkySun(material: THREE.ShaderMaterial, position: readonly [number, number, number]): void {
   (material.uniforms["uSunDirection"]!.value as THREE.Vector3).set(position[0], position[1], position[2]).normalize();
 }
 
-/** Props for {@link Sky}: the sky descriptor, the clock that runs it, who owns the lights, and biome bands. */
 export interface SkyProps {
   sky: SkyEnvironmentDescriptor;
-  /**
-   * The world's `SimClock` (or a stub exposing `calendar().dayFraction`). With `sky.timeOfDay` it
-   * drives the sun, moon, dome and fog through the day; absent, the sky holds its preset's look.
-   */
   clock?: { calendar(): { dayFraction: number } };
-  /**
-   * Mount the sky's own hemisphere fill, sun and moon. Default true. `false` keeps only dome and
-   * fog, for a game that authors `PlayableGame.lighting`.
-   */
   lights?: boolean;
-  /**
-   * Authored lights to drive through the day: each frame the sky writes the sun/ambient factors
-   * and sun tint the configured lights read (the authored values are the noon keyframe) and mounts
-   * the moon. Use with `lights={false}` under a time-of-day sky.
-   */
   modulation?: DaylightModulation;
-  /** Terrain `biomeBands`; any band carrying `fog`/`sky` cross-fades fog, dome and light per camera z. */
   bands?: readonly BiomeBand[];
-  /** Fog range authored on the game's `backdrop.fog`, used when the sky descriptor sets none. */
   fogRange?: { near?: number; far?: number };
-  /**
-   * The world's weather (`ctx.environment`): wherever the camera is, its cloud cover (an overcast
-   * profile, or falling rain or snow) greys the dome and fog, dims the sun and thickens the clouds.
-   * Omit for a sky that ignores the weather.
-   */
   weather?: { sample(x: number, z: number): { precipitation: number; cloudCover?: number } };
 }
 
-/** Fog range: the sky's own fields win, then the authored backdrop, then the caller's default. */
 function skyFogRange(sky: SkyEnvironmentDescriptor, fogRange: SkyProps["fogRange"], fallback: { near: number; far: number }) {
   return { near: sky.fog?.near ?? fogRange?.near ?? fallback.near, far: sky.fog?.far ?? fogRange?.far ?? fallback.far };
 }
 
-/** Dome-shape overrides (radius, haze, sun-glow) carried by the sky descriptor, spread onto `SkyDome`; unset fields keep the dome defaults. */
 function skyDomeShape(
   sky: SkyEnvironmentDescriptor,
 ): Pick<SkyDomeProps, "radius" | "hazeStrength" | "sunGlowStrength" | "exponent" | "cloudiness"> {
@@ -579,7 +518,6 @@ interface SkyLightWriters {
   display: THREE.Color;
 }
 
-/** Fill the published {@link SkyLight} from this frame's daylight, as the dome and the lights show it. */
 function writeSkyLight(
   light: SkyLight,
   writers: SkyLightWriters,
@@ -602,7 +540,6 @@ function writeSkyLight(
   light.daylight = Math.min(1, Math.max(0, sunShare, ambientShare));
 }
 
-/** Everything the sky's children and frame read, resolved once per prop-identity sync. */
 interface SkyDerived {
   timeOfDay: boolean;
   banded: boolean;

@@ -16,14 +16,12 @@ export interface CreateStatsOptions {
   now?: () => number;
 }
 
-/** One serializable modifier source in a {@link StatsSnapshot}. */
 interface StatModifierSourceSnapshot<TStat extends string> {
   id: string;
   modifiers: StatModifierSet<TStat>;
   expiresAtMs?: number;
 }
 
-/** Complete plain-data state for a {@link Stats} runtime. */
 export interface StatsSnapshot<TStat extends string> {
   base: Record<TStat, number>;
   sources: StatModifierSourceSnapshot<TStat>[];
@@ -38,9 +36,7 @@ export interface Stats<TStat extends string> {
   get(stat: TStat, nowMs?: number): number;
   pruneExpired(nowMs: number): string[];
   sources(): string[];
-  /** Return a detached JSON-serializable copy of base values and modifier sources. */
   snapshot(): StatsSnapshot<TStat>;
-  /** Replace all runtime state from caller-owned decoded snapshot data. */
   restore(snapshot: StatsSnapshot<TStat>): void;
 }
 
@@ -58,11 +54,7 @@ function cloneModifierSet<TStat extends string>(modifiers: StatModifierSet<TStat
   return copy;
 }
 
-/**
- * A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
- *
- * @capability stat-block base stats with stacking, expiring buffs and debuffs applied on read
- */
+/** @capability stat-block base stats with stacking, expiring buffs and debuffs applied on read */
 export function createStats<TStat extends string>(
   base: Record<TStat, number>,
   options?: CreateStatsOptions,
@@ -70,11 +62,9 @@ export function createStats<TStat extends string>(
   const clock = options?.now;
   let baseValues: Record<TStat, number> = { ...base };
   const sourceEntries = new Map<string, StatSourceEntry<TStat>>();
-  /** Every stat id the graph knows: base values plus whatever a modifier source names. */
   const statIds = new Set<string>(Object.keys(baseValues));
   let sheet: StatSheet = emptySheet();
 
-  /** A sheet over every stat any base value or modifier source names. */
   function emptySheet(): StatSheet {
     const graph: StatGraph = createStatGraph({ inputs: [...statIds].map((id) => ({ id })) });
     const created = graph.create(baseValues);

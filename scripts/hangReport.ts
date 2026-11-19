@@ -25,7 +25,6 @@ let current: StepMark | null = null;
 let pausedMs = 0;
 let pausedSince: number | null = null;
 
-/** Record the step this process is in; cheap enough to call before every phase. */
 export function markStep(label: string, env: NodeJS.ProcessEnv = process.env, now = Date.now()): void {
   current = { label, since: now, pid: process.pid, ...(pausedMs > 0 ? { pausedMs } : {}), ...(pausedSince === null ? {} : { pausedSince }) };
   const path = env[STEP_FILE_ENV];
@@ -57,7 +56,6 @@ export function readStepFile(path: string): StepMark | null {
   }
 }
 
-/** Start waiting in a queue: the wait is marked as the step, and deadlines stop counting until {@link endPause}. */
 export function beginPause(label: string, now = Date.now()): void {
   if (pausedSince === null) pausedSince = now;
   markStep(label, process.env, now);
@@ -101,7 +99,6 @@ export function pausableDeadline(ms: number, readPaused: () => number, onExpire:
   return () => clearTimeout(timer);
 }
 
-/** One line naming the step that hung and how long it sat there. */
 export function describeHang(step: StepMark | null, now = Date.now()): string {
   if (step === null) return "hung before it reported a step";
   return `hung in: ${step.label} (${Math.round((now - step.since) / 1000)}s in that step)`;

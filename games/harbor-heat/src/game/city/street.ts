@@ -25,26 +25,20 @@ const CREW_REACH = 150;
 const CREW_RESPAWN = 45;
 /** Metres around the block's centre the crew loiters. */
 const CREW_SPREAD = 9;
-/** A crew turns on the player once its gang is this angry (or the block is already shooting). */
 export const WAR_MOOD = -20;
-/** Soldiers a push sends when the player is near; dropping all of them wins back more hold than the push took. */
 export const PUSHERS = 3;
-/** Soldiers each crew sends to a clash the player is close enough to see. */
 const CLASH_SIDE = 2;
 /** Seconds a clash's survivors hang around before going home. */
 const CLASH_LIFETIME = 40;
 const CLASH_RANGE = 26;
 const CLASH_SHOT_RANGE = 15;
-/** No cover hides you while a cop is this close: they watched you pull in. */
 const COVER_BLOWN = 28;
 const RESPRAY_PER_STAR = 150;
 const PAYOFF_PER_STAR = 400;
 
-/** What each crew sends onto the street. */
 const SOLDIER: Record<GangId, string> = { carmine: "ganger_dock", riptide: "riptide_soldier" };
 export const GANG_LABEL: Record<string, string> = { carmine: "The Carmines", riptide: "The Riptides" };
 
-/** Which crew a body belongs to, by its catalog id, or null for anyone else. */
 export function gangOf(catalogId: string): GangId | null {
   if (catalogId.startsWith("ganger_") || catalogId === "kingpin_sal") return "carmine";
   if (catalogId.startsWith("riptide_")) return "riptide";
@@ -62,7 +56,6 @@ interface Street {
   standing: Record<string, string[]>;
   /** The crew standing on each block, so a block that changed hands swaps its corner crew. */
   standingFor: Record<string, GangId>;
-  /** Clashes on the street: the block and when the survivors go home. */
   clashes: Record<string, number>;
   nextCheck: number;
 }
@@ -73,7 +66,6 @@ const crewId = (place: string, index: number) => `crew_${place}_${index}`;
 const pusherId = (place: string, gang: GangId, index: number) => `crew_push_${gang}_${place}_${index}`;
 const clashId = (place: string, gang: GangId, index: number) => `clash_${place}_${gang}_${index}`;
 
-/** Crew members on a block: one more after dark, one fewer as the grip slips. */
 function crewSize(ctx: GameContext, place: string): number {
   const world = cityOf(ctx);
   if (!isGang(world.fact(`${place}.owner`))) return 0;
@@ -90,7 +82,6 @@ function spawnAround(ctx: GameContext, id: string, catalogId: string, at: readon
   ctx.scene.entity.spawn(catalogId, { id, position: [x, ctx.world.groundHeightAt(x, z), z], role: "npc" });
 }
 
-/** Put each nearby crew block's soldiers on its corner, and swap them when the block changed hands. */
 export function tickStreetCrews(ctx: GameContext): void {
   const street = streetOf(ctx);
   const now = ctx.time.now();
@@ -126,10 +117,6 @@ export function tickStreetCrews(ctx: GameContext): void {
   }
 }
 
-/**
- * Whether a crew body on the street goes for the player: pushers and raiders always, clash fighters
- * only while their own crew is angry at you, corner crews once it's war or their block is shooting.
- */
 export function crewHostile(ctx: GameContext, entity: { id: string; name: string; position: readonly [number, number, number] }): boolean {
   const corner = entity.id.startsWith("crew_") && !entity.id.startsWith("crew_push_");
   const clash = entity.id.startsWith("clash_");
@@ -142,7 +129,6 @@ export function crewHostile(ctx: GameContext, entity: { id: string; name: string
   return place !== null && world.num(`${place}.fear`) >= 30;
 }
 
-/** World hook: a crew pushes into a block the player holds; if the player is close, the crew turns up. */
 export function crewPush(ctx: GameContext, call: WorldHookCall): void {
   if (call.place === null) return;
   const world = cityOf(ctx);
@@ -161,10 +147,6 @@ export function crewPush(ctx: GameContext, call: WorldHookCall): void {
   ctx.game.feedback.cue("deny", `Crew in ${label}`);
 }
 
-/**
- * World hook: the crews' war landed on a block. Far from the player it is a line on the news; within
- * reach, two soldiers from each side turn up and shoot it out, and whoever drops whom moves the block.
- */
 export function gangClash(ctx: GameContext, call: WorldHookCall): void {
   if (call.place === null) return;
   const street = streetOf(ctx);
@@ -185,7 +167,6 @@ export function gangClash(ctx: GameContext, call: WorldHookCall): void {
   ctx.game.notices.push({ text: `Carmines and Riptides are shooting it out in ${label}.`, tone: "warn" });
 }
 
-/** Clash fighters go for the nearest soldier of the other crew; when nobody is left to fight, they go home. */
 export function tickClashes(ctx: GameContext, dt: number): void {
   const street = streetOf(ctx);
   const now = ctx.time.now();
@@ -257,7 +238,6 @@ function copWithin(ctx: GameContext, at: readonly [number, number, number], metr
   return ctx.scene.entity.list().some((entity) => entity.name.startsWith("cop_") && entity.name !== "car_cop" && Math.hypot(entity.position[0] - at[0], entity.position[2] - at[2]) <= metres);
 }
 
-/** The cover the player is in right now, or null. */
 export function coverAt(ctx: GameContext, safehouseOwned: boolean): Hideout | null {
   const body = ctx.scene.entity.get(streetPlayOf(ctx).drivingVehicleId() ?? ctx.player.userId);
   if (body === null) return null;
@@ -270,7 +250,6 @@ export function coverAt(ctx: GameContext, safehouseOwned: boolean): Hideout | nu
   return null;
 }
 
-/** Tell the pursuit whether the player is in cover this tick; it cools the trail faster and ignores sightings. */
 export function tickCover(ctx: GameContext, safehouseOwned: boolean): void {
   const streetPlay = streetPlayOf(ctx);
   const cover = streetPlay.wanted().stars > 0 ? coverAt(ctx, safehouseOwned) : null;
@@ -332,7 +311,6 @@ export function registerStreet(ctx: GameContext): void {
   });
 }
 
-/** The respray prompt, shown to a driver in Sunset Motors' bay with heat on them. */
 export function streetPrompts(ctx: GameContext): PositionedPrompt[] {
   const bay = motors();
   if (bay === null || streetPlayOf(ctx).drivingVehicleId() === null || streetPlayOf(ctx).wanted().stars === 0) return [];
@@ -349,7 +327,6 @@ export function streetPromptLabel(ctx: GameContext, id: string): string | null {
   return null;
 }
 
-/** What the phone's turf list shows. */
 export function turfViews(ctx: GameContext) {
   const world = cityOf(ctx);
   return TURF.map((id) => {

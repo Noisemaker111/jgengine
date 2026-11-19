@@ -3,28 +3,18 @@ import * as THREE from "three";
 
 import { detectHumanoidRig } from "@jgengine/core/anim/skeletonStandard";
 
-/**
- * The entity whose own body the first-person camera looks out of, or `null` when no body is drawn
- * in first person. The shell provides it; a model instance bound to that entity collapses its head.
- */
 export const FirstPersonBodyContext = createContext<string | null>(null);
 
 let drawFirstPersonBody: string | null = null;
 
-/**
- * The first-person body id for draw code, which has no UI context. The shell
- * writes it next to the provider; `null` outside a first-person rig.
- */
 export function noteFirstPersonBody(instanceId: string | null): void {
   drawFirstPersonBody = instanceId;
 }
 
-/** The entity whose body the first-person camera sits in, for draw code. */
 export function firstPersonBodyInstance(): string | null {
   return drawFirstPersonBody;
 }
 
-/** True when `instanceId` is the body the first-person camera sits in. */
 export function useFirstPersonBody(instanceId: string | undefined): boolean {
   const body = useContext(FirstPersonBodyContext);
   return instanceId !== undefined && body === instanceId;
@@ -46,7 +36,6 @@ export function humanoidHead(scene: THREE.Object3D): THREE.Object3D | null {
   return head === undefined ? null : (scene.getObjectByName(head) ?? null);
 }
 
-/** Folds a head bone away for this frame; the animation writes its pose first, so call it after. */
 export function collapseHead(head: THREE.Object3D): void {
   head.scale.setScalar(COLLAPSED);
 }
@@ -56,11 +45,6 @@ const eyeWorld = new THREE.Vector3();
 const eyeLocal = new THREE.Vector3();
 const headLocal = new THREE.Vector3();
 
-/**
- * Slides `body` across the ground so its folded head sits straight under the `eye` camera, from `rest` (the
- * body's own position before any slide). A walk or run clip leans the torso forward; without this the
- * neck, nape hair and collar swing out in front of an eye-height camera. Call after `collapseHead`.
- */
 export function keepHeadUnderEye(body: THREE.Object3D, head: THREE.Object3D, eye: THREE.Object3D, rest: THREE.Vector3): void {
   body.position.copy(rest);
   const parent = body.parent;

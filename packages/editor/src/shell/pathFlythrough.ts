@@ -6,13 +6,11 @@ import {
   type Waypoint,
 } from "@jgengine/core/nav/pathFollow";
 
-/** A scrubbable scene path — real document polylines with enough points to sample. */
 export interface ScrubbablePath {
   id: string;
   kind: string;
   label: string;
   pointCount: number;
-  /** Total arc length in world units (0 when degenerate). */
   length: number;
 }
 
@@ -28,11 +26,7 @@ export function pathFollowConfigFromEditorPath(path: EditorPath): PathFollowConf
   return { waypoints, speed: 1 };
 }
 
-/**
- * Lists document paths that can be scrubbed, with length metadata for the dock UI.
- *
- * @internal
- */
+/** @internal */
 export function listScrubbablePaths(paths: readonly EditorPath[]): ScrubbablePath[] {
   return paths
     .map((path) => {

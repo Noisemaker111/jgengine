@@ -21,7 +21,6 @@ function folders(root: string, keep: (name: string) => boolean): string[] {
     .sort();
 }
 
-/** Games under games/ that are not reference games, in name order — folders with a game's own entry. */
 export function ignoredGames(root: string, games: readonly string[] = referenceGames(root)): string[] {
   return folders(root, (name) => {
     const dir = join(root, "games", name);

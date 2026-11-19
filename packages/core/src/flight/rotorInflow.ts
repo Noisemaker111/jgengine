@@ -13,39 +13,24 @@ export interface AircraftRotorInflow {
    * measured (default), past `1` the induced flow scales with the strength (a more heavily loaded disc); sane over `0..4`.
    */
   strength?: number;
-  /** Blade count (default `4`, the Bo-105). */
   blades?: number;
-  /** Blade chord, m (default `0.27`). */
   chord?: number;
-  /** Linear twist root to tip, rad (default `−8°`). */
   twist?: number;
-  /** Inner edge of the lifting blade, share of the radius (default `0.2`). */
   rootCutout?: number;
   /** Rated rotor speed, rad/s (default `44.5`, a 218.5 m/s tip on the Bo-105's 4.91 m blade). */
   ratedSpeed?: number;
-  /** Section lift slope, per rad (default `6.0`, NACA 23012). */
   liftSlope?: number;
-  /** Section zero-lift angle, rad (default `−1.2°`, NACA 23012). */
   zeroLift?: number;
-  /** Profile drag polar `d0 + d1·α + d2·α²` at the mean blade angle (default Bailey's `[0.0087, −0.0216, 0.4]`). */
   profileDrag?: readonly [number, number, number];
-  /** Blade pitch at 75% radius at the bottom and top of the collective lever, rad (default `0` and `16°`). */
   collective?: readonly [number, number];
-  /** Prandtl tip loss: the share of the radius that lifts (default `0.97`). */
   tipLoss?: number;
-  /** Induced power factor over ideal momentum theory (default `1.15`). */
   inducedPower?: number;
 }
 
-/** What the rotor does at one condition. */
 export interface RotorInflowLoads {
-  /** Thrust along the shaft, N. */
   thrust: number;
-  /** Aerodynamic torque resisting rotation, N·m. */
   torque: number;
-  /** Induced inflow ratio `v_i/ΩR`, the warm start for the next call. */
   inflow: number;
-  /** Ground effect factor on the induced velocity, `≤ 1`. */
   groundEffect: number;
 }
 

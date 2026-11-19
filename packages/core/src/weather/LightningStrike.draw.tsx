@@ -8,7 +8,6 @@ import { hashString, seededRng } from "@jgengine/core/random/rng";
 import { lightningStrikeEnvelope } from "./weatherMath";
 import type { WeatherVector } from "./weatherUniforms.draw";
 
-/** Props for {@link LightningStrike}: bolt start and end, a key that restarts it, a seed for its shape and visibility. */
 export interface LightningStrikeProps {
   origin: WeatherVector;
   target: WeatherVector;
@@ -22,7 +21,6 @@ export interface LightningStrikeProps {
   jaggedness?: number;
   impactLight?: number;
   renderOrder?: number;
-  /** Supply both fields to replay the strike from authoritative simulation state. */
   timeSeconds?: () => number;
   startedAt?: number;
 }
@@ -106,11 +104,7 @@ function writeLightningGeometry(geometry: THREE.BufferGeometry, segments: Lightn
   geometry.computeBoundingSphere();
 }
 
-/**
- * Draw-side form of {@link LightningStrike}: owns the bolt geometry, additive line material and
- * impact light, rebuilding the bolt when its shape inputs or visibility change and fading it with
- * the strike envelope each frame. @internal
- */
+/** @internal */
 export function lightningStrikeDraw(getProps: () => LightningStrikeProps): EngineDraw {
   const geometry = new THREE.BufferGeometry();
   const material = new THREE.LineBasicMaterial({
@@ -199,7 +193,6 @@ export function lightningStrikeDraw(getProps: () => LightningStrikeProps): Engin
   };
 }
 
-/** A jagged, briefly flashing lightning bolt from `origin` to `target`. */
 export function LightningStrike(props: LightningStrikeProps) {
   const latest = useRef(props);
   latest.current = props;

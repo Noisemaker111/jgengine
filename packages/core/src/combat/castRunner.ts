@@ -21,11 +21,8 @@ export interface CastBarSnapshot {
   remainingMs: number;
   /** Fill fraction in `[0, 1]` for the cast bar. */
   fraction: number;
-  /** Movement budget this cast was begun with; `Infinity` for a cast that tolerates travel. */
   moveTolerance: number;
-  /** The caster's noise floor this cast was begun with. */
   moveDeadzone: number;
-  /** Travel already spent against `moveTolerance` (sub-deadzone jitter excluded). */
   movedTotal: number;
 }
 
@@ -35,30 +32,12 @@ export type CastEvent =
   | { kind: "completed"; abilityId: string }
   | { kind: "interrupted"; abilityId: string; reason: CastInterruptReason };
 
-/**
- * Per-entity cast-time state machine — begin, tick with game-time `dt` plus how far the caster
- * moved, and act on the returned event. The runner owns timing and move-interruption only; the
- * caller spends resources, starts cooldowns, and executes the ability when `completed` fires
- * (compose with `abilityKit` — check readiness before `begin`, `cast` on completion).
- */
 export interface CastRunner {
-  /** Start a cast; `false` while one is already in flight (interrupt or let it finish first). */
   begin(config: CastConfig): boolean;
   casting(): boolean;
-  /** The in-flight cast's timing and remaining move budget, or `null` when idle. */
   state(): CastBarSnapshot | null;
-  /**
-   * Replace the in-flight cast with a snapshot from {@link state} — resuming a saved cast with the
-   * movement already spent against its budget, or clearing it with `null`. The derived `fraction`
-   * and `remainingMs` are recomputed; everything else is kept as saved.
-   */
   restore(next: CastBarSnapshot | null): void;
-  /** Interrupt the in-flight cast now; returns the interruption event, or `null` when idle. */
   interrupt(reason?: CastInterruptReason): CastEvent | null;
-  /**
-   * Advance by `dtSeconds`; `movedDistance` accumulates toward the config's `moveTolerance`, except
-   * for per-tick movement at or below `moveDeadzone`, which is treated as jitter and ignored.
-   */
   tick(dtSeconds: number, movedDistance?: number): CastEvent | null;
 }
 
@@ -73,11 +52,7 @@ interface ActiveCast {
   movedTotal: number;
 }
 
-/**
- * Run a channeled cast/charge timer that movement or damage can interrupt — the spell cast bar.
- *
- * @capability cast-bar run a channeled cast timer that movement or damage can interrupt
- */
+/** @capability cast-bar run a channeled cast timer that movement or damage can interrupt */
 export function createCastRunner(): CastRunner {
   let active: ActiveCast | null = null;
 

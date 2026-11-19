@@ -76,7 +76,6 @@ function inspectorView(household: HouseholdState, objects: readonly SceneObject[
   };
 }
 
-/** A being's care card: mood, traits, needs, post and mastery, direct care, rhythm, shift and bonds. */
 export function Inspector() {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -129,7 +128,6 @@ export function Inspector() {
   </>;
 }
 
-/** The furnishings catalogue: pick one, then tap open floor; placed pieces can be sold back. */
 export function BuildPalette({ onChoose }: { onChoose: () => void }) {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -159,7 +157,6 @@ function Line({ label, value }: { label: string; value: Live<string> }) {
   return <Row justify="between"><Text size={14}>{label}</Text><Text size={14} weight={700} text={value} /></Row>;
 }
 
-/** The pantry and bills drawer: today's books, rations and repairs, with the ticking credits written live. */
 export function PantryLedger({ command }: { command: Command }) {
   const ctx = useGameContext();
   const objects = useSceneObjects();

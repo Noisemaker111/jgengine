@@ -16,7 +16,6 @@ export interface VendorHostingOpportunity {
   moneyPerToken: number;
   tokensPerSecond: number;
   tokensPerToken: number;
-  /** Default host share at 0 reputation; actual share scales with reputation. */
   baseRevenueShareHost: number;
 }
 

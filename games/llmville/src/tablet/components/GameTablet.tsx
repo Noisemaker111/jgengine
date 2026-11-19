@@ -41,13 +41,10 @@ interface GameTabletProps {
   goalSelection?: LabGoalSelection;
 }
 
-/** Each app tile's colour, in the order of `TABLET_APPS`. */
-/** The app's line icon as glyph artwork (its stroke path in a 24-unit box). */
 function appArtwork(app: TabletAppShortcut): string {
   return `<path d="${app.icon}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
 
-/** A home-screen app: a coloured rounded tile with its icon and name; the tutorial can point at it. */
 function AppTile({ app, allowed, highlighted, onOpen }: { app: TabletAppShortcut; allowed: boolean; highlighted: boolean; onOpen: () => void }) {
   return <RuneAction label={`Open ${app.label}`} disabled={!allowed} run={onOpen} items="center" gap={6} padding={4} radius={16} hover="#ffffff0d" press="#00000033" opacity={allowed ? 1 : 0.35}>
     {highlighted ? <TutorialArrow /> : null}
@@ -59,7 +56,6 @@ function AppTile({ app, allowed, highlighted, onOpen }: { app: TabletAppShortcut
   </RuneAction>;
 }
 
-/** The clock and date from the game's calendar, or the phone-ad time before one exists. */
 function StatusBar({ world }: { world: ReadyWorldViewModel }) {
   return <Row justify="between" width={FULL} padding={[6, 18, 6, 18]}>
     <Row gap={8}>

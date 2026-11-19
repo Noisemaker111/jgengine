@@ -6,7 +6,6 @@ export interface CellGrid<T> {
   readonly cells: readonly (T | null)[];
 }
 
-/** A straight line of matching cells found by {@link findRuns}. */
 export interface CellRun<T> {
   readonly value: T;
   readonly cells: readonly { readonly x: number; readonly y: number }[];
@@ -22,18 +21,15 @@ export function createCellGrid<T>(width: number, height: number): CellGrid<T> {
   return { width, height, cells: new Array<T | null>(width * height).fill(null) };
 }
 
-/** Whether `(x, y)` lies on the board. */
 export function inGridBounds<T>(grid: CellGrid<T>, x: number, y: number): boolean {
   return x >= 0 && x < grid.width && y >= 0 && y < grid.height;
 }
 
-/** The value at `(x, y)`, or `null` when empty or off the board. */
 export function cellAt<T>(grid: CellGrid<T>, x: number, y: number): T | null {
   if (!inGridBounds(grid, x, y)) return null;
   return grid.cells[y * grid.width + x] ?? null;
 }
 
-/** A copy with `(x, y)` set to `value`; off-board writes return the grid unchanged. */
 export function withCell<T>(grid: CellGrid<T>, x: number, y: number, value: T | null): CellGrid<T> {
   if (!inGridBounds(grid, x, y)) return grid;
   const cells = grid.cells.slice();
@@ -41,7 +37,6 @@ export function withCell<T>(grid: CellGrid<T>, x: number, y: number, value: T | 
   return { width: grid.width, height: grid.height, cells };
 }
 
-/** A copy with every in-bounds entry written; one allocation for a whole piece or stamp. */
 export function withCells<T>(
   grid: CellGrid<T>,
   entries: readonly { readonly x: number; readonly y: number; readonly value: T | null }[],
@@ -53,7 +48,6 @@ export function withCells<T>(
   return { width: grid.width, height: grid.height, cells };
 }
 
-/** Indices of rows with no empty cell, top to bottom. */
 export function fullRows<T>(grid: CellGrid<T>): number[] {
   const rows: number[] = [];
   for (let y = 0; y < grid.height; y += 1) {
@@ -69,7 +63,6 @@ export function fullRows<T>(grid: CellGrid<T>): number[] {
   return rows;
 }
 
-/** A copy with `rows` removed and the rows above shifted down, refilling empty rows at the top. */
 export function clearRows<T>(grid: CellGrid<T>, rows: readonly number[]): CellGrid<T> {
   const removed = new Set(rows);
   const kept: (T | null)[][] = [];
@@ -84,7 +77,6 @@ export function clearRows<T>(grid: CellGrid<T>, rows: readonly number[]): CellGr
   return { width: grid.width, height: grid.height, cells };
 }
 
-/** A copy where every column's cells fall to the bottom, keeping their order. */
 export function collapseColumns<T>(grid: CellGrid<T>): CellGrid<T> {
   const cells = grid.cells.slice() as (T | null)[];
   for (let x = 0; x < grid.width; x += 1) {
@@ -123,7 +115,6 @@ function scanRuns<T>(
   return runs;
 }
 
-/** Horizontal and vertical runs of at least `minLength` cells whose values `matches` (default `===`). */
 export function findRuns<T>(
   grid: CellGrid<T>,
   minLength: number,

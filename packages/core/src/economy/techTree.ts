@@ -46,11 +46,9 @@ export function grantTech(state: TechState, node: TechNodeDef): string[] {
 }
 
 /**
- * Research/tech nodes gated by prerequisites that unlock recipes and capabilities as they are granted.
- *
  * @capability tech-tree research nodes with prerequisites that unlock recipes
-  * @internal
-  */
+ * @internal
+ */
 export function availableTech(defs: readonly TechNodeDef[], state: TechState): TechNodeDef[] {
   return defs.filter((node) => !hasUnlock(state, node.id) && techPrerequisitesMet(state, node));
 }

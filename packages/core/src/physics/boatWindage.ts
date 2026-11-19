@@ -18,22 +18,14 @@ export const AIR_DENSITY = 1.225;
 export interface BoatWind {
   field: WindField;
   strength?: number;
-  /** Frontal area above the water, m². Default `beam · 0.5 · beam`. */
   frontalArea?: number;
-  /** Lateral area above the water, m². Default `length · 0.5 · beam`. */
   lateralArea?: number;
-  /** Drag coefficient on the frontal area (head wind). Default 0.6. */
   frontalCoefficient?: number;
-  /** Drag coefficient on the lateral area (beam wind). Default 0.9. */
   lateralCoefficient?: number;
-  /** Height the wind is read at, m. Default 10 (where windage coefficients are referenced). */
   heightM?: number;
 }
 
-/**
- * Windage force, N, in world x/z on a hull at `x, z` heading `heading` moving at `vx, vz`.
- * @capability boat-windage push a hull with the shared wind field on its above-water areas, its own 0-upward strength dial
- */
+/** @capability boat-windage push a hull with the shared wind field on its above-water areas, its own 0-upward strength dial */
 export function boatWindageForce(wind: BoatWind, hull: { length: number; beam: number }, x: number, z: number, heading: number, vx: number, vz: number, time: number): [number, number] {
   const strength = wind.strength ?? 1;
   if (!Number.isFinite(strength) || strength < 0) throw new Error(`boat wind strength must be finite and >= 0 (got ${strength})`);

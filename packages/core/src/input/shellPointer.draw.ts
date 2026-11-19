@@ -9,14 +9,13 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import type { PointerService } from "./pointerService.draw";
 
-/** Minimal playable slice for context-menu verb lookup. @internal */
+/** @internal */
 export type PointerPlayable = {
   content: {
     entityById?: (name: string) => { verbs?: ContextMenu["verbs"] } | null | undefined;
   };
 };
 
-/** How far a cursor aim reaches when the cursor is over open sky. */
 const CURSOR_AIM_REACH_M = 250;
 
 /**
@@ -52,7 +51,6 @@ export function pointerAimFor(ctx: GameContext, service: PointerService): Aim | 
   return aimToPoint(from, point);
 }
 
-/** Camera rigs that show a free cursor over a world seen from outside the shooter. */
 const CURSOR_AIM_RIGS: ReadonlySet<string> = new Set(["chase", "orbit", "topDown", "rts", "sideScroll"]);
 
 /**
@@ -67,7 +65,7 @@ export function resolvePointerAim(pointerAim: boolean | undefined, rig: string |
   return CURSOR_AIM_RIGS.has(rig ?? "orbit");
 }
 
-/** Context menu for an entity/object pointer hit, or null for empty ground. @internal */
+/** @internal */
 export function pointerContextMenu(
   ctx: GameContext,
   playable: PointerPlayable,

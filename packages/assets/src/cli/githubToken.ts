@@ -27,7 +27,6 @@ export function resolveGithubToken(env: NodeJS.ProcessEnv = process.env, readGh:
   return readGh() ?? undefined;
 }
 
-/** True when `url` goes to a host that should carry the token. */
 export function wantsGithubToken(url: string): boolean {
   try {
     const parsed = new URL(url);

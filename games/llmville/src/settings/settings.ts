@@ -8,7 +8,6 @@ import { formatBindableKeyLabel } from "./keybinds";
 
 export interface HomeRouteSearch {
   settings?: boolean | undefined;
-  /** The settings tab open on the main menu. */
   tab?: string | undefined;
 }
 
@@ -29,7 +28,6 @@ function appSettingsStore(): AppSettingsStore {
   return appSettings;
 }
 
-/** The engine settings store LLMville's settings live in, for the main menu's settings blocks. */
 export function appEngineSettings(): SettingsStore {
   return appSettingsStore().engine;
 }

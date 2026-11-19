@@ -28,7 +28,6 @@ export type ModelCardActionProps = { model: string } & (
 
 const word = (text: string, color: string) => <Text family={DISPLAY} size={14} weight={800} color={color}>{text.toUpperCase()}</Text>;
 
-/** A static state chip (scraping, locked, serving) in the same footprint as the buttons. */
 function Chip({ text, color, dot = false }: { text: string; color: string; dot?: boolean }) {
   return <Row minWidth={100} minHeight={36} padding={[6, 12, 6, 12]} radius={12} justify="center" gap={6} border={{ width: 1, color: `${color}80` }}>
     {dot ? <RuneView width={8} height={8} radius={4} fill={color} /> : null}

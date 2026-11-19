@@ -1,27 +1,17 @@
-/**
- * The park's calendar and books as content: a season of eight months, March to October, eight days a
- * month; the lines the monthly report adds up; and the marketing campaigns the office can buy.
- * The world declaration (`park.ts`) turns each line into `month.<id>` (this month so far) and
- * `report.<id>` (the last month closed), and each campaign into an action in the `ads` queue.
- */
-
 import { DAY_LENGTH } from "./catalog";
 
 /** Days in a park month. A day is `DAY_LENGTH` seconds, so a month is 20 minutes at 1x. */
 export const MONTH_DAYS = 8;
 
-/** The season: the park opens in March and closes its year after October. */
 const MONTH_NAMES: readonly string[] = ["March", "April", "May", "June", "July", "August", "September", "October"];
 
 export interface ParkDate {
   year: number;
-  /** Months since the park opened, from 0. */
   monthIndex: number;
   month: string;
   dayOfMonth: number;
 }
 
-/** The calendar date of a park day (day 1 is 1 March, Year 1). */
 export function parkDate(day: number): ParkDate {
   const d = Math.max(0, day - 1);
   const monthIndex = Math.floor(d / MONTH_DAYS);
@@ -33,7 +23,6 @@ export function parkDate(day: number): ParkDate {
   };
 }
 
-/** "3 May": a park day as the HUD shows it. */
 export function parkDateLabel(day: number): string {
   const date = parkDate(day);
   return `${date.dayOfMonth} ${date.month}${date.year > 1 ? ` Y${date.year}` : ""}`;
@@ -46,7 +35,6 @@ export function parkDuration(seconds: number): string {
   return `${days} day${days === 1 ? "" : "s"}`;
 }
 
-/** "May, Year 1": how a month reads on the HUD and in a scenario's deadline. */
 export function monthLabel(monthIndex: number): string {
   return `${MONTH_NAMES[monthIndex % MONTH_NAMES.length] ?? "March"}, Year ${Math.floor(monthIndex / MONTH_NAMES.length) + 1}`;
 }
@@ -54,11 +42,9 @@ export function monthLabel(monthIndex: number): string {
 export interface BookLine {
   id: string;
   label: string;
-  /** Money in (true) or out (false). */
   income: boolean;
 }
 
-/** What the monthly report adds up. Building and land is what is left over: the till's change less every line here. */
 export const BOOK_LINES: readonly BookLine[] = [
   { id: "gate", label: "Gate tickets", income: true },
   { id: "rides", label: "Ride tickets", income: true },
@@ -79,9 +65,7 @@ export interface Campaign {
   label: string;
   blurb: string;
   cost: number;
-  /** How long it runs, in park days. */
   days: number;
-  /** How much it multiplies the guests heading for the gate while it runs (campaigns add up). */
   boost: number;
 }
 

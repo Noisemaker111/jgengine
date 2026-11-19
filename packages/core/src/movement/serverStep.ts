@@ -3,7 +3,6 @@ import type { InputFrame } from "../runtime/inputSnapshot";
 import { groundFieldFor } from "../terrain/terrain";
 import { stepPlayerMovement, type PlayerMovementTuning } from "./playerMovement";
 
-/** Advance one authoritative player's movement using the same controller as the shell. */
 export function serverStep(
   ctx: GameContext,
   userId: string,

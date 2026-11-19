@@ -9,28 +9,21 @@
  * generator's default profile, so a new street style is judged as soon as it maps to one.
  */
 
-/** A source a band cites. */
 export interface ReferenceCitation {
   readonly id: string;
   readonly text: string;
   readonly url?: string;
 }
 
-/** One acceptable range for one metric. Either bound may be open. */
 export interface ReferenceBand {
-  /** Metric key, dotted for nested fields (`blocks.medianHa`). */
   readonly metric: string;
   readonly min?: number;
   readonly max?: number;
-  /** `reference`: a measured real-world range. `target`: a generator acceptance bar. */
   readonly kind: "reference" | "target";
-  /** What the range describes, in a few words. */
   readonly note: string;
-  /** {@link ReferenceCitation} id. */
   readonly cite: string;
 }
 
-/** The generator families the bands cover. */
 export type ReferenceGenerator = "streets" | "city" | "circuit";
 
 export interface ReferenceProfile {
@@ -104,7 +97,6 @@ const target = (metric: string, min: number | undefined, max: number | undefined
   cite: "genaudit2026",
 });
 
-/** Bands every street net shares, whatever its style. */
 const STREET_COMMON: readonly ReferenceBand[] = [
   ref("detourRatio", 1.1, 1.3, "network over straight-line distance", "levinson2009"),
   ref("arterialShare", 0.1, 0.25, "urban arterial share of length", "fhwa2013"),
@@ -232,21 +224,18 @@ export const GENERATOR_REFERENCE_PROFILES: readonly ReferenceProfile[] = [
   },
 ];
 
-/** Generator → preset id → profile id. A preset missing here is judged by the generator's `*` entry. */
 export const GENERATOR_PRESET_PROFILES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   streets: { "*": "grid", net: "grid", grid: "grid", organic: "organic", radial: "organic", suburban: "suburban", rural: "rural", circuit: "loop" },
   city: { "*": "urban", default: "urban", manhattan: "dense-core", metropolis: "urban", losangeles: "sprawl", beverlyhills: "suburban-city", ruralohio: "rural-city", rally: "roads-only", circuit: "roads-only" },
   circuit: { "*": "circuit", circuit: "circuit", "street-race": "street-race", city: "street-race" },
 };
 
-/** The profile a generator's preset is judged against. */
 export function referenceProfileFor(generator: ReferenceGenerator, preset: string): ReferenceProfile | undefined {
   const map = GENERATOR_PRESET_PROFILES[generator] ?? {};
   const id = map[preset] ?? map["*"];
   return GENERATOR_REFERENCE_PROFILES.find((profile) => profile.id === id && profile.generator === generator);
 }
 
-/** Read a dotted metric path off a metrics object; `undefined` when absent or not a number. */
 export function metricValue(metrics: unknown, path: string): number | undefined {
   let cur: unknown = metrics;
   for (const key of path.split(".")) {
@@ -278,7 +267,6 @@ export function judgeBands(metrics: unknown, bands: readonly ReferenceBand[]): B
   });
 }
 
-/** `"10–25"`, `"≥ 5"`, `"≤ 0.05"` for a band's range. */
 export function formatBand(band: ReferenceBand): string {
   if (band.min !== undefined && band.max !== undefined) return `${band.min}–${band.max}`;
   if (band.min !== undefined) return `≥ ${band.min}`;

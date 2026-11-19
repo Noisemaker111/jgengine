@@ -29,11 +29,9 @@ export type BookChargeResult =
   | { status: "rejected"; reason: "insufficient-funds" };
 
 /**
- * Shared or group currency pools that track each member's contribution to a common balance.
- *
  * @capability shared-wallet shared/group currency pools tracking per-member contributions
-  * @internal
-  */
+ * @internal
+ */
 export function createWalletBook(): WalletBook {
   return { scopes: {}, contributions: {} };
 }

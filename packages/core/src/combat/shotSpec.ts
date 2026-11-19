@@ -11,25 +11,20 @@ export type ShotVec3 = readonly [number, number, number];
 /** Standard gravity used to scale `ShotBody.gravity`, m/s². */
 export const SHOT_GRAVITY = 9.8;
 
-/** Furthest a shot resolves when the delivery names no range, m. */
 export const DEFAULT_SHOT_RANGE = 100;
 
 /** Launch speed of a body that names none, m/s. */
 export const DEFAULT_SHOT_SPEED = 15;
 
-/** Hit-sphere radius of a body that names none, m. */
 export const DEFAULT_SHOT_RADIUS = 0.5;
 
-/** Most extra hits a shot may pass through when it names no penetration. */
 export const DEFAULT_SHOT_PENETRATION = 0;
 
-/** Damage multiplier left at the end of falloff when a shot names no end scale. */
 export const DEFAULT_FALLOFF_END_SCALE = 0.5;
 
 /** An instant trace: the shot resolves on the tick it is fired and never travels. */
 export interface ShotTrace {
   kind: "trace";
-  /** Furthest the trace resolves, m (default {@link DEFAULT_SHOT_RANGE}). */
   range?: number;
 }
 
@@ -39,17 +34,13 @@ export interface ShotTrace {
  */
 export interface ShotBody {
   kind: "body";
-  /** Hard distance cap, m, on top of `lifetime` (default {@link DEFAULT_SHOT_RANGE}). */
   range?: number;
   /** Launch speed, m/s (default {@link DEFAULT_SHOT_SPEED}). */
   speed?: number;
-  /** Downward acceleration as a multiple of {@link SHOT_GRAVITY} (default `0`: flies straight). */
   gravity?: number;
-  /** Velocity decay, 1/s (default `0`: keeps its speed). */
   drag?: number;
   /** Seconds the body stays alive before it expires (default `range / speed`). */
   lifetime?: number;
-  /** Radius of the hit sphere, m (default {@link DEFAULT_SHOT_RADIUS}). */
   radius?: number;
   /**
    * `"impact"` detonates on the first contact (default). A number detonates that many seconds into
@@ -60,12 +51,9 @@ export interface ShotBody {
   homing?: number;
 }
 
-/** How the shot reaches its target. */
 export type ShotDelivery = ShotTrace | ShotBody;
 
-/** Linear damage falloff between two distances. */
 export interface ShotFalloff {
-  /** Distance, m, where damage starts dropping. */
   start: number;
   /** Distance, m, where it reaches `endScale`; clamped beyond. */
   end: number;
@@ -73,27 +61,19 @@ export interface ShotFalloff {
   endScale: number;
 }
 
-/** Extra targets a hit passes through. */
 export interface ShotPenetration {
   /** Targets after the first that the shot may also hit (default `0`). */
   count: number;
-  /** Whether those later hits keep full damage (default `true`); `false` leaves them undamaged. */
   keepDamage?: boolean;
 }
 
-/** Area damage around the contact point. */
 export interface ShotSplash {
-  /** Radius, m. */
   radius: number;
-  /** Damage scale across the radius (default `"linear"`). */
   falloff?: "linear" | "none";
-  /** Multiplier on the direct hit's damage before falloff (default `1`). */
   damageScale?: number;
 }
 
-/** Bounces off the first surface contacted. */
 export interface ShotRicochet {
-  /** Bounces the shot resolves before it stops (default `0`). */
   count: number;
   /** Widest incoming angle, degrees, that still bounces (default `45`). */
   angleDeg?: number;
@@ -101,27 +81,17 @@ export interface ShotRicochet {
   damageScale?: number;
 }
 
-/** One damage channel a shot applies on contact. */
 export interface ShotDamage {
-  /** Damage type id in the caller's damage table. */
   type: string;
-  /** Damage before hit zone, table, armor, falloff and penetration scale. */
   base: number;
-  /** Status ids the hit tries to apply; the damage runtime owns chance and effect. */
   statuses?: readonly string[];
 }
 
-/** What a shot does on contact: damage, falloff, penetration, splash, ricochet, statuses. */
 export interface ShotContact {
-  /** Direct damage. Omit for a shot that only splashes. */
   damage?: ShotDamage;
-  /** Damage over distance, on both deliveries. Omit for no falloff. */
   falloff?: ShotFalloff;
-  /** Extra targets the shot passes through. */
   penetration?: ShotPenetration;
-  /** Area damage around the contact point. */
   splash?: ShotSplash;
-  /** Bounces off the first surface contacted. */
   ricochet?: ShotRicochet;
 }
 
@@ -136,13 +106,9 @@ export interface ShotSpec {
 
 /** A spec with every default filled in. Read `mode` and the branch it names, never the raw spec. */
 export interface ResolvedShotSpec {
-  /** The one decision a firing path makes: resolve now, or simulate a body over time. */
   mode: "trace" | "body";
-  /** Furthest the shot resolves, m. */
   range: number;
-  /** Present when `mode` is `"trace"`. */
   trace: { range: number } | null;
-  /** Present when `mode` is `"body"`. */
   body: {
     speed: number;
     gravity: number;
@@ -161,11 +127,8 @@ export interface ResolvedShotSpec {
   };
 }
 
-/** What one contact does: whether the shot still carries damage, at what scale, and whether it goes on. */
 export interface ShotHitOutcome {
-  /** `false` once every penetration slot is spent; the shot stops on this target. */
   applies: boolean;
-  /** Multiplier on the damage base for this target. */
   scale: number;
 }
 
@@ -256,7 +219,6 @@ export function shotFuseSeconds(shot: ResolvedShotSpec): number | null {
   return shot.body === null || shot.body.fuse === "impact" ? null : shot.body.fuse;
 }
 
-/** Damage multiplier from falloff at `distance`; `1` with no falloff. */
 export function shotFalloffAt(shot: ResolvedShotSpec, distance: number): number {
   const falloff = shot.contact.falloff;
   if (falloff === null || distance <= falloff.start) return 1;
@@ -265,10 +227,6 @@ export function shotFalloffAt(shot: ResolvedShotSpec, distance: number): number 
   return 1 + (falloff.endScale - 1) * t;
 }
 
-/**
- * What a contact at `distance` does to the `hitIndex`-th target it meets, counting the first as `0`.
- * A trace or body stops once its penetration slots are spent, so penetration is a number, not a branch.
- */
 export function shotHitOutcome(shot: ResolvedShotSpec, distance: number, hitIndex: number): ShotHitOutcome {
   const index = Math.max(0, Math.floor(hitIndex));
   if (index > shot.contact.penetration.count) return { applies: false, scale: 0 };
@@ -276,18 +234,15 @@ export function shotHitOutcome(shot: ResolvedShotSpec, distance: number, hitInde
   return { applies: true, scale: shotFalloffAt(shot, distance) * survived };
 }
 
-/** Straight-line flight of a body, for a caller that only needs where it starts and how fast. */
 export interface ShotLaunch {
   origin: ShotVec3;
   velocity: ShotVec3;
   gravity: number;
 }
 
-/** Where a body lands and how long it took, in the same numbers the runtime simulates. */
 export interface ShotArc extends ShotLaunch {
   /** Seconds of flight, capped by the fuse and ended early by the ground. */
   flightTime: number;
-  /** Highest point above the launch, m. */
   apex: number;
   /** Contact point; `y` is clamped to the ground plane. */
   landing: [number, number, number];
@@ -323,7 +278,6 @@ export function shotArc(shot: ResolvedShotSpec, origin: ShotVec3, direction: Sho
   };
 }
 
-/** Reads a numeric stat by name; the shape every item registry already exposes. */
 export type ShotStatReader = (stat: string) => number | null;
 
 /**

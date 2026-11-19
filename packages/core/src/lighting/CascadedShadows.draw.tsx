@@ -87,10 +87,8 @@ export function snapCascadeCenter(
   return localCentre.applyMatrix4(orientMatrix);
 }
 
-/** Per-frame cascade refresh bookkeeping: the centre each map was last rendered with. */
 export interface CascadeRefreshState {
   centres: THREE.Vector3[];
-  /** Depth passes requested since the state was created. */
   refreshes: number;
   /** Leading cascades that refresh every frame whatever the snap says: a moving caster must not freeze. */
   floor: number;
@@ -383,10 +381,9 @@ function setupMaterial(material: THREE.Material, csm: CsmMaterialSetup): void {
   material.needsUpdate = true;
 }
 
-/** Patch streamed meshes on attachment and material replacement without scanning the world each frame. @internal */
+/** @internal */
 export function bindCsmMaterials(scene: THREE.Scene, csm: CsmMaterialSetup): () => void {
   const nodes = new Map<THREE.Object3D, () => void>();
-  /** Per mesh: patch again if its material was swapped since the last look. */
   const swapChecks = new Set<() => void>();
   const materials = new Map<THREE.Material, () => void>();
   const patch = (material: THREE.Material) => {

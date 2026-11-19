@@ -1,10 +1,8 @@
 import type { ThresholdBoundary } from "../threshold/thresholds";
 import { seededRng } from "../random/rng";
 
-/** One discrete pick move: how far the pick drives into the lock this step. */
 export type LockAction = "hardSet" | "set" | "steady" | "ease" | "drop";
 
-/** Vertical row delta applied to the pick for each action. Row 0 is the shallow/top row. */
 export const LOCK_ACTION_DELTA: Readonly<Record<LockAction, number>> = {
   hardSet: -2,
   set: -1,
@@ -13,10 +11,8 @@ export const LOCK_ACTION_DELTA: Readonly<Record<LockAction, number>> = {
   drop: 2,
 };
 
-/** The five pick actions, in display order (shallow → deep). */
 export const LOCK_ACTIONS: readonly LockAction[] = ["hardSet", "set", "steady", "ease", "drop"];
 
-/** Difficulty dials for one lock, a Ladder step (`at` is its place in the difficulty order): board size, forgiveness band, gates, fog window, traps. */
 export interface LockTierSpec extends ThresholdBoundary {
   cols: number;
   rows: number;
@@ -27,7 +23,6 @@ export interface LockTierSpec extends ThresholdBoundary {
   trapCount?: number;
 }
 
-/** A generated lock board. `open[col]` holds every enterable row in that column. */
 export interface LockSpec {
   seed: string | number;
   tier: LockTierSpec;
@@ -42,11 +37,8 @@ export interface LockSpec {
  * do not and should cost a life. */
 export type LockStepResult = "advanced" | "slip" | "bind" | "trap" | "success";
 
-/** What a revealed cell renders as: a plain open notch, an exact tumbler gate, the bolt seat
- * (win condition), or a ward-trap that looks open but jams on contact. */
 export type LockCellKind = "open" | "gate" | "seat" | "trap";
 
-/** One cell inside the fogged {@link visibleCells} window: its board position and kind. */
 export interface LockCell {
   col: number;
   row: number;
@@ -140,7 +132,6 @@ export function generateLock(seed: string | number, tier: LockTierSpec): LockSpe
   return { seed, tier, open, gates, traps, startRow: path[0]!, seatRow: path[cols - 1]! };
 }
 
-/** Return a concrete row-per-column solution, or null if the board is unsolvable. */
 export function solveLockPath(spec: LockSpec): number[] | null {
   const deltas = legalDeltas(spec.tier);
   const cols = spec.open.length;
@@ -172,7 +163,6 @@ export function solveLockPath(spec: LockSpec): number[] | null {
   return path;
 }
 
-/** Whether the board has a path from the start row to the bolt seat at all. */
 export function solveLock(spec: LockSpec): boolean {
   return solveLockPath(spec) !== null;
 }

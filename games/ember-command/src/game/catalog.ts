@@ -1,13 +1,5 @@
 import type { Faction } from "./tuning";
 
-/**
- * The Ember Command roster. Positions are authored in `editor.scene.json`; this catalog holds the
- * per-type stats that drive both the engine entity entry (health/speed/scale/role) and the RTS AI
- * (damage/reach/cooldown/aggro) — the combat numbers no `entities` editor schema can express. One
- * source of truth: `content.ts` and `editorCatalogs.ts` both read it, the AI reads it, the models
- * plan keys off its ids.
- */
-
 export type CombatantKind = "unit" | "building";
 
 export interface CombatantDef {
@@ -15,51 +7,36 @@ export interface CombatantDef {
   label: string;
   faction: Faction;
   kind: CombatantKind;
-  /** Engine role — cosmetic here; hostility is decided by `faction`, not role. */
   role: "npc" | "enemy";
   maxHealth: number;
-  /** 0 for buildings. */
   walkSpeed: number;
   scale: number;
-  /** Melee damage per swing (0 for buildings — keeps are passive in this slice). */
   damage: number;
-  /** Reach at which a unit stops to swing. */
   attackRange: number;
   /** Seconds between swings. */
   attackCooldown: number;
-  /** Auto-acquire hostiles within this radius when idle/guarding or attack-moving. */
   aggroRadius: number;
-  /** Gold awarded to the player when this dies (enemy units only). */
   bounty: number;
-  /** Supply (food) this unit consumes; buildings cost 0. */
   food: number;
-  /** True for the Peasant — can harvest resource nodes and build. */
   worker?: boolean;
-  /** Workers drop their haul here (the keep, and any Barracks raised nearer the fields). */
   depot?: boolean;
-  /** What this unit goes for first when several hostiles are in reach: harvesters or structures. */
   prefers?: "worker" | "building";
   /** What its blows are, as a row of the matchup table (`matchups.ts`): `"strike"` unless it has a matchup. */
   damageType: string;
   /** The class it presents to the matchup table: `"unit"` or `"building"` unless the roster says otherwise. */
   resistance: string;
-  /** Blows struck from inside this distance land in the matchup table's `crowded` band (a rifle with no screen). */
   crowdedWithin?: number;
 }
 
-/** What a price is paid in. */
 export type Resource = "gold" | "lumber";
 
-/** A price in each resource it takes; a resource it does not take is absent. */
 export type Cost = Readonly<Partial<Record<Resource, number>>>;
 
-/** What a producing building can train, its resource cost, and how long it takes. */
 export interface TrainableDef {
   cost: Cost;
   trainSeconds: number;
 }
 
-/** A table looked up by an id that arrives as text (a command payload, a scene entry). */
 function byId<V>(table: Readonly<Record<string, V>>): (id: string) => V | undefined {
   const entries = new Map(Object.entries(table));
   return (id) => entries.get(id);
@@ -138,19 +115,13 @@ export const COMBATANTS = {
   }),
 } satisfies Record<string, CombatantDef>;
 
-/** Decorative props spawned from the scene — no health, not selectable. Forest fill is instanced
- * scatter; these are the placed hero props: base dressing and resource nodes. */
 export const DECOR = new Set(["banner_blue", "banner_red", "torch", "barrel"]);
 
-/** Harvestable resource nodes: gold from mines, lumber from logging camps. Placed in the scene, they
- * spawn as inert prop entities the pointer can target and workers can gather from. */
 export const NODES: Record<string, { resource: string; label: string }> = {
   goldmine: { resource: "gold", label: "Gold seam" },
   woods: { resource: "lumber", label: "Logging camp" },
 };
 
-/** What each producing building trains: cost (gold/lumber) and train time. Units past the Peasant
- * require a Barracks (gated in `canTrain`). */
 export type TrainableId = "peasant" | "footman" | "rifleman";
 
 export const TRAINABLE: Readonly<Record<TrainableId, TrainableDef>> = {
@@ -162,10 +133,8 @@ export const TRAINABLE: Readonly<Record<TrainableId, TrainableDef>> = {
 /** What `id` trains like, or undefined when no building trains it. */
 export const trainableDef = byId<TrainableDef>(TRAINABLE);
 
-/** Units a Barracks unlocks (Town Hall only trains Peasants). */
 export const BARRACKS_UNITS = new Set(["footman", "rifleman"]);
 
-/** A player-constructed building: cost, build time, and (for a Farm) the supply it adds. */
 export interface BuildingDef {
   cost: Cost;
   buildSeconds: number;

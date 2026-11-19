@@ -18,15 +18,11 @@ export interface MainMenuState {
   confirmDeleteWorld: boolean;
   setConfirmDeleteWorld: (open: boolean) => void;
   isDeleting: boolean;
-  /** True from play/continue click until the game route takes over. */
   isEnteringGame: boolean;
-  /** Start (or resume into) a lab — routes to sign-in first when needed. */
   startGame: () => void;
   /** Open the user's existing world. No-op unless the phase is `continue`. */
   continueGame: () => void;
-  /** Warm the create-game route ahead of a click (hover / pointer-down). */
   warmCreateRoute: () => void;
-  /** Warm the continue-game route when the user already has a world. */
   warmContinueRoute: () => void;
   deleteCurrentWorld: () => Promise<void>;
 }

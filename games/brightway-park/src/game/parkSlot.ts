@@ -10,13 +10,11 @@ const num = (save: ParkSave, key: string): number => {
 };
 
 export { captureParkThumb, parkProfile } from "./parkProfile";
-/** Brightway keeps one park; the card is that document. */
 export const parkSlots = createSaveSlots({
   capacity: 1,
   slots: [{ id: PARK_SLOT, empty: true, meta: {} }],
 });
 
-/** Read the saved park back into the card, so Continue and the slot grid show what is on disk. */
 export async function refreshParkSlot(ctx: GameContext): Promise<void> {
   const read = await parkSave(ctx).peek(PARK_SLOT);
   // A damaged park is reported by restorePark; the card shows an empty slot.

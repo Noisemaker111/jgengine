@@ -1,8 +1,6 @@
 import type { AnimGraph, AnimLayer, AnimState, AnimTransition } from "./animGraph";
 
-/** A masked, optionally additive overlay layer: a resting clip plus one one-shot state per action. */
 export interface ActionLayerInput {
-  /** Layer id; also the prefix of its action state ids (`id:action`). */
   id: string;
   /**
    * Bone name prefixes this layer drives (`["spine", "chest", "upperarm"]`). Required and nonempty:
@@ -10,12 +8,7 @@ export interface ActionLayerInput {
    * `LOWER_BODY_MASK` (`@jgengine/core/anim/skeletonStandard`) cover a standard rig.
    */
   mask: readonly string[];
-  /**
-   * Clip held while no action plays. On an additive layer this state is held at its first frame,
-   * which `makeClipAdditive` makes the zero reference, so rest contributes nothing to the pose.
-   */
   rest: string;
-  /** Trigger name → clip, or clips for a random variant, played once over the rest state. */
   actions: Readonly<Record<string, string | readonly string[]>>;
   /** Add the actions to the base pose instead of replacing the masked bones. Default false. */
   additive?: boolean;
@@ -27,7 +20,6 @@ export interface ActionLayerInput {
   exitTime?: number;
 }
 
-/** State id of an action layer's resting state. */
 export const ACTION_REST_STATE = "rest";
 
 /**

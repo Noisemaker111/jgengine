@@ -16,7 +16,6 @@ function retryable(error: unknown): boolean {
   return error instanceof Error && "code" in error && typeof error.code === "string" && RETRY_CODES.has(error.code);
 }
 
-/** Remove `dir` and everything in it, retrying a held file for up to `timeoutMs`; throws the last error after that. */
 export function removeDirSync(dir: string, timeoutMs = DEFAULT_TIMEOUT_MS): void {
   const deadline = Date.now() + timeoutMs;
   const pause = new Int32Array(new SharedArrayBuffer(4));
@@ -31,7 +30,6 @@ export function removeDirSync(dir: string, timeoutMs = DEFAULT_TIMEOUT_MS): void
   }
 }
 
-/** {@link removeDirSync} without blocking the event loop between tries. */
 export async function removeDir(dir: string, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   for (;;) {

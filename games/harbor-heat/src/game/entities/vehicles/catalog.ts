@@ -4,12 +4,10 @@ export type VehicleHandling =
   | { type: "ground"; tuning: VehicleSpec }
   | {
       type: "aircraft";
-      /** Wings, a rotor, or a VTOL that switches between its lift rotors and its wings. */
       kind: AircraftKind;
       tuning: RigidAircraftTuning;
       /** Level-flight top speed at full throttle (m/s): the dash's dial range. */
       topSpeed: number;
-      /** Thrust multiplier while the afterburner key is held; absent = no afterburner. */
       afterburner?: number;
     };
 
@@ -40,36 +38,24 @@ interface CarSpec {
   cabin: string;
   price: number;
   massKg: number;
-  /** Peak drive force at the wheels, N. */
   engineForce: number;
   /** Peak service-brake force, N (brake g = brakeForce / (massKg·g), kept in [0.35, 1.3]). */
   brakeForce: number;
-  /** Peak tyre μ on an ideal surface (~0.9 street, ~1.1 sport, ~0.7 bus). */
   tireGrip: number;
-  /** Centre-of-mass height, m — taller washes out earlier and leans more. */
   comHeight: number;
-  /** Track width, m — wider resists lateral weight transfer. */
   trackWidth: number;
-  /** Steering wheelbase, m; drives the turning circle with `maxAngle`. */
   wheelbase: number;
-  /** Top forward speed, world units/s. */
   topSpeed: number;
-  /** Lateral grip retained under handbrake (lower = looser slides). */
   handbrakeGrip: number;
   collisionRadius: number;
-  /** Aero downforce area, m² (grip gain with speed); default 0.3, sport ~0.5. */
   downforce?: number;
-  /** Max steering lock, rad; default 0.58, bus tighter-locked (0.42) for a wide circle. */
   maxAngle?: number;
-  /** Gearbox ratios; default is a 6-speed, SUV a 5-speed, bus a 4-speed. */
   gears?: readonly number[];
   /** Redline rpm; default 7600, bus ~4600. */
   redlineRpm?: number;
-  /** Torque curve; muscle overrides with a punchy low end that chirps on launch. */
   torqueCurve?: GripCurve;
 }
 
-/** Street torque: strong enough off-idle that launch is not a crawl. */
 const TORQUE_DEFAULT: GripCurve = { points: [[0, 0.78], [0.28, 0.94], [0.55, 1], [0.85, 0.9], [1, 0.6]] };
 /** Fat low-end so a muscle car saturates its friction budget off the line and wheelspins. */
 const TORQUE_MUSCLE: GripCurve = { points: [[0, 0.94], [0.28, 1], [0.6, 0.95], [0.82, 0.86], [1, 0.6]] };
@@ -78,7 +64,6 @@ const GEARS_DEFAULT: readonly number[] = [3.2, 2.18, 1.57, 1.21, 0.97, 0.8];
 const GEARS_SUV: readonly number[] = [3.4, 2.1, 1.45, 1.05, 0.82];
 const GEARS_BUS: readonly number[] = [4.2, 2.3, 1.4, 0.95];
 
-/** Speed the steering lock is quoted at: `turnRate` there puts full lock on the car's own geometry. */
 const TURN_SPEED = 7;
 
 function car(spec: CarSpec): VehicleSpec {
@@ -153,7 +138,6 @@ const GRAVITY = 9.81;
 
 interface WingSpec {
   massKg: number;
-  /** Total wing area, m². */
   wingArea: number;
   span: number;
   length: number;
@@ -163,7 +147,6 @@ interface WingSpec {
   /** Where full throttle meets drag, m/s. */
   topSpeed: number;
   stallAngle?: number;
-  /** Aileron, elevator and rudder authority (AoA per rad of deflection). */
   roll: number;
   pitch: number;
   yaw: number;
@@ -171,11 +154,6 @@ interface WingSpec {
   assists: AircraftAssistTuning;
 }
 
-/**
- * A rigid-body airframe from a few real numbers: two wing panels trimmed for `cruise`, a tailplane and a fin
- * on a tail arm, inertia from span and length, and a drag area that puts top speed where `maxThrust` meets
- * drag. The jgengine-world `flight-feel` recipe is the derivation.
- */
 function wingAirframe(spec: WingSpec): RigidAircraftTuning {
   const slope = 5;
   const panel = spec.wingArea / 2;

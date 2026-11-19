@@ -1,22 +1,12 @@
-/**
- * Everything the park can build, as data. A ride is its cycle, ratings, price and wear; a shop is
- * what it sells and to which need; scenery is the charm it spreads to rides nearby. `research`
- * names the lab topic that opens a kind: a kind without one is on the palette from day one.
- * The world declaration (`park.ts`) turns each entry into a kind, its actions and its totals.
- */
-
 export type BuildCategory = "ride" | "stall" | "track" | "path" | "land" | "scenery" | "staff";
 
-/** The ride families of the build palette and the research lab. */
 export type RideGroup = "gentle" | "thrill" | "water" | "transport" | "coaster";
 
 /** A guest need a shop fills: every one is a fullness meter on the guest (100 is fine). */
 export type StallNeed = "hunger" | "thirst" | "souvenir" | "toilet" | "info" | "nausea";
 
-/** A ride's own cycle, ratings, price and wear curve - content the shared ride sim reads as data. */
 export interface RideData {
   group: RideGroup;
-  /** Ratings on the 0-10 scale guests judge by: how much fun, how wild, how queasy. */
   excitement: number;
   intensity: number;
   nausea: number;
@@ -24,7 +14,6 @@ export interface RideData {
   capacity: number;
   loadSeconds: number;
   unloadSeconds: number;
-  /** Ticket a guest pays to board; the park sets the live price from this default. */
   price: number;
   /** Chance one completed cycle breaks the ride, and what the repair costs. */
   breakdown: { baseChance: number; wearChance: number; repairSeconds: number; repairCost: number; serviceCost: number };
@@ -32,14 +21,10 @@ export interface RideData {
 
 export interface StallData {
   need: StallNeed;
-  /** Default price; the park sets the live one. */
   price: number;
-  /** What a guest thinks the item is worth: above this they say it is too expensive. */
   value: number;
-  /** What one item costs to restock at midnight. */
   restock: number;
   stock: number;
-  /** How much of the need one purchase fills. */
   fill: number;
 }
 
@@ -57,18 +42,15 @@ export interface BuildableDef {
   category: BuildCategory;
   icon: string;
   cost: number;
-  /** Running cost per park day (wages for staff posts). */
   upkeep: number;
   color: string;
   trim: string;
-  /** Base appeal to the park; scenery nearby adds to a ride's. */
   appeal: number;
   /** Side of the square it covers, in metres. */
   footprint: number;
   research?: ResearchData;
   ride?: RideData;
   stall?: StallData;
-  /** A hire: the post is the middle of this person's patrol area. */
   staff?: { role: StaffRole; cleaning: number; repair?: number; patrol: number };
   /** Scenery: how far its charm reaches, in metres, and how much it adds to each ride in reach. */
   theme?: { radius: number; bonus: number };
@@ -76,7 +58,6 @@ export interface BuildableDef {
   libraryModel?: { id: string; height?: number } | undefined;
 }
 
-/** What a hired person does on patrol. */
 export type StaffRole = "handyman" | "mechanic" | "entertainer" | "security";
 
 type RideRow = [id: string, label: string, icon: string, group: RideGroup, cost: number, upkeep: number, footprint: number,
@@ -91,7 +72,6 @@ const COLORS: Record<RideGroup, [string, string]> = {
   coaster: ["#3f7be0", "#ff5a3c"],
 };
 
-/** Gentle 8, thrill 8, water 4, transport 3, coasters 5: twenty-eight rides. */
 const RIDES: readonly RideRow[] = [
   ["ride_carousel", "Carousel", "🎠", "gentle", 1200, 40, 8, 3.2, 1.0, 0.6, 12, 14, 2, null, "Painted horses on a turning deck. Families love it."],
   ["ride_helter", "Helter Skelter", "🌀", "gentle", 900, 30, 8, 3.0, 2.0, 0.8, 6, 10, 1, null, "Climb the tower, slide round and round to the bottom."],
@@ -123,7 +103,6 @@ const RIDES: readonly RideRow[] = [
   ["ride_inverted", "Inverted Coaster", "🦇", "coaster", 12000, 260, 20, 8.0, 8.6, 6.4, 24, 40, 7, { cost: 4000, seconds: 240, after: "ride_looping" }, "Feet dangling under the track through a loop and a corkscrew."],
 ];
 
-/** Repairs, servicing and the odds of a breakdown grow with the ride's size and wildness. */
 function rideEntry(row: RideRow): BuildableDef {
   const [id, label, icon, group, cost, upkeep, footprint, excitement, intensity, nausea, capacity, rideSeconds, price, research, blurb] = row;
   const [color, trim] = COLORS[group];
@@ -183,7 +162,6 @@ type SceneryRow = [id: string, label: string, icon: string, cost: number, footpr
 const NATURE = "quaternius-stylized-nature";
 const CITY = "kaykit-city-builder";
 
-/** A ride's charm from scenery in reach caps at this many points of appeal. */
 export const THEME_CAP = 6;
 
 const SCENERY: readonly SceneryRow[] = [
@@ -270,7 +248,6 @@ for (const def of Object.values(BUILDABLES)) {
   }
 }
 
-/** The buildable `id` names, or undefined for an id the park does not know (an old save, a typo). */
 export function findBuildable(id: string): BuildableDef | undefined {
   return BUILDABLES[id];
 }

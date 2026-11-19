@@ -38,11 +38,6 @@ function grainTexture(data: Uint8Array): THREE.DataTexture {
   return texture;
 }
 
-/**
- * Tileable turf grain for the cover mat, generated once from a hash with no asset pull: thousands
- * of short centimetre blade strokes over darker gaps, as a colour map (luminance around 0.9) and a
- * matching normal map. Up close a short-cut mat reads as blades, and mipmaps calm it with distance.
- */
 function coverGrain(): CoverGrain {
   if (grain !== null) return grain;
   const size = GRAIN_SIZE;
@@ -91,22 +86,13 @@ function coverGrain(): CoverGrain {
   return grain;
 }
 
-/**
- * How a style's `detail` draws the mat's grain: `strength` scales the blade strokes' contrast (0 a
- * flat painted colour, 1 the grain as generated, up to 1.6) and `scale` how finely they repeat (1,
- * up to 2 at full detail). Detail 0.5 is the grain as it always was.
- * @internal
- */
+/** @internal */
 export function grassCoverGrain(detail: number): { strength: number; scale: number } {
   const d = Math.max(0, Math.min(1, detail));
   return { strength: Math.min(1.6, d * 2), scale: d > 0.5 ? 1 + (d - 0.5) * 2 : 1 };
 }
 
-/**
- * The mat's map lookup with the grain's strength and scale applied: three's `map_fragment` sampling at
- * `vMapUv * uGrainScale` and mixing the sample toward the grain's mean by `uGrain`.
- * @internal
- */
+/** @internal */
 export function grassCoverMapFragment(chunk: string): string {
   const sample = "texture2D( map, vMapUv )";
   const apply = "diffuseColor *= sampledDiffuseColor;";
@@ -116,7 +102,6 @@ export function grassCoverMapFragment(chunk: string): string {
     .replace(apply, `sampledDiffuseColor.rgb = mix( vec3( uGrainMean ), sampledDiffuseColor.rgb, uGrain );\n\t${apply}`);
 }
 
-/** Props for {@link GrassCover}: one authored patch's footprint, colours and drape samplers. */
 export interface GrassCoverProps {
   area: readonly [number, number];
   seed: number;

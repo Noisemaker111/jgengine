@@ -1,12 +1,6 @@
 import { TRACK_OBJECT as O } from "../objects/catalog";
 import type { TrackTheme } from "./course";
 
-/**
- * The Conveyor Maze, on the night shift: a narrow serpentine of right angles through the sorting
- * sheds, under searchlights. Belts run under the road - some carry you, some fight you, some only
- * cover half a lane. The belt hall runs straight through the first shed on a fast belt, past a ramp.
- * The course itself is the `conveyor-maze` course in editor.scene.json.
- */
 export const CONVEYOR_MAZE: TrackTheme = {
   id: "conveyor-maze",
   label: "Conveyor Maze",

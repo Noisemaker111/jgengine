@@ -19,13 +19,11 @@ import { PLANT_LIBRARY } from "../species/data/plantLibrary";
 import type { PlantSpecies } from "../species/plantSpecies";
 import { createStand, type StandTree } from "./standSim";
 
-/** The editor path kind a forest stand is drawn as. */
 export const FOREST_STAND_KIND = "forest_stand";
 
 /** Most trees one stand places, so a huge polygon stays bounded work. */
 export const FOREST_STAND_TREE_BUDGET = 20000;
 
-/** The `forest_stand` params. */
 export const FOREST_STAND_SCHEMA = defineParamSchema({
   fields: [
     { type: "weightedList", key: "species", label: "species (planting share)", itemLabel: "species id", default: [{ item: "pinus-resinosa", weight: 1 }] },
@@ -39,7 +37,6 @@ export const FOREST_STAND_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Parsed `forest_stand` params. */
 export type ForestStandParams = ParamsOf<typeof FOREST_STAND_SCHEMA>;
 
 /** One grown tree on the plot tile, plot-local metres. */
@@ -52,7 +49,6 @@ export interface ForestStandTree {
   dbhCm: number;
 }
 
-/** A grown plot tile and its stand statistics. */
 export interface ForestStandPlot {
   sizeM: number;
   trees: readonly ForestStandTree[];
@@ -95,19 +91,12 @@ export function growForestStandPlot(params: ForestStandParams): ForestStandPlot 
   return plot;
 }
 
-/**
- * Read a path's forest params.
- * @capability forest-stand fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial
- */
+/** @capability forest-stand fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial */
 export function readForestStandParams(object: Pick<SceneKindObject, "meta">): ForestStandParams {
   return parseParams(FOREST_STAND_SCHEMA, object.meta);
 }
 
-/**
- * The trees of one drawn stand: the plot tiled over the polygon, kept inside it and out of clearance masks, grounded on
- * `terrain`. Same path, same trees.
- * @capability forest-stand fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial
- */
+/** @capability forest-stand fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial */
 export function resolveForestStand(path: ScenePathLike, terrain?: ScatterTerrain, masks?: AvoidMasks): ScatterInstance[] {
   if (path.points.length < 3) return [];
   const polygon: Vec2[] = path.points.map((point) => [point.x, point.z]);
@@ -146,7 +135,7 @@ export function resolveForestStand(path: ScenePathLike, terrain?: ScatterTerrain
   return out;
 }
 
-/** Registers the `forest_stand` path kind and its scatter source. Called by `registerBuiltinSceneKinds`. @internal */
+/** @internal */
 export function registerForestStandKind(): void {
   registerScatterSource(FOREST_STAND_KIND, resolveForestStand);
   registerSceneKind({

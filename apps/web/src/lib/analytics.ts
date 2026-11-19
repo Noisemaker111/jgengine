@@ -4,7 +4,6 @@ import { SITE_URL } from "./site";
 export const DATABUDDY_CLIENT_ID = "9a7288b3-67db-47ef-af92-3ef30b52f6d8";
 export const DATABUDDY_SCRIPT_SRC = "https://cdn.databuddy.cc/databuddy.js";
 
-/** Visits count only on the live site: the workers.dev preview, `wrangler dev` and local builds load nothing. */
 export const ANALYTICS_HOST = new URL(SITE_URL).hostname;
 
 /**
@@ -23,7 +22,6 @@ export const ANALYTICS_LOADER_SCRIPT = [
   `document.head.appendChild(s)}`,
 ].join("");
 
-/** The visitor actions the site counts beyond page views. */
 export type AnalyticsEvent = "playground_start" | "game_play";
 
 interface DatabuddyTracker {
@@ -37,10 +35,6 @@ declare global {
   }
 }
 
-/**
- * Counts `name` with Databuddy. Waits for the tag when it is still loading; a no-op where the
- * tag is not on the page (dev, previews, tests) or a blocker removed it.
- */
 export function trackEvent(name: AnalyticsEvent, properties?: Record<string, string | number | boolean>): void {
   if (typeof window === "undefined") return;
   const send = (): void => (window.databuddy ?? window.db)?.track(name, properties);

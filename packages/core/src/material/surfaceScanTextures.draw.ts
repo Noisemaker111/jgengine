@@ -5,22 +5,13 @@ import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 import { ImageTextureLoader } from "./imageTexture.draw";
 import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 
-/** A scan tracked outside the UI runtime: `useSurfaceScan`'s draw-side twin for EngineDraw factories. */
 export interface SurfaceScanTrack {
-  /** The decoded maps; `null` while loading, after a failure, or when nothing was asked for. */
   textures(): SurfaceScanTextures | null;
-  /** True until the maps load or fail — the surface stays hidden meanwhile. */
   pending(): boolean;
-  /** Swap `enabled`/`maps` for a new request; the old handle is released. */
   sync(maps: TerrainMaterialMaps | undefined, enabled: boolean, scene: THREE.Scene): void;
   release(): void;
 }
 
-/**
- * Acquire a scan for draw code: the first holder starts the decode, `onChange` fires once the maps
- * are ready or have failed, and the last release frees the GPU textures. `sync` follows prop changes
- * the way the hook's effect deps did.
- */
 export function trackSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled: boolean, scene: THREE.Scene, onChange: () => void): SurfaceScanTrack {
   let handle: ReturnType<typeof acquireSurfaceScan> | null = null;
   let requested = false;
@@ -64,7 +55,6 @@ export function trackSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled:
   };
 }
 
-/** Decoded maps of one scanned surface, shared by every material that tiles it. */
 export interface SurfaceScanTextures {
   color: THREE.Texture;
   normal: THREE.Texture;
@@ -80,14 +70,12 @@ interface ScanEntry {
   failed: boolean;
   listeners: Set<() => void>;
   loaded: THREE.Texture[];
-  /** Settles once the maps have loaded or failed. */
   settled: Promise<void>;
   settle: () => void;
 }
 
 const entries = new Map<string, ScanEntry>();
 
-/** Loads one map; the default goes through {@link ImageTextureLoader}. */
 export type SurfaceScanLoader = (url: string, onLoad: (texture: THREE.Texture) => void, onError: () => void) => void;
 
 const defaultLoader: SurfaceScanLoader = (url, onLoad, onError) => {
@@ -95,7 +83,7 @@ const defaultLoader: SurfaceScanLoader = (url, onLoad, onError) => {
 };
 let loadMap: SurfaceScanLoader = defaultLoader;
 
-/** Swap the map loader, e.g. for a test without a DOM; `null` restores the default. @internal */
+/** @internal */
 export function setSurfaceScanLoader(loader: SurfaceScanLoader | null): void {
   loadMap = loader ?? defaultLoader;
 }
@@ -109,7 +97,7 @@ function scanRoles(maps: TerrainMaterialMaps): readonly (readonly [ScanRole, str
   ];
 }
 
-/** Stable identity of a scan's map set; two layers naming the same URLs share one decode. @internal */
+/** @internal */
 export function surfaceScanKey(maps: TerrainMaterialMaps): string {
   return scanRoles(maps).map(([role, url]) => `${role}:${url}`).join("|");
 }
@@ -189,9 +177,7 @@ export function acquireSurfaceScan(maps: TerrainMaterialMaps, onChange: () => vo
   };
 }
 
-/** A scan's maps as a component sees them. */
 export interface SurfaceScanState {
-  /** The decoded maps; `null` while loading, after a load failure, or when no scan was asked for. */
   textures: SurfaceScanTextures | null;
   /** True until the maps load or fail. A surface waiting on them stays hidden, so no program is linked for the look they replace. */
   pending: boolean;

@@ -1,28 +1,22 @@
-/** A searcher's place on its beat; one serializable number, `null` until the first step picks one. */
 export interface SearchBeatState {
   /** Bearing from the search centre to the current waypoint, radians. */
   angle: number | null;
 }
 
-/** The circle being searched. `AlertSearchArea` from `ai/alertLevel` fits. */
 export interface SearchBeatArea {
   center: readonly [number, number];
   radius: number;
 }
 
-/** How a searcher walks its beat. */
 export interface SearchBeatTuning {
-  /** Waypoints sit this fraction of the radius out from the centre. */
   reach: number;
   /** Within this many metres of a waypoint it counts as reached. */
   arriveRadius: number;
   /** On arrival the bearing turns by at least this, radians. */
   turnMin: number;
-  /** Plus up to this much more, drawn from `rng`. */
   turnSpread: number;
 }
 
-/** A fresh beat; the first step picks a random bearing. */
 export function createSearchBeat(): SearchBeatState {
   return { angle: null };
 }

@@ -21,7 +21,6 @@ import { COURSE_GENERATOR, COURSE_SCHEMA } from "./courseGenerator";
 import { applyCoursePins, checkCoursePlayability, COURSE_SLOT_KINDS, type CourseLayout, type CoursePin, type CourseSlot } from "./courseLayout";
 import { type CourseBranchSpec, type CoursePiece, type CourseVec2 } from "./routeCourse";
 
-/** The scene kind id. */
 export const COURSE_KIND = "course";
 
 /** One authored piece as the scene stores it: degrees, left positive. */
@@ -40,7 +39,6 @@ export interface CourseBranchData {
   data?: Readonly<Record<string, string | number | boolean>>;
 }
 
-/** The `course` kind's inspector: the generator's dials, and whether the kind draws a plain road itself. */
 export const COURSE_KIND_SCHEMA = defineParamSchema({
   presetKey: COURSE_SCHEMA.presetKey!,
   presets: COURSE_SCHEMA.presets!,
@@ -82,7 +80,6 @@ export function coursePiecesFromData(raw: unknown): CoursePiece[] | null {
   });
 }
 
-/** Pieces as the scene stores them: the inverse of {@link coursePiecesFromData}. */
 export function coursePiecesToData(pieces: readonly CoursePiece[]): CoursePieceData[] {
   return pieces.map((piece) => {
     const extras = { ...(piece.rise === undefined ? {} : { rise: piece.rise }), ...(piece.halfWidth === undefined ? {} : { halfWidth: piece.halfWidth }), ...(piece.tag === undefined ? {} : { tag: piece.tag }) };
@@ -90,7 +87,6 @@ export function coursePiecesToData(pieces: readonly CoursePiece[]): CoursePieceD
   });
 }
 
-/** Where a course marker stands: its start pose in world space. */
 export interface CoursePose {
   x: number;
   z: number;
@@ -98,7 +94,6 @@ export interface CoursePose {
   elevation: number;
 }
 
-/** A course-local `[x, z]` (x left of the heading, z ahead) in world space. */
 export function courseLocalToWorld(pose: CoursePose, point: CourseVec2): CourseVec2 {
   const c = Math.cos(pose.heading);
   const s = Math.sin(pose.heading);
@@ -160,7 +155,6 @@ export function courseLayoutFromMeta(meta: Readonly<Record<string, unknown>> | u
   return applyCoursePins(layout, pinsFromData(meta?.["pins"]));
 }
 
-/** The pose a course marker stands at. */
 export function coursePoseOf(object: Pick<SceneKindObject, "position" | "center" | "rotationY">): CoursePose | null {
   const at = object.position ?? object.center;
   if (at === undefined) return null;
@@ -179,7 +173,7 @@ export function resolveCourseObject(object: SceneKindObject): CourseLayout | nul
 
 let registered = false;
 
-/** Registers {@link COURSE_GENERATOR} and the `course` scene kind. Loaded on demand (`ON_DEMAND_SCENE_KINDS`). @internal */
+/** @internal */
 export function registerCourseKind(): void {
   if (registered) return;
   registered = true;

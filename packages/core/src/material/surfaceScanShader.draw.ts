@@ -1,6 +1,5 @@
 import type { SurfaceScanTextures } from "./surfaceScanTextures.draw";
 
-/** Uniform values a scanned-surface shader reads; one object per material, maps shared. */
 export interface SurfaceScanUniforms {
   [name: string]: { value: unknown };
   uScanColor: { value: SurfaceScanTextures["color"] | null };
@@ -12,17 +11,15 @@ export interface SurfaceScanUniforms {
   uScanTint: { value: number };
 }
 
-/** Blend settings for one scanned layer. */
 export interface SurfaceScanBlend {
   /** Metres one tile covers. */
   repeat: number;
   /** 0..1 how much of the scan shows over the procedural surface. */
   strength: number;
-  /** 0 keeps the authored colour and takes the scan's grain; 1 shows the scan's own colour. */
   tint: number;
 }
 
-/** Fresh uniforms for one material sampling `textures` (or nothing yet). @internal */
+/** @internal */
 export function surfaceScanUniforms(blend: SurfaceScanBlend, textures: SurfaceScanTextures | null): SurfaceScanUniforms {
   return {
     uScanColor: { value: textures?.color ?? null },
@@ -35,7 +32,7 @@ export function surfaceScanUniforms(blend: SurfaceScanBlend, textures: SurfaceSc
   };
 }
 
-/** Defines selecting which optional maps a scan carries. @internal */
+/** @internal */
 export function surfaceScanDefines(textures: SurfaceScanTextures): Record<string, string> {
   return {
     JG_SCAN: "",
@@ -44,7 +41,7 @@ export function surfaceScanDefines(textures: SurfaceScanTextures): Record<string
   };
 }
 
-/** Cache-key fragment for a scan's compiled variant. @internal */
+/** @internal */
 export function surfaceScanKeyPart(textures: SurfaceScanTextures | null): string {
   if (textures === null) return "noscan";
   return `scan${textures.roughness === undefined ? "" : "-r"}${textures.ao === undefined ? "" : "-ao"}`;

@@ -3,7 +3,6 @@ import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import { createTimerSet } from "@jgengine/core/time/timerSet";
 import { engineActions, type GameEngine, type GameEngineState } from "./gameEngine";
 
-/** Each timed cue: when it is due, and what clears it. A cue with no deadline is not timing. */
 const CUES: readonly { id: string; until: (state: GameEngineState) => number | null; expire: (engine: GameEngine) => void }[] = [
   { id: "launchCelebration", until: (s) => s.effects.launchCelebrationUntil, expire: (e) => e.dispatch(engineActions.clearLaunchCelebration()) },
   { id: "spendPulse", until: (s) => s.effects.spendPulse?.until ?? null, expire: (e) => e.dispatch(engineActions.clearSpendPulse()) },

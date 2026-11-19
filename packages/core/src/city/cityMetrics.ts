@@ -1,48 +1,27 @@
-/**
- * City district quality metrics: how built-up, how paved, how varied and how believable a generated
- * district is, against the figures planners use. Model code: plain data in, numbers out.
- *
- * - Coverage (building footprint share of the district) and FAR (gross floor area over district area),
- *   with footprints and pavement rasterized on one grid so overlaps count once.
- * - Pavement share (carriageway plus sidewalks), land in blocks, block-kind mix.
- * - Template variety: distinct massing templates per building class.
- * - Height falls with distance from the centre: Spearman correlation of distance and height.
- * - Landmarks, floors and height spread, buildings standing on a carriageway (a correctness check).
- * - Kept length: district street length over the length of the graph it grew from, for a generator
- *   that caps its street list.
- *
- * {@link cityMetricsInput} reads a resolved `city` volume into the plain input shape.
- */
 import { quantile, spearman } from "../math/stats";
 import { polylineLength, type PlanPoint } from "../roads/streetMetrics";
 import type { ResolvedCity } from "./cityKind";
 
-/** One building as the city metric reads it, in district-local XZ (district centre at the origin). */
 export interface CityBuildingSample {
   readonly x: number;
   readonly z: number;
   readonly floors: number;
-  /** Roof top above grade (m). */
   readonly height: number;
   /** Ground footprint polygons (convex rings, usually rectangles). */
   readonly footprint: readonly (readonly PlanPoint[])[];
-  /** Gross floor area (m²). */
   readonly floorArea: number;
   readonly class: string;
   readonly landmark?: string;
-  /** Massing template key: two buildings with the same key read as the same design. */
   readonly template: string;
 }
 
 export interface CityMetricsInput {
-  /** District half extents (m); the district spans `[-halfX, halfX] × [-halfZ, halfZ]`. */
   readonly halfX: number;
   readonly halfZ: number;
   readonly streets: readonly { readonly points: readonly PlanPoint[]; readonly width: number; readonly sidewalk?: boolean }[];
   readonly sidewalkWidth?: number;
   readonly blocks: readonly { readonly area: number; readonly kind: string }[];
   readonly buildings: readonly CityBuildingSample[];
-  /** Total length (m) of the street graph the district grew from. */
   readonly networkLength?: number;
 }
 
@@ -52,7 +31,6 @@ export interface CityMetrics {
   buildingsPerHa: number;
   /** Building footprint share of the district, 0..1. */
   coverage: number;
-  /** Gross floor area over district area. */
   far: number;
   /** Carriageway + sidewalk share of the district, 0..1. */
   pavementShare: number;
@@ -60,21 +38,16 @@ export interface CityMetrics {
   roadKmPerKm2: number;
   /** Land inside blocks over district area, 0..1. */
   landInBlocksShare: number;
-  /** Block counts by kind. */
   blockKinds: Record<string, number>;
-  /** Share of block land that is not buildable (parks, plazas, fields, buffers). */
   openBlockShare: number;
   floorsP50: number;
   floorsP90: number;
   floorsMax: number;
   heightMaxM: number;
-  /** Spearman ρ of distance from the centre against height (negative: towers in the middle). */
   heightDistanceRho: number;
   landmarks: number;
-  /** Building counts per class. */
   classMix: Record<string, number>;
   uniqueTemplates: number;
-  /** Distinct templates per class. */
   templatesPerClass: Record<string, number>;
   /** Fewest templates among classes with at least `minClassSize` buildings (`NaN` if none qualify). */
   minTemplatesPerClass: number;
@@ -98,7 +71,6 @@ class Raster {
     this.nz = Math.max(1, Math.ceil((2 * halfZ) / cell));
     this.bits = new Uint8Array(this.nx * this.nz);
   }
-  /** Set `bit` on every cell in the box whose centre passes `inside`; returns how many cells that was. */
   fill(minX: number, maxX: number, minZ: number, maxZ: number, inside: (x: number, z: number) => boolean, bit: number): number {
     const i0 = Math.max(0, Math.floor((minX + this.halfX) / this.cell));
     const i1 = Math.min(this.nx - 1, Math.floor((maxX + this.halfX) / this.cell));
@@ -121,7 +93,6 @@ class Raster {
     for (const value of this.bits) if (value & bit) n += 1;
     return n;
   }
-  /** Cells inside the polygon that already carry `bit`. */
   overlap(ring: readonly PlanPoint[], bit: number): number {
     const xs = ring.map((p) => p[0]);
     const zs = ring.map((p) => p[1]);
@@ -167,10 +138,7 @@ const BUILDING = 1;
 const CARRIAGEWAY = 2;
 const PAVEMENT = 4;
 
-/**
- * Measure a district (see the module comment). `minClassSize` (default 10) gates the per-class template minimum.
- * @capability generator-metrics measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them
- */
+/** @capability generator-metrics measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them */
 export function cityMetrics(input: CityMetricsInput, options: { readonly cell?: number; readonly minClassSize?: number } = {}): CityMetrics {
   const areaM2 = 4 * input.halfX * input.halfZ;
   const cell = options.cell ?? Math.max(1, Math.max(input.halfX, input.halfZ) / 750);
@@ -251,11 +219,6 @@ export function cityMetrics(input: CityMetricsInput, options: { readonly cell?: 
   };
 }
 
-/**
- * Read a resolved `city` volume into {@link CityMetricsInput}: positions back into district-local XZ,
- * grounded wall pieces as footprints, floor area per wall piece (its height over the lot's storey
- * height, at least one floor), and a template key from the lot's wall/roof piece shapes in order.
- */
 export function cityMetricsInput(city: ResolvedCity): CityMetricsInput {
   const [cx, , cz] = city.center;
   const cr = Math.cos(city.rotationY);

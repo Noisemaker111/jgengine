@@ -21,7 +21,6 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 
 export const PLAN = "types";
 
-/** The stages of the CI `types` job: ensure-ready, then every check the table gives that job. */
 export function typesPlan(): Stage[] {
   return checkPlan(jobChecks("types"), false);
 }
@@ -51,7 +50,6 @@ export const PROVEN_IN_QUICK: Readonly<Record<string, string>> = {
   "skill-api": "bun run check skill-api",
 };
 
-/** The stages this job runs: the plan minus what `quick` already proved. */
 export function planStages(stages: readonly Stage[]): Stage[] {
   const names = new Set(stages.map((stage) => stage.name));
   for (const name of Object.keys(PROVEN_IN_QUICK)) {
@@ -78,7 +76,6 @@ export function ordered(stages: readonly Stage[]): Stage[] {
     .map((entry) => entry.stage);
 }
 
-/** Run `work` over every item with at most `concurrency` in flight, keeping going after a failure. */
 export async function runPool<T>(items: readonly T[], concurrency: number, work: (item: T) => Promise<void>): Promise<void> {
   const queue = [...items];
   const lanes = Math.max(1, Math.min(concurrency, queue.length));

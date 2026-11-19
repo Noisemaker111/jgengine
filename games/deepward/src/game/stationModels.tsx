@@ -19,9 +19,6 @@ export function stationModelReplacements(place: Place): Set<string> {
 export function hasStationModel(place: Place, sourceId: string): boolean {
  return stationModelMarkers(place).some(marker => marker.meta?.["sourceId"] === sourceId);
 }
-/** Catalog models render at authored marker transforms, with their original floor origin.
- * The room/machine/column volumes remain the single gameplay/collision authority.
- */
 export function StationModels({ place, assets }: { place: Place; assets: AssetCatalog }) {
  return <>{stationModelMarkers(place).map(marker=>{
   const asset = marker.catalogId ? assets.resolve(marker.catalogId) : null;

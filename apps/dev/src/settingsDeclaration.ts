@@ -8,7 +8,6 @@
  */
 import type { GameSettingsConfig } from "@jgengine/core/settings/settingsModel";
 
-/** One declared setting: its id, the kind of value it takes, and the bounds or options it offers. */
 export interface DeclaredSetting {
   id: string;
   kind: string;

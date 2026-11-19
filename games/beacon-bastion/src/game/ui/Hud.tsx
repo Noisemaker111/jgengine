@@ -28,10 +28,6 @@ import type { GlyphName } from "./glyphs";
 
 const num = (ctx: GameContext, stat: string) => keep.of(ctx).num(stat);
 
-/**
- * The keep's own signage, top-left: the brazier burns as high as the keep has lives, the purse hangs
- * beside it, and under them the kill pay, the held-wave interest, the masons' call and any relic.
- */
 export function KeepSigns() {
   const ctx = useGameContext(), phone = usePhone();
   const unsaved = useGameStore((c) => keepIsUnsaved(c));
@@ -57,7 +53,6 @@ export function KeepSigns() {
   </RuneView>;
 }
 
-/** The masons' call: shown once a raider has broken through; dim while raiders are still on the road. */
 function MendButton() {
   const ctx = useGameContext(), keys = useActionBindings();
   const breached = useGameStore((c) => num(c, "keep.breaches") > 0);
@@ -70,7 +65,6 @@ function MendButton() {
   </Plank>;
 }
 
-/** The wave count cut into a timber board at the top edge, the road's one line, and the boss pennant. */
 export function WaveBoard() {
   const ctx = useGameContext(), phone = usePhone();
   const boss = useGameStore(() => bossLine(session.boss));
@@ -100,10 +94,6 @@ const TRAIT_MARK: Record<string, { glyph: GlyphName; label: string }> = {
   splits: { glyph: "swap", label: "Hulks break into bonelings" },
 };
 
-/**
- * The war horn: who comes next and what about them matters, the clock until they march on their own,
- * and the button that calls them early for gold.
- */
 export function ReleaseHorn() {
   const ctx = useGameContext(), phone = usePhone();
   const shown = useGameStore((c) => canSendWave(c) && !session.encounter.view().done);
@@ -138,7 +128,6 @@ export function ReleaseHorn() {
   </RuneView>;
 }
 
-/** The builder's rack along the foot: one timber plaque per tower, its glyph, price and key. */
 export function BuildBar() {
   const ctx = useGameContext(), keys = useActionBindings(), phone = usePhone();
   const gold = () => num(ctx, "keep.gold");
@@ -167,7 +156,6 @@ export function BuildBar() {
   </RuneView>;
 }
 
-/** How far a rite has recharged: its stone fills back up like a rising flame. */
 function riteFill(id: string): number {
   const slot = session.abilities.snapshot().find((entry) => entry.id === id);
   return slot === undefined ? 1 : 1 - slot.cooldownFraction;

@@ -19,7 +19,6 @@ export { TABLET_APP_ID, TABLET_STORE_TAB_ID };
 export interface TabletAppShortcut {
   id: TabletAppId;
   label: string;
-  /** Tile colour (hex). */
   color: string;
   icon: string;
 }
@@ -73,11 +72,6 @@ export function getTabletActiveAppTitle(activeTab: TabletAppId): string {
   return "Map";
 }
 
-/** Rack overlay is not restored across reloads; treat as closed for tablet bootstrap. */
-/**
- * Desktop tablet can stay logically open while collapsed (pointer locked on the canvas).
- * Only the visible, interactable sheet should pause gameplay and count as "menu open".
- */
 export function isTabletUiBlockingGameplay(
   tabletOpen: boolean,
   isPointerLocked: boolean,
@@ -145,7 +139,6 @@ function parsePersistedGameMenuState(value: unknown): PersistedGameMenuState | n
 
   return null;
 }
-
 
 function readGameUiSession(gameId: string): PersistedGameMenuState {
   return parsePersistedGameMenuState(localGameState().readMenu(gameId)) ?? { type: "closed" };

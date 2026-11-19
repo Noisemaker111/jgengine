@@ -30,22 +30,11 @@ import { EmptyState, IconButton } from "./ui";
 /** Default world-units/sec when playing a path flythrough preview. */
 const DEFAULT_PLAY_SPEED = 8;
 
-/** Rigged asset entries (carry animation clips) for the clip-preview picker. */
 function riggedAssets(assets: readonly EditorAssetEntry[]): EditorAssetEntry[] {
   return assets.filter((entry) => entry.url !== undefined && entry.clips !== undefined && entry.clips.length > 0);
 }
 
-/**
- * Animation dock with three modes:
- * - **Graph** — the selected placement's animation graph with a scrubbed, triggerable preview posed
- *   on the rig in the viewport (see {@link AnimationGraphPanel}).
- * - **Path** — scrub/play the editor orbit camera along authored scene polylines (real path points,
- *   no fabricated keyframes).
- * - **Clips** — preview a rigged asset's animation clips in the viewport (scrub, loop, speed) via the
- *   shell mixer, either a placed instance's asset or any rigged catalog asset.
- *
- * @internal
- */
+/** @internal */
 export function AnimationPanel({
   session,
   api,
@@ -109,7 +98,6 @@ export function AnimationPanel({
   );
 }
 
-/** Clip-preview mode: pick a rigged asset (placed instance or catalog) and play its clips in the viewport. */
 function ClipPreview({
   session,
   ui,
@@ -331,7 +319,6 @@ function ClipPreview({
   );
 }
 
-/** Path flythrough mode: scrub the orbit camera along authored scene polylines. */
 function PathFlythrough({ session, api }: { session: EditorSession; api: EditorHostApi }) {
   const paths = useStoreSelector(session, (state) => state.document.paths);
   const scrubbable = useMemo(() => listScrubbablePaths(paths), [paths]);

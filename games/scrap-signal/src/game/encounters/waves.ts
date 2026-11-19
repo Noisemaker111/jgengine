@@ -14,7 +14,6 @@ import type { PressureRule } from "@jgengine/core/waves/pressure";
 export const FRONT_ID = "rustflat_front";
 export const FRONT_SEED = 4097;
 
-/** Entries and the wreck are authored markers in `editor.scene.json`. */
 export const FRONT_MARKERS = {
   center: "front_rustflat_center",
   scrapjack: "front_rustflat_scrapjack",
@@ -90,19 +89,12 @@ export const FRONT_PRESSURE: PressureRule = {
   maxTier: 2,
 };
 
-/** The Ripper pack's alpha: a convoy-fed maw that leads the front's last wave. */
 export const FOREMAN_ID = "foreman_maw";
 
-/** One Foreman phase: its health cut point, the role shape it fights with, and its tell. */
 export interface ForemanPhase extends PhaseLike {
-  /** The same dials a squad role uses. */
   behaviour: Omit<SquadRole, "id" | "count">;
 }
 
-/**
- * Three authored phases. Cut points, monotone order and the tell fire are the engine's; what each
- * phase *does* is the stance table below, which is this game's content.
- */
 export const FOREMAN_PHASES: readonly ForemanPhase[] = [
   {
     id: "stoke",
@@ -124,21 +116,18 @@ export const FOREMAN_PHASES: readonly ForemanPhase[] = [
   },
 ];
 
-/** What a phase looks like on the ground: how fast the frame walks and what the HUD calls it. */
 export const FOREMAN_STANCE: Record<string, { speedScale: number; label: string }> = {
   stoke: { speedScale: 1, label: "Stoking" },
   stampede: { speedScale: 1.5, label: "Stampede" },
   starving: { speedScale: 1.9, label: "Starving" },
 };
 
-/** One line per tell, shown while the player has time to answer it. */
 export const FOREMAN_TELL_TEXT: Record<string, string> = {
   wake: "THE FOREMAN WAKES — it shrugs off the wreck",
   lunge: "THE FOREMAN LUNGES — it is faster now",
   starve: "THE FOREMAN IS STARVING — it will not slow",
 };
 
-/** The elite that walks with the third wave, and the wind-up that announces it. */
 export const ELITE_TELL = {
   unit: "elite_husk",
   text: "ELITE HUSK — SHIELD BREAKER WINDING UP",
@@ -147,7 +136,6 @@ export const ELITE_TELL = {
   damage: 20,
 } as const;
 
-/** A shot's hearing weight by gun family; a shotgun carries further than a pistol. */
 export const SHOT_LOUDNESS: Record<string, number> = {
   pistol: 1.1,
   smg: 1,

@@ -5,10 +5,8 @@ export const DEFAULT_SCRAPE_TIER: ScrapeTierId = "books";
 
 export const SCRAPE_TICK_INTERVAL_MS = 10_000;
 
-/** FP16 TFLOPs of one starter card (GTX 1060): the yield curve's unit input. */
 export const STARTER_SCRAPE_TFLOPS = 11;
 
-/** Data-per-token of the free starter base model: the yield curve's unit source quality. */
 export const REFERENCE_SCRAPE_TOKENS_PER_TOKEN = 0.012;
 
 export interface ScrapeTierDef {
@@ -16,7 +14,6 @@ export interface ScrapeTierDef {
   label: string;
   description: string;
   baseTokensPerProc: number;
-  /** FP16 TFLOPs of scraping-dedicated cards required to run this tier. */
   tflopThreshold: number;
 }
 
@@ -56,7 +53,6 @@ export function isScrapeTierRunnable(tier: ScrapeTierId, scrapeTflops: number): 
   return scrapeTflops > 0 && scrapeTflops >= getScrapeTierDef(tier).tflopThreshold;
 }
 
-/** Sub-linear in lane compute, linear in the best licensed source's data-per-token. */
 export function computeScrapeTokensPerProc(
   tier: ScrapeTierId,
   scrapeTflops: number,

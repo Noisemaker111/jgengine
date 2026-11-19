@@ -23,12 +23,9 @@ import type {
 
 /** One materialized placement from a directive — grounded XZ, deterministic scale/yaw, stable id. */
 export interface MaterializedInstance {
-  /** Stable id `<directiveId>#<index>` — the key an overlay patches or deletes. */
   id: string;
-  /** The directive that minted this instance. */
   directiveId: string;
   kind: EditorDirectiveKind;
-  /** What to place: a `scatter` directive's catalog asset, or a `population` directive's species id. */
   asset: string;
   x: number;
   z: number;
@@ -38,7 +35,6 @@ export interface MaterializedInstance {
   scale: number;
 }
 
-/** A resolved directive footprint: the XZ bounds to scatter within, plus an optional clip polygon. */
 export interface DirectiveFootprint {
   area: Aabb;
   polygon?: Vec2[];
@@ -180,11 +176,7 @@ export function materializePopulationDirective(
   return out;
 }
 
-/**
- * Materializes one directive against a document, resolving its footprint first. Returns an empty
- * list when the region does not resolve.
- * @capability world-directives materialize one scene directive into instances
- */
+/** @capability world-directives materialize one scene directive into instances */
 export function materializeDirective(doc: EditorDocument, directive: EditorDirective): MaterializedInstance[] {
   const footprint = resolveDirectiveFootprint(doc, directive);
   if (footprint === null) return [];
@@ -193,15 +185,11 @@ export function materializeDirective(doc: EditorDocument, directive: EditorDirec
     : materializePopulationDirective(directive, footprint);
 }
 
-/** A per-instance hand-tweak over a materialized directive, keyed by the minted instance id. */
 export interface DirectiveInstancePatch {
-  /** Override the placement's XZ position. */
   position?: { x: number; z: number };
-  /** Override the vertical offset. */
   y?: number;
   scale?: number;
   rotationY?: number;
-  /** Remove this instance from the materialized set. */
   deleted?: boolean;
 }
 
@@ -210,16 +198,11 @@ export interface DirectiveInstancePatch {
  * Hand-edits are keyed by the stable instance id the materializer mints, so they survive re-bakes.
  */
 export interface EditorDirectiveOverlay {
-  /** The directive id whose instances this overlay patches. */
   over: string;
   patches: Record<string, DirectiveInstancePatch>;
 }
 
-/**
- * Applies a directive overlay to its materialized instances: patched fields override, `deleted`
- * drops the instance. Instances with no patch pass through untouched.
- * @capability world-directives apply a sparse overlay over materialized directive instances
- */
+/** @capability world-directives apply a sparse overlay over materialized directive instances */
 export function applyDirectiveOverlay(
   instances: readonly MaterializedInstance[],
   overlay: EditorDirectiveOverlay,
@@ -244,12 +227,7 @@ export function applyDirectiveOverlay(
   return out;
 }
 
-/**
- * Materializes every directive on a document into one flat instance list, applying each directive's
- * overlay (matched by `over` === directive id) as it goes. The bulk-content counterpart to
- * `resolveAuthoredObjects` / `resolveScatter`: games and headless tests read the same list.
- * @capability world-directives materialize all scene directives with their overlays
- */
+/** @capability world-directives materialize all scene directives with their overlays */
 export function materializeDirectives(
   doc: EditorDocument,
   overlays?: readonly EditorDirectiveOverlay[],

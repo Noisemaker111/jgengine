@@ -2,17 +2,8 @@ import type { AnimClipOutput, AnimGraph } from "@jgengine/core/anim/animGraph";
 import { classifyClip, type ClipRole } from "@jgengine/core/game/clipRoles";
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
 
-/**
- * Editor viewport clip-preview model — pure logic, no JSX or renderer. Mirrors how `pathFlythrough.ts`
- * splits the flythrough math out of {@link AnimationPanel}: derives a rigged asset's playable clip
- * list and models a scrub/loop/speed playback driver that the viewport layer and the dock panel
- * both consume. The actual mixer is the shell's `useModelAnimation`; this module only shapes the
- * config it plays and the transitions the controls dispatch.
- *
- * @internal
- */
+/** @internal */
 
-/** A rigged asset carrying animation clip names — the browser entry / catalog `ModelAssetRef`. */
 export interface ClipSourceRef {
   readonly clips?: readonly string[];
 }
@@ -23,10 +14,6 @@ export interface ClipEntry {
   readonly role: ClipRole | null;
 }
 
-/**
- * Lists a rigged asset's clips with their classified roles, preserving catalog order. Empty when
- * the ref carries no clips (not rigged, or clip metadata absent).
- */
 export function clipEntriesFromRef(ref: ClipSourceRef | null | undefined): ClipEntry[] {
   const clips = ref?.clips;
   if (clips === undefined || clips.length === 0) return [];
@@ -68,10 +55,7 @@ export interface ClipPreviewState {
   time: number;
 }
 
-/** Lowest / highest preview playback rate the speed control allows. */
-/** Lower bound for the clip-preview playback rate. */
 export const MIN_PREVIEW_SPEED = 0.1;
-/** Upper bound for the clip-preview playback rate. */
 export const MAX_PREVIEW_SPEED = 4;
 
 function clampSpeed(speed: number): number {
@@ -79,28 +63,23 @@ function clampSpeed(speed: number): number {
   return Math.max(MIN_PREVIEW_SPEED, Math.min(MAX_PREVIEW_SPEED, speed));
 }
 
-/** Fresh driver state for a clip (auto-plays when a clip is given, like the browser badge implies). */
 export function initialClipPreviewState(clipName: string | null = null): ClipPreviewState {
   return { clipName, playing: clipName !== null, loop: true, speed: 1, time: 0 };
 }
 
-/** Switch to a different clip: resets the playhead and starts playing it. */
 export function selectPreviewClip(state: ClipPreviewState, clipName: string): ClipPreviewState {
   return { ...state, clipName, time: 0, playing: true };
 }
 
-/** Sets whether the previewed clip is playing; pausing keeps the current scrub time. */
 export function setPreviewPlaying(state: ClipPreviewState, playing: boolean): ClipPreviewState {
   if (state.clipName === null) return { ...state, playing: false };
   return { ...state, playing };
 }
 
-/** Toggles play/pause of the previewed clip without losing the scrub position. */
 export function togglePreviewPlaying(state: ClipPreviewState): ClipPreviewState {
   return setPreviewPlaying(state, !state.playing);
 }
 
-/** Sets whether the previewed clip loops when it reaches its end. */
 export function setPreviewLoop(state: ClipPreviewState, loop: boolean): ClipPreviewState {
   return { ...state, loop };
 }

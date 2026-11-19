@@ -3,12 +3,6 @@ import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } fro
 
 import type { ScreenEffect, ScreenEffectsController } from "@jgengine/core/vfx/screenEffects";
 
-/**
- * Build the CSS `background` for one effect at its current eased opacity. A
- * `"full"` effect tints the whole frame; a `"vignette"` effect tints only the
- * edges via a radial gradient that stays transparent in the center. Genre-blind —
- * it reads `color`/`shape`/`intensity` off the model and nothing else.
- */
 function effectBackground(effect: ScreenEffect): string {
   if (effect.shape === "vignette") {
     // Transparent core → the effect color at the corners, scaled by opacity.
@@ -17,27 +11,15 @@ function effectBackground(effect: ScreenEffect): string {
   return effect.color;
 }
 
-/** Per-effect fill layer opacity, so `color` can stay a plain CSS color string. */
 function effectOpacity(effect: ScreenEffect): number {
   const a = effect.intensity;
   return a < 0 ? 0 : a > 1 ? 1 : a;
 }
 
-/** Reskin tokens for {@link ScreenEffectsOverlay}. */
 export interface ScreenEffectsOverlayProps {
-  /** The model to render. */
   controller: ScreenEffectsController;
-  /**
-   * CSS blend mode for the tint layers. Default `"normal"` (straight alpha
-   * composite). `"screen"` or `"multiply"` read as more filmic color grades.
-   */
   blendMode?: CSSProperties["mixBlendMode"];
-  /** Extra `z-index` for the overlay root. Default `40`. */
   zIndex?: number;
-  /**
-   * Drive `advance()` on an animation frame. Default `true`. Turn off if the game
-   * already advances the controller from its own tick.
-   */
   animate?: boolean;
 }
 

@@ -79,9 +79,7 @@ function playerLevel(ctx: GameContext): number {
 
 /** How far off the facing direction (radians) an item still counts as the one being looked at. */
 const LOOK_CONE = Math.PI / 3;
-/** A drop this close is under your feet: the one you mean. */
 export const STAND_ON = 0.6;
-/** Drops this close in score are one pile: E takes the best of it, not whichever landed first. */
 const PILE_SPREAD = 0.08;
 
 function pileRank(itemId: string): number {
@@ -89,10 +87,6 @@ function pileRank(itemId: string): number {
   return gun === undefined ? 0 : 1 + rarityRank(gun.rarity);
 }
 
-/**
- * The drop E takes: the one you stand on, else the one in reach closest to where the player is facing,
- * else the nearest. Out of a pile (drops at the same spot) it takes the rarest gun.
- */
 export function lookedAtItem(ctx: GameContext, from: readonly [number, number, number], yaw: number): string | null {
   let best: string | null = null;
   let bestScore = Number.POSITIVE_INFINITY;
@@ -237,7 +231,6 @@ function openRedChest(ctx: GameContext, instanceId: string): void {
   }
 }
 
-/** The aim a command carries, as an optional field a use input can spread in. */
 function aimOf(input: AimPayload): { aim?: NonNullable<AimPayload["aim"]> } {
   return input.aim === undefined ? {} : { aim: input.aim };
 }
@@ -669,11 +662,6 @@ export function registerCommands(ctx: GameContext): void {
   }
 }
 
-/**
- * Re-derive the module-level `activeCharacter`/`talentTree` singletons from the restored stores after a
- * whole-world `ctx.game.save.load()` — they live outside the world snapshot, unlike the character id,
- * talent ranks and `skillPoints` stat the load already restored. Returns whether a saved build was found.
- */
 export function resumeBuild(ctx: GameContext): boolean {
   const characterId = characterIdStore.read(ctx);
   if (characterId === null) return false;
@@ -698,13 +686,4 @@ function applyPassiveEffects(ctx: GameContext, previousHealthMult = 1): void {
   }
   applyWalkSpeed(ctx, reservePhase(ctx) === "downed");
 }
-
-
-
-
-
-
-
-
-
 

@@ -115,9 +115,7 @@ export interface DecorDef {
   id: string;
   color: string;
   height: number;
-  /** Uniform scale for flat pieces (rugs) whose height is not what sizes them. */
   scale?: number;
-  /** Glow of the piece, 0 when it casts none. */
   glow?: number;
 }
 

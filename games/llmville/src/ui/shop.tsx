@@ -1,5 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/** The tablet's shop pieces: listing cards, price and research buttons, quantity steppers, stat pills. */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneView, type RuneViewProps } from "@jgengine/core/ui/rune/primitives.view";
 
@@ -11,12 +10,10 @@ export function Card({ dim = false, owned = false, children, ...props }: RuneVie
     opacity={dim ? 0.45 : 1} gap={8} padding={12} {...props}>{children}</RuneView>;
 }
 
-/** A money figure: `$1,200`. */
 export function money(value: number): string {
   return `$${Math.round(value).toLocaleString()}`;
 }
 
-/** A buy or research price button; `pending` shows an ellipsis while the request is out. */
 export function PriceButton({ price, affordable, pending = false, label, onPress, name }: {
   price: number; affordable: boolean; pending?: boolean; label?: string; onPress: () => void; name?: string;
 }) {
@@ -27,12 +24,10 @@ export function PriceButton({ price, affordable, pending = false, label, onPress
   </Button>;
 }
 
-/** Research a locked listing with data tokens. */
 export function ResearchButton({ tokens, affordable, pending, onPress, name }: { tokens: number; affordable: boolean; pending: boolean; onPress: () => void; name: string }) {
   return <PriceButton price={tokens} affordable={affordable} pending={pending} label={`Research — ${tokens.toLocaleString()} tokens`} name={name} onPress={onPress} />;
 }
 
-/** − quantity + and `Buy ×N`. Every action carries the listing's name for keyboard, pad and tests. */
 export function QuantityBuy({ quantity, max = 99, onQuantity, onBuy, disabled, pending = false, name, highlight = false }: {
   quantity: number; max?: number; onQuantity: (next: number) => void; onBuy: () => void; disabled: boolean; pending?: boolean; name: string; highlight?: boolean;
 }) {
@@ -50,7 +45,6 @@ export function QuantityBuy({ quantity, max = 99, onQuantity, onBuy, disabled, p
   </Row>;
 }
 
-/** A small stat: value over label. */
 export function Pill({ label, value, accent = C.cream }: { label: string; value: string; accent?: string }) {
   return <RuneView gap={2} padding={[6, 10, 6, 10]} radius={10} fill="#ffffff0d" items="center">
     <Text size={13} weight={800} color={accent}>{value}</Text>
@@ -58,7 +52,6 @@ export function Pill({ label, value, accent = C.cream }: { label: string; value:
   </RuneView>;
 }
 
-/** A segmented row of tabs; disabled tabs are locked by the tutorial, a highlighted one is next. */
 export function Tabs<T extends string>({ tabs, active, labels, allowed = () => true, highlighted = () => false, onSelect, accent = C.teal }: {
   tabs: readonly T[]; active: T; labels: Record<T, string>; allowed?: (id: T) => boolean; highlighted?: (id: T) => boolean; onSelect: (id: T) => void; accent?: string;
 }) {
@@ -71,7 +64,6 @@ export function Tabs<T extends string>({ tabs, active, labels, allowed = () => t
   </RuneView>;
 }
 
-/** The bouncing teal arrow that points at the tutorial's next action. */
 export function TutorialArrow() {
   return <Text size={18} weight={800} color={C.teal} label="Next step">↓</Text>;
 }

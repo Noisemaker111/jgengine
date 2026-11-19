@@ -13,7 +13,7 @@ import { createShaderWarmup, deferUnlinkedDraws, firstUnlinkedDrawable, holdDraw
 /** Warmup state before the gate has run, so the loading screen covers the very first frame. @internal */
 export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
 
-/** Warmup progress held outside UI state: see {@link createSceneWarmupStore}. @internal */
+/** @internal */
 export interface SceneWarmupStore {
   get: () => ShaderWarmupState;
   set: (state: ShaderWarmupState) => void;
@@ -189,7 +189,7 @@ export function warmupLabel(state: ShaderWarmupState): string {
   return "Preparing scene.";
 }
 
-/** How full the cover's bar is: a sliver while waiting for the scene, then the share of links the GPU has run. @internal */
+/** @internal */
 export function warmupBarShare(state: ShaderWarmupState): number {
   if (state.phase !== "compiling") return 0.05;
   return Math.max(0.05, Math.min(1, state.progress));
@@ -200,7 +200,7 @@ export function warmupCovering(state: ShaderWarmupState): boolean {
   return state.phase !== "ready" && state.phase !== "failed";
 }
 
-/** The cover, re-rendered on its own as progress lands in the store and as the boot moves. @internal */
+/** @internal */
 export function SceneWarmupCoverLive({ store }: { store: SceneWarmupStore }) {
   const state = useSyncExternalStore(store.subscribe, store.get, store.get);
   return <SceneWarmupCover state={state} step={useBootStep()} />;

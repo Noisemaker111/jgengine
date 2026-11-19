@@ -13,18 +13,13 @@ import { registerSceneKind, type SceneKindObject } from "../scene/sceneKinds";
 import { type ParamSchema } from "../generator/paramSchema";
 import type { WaterSurfaceConfig } from "./waterSurface";
 
-/** The editor volume kind marking a box as a water surface. */
 export const WATER_VOLUME_KIND = "water";
 
-/** Fully-defaulted water surface params parsed from a volume's `meta`. */
 export interface WaterRules {
-  /** Deep-water base color (hex). */
   color: string;
-  /** Shallow/edge tint blended toward the shore (hex). */
   shallowColor: string;
   /** Wave amplitude in meters. */
   waveHeight: number;
-  /** Wave scroll speed multiplier. */
   waveSpeed: number;
   /** Spatial wave frequency (waves per meter). */
   waveScale: number;
@@ -48,7 +43,6 @@ export const WATER_DEFAULTS: WaterRules = {
   reflectivity: 0.4,
 };
 
-/** The water parameter schema — drives the inspector and `meta` parse via the studio seam. */
 export const WATER_SCHEMA: ParamSchema = {
   fields: [
     { type: "color", key: "color", label: "deep color", default: WATER_DEFAULTS.color },
@@ -72,7 +66,7 @@ function metaString(meta: Record<string, unknown> | undefined, key: string, fall
   return typeof value === "string" ? value : fallback;
 }
 
-/** Parse a volume's `meta` into fully-defaulted water rules. @internal */
+/** @internal */
 export function readWaterRules(meta: Record<string, unknown> | undefined): WaterRules {
   return {
     color: metaString(meta, "color", WATER_DEFAULTS.color),
@@ -92,7 +86,6 @@ export interface ResolvedWater {
   /** Full width (X) and depth (Z) of the water plane in meters. */
   size: readonly [number, number];
   rules: WaterRules;
-  /** The wave model at the surface height: hand it to `waterSurface` for buoyancy, and the shell draws the same waves. */
   surface: WaterSurfaceConfig;
 }
 
@@ -106,7 +99,6 @@ function waterRulesSurface(rules: WaterRules, level: number): WaterSurfaceConfig
   };
 }
 
-/** Reads a numeric field off a possibly-untyped `{x,y,z}`-ish object. */
 function axis(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
@@ -134,7 +126,7 @@ export function resolveWaterObject(object: SceneKindObject): ResolvedWater | nul
   return { center: [center.x, level, center.z], size: [width, depth], rules, surface: waterRulesSurface(rules, level) };
 }
 
-/** Registers the `water` scene kind (schema + resolver). Called by {@link registerBuiltinSceneKinds}. @internal */
+/** @internal */
 export function registerWaterKind(): void {
   registerSceneKind<ResolvedWater | null>({
     kind: WATER_VOLUME_KIND,

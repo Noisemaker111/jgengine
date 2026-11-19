@@ -10,15 +10,12 @@ const GRAVITY = 9.80665;
 const DENSITY = 1.225;
 const DEG = Math.PI / 180;
 
-/** A game rotorcraft to measure: its tuning, with a `rotor` block. */
 export interface RotorcraftComparisonAircraft {
   name: string;
   tuning: RigidAircraftTuning;
-  /** Largest allowed gap to the reference on every row, share of it; rows then report `pass`. */
   tolerance?: number;
 }
 
-/** One metric: the game rotor, the Bo-105 reference and the NASA wind-tunnel figure; `real` is absent where none exists. */
 export interface RotorcraftComparisonRow {
   label: string;
   unit: string;
@@ -29,7 +26,6 @@ export interface RotorcraftComparisonRow {
   pass?: boolean;
 }
 
-/** A game rotor's metrics beside the Bo-105 reference helicopter's and the measured Bo-105 rotor's. */
 export interface RotorcraftComparison {
   aircraft: string;
   reference: string;
@@ -43,7 +39,6 @@ interface GameRotor {
   torque: number;
 }
 
-/** The game rotor's thrust and torque at a collective, rotor speed 1, flying at `velocity` (world, y up). */
 function gameRotor(tuning: RigidAircraftTuning, velocity: readonly [number, number, number], collective: number, hubHeight = 1000): GameRotor {
   const rotor = tuning.rotor;
   if (rotor === undefined) return { thrust: Number.NaN, torque: Number.NaN };
@@ -55,7 +50,6 @@ function gameRotor(tuning: RigidAircraftTuning, velocity: readonly [number, numb
   return { thrust: step.rotor?.thrust ?? Number.NaN, torque: step.rotor?.aerodynamicTorque ?? Number.NaN };
 }
 
-/** The collective that makes `thrust` at `velocity` out of ground effect, by bisection. */
 function collectiveFor(tuning: RigidAircraftTuning, thrust: number, velocity: readonly [number, number, number] = [0, 0, 0]): number {
   let low = 0;
   let high = 1;
@@ -94,7 +88,6 @@ function gameEngineCut(tuning: RigidAircraftTuning, trimCollective: number): num
   return speed;
 }
 
-/** Shaft angle of the TM-110356 μ 0.15 flight-matched run, rad (forward tilt). */
 const CRUISE_SHAFT = 3.3 * DEG;
 
 function gameColumn(tuning: RigidAircraftTuning): number[] {
@@ -122,7 +115,6 @@ function gameColumn(tuning: RigidAircraftTuning): number[] {
   ];
 }
 
-/** The Bo-105 main rotor at sea level and rated speed, controls fixed, flapping and inflow settled. */
 function bo105Rotor(w: number, u: number, collective: number, height = Number.POSITIVE_INFINITY): GameRotor & { power: number } {
   const flow = { u, v: 0, w, p: 0, q: 0, density: DENSITY, speedOfSound: 340.294, height };
   const pitch = { collective, cosine: 0, sine: 0 };

@@ -21,15 +21,13 @@ const DECAL_TILE = 128;
 /** Texels each tile repeats its edge into, so mip levels do not bleed one decal into the next. */
 const DECAL_GUTTER = 8;
 const DECAL_STRIDE = DECAL_TILE + 2 * DECAL_GUTTER;
-/** Tiles per atlas row; a page holds `DECAL_COLUMNS`² decal looks. */
 const DECAL_COLUMNS = 8;
 const DECAL_PAGE_SLOTS = DECAL_COLUMNS * DECAL_COLUMNS;
 /** Edge in metres of the world cell one merged decal draw covers, so an unseen cell still culls whole. */
 export const DECAL_CELL = 128;
 
-/** Every decal of a scene as a few draws: one per (atlas page, world cell). @internal */
+/** @internal */
 export interface DecalBatches {
-  /** Atlas pages holding every distinct decal look once. */
   pages: THREE.DataTexture[];
   /** Merged world-space decal geometry, one per page and cell. */
   draws: { key: string; page: number; geometry: THREE.BufferGeometry }[];
@@ -76,7 +74,6 @@ function bakePage(looks: readonly DecalLook[]): THREE.DataTexture {
   return texture;
 }
 
-/** One decal's geometry in world space, its UVs moved onto its atlas tile and its opacity in the vertex alpha. */
 function decalGeometry(resolved: ResolvedDecal, heightAt: TerrainHeightSampler, slot: number, pageLooks: number): { geometry: THREE.BufferGeometry; cell: string } {
   const { rules } = resolved;
   const [px, py, pz] = resolved.position;
@@ -175,17 +172,13 @@ function decalMaterial(map: THREE.Texture): THREE.MeshStandardMaterial {
   });
 }
 
-/** Props {@link decalsDraw} reads each sync. @internal */
+/** @internal */
 export interface DecalsDrawProps {
   objects: readonly SceneKindObject[];
   heightAt: TerrainHeightSampler;
 }
 
-/**
- * Draw-side form of the decal batch: rebuilds the atlas pages and merged cell draws when the object
- * list or height sampler changes, and frees the previous bake's textures, geometries and materials.
- * @internal
- */
+/** @internal */
 export function decalsDraw(getProps: () => DecalsDrawProps): EngineDraw {
   let batches: DecalBatches | null = null;
   let materials: THREE.MeshStandardMaterial[] = [];
@@ -246,7 +239,7 @@ function Decals({ objects, heightAt }: { objects: readonly SceneKindObject[]; he
   return null;
 }
 
-/** Registers the `decal` marker renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerDecalRenderer(): void {
   registerSceneKindRenderer("decal", ({ objects, context }) => <Decals objects={objects} heightAt={context.field.sampleHeight} />);
 }

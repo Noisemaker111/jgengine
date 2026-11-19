@@ -3,8 +3,6 @@ import { join, relative } from "node:path";
 
 import { isGameSourceFile } from "../packages/jgengine/src/gameShape";
 
-/** Every non-test `.ts`/`.tsx` under each game's `src`, as repo-relative paths with their source.
- * Pass `games` to scan only those (the reference set); omitted scans every game folder. */
 export function eachGameSource(root: string, games?: readonly string[]): { rel: string; source: string }[] {
   const gamesDir = join(root, "games");
   const files: { rel: string; source: string }[] = [];
@@ -43,7 +41,6 @@ export function eachGameSource(root: string, games?: readonly string[]): { rel: 
   return files;
 }
 
-/** Scans every game source line by line, collecting whatever `match` returns. */
 export function scanGameLines<T>(
   root: string,
   match: (line: string, rel: string, lineNumber: number) => T | null,

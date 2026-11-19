@@ -13,16 +13,12 @@ import type { GlbMaterial, GlbModel, GlbNode, GlbPrimitive } from "./glbWrite";
  */
 export type RigShape = "quadruped" | "biped" | "flyer" | "bug" | "serpent";
 
-/** What {@link autoRig} needs to know about a model; every share is of the model's own size. */
 export interface AutoRigOptions {
   shape: RigShape;
-  /** The way the source model faces. Default `+z`. */
   facing?: "+z" | "-z" | "+x" | "-x";
   /** Where the legs join the body, as a share of standing height. Found from the belly when omitted. */
   legTop?: number;
-  /** Share of the body length, from the nose, that the neck and head take. */
   head?: number;
-  /** Share of the body length, from the tail tip, that the tail takes; 0 for no tail. */
   tail?: number;
   /** Pairs of legs on a bug. Default 4. */
   legPairs?: number;
@@ -63,7 +59,6 @@ function facingTurn(facing: AutoRigOptions["facing"]): (x: number, z: number) =>
   }
 }
 
-/** Lowest point where an upward ray at (x, z) meets the mesh, or null. */
 function lowestHit(prims: readonly { positions: Float32Array; indices: Uint32Array }[], x: number, z: number): number | null {
   let best: number | null = null;
   for (const { positions: p, indices } of prims) {
@@ -83,7 +78,6 @@ function lowestHit(prims: readonly { positions: Float32Array; indices: Uint32Arr
   return best;
 }
 
-/** Split values into `k` groups by 1-D k-means; returns the sorted group centres. */
 function kMeans1d(values: readonly number[], k: number): number[] {
   if (values.length === 0) return [];
   const sorted = [...values].sort((a, b) => a - b);

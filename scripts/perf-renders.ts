@@ -6,13 +6,10 @@ import { installRenderCounter, type RenderCounts } from "../packages/core/src/de
 /** The counter as a page script; it must run before the page's own scripts load the UI runtime. */
 export const RENDER_COUNTER_SCRIPT = `(${installRenderCounter.toString()})(globalThis);`;
 
-/** Install the counter for every document this session opens from now on. */
 export async function installPageRenderCounter(session: CdpSession): Promise<void> {
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RENDER_COUNTER_SCRIPT });
 }
 
-/** Start the count over; false when the page has no counter (React DevTools' own hook was there first). */
-/** The game's simulation tick through the agent bridge, or null on a page without one. */
 const SIM_TICK = `(globalThis.__jg?.agent?.handle({ method: "scene_counts" })?.tick ?? null)`;
 
 export async function resetRenderCounter(session: CdpSession): Promise<boolean> {

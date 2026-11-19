@@ -3,10 +3,8 @@ import { createHumanBody, type HumanBody } from "./humanBody";
 import { analyzeLocomotion, reflexDriver, type GaitReport } from "./humanGaitAnalysis";
 import { createReflexWalker, type ReflexParameters, type ReflexWalker } from "./reflexWalker";
 
-/** Ground a fitted walk was tuned on. */
 export type WalkTerrain = "level" | "uphill" | "downhill" | "stairs";
 
-/** Reflex parameters fitted for one walking speed and terrain. */
 export interface FittedWalk {
   terrain: WalkTerrain;
   /** Target speed of the fit and the speed the walk starts at, m/s. Above 1.6 m/s the walker settles slower than its target. */
@@ -14,10 +12,6 @@ export interface FittedWalk {
   reflexes: ReflexParameters;
 }
 
-/**
- * The terrains the fits ran on: level; a 6% grade up or down starting 3 m ahead; a flight of 0.15 m × 0.30 m steps
- * (a common building-code stair) starting 4 m ahead.
- */
 export const WALK_TERRAIN: Record<WalkTerrain, GroundProfile> = {
   level: flatGround(),
   uphill: slopeGround(Math.atan(0.06), 3),
@@ -80,10 +74,7 @@ export const FITTED_WALKS: readonly FittedWalk[] = [
   },
 ];
 
-/**
- * The fitted walk nearest `speed` on `terrain`.
- * @capability fitted-human-walk the reference human's fitted reflex walk nearest a speed on level ground, slopes or stairs
- */
+/** @capability fitted-human-walk the reference human's fitted reflex walk nearest a speed on level ground, slopes or stairs */
 export function fittedWalk(speed: number, terrain: WalkTerrain = "level"): FittedWalk {
   let best: FittedWalk | undefined;
   for (const walk of FITTED_WALKS) {
@@ -96,19 +87,13 @@ export function fittedWalk(speed: number, terrain: WalkTerrain = "level"): Fitte
 
 const DEG = Math.PI / 180;
 
-/**
- * Put `body` in the mid-swing pose the fits start from, moving at the walk's speed, and attach its reflex walker.
- * @internal
- */
+/** @internal */
 export function startWalk(body: HumanBody, walk: FittedWalk): ReflexWalker {
   body.reset(0, { leftAnkle: 5 * DEG, leftKnee: -5 * DEG, leftHip: 5 * DEG, rightAnkle: 0, rightKnee: -5 * DEG, rightHip: 40 * DEG, trunk: -walk.reflexes.thetaRef }, walk.speed);
   return createReflexWalker(body, walk.reflexes);
 }
 
-/**
- * Walk the reference human with a fitted walk on its terrain and measure the steady gait (see `analyzeLocomotion`).
- * @capability human-walk-reference walk the muscle-reflex reference human at a fitted speed on level ground, a 6% grade or stairs, and measure it
- */
+/** @capability human-walk-reference walk the muscle-reflex reference human at a fitted speed on level ground, a 6% grade or stairs, and measure it */
 export function measureWalk(walk: FittedWalk, settle = 4, measure = 6): GaitReport {
   const body = createHumanBody({ mass: 80, stature: 1.8, ground: WALK_TERRAIN[walk.terrain] });
   return analyzeLocomotion(reflexDriver(body, startWalk(body, walk)), settle, measure);

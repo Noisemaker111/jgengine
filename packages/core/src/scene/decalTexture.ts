@@ -33,11 +33,7 @@ function fbm(x: number, y: number, seed: number): number {
   return noise(x, y, seed) * 0.62 + noise(x * 2.1 + 7.3, y * 2.1 - 3.1, seed + 11) * 0.26 + noise(x * 4.3 - 1.7, y * 4.3 + 5.9, seed + 23) * 0.12;
 }
 
-
-/**
- * 5x7 stencil glyphs, one string of seven 5-bit rows per character: digits, capitals and `-/.`.
- * @internal
- */
+/** @internal */
 export const STENCIL_GLYPHS: Readonly<Record<string, string>> = {
   "0": "01110100011001110101100111000101110", "1": "00100011000010000100001000010001110", "2": "01110100010000100010001000100011111",
   "3": "11110000010000101110000010000111110", "4": "00010001100101010010111110001000010", "5": "11111100001111000001000011000101110",
@@ -54,7 +50,6 @@ export const STENCIL_GLYPHS: Readonly<Record<string, string>> = {
   "-": "00000000000000011111000000000000000", "/": "00001000010001000100010001000010000", ".": "00000000000000000000000000110001100",
 };
 
-/** The characters of a stencil's text it can paint: known glyphs and spaces, upper-cased. */
 function stencilChars(text: string): string[] {
   return [...text.toUpperCase()].filter((char) => char === " " || STENCIL_GLYPHS[char] !== undefined);
 }
@@ -80,19 +75,17 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
-/** The paint a stencil or chevron decal is sprayed in. */
 export interface DecalPaint {
   text?: string | undefined;
   color?: string | undefined;
 }
 
-/** Baked decals kept for the next mount of the same look, newest last; capped by {@link BAKED_CACHE_BYTES}. */
 const bakedDecals = new Map<string, DecalTextureData>();
 let bakedBytes = 0;
 /** About 120 256-pixel stencils or 500 128-pixel stains: every look a floor or two shows. */
 const BAKED_CACHE_BYTES = 32 * 1024 * 1024;
 
-/** The cache key of one decal look. @internal */
+/** @internal */
 export function decalKey(style: DecalStyle, seed: string, size: number, paint: DecalPaint): string {
   return `${style}\u0000${seed}\u0000${size}\u0000${paint.text ?? ""}\u0000${paint.color ?? ""}`;
 }
@@ -138,7 +131,7 @@ export function createDecalTexture(style: DecalStyle, seed: string, size = 128, 
   return baked;
 }
 
-/** Bake one look, uncached: what a worker runs. @internal */
+/** @internal */
 export function bakeDecalTexture(style: DecalStyle, seed: string, size: number, paint: DecalPaint): DecalTextureData {
   const lettering = style === "stencil" ? stencilChars(paint.text || "00") : [];
   const hexPaint = paint.color ?? "";

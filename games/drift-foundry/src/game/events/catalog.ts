@@ -3,37 +3,21 @@ import type { MedalBoardConfig, MedalDirection } from "@jgengine/core/progressio
 import { COMPACTOR_BASE_SPEED, type CompactorPlan } from "../compactor/schedule";
 import type { RivalDef } from "../race/opponents";
 
-/**
- * The yard calendar: every event is one of the yard's tracks under its own rules - who is on the
- * grid, how hard the crusher comes, whether the pit garage's build is allowed - and one number the
- * medals are judged on. Medals add up to points and points open the next tier, the way Trials and
- * Trackmania hand out their next set of tracks.
- */
-
 export type EventMetric = "place" | "time" | "sweep" | "grudge";
 
 export interface YardEvent {
   id: string;
   label: string;
   tier: TierId;
-  /** The track this event runs on (see tracks/catalog.ts). */
   track: string;
-  /** One line on the calendar card. */
   blurb: string;
   metric: EventMetric;
-  /** Bronze, silver and gold on that metric. */
   targets: { bronze: number; silver: number; gold: number };
-  /** Rival ids on the grid; `"all"` is the full field and `[]` is the corridor alone. */
   rivals: "all" | readonly string[];
-  /** Pace multiplier for every rival on the grid. */
   rivalPace?: number;
-  /** Line multiplier: under 1 pulls every rival onto a cleaner, faster line. */
   rivalLine?: number;
-  /** The pit garage's bought parts are bolted on at the start; off means route salvage only. */
   garage: boolean;
-  /** Changes to the crusher on top of the shift the run drew. */
   compactor?: { startZ?: number; baseSpeed?: number; surgeSpeed?: number; surgeEarlier?: number };
-  /** Credits paid the first time each medal is earned on this event. */
   rewards: { bronze: number; silver: number; gold: number };
 }
 
@@ -175,7 +159,6 @@ export const DEFAULT_EVENT_ID = "salvage-run";
 
 const DIRECTION: Record<EventMetric, MedalDirection> = { place: "lower", time: "lower", sweep: "higher", grudge: "higher" };
 
-/** The calendar as the engine's medal board reads it. */
 export const MEDAL_BOARD: MedalBoardConfig = {
   medals: MEDALS,
   tiers: YARD_TIERS,
@@ -186,7 +169,6 @@ export function eventById(id: string): YardEvent | null {
   return YARD_EVENTS.find((event) => event.id === id) ?? null;
 }
 
-/** The grid this event races: the shift-adjusted field, filtered and retuned by the event. */
 export function eventRivals(event: YardEvent, defs: readonly RivalDef[]): readonly RivalDef[] {
   const allowed = event.rivals === "all" ? defs : defs.filter((def) => (event.rivals as readonly string[]).includes(def.id));
   if (event.rivalPace === undefined && event.rivalLine === undefined) return allowed;
@@ -197,7 +179,6 @@ export function eventRivals(event: YardEvent, defs: readonly RivalDef[]): readon
   }));
 }
 
-/** The crusher this event runs: the shift's plan with the event's start, base speed and surges on top. */
 export function eventCompactor(event: YardEvent, plan: CompactorPlan): CompactorPlan {
   const change = event.compactor;
   if (change === undefined) return plan;
@@ -214,7 +195,6 @@ export function eventCompactor(event: YardEvent, plan: CompactorPlan): Compactor
   };
 }
 
-/** How the event's number reads on a card: `P2`, `38.4 s`, `9 drops`, `+1.2 s on HOBBS`. */
 export function formatMetric(metric: EventMetric, value: number): string {
   if (metric === "place") return `P${Math.round(value)}`;
   if (metric === "time") return `${value.toFixed(1)} s`;
@@ -222,7 +202,6 @@ export function formatMetric(metric: EventMetric, value: number): string {
   return `${value >= 0 ? "+" : "−"}${Math.abs(value).toFixed(1)} s on HOBBS`;
 }
 
-/** What a medal asks for, in words: `finish P1`, `under 35.0 s`, `12 drops`, `beat HOBBS by 2.5 s`. */
 export function targetText(metric: EventMetric, value: number): string {
   if (metric === "place") return value === 1 ? "win it" : `finish P${value} or better`;
   if (metric === "time") return `escape in ${value.toFixed(1)} s`;

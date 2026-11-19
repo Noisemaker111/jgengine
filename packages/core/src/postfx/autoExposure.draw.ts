@@ -85,7 +85,6 @@ export class ExposureMeterPass extends Pass {
   private readonly copyQuad: FullScreenQuad;
   private readonly pixels = new Uint8Array(METER_SIZE * METER_SIZE * 4);
   private readonly samples = new Float32Array(METER_SIZE * METER_SIZE);
-  /** A dry run (the shader warmup's) draws the passes without metering or queueing a readback. */
   dry = false;
   private frames = 0;
   private taken = 0;
@@ -96,7 +95,6 @@ export class ExposureMeterPass extends Pass {
   private fence: WebGLSync | null = null;
   /** Fenced after the last frame's drawing while a readback waits; see {@link frameEnd}. */
   private drain: WebGLSync | null = null;
-  /** Frames a finished readback has waited for the GPU to catch up. */
   private waited = 0;
 
   constructor(
@@ -222,7 +220,6 @@ export class ExposureMeterPass extends Pass {
     if (status !== gl.WAIT_FAILED) this.emit();
   }
 
-  /** Whether the GPU has finished the last frame's drawing; each answer uses up the frame's marker. */
   private caughtUp(gl: WebGL2RenderingContext): boolean {
     this.waited += 1;
     const drain = this.drain;

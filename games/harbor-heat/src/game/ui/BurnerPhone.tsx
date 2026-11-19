@@ -6,7 +6,6 @@ import { useGameContext } from "@jgengine/ui/provider";
 import { clockText, Label, Lcd, LcdText, Row, Text } from "./kit";
 import { HH, DISPLAY } from "./theme";
 
-/** A physical key's job: the label printed on the screen above it and what pressing it does. */
 export interface PhoneKey {
   label: string;
   run: () => void;
@@ -14,7 +13,6 @@ export interface PhoneKey {
 
 const NUMPAD = ["1", "2 ABC", "3 DEF", "4 GHI", "5 JKL", "6 MNO", "7 PQRS", "8 TUV", "9 WXYZ", "*", "0 +", "#"] as const;
 
-/** Four signal bars and a two-cell battery, drawn on the LCD's status line. */
 function StatusLine() {
   const ctx = useGameContext();
   return (
@@ -36,11 +34,6 @@ function SoftKey({ keyDef }: { keyDef: PhoneKey | undefined }) {
   );
 }
 
-/**
- * The courier's burner: a chunky candybar phone with a stub antenna, an amber LCD and a rubber keypad.
- * Pause, settings and the city phone (T) are all apps on this one handset. The softkeys work; the
- * number keys are just keys. The LCD's rows are native actions, so arrows, pad and touch reach them.
- */
 export function BurnerPhone({ app, children, softLeft, softRight, notice, keypad = false, width = 300, lcdHeight }: {
   app: string;
   children: ReactNode;
@@ -86,7 +79,6 @@ export function BurnerPhone({ app, children, softLeft, softRight, notice, keypad
   );
 }
 
-/** One LCD line you can pick: arrows, pad, mouse and touch reach it. */
 export function LcdLine({ children, ...props }: RuneActionProps) {
   return <RuneAction variant="line" layout="row" justify="between" color={HH.lcdInk} {...props}>{children}</RuneAction>;
 }

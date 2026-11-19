@@ -12,7 +12,6 @@ export interface ArthropodStride {
 export interface ArthropodRunner {
   animal: string;
   legs: 6 | 8;
-  /** Length of the hind (insects) or walking (spiders) leg, m: the length of its Froude number. */
   legLength: number;
   /** Fastest measured steady speed, m/s. */
   topSpeed: number;
@@ -73,13 +72,8 @@ export const ARTHROPOD_RUNNERS: Record<"cockroach" | "silverAnt" | "desertAnt" |
   },
 };
 
-/** Gaits of a running arthropod. */
 export type ArthropodGait = "tripod" | "running" | "alternating tetrapod";
 
-/**
- * Froude number above which a six-legged runner takes aerial phases: the geometric mean of the onsets measured in
- * the cockroach and the two Cataglyphis ants (0.34 to 3.4).
- */
 export const HEXAPOD_AERIAL_FROUDE = Math.cbrt(
   [ARTHROPOD_RUNNERS.cockroach, ARTHROPOD_RUNNERS.silverAnt, ARTHROPOD_RUNNERS.desertAnt].reduce((p, r) => p * froudeNumber(r.aerialFrom, r.legLength), 1),
 );
@@ -106,23 +100,19 @@ export function arthropodTopSpeed(legs: 6 | 8, legLength: number): { low: number
   return { low: Math.min(...speeds), high: Math.max(...speeds) };
 }
 
-/** A game arthropod's legs and speeds. */
 export interface ArthropodLocomotion {
   legs: 6 | 8;
-  /** Leg length, m. */
   legLength: number;
   walkSpeed: number;
   runSpeed: number;
 }
 
-/** One game arthropod against real ones scaled to its leg length. */
 export interface ArthropodComparison {
   walkGait: ArthropodGait;
   runGait: ArthropodGait;
   runFroude: number;
   referenceTopSpeedLow: number;
   referenceTopSpeedHigh: number;
-  /** Game run speed over the fastest scaled real runner. */
   topSpeedRatio: number;
 }
 
@@ -131,10 +121,7 @@ function gaitAt(legs: 6 | 8, froude: number): ArthropodGait {
   return froude >= HEXAPOD_AERIAL_FROUDE ? "running" : "tripod";
 }
 
-/**
- * Compare a game arthropod's walk and run with real insects or spiders at equal Froude number.
- * @capability arthropod-compare score a game insect or spider's gaits and top speed against real arthropods
- */
+/** @capability arthropod-compare score a game insect or spider's gaits and top speed against real arthropods */
 export function compareArthropod(creature: ArthropodLocomotion): ArthropodComparison {
   const top = arthropodTopSpeed(creature.legs, creature.legLength);
   const runFroude = froudeNumber(creature.runSpeed, creature.legLength);
@@ -152,12 +139,7 @@ function row(metric: string, label: string, unit: string, reference: number, low
   return { metric, label, unit, reference, low, high, source, pass: reference >= low && reference <= high };
 }
 
-/**
- * Validate the arthropod reference: each runner's stride fits multiply back to its speed, the two ants predict the
- * cockroach's top speed at equal Froude number, and √leg-length scaling sits inside Hurlbert et al.'s measured ant
- * exponents.
- * @capability arthropod-reference-validation check the arthropod reference against published insect and spider running data
- */
+/** @capability arthropod-reference-validation check the arthropod reference against published insect and spider running data */
 export function validateArthropodReference(): HumanValidationRow[] {
   const rows: HumanValidationRow[] = [];
   for (const [id, runner] of Object.entries(ARTHROPOD_RUNNERS)) {

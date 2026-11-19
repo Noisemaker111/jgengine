@@ -2,20 +2,15 @@ import type { Aabb, Vec2 } from "../world/geometry";
 import type { TerrainMaterialMaps } from "../world/features";
 import { fractalNoise, FLAT_FIELD, withNormal, type FractalNoiseConfig, type TerrainField, type TerrainNormal } from "./terrain";
 
-/** A sculpt operation kind: heightfield brushes plus the surface-paint brush. */
 export type TerraformMode = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" | "paint";
-/** How a brush's strength fades from its center to its rim. */
 export type TerraformFalloff = "smooth" | "linear" | "none";
-/** A brush footprint: a round disc or an axis-aligned square. */
 export type TerraformShape = "circle" | "square";
 
-/** Clamp bounds applied to the resulting terrain height after a heightfield edit. */
 export interface TerraformHeightLimit {
   min?: number;
   max?: number;
 }
 
-/** A single sculpt stamp: which brush, where, and its shaping parameters. */
 export interface TerraformEdit {
   mode: TerraformMode;
   center: Vec2;
@@ -30,15 +25,12 @@ export interface TerraformEdit {
   surface?: string;
   falloff?: TerraformFalloff;
   shape?: TerraformShape;
-  /** Noise brush frequency (world units), higher = finer detail. */
   frequency?: number;
-  /** Noise brush seed — same seed reproduces the same roughening. */
   seed?: number;
   /** Clamp final terrain height into this range after the edit. */
   heightLimit?: TerraformHeightLimit;
 }
 
-/** Grid and starting ground for {@link createEditableTerrain}: world bounds, an optional base field to sculpt on, and the cell size. */
 export interface EditableTerrainConfig {
   bounds: Aabb;
   base?: TerrainField;
@@ -56,11 +48,8 @@ export interface TerrainMaterialLayer {
   surface: string;
   /** Surface micro-roughness 0..1 (0 = mirror, 1 = matte). */
   roughness?: number;
-  /** World units per texture repeat. */
   tiling?: number;
-  /** Project the material on all three axes to hide stretching on cliffs. */
   triplanar?: boolean;
-  /** Authored hex color replacing the default surface palette color in editor and runtime. */
   tint?: string;
   /** Layer master opacity 0..1 — scales this layer's blend weight everywhere. */
   opacity?: number;
@@ -70,26 +59,17 @@ export interface TerrainMaterialLayer {
    * needs no asset-library lookup.
    */
   material?: string;
-  /** Resolved scanned PBR map URLs (colour, normal, roughness, AO, height), written by the editor from {@link TerrainMaterialLayer.material}. */
   materialMaps?: TerrainMaterialMaps | undefined;
 }
 
-/** Plain JSON of a sculpted terrain: grid size, per-cell height offsets, painted surfaces and material layers. Saved in scene documents. */
 export interface TerraformSnapshot {
   bounds: Aabb;
   cellSize: number;
   cols: number;
   rows: number;
   offsets: readonly number[];
-  /** Dominant surface id per cell — the single-layer fast path and backward-compatible channel. */
   surfaces: readonly (string | null)[];
-  /** Reorderable material stack; absent on pre-2.0 documents (derive with {@link migrateTerrainSnapshot}). */
   layers?: readonly TerrainMaterialLayer[];
-  /**
-   * Per-cell per-layer blend weights, flat `cols*rows*layers.length` (cell-major, then layer),
-   * each cell summing to ≈1. Lazy: absent until a blend is painted, so single-layer terrains stay
-   * compact. When absent, blending falls back to the hard {@link TerraformSnapshot.surfaces} id.
-   */
   weights?: readonly number[];
 }
 
@@ -104,7 +84,6 @@ export interface TerraformDelta {
   after: readonly number[];
 }
 
-/** Reports each changed vertex during a recorded edit: grid index, prior offset, new offset. */
 export type TerraformDeltaRecorder = (index: number, before: number, after: number) => void;
 
 /**
@@ -117,15 +96,9 @@ export interface SurfaceDelta {
   indices: readonly number[];
   before: readonly (string | null)[];
   after: readonly (string | null)[];
-  /**
-   * The blend-weight slots the hard paint reset alongside the ids: on a blended terrain each
-   * touched cell becomes weight 1 on the painted layer and 0 on every other. Absent when the
-   * terrain has no weight buffer, so unblended paint deltas stay as compact as before.
-   */
   weights?: WeightDelta;
 }
 
-/** Reports each changed cell during a recorded paint: grid index, prior surface id, new surface id. */
 export type SurfaceDeltaRecorder = (index: number, before: string | null, after: string | null) => void;
 
 /**
@@ -140,10 +113,8 @@ export interface WeightDelta {
   after: readonly number[];
 }
 
-/** Reports each changed weight slot during a recorded blend: flat index, prior weight, new weight. */
 export type WeightDeltaRecorder = (index: number, before: number, after: number) => void;
 
-/** A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high). */
 export interface TerrainSurfaceRule {
   surface: string | null;
   /** Minimum slope (rise/run) a cell must have to be painted. */
@@ -153,7 +124,6 @@ export interface TerrainSurfaceRule {
   maxHeight?: number;
 }
 
-/** A sculptable heightfield: a `TerrainField` that brushes raise, lower, smooth and paint, with snapshot and undo support. */
 export interface EditableTerrain extends TerrainField {
   readonly cols: number;
   readonly rows: number;
@@ -161,18 +131,10 @@ export interface EditableTerrain extends TerrainField {
   /** World-space extent of the cell grid; cell `(gx, gz)` spans `cols`/`rows` equal slices of it. */
   readonly gridBounds: Aabb;
   apply(edit: TerraformEdit): number;
-  /** Apply an edit while reporting every touched vertex to `record` — the seam strokes record deltas through. */
   applyRecording(edit: TerraformEdit, record: TerraformDeltaRecorder): number;
-  /** Apply a single edit and return the compact delta it produced. */
   editDelta(edit: TerraformEdit): TerraformDelta;
-  /** Re-apply a delta's `after` offsets (redo). */
   applyDelta(delta: TerraformDelta): void;
-  /** Restore a delta's `before` offsets (undo). */
   revertDelta(delta: TerraformDelta): void;
-  /**
-   * Paint a surface brush while reporting every changed cell to `record` and every blend-weight
-   * slot it reset to `recordWeight` — surface strokes record deltas through.
-   */
   paintRecording(edit: TerraformEdit, record: SurfaceDeltaRecorder, recordWeight?: WeightDeltaRecorder): number;
   /**
    * Hard-paint a surface brush and return the compact delta it produced. Every hard write (paint,
@@ -181,31 +143,16 @@ export interface EditableTerrain extends TerrainField {
    * painting a surface outside {@link layers}, zeroes the cell's weights so the id shows through.
    */
   paintDelta(edit: TerraformEdit): SurfaceDelta;
-  /** Fill every cell with one surface (or `null` to clear) and return the compact delta. */
   fillSurfaceDelta(surface: string | null): SurfaceDelta;
-  /** Paint a surface into every cell matching a height/slope rule and return the compact delta. */
   autoPaintDelta(rule: TerrainSurfaceRule): SurfaceDelta;
-  /** Re-apply a surface delta's `after` ids and weights (redo). */
   applySurfaceDelta(delta: SurfaceDelta): void;
-  /** Restore a surface delta's `before` ids and weights (undo). */
   revertSurfaceDelta(delta: SurfaceDelta): void;
-  /** The current material layer stack (lower index paints under higher). */
   readonly layers: readonly TerrainMaterialLayer[];
-  /** Replace the material stack, retaining weights by layer id and normalizing when painted layers are removed. */
   setLayers(layers: readonly TerrainMaterialLayer[]): void;
-  /**
-   * Paint the active `edit.surface` layer's blend weight into the brush footprint, pushing the
-   * cell toward that layer while renormalizing the rest. Returns the compact delta it produced;
-   * empty if `edit.surface` is not one of the current {@link layers}.
-   */
   blendPaintDelta(edit: TerraformEdit): WeightDelta;
-  /** Blend-paint while reporting every changed weight slot to `record` — blend strokes record through it. */
   blendRecording(edit: TerraformEdit, record: WeightDeltaRecorder): number;
-  /** Re-apply a weight delta's `after` values (redo). */
   applyWeightDelta(delta: WeightDelta): void;
-  /** Restore a weight delta's `before` values (undo). */
   revertWeightDelta(delta: WeightDelta): void;
-  /** The per-layer blend weights under a world point (parallel to {@link layers}); empty when unblended. */
   weightsAt(x: number, z: number): number[];
   heightOffsetAt(x: number, z: number): number;
   surfaceAt(x: number, z: number): string | null;
@@ -214,7 +161,6 @@ export interface EditableTerrain extends TerrainField {
   restore(snapshot: TerraformSnapshot): void;
 }
 
-/** Smooth/linear/hard brush weight for a sample `distance` from the brush center. */
 export function brushWeight(distance: number, radius: number, falloff: TerraformFalloff): number {
   if (radius <= 0) return distance <= 0 ? 1 : 0;
   const t = distance / radius;
@@ -235,7 +181,6 @@ function clampRange(value: number, min: number | undefined, max: number | undefi
   return value;
 }
 
-/** Build a flat (or base-field) editable terrain over `config.bounds`, ready for brushes. */
 export function createEditableTerrain(config: EditableTerrainConfig): EditableTerrain {
   const base = config.base ?? FLAT_FIELD;
   const bounds = config.bounds;
@@ -473,12 +418,6 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     for (let i = 0; i < delta.indices.length; i += 1) buffer[delta.indices[i]!] = values[i]!;
   }
 
-  /**
-   * Visits every cell in a brush footprint on the CELL grid, yielding each cell's flat `index`, its
-   * {@link brushWeight} `weight`, world center (`wx`,`wz`), and raw `dist` from the brush center.
-   * Shared by the cell-grid brushes ({@link paintSurface}, {@link blendPaint}); each applies its own
-   * inclusion test on the yielded values (paint uses `dist <= radius`, blend uses `weight > 0`).
-   */
   function forEachBrushCell(
     edit: TerraformEdit,
     visit: (index: number, weight: number, wx: number, wz: number, dist: number) => void,
@@ -604,7 +543,6 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     return Array.from({ length: layers.length }, (_, l) => weights![base + l]!);
   }
 
-  /** Materializes the weight buffer, seeding each cell to weight 1 on its current dominant surface. */
   function ensureWeights(): Float32Array {
     if (weights !== null) return weights;
     const buffer = new Float32Array(cellCount * Math.max(1, layers.length));
@@ -847,30 +785,18 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
   return field;
 }
 
-/**
- * Accumulates a whole drag — many brush stamps — into one compact {@link TerraformDelta}. Keeps
- * each vertex's first `before` and latest `after`, so undo replays the stroke as a single step
- * even though the pointer fired dozens of moves.
- */
 export interface TerraformStroke {
   stamp(edit: TerraformEdit): number;
   delta(): TerraformDelta;
   isEmpty(): boolean;
 }
 
-/** The changed-entry arrays a stroke accumulated: parallel `indices`/`before`/`after` over one type. */
 interface StrokeChanges<T> {
   indices: number[];
   before: T[];
   after: T[];
 }
 
-/**
- * The shared first/latest Map accumulator behind every `begin*Stroke`. Records each key's first
- * `before` and latest `after` across many stamps, then assembles the net changed entries (skipping
- * keys whose latest equals their first). Each stroke supplies its own recording call via `recordStamp`
- * and wraps {@link StrokeChanges} into its concrete delta shape.
- */
 function createStroke<T>(
   recordStamp: (edit: TerraformEdit, record: (index: number, before: T, after: T) => void) => number,
 ) {
@@ -882,7 +808,6 @@ function createStroke<T>(
   };
 }
 
-/** The first-`before`/latest-`after` maps behind {@link createStroke}, fed by any recorder. */
 function createChangeTracker<T>() {
   const first = new Map<number, T>();
   const latest = new Map<number, T>();
@@ -891,7 +816,6 @@ function createChangeTracker<T>() {
       if (!first.has(index)) first.set(index, before);
       latest.set(index, after);
     },
-    /** Net changed entries; `keep` retains one whose latest equals its first (a cell whose weights changed). */
     changes(keep?: (index: number) => boolean): StrokeChanges<T> {
       const indices: number[] = [];
       const before: T[] = [];
@@ -912,7 +836,6 @@ function createChangeTracker<T>() {
   };
 }
 
-/** Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta. */
 export function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke {
   const stroke = createStroke<number>((edit, record) => terrain.applyRecording(edit, record));
   return {
@@ -922,20 +845,12 @@ export function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecord
   };
 }
 
-/**
- * Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}.
- * Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
- */
 export interface SurfaceStroke {
   stamp(edit: TerraformEdit): number;
   delta(): SurfaceDelta;
   isEmpty(): boolean;
 }
 
-/**
- * Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta
- * carrying both the surface ids and the blend weights the hard paint reset.
- */
 export function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecording" | "layers">): SurfaceStroke {
   const cells = createChangeTracker<string | null>();
   const slots = createChangeTracker<number>();
@@ -953,7 +868,6 @@ export function beginSurfaceStroke(terrain: Pick<EditableTerrain, "paintRecordin
   };
 }
 
-/** Returns a new snapshot with a surface delta's `after` ids and weights applied (copy-on-write). */
 export function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot {
   const surfaces = snapshot.surfaces.slice();
   for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.after[i] ?? null;
@@ -961,7 +875,6 @@ export function applySurfaceDeltaToSnapshot(snapshot: TerraformSnapshot, delta: 
   return delta.weights === undefined ? painted : applyWeightDeltaToSnapshot(painted, delta.weights);
 }
 
-/** Returns a new snapshot with a surface delta's `before` ids and weights restored (copy-on-write undo). */
 export function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: SurfaceDelta): TerraformSnapshot {
   const surfaces = snapshot.surfaces.slice();
   for (let i = 0; i < delta.indices.length; i += 1) surfaces[delta.indices[i]!] = delta.before[i] ?? null;
@@ -969,7 +882,6 @@ export function revertSurfaceDeltaFromSnapshot(snapshot: TerraformSnapshot, delt
   return delta.weights === undefined ? reverted : revertWeightDeltaFromSnapshot(reverted, delta.weights);
 }
 
-/** The distinct non-null surface ids painted in a snapshot, in first-seen order. */
 function distinctSurfaces(snapshot: TerraformSnapshot): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -999,7 +911,6 @@ export function migrateTerrainSnapshot(snapshot: TerraformSnapshot): TerraformSn
   return { ...snapshot, layers };
 }
 
-/** Materializes a snapshot's blend weights, seeding weight 1 on each cell's dominant surface. */
 function materializeSnapshotWeights(snapshot: TerraformSnapshot): number[] {
   const layers = snapshot.layers ?? [];
   const cells = snapshot.cols * snapshot.rows;
@@ -1019,10 +930,7 @@ function materializeSnapshotWeights(snapshot: TerraformSnapshot): number[] {
   return buffer;
 }
 
-/**
- * Returns a new snapshot with a weight delta's `after` values applied (materializing weights first).
- * @internal — undo/redo plumbing behind the `blendTerrain` command.
- */
+/** @internal — undo/redo plumbing behind the `blendTerrain` command. */
 export function applyWeightDeltaToSnapshot(snapshot: TerraformSnapshot, delta: WeightDelta): TerraformSnapshot {
   if (delta.layerCount !== (snapshot.layers?.length ?? 0)) return snapshot;
   const weights = materializeSnapshotWeights(snapshot);
@@ -1030,10 +938,7 @@ export function applyWeightDeltaToSnapshot(snapshot: TerraformSnapshot, delta: W
   return { ...snapshot, weights };
 }
 
-/**
- * Returns a new snapshot with a weight delta's `before` values restored (copy-on-write undo).
- * @internal — undo/redo plumbing behind the `blendTerrain` command.
- */
+/** @internal — undo/redo plumbing behind the `blendTerrain` command. */
 export function revertWeightDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: WeightDelta): TerraformSnapshot {
   if (delta.layerCount !== (snapshot.layers?.length ?? 0)) return snapshot;
   const weights = materializeSnapshotWeights(snapshot);
@@ -1041,20 +946,13 @@ export function revertWeightDeltaFromSnapshot(snapshot: TerraformSnapshot, delta
   return { ...snapshot, weights };
 }
 
-/**
- * Accumulates a whole blend-paint drag into one compact {@link WeightDelta}. Keeps each weight
- * slot's first `before` and latest `after`, so undo replays the blend as a single step.
- */
 export interface BlendStroke {
   stamp(edit: TerraformEdit): number;
   delta(): WeightDelta;
   isEmpty(): boolean;
 }
 
-/**
- * Opens a blend-stroke recorder over `terrain`; stamp blend edits into it, then read one net delta.
- * @internal — the stroke recorder behind the blend brush and the `blendTerrain` command.
- */
+/** @internal — the stroke recorder behind the blend brush and the `blendTerrain` command. */
 export function beginBlendStroke(terrain: Pick<EditableTerrain, "blendRecording" | "layers">): BlendStroke {
   const stroke = createStroke<number>((edit, record) => terrain.blendRecording(edit, record));
   return {
@@ -1097,12 +995,10 @@ export function dirtyBoundsFromIndices(
   return { minX: minX - margin, minZ: minZ - margin, maxX: maxX + margin, maxZ: maxZ + margin };
 }
 
-/** A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document. */
 export function createTerrainSnapshot(config: EditableTerrainConfig): TerraformSnapshot {
   return createEditableTerrain(config).snapshot();
 }
 
-/** Rebuilds a live {@link EditableTerrain} from a snapshot, layered over `base` ground. */
 export function editableTerrainFromSnapshot(
   snapshot: TerraformSnapshot,
   base?: TerrainField,
@@ -1116,21 +1012,18 @@ export function editableTerrainFromSnapshot(
   return terrain;
 }
 
-/** Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched). */
 export function applyDeltaToSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot {
   const offsets = snapshot.offsets.slice();
   for (let i = 0; i < delta.indices.length; i += 1) offsets[delta.indices[i]!] = delta.after[i]!;
   return { ...snapshot, offsets };
 }
 
-/** Returns a new snapshot with a delta's `before` offsets restored (copy-on-write undo). */
 export function revertDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: TerraformDelta): TerraformSnapshot {
   const offsets = snapshot.offsets.slice();
   for (let i = 0; i < delta.indices.length; i += 1) offsets[delta.indices[i]!] = delta.before[i]!;
   return { ...snapshot, offsets };
 }
 
-/** Starting radius, strength, falloff and paint surface for {@link createTerraformBrush}. */
 export interface TerraformBrushConfig {
   radius?: number;
   strength?: number;
@@ -1138,7 +1031,6 @@ export interface TerraformBrushConfig {
   surface?: string;
 }
 
-/** A held sculpt tool: raise, lower, flatten or paint at a point with its current radius and strength. */
 export interface TerraformBrush {
   raise(center: Vec2): number;
   lower(center: Vec2): number;
@@ -1147,18 +1039,15 @@ export interface TerraformBrush {
   setRadius(radius: number): void;
   setStrength(strength: number): void;
   config(): Required<Omit<TerraformBrushConfig, "surface">> & { surface: string | undefined };
-  /** The retunable brush settings; the terrain keeps its own `snapshot()`. */
   snapshot(): TerraformBrushState;
   restore(next: TerraformBrushState): void;
 }
 
-/** Plain JSON state of a {@link TerraformBrush}. */
 export interface TerraformBrushState {
   radius: number;
   strength: number;
 }
 
-/** Make a brush that edits `terrain` through its `apply`; each stroke returns how many cells changed. */
 export function createTerraformBrush(
   terrain: Pick<EditableTerrain, "apply">,
   config: TerraformBrushConfig = {},

@@ -17,17 +17,12 @@ const PARSED = /\.[cm]?[jt]sx?$/;
 const EXTENSIONS = ["", ".ts", ".tsx", ".mts", ".cts", ".d.ts", ".js", ".jsx", ".mjs", "/index.ts", "/index.tsx", "/index.js"];
 
 export interface ImportGraph {
-  /** Every tracked or untracked-but-not-ignored file, repo-relative with `/`. */
   files: ReadonlySet<string>;
-  /** Source file -> the in-repo files it imports. */
   imports: ReadonlyMap<string, readonly string[]>;
-  /** File -> the source files that import it. */
   importers: ReadonlyMap<string, readonly string[]>;
-  /** Source file -> its in-repo specifiers that resolved to no file; see the header. */
   opaque: ReadonlyMap<string, readonly string[]>;
 }
 
-/** Import specifiers in a source file: static, type-only, dynamic, re-export and require forms. */
 export function specifiers(text: string): string[] {
   const found: string[] = [];
   const pattern = /(?:^|[^\w$.])(?:import|export)\s*(?:[^"'();]*?\sfrom\s*)?["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']|require\s*\(\s*["']([^"']+)["']/g;
@@ -38,7 +33,6 @@ export function specifiers(text: string): string[] {
   return found;
 }
 
-/** Tracked and untracked (not ignored) files: the tree a lane is about to push. */
 export function repoFiles(root: string): string[] {
   const result = spawnSync("git", ["ls-files", "-co", "--exclude-standard"], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   if (result.status !== 0) throw new Error(`git ls-files: ${(result.stderr ?? "").trim()}`);
@@ -65,10 +59,6 @@ function inRepoBare(specifier: string, packages: readonly WorkspacePackage[], al
   return aliases.some((alias) => (alias.key.endsWith("/*") ? specifier.startsWith(alias.key.slice(0, -1)) : specifier === alias.key));
 }
 
-/**
- * Build the graph over `files`. `readText` is injectable for tests; `packages` names the
- * workspace packages so `@games/harbor-heat/...` and `@llmville/game/...` resolve.
- */
 export function buildImportGraph(
   root: string,
   files: readonly string[],
@@ -79,7 +69,6 @@ export function buildImportGraph(
   const packages = [...(options.packages ?? [])].sort((a, b) => b.name.length - a.name.length);
   const aliasCache = new Map<string, Alias[]>(options.tsconfigs ?? []);
 
-  /** The `paths` in effect for files under `dir`: the nearest tsconfig.json up the tree. */
   const aliasesFor = (dir: string): Alias[] => {
     const cached = aliasCache.get(dir);
     if (cached !== undefined) return cached;
@@ -194,7 +183,6 @@ export function buildImportGraph(
   return { files: all, imports, importers, opaque };
 }
 
-/** Every file whose import closure contains one of `seeds`, the seeds included. */
 export function reverseReach(graph: ImportGraph, seeds: Iterable<string>): Set<string> {
   const reached = new Set<string>();
   const queue = [...seeds];
@@ -207,7 +195,6 @@ export function reverseReach(graph: ImportGraph, seeds: Iterable<string>): Set<s
   return reached;
 }
 
-/** Every file `entry` imports, directly or not, `entry` included. */
 export function closure(graph: ImportGraph, entries: Iterable<string>): Set<string> {
   const reached = new Set<string>();
   const queue = [...entries];

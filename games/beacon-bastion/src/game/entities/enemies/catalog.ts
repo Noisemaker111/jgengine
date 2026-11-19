@@ -1,6 +1,5 @@
 import type { RaiderClass } from "../../combat/damage";
 
-/** Fresnel rim tuned per raider so its edge separates from the road it walks on. */
 export interface CreepRim {
   color: string;
   strength: number;
@@ -14,29 +13,21 @@ export interface CreepDef {
   title?: string;
   health: number;
   speed: number;
-  /** The unit's weight in gold at wave 1; the wave and a relic multiply it (`waves/bounty.ts`). */
   bounty: number;
   leak: number;
   /** Visual size, and the hitbox it derives. The default camera puts about seven vertical pixels on one world unit, so this carries most of the "which raider is that" answer. */
   scale: number;
-  /** The body: a `kaykit-adventurers` model for the living, a `kaykit-skeletons` model for the dead. */
   model: string;
-  /** Weapons in each hand, `kaykit-adventurers` prop ids: the heavy ranks carry a two-hander or a shield so rank shows in outline. */
   gear?: { right?: string; left?: string };
   /** A second skeleton model when the first is missing; living raiders have none. */
   fallbackModel?: string;
   /** Body tint, multiplied over the model's own texture - the arena is warm tan and green, so each raider carries a hue the ground never has. */
   color: string;
   rim: CreepRim;
-  /** What it is made of, read against each tower's damage type (`combat/damage.ts`). */
   class: RaiderClass;
-  /** Armor points against arrows and shells; 40 halves a hit. */
   armor: number;
-  /** Floats above the road: only towers that hit the air can aim at it. */
   flying?: boolean;
-  /** A ward that soaks damage first and rebuilds after a lull. */
   shield?: { max: number; regenPerSecond: number; regenDelayMs: number };
-  /** Mends raiders around it on a beat. */
   heals?: { radius: number; share: number; everySeconds: number };
   /** Breaks into smaller raiders where it falls. */
   splits?: { unit: string; count: number };
@@ -265,7 +256,6 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
   },
 };
 
-/** A raider's display name: its name when it has one, else its role. */
 export function creepName(id: string): string {
   const def = CREEP_CATALOG[id];
   if (def === undefined) return id;
@@ -278,7 +268,6 @@ export function creepDef(id: string): CreepDef {
   return def;
 }
 
-/** The traits a wave preview names: what a player has to bring an answer for. */
 export function creepTraits(id: string): readonly string[] {
   const def = CREEP_CATALOG[id];
   if (def === undefined) return [];

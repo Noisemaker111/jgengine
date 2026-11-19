@@ -6,9 +6,7 @@ export interface RecordingFrame<T> {
 }
 
 export interface RecordingBufferOptions {
-  /** Evict frames older than `latestT - maxDurationSeconds`. Default unlimited. */
   maxDurationSeconds?: number;
-  /** Hard cap on frame count, oldest evicted first. Default unlimited. */
   maxFrames?: number;
 }
 
@@ -19,11 +17,8 @@ export interface RecordingPair<T> {
 
 export interface RecordingBuffer<T> {
   append(t: number, data: T): void;
-  /** Nearest frame at or before `t`, or null if the buffer is empty or `t` precedes every frame. */
   seek(t: number): RecordingFrame<T> | null;
-  /** The frames bracketing `t` for interpolated playback: `before` is `seek(t)`, `after` is the next recorded frame (null past the end). */
   seekPair(t: number): RecordingPair<T>;
-  /** Frames with `fromT <= t <= toT`, in recorded order. */
   range(fromT: number, toT: number): RecordingFrame<T>[];
   clear(): void;
   duration(): number;
@@ -45,14 +40,7 @@ function evict<T>(frames: RecordingFrame<T>[], options: RecordingBufferOptions):
   }
 }
 
-/**
- * A session-recording buffer for replay / photo mode / kill-cam: append
- * timestamped snapshots (poses, camera state, whatever `T` is) on game-time,
- * then seek/scrub the recording independent of the live sim. Frames are
- * expected in non-decreasing `t` order (one push per tick); `seek`/`range`
- * binary-search on that assumption.
-  * @internal
-  */
+/** @internal */
 export function createRecordingBuffer<T>(options: RecordingBufferOptions = {}): RecordingBuffer<T> {
   const frames: RecordingFrame<T>[] = [];
 

@@ -1,8 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { ErrorReportActions, errorReportContext } from "@jgengine/core/devtools/diagnosticOverlay.view";
 
-/** Small pieces every runner app root shares: error formatting and the two panels. */
-
 export function formatLoadError(error: unknown): string {
   if (error instanceof Error) return error.stack ?? error.message;
   return String(error);

@@ -10,7 +10,6 @@ import { lightBeamDraw } from "@jgengine/core/map/LightBeam.draw";
 
 import { bodies } from "../deathBody";
 
-/** Fallen survivors' bodies: a bundle where they fell and a pale beam of light above it to find it by. */
 export function bodiesDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
   const group = new THREE.Group();
   const geometry = new THREE.DodecahedronGeometry(0.5, 0);

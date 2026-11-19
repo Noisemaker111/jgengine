@@ -37,7 +37,6 @@ export function postAuditVerdict(row: AuditRow): PostAuditVerdict {
   return "identical";
 }
 
-/** A game whose chain has none of the changed draws (no grade, no AO, no bloom) has nothing that could differ. */
 const PASSING: ReadonlySet<string> = new Set(["identical", "nothing changed"]);
 
 export function renderPostAudit(rows: readonly AuditRow[]): string {

@@ -5,7 +5,6 @@ import { useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import { demoPart, type DemoKey } from "./demoParts";
 import { TracedDemo } from "./TracedDemo";
 
-/** Several live demos behind tabs, one running at a time, each above the code that drives it. */
 export function EngineTour({
   demos,
   eyebrow,

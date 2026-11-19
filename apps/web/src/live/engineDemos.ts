@@ -3,7 +3,6 @@ import type { DemoKey } from "./demoParts";
 import { formatNumber, type LiveCodeSpec } from "./liveCode";
 import type { TraceLines } from "./trace";
 
-/** A live demo's jgengine code: the file it shows, which lines light while the demo does each thing, and how its sliders rewrite it. */
 export interface EngineDemo {
   file: SnippetFile;
   filename: string;

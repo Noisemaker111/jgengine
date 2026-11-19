@@ -10,15 +10,8 @@ import { clamp01 } from "../math/scalar";
  * Pure and deterministic so the whole cycle is testable without a renderer.
  */
 
-/**
- * Rayleigh scattering coefficient per RGB channel in m^-1 (680, 550, 440 nm, the standard
- * β_R ∝ 1/λ⁴ curve) times an 8000 m scale height — the zenith optical depth `τ` of each channel.
- */
 const RAYLEIGH_DEPTH = [0.0464, 0.108, 0.2648] as const;
 
-/** Peak moonlight as a fraction of the authored sunlight, at the moon's highest point.
- * Real moonlight is ~2.5e-6 of daylight; every game exaggerates it to stay readable, and this is
- * the exaggeration, not a measurement. Games override it through `SkyEnvironmentConfig.moon`. */
 export const MOONLIGHT_PEAK = 0.12;
 
 /** Moonlight's colour: scattered sunlight, blue-shifted because the eye's scotopic response peaks there. */
@@ -63,10 +56,6 @@ export function sunTransmission(elevationDeg: number): [number, number, number] 
   return [0, 1, 2].map((channel) => Math.exp(-RAYLEIGH_DEPTH[channel]! * mass)) as [number, number, number];
 }
 
-/**
- * The sun's colour at `elevationDeg`, normalised so its brightest channel is full: white overhead,
- * orange at the horizon, moon-blue once it has set. Intensity stays the authored cycle's job.
- */
 export function sunlightColor(elevationDeg: number): string {
   if (elevationDeg <= -6) return MOONLIGHT_COLOR;
   const transmission = sunTransmission(Math.max(elevationDeg, 0));
@@ -86,16 +75,11 @@ export function luminanceOf(color: string): number {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 }
 
-/**
- * Moonlight at `sunElevationDeg`'s opposite point: full at the top of the moon's arc, zero while
- * the moon is below the horizon, scaled by `peak` (a fraction of the authored sun intensity).
- */
 export function moonIllumination(moonElevationDeg: number, peak: number = MOONLIGHT_PEAK): number {
   if (moonElevationDeg <= 0) return 0;
   return Math.sin(Math.min(moonElevationDeg, 90) * DEG) * Math.max(0, peak);
 }
 
-/** How visible the stars are: none in daylight, half at the first hint of a set sun, full once it is 6° under. */
 export function starOpacity(sunElevationDeg: number): number {
   return 1 - smoothstep(-6, 0, sunElevationDeg);
 }

@@ -1,8 +1,3 @@
-/**
- * Live demo: key bindings as data. A little room plays itself by pressing ACTIONS (open the door, fire,
- * open the inventory); which physical key that is comes from the input map. Beside it sits the engine's
- * own `KeybindingMenu` over `createRebindSession`: change a key there and the very next press uses it.
- */
 // Engine components draw through the engine's own UI runtime, mounted into an element the page owns.
 import { createElement } from "@jgengine/core/ui/jsx";
 import { createRoot, type Root } from "@jgengine/core/ui/jsx/client.view";
@@ -104,7 +99,6 @@ export function createKeysSpecimen(container: HTMLElement, trace: Trace): KeysSp
   let session: RebindSession = createRebindSession({ input: inputMap(dials), labels: LABELS });
   let map = applyBindingOverrides(inputMap(dials), session.overrides());
 
-  /** Keys down right now, from the visitor or the autopilot. */
   const pressed = new Set<string>();
   const pilot = takeover(5000);
   const player = { x: 0.3, y: 0.55, hop: 0, faceX: 1, faceY: 0 };
@@ -119,7 +113,6 @@ export function createKeysSpecimen(container: HTMLElement, trace: Trace): KeysSp
     return codes !== undefined && codesOf(codes).some((c) => pressed.has(c));
   };
   const actionFor = (code: string) => Object.entries(map).find(([, codes]) => codesOf(codes).includes(fold(code)))?.[0] ?? null;
-  /** The key the input map says triggers an action right now. */
   const keyFor = (action: string) => {
     const codes = map[action];
     return codes === undefined ? null : (codesOf(codes)[0] ?? null);
@@ -154,7 +147,6 @@ export function createKeysSpecimen(container: HTMLElement, trace: Trace): KeysSp
     stepStarted = performance.now();
   }
 
-  /** Runs the script: walking presses the move keys, the rest press one action's key. */
   function autopilot(now: number) {
     const step = at(SCRIPT, stepAt);
     const age = now - stepStarted;

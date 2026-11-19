@@ -8,15 +8,11 @@ import { useGameContext } from "@jgengine/ui/provider";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Darkest a fresh mark draws at full strength. */
 const MARK_ALPHA = 0.62;
 /** Fades are coarse: rebuilding twice a second is invisible and keeps the pool cheap. */
 const FADE_REBUILD_SECONDS = 0.5;
 
-/**
- * Write each live mark as a quad (two triangles) into `positions` (xyz) and `colors` (rgba), fading by age.
- * Returns the number of vertices written. @internal
- */
+/** @internal */
 export function writeTireMarkGeometry(marks: readonly TireMark[], time: number, lifetime: number, positions: Float32Array, colors: Float32Array): number {
   const maxQuads = Math.floor(positions.length / 18);
   let quad = 0;
@@ -55,10 +51,7 @@ export function writeTireMarkGeometry(marks: readonly TireMark[], time: number, 
   return quad * 6;
 }
 
-/**
- * Draws `ctx.tireMarks` as one batched, fading mesh on the ground. Mounted by the 3D shell for every game.
- * @internal
- */
+/** @internal */
 export function worldTireMarksDraw(ctx: GameContext): EngineDraw {
   const store = ctx.tireMarks;
   let mesh: Mesh | null = null;
@@ -121,7 +114,7 @@ export function worldTireMarksDraw(ctx: GameContext): EngineDraw {
   };
 }
 
-/** Draws `ctx.tireMarks` as one batched, fading mesh on the ground. Mounted by the 3D shell for every game. @internal */
+/** @internal */
 export function WorldTireMarks() {
   const ctx = useGameContext();
   const created = useRef<EngineDraw | null>(null);

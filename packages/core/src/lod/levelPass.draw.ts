@@ -17,18 +17,18 @@ let passes = 0;
 let skips = 0;
 let frames = 0;
 
-/** Count one frame a level pass was offered. @internal */
+/** @internal */
 export function noteLevelPassFrame(): void {
   frames += 1;
 }
 
-/** Count one level pass that ran or was skipped. @internal */
+/** @internal */
 export function noteLevelPass(ran: boolean): void {
   if (ran) passes += 1;
   else skips += 1;
 }
 
-/** Clear the level pass counters. For tests and between capture runs. @internal */
+/** @internal */
 export function resetLevelPassStats(): void {
   passes = 0;
   skips = 0;
@@ -67,17 +67,15 @@ export function levelPassNeeded(last: THREE.Vector3, camera: THREE.Vector3, marg
   return camera.distanceToSquared(last) >= margin * margin;
 }
 
-/** Holds the last pass's camera position and its distance to the nearest switch edge. @internal */
+/** @internal */
 export interface LevelPassGate {
-  /** True when this frame's pass could change an answer, or when no pass has run yet. */
   needsPass(camera: THREE.Vector3): boolean;
-  /** Record a pass that ran: its camera position and the smallest margin it measured. */
   record(camera: THREE.Vector3, margin: number): void;
   /** Forget the last pass, so the next frame runs one. */
   invalidate(): void;
 }
 
-/** A skip gate for one batch's level pass. @internal */
+/** @internal */
 export function createLevelPassGate(): LevelPassGate {
   let x = 0;
   let y = 0;
@@ -113,13 +111,11 @@ export function createLevelPassGate(): LevelPassGate {
 export interface VariantSwitch {
   readonly boundaries: readonly number[];
   readonly hysteresis: number;
-  /** Share of each boundary added to `hysteresis`. */
   readonly ratio: number;
-  /** Distances are divided by each instance's largest placement scale before switching. */
   readonly scaleWithInstance: boolean;
 }
 
-/** Read a model's variant config as {@link VariantSwitch}. @internal */
+/** @internal */
 export function variantSwitchOf(variants: ModelVariantLodConfig): VariantSwitch {
   const boundaries: number[] = [];
   for (let index = 0; index < variants.levels.length - 1; index += 1) {

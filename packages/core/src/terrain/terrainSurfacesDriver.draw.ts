@@ -12,7 +12,7 @@ import { MAX_TERRAIN_PAINT_LAYERS, type TerrainPaintSlot } from "./terrainSurfac
 const NO_SCANS: ReadonlyMap<string, SurfaceMaterialMaps> = new Map();
 const loading = new Map<string, Promise<SurfaceMaterialMaps | undefined>>();
 
-/** One shared decode per scan spec and size, matching the `useLoader` cache the hook path used. @internal */
+/** @internal */
 export function loadSharedTerrainScan(maps: TerrainMaterialMaps, size: number): Promise<SurfaceMaterialMaps | undefined> {
   const key = `${size}|${terrainScanKey(maps)}`;
   const known = loading.get(key);
@@ -26,14 +26,12 @@ export function loadSharedTerrainScan(maps: TerrainMaterialMaps, size: number): 
   return pending;
 }
 
-/** What a terrain surface bake needs: the resolved surface roles, paint-layer scans and graphics tier. */
 export interface TerrainSurfacesInput {
   detailSurfaces: ResolvedTerrainSurfaces | undefined;
   paintSlots: readonly TerrainPaintSlot[] | undefined;
   quality: GraphicsQuality;
 }
 
-/** The baked surface array plus whether scans or the bake are still in flight. */
 export interface TerrainSurfacesSnapshot {
   surfaces: TerrainSurfaceTextures | undefined;
   pending: boolean;

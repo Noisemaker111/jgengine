@@ -119,7 +119,6 @@ function radialTexture(): THREE.Texture {
   return texture;
 }
 
-/** One combat.vfx burst: sprites plus an optional nova ring or beam mesh, animated by wall clock. */
 function vfxItemDraw(event: CombatVfxEvent, texture: THREE.Texture): EngineDraw {
   const born = performance.now();
   const group = new THREE.Group();
@@ -262,10 +261,7 @@ function vfxItemDraw(event: CombatVfxEvent, texture: THREE.Texture): EngineDraw 
   };
 }
 
-/**
- * Renders `combat.vfx` bursts as additive sprite-particle effects in the world scene.
- * @internal
- */
+/** @internal */
 export function spellVfxDraw(ctx: GameContext, { tailMs = 200 }: { tailMs?: number }): EngineDraw {
   const active = new Map<number, { draw: EngineDraw; timer: ReturnType<typeof setTimeout> }>();
   const timers = new Set<ReturnType<typeof setTimeout>>();
@@ -315,7 +311,7 @@ export function spellVfxDraw(ctx: GameContext, { tailMs = 200 }: { tailMs?: numb
   };
 }
 
-/** Renders `combat.vfx` bursts as additive sprite-particle effects in the world scene. @internal */
+/** @internal */
 export function SpellVfx({ tailMs = 200 }: { tailMs?: number }) {
   const ctx = useGameContext();
   useEngineDraw(() => spellVfxDraw(ctx, { tailMs }), [ctx, tailMs]);

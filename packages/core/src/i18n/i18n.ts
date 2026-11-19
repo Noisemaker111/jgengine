@@ -1,13 +1,10 @@
 // @skill jgengine-ui
-/** A locale tag (e.g. `"en"`, `"es"`, `"ja"`) — a key into a {@link Catalog}. */
 export type Locale = string;
 
 import { formatLocaleNumber } from "./localeFormat";
 
-/** Flat message table for one locale: key → template string or plural forms. */
 export type Messages = Readonly<Record<string, Message>>;
 
-/** The Unicode plural categories; a language uses only the ones its rules produce. */
 export type PluralCategory = "zero" | "one" | "two" | "few" | "many" | "other";
 
 /**
@@ -25,19 +22,12 @@ export interface PluralMessage {
   ordinal?: boolean;
 }
 
-/** One message: a `{param}` template, or plural forms chosen by `count`. */
 export type Message = string | PluralMessage;
 
-/** All locales' message tables, keyed by locale. */
 export type Catalog = Readonly<Record<Locale, Messages>>;
 
-/** Interpolation values for a message template. */
 export type TParams = Readonly<Record<string, string | number>>;
 
-/**
- * Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left
- * intact. With a `locale`, numbers print with that locale's grouping, decimals and digits.
- */
 export function interpolate(template: string, params?: TParams, locale?: Locale): string {
   if (params === undefined) return template;
   return template.replace(/\{(\w+)\}/g, (whole, name: string) => {
@@ -47,8 +37,7 @@ export function interpolate(template: string, params?: TParams, locale?: Locale)
   });
 }
 
-/** The plural category `count` falls in for `locale`, from `Intl.PluralRules`. * @internal
- */
+/** @internal */
 export function pluralCategory(locale: Locale, count: number, type: "cardinal" | "ordinal" = "cardinal"): PluralCategory {
   try {
     return new Intl.PluralRules(locale, { type }).select(count);
@@ -57,18 +46,15 @@ export function pluralCategory(locale: Locale, count: number, type: "cardinal" |
   }
 }
 
-/** The template of `message` for `count`: the exact `zero`, else the locale's category, else `other`. */
 export function selectPlural(locale: Locale, message: PluralMessage, count: number): string {
   if (count === 0 && message.zero !== undefined) return message.zero;
   return message[pluralCategory(locale, count, message.ordinal === true ? "ordinal" : "cardinal")] ?? message.other;
 }
 
-/** Configuration for {@link createI18n}. */
 export interface I18nOptions {
   catalog: Catalog;
   /** Active locale. Must be a key of `catalog` for lookups to resolve there. */
   locale: Locale;
-  /** The game's base locale, consulted when a key is missing in the active locale. */
   baseLocale?: Locale;
   /** Called once per locale and key that is missing there (default: one `console.warn`). `t` still answers from the base locale, else the key. */
   onMissing?: (key: string, locale: Locale) => void;
@@ -77,17 +63,12 @@ export interface I18nOptions {
 /** Runtime translator over a message {@link Catalog} — active locale, lookup with fallback, interpolation, and pluralization. */
 export interface I18n {
   locale(): Locale;
-  /** Switch the active locale; notifies subscribers when it actually changes. */
   setLocale(locale: Locale): void;
-  /** Locales present in the catalog. */
   locales(): readonly Locale[];
-  /** The base locale: the configured one, else the locale the translator started on. */
   baseLocale(): Locale;
   /** True when `key` resolves in the active or fallback locale. */
   has(key: string): boolean;
-  /** Translate `key`, interpolating `{param}` slots; a plural message uses a numeric `count` param. Returns `key` itself if it resolves nowhere. */
   t(key: string, params?: TParams): string;
-  /** Translate a plural message for `count` (available as `{count}`). */
   plural(key: string, count: number, params?: TParams): string;
   subscribe(listener: () => void): () => void;
 }

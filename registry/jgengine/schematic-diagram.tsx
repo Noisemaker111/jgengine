@@ -11,7 +11,6 @@ export interface SchematicNode {
   label?: string;
   glyph?: string;
   tone?: SchematicTone;
-  /** Ring the node (the selected station, the breached vault). */
   active?: boolean;
 }
 
@@ -19,7 +18,6 @@ export interface SchematicEdge {
   from: string;
   to: string;
   tone?: SchematicTone;
-  /** Dashed — a planned/severed/forecast connection. */
   dashed?: boolean;
   label?: string;
 }
@@ -31,10 +29,6 @@ function toneColor(tone: SchematicTone | undefined): string {
   return "var(--jg-accent, #e3b054)";
 }
 
-/**
- * Fixed-panel node+edge schematic — circuit layouts, rail networks, heist floor plans, skill webs.
- * Pure presentational: positions are panel fractions, not world coordinates; game glue decides both.
- */
 export function SchematicDiagram({
   nodes,
   edges = [],

@@ -24,12 +24,10 @@ export const {
   matchmaking: "singleton",
 });
 
-/** The one shared LLMville world, or `null` before anyone has joined it. */
 export function worldServerRow(ctx: QueryCtx | MutationCtx): Promise<Doc<"jgGameServers"> | null> {
   return helpers.findServer(ctx, LLMVILLE_GAME_ID);
 }
 
-/** Runs a world command as the actor on the shared world. */
 export async function runWorldCommand(
   ctx: MutationCtx,
   actorExternalId: string,

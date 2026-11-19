@@ -20,10 +20,8 @@ import { printHelpIfAsked, type Usage } from "./script-help";
 
 const REACT_SPECIFIER = /^react(?:-dom)?(?:\/|$)/;
 const REACT_PACKAGE = /^(?:react|react-dom|@types\/react|@types\/react-dom|@vitejs\/plugin-react)$/;
-/** Folders that may use React, each for the reason in the header. */
 export const REACT_ALLOWED = ["examples/next-host/", "examples/tanstack-host/"];
 const REACT_HOOK_MANIFESTS = new Set(["packages/convex/package.json"]);
-/** Source roots. `scripts/` is left out: its tests and the port script hold import lines as strings. */
 const SOURCE_ROOTS = ["packages", "games", "apps", "registry", "examples"];
 const SOURCE_FILE = /\.(tsx?|jsx?|mjs|cjs)$/;
 
@@ -32,7 +30,6 @@ const withoutComments = (source: string): string =>
 
 const IMPORT_SPECIFIER = /\b(?:import|export)\s+(?:type\s+)?[^;"']*?\s+from\s*["']([^"']+)["']|\bimport\s*\(?\s*["']([^"']+)["']|\brequire\s*\(\s*["']([^"']+)["']/g;
 
-/** The React modules `source` imports. */
 export function reactImports(source: string): string[] {
   const found: string[] = [];
   for (const match of withoutComments(source).matchAll(IMPORT_SPECIFIER)) {
@@ -42,7 +39,6 @@ export function reactImports(source: string): string[] {
   return found;
 }
 
-/** The React packages a package.json names in any dependency field. */
 export function reactDependencies(packageJson: string): string[] {
   const parsed: unknown = JSON.parse(packageJson);
   if (typeof parsed !== "object" || parsed === null) return [];
@@ -60,7 +56,6 @@ export interface ReactViolation {
   what: string;
 }
 
-/** Scan the tracked and untracked files under `root` for React outside the allowed folders. */
 export function scanReactFree(root: string): { files: number; violations: ReactViolation[] } {
   const listed = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], {
     cwd: root,

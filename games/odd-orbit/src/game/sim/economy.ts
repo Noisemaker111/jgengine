@@ -24,7 +24,6 @@ export function createHouseholdEconomy(now = 0): ResourceLedger {
   });
 }
 
-/** Base habitat rent per night in each charter term; the Authority raises it as the charter runs. */
 export const TERM_RENT = [HABITAT_UPKEEP, 130, 190, 260] as const;
 
 export function rentFor(state: Pick<HouseholdState, "charter">): number {
@@ -39,7 +38,6 @@ export function nextBill(state: HouseholdState, objects: readonly SceneObject[])
   return dailyUpkeep(objects, rentFor(state)) + Math.min(state.debt, 40);
 }
 
-/** Settle any due midnight bills. Returns the closed day's income when a new day began, else null. */
 export function settleHouseholdDay(state: HouseholdState, objects: readonly SceneObject[], now: number, notices: Pick<NoticeFeed, "push">): number | null {
   const today = Math.floor(now / DAY_LENGTH);
   const due = state.economy.cursors["upkeep"]!.nextDueSeconds;

@@ -64,7 +64,6 @@ export interface ShootDaemonState {
   devPort?: number | undefined;
   devBase?: string | undefined;
   chromePid?: number | undefined;
-  /** Chrome profile, removed when the daemon stops. */
   userDataDir?: string | undefined;
   devPid?: number | undefined;
   webPort?: number | undefined;
@@ -72,10 +71,8 @@ export interface ShootDaemonState {
   webPid?: number | undefined;
   /** Game list the dev server was booted against; a mismatch means it is stale. */
   devWorld?: GamesWorld;
-  /** Game list the website server was booted against. */
   webWorld?: GamesWorld;
   startedAt: string;
-  /** Last capture that attached to this daemon; absent on records written before idle sweeping. */
   lastUsedAt?: string;
   /**
    * The machine broker's shared browser rather than a per-checkout daemon: no state file, servers
@@ -89,7 +86,6 @@ export interface ShootDaemonState {
  * glob are computed once, so a game added or removed after boot is invisible to it.
  */
 export interface GamesWorld {
-  /** Game ids the runner can resolve. */
   games: string[];
 }
 
@@ -238,10 +234,8 @@ async function touchDaemonState(cwd: string): Promise<void> {
 
 export type ShootDaemonTarget = "dev" | "web";
 
-/** The prefix of every line that reports a warm daemon failing a run: grep it in any run's output. */
 export const DAEMON_FAILURE = "daemon failure:";
 
-/** A warm daemon that could not be had even after one restart. The lane exits nonzero with this message. */
 export class DaemonUnavailable extends Error {
   constructor(cause: string) {
     super(`${DAEMON_FAILURE} ${cause}. Pass --cold for a deliberate direct launch.`);
@@ -249,11 +243,9 @@ export class DaemonUnavailable extends Error {
   }
 }
 
-/** What a lane got when it asked for a warm capture. */
 export interface WarmCapture {
   /** The daemon to attach to, or null when this run owns its own Chrome. */
   daemon: ShootDaemonState | null;
-  /** `warm` reused a live daemon; `cold` started one, was refused one, or was told not to. */
   mode: "warm" | "cold";
   /** Wall time the acquisition cost, so a lane's own timing line accounts for it. */
   seconds: number;
@@ -346,7 +338,6 @@ export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}
     if (got !== null) return got;
   }
 
-  /** The one retry: start the daemon again, or fail naming both causes. */
   const startOnce = async (failure: string): Promise<WarmCapture> => {
     console.error(`${DAEMON_FAILURE} ${failure} — starting it once more`);
     try {
@@ -407,7 +398,6 @@ async function daemonAnswers(daemon: ShootDaemonState, cwd: string): Promise<boo
   return localOk(`http://127.0.0.1:${daemon.chromePort}/json/version`, 800).catch(() => false);
 }
 
-/** Which part of a dead daemon went, as precisely as this machine can tell. */
 export async function describeDaemonDeath(daemon: ShootDaemonState): Promise<string> {
   if (daemon.broker !== true) {
     return `this checkout's daemon Chrome :${daemon.chromePort}${daemon.chromePid === undefined ? "" : ` (pid ${daemon.chromePid})`} stopped answering`;
@@ -418,7 +408,6 @@ export async function describeDaemonDeath(daemon: ShootDaemonState): Promise<str
     : `the shared browser :${daemon.chromePort} exited while the broker (pid ${status.pid}) kept running (log ${brokerLogPath()})`;
 }
 
-/** Test seams for {@link runWithDaemonRecovery}. */
 export interface DaemonRecoveryOptions {
   cwd?: string;
   /** Start or attach to a daemon again. Defaults to {@link acquireWarmCapture}. */
@@ -500,7 +489,6 @@ export async function watchDaemon(daemon: ShootDaemonState, cwd = process.cwd(),
 /** Probes in a row a browser may miss before the watch calls it dead: about 8 s at the 2 s interval. */
 const DAEMON_MISSES_ALLOWED = 3;
 
-/** Run a capture session, failing early if the daemon it borrowed dies under it. */
 export async function withDaemonWatch<T>(daemon: ShootDaemonState | null, run: Promise<T>, cwd = process.cwd()): Promise<T> {
   if (daemon === null) return run;
   return Promise.race([run, watchDaemon(daemon, cwd)]);
@@ -694,7 +682,6 @@ export async function waitForDaemonLive(
 export async function startDaemon(options: {
   cwd?: string;
   foreground?: boolean;
-  /** Idle sweep before launch; tests turn it off. */
   reapIdle?: boolean;
 }): Promise<ShootDaemonState> {
   const cwd = options.cwd ?? process.cwd();

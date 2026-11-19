@@ -15,21 +15,17 @@ export function formatLogArg(arg: unknown): string {
   }
 }
 
-/** Format an array of console arguments into a single truncated log message string. */
 export function formatLogMessage(args: readonly unknown[]): string {
   const message = args.map(formatLogArg).join(" ");
   return message.length > LOG_BUS_MESSAGE_MAX ? `${message.slice(0, LOG_BUS_MESSAGE_MAX)}…` : message;
 }
 
-/** Logs subsystem exposing the log-capture and latency-tracking facades. */
 export interface LogsModule {
   logs: DevtoolsLogs;
   latency: DevtoolsLatency;
-  /** The ring the facade writes through, for a reporter that needs the whole window at once. */
   bus: LogBus;
 }
 
-/** Create the logs subsystem that buffers captured console output and records latency samples. */
 export const createLogsModule = (deps: { signal: ChangeSignal }): LogsModule => {
   const { signal } = deps;
 

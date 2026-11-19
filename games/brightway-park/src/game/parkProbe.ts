@@ -8,7 +8,6 @@ import { SCENARIOS, scenarioLock } from "./scenarios";
 import { sessionOf } from "./session";
 import { scenariosWon } from "./persistence";
 
-/** What the proofs read from a live park. */
 export interface ParkProbe {
   [reading: string]: number;
   guests: number;
@@ -18,9 +17,7 @@ export interface ParkProbe {
   cash: number;
   breakdowns: number;
   rides: number;
-  /** First-scenario hints done. */
   taught: number;
-  /** Lab topics finished plus rating awards won. */
   unlocks: number;
   ridesSeen: number;
   ridesTotal: number;
@@ -39,17 +36,12 @@ export interface ParkProbe {
   staffHired: number;
   visitors: number;
   loanOwed: number;
-  /** 1 once the park has closed for good (two month-ends in a row in the red), else 0. */
   gameOver: number;
-  /** The park's day, from 1. */
   day: number;
-  /** 1 while the gate is open to guests. */
   gateOpen: number;
-  /** Rides broken down right now, waiting for a mechanic. */
   ridesDown: number;
 }
 
-/** Open to the player (no lab topic, or its topic done) and how many there are, for one build category. */
 function kindCount(ctx: GameContext, category: BuildCategory): { seen: number; total: number; researched: number } {
   const w = park.of(ctx);
   let seen = 0;
@@ -65,11 +57,6 @@ function kindCount(ctx: GameContext, category: BuildCategory): { seen: number; t
   return { seen, total, researched: done };
 }
 
-/**
- * The park's probe: the crowd and the till, plus the design brief's readings (`PLAN.md`): `taught`,
- * `unlocks`, each budget kind's `<kind>Seen` (open to the player, or met) and `<kind>Total`, and one
- * reading per system that moves when the player uses it.
- */
 export function parkProbe(ctx: GameContext): ParkProbe {
   const w = park.of(ctx);
   let queued = 0;

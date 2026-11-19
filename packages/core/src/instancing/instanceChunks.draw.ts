@@ -6,27 +6,17 @@ import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
 export interface InstanceChunk {
   key: string;
   matrices: THREE.Matrix4[];
-  /** Where each of `matrices` sat in the list given to {@link partitionInstances}, so per-instance data (a tint) can follow it. */
   sources: number[];
-  /** Union of every instance's transformed geometry box. */
   bounds: THREE.Box3;
 }
 
-/** Knobs for {@link partitionInstances}. */
 export interface PartitionInstancesOptions {
-  /** Applied after each instance matrix: a model part's own transform inside its source scene. */
   localMatrix?: THREE.Matrix4;
   /** Cell edge in meters. Default 256. */
   cellSize?: number;
 }
 
-/**
- * Split instance matrices into XZ cells by where each instance's geometry actually lands, so far or
- * offscreen cells are culled as a unit. A batch that already fits one cell stays a single `compact`
- * chunk, even across the grid origin. Instance order is kept within each chunk.
- *
- * @capability instance-chunks split a big instanced batch into spatial cells that cull as units
- */
+/** @capability instance-chunks split a big instanced batch into spatial cells that cull as units */
 export function partitionInstances(
   geometry: THREE.BufferGeometry,
   matrices: readonly THREE.Matrix4[],

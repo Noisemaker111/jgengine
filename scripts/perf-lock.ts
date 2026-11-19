@@ -132,7 +132,6 @@ function writeTicket(path: string, queuedAt: number): string {
   return ticket;
 }
 
-/** True when no live process holds an older ticket than this process (or this process holds none yet and the queue is empty). */
 function myTurn(path: string, isAlive: (pid: number) => boolean): boolean {
   let names: string[];
   try {
@@ -332,7 +331,6 @@ export async function acquirePerfLock(what: string, options: PerfLockOptions = {
   };
 }
 
-/** Run `work` holding the machine-wide perf lock; `what` names the run to anyone waiting. */
 export async function withPerfLock<T>(what: string, work: () => Promise<T>, options: PerfLockOptions = {}): Promise<T> {
   const release = await acquirePerfLock(what, options);
   try {
@@ -374,7 +372,6 @@ export function perfLockTurn(what: string, broker: Turn | undefined, options: Pe
   };
 }
 
-/** Who holds the lock now, or null. */
 export function perfLockHolder(path = perfLockPath()): PerfLockHolder | null {
   return readHolder(path);
 }

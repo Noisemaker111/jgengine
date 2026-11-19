@@ -90,7 +90,6 @@ function Legend() {
   </div>;
 }
 
-/** Contact sheet for the shared VFX library; `?quality=low|medium|high` pins the applied tier. */
 function VfxGround() {
   const draw = useMemo(() => {
     const geometry = new THREE.PlaneGeometry(34, 30);

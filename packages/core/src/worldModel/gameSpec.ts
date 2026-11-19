@@ -31,57 +31,38 @@ import {
   type WorldRemoved,
 } from "./worldModel";
 
-/** How a placed kind appears in the scene: one entity per built instance, with the instance's id. */
 export interface GameSpecShow {
   /** Entity catalog id to spawn (default: the instance's kind). */
   entity?: string;
-  /** Scene role (default `"prop"`). */
   role?: EntityRole;
   /** Facing in radians. */
   rotationY?: number;
 }
 
-/** Everything a game is, as data plus the code hooks the data names. */
 export interface GameSpecDecl {
-  /** Store and command prefix: `<id>.place`, `<id>.act`, the `<id>.world` store. */
   id: string;
   world: WorldModelDecl;
-  /** Marker positions for places, slots and mission objectives (usually `missionMarkers(editorLayers)`). */
   markers?: Readonly<Record<string, ScenePoint3>> | ((ctx: GameContext) => Readonly<Record<string, ScenePoint3>>);
-  /** Code for whatever a declaration names with `hook`. */
   hooks?: Readonly<Record<string, (ctx: GameContext, call: WorldHookCall) => void>>;
-  /** Where named ripple outputs go (`heat`, `noise`, `traffic`). */
   outputs?: Readonly<Record<string, (ctx: GameContext, amount: number, event: WorldEvent) => void>>;
-  /** Pay a job's mission rewards through the game's own wallet. */
   onReward?(ctx: GameContext, rewards: MissionRewards, jobId: string): void;
-  /**
-   * Kinds (or tags) whose built instances the engine puts on screen itself: spawned on the ground at
-   * the instance's slot or cell when ready, despawned when removed, and rebuilt after a save loads.
-   * `true` spawns the kind's own catalog entry as a prop. `onReady`/`onRemoved`/`onRestored` still run.
-   */
   show?: Readonly<Record<string, GameSpecShow | true>>;
   /**
    * Start the next story job by itself whenever none is running, so a campaign plays straight
    * through without the player opening a contact. Side jobs still wait to be started.
    */
   autoStart?: boolean;
-  /** Put a finished build on screen (spawn its entity). */
   onReady?(ctx: GameContext, instance: WorldInstanceView): void;
-  /** Take a removed instance off screen; `removed.refund` is what came back. */
   onRemoved?(ctx: GameContext, removed: WorldRemoved): void;
   /**
    * Put every built instance back on screen: runs on the first frame of a world and again after a
    * save loads, so a game never has to respawn its own buildings.
    */
   onRestored?(ctx: GameContext, instances: readonly WorldInstanceView[]): void;
-  /** Return a message to refuse every command right now ("The park is closed"), or null to accept. */
   accepting?(ctx: GameContext): string | null;
-  /** React to an action landing (sound, effect). */
   onLanded?(ctx: GameContext, action: string, target: string | null): void;
   onJob?(ctx: GameContext, event: WorldJobEvent): void;
-  /** What missions see each tick: actor positions, events, extra facts. */
   input?(ctx: GameContext): MissionTickInput;
-  /** Mission actor id for `pursue` objectives that name no pursuer. */
   defaultPursuer?: string;
   /** Facts the game computes each read (`clock.hour`, `police.stars`); conditions see them, saves never hold them. */
   live?(ctx: GameContext): Readonly<Record<string, WorldFactValue>>;
@@ -92,27 +73,22 @@ export interface GameSpecDecl {
   watch?: { facts: readonly string[]; onChange(ctx: GameContext, change: WorldFactChange): void };
 }
 
-/** A running game spec: its checked world, the system to install, and the live world per context. */
 export interface GameSpec {
   readonly id: string;
   readonly def: WorldModelDef;
-  /** Install with `defineGame({ systems: [spec.system] })`. */
   readonly system: SystemDefinition;
   readonly store: StoreHandle<WorldModelState | undefined>;
-  /** The live world of one game context. */
   of(ctx: GameContext): WorldModel;
   /** Report a world event (gunfire, a breakdown, a leak); it ripples through the declaration. */
   emit(ctx: GameContext, event: WorldEvent): void;
 }
 
-/** Input of the `<id>.place` command. */
 export interface GameSpecPlaceInput {
   kind: string;
   slot?: string;
   cell?: readonly [number, number];
 }
 
-/** Input of the `<id>.act` command. */
 export interface GameSpecActInput {
   action: string;
   target?: string;
@@ -120,12 +96,7 @@ export interface GameSpecActInput {
 
 const refusal = (result: WorldRefusal | null) => (result === null ? null : { reason: result.reason, message: result.message });
 
-/**
- * Turn a game declaration into an installable engine system with commands
- * `<id>.place`, `<id>.remove`, `<id>.act`, `<id>.cancel` and `<id>.job.start`.
- *
- * @capability game-spec a whole game as one declaration the engine runs, with named code hooks for the rest
- */
+/** @capability game-spec a whole game as one declaration the engine runs, with named code hooks for the rest */
 export function defineGameSpec(spec: GameSpecDecl): GameSpec {
   if (spec.id.trim().length === 0 || spec.id.includes(" ")) throw new Error("game spec: id must be one word");
   const def = defineWorldModel(spec.world);

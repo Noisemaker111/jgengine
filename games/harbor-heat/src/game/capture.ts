@@ -10,20 +10,12 @@ import { streetPlayOf } from "./streetPlay";
 import { RACE_ROUTES } from "./world/districts";
 import { courierSettlement, courierStore, DELIVERY_ROUTES } from "./jobs/courier";
 
-/** What a staged chase should look like when the capture takes it. */
 export type StageMode = "chase";
 
-/** One simulated step, at the cadence the driving and pursuit slices are tuned for. */
 const STEP = 1 / 60;
 
-/** Heat that lands the player deep in a pursuit: three stars summons cruisers. */
 const CHASE_HEAT = 380;
 
-/**
- * Stage the state a chase proof needs: the player in a car with a live pursuit around them.
- * The heat is the response system's own input, the cruisers are spawned by its own tick, and the
- * cars are driven by its own driver - this only picks the car and runs the tick forward.
- */
 export function stageChase(ctx: GameContext, mode: StageMode = "chase", seconds = 10): void {
   void mode;
   const streetPlay = streetPlayOf(ctx);
@@ -52,7 +44,6 @@ export function stageChase(ctx: GameContext, mode: StageMode = "chase", seconds 
   tick(ctx, streetPlay, seconds);
 }
 
-/** The bystander whose sighting lets a staged crime raise heat at all. */
 export const WITNESS_ID = "ped_witness_0";
 
 function tick(ctx: GameContext, streetPlay: ReturnType<typeof streetPlayOf>, seconds: number): void {
@@ -76,10 +67,6 @@ export function stageReadout(ctx: GameContext): { stars: number; heat: number; c
   };
 }
 
-/**
- * Dev-only capture staging for the chase proof: three stars, cruisers on the scene, the player on
- * the move. Play reaches it by committing crimes in front of witnesses.
- */
 export function registerCaptureCommands(ctx: GameContext): void {
   if (!import.meta.env.DEV) return;
   ctx.game.commands.define<{ mode?: StageMode }>("chase.stage", {
@@ -181,9 +168,4 @@ export function registerCaptureCommands(ctx: GameContext): void {
     },
   });
 }
-
-
-
-
-
 

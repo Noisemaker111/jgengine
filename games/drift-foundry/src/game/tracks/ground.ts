@@ -37,7 +37,6 @@ export function yardGround(base: (x: number, z: number) => number, tracks: reado
   return ground;
 }
 
-/** The headless yard: flat ground with the tracks laid in. */
 export const FLAT_YARD_GROUND = yardGround(() => 0);
 
 /**
@@ -51,5 +50,4 @@ export function yardSwell(x: number, z: number): number {
   return 1.2 * (a + b + c) / 1.75;
 }
 
-/** The ground the game renders and drives on: the swell with every track laid into it. */
 export const YARD_GROUND = yardGround(yardSwell);

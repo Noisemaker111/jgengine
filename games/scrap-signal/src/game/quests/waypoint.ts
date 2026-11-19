@@ -8,10 +8,8 @@ import { ZONES } from "../world/zones";
 import { isNpcId, NPCS, objectiveLabel, scrapQuestById, type NpcId, type ScrapObjective } from "./catalog";
 import { offerFrom } from "./givers";
 
-/** What the quest marker points at: a person, a chest, a gun on the ground, an enemy, or a place. */
 export type WaypointKind = "npc" | "chest" | "loot" | "enemy" | "place";
 
-/** The quest marker: where the tracked objective is, and the words over it. */
 export interface QuestWaypoint {
   x: number;
   y: number;
@@ -43,7 +41,6 @@ function npcPoint(ctx: GameContext, npc: NpcId): Point | null {
   return ctx.scene.entity.get(NPCS[npc].entity)?.position ?? null;
 }
 
-/** Where an enemy type lives when none is standing: the centre of a camp that spawns it. */
 function campOf(ctx: GameContext, catalogId: string, from: Point): Point | null {
   const camps = ZONES.flatMap((zone) => [
     ...zone.clusters.filter((cluster) => cluster.catalogId === catalogId).map((cluster) => cluster.center),
@@ -102,10 +99,6 @@ function objectivePoint(ctx: GameContext, objective: ScrapObjective, from: Point
   }
 }
 
-/**
- * The quest marker, Borderlands-style: the tracked quest's next unfinished objective, its giver once
- * every objective is done, or, with no quest running, the nearest person with one to give.
- */
 export function questWaypoint(ctx: GameContext): QuestWaypoint | null {
   const journal = ctx.game.quest;
   const me = ctx.scene.entity.get(ctx.player.userId);

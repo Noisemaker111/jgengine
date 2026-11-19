@@ -18,11 +18,9 @@ import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-/** Caller-owned species models for authored habitat agents. */
 export interface AuthoredFlocksProps {
   models: Record<string, string | ModelConfig>;
   assets?: AssetCatalog | undefined;
-  /** Model nose axis. Default -Z. */
   forward?: readonly [number, number, number];
   maxInstances?: number;
 }
@@ -34,11 +32,7 @@ export function applyFlockPose(group: THREE.Object3D, agent: FlockStepAgent, for
   if (direction.lengthSq() > 1e-12) group.quaternion.setFromUnitVectors(forward, direction.normalize());
 }
 
-/**
- * Whether a species can draw every agent as instances of one mesh per material: a model with no
- * animation, parts, attachments, variants or per-node edits, whose loaded scene instances as is.
- * @internal
- */
+/** @internal */
 export function flockSpeciesInstances(model: ModelConfig, gltf: { scene: THREE.Object3D; animations: THREE.AnimationClip[] }): boolean {
   const hidden = model.hiddenNodes;
   return model.parts === undefined && (model.attachments?.length ?? 0) === 0 && model.variants === undefined &&
@@ -46,11 +40,7 @@ export function flockSpeciesInstances(model: ModelConfig, gltf: { scene: THREE.O
     (hidden === undefined || (Array.isArray(hidden) && hidden.length === 0)) && canInstanceStaticScene(gltf.scene, gltf.animations);
 }
 
-/**
- * Pose `count` instances of one source at the agents: each agent's position and heading, then the
- * source's own offset in the model. Leaves the mesh drawing exactly those agents.
- * @internal
- */
+/** @internal */
 export function writeFlockInstances(
   mesh: THREE.InstancedMesh,
   source: Pick<ScatterModelSource, "localMatrix">,
@@ -69,7 +59,6 @@ export function writeFlockInstances(
   mesh.computeBoundingSphere();
 }
 
-/** The cosmetic agents of one species this frame, up to `cap`, written into `into`. */
 function speciesAgents(flocks: readonly { role: string; species: string; agents: readonly FlockStepAgent[] }[], species: string, cap: number, into: FlockStepAgent[]): FlockStepAgent[] {
   into.length = 0;
   for (const flock of flocks) {
@@ -118,7 +107,6 @@ interface FlockDrawEnv {
   limit: number;
 }
 
-/** A child draw mounted under a parent group: fresh child frame state per call, board-joined frame. */
 class ChildDraw {
   private leave: (() => void) | null = null;
   constructor(private readonly draw: EngineDraw, private readonly parent: THREE.Object3D) {}
@@ -139,11 +127,6 @@ interface SpeciesEntry {
   cancelled: boolean;
 }
 
-/**
- * Every species' share of `limit`, in flock order; a species drawing no agent keeps no draw. The
- * per-frame reconcile mounts a species' draw once its model resolves and drops it when its share
- * empties — the draw-side `AuthoredFlocks` + `FlockSpecies`.
- */
 function authoredFlocksDraw(getEnv: () => FlockDrawEnv): EngineDraw {
   const group = new THREE.Group();
   const caps = new Map<string, number>();
@@ -213,7 +196,6 @@ function authoredFlocksDraw(getEnv: () => FlockDrawEnv): EngineDraw {
   };
 }
 
-/** A species whose model instances as-is: one instanced draw per material, posed every frame. */
 function instancedFlockDraw(args: {
   ctx: GameContext;
   species: string;
@@ -259,7 +241,6 @@ function instancedFlockDraw(args: {
   };
 }
 
-/** An animated species: each agent on its own rig under a keyed group, reconciled every frame. */
 function riggedFlockDraw(args: {
   ctx: GameContext;
   species: string;

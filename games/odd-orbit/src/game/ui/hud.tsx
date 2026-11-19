@@ -24,7 +24,6 @@ import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 const PHASE_WORD: Record<string, string> = { torpor: "Torpor", yield: "Yield hours", bloom: "Bloom hours", bond: "Bonding hours" };
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-/** The day's rhythm on a 24-hour dial: torpor, Yield, Bloom and bonding hours. */
 const DIAL_PHASES: readonly { from: number; to: number; color: string }[] = [
   { from: 22, to: 32, color: "#5b4a7a" }, { from: 8, to: 14, color: "#ffc76e" }, { from: 14, to: 18, color: "#8fdcb8" }, { from: 18, to: 22, color: "#f6a6cf" },
 ];
@@ -32,7 +31,6 @@ const dialAt = (h: number, r: number): [number, number] => { const t = ((h / 24)
 const wedge = (from: number, to: number, r: number) => { const [x0, y0] = dialAt(from, r), [x1, y1] = dialAt(to, r); return `M50 50L${x0} ${y0}A${r} ${r} 0 ${to - from > 12 ? 1 : 0} 1 ${x1} ${y1}Z`; };
 const TICKS = Array.from({ length: 24 }, (_, i) => { const [x1, y1] = dialAt(i, 44), [x2, y2] = dialAt(i, i % 6 === 0 ? 37 : 41); return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-width="${i % 6 === 0 ? 2.6 : 1.2}"/>`; }).join("");
 
-/** A 24-hour wall clock: midnight at the foot, noon at the crown, the shift hours painted on. */
 function WallClock({ size }: { size: number }) {
   // The hand steps every ten game minutes; only this small dial re-renders.
   const step = useGameCalendar((c) => Math.floor((c.hour * 60 + c.minute) / 10));
@@ -48,7 +46,6 @@ function WallClock({ size }: { size: number }) {
   </RuneView>;
 }
 
-/** The kitchen wall: the clock, a tear-off calendar and the speed knobs. */
 export function HouseClock({ compact }: { compact: boolean }) {
   const ctx = useGameContext();
   const clock = useGameClock();
@@ -77,7 +74,6 @@ function Magnet({ tone, icon, value, unit, label }: { tone: EnamelTone; icon: Ga
   </Row>;
 }
 
-/** The fridge door: credits, rations and the midnight bill, with the day's note pinned under them. */
 export function FridgeMagnets({ compact }: { compact: boolean }) {
   const ctx = useGameContext();
   const objects = useSceneObjects();
@@ -93,7 +89,6 @@ export function FridgeMagnets({ compact }: { compact: boolean }) {
   </RuneView>;
 }
 
-/** The Authority's charter pinned under the fridge: the term, its three goals and the strikes so far. */
 export function CharterNote({ compact }: { compact: boolean }) {
   const objects = useSceneObjects();
   const note = useStore(householdStore, (household) => {
@@ -120,7 +115,6 @@ export function CharterNote({ compact }: { compact: boolean }) {
 
 const INCIDENT_ICON: Record<string, GameIconName> = { trader: "coin", overtime: "hourglass", dust: "leaf", brownout: "lightning", spoilage: "poison", traveller: "hand", quarrel: "fist", fever: "potionRed", meteor: "fire", hullLeak: "frost" };
 
-/** A transmission slip from the Authority's relay: what happened, the household's answers and the fuse. */
 export function TransmissionSlip({ width }: { width: number }) {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -149,7 +143,6 @@ export function TransmissionSlip({ width }: { width: number }) {
   </Paper>;
 }
 
-/** The Authority's letter at the close of a term, or the notice that ends the charter. */
 export function TermLetter() {
   const { commands } = useGame();
   const letter = useStore(householdStore, (household) => {
@@ -193,7 +186,6 @@ function rosterSource(ctx: GameContext): RuneSource<string> {
   };
 }
 
-/** One enamel magnet per being, in their own colour, with their four needs and what they are doing. */
 export function RosterPanel({ compact }: { compact: boolean }) {
   const ctx = useGameContext();
   const source = useMemo(() => rosterSource(ctx), [ctx]);

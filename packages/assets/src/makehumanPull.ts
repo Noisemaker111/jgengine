@@ -29,29 +29,23 @@ const MAKEHUMAN_TREE = `https://api.github.com/repos/makehumancommunity/makehuma
 const MAKEHUMAN_RAW = `https://raw.githubusercontent.com/makehumancommunity/makehuman/${MAKEHUMAN_COMMIT}/makehuman/data`;
 const MAKEHUMAN_HOSTS = new Set(["api.github.com", "raw.githubusercontent.com"]);
 
-/** Ethnic mix of a MakeHuman body; MakeHuman normalises the three to sum to 1. */
 export interface MakeHumanEthnicity {
   african: number;
   asian: number;
   caucasian: number;
 }
 
-/** One pinned MakeHuman person: the macro settings MakeHuman's sliders would hold. */
 export interface MakeHumanPreset {
-  /** Library id and output folder (`female-young-caucasian`). */
   id: string;
   title: string;
   gender: "female" | "male";
-  /** 0 is a 25-year-old adult (MakeHuman's "young"), 1 is 90 ("old"). */
   age: number;
   ethnicity: MakeHumanEthnicity;
-  /** MakeHuman's muscle and weight extremes, `average` when absent. */
   muscle?: "min" | "max";
   weight?: "min" | "max";
   tags: readonly string[];
 }
 
-/** Settings for {@link pullMakeHumanCharacter}. */
 export interface PullMakeHumanOptions {
   /** The folder `model.glb` is written into. */
   outDir: string;
@@ -59,7 +53,6 @@ export interface PullMakeHumanOptions {
   githubToken?: string | undefined;
 }
 
-/** What one MakeHuman build wrote. */
 export interface PulledMakeHuman {
   id: string;
   file: string;
@@ -121,7 +114,6 @@ class MakeHumanSource {
   }
 }
 
-/** A parsed Wavefront OBJ: positions, UVs and faces (vertex/uv index pairs) by group. */
 interface ObjMesh {
   positions: number[];
   uvs: number[];
@@ -154,7 +146,7 @@ export function parseObj(text: string): ObjMesh {
   return { positions, uvs, faces };
 }
 
-/** Adds a `.target` file (`index dx dy dz` lines) into `positions`, scaled by `weight`. @internal */
+/** @internal */
 export function applyTarget(positions: Float32Array, text: string, weight: number): void {
   if (weight === 0) return;
   for (const line of text.split("\n")) {
@@ -169,11 +161,7 @@ export function applyTarget(positions: Float32Array, text: string, weight: numbe
   }
 }
 
-/**
- * The macro targets and weights MakeHuman sums for a preset: each ethnicity's gender-age target
- * (young and old blended by age) and the universal muscle/weight target when either is not average.
- * @internal
- */
+/** @internal */
 export function makehumanTargets(preset: MakeHumanPreset): { path: string; weight: number }[] {
   const total = preset.ethnicity.african + preset.ethnicity.asian + preset.ethnicity.caucasian;
   if (!(total > 0)) throw new Error(`${preset.id}: ethnicity weights sum to zero`);
@@ -227,7 +215,6 @@ export function makehumanBoneName(name: string): string {
   return name.replace(/\./g, "_");
 }
 
-/** Rocketbox Bip01 bones driving MakeHuman's default skeleton; twist, finger and face bones follow their parents. */
 const BIP01_TO_MAKEHUMAN: readonly RetargetBone[] = [
   { target: "root", source: "Bip01_Pelvis" },
   { target: "spine05", source: "Bip01_Spine", aim: { target: "spine03", source: "Bip01_Spine1" } },
@@ -246,7 +233,6 @@ const BIP01_TO_MAKEHUMAN: readonly RetargetBone[] = [
   ]),
 ];
 
-/** The Rocketbox clips each body plays, by gender, named so `classifyClip` finds idle, walk and run. */
 const LOCOMOTION: Readonly<Record<MakeHumanPreset["gender"], readonly { name: string; clip: RocketboxClip }[]>> = {
   female: [
     { name: "Idle", clip: { name: "Idle", file: "f_idle_neutral_01.max.fbx", folder: "static" } },
@@ -268,7 +254,6 @@ function numberList(value: unknown): number[] {
   return Array.isArray(value) ? value.filter((item): item is number => typeof item === "number") : [];
 }
 
-/** MakeHuman's base mesh is in decimetres. */
 const DECIMETRE = 0.1;
 
 /**

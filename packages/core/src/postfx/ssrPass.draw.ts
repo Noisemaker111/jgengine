@@ -132,9 +132,7 @@ const maskFragment = /* glsl */ `
   }
 `;
 
-/** How often the pass looks for glossy surfaces again, in frames. */
 const GLOSS_RESCAN_FRAMES = 90;
-/** Most glossy surfaces one frame masks; the nearest scan order keeps the first ones found. */
 export const MAX_GLOSSY_SURFACES = 256;
 
 /**
@@ -153,7 +151,7 @@ export function surfaceGloss(mesh: THREE.Mesh, maxRoughness: number): number {
   return 1 - standard.roughness / maxRoughness;
 }
 
-/** Every visible mesh in `scene` that reflects, with its gloss, at most {@link MAX_GLOSSY_SURFACES}. @internal */
+/** @internal */
 export function findGlossySurfaces(scene: THREE.Object3D, maxRoughness: number): { mesh: THREE.Mesh; gloss: number }[] {
   const found: { mesh: THREE.Mesh; gloss: number }[] = [];
   visitVisible(scene, (node) => {
@@ -173,7 +171,6 @@ export function findGlossySurfaces(scene: THREE.Object3D, maxRoughness: number):
 export class SsrPass extends Pass {
   readonly material: THREE.ShaderMaterial;
   readonly mask: THREE.WebGLRenderTarget;
-  /** The shader's uniforms, typed. */
   readonly uniforms: {
     tDiffuse: THREE.IUniform<THREE.Texture | null>;
     tDepth: THREE.IUniform<THREE.DepthTexture>;
@@ -205,7 +202,6 @@ export class SsrPass extends Pass {
    * them mid-play: a 120 ms freeze in the browser and 240 ms in the desktop app.
    */
   dry = false;
-  /** Drawn into the mask on a dry run: no glossy surface needs to exist for its program to link. */
   private readonly standIn = new THREE.Mesh(new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(9), 3)));
 
   constructor(
@@ -268,7 +264,6 @@ export class SsrPass extends Pass {
     return proxy;
   }
 
-  /** Draw the glossy surfaces' reflection strength into the mask; returns false when none are in view. */
   private drawMask(renderer: THREE.WebGLRenderer): boolean {
     this.framesSinceScan += 1;
     if (this.framesSinceScan >= GLOSS_RESCAN_FRAMES || this.surfaces.some(({ mesh }) => mesh.parent === null)) {

@@ -31,7 +31,6 @@ export interface RuneUiEvent {
 export type RuneScrollValues = readonly [number, number, number, number, number, number];
 
 export interface RuneUiFrame {
-  /** Page-side tree revision whose layout this frame describes. */
   revision: number;
   events: RuneUiEvent[];
   /** Interactive regions as `[x1, y1, x2, y2]` in CSS pixels. */
@@ -43,24 +42,16 @@ export interface RuneUiFrame {
 
 const DEFAULT_BASE = "/jg-ui";
 
-/**
- * The jg-ui module URL, under the app base installed with `setAssetBase`: a runner served from
- * `/play/` loads `/play/jg-ui/jg_ui.js`, not the site root's `/jg-ui/` (which jgengine.com does not serve).
- */
 export function runeBundleUrl(baseUrl: string = DEFAULT_BASE): string {
   return resolveAssetBaseUrl(`${baseUrl}/jg_ui.js`);
 }
 
 export interface RuneUiOptions {
-  /** Canvas element id; the bridge creates `<canvas id>` when absent. */
   canvasId?: string;
   /** Where the wasm bundle is served from (default `/jg-ui`, under the installed app base). */
   baseUrl?: string;
-  /** TrueType/OpenType font URLs (not WOFF), fetched while the GPU starts. */
   fonts?: readonly string[];
-  /** CSS family list for sans text (default "Inter"). */
   sans?: string;
-  /** CSS family list for mono text. */
   mono?: string;
   /** z-index of the UI canvas; must sit above the game canvas. */
   zIndex?: number;
@@ -129,7 +120,6 @@ export class RuneUi {
   private readonly pointer = createRunePassThrough((x, y) => this.overUi(x, y));
   private readonly zIndexCss: string;
   private readonly cleanups: (() => void)[] = [];
-  /** Counts committed native frames and spec submissions for idle/performance evidence. */
   private specCount = 0;
   get stats(): { frames: number; specs: number } { return { frames: this.api.frames_drawn(), specs: this.specCount }; }
 
@@ -174,12 +164,10 @@ export class RuneUi {
     return ui;
   }
 
-  /** A stable slot index for `name`; allocate once, reuse across spec rebuilds. */
   slot(name: string): number {
     return this.valueSlots.slot(name);
   }
 
-  /** A stable slot fed by `get` every frame — the per-frame binding games write values through. */
   bind(name: string, get: () => number): number {
     const slot = this.slot(name);
     this.bound.set(name, { slot, get });
@@ -187,7 +175,6 @@ export class RuneUi {
     return slot;
   }
 
-  /** Write `value` into `name`'s slot immediately (outside the per-frame loop). */
   write(name: string, value: number): void {
     const slot = this.slot(name);
     const changed = this.valueSlots.write(name, value);
@@ -195,26 +182,25 @@ export class RuneUi {
     if (changed) this.wake();
   }
 
-  /** Release a removed binding's numeric slot. @internal */
+  /** @internal */
   releaseSlot(name: string): void {
     const released = this.valueSlots.release(name);
     if (released !== undefined) this.prevValues.delete(released);
     this.bound.delete(name);
   }
 
-  /** Write a live label into shared memory; only its first binding or growth needs a text patch. @internal */
+  /** @internal */
   writeText(name: string, text: string): { slots: RuneTextSlots; grew: boolean } {
     const record = this.valueSlots.writeText(name, text);
     if (record.changed) this.wake();
     return record;
   }
 
-  /** Release a removed live label's slots for the next mounted label. @internal */
+  /** @internal */
   releaseText(name: string): void {
     this.valueSlots.releaseText(name);
   }
 
-  /** Replace the tree. `children` are native nodes (`{k: "native", ...}`); `modal` suspends game input. */
   setSpec(children: RuneUiNode[], modal = false): void {
     this.specCount += 1;
     const json = JSON.stringify({ children, modal });
@@ -222,9 +208,7 @@ export class RuneUi {
     this.send(() => this.api.set_spec(json, revision));
   }
 
-  /** Reveal a native keyed control inside its scroll viewport. */
   scrollNativeIntoView(id: string): void { this.send(() => this.api.scroll_native_into_view(id)); }
-  /** Give a native field keyboard focus, or drop it with `null`. */
   focusNative(id: string | null): void { this.send(() => id === null ? this.api.blur_native() : this.api.focus_native(id)); }
   /** The canvas Rune draws on and winit reads keys from. */
   get surfaceCanvas(): HTMLCanvasElement { return this.canvas; }
@@ -235,7 +219,6 @@ export class RuneUi {
     else this.specQueue.push(call);
   }
 
-  /** Subscribe to a widget's events by its spec `id`; `"*"` gets every event. */
   on(id: string, handler: EventHandler): () => void {
     let set = this.handlers.get(id);
     if (set === undefined) {
@@ -251,12 +234,10 @@ export class RuneUi {
     return this.regions;
   }
 
-  /** Whether the last frame's spec marked the UI modal. */
   get modal(): boolean {
     return this.modalFlag;
   }
 
-  /** Whether a viewport point lands on an interactive UI region. */
   overUi(x: number, y: number): boolean {
     for (const [x1, y1, x2, y2] of this.regions) {
       if (x >= x1 && x <= x2 && y >= y1 && y <= y2) return true;

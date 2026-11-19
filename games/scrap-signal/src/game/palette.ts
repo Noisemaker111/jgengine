@@ -40,7 +40,6 @@ export const FERRALON = {
    */
   rockLow: "#5f3c22",
   rockHigh: "#dba869",
-  /** Slope/cliff face: cooler and darker than the flats so relief separates by value, not just shading. */
   cliff: "#6b5340",
   sand: "#cdab74",
   dust: "#b3663a",
@@ -62,22 +61,14 @@ export const FERRALON = {
  * metal with visible form, not as silhouette cutouts.
  */
 export const MACHINE = {
-  /** Mass-production drone shell. */
   steel: "#b3bec9",
-  /** Weathered scavenger plating. */
   scrap: "#93a0ad",
-  /** Heavy frame / armour. */
   iron: "#75828f",
-  /** Recessed joints, hydraulics, cabling — the darkest value, still well off black. */
   joint: "#586471",
-  /** Corrosion bleed on old welds. */
   rust: "#8a4a2a",
   /** Rim-light edge on machine hostiles — cool, so it never reads as sun bounce off the sand. */
   rimCool: "#9fd0ff",
-  /** Faction hazard stripe. */
   hazard: "#f0a828",
-  /** Optic glow — the read for "this thing is alive and looking at you". */
   optic: "#3fd8ff",
-  /** Elite/elite optic + trim. */
   opticElite: "#ff5a2e",
 } as const;

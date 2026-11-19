@@ -3,15 +3,12 @@
  * notifications, save/import/export results, RPC and agent errors — never fabricated runtime logs.
  */
 
-/** Console entry severity, driving the filter chips and row tinting. */
 export type ConsoleSeverity = "info" | "warning" | "error";
 
-/** One recorded editor event. */
 export interface ConsoleEntry {
   id: number;
   at: number;
   severity: ConsoleSeverity;
-  /** Which editor subsystem produced the event (ui, save, import, agent, rpc). */
   source: string;
   message: string;
 }
@@ -28,7 +25,6 @@ export interface EditorConsoleStore {
 /** Entries kept before the oldest are dropped. */
 export const CONSOLE_CAPACITY = 500;
 
-/** Creates the editor console store. `now` is injectable for tests. */
 export function createEditorConsoleStore(now: () => number = () => Date.now()): EditorConsoleStore {
   let entries: ConsoleEntry[] = [];
   let nextId = 1;

@@ -11,11 +11,6 @@ const ORDER = ["Migrate", "Added", "Changed", "Fixed", "Removed"];
 /** PR-body sections a fragment may carry that are not release notes; they never reach the changelog. */
 const DROPPED_HEADINGS = new Set(["Bends"]);
 
-/**
- * Group a notes body by its `### Heading`, keeping each bullet's raw markdown lines. A heading at
- * any level closes the group before it, and a `Bends` section (land writes one into PR bodies) is
- * dropped whole.
- */
 export function groupByHeading(lines: string[]): Map<string, string[]> {
   const groups = new Map<string, string[]>();
   let heading: string | null = null;
@@ -33,7 +28,6 @@ export function groupByHeading(lines: string[]): Map<string, string[]> {
   return groups;
 }
 
-/** Append fragment bullets to the matching `###` sections of the `## [Unreleased]` block. */
 export function foldFragments(markdown: string, fragments: string[]): string {
   if (fragments.length === 0) return markdown;
   const lines = markdown.split("\n");

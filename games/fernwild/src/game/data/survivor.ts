@@ -2,10 +2,6 @@ import type { Curve } from "@jgengine/core/progression/leveling";
 import type { ComfortConfig } from "@jgengine/core/survival/bodyTemperature";
 import type { VitalDef } from "@jgengine/core/stats/vitals";
 
-/**
- * ARK's human survivor. Base values and per-point gains are ARK's (ark.wiki.gg, Human). Drain and
- * regen rates the wiki does not publish are our measurements of the feel and are marked "approx".
- */
 export const SURVIVOR = {
   health: 100,
   stamina: 100,
@@ -17,7 +13,6 @@ export const SURVIVOR = {
   /** m/s walking; ARK runs about 1.8x. */
   walkSpeed: 4.9,
   runMultiplier: 1.8,
-  /** At or under this much health the survivor is injured and slowed. */
   injuredAt: 30,
   injuredSpeed: 0.5,
   /** Seconds of breath under water from full (approx), and how far below the surface the head goes under. */
@@ -26,19 +21,14 @@ export const SURVIVOR = {
   /** Stamina per second while running (approx). */
   runStamina: 5,
   jumpStamina: 5,
-  /** XP per gathering swing that took something (approx). */
   gatherXp: 0.4,
-  /** XP for a tame (ARK scales it by the creature; flat for now). A kill gives the creature's kill XP. */
   tameXp: 20,
-  /** Water per drink from a lake or the sea shallows (approx). */
   drink: 10,
 } as const;
 
-/** One levelable stat and what each point adds. */
 export interface LevelStat {
   id: "health" | "stamina" | "oxygen" | "food" | "water" | "weight" | "melee" | "speed" | "fortitude" | "crafting";
   label: string;
-  /** Added per point (absolute for pools, percentage points for melee/speed/crafting, fortitude points). */
   per: number;
   unit: "" | "%";
 }
@@ -56,7 +46,6 @@ export const LEVEL_STATS: readonly LevelStat[] = [
   { id: "crafting", label: "Crafting Skill", per: 10, unit: "%" },
 ];
 
-/** The vitals ARK's HUD shows, with ARK's starvation and dehydration (about 1 HP per 5 s, torpor creeping up). */
 export function survivorVitals(): VitalDef[] {
   return [
     { id: "health", max: SURVIVOR.health, rate: 0.35, regenCost: [{ vital: "food", perPoint: 0.25 }] },
@@ -69,7 +58,6 @@ export function survivorVitals(): VitalDef[] {
   ];
 }
 
-/** Hypothermia burns food, heat drinks water; fortitude widens the band (ARK). Thresholds approx. */
 export const COMFORT: ComfortConfig = {
   comfortC: [12, 32],
   bands: {
@@ -85,10 +73,6 @@ export const COMFORT: ComfortConfig = {
   fortitudeC: 0.5,
 };
 
-/**
- * Total XP to reach each level (ARK, multiplayer). Exact to level 30; later anchors are ARK's and
- * the curve interpolates between them.
- */
 export const XP_TO_LEVEL: Curve = {
   kind: "piecewise",
   points: [
@@ -102,7 +86,6 @@ export const XP_TO_LEVEL: Curve = {
 
 export const MAX_LEVEL = 105;
 
-/** Engram points granted on reaching each level (ARK). */
 export function engramPointsFor(level: number): number {
   if (level < 2) return 0;
   if (level < 10) return 8;

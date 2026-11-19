@@ -3,7 +3,6 @@ import { createRigidAircraft, type RigidAircraftOptions, type RigidAircraftTunin
 import { trimReferenceAircraft } from "./aircraftTrim";
 import { createReferenceAircraft, type ReferenceAircraftModel, type ReferenceAircraftOptions, type ReferenceActuator } from "./referenceAircraft";
 
-/** Stick, throttle and brakes, the `RigidAircraftInput` shape. */
 export interface FlightTestControls {
   throttle: number;
   pitch: number;
@@ -12,44 +11,35 @@ export interface FlightTestControls {
   brake: number;
 }
 
-/** What a flight test reads each tick, in the same units and signs for every subject. */
 export interface FlightTestSample {
   time: number;
-  /** Height above the start, m. */
   altitude: number;
   climbRate: number;
   /** True airspeed, m/s. */
   airspeed: number;
   /** Equivalent airspeed, m/s (true airspeed for a constant-density game model). */
   equivalentAirspeed: number;
-  /** Rad; positive nose up, right wing down, nose right. */
   pitch: number;
   bank: number;
   heading: number;
   /** Rad/s; positive nose up, right roll, nose right. */
   pitchRate: number;
   rollRate: number;
-  /** Horizontal distance from the start, m. */
   distance: number;
   onGround: boolean;
   stalled: boolean;
-  /** Sideslip, rad, positive with the body moving to its right. */
   sideslip: number;
-  /** Mach number, or `0` where the model has none. */
   mach: number;
 }
 
-/** Anything the flight tests can fly: the reference sim or a game model behind an adapter. */
 export interface FlightTestSubject {
   readonly name: string;
   /** A comfortable cruise speed to start the tests from, equivalent airspeed m/s. */
   readonly cruiseSpeed: number;
   /** Starts level at an equivalent airspeed, m/s, heading north; returns the steady pitch stick and throttle it needs, when known. */
   startAirborne(equivalentAirspeed: number, altitudeOffset?: number): { pitch: number; throttle: number };
-  /** Starts at rest on the runway, brakes on. */
   startOnGround(): void;
   step(dt: number, controls: FlightTestControls): FlightTestSample;
-  /** Fastest the subject's data is valid for, Mach (default no limit). */
   readonly maxMach?: number;
 }
 
@@ -69,22 +59,16 @@ export interface FlightTestReport {
   sustainedTurnRate: number;
   /** Equivalent airspeed of that best sustained turn, m/s. */
   sustainedTurnSpeed: number;
-  /** Ground roll from brake release to lift-off at full throttle, rotating at 1.1× stall speed, m. */
   takeoffGroundRoll: number;
 }
 
-/** Scenario settings. */
 export interface FlightTestOptions {
-  /** Control tick, s (default `1/60`). */
   dt?: number;
   /** Pitch loop gains, stick per rad and stick per rad/s (default `1`, `0.2`). */
   pitchGain?: number;
   pitchDamping?: number;
-  /** Speeds the sustained turn sweep tries, as multiples of the stall speed (default 1.4 to 5). */
   turnSpeeds?: readonly number[];
-  /** Climb speeds tried, as multiples of the stall speed (default 1.2 to 2.2). */
   climbSpeeds?: readonly number[];
-  /** Pitch attitude held after rotation, rad (default `0.2`). */
   rotationPitch?: number;
 }
 
@@ -175,11 +159,7 @@ export function referenceFlightSubject(model: ReferenceAircraftModel, cruiseSpee
   };
 }
 
-/**
- * Wraps a game `RigidAircraftTuning` as a {@link FlightTestSubject}, flown exactly as the game runs it: its assists
- * stay on, air density is the model's default, and the ground is flat at `y = 0`.
- * @capability flight-tests fly a game RigidAircraft through the flight tests
- */
+/** @capability flight-tests fly a game RigidAircraft through the flight tests */
 export function rigidAircraftFlightSubject(name: string, tuning: RigidAircraftTuning, cruiseSpeed: number, options: RigidAircraftOptions = {}, maxMach?: number): FlightTestSubject {
   let aircraft = createRigidAircraft(tuning, options);
   let start: readonly [number, number, number] = [0, 0, 0];
@@ -233,7 +213,6 @@ interface Pilot {
   pitchDamping: number;
 }
 
-/** Elevator stick for a pitch attitude target: PI on the attitude error with rate damping. */
 function createAttitudeHold(pilot: Pilot, trim: number): (sample: FlightTestSample, target: number, dt: number) => number {
   let integral = trim;
   return (sample, target, dt) => {
@@ -243,7 +222,6 @@ function createAttitudeHold(pilot: Pilot, trim: number): (sample: FlightTestSamp
   };
 }
 
-/** Elevator stick holding the start altitude: flight-path error sets a pitch attitude target for the attitude loop. */
 function createAltitudeHold(pilot: Pilot, trim: number): (sample: FlightTestSample, dt: number) => number {
   const attitude = createAttitudeHold(pilot, trim);
   let base: number | undefined;
@@ -264,7 +242,6 @@ function controls(throttle: number, pitch: number, roll: number, yaw = 0, brake 
   return { throttle, pitch, roll, yaw, brake };
 }
 
-/** A test pilot's hands in manoeuvring flight: rudder keeps the ball centred, and a stall gets the stick pushed. */
 function flown(sample: FlightTestSample, throttle: number, pitch: number, roll: number): FlightTestControls {
   return controls(throttle, sample.stalled ? Math.min(pitch, -0.3) : pitch, roll, clamp(3 * sample.sideslip, -1, 1));
 }

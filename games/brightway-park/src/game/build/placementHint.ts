@@ -9,7 +9,6 @@ import type { PlacementCheck } from "./placement";
  */
 export const placementHintStore = defineStore<string | null>("brightway.placementHint", null);
 
-/** The reason a hovered spot is refused, in the world's own words (a short till included). */
 export function hoverRefusal(check: PlacementCheck): string | null {
   return check.ok ? null : check.reason;
 }

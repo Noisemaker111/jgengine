@@ -40,10 +40,7 @@ export function applyMaterialAppearanceSignals(material: THREE.MeshStandardMater
   return response;
 }
 
-/**
- * Restore the dry baseline when removing an appearance binding; maps and unrelated imported features remain borrowed.
- * @capability material-appearance-signals restore dry material response when removing an environment appearance binding
- */
+/** @capability material-appearance-signals restore dry material response when removing an environment appearance binding */
 export function restoreMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial, baseline: RenderMaterialAppearanceBaseline): void {
   if ((baseline.sheen !== undefined || baseline.clearcoat !== undefined) && !(material as THREE.MeshPhysicalMaterial).isMeshPhysicalMaterial) throw new TypeError("The appearance baseline belongs to a physical material.");
   material.roughness = baseline.roughness;

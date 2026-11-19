@@ -21,7 +21,6 @@ function ClaimHint({ hint }: { hint: PlacementClaimHint }) {
   </RuneView>;
 }
 
-/** The pinned placement note: rotate, the facing, the land claim and place. */
 export default function PlacementControls({ onRotate, onPlace, canPlace, facingLabel, claimHint, isTouch = false }: {
   onRotate: () => void; onPlace: () => void; canPlace: boolean; facingLabel: string; claimHint: PlacementClaimHint | null; isTouch?: boolean;
 }) {

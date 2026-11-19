@@ -8,20 +8,16 @@ import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 import { WEATHER_SHELTER_BUDGET } from "./weatherShelter.draw";
 import { WeatherLayer, type WeatherLayerProps } from "./WeatherLayer.draw";
 
-/** Authored weather document and optional precipitation appearance and ground sampling. */
 export interface AuthoredWeatherLayerProps {
   document: EditorDocument;
   rain?: WeatherLayerProps["rain"];
   snow?: WeatherLayerProps["snow"];
   dust?: WeatherLayerProps["dust"];
   heightAt?: (x: number, z: number) => number;
-  /** Register actual procedural weather pool and impact query counters. */
   diagnostics?: boolean;
 }
 
-/** Render pooled precipitation from the same authored document and clock as gameplay.
- * @capability authored-weather-rendering Render authored weather from shared gameplay samples, simulation time and shelter volumes.
- */
+/** @capability authored-weather-rendering Render authored weather from shared gameplay samples, simulation time and shelter volumes. */
 export function AuthoredWeatherLayer({ document, rain, snow, dust, heightAt, diagnostics = false }: AuthoredWeatherLayerProps) {
   const ctx = useGameContext();
   const config = document.simulation?.weather;

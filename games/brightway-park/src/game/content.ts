@@ -18,7 +18,6 @@ function entityById(catalogId: string): GameContextEntityEntry | null {
   return null;
 }
 
-/** What guests walk on and through: paths, queue lines (railed, but walked down the middle) and ride doors. */
 const WALK_THROUGH = new Set(["path_walk", "path_queue", "ride_entrance", "ride_exit"]);
 
 function objectById(catalogId: string): GameContextObjectEntry | null {

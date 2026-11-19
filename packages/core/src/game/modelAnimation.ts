@@ -1,4 +1,3 @@
-/** The two one-shot events the shell fires automatically for an entity, from `combat.hitReaction` and `entity.died`. */
 export const AUTO_ONE_SHOT_EVENTS = ["hit", "death"] as const;
 
 /**

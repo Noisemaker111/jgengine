@@ -16,7 +16,6 @@ import type { HitReactionConfig } from "@jgengine/core/combat/hitReaction";
 
 export const GRENADE = { damage: 55, radius: 4.2, fuseTime: 1.3, speed: 18, intervalMs: 900 };
 
-/** A gun shot as the player feels it: the viewmodel's muzzle flash and kick, the report, the shake. */
 function presentGunShot(ctx: GameContext, shot: WeaponTriggerShot): void {
   const gun = gunById(shot.weapon);
   if (gun === undefined) return;
@@ -32,7 +31,6 @@ const weaponsOf = perContext((ctx): { triggers: WeaponTriggers; lastWarnAt: Map<
   return { triggers, lastWarnAt: new Map() };
 });
 
-/** The weapon triggers for this world: cadence state and the per-shot presentation seam. */
 export function weaponTriggers(ctx: GameContext): WeaponTriggers {
   return weaponsOf(ctx).triggers;
 }
@@ -46,17 +44,11 @@ function warn(ctx: GameContext, from: string, text: string): void {
   ctx.scene.entity.floatText({ instanceId: from, text, kind: "warn" });
 }
 
-/** Hit-feel tier for a landed shot: kills read heaviest, crits shove harder, plain hits only flinch. */
 export function hitFeel(crit: boolean, killed: boolean): HitReactionConfig | "enemyKilled" {
   if (killed) return "enemyKilled";
   return crit ? { hitstopMs: 30, knockback: 0.35, trauma: 0.08 } : { hitstopMs: 0, knockback: 0.12 };
 }
 
-/**
- * One landed pellet: the shared damage model resolves the number (element chart, gun talent, crit),
- * the world takes it as one application, and the feel cues read the same resolution. Errors out on a
- * body the damage model has no profile for — that is the wiring check, not a zero-damage hit.
- */
 function landGunHit(ctx: GameContext, from: string, targetId: string, gunId: string, shot: GunHitMods = {}): void {
   const gun = gunById(gunId);
   if (gun === undefined) return;

@@ -6,26 +6,17 @@ export interface GroundProfile {
   readonly vertices: readonly (readonly [number, number])[];
 }
 
-/**
- * Level ground at height `y`.
- * @internal
- */
+/** @internal */
 export function flatGround(y = 0): GroundProfile {
   return { vertices: [[-1e6, y], [1e6, y]] };
 }
 
-/**
- * Ground flat until `startX`, then a constant grade of `angle` rad (positive climbs toward +x).
- * @capability reference-slope-ground a constant-grade sagittal ground profile for the reference human
- */
+/** @capability reference-slope-ground a constant-grade sagittal ground profile for the reference human */
 export function slopeGround(angle: number, startX = 0): GroundProfile {
   return { vertices: [[-1e6, 0], [startX, 0], [startX + 1e4 * Math.cos(angle), 1e4 * Math.sin(angle)]] };
 }
 
-/**
- * Flat ground until `startX`, then `count` steps of `rise` × `going` (m), flat at the top. Negative `rise` descends.
- * @capability reference-stair-ground a stair-flight sagittal ground profile for the reference human
- */
+/** @capability reference-stair-ground a stair-flight sagittal ground profile for the reference human */
 export function stairGround(rise: number, going: number, count: number, startX = 0): GroundProfile {
   const vertices: [number, number][] = [[-1e6, 0]];
   for (let i = 0; i < count; i++) {
@@ -36,10 +27,7 @@ export function stairGround(rise: number, going: number, count: number, startX =
   return { vertices };
 }
 
-/**
- * Height of the walkable surface at `x` (the top of a riser at its own `x`).
- * @internal
- */
+/** @internal */
 export function groundHeight(ground: GroundProfile, x: number): number {
   const v = ground.vertices;
   let best = Number.NEGATIVE_INFINITY;
@@ -59,15 +47,10 @@ export function groundHeight(ground: GroundProfile, x: number): number {
   return best;
 }
 
-/** Contact law parameters. */
 export interface ContactParameters {
-  /** Hunt–Crossley stiffness, N/m^1.5. */
   stiffness: number;
-  /** Hunt–Crossley damping, s/m. */
   damping: number;
-  /** Coulomb friction coefficient (static and sliding). */
   friction: number;
-  /** Tangential stick spring, N/m, and its damping, N·s/m. */
   stickStiffness: number;
   stickDamping: number;
 }
@@ -79,14 +62,12 @@ export interface ContactParameters {
  */
 export const SHOE_ON_CONCRETE: ContactParameters = { stiffness: 1.2e6, damping: 1.5, friction: 0.8, stickStiffness: 1.5e5, stickDamping: 1.5e3 };
 
-/** Per-point stick state: the anchor the tangential spring pulls toward, or `null` when not in contact. */
 export interface ContactPointState {
   anchor: [number, number] | null;
 }
 
 const closest = new Float64Array(4);
 
-/** Nearest point on the ground polyline to `(x, y)`, its outward normal, and whether `(x, y)` is under the surface. */
 function nearestOnGround(ground: GroundProfile, x: number, y: number): number {
   const v = ground.vertices;
   let best = Number.POSITIVE_INFINITY;

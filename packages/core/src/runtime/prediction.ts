@@ -3,10 +3,8 @@ import type { InputFrame } from "./inputSnapshot";
 /** Deterministic state transition used to advance one predicted input frame. */
 export type PredictionStep<S> = (state: S, input: InputFrame, dt: number) => S;
 
-/** One input, tick, and resulting state retained for authoritative replay. */
 export type PredictionRecord<S> = { tick: number; input: InputFrame; state: S; dt: number };
 
-/** Serializable prediction state containing the confirmation baseline and pending input history. */
 export type PredictionSnapshot<S> = {
   confirmedTick: number;
   confirmed: S;
@@ -14,7 +12,6 @@ export type PredictionSnapshot<S> = {
   records: PredictionRecord<S>[];
 };
 
-/** Stateful prediction handle supporting recording, reconciliation, inspection, and restoration. */
 export type PredictionBuffer<S> = {
   record(input: InputFrame, dt?: number, observedState?: S): S;
   reconcile(tick: number, authoritative: S): { error: number; replayed: number; snapped: boolean; state: S };
@@ -23,19 +20,13 @@ export type PredictionBuffer<S> = {
   restore(next: PredictionSnapshot<S>): void;
 };
 
-/**
- * Keeps local input predictions ahead of the last server confirmation. Reconciliation replaces the
- * confirmed state and deterministically replays unconfirmed inputs through the supplied step function.
- * `maxTicks` bounds retained work and memory; dropped inputs are folded into the confirmed baseline.
- * @capability client-side input prediction with replay reconciliation
- */
+/** @capability client-side input prediction with replay reconciliation */
 export function createPredictionBuffer<S>(config: {
   initial: S;
   step: PredictionStep<S>;
   maxTicks: number;
   startTick?: number;
   dt?: number;
-  /** Error above which a caller should snap its rendered pose to the reconciled result. */
   snapThreshold?: number;
 }): PredictionBuffer<S> {
   const maxTicks = Math.max(1, Math.floor(config.maxTicks));

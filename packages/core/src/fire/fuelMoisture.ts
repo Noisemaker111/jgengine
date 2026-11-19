@@ -3,15 +3,12 @@ import { decodeFireArray, encodeFireArray } from "./fireArrays";
 import type { FireMoistureField } from "./fireLandscape";
 import type { FuelMoisture } from "./fuelModels";
 
-/** The weather a fuel moisture model reads; the only seam between fire and a weather system. */
 export interface MoistureWeather {
-  /** Air temperature at screen height, °C. */
   airTemperatureC: number;
   /** Relative humidity, 0..1. */
   relativeHumidity: number;
   /** Rain rate, mm/h. */
   rainRateMmPerHour: number;
-  /** Cloud cover, 0 (clear) .. 1 (overcast). */
   cloudCover: number;
   /** Strength of the sun on the fuels, 0 at night .. 1 at midday; defaults to 1. */
   daylight?: number;
@@ -35,7 +32,6 @@ export function equilibriumMoistureContent(temperatureC: number, relativeHumidit
   return Math.max(0, emc) / 100;
 }
 
-/** NFDRS 1978 fuel-level corrections by sky: [cloud cover, temperature added °F, humidity factor]. */
 const SKY: readonly (readonly [number, number, number])[] = [
   [0.05, 25, 0.75],
   [0.3, 19, 0.83],
@@ -96,32 +92,23 @@ export function growingSeasonIndex(minimumTemperatureC: number, vaporPressureDef
   return ramp(minimumTemperatureC, -2, 5) * (1 - ramp(vaporPressureDeficitPa, 900, 4100)) * ramp(dayLengthHours, 10, 11);
 }
 
-/** Live policy of a fuel moisture model; every value can change during play with `retune`. */
 export interface FuelMoistureTuning {
-  /** Time lags of the dead fuel classes, hours (Byram 1963: 63 % of the gap to equilibrium closes in one lag). */
   oneHourLagHours: number;
   tenHourLagHours: number;
   hundredHourLagHours: number;
   /** Rain rate counted as rain, mm/h (0.01 in as NFDRS). */
   rainThresholdMmPerHour: number;
-  /** Moisture fine (1-h, 10-h) fuels approach while it rains, fraction (NFDRS 1978: 35 %). */
   rainFineMoisture: number;
-  /** 100-h boundary while it rains: base + per hour of rain in the last 24 h (NFDRS 1978: 41 % + 0.5 %/h). */
   rainHundredBase: number;
   rainHundredPerHour: number;
-  /** Live herbaceous moisture when dormant and fully green, fraction (NFDRS 2016: 30 % .. 250 %). */
   liveHerbMin: number;
   liveHerbMax: number;
-  /** Live woody moisture when dormant and fully green, fraction (NFDRS 2016: 60 % .. 200 %). */
   liveWoodyMin: number;
   liveWoodyMax: number;
-  /** Growing season index at which green-up starts (NFDRS 2016: 0.5). */
   greenUp: number;
-  /** Averaging window of the growing season index, days (Jolly 2005: 21). */
   greennessWindowDays: number;
 }
 
-/** NFDRS 1978 dead fuel lags and rain boundaries, NFDRS 2016 live fuel ranges. */
 export const DEFAULT_FUEL_MOISTURE_TUNING: Readonly<FuelMoistureTuning> = {
   oneHourLagHours: 1,
   tenHourLagHours: 10,
@@ -138,7 +125,6 @@ export const DEFAULT_FUEL_MOISTURE_TUNING: Readonly<FuelMoistureTuning> = {
   greennessWindowDays: 21,
 };
 
-/** Serializable state of a fuel moisture model. */
 export interface FuelMoistureSnapshot {
   version: 1;
   cells: number;
@@ -156,16 +142,13 @@ export interface FuelMoistureSnapshot {
   vpdWeight: number[];
 }
 
-/** Per-cell dead fuel moisture and stand-wide live fuel moisture that follow the weather over time. */
 export interface FuelMoistureModel extends FireMoistureField {
   readonly cells: number;
   /** Seconds simulated. */
   readonly time: number;
-  /** Per-cell dead fuel moisture, fractions. */
   readonly layers: { readonly oneHour: Float32Array; readonly tenHour: Float32Array; readonly hundredHour: Float32Array };
   /** Advance by `dt` seconds of steady weather. Call at the weather's cadence, not every frame. */
   step(dt: number, weather: MoistureWeather): void;
-  /** Wet one cell's fine dead fuel (1-h and 10-h) to at least `moisture`, as a water drop or hose would. */
   wet(cell: number, moisture: number): void;
   /** Live moisture and the averaged growing season index behind it (NaN before the first full hour). */
   live(): { herb: number; woody: number; greenness: number };

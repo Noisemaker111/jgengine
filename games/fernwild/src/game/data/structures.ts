@@ -1,11 +1,6 @@
 import type { BaseBuildingConfig, StructureShapeDef } from "../../engine-local/basebuilding/baseBuilding";
 import type { SocketDef } from "@jgengine/core/placement/buildSockets";
 
-/**
- * ARK's building kit on its 3 m grid: thatch, wood and stone foundations, walls, doorframes, doors and
- * ceilings, wooden and stone pillars, the wooden ramp, and the two stations. Health, level, engram
- * points and costs are each piece's ark.wiki.gg page; shapes are ours (placeholder boxes).
- */
 export interface StructureDef {
   id: string;
   label: string;
@@ -28,7 +23,6 @@ const WALL = 3;
 const THICK = 0.15;
 const RIGHT = Math.PI / 2;
 
-/** Socket yaw is the outward direction's angle `atan2(z, x)`, as `placement/buildSockets` reads it. */
 function edges(kind: string, y: number): SocketDef[] {
   return [
     { name: `${kind}+x`, kind, position: [HALF, y, 0], yaw: 0 },
@@ -113,7 +107,6 @@ export const SHAPES: readonly StructureShapeDef[] = [
   { id: "hide_sleeping_bag", boxes: [{ min: [-0.45, 0, -1], max: [0.45, 0.15, 1] }], ground: { maxStep: 0.6 }, floor: true },
 ];
 
-/** Which socket kinds mate: candidate kind `a` onto placed kind `b`. */
 const RULES: BaseBuildingConfig["rules"] = [
   { a: "floor_edge", b: "floor_edge" },
   { a: "wall_base", b: "floor_edge", mutual: false },
@@ -132,10 +125,6 @@ const RULES: BaseBuildingConfig["rules"] = [
   { a: "ramp_high", b: "ceiling_edge", mutual: false },
 ];
 
-/**
- * ARK's tier rules: thatch takes anything but plain ranged shots; wood shrugs off fists, stone tools and
- * plain ranged shots; stone only takes metal tools and explosives.
- */
 const TIERS: BaseBuildingConfig["tiers"] = [
   { id: "thatch", at: 0, damage: { ranged: 0 } },
   { id: "wood", at: 1, damage: { fist: 0, primitive: 0, ranged: 0 } },
@@ -197,20 +186,17 @@ export const BASE_BUILDING: BaseBuildingConfig = {
   snapDistance: 3,
 };
 
-/** Stations a recipe can need, by piece id. */
 export const STATIONS: ReadonlySet<string> = new Set(["campfire", "mortar_and_pestle", "cooking_pot", "refining_forge"]);
 
 /** Pieces a dead survivor wakes on instead of the beach; each is used up by it. */
 export const BEDS: ReadonlySet<string> = new Set(["hide_sleeping_bag"]);
 
-/** A piece that holds items: how many stacks, how fast what it holds goes off (1 is as fast as carried), and whether it takes only perishables. */
 export interface ContainerSpec {
   slots: number;
   spoil: number;
   foodOnly?: boolean;
 }
 
-/** Pieces that hold items: E opens them beside your own inventory. */
 export const CONTAINERS: Readonly<Record<string, ContainerSpec>> = {
   storage_box: { slots: 15, spoil: 1 },
   // A quarter of the carried rate, so food lasts four times as long (approx).

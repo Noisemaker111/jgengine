@@ -32,7 +32,6 @@ export {
 
 const ROW_HEIGHT = 26;
 
-/** HTML5 drag payload for hierarchy reparenting via `set_parent`. */
 export const OBJECT_DRAG_MIME = "application/x-jgengine-editor-object";
 
 function dataTransferHas(types: readonly string[], mime: string): boolean {
@@ -67,9 +66,7 @@ export const HierarchyPanel = memo(function HierarchyPanel({
 }: {
   session: EditorSession;
   api: EditorHostApi;
-  /** Opens the add flow (command palette pre-filtered to Add commands). */
   onAdd: () => void;
-  /** Right-click a row — host opens the shared editor context menu at the pointer. */
   onRowContextMenu?: (event: { clientX: number; clientY: number }, id: string) => void;
 }) {
   const document = useStoreSelector(session, (state) => state.document);

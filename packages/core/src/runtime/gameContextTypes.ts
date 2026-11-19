@@ -88,7 +88,6 @@ export interface GameContextItemEntry {
   use?: string;
   weapon?: Record<string, unknown>;
   trade?: TradeField;
-  /** Rarity id read by the `worldItem` loot-filter/render binding when this item drops to the ground (#32/#33). */
   rarity?: string;
   /** Base item type read by the loot-filter rule evaluator (#33); defaults to the item id when absent. */
   baseType?: string;
@@ -102,24 +101,15 @@ export interface GameContextEntityEntry {
   onDeath?: OnDeathSpec;
   movement?: PoseAllowedStates & { walkSpeed?: number };
   role?: CatalogEntityRole;
-  /** Right-click context-menu verbs for this entity (#31). */
   verbs?: readonly ContextVerb[];
-  /** Purpose-specific colliders (physical body + named damage hitboxes). */
   colliders?: EntityColliderSet;
-  /** Uniform visual scale of the rendered mesh; derives a matching hitbox (and eye-height) when no explicit `colliders` are set. */
   scale?: number;
 }
 
 export interface GameContextObjectEntry {
   proximityPrompt?: ProximityPrompt;
   breakable?: false | { baseBreakTime: number };
-  /**
-   * Declares this object a container: every placement gets its own slots, held on `SceneObject.slots`
-   * and mutated through `ctx.scene.object.slots`, which enforces the declared `slots` count and
-   * `accepts` kind filter.
-   */
   slotInventory?: InventoryLayout;
-  /** Right-click context-menu verbs for this object (#31). */
   verbs?: readonly ContextVerb[];
   colliders?: EntityColliderSet;
   halfExtents?: readonly [number, number, number];
@@ -164,7 +154,6 @@ export interface GameContextOptions<
    * Never use `Math.random` on simulation paths — pass `ctx.rng` into pure helpers instead.
    */
   rng?: () => number;
-  /** Bind `ctx.game.save` to a pluggable backend (offline/single-player whole-world save). The shell resolves this from `defineGame({ save })`; multiplayer leaves it off (the host persists). */
   save?: RuntimeSaveOptions;
   /**
    * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
@@ -182,9 +171,7 @@ export interface GameContextOptions<
   models?: GameContextModels;
 }
 
-/** Per-kind render-model lookup for {@link GameContextOptions.models}; a resolved `ModelConfig` satisfies {@link ModelBodySource} structurally.
- * @capability collider-autofit hitboxes and physical bodies fit each kind's rendered model bounds automatically — no hand-tuned sizes
- */
+/** @capability collider-autofit hitboxes and physical bodies fit each kind's rendered model bounds automatically — no hand-tuned sizes */
 export interface GameContextModels {
   entity?(kind: string): ModelBodySource | null | undefined;
   object?(catalogId: string): ModelBodySource | null | undefined;
@@ -244,17 +231,7 @@ export interface FloatTextInput {
   scale?: number;
 }
 
-/**
- * Request a transient spell/ability VFX burst. The easy path is a named `preset` —
- * `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color
- * or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"`
- * and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id
- * (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`,
- * `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color`
- * yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
- */
 export interface VfxInput {
-  /** A named visual flavor from {@link vfxPresets}. Fills in `kind`/`color`/defaults; explicit fields below still win. */
   preset?: VfxPresetName | (string & {});
   /** Visual archetype. Optional when `preset` is given; required otherwise. */
   kind?: VfxKind;
@@ -282,7 +259,6 @@ export interface TelegraphInput {
   };
 }
 
-/** A hit reaction between two entities by id, with a config or impact preset. */
 export interface EntityHitReactionInput {
   from: string;
   to: string;
@@ -290,7 +266,6 @@ export interface EntityHitReactionInput {
   power?: number;
 }
 
-/** Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn. */
 export interface MoveTowardCommitOptions extends MoveTowardOptions {
   /** Rotate the entity to face its direction of travel instead of preserving its current `rotationY`. Default false. */
   face?: boolean;
@@ -301,13 +276,11 @@ export interface SceneEntityContext {
   despawn(instanceId: string): boolean;
   update: EntityStore["update"];
   setPose(instanceId: string, pose: EntityPose): boolean;
-  /** Set finite world velocity without changing pose; invalid tuples and missing entities return false unchanged. */
   setVelocity: EntityStore["setVelocity"];
   setPoseConstraint: EntityStore["setPoseConstraint"];
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];
   ids: EntityStore["ids"];
-  /** Notified after every entity write, pose writes included; for engine systems that skip work while no entity changed. */
   subscribe: EntityStore["subscribe"];
   subscribeMembership: EntityStore["subscribeMembership"];
   subscribeBehaviors: EntityStore["subscribeBehaviors"];
@@ -328,19 +301,7 @@ export interface SceneEntityContext {
   vfxInstance: VfxInstanceStore;
   telegraph(input: TelegraphInput): () => void;
   hitReaction(input: EntityHitReactionInput): HitReaction | null;
-  /**
-   * The player's selected entities — the RTS selection the shell pointer writes (`pointer.select`
-   * click / marquee) and the order command receives. Game HUDs read it to show the selected unit's
-   * card or a "3 units selected" summary, and may write it (select-all buttons, control groups).
-   * Mutations bump `ctx.version()`/notify `ctx.subscribe`; despawned ids drop out.
-   */
   selection: SelectionSet;
-  /**
-   * Saved entity sets keyed by opaque strings — the RTS control groups `pointer.controlGroups` binds
-   * (Ctrl+digit), appends (Shift+digit) and recalls (digit) under keys `"0"`…`"9"`. HUDs read
-   * `keys()`/`size(key)`/`recall(key)` for a group bar; games may also write it. Mutations notify
-   * `ctx.subscribe`; a despawned id drops out of every group.
-   */
   controlGroups: SelectionBookmarks;
   setTarget(fromId: string, toId: string | null): void;
   getTarget(fromId: string): string | null;
@@ -351,7 +312,6 @@ export interface SceneEntityContext {
   willHitProjectile: ProjectileSystem["willHitProjectile"];
   fireProjectile: ProjectileSystem["fireProjectile"];
   settleProjectile: ProjectileSystem["settleProjectile"];
-  /** Live travel poses for game-owned arrow/projectile appearance. */
   activeProjectiles: ProjectileSystem["activeProjectiles"];
   projectileState: ProjectileSystem["snapshot"];
   restoreProjectiles: ProjectileSystem["restore"];
@@ -397,7 +357,6 @@ export interface SceneEntityContext {
    * @capability conforming-hitboxes shots aimed between a character's feet or past its shoulder MISS — damage raycasts hit the rendered model's triangles, not its bounding box.
    */
   reportCollisionMesh(kind: string, mesh: CollisionMeshSource | null): boolean;
-  /** Uniform visual scale from the entity's catalog entry (1 when unscaled). */
   visualScaleOf(instanceId: string): number;
   form: Forms;
   paint: PaintLayer;
@@ -409,7 +368,6 @@ export interface SceneEntityContext {
    * `bodies` is despawned — no per-game spawn/despawn dance.
    */
   bind(key: string): BodyBind;
-  /** The bind whose `sync` poses `instanceId` every tick (its sim owns the pose), or null for a body nothing binds. */
   bindOf(instanceId: string): BodyBind | null;
 }
 
@@ -417,11 +375,7 @@ export type WorldItemPickupResult =
   | { status: "ok"; record: WorldItemRecord }
   | { status: "rejected"; reason: string };
 
-/**
- * `ctx.scene.worldItem`: items lying in the world — spawn, list, find the nearest, and pick up into a player's bag.
- *
- * @capability world-item-pickup pick up dropped items: ctx.scene.worldItem nearestInRadius → pickup into the player's inventory
- */
+/** @capability world-item-pickup pick up dropped items: ctx.scene.worldItem nearestInRadius → pickup into the player's inventory */
 export interface SceneWorldItemContext {
   spawn(input: WorldItemSpawnInput): WorldItemRecord;
   get(instanceId: string): WorldItemRecord | null;
@@ -439,18 +393,12 @@ export interface GameContextCommands {
   define<TInput>(name: string, definition: CommandDefinition<GameContext, TInput>): void;
   has(name: string): boolean;
   names(): string[];
-  /** Whether `name` was defined with `cheat: true`: a debug command a suite proof may only use in setup. */
   isCheat(name: string): boolean;
   run(name: string, input: unknown): CommandResult<GameContext>;
   /** Run a command attributed to `actorUserId` — a shared-world host routes each client's command through this so the handler can read {@link actor}. */
   runAs(actorUserId: string, name: string, input: unknown): CommandResult<GameContext>;
   /** The user a command is running on behalf of, or `null` outside a {@link runAs} call — commands default to `ctx.player.userId` when this is `null`. */
   actor(): string | null;
-  /**
-   * Refuse commands before they run, whatever their own `validate` says: `check` sees each command
-   * name and returns a refusal or `null`. The refusal goes out as `command.refused` like any other.
-   * Returns the function that removes the gate. Onboarding locks are built on this.
-   */
   gate(check: (name: string) => CommandRejection | null): () => void;
 }
 
@@ -468,9 +416,7 @@ export interface GameContextLoot {
 export interface GameContextEconomy {
   balance(userId: string, currencyId: string | CurrencyDefinition): number;
   grant(userId: string, currencyId: string | CurrencyDefinition, amount: number): void;
-  /** `options.overdraft` opts this charge into carrying a negative balance (`true` unlimited, `{ max }` capped) — omitted keeps the strict no-debt default. */
   charge(userId: string, currencyId: string | CurrencyDefinition, amount: number, options?: WalletChargeOptions): { reason: string } | null;
-  /** True once `balance(userId, currencyId)` has gone negative under an overdraft-enabled charge. */
   isOverdrawn(userId: string, currencyId: string | CurrencyDefinition): boolean;
 }
 
@@ -484,20 +430,14 @@ export interface GameContextItemUse {
 export interface GameContextWorld {
   ground: TerrainField;
   groundHeightAt(x: number, z: number): number;
-  /**
-   * Static collision for world geometry that is not a scene object. `environment({ structures })`
-   * fills the `environment:structures` layer; `syncAuthoredSolids` fills one layer per studio object.
-   */
   solids: WorldSolids;
 }
 
 export interface GameContextCards {
-  /** Lazily creates (on first call, `config` required) or returns the existing notify-wrapped pile for `id`. */
   pile(id: string, config?: CardPileConfig): CardPile;
 }
 
 export interface GameContextTurn {
-  /** Lazily creates (on first call, `config` required) or returns the existing notify-wrapped turn loop for `id`. */
   loop(id: string, config?: TurnLoopConfig): TurnLoop;
 }
 
@@ -512,7 +452,6 @@ export interface GameContextRace {
  * shell, so a game never encodes what a hit or a wave should sound like.
  */
 export interface GameFeedback {
-  /** Raise `cue` (`"hit" | "hurt" | "kill" | "pickup" | "objective" | "wave" | "deny"`); `caption` replaces the cue's default caption text. Emits `feedback.cue`. */
   cue(cue: FeedbackCue, caption?: string): void;
 }
 
@@ -524,12 +463,7 @@ export interface GameAudio {  play(sound: string, at?: readonly [number, number,
    * tuned back in lands mid-song).
    */
   music(theme: string | null, transpose?: number, options?: { offset?: number }): void;
-  /**
-   * Say `text` through the browser's speech synthesiser on the speech bus (emits `audio.speak`). Best
-   * effort: with no system voice, or headless, nothing is heard, so show the words on screen too.
-   */
   speak(text: string, options?: SpeakOptions): void;
-  /** Stop the line being said and drop any queued ones (emits `audio.speechStop`). */
   stopSpeech(): void;
   /**
    * Hold bus `bus` lowered by `amount` (0..1) under the key `id` until called again; `amount` 0
@@ -581,7 +515,6 @@ export interface GameAudio {  play(sound: string, at?: readonly [number, number,
   zoneLevel(zoneId: string, level: number): void;
 }
 
-/** The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world. */
 export interface GameContext {
   scene: {
     object: SceneObjectContext;
@@ -591,7 +524,6 @@ export interface GameContext {
     raycastAll(input: SceneRaycastInput): readonly SceneRaycastHit[];
   };
   world: GameContextWorld;
-  /** Authored weather, shelter, accumulation and fire sampled from ctx.time. */
   environment: AuthoredSimulationRuntime;
   /**
    * Deterministic `[0,1)` stream for this world — loot, AI, combat rolls, and any sim path that
@@ -611,10 +543,6 @@ export interface GameContext {
     territory?: Territory | undefined;
     commands: GameContextCommands;
     events: GameEvents;
-    /**
-     * Player-facing notice feed (info/success/warn/deny) with stacking dedupe and TTL. The shell renders it
-     * and plays a UI cue per push; refused commands that return `{ reason, message }` land here automatically.
-     */
     notices: NoticeFeed;
     audio: GameAudio;
     /**
@@ -623,7 +551,6 @@ export interface GameContext {
      * never encodes the reaction itself.
      */
     feedback: GameFeedback;
-    /** Play a model's one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an attack swing) — emits `entity.animation` for the shell to pick up. */
     playEntityAnimation(instanceId: string, event: string): void;
     feed: GameContextFeed;
     loot: GameContextLoot;
@@ -668,16 +595,11 @@ export interface GameContext {
     registerReplicate?(module: SnapshotModule): void;
   };
   player: {
-    /** The acting player's id — the command actor inside `runAs`, the local player everywhere else. */
     userId: string;
     isNew: boolean;
-    /** The acting player's inventory set — the command actor's bags inside `runAs`, the local player's everywhere else. */
     inventory: InventorySet<string>;
-    /** A specific player's inventory set — how a host reads or grants into any connected player's bags. */
     inventoryFor(userId: string): InventorySet<string>;
-    /** The acting player's stat modifiers — the command actor's inside `runAs`, the local player's everywhere else. */
     stats: Stats<string>;
-    /** A specific player's stat modifiers — how a host reads or buffs any connected player's stats. */
     statsFor(userId: string): Stats<string>;
     loadout: Loadouts;
     applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
@@ -687,7 +609,6 @@ export interface GameContext {
     cosmetics?: Cosmetics | undefined;
     /** Motion seam into the movement integrator (#162.4); routes to the command actor's queue (or the local player outside a command), so a command's impulse lands on whoever ran it. See `MotionIntents`. */
     motion: MotionIntents;
-    /** A specific player's motion queue — how the host-side per-player movement integrator drains each connected player's impulses. */
     motionFor(userId: string): MotionIntents;
   };
   item: {
@@ -695,23 +616,16 @@ export interface GameContext {
     weapon: WeaponStats;
   };
   time: SimClock;
-  /** The simulation stepper (fixed or variable) every driver advances through, plus render-side pose interpolation and per-step stages. */
   sim: SimContext;
   /** Runtime camera-follow/cinematic override (#196.2); the shell reads `followedEntityId()` each frame. */
   camera: CameraDirector;
   /** Particle VFX seam (#1659): queue bursts / standing emitters as data; the shell renders them quality-capped. */
   particles: ParticleDirector;
-  /** Skid marks every car's sliding tires lay (`tickDrivableVehicle`'s `tires` option); the shell draws them on the ground. */
   tireMarks: TireMarks;
   /** Held-input snapshot published by the shell each frame before `onTick` (#164.1). */
   input: InputSnapshot;
   subscribe(listener: () => void): () => void;
   version(): number;
-  /**
-   * Bump {@link version}/notify {@link subscribe} directly — the escape hatch for a command that only
-   * mutates game-owned state outside the entity/object/economy/store layers (an external session map,
-   * a plain closure variable) and needs to force a reactive HUD refresh without faking a `ctx.game.store.set`.
-   */
   touch(): void;
   /**
    * Run `work` with change notices held: reads inside see every write, and {@link subscribe}
@@ -719,28 +633,19 @@ export interface GameContext {
    * simulation in one, so a HUD selector runs once a frame however many bodies moved.
    */
   batch<T>(work: () => T): T;
-  /**
-   * Gather every opted-in live subsystem into one {@link WorldSnapshot} — entities, entity stats, the
-   * keyed store, the action feed, plus leaderboard/chat when those features are on. The full-world
-   * baseline a host sends a joining client; {@link hydrate} is its inverse. Pass a `viewer` and the host
-   * projects the snapshot to only what that viewer may see (private state, area of interest) when a
-   * {@link GameContextOptions.replication} policy is set; without one the viewer argument is a no-op.
-   */
   snapshot(viewer?: SnapshotViewer): WorldSnapshot;
-  /** Apply a {@link WorldSnapshot} from an authoritative host, hydrating each subsystem key present in it. */
   hydrate(snapshot: WorldSnapshot): void;
   /** Detached authoritative state, including save-only modules. Use for persistence, never client replication; available without `persist` or a save backend. */
   state(): WorldSnapshot;
-  /** Restore authoritative state after initialization. Missing keys retain their initialized values, including in legacy replication-only saves. */
   restore(state: WorldSnapshot): void;
-  /** Aggregate world-dirty version summed across replicated modules; the host replicator skips an unchanged commit. @internal */
+  /** @internal */
   replicationVersion(): number;
-  /** True when a {@link GameContextOptions.replication} policy makes {@link snapshot} viewer-dependent (private/AOI projection is active). @internal */
+  /** @internal */
   replicatesPerViewer(): boolean;
-  /** True when a replicated module throttles itself per viewer through `priority`. @internal */
+  /** @internal */
   throttlesModules(): boolean;
-  /** Entity ids `viewer` holds under the replication policy's interest radius (spatial index plus always-relevant ids), or `null` for every entity. @internal */
+  /** @internal */
   interestOf(viewer: SnapshotViewer): readonly string[] | null;
-  /** One changed replicated module narrowed for `viewer`; the value unchanged when the module has no projector. @internal */
+  /** @internal */
   projectModule(key: string, value: unknown, viewer: SnapshotViewer): unknown;
 }

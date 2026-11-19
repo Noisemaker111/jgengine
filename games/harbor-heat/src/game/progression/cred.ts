@@ -18,7 +18,6 @@ export function resolveCredProgress(level: number, xp: number): LevelProgress {
   return track.resolve(level, xp);
 }
 
-/** Cred paid per finished job in the city's world model — the story is the progression spine. */
 export const CRED_BY_JOB: Record<string, number> = {
   welcome: 100,
   dock_sweep: 220,
@@ -40,7 +39,6 @@ export const CRED_BY_JOB: Record<string, number> = {
 export const BOUNTY_CRED = 140;
 export const RACE_WIN_CRED = 150;
 
-/** Cred level required to buy an item/vehicle; ids absent here are always in stock. */
 export const CRED_GATES: Record<string, number> = {
   smg_carmine: 2,
   shotgun_boardwalk: 3,

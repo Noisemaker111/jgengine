@@ -43,7 +43,6 @@ import { RainField } from "@jgengine/core/weather/RainField.draw";
 import { SnowField } from "@jgengine/core/weather/SnowField.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
-/** Props for {@link EnvironmentScene}: the environment world feature to draw. */
 export interface EnvironmentSceneProps {
   feature: EnvironmentWorldFeature;
 }
@@ -108,7 +107,6 @@ function Vegetation({
   );
 }
 
-/** Terrain color under a grass patch center — so blade roots blend into the ground they stand on. */
 function vegetationGroundColor(
   terrain: Omit<TerrainEnvironmentDescriptor, "kind"> | undefined,
   field: TerrainField,
@@ -267,7 +265,6 @@ function Structures({
 const NO_ROADS: readonly RoadEnvironmentDescriptor[] = [];
 const NO_SUBSCRIPTION = () => () => {};
 
-/** The roads to draw: the live source when the world declares one, else the boot list. */
 function useLiveRoads(feature: EnvironmentWorldFeature): readonly RoadEnvironmentDescriptor[] {
   const source = feature.roadSource;
   const fallback = feature.roads ?? NO_ROADS;
@@ -279,7 +276,6 @@ function useLiveRoads(feature: EnvironmentWorldFeature): readonly RoadEnvironmen
   return useSyncExternalStore(subscribe, read, read);
 }
 
-/** Draw an environment world feature: its sky, ground (terrain, pad or plane), water, weather and lighting. */
 export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
   const field = useMemo(() => resolveEnvironmentField(feature), [feature]);
   const vegetation = feature.vegetation ?? [];

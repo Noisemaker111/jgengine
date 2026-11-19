@@ -1,6 +1,5 @@
 import type { DecisionGraph } from "./decisionGraph";
 
-/** Graph-shaped description of the mob brain's idle, wander, chase, engage, and evade decisions. */
 export const mobBrainGraph: DecisionGraph = {
   kind: "selector",
   children: [

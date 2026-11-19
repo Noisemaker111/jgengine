@@ -3,13 +3,9 @@
  * module load) so they run under `bun test` without a browser.
  */
 
-/** What the readiness gate observes between rendered frames. */
 export interface ViewActivity {
-  /** Times the shared model loader went busy since boot; a change means new streaming started. */
   modelLoadStarts: number;
-  /** The jgengine loading screen (`data-shell-code-loading`) is mounted. */
   viewLoading: boolean;
-  /** The model loader has been idle long enough that nothing is still streaming in. */
   modelsIdle: boolean;
 }
 
@@ -51,16 +47,12 @@ export async function waitForQuiescentView(deps: QuiescenceDeps, timeoutMs: numb
   return `models kept streaming for ${seconds}s — capturing would race them`;
 }
 
-/** The slice of an element the start-action picker reads. */
 export interface StartCandidate {
   text: string;
   disabled: boolean;
   visible: boolean;
-  /** `data-jg-start` is present: the game marked its primary start action. */
   marked: boolean;
-  /** Looks like a primary button (class or data-variant names primary/cta). */
   primary: boolean;
-  /** A settings/credits trigger the StartScreen scaffold marks itself. */
   utility: boolean;
 }
 

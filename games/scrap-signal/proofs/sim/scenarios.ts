@@ -34,7 +34,6 @@ export function huskAhead(s: ProofSetup<Probe>, metres: number): void {
   s.ctx.scene.entity.spawn("husk", { id: "suite_husk", position: [me.position[0], me.position[1], me.position[2] + metres] });
 }
 
-/** Pull the trigger with the aim the mouse gives: the camera's heading, and a pitch. */
 export async function pull(p: ProofPlay<Probe>, yaw: number, pitch = 0): Promise<void> {
   await p.tryAct("fire", { yaw, pitch, aim: { yaw, pitch } });
   await p.wait(100);

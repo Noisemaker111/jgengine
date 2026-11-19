@@ -15,7 +15,6 @@ export interface ScatterModelSource {
   localMatrix: THREE.Matrix4;
   castShadow?: boolean;
   receiveShadow?: boolean;
-  /** Leave this source out of the shadow pass on every scatter path (pebble-sized generated meshes). */
   skipShadow?: boolean;
 }
 
@@ -114,10 +113,7 @@ export function buildScatterModelSources(
   return { sources, root };
 }
 
-/**
- * Releases the instance resources harvested by {@link buildScatterModelSources}, retaining cached assets.
- * @internal
- */
+/** @internal */
 export function disposeScatterModelSources(root: THREE.Object3D): void {
   disposeModelScene(root);
 }

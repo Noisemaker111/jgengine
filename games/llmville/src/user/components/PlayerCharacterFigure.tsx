@@ -30,7 +30,6 @@ import {
 interface PlayerCharacterFigureProps {
   look?: CharacterLook;
   scale?: number;
-  /** When true, legs/arms swing through the walk cycle. Idle holds a neutral frame. */
   isWalking?: boolean;
   /** Optional external walk phase in radians to drive sync across clients. */
   walkPhase?: number | undefined;
@@ -38,7 +37,6 @@ interface PlayerCharacterFigureProps {
   headYaw?: number;
   /** Head look pitch in radians (positive = look down in camera space). */
   headPitch?: number;
-  /** Live head look — read every frame when set (for remote avatar interpolation). */
   headLookRef?: MutableRefObject<{ pitch: number } | null> | undefined;
 }
 
@@ -46,7 +44,6 @@ const MODEL_URL = "/models/character/player-walk.glb";
 const WALK_RATE = 5.5;
 const IDLE_TIME = 0;
 const RIG_SCALE_FIX = 1;
-
 
 const REGION = {
   neutral: 0,

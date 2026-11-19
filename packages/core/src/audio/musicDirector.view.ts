@@ -23,20 +23,12 @@ interface Layer {
   transpose: number;
 }
 
-/** Options for a music crossfade. */
 export interface CrossfadeOptions {
-  /** Semitone shift applied to every note of the incoming theme (per-zone key). Default 0. */
   transpose?: number;
   /** Seconds into the incoming theme's loop to start from, so a radio tuned back in lands mid-song. Default 0. */
   offset?: number;
 }
 
-/**
- * Runs a set of looping {@link MusicTheme}s as crossfadeable layers on one shared
- * Web Audio graph: master → compressor → destination, with a fixed convolution
- * reverb send. `crossfadeTo` swaps the audible theme; a 110ms lookahead scheduler
- * keeps each active layer's notes queued ahead of the clock so loops are seamless.
- */
 export class MusicDirector {
   private readonly ctx: BaseAudioContext;
   private readonly master: GainNode;
@@ -100,7 +92,6 @@ export class MusicDirector {
     return this.current;
   }
 
-  /** Fade to `themeId` (or fade all out when null). No-op if it is already current. */
   crossfadeTo(themeId: string | null, options: CrossfadeOptions = {}): void {
     if (themeId === this.current) return;
     this.current = themeId;
@@ -130,7 +121,6 @@ export class MusicDirector {
     this.master.gain.value = MASTER_BASE * this.volume;
   }
 
-  /** Stop the scheduler and release the graph. */
   dispose(): void {
     if (this.timer !== undefined) clearInterval(this.timer);
     this.timer = undefined;

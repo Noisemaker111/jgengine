@@ -4,43 +4,34 @@
  * of `glbWrite`, enough to take a downloaded static animal apart and rig it ({@link autoRig}).
  */
 
-/** One material as the source file describes it. */
 export interface ReadMaterial {
   name: string;
-  /** Linear RGBA base colour factor. */
   baseColor: readonly [number, number, number, number];
   metalness: number;
   roughness: number;
-  /** Linear RGB emissive factor. */
   emissive: readonly [number, number, number];
   doubleSided: boolean;
-  /** Index into {@link ReadModel.images} of the base colour texture. */
   image?: number;
 }
 
-/** An image embedded in the source file, carried through untouched. */
 export interface ReadImage {
   mimeType: string;
   bytes: Uint8Array;
 }
 
-/** One triangle mesh in model space. */
 export interface ReadPrimitive {
   positions: Float32Array;
   normals: Float32Array;
   uvs?: Float32Array;
-  /** Linear RGBA per vertex. */
   colors?: Float32Array;
   indices: Uint32Array;
   material: number;
 }
 
-/** Everything a static model holds. */
 export interface ReadModel {
   primitives: ReadPrimitive[];
   materials: ReadMaterial[];
   images: ReadImage[];
-  /** True when the file already has a skeleton or animations: it needs no rig. */
   animated: boolean;
 }
 
@@ -71,7 +62,6 @@ function compose(t: readonly number[] = [0, 0, 0], q: readonly number[] = [0, 0,
   ]);
 }
 
-/** The inverse-transpose of a matrix's upper 3x3, for normals. */
 function normalMatrix(m: Mat4): number[] {
   const a = m[0]!, b = m[1]!, c = m[2]!, d = m[4]!, e = m[5]!, f = m[6]!, g = m[8]!, h = m[9]!, i = m[10]!;
   const det = a * (e * i - f * h) - d * (b * i - c * h) + g * (b * f - c * e) || 1;
@@ -251,7 +241,6 @@ export function readGlbModel(bytes: Uint8Array): ReadModel {
   return { primitives, materials, images, animated: (gltf.skins?.length ?? 0) > 0 || (gltf.animations?.length ?? 0) > 0 };
 }
 
-/** Flat-ish normals for a mesh that has none: each vertex gets the sum of its faces' normals. */
 function faceNormals(positions: Float32Array, indices: Uint32Array, out: Float32Array): void {
   for (let t = 0; t < indices.length; t += 3) {
     const a = indices[t]! * 3, b = indices[t + 1]! * 3, c = indices[t + 2]! * 3;

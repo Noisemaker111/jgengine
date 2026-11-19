@@ -9,7 +9,6 @@ import { readGameSuiteConfig, renderSuiteText, scoreGameSuite, suiteRegressions,
 import { readGameProject, readSuiteReport, SUITE_PROOFS_DIR, SUITE_REPORT_FILE, SUITE_RUN_OUT_ENV } from "./suiteReport";
 import type { SuiteProofAnswer, SuiteProofJob } from "./suiteProofWorker";
 
-/** Overrides how many proofs play at once (`suiteWorkers`). */
 export const SUITE_WORKERS_ENV = "JG_SUITE_WORKERS";
 
 /** The most workers one job takes on a shared machine unless JG_SUITE_WORKERS asks for more. */
@@ -28,14 +27,12 @@ export function suiteWorkers(proofs: number, env: Record<string, string | undefi
   return Math.max(1, Math.min(proofs, wanted));
 }
 
-/** Every proof file of a game, sorted: the report's order, whatever order the workers finish in. */
 function proofFiles(gameDir: string): string[] {
   const dir = join(gameDir, SUITE_PROOFS_DIR);
   if (!existsSync(dir)) return [];
   return readdirSync(dir).filter((name) => name.endsWith(".proof.ts")).sort();
 }
 
-/** Play every proof across `workers` threads, each proof once, and return the report in file order. */
 export async function runSuiteInWorkers(game: string, gameDir: string, content: SuiteContent | null, workers = suiteWorkers(proofFiles(gameDir).length)): Promise<SuiteReport> {
   const jobs: SuiteProofJob[] = proofFiles(gameDir).map((name) => ({ game, path: join(gameDir, SUITE_PROOFS_DIR, name), file: `${SUITE_PROOFS_DIR}/${name}` }));
   const results = new Map<string, SuiteProofResult>();

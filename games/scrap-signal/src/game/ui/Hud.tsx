@@ -28,14 +28,8 @@ import { useCompact, C, FULL, Hull, Icon, idleFade, Label, Pips, Plate, Row, Sma
 const PIPS = 12;
 const stat = (ctx: GameContext, id: string) => ctx.scene.entity.stats.get(ctx.player.userId, id);
 const gameMs = (ctx: GameContext) => ctx.time.now() * 1000;
-/** True while `atMs` is within `windowMs` of game time. */
 const within = (ctx: GameContext, atMs: number | undefined, windowMs: number) => { if (atMs === undefined) return false; const age = gameMs(ctx) - atMs; return age >= 0 && age <= windowMs; };
 
-/**
- * The reclaimer's wrist unit: level and chassis tag on the housing, shield and health as lit pip rows
- * on the tube, experience as a thin trace under them. It dims out of a fight and holds full strength
- * while hostiles are near, the shield is recharging or health is low.
- */
 export function VitalsPlate({ combat }: { combat: () => boolean }) {
   const ctx = useGameContext();
   const level = Math.round(useEntityStat(ctx.player.userId, "level")?.current ?? 1);
@@ -64,7 +58,6 @@ function Gauge({ label, value, max, color }: { label: string; value: () => numbe
   return <Row gap={6}><Label width={26} color={C.phosphor}>{label}</Label><Pips value={value} max={max} count={PIPS} color={color} /><RuneLabel value={bind(value)} format={n => String(Math.ceil(n))} size={13} color={C.phosphor} /></Row>;
 }
 
-/** Magazine, reserve and grenades for the held gun; numbers bound at their leaves. */
 export function AmmoPlate({ combat }: { combat: () => boolean }) {
   const ctx = useGameContext();
   const selected = useStore(selectedSlotStore);
@@ -97,7 +90,6 @@ export function AmmoPlate({ combat }: { combat: () => boolean }) {
   </Hull>;
 }
 
-/** The weapon cartridges slotted into the forearm rig; the live one rides up and lights. */
 export function WeaponHotbar({ combat }: { combat: () => boolean }) {
   const ctx = useGameContext();
   const selected = useStore(selectedSlotStore);
@@ -131,10 +123,6 @@ export function ItemCard() {
   </Hull>;
 }
 
-/**
- * A gun's perks: a named legendary's signature in red text with its flavor line and the boss that
- * farms it, rolled perks as stamped steel chips with their one-line read.
- */
 export function PerkList({ perks }: { perks: readonly PerkLine[] | undefined }) {
   if (perks === undefined || perks.length === 0) return null;
   return <RuneView gap={4}>{perks.map(perk => perk.signature
@@ -143,12 +131,10 @@ export function PerkList({ perks }: { perks: readonly PerkLine[] | undefined }) 
   </RuneView>;
 }
 
-/** The tracker splits its column: one full card for the current objective, a title line per other quest. */
 export function splitTrackedQuests<T>(active: readonly T[]): { primary: T | undefined; others: readonly T[] } {
   return { primary: active[0], others: active.slice(1) };
 }
 
-/** The Mast Watch contract's live objective, timer and outcome, as the first entry on the log. */
 function MastCard() {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -165,7 +151,6 @@ function MastCard() {
   </RuneView>;
 }
 
-/** The mission log hung top-left: the contract card, the current objective and other active quests. */
 export function MissionTracker() {
   const journal = useQuestJournal();
   const active = journal.filter(entry => entry.status === "active");
@@ -192,7 +177,6 @@ export function MissionTracker() {
   </Plate>;
 }
 
-/** Bolt's field notes: the onboarding's current step, with Next and Hide. */
 export function FieldNotes() {
   const { commands } = useGame();
   const view = useGameStore(c => {
@@ -216,7 +200,6 @@ export function FieldNotes() {
   </Plate>;
 }
 
-/** A small carbon counter with an odometer window, for the cash and cores readouts. */
 export function Counter({ icon, color, label, read }: { icon: "coin" | "gem"; color: string; label: string; read: (ctx: GameContext) => number }) {
   const ctx = useGameContext();
   const fade = useMemo(() => idleFade(() => String(read(ctx)), () => false, 0.5, 6000), [ctx]);
@@ -227,7 +210,6 @@ export function Counter({ icon, color, label, read }: { icon: "coin" | "gem"; co
 export const cashOf = (ctx: GameContext) => ctx.game.economy.balance(ctx.player.userId, "cash");
 export const coresOf = (ctx: GameContext) => ctx.game.economy.balance(ctx.player.userId, "cores");
 
-/** The newest loot lines, beside the wallet. */
 export function LootToasts() {
   const entries = useFeed({ action: "loot.granted", limit: 4 });
   return <RuneView gap={3} items="end">{[...entries].reverse().map((entry, index) => {
@@ -248,7 +230,6 @@ export function ZoneBanner() {
   </RuneView>;
 }
 
-/** An incoming transmission from a crewmate, on the rig's radio strip. */
 export function EchoBox() {
   const ctx = useGameContext();
   const { compact } = useCompact();
@@ -260,7 +241,6 @@ export function EchoBox() {
   </Plate>;
 }
 
-/** The emergency reserve: the rig's tube flashes a reboot countdown across the middle of the view. */
 export function ReserveOverlay() {
   const ctx = useGameContext();
   const { width, height } = useRuneViewport();
@@ -311,7 +291,6 @@ export function SpreadReticle() {
 }
 
 const HIT_ART = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 4 L9 9 M20 4 L15 9 M4 20 L9 15 M20 20 L15 15" stroke="#ffffff" stroke-width="2.6" stroke-linecap="square"/></svg>`;
-/** The hit marker over the crosshair: a cross that pops and fades, red on a kill, amber on a crit. */
 export function HitMarker() {
   return <HitMarkerCue timing={SCRAP_HIT_MARKER} artwork={HIT_ART} size={26} gap={30}
     colors={{ hit: "#f5f0e6", crit: C.amber, kill: "#e23c2e" }}
@@ -326,7 +305,6 @@ export function DamageVignette() {
     opacity={bind(() => Math.max(0, Math.min(1, 1 - (gameMs(ctx) - lastHurtAtMs()) / 450)))} />;
 }
 
-/** Level up: a ring and the new level, pulsed by the level stat itself. */
 export function LevelUpBurst() {
   const ctx = useGameContext();
   const level = () => stat(ctx, "level")?.current ?? 1;

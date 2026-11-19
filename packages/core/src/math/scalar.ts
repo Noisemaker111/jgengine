@@ -1,12 +1,7 @@
 // @skill jgengine-world
 export { lerp, clamp01, smoothstep } from "../anim/easing";
 
-/**
- * Length of the vector (x, y) as `sqrt(x*x + y*y)`. `Math.hypot` is not required to round exactly and
- * differs between JIT tiers and machines; a simulation that runs thousands of steps amplifies that last
- * bit, so hot paths use this instead.
- * @internal
- */
+/** @internal */
 export function length2(x: number, y: number): number {
   return Math.sqrt(x * x + y * y);
 }
@@ -28,9 +23,7 @@ export function clamp(value: number, min: number, max: number): number {
   return value < min ? min : value > max ? max : value;
 }
 
-/** Fraction of the way `value` sits between `from` and `to`; inverse of `lerp`. Returns 0 when the span is empty.
- * @internal
- */
+/** @internal */
 export function inverseLerp(from: number, to: number, value: number): number {
   return from === to ? 0 : (value - from) / (to - from);
 }
@@ -54,25 +47,19 @@ export function remap(
   return mapped < lo ? lo : mapped > hi ? hi : mapped;
 }
 
-/** Euclidean modulo that always returns a non-negative result in `[0, modulus)`, unlike the `%` operator.
- * @internal
- */
+/** @internal */
 export function mod(value: number, modulus: number): number {
   return ((value % modulus) + modulus) % modulus;
 }
 
-/** Step `current` toward `target` by at most `maxDelta`, without overshooting.
- * @internal
- */
+/** @internal */
 export function moveTowards(current: number, target: number, maxDelta: number): number {
   const diff = target - current;
   if (Math.abs(diff) <= maxDelta) return target;
   return current + Math.sign(diff) * maxDelta;
 }
 
-/** Wrap `value` into the half-open range `[min, max)`, cycling past either edge.
- * @internal
- */
+/** @internal */
 export function wrap(value: number, min: number, max: number): number {
   const span = max - min;
   return span <= 0 ? min : min + mod(value - min, span);

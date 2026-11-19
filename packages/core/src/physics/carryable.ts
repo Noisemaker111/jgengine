@@ -1,21 +1,13 @@
 import type { PhysicsWorld } from "./physicsWorld";
 
 export interface CarryableConfig {
-  /** Spring stiffness pulling the held body toward the follow point. Default 60. */
   followStiffness?: number;
-  /** Spring damping on the follow constraint. Default 12. */
   followDamping?: number;
   /** Clamp on the follow impulse so a heavy item lags instead of teleporting. Default 40. */
   maxForce?: number;
-  /** Mass one owner hauls at full speed; heavier → encumbered / needs more owners. The game's own carrying number. */
   carryCapacity: number;
 }
 
-/**
- * Movement multiplier (1 = unhindered, →0 = crushed) for a body of `mass` carried by `owners`.
- * Pure — the HUD/movement kit reads it to slow a laden hauler (Lethal Company) and to gate items
- * that need 2+ people (R.E.P.O.).
- */
 export function carrySpeedMultiplier(mass: number, carryCapacity: number, owners: number): number {
   if (owners <= 0) return 0;
   if (mass <= 0) return 1;
@@ -23,12 +15,6 @@ export function carrySpeedMultiplier(mass: number, carryCapacity: number, owners
   return scale < 0 ? 0 : scale > 1 ? 1 : scale;
 }
 
-/**
- * A grabbed physics object following a moving hold point through a spring constraint (the pick —
- * a raycast — is the caller's/shell's job; core owns the constraint). Supports shared multi-owner
- * carry (the follow point is the average of owners' hold points), an encumbrance read, and
- * drop/throw. Reuses `PhysicsWorld.springJoint` to a world anchor moved each frame.
- */
 export class Carryable {
   readonly body: number;
   private readonly world: PhysicsWorld;
@@ -65,7 +51,6 @@ export class Carryable {
     return carrySpeedMultiplier(this.mass(), this.capacity, this.holds.size);
   }
 
-  /** Add an owner grabbing at a hold point; the first owner creates the follow constraint. */
   grab(ownerId: number, x: number, y: number, z: number): void {
     this.holds.set(ownerId, [x, y, z]);
     if (this.joint < 0) {
@@ -97,7 +82,6 @@ export class Carryable {
     }
   }
 
-  /** Recompute the follow point (average of live hold points) and drive the constraint. */
   update(): void {
     if (this.joint < 0 || this.holds.size === 0) return;
     let tx = 0;

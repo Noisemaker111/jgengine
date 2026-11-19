@@ -4,7 +4,6 @@
  * embeds these functions with `Function.prototype.toString`.
  */
 
-/** The CDP calls a drive step makes; both the engine and portable sessions satisfy it. */
 export interface DriveSession {
   send(method: string, params?: Record<string, unknown>): Promise<unknown>;
   evaluate(expression: string, options?: { awaitPromise?: boolean }): Promise<unknown>;
@@ -22,11 +21,9 @@ export interface DriveInputDeps {
 
 /** Release a held input once a check passes, instead of after a guessed duration. */
 export interface DriveHoldUntil {
-  /** True once the hold has arrived (a probe reading, a page value). */
   check: () => Promise<boolean>;
   /** How long the input may stay held before the hold fails. */
   timeoutMs: number;
-  /** What the check asks, for the failure message. */
   describe: string;
 }
 
@@ -83,7 +80,6 @@ export async function holdDriveInput(session: DriveSession, chord: string, holdM
   }
 }
 
-/** Modifier keys as a browser reports them: key name, virtual key code, left/right, and modifier bit. */
 const MODIFIERS: Readonly<Record<string, { key: string; vk: number; location: number; bit: number }>> = {
   ShiftLeft: { key: "Shift", vk: 16, location: 1, bit: 8 },
   ShiftRight: { key: "Shift", vk: 16, location: 2, bit: 8 },
@@ -109,7 +105,6 @@ export function driveChordEvents(chord: string, type: "keyDown" | "keyUp"): Reco
   });
 }
 
-/** Press or release a chord on the page. */
 export async function sendDriveChord(session: DriveSession, chord: string, type: "keyDown" | "keyUp"): Promise<void> {
   for (const event of driveChordEvents(chord, type)) await session.send("Input.dispatchKeyEvent", event);
 }

@@ -21,14 +21,12 @@ function cx(...names: (string | false | undefined)[]): string {
   return names.filter(Boolean).join(" ");
 }
 
-/** A data tag from a label, like `0x3F`: the same label always gets the same tag. */
 function hexTag(text: string): string {
   let hash = 7;
   for (const char of text) hash = (hash * 31 + (char.codePointAt(0) ?? 0)) & 0xff;
   return `0x${hash.toString(16).toUpperCase().padStart(2, "0")}`;
 }
 
-/** A menu row index as hex: the first row is `0x01`. */
 function hexIndex(n: number): string {
   return `0x${n.toString(16).toUpperCase().padStart(2, "0")}`;
 }
@@ -47,7 +45,6 @@ function Shape(): ReactNode {
   );
 }
 
-/** Corner brackets sitting just outside a frame. */
 function Brackets(): ReactNode {
   return <span className={`${P}-brackets`} aria-hidden="true" />;
 }

@@ -4,13 +4,11 @@
  * turning the camera behind its back.
  */
 
-/** The CDP calls an aim step makes. */
 export interface DriveAimSession {
   send(method: string, params?: Record<string, unknown>): Promise<unknown>;
   evaluate(expression: string, options?: { awaitPromise?: boolean }): Promise<unknown>;
 }
 
-/** A CSS viewport point. */
 export interface DrivePoint {
   x: number;
   y: number;
@@ -52,7 +50,6 @@ function finiteField(value: object, key: "x" | "y" | "seen"): number | null {
   return typeof field === "number" && Number.isFinite(field) ? field : null;
 }
 
-/** A page value as a screen point: `{x, y}` or `[x, y]`, else `null`. */
 function asPoint(value: unknown): DrivePoint | null {
   if (Array.isArray(value)) {
     const x = Number(value[0]);
@@ -71,14 +68,12 @@ async function canvasCentre(session: DriveAimSession): Promise<DrivePoint> {
   return centre;
 }
 
-/** The movement the page's listener saw since the last reset. */
 async function readMovement(session: DriveAimSession): Promise<{ x: number; y: number; seen: number }> {
   const value = await session.evaluate(READ_MOVEMENT);
   if (typeof value !== "object" || value === null) return { x: 0, y: 0, seen: 0 };
   return { x: finiteField(value, "x") ?? 0, y: finiteField(value, "y") ?? 0, seen: finiteField(value, "seen") ?? 0 };
 }
 
-/** The `result.value` of a CDP `Runtime.evaluate` answer. */
 function evaluateValue(answer: unknown): unknown {
   if (typeof answer !== "object" || answer === null || !("result" in answer)) return undefined;
   const result: unknown = answer.result;

@@ -7,7 +7,6 @@ import "../runtime/pageHandle";
  * renders of a real game HUD. It can be installed before or after the runtime loads.
  */
 
-/** One component's renders since the last reset. */
 export interface ComponentRenders {
   name: string;
   renders: number;
@@ -15,7 +14,6 @@ export interface ComponentRenders {
   perFrame: number;
 }
 
-/** Every commit and component render since the counter was installed or reset. */
 export interface RenderCounts {
   seconds: number;
   /** Animation frames the page ran over the same span: a page that renders slowly is judged per frame, not per second. */
@@ -25,15 +23,12 @@ export interface RenderCounts {
   components: ComponentRenders[];
 }
 
-/** The installed counter, at `window.__jg.renders`. */
 export interface RenderCounter {
   reset(): void;
   read(): RenderCounts;
-  /** Renders of components with this name since the last reset. */
   count(name: string): number;
 }
 
-/** Where the UI runtime reports each render and commit. */
 export interface RenderSink {
   render(type: unknown): void;
   commit(): void;

@@ -43,7 +43,6 @@ import {
   type ScatterGeneratorItem,
 } from "./scatterGenerator";
 
-/** Chunk edge (m): dense fields split into this-sized buckets, each frustum-culled independently. */
 const DEFAULT_CHUNK_SIZE = 24;
 const DEFAULT_MAX_INSTANCES = 20000;
 /** Most chunks one field splits into; past it chunks grow, so an island costs hundreds of objects, not tens of thousands. */
@@ -82,11 +81,10 @@ export function capScatterInstances<T>(instances: readonly T[], max: number): re
   return kept;
 }
 
-/** One instanced draw unit - a single species within a single spatial chunk. @internal */
+/** @internal */
 export interface ScatterBatch {
   key: string;
   item: string;
-  /** Per-instance transforms, parallel to `instances`. */
   matrices: THREE.Matrix4[];
   /** The placements themselves, so the level pass can read a stable id and a world position. */
   instances: ScatterInstance[];
@@ -191,7 +189,6 @@ function asyncChildDraw(load: (state: EngineFrameState) => Promise<EngineDraw | 
   };
 }
 
-/** One species-in-a-chunk InstancedMesh: a proxy batch's placements as a single GPU-instanced draw. */
 function scatterBatchMeshDraw(batch: ScatterBatch, geometry: THREE.BufferGeometry): EngineDraw {
   const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
   let mesh: THREE.InstancedMesh | null = null;
@@ -216,20 +213,17 @@ function scatterBatchMeshDraw(batch: ScatterBatch, geometry: THREE.BufferGeometr
   };
 }
 
-/** Which placements of one chunk each detail level draws, refilled by {@link pickDetailPlacements}. @internal */
+/** @internal */
 export interface DetailPicks {
-  /** Per placement: the level it draws at, or -1 past the draw distance. */
   readonly level: Int8Array;
-  /** Per level: the placement indices it draws, the first `counts[level]` of them. */
   readonly members: Int32Array[];
   readonly counts: Int32Array;
   /** `counts` before the last pick. */
   readonly previous: Int32Array;
-  /** Per level: 1 when its list changed in the last pick, so its draws upload again. */
   readonly dirty: Uint8Array;
 }
 
-/** Empty picks for a chunk of `placements` over `levels` detail levels. @internal */
+/** @internal */
 export function createDetailPicks(placements: number, levels: number): DetailPicks {
   return {
     level: new Int8Array(placements).fill(-1),
@@ -285,7 +279,7 @@ export function pickDetailPlacements(
   return changed;
 }
 
-/** Empty every level of a chunk the camera is out of reach of; true when it held anything. @internal */
+/** @internal */
 export function clearDetailPicks(picks: DetailPicks): boolean {
   picks.dirty.fill(0);
   let changed = false;
@@ -318,10 +312,8 @@ function uploadPicked(mesh: THREE.InstancedMesh, batch: ScatterBatch, picks: Det
  */
 type DetailDraw = THREE.InstancedMesh | StaticDrawSlot;
 
-/** A detail field's draws, by chunk, level and draw source: a slot holds a draw only while its level picks a placement. */
 type DetailMeshes = (DetailDraw | undefined)[][][];
 
-/** A placement of a chunk as a shared-batch member; scatter names no scene object, so picking reports none. */
 interface DetailPlacement extends PooledPlacement {
   readonly index: number;
 }
@@ -425,7 +417,7 @@ export function syncDetailDraws(
   });
 }
 
-/** Give back every draw of a detail field: meshes leave the scene and free their buffers, slots return to the shared batches. @internal */
+/** @internal */
 export function clearDetailDraws(field: THREE.Object3D, meshes: DetailMeshes): void {
   for (const levels of meshes) for (const row of levels ?? []) for (const draw of row ?? []) {
     if (draw !== undefined) dropDetailDraw(field, draw);
@@ -523,7 +515,7 @@ function scatterVariantSpeciesDraw({ model, batches }: { model: ModelConfig; bat
   return childrenDraw(children, () => selector.clear());
 }
 
-/** A batch's footprint on the ground: its centre and the radius that reaches its farthest placement. @internal */
+/** @internal */
 export function scatterBatchFootprint(batch: ScatterBatch): { x: number; z: number; radius: number } {
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
@@ -624,11 +616,7 @@ function scatterDetailDraw({ levels, batches, radius, hysteresis = 0 }: { levels
   };
 }
 
-/**
- * The level a placement at `distance` draws: the first whose `maxDistance` it is inside, holding
- * `current` until it is a `hysteresis` share past the edge it would cross.
- * @internal
- */
+/** @internal */
 export function placementLevel(levels: readonly { maxDistance: number }[], distance: number, current: number, hysteresis: number): number {
   let level = levels.length - 1;
   for (let index = 0; index < levels.length; index += 1) {
@@ -668,7 +656,6 @@ function scatterSingleSpeciesDraw({ model, batches }: { model: ModelConfig; batc
   });
 }
 
-/** A catalog species and the built levels it switches through per chunk (none when nothing was built). */
 function scatterBuiltSpeciesDraw({ model, levels, hysteresis, batches, cacheKey }: {
   model: ModelConfig;
   levels: readonly { url: string; maxDistance?: number }[] | null;
@@ -706,7 +693,6 @@ function scatterBuiltSpeciesDraw({ model, levels, hysteresis, batches, cacheKey 
   });
 }
 
-/** A species draw: big ones get the impostor far field, small ones stop past their detail distance. */
 function scatterSourcesFieldDraw({ cacheKey, sources: given, levels: chunkLevels, farSources, batches, hysteresis }: {
   cacheKey: string;
   sources?: ScatterModelSource[];
@@ -729,14 +715,12 @@ const NO_HEROES: ReadonlySet<string> = new Set();
 /** Generated meshes smaller than this bounding radius (metres) skip the shadow pass. */
 const SMALL_SHADOW_RADIUS = 0.6;
 
-/** One generator-grown species, resolved: the generator, the item, and its placements per variant. */
 interface ScatterGeneratorSpeciesDraw {
   definition: GeneratorDefinition;
   spec: ScatterGeneratorItem;
   byVariant: Map<number, ScatterBatch[]>;
 }
 
-/** One bake of a generator's variants: the definition with the details to bake as its `lods`, the base params, the variant options. */
 interface GeneratorBake {
   definition: GeneratorDefinition;
   base: Parameters<typeof bakeGeneratorVariants>[1];
@@ -751,12 +735,6 @@ function disposeBakedGeometries(geometries: readonly THREE.BufferGeometry[]): vo
   for (const geometry of geometries) geometry.dispose();
 }
 
-/**
- * Bake a generator's variants at every detail in `bake.definition.lods` into draw sources: per variant,
- * per detail. A generator with a `prepare` step (a grown plant) prepares them off the frame first,
- * counted as scene loading under `work`; until then, and for no bake, there are none. Returns the
- * cancel for the in-flight prepare.
- */
 function bakeGeneratorDraw(bake: GeneratorBake, work: string, onDone: (variants: ScatterModelSource[][][]) => void): () => void {
   let live = true;
   const bakeNow = (): ScatterModelSource[][][] => {
@@ -787,16 +765,6 @@ function bakeGeneratorDraw(bake: GeneratorBake, work: string, onDone: (variants:
   };
 }
 
-/**
- * A palette item grown by a generator: its variants are baked once, each turned into instanced draws
- * through the mesh builder registered for the generator's output, and every variant draws only the
- * placements assigned to it. Far away every variant draws one shared impostor baked from the first,
- * so more variants cost near draws, not atlas memory. A species too small for an impostor also bakes
- * the generator's coarser levels when the game sets `visibility.meshLods`, and each placement draws
- * the one its size on screen calls for. A unique species (`variants: "unique"`) also grows its near
- * placements one by one from their own seeds ({@link scatterHeroesDraw}) and hides their stand-ins once
- * each is ready.
- */
 function scatterGeneratorSpeciesDraw({ item, species }: { item: string; species: ScatterGeneratorSpeciesDraw }): EngineDraw {
   const { definition, spec } = species;
   const key = `generator:${item}:${JSON.stringify(spec)}`;
@@ -962,7 +930,6 @@ function scatterGeneratorSpeciesDraw({ item, species }: { item: string; species:
   };
 }
 
-/** The generator a palette item grows from: its mapping, else a registered generator whose id is the item and whose output draws as meshes. */
 function generatorSpec(item: string, resolved: ModelConfig | ScatterGeneratorItem | null): ScatterGeneratorItem | null {
   if (resolved !== null) return isScatterGeneratorItem(resolved) ? resolved : null;
   const definition = getGenerator(item);
@@ -976,14 +943,11 @@ function scatterModelSpeciesDraw({ model, batches }: { model: ModelConfig; batch
     : scatterVariantSpeciesDraw({ model, batches });
 }
 
-/** Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs. */
 export interface InstancedScatterProps {
   instances: readonly ScatterInstance[];
   /** Chunk edge in meters; dense fields split into independently frustum-culled buckets. Default 24. */
   chunkSize?: number;
-  /** Most instances drawn; past it the field thins evenly. Default 20000. */
   maxInstances?: number;
-  /** Most chunks the field splits into; bigger fields get bigger chunks. Default 400. */
   maxChunks?: number;
   /**
    * Per-species override: return a real catalog `ModelConfig` for an item to GPU-instance the actual
@@ -992,7 +956,6 @@ export interface InstancedScatterProps {
    * that generator, and draws anything else as the stylized `buildScatterProxy`.
    */
   resolveItem?: (item: string) => ModelConfig | ScatterGeneratorItem | null;
-  /** Placement ids not drawn — felled trees, mined rocks ({@link ScatterClearing}). */
   hidden?: ReadonlySet<string>;
 }
 

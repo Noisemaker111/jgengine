@@ -100,7 +100,6 @@ export function toneMapColor(color: readonly [number, number, number], mode: Ton
 
 const CURVED = new Set<ToneMapping>([ReinhardToneMapping, CineonToneMapping, ACESFilmicToneMapping, AgXToneMapping, NeutralToneMapping]);
 
-/** Keeps a compensated sky inside half-float range; the brightest pastel under AgX needs ~13. */
 const MAX_SCENE_VALUE = 32;
 
 /**

@@ -19,66 +19,44 @@ import { pickScored, type DifficultyProfile, type ScoredOption } from "./difficu
 import { restoreRng, rngStateOf, seededRng } from "../random/rng";
 import type { ResourceCost } from "../work/unitTraining";
 
-/** What a catalog entry is: a structure, a trained unit, or a one-time research. */
 export type BuildKind = "building" | "unit" | "research";
 
-/** One thing the AI can make. */
 export interface BuildCatalogEntry {
   kind: BuildKind;
-  /** Price per currency id. */
   cost: ResourceCost;
   /** Ids that must be owned complete (or researched) before this can be made. */
   requires?: readonly string[];
-  /** Supply a unit consumes. */
   supply?: number;
-  /** Supply cap a building adds once complete. */
   supplyProvided?: number;
-  /** The id that trains or researches this; owning one complete is an implicit requirement. */
   producer?: string;
   /** Never hold more than this many (owned + pending). */
   maxCount?: number;
 }
 
-/** Everything the AI can make, keyed by id. */
 export type BuildCatalog = Readonly<Record<string, BuildCatalogEntry>>;
 
-/** What the game reports to the planner each decision. */
 export interface BuildPlannerView {
   /** Game time in seconds. */
   time: number;
   balances: Readonly<Record<string, number>>;
-  /** Completed buildings and units; researched ids count as 1. */
   owned: Readonly<Record<string, number>>;
-  /** Queued or in-progress counts. */
   pending: Readonly<Record<string, number>>;
-  /**
-   * `used` is supply held by units; `queued` is supply already reserved by queued units. Omit
-   * `queued` and it is derived from `pending` × catalog `supply`; pass `0` when your game's `used`
-   * already includes queued units (as a `work/unitTraining` queue that reserves at enqueue does).
-   */
   supply: { used: number; cap: number; queued?: number };
   /** Idle producers by id. Omitted means producers are never busy. */
   idleProducers?: Readonly<Record<string, number>>;
 }
 
-/** One build-order line: hold `count` (default 1) of `make`, owned plus pending. */
 export interface BuildStep {
   make: string;
   count?: number;
 }
 
-/** The plan: catalog, opening order and sustain policy. Change it mid-game with `retune`. */
 export interface BuildPlanConfig {
   catalog: BuildCatalog;
-  /** Opening build order, followed in order. */
   steps?: readonly BuildStep[];
-  /** Keep this many workers (owned + pending) once the order is done or blocked. */
   workers?: { id: string; target: number };
-  /** Army share by unit id; the unit furthest below its share is made next. */
   composition?: Readonly<Record<string, number>>;
-  /** Make the cheapest supply provider when free supply (counting pending) drops below this. */
   supplyBuffer?: number;
-  /** Supply cap beyond which no more providers are made. */
   supplyLimit?: number;
   /**
    * `true` waits for the wanted thing when it is unaffordable; `false` spends on something
@@ -94,44 +72,32 @@ export type BuildMakeReason = "order" | "requirement" | "supply" | "workers" | "
 /** Why the planner is not making anything this decision. */
 export type BuildWaitReason = "afford" | "supply" | "producer" | "requirement" | "think" | "done";
 
-/** One decision: make `id`, or wait (naming what it waits on when there is one). */
 export type BuildDecision =
   | { kind: "make"; id: string; reason: BuildMakeReason }
   | { kind: "wait"; reason: BuildWaitReason; id?: string };
 
-/** The planner's derived pacing, for a HUD or debug readout. */
 export interface BuildPlannerTuning {
   /** Seconds between decisions. */
   decisionInterval: number;
-  /** Chance a composition pick ignores the best option. */
   decisionNoise: number;
   /** Whether it saves for unaffordable wants instead of floating. */
   saveFor: boolean;
 }
 
-/** Serializable planner state. */
 export interface BuildPlannerState {
-  /** Index of the current build-order step. */
   stepIndex: number;
   /** Seconds accumulated toward the next decision. */
   thinkTimer: number;
-  /** Cursor of a seeded rng, or `null` for one that carries no state. */
   rng: number | null;
 }
 
-/** Options for {@link createBuildPlanner}. */
 export interface BuildPlannerOptions {
-  /** Decision quality; omitted decides every call with no noise. */
   profile?: DifficultyProfile;
-  /** Injected randomness for composition noise. Default `seededRng("buildOrder")`. */
   rng?: () => number;
-  /** Decision interval = `reactionSeconds` × this. Default 2 (easy 1.8 s, standard 0.7 s, expert 0.16 s). */
   intervalPerReaction?: number;
 }
 
-/** A running build planner. */
 export interface BuildPlanner {
-  /** Advance the think timer by `dt` and, when due, decide the next thing to make. */
   decide(view: BuildPlannerView, dt: number): BuildDecision;
   tuning(): BuildPlannerTuning;
   snapshot(): BuildPlannerState;
@@ -140,7 +106,6 @@ export interface BuildPlanner {
   retune(config: BuildPlanConfig, profile?: DifficultyProfile): void;
 }
 
-/** Where a tech path leads: something makeable now, a prerequisite already in progress, or nothing. */
 export type TechPathStep =
   | { status: "ready"; id: string }
   | { status: "pending"; id: string }
@@ -148,12 +113,7 @@ export type TechPathStep =
 
 const countOf = (record: Readonly<Record<string, number>> | undefined, id: string): number => record?.[id] ?? 0;
 
-/**
- * Requirement ids of `id` (its `requires` plus its `producer`) that the view does not own complete.
- * Unknown ids return an empty list.
- *
- * @capability build-requirements list the unmet prerequisites of an RTS building, unit or research
- */
+/** @capability build-requirements list the unmet prerequisites of an RTS building, unit or research */
 export function missingRequirements(
   catalog: BuildCatalog,
   id: string,
@@ -259,15 +219,7 @@ const NO_NOISE: DifficultyProfile = {
 
 type Attempt = Extract<BuildDecision, { kind: "make" }> | { kind: "wait"; reason: BuildWaitReason; id?: string };
 
-/**
- * An RTS economy planner: follows `config.steps` in order, inserting the tech path for any unmet
- * requirement, then sustains workers and an army `composition`, building supply ahead of a block.
- * The {@link DifficultyProfile} sets how often it decides (`reactionSeconds` × `intervalPerReaction`),
- * how often a composition pick is worse than the best (`decisionNoise`), and whether it saves for
- * unaffordable wants. Returns a decision per call; the game executes it.
- *
- * @capability rts-build-planner AI build order, tech path, supply and army composition for an RTS opponent economy
- */
+/** @capability rts-build-planner AI build order, tech path, supply and army composition for an RTS opponent economy */
 export function createBuildPlanner(config: BuildPlanConfig, options: BuildPlannerOptions = {}): BuildPlanner {
   validatePlan(config);
   const rng = options.rng ?? seededRng("buildOrder");
@@ -435,13 +387,10 @@ export function createBuildPlanner(config: BuildPlanConfig, options: BuildPlanne
   };
 }
 
-/** When attack waves launch and how they grow. */
 export interface AttackClockConfig {
   /** No wave launches before this game time (seconds). */
   firstAt: number;
-  /** Army supply the first wave needs. */
   minArmy: number;
-  /** Extra army supply each later wave needs. Default 0. */
   growPerWave?: number;
   /** Launch anyway once this many seconds pass since `firstAt` or the last wave, if any army exists. Default never. */
   maxWait?: number;
@@ -449,18 +398,14 @@ export interface AttackClockConfig {
   minGap?: number;
 }
 
-/** Serializable attack-clock state. */
 export interface AttackClockState {
-  /** Waves launched so far. */
   launched: number;
   /** Game time of the last launch, or `null` before the first. */
   lastLaunchAt: number | null;
 }
 
-/** What the game reports to the attack clock. */
 export interface AttackClockInput {
   time: number;
-  /** Supply (or any army-size measure) of the units free to attack. */
   armySupply: number;
 }
 
@@ -472,9 +417,7 @@ export interface AttackDecision {
   reason: "early" | "gathering" | "army" | "maxWait";
 }
 
-/** A running attack clock. */
 export interface AttackClock {
-  /** Decide whether to launch; a launch is recorded, so call once per decision. */
   decide(input: AttackClockInput): AttackDecision;
   snapshot(): AttackClockState;
   restore(next: AttackClockState): void;

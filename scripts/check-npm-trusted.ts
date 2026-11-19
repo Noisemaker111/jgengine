@@ -26,7 +26,6 @@ import { printHelpIfAsked } from "./script-help";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
-/** What a registry lookup returns: the status and, on 200, the packument. */
 export type RegistryLookup = (name: string) => Promise<{ status: number; body?: unknown }>;
 
 interface Packument {
@@ -34,7 +33,6 @@ interface Packument {
   versions?: Record<string, { _npmUser?: { trustedPublisher?: { id?: string } } }>;
 }
 
-/** The hand-published version that only claims a new name on npm, and npm's own staged-publishing placeholder. */
 const BOOTSTRAP_VERSION = /^0\.0\.0-(?:bootstrap\.\d+|stage)$/;
 
 /** Why `name` cannot be published by trusted publishing, or null when it can. */
@@ -51,7 +49,6 @@ export function trustedPublishProblem(name: string, status: number, body: unknow
   return null;
 }
 
-/** The problems with every name in `names`; empty when the release may publish them all. */
 export async function trustedPublishProblems(names: readonly string[], lookup: RegistryLookup): Promise<string[]> {
   const problems = await Promise.all(names.map(async (name) => {
     try {
@@ -64,7 +61,6 @@ export async function trustedPublishProblems(names: readonly string[], lookup: R
   return problems.filter((problem): problem is string => problem !== null);
 }
 
-/** The npm names of the packages the Publish workflow publishes, in its order. */
 export function publishedPackageNames(): string[] {
   const lists = publishListsFrom(readFileSync(`${root}.github/workflows/publish.yml`, "utf8"));
   if (lists.length === 0) throw new Error("publish.yml has no `for p in ...; do` package list");
@@ -76,7 +72,6 @@ export const registryLookup: RegistryLookup = async (name) => {
   return response.status === 200 ? { status: 200, body: await response.json() } : { status: response.status };
 };
 
-/** Logs the result; resolves true when every package can be published. */
 export async function checkNpmTrusted(lookup: RegistryLookup = registryLookup): Promise<boolean> {
   const names = publishedPackageNames();
   const problems = await trustedPublishProblems(names, lookup);

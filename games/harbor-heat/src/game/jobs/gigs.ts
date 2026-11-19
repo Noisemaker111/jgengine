@@ -25,7 +25,6 @@ import { publishForContext } from "@jgengine/core/runtime/contextDisposal";
 
 declare module "@jgengine/core/runtime/pageHandle" {
   interface JgPage {
-    /** Harbor Heat's gig readout and dev staging, as its proofs drive them. */
     harborGigs?: { read(): unknown; [control: string]: unknown };
   }
 }
@@ -33,9 +32,7 @@ declare module "@jgengine/core/runtime/pageHandle" {
 /** The street-race stake, and what a place pays back as a multiple of it: first triples, second breaks even. */
 export const GIG_RACE_STAKE = 200;
 const GIG_RACE_PAYOUTS = [3, 1] as const;
-/** Cred per paid gig, by kind. */
 const GIG_CRED: Record<string, number> = { taxi: 10, flowers: 15, street: 40 };
-/** The fare standing at the kerb. */
 export const FARE_ID = "gig_fare";
 /** Seconds between fresh taxi hails while on duty with nobody waiting. */
 const HAIL_EVERY = 4;
@@ -50,7 +47,6 @@ function tagsOf(meta: unknown): string[] {
   return typeof tags === "string" ? tags.split(",").map((t) => t.trim()).filter((t) => t.length > 0) : [];
 }
 
-/** Every authored `gig_stop` marker in the scene document, as side-job spots. */
 export const GIG_SPOTS: readonly (SideJobSpot & { label: string })[] = editorLayers.markers
   .filter((marker) => marker.kind === "gig_stop")
   .map((marker) => ({ id: marker.id, label: marker.label ?? marker.id, x: marker.position.x, z: marker.position.z, tags: tagsOf(marker.meta) }));
@@ -130,13 +126,11 @@ export const GIG_KINDS: readonly SideJobKindDef[] = [
   },
 ];
 
-/** What a reload keeps: whether the taxi light is on and the board itself. */
 export interface GigSave {
   duty: boolean;
   board: SideJobsState;
 }
 
-/** HUD mirror: the job in hand, the open offers and the last receipt. */
 export interface GigHud {
   duty: boolean;
   view: SideJobView | null;
@@ -156,7 +150,6 @@ interface GigRuntime {
   rivals: Map<string, { config: PathFollowConfig; state: PathFollowState }>;
   /** The car a fare or race is being run in; swapping it mid-job is leaving it. */
   jobCar: string | null;
-  /** A dropped-off fare walking away, and when it leaves the scene. */
   walkOff: { until: number; to: readonly [number, number, number] } | null;
 }
 
@@ -189,7 +182,6 @@ function ground(ctx: GameContext, x: number, z: number): readonly [number, numbe
   return [x, ctx.world.groundHeightAt(x, z), z];
 }
 
-/** The fare waiting at the kerb faces the street and waves; nobody stands there once they are aboard. */
 function syncFare(ctx: GameContext): void {
   const rt = runtimes(ctx);
   const job = rt.board.job();
@@ -214,7 +206,6 @@ function syncFare(ctx: GameContext): void {
   }
 }
 
-/** Line up the circuit's own crew beside the player; returns who they are, for the start call. */
 function spawnRivals(ctx: GameContext, rivals: readonly string[]): string[] {
   const rt = runtimes(ctx);
   const job = rt.board.job();
@@ -265,7 +256,6 @@ function settleReceipt(ctx: GameContext, receipt: SideJobReceipt): void {
   if (receipt.total > 0) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+$${receipt.total}`, kind: "good" });
 }
 
-/** The pager's one-line settlement, in the order the money landed. */
 export function receiptLine(receipt: SideJobReceipt): string {
   if (receipt.kindId === "street") {
     if (receipt.place === 1) return `Won ${receipt.label} — $${receipt.purse} purse.`;
@@ -325,7 +315,6 @@ function handle(ctx: GameContext, events: readonly SideJobEvent[]): void {
   if (events.length > 0) publish(ctx);
 }
 
-/** Pull up beside a waiting fare and they climb in: arriving is accepting, as a street hail is. */
 function takeHail(ctx: GameContext, at: { x: number; z: number }, speed: number): void {
   const rt = runtimes(ctx);
   if (rt.board.job() !== null || !rt.duty) return;
@@ -394,7 +383,6 @@ export function tickGigs(ctx: GameContext, dt: number): void {
   publish(ctx);
 }
 
-/** Taxi light on or off. Going off duty sends the waiting fare away; a fare aboard still rides. */
 export function setDuty(ctx: GameContext, on: boolean): void {
   const rt = runtimes(ctx);
   rt.duty = on;
@@ -421,7 +409,6 @@ function acceptOffer(ctx: GameContext, id: string): boolean {
   return true;
 }
 
-/** Fail the gig in hand for a reason the city decided (busted, wasted). */
 export function failGigs(ctx: GameContext, reason: string): void {
   handle(ctx, gigBoard(ctx).fail(reason));
   clearRivals(ctx);
@@ -531,7 +518,6 @@ function warpToTarget(ctx: GameContext, short: number): void {
   streetPlayOf(ctx).placeVehicle(ctx, car, ground(ctx, x, z), Math.atan2(dx, dz));
 }
 
-/** The florist's counter prompt. */
 export function gigPrompts(ctx: GameContext): PositionedPrompt[] {
   if (FLORIST === null || gigBoard(ctx).job() !== null) return [];
   return [{ id: "gig:flowers", priority: 2, position: { x: FLORIST.x, z: FLORIST.z }, prompt: { radius: 8, display: { kind: "keybind", actionId: "interact" }, invoke: { name: "gigs.flowers", input: undefined } } }];

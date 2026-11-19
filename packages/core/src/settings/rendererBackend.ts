@@ -15,12 +15,10 @@ export const RENDERER_BACKEND_OPTIONS: readonly SettingOption[] = [
   { value: "webgpu", label: "WebGPU (preview)" },
 ];
 
-/** A backend name from a URL or stored value, or `null` when it names none. */
 export function parseRendererBackend(raw: unknown): RendererBackend | null {
   return raw === "webgl" || raw === "webgpu" ? raw : null;
 }
 
-/** The player's stored backend, falling back to the default when missing or unknown. */
 export function readRendererBackend(store: Pick<SettingsStore, "get">): RendererBackend {
   return parseRendererBackend(store.get(SETTING_IDS.graphicsRenderer, DEFAULT_RENDERER_BACKEND)) ?? DEFAULT_RENDERER_BACKEND;
 }

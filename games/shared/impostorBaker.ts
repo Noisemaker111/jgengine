@@ -36,7 +36,6 @@ async function pageBundle(): Promise<string> {
   return output.text();
 }
 
-/** Start the baker; `root` is the folder every baked file sits under. */
 export async function startImpostorBaker(root: string): Promise<ImpostorBakerHandle> {
   const script = await pageBundle();
   const browser: Browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox", ...chromeGraphicsArgs()] });

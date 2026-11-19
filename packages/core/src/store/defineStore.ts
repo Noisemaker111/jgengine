@@ -16,9 +16,7 @@ export interface StoreHandle<T> {
   read(ctx: GameContext): T;
   /** The raw stored value, or `undefined` when unset — for callers that need to distinguish "never written" from the initial. */
   peek(ctx: GameContext): T | undefined;
-  /** Overwrite the slot; bumps `ctx.version()` and notifies `ctx.subscribe`. */
   write(ctx: GameContext, value: T): void;
-  /** Read-modify-write in one step, returning the next value. `mutate` receives the current value (or initial when unset). */
   update(ctx: GameContext, mutate: (previous: T) => T): T;
   /** Delete the slot, so the next {@link read} returns the initial again. */
   clear(ctx: GameContext): void;

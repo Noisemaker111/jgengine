@@ -50,10 +50,6 @@ function canStandAt(position: PlayerPosition, otherPlayers: readonly PlayerPosit
 
 type Point3 = readonly [number, number, number];
 
-/**
- * The shell's movement commit hook for LLMville's standing rule: a step into a structural column or
- * another player keeps the open axis, else stays put. Undefined accepts the step as proposed.
- */
 export function standingStep(
   current: Point3,
   next: Point3,

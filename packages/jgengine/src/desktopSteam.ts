@@ -1,22 +1,16 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-/**
- * A game's Steam identity, from `package.json` `"jgengine": { "steam": { ... } }` with the
- * `--steam-app`, `--steam-depot` and `--steam-branch` flags winning. Nothing here is hardcoded:
- * a game with no app id still builds its depot content and is told the id is missing.
- */
 export interface SteamConfig {
   appId: number | null;
   /** The Windows depot; Steamworks creates the first depot as app id + 1, so that is the default. */
   depotId: number | null;
   /** A branch to set the build live on after upload (never the default branch, which SteamPipe refuses). */
   branch: string | null;
-  /** Link the Steamworks API and the overlay surface (`--steamworks`, or `"steamworks": true`). */
   steamworks: boolean;
 }
 
-/** The flags `jgengine desktop` passes on. @internal */
+/** @internal */
 export interface SteamFlags {
   appId: string | undefined;
   depotId: string | undefined;
@@ -31,7 +25,7 @@ function steamId(raw: unknown, what: string): number | null | { error: string } 
   return value;
 }
 
-/** Merge the game's `jgengine.steam` block with the command-line flags. @internal */
+/** @internal */
 export function resolveSteamConfig(packageJson: unknown, flags: SteamFlags): SteamConfig | { error: string } {
   const block = typeof packageJson === "object" && packageJson !== null ? Reflect.get(packageJson, "jgengine") : undefined;
   const saved = typeof block === "object" && block !== null ? Reflect.get(block, "steam") : undefined;
@@ -53,7 +47,7 @@ export function resolveSteamConfig(packageJson: unknown, flags: SteamFlags): Ste
   };
 }
 
-/** SteamPipe's app build script, relative to the `scripts/` folder it is written into. @internal */
+/** @internal */
 export function steamAppBuildVdf(appId: number, depotId: number, branch: string | null, description: string): string {
   return [
     `"AppBuild"`,
@@ -72,7 +66,7 @@ export function steamAppBuildVdf(appId: number, depotId: number, branch: string 
   ].join("\n");
 }
 
-/** SteamPipe's depot build script: everything in `content/` at the depot root. @internal */
+/** @internal */
 export function steamDepotBuildVdf(depotId: number): string {
   return [
     `"DepotBuild"`,
@@ -89,11 +83,7 @@ export function steamDepotBuildVdf(depotId: number): string {
   ].join("\n");
 }
 
-/**
- * Where steamworks-sys copied Valve's `steam_api64.dll` in the shared cargo target: the newest
- * one, since every build of the crate writes its own `build/steamworks-sys-*` folder.
- * @internal
- */
+/** @internal */
 export function findSteamApiDll(targetDir: string): string | null {
   const build = join(targetDir, "release", "build");
   if (!existsSync(build)) return null;
@@ -108,7 +98,7 @@ export function findSteamApiDll(targetDir: string): string | null {
   return best?.path ?? null;
 }
 
-/** What `writeSteamDepot` laid out. @internal */
+/** @internal */
 export interface SteamDepot {
   root: string;
   content: string;
@@ -117,12 +107,7 @@ export interface SteamDepot {
   upload: string | null;
 }
 
-/**
- * Lay out a SteamPipe build beside the app: `steam/content/` (the game executable, plus
- * `steam_api64.dll` for a Steamworks build), `steam/scripts/` (app and depot build scripts) and
- * an empty `steam/output/` for SteamPipe's logs. The scripts are written only with an app id.
- * @internal
- */
+/** @internal */
 export function writeSteamDepot(stagingDir: string, app: string, steamApiDll: string | null, config: SteamConfig, description: string): SteamDepot {
   const root = join(stagingDir, "steam");
   if (existsSync(root)) rmSync(root, { recursive: true, force: true });

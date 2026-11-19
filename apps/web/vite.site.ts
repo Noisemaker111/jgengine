@@ -21,12 +21,6 @@ export const siteAliases: Alias[] = [
 
 const GAMES_INDEX_ID = "virtual:jgengine-games";
 
-/**
- * Parses a game's `export const credit = …` from its game.config.ts source.
- * Mirrors the `GameCredit` shape and the desktop project surface
- * (apps/desktop/src/project/gameMeta.ts) — the game's config is the single
- * source of truth for its attribution, not a hand-maintained web registry.
- */
 const CREDIT_EXPORT_RE =
   /export\s+const\s+credit\s*=\s*(\{[\s\S]*?\n\}|\{[^}]*\}|["'`][^"'`]+["'`])\s*;?/;
 
@@ -47,7 +41,6 @@ const parseGameCredit = (
   return { text, ...(url !== undefined ? { url } : {}), ...(handle !== undefined ? { handle } : {}) };
 };
 
-/** The site's live demos whose engine part a game's source (or editor scene) uses. */
 const gameDemoParts = (srcDir: string): string[] => {
   const files = readdirSync(srcDir, { recursive: true, encoding: "utf8" }).filter((file) => /\.(tsx?|json)$/.test(file));
   const found = new Set<string>();
@@ -59,14 +52,12 @@ const gameDemoParts = (srcDir: string): string[] => {
   return DEMO_PARTS.filter((part) => found.has(part.key)).map((part) => part.key);
 };
 
-/** Every game the site lists, plays and puts in the sitemap: each `games/<id>` with a `src/index.tsx`. */
 export const listGameIds = (): string[] =>
   readdirSync(gamesDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
     .map((entry) => entry.name)
     .sort();
 
-/** Exposes the games/* ids, per-game credit and the demoed engine parts each game uses to routes as `virtual:jgengine-games`, resolved at build time. */
 export const gamesIndexPlugin = (): Plugin => ({
   name: "jgengine-games-index",
   resolveId(id) {

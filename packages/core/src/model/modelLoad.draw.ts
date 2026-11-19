@@ -229,9 +229,7 @@ export async function handleModelLoadFailure(
   onLoad(createFallbackModel(diagnosis, name));
 }
 
-/** A model the loader could not load and replaced with a placeholder box. */
 export interface MissingModelRecord {
-  /** Folder and file name (`kaykit-city-builder/building_A`). */
   name: string;
   url: string;
   /** Why it failed: a missing file, the dev server's HTML fallback, a corrupt or unsupported body. */
@@ -267,7 +265,7 @@ export function modelLoadFallbacks(): readonly MissingModelRecord[] {
   return servedFallbacks;
 }
 
-/** Calls `listener` each time a model joins {@link modelLoadFallbacks}; returns the unsubscribe. @internal */
+/** @internal */
 export function subscribeModelLoadFallbacks(listener: () => void): () => void {
   fallbackListeners.add(listener);
   return () => {
@@ -275,7 +273,7 @@ export function subscribeModelLoadFallbacks(listener: () => void): () => void {
   };
 }
 
-/** Drops the recorded placeholder list. For tests and between capture runs. @internal */
+/** @internal */
 export function clearModelLoadFallbacks(): void {
   servedFallbacks = [];
   publishMissingModels();
@@ -286,15 +284,12 @@ export const DEFAULT_MODEL_TRIANGLE_BUDGET = 100_000;
 
 let modelTriangleBudget = DEFAULT_MODEL_TRIANGLE_BUDGET;
 
-/**
- * Retune the per-model triangle budget (a cinematic game may raise it; a mobile target lowers it). Non-finite or non-positive values restore the default.
- * @capability model-triangle-budget Raise or lower the per-model triangle budget
- */
+/** @capability model-triangle-budget Raise or lower the per-model triangle budget */
 export function setModelTriangleBudget(triangles: number): void {
   modelTriangleBudget = Number.isFinite(triangles) && triangles > 0 ? triangles : DEFAULT_MODEL_TRIANGLE_BUDGET;
 }
 
-/** Triangles a loaded model contributes per draw, summing every mesh (instanced meshes count once per instance). @internal */
+/** @internal */
 export function countSceneTriangles(root: THREE.Object3D): number {
   let total = 0;
   root.traverse((node) => {
@@ -308,7 +303,6 @@ export function countSceneTriangles(root: THREE.Object3D): number {
   return total;
 }
 
-/** One over-budget model as {@link heavyModels} reports it: the URL the loader fetched, its triangle count, and the budget it exceeded. */
 export interface HeavyModelRecord {
   url: string;
   triangles: number;
@@ -416,10 +410,8 @@ export interface ModelLoaderConfig {
   ktx2TranscoderPath?: string;
 }
 
-/** The decoder path meaning "the copy bundled with the build". */
 const BUNDLED_DECODERS = "";
 
-/** The bundled decoder files' URLs, filled in by {@link bundledDecodersReady}. */
 const bundledUrls: Record<string, string> = {};
 let bundledPending: Promise<void> | undefined;
 
@@ -437,11 +429,6 @@ function bundledDecodersReady(): Promise<void> {
   return bundledPending;
 }
 
-/**
- * A loading manager that answers the decoder file names with their bundled URLs and hands
- * everything else (and its progress) to `THREE.DefaultLoadingManager`, as the loaders' default
- * manager would.
- */
 function bundledDecoderManager(): THREE.LoadingManager {
   const base = THREE.DefaultLoadingManager;
   const manager = new THREE.LoadingManager();
@@ -455,7 +442,6 @@ function bundledDecoderManager(): THREE.LoadingManager {
 
 type LibraryLoader = { _loadLibrary(url: string, responseType: string): Promise<unknown> };
 
-/** A Draco loader whose decoder files come from the build: each fetch waits for their URLs. */
 class BundledDRACOLoader extends DRACOLoader {
   constructor() {
     super(bundledDecoderManager());
@@ -477,7 +463,6 @@ class RendererKTX2Loader extends KTX2Loader {
   });
   isDetected = false;
 
-  /** `bundled`: the transcoder comes from the build, so detection also waits for its URLs. */
   constructor(private readonly bundled: boolean) {
     super(bundled ? bundledDecoderManager() : undefined);
   }
@@ -542,7 +527,7 @@ export function ktx2Detected(): boolean {
   return ktx2Loader?.isDetected === true;
 }
 
-/** Shared transcoder for authored material maps; GPU support is detected by the canvas. @internal */
+/** @internal */
 export function materialKtx2Loader(): KTX2Loader {
   configureModelLoaders();
   return ktx2Loader!;
@@ -587,7 +572,7 @@ export function modelLoadStarts(): number {
   return modelQueueStarts;
 }
 
-/** Pending shared loader and scene work, with duplicate starts counted. @internal */
+/** @internal */
 export function pendingModelLoads(): { total: number; items: { url: string; count: number }[] } {
   let total = 0;
   for (const count of pendingModelWork.values()) total += count;
@@ -602,12 +587,7 @@ configureModelLoaders();
 
 let sceneWorkSerial = 0;
 
-/**
- * Count a scene build that is still running (a sliced grass bake, a streamed chunk) as loading,
- * until the returned function runs. It joins the shared model queue, so {@link modelLoadIdleMs},
- * {@link modelLoadStarts}, capture settle waits and the shader warmup all wait for it like a model.
- * @internal
- */
+/** @internal */
 export function trackSceneWork(label: string): () => void {
   const item = `scene-work:${label}#${(sceneWorkSerial += 1)}`;
   modelLoadingManager.itemStart(item);

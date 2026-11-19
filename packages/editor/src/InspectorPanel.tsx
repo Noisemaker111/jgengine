@@ -65,7 +65,6 @@ import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./shell/theme";
 import { CollapsibleSection, EmptyState, IconButton, PanelTabs } from "./shell/ui";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
-/** Builds the resolver-facing view of a document object for a registered scene kind's inspector. */
 function markerObject(marker: { id: string; kind: string; position: { x: number; y: number; z: number }; rotationY?: number; meta?: Record<string, unknown> }): SceneKindObject {
   return { id: marker.id, kind: marker.kind, position: marker.position, ...(marker.rotationY === undefined ? {} : { rotationY: marker.rotationY }), ...(marker.meta === undefined ? {} : { meta: marker.meta }) };
 }
@@ -85,7 +84,6 @@ function pathObject(path: NonNullable<ReturnType<typeof findEditorPath>>): Scene
   return { id: path.id, kind: path.kind, points: path.points.map((point) => ({ x: point.x, y: point.y, z: point.z })), ...(path.meta === undefined ? {} : { meta: path.meta }) };
 }
 
-/** Auto-generated inspector for a registered scene kind's params (schema-driven, no per-kind JSX). */
 function KindInspector({ object, meta, onMeta, environment }: { object: SceneKindObject; meta: Record<string, unknown> | undefined; onMeta: MetaPatch; environment: EditorEnvironment | undefined }) {
   const definition = getSceneKind(object.kind);
   if (definition === undefined) return null;
@@ -134,7 +132,6 @@ function KindInspector({ object, meta, onMeta, environment }: { object: SceneKin
   );
 }
 
-/** Auto-generated inspector for a placed generator asset's params (building/bookcase/…). */
 function GeneratorInspector({ meta, onMeta }: { meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
   const generator = placedGeneratorFor(meta);
   if (generator === undefined) return null;
@@ -166,10 +163,6 @@ function VariantsSection({
   );
 }
 
-/**
- * Tags an object as a gameplay spot with a clearance radius: scatter keeps foliage off it and the
- * runtime ground flattens under it (via `clearanceZonesFrom` → `environment({ clearings })`). 0 = untagged.
- */
 function ClearanceField({
   meta,
   onMeta,
@@ -185,7 +178,6 @@ function ClearanceField({
   );
 }
 
-/** Inspector row to parent the selected object under another (excludes itself and its descendants). */
 function ParentField({ session, id }: { session: EditorSession; id: string }) {
   const document = session.getState().document;
   const current = editorParentOf(document, id) ?? "";
@@ -252,7 +244,6 @@ function KindColorFields({
   );
 }
 
-/** Header card identifying the selected object: type glyph, editable name, kind, id, lock state. */
 function ObjectHeader({
   kind,
   id,
@@ -301,10 +292,6 @@ interface SectionState {
   toggle: (id: string) => void;
 }
 
-/**
- * Add/remove bar for optional authored components (trigger, material). Only offers real
- * data-model seams — no invented component system.
- */
 function ComponentAddBar({
   target,
   meta,
@@ -593,7 +580,6 @@ function Section({
   );
 }
 
-/** Materials tab: assign the terrain material palette to the current selection over the real RPC. */
 function MaterialsTab({
   api,
   selection,
@@ -678,14 +664,10 @@ export function InspectorPanel({
   ui: EditorUiStore;
   creatorPolicy?: CreatorPolicy | undefined;
   onClose?: () => void;
-  /** Host API for RPC-backed actions (material assignment, camera). */
   api?: EditorHostApi;
-  /** Live browser asset list, used to resolve a placed marker's rig clips for animation authoring. */
   assets?: readonly EditorAssetEntry[];
-  /** Controlled active tab; omit for local state. */
   tab?: InspectorTab;
   onSelectTab?: (tab: InspectorTab) => void;
-  /** Controlled section collapse state (persisted by the shell layout store). */
   collapsed?: Record<string, boolean>;
   onToggleSection?: (id: string) => void;
 }) {

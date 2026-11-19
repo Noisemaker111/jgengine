@@ -25,7 +25,6 @@ import { ROW_SIX_TRACK, type Track } from "../tracks/catalog";
 export const PLAYER_RACER_ID = "player";
 export const RACE_LAPS = 1;
 
-/** One checkpoint volume per barricade plus the finish line: the corridor's authored milestones. */
 const ROW_SIX_CHECKPOINTS: readonly Checkpoint[] = [
   ...ROUTE_GATES.map((gate) => ({
     id: gate.id,
@@ -51,20 +50,16 @@ export interface RaceSnapshot {
   lap: number;
   laps: number;
   standings: readonly RacerStanding[];
-  /** True once every kart is home - the full classification is final at that point. */
   finished: boolean;
   /** The player's lap clock this tick, seconds. */
   lapTime: number;
-  /** The player's last completed lap, `null` before it closes. */
   lastLap: number | null;
   /** The player's fastest lap, `null` before the first one closes. */
   bestLap: number | null;
-  /** Cumulative player split times, one per barricade and one at the flag. */
   splits: readonly number[];
 }
 
 export interface Standings {
-  /** Advance the player's lap clock one tick, before `update`. */
   tick(dt: number): void;
   /** Advance the checkpoint ring with this tick's positions; returns the race's events. */
   update(now: number, positions: Record<string, readonly [number, number, number]>): readonly RaceEvent[];
@@ -84,7 +79,6 @@ export function trackCheckpoints(track: Track): { checkpoints: readonly Checkpoi
   return track.course.checkpoints({ at, finish: track.exitAt + track.origin, height: 10 });
 }
 
-/** Racers are placed by their positions with `y` the road height under them (see the session). */
 export function createStandings(names: Readonly<Record<string, string>>, course: Track = ROW_SIX_TRACK): Standings {
   const ids = Object.keys(names);
   const track = raceTrack({ ...trackCheckpoints(course), laps: RACE_LAPS });

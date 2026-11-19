@@ -1,9 +1,4 @@
 // @skill jgengine-world
-/**
- * Worker entry that grows landforms off the main thread: it takes a {@link LandformJob}, grows it
- * with the same models the main thread runs and posts the terrain back, its arrays transferred.
- * Spawned by {@link createWorkerLandformGrower}.
- */
 import { isLandformJob, type LandformReply } from "./landformGenerator";
 import { growLandform } from "./landformTerrain";
 

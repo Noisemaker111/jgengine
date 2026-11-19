@@ -71,7 +71,6 @@ function RailCart({ at, home = false }: { at: Triple; home?: boolean }) {
     {!hasStationModel(home ? "home" : "vault", home ? "rail-garage" : "rail-extraction") && <Sign at={[0, 3.04, 0.9]} title={home ? "THE GARAGE" : "RETURN TO MARROW"} sub={home ? "BELLWETHER / LINE 06" : "THE WAY OUT IS THE WAY IN"} width={2.65} turn={home ? 0 : Math.PI} />}
   </SceneObjectGroup>;
 }
-/** The room shell and its trim in the station's own finish; `shell={false}` keeps only the signs and floor guides. */
 function Architecture({ place, shell = true }: { place: Place; shell?: boolean }) {
   const plan = useMemo(() => deriveRoomPresentation(place), [place]);
   const batches = useMemo(() => {
@@ -110,14 +109,12 @@ function Architecture({ place, shell = true }: { place: Place; shell?: boolean }
     </>}
   </>;
 }
-/** How much brighter a ceiling spot burns than the old all-round bulb: the light it no longer spends on the ceiling. */
 const ROOM_SPOT_GAIN = 1.3;
 /**
  * Fixed pool selected on the render frame; no timers, actor hiding, or graphics-profile changes. Each
  * lamp is a downward spot, so it leaves a pool on the floor, dark corners between pools, and a beam in
  * the haze; the dock's work lights are near-hemispheres.
  */
-/** The floor the station is drawn for: Marrow at home, else the stratum the dive is on. */
 const placeOf = (view: View): Place => view.mode === "home" || view.dive === null ? "home" : view.dive.stratum;
 function RoomLights() {
   const place = useStore(viewStore, placeOf);
@@ -176,7 +173,6 @@ function SalvagePlacard({ id, kind }: { id: string; kind: keyof typeof ITEMS }) 
 function renderEntity(entity: SceneEntity): ReactNode {
   return entity.id === PRINT_ID ? <PrintPresentation /> : null;
 }
-/** The Fitter's model, re-rendered when its clip changes, not as it walks or winds up: the entity moves it and the clip runs the windup. */
 function PrintPresentation() {
   const mode = useStore(viewStore, view => {
     const print = view.dive?.print;
@@ -229,7 +225,6 @@ function AlarmLamps() {
       } satisfies EngineDraw;
     }} deps={[index]} />)}</>;
 }
-/** Printer Zero's red lamp in the choir, dark once its pattern is copied. */
 function ZeroLamp({ place }: { place: Place }) {
   const lit = useGameStore(ctx => place === "choir" && marrowOf(ctx).fact("story.zero") !== true);
   const lightRef = useRef<PointLight | null>(null);
@@ -248,7 +243,6 @@ function ZeroLamp({ place }: { place: Place }) {
     } satisfies EngineDraw;
   }} deps={[]} />;
 }
-/** The steam vent's glow in the vault while it vents. */
 function VentGlow() {
   const on = useStore(viewStore, view => view.dive !== null && view.dive.stratum === "vault" && view.dive.elapsed % 8 < 3);
   const lightRef = useRef<PointLight | null>(null);
@@ -267,7 +261,6 @@ function VentGlow() {
     } satisfies EngineDraw;
   }} deps={[]} />;
 }
-/** The Fitter's red hit flash, on its chest from the entity's pose, burning while the last shot struck it. */
 function FitterFlash() {
   const ctx = useGameContext();
   const lightRef = useRef<PointLight | null>(null);
@@ -364,10 +357,6 @@ function FloorDressing({ place }: { place: Place }) {
   });
   return <StratumDressing place={place} marks={marks} />;
 }
-/**
- * The floor's creatures and lures: re-rendered when one arrives, dies, lands or burns out. Each
- * creature moves itself on the render frame; a lure stays where it landed.
- */
 function FloorLife({ place }: { place: Place }) {
   const ctx = useGameContext();
   const living = useStore(viewStore, view => Object.values(view.dive?.fauna ?? NO_FAUNA).filter(creature => creature.place === place && creature.health > 0).map(creature => creature.id).join("\n"));
@@ -376,7 +365,6 @@ function FloorLife({ place }: { place: Place }) {
   const creatures = useMemo(() => living === "" ? [] : living.split("\n"), [living]);
   return <StratumLife creatures={creatures} read={read} thrown={viewStore.read(ctx).dive?.thrown ?? NO_LURES} />;
 }
-/** Marrow's bays, re-rendered when one is built, finishes or loses power. */
 function Bays() {
   const ctx = useGameContext();
   useGameStore(state => {
@@ -478,7 +466,6 @@ function WorldOverlay() {
     <Hand />
   </>;
 }
-/** The last shot's tracer, while it shows. */
 function ShotTrace() {
   const trace = useStore(viewStore, view => view.trace === null ? null : { from: view.trace.from, to: view.trace.to });
   return trace === null ? null : <Tracer from={trace.from} to={trace.to} />;

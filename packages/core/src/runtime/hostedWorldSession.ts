@@ -20,9 +20,7 @@ export function unwrapOpEnvelope(input: unknown): { opId: string; input: unknown
   return { opId, input: rest };
 }
 
-/** Detached in-process {@link SyncHostedWorldStore} for tests, local play, and the browser-tab P2P host.
- * @internal
- */
+/** @internal */
 export function memoryWorldStore(seed?: HostedWorldRecord): SyncHostedWorldStore {
   let record: HostedWorldRecord | null = seed === undefined ? null : structuredClone(seed);
   return {
@@ -34,12 +32,10 @@ export function memoryWorldStore(seed?: HostedWorldRecord): SyncHostedWorldStore
   };
 }
 
-/** A client replication pull: a full baseline (first sync / fell behind) or a diff since the client's cursor. */
 export type HostedWorldSync =
   | { kind: "baseline"; revision: number; snapshot: WorldSnapshot }
   | { kind: "diff"; diff: WorldDiff };
 
-/** Config for {@link createHostedWorldSession}: the game, its persistence store, and the auto-save cadence. */
 export interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMultiplayer> {
   definition: GameDefinition<TAssetRef, TMultiplayer>;
   content: GameContextContent;
@@ -49,9 +45,7 @@ export interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMul
   store?: SyncHostedWorldStore;
   /** Minimum elapsed ms between automatic saves, measured against `now` (default `Date.now`). Default `0`; private clock/simulation changes also count. A pending write defers automatic capture until a later tick. */
   saveIntervalMs?: number;
-  /** Retained retry receipts per player. Default `64`; retries after eviction are new operations. */
   operationHistoryLimit?: number;
-  /** Render-model lookup for collider auto-fit, forwarded to the runner — see {@link HostedGameRunnerOptions.models}. */
   models?: GameContextModels;
 }
 
@@ -63,23 +57,15 @@ export interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMul
  */
 export interface HostedWorldSession {
   join(userId: string, isNew: boolean): void;
-  /** Whether this identity has joined before, including across leave/restart. */
   hasPlayer(userId: string): boolean;
   leave(userId: string): void;
   input(userId: string, frame: InputFrame): void;
-  /** Optional stable operation id deduplicates retries across reconnect/restart; the receipt persists atomically with state. */
   command(userId: string, name: string, input: unknown, operationId?: string): CommandResult<GameContext>;
   tick(dt: number): number;
-  /** Replication pull: a fresh, pre-restart or future cursor receives a baseline; an in-session revision receives a diff. */
   sync(sinceRevision: number | null): HostedWorldSync;
   /** Alias used by host transports when pulling the next baseline or diff for a subscriber. */
   pull(sinceRevision: number | null): HostedWorldSync;
-  /** The full world baseline projected for one viewer (private/AOI). Identity when no replication policy is set. */
   snapshotFor(viewer: SnapshotViewer): WorldSnapshot;
-  /**
-   * Replication pull for one viewer: a projected baseline on first sync, or a diff limited to what the viewer's
-   * interest radius holds. `state` is that connection's cursor and is updated in place.
-   */
   pullFor(viewer: SnapshotViewer, sinceRevision: number | null, state: WorldViewState): HostedWorldSync;
   /** True when {@link pullFor} can serve diffs; false means a host must send a projected baseline every tick. */
   viewerDiffs(): boolean;
@@ -87,16 +73,12 @@ export interface HostedWorldSession {
   projectsViewers(): boolean;
   revision(): number;
   members(): readonly string[];
-  /** Force-persist the current world to the store. */
   save(): void | Promise<void>;
-  /** Most recent automatic save failure; cleared by a successful write. Explicit `save()` also rejects. */
   persistenceError(): unknown | null;
   runner(): HostedGameRunner;
 }
 
-/** Build a {@link HostedWorldSession} — a live runner loaded from a {@link HostedWorldStore} and auto-persisted on tick.
- * @internal
- */
+/** @internal */
 export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: HostedWorldSessionOptions<TAssetRef, TMultiplayer>,
 ): HostedWorldSession {
@@ -281,7 +263,6 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
   };
 }
 
-/** Build a hosted session from an asynchronous persistence backend. */
 export async function createHostedWorldSessionAsync<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: Omit<HostedWorldSessionOptions<TAssetRef, TMultiplayer>, "store"> & { store: HostedWorldStore },
 ): Promise<HostedWorldSession> {

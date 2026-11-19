@@ -7,10 +7,8 @@ import {
   type StatPoolPatch,
 } from "../stats/statPool";
 
-/** Native entity-stat name retained as a compatibility bridge to the portable pool model. */
 export interface StatValue extends StatPool {}
 
-/** Native entity-stat patch retained as a compatibility bridge. */
 export interface StatValuePatch extends StatPoolPatch {}
 
 export type StatValueMap = Record<string, StatValue>;
@@ -67,9 +65,7 @@ export function seedStatValues(catalogStats: StatCatalog): StatValueMap {
   return map;
 }
 
-/** Deep-copy the per-entity stat maps into a serializable record — the transport counterpart of {@link hydrateEntityStats}.
- * @internal
- */
+/** @internal */
 export function snapshotEntityStats(
   store: ReadonlyMap<string, StatValueMap>,
 ): Record<string, StatValueMap> {
@@ -82,9 +78,7 @@ export function snapshotEntityStats(
   return out;
 }
 
-/** Replace a live stat store with deep copies of a snapshot, clearing entities absent from it.
- * @internal
- */
+/** @internal */
 export function hydrateEntityStats(
   store: Map<string, StatValueMap>,
   data: Record<string, StatValueMap>,
@@ -97,7 +91,6 @@ export function hydrateEntityStats(
   }
 }
 
-/** Native entity-stat adapter over the portable {@link StatPoolAccess} contract. */
 export interface EntityStatsApi extends StatPoolAccess {
   get(instanceId: string, statId: string): StatValue | null;
   set(instanceId: string, statId: string, patch: StatValuePatch): boolean;

@@ -13,7 +13,6 @@ import {
 
 /** @internal Props for shell {@link IrradianceVolumeLighting}. */
 export interface IrradianceVolumeLightingProps {
-  /** Baked volumes authored on the scene document; the one covering the camera wins. */
   volumes: readonly IrradianceVolume[];
 }
 

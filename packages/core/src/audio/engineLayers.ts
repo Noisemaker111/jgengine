@@ -1,18 +1,13 @@
 /** One recorded engine sample, keyed by the rpm it was recorded at. */
 export interface EngineLayer {
-  /** Catalog sound id of the loop. */
   sound: string;
   /** Rpm the sample was recorded at; playback rate is `rpm / layer.rpm`. */
   rpm: number;
-  /** Which load set the layer belongs to: `"on"` (throttle), `"off"` (coast/overrun) or `"any"` (always). Default `"any"`. */
   load?: "on" | "off" | "any";
-  /** Extra gain for this layer. Default 1. */
   gain?: number;
 }
 
-/** Config for {@link createEngineLayers}. */
 export interface EngineLayersConfig {
-  /** Prefix for the retained loop ids, one per layer: `${id}:${index}`. */
   id: string;
   layers: readonly EngineLayer[];
   /** Load window the off-load set crossfades to the on-load set across. Default `[0.15, 0.6]`. */
@@ -21,31 +16,25 @@ export interface EngineLayersConfig {
   loadResponse?: number;
 }
 
-/** One layer's live mix. */
 export interface EngineLayerMix {
-  /** Retained loop id. */
   id: string;
   sound: string;
   gain: number;
   rate: number;
 }
 
-/** Serializable {@link EngineLayers} state. */
 export interface EngineLayersState {
   load: number;
 }
 
-/** Per-tick parameters {@link EngineLayers.play} forwards to every layer's loop. */
 export interface EngineLayersPlayOptions {
   at?: readonly [number, number, number];
   velocity?: readonly [number, number, number] | undefined;
-  /** Overall gain multiplier. Default 1. */
   gain?: number;
   lowpass?: number;
   highpass?: number;
 }
 
-/** The part of `ctx.game.audio` {@link EngineLayers} drives. */
 export interface EngineLayersAudio {
   loop(id: string, sound: string, options?: { at?: readonly [number, number, number] }): void;
   setLoop(
@@ -64,11 +53,8 @@ export interface EngineLayersAudio {
 
 /** A layered engine loop: N rpm-keyed samples crossfaded by rpm, with on- and off-load sets picked by engine load. */
 export interface EngineLayers {
-  /** Advance by `dt` and return each layer's gain and rate. The returned array and its entries are reused between calls. */
   update(dt: number, signals: { rpm: number; load: number }): readonly EngineLayerMix[];
-  /** Start (idempotently) and update every layer's retained loop from the last {@link update}. */
   play(audio: EngineLayersAudio, options?: EngineLayersPlayOptions): void;
-  /** Stop every layer's loop. */
   stop(audio: EngineLayersAudio): void;
   mix(): readonly EngineLayerMix[];
   retune(next: EngineLayersConfig): void;

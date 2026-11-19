@@ -25,9 +25,7 @@ export interface WorldMirror {
   needsResync(): boolean;
 }
 
-/** Build a {@link WorldMirror} that replicates a host's baseline + diff stream onto `ctx` via `ctx.hydrate`.
- * @internal
- */
+/** @internal */
 export function createWorldMirror(ctx: Pick<GameContext, "hydrate">): WorldMirror {
   let mirror: WorldSnapshot = {};
   let revision = 0;
@@ -55,12 +53,7 @@ export function createWorldMirror(ctx: Pick<GameContext, "hydrate">): WorldMirro
   };
 }
 
-/**
- * Pull one replication step from a co-located {@link HostedWorldSession} into a {@link WorldMirror} — the
- * no-network local path (host and client in one process). A fresh mirror pulls a baseline; thereafter it pulls
- * a diff since its own revision. The same `sync(sinceRevision)` call is what a networked transport marshals.
-  * @internal
-  */
+/** @internal */
 export function pullWorld(session: HostedWorldSession, mirror: WorldMirror): void {
   const sync = session.sync(mirror.revision() === 0 ? null : mirror.revision());
   if (sync.kind === "baseline") mirror.applyBaseline(sync.revision, sync.snapshot);

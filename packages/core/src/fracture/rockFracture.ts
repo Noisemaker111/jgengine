@@ -19,9 +19,7 @@ export interface RockBreakage {
   id: string;
   /** Bulk density, kg/m³. */
   density: number;
-  /** JKMRC t10 law: maximum t10, percent. */
   a: number;
-  /** JKMRC t10 law: rate, t/kWh. */
   b: number;
   /** Vogel–Peukert material constant f_Mat, kg/(J m). */
   fMat: number;
@@ -38,68 +36,47 @@ export interface RockBreakage {
  */
 export const GRANITE_BREAKAGE: RockBreakage = { id: "granite", density: 2650, a: 60, b: 0.7, fMat: 0.6, thresholdSizeEnergy: 0.04 };
 
-/**
- * Berea sandstone: soft, A×b 120.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export const SANDSTONE_BREAKAGE: RockBreakage = { id: "sandstone", density: 2100, a: 75, b: 1.6, fMat: 2.2, thresholdSizeEnergy: 0.01 };
 
-/**
- * Indiana limestone: medium, A×b 60.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export const LIMESTONE_BREAKAGE: RockBreakage = { id: "limestone", density: 2300, a: 65, b: 0.92, fMat: 1.0, thresholdSizeEnergy: 0.025 };
 
-/**
- * Basalt: very hard, A×b 30.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export const BASALT_BREAKAGE: RockBreakage = { id: "basalt", density: 2900, a: 55, b: 0.55, fMat: 0.4, thresholdSizeEnergy: 0.06 };
 
-/**
- * The four rock breakage presets.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export const ROCK_BREAKAGE: readonly RockBreakage[] = [GRANITE_BREAKAGE, SANDSTONE_BREAKAGE, LIMESTONE_BREAKAGE, BASALT_BREAKAGE];
 
-/** One piece of a broken rock. Its cell is in world space; `centre` is its centroid. */
 export interface RockFragment {
   cell: ConvexCell;
   centre: [number, number, number];
   volume: number;
   mass: number;
-  /** Equivalent sphere diameter, m. */
   size: number;
   velocity: [number, number, number];
 }
 
-/** What {@link fractureRock} did. */
 export interface FractureResult {
   broken: boolean;
   /** Chance it had to break, 0..1. */
   probability: number;
   /** Specific impact energy, J/kg. */
   specificEnergy: number;
-  /** t10 the law predicts, percent. */
   t10: number;
   fragments: RockFragment[];
   /** Mass below the smallest meshed fragment, kg: dust a game may draw as particles or a granular deposit. */
   finesMass: number;
 }
 
-/** Options of {@link fractureRock}. */
 export interface FractureOptions {
   material: RockBreakage;
-  /** Impact energy delivered, J. */
   energy: number;
-  /** Where the blow lands, on or in the rock. */
   impactPoint: CellVec;
   rng: SeededRng;
   /** Velocity of the rock before the blow, m/s. */
   velocity?: CellVec;
-  /** Most meshed fragments. Default 32. */
   maxFragments?: number;
-  /** Share of the impact energy carried off by the fragments. Default 0.03 (Fujiwara & Tsukamoto 1980 measured 0.5–5%). */
   kineticFraction?: number;
   /** Break even when the probability draw says no (an editor preview). */
   force?: boolean;
@@ -184,12 +161,7 @@ export function fractureRock(rock: ConvexCell, options: FractureOptions): Fractu
   return { broken: true, probability, specificEnergy, t10, fragments, finesMass: Math.max(0, mass - meshedMass) };
 }
 
-/**
- * Fragment sizes for a parent `size` m across breaking to `t10` percent: the Gaudin–Schuhmann distribution
- * P(x) = (x/size)^m with m = −log₁₀(t10/100), so P(size/10) = t10, binned logarithmically and each bin rounded at random
- * to whole fragments. Bins past `maxFragments` fold into the fines.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function fragmentSizes(size: number, t10: number, maxFragments: number, rng: SeededRng): { sizes: number[]; exponent: number; fines: number } {
   const passing = Math.min(Math.max(t10 / 100, 1e-4), 0.95);
   const exponent = -Math.log10(passing);
@@ -227,7 +199,6 @@ function powerCells(rock: ConvexCell, seeds: readonly CellVec[], weights: readon
   });
 }
 
-/** Add an outward burst carrying `energy` J, speed ∝ m^(−1/6). */
 function burst(fragments: RockFragment[], origin: CellVec, energy: number): void {
   let sum = 0;
   for (const f of fragments) sum += 0.5 * f.mass * f.mass ** (-1 / 3);
@@ -254,10 +225,7 @@ function burst(fragments: RockFragment[], origin: CellVec, energy: number): void
   }
 }
 
-/**
- * Axis-aligned bounds of a cell.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function convexCellBounds(cell: ConvexCell): { min: [number, number, number]; max: [number, number, number] } {
   const min: [number, number, number] = [Infinity, Infinity, Infinity];
   const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];

@@ -82,7 +82,6 @@ import {
   type StreetVec2,
 } from "./streetGenerator";
 
-/** Road hierarchy rank — higher is wider/more arterial. Shared with the fabric's ordering. */
 const LEVEL_RANK: Record<StreetLevel, number> = { lane: 0, street: 1, avenue: 2, boulevard: 3 };
 
 /**
@@ -158,7 +157,6 @@ const CIRCUIT_ROUTE_FIELDS = [
  */
 export const CIRCUIT_ROUTE_SCHEMA = defineParamSchema({ fields: CIRCUIT_ROUTE_FIELDS });
 
-/** Parsed lap params. */
 export type CircuitRouteParams = ParamsOf<typeof CIRCUIT_ROUTE_SCHEMA>;
 
 /**
@@ -166,26 +164,18 @@ export type CircuitRouteParams = ParamsOf<typeof CIRCUIT_ROUTE_SCHEMA>;
  * instanced event. Stands just off the junction, spanning the sealed street's full width.
  */
 export interface CircuitSeal {
-  /** Volume-local XZ of the barrier run's center. */
   x: number;
   z: number;
   /** Yaw (radians) pointing down the sealed street, away from the lap. */
   heading: number;
-  /** Width of the street being closed — the run spans it plus a shoulder. */
   width: number;
   kind: CircuitSealKind;
-  /** Graph node the seal stands at. */
   node: number;
 }
 
-/**
- * One barrier run dropped onto the racing surface for the event (a chicane apex): a line of blocks
- * across the road, perpendicular to `heading`, spanning `width` from one road edge.
- */
 export interface CircuitBarrier {
   x: number;
   z: number;
-  /** Yaw of travel down the road at the barrier; the run stands across it. */
   heading: number;
   /** Length of the run across the road, meters. */
   width: number;
@@ -203,67 +193,49 @@ export interface CircuitChicane {
   barriers: readonly [CircuitBarrier, CircuitBarrier];
 }
 
-/** A closed lap, or a point-to-point sprint from one end of the city to another. */
 export type StreetRaceKind = "lap" | "sprint";
 
-/** One analyzed corner: where the lap turns, how hard, and which way. */
 export interface CircuitCorner {
-  /** `centerline` index at the apex (tightest point). */
   apex: number;
   /** Radius of curvature at the apex, meters. */
   radius: number;
   /** Total turn through the corner, radians. */
   angle: number;
-  /** -1 = left-hand, 1 = right-hand. */
   direction: -1 | 1;
-  /** `centerline` index where the corner starts. */
   entry: number;
-  /** `centerline` index where it ends. */
   exit: number;
-  /** The corner's type in the corner grammar — present on a designed closed circuit. */
   kind?: CircuitCornerKind;
 }
 
-/** One checkpoint trigger volume, shaped to hand straight to `raceTrack({ checkpoints })`. */
 export interface CircuitGate {
   id: string;
   center: readonly [number, number, number];
   half: readonly [number, number, number];
 }
 
-/** The start/finish line: where it is, which way cars face, and the painted line across the road. */
 export interface CircuitStart {
   x: number;
   z: number;
-  /** Yaw cars face on the grid (direction of travel). */
   heading: number;
-  /** The two road-edge ends of the painted line. */
   line: readonly [StreetVec2, StreetVec2];
   /** Arc-length position of the line along the lap, meters. */
   distance: number;
-  /** Road width at the line. */
   width: number;
 }
 
-/** One grid slot: a staggered spawn behind the start line. */
 export interface CircuitGridSlot {
   x: number;
   z: number;
-  /** Yaw facing down the start straight. */
   heading: number;
 }
 
-/** One kerb strip on the outside or inside of a corner, as an offset polyline to stripe. */
 export interface CircuitKerb {
-  /** Polyline along the road edge the kerb hugs. */
   points: StreetVec2[];
   /** Strip width across, meters. */
   width: number;
-  /** Which side of travel the strip sits on: -1 left, 1 right. */
   side: -1 | 1;
   /** Alternating stripe length along the run, meters. */
   stripe: number;
-  /** Corner this kerb belongs to (index into {@link CircuitRoute.corners}). */
   corner: number;
 }
 
@@ -275,29 +247,22 @@ export interface CircuitKerb {
  * runs (see `raceEvents`), so the city drives as an open world the rest of the time.
  */
 export interface CircuitRoute {
-  /** `true` for a lap; `false` for a sprint, whose centerline runs start area → finish. */
   closed: boolean;
   /**
    * The driven line in volume-local XZ: the street centerlines the race runs on, shaped into a racing
    * line inside the asphalt. A lap is implicitly closed (the last point joins the first).
    */
   centerline: StreetVec2[];
-  /** Road width at each centerline point, inherited from the streets the lap follows. */
   widths: number[];
   /** Road-surface height per point, present only when the network carries elevation. */
   heights?: number[];
   /** Lap length, meters. */
   length: number;
-  /** Graph edge ids the lap runs on — style exactly these streets as track surface. */
   edges: number[];
-  /** Graph node ids the lap visits in order (no repeat of the closing node; a sprint lists both ends). */
   nodes: number[];
-  /** Every street leaving the lap that is not part of it, closed off. */
   seals: CircuitSeal[];
-  /** Barrier chicanes on the secondary straights. */
   chicanes: CircuitChicane[];
   corners: CircuitCorner[];
-  /** Ordered gates, finish line last — ready for `raceTrack({ checkpoints, laps })`. */
   checkpoints: CircuitGate[];
   /** Laps the race runs; always 1 for a sprint. */
   laps: number;
@@ -316,21 +281,16 @@ export interface CircuitRoute {
   tightestRadius: number;
   /** Road roll per point, radians (positive raises the right edge) — designed circuits only. */
   banking?: number[];
-  /** Simulated lap time (s) and braking zones (arc lengths from index 0) — designed circuits only. */
   lapTime?: number;
   brakingZones?: CircuitDesignBrake[];
-  /** Pit lane joined to the lap at two junctions, with garages — designed circuits only. */
   pit?: CircuitPitLane;
-  /** Run-off areas, permanent wall runs and grandstand spots — designed circuits only. */
   runoff?: CircuitRunoff[];
   walls?: CircuitWall[];
   grandstands?: CircuitGrandstand[];
-  /** Grade-separated crossings of a figure-8 — designed circuits only. */
   crossings?: CircuitCrossing[];
 }
 
 interface Adjacency {
-  /** node id → incident edges. */
   links: Map<number, { edge: number; other: number }[]>;
   edgeById: Map<number, StreetEdge>;
   nodeAt: Map<number, { x: number; z: number }>;
@@ -397,11 +357,6 @@ function assembleCenterline(
   return { centerline, widths, heights: anyHeights ? heights : null };
 }
 
-/**
- * Resample a lap (or, `closed` false, a sprint) to a fixed arc-length step, interpolating width and
- * height. City street polylines are emitted at whatever resolution the road ribbon needed (often 15 m
- * between vertices); a racing surface, corner analysis, and kerbs all need a dense, evenly spaced line.
- */
 function resampleLine(
   points: readonly StreetVec2[],
   widths: readonly number[],
@@ -685,7 +640,6 @@ function placeStart(radii: readonly number[], at: readonly number[], total: numb
   return best === null ? null : indexAtDistance(at, total, best, closed);
 }
 
-/** Runs (arc start, length) where the radius stays at or above `minRadius`. */
 function straightRunsAbove(radii: readonly number[], at: readonly number[], total: number, closed: boolean, minRadius: number): { start: number; length: number }[] {
   const n = radii.length;
   const runs: { start: number; length: number }[] = [];
@@ -714,7 +668,6 @@ interface Candidate {
   arterial: number;
 }
 
-/** Order the generator's own `loop` edges into a traversal — the circuit-mode fast path. */
 function loopCandidate(network: StreetNetwork): Candidate | null {
   const loopEdges = network.edges.filter((edge) => edge.loop && edge.a !== edge.b);
   if (loopEdges.length < 3) return null;
@@ -750,7 +703,6 @@ function loopCandidate(network: StreetNetwork): Candidate | null {
   return { nodes, edges, length, arterial: length > 0 ? arterial / length : 0 };
 }
 
-/** Barriers on every street that leaves the lap and is not part of it. */
 function buildSeals(
   nodes: readonly number[],
   edges: readonly number[],
@@ -793,7 +745,6 @@ function buildSeals(
   return seals;
 }
 
-/** Kerb strips on the outside and inside of every real corner. */
 export interface CircuitKerbOptions {
   /** Strip width across, meters. Defaults to 1.1. */
   width?: number;
@@ -803,11 +754,6 @@ export interface CircuitKerbOptions {
   maxRadius?: number;
 }
 
-/**
- * Red/white kerb strips where a racing line touches the road edge: an inside kerb across the apex (the
- * middle of the corner) and an outside kerb at the track-out (apex to exit). Returns the polylines and
- * stripe pitch as data; the renderer owns the mesh and the colors.
- */
 export function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = {}): CircuitKerb[] {
   const width = options.width ?? 1.1;
   const stripe = options.stripe ?? 2.2;
@@ -876,12 +822,9 @@ export interface CircuitRouteConstraints {
   avoidEdges?: readonly number[];
 }
 
-/** Spacing (m) the search shapes finalists at; the winner is resampled to `sampleStep` afterwards. */
 const SHAPE_STEP = 3;
-/** Finalists the search shapes into racing lines and re-scores. */
 const FINALISTS = 4;
 
-/** A finalist shaped into its racing line, with its chicane barriers placed on the street. */
 interface ShapedRoute {
   line: StreetVec2[];
   widths: number[];
@@ -908,7 +851,6 @@ function shapeOutline(outline: LapOutline, planned: readonly PlannedChicane[], r
   return { line, widths: dense.widths, heights: dense.heights, barriers: placed };
 }
 
-/** Corners of a shaped line with their honest total turn, read just outside each tight span. */
 function lineCorners(line: readonly StreetVec2[], closed: boolean, resolved: CircuitRouteParams): { corners: CircuitCorner[]; radii: number[]; at: number[]; total: number } {
   const { at, total } = arcProfile(line, closed);
   const radii = radiusProfile(line, Math.max(6, resolved.minCornerRadius), closed);
@@ -939,10 +881,6 @@ function lineCorners(line: readonly StreetVec2[], closed: boolean, resolved: Cir
 /** Smallest turn (radians) each half of an S must make to count as two corners. */
 const ESS_MIN_TURN = (5 * Math.PI) / 180;
 
-/**
- * Split a tight span that turns one way then the other (a chicane, an S) into its two corners at
- * the inflection: unsigned radius sees one corner there, a driver sees a left and a right.
- */
 function splitEsses(line: readonly StreetVec2[], radii: readonly number[], corners: CircuitCorner[], closed: boolean): CircuitCorner[] {
   const n = line.length;
   const turnAt = (i: number): number => {
@@ -984,10 +922,8 @@ function splitEsses(line: readonly StreetVec2[], radii: readonly number[], corne
   return out;
 }
 
-/** Furthest (m) a corner's turn is read outside its tight span. */
 const CORNER_READ = 60;
 
-/** The lap summary read off a shaped racing line — what the finalists are judged on. */
 function shapedSummary(shaped: ShapedRoute, closed: boolean, base: LapSummary, resolved: CircuitRouteParams): LapSummary {
   const line = shaped.line;
   const { corners, at, total } = lineCorners(line, closed, resolved);
@@ -1205,7 +1141,6 @@ export function extractCircuitRoute(
   };
 }
 
-/** The start/finish line across the road at `index`. */
 function startAt(centerline: readonly StreetVec2[], widths: readonly number[], at: readonly number[], index: number, closed: boolean): CircuitStart {
   const point = centerline[index]!;
   const heading = headingAt(centerline, index, closed);
@@ -1224,7 +1159,6 @@ function startAt(centerline: readonly StreetVec2[], widths: readonly number[], a
   };
 }
 
-/** Staggered grid slots in pairs behind the line at `startIndex`. */
 function gridBehind(
   centerline: readonly StreetVec2[],
   widths: readonly number[],
@@ -1404,7 +1338,6 @@ export interface RaceCircuit {
 
 const streetPreset = (id: string): Readonly<Record<string, unknown>> => STREET_NETWORK_SCHEMA.presets?.find((preset) => preset.id === id)?.values ?? {};
 
-/** The closed-circuit characters share a pit lane, a full grid and the circuit topology dials. */
 const closedCircuit = (values: Record<string, unknown>): Record<string, unknown> => ({ ...streetPreset("circuit"), branching: 0.4, gridSlots: 20, ...values });
 
 /**

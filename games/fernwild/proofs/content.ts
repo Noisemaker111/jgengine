@@ -16,7 +16,6 @@ import { SUPPLY_TIERS } from "../src/game/data/supplyDrops";
 import { MAX_LEVEL } from "../src/game/data/survivor";
 import { NARCOTICS } from "../src/game/data/taming";
 
-/** What a tool gets from a node: every resource it has a bias for. */
 function yields(tool: ToolDef, kinds: readonly string[]): string[] {
   return kinds.filter((kind) => (tool.gather.biases?.[kind] ?? tool.gather.defaultBias ?? 0) > 0);
 }
@@ -63,7 +62,6 @@ const uses: SuiteContentUse[] = [
   ...BROOD_TIERS.map((tier) => ({ id: `summon:${tier.id}`, path: `src/game/data/bosses.ts/${tier.id}`, items: Object.keys(tier.cost) })),
 ];
 
-/** Fernwild's content for the game suite's data entries, read from the catalogs the game runs on. */
 export const content: SuiteContent = {
   items: ITEMS.map((item) => ({
     id: item.id,

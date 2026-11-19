@@ -19,28 +19,16 @@ import { publishForContext } from "@jgengine/core/runtime/contextDisposal";
 
 declare module "@jgengine/core/runtime/pageHandle" {
   interface JgPage {
-    /** This game's dev readout, as its proofs read it. */
     beacon?: { read(): unknown };
   }
 }
 
-/**
- * The keep as one declaration: its purse and walls, the nine plots, every tower type with its build
- * time, upgrades and sale, and what kills, leaks and early releases do to it. The engine runs it, so
- * the HUD, the tower panel, the build bar, saves and co-op all read the same world. Creeps on the road,
- * tower aim and the wave director stay real-time game code that reads and writes these facts.
- */
-
-/** Share of everything a tower cost (build and upgrades) that a sale returns. */
 export const SELL_SHARE = 0.7;
 
-/** What mending one wall breach costs and restores. Repairs wait for a clear road. */
 export const MEND_RULE = { gold: 20, lives: 1 } as const;
 
-/** One sale for every tower type: the `tower` tag covers them all. */
 export const sellAction = (_kind?: string) => "sell";
 
-/** The priorities a tower's aim can be set to, in the order the tablet's button steps through them. */
 export const AIM_POLICIES: readonly AutoTargetPolicy[] = ["first", "last", "strongest", "nearest"];
 export const aimAction = (policy: AutoTargetPolicy) => `aim_${policy}`;
 
@@ -87,15 +75,10 @@ export const keep = defineGameSpec({
           banked: false,
           fallen: false,
           held: false,
-          /** Stars the finished defense earned (0 until it ends, and for a fall). */
           stars: 0,
-          /** Lives lost and not yet mended. */
           breaches: { value: 0, min: 0 },
-          /** Lives lost since the last held-wave pay. */
           wave_leaks: { value: 0, min: 0 },
-          /** The last wave the garrison was paid for. */
           paid_wave: 0,
-          /** The newest wave has fully arrived and no raider is on the road. */
           field_clear: true,
         },
       },
@@ -174,27 +157,22 @@ export const keepBooks = perContext((ctx: GameContext): WalletBooks => createWal
   opening: "opening-purse",
 }));
 
-/** A defense that already fell or held: nothing more is built, released or banked. */
 export function runEnded(world: WorldModel): boolean {
   return world.fact("keep.fallen") === true || world.fact("keep.held") === true;
 }
 
-/** Ready towers standing, every type. */
 export function towersStanding(world: WorldModel): number {
   return world.num("keep.towers");
 }
 
-/** Damage per shot summed over every ready tower. */
 export function firepower(world: WorldModel): number {
   return world.num("keep.firepower");
 }
 
-/** A tower's rank: 1 when built, one more per step it has taken on its ladder (5 at the top). */
 export function towerLevel(world: WorldModel, id: string): number {
   return 1 + world.num(`${id}.tier`) + world.num(`${id}.branch_tier`);
 }
 
-/** The highest rank a tower reaches: built, two shared ranks, two on its path. */
 export const MAX_TOWER_LEVEL = 5;
 
 export type TowerStats = Record<TowerFact, number> & {
@@ -205,7 +183,6 @@ export type TowerStats = Record<TowerFact, number> & {
   aim: AutoTargetPolicy;
 };
 
-/** One tower's live numbers, as the world holds them. */
 export function towerStats(world: WorldModel, id: string): TowerStats {
   const facts = Object.fromEntries(TOWER_FACTS.map((fact) => [fact, world.num(`${id}.${fact}`)])) as Record<TowerFact, number>;
   const branch = world.fact(`${id}.branch`);
@@ -220,28 +197,23 @@ export function towerStats(world: WorldModel, id: string): TowerStats {
   };
 }
 
-/** The steps a tower can take next on its ladder, priced and checked by the keep's world. */
 export function towerOptions(world: WorldModel, id: string, kind: string): UpgradeOption[] {
   const ladder = TOWER_LADDERS[kind];
   return ladder === undefined ? [] : upgradeOptions(world, ladder, id);
 }
 
-/** Gold a tower costs to build, as the declaration prices it. */
 export function buildCost(kind: string): number {
   return -((keep.def.kinds?.[kind]?.cost?.["keep.gold"] as number | undefined) ?? 0);
 }
 
-/** Gold a cost would take, as a positive number (`costOf` reports spends as negatives). */
 export function goldCost(world: WorldModel, action: string, target?: string): number {
   return -(world.costOf(action, target)["keep.gold"] as number | undefined ?? 0);
 }
 
-/** What selling a tower returns right now: its share of the build and every upgrade it took. */
 export function sellValue(world: WorldModel, id: string, _kind?: string): number {
   return Math.round(world.num(`${id}.spent`) * SELL_SHARE);
 }
 
-/** Wipe the field back to a fresh keep, opening with the purse and walls the relic and bank allow. */
 export function resetKeep(ctx: GameContext, opening: { gold: number; lives: number }): void {
   for (const tower of keep.of(ctx).instances()) ctx.scene.entity.despawn(tower.id);
   keep.store.write(ctx, undefined);
@@ -252,7 +224,6 @@ export function resetKeep(ctx: GameContext, opening: { gold: number; lives: numb
   keepBooks(ctx).reset("opening-purse");
 }
 
-/** Put every ready tower of the stored world back on the field (after a load). */
 export function spawnStandingTowers(ctx: GameContext): void {
   for (const tower of keep.of(ctx).instances()) {
     if (!tower.ready || ctx.scene.entity.get(tower.id) !== null) continue;
@@ -261,10 +232,6 @@ export function spawnStandingTowers(ctx: GameContext): void {
   }
 }
 
-/**
- * Dev-only: the readout a drive asserts against (the keep's facts, towers, builds, refusals) and
- * `beacon.dev.try`, which runs a command a drive expects to be refused without failing the step.
- */
 export function exposeKeepReadout(ctx: GameContext, phase: () => string): void {
   if (!import.meta.env?.DEV) return;
   const refused: string[] = [];

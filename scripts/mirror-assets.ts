@@ -28,7 +28,6 @@ function ghOk(args: string[]): string {
   return run.stdout;
 }
 
-/** The names already in the `packs` release, creating the release when it does not exist yet. */
 function mirroredNames(): Set<string> {
   const release = gh(["api", `repos/${repo}/releases/tags/${TAG}`, "--jq", ".id"]);
   if (release.status !== 0) {

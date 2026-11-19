@@ -29,29 +29,23 @@ import { BOARD_BUDGET_SECONDS } from "../../shoot";
 const root = resolve(import.meta.dir, "../../..");
 const PHOTOS = join(import.meta.dir, "photos");
 
-/** What one board run shoots and where it writes. */
 export interface BoardArgs {
   out: string;
-  /** Realism levels to shoot the reference views at; empty shoots the demo as it is ("today"). */
   realism: number[];
   views: boolean;
   species: boolean;
   /** Board ids to keep (reference photos, game views or species numbers); empty keeps all. */
   only: string[];
-  /** An earlier board to compare with. */
   diff?: string;
-  /** Keep every shot file already in the board folder, whatever code took it, and shoot only the missing ones. */
   resume: boolean;
   /** Seconds one run shoots for before it stops and leaves the rest to the next run. */
   budget: number;
-  /** Extra arguments for every capture (`--quality high`, `--timeout 240`). */
   shoot: string[];
 }
 
-/** Exit code of a run that stopped at its budget with shots still to take: run the same command again. */
 export const BOARD_MORE_EXIT = 3;
 
-/** Parse `--board` flags. @internal */
+/** @internal */
 export function parseBoardArgs(argv: readonly string[]): BoardArgs {
   const args: BoardArgs = { out: join(root, ".scratch", "boards", "grass"), realism: [], views: false, species: false, only: [], shoot: [], resume: false, budget: BOARD_BUDGET_SECONDS };
   for (let index = 0; index < argv.length; index += 1) {
@@ -85,7 +79,7 @@ export function parseBoardArgs(argv: readonly string[]): BoardArgs {
   return args;
 }
 
-/** One capture the board needs: the shoot arguments and the file it writes, relative to the board. @internal */
+/** @internal */
 export interface BoardShot {
   file: string;
   argv: string[];
@@ -95,7 +89,7 @@ function realismTag(level: number | undefined): string {
   return level === undefined ? "today" : `r${level}`;
 }
 
-/** Every capture a board run takes, in order. @internal */
+/** @internal */
 export function boardShots(args: Pick<BoardArgs, "realism" | "views" | "species" | "only">): BoardShot[] {
   const keep = (id: string) => args.only.length === 0 || args.only.includes(id);
   const levels: (number | undefined)[] = args.realism.length === 0 ? [undefined] : args.realism;
@@ -142,7 +136,7 @@ function blank(width: number, height: number, shade = 24): RgbaImage {
   return { width, height, data };
 }
 
-/** Centre-crop `image` to the cell's aspect and box-sample it down to `width` x `height`. @internal */
+/** @internal */
 export function coverResize(image: RgbaImage, width: number, height: number): RgbaImage {
   const scale = Math.min(image.width / width, image.height / height);
   const cropW = width * scale, cropH = height * scale;
@@ -204,7 +198,7 @@ export function labelWidth(text: string, scale: number): number {
   return Math.max(0, text.length * 6 - 1) * scale;
 }
 
-/** Draw `text` in the 5x7 stencil font on a dark plate at the cell's lower left. @internal */
+/** @internal */
 export function drawLabel(target: RgbaImage, text: string, left: number, top: number, scale = 2): void {
   const chars = [...text.toUpperCase()];
   fill(target, left, top, labelWidth(text, scale) + scale * 4, 7 * scale + scale * 4, [0, 0, 0]);
@@ -219,13 +213,11 @@ export function drawLabel(target: RgbaImage, text: string, left: number, top: nu
   });
 }
 
-/** One sheet cell: an image file (or none, for a gap) and its label. */
 interface Cell {
   path?: string;
   label: string;
 }
 
-/** Lay cells out in rows on a dark sheet, each cover-cropped to `cellW` x `cellH` and labelled. */
 function composeSheet(rows: readonly (readonly Cell[])[], cellW: number, cellH: number, title: string): RgbaImage {
   const gap = 4, head = 30;
   const columns = Math.max(...rows.map((row) => row.length));
@@ -263,7 +255,6 @@ export function shotDifference(a: RgbaImage, b: RgbaImage): { mean: number; chan
   return { mean: total / pixels, changed: changed / pixels };
 }
 
-/** One guarded capture of a shot into the board folder; true when it wrote its file. */
 function captureShot(args: BoardArgs, shot: BoardShot): boolean {
   const out = join(args.out, shot.file);
   mkdirSync(dirname(out), { recursive: true });
@@ -308,18 +299,14 @@ function diffBoards(args: BoardArgs, before: string): void {
   for (let i = 0; i < pairs.length; i += 6) save(join(args.out, `compare-${i / 6 + 1}.png`), composeSheet(pairs.slice(i, i + 6), 640, 360, `BEFORE AFTER ${i / 6 + 1}`));
 }
 
-/** A board folder's progress: the code its shots were taken with, the shots landed, and failed tries. @internal */
+/** @internal */
 export interface BoardManifest {
   version: 1;
-  /** {@link boardSource} of the code every landed shot was taken with. */
   source: string;
-  /** Landed shots: file -> the capture arguments that took it. */
   done: Record<string, string>;
-  /** Failed captures per file still missing. */
   failed: Record<string, number>;
 }
 
-/** What a shot depicts: its capture arguments and the graphics tier, not how long a capture may wait (`--timeout`). */
 function shotKey(shot: BoardShot, args: Pick<BoardArgs, "shoot">): string {
   const depicts = args.shoot.filter((_arg, index, all) => all[index] !== "--timeout" && all[index - 1] !== "--timeout");
   return [...shot.argv, ...depicts].join(" ");
@@ -371,7 +358,7 @@ export function boardSource(cwd: string = root): string {
   return `unknown-${createHash("sha1").update(String(Date.now())).digest("hex").slice(0, 12)}`;
 }
 
-/** What a run starts from: the folder's manifest when it was taken with this code (or `--resume` keeps any shot file), else a fresh one. @internal */
+/** @internal */
 export function startManifest(args: Pick<BoardArgs, "out" | "resume" | "shoot">, shots: readonly BoardShot[], source: string, exists: (path: string) => boolean = existsSync): { manifest: BoardManifest; note?: string } {
   const previous = readManifest(args.out);
   const manifest: BoardManifest = { version: 1, source, done: {}, failed: {} };
@@ -402,7 +389,7 @@ export function shotsToTake(manifest: BoardManifest, shots: readonly BoardShot[]
   return [...open.filter((shot) => manifest.failed[shot.file] === undefined), ...open.filter((shot) => manifest.failed[shot.file] !== undefined)];
 }
 
-/** Whether one more capture still fits: the first always does, later ones when the slowest so far would end inside the budget. @internal */
+/** @internal */
 export function fitsBudget(elapsedMs: number, slowestMs: number, taken: number, budgetSeconds: number): boolean {
   return taken === 0 || elapsedMs + slowestMs <= budgetSeconds * 1000;
 }
@@ -469,7 +456,6 @@ export function runBoard(args: BoardArgs, deps: BoardDeps = REAL_DEPS): number {
   return 0;
 }
 
-/** Lay out every sheet from the shots in the board folder (and the comparison with `--diff`). */
 function composeBoard(args: BoardArgs, _shots: readonly BoardShot[]): void {
   const levels: (number | undefined)[] = args.realism.length === 0 ? [undefined] : args.realism;
   const photos = GRASS_REFERENCE_PHOTOS.filter((photo) => args.only.length === 0 || args.only.includes(photo.id));

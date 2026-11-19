@@ -12,55 +12,43 @@
 /** A local- or world-space position/offset, matching the `[x, y, z]` triple used across core. */
 export type SocketVec3 = readonly [number, number, number];
 
-/** One named socket on a piece: where it sits and which horizontal direction it faces (yaw about Y). */
 export interface SocketDef {
-  /** Stable socket name, unique within its piece. */
   name: string;
-  /** Generic connection kind — e.g. "top", "bottom", "edge", "side". Matched by the rule table. */
   kind: string;
-  /** Local offset from the piece origin. */
   position: SocketVec3;
   /** Outward-facing yaw in radians (rotation about +Y), local to the piece. Default `0`. */
   yaw?: number;
 }
 
-/** A rectangular footprint (world units) a piece occupies on the build grid — the occupancy bridge. */
 export interface BuildFootprint {
   w: number;
   d: number;
 }
 
-/** A registered piece type: its named sockets and, optionally, the footprint it claims when placed. */
 export interface BuildPieceDef {
-  /** Stable piece-type id, unique within the catalog. */
   type: string;
   sockets: readonly SocketDef[];
   /** Grid footprint for occupancy checks; omit for pieces that don't reserve cells. */
   footprint?: BuildFootprint;
 }
 
-/** Declares that two socket kinds may snap together; `mutual` (default `true`) also allows `b`→`a`. */
 export interface ConnectionRule {
   a: string;
   b: string;
-  /** When `false` the rule is directional: an `a`-kind candidate socket may mate onto a `b`-kind placed socket, but not the reverse. */
   mutual?: boolean;
 }
 
-/** World transform of a placed piece: position plus a yaw about +Y. */
 export interface PieceTransform {
   position: SocketVec3;
   /** Rotation about +Y in radians. Default `0`. */
   yaw?: number;
 }
 
-/** An already-placed piece the resolver snaps candidates against. */
 export interface PlacedPiece {
   type: string;
   transform: PieceTransform;
 }
 
-/** A piece's socket resolved into world space. */
 export interface PlacedSocket {
   name: string;
   kind: string;
@@ -70,30 +58,21 @@ export interface PlacedSocket {
   yaw: number;
 }
 
-/** One integer grid cell — structurally the `GridCell` of `world/footprintGrid` (no import needed). */
 export interface BuildCell {
   col: number;
   row: number;
 }
 
-/** A resolved snap: which sockets mate and the world transform that lands the candidate onto the target. */
 export interface SnapCandidate {
   candidateType: string;
-  /** Name of the socket on the already-placed piece. */
   targetSocket: string;
-  /** Name of the candidate's socket that mates onto it. */
   candidateSocket: string;
-  /** Where to place the candidate so its socket aligns onto the target socket. */
   transform: { position: SocketVec3; yaw: number };
-  /** Shared world position of the mated sockets. */
   point: SocketVec3;
-  /** Distance from the resolve `cursor` to `point`, or `0` when no cursor was given. */
   distance: number;
 }
 
-/** Options for {@link BuildSocketCatalog.resolveSnaps}. */
 export interface ResolveSnapsOptions {
-  /** Cursor point; when given, candidates are ordered nearest-first by mate-point distance. */
   cursor?: SocketVec3;
   /**
    * Occupancy predicate — return `false` to reject a snap whose target cells are taken. Only applied
@@ -103,55 +82,38 @@ export interface ResolveSnapsOptions {
   isFree?: (cell: BuildCell) => boolean;
 }
 
-/** Options for {@link BuildSocketCatalog.snapNearest}. */
 export interface SnapNearestOptions {
-  /** Farthest a mate point may sit from the cursor and still snap. Default `1.5`. */
   snapDistance?: number;
-  /** Occupancy predicate, as in {@link ResolveSnapsOptions.isFree}. */
   isFree?: (cell: BuildCell) => boolean;
 }
 
-/** The snap {@link BuildSocketCatalog.snapNearest} picked, with the index of the placed piece it mates onto. */
 export interface NearestSnap extends SnapCandidate {
   targetIndex: number;
 }
 
-/** Serializable catalog config; also the shape returned by {@link BuildSocketCatalog.toJSON}. */
 export interface BuildSocketCatalogConfig {
   pieces: readonly BuildPieceDef[];
   rules: readonly ConnectionRule[];
-  /** World units per grid cell for footprint occupancy. Default `1`. */
   cellSize?: number;
 }
 
-/** Handle returned by {@link createBuildSocketCatalog}. */
 export interface BuildSocketCatalog {
   readonly cellSize: number;
   has(type: string): boolean;
   piece(type: string): BuildPieceDef | null;
-  /** Registered piece-type ids, in declaration order. */
   types(): readonly string[];
-  /** True when a `candidateKind` socket may mate onto a `placedKind` socket. */
   canConnect(candidateKind: string, placedKind: string): boolean;
-  /** Every socket of `placed` resolved into world space. */
   worldSockets(placed: PlacedPiece): PlacedSocket[];
-  /** Every valid snap of `candidateType` onto `placed`, ordered deterministically. */
   resolveSnaps(placed: PlacedPiece, candidateType: string, options?: ResolveSnapsOptions): SnapCandidate[];
-  /**
-   * The one snap a build cursor lands on: across every placed piece, the valid snap whose mate point
-   * is nearest `cursor` and within `snapDistance` (default `1.5`), or `null` when nothing is in reach.
-   */
   snapNearest(
     placed: readonly PlacedPiece[],
     candidateType: string,
     cursor: SocketVec3,
     options?: SnapNearestOptions,
   ): NearestSnap | null;
-  /** Plain, serializable snapshot — feed straight back into {@link createBuildSocketCatalog}. */
   toJSON(): BuildSocketCatalogConfig;
 }
 
-/** Length-prefixed composite key (avoids delimiter collisions without any control characters). */
 function pairKey(a: string, b: string): string {
   return `${a.length}:${a}:${b}`;
 }
@@ -208,7 +170,6 @@ export function footprintCells(
   return cells;
 }
 
-/** A `{ name, offset }` attach point — structurally the `ModelSocket` of `scene/modelSockets`. */
 export interface ModelSocketLike {
   name: string;
   offset: SocketVec3;

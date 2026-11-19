@@ -13,7 +13,6 @@ export interface HitReactionConfig {
   shake?: CameraShake;
   /** Trauma (0..1) fed to a trauma² camera-shake channel — the calibrated alternative to `shake`. */
   trauma?: number;
-  /** Slow-mo factor during hitstop (e.g. 0.05 = 5% speed); read by the game's own time-scale system, not applied here. */
   timescale?: number;
 }
 
@@ -31,7 +30,6 @@ export interface HitReaction {
   timescale: number | null;
 }
 
-/** A calibrated `resolveHitReaction` config for a named impact event — hitstop + trauma so feel works with zero tuning. */
 export interface ImpactPreset {
   hitstopMs: number;
   trauma: number;
@@ -57,7 +55,6 @@ export const impactPresets = {
   explosion: { hitstopMs: 90, trauma: 0.7, timescale: 0.05 },
 } as const satisfies Record<string, ImpactPreset>;
 
-/** A named key into {@link impactPresets} (`"pickup" | "jumpLand" | "enemyKilled" | "playerHit" | "explosion"`). */
 export type ImpactPresetName = keyof typeof impactPresets;
 
 function configFromPreset(name: ImpactPresetName): HitReactionConfig {
@@ -71,13 +68,7 @@ function configFromPreset(name: ImpactPresetName): HitReactionConfig {
   };
 }
 
-/**
- * Resolves hit feel (hitstop, knockback impulse, camera shake) from either a
- * named `impactPresets` event (`resolveHitReaction("explosion", input)`) or a
- * raw `HitReactionConfig` override.
- *
- * @capability impact-feel resolve hitstop/knockback/shake feel from an impact preset or raw config
- */
+/** @capability impact-feel resolve hitstop/knockback/shake feel from an impact preset or raw config */
 export function resolveHitReaction(
   config: HitReactionConfig | ImpactPresetName,
   input: HitReactionInput,

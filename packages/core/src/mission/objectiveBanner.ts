@@ -8,11 +8,8 @@ import { clamp01 } from "../math/scalar";
  */
 export type ObjectiveBannerPhase = "in" | "hold" | "out";
 
-/** One announcement request handed to {@link ObjectiveBannerController.announce}. */
 export interface ObjectiveBannerAnnouncement {
-  /** The big centered headline (e.g. `"WAVE 3"`, `"VICTORY"`). */
   title: string;
-  /** Optional smaller line under the title (e.g. `"Defend the core"`). */
   subtitle?: string;
   /**
    * Free-string label the game owns and styles ("wave", "victory", "defeat",
@@ -35,21 +32,15 @@ export interface ObjectiveBannerAnnouncement {
  * call — read it, don't retain it.
  */
 export interface ObjectiveBannerView {
-  /** Stable id assigned at announce time. */
   id: number;
-  /** The headline. */
   title: string;
-  /** The optional subtitle, or `undefined`. */
   subtitle: string | undefined;
-  /** The game-owned free-string label. */
   kind: string;
-  /** Which phase the banner is in. */
   phase: ObjectiveBannerPhase;
   /** Progress `0..1` within the current phase. */
   progress: number;
 }
 
-/** A persisted banner record — all announcement fields resolved, plus id and schedule. */
 export interface StoredObjectiveBanner {
   id: number;
   title: string;
@@ -62,49 +53,31 @@ export interface StoredObjectiveBanner {
   startAt: number | null;
 }
 
-/** Serializable state of the queue and the active banner, for save/restore. */
 export interface ObjectiveBannerSnapshot {
   /** Wall-clock (ms) the snapshot was taken, so restore re-anchors elapsed time. */
   now: number;
-  /** Next id to hand out. */
   nextId: number;
-  /** The active banner (head) followed by everything still queued, in order. */
   queue: readonly StoredObjectiveBanner[];
 }
 
-/** A live, clock-driven objective/stage banner controller. */
 export interface ObjectiveBannerController {
   /**
    * Enqueue a banner. If nothing is showing it starts flying in immediately;
    * otherwise it waits its turn (one banner shows at a time). Returns the new id.
    */
   announce(announcement: ObjectiveBannerAnnouncement): number;
-  /**
-   * Advance the clock: transition the active banner through in → hold → out,
-   * reap it when its life ends, and start the next queued banner. Pass an explicit
-   * `nowMs` to drive deterministically, else the injected clock is read. Notifies
-   * subscribers. Call it each frame from the renderer.
-   */
   advance(nowMs?: number): void;
   /** The banner to draw right now (pooled — do not retain), or `null` when idle. */
   current(): ObjectiveBannerView | null;
-  /** Dismiss the active banner immediately and start the next queued one, if any. */
   skip(): void;
-  /** Drop the active banner and everything queued. */
   clear(): void;
-  /** How many banners are waiting behind the active one. */
   pending(): number;
-  /** Whether a banner is currently active. */
   isActive(): boolean;
-  /** Observe changes (announce, advance, skip, clear, restore). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): ObjectiveBannerSnapshot;
-  /** Restore from an {@link ObjectiveBannerSnapshot}. */
   restore(snapshot: ObjectiveBannerSnapshot): void;
 }
 
-/** Options for {@link createObjectiveBanner}. */
 export interface ObjectiveBannerOptions {
   /** Injected clock (ms). Default `Date.now`. */
   now?: () => number;
@@ -116,9 +89,7 @@ export interface ObjectiveBannerOptions {
   outMs?: number;
 }
 
-/** Mutable queued/active banner record (internal). */
 interface QueuedBanner extends StoredObjectiveBanner {
-  /** Cached current phase, refreshed by {@link recompute}. */
   phase: ObjectiveBannerPhase;
   /** Cached progress `0..1` within {@link phase}. */
   progress: number;

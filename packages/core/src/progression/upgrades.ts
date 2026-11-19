@@ -11,15 +11,12 @@ export interface UpgradeNodeDef {
   label?: string;
   /** Cost of rank `n`, priced by this curve at `n` (1-based). */
   cost: Curve;
-  /** Ranks purchasable (default `1`). */
   maxRank?: number;
   /** Node ids that must be owned before this one can be bought. */
   requires?: readonly string[];
-  /** Over `standing.<trackId>` facts; omitted means no standing gate. */
   standing?: Predicate;
 }
 
-/** Plain JSON state: node id → ranks owned. Nodes at rank `0` are absent. */
 export interface UpgradeState {
   ranks: Readonly<Record<string, number>>;
 }
@@ -30,18 +27,14 @@ export type UpgradeRejection = "unknown-node" | "max-rank" | "missing-prerequisi
 /** Result of {@link UpgradeTree.buy}: the rank reached and what it cost, or why it was refused. */
 export type UpgradeBuy = { ok: true; nodeId: string; rank: number; cost: number } | { ok: false; reason: UpgradeRejection };
 
-/** Authored upgrade nodes with a per-node cost curve, prerequisites, a standing gate and one snapshot. */
 export interface UpgradeTree {
   nodes(): readonly UpgradeNodeDef[];
   node(nodeId: string): UpgradeNodeDef | null;
-  /** Ranks owned for `nodeId`; `0` when unknown or unowned. */
   rank(nodeId: string): number;
   maxRank(nodeId: string): number;
   /** Price of `rank` (default: the next rank), or `null` when unknown or past the cap. */
   costOf(nodeId: string, rank?: number): number | null;
-  /** What buying the next rank needs, without changing anything. */
   canBuy(nodeId: string, actorId: string): UpgradeBuy;
-  /** Buy the next rank, charging `pay` only after every gate passes. */
   buy(nodeId: string, actorId: string, pay: (cost: number) => boolean): UpgradeBuy;
   owned(): readonly string[];
   spendTotal(): number;
@@ -49,12 +42,9 @@ export interface UpgradeTree {
   restore(next: UpgradeState): void;
 }
 
-/** Authored nodes plus the standing a node's requirement reads. */
 export interface UpgradeTreeConfig {
   nodes: readonly UpgradeNodeDef[];
-  /** The standing a node's requirement reads, for both validation and purchase. */
   standing?: Pick<Standing, "hasTrack" | "standing">;
-  /** Rehydrate from a prior {@link UpgradeTree.snapshot}. */
   state?: UpgradeState;
 }
 
@@ -69,7 +59,6 @@ function check(condition: boolean, message: string): void {
  */
 const checkedNodes = new WeakMap<readonly UpgradeNodeDef[], readonly (readonly [nodeId: string, trackId: string])[]>();
 
-/** Check authored upgrade nodes; throws `RangeError` naming the offending node or field. */
 export function assertUpgrades(config: UpgradeTreeConfig): void {
   const checked = checkedNodes.get(config.nodes);
   if (checked !== undefined) {

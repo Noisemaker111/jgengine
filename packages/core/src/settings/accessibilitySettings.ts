@@ -11,7 +11,6 @@ import type { GameSettingDef, SettingOption, SettingValue, SettingsStore } from 
  */
 export type HoldVsToggle = "hold" | "toggle";
 
-/** The persisted settings ids behind the accessibility section. */
 export const ACCESSIBILITY_SETTING_IDS = {
   textScale: "accessibility.textScale",
   colorblind: "accessibility.colorblind",
@@ -21,7 +20,6 @@ export const ACCESSIBILITY_SETTING_IDS = {
   holdVsToggle: "controls.holdVsToggle",
 } as const;
 
-/** Text-scale choices, as numeric strings the settings store persists. */
 export const TEXT_SCALE_OPTIONS: readonly SettingOption[] = [
   { value: "1", label: "100%" },
   { value: "1.15", label: "115%" },
@@ -31,7 +29,6 @@ export const TEXT_SCALE_OPTIONS: readonly SettingOption[] = [
   { value: "2", label: "200%" },
 ];
 
-/** Colorblind palette choices. `none` keeps the game's own colours. */
 export const COLORBLIND_OPTIONS: readonly SettingOption[] = [
   { value: "none", label: "Off" },
   { value: "protanopia", label: "Protanopia" },
@@ -40,7 +37,6 @@ export const COLORBLIND_OPTIONS: readonly SettingOption[] = [
   { value: "grayscale", label: "Grayscale" },
 ];
 
-/** Hold-versus-toggle choices for actions that support both. */
 export const HOLD_VS_TOGGLE_OPTIONS: readonly SettingOption[] = [
   { value: "hold", label: "Hold" },
   { value: "toggle", label: "Toggle" },
@@ -51,25 +47,18 @@ export function readTextScale(store: SettingsStore): number {
   return clampTextScale(Number(store.get(ACCESSIBILITY_SETTING_IDS.textScale, 1)));
 }
 
-/** Read a stored colorblind mode, falling back to `none` for an unknown value. */
 export function readColorblind(store: SettingsStore): ColorblindMode {
   const value = String(store.get(ACCESSIBILITY_SETTING_IDS.colorblind, "none"));
   const known = COLORBLIND_OPTIONS.some((option) => option.value === value);
   return known ? (value as ColorblindMode) : "none";
 }
 
-/** Read the hold-or-toggle preference, falling back to `hold`. */
 export function readHoldVsToggle(store: SettingsStore): HoldVsToggle {
   const value: string = String(store.get(ACCESSIBILITY_SETTING_IDS.holdVsToggle, "hold"));
   return value === "toggle" ? "toggle" : "hold";
 }
 
-/**
- * Read the whole accessibility state the presentation needs (reduced motion, high contrast, text
- * scale, colorblind mode, captions) plus the hold/toggle preference, from the shared settings store.
- *
- * @capability accessibility-settings read accessibility preferences and the hold-vs-toggle choice from the shared settings store
- */
+/** @capability accessibility-settings read accessibility preferences and the hold-vs-toggle choice from the shared settings store */
 export function readAccessibilitySettings(store: SettingsStore): {
   state: AccessibilityState;
   holdVsToggle: HoldVsToggle;
@@ -86,7 +75,6 @@ export function readAccessibilitySettings(store: SettingsStore): {
   };
 }
 
-/** One accessibility setting as the shared settings menu renders it. */
 export interface AccessibilitySettingRow {
   id: string;
   label: string;
@@ -98,17 +86,10 @@ export interface AccessibilitySettingRow {
   options?: readonly SettingOption[];
   format?: (value: number) => string;
   set: (value: SettingValue) => void;
-  /** When this row drives presentation, the accessibility state key it maps to. */
   affects?: keyof AccessibilityState;
 }
 
-/**
- * The accessibility rows, wired to the settings store: text scale, colorblind palette, reduced
- * motion, high contrast, captions and hold-vs-toggle. The shell adds them as its `accessibility`
- * category and any game can render them inside its own settings layout.
- *
- * @capability accessibility-settings-rows accessibility setting rows (text scale, colorblind, reduced motion, high contrast, captions, hold-vs-toggle) backed by the shared settings store
- */
+/** @capability accessibility-settings-rows accessibility setting rows (text scale, colorblind, reduced motion, high contrast, captions, hold-vs-toggle) backed by the shared settings store */
 export function accessibilitySettingRows(store: SettingsStore): AccessibilitySettingRow[] {
   return [
     {
@@ -179,11 +160,8 @@ export function accessibilitySettingDefs(category = "accessibility"): GameSettin
   ];
 }
 
-/** One frame of an action's raw input. */
 export interface HoldToggleInput {
-  /** The action's key/button went down this frame (the edge). */
   pressed: boolean;
-  /** The action's key/button is down. */
   held: boolean;
 }
 

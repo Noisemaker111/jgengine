@@ -42,7 +42,6 @@ function argsHash(args: readonly number[], salt: number): number {
 
 const EXACT = new Set([Math.PI, Math.PI / 2, Math.PI / 4, (3 * Math.PI) / 4].flatMap((v) => [v, -v]));
 
-/** A finite double as an exact dyadic `mantissa * 2^exponent`. */
 function dyadic(value: number): { mantissa: bigint; exponent: bigint } {
   buffer.setFloat64(0, value);
   const bits = buffer.getBigUint64(0);
@@ -54,7 +53,6 @@ function dyadic(value: number): { mantissa: bigint; exponent: bigint } {
     : { mantissa: sign * (fraction | 0x10000000000000n), exponent: BigInt(biased - 1075) };
 }
 
-/** Exact `a == b` for dyadic rationals. */
 function dyadicEqual(a: { mantissa: bigint; exponent: bigint }, b: { mantissa: bigint; exponent: bigint }): boolean {
   const shift = a.exponent - b.exponent;
   return shift >= 0n ? a.mantissa << shift === b.mantissa : a.mantissa === b.mantissa << -shift;
@@ -64,7 +62,6 @@ function dyadicPow(value: { mantissa: bigint; exponent: bigint }, n: bigint): { 
   return { mantissa: value.mantissa ** n, exponent: value.exponent * n };
 }
 
-/** True when the mathematically exact result is a double, which every libm returns as is. */
 function exactlyRepresented(name: string, args: readonly number[], result: number): boolean {
   if (!Number.isFinite(result) || Number.isInteger(result) || EXACT.has(result)) return true;
   // Tiny arguments: sin, tan, atan, sinh, expm1, log1p... return the argument itself everywhere.
@@ -88,11 +85,7 @@ function exactlyRepresented(name: string, args: readonly number[], result: numbe
   return false;
 }
 
-/**
- * Runs `body` with `Math`'s transcendental functions moved by one ulp per call, deterministically by `salt`;
- * restores them afterwards, even on a throw.
- * @internal test fixture, not engine API.
- */
+/** @internal test fixture, not engine API. */
 export function withOtherLibm<T>(salt: number, body: () => T): T {
   const math = Math as unknown as Record<string, MathFn>;
   const original = new Map<string, MathFn>();
@@ -115,10 +108,7 @@ export function withOtherLibm<T>(salt: number, body: () => T): T {
   }
 }
 
-/**
- * A hash of `value`'s JSON with every number rounded to 1e-4: far above an ulp, far below a visible change.
- * @internal test fixture, not engine API.
- */
+/** @internal test fixture, not engine API. */
 export function roundedFingerprint(value: unknown): string {
   const json = JSON.stringify(value, (_key, n: unknown) => (typeof n === "number" ? Math.round(n * 1e4) / 1e4 : n)) ?? "";
   // Two independent 32-bit FNV-1a lanes: plenty for telling outputs apart, no node:crypto in a src file.

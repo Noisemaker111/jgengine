@@ -47,7 +47,6 @@ import {
   useTransition,
 } from "./reconciler";
 
-/** A context: `<Ctx value>` (or `<Ctx.Provider value>`) provides, `useContext(Ctx)` reads. */
 export function createContext<T>(defaultValue: T): ContextType<T> {
   const context = createContextRecord(defaultValue) as unknown as { -readonly [K in keyof ContextType<T>]: ContextType<T>[K] }; // type-escape: filling the marker's Consumer
   context.Consumer = (props: { children: (value: T) => UiNode }) => props.children(useContext(context as unknown as ContextType<T>)); // type-escape: same marker

@@ -16,9 +16,7 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 
 const PARAMS = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
-/** Every library species open-grown to one age (`?age=25` picks another), in rows a capture view frames one at a time. */
 const SHEET = { age: Number(PARAMS.get("age") ?? 60) || 60, perRow: 9, spacing: 24, rowGap: 300, detail: 0.5 };
-/** `?seed=forest-b` regrows every species from another seed; each plant's seed is `<seed>-<species id>`. */
 const SEED = PARAMS.get("seed") ?? "library";
 
 function LibraryTree({ species, label, position }: { species: string; label: string; position: [number, number, number] }) {
@@ -86,7 +84,6 @@ const views = Object.fromEntries(
   Array.from({ length: rowOf(PLANT_LIBRARY.length - 1) + 1 }, (_, row) => [`row-${row + 1}`, { look: `${rowX(row)},14,0`, lookFrom: "125,12,0" }]),
 );
 
-/** A contact sheet of every species in the plant library, open-grown to 60 years, one capture view per row. */
 export const plantLibraryGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-library" },

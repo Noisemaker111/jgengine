@@ -65,13 +65,11 @@ export function createIdleTask(run: () => void): IdleTask {
  * the recorded times runs every step in the same recorded frame as the live one did.
  */
 export interface RecordedTime {
-  /** The time to record for a step just run ahead, given what {@link SimLoop.untilStep} said before it. */
   ahead(untilStep: number): number;
   /** The time to record for a frame that took `dt` real seconds. */
   frame(dt: number): number;
 }
 
-/** Create the {@link RecordedTime} ledger for one recording. */
 export function createRecordedTime(): RecordedTime {
   let carry = 0;
   return {

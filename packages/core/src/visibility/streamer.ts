@@ -7,35 +7,26 @@
  * content arrives later stays `loading` until the caller marks it ready.
  */
 
-/** The minimal shard shape the streamer schedules on: any world-manifest shard or grid cell satisfies it. */
 export interface StreamerShard {
-  /** Stable shard id (the load/unload unit). */
   id: string;
-  /** XZ footprint `[minX, minZ]`..`[maxX, maxZ]`; absent = always resident. */
   bounds?: { min: readonly [number, number]; max: readonly [number, number] };
   /** `"always"` keeps the shard resident regardless of distance; default `"streamed"` when bounded. */
   residency?: "always" | "streamed";
 }
 
-/** A point residency is measured from: a camera, or one player in a shared world. */
 export interface StreamFocus {
   x: number;
   z: number;
 }
 
-/** Play-time tuning of a {@link WorldStreamer}; every field is retunable. */
 export interface WorldStreamerTuning {
-  /** Load a shard when a focus comes within this distance (m) of its footprint. */
   loadRadius: number;
   /** Keep a loaded shard resident until every focus is farther than this (m), the hysteresis band. Clamped up to `loadRadius`. */
   keepRadius: number;
-  /** Most shards that start loading in one update, nearest first; the rest wait for the next. Default unlimited. */
   loadsPerUpdate?: number;
-  /** Most shards that unload in one update, farthest first. Default unlimited. */
   unloadsPerUpdate?: number;
 }
 
-/** Configuration for {@link createWorldStreamer}. */
 export interface WorldStreamerConfig extends WorldStreamerTuning {
   shards: readonly StreamerShard[];
   /**
@@ -44,38 +35,26 @@ export interface WorldStreamerConfig extends WorldStreamerTuning {
    * a shard is ready the update it loads.
    */
   awaitReady?: boolean;
-  /** Edge (m) of the index buckets an update reads. Default `max(loadRadius, 32)`. */
   bucketSize?: number;
 }
 
-/** Where one shard stands. */
 export type ShardResidency = "unloaded" | "loading" | "ready";
 
-/** The residency change produced by one {@link WorldStreamer.update}. */
 export interface StreamUpdate {
-  /** Shard ids that became resident on this update, nearest first. */
   load: string[];
-  /** Shard ids that left residency on this update, farthest first. */
   unload: string[];
-  /** Shards that want to load or unload but wait for a later update's budget. */
   pending: number;
 }
 
-/** Plain JSON state of a {@link WorldStreamer}: each resident shard and whether it is ready, plus the tuning. */
 export interface WorldStreamerState {
   resident: [id: string, state: "loading" | "ready"][];
   tuning: Required<WorldStreamerTuning>;
 }
 
-/** A stateful proximity streamer over a fixed shard set. */
 export interface WorldStreamer {
-  /** Advances to new focus points, returning the residency delta. With no focus point nothing changes. */
   update(focus: StreamFocus | readonly StreamFocus[]): StreamUpdate;
-  /** The current resident shard-id set (sorted). */
   resident(): string[];
-  /** Where one shard stands; `"unloaded"` for an unknown id. */
   state(id: string): ShardResidency;
-  /** Mark a loading shard's content arrived. Returns false when the shard is not loading. */
   markReady(id: string): boolean;
   /** The shard a world point falls in, or null outside every bounded shard. */
   shardAt(x: number, z: number): StreamerShard | null;
@@ -83,7 +62,6 @@ export interface WorldStreamer {
   tuning(): Required<WorldStreamerTuning>;
   snapshot(): WorldStreamerState;
   restore(state: WorldStreamerState): void;
-  /** Clears all residency (next update reloads from scratch). */
   reset(): void;
 }
 
@@ -91,10 +69,7 @@ function isAlwaysResident(shard: StreamerShard): boolean {
   return shard.residency === "always" || shard.bounds === undefined;
 }
 
-/**
- * Distance from a point to a shard's XZ footprint (0 when inside), or 0 for an always-resident shard.
- * @capability world-streaming distance from a camera to a shard footprint
- */
+/** @capability world-streaming distance from a camera to a shard footprint */
 export function shardDistance(shard: StreamerShard, center: StreamFocus): number {
   if (shard.bounds === undefined) return 0;
   const { min, max } = shard.bounds;
@@ -103,25 +78,18 @@ export function shardDistance(shard: StreamerShard, center: StreamFocus): number
   return Math.hypot(center.x - qx, center.z - qz);
 }
 
-/** One square grid cell: a shard that always has bounds. */
 export interface StreamCell extends StreamerShard {
   bounds: { min: readonly [number, number]; max: readonly [number, number] };
 }
 
-/** Options for {@link gridShards}. */
 export interface GridShardsOptions {
-  /** World XZ corner the grid starts from. */
   min: readonly [number, number];
-  /** World XZ corner the grid reaches; the last row and column cover it. */
   max: readonly [number, number];
   /** Cell edge in metres. */
   cellSize: number;
 }
 
-/**
- * The id of the grid cell a world point falls in: `"col,row"` counted from world origin.
- * @capability world-streaming-cell-id name the streamed grid cell a world point falls in
- */
+/** @capability world-streaming-cell-id name the streamed grid cell a world point falls in */
 export function gridCellId(x: number, z: number, cellSize: number): string {
   return `${Math.floor(x / cellSize)},${Math.floor(z / cellSize)}`;
 }

@@ -1,10 +1,8 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** Native frames land a beat after a state change on a software adapter: let the page settle before a shot. */
 const settle = (f: { wait(ms: number): Promise<void> }) => f.wait(4000);
 
-/** The native page's text, for checks that read what the player sees. */
 const text = "window.__jg?.nativeUi.text()";
 const shows = (words: string): string => `${text}.includes(${JSON.stringify(words)})`;
 

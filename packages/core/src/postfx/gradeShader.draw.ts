@@ -75,7 +75,6 @@ const vertexShader = /* glsl */ `
   }
 `;
 
-/** Packs a baked cube into the strip layout the sampler expects: `size` tiles side by side per blue slice. */
 function lutStripTexture(cube: LutCube): THREE.DataTexture {
   const size = cube.size;
   const data = new Uint8Array(size * size * size * 4);

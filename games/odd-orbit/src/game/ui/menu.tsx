@@ -22,10 +22,8 @@ import { ORBIT_SLOTS, orbitProfile } from "../session/save";
 import { clearOrbitSlot, newOrbitSlot, openOrbitSlot, orbitSlotLabel, orbitSlots, refreshOrbitSlots, saveOrbitSlot, shownOrbitSave, workingMember } from "../menuSave";
 import { CREAM_TEXT, ENAMEL, type EnamelTone, Fine, FULL, Heading, Icon, INK, NIGHT_DIM, Paper, Plate, RIM, Row, Swatch, Tag, Text } from "./kit";
 
-/** Capture-only focus request: a shot declares which page it wants open. */
 export const menuFocus: { id: string | null } = { id: null };
 
-/** The art direction's sky and grade, named once; the credits list them. */
 export const LOOKS_USED = { hdri: ["lilac-dusk"], lut: ["pastel-dusk"] } as const;
 
 const credits = mergeCredits({
@@ -73,7 +71,6 @@ function CreditsPage() {
 
 const PREF_LINES: readonly { id: keyof OrbitPreferences; label: string }[] = [{ id: "calm", label: "Calm interface" }, { id: "contrast", label: "Bolder panels" }];
 
-/** The house controls: category tabs, each setting as one line with a slider, a lamp switch or chips, and key rebinding. */
 export function HouseSettings({ preferences, onPreference }: Prefs) {
   const settings = useSettings();
   const [chosen, setChosen] = useState<string | null>(null);
@@ -128,7 +125,6 @@ function Slider({ row }: { row: SettingsRow }) {
   </Row>;
 }
 
-/** Letters, digits and space typed onto the moving-in card while it is armed; Enter moves in, Escape stops. */
 const SUGGESTED = ["The Moonwells", "The Pebblesons", "The Quill-Ottos", "The Driftmoss", "The Halcyons"];
 function keyChar(code: string): string | null {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3).toLowerCase();
@@ -183,10 +179,6 @@ function Polaroid({ slot, onOpen, onNew, onClear }: { slot: SaveSlotMeta; onOpen
 
 type Loader = (label: string, work: () => Promise<unknown>) => Promise<void>;
 
-/**
- * Odd Orbit's front end. The title is the habitat's porch: the house sign, the verbs as enamel door
- * plates and a paper note for whichever plate is open. Pause is the household handbook.
- */
 export function OrbitMenu(props: Prefs) {
   const session = useStore(orbitSession);
   const [busy, setBusy] = useState<string | null>(null);
@@ -289,7 +281,6 @@ function Porch({ preferences, onPreference, whileLoading }: Prefs & { whileLoadi
 
 interface Chapter { id: string; label: string; icon: GameIconName; page: string }
 
-/** The pause menu: the household handbook, open to today's page. */
 function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLoading: Loader }) {
   const ctx = useGameContext();
   const { commands } = useGame();

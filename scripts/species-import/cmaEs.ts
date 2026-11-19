@@ -1,15 +1,9 @@
-/**
- * CMA-ES (Hansen 2016, "The CMA Evolution Strategy: a tutorial") with a full covariance matrix and a
- * Jacobi eigen decomposition: enough for the twenty-odd parameters of a species fit.
- */
 export interface CmaEs {
   readonly sigma: number;
   readonly mean: readonly number[];
-  /** Generations told so far, counting the ones of a restored search. */
   readonly generation: number;
   ask(): number[][];
   tell(population: readonly (readonly number[])[], scores: readonly number[]): void;
-  /** Everything a later `createCmaEs(..., state)` needs to carry on exactly where this one is. */
   state(): CmaEsState;
 }
 
@@ -23,13 +17,10 @@ export interface CmaEsState {
   mean: number[];
   pc: number[];
   ps: number[];
-  /** Row-major n×n covariance. */
   cov: number[];
-  /** The xorshift32 word the next draw reads. */
   rng: number;
 }
 
-/** xorshift32 in [0, 1); `state` reads or sets the word the next draw uses. */
 export interface Random {
   (): number;
   state: number;
@@ -55,7 +46,6 @@ function gaussian(random: () => number): number {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * random());
 }
 
-/** Symmetric n×n matrix in a flat row-major array. */
 type Matrix = Float64Array;
 
 function jacobiEigen(source: Matrix, n: number): { values: Float64Array; vectors: Matrix } {
@@ -101,11 +91,6 @@ function jacobiEigen(source: Matrix, n: number): { values: Float64Array; vectors
   return { values, vectors: v };
 }
 
-/**
- * A CMA-ES search from `start` with step size `sigma` and `lambda` samples a generation; given a
- * `resume` state of the same dimension, it continues that search instead (`start` and `sigma0` are
- * then only what a state of another dimension falls back to).
- */
 export function createCmaEs(start: readonly number[], sigma0: number, lambda: number, seed: number, resume?: CmaEsState): CmaEs {
   const n = start.length;
   const random = createRandom(seed);

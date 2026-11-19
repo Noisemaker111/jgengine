@@ -15,14 +15,12 @@ const shows = (words: string): string => `${text}.includes(${JSON.stringify(word
 const focused = "(document.getElementById('jg-ui')?.getAttribute('aria-label') ?? '')";
 const point = async (f: F, label: string): Promise<Point> =>
   (await f.waitForPage(`window.__jg?.nativeUi.point(${JSON.stringify(label)}) ?? false`, { timeoutMs: 15000, note: `a laid-out "${label}"` })) as Point;
-/** The packed cache item's grid box `[x, y, w, h]` in cells, read from the native tree. */
 const cacheItem = (name: string): string => `(() => {
   const walk = (n) => [n, ...n.children.flatMap(walk)];
   const n = walk(window.__jg?.nativeUi.tree()).find((n) => n.props.label === ${JSON.stringify(`Select ${name}`)});
   return n ? [n.props.pin[0] / 64, n.props.pin[1] / 64, (n.props.width + 4) / 64, (n.props.height + 4) / 64] : null;
 })()`;
 
-/** A standard pad: buttons 0 confirm, 1 back, 12-15 the d-pad. */
 const plugPad = (f: F) => f.page(`(() => {
   const pad = { id: "flow pad", index: 0, connected: true, mapping: "standard", timestamp: 0, axes: [0, 0, 0, 0],
     buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
@@ -201,7 +199,6 @@ export default defineFlow(game, {
     await f.waitForPage(`!${shows("CARRIED CACHE")}`, { timeoutMs: 5000, note: "the cache closed" });
 
     // Save failure: the tank runs out and storage refuses the write that ends the Life, so the
-    // return waits on a retry. Dive checkpoints still write; refusing those blocks the record instead.
     await f.page(`(window.__flowSetItem = Storage.prototype.setItem, Storage.prototype.setItem = function (key, value) {
       if (String(value).includes('"mode":"reprinting"')) throw new DOMException("flow: storage refused", "QuotaExceededError");
       return window.__flowSetItem.call(this, key, value);

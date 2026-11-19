@@ -9,7 +9,6 @@ export interface StripMarker {
   at: number;
   glyph?: string;
   tone?: StripTone;
-  /** Larger marker with a label below (the player, the leader). */
   emphasis?: boolean;
   label?: string;
 }

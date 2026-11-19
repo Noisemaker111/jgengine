@@ -11,7 +11,6 @@
 //   bun run verify:fast --cheap      # only the type-checks and gates: what `bun run preflight` runs
 //
 // The type-checks and gates start before the tests, and the run stops at the first failure: a
-// type error is reported in seconds instead of after minutes of tests that were never the problem.
 // `--cheap` (the landing's preflight) runs every gate CI's quick and types jobs run and reports
 // every failure in one pass instead.
 //
@@ -74,9 +73,7 @@ const SOURCE_FILE = /\.[cm]?[jt]sx?$/;
 const DECLARATION = /\.d\.[cm]?ts$/;
 const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\/[^/]+\/src\//, /^scripts\/.+\.[cm]?tsx?$/, /^games\/[^/]+\/src\//];
 const GAME_DIR = /^games\/[^/]+$/;
-/** Root files every program reads: a change to one is attributable to no test in particular. */
 const ROOT_CONFIG = /^(package\.json|bun\.lock|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
-/** A workspace's own manifest and compiler settings, relative to the workspace. */
 const WORKSPACE_CONFIG = /^(package\.json|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
 /** Prose: read by people and by the gates that plan by path, never compiled or imported by a test. */
 const DOC_FILE = /\.(md|mdx|txt)$/i;
@@ -85,7 +82,6 @@ const DEMO = /(^|\/)demos?\//;
 
 export interface Step extends ScheduledStep {
   command: string[];
-  /** Starts a browser against the shared dev server, which `--full` boots once for every one of these. */
   browser?: boolean;
   /**
    * Runs with the machine to itself. A timing budget or a launch-handshake fixture measures
@@ -107,11 +103,9 @@ export interface Step extends ScheduledStep {
    * lanes guessing and pushed them to CI to find out.
    */
   fix?: string | undefined;
-  /** The units this step settles; each is remembered as passed when the step passes, and a test file also when its own tests all passed in a step that failed. */
   units?: Unit[];
 }
 
-/** One test file, type-check, gate or boot, and the changed paths that can decide its result. */
 export interface Unit {
   id: string;
   inputs: readonly string[];
@@ -128,25 +122,17 @@ export const DEFAULT_JOBS = Math.max(2, Math.min(4, Math.floor(availableParallel
 export interface Workspace {
   dir: string;
   checkTypes: boolean;
-  /** The package name, when the manifest has one. */
   name?: string;
-  /** Workspace packages this one depends on (`workspace:*`). */
   dependsOn?: string[];
 }
 
 export interface Plan {
   changed: string[];
-  /** Paths the branch deleted. */
   deleted: string[];
-  /** Workspace dirs whose own `check-types` runs. */
   typechecks: string[];
-  /** Test files to run, sorted. */
   tests: string[];
-  /** Root package scripts that run. */
   gates: string[];
-  /** Changed runtime files no selected test can reach. */
   unattributed: string[];
-  /** Changed paths no test can be attributed to (root configs, lockfile, `unattributed`): every test file and type-check runs. */
   fallback: string[];
   /** Workspaces whose whole suite runs because a changed file in them has no test of its own. */
   suites: string[];
@@ -155,10 +141,6 @@ export interface Plan {
    * boots a game, so this is the only place a boot regression is caught before merge.
    */
   boots: string[];
-  /**
-   * `--landing` only: build the site and hold each game's download to its budget, as CI's web-build
-   * job did for every PR (a game's first download over budget, and a build that broke, reached it).
-   */
   webBuild: boolean;
   /**
    * The files whose content decides each unit's result, keyed `test:<file>`, `typecheck:<dir>` and
@@ -168,7 +150,6 @@ export interface Plan {
   inputs: Record<string, string[]>;
 }
 
-/** At most this many games boot in the inner loop; each costs ~15-40 s. */
 export const MAX_BOOTS = 2;
 
 /**
@@ -229,7 +210,6 @@ export function changedFiles(root: string, base: string = BASE): string[] {
   return [...out].sort();
 }
 
-/** Paths this branch deleted against `base`, committed, staged or not. */
 export function deletedFiles(root: string, base: string = BASE): string[] {
   const out = new Set<string>();
   for (const args of [["diff", "--name-only", "--diff-filter=D", `${base}...HEAD`], ["diff", "--name-only", "--diff-filter=D", "--cached"], ["diff", "--name-only", "--diff-filter=D"]]) {
@@ -238,7 +218,6 @@ export function deletedFiles(root: string, base: string = BASE): string[] {
   return [...out].sort();
 }
 
-/** `test:a`, `test:b`, `gate:c` -> `2 test(s), 1 gate(s)`. */
 export function summarizeUnits(units: readonly string[]): string {
   const counts = new Map<string, number>();
   for (const unit of units) {
@@ -263,7 +242,6 @@ export function pureRenames(root: string, base: string = BASE): string[] {
   return [...renamed].sort();
 }
 
-/** Every workspace dir under the root `package.json` globs, with whether it type-checks. */
 export function workspaces(root: string): Workspace[] {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
     workspaces?: string[] | { packages?: string[] };
@@ -299,7 +277,6 @@ export function workspaces(root: string): Workspace[] {
     .sort((a, b) => a.dir.localeCompare(b.dir));
 }
 
-/** The workspace that owns a path: the longest `dir/` prefix, or null for root files such as `scripts/`. */
 export function workspaceOf(path: string, all: readonly Workspace[]): Workspace | null {
   let found: Workspace | null = null;
   for (const workspace of all) {
@@ -314,7 +291,6 @@ export function isTestFile(path: string): boolean {
   return TEST_FILE.test(path);
 }
 
-/** A file whose behavior a test is expected to reach: source under a runtime root, not a test or a declaration. */
 export function isRuntimeSource(path: string): boolean {
   return (
     RUNTIME_ROOTS.some((root) => root.test(path)) &&
@@ -358,7 +334,6 @@ export function gatesFor(changed: readonly string[]): string[] {
  */
 export const GENERATED_GATES: ReadonlySet<string> = new Set(GEN_TARGETS.map((target) => target.name).filter((name) => findCheck(name)?.generated === true));
 
-/** A gate runs when the diff reaches what it reads and it is not a generated-file comparison. */
 function keepGate(name: string, changed: readonly string[]): boolean {
   const check = findCheck(name);
   return check !== undefined && !GENERATED_GATES.has(name) && reachedBy(check, changed);
@@ -410,10 +385,8 @@ export function opaqueScopes(file: string, unresolved: readonly string[], all: r
   return [...scopes].sort();
 }
 
-/** Root files every unit's result can depend on: the toolchain and the compiler settings. */
 export const ROOT_INPUTS = ["package.json", "bun.lock", "bunfig.toml", "tsconfig.base.json", "tsconfig.json"];
 
-/** Workspaces whose tests stay inside their own directory and imports; repo tooling tests read the whole tree. */
 const CONTAINED = /^(packages\/(?!jgengine$)[^/]+|games\/(?!scripts$|shared$)[^/]+)$/;
 
 function sourcesUnder(graph: ImportGraph, dir: string): string[] {
@@ -440,16 +413,12 @@ export function unitInputs(graph: ImportGraph, entries: readonly string[], works
 /** What `bun run verify:fast` runs for this change. */
 export function verifyPlan(input: {
   changed: readonly string[];
-  /** Paths the branch deleted: whatever imported them is reached too. */
   deleted?: readonly string[];
   testFiles: readonly string[];
   workspaces: readonly Workspace[];
   graph: ImportGraph;
-  /** Changed paths that need no test (pure renames). */
   exempt?: readonly string[];
-  /** What `lane:close` runs: also the site build and its bundle budgets when the change reaches them. */
   landing?: boolean;
-  /** Changed prose file -> the tests that read it from disk by name (`docReaderTests`). */
   docReaders?: ReadonlyMap<string, readonly string[]>;
 }): Plan {
   const changed = [...new Set(input.changed)].sort();
@@ -595,7 +564,6 @@ export function verifyPlan(input: {
   };
 }
 
-/** Whether a change can alter the built site: a source or asset under apps/, packages/ or games/, not a note. */
 export function reachesSite(paths: readonly string[]): boolean {
   const check = findCheck("site-bundles");
   return check !== undefined && paths.some((path) => !path.endsWith(".md") && !isTestFile(path) && reachedBy(check, [path]));
@@ -653,10 +621,6 @@ export function junitCosts(xml: string): Record<string, number> {
   return costs;
 }
 
-/**
- * The test files a junit report shows passing: every test in the file's own suite passed. A file
- * that failed to load, or a process that died before writing the report, is not in it.
- */
 export function junitPassedFiles(xml: string): string[] {
   const passed: string[] = [];
   for (const match of xml.matchAll(/<testsuite\s[^>]*>/g)) {
@@ -669,17 +633,12 @@ export function junitPassedFiles(xml: string): string[] {
 }
 
 export interface FastOptions {
-  /** Also run `check skill-api`. */
   skillApi?: boolean;
-  /** Only the type-checks and gates: no tests or boots. */
   cheap?: boolean;
-  /** Lanes the steps share; the tests split into at most this many processes. */
   lanes?: number;
-  /** True when this unit passed before with the same `inputs`; it is not run again. */
   fresh?: (unit: string, inputs: readonly string[]) => boolean;
   /** Measured seconds per test file, so the processes split by time rather than by count. */
   testCosts?: Readonly<Record<string, number>>;
-  /** Where each test process writes its junit report (`<dir>/tests-<n>.xml`), for `testCosts`. */
   reportDir?: string;
   /** Every file in the checkout, so a gate's pass is keyed on the files its row reads; absent, on the whole tree. */
   tree?: readonly string[];
@@ -729,7 +688,30 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       ...(first ? { first: true } : {}),
       units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
     });
-    if (own.size > 0) steps.push(testStep([...own], `test ${own.size} own file(s)`, 0, true));
+    // Windows CreateProcess caps argv at ~32 KB; keep each `bun test` invocation safely under 20 KB.
+    const chunkByArgv = (list: readonly string[], maxChars = 20_000): string[][] => {
+      const sorted = [...list].sort();
+      const chunks: string[][] = [];
+      let current: string[] = [];
+      let chars = 0;
+      for (const file of sorted) {
+        if (current.length > 0 && chars + file.length + 1 > maxChars) {
+          chunks.push(current);
+          current = [];
+          chars = 0;
+        }
+        current.push(file);
+        chars += file.length + 1;
+      }
+      if (current.length > 0) chunks.push(current);
+      return chunks;
+    };
+    let reportIndex = 0;
+    const ownChunks = chunkByArgv([...own]);
+    ownChunks.forEach((group, idx) => {
+      const label = ownChunks.length === 1 ? `test ${group.length} own file(s)` : `test ${group.length} own file(s) (${idx + 1}/${ownChunks.length})`;
+      steps.push(testStep(group, label, reportIndex++, true));
+    });
     // The files that read downloaded models run in one step of their own. A worktree starts with no
     // models: link (or, once per machine, download) the packs those tests read first, or every model
     // they check reads as missing. A test outside a game's folder gets every game's.
@@ -739,17 +721,21 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       const provision = owners.includes(undefined) ? [] : [...new Set(owners as string[])].sort();
       const provisionStep = `provision models for tests${provision.length > 0 ? ` ${provision.join(" ")}` : ""}`;
       steps.push({ name: provisionStep, command: ["bun", "games/scripts/provision-assets.ts", ...provision], cost: 2 });
-      steps.push({ ...testStep(readers, `test ${readers.length} file(s) that read downloaded models`, 999, isOwn), needs: [provisionStep] });
+      const readerChunks = chunkByArgv(readers);
+      readerChunks.forEach((group, idx) => {
+        const label = readerChunks.length === 1 ? `test ${group.length} file(s) that read downloaded models` : `test ${group.length} file(s) that read downloaded models (${idx + 1}/${readerChunks.length})`;
+        steps.push({ ...testStep(group, label, 999 + idx, isOwn), needs: [provisionStep] });
+      });
     }
     if (rest.length > 0) {
       const total = rest.reduce((sum, file) => sum + cost[file]!, 0);
       const byCount = Math.min(lanes, Math.ceil(rest.length / TESTS_PER_LANE));
       const byTime = Math.min(lanes * 3, Math.ceil(total / TEST_CHUNK_SECONDS));
       const parts = Math.min(rest.length, Math.max(1, byCount, byTime));
-      const groups = splitByCost(rest, cost, parts).filter((group) => group.length > 0);
+      const groups = splitByCost(rest, cost, parts).filter((group) => group.length > 0).flatMap((group) => chunkByArgv(group));
       groups.forEach((group, index) => {
         const label = groups.length === 1 ? `test ${group.length} file(s)` : `test ${group.length} file(s) (${index + 1}/${groups.length})`;
-        steps.push(testStep(group, label, index + 1, false));
+        steps.push(testStep(group, label, reportIndex++, false));
       });
     }
   }
@@ -803,7 +789,6 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
   return options.cheap === true ? steps.filter((step) => step.first === true && step.command[1] !== "test") : steps;
 }
 
-/** The paths whose change turns on CI's frame and smoke gates, from the same map the workflow calls. */
 export function heavyPaths(_root: string): RegExp {
   return scopePattern();
 }
@@ -863,7 +848,6 @@ export function shardISteps(root: string): Step[] {
   ];
 }
 
-/** Two groups of files with roughly equal measured cost, heaviest files first. */
 export function splitByCost(files: readonly string[], cost: Readonly<Record<string, number>>, parts = 2): string[][] {
   const groups = Array.from({ length: parts }, () => ({ files: [] as string[], total: 0 }));
   const ordered = [...files].sort((a, b) => (cost[b] ?? 1) - (cost[a] ?? 1) || a.localeCompare(b));
@@ -874,7 +858,6 @@ export function splitByCost(files: readonly string[], cost: Readonly<Record<stri
   }
   return groups.map((group) => group.files);
 }
-
 
 /**
  * Exactly the commands CI runs: the `quick` job, `types`, every `test` shard,
@@ -1017,7 +1000,6 @@ async function run(step: Step, root: string): Promise<StepResult> {
   return { name: step.name, ok: first.ok, ms: Date.now() - started, output };
 }
 
-/** What a step whose only failures are timeouts says: which files, and that a rerun is not the fix. */
 export function timedOutNote(stepName: string, files: readonly string[]): string {
   return `${stepName}: ${files.join(", ")} timed out. Not rerun: a test that passes only on a second try is a flake. Fix its cause (a wait on a fixed delay, a race, work too big for its budget) or quarantine it with an issue.`;
 }
@@ -1039,10 +1021,6 @@ async function withHeavyServer<T>(root: string, steps: readonly Step[], work: ()
   }
 }
 
-/**
- * The command that reruns one step alone, as a line to paste: the run's own junit flags are left
- * out, and an argument with a space is quoted.
- */
 export function rerunCommand(step: Pick<Step, "name" | "command">): string {
   return step.command
     .filter((word) => !word.startsWith("--reporter"))
@@ -1116,10 +1094,8 @@ export function docReaderTests(changed: readonly string[], testFiles: readonly s
   return readers;
 }
 
-/** A test file that imports the CI skip for downloaded models (`games/shared/assetTest.ts`). */
 const MODEL_TEST_SOURCE = /from\s+["'][^"']*\/assetTest(\.ts)?["']/;
 
-/** The test files among `files` that read downloaded models, which verify:fast links before they run. */
 export function modelTestFiles(root: string, files: readonly string[], read: (path: string) => string = (path) => readFileSync(join(root, path), "utf8")): Set<string> {
   const readers = new Set<string>();
   for (const file of files) {

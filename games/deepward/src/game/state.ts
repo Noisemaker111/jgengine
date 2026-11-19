@@ -19,16 +19,12 @@ export const TANK_SECONDS = 110;
 export interface Result { kind: "extracted" | "lost"; dive: number; count: number | null; reason: string; scrip?: number }
 export interface Home {
   version: 5; refits: ("tank" | "reserve")[]; reprintPending: boolean; revision: number; nextDive: number; life: number;
-  /** The diver's own name for the record; absent on saves written before it existed. */
   callsign?: string;
   activeDive: number | null; stash: Item[]; extractions: number; deaths: number; last: Result | null;
-  /** Career scrip: what the counter keeps, and what a Life's haul becomes. */
   bank: CareerBankState;
-  /** Marrow's standing, moved by returning and by dying. */
   standing: StandingState;
   /** Instances that left play; a broken-down item can never be equipped or paid again. */
   ledger: ItemLedgerState;
-  /** The counter's books: every scrip movement with its reason and the balance it produced. */
   books: LedgerState;
   /** The dive session loop's own state, so a reload resumes the run that was outstanding. */
   session?: SessionLoopState;
@@ -36,29 +32,20 @@ export interface Home {
 export interface Dive {
   id: number; elapsed: number; tankSeconds: number; oxygen: number; health: number; cache: PackedItem[];
   collected: string[]; hand: "sidearm" | "service-rifle";
-  /** Rounds the refit issued for this dive's one reserve; the held weapon's magazine draws from it. */
   reservePool: number;
   flash: number; hurt: number;
   print: { at: Point; health: number; mode: "route" | "calling" | "winding"; attack: number; cooldown: number; drop: Point | null };
   channel: { id: string; remaining: number; anchor: Point; kind?: ChannelKind; total?: number } | null;
-  /** The stratum the diver stands in; receiving is the rail's floor. */
   stratum: Stratum;
-  /** Headlamp: lights the dark strata, and lights the diver up for anything that hunts by sight. */
   lamp: boolean;
-  /** Food, water and lures carried on the belt; food and water ride home into Marrow's galley. */
   belt: { ration: number; water: number; lure: number };
-  /** Every creature in Bellwether this Life, by id. A creature put down stays down for the dive. */
   fauna: Record<string, Creature>;
-  /** Times each resource node has been worked this Life. */
   harvested: Record<string, number>;
-  /** Lures on the floor: where each landed and how long its blood keeps calling. */
   thrown: { id: string; at: Point; remaining: number }[];
   /** Seconds of ink still on the suit: a courier can smell it. */
   inked: number;
 }
-/** What a held E (or C) is doing: searching a locker, working a node, scanning, or taking a supply. */
 export type ChannelKind = "search" | "harvest" | "scan" | "supply" | "creature" | "zero";
-/** What the dive starts with beyond the refits: the base's air, carried lures and the crawler's landing. */
 export interface DiveStart { airBonus?: number; lures?: number; stratum?: Stratum }
 export function newHome(): Home {
   return {
@@ -119,10 +106,8 @@ export function pack(cache: readonly PackedItem[], item: Item): PackedItem | nul
   }
   return null;
 }
-/** What an empty square, the weight gate or an already-searched source refused, in the player's words. */
 export type LootRefusal = "taken" | "over-capacity" | "grid-full";
 export type Looted = { ok: true; dive: Dive } | { ok: false; reason: LootRefusal; message: string };
-/** The instance a source would yield in this Life; extraction and the pre-search check roll the same one. */
 export function peekLoot(dive: Dive, source: string, kind: ItemKind, depth = 1): Item {
   return rollItem(kind, depth, `deepward:${dive.id}:${source}`, `${dive.id}:${source}`);
 }
@@ -147,7 +132,6 @@ export function settle(home: Home, dive: Pick<Dive, "id" | "cache">, kind: Resul
   return { ...settlement.result, session: loop.snapshot() };
 }
 
-/** The boundary's own rule: the shared haul banks what the stash takes or loses it with the Life. */
 function settleDive(home: Home, dive: Pick<Dive, "id" | "cache">, kind: Result["kind"], reason: string): Home {
   const carried: Item[] = dive.cache.map(({ x: _x, y: _y, rotated: _rotated, ...item }) => item);
   const moved = kind === "extracted" ? bankHaul(carried, home.stash) : { banked: [], refused: loseHaul(carried) };
@@ -163,7 +147,6 @@ export function recoverInterrupted(home: Home): Home {
   const lost = settle(home, { id: home.activeDive, cache: [] }, "lost", "Radio lost during a dive. The Life ended; its carried haul stayed in Bellwether.");
   return { ...lost, last: { ...lost.last!, count: null } }; // Carried instances were never persisted mid-dive.
 }
-/** What else is wearing on the diver this tick: crush, hunger, thirst, and how hard the air works. */
 export interface Wear { damage?: number; airRate?: number }
 export function ageDive(dive: Dive, dt: number, steam: boolean, wear: Wear = {}): Dive {
   if (!(dt > 0) || !Number.isFinite(dt)) return dive;

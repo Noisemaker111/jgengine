@@ -9,9 +9,7 @@ import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
-/** Props for {@link WorldFloatingText}. */
 export interface WorldFloatingTextProps extends FloatingTextLayoutOptions {
-  /** The core field to render (`createFloatingTextField`). */
   field: FloatingTextField;
   /**
    * Advance the field each frame with the render delta. Leave `true` for a
@@ -19,26 +17,13 @@ export interface WorldFloatingTextProps extends FloatingTextLayoutOptions {
    * field so it advances exactly once per fixed step.
    */
   advance?: boolean;
-  /** Per-`kind` art direction merged over the defaults (color, font, shadow). */
   styleFor?: (view: FloatingTextView) => CSSProperties;
   /** Base font size in px at `size === 1`. Default 20. */
   fontSizePx?: number;
-  /** Class on the overlay layer. */
   className?: string;
 }
 
-
-/**
- * One-line drop-in for world-anchored floating text: mounts inside the scene,
- * (optionally) advances a core {@link FloatingTextField} each frame, samples the
- * live camera to project every live entry to the screen, and renders
- * `@jgengine/ui`'s {@link FloatingText} through a fullscreen `<Html>` overlay.
- * This is the turnkey way a game gets damage numbers / heal pops / XP gains
- * from its own field without wiring projection by hand — the camera binding,
- * viewport culling, and depth stacking come for free. Skin per `kind` with `styleFor`.
- *
- * @capability floating-text Drop-in that advances a floating-text field and renders it camera-projected over the scene
- */
+/** @capability floating-text Drop-in that advances a floating-text field and renders it camera-projected over the scene */
 export function WorldFloatingText({
   field,
   advance = true,

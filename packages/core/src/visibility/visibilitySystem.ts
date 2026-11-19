@@ -25,31 +25,20 @@ import type { Vec3 } from "../world/geometry";
 export interface Renderable {
   readonly id: string;
   readonly position: Vec3;
-  /** Bumps when transform, geometry, bounds, or overrides change — gates bounds/override recompute. */
   readonly version: number;
   readonly bounds?: BoundsSpec;
   readonly overrides?: ObjectVisibilityOverrides | undefined;
   readonly layer?: string;
-  /** Fast-path exemption for UI, skyboxes, debug overlays, camera-attached, marked always-visible. */
   readonly alwaysVisible?: boolean;
-  /** Asset ids this object needs loaded; feeds the streaming preload/retain sets. */
   readonly assets?: readonly string[];
 }
 
-/** One group of renderables a {@link VisibilitySystem} walks, such as the scene's actors or its props. */
 export interface RenderableSource {
-  /** Every renderable of the group. */
   readonly renderables: () => Iterable<Renderable>;
-  /**
-   * Moves whenever a renderable of the group is added, removed or changed. The group is walked only on
-   * an update where it moved, so still props cost nothing while actors walk. Without it the group is
-   * walked on every update.
-   */
   readonly revision?: () => number;
 }
 
 export interface VisibilitySystemOptions {
-  /** The scene's renderables, in groups; an id belongs to one group. */
   readonly sources: readonly RenderableSource[];
   readonly cameras: () => readonly CameraVisibilityContext[];
   readonly settings?: Partial<CullingSettings>;
@@ -70,20 +59,10 @@ export interface IdSet extends Iterable<string> {
 }
 
 export interface VisibilityResult {
-  /** Objects to submit to the renderer this frame. Valid until the next `update()` (reused set). */
   readonly visible: IdSet;
-  /** Objects within the preload region — load their assets, whether or not they render. */
   readonly preload: IdSet;
   readonly stats: VisibilityStats;
-  /**
-   * Counts the updates whose visible set differed from the one before. Unchanged means every id
-   * visible last update is visible now and no other, so work keyed on the visible set can be skipped.
-   */
   readonly generation: number;
-  /**
-   * The ids whose visibility differs from the update before: the ones that entered `visible` and the
-   * ones that left it. Empty when the set is unchanged. Valid until the next `update()` (reused array).
-   */
   readonly changed: readonly string[];
 }
 
@@ -117,29 +96,19 @@ interface ObjRecord {
   dynamic: boolean;
   assets: readonly string[] | undefined;
   lastSeen: number;
-  /** The spatial index already holds this version's bounds. */
   indexed: boolean;
   /** The bounds the index holds for it, kept here so the per-frame loop does no second lookup. */
   bounds: RenderBounds | undefined;
-  /** The last evaluation that considered it, so several cameras count it once. */
   considered: number;
-  /** The last evaluation that drew it, and the one before that: the previous frame's set without a set lookup. */
   visibleIn: number;
   priorVisibleIn: number;
-  /** The last evaluation that put it in the preload set. */
   preloadIn: number;
-  /** The four inputs `resolved` was computed from; identical inputs skip the resolve. */
   ov: ObjectVisibilityOverrides | undefined;
   ol: ObjectVisibilityOverrides | undefined;
   os: ObjectVisibilityOverrides | undefined;
   og: ObjectVisibilityOverrides | undefined;
 }
 
-/**
- * The ids one evaluation put in a set, listed once each: membership is read from a stamp on the id's
- * record, so filling it costs a push, where a `Set` cleared and refilled every frame regrew its table
- * from empty. Ids without a record (none in practice) go in `loose`.
- */
 class StampedIds implements IdSet {
   list: string[] = [];
   readonly loose = new Set<string>();
@@ -165,7 +134,6 @@ class StampedIds implements IdSet {
   }
 }
 
-/** What one source's last walk found: its revision then, its ids in walk order and its always-visible ones. */
 interface SourceWalk {
   revision: number;
   ids: string[];
@@ -173,7 +141,6 @@ interface SourceWalk {
   always: Renderable[];
 }
 
-/** Numbers per camera that {@link sameCameras} compares: everything an evaluation reads from it. */
 const CAMERA_STRIDE = 18;
 
 function writeCamera(out: Float64Array, offset: number, camera: CameraVisibilityContext): void {
@@ -266,7 +233,6 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     return resolved.bounds ?? r.bounds ?? DEFAULT_BOUNDS;
   }
 
-  /** Records whose overrides carry a `customVisibility`, which may answer differently for the same inputs. */
   let customRecords = 0;
 
   function recordFor(r: Renderable): ObjRecord {
@@ -318,10 +284,6 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
   const walks: SourceWalk[] = options.sources.map(() => ({ revision: Number.NaN, ids: [], spare: [], always: [] }));
   let trackedObjects = 0;
 
-  /**
-   * Walk every source whose revision moved: refresh its records and index entries, and drop the ids its
-   * last walk had that this one did not. True when any source was walked.
-   */
   function maintain(): boolean {
     let walkedAny = false;
     for (let s = 0; s < walks.length; s += 1) {
@@ -373,7 +335,6 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
   // The entered ids, then (once the evaluation is done) the ones that left.
   const changed: string[] = [];
 
-  /** Draw `id` this evaluation; `record` carries the stamps that answer "drawn last frame?". */
   function show(id: string, record: ObjRecord | undefined): void {
     if (record === undefined) {
       if (visible.loose.has(id)) return;
@@ -393,7 +354,6 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     }
   }
 
-  /** Preload `id` this evaluation. */
   function preloadId(id: string, record: ObjRecord | undefined): void {
     if (record === undefined) preload.loose.add(id);
     else if (record.preloadIn !== consideredCounter) {
@@ -402,7 +362,6 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     }
   }
 
-  /** Whether the last evaluation drew it: the frame hysteresis holds an object in. */
   function shownLastFrame(record: ObjRecord): boolean {
     const last = consideredCounter - 1;
     return record.visibleIn === last || (record.visibleIn === consideredCounter && record.priorVisibleIn === last);

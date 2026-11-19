@@ -89,9 +89,7 @@ export type GameRuntime = {
    * and nothing else. Missing scopes load only the actor and no chunks; `{}` explicitly requests all state.
    */
   commandScope: (commandName: string, input: unknown, actorUserId: string) => CommandScope | undefined;
-  /** Who may send a command, or `undefined` when the runtime has no command by that name. */
   commandAccess: (commandName: string) => CommandAccess | undefined;
-  /** What a join has to hydrate. `undefined` means the whole world, as when `onNewPlayer` is unscoped. */
   joinScope: (userId: string, isNew: boolean) => CommandScope | undefined;
   /** `nowMs` is the host wall clock at the start of the tick, in ms; defaults to `Date.now()`. */
   tick: (snapshot: GameRuntimeSnapshot, dtSeconds: number, nowMs?: number) => GameRuntimeSnapshot;
@@ -233,7 +231,6 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
   };
 }
 
-/** Seed a fresh player through the same onNewPlayer hook as joining, without hydrating or modifying a world. */
 export function initialPlayerState(runtime: GameRuntime, userId: string, nowMs: number = Date.now()): RuntimePlayerRow {
   const snapshot = createRuntimeSnapshot({ gameId: runtime.gameId, serverId: "" });
   const initialized = runtime.joinPlayer(snapshot, userId, true, nowMs);

@@ -97,11 +97,7 @@ function isStandard(material: THREE.Material): material is THREE.MeshStandardMat
   return (material as THREE.MeshStandardMaterial).isMeshStandardMaterial === true;
 }
 
-/**
- * Whether the procedural surface pass suits this material: an opaque standard/physical surface without
- * its own normal map (flat colour, vertex colour, or a palette-atlas texture like KayKit's).
- * @internal
- */
+/** @internal */
 export function modelSurfaceEligible(material: THREE.Material): material is THREE.MeshStandardMaterial {
   return isStandard(material) && material.normalMap === null && !material.transparent && material.alphaTest === 0;
 }
@@ -214,7 +210,7 @@ export function configureModelSurface(enabled: boolean, level: SurfaceDetailLeve
   for (const material of compiled) material.needsUpdate = true;
 }
 
-/** Current model surface-detail level. @internal */
+/** @internal */
 export function modelSurfaceLevel(): SurfaceDetailLevel {
   return activeLevel;
 }

@@ -13,9 +13,7 @@
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 export interface ApngFrame {
-  /** A complete, standalone PNG file. */
   png: Buffer | Uint8Array;
-  /** How long this frame stays on screen during playback. */
   delayMs: number;
 }
 
@@ -98,7 +96,6 @@ function fctlBytes(
  * frames disagree on IHDR (dimensions/bit depth/color type) — the caller
  * captured at inconsistent sizes, which is a bug, not a recoverable state.
  */
-/** A raw capture (screencast/screenshot) with its wall-clock capture time. */
 export interface TimedPng {
   png: Buffer;
   /** Capture time in milliseconds (any consistent epoch). */

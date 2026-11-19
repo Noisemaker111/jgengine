@@ -1,7 +1,6 @@
 import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
 import { runHabitTrial, runTrial } from "./speciesTrial";
 
-/** A worker that grows one species trial per message, for the fit's worker pool. */
 declare const self: Worker;
 
 interface Request {

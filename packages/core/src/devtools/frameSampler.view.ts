@@ -20,7 +20,6 @@ declare module "../runtime/pageHandle" {
  * here runs on the hot path.
  */
 
-/** Query flag selecting off, local-only, or the dev-server sampler. */
 export const TELEMETRY_FLAG = "telemetry";
 
 /** Local diagnosis never probes or pushes to a server. @internal */
@@ -32,12 +31,10 @@ export async function frameTelemetryMode(flag: string | null, probe: () => Promi
 }
 /** How long after the sampler starts the GL counters get their post-warmup baseline. */
 export const TELEMETRY_WARMUP_MS = 5_000;
-/** How long the page waits for the dev server's report route before running without telemetry. */
 export const REPORT_PROBE_TIMEOUT_MS = 30_000;
 /** Cadence of the push to the dev server, in milliseconds. */
 export const REPORT_PUSH_MS = 1_000;
 
-/** GPU-object creation counts, the fields the budget gate compares. */
 export interface GlCounterTotals {
   programsLinked: number;
   framebuffers: number;
@@ -101,7 +98,6 @@ export function countSceneNodes(scene: unknown): { nodes: number | null; scenes:
   }
 }
 
-/** Everything the report needs, gathered by whichever producer is asking. */
 export interface FrameReportInputs {
   game: string;
   gpu: string;
@@ -211,7 +207,6 @@ export interface FrameTelemetrySources {
   push?: boolean;
 }
 
-/** The installed sampler: ask it for a report, reset its window, or tear it down. */
 export interface FrameSampler {
   report(): PerfReport;
   resetWindow(): void;
@@ -254,7 +249,6 @@ export async function probeReportRoute(
   game = "",
   fetchImpl: typeof fetch | null = typeof fetch === "function" ? fetch : null,
   timeoutMs = REPORT_PROBE_TIMEOUT_MS,
-  /** The page's cookies; `null` outside a browser, where only `fetchImpl` decides. */
   cookie: string | null = typeof document === "undefined" ? null : document.cookie,
 ): Promise<boolean> {
   if (fetchImpl === null) return false;

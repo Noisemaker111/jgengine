@@ -190,7 +190,6 @@ export type GameEngineAction =
   | ProgressAction
   | GameEffectsAction;
 
-/** Canonical action constructors — single source for dispatch `type` strings. */
 export const engineActions = {
   bootstrapStart: (): GameSessionAction => ({ type: "BOOTSTRAP_START" }),
   bootstrapSuccess: (gameId: string): GameSessionAction => ({ type: "BOOTSTRAP_SUCCESS", gameId }),
@@ -237,7 +236,6 @@ export interface GameEngineEventMap {
 }
 
 export type GameEngineEventName = keyof GameEngineEventMap;
-
 
 export type GameFeature = StateFeature<GameEngineState, GameEngineAction, GameEngineEventMap>;
 

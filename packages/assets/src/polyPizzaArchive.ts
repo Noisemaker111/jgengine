@@ -3,20 +3,17 @@ import { strToU8, zipSync } from "fflate";
 import type { FetchLike } from "./download";
 import type { PolyPizzaBundleDownload } from "./manifest";
 
-/** One model card on a Poly Pizza bundle page. */
 export interface PolyPizzaModel {
-  /** Poly Pizza model id: the page is `poly.pizza/m/<id>`. */
   id: string;
   title: string;
   /** Static resource id: the model is `static.poly.pizza/<resource>.glb`. */
   resource: string;
-  /** The licence chip on the card, e.g. "CC0" or "CC-BY". */
   license: string;
 }
 
 const USER_AGENT = { "user-agent": "Mozilla/5.0 (jgengine asset mirror)" };
 
-/** Parse every model card on a Poly Pizza bundle page. @internal */
+/** @internal */
 export function parsePolyPizzaBundle(html: string): PolyPizzaModel[] {
   const models: PolyPizzaModel[] = [];
   const seen = new Set<string>();
@@ -30,7 +27,6 @@ export function parsePolyPizzaBundle(html: string): PolyPizzaModel[] {
   return models;
 }
 
-/** A model's title as a file name: "Character Soldier" -> "Character_Soldier". */
 function fileStem(title: string): string {
   return title.replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }

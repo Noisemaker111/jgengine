@@ -39,7 +39,6 @@ export const HARBOR_DECALS: ImpactDecalsConfig = {
   },
 };
 
-/** The hit marker over the street: a quick tick, longer for a crit, longest for a takedown. */
 export const HARBOR_HIT_MARKER: HitMarkerTiming = {
   lifeMs: { hit: 200, crit: 260, kill: 420 },
   popMs: 120,

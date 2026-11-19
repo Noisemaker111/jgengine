@@ -7,7 +7,6 @@ import { RuneGlyph, RuneLabel, RuneView } from "@jgengine/core/ui/rune/primitive
 import { itemDef, itemLabel } from "../data/items";
 import { itemIconKey } from "../data/itemIcons";
 
-/** Our own item tiles: a colour per kind under a game-icons.net glyph (ARK's painted icons are theirs). */
 const KIND_COLOR: Record<string, string> = {
   resource: "#8a6a3c",
   consumable: "#a33b4a",
@@ -42,10 +41,6 @@ function initials(label: string): string {
   return words.length === 1 ? label.slice(0, 2) : words.map((word) => word[0]).join("").slice(0, 3);
 }
 
-/**
- * game-icons.net files are a black 512 square with the glyph in white paths. The native glyph takes the
- * white paths alone, scaled into its 24-unit view and tinted with `currentColor`.
- */
 export function glyphArtwork(svg: string): string | null {
   const paths = [...svg.matchAll(/<path\b[^>]*\bd="([^"]+)"[^>]*>/g)].filter((match) => /fill="#fff(?:fff)?"/i.test(match[0])).map((match) => match[1]);
   if (paths.length === 0) return null;

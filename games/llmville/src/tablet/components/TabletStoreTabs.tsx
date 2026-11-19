@@ -14,7 +14,6 @@ const STORE_TAB_LABELS: Record<TabletStoreTabId, string> = {
   operator: "Operator",
 };
 
-/** The store's departments; the tutorial can lock all but one and point at it. */
 export function TabletStoreTabs({ activeStoreTab, tutorialLock, isStoreTabAllowed, onOpenStoreTab }: {
   activeStoreTab: TabletStoreTabId;
   tutorialLock: TabletTutorialLock | null;

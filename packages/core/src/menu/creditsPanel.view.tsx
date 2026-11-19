@@ -9,19 +9,12 @@ import { hudSpace, hudType } from "@jgengine/core/hud/hudTokens";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { MenuScreen } from "@jgengine/core/menu/menuScreen.view";
 
-/** Props for {@link CreditsPanel}. */
 export interface CreditsPanelProps {
-  /** The credits to show — typed lines, generated attribution, or a merge of both. */
   document: CreditsDocument;
-  /** Back to the previous screen (the back button, Escape, B/Circle or Start). */
   onBack: () => void;
-  /** Screen heading. Default `"Credits"`. */
   title?: ReactNode;
-  /** Back button label. Default `"Back"`. */
   backLabel?: string;
-  /** Open state. */
   open?: boolean;
-  /** Artwork or a live scene behind the panel. */
   backdrop?: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -29,13 +22,7 @@ export interface CreditsPanelProps {
   contentStyle?: CSSProperties;
 }
 
-/**
- * A reachable credits screen: the generated or hand-authored {@link CreditsDocument} in a scrollable
- * panel over the scene, with one back affordance that keyboard and gamepad both reach. The game owns
- * the backdrop and the wording; the block keeps the lines HudTheme-skinned and the exit working.
- *
- * @capability credits-panel scrollable, navigable credits screen with a back affordance
- */
+/** @capability credits-panel scrollable, navigable credits screen with a back affordance */
 export function CreditsPanel({
   document,
   onBack,

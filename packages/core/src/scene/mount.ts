@@ -28,7 +28,6 @@ export interface Occupant {
   seatId: string;
 }
 
-/** Occupancy only; register the world's rideables before restoring. */
 export interface MountedRider extends SeatRef {
   riderId: string;
 }
@@ -43,13 +42,6 @@ interface Registered {
   bySeat: Map<string, string>;
 }
 
-/**
- * Mount / rideable control-transfer (issue #83). Registers rideables (each with one or more seats — a
- * control seat drives, the rest ride) and tracks who is on what. It owns no camera or physics: game code
- * reads `cameraTarget(riderId)` to point the follow camera at the mount, and `driveTarget(riderId)` to
- * route that rider's {@link import("../input/axisInput").AxisInput}-driven input at the mount's
- * movement kit — the same seam a horse, a truck, or a shared multi-seat ship all plug into.
- */
 export class MountController {
   private readonly mounts = new Map<string, Registered>();
   private readonly seatOfRider = new Map<string, SeatRef>();
@@ -132,7 +124,6 @@ export class MountController {
     return null;
   }
 
-  /** Entity the follow camera should track for this rider: the mount when seated, else the rider. */
   cameraTarget(riderId: string): string {
     const ref = this.seatOfRider.get(riderId);
     return ref === undefined ? riderId : ref.mountId;
@@ -153,7 +144,6 @@ export class MountController {
     return [...this.seatOfRider].map(([riderId, ref]) => ({ riderId, ...ref }));
   }
 
-  /** Replace occupancy atomically. Invalid, unknown, or duplicate claims leave it unchanged. */
   restore(next: readonly MountedRider[]): void {
     const riders = new Set<string>();
     const claims = new Map<string, Set<string>>();
@@ -179,7 +169,6 @@ export class MountController {
     }
   }
 
-  /** Release every rider, preserving authored registrations. */
   reset(): void {
     this.seatOfRider.clear();
     for (const reg of this.mounts.values()) reg.bySeat.clear();

@@ -2,7 +2,6 @@ import type { UnlockCatalog } from "../game/unlocks";
 import { evaluatePredicate, predicateLeaves, type Predicate, type PredicateFacts } from "../rules/predicate";
 import { standingTracksRead, type Standing } from "./standing";
 
-/** What a gate is evaluated against: `standing.<trackId>` and `balance.<currency>` numbers, plus any fact the game names. */
 export type GateFacts = PredicateFacts;
 
 /**
@@ -14,39 +13,30 @@ export interface GateDef {
   unlock: string;
   label?: string;
   category?: string;
-  /** Over the {@link GateFacts}, e.g. `{ gte: ["standing.park", 20] }`; omitted opens the gate from the start. */
   requires?: Predicate;
 }
 
-/** One gate against live facts. */
 export interface GateStatus {
   gate: GateDef;
   open: boolean;
-  /** The unmet clauses: each failing child of a top-level `all`, or the whole predicate. */
   missing: readonly Predicate[];
 }
 
-/** Evaluated gate content: the table, its status against facts, and the grants a caller applies. */
 export interface GateSet {
   gates(): readonly GateDef[];
   gate(gateId: string): GateDef | null;
   status(facts: GateFacts): readonly GateStatus[];
   isOpen(gateId: string, facts: GateFacts): boolean;
   open(facts: GateFacts): readonly GateDef[];
-  /** Gates met now whose `unlock` is not in `granted` — the unlocks to grant this pass. */
   claim(facts: GateFacts, granted: readonly string[]): readonly GateDef[];
 }
 
-/** Content and the resolvers a {@link GateSet} is built from. */
 export interface GateSetConfig {
   gates: readonly GateDef[];
-  /** The ids an unlock may resolve to; normally the game's content catalog. */
   catalog: Pick<UnlockCatalog, "has">;
-  /** The standing a requirement reads; also validates every requirement's track at load. */
   standing?: Pick<Standing, "hasTrack">;
 }
 
-/** Read a {@link Standing} and a balance record as `standing.*` and `balance.*` {@link GateFacts}. */
 export function gateFacts(
   standing: Pick<Standing, "standings">,
   actorId: string,
@@ -59,7 +49,6 @@ function check(condition: boolean, message: string): void {
   if (!condition) throw new RangeError(message);
 }
 
-/** Check an authored gate table against the content it grants; throws `RangeError` naming the gate. */
 export function assertGates(config: GateSetConfig): void {
   const ids = new Set<string>();
   for (const gate of config.gates) {

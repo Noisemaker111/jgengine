@@ -3,15 +3,8 @@ import type { AxisInput } from "../input/axisInput";
 import type { VehicleDynamicsModifiers } from "./vehicleDynamics";
 import type { VehicleSpec } from "./vehicleSpec";
 
-/**
- * Handling change one damage zone applies at its *last* stage. Multiplier fields read `1` = undamaged,
- * and a zone part-way through its stages gets the fraction between; `steerPull` and `drag` are additive
- * and reach their full value only at the last stage.
- */
 export interface VehicleDamageEffect {
-  /** Tire grip multiplier at full damage (`< 1` loses grip). */
   gripScale?: number;
-  /** Drive-force multiplier at full damage. */
   engineScale?: number;
   brakeScale?: number;
   topSpeedScale?: number;
@@ -30,17 +23,14 @@ export interface VehicleDamageZone {
   id: string;
   /** Local body point in metres (x right, y up, z forward); picks the zone nearest an impact and anchors the dent. */
   at: readonly [number, number, number];
-  /** Impulse thresholds; the count is the zone's stage count, and the last stage is fully damaged. */
   thresholds: readonly number[];
   /** Dent displacement in metres at the last stage, scaled by stage. Omit for a zone that only changes handling. */
   deform?: readonly [number, number, number];
   /** Stage at which the part comes off (the renderer hides or drops it); omit to never detach. */
   detachStage?: number;
-  /** Handling change at the last stage, reached proportionally across the stages. */
   effect?: VehicleDamageEffect;
 }
 
-/** Live state of one zone, as a HUD or a save reads it. */
 export interface VehicleDamageZoneState {
   id: string;
   accumulated: number;
@@ -48,14 +38,12 @@ export interface VehicleDamageZoneState {
   detached: boolean;
 }
 
-/** Serializable damage state: {@link VehicleDamage.restore} needs only this. */
 export interface VehicleDamageState {
   zones: VehicleDamageZoneState[];
   total: number;
   disabled: boolean;
 }
 
-/** A zone crossing a threshold this tick — the event a HUD feed, a smoke puff or a camera shake keys off. */
 export interface VehicleDamageTransition {
   zone: string;
   stage: number;
@@ -71,11 +59,9 @@ export interface VehicleDeformation {
   stage: number;
   /** Local displacement in metres, never larger than the zone's `deform`. */
   offset: readonly [number, number, number];
-  /** The part has come off — the renderer hides or drops it. */
   detached: boolean;
 }
 
-/** Every zone's handling cost summed into one set of numbers (all fields present, defaults filled). */
 export interface VehicleDamageEffectResolved {
   gripScale: number;
   engineScale: number;
@@ -85,12 +71,10 @@ export interface VehicleDamageEffectResolved {
   drag: number;
 }
 
-/** Everything {@link createVehicleDamage} needs. */
 export interface VehicleDamageConfig {
   zones: readonly VehicleDamageZone[];
   /** Total accumulated impulse across every zone that disables the vehicle; omit to never disable. */
   disableAt?: number;
-  /** Called on each threshold crossing, for HUD/feed/audio. */
   onTransition?: (transition: VehicleDamageTransition) => void;
   /** Register a devtools probe under this name so the perf overlay shows the damage summary. */
   devtoolsName?: string;
@@ -110,25 +94,18 @@ export interface VehicleDamage {
    * impact into body space; this module never reads the world.
    */
   hit(local: readonly [number, number, number], impulse: number): readonly VehicleDamageTransition[];
-  /** Add impulse straight to a named zone; null for an unknown zone or a non-positive impulse. */
   impact(zoneId: string, impulse: number): VehicleDamageTransition | null;
   stageOf(zoneId: string): number;
   zones(): readonly VehicleDamageZoneState[];
-  /** Summed handling change across every zone at its current stage. */
   effect(): VehicleDamageEffectResolved;
   /** Bounded visual deformation, one entry per zone that has taken a stage — the render hook. */
   deformation(): readonly VehicleDeformation[];
   total(): number;
   disabled(): boolean;
-  /**
-   * Per-tick modifiers the sim applies for one frame. Use this for a scratch or a reset that should not
-   * rebuild the tuning; for lasting damage call {@link damagedSpec} and `retune` once per change.
-   */
   modifiers(): VehicleDynamicsModifiers;
   snapshot(): VehicleDamageState;
   restore(next: VehicleDamageState): void;
   reset(): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 

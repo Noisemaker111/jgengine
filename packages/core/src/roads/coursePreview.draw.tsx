@@ -22,11 +22,7 @@ function isLayout(value: unknown): value is CourseLayout {
   return typeof value === "object" && value !== null && "spec" in value && "slots" in value && Array.isArray(value.slots);
 }
 
-/**
- * A course's flat top-down layers: the main line, the shortcuts, hazard spans by role, barricades
- * as bars across the road (green jump, red block) and drops as short dashes. `shift` moves every
- * point (the variant tile centres the footprint). @internal
- */
+/** @internal */
 export function courseLayers(layout: CourseLayout, course: RouteCourse = buildCourseLayout(layout), shift: readonly [number, number] = [0, 0]): StreetPreviewLayer[] {
   const at = (route: string, s: number, offset = 0): RoadPoint => {
     const point = course.pointAt(route, s, offset);
@@ -152,11 +148,7 @@ function CourseRoad({ object }: { object: SceneKindObject; context: SceneKindRen
 
 let registered = false;
 
-/**
- * Registers the course generator's variant-tile preview (the layout seen from above: road,
- * shortcuts, hazards by role, barricades and drops) and the `course` kind's road renderer. Loaded on
- * demand with the kind. @internal
- */
+/** @internal */
 export function registerCourseDraw(): void {
   if (registered) return;
   registered = true;

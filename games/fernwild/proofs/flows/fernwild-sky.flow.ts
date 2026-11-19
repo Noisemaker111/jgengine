@@ -1,11 +1,9 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** The south beach below spawn, facing out to sea (yaw 0 looks toward +z); the waterline is at about z 1355. */
 const BEACH: readonly [number, number, number] = [229.5, 1318, 0];
 const WATERLINE: readonly [number, number, number] = [229.5, 1342, 0];
 
-/** The same sea view at each time of day and weather, then the shallows close up. */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

@@ -1,22 +1,14 @@
 import * as THREE from "three";
 
-/** One line of the triangle table: the draws sharing one geometry inside one named model. */
 export interface TriangleLine {
-  /** Model ancestor names plus the mesh name, or the material name when nothing is named. */
   label: string;
-  /** Triangles one instance submits. */
   perInstance: number;
-  /** Instances drawn from this geometry. */
   instances: number;
-  /** Draw calls this line costs. */
   draws: number;
-  /** `perInstance * instances` - the triangles this line puts in the frame. */
   triangles: number;
 }
 
-/** Where one scene's triangles are, biggest line first. */
 export interface TriangleAttribution {
-  /** Every triangle the scene graph would submit for one camera pass, instances included. */
   triangles: number;
   /** How many of those belong to meshes that cast shadows, so the shadow pass pays them again. */
   casters: number;
@@ -94,12 +86,7 @@ export function attributeTriangles(root: THREE.Object3D, limit = 12): TriangleAt
   return { triangles, casters, lines: limit > 0 ? sorted.slice(0, limit) : sorted };
 }
 
-/**
- * The `render/triangles` probe for one scene: the table, its two headline numbers, and the one-line
- * summary a report prints. Reads the graph on every call, so wrap it in a short cache when a
- * snapshot reads counters and state together.
- * @internal
- */
+/** @internal */
 export function triangleProbe(root: THREE.Object3D): {
   table(): TriangleAttribution;
   counters(): Record<string, number>;

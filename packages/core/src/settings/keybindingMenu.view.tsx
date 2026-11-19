@@ -6,35 +6,21 @@ import type { RebindRow, RebindSession } from "@jgengine/core/input/rebindSessio
 import { Keycap } from "@jgengine/core/input/keyHint.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
-/**
- * Subscribe to a rebind session and re-render on every change (capture, reset,
- * arm/disarm, restore). Returns the session unchanged for convenient inline use.
- *
- * @capability use-rebind-session UI hook that re-renders a component whenever a rebind session changes
- */
+/** @capability use-rebind-session UI hook that re-renders a component whenever a rebind session changes */
 export function useRebindSession(session: RebindSession): RebindSession {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => session.subscribe(bump), [session]);
   return session;
 }
 
-/** Reskin tokens for {@link KeybindingMenu}. All fall back to HudTheme `--jg-*` vars. */
 export interface KeybindingMenuTheme {
-  /** Panel background. Default reads `--jg-frame-bg`. */
   bg?: string;
-  /** Panel border. Default reads `--jg-frame-border`. */
   border?: string;
-  /** Corner radius. Default reads `--jg-frame-radius`. */
   radius?: string;
-  /** Row label text color. */
   text?: string;
-  /** Muted text (hints, secondary). */
   muted?: string;
-  /** Accent for the armed row + focus glow. Default reads `--jg-accent`. */
   accent?: string;
-  /** Conflict highlight color. */
   conflict?: string;
-  /** Font family. */
   fontFamily?: string;
 }
 
@@ -51,37 +37,19 @@ function resolveTheme(theme: KeybindingMenuTheme | undefined): Required<Keybindi
   };
 }
 
-/** Props for {@link KeybindingMenu}. */
 export interface KeybindingMenuProps {
-  /** The rebind session to edit. */
   session: RebindSession;
-  /** Reskin tokens (fall back to HudTheme). */
   theme?: KeybindingMenuTheme;
-  /** Heading shown above the list. Default `"Controls"`. */
   title?: ReactNode;
-  /** Label for the reset-all button. Default `"Reset All"`. */
   resetAllLabel?: string;
   /** Prompt shown in a row that is armed for capture. Default `"Press a key…"`. */
   capturePrompt?: string;
-  /** Called after a successful rebind or reset — e.g. persist `session.overrides()`. */
   onChange?: (session: RebindSession) => void;
   className?: string;
   style?: CSSProperties;
 }
 
-/**
- * A drop-in controls-settings surface for a {@link RebindSession}: one row per
- * action showing its label and current key glyph. Clicking a row arms capture
- * ("Press a key…") and a window `keydown` listener feeds the pressed
- * `event.code` to `session.capture`; rows that collide with another action show
- * a conflict badge; `locked` actions show a lock mark and no capture button;
- * each row has a Reset button and the panel has a Reset-all button. Presentation only — all conflict/capture/reset logic lives in the core
- * session, and action ids/labels are the game's free strings. Reskin via
- * {@link KeybindingMenuTheme} or ambient HudTheme tokens. A game owns its overall
- * settings layout; this is the reusable controls block it drops in.
- *
- * @capability keybinding-menu drop-in controls-settings surface over a rebind session — click-to-capture rows with key glyphs, conflict badges, per-row and reset-all, HudTheme-skinnable
- */
+/** @capability keybinding-menu drop-in controls-settings surface over a rebind session — click-to-capture rows with key glyphs, conflict badges, per-row and reset-all, HudTheme-skinnable */
 export function KeybindingMenu({
   session,
   theme,

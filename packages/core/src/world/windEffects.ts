@@ -1,15 +1,7 @@
 // @skill jgengine-world
-/**
- * The physical terms a {@link windField} can carry, each its own effect with its own `strength`:
- * a mean speed that grows with height over the ground's roughness (the logarithmic law), and gusts
- * drawn from the along-wind turbulence spectrum, both as EN 1991-1-4 (Eurocode 1, wind actions)
- * gives them. `scripts/reference/environment/windProfile.ts` reproduces the published numbers.
- *
- * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
- */
+/** @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial */
 import { hashUnit } from "../random/rng";
 
-/** The ground a wind blows over, by EN 1991-1-4 Table 4.1 terrain category: sea (0), open grass (II), forest (III), city (IV). */
 export type WindSurfaceClass = "openWater" | "grass" | "forest" | "city";
 
 /** Roughness of one surface class: roughness length z₀ and the height below which the profile stops falling, both metres. */
@@ -18,7 +10,6 @@ export interface WindSurfaceRoughness {
   minHeightM: number;
 }
 
-/** EN 1991-1-4 Table 4.1: z₀ and z_min per terrain category. */
 export const WIND_SURFACE_ROUGHNESS: Readonly<Record<WindSurfaceClass, WindSurfaceRoughness>> = {
   openWater: { roughnessLengthM: 0.003, minHeightM: 1 },
   grass: { roughnessLengthM: 0.05, minHeightM: 2 },
@@ -33,7 +24,6 @@ export const WIND_SURFACE_ROUGHNESS: Readonly<Record<WindSurfaceClass, WindSurfa
  */
 export interface WindProfileEffect {
   strength?: number;
-  /** Height the field's `speed` is measured at, m. Default 10 (the meteorological standard). */
   referenceHeightM?: number;
 }
 
@@ -45,21 +35,14 @@ export interface WindProfileEffect {
  */
 export interface WindGustEffect {
   strength?: number;
-  /** Turbulence intensity I_v; default the surface class's 1/ln(z/z₀) at each height (EN 1991-1-4 eq. 4.7, k_I = c₀ = 1). */
   intensity?: number;
-  /** Turbulence length scale at 10 m, m; default EN 1991-1-4 eq. B.1 for the surface class. */
   scaleLengthM?: number;
-  /** Spectral components summed; more is smoother and costs more per sample. Default 32. */
   components?: number;
 }
 
-/** The physical effects a wind field carries; one optional field on `WindFieldConfig`. Plain data. */
 export interface WindEffects {
-  /** Surface class the effects read their roughness from. Default `"grass"`. */
   surface?: WindSurfaceClass;
-  /** Roughness length z₀ override, m. */
   roughnessLengthM?: number;
-  /** Minimum height override, m. */
   minHeightM?: number;
   profile?: WindProfileEffect;
   gusts?: WindGustEffect;
@@ -71,10 +54,7 @@ function dial(value: number | undefined): number {
   return value;
 }
 
-/**
- * The roughness a set of effects resolves to.
- * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
- */
+/** @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial */
 export function windRoughness(effects: Pick<WindEffects, "surface" | "roughnessLengthM" | "minHeightM">): WindSurfaceRoughness {
   const base = WIND_SURFACE_ROUGHNESS[effects.surface ?? "grass"];
   return { roughnessLengthM: effects.roughnessLengthM ?? base.roughnessLengthM, minHeightM: effects.minHeightM ?? base.minHeightM };
@@ -85,20 +65,14 @@ function clampHeight(heightM: number, roughness: WindSurfaceRoughness): number {
   return Number.isFinite(heightM) ? Math.min(1e5, Math.max(floor, heightM)) : floor;
 }
 
-/**
- * Mean speed at `heightM` over the mean speed at the reference height, raised to the profile strength.
- * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
- */
+/** @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial */
 export function windProfileFactor(heightM: number, roughness: WindSurfaceRoughness, referenceHeightM = 10, strength = 1): number {
   const z0 = roughness.roughnessLengthM;
   const ratio = Math.log(clampHeight(heightM, roughness) / z0) / Math.log(clampHeight(referenceHeightM, roughness) / z0);
   return strength === 0 ? 1 : ratio ** strength;
 }
 
-/**
- * Turbulence intensity I_v(z) = 1 / ln(z/z₀) (EN 1991-1-4 eq. 4.7 with k_I = c₀ = 1).
- * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
- */
+/** @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial */
 export function windTurbulenceIntensity(heightM: number, roughness: WindSurfaceRoughness): number {
   return 1 / Math.log(clampHeight(heightM, roughness) / roughness.roughnessLengthM);
 }
@@ -112,18 +86,12 @@ export function windTurbulenceScale(heightM: number, roughness: WindSurfaceRough
   return 300 * (clampHeight(heightM, roughness) / 200) ** alpha;
 }
 
-/**
- * The non-dimensional along-wind spectrum S_L(f_L) = n S(n)/σ² = 6.8 f_L / (1 + 10.2 f_L)^(5/3) (EN 1991-1-4 eq. B.2).
- * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
- */
+/** @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial */
 export function windGustSpectrum(fL: number): number {
   return fL <= 0 ? 0 : (6.8 * fL) / (1 + 10.2 * fL) ** (5 / 3);
 }
 
-/**
- * Share of the gust variance below f_L: the closed-form integral of {@link windGustSpectrum}, 1 − (1 + 10.2 f_L)^(−2/3).
- * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
- */
+/** @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial */
 export function windGustVarianceBelow(fL: number): number {
   return fL <= 0 ? 0 : 1 - (1 + 10.2 * fL) ** (-2 / 3);
 }
@@ -168,7 +136,6 @@ export function windGustSynthesis(components: number, seed: string): WindGustSyn
   return { frequencies, amplitudes, phases };
 }
 
-/** The prepared effects a field samples each call. */
 export interface PreparedWindEffects {
   readonly roughness: WindSurfaceRoughness;
   readonly referenceHeightM: number;
@@ -177,16 +144,12 @@ export interface PreparedWindEffects {
   readonly gustIntensity: number | undefined;
   readonly gustScaleLengthM: number | undefined;
   readonly synthesis: WindGustSynthesis | null;
-  /** Mean speed at `heightM` for a field whose reference-height mean is `speed`. */
   meanAt(speed: number, heightM: number): number;
   /** Along-wind gust, m/s, at `heightM`, mean speed `mean`, time `t` and downwind distance `along`. */
   gustAt(mean: number, heightM: number, t: number, along: number): number;
 }
 
-/**
- * Resolve effects once for a field.
- * @internal
- */
+/** @internal */
 export function prepareWindEffects(effects: WindEffects, seed: string): PreparedWindEffects {
   const roughness = windRoughness(effects);
   if (!(roughness.roughnessLengthM > 0) || !Number.isFinite(roughness.roughnessLengthM)) throw new Error("wind roughnessLengthM must be finite and > 0");

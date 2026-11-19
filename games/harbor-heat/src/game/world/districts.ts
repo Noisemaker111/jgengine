@@ -18,9 +18,7 @@ export interface District {
 export interface RoadSegment {
   from: readonly [number, number];
   to: readonly [number, number];
-  /** Authored carriageway width; an avenue carries four lanes, a side street two. */
   width: number;
-  /** Authored street class — the lane graph's speed policy and the traffic system's density read it. */
   level: string;
 }
 
@@ -65,11 +63,6 @@ export interface Promenade {
   points: readonly (readonly [number, number])[];
 }
 
-/**
- * Palm-lined walks authored as `promenade` paths in the scene document — the beachfront boardwalk
- * and the Palm Heights villa row. `setup.ts` steps each polyline and dresses it, so re-routing the
- * boardwalk is dragging a path in the editor, not editing a coordinate loop in TypeScript.
- */
 export const PROMENADES: readonly Promenade[] = editorLayers.paths
   .filter((path) => path.kind === "promenade")
   .map((path) => ({
@@ -119,7 +112,6 @@ export const PLAYER_SPAWN: readonly [number, number, number] =
 /** Authored facing of the spawn marker — what the player, and so the chase camera, opens looking at. */
 export const PLAYER_SPAWN_YAW: number = authoredSpawnRotation(editorLayers);
 export const MARCO_POS: readonly [number, number, number] = markerXYZ("marco");
-/** Inez Corvo holds court at the Riptides' yard. */
 export const INEZ_POS: readonly [number, number, number] = markerXYZ("riptide_yards");
 export const GUNSHOP_POS: readonly [number, number, number] = markerXYZ("gunshop");
 export const GARAGE_POS: readonly [number, number, number] = markerXYZ("garage");
@@ -149,7 +141,6 @@ export interface StashSpot {
   position: readonly [number, number, number];
 }
 
-/** Hidden-stash pickups scattered across the isle — the repeatable "collect them all" side hunt. */
 export const STASH_SPOTS: readonly StashSpot[] = editorLayers.markers
   .filter((marker) => marker.kind === "stash")
   .map((marker) => ({

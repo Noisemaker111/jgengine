@@ -37,19 +37,11 @@ function arcConfig(count: number, arc: RadialArc | undefined): {
 /** One wedge of a radial menu — geometry for rendering a slice. Angles are radians from "up" (−Y), clockwise. */
 export interface RadialSlice {
   index: number;
-  /** Angle at the slice's center. */
   centerAngle: number;
-  /** Leading edge angle. */
   startAngle: number;
-  /** Trailing edge angle. */
   endAngle: number;
 }
 
-/**
- * Divide a ring (or `arc`) into `count` wedges — the geometry a radial/quick
- * menu (weapon wheel, emote arc, ping bar) renders. A full wheel centers index 0
- * at the top; a partial `arc` packs the slices inside its sweep.
- */
 export function radialSlices(count: number, arc?: RadialArc): RadialSlice[] {
   if (count <= 0) return [];
   const { size, centerOf } = arcConfig(count, arc);
@@ -66,7 +58,6 @@ export function radialSlices(count: number, arc?: RadialArc): RadialSlice[] {
   return slices;
 }
 
-/** Map an angle to a slice index; returns -1 when the angle falls outside a partial `arc`. */
 export function radialIndexFromAngle(angle: number, count: number, arc?: RadialArc): number {
   if (count <= 0) return -1;
   const { full, size, startAngle, sweep } = arcConfig(count, arc);
@@ -76,9 +67,7 @@ export function radialIndexFromAngle(angle: number, count: number, arc?: RadialA
   return Math.max(0, Math.min(count - 1, Math.floor(rel / size)));
 }
 
-/** Options for {@link radialIndexFromVector}. */
 export interface RadialVectorOptions extends RadialArc {
-  /** Minimum vector magnitude to register a selection; shorter vectors return null (the neutral center). Default 0. */
   deadZone?: number;
 }
 
@@ -104,7 +93,6 @@ export function radialIndexFromVector(
   return index < 0 ? null : index;
 }
 
-/** Unit-circle position of a slice center (up = `(0, -1)`), scaled by `radius` — where to place a wedge's icon/label. */
 export function radialSlicePosition(index: number, count: number, radius: number, arc?: RadialArc): { x: number; y: number } {
   const { centerOf } = arcConfig(count, arc);
   const angle = count <= 0 ? 0 : centerOf(index);

@@ -15,7 +15,6 @@ import { LlmvilleDatacenter, LlmvilleWorld } from "./scene/components/GameScene"
 import { DEFAULT_APP_KEYBINDS, keybindToCodes } from "./settings/keybinds";
 import sceneJson from "./editor.scene.json";
 
-/** The shell drives these from LLMville's keybinds; every other key stays with the game's own input. */
 const WALK_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump", "sprint", "crouch"] as const;
 
 /**

@@ -7,7 +7,6 @@ import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 import { runSliced, SlicedWorkCancelled } from "@jgengine/core/run/slicedWork";
 import type { NatureMesh, NatureSurface } from "./natureMesh";
 
-/** A generated surface: a baked texture set projected in world space. */
 type BakedSurface = Exclude<NatureSurface, "leaf">;
 
 /**

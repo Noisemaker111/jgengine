@@ -11,7 +11,6 @@ export type HalleOldemanModel = "rauh" | "troll" | "corner" | "leeuwenberg" | "a
  */
 export type CrownForm = "decurrent" | "excurrent" | "columnar" | "weeping";
 
-/** Bark surface kind a style reads to pick its bark material. */
 export type BarkKind = "smooth" | "furrowed" | "plated" | "peeling" | "fibrous" | "scaly";
 
 /**
@@ -21,12 +20,9 @@ export type BarkKind = "smooth" | "furrowed" | "plated" | "peeling" | "fibrous" 
  * blade's width over its length.
  */
 export interface LeafShapeParams {
-  /** Main outline: lobed (maple, oak), ovate (beech), needle, scale, blade, frond, fan. */
   kind: "lobed" | "ovate" | "lanceolate" | "needle" | "scale" | "blade" | "frond" | "fan";
   lobes: number;
-  /** Depth of the sinus between lobes, 0 none .. 1 to the midrib. */
   lobeDepth: number;
-  /** Width over length. */
   aspect: number;
   petioleFraction: number;
 }
@@ -50,7 +46,6 @@ export interface SeasonalColor {
  */
 export interface PlantSpecies {
   id: string;
-  /** Bumped when any value changes; part of every structure cache key. */
   version: number;
   names: { scientific: string; common: Readonly<Record<string, string>> };
   ids: { gbif?: number; usda?: string; wikidata?: string };
@@ -60,40 +55,24 @@ export interface PlantSpecies {
     phyllotaxis: "alternate" | "opposite" | "whorled" | "spiral";
     /** Rotation between successive nodes, degrees (90 for decussate opposite leaves). */
     divergence: number;
-    /**
-     * A tree's crown form, from Silvics of North America; absent for shrubs, palms, ferns and herbs.
-     * Only a decurrent crown divides into codominant stems as its leader weakens.
-     */
     crownForm?: CrownForm;
   };
   growth: {
     /** Borchert–Honda apical control λ in 0..1 of a young plant: the main axis's weight against its laterals. */
     apicalControl: number;
-    /**
-     * λ the plant settles to with age. Decurrent trees (maples, oaks) lose much of their apical control
-     * as they mature and laterals overtake the leader into a rounded crown; excurrent trees (pines,
-     * firs) keep most of it and stay conical (Brown, McAlpine & Kormanik 1967; Wilson 2000).
-     */
     apicalControlMature: number;
-    /** Age in years at which λ has moved halfway from {@link apicalControl} to {@link apicalControlMature}. */
     apicalControlHalfYears: number;
     /** Internode length, metres. */
     internodeMax: number;
     /** Branching angle between a lateral shoot and its parent axis, degrees. */
     branchAngle: number;
     lateralBudsPerNode: number;
-    /** Most internodes one bud makes in a year. */
     maxMetamersPerShoot: number;
     /**
      * Years of the establishment phase: a seedling's growth units start small and reach full size over
      * this many years as its root system builds (Barthélémy & Caraglio 2007). 0 for none.
      */
     establishmentYears: number;
-    /**
-     * Stems the seedling sets at its base: 1 for a single trunk, more for a multi-stemmed tree that
-     * forks at the root collar (Barthélémy & Caraglio 2007, basitony). DBH is then the quadratic sum
-     * of the stems at breast height, as forest inventories measure it.
-     */
     basalStems: number;
     /**
      * A shrub's stems live this many years on average (each one 0.6–1.4 of it), then die and a new
@@ -120,9 +99,7 @@ export interface PlantSpecies {
      */
     vigourIndexWeight: number;
     tropism: {
-      /** Gravitropic pull per metamer towards the axis's set-point angle. */
       gravity: number;
-      /** Factor applied to the gravity pull per branch order. */
       gravityOrderDecay: number;
       /**
        * Gravitropic set-point angle of first-order laterals, degrees from vertical (Digby & Firn 1995):
@@ -136,33 +113,22 @@ export interface PlantSpecies {
        * lets them hang below the horizontal as a weeping crown's do.
        */
       setpointMax: number;
-      /** Pull towards the least-shaded neighbouring voxel (Palubicki's optimal growth direction). */
       optimal: number;
-      /** Pull along the prevailing wind, per unit wind strength. */
       wind: number;
     };
-    /** Relative light under which a bud does not flush. */
     budLightThreshold: number;
     /** Years a terminal bud survives without flushing. */
     budDeathYears: number;
     /** Years a lateral bud stays able to break before it dies. */
     dormantBudYears: number;
-    /** Years a node keeps bearing leaves on short shoots. */
     spurYears: number;
-    /**
-     * Botanical leaf nodes one grown metamer stands for: a metamer `internodeMax` long carries the
-     * leaves of the real nodes along that length. Absent, 1. Fitted to crown density, not measured.
-     */
     leafNodesPerMetamer?: number;
-    /** Light-field coupling: a·b^-q per voxel layer q, propagated at most `depth` layers. */
     shadow: { a: number; b: number; depth: number };
-    /** Light extinction coefficient k of Beer–Lambert, per unit leaf area index. */
     extinction: number;
     /** Relative bud-direction jitter, radians. */
     jitter: number;
   };
   carbon: {
-    /** Gross light-use efficiency of a leaf in open sky, grams of dry matter per MJ of absorbed PAR. */
     lueGPerMJ: number;
     /**
      * Light (0..1 of open sky) at which a leaf's photosynthesis is half its light-saturated rate. Leaf
@@ -174,28 +140,16 @@ export interface PlantSpecies {
     respiration: number;
     sapwoodRespiration: number;
     rootRespiration: number;
-    /** Fine-root mass per foliage mass. */
     rootPerFoliage: number;
     rootTurnover: number;
-    /**
-     * Share of a node's foliage regrown each year once its leaves outlive `leaf.lifespanYears` (1 for a
-     * deciduous tree re-leafing its spurs). Leaves still within their lifespan were paid for with the
-     * shoot that bore them.
-     */
     foliageTurnover: number;
     /** Construction efficiency: kg of tissue per kg of assimilate. */
     growthEfficiency: number;
-    /** Pipe model: sapwood area per leaf area above (m² per m²). */
     sapwoodPerFoliage: number;
-    /** Share of sapwood that turns into heartwood each year. */
     sapwoodTurnover: number;
-    /** da Vinci exponent n in r^n = Σ r_i^n at a branch join. */
     pipeExponent: number;
-    /** Share of the growth budget spent on flowers and seed once mature. */
     reproductiveShare: number;
-    /** Years a branch may run a carbon deficit before it is shed. */
     pruneDeficitYears: number;
-    /** Coarse-root wood built per unit of above-ground wood. */
     coarseRootShare: number;
     /**
      * Hydraulic limitation (Ryan & Yoder 1997): photosynthesis at height h is scaled by
@@ -211,11 +165,8 @@ export interface PlantSpecies {
   wood: {
     /** Basic density, dry kg per green m³. */
     densityKgM3: number;
-    /** Green mass over dry mass (water load on limbs). */
     greenFactor: number;
-    /** Green modulus of elasticity, GPa. */
     modulusGPa: number;
-    /** Share of each year's bending that reaction wood straightens back (gravimorphism). */
     reactionCompensation: number;
     /** Radius of a fresh shoot, metres. */
     shootRadiusM: number;
@@ -241,15 +192,12 @@ export interface PlantSpecies {
   bark: { kind: BarkKind; smoothUntilYears: number; furrowDepth: number; color: string };
   reproduction: { firstFlowerYears: number; flowerColor?: string; fruitColor?: string; seedMassMg: number };
   phenology: {
-    /** Base temperature of spring forcing, °C. */
     forcingBaseC: number;
     /** Degree-days above the base that bring budburst. */
     forcingSum: number;
     chillingDays: number;
-    /** Day length under which leaves senesce after midsummer, hours. */
     senescencePhotoperiodH: number;
   };
-  /** Where each top-level field came from, for CREDITS.md and later refits. */
   provenance: Readonly<Record<string, { source: PlantSourceId; fitted?: { score: number; against: string } }>>;
 }
 
@@ -278,10 +226,7 @@ const FIELD_RANGES: readonly (readonly [path: string, read: (s: PlantSpecies) =>
   ["limits.maxCrownRadiusM", (s) => s.limits.maxCrownRadiusM, 0.01, 60],
 ];
 
-/**
- * Out-of-range or non-finite fields of a species record, as readable lines; empty when valid.
- * @capability plant-species register and validate plant species records: measured biology as plain data
- */
+/** @capability plant-species register and validate plant species records: measured biology as plain data */
 export function validatePlantSpecies(species: PlantSpecies): string[] {
   const problems: string[] = [];
   if (species.id.length === 0) problems.push("id is empty");
@@ -294,28 +239,19 @@ export function validatePlantSpecies(species: PlantSpecies): string[] {
 
 const registry = new Map<string, PlantSpecies>();
 
-/**
- * Register a species so tools and generators can look it up by id. Throws on an invalid record.
- * @capability plant-species register and validate plant species records: measured biology as plain data
- */
+/** @capability plant-species register and validate plant species records: measured biology as plain data */
 export function registerPlantSpecies(species: PlantSpecies): void {
   const problems = validatePlantSpecies(species);
   if (problems.length > 0) throw new Error(`plant species ${species.id}: ${problems.join("; ")}`);
   registry.set(species.id, species);
 }
 
-/**
- * A registered species, or undefined.
- * @capability plant-species register and validate plant species records: measured biology as plain data
- */
+/** @capability plant-species register and validate plant species records: measured biology as plain data */
 export function plantSpeciesById(id: string): PlantSpecies | undefined {
   return registry.get(id);
 }
 
-/**
- * Every registered species id, sorted.
- * @capability plant-species register and validate plant species records: measured biology as plain data
- */
+/** @capability plant-species register and validate plant species records: measured biology as plain data */
 export function plantSpeciesIds(): string[] {
   return [...registry.keys()].sort();
 }

@@ -21,7 +21,6 @@ function block(lines: readonly string[]): string {
   return [START, ...lines, END].join("\n");
 }
 
-/** Replace the marked block, or insert it where `place` says; `place` gets the text without a block. */
 function upsert(text: string, made: string, place: (text: string) => string): string {
   const start = text.indexOf(START);
   const end = text.indexOf(END);
@@ -49,7 +48,6 @@ function planBlock(game: string, score: GameSuiteScore): string {
   ]);
 }
 
-/** Under the first line (the `# Title`), after one blank line. */
 function underTitle(made: string): (text: string) => string {
   return (text) => {
     const eol = text.indexOf("\n");
@@ -58,7 +56,6 @@ function underTitle(made: string): (text: string) => string {
   };
 }
 
-/** Ahead of the first `## ` section; at the end when there is none. */
 function beforeFirstSection(made: string): (text: string) => string {
   return (text) => {
     const at = text.search(/^## /m);

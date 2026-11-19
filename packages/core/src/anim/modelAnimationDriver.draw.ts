@@ -51,17 +51,12 @@ function graphClipNames(graph: AnimGraph): Set<string> {
   return names;
 }
 
-/** A repairable mismatch between a model animation config and its imported rig. */
 export interface ModelAnimationDiagnostic {
   code: "missing-clip" | "missing-root-track" | "empty-layer-mask" | "incomplete-locomotion" | "missing-auto-idle";
   message: string;
 }
 
-/**
- * Checks clip mappings, masked layers and root-motion assumptions without starting a mixer.
- *
- * @capability model-animation-diagnostics inspect imported clip mappings, layer masks and root-track compatibility
- */
+/** @capability model-animation-diagnostics inspect imported clip mappings, layer masks and root-track compatibility */
 export function diagnoseModelAnimation(
   scene: THREE.Object3D,
   animation: ModelAnimationConfig,
@@ -138,9 +133,7 @@ interface GraphPlayback {
   lastYaw: number | null;
   smoothedSpeed: number;
   params: Record<string, AnimParamValue>;
-  /** Reused per-frame sample of this rig's motion, so posing a rig allocates nothing. */
   step: ModelMotionStep;
-  /** Reused per-frame record of the pose the rig is showing. */
   phase: { clip: string; time: number };
 }
 
@@ -204,7 +197,6 @@ export function readModelAnimationParams(
   return out;
 }
 
-/** Per-layer action key: a masked or additive layer needs its own clip variant even for a clip another layer plays. */
 function actionKey(layer: string, clip: string): string {
   return `${layer}:${clip}`;
 }
@@ -244,7 +236,6 @@ function applyGraphClips(actions: ReadonlyMap<string, THREE.AnimationAction>, cl
   }
 }
 
-/** The clip with the largest weight in one graph output: the pose the rig is mostly showing. */
 function dominantPhase(clips: readonly AnimClipOutput[], out: { clip: string; time: number }): { clip: string; time: number } | undefined {
   let best: AnimClipOutput | undefined;
   for (const entry of clips) {
@@ -256,11 +247,8 @@ function dominantPhase(clips: readonly AnimClipOutput[], out: { clip: string; ti
   return out;
 }
 
-/** A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}. */
 export interface GraphPose {
-  /** Clip durations read from the rig, the `clips` argument `runtime.advance` expects. */
   durations: Readonly<Record<string, { duration: number; rootTrack?: { times: Float32Array; values: Float32Array } }>>;
-  /** Poses the rig with one advance's clip weights and times. */
   apply(clips: readonly AnimClipOutput[], rootMotion?: boolean): void;
   dispose(): void;
 }
@@ -480,7 +468,6 @@ export class ModelAnimationDriver {
     );
   }
 
-  /** Pose the rig for one rendered frame; a no-op when the model has nothing to play. */
   pose(delta: number): void {
     if (!this.active) return;
     const { ctx, instanceId, animation } = this;

@@ -13,20 +13,14 @@
 import { plantExp, plantLog } from "../../plants/growth/plantMath";
 import type { FlowRouting } from "../flow/flowRouting";
 
-/** A least-squares power law y = coefficient · x^exponent fitted in log space. */
 export interface PowerLawFit {
   exponent: number;
   coefficient: number;
-  /** Coefficient of determination of the log-log fit. */
   r2: number;
-  /** Points fitted. */
   count: number;
 }
 
-/**
- * Fit y = c · x^e by least squares on log x, log y over the points where both are positive.
- * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
- */
+/** @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata */
 export function fitPowerLaw(x: ArrayLike<number>, y: ArrayLike<number>): PowerLawFit {
   let n = 0;
   let sx = 0;
@@ -73,10 +67,8 @@ export function upstreamLength(routing: FlowRouting): Float64Array {
   return length;
 }
 
-/** Which cells count as channels: drainage area in m² at least `minArea`, on land, not at an outlet. */
 export interface ChannelSelection {
   minArea: number;
-  /** Largest area to include; default unbounded. */
   maxArea?: number;
 }
 
@@ -93,11 +85,7 @@ function channelCells(routing: FlowRouting, height: ArrayLike<number>, selection
   return out;
 }
 
-/**
- * Flint's slope–area law over channel cells: exponent −θ (θ the concavity) and coefficient k_s (the
- * steepness index).
- * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
- */
+/** @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata */
 export function slopeAreaFit(routing: FlowRouting, height: ArrayLike<number>, selection: ChannelSelection): PowerLawFit & { concavity: number } {
   const { receiver, receiverDistance, area } = routing;
   const cells = channelCells(routing, height, selection);

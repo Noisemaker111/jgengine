@@ -36,7 +36,7 @@ export function markHudCaptureReady(root: { dataset: DOMStringMap }): void {
   if (root.dataset["jgCapture"] === undefined) root.dataset["jgCapture"] = "ready";
 }
 
-/** HUD-only play surface for non-3D shells. @internal */
+/** @internal */
 export function ShellHudPresentation({
   playable,
   ctx,

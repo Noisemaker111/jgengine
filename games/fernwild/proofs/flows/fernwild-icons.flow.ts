@@ -1,7 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** A stocked survivor: the hotbar and the inventory draw game-icons.net item icons. */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

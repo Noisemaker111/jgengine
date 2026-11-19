@@ -1,12 +1,6 @@
-/**
- * Renders an engine UI tree once to an HTML string, with no effects run. Tests
- * read the produced tree through it; the website prerenders through it.
- */
-
 import type { Props, UiNode } from "./element";
 import { Root, type Host } from "./reconciler";
 
-/** A node of the recorded tree: an element with props and children, or text. */
 export interface MarkupNode {
   tag: string | null;
   text: string;
@@ -170,7 +164,6 @@ function write(node: MarkupNode, svg: boolean, out: string[], selection: Readonl
   out.push("</", tag, ">");
 }
 
-/** The recorded tree of one static render: the root's children. */
 export function renderToTree(node: UiNode): MarkupNode[] {
   const container: MarkupNode = { tag: "#root", text: "", props: {}, children: [] };
   const root = new Root<MarkupNode>(markupHost, container, "R", false);

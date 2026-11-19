@@ -4,7 +4,6 @@ import type { Aabb } from "./geometry";
 
 /** Integer cell coordinates used for ownership on the ground plane. */
 export type TerritoryCell = { x: number; z: number };
-/** Cell size, foreign-owner gap, growth price, currency and starter-grant policy. */
 export type TerritoryPolicy = {
   gapCells?: number;
   cellSize?: number;
@@ -31,19 +30,13 @@ function key(cell: TerritoryCell): string {
   if (!Number.isSafeInteger(cell.x) || !Number.isSafeInteger(cell.z)) throw new RangeError("Invalid territory cell");
   return `${cell.x},${cell.z}`;
 }
-/**
- * Persisted chunk key containing one territory cell.
- * @capability territory-cell-chunk Map ownership cells to persisted world chunks.
- */
+/** @capability territory-cell-chunk Map ownership cells to persisted world chunks. */
 export function territoryChunkKey(cell: TerritoryCell, policy: TerritoryPolicy = {}): string {
   key(cell);
   const { cellSize, chunkSize } = checked(policy);
   return chunkKeyAt([cell.x * cellSize, 0, cell.z * cellSize], chunkSize);
 }
-/**
- * Exact chunks needed to validate a footprint and its foreign-owner gap.
- * @capability territory-read-scope Load the footprint and foreign-owner gap without scanning the world.
- */
+/** @capability territory-read-scope Load the footprint and foreign-owner gap without scanning the world. */
 export function territoryChunkKeys(cells: readonly TerritoryCell[], policy: TerritoryPolicy = {}): string[] {
   const { gapCells } = checked(policy);
   const chunks = new Set<string>();
@@ -56,17 +49,11 @@ export function territoryChunkKeys(cells: readonly TerritoryCell[], policy: Terr
   }
   return [...chunks];
 }
-/**
- * Owner of a loaded cell; hosts load the target and gap neighborhood before evaluating claims.
- * @capability territory-owner-query Read a loaded land cell owner for authoritative placement checks.
- */
+/** @capability territory-owner-query Read a loaded land cell owner for authoritative placement checks. */
 export function territoryOwnerOf(snapshot: GameRuntimeSnapshot, cell: TerritoryCell, policy: TerritoryPolicy = {}): string | null {
   return snapshot.chunks[territoryChunkKey(cell, policy)]?.territory?.[key(cell)] ?? null;
 }
-/**
- * Cells touched by a placement, excluding cells that only touch its outer edge.
- * @capability territory-footprint Resolve exactly the ownership cells touched by a placement footprint.
- */
+/** @capability territory-footprint Resolve exactly the ownership cells touched by a placement footprint. */
 export function territoryFootprintCells(bounds: Aabb, cellSize = 1): TerritoryCell[] {
   if (!Number.isFinite(cellSize) || cellSize <= 0 || !Object.values(bounds).every(Number.isFinite) || bounds.maxX <= bounds.minX || bounds.maxZ <= bounds.minZ) throw new RangeError("Invalid territory footprint");
   const cells: TerritoryCell[] = [];
@@ -76,7 +63,6 @@ export function territoryFootprintCells(bounds: Aabb, cellSize = 1): TerritoryCe
   for (let x = minX; x <= maxX; x++) for (let z = minZ; z <= maxZ; z++) cells.push({ x, z });
   return cells;
 }
-/** Price and validate a footprint without mutating or charging; reuse for placement previews. */
 export function planFootprintClaims(snapshot: GameRuntimeSnapshot, userId: string, footprint: readonly TerritoryCell[], policy: TerritoryPolicy = {}): TerritoryPlan {
   const { gapCells } = checked(policy);
   if (footprint.length * (2 * gapCells + 1) ** 2 > 1_000_000) throw new RangeError("Territory neighborhood is too large");
@@ -106,7 +92,6 @@ export function planFootprintClaims(snapshot: GameRuntimeSnapshot, userId: strin
   if (cost > 0 && (!policy.currency || (player.economy[policy.currency] ?? 0) < cost)) return { ok: false, reason: "territory.unaffordable" };
   return { ok: true, cells, cost };
 }
-/** Atomically buy every unowned footprint cell, leaving the input untouched on failure. */
 export function claimTerritory(snapshot: GameRuntimeSnapshot, userId: string, cells: readonly TerritoryCell[], policy: TerritoryPolicy = {}): TerritoryResult {
   const plan = planFootprintClaims(snapshot, userId, cells, policy);
   if (!plan.ok) return plan;
@@ -121,20 +106,14 @@ export function claimTerritory(snapshot: GameRuntimeSnapshot, userId: string, ce
   next = { ...next, players: { ...next.players, [userId]: { ...player, territoryOwnedCount: Number(player.territoryOwnedCount ?? 0) + plan.cells.length, ownedTerritoryChunkKeys: [...new Set([...(player.ownedTerritoryChunkKeys ?? []), ...plan.cells.map(cell => territoryChunkKey(cell, policy))])], economy: policy.currency ? { ...player.economy, [policy.currency]: (player.economy[policy.currency] ?? 0) - plan.cost } : player.economy } }, dirty: { ...next.dirty, players: [...new Set([...next.dirty.players, userId])] } };
   return { ok: true, snapshot: next, cost: plan.cost };
 }
-/**
- * Placement transaction: rejected object placement also rolls back territory and its charge.
- * @capability territory-placement Purchase footprint cells atomically with object placement.
- */
+/** @capability territory-placement Purchase footprint cells atomically with object placement. */
 export function placeWithTerritory(snapshot: GameRuntimeSnapshot, userId: string, bounds: Aabb, policy: TerritoryPolicy, place: (snapshot: GameRuntimeSnapshot) => { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string }): { ok: true; snapshot: GameRuntimeSnapshot; cost: number } | { ok: false; reason: string } {
   const claimed = claimTerritory(snapshot, userId, territoryFootprintCells(bounds, policy.cellSize), policy);
   if (!claimed.ok) return claimed;
   const placed = place(claimed.snapshot);
   return placed.ok ? { ...placed, cost: claimed.cost } : placed;
 }
-/**
- * Snapshot-backed territory facade with host-owned storage and live policy.
- * @capability territory-ownership Claim, release and query land through host-owned snapshot storage.
- */
+/** @capability territory-ownership Claim, release and query land through host-owned snapshot storage. */
 export function createTerritory(storage: TerritoryStorage, policy: () => TerritoryPolicy = () => ({})) {
   return {
     snapshot: () => storage.get(),
@@ -169,5 +148,4 @@ export function createTerritory(storage: TerritoryStorage, policy: () => Territo
     },
   };
 }
-/** Snapshot-backed claim, release, owner and starter-grant operations. */
 export type Territory = ReturnType<typeof createTerritory>;

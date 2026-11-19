@@ -1,15 +1,9 @@
 import { HUD_ANCHOR_FRACTIONS, type HudAnchor, type HudRect, type HudSize } from "./hudLayout";
 import { ZERO_INSETS, type HudPriority, type Insets, type LayoutRect } from "./hudPriority";
 
-/**
- * One HUD panel asking for room. Panels that share an `anchor` stack outward from that edge in `order`;
- * the solver then moves, collapses or shrinks whatever would land on something else.
- */
 export interface HudPanelClaim {
   id: string;
-  /** The corner, edge or centre the panel hangs from. */
   anchor: HudAnchor;
-  /** Stack position within the anchor, ascending away from the anchored edge. Default `0`. */
   order?: number | undefined;
   /** `critical` never collapses; `tertiary` is the first to fold into a toggle. Default `secondary`. */
   priority?: HudPriority | undefined;
@@ -19,13 +13,10 @@ export interface HudPanelClaim {
   chipSize?: HudSize;
 }
 
-/** The screen the panels share. */
 export interface HudPanelLayoutRequest {
   /** The HUD's on-screen size in CSS pixels. */
   viewport: HudSize;
-  /** The zoom the HUD prefers. Default `1`. */
   scale?: number;
-  /** The smallest zoom the HUD may shrink to before panels are allowed to overlap. Default `scale * 0.7`. */
   minScale?: number;
   /** Safe-area insets, in on-screen pixels. */
   insets?: Insets;
@@ -33,19 +24,15 @@ export interface HudPanelLayoutRequest {
   edgePad?: number;
   /** Gap kept between panels, in HUD pixels. Default `10`. */
   gap?: number;
-  /** On-screen rectangles no panel may cover (a touch-control dock). */
   reserved?: readonly LayoutRect[];
 }
 
-/** Where every panel landed. */
 export interface HudPanelLayout {
   /** The zoom the HUD draws at; smaller than the requested scale only when nothing else fit. */
   scale: number;
   /** Each panel's rectangle in HUD pixels from the HUD's top-left corner. */
   rects: Record<string, HudRect>;
-  /** Panels drawn as their collapsed toggle. */
   collapsed: string[];
-  /** Panels that found no free room even at the smallest zoom; they sit at their anchor. */
   overlapping: string[];
 }
 
@@ -136,15 +123,9 @@ interface Attempt {
   rects: Record<string, HudRect>;
   collapsed: string[];
   overlapping: string[];
-  /** Panels pushed off their anchored edge into the screen by more than their own depth. */
   strayed: string[];
 }
 
-/**
- * Whether a spot left the panel's anchored edge for the middle of the screen: a top or bottom panel
- * moved off its row by more than its height, a side panel off its column by more than its width, a
- * corner panel off both. Sliding along the edge or down a corner's stack is not straying.
- */
 function strays(anchor: HudAnchor, ideal: { x: number; y: number }, spot: HudRect): boolean {
   const { fx, fy } = HUD_ANCHOR_FRACTIONS[anchor];
   const offRow = fy !== 0.5 && Math.abs(spot.y - ideal.y) > spot.height + EPSILON;

@@ -25,7 +25,6 @@
 import type { Checkpoint, RaceFork } from "../game/race";
 import type { PathRetaining, TerrainPathProfile } from "../terrain/pathTerrain";
 
-/** An `[x, z]` world point. */
 export type CourseVec2 = readonly [number, number];
 
 interface CoursePieceBase {
@@ -33,17 +32,14 @@ interface CoursePieceBase {
   halfWidth?: number;
   /** Metres of climb (negative for a descent) spread evenly along the piece. */
   rise?: number;
-  /** Names a span over this piece's main-line distance, read back with {@link RouteCourse.spansAt}. */
   tag?: string;
 }
 
-/** A straight piece along the current heading. */
 export interface CourseStraight extends CoursePieceBase {
   kind: "straight";
   length: number;
 }
 
-/** A constant-radius arc. */
 export interface CourseTurn extends CoursePieceBase {
   kind: "turn";
   /** Radians added to the heading; positive turns toward the left normal. */
@@ -52,7 +48,6 @@ export interface CourseTurn extends CoursePieceBase {
   radius: number;
 }
 
-/** One piece of the main line. */
 export type CoursePiece = CourseStraight | CourseTurn;
 
 /** An alternate path that leaves the main line at `from` and rejoins it at `to` (main-line metres). */
@@ -60,14 +55,9 @@ export interface CourseBranchSpec {
   id: string;
   from: number;
   to: number;
-  /**
-   * Interior control points; the branch is a smooth curve through them, leaving and rejoining tangent
-   * to the main line. Omitted, the branch runs the straight chord between its two junctions.
-   */
   via?: readonly CourseVec2[];
   halfWidth?: number;
   tag?: string;
-  /** Game data the branch carries (a sign's label), untouched by the course. */
   data?: Readonly<Record<string, string | number | boolean>>;
 }
 
@@ -78,11 +68,9 @@ export interface CourseSpanCycle {
   phase?: number;
 }
 
-/** A tagged stretch of one route: a hazard, a surface, a set-piece trigger. */
 export interface CourseSpanSpec {
   id: string;
   tag: string;
-  /** Route id; default the main line. */
   route?: string;
   /** Route-local metres. On a closed main line, `from > to` wraps past the seam. */
   from: number;
@@ -91,30 +79,20 @@ export interface CourseSpanSpec {
   offset?: readonly [number, number];
   /** On a timer instead of always. */
   cycle?: CourseSpanCycle;
-  /** Game data the span carries (strength, push, label), untouched by the course. */
   data?: Readonly<Record<string, string | number | boolean>>;
 }
 
 /** A main line given as a polyline instead of pieces: a lap lifted from streets, an editor path. */
 export interface CourseCenterline {
   points: readonly CourseVec2[];
-  /** Half-width at each point; default the course's. */
   halfWidths?: readonly number[];
-  /** Surface height at each point; default 0. */
   elevations?: readonly number[];
 }
 
-/**
- * Everything {@link buildRouteCourse} lays out: the main line (pieces from a start pose, or a
- * centreline), whether it closes into a lap, its branches and spans.
- */
 export interface RouteCourseSpec {
-  /** Where the pieces start. Required with `pieces`. */
   start?: { x: number; z: number; heading: number; elevation?: number };
   halfWidth: number;
-  /** The main line laid turtle-style from `start`. Give this or `centerline`. */
   pieces?: readonly CoursePiece[];
-  /** The main line as a polyline. Give this or `pieces`. */
   centerline?: CourseCenterline;
   /**
    * A lap: the main line's end joins its start. Pieces must bring the turtle back to the start
@@ -127,10 +105,8 @@ export interface RouteCourseSpec {
   step?: number;
 }
 
-/** Route id of the main line. */
 export const MAIN_ROUTE = "main";
 
-/** Where a point sits on the course. */
 export interface CourseFix {
   route: string;
   /** Route-local metres. */
@@ -143,11 +119,9 @@ export interface CourseFix {
   /** Centreline heading here, radians, `(sin h, cos h)` forward. */
   heading: number;
   elevation: number;
-  /** Inside this route's walls (not past an end cap, within the half-width). */
   inside: boolean;
 }
 
-/** A point placed on the course. */
 export interface CoursePoint {
   x: number;
   z: number;
@@ -157,36 +131,28 @@ export interface CoursePoint {
   progress: number;
 }
 
-/** One sampled wall post along a route edge. */
 export interface CourseEdgePoint extends CoursePoint {
   route: string;
   s: number;
   side: "left" | "right";
 }
 
-/** One route as laid: its sampled centreline and where it sits on the main line. */
 export interface CourseRouteInfo {
   id: string;
   length: number;
-  /** Main-line progress at the route's start and end. */
   from: number;
   to: number;
   points: readonly CourseVec2[];
   tag?: string;
 }
 
-/** A span as the course holds it, its route resolved. */
 export interface CourseSpan extends CourseSpanSpec {
   route: string;
 }
 
-/** Where {@link RouteCourse.checkpoints} puts the trigger boxes. */
 export interface CourseCheckpointOptions {
-  /** Main-line distances of the ordinary checkpoints, ascending. */
   at: readonly number[];
-  /** Main-line distance of the finish line (a lap's start/finish line when the course is closed). */
   finish: number;
-  /** Vertical half-extent of every trigger box. Default 8. */
   height?: number;
   /** Extra metres on the trigger box beyond the corridor half-width. Default 1. */
   margin?: number;
@@ -196,25 +162,16 @@ export interface CourseCheckpointOptions {
 export interface RouteCourse {
   /** Main-line length, metres (a lap's length when closed). */
   readonly length: number;
-  /** True for a lap: main-line `s` and progress wrap at `length`, and the main line has no end walls. */
   readonly closed: boolean;
   readonly routes: readonly CourseRouteInfo[];
   readonly spans: readonly CourseSpan[];
   readonly bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   /** Point on a route at route-local `s`, `offset` metres off the centreline. `s` wraps on a closed main line. */
   pointAt(route: string, s: number, offset?: number): CoursePoint;
-  /** Main-line progress of route-local `s`. */
   progressOf(route: string, s: number): number;
-  /**
-   * Where `(x, z)` sits. `hint` (the previous fix) keeps a kart on its own leg where corridors
-   * overlap: on the branch it took, on the near side of a switchback.
-   */
   locate(x: number, z: number, hint?: CourseFix | null): CourseFix;
-  /** True when the point is inside any route's walls. */
   contains(x: number, z: number): boolean;
-  /** The point itself when inside the walls, else the nearest point just inside them - a movement clamp. */
   clamp(x: number, z: number, hint?: CourseFix | null): { x: number; z: number; fix: CourseFix };
-  /** Spans covering a fix, optionally only those with `tag`, honouring each span's cycle at `time`. */
   spansAt(fix: CourseFix, time?: number, tag?: string): readonly CourseSpan[];
   /** Posts along every route edge each `spacing` metres, skipping junction openings into another route. */
   edges(spacing: number, inset?: number): readonly CourseEdgePoint[];
@@ -234,11 +191,6 @@ export interface RouteCourse {
    * falloff` above 32 m is cut at 32 m.
    */
   groundHeight(base: (x: number, z: number) => number, options?: { shoulder?: number; falloff?: number }): (x: number, z: number) => number;
-  /**
-   * Terrain path profiles that grade the ground to every route's climb: one profile per run of even
-   * slope, ready for a terrain descriptor's `pathProfiles`. `retaining` raises walls on the shoulders;
-   * `shoulder` is the blend ring back into the surrounding ground (default 6 m).
-   */
   terrainProfiles(options?: { shoulder?: number; retaining?: PathRetaining; extraWidth?: number }): readonly TerrainPathProfile[];
 }
 
@@ -250,12 +202,10 @@ interface Route {
   s: Float64Array;
   hw: Float64Array;
   elev: Float64Array;
-  /** Segment heading, one fewer than the samples. */
   heading: Float64Array;
   length: number;
   from: number;
   to: number;
-  /** A lap: the last sample is the first, `s` wraps and neither end is a wall. Open routes cap both ends. */
   closed: boolean;
   tag?: string;
 }
@@ -382,7 +332,6 @@ function catmullRom(p0: CourseVec2, p1: CourseVec2, p2: CourseVec2, p3: CourseVe
   return [axis(0), axis(1)];
 }
 
-/** Resample a dense polyline at an even `step` along its arc length. */
 function resample(dense: readonly CourseVec2[], step: number): CourseVec2[] {
   const out: CourseVec2[] = [dense[0]!];
   let carried = 0;
@@ -457,12 +406,7 @@ function segmentAt(route: Route, s: number): number {
   return Math.min(lo, route.s.length - 2);
 }
 
-/**
- * Build a {@link RouteCourse} from its pieces, branches and spans. Throws on a turn tighter than its
- * half-width, a branch outside the main line, or overlapping branches.
- *
- * @capability route-course build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
- */
+/** @capability route-course build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines */
 export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
   const step = spec.step ?? 2;
   if (!(step > 0)) throw new Error("route course: step must be positive");
@@ -571,7 +515,6 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
     seg: number;
     s: number;
     offset: number;
-    /** Distance to the nearest point of this segment. */
     dist: number;
     /** Metres outside the walls (negative inside). */
     excess: number;
@@ -636,7 +579,6 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
     return made;
   }
 
-  /** Projects onto the segments near (x, z) into the pool; returns how many it filled. */
   function candidates(x: number, z: number): number {
     const list = grid.get(cellKey(Math.floor(x / GRID_CELL), Math.floor(z / GRID_CELL)));
     if (list === undefined) return 0;
@@ -647,7 +589,6 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
     return list.length;
   }
 
-  /** Projects onto every segment of every route into the pool; returns how many it filled. */
   function everything(x: number, z: number): number {
     let count = 0;
     for (const route of routes) {
@@ -659,7 +600,6 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
     return count;
   }
 
-  /** The filters and keys `choose` ranks the pool by. */
   type Only = "all" | "inside" | "insideOnRoute" | "insideNearHint" | "insideOnJoined" | "nearHint";
   type By = "dist" | "excess" | "progressGap";
   let hinted: CourseFix | null = null;

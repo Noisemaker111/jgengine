@@ -7,7 +7,6 @@
 export interface VehicleTireCrownEffect {
   /** Multiplier on the effect: `0` off (knife-edge tyres: the lean is the balance lean), `1` the crown as given (default), past `1` rounder crowns (up to half the centre-of-mass height); sane over `0..4`. */
   strength?: number;
-  /** Crown radius of the tread, m (default `0.075`: a sport bike's 0.06 m front and 0.09 m rear). */
   radius?: number;
 }
 
@@ -15,19 +14,13 @@ function crown(effect: VehicleTireCrownEffect, comHeight: number, strength: numb
   return Math.min(0.5 * comHeight, Math.max(0, (effect.radius ?? 0.075) * strength));
 }
 
-/**
- * The roll angle a bike needs for balance lean `balance`, rad, same sign.
- * @internal
- */
+/** @internal */
 export function crownShownLean(effect: VehicleTireCrownEffect, comHeight: number, balance: number, strength: number): number {
   const r = crown(effect, comHeight, strength);
   return balance + Math.asin(Math.min(1, (r * Math.sin(balance)) / Math.max(1e-3, comHeight - r)));
 }
 
-/**
- * The balance lean, rad, that a bike rolled to `lean` runs at: the inverse of {@link crownShownLean}.
- * @capability vehicle-tire-crown round motorcycle tyre crowns: the extra lean past balance a wide tyre needs, and a lean that leads the turn
- */
+/** @capability vehicle-tire-crown round motorcycle tyre crowns: the extra lean past balance a wide tyre needs, and a lean that leads the turn */
 export function crownBalanceLean(effect: VehicleTireCrownEffect, comHeight: number, lean: number, strength: number): number {
   // The shown lean rises monotonically with the balance lean, so bisect on [0, |lean|].
   const target = Math.abs(lean);

@@ -34,14 +34,7 @@ export type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = Playabl
   TProbe,
   ComponentType<RemotePlayersProps>
 > & {
-  /** HUD theme the shell applies at the `GameUI` root. Unset uses `defaultHudTheme`; `false` opts out of the default theme and the engine's generic HUD control styling. A theme the game sets inside `GameUI` still wins. */
   hudTheme?: HudTheme | false | undefined;
-  /**
-   * The game's UI kit: a complete visual language (shapes, type, motion, sound) for every kit part and
-   * engine screen — a built-in kit imported from its own module (`inkKit` from
-   * `@jgengine/core/ui/kit/uiKitInk.view`, and so on), or `customizeKit(inkKit, { ... })`. Only the kit
-   * the game imports is bundled. Its cue sounds replace the default UI sounds.
-   */
   uiKit?: UiKit | undefined;
   /** A direct Rune GameUI authors typed native props and bypasses the DOM chrome (HUD theme, kit, notices, settings gear). */
   uiRenderer?: "rune" | undefined;

@@ -1,8 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/**
- * Engine placement preview — runs each frame while a build draft is active.
- * Rules live in build.ts (`computePlacementPreview`).
- */
 
 import { computePlacementPreview, type BuildPlacementPreview, type PlacedBuildItem } from "@llmville/game/build/build";
 import type { BuildDirection, BuildItemId } from "@llmville/game/build/catalog";

@@ -70,7 +70,6 @@ function workspaceManifests(): string[] {
   return manifests;
 }
 
-/** The install problems, if any: missing modules, a broken link, or a lockfile CI would refuse. */
 function installProblems(): string[] {
   const problems: string[] = [];
   try {
@@ -126,7 +125,6 @@ function installProblems(): string[] {
   return problems;
 }
 
-/** Changed text files, committed or not, that still hold a conflict marker. */
 function conflictProblems(): string[] {
   const listed = spawnSync("git", ["diff", "--name-only", "--diff-filter=ACMR", "origin/beta"], { cwd: root, encoding: "utf8" });
   const untracked = spawnSync("git", ["ls-files", "--others", "--exclude-standard"], { cwd: root, encoding: "utf8" });
@@ -154,7 +152,6 @@ function gitNames(args: string[]): string[] {
   return (run.stdout ?? "").split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
 }
 
-/** Every file a generator's output depends on, its own outputs included. */
 function genInputs(target: GenTarget, tree: readonly string[]): string[] {
   return tree.filter((file) => readsPath(target, file));
 }
@@ -177,10 +174,6 @@ function genCache(): { fresh: (target: GenTarget) => boolean; record: (targets: 
   };
 }
 
-/**
- * The generators this diff needs: each one whose inputs it reaches, less each one that already
- * ran on these exact inputs. A diff that reaches none (a doc, a game's own data) runs none.
- */
 export function genTargetsFor(changed: readonly string[], fresh: (target: GenTarget) => boolean = () => false): GenTarget[] {
   return GEN_TARGETS.filter((target) => reachedBy(target, changed) && !fresh(target));
 }

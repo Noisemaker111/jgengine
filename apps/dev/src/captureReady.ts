@@ -122,9 +122,7 @@ function delay(ms: number): Promise<void> {
   });
 }
 
-/** Streaming counts as done after this much loader idle; below it a model can still pop in. */
 const MODEL_IDLE_MS = 400;
-/** One idle wait; the quiescence loop repeats it until its own budget runs out. */
 const MODEL_IDLE_SLICE_MS = 15_000;
 /**
  * Budget for staged work to tick, mount and finish streaming before the gate gives up. It outlasts
@@ -132,7 +130,6 @@ const MODEL_IDLE_SLICE_MS = 15_000;
  * reported a slow load (a GPU short of memory, trees grown in workers) as a failure.
  */
 const QUIESCENCE_TIMEOUT_MS = SHADER_WARMUP_DEFAULTS.planBudgetMs + 30_000;
-/** Start-menu rounds the gate clicks through when the game declares no `capture.play`. */
 const AUTO_START_ROUNDS = 3;
 
 /**
@@ -149,7 +146,6 @@ async function waitForModelStreaming(): Promise<void> {
   }
 }
 
-/** What the loader still waits on, for a capture that gave up on it. */
 function pendingModelsNote(): string {
   if (modelLoadIdleMs() >= MODEL_IDLE_MS) return "";
   const pending = pendingModelLoads();
@@ -214,7 +210,6 @@ async function waitForCaptureRun(timeoutMs: number): Promise<void> {
   }
 }
 
-/** Human-readable notes about what the gate did, surfaced by shoot/drive after readiness. */
 function addCaptureNote(note: string): void {
   const root = document.documentElement;
   const current = root.dataset["jgCaptureNote"];
@@ -286,12 +281,6 @@ async function passStartMenu(explicitStart: boolean): Promise<void> {
   );
 }
 
-/**
- * When `?capture=1`, marks preparing → ready|error once the runner has an
- * honest frame for the active mode. Host polls `data-jg-capture` / console.
- * `expectRun` holds readiness until the capture run has applied; `explicitStart`
- * says the game (or `?run=`) scripted its own way past a start menu.
- */
 export function armCaptureReady(
   mode: string,
   defaultSettleMs?: number,

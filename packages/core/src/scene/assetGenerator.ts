@@ -11,17 +11,14 @@
 import { getGenerator, runGenerator, type GeneratorDefinition } from "../generator/generator";
 import { getSceneKind } from "./sceneKinds";
 
-/** One generated primitive part — a box/panel placed in the asset's local space. */
 export interface GeneratedPart {
   id: string;
-  /** Optional semantic tag (shelf, board, book, wall, window …) for materials/inspection. */
   kind?: string;
   /** Local-space center. */
   position: readonly [number, number, number];
   /** Full box dimensions (w, h, d) in meters. */
   size: readonly [number, number, number];
   rotationY?: number;
-  /** Hex color; the renderer falls back to a neutral material when absent. */
   color?: string;
 }
 
@@ -61,10 +58,8 @@ export function partsBounds(parts: readonly GeneratedPart[]): GeneratedAsset["bo
   return { min: [minX, minY, minZ], max: [maxX, maxY, maxZ] };
 }
 
-/** The output family of a generator that returns {@link GeneratedAsset} parts. */
 export const PARTS_OUTPUT = "parts";
 
-/** True when a generate result has the {@link GeneratedAsset} shape. */
 export function isGeneratedAsset(value: unknown): value is GeneratedAsset {
   if (typeof value !== "object" || value === null) return false;
   return "parts" in value && Array.isArray(value.parts) && "bounds" in value && typeof value.bounds === "object" && value.bounds !== null;
@@ -72,22 +67,17 @@ export function isGeneratedAsset(value: unknown): value is GeneratedAsset {
 
 const placeableOutputs = new Set<string>([PARTS_OUTPUT]);
 
-/**
- * Let markers place generators of an output family by `meta.assetId` (parts always can). The
- * family also needs a draw-side mesh builder (`registerGeneratorMesh`) to render at runtime.
- * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
- */
+/** @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure */
 export function registerPlaceableGeneratorOutput(output: string): void {
   placeableOutputs.add(output);
 }
 
-/** An object's generator: its kind's `generator`, else the placeable generator its `meta.assetId` names. @internal */
+/** @internal */
 export function generatorForObject(kind: string, meta: Readonly<Record<string, unknown>> | undefined): GeneratorDefinition | undefined {
   const kindGenerator = getSceneKind(kind)?.generator;
   return kindGenerator === undefined ? placedGeneratorFor(meta) : getGenerator(kindGenerator);
 }
 
-/** The placeable generator (parts, nature …) a placed marker's `meta.assetId` names, or undefined. */
 export function placedGeneratorFor(meta: Readonly<Record<string, unknown>> | undefined): GeneratorDefinition | undefined {
   const assetId = meta?.["assetId"];
   const definition = typeof assetId === "string" ? getGenerator(assetId) : undefined;

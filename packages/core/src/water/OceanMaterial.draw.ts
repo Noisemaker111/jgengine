@@ -6,7 +6,6 @@ import { createSkyLight } from "@jgengine/core/sky/skyLight.draw";
 import { buildOceanWaveUniforms, type ResolvedOceanConfig } from "./OceanConfig.draw";
 import { oceanFragmentShader, oceanVertexShader } from "./OceanShader";
 
-/** Uniforms the ocean shader reads: time, wave set, bed map, colours, foam, and the sky's light. */
 export interface OceanMaterialUniforms {
   uTime: { value: number };
   uWaveDirections: { value: THREE.Vector2[] };
@@ -15,13 +14,9 @@ export interface OceanMaterialUniforms {
   uChoppiness: { value: number };
   uWaveCount: { value: number };
   uBedMap: { value: THREE.Texture };
-  /** Bed-map rect in ocean-local XZ: min x, min z, width, depth. */
   uBedRect: { value: THREE.Vector4 };
-  /** World height of the still surface. */
   uSurfaceY: { value: number };
-  /** World XZ the waves and the bed are measured from. */
   uOrigin: { value: THREE.Vector2 };
-  /** World XZ offset of a camera-following sheet. */
   uFollow: { value: THREE.Vector2 };
   uBorderFade: { value: number };
   uShallowColor: { value: THREE.Color };
@@ -50,13 +45,11 @@ export interface OceanMaterialUniforms {
   uCover: { value: number };
 }
 
-/** Glint strength by sun height: full once the sun clears the horizon, none once it has set. */
 function sunGlintFactor(sunHeight: number): number {
   const t = Math.min(1, Math.max(0, (sunHeight + 0.02) / 0.17));
   return t * t * (3 - 2 * t);
 }
 
-/** The ocean's `ShaderMaterial`, typed with its {@link OceanMaterialUniforms}. */
 export type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms };
 
 const DAY_LIGHT = createSkyLight();
@@ -72,7 +65,6 @@ export function deepBedTexture(): THREE.DataTexture {
   return texture;
 }
 
-/** Build the ocean shader material for a resolved config. */
 export function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial {
   const material = new THREE.ShaderMaterial({
     vertexShader: oceanVertexShader,
@@ -127,11 +119,6 @@ export function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMat
   return material;
 }
 
-/**
- * Write the config, the frame's clock and the sky's light into the material. `light` is what the
- * scene's sky published (`readSkyLight`): the water is lit, tinted and reflects by it, and its glints
- * fade as the sun sets. Without a sky it keeps a clear noon.
- */
 export function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number, light?: SkyLight): void {
   const u = material.uniforms;
   u.uTime.value = elapsedSeconds;

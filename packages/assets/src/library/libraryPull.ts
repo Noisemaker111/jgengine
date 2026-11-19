@@ -17,16 +17,12 @@ import { smithsonianGlbUrl } from "./librarySmithsonian";
 import { librarySource } from "./librarySources";
 import { libraryServedPath, lowerLibraryId, type LibraryServedPath } from "./libraryServed";
 
-/** What {@link pullLibraryEntry} needs from its caller. */
 export interface LibraryPullContext {
-  /** The `public/`-shaped root to write into (a game's `public/` or the shared asset store). */
   outRoot: string;
   fetchImpl?: typeof fetch;
-  /** Pulls a whole catalog pack through the ordinary `assets pull <source>` path. */
   pullPack: (source: AssetSource) => Promise<void>;
   githubToken?: string;
   env?: Readonly<Record<string, string | undefined>>;
-  /** Rocketbox animation entries baked onto a pulled Rocketbox character, retargeted by bone name and made in place. */
   clips?: readonly LibraryEntry[];
   log?: (line: string) => void;
 }
@@ -53,11 +49,7 @@ function pick(value: unknown, ...path: string[]): unknown {
   return current;
 }
 
-/**
- * The material source `assets pull` uses for one ambientCG material or decal (same id scheme as the shipped catalog).
- *
- * @internal
- */
+/** @internal */
 export function ambientcgLibrarySource(entry: LibraryEntry): AssetSource {
   const id = `ambientcg-${lowerLibraryId(entry.id)}`;
   return (

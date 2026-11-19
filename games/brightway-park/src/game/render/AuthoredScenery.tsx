@@ -19,7 +19,6 @@ interface SceneryPlacement {
   lift: number;
 }
 
-/** Every `scenery` marker in `editor.scene.json`, resolved to its model file and ground lift once. */
 const PLACEMENTS: readonly SceneryPlacement[] = editorLayers.markers.flatMap((marker) => {
   if (marker.kind !== "scenery") return [];
   const assetId = marker.meta?.["assetId"];
@@ -48,7 +47,6 @@ function sceneryPieceDraw(placement: SceneryPlacement): EngineDraw {
   });
 }
 
-/** The town behind the fence, hedges and flowerbeds along the promenade: placed in the scene, drawn here. */
 export function authoredSceneryDraw(): EngineDraw {
   const draws = PLACEMENTS.map(sceneryPieceDraw);
   return {

@@ -1,11 +1,3 @@
-/**
- * Per-frame look channel shared between an event-driven capture layer (writer
- * of raw pointer deltas) and a frame-driven controller (consumer), plus the
- * latest committed pose for same-frame readers such as presence sync. Kept as
- * plain mutable state on purpose: routing per-frame deltas through a reactive
- * store would notify subscribers every frame for state no UI reads.
- */
-
 export interface LookDeltas {
   yaw: number;
   pitch: number;
@@ -37,7 +29,6 @@ export interface LookChannel {
 export interface LookChannelOptions {
   /** Radians of rotation per pixel of pointer travel. */
   sensitivity: number;
-  /** Clamp for the vertical offset register (e.g. peak jump height). */
   maxVerticalOffset?: number;
 }
 

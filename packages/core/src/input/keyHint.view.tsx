@@ -2,14 +2,7 @@
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 import { useDisplayProfile } from "../ui/display.view";
 
-/**
- * A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling
- * can find it; on its own it stays visible (hiding a lone cap would strand its
- * label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish
- * on touch.
- *
- * @capability keycap styled keyboard/mouse key cap for control hints
- */
+/** @capability keycap styled keyboard/mouse key cap for control hints */
 export function Keycap({
   children,
   className,

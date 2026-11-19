@@ -16,13 +16,10 @@ import { hashString } from "../random/rng";
 import { runToEnd, type SlicedJob } from "../run/slicedWork";
 import { clamp01, lerp } from "../math/scalar";
 
-/** The generator output family every surface material returns: {@link SurfaceMaterialMaps}. */
 export const SURFACE_MATERIAL_OUTPUT = "surface-material";
 
-/** The surface kinds the material generator draws. */
 export const SURFACE_MATERIAL_KINDS = ["sand", "grass", "soil", "mud", "rock", "gravel", "bark", "snow"] as const;
 
-/** One surface kind. */
 export type SurfaceMaterialKind = (typeof SURFACE_MATERIAL_KINDS)[number];
 
 /**
@@ -37,19 +34,14 @@ export interface SurfaceMaterialMaps {
   albedo: Uint8Array;
   /** RGBA bytes: normal x, normal y, roughness, AO. */
   surface: Uint8Array;
-  /** Mean albedo in linear RGB, for tinting the map toward another colour without losing its grain. */
   meanLinear: readonly [number, number, number];
 }
 
-/**
- * True when a generator output is {@link SurfaceMaterialMaps}.
- * @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
- */
+/** @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow) */
 export function isSurfaceMaterialMaps(value: unknown): value is SurfaceMaterialMaps {
   return typeof value === "object" && value !== null && "albedo" in value && value.albedo instanceof Uint8Array && "surface" in value && value.surface instanceof Uint8Array;
 }
 
-/** The surface material param schema: kind, colours, feature scale, stones, cracks, cover and wear. */
 export const SURFACE_MATERIAL_SCHEMA = defineParamSchema({
   groups: [
     { id: "surface", label: "Surface" },
@@ -115,10 +107,8 @@ export const SURFACE_MATERIAL_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Parsed surface material params. */
 export type SurfaceMaterialParams = ParamsOf<typeof SURFACE_MATERIAL_SCHEMA>;
 
-// ---------------------------------------------------------------------------------------------
 // Tileable noise. Every lattice and cell grid wraps at an integer period over the unit tile.
 
 function mod(value: number, period: number): number {
@@ -231,7 +221,6 @@ function ridged(u: number, v: number, period: number, octaves: number, seed: num
   return sum / norm;
 }
 
-/** Nearest-cell result of {@link cells}: distances in cell units and the nearest cell's random id. */
 interface CellHit {
   f1: number;
   f2: number;
@@ -257,7 +246,6 @@ function cellGrid(cu: number, cv: number, seed: number, jitter: number): Float32
   return grid;
 }
 
-/** Wrapping Worley cells, `cu` x `cv` over the tile. Reuses one result object. */
 function cells(u: number, v: number, cu: number, cv: number, seed: number, jitter = 0.85): CellHit {
   const grid = cellGrid(cu, cv, seed, jitter);
   const x = u * cu;
@@ -322,7 +310,6 @@ const SRGB_TO_LINEAR = Float32Array.from({ length: 256 }, (_, i) => {
   return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 });
 
-// ---------------------------------------------------------------------------------------------
 // The bake canvas: height, colour and roughness per texel, plus wrapped splats.
 
 class SurfaceCanvas {
@@ -375,7 +362,6 @@ interface BakeInputs {
   base: Rgb;
   second: Rgb;
   cover: Rgb;
-  /** Feature scale: more, smaller features as it rises. */
   s: number;
 }
 
@@ -397,10 +383,6 @@ function variance(u: number, v: number, seed: number, amount: number): number {
   return 1 + (fbm(u, v, 3, 3, seed + 404) - 0.5) * 2 * amount;
 }
 
-/**
- * Splat round stones (pebbles, gravel, shells): domed height, a colour per stone picked between
- * `palette` entries, smoother roughness. A stone only lands where it stands above what is there.
- */
 function* splatStones(
   input: BakeInputs,
   count: number,
@@ -439,7 +421,6 @@ function* splatStones(
   }
 }
 
-/** Splat thin strokes (grass blades, twigs, pine needles) that rise toward their tip. */
 function* splatStrokes(
   input: BakeInputs,
   count: number,
@@ -478,7 +459,6 @@ function* splatStrokes(
   }
 }
 
-// ---------------------------------------------------------------------------------------------
 // Per-kind recipes.
 
 function* bakeSand(input: BakeInputs): BakeJob {
@@ -761,10 +741,8 @@ function isKind(value: string): value is SurfaceMaterialKind {
   return KIND_SET.has(value);
 }
 
-// ---------------------------------------------------------------------------------------------
 // Encoding: height normalised into albedo alpha; normal, roughness and AO packed into `surface`.
 
-/** Box blur with wrap, separable, in place on a scratch buffer. */
 function* blurWrap(source: Float32Array, size: number, radius: number): Generator<void, Float32Array, void> {
   const tmp = new Float32Array(size * size);
   const out = new Float32Array(size * size);
@@ -888,11 +866,7 @@ function bake(params: SurfaceMaterialParams, context: GeneratorContext): Surface
   return runToEnd(bakeJob(params, context));
 }
 
-/**
- * The surface material generator: one schema for every kind, with presets for the common looks.
- * Bake one with {@link bakeSurfaceMaterial}, a variant grid with `generatorVariants`.
- * @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
- */
+/** @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow) */
 export const SURFACE_MATERIAL_GENERATOR = defineGenerator({
   id: "material.surface",
   label: "Surface material",
@@ -901,20 +875,13 @@ export const SURFACE_MATERIAL_GENERATOR = defineGenerator({
   generate: bake,
 });
 
-/** A surface material by preset and overrides: `{ preset: "beach-sand", params: { stones: 0.4 } }`. */
 export interface SurfaceMaterialSpec {
-  /** A {@link SURFACE_MATERIAL_SCHEMA} preset id (`sand`, `grass`, `soil`, `rock`, `bark` …). */
   preset?: string;
-  /** Param overrides on top of the preset (kind, colours, stones, cracks …). */
   params?: Readonly<Record<string, unknown>>;
-  /** Seed; the same spec and seed always bake the same maps. Default the preset id. */
   seed?: string;
 }
 
-/**
- * The `meta` bag a {@link SurfaceMaterialSpec} resolves to: preset values, then overrides, then seed.
- * @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
- */
+/** @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow) */
 export function surfaceMaterialMeta(spec: SurfaceMaterialSpec): Record<string, unknown> {
   const preset = spec.preset === undefined ? undefined : SURFACE_MATERIAL_SCHEMA.presets?.find((entry) => entry.id === spec.preset);
   if (spec.preset !== undefined && preset === undefined) {

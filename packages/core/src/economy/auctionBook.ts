@@ -2,7 +2,6 @@
 import type { ItemStack } from "../inventory/storageTier";
 import type { CollectionBoxSnapshot } from "./listingBook";
 
-/** One live timed auction in an {@link AuctionBook}: an item stack under open bidding until it closes. */
 export interface Auction {
   readonly id: string;
   readonly sellerId: string;
@@ -17,7 +16,6 @@ export interface Auction {
   readonly highBid: HighBid | null;
 }
 
-/** The current leading bid on an {@link Auction}. */
 export interface HighBid {
   readonly bidderId: string;
   readonly amount: number;
@@ -37,7 +35,6 @@ export interface AuctionBookConfig {
   antiSnipeExtensionSeconds?: number;
 }
 
-/** Input to {@link AuctionBook.post} — the goods, opening terms, and current game-time. */
 export interface PostAuctionInput {
   id?: string;
   sellerId: string;
@@ -59,7 +56,6 @@ export type PostAuctionReason =
   | "auction-cap-reached"
   | "duplicate-id";
 
-/** Result of {@link AuctionBook.post}. */
 export type PostAuctionResult =
   | { status: "ok"; auction: Auction }
   | { status: "rejected"; reason: PostAuctionReason };
@@ -84,12 +80,10 @@ export type BidResult =
   | { status: "ok"; auction: Auction; escrowed: number; won: boolean }
   | { status: "rejected"; reason: BidReason };
 
-/** Result of {@link AuctionBook.cancel}: a bid-on auction can no longer be withdrawn. */
 export type CancelAuctionResult =
   | { status: "ok"; auction: Auction }
   | { status: "rejected"; reason: "not-found" | "not-owner" | "has-bids" };
 
-/** How one closed auction resolved during {@link AuctionBook.settleExpired}. */
 export type AuctionSettlement =
   | {
       status: "sold";
@@ -101,10 +95,6 @@ export type AuctionSettlement =
     }
   | { status: "returned"; auction: Auction };
 
-/**
- * A timed-bid auction marketplace plus the per-player collection boxes behind it. See
- * {@link createAuctionBook}.
- */
 export interface AuctionBook {
   post(input: PostAuctionInput): PostAuctionResult;
   bid(auctionId: string, bidderId: string, amount: number, now: number): BidResult;
@@ -139,17 +129,7 @@ interface CollectionBoxState {
   items: ItemStack[];
 }
 
-/**
- * Timed-bid auctions in the WoW/BDO auction-house mold: post an item with a start price, minimum
- * increment, and optional buyout; bids escrow currency, outbid players are refunded into their
- * collection box, bids near the close extend it (anti-snipe), and settlement pays the seller minus
- * the house cut while the item lands in the winner's collection box. Unsold auctions return the
- * goods to the seller's box. Wallet and inventory movement is the caller's job (mirrors
- * `economy/listingBook`) — this primitive owns the auction lifecycle and the escrowed
- * collection-box bookkeeping behind it.
- *
- * @capability auction-book timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement
- */
+/** @capability auction-book timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement */
 export function createAuctionBook(config: AuctionBookConfig): AuctionBook {
   const auctions = new Map<string, AuctionState>();
   const boxes = new Map<string, CollectionBoxState>();

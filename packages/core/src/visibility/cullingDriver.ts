@@ -20,7 +20,6 @@ interface Entry {
   seen: number;
 }
 
-/** Until a model is measured: a 2 m sphere over a standing entity, a scale-sized one over a prop. */
 const ENTITY_FALLBACK = { radius: 2, offsetY: 1 };
 /** Measured spheres grow by this share so a model's silhouette edge never clips at the frame edge. */
 const MEASURED_MARGIN = 1.05;
@@ -36,10 +35,6 @@ function objectRadius(scale: number | readonly [number, number, number] | undefi
   return size === undefined ? 1 : Math.max(0.75, size);
 }
 
-/**
- * A counter that moves whenever an entry of the kind-to-overrides table `read` returns is added,
- * removed or replaced. A game's table holds a few kinds, so checking it every frame costs a few compares.
- */
 function overrideWatch(read: () => Readonly<Record<string, unknown>> | undefined): () => number {
   let seen: unknown[] = [];
   let changes = 0;

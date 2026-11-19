@@ -5,7 +5,6 @@
  */
 export type SlicedJob<T> = Generator<void, T, void>;
 
-/** Options for {@link runSliced}; the clock and the yield are injectable for tests. */
 export interface SlicedWorkOptions {
   /** Work per slice before the thread is handed back. Default 8 ms, half a 60 Hz frame. */
   budgetMs?: number;
@@ -18,9 +17,7 @@ export interface SlicedWorkOptions {
   yieldThread?: () => Promise<void>;
 }
 
-/** A sliced job in flight. */
 export interface SlicedRun<T> {
-  /** Resolves with the job's result; rejects with what the job threw, or when cancelled. */
   done: Promise<T>;
   /** Stop before the next slice; `done` rejects with a {@link SlicedWorkCancelled}. */
   cancel(): void;
@@ -39,11 +36,7 @@ const DEFAULT_BUDGET_MS = 8;
 const defaultNow = (): number => (typeof performance === "undefined" ? Date.now() : performance.now());
 const defaultYield = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
-/**
- * Run a job in slices of at most `budgetMs`, yielding the thread between slices.
- *
- * @internal
- */
+/** @internal */
 export function runSliced<T>(job: SlicedJob<T>, options: SlicedWorkOptions = {}): SlicedRun<T> {
   const budgetMs = options.budgetMs ?? DEFAULT_BUDGET_MS;
   const now = options.now ?? defaultNow;

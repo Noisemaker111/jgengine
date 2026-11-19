@@ -5,49 +5,36 @@
  * `data`). Adding an entry here raises the bar for every game at once.
  */
 
-/** How an entry is proven: a headless simulation of the real game (`sim`), or the generic check over the game's content (`data`). */
 export type SuiteProofBy = "sim" | "data";
 
-/** The depth a core feature needs, beyond existing: how it is found, grows, connects, repeats and fails. */
 export interface SuiteDepth {
-  /** How a new player finds it without being told the command. */
   find: string;
-  /** What gets better about it over the first hours. */
   improves: string;
-  /** Two other entries it feeds, by id. */
   feeds: readonly [string, string];
   /** Why a player still does it at hour 5. */
   repeat: string;
-  /** How it goes wrong for the player, and what that costs. */
   fails: string;
 }
 
 /** One thing a player must be able to do. */
 export interface SuiteEntry {
-  /** Stable id: `<area>.<verb>`; the area groups the score. */
   id: string;
-  /** `universal`, or the genre ids that require it. */
   genres: readonly string[];
-  /** What the player does, in one line. */
   does: string;
-  /** What proves it, in one line. */
   proof: string;
   by: SuiteProofBy;
   /** Set on core features: the depth the game must design for. */
   depth?: SuiteDepth;
 }
 
-/** A genre a game may declare; `includes` pulls in another genre's entries too. */
 export interface SuiteGenre {
   id: string;
   label: string;
   includes?: readonly string[];
 }
 
-/** The genre tag every game carries. */
 export const SUITE_UNIVERSAL = "universal";
 
-/** Every genre a game may declare. */
 export const SUITE_GENRES: readonly SuiteGenre[] = [
   { id: "survival", label: "Survival: vitals, gathering, crafting, building" },
   { id: "creature-survival", label: "Creature survival: survival plus taming, riding, breeding and creature work", includes: ["survival"] },
@@ -65,7 +52,6 @@ export const SUITE_GENRES: readonly SuiteGenre[] = [
 
 const U = [SUITE_UNIVERSAL];
 
-/** Every entry, universal first, then by genre. */
 export const SUITE_ENTRIES: readonly SuiteEntry[] = [
   // Universal: every game.
   {

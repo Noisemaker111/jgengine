@@ -16,7 +16,6 @@ let litWood: THREE.MeshStandardMaterial | null = null;
 const atlases = new Map<string, THREE.DataTexture>();
 const leafMaterials = new Map<string, THREE.Material>();
 
-/** The baked leaf atlas of a leaf shape as one shared texture per shape. */
 function leafAtlasTexture(shape: LeafShapeParams): THREE.DataTexture {
   const key = plantLeafAtlasKey(shape);
   const known = atlases.get(key);
@@ -45,12 +44,7 @@ function texturedLeaves(look: PlantMeshLook, shape: LeafShapeParams): THREE.Mate
   return material;
 }
 
-/**
- * The shared materials a plant mesh's wood and foliage draw with for its look: lit vertex colour
- * (with generated bark grain when asked) or one cel-shading ramp for both. Foliage with a leaf atlas
- * samples the atlas baked from its species' leaf shape and cuts leaves out by its alpha.
- * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
- */
+/** @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets */
 export function plantMeshMaterials(look: PlantMeshLook): { bark: THREE.Material; leaves: THREE.Material } {
   if (look.shading === "ramp") {
     const ramp = toonRampMaterial(look.ramp);
@@ -64,10 +58,7 @@ export function plantMeshMaterials(look: PlantMeshLook): { bark: THREE.Material;
   };
 }
 
-/**
- * A plant mesh as instanceable draws, wood then foliage; the geometries belong to the caller.
- * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
- */
+/** @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets */
 export function plantMeshSources(mesh: PlantMesh): GeneratorMeshSource[] {
   const materials = plantMeshMaterials(mesh.look);
   const sources: GeneratorMeshSource[] = [];

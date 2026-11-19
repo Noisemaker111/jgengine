@@ -1,13 +1,11 @@
 import type { GameSaveSystem } from "@jgengine/core/save/saveDocument";
 import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 
-/** What a dispatch keeps about its courier: the name they gave and the frame they left. */
 export const harborProfile: { driver: string | null; thumbnail: string | null } = {
   driver: null,
   thumbnail: null,
 };
 
-/** The frame a save card shows: the live scene when the binding answers, else the last one kept. */
 export async function captureHarborThumb(): Promise<string | null> {
   const shot = await requestSceneThumbnail({ width: 320, height: 180, bindingTimeoutMs: 600 });
   if (shot.ok) harborProfile.thumbnail = shot.thumbnail;

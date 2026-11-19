@@ -13,14 +13,11 @@ export interface FlightComparisonAircraft {
   name: string;
   tuning: RigidAircraftTuning;
   cruiseSpeed: number;
-  /** Largest allowed gap to the reference per metric, as a share of the reference; a row with one reports `pass`. */
   tolerance?: Partial<Record<keyof FlightTestReport, number>>;
 }
 
-/** Published figures for a real aircraft, SI units, for the metrics a source gives. */
 export type PublishedFlightFigures = Partial<Record<keyof FlightTestReport, number>>;
 
-/** One metric of one comparison, SI units; `real` is absent where nothing is published. */
 export interface FlightComparisonRow {
   metric: keyof FlightTestReport;
   label: string;
@@ -28,13 +25,10 @@ export interface FlightComparisonRow {
   game: number;
   reference: number;
   real: number | undefined;
-  /** Largest allowed gap to the reference, share of it; present only where the aircraft carries a tolerance. */
   allowed?: number;
-  /** The game value is within `allowed` of the reference (both missing counts as within). */
   pass?: boolean;
 }
 
-/** A game aircraft's flight-test results beside its reference aircraft's and the real aircraft's. */
 export interface FlightComparison {
   aircraft: string;
   reference: string;
@@ -100,11 +94,7 @@ export function compareFlight(aircraft: readonly FlightComparisonAircraft[]): Fl
   });
 }
 
-/**
- * Adds `allowed` and `pass` to a row when a tolerance applies: the game value within that share of the reference, or
- * both missing.
- * @capability flight-comparison judge a comparison row against its tolerance
- */
+/** @capability flight-comparison judge a comparison row against its tolerance */
 export function withTolerance<Row extends { game: number; reference: number }>(row: Row, allowed: number | undefined): Row & { allowed?: number; pass?: boolean } {
   if (allowed === undefined) return row;
   const missing = !Number.isFinite(row.game) && !Number.isFinite(row.reference);
@@ -124,11 +114,7 @@ export const REFERENCE_BUILD_TOLERANCE: Readonly<Record<keyof FlightTestReport, 
   takeoffGroundRoll: 0.1,
 };
 
-/**
- * The runtime's own reference airframes, `aircraftFromReference("cessna-172")` and `("f-16")` with every effect at 1,
- * to fly against the reference sims they reproduce, each with {@link REFERENCE_BUILD_TOLERANCE}.
- * @capability flight-comparison the runtime's Cessna 172N and F-16 builds with their tolerances
- */
+/** @capability flight-comparison the runtime's Cessna 172N and F-16 builds with their tolerances */
 export function referenceBuilds(): FlightComparisonAircraft[] {
   return [
     { name: "Cessna 172N (aircraftFromReference)", tuning: aircraftFromReference("cessna-172"), cruiseSpeed: 55, tolerance: REFERENCE_BUILD_TOLERANCE },
@@ -136,7 +122,6 @@ export function referenceBuilds(): FlightComparisonAircraft[] {
   ];
 }
 
-/** Any game / reference / real comparison {@link formatFlightComparison} can print. */
 export interface ComparisonTable {
   aircraft: string;
   reference: string;
@@ -154,10 +139,7 @@ function delta(value: number | undefined, base: number | undefined): string {
   return `${percent >= 0 ? "+" : ""}${percent.toFixed(0)}%`;
 }
 
-/**
- * Renders comparisons as a plain-text table per aircraft: game, reference and real values with the deltas between them.
- * @capability flight-comparison plain-text game / reference / real table
- */
+/** @capability flight-comparison plain-text game / reference / real table */
 export function formatFlightComparison(comparisons: readonly ComparisonTable[]): string {
   const blocks = comparisons.map((comparison) => {
     const judged = comparison.rows.some((row) => row.allowed !== undefined);

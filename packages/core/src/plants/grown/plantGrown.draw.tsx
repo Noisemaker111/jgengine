@@ -14,7 +14,6 @@ import { isPlantMesh, type PlantMesh } from "../mesh/plantMesh";
 import { plantMeshSources } from "../mesh/plantMesh.draw";
 import { PLANT_MESH_OUTPUT } from "./plantGrown";
 
-/** Variant tiles draw the shoot-card level: a whole grid of plants stays cheap. */
 const PREVIEW_DETAIL = 0.5;
 
 /** Meshes of tiles already grown, so a tile's camera frame fits the plant once it exists. */
@@ -97,7 +96,7 @@ function PlantPreview(props: GeneratorPreviewProps) {
   return null;
 }
 
-/** Registers the grown-plant instanced mesh builder and variant-tile preview. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerPlantDraw(): void {
   registerGeneratorMesh(PLANT_MESH_OUTPUT, (output) => (isPlantMesh(output) ? plantMeshSources(output) : null));
   registerGeneratorPreview(PLANT_MESH_OUTPUT, {

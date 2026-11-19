@@ -3,11 +3,6 @@ export interface PhysicsBounds {
   max: readonly [number, number, number];
 }
 
-/**
- * Simulation fidelity intent: `low` (cheap — many bodies, loose stacks, forgiving sleep), `standard`
- * (default), `high` (tight stacks, accurate joints, worth the extra solver work). Sets the solver
- * knobs below to a matched preset; an individual knob left explicit always wins over the preset.
- */
 export type PhysicsPrecision = "low" | "standard" | "high";
 
 interface PhysicsPrecisionPreset {
@@ -25,17 +20,12 @@ const PHYSICS_PRECISION_PRESETS: Record<PhysicsPrecision, PhysicsPrecisionPreset
 };
 
 export interface PhysicsWorldConfig {
-  /** Maximum bodies the SoA buffers can hold. Fixed at construction; no reallocation later. */
   capacity: number;
-  /** AABB container; every body is constrained inside it (floor included). */
   bounds: PhysicsBounds;
-  /** Downward acceleration applied to awake bodies each substep. Default -20. */
   gravity?: number;
-  /** Simulation fidelity intent. Default "standard" — see {@link PhysicsPrecision}. */
   precision?: PhysicsPrecision;
   /** Fixed substep length in seconds. Default 1/60. */
   fixedDt?: number;
-  /** Cap on substeps per `step()` — bounds catch-up work, drops the rest. Default 4. */
   maxSubsteps?: number;
   /** Bounce factor on contacts and walls, 0..1. Default 0.2. */
   restitution?: number;
@@ -45,15 +35,9 @@ export interface PhysicsWorldConfig {
   friction?: number;
   /** Per-second linear velocity damping (physical energy bleed so piles settle and sleep). Default 0.2. */
   linearDamping?: number;
-  /** Speed at or below which a body counts as still. Default 0.08. */
   sleepLinearVelocity?: number;
-  /** Maximum simultaneous joints the constraint buffers can hold. Default 256. */
   jointCapacity?: number;
-  /**
-   * @deprecated Advanced escape hatch — tune only when profiling shows the broadphase grid is the
-   * bottleneck; most games never set this. Broadphase cell edge; ideally ≈ small-body diameter.
-   * Default 1.
-   */
+  /** @deprecated Advanced escape hatch — tune only when profiling shows the broadphase grid is the bottleneck; most games never set this. Broadphase cell edge; ideally ≈ small-body diameter. Default 1. */
   cellSize?: number;
   /** @deprecated Advanced escape hatch — prefer `precision`. Sequential-impulse velocity iterations per substep (higher = more stable stacks). */
   solverIterations?: number;
@@ -82,11 +66,9 @@ export interface PhysicsStats {
 export interface BodyCommonOptions {
   position: readonly [number, number, number];
   velocity?: readonly [number, number, number];
-  /** ≤ 0 or omitted with `static` → infinite mass (immovable collider). Default 1. */
   mass?: number;
   /** Immovable collider: never integrates, never sleeps-out, invMass 0. */
   static?: boolean;
-  /** Seed the body asleep (a settled bed pays no integration cost until woken). */
   asleep?: boolean;
 }
 
@@ -95,7 +77,6 @@ export interface BoxBodyOptions extends BodyCommonOptions {
   halfExtents: readonly [number, number, number];
 }
 
-/** The radius fills all three half-extent columns, so broadphase and bounds see the sphere's enclosing AABB. */
 export interface SphereBodyOptions extends BodyCommonOptions {
   shape: "sphere";
   radius: number;
@@ -106,11 +87,6 @@ export type AddBodyOptions = BoxBodyOptions | SphereBodyOptions;
 export const SHAPE_BOX = 0;
 export const SHAPE_SPHERE = 1;
 
-/**
- * Hard bilateral: `fixed` pins the shared anchor (3-DOF), `hinge` pins only the plane
- * perpendicular to `axis` (free along the axis — translational cylindrical), `distance`
- * holds a fixed separation. `spring` is a soft PD drive toward `restLength`.
- */
 export type JointKind = "hinge" | "distance" | "spring" | "fixed";
 
 export const JOINT_FIXED = 0;
@@ -119,23 +95,17 @@ export const JOINT_DISTANCE = 2;
 export const JOINT_SPRING = 3;
 
 export interface JointOptions {
-  /** First body index. */
   bodyA: number;
   /** Second body index, or omit / < 0 to anchor A to a fixed world point (`anchorB`). */
   bodyB?: number;
-  /** Local offset of the anchor on A, in world axes (no rotation). Default [0,0,0]. */
   anchorA?: readonly [number, number, number];
-  /** Local offset on B, or — when B is a world anchor — the world point itself. Default [0,0,0]. */
   anchorB?: readonly [number, number, number];
   /** Target separation for `distance`/`spring`. Defaults to the anchors' current distance. */
   restLength?: number;
-  /** Spring restoring rate. Default 40. */
   stiffness?: number;
-  /** Spring damping (relative-velocity bleed). Default 6. */
   damping?: number;
   /** Clamp on the per-substep spring impulse (a follow-point that never yanks). Default unbounded. */
   maxImpulse?: number;
-  /** Unit hinge axis (world). Required semantics for `hingeJoint`; free motion along this axis. Default [0,1,0]. */
   axis?: readonly [number, number, number];
 }
 
@@ -154,7 +124,6 @@ const FLAG_SLEEPING = 1;
 const FLAG_STATIC = 2;
 const FLAG_DEAD = 4;
 
-/** Cap on `nx*ny*nz` broadphase cells — guards a huge-bounds/tiny-cellSize config from hanging `step()`. */
 export const MAX_BROADPHASE_CELLS = 1_000_000;
 
 /** Grid cell containing a point, clamped into the grid. Pure — exported for tests. */
@@ -199,9 +168,7 @@ export class PhysicsWorld {
   readonly halfZ: Float32Array;
   readonly invMass: Float32Array;
   readonly flags: Uint8Array;
-  /** `SHAPE_BOX` (0) or `SHAPE_SPHERE` (1) per body; spheres keep their radius in halfX/halfY/halfZ. */
   readonly shape: Uint8Array;
-  /** 1 for a body that took part in a contact this frame; reset each `step()`. Render tint reads this. */
   readonly contact: Uint8Array;
 
   private readonly sleepTimer: Uint16Array;
@@ -383,7 +350,6 @@ export class PhysicsWorld {
     return this.bodyCount;
   }
 
-  /** One past the highest slot `addBody` has ever handed out — the range `removeBody` leaves holes in. */
   get highWater(): number {
     return this.bodyHigh;
   }
@@ -472,14 +438,12 @@ export class PhysicsWorld {
     this.jointActiveCount -= 1;
   }
 
-  /** Move a joint's world anchor point (only meaningful when `bodyB` is a world anchor). */
   setJointAnchor(id: number, x: number, y: number, z: number): void {
     this.jAnchorBX[id] = x;
     this.jAnchorBY[id] = y;
     this.jAnchorBZ[id] = z;
   }
 
-  /** Move a joint's local anchor offset on A (world axes, no rotation applied by the solver). */
   setJointAnchorA(id: number, x: number, y: number, z: number): void {
     this.jAnchorAX[id] = x;
     this.jAnchorAY[id] = y;
@@ -490,12 +454,6 @@ export class PhysicsWorld {
     this.jRest[id] = restLength;
   }
 
-  /**
-   * Gather joint `id`'s two world anchor points into {@link anchorScratch} as [ax,ay,az,bx,by,bz]
-   * (A's local offset added to body A's centre, or world-origin when A is unset; B likewise, treating
-   * `anchorB` as a world point when B is unset). The single definition shared by {@link jointDistance},
-   * {@link readJointSegments}, and {@link solveJoints}.
-   */
   private anchorWorld(id: number): void {
     const s = this.anchorScratch;
     const bA = this.jBodyA[id]!;
@@ -517,7 +475,6 @@ export class PhysicsWorld {
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
-  /** Write [ax,ay,az,bx,by,bz] world endpoints per active joint into `out`; returns the joint count. */
   readJointSegments(out: Float32Array): number {
     let n = 0;
     for (let id = 0; id < this.jointHigh; id += 1) {
@@ -639,7 +596,6 @@ export class PhysicsWorld {
     this.addAwake(i);
   }
 
-  /** Overwrite a body's velocity directly, waking it if asleep. */
   setVelocity(id: number, x: number, y: number, z: number): void {
     if ((this.flags[id]! & FLAG_DEAD) !== 0) return;
     this.velX[id] = x;
@@ -648,7 +604,6 @@ export class PhysicsWorld {
     this.wake(id);
   }
 
-  /** Move a body, keeping its current velocity, and wake it if asleep. */
   setPosition(id: number, x: number, y: number, z: number): void {
     if ((this.flags[id]! & FLAG_DEAD) !== 0) return;
     this.posX[id] = x;
@@ -691,7 +646,6 @@ export class PhysicsWorld {
     this.jointActiveCount = 0;
   }
 
-  /** Advance by a real frame delta; runs whole fixed substeps and carries the remainder. */
   step(frameDt: number): PhysicsStats {
     const start = performanceNow();
     this.accumulator += frameDt;
@@ -1057,11 +1011,6 @@ export class PhysicsWorld {
     this.posZ[j]! += corr * imJ * nZ;
   }
 
-  /**
-   * Apply an axial velocity impulse `jn` along unit axis (nX,nY,nZ) to a joint's two bodies: body A
-   * recoils (−) and body B advances (+), each scaled by its inverse mass. A world anchor (body index
-   * < 0) is skipped. Scalar args only — no allocation on the joint hot path.
-   */
   private applyAxialImpulse(
     bA: number,
     bB: number,
@@ -1084,10 +1033,6 @@ export class PhysicsWorld {
     }
   }
 
-  /**
-   * Positional (Baumgarte) twin of {@link applyAxialImpulse}: nudge the joint's two bodies along
-   * (nX,nY,nZ) by `corr` — body A advances (+), body B recoils (−), each scaled by its inverse mass.
-   */
   private applyAxialCorrection(
     bA: number,
     bB: number,

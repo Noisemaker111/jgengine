@@ -26,15 +26,9 @@ export const RENDER_SLOTS_ENV = "JG_RENDER_SLOTS";
 export const RENDER_WAIT_ENV = "JG_RENDER_WAIT_MINUTES";
 export const RENDER_DIR_ENV = "JG_RENDER_DIR";
 
-/** What one rendering browser costs the machine, for the default count and fairshare's room check. */
 export const RENDER_CORES = 4;
 export const RENDER_MEM_GB = 4;
 
-/**
- * Slots on this machine: `JG_RENDER_SLOTS`, else one per four threads and four GB of memory, at least
- * one. A software-GL GPU process alone keeps a core busy, and the page, the dev server and the run
- * beside it take the rest; 8 threads and 16 GB give two.
- */
 export function renderSlotCount(env: NodeJS.ProcessEnv = process.env, threads = availableParallelism(), memBytes = totalmem()): number {
   const asked = Number(env[RENDER_SLOTS_ENV]);
   if (Number.isInteger(asked) && asked > 0) return asked;
@@ -53,9 +47,7 @@ export function renderSlotDir(env: NodeJS.ProcessEnv = process.env): string {
 export interface SlotRecord {
   token: string;
   label: string;
-  /** The process that took the slot. */
   pid: number;
-  /** The browser it started, once started; the slot lives while either lives. */
   browserPid?: number;
   takenAt: string;
 }
@@ -70,7 +62,6 @@ export interface RenderSlot {
 export interface RenderSlotOptions {
   label: string;
   env?: NodeJS.ProcessEnv;
-  /** Is this pid running. */
   alive?: (pid: number) => boolean;
   /** Is there room on the machine for one more browser: true, false, or null when nothing can tell. */
   room?: () => boolean | null;
@@ -116,7 +107,6 @@ function holderAlive(record: SlotRecord | null, alive: (pid: number) => boolean)
   return alive(record.pid) || (record.browserPid !== undefined && alive(record.browserPid));
 }
 
-/** Who holds each slot now, for a waiting run's line and `status`. */
 export function renderSlotHolders(env: NodeJS.ProcessEnv = process.env, alive: (pid: number) => boolean = pidAlive): SlotRecord[] {
   const dir = renderSlotDir(env);
   if (!existsSync(dir)) return [];
@@ -168,7 +158,6 @@ function tryTake(path: string, record: SlotRecord): boolean {
   }
 }
 
-/** A slot file nobody can read is a run mid-write, or wreckage once it is this old. */
 const UNREADABLE_STALE_MS = 10_000;
 
 function stale(path: string, record: SlotRecord | null, alive: (pid: number) => boolean, now: number): boolean {

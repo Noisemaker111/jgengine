@@ -51,7 +51,6 @@ export const BLACK_MARKET_POS: EntityPosition = [
   blackMarket.position.z,
 ];
 
-/** The Coretown vault: the bank where guns you are not carrying wait for you. */
 export const VAULT_POS: EntityPosition = [vault.position.x, vault.position.y, vault.position.z];
 
 export const REBUILD_STATION: EntityPosition = [rebuild.position.x, rebuild.position.y, rebuild.position.z];

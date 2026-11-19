@@ -1,35 +1,27 @@
 // @skill jgengine-world
 import { calibratedAirspeed, standardAtmosphere, standardGravity, type AtmosphereModel, type AtmosphereSample } from "./standardAtmosphere";
 
-/** Three numbers, body axes (x forward, y right, z down) or north-east-down axes. */
 export type ReferenceVector = [number, number, number];
 
 /** Air data the aerodynamic model reads, SI units and radians. */
 export interface ReferenceAirData {
   /** True airspeed, m/s. */
   airspeed: number;
-  /** Angle of attack, rad. */
   alpha: number;
-  /** Sideslip, rad, positive with the relative wind from the right. */
   beta: number;
   mach: number;
-  /** Dynamic pressure, Pa. */
   dynamicPressure: number;
   /** Air density, kg/m³. */
   density: number;
-  /** Geometric altitude above mean sea level, m. */
   altitude: number;
-  /** Height of the centre of gravity above the ground, m. */
   heightAboveGround: number;
   /** Body roll, pitch and yaw rates, rad/s. */
   p: number;
   q: number;
   r: number;
-  /** The air state at this altitude. */
   air: AtmosphereSample;
 }
 
-/** Surface deflections, rad, in the model's own sign convention. */
 export interface ReferenceSurfaces {
   elevator: number;
   aileron: number;
@@ -37,10 +29,6 @@ export interface ReferenceSurfaces {
   flap: number;
 }
 
-/**
- * Body-axis aerodynamic coefficients about the centre of gravity, written by a model's `aerodynamics`. Forces are
- * `q̄·S·C`, rolling and yawing moments `q̄·S·b·C`, pitching moment `q̄·S·c̄·C`.
- */
 export interface ReferenceAeroCoefficients {
   cx: number;
   cy: number;
@@ -54,40 +42,25 @@ export interface ReferenceAeroCoefficients {
   cmAlphaDot: number;
 }
 
-/** What a propulsion model writes each evaluation: body-axis force and moment, rotor angular momentum, state rates. */
 export interface ReferencePropulsionOutput {
   force: ReferenceVector;
   moment: ReferenceVector;
   /** Angular momentum of spinning engine parts in body axes, kg·m²/s; it adds the gyroscopic moment. */
   angularMomentum: ReferenceVector;
-  /** Time derivative of each propulsion state. */
   rates: number[];
-  /** Thrust along body x, N, for telemetry. */
   thrust: number;
-  /** Shaft power delivered to a propeller, W, for telemetry (0 for a jet). */
   shaftPower: number;
-  /** Shaft speed, rev/min, for telemetry (0 for a jet). */
   rpm: number;
 }
 
-/** An engine and whatever it drives, with its own integrated states. */
 export interface ReferencePropulsion {
-  /** Names of the integrated states, in order. */
   readonly stateNames: readonly string[];
-  /**
-   * Writes the steady states for a throttle setting in this air (trim and a clean start). `surfaces` are the control
-   * actuator positions, for propulsion they drive (a rotor's cyclic and tail pitch).
-   */
   settle(throttle: number, air: ReferenceAirData, state: number[], surfaces?: ReferenceSurfaces): void;
-  /** Evaluates forces, moments and state rates. `state` holds this model's states only. */
   evaluate(state: readonly number[], throttle: number, air: ReferenceAirData, out: ReferencePropulsionOutput, surfaces?: ReferenceSurfaces): void;
 }
 
-/** One surface actuator: where full pilot input puts it, and how fast it gets there. */
 export interface ReferenceActuator {
-  /** Deflection at full positive pilot input (nose up, right roll, nose right), rad. */
   atFullPositive: number;
-  /** Deflection at full negative pilot input, rad. */
   atFullNegative: number;
   /** First-order bandwidth, rad/s. */
   bandwidth: number;
@@ -95,33 +68,20 @@ export interface ReferenceActuator {
   rateLimit: number;
 }
 
-/**
- * One landing gear leg: a massless strut spring-damper at the wheel's contact point and a tyre with rolling
- * resistance, brakes and slip-angle side force that saturates at the friction limit.
- */
 export interface ReferenceGearLeg {
   name: string;
-  /** Tyre contact point with the strut fully extended, body axes m from the centre of gravity. */
   at: ReferenceVector;
-  /** Strut spring rate, N/m. */
   stiffness: number;
-  /** Strut damping, N·s/m. */
   damping: number;
-  /** Strut travel before it bottoms, m; past it the spring is ten times stiffer. */
   travel: number;
-  /** Rolling resistance coefficient with brakes off. */
   rollingFriction: number;
-  /** Braking friction coefficient at full brake; `0` for an unbraked wheel. */
   brakeFriction: number;
-  /** Peak side friction coefficient. */
   sideFriction: number;
   /** Side force per unit load per radian of slip angle before it saturates (cornering stiffness over load). */
   corneringStiffness: number;
-  /** Steering angle at full yaw pedal, rad; `0` for a fixed or castering wheel. */
   steering: number;
 }
 
-/** Mass and inertia about the centre of gravity, body axes. */
 export interface ReferenceMassProperties {
   massKg: number;
   /** kg·m²; `ixz` is the product of inertia (positive with the nose-down principal axis tilt convention of Stevens & Lewis). */
@@ -131,26 +91,19 @@ export interface ReferenceMassProperties {
   ixz: number;
 }
 
-/** A complete reference airframe: geometry, mass, aerodynamics, controls, propulsion and gear. */
 export interface ReferenceAircraftModel {
   readonly name: string;
   readonly mass: ReferenceMassProperties;
-  /** Reference wing area, m². */
   readonly wingArea: number;
-  /** Reference span, m. */
   readonly span: number;
-  /** Mean aerodynamic chord, m. */
   readonly chord: number;
-  /** Writes body-axis coefficients about the centre of gravity. */
   aerodynamics(air: ReferenceAirData, surfaces: ReferenceSurfaces, out: ReferenceAeroCoefficients): void;
   readonly controls: { elevator: ReferenceActuator; aileron: ReferenceActuator; rudder: ReferenceActuator; flap?: ReferenceActuator };
   readonly propulsion: ReferencePropulsion;
   readonly gear: readonly ReferenceGearLeg[];
-  /** Angle of attack where the wing's lift peaks, rad; telemetry reports `stalled` past it. */
   readonly stallAlpha: number;
 }
 
-/** Pilot input, the same shape as `RigidAircraftInput`. */
 export interface ReferencePilotInput {
   /** `0..1`. */
   throttle: number;
@@ -166,23 +119,18 @@ export interface ReferencePilotInput {
   flap?: number;
 }
 
-/** Serializable integrator state. */
 export interface ReferenceAircraftState {
   time: number;
-  /** North, east, down position, m (down is minus altitude). */
   position: ReferenceVector;
   /** Velocity over the ground in body axes, m/s. */
   velocity: ReferenceVector;
-  /** Unit quaternion `[w, x, y, z]` taking body axes to north-east-down axes. */
   attitude: [number, number, number, number];
   /** Body rates p, q, r, rad/s. */
   rates: ReferenceVector;
   surfaces: ReferenceSurfaces;
-  /** Propulsion states in `model.propulsion.stateNames` order. */
   propulsion: number[];
 }
 
-/** Telemetry for the current state. */
 export interface ReferenceAircraftSample {
   time: number;
   position: ReferenceVector;
@@ -201,7 +149,6 @@ export interface ReferenceAircraftSample {
   mach: number;
   alpha: number;
   beta: number;
-  /** Euler angles, rad (yaw-pitch-roll order). */
   heading: number;
   pitch: number;
   bank: number;
@@ -209,13 +156,11 @@ export interface ReferenceAircraftSample {
   p: number;
   q: number;
   r: number;
-  /** Load factor along body −z, g. */
   loadFactor: number;
   surfaces: ReferenceSurfaces;
   thrust: number;
   shaftPower: number;
   rpm: number;
-  /** Vertical load on each gear leg, N, in `model.gear` order. */
   gearLoads: number[];
   onGround: boolean;
   stalled: boolean;
@@ -224,37 +169,28 @@ export interface ReferenceAircraftSample {
 /** Wind at a point and time: mean wind plus any turbulence, north-east-down m/s. */
 export type ReferenceWind = (position: ReferenceVector, time: number) => ReferenceVector;
 
-/** World hooks for a reference aircraft. */
 export interface ReferenceAircraftOptions {
-  /** Default {@link standardAtmosphere}. */
   atmosphere?: AtmosphereModel;
   /** Gravity at a geometric altitude, m/s² (default inverse-square from 9.80665). */
   gravity?: (altitude: number) => number;
   wind?: ReferenceWind;
-  /** Ground elevation above mean sea level at a north/east point, m (default `0`). */
   groundElevation?: (north: number, east: number) => number;
-  /** Fixed RK4 step, s (default `1/400`). */
   step?: number;
 }
 
-/** Where and how a reference aircraft starts. */
 export interface ReferenceInitialCondition {
   north?: number;
   east?: number;
-  /** Geometric altitude of the centre of gravity, m. */
   altitude: number;
   /** True airspeed along the flight path, m/s. */
   airspeed: number;
-  /** Rad. */
   heading?: number;
   pitch?: number;
   bank?: number;
-  /** Angle of attack, rad; the body pitches up by this over the flight path. */
   alpha?: number;
   throttle?: number;
 }
 
-/** A reference 6-DOF aircraft: rigid body, quaternion attitude, fixed-step RK4. */
 export interface ReferenceAircraft {
   readonly model: ReferenceAircraftModel;
   readonly options: Readonly<Required<Omit<ReferenceAircraftOptions, "wind">>> & { wind: ReferenceWind | undefined };
@@ -264,21 +200,15 @@ export interface ReferenceAircraft {
   snapshot(): ReferenceAircraftState;
   restore(state: ReferenceAircraftState): void;
   reset(initial: ReferenceInitialCondition): void;
-  /** Puts the aircraft at rest with every gear leg loaded on level ground under `north`/`east`, after settling. */
   restOnGround(north?: number, east?: number, heading?: number): void;
-  /** Time derivative of a state under an input, in state shape; surfaces and propulsion rates included. */
   derivative(state: ReferenceAircraftState, input: ReferencePilotInput): ReferenceAircraftState;
-  /** Telemetry of an arbitrary state. */
   sampleOf(state: ReferenceAircraftState, input?: ReferencePilotInput): ReferenceAircraftSample;
 }
 
 const BASE = 17;
 const IDLE: ReferencePilotInput = { throttle: 0, pitch: 0, roll: 0, yaw: 0 };
 
-/**
- * Quaternion `[w, x, y, z]` from yaw-pitch-roll Euler angles, rad.
- * @capability reference-aircraft attitude quaternion from heading, pitch and bank
- */
+/** @capability reference-aircraft attitude quaternion from heading, pitch and bank */
 export function referenceQuaternion(heading: number, pitch: number, bank: number): [number, number, number, number] {
   const cy = Math.cos(heading / 2);
   const sy = Math.sin(heading / 2);
@@ -289,10 +219,7 @@ export function referenceQuaternion(heading: number, pitch: number, bank: number
   return [cr * cp * cy + sr * sp * sy, sr * cp * cy - cr * sp * sy, cr * sp * cy + sr * cp * sy, cr * cp * sy - sr * sp * cy];
 }
 
-/**
- * Yaw-pitch-roll Euler angles, rad, of a body-to-NED quaternion `[w, x, y, z]`.
- * @capability reference-aircraft Euler angles from an attitude quaternion
- */
+/** @capability reference-aircraft Euler angles from an attitude quaternion */
 export function referenceEuler(q: readonly [number, number, number, number]): { heading: number; pitch: number; bank: number } {
   const [q0, q1, q2, q3] = q;
   const c11 = q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3;
@@ -313,15 +240,7 @@ function clamp(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(high, value));
 }
 
-/**
- * Creates a {@link ReferenceAircraft}: a flat, non-rotating Earth 6-DOF rigid body with quaternion attitude, a full
- * inertia tensor (with the `Ixz` product) plus gyroscopic engine momentum, gravity falling off with altitude, an
- * injected atmosphere and wind, the α̇ aerodynamic terms solved implicitly, first-order rate-limited actuators,
- * propulsion states, and spring-damper gear with tyre friction. Integrates with classic fourth-order Runge–Kutta at a
- * fixed step, so halving the step cuts the error about sixteen-fold. It is a measuring stick for game flight models,
- * not a game's runtime.
- * @capability reference-aircraft 6-DOF reference flight sim — quaternion rigid body, RK4, standard atmosphere, coefficient-table aero, gear, wind
- */
+/** @capability reference-aircraft 6-DOF reference flight sim — quaternion rigid body, RK4, standard atmosphere, coefficient-table aero, gear, wind */
 export function createReferenceAircraft(model: ReferenceAircraftModel, options: ReferenceAircraftOptions = {}): ReferenceAircraft {
   const atmosphere = options.atmosphere ?? standardAtmosphere;
   const gravityAt = options.gravity ?? standardGravity;
@@ -375,7 +294,6 @@ export function createReferenceAircraft(model: ReferenceAircraftModel, options: 
     return source[index] ?? 0;
   }
 
-  /** Writes ds/dt into `out`; fills `air`, `surfaces`, `gearLoads` and `telemetry` as a side effect. */
   function evaluate(t: number, s: readonly number[], input: ReferencePilotInput, out: number[]): void {
     const pn = at(s, 0);
     const pe = at(s, 1);

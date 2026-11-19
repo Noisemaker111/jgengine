@@ -13,7 +13,6 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const RUNTIME = "@jgengine/core/ui/jsx";
 const DOM_TYPES = `${RUNTIME}/dom.view`;
 
-/** Module specifiers that move, and where to. */
 const SPECIFIERS: Record<string, string> = {
   react: RUNTIME,
   "react/jsx-runtime": `${RUNTIME}/jsx-runtime`,
@@ -69,7 +68,6 @@ interface Named {
   typeOnly: boolean;
 }
 
-/** Remove borrowed React peers from browser fixtures and pack the replacement UI package. */
 export function portBrowserFixture(text: string): string {
   return text
     .replace(/(installPublicPackages\([^\n]*\[)([^\]]*)(\])/g, (_all, lead: string, packages: string, end: string) =>
@@ -84,7 +82,6 @@ function renderImport(names: Named[], from: string, quote: string, allTypes: boo
   return `import ${allTypes ? "type " : ""}{ ${parts.join(", ")} } from ${quote}${from}${quote};`;
 }
 
-/** Rewrites one source file's React imports; returns the new text and what it could not settle. */
 export function portSource(path: string, text: string): { text: string; notes: string[] } {
   const notes: string[] = [];
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true, path.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
@@ -218,7 +215,6 @@ export function portSource(path: string, text: string): { text: string; notes: s
   return { text: portBrowserFixture(out), notes };
 }
 
-/** `"jsx": "react-jsx"` gains the engine runtime as its import source. */
 export function portTsconfig(text: string): string {
   if (!/"jsx"\s*:/.test(text)) return text;
   if (/"jsxImportSource"\s*:/.test(text)) return text.replace(/"jsxImportSource"\s*:\s*"[^"]*"/, `"jsxImportSource": "${RUNTIME}"`);

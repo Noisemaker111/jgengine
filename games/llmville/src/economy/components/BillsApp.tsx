@@ -17,7 +17,6 @@ interface BillsAppProps {
   canEditGame: boolean;
 }
 
-/** One unpaid invoice as the bills list shows it. */
 export interface BillRow {
   id: Id<"bills">;
   description: string;
@@ -37,7 +36,6 @@ export function BillsApp({ gameId, playerId, money, canEditGame }: BillsAppProps
     onPay={(billId) => wrapMutation("payBill", payBill({ gameId, billId, externalId: playerId }))} />;
 }
 
-/** The unpaid invoices, two columns on wide tablets. */
 export function BillsList({ bills, money, canEditGame, onPay }: { bills: readonly BillRow[]; money: number; canEditGame: boolean; onPay: (billId: BillRow["id"]) => unknown }) {
   const compact = useCompact();
   if (bills.length === 0) return <Muted size={13}>No outstanding bills. The lab is paid up.</Muted>;

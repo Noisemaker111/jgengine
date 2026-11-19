@@ -6,11 +6,8 @@ import type { RuneElementProps } from "./element";
 export function RuneBox(props: RuneElementProps) { return createElement("rune-box", props); }
 /** Native Rune row. */
 export function RuneRow(props: RuneElementProps) { return createElement("rune-box", { ...props, direction: "row" }); }
-/** Native text, optionally bound directly to a live getter. */
 export function RuneText(props: RuneElementProps) { return createElement("rune-text", props); }
-/** Native scroll viewport with a column as its content. */
 export function RuneScroll(props: RuneElementProps) { return createElement("rune-box", { ...props, scroll: true }); }
-/** Native interactive element; children retain their own layout and paint. */
 export function RuneButton(props: RuneElementProps) { return createElement("rune-box", { ...props, role: "button" }); }
 /** Native SVG icon; SVG body is artwork, never a style declaration. */
 export function RuneIcon(props: RuneElementProps) { return createElement("rune-icon", props); }
@@ -26,7 +23,6 @@ export function RuneViewport({ width, height, children }: { width: number; heigh
   return <Viewport value={{ width, height }}>{children}</Viewport>;
 }
 
-/** Viewport size in layout points; only a resize rerenders its consumer. */
 export function useRuneViewport(): { width: number; height: number } {
   const provided = useContext(Viewport);
   const read = () => typeof window === "undefined" ? { width: 1280, height: 720 } : { width: window.innerWidth, height: window.innerHeight };

@@ -4,10 +4,6 @@
  */
 export type DamageChannelId = string;
 
-/**
- * Caller-owned id for a target trait — `"armored"`, `"fleshy"`, `"wet"`, `"boss"`.
- * Traits are the receiver-side facets a matchup scores a channel against.
- */
 export type TargetTraitId = string;
 
 /**
@@ -18,41 +14,27 @@ export type TargetTraitId = string;
  * scalar (knockback, stagger, heat) the engine forwards without interpreting.
  */
 export interface MatchupOutputs {
-  /** Multiplier on direct impact magnitude. */
   impact?: number;
-  /** Multiplier on status application probability. */
   applyChance?: number;
-  /** Multiplier on applied status magnitude (e.g. damage per tick). */
   magnitude?: number;
-  /** Multiplier on applied status duration/ticks. */
   duration?: number;
-  /** Caller-defined extra scalar outputs, multiplied per axis like the named ones. */
   extra?: Record<string, number>;
 }
 
-/**
- * A serializable, data-defined matchup table: `channel → trait → outputs`. When a hit's channel
- * meets a target carrying several traits, every matching entry's outputs multiply together, so
- * axes compose independently (a trait can halve impact yet double status duration). `default`
- * applies for a channel/trait pair the table does not mention.
- */
 export interface DamageMatchup<
   TChannel extends string = DamageChannelId,
   TTrait extends string = TargetTraitId,
 > {
-  /** Channel keyed to a per-trait outputs table. */
   entries: Partial<Record<TChannel, Partial<Record<TTrait, MatchupOutputs>>>>;
   /** Outputs used when no listed trait matches the channel; identity when omitted. */
   default?: MatchupOutputs;
 }
 
-/** One `(trait → outputs)` pair that contributed to a resolved matchup — provenance for UI/debug. */
 export interface MatchupContribution {
   trait: TargetTraitId;
   outputs: MatchupOutputs;
 }
 
-/** Fully-resolved matchup outputs (every axis populated) plus the contributions that produced them. */
 export interface ResolvedMatchup {
   channel: DamageChannelId;
   impact: number;
@@ -61,7 +43,6 @@ export interface ResolvedMatchup {
   duration: number;
   /** Extra scalar outputs, each defaulting to 1 unless a contribution set it. */
   extra: Record<string, number>;
-  /** Whether at least one listed trait matched (false means `default`/identity was used). */
   matched: boolean;
   contributions: MatchupContribution[];
 }

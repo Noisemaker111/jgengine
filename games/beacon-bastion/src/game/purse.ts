@@ -19,19 +19,16 @@ export type PurseReason =
   | "load"
   | "reconcile";
 
-/** The fact the keep's purse lives in, and the one currency its books keep. */
 export const PURSE_FACT = "keep.gold";
 export const PURSE_CURRENCY = "gold";
 export const PURSE_ACCOUNT = "keep";
 
-/** The keep's ripples that pay gold, by the event that raises them. */
 const EVENT_REASONS: Readonly<Record<string, PurseReason>> = {
   bounty: "kill-bounty",
   overlap_bonus: "early-call-bonus",
   held_pay: "held-pay",
 };
 
-/** The reason a world call that moved the purse is booked under. */
 export function purseReason(cause: WorldCause): PurseReason {
   switch (cause.kind) {
     case "event":
@@ -53,7 +50,6 @@ export function purseReason(cause: WorldCause): PurseReason {
   }
 }
 
-/** What the entry points at: the tower it was done to, else the kind, action or event it named. */
 export function purseRef(cause: WorldCause): string | undefined {
   return cause.target ?? cause.name ?? undefined;
 }

@@ -23,13 +23,6 @@ import { hashUnit } from "../random/rng";
 import { polylineLength } from "../roads/roads";
 import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "../terrain/terrain";
 
-/**
- * The buildings one `building()` descriptor places, always through the one frontage placer
- * ({@link deriveBuildingLots}): along its `along` roads; else, when the world's streets pass through
- * the settlement, along those streets near `position`; else in two rows facing a lane through
- * `position` (`spacing` wide). `roads` are the world's streets: no lot ever stands on their
- * carriageway or sidewalks.
- */
 export function resolveStructureBuildings(
   descriptor: BuildingEnvironmentDescriptor,
   roads: readonly RoadFrontage[] = [],
@@ -159,7 +152,6 @@ export interface WeatherSummary {
   density: number;
 }
 
-/** One road descriptor's resolved footprint: vertex count, width, and total centerline length. */
 export interface RoadSummary {
   points: number;
   width: number;

@@ -35,7 +35,6 @@ export interface TalentSnapshot {
  */
 export type TalentHydrateReason = "unknown-node" | "invalid-rank" | "max-rank";
 
-/** One saved rank {@link TalentTree.hydrate} dropped or narrowed, with the value the save held. */
 export interface TalentHydrateIssue {
   nodeId: string;
   rank: unknown;

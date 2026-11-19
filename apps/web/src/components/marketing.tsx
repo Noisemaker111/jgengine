@@ -28,7 +28,6 @@ const KEYWORDS = new Set([
 
 const TOKEN = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`[^`]*`|\/\/.*$|#.*$|[A-Za-z_$][\w$]*)/g;
 
-/** A light, dependency-free highlighter: comments, strings and a handful of keywords. */
 function CodeLine({ line }: { line: string }) {
   if (line.length === 0) return <>{"​"}</>;
   const out: ReactNode[] = [];
@@ -123,7 +122,6 @@ function useLitLines(
   return lit;
 }
 
-/** A titled, copyable code panel: the "show the real thing" surface across the site. */
 export function CodeBlock({
   code,
   filename,
@@ -137,7 +135,6 @@ export function CodeBlock({
   tone?: "neutral" | "good" | "bad";
   copy?: boolean;
   className?: string;
-  /** A running demo; the lines doing what it does right now light up. */
   trace?: { channel: Trace; lines: TraceLines } | undefined;
 }) {
   const border = tone === "good" ? "border-accent/40" : tone === "bad" ? "border-line" : "border-line";
@@ -188,7 +185,6 @@ export function CodeBlock({
   );
 }
 
-/** Side-by-side "do it yourself vs. do it with jgengine". */
 export function VersusBlock({
   before,
   after,
@@ -204,7 +200,6 @@ export function VersusBlock({
   afterLabel?: string;
   beforeNote?: string;
   afterNote?: string;
-  /** A running demo: both columns light the lines doing what it does right now. */
   trace?: { channel: Trace; before: TraceLines; after: TraceLines };
 }) {
   const beforeTrace = useMemo(() => (trace === undefined ? undefined : { channel: trace.channel, lines: trace.before }), [trace]);
@@ -245,7 +240,6 @@ function Dash() {
   );
 }
 
-/** Two-column strengths / trade-offs. */
 export function ProsCons({
   pros,
   cons,
@@ -291,7 +285,6 @@ export function ProsCons({
   );
 }
 
-/** A compact feature tile with a glyph, used in grids on the editor and adopt pages. */
 export function FeatureCard({ glyph, title, children }: { glyph: string; title: string; children: ReactNode }) {
   return (
     <div className="card p-5">

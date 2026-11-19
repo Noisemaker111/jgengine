@@ -10,16 +10,13 @@ import type { VitalDef, VitalDose } from "@jgengine/core/stats/vitals";
  * off first wakes it and the tame is lost. Every number is a meter, a dose or a curve below.
  */
 
-/** The levels ARK's taming tables are written at: a wild creature's first level and its last. */
 const LOW = 1;
 const HIGH = 30;
 
-/** A table value: `low` at level 1, `high` at level 30, straight lines between. */
 function grows(low: number, high: number): Curve {
   return { kind: "piecewise", points: [[LOW, low], [HIGH, high]] };
 }
 
-/** A species' taming: its torpor at a level, the affinity a tame takes at a level, and its foods, most preferred first. */
 export interface TamingDef {
   torpor: Curve;
   affinity: Curve;
@@ -28,10 +25,6 @@ export interface TamingDef {
   awake?: boolean;
 }
 
-/**
- * ARK's passive tames on the Island: walk up while it is hungry and hand it a food it likes, wait for it to
- * digest, and feed it again; any hit scares it and the tame so far is lost.
- */
 export const AWAKE_TAMES: ReadonlySet<string> = new Set(["ovis", "lystrosaurus", "moschops", "equus", "castoroides", "gigantopithecus"]);
 
 /**
@@ -46,7 +39,6 @@ export function food(affinity: number, digestSeconds: number, ineffectiveness = 
   ];
 }
 
-/** A species' table: torpor at level 1 and per level, plain-food meals a tame takes at levels 1 and 30, and its foods. */
 export function tamingTable(torpor: { base: number; perLevel: number }, meals: readonly [number, number], foods: Readonly<Record<string, readonly VitalDose[]>>): TamingDef {
   return { torpor: grows(torpor.base, torpor.base + torpor.perLevel * (HIGH - LOW)), affinity: grows(meals[0], meals[1]), foods };
 }
@@ -54,7 +46,6 @@ export function tamingTable(torpor: { base: number; perLevel: number }, meals: r
 /** ARK's knocked-out torpor drain: 0.3 a second at level 1, 0.5 at level 30. */
 export const TORPOR_DRAIN: Curve = grows(0.3, 0.5);
 
-/** Ineffectiveness a hit adds per share of max health taken while down (ARK: 2). */
 export const HIT_INEFFECTIVENESS = 2;
 
 /** Share of the affinity a tame takes, lost a second while a downed creature has nothing it will eat. */
@@ -63,7 +54,6 @@ export const STARVE_LOSS = 0.001;
 /** The longest anything can hold a creature still, seconds: a second bola tops it up, never past this. */
 const HOLD_MAX = 30;
 
-/** It wakes once torpor wears down to this share of full. */
 export const WAKES_AT = 0.002;
 
 /** The body a creature is tamed through, at its level: the meters above, the flags it raises. */
@@ -80,7 +70,6 @@ export function tamingBody(def: TamingDef, level: number): VitalDef[] {
   ];
 }
 
-/** Taming effectiveness from the ineffectiveness a tame gathered: 1 clean, falling with every meal and hit. */
 export function effectivenessOf(ineffectiveness: number): number {
   return 1 / (1 + Math.max(0, ineffectiveness));
 }
@@ -98,7 +87,6 @@ export const NARCOTICS = createDoseTable(
   { fallback: "any" },
 );
 
-/** ARK's bonus levels: half the wild level, scaled by taming effectiveness, floored. */
 export function bonusLevels(level: number, effectiveness: number): number {
   return Math.floor((level * effectiveness) / 2);
 }

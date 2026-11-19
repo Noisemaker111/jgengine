@@ -10,29 +10,22 @@ export const BOUNTY_RULE = {
   maxScale: 4,
 } as const;
 
-/** The wave's multiplier on every raider's weight, times any relic the player carries. */
 export function bountyScale(wave: number, relicScale = 1): number {
   const waveScale = Math.min(BOUNTY_RULE.maxScale, 1 + BOUNTY_RULE.perWave * Math.max(0, wave - 1));
   return waveScale * relicScale;
 }
 
-/** What one kill of `unit` pays on `wave`: its weight, the wave's multiplier, and the relic's. */
 export function killBounty(unit: string, wave: number, relicScale = 1): number {
   return Math.round(creepDef(unit).bounty * bountyScale(wave, relicScale));
 }
 
 export interface BountyReadout {
-  /** The multiplier a kill pays at the run's deepest wave. */
   scale: number;
-  /** What the lightest raider (a Scout) pays on wave 1. */
   opening: number;
-  /** What the same raider pays on the deepest wave reached. */
   closing: number;
-  /** Every bounty paid this run. */
   earned: number;
 }
 
-/** The result card's readout: the same raider's pay at the start and at the run's last wave. */
 export function bountyReadout(deepestWave: number, earned: number, relicScale = 1): BountyReadout {
   return {
     scale: bountyScale(deepestWave, relicScale),

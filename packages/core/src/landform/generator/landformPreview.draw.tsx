@@ -10,7 +10,6 @@ import { LANDFORM_OUTPUT } from "./landformGenerator";
 import type { LandformSurfaceKind } from "../materials/landformSurface";
 import type { LandformTerrain } from "./landformTerrain";
 
-/** Tile colour per surface kind, blended by the landform's weights. */
 const KIND_COLORS: Readonly<Record<LandformSurfaceKind, string>> = { rock: "#7d7a76", gravel: "#9a8f7e", sand: "#d8c08a", mud: "#6b5a44", soil: "#5d7a3a" };
 const WATER = new THREE.Color("#3f6f96");
 
@@ -18,7 +17,6 @@ function isLandformTerrain(value: unknown): value is LandformTerrain {
   return typeof value === "object" && value !== null && "heights" in value && value.heights instanceof Float32Array && "cols" in value && "rows" in value;
 }
 
-/** A tile grows its variant at the generator's coarsest detail, so twenty tiles stay quick. */
 function previewTerrain(definition: GeneratorDefinition, variant: GeneratorVariant): LandformTerrain | null {
   const detail = Math.min(1, ...(definition.lods ?? [1]));
   const output = runGenerator(definition, variant.meta, { detail });
@@ -35,11 +33,7 @@ function heightRange(terrain: LandformTerrain): { low: number; high: number } {
   return { low: Number.isFinite(low) ? low : 0, high: Number.isFinite(high) ? high : 0 };
 }
 
-/**
- * The landform as a lit, vertex-coloured heightfield centred on the origin with its lowest ground at
- * 0, water cells tinted blue.
- * @internal
- */
+/** @internal */
 export function landformPreviewGeometry(terrain: LandformTerrain): THREE.BufferGeometry {
   const { cols, rows, cellSize, heights, kinds, weights, waterDepth } = terrain;
   const { low } = heightRange(terrain);
@@ -92,7 +86,7 @@ function LandformPreview(props: GeneratorPreviewProps) {
   return null;
 }
 
-/** Registers the landform variant-tile preview: the grown ground as a coloured relief. Loaded on demand. @internal */
+/** @internal */
 export function registerLandformPreview(): void {
   registerGeneratorPreview(LANDFORM_OUTPUT, {
     Component: LandformPreview,

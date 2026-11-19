@@ -53,20 +53,13 @@ function dedupe(entries: CapabilityEntry[]): CapabilityEntry[] {
   return [...best.values()];
 }
 
-function importLine(name: string, importPath: string): string {
-  return `import { ${name} } from "${importPath}"`;
-}
-
 function renderSkill(skill: string, entries: CapabilityEntry[]): string {
   const lines: string[] = [GENERATED_HEADER, "", `# ${skill} — capability index`, ""];
   if (entries.length === 0) {
     lines.push("No capabilities tagged in this domain yet.");
     return `${lines.join("\n").trimEnd()}\n`;
   }
-  lines.push(
-    "Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.",
-    "",
-  );
+  lines.push("Discover with `bun run find <intent>` or `npx jgengine find <intent>`.", "");
   const bySlug = new Map<string, CapabilityEntry[]>();
   for (const entry of entries) {
     const list = bySlug.get(entry.slug) ?? [];
@@ -76,11 +69,17 @@ function renderSkill(skill: string, entries: CapabilityEntry[]): string {
   for (const slug of [...bySlug.keys()].sort()) {
     const list = (bySlug.get(slug) ?? []).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     const intent = list.find((e) => e.intent !== "")?.intent ?? slug;
-    lines.push(`## ${slug} — ${intent}`, "");
+    const byModule = new Map<string, string[]>();
     for (const entry of list) {
-      lines.push(`- \`${entry.name}\` (${entry.kind}) · \`${importLine(entry.name, entry.importPath)}\``);
+      const names = byModule.get(entry.importPath) ?? [];
+      names.push(entry.name);
+      byModule.set(entry.importPath, names);
     }
-    lines.push("");
+    const imports = [...byModule.entries()]
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([mod, names]) => `\`import { ${names.join(", ")} } from "${mod}"\``)
+      .join(" · ");
+    lines.push(`- **${slug}** — ${intent} · ${imports}`);
   }
   return `${lines.join("\n").trimEnd()}\n`;
 }

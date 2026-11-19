@@ -32,7 +32,6 @@ const PROP_MODELS: Record<string, string> = {
 
 export const LIBRARY_MODEL_NAMES: readonly string[] = [...new Set([...Object.values(PROP_MODELS), ...CAST_MODEL_NAMES, CAR_MODEL_NAME])];
 
-/** The lamp head glows after dark; only its glass takes the warm self-lit finish. */
 const LAMP_GLASS = { emissive: "#ffcf94", emissiveIntensity: 2.4, materials: ["street_lamp_01_glass"] };
 
 export const LIBRARY_PROPS: Record<string, ModelConfig> = Object.fromEntries(
@@ -42,5 +41,4 @@ export const LIBRARY_PROPS: Record<string, ModelConfig> = Object.fromEntries(
   }),
 );
 
-/** One credit line per library model the city uses: title, author, license and source page. */
 export const LIBRARY_CREDITS: readonly string[] = libraryModelCredits(LIBRARY_MODEL_NAMES);

@@ -12,7 +12,6 @@ import { terrainScanKey } from "./terrainScanMaps.draw";
 import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader.draw";
 import type { TerrainPaintTextures } from "./terrainSurfaces.draw";
 
-/** The built procedural detail terrain material, ready to mount on the ground mesh. */
 export interface TerrainDetailMaterialHandle {
   material: THREE.MeshStandardMaterial;
   /** Editor relief-contour strength 0..1 (0 in play); write `.value` to retune without recompiling. */
@@ -31,20 +30,15 @@ export interface TerrainDetailMaterialTextures {
   ao?: THREE.Texture;
 }
 
-/** Surface-pass inputs beyond the resolved detail config. */
 export interface TerrainDetailMaterialOptions {
-  /** Authored paint coverage from {@link createTerrainPaintTextures}; omit for unpainted ground. */
   paint?: TerrainPaintTextures | undefined;
-  /** Graphics tier. `low` draws one cheap mottle per surface and skips micro-normals. Default `high`. */
   quality?: GraphicsQuality;
   /**
    * Surface classes to compile (bit `1 << classIndex`); defaults to the paint's own classes. An
    * editor that can paint any surface passes {@link ALL_TERRAIN_SURFACE_CLASSES}.
    */
   classMask?: number;
-  /** Initial editor relief-contour strength. Default 0. */
   contour?: number;
-  /** Generated surfaces for the ground, sand band and slope rock, from {@link createTerrainSurfaceTextures}. */
   surfaces?: TerrainSurfaceTextures | undefined;
 }
 
@@ -55,16 +49,13 @@ export interface TerrainSurfaceSlot {
   tint: number;
 }
 
-/** Generated terrain surfaces baked into array textures, ready for {@link createTerrainDetailMaterial}. */
 export interface TerrainSurfaceTextures {
   textures: SurfaceMaterialArrayTextures;
   roles: Partial<Record<TerrainSurfaceRole, TerrainSurfaceSlot>>;
-  /** Array layer of each paint slot's scan (index 0 is paint slot 1); undefined where the slot has none. */
   paintLayers: readonly (number | undefined)[];
   dispose(): void;
 }
 
-/** Scans already decoded and packed, by {@link terrainScanKey}. */
 export type TerrainScanLibrary = ReadonlyMap<string, SurfaceMaterialMaps>;
 
 /**
@@ -134,7 +125,6 @@ export function* createTerrainSurfaceTexturesJob(
 }
 
 const ROCK_CLASS_BIT = 1 << 4;
-/** Compile every surface response, for an editor viewport whose paint can change to any surface. */
 export const ALL_TERRAIN_SURFACE_CLASSES = 0x1ff;
 
 // Slot 0 is the unpainted base, 1–8 the paint layers, 9 slope rock.

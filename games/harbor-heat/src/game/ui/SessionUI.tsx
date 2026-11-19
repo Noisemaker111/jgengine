@@ -11,7 +11,6 @@ import { saveHarborState } from "../save";
 import { sessionStore } from "../session";
 import { ReceiptScreen, type Slip } from "./Receipt";
 
-/** What the slip says: a delivery's receipt, paid or missed, or the paper's front page for a bust or a clinic stay. */
 export function resultOf(notice: string, courier: CourierState): Slip {
   const title = { id: "title", label: "Title" };
   if (notice !== "courier") {
@@ -54,7 +53,6 @@ function money(amount: number): string {
   return amount < 0 ? `-$${-amount}` : amount > 0 ? `+$${amount}` : "$0";
 }
 
-/** Pause on P (also over a receipt), and the end-of-run receipt with its choices. */
 export function SessionUI() {
   const { commands } = useGame();
   const ctx = useGameContext();

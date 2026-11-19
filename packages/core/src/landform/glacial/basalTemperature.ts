@@ -15,18 +15,14 @@
 /** Melting point lowering in K per metre of ice (air-saturated ice, Cuffey & Paterson 2010). */
 const MELTING_SLOPE = 8.7e-4;
 
-/** Thermal conductivity of ice in W m⁻¹ K⁻¹. */
 const ICE_CONDUCTIVITY = 2.1;
 
-/** The climate a glacier's bed temperature follows. @internal */
+/** @internal */
 export interface BasalClimate {
   /** Snowline altitude in metres. */
   ela: number;
-  /** Mean annual air temperature at the snowline in °C. */
   snowlineTemperature: number;
-  /** Fall of air temperature with altitude in K/m. */
   lapseRate: number;
-  /** Geothermal heat flux in W/m². */
   geothermalFlux: number;
 }
 

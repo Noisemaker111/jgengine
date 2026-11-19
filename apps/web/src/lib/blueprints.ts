@@ -1,13 +1,6 @@
-/**
- * Landing-page examples of a big game broken into existing primitives. Every
- * block is a `skill/intent-key` row from a generated `capabilities.md`;
- * `capabilityIndex.test.ts` fails if one stops existing.
- */
 export interface Blueprint {
-  /** Completes "Make a game that ___ with jgengine". */
   readonly prompt: string;
   readonly scale: string;
-  /** The probe game on /games closest to this pitch (it need not use every block). */
   readonly gameId?: string;
   readonly blocks: readonly string[];
 }

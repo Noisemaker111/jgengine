@@ -13,12 +13,9 @@ import { readRunState, RUN_STATE_KEY } from "./run/shiftState";
 /** The yard's save document namespace. The corridor is one ladder, so the yard keeps one slot. */
 export const FOUNDRY_SAVE_KEY = "drift-foundry.yard";
 export const FOUNDRY_SLOT = "yard";
-/** The backend key the yard's document is written to. */
 export const FOUNDRY_ENTRY = `${FOUNDRY_SAVE_KEY}:${FOUNDRY_SLOT}`;
-/** Where an older build kept the pit's card frame; lifted into the `pitFrame` section. */
 export const PIT_FRAME_KEY = "drift-foundry.pit-frame.v1";
 
-/** The frame and time the pit left behind, for the card Continue opens. */
 export interface PitFrame {
   thumbnail: string | null;
   savedAt: number;
@@ -26,7 +23,6 @@ export interface PitFrame {
 
 const nonnegative = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
 
-/** The stored `pitFrame` section; a frame larger than a card thumbnail can be is dropped. */
 export function readPitFrame(value: unknown): PitFrame {
   if (value === null || typeof value !== "object") return { thumbnail: null, savedAt: 0 };
   const raw = value as Partial<Record<keyof PitFrame, unknown>>;
@@ -55,7 +51,6 @@ export function newFoundryProfile(): FoundryProfile {
   return { records: { ...EMPTY_RECORDS }, run: null, career: newCareer(), ghosts: {}, parked: null, pitFrame: { thumbnail: null, savedAt: 0 } };
 }
 
-/** Each section's reader: stored JSON in, a value the game can trust out. */
 const READERS: { readonly [K in keyof FoundryProfile]: (value: unknown) => FoundryProfile[K] } = {
   records: readRecords,
   run: readRunState,
@@ -77,7 +72,6 @@ const LEGACY_KEYS: { readonly [K in keyof FoundryProfile]: string } = {
 
 const SECTIONS = Object.keys(READERS) as (keyof FoundryProfile)[];
 
-/** A document's sections read into a profile; a missing section is the fresh one. */
 export function readFoundryProfile(sections: Readonly<Record<string, unknown>>): FoundryProfile {
   const profile = newFoundryProfile();
   for (const name of SECTIONS) {
@@ -101,34 +95,21 @@ function liftKeys(stored: Readonly<Record<string, string>>): Record<string, unkn
   return sections;
 }
 
-/** The yard's save: one shared save document, one section per part of the profile, one digest. */
 export interface FoundrySave {
-  /** The live profile the run session reads and changes; `write` persists it as it stands. */
   readonly profile: FoundryProfile;
-  /** Whether writes reach storage at all; a memory-only yard plays the same and keeps nothing. */
   readonly persistent: boolean;
-  /** Write the profile; resolves false when it could not be kept (no storage, or a failed write). */
   write(): Promise<boolean>;
-  /** Read the stored document (or an older build's keys) into the profile. */
   load(): Promise<FoundryProfile>;
-  /** Read the stored document without touching the live profile; `null` when the yard has none. */
   peek(): Promise<FoundryProfile | null>;
-  /** One hash over every section, as the live profile would write them. */
   digest(): string;
 }
 
-/** The yard's save in this browser's storage, or a memory-only yard where there is none (headless, blocked). */
 export function browserFoundrySave(): FoundrySave {
   return createFoundrySave(defaultKeyValueStorage() === null ? null : localSaveBackend());
 }
 
-/** This context's yard save: the one the run session, the pit card and the capture staging share. */
 export const foundrySaveOf = perContext((): FoundrySave => browserFoundrySave());
 
-/**
- * Open the yard's save over a backend. `null` keeps the profile in memory only: it plays the same,
- * and every write reports that nothing was kept.
- */
 export function createFoundrySave(backend: SaveBackend | null, initial: Partial<FoundryProfile> = {}): FoundrySave {
   const profile: FoundryProfile = { ...newFoundryProfile(), ...initial };
   const fresh = newFoundryProfile();

@@ -1,18 +1,15 @@
-/** A sampled pair of snapshots and interpolation factor. */
 export type SnapshotBufferSample<T> = {
   before: T;
   after: T;
   alpha: number;
 };
 
-/** Serializable snapshot-buffer state. */
 export type SnapshotBufferState<T> = {
   delayMs: number;
   capacity: number;
   entries: Array<{ atMs: number; value: T }>;
 };
 
-/** Handle for a timestamped delayed snapshot buffer. */
 export type SnapshotBuffer<T> = {
   push(atMs: number, value: T): void;
   sampleAt(nowMs: number): SnapshotBufferSample<T> | null;
@@ -21,9 +18,7 @@ export type SnapshotBuffer<T> = {
   retune(config: { delayMs?: number; capacity?: number }): void;
 };
 
-/** Stores timestamped snapshots and samples a delayed, interpolatable pair.
- * @capability runtime snapshot interpolation
- */
+/** @capability runtime snapshot interpolation */
 export function createSnapshotBuffer<T>(config: {
   delayMs: number;
   capacity: number;

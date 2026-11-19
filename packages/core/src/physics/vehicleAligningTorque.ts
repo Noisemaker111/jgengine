@@ -9,15 +9,11 @@ import { magicFormulaTrail, TNO_205_60R15_TIRE, type MagicFormulaTireCoefficient
 export interface VehicleAligningTorqueEffect {
   /** Multiplier on the effect: `0` off (the wheels sit at the rack), `1` as the reference measures it (default), past `1` more self-steer into a slide; sane over `0..4`. */
   strength?: number;
-  /** Road-wheel rad per N·m of summed kingpin torque (default `0.4°` per 100 N·m, a road car's rack and column). */
   compliance?: number;
-  /** Caster trail at the ground, m (default `0.016`, the reference MX-5's front linkage). */
   casterTrail?: number;
-  /** Tyre coefficients for the pneumatic trail (default the `magicFormula` effect's, else the TNO 205/60 R15). */
   tire?: Partial<MagicFormulaTireCoefficients>;
 }
 
-/** Steering-system compliance of a road car's rack and column, road-wheel rad per N·m. */
 export const ROAD_CAR_STEERING_COMPLIANCE = (0.4 * Math.PI) / 180 / 100;
 
 /**

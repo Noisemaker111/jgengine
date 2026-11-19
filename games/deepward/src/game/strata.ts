@@ -1,29 +1,17 @@
-/**
- * Bellwether by depth. Each stratum is its own authored floor plan (an editor `place`), reached by
- * the descent lift at the back of the one above it. A stratum owns how it looks (lamp colour and
- * reach, fog, ambient light), what it costs to stand in it (pressure against the suit's seal
- * rating, cold, ink) and what lives there; the editor scene owns where every room, node and
- * creature sits.
- */
 export type Stratum = "vault" | "cold" | "wells" | "choir";
 
 export interface StratumDef {
   id: Stratum;
-  /** The roman numeral the depth strip and the lift plates print. */
   numeral: string;
   name: string;
   /** Metres below Marrow, for the depth strip. */
   metres: number;
-  /** The seal rating a suit needs to stand here without the hull crushing in. */
   pressure: number;
-  /** The stratum above (its lift up) and below (its lift down). */
   above: Stratum | null;
   below: Stratum | null;
-  /** Room lamps: colour, intensity, reach and how deep a failing lamp dips (0 steady, 1 to black). A dark stratum is where the headlamp matters. */
   lamp: { color: string; intensity: number; reach: number; flicker: number };
   fog: { color: string; near: number; far: number };
   ambient: number;
-  /** One line the radio reads on arrival. */
   arrival: string;
   /** What the cold or the ink does to the body here, as rate multipliers on the survival meters. */
   drain: { food: number; water: number; air: number };
@@ -62,7 +50,6 @@ export function isStratum(value: unknown): value is Stratum {
   return typeof value === "string" && Object.hasOwn(STRATA, value);
 }
 
-/** Suit seal ratings by mark; the issue suit holds the first two strata. */
 export const SEAL_RATING = { 1: 2, 2: 3, 3: 4 } as const;
 /** Suit damage per second for each pressure step past the seal's rating. */
 export const CRUSH_PER_STEP = 7;

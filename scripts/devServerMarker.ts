@@ -21,9 +21,7 @@ export interface DevServerMarker {
   identity: string;
   port: number;
   pid?: number;
-  /** Commit this server booted from; absent for markers written before revision keying. */
   head?: string | undefined;
-  /** Which config published it; absent on older markers, resolved by probing `/games`. */
   kind?: "website" | "runner";
   /** Host that answers: Vite's default `localhost` can be IPv6-only, where `127.0.0.1` hangs. */
   host?: string;
@@ -63,7 +61,6 @@ export function removeMarker(port: number, identity?: string, dir = tmpdir()): b
   }
 }
 
-/** Every marker on this machine — callers filter by identity. */
 export function listMarkers(dir = tmpdir()): DevServerMarker[] {
   const out: DevServerMarker[] = [];
   let names: string[];
@@ -82,7 +79,6 @@ export function listMarkers(dir = tmpdir()): DevServerMarker[] {
   return out;
 }
 
-/** True when something answers HTTP with a 2xx or 3xx at `url`. */
 export async function isUp(url: string): Promise<boolean> {
   try {
     const response = await localRequest(url, { timeoutMs: 1_000 });
@@ -122,11 +118,8 @@ async function answers(base: string, timeoutMs = 3_000): Promise<boolean> {
 /** Route every dev server answers with who it is, so reuse asks the live server instead of a marker file. */
 export const SERVER_IDENTITY_PATH = "/__jgengine/server";
 
-/** What a live dev server reports about itself at {@link SERVER_IDENTITY_PATH}. */
 export interface ServerIdentityReport {
-  /** Same string as {@link devServerIdentity}: the checkout, plus `|game-dir:` when it serves one. */
   identity: string;
-  /** The checkout this server runs from. */
   root: string;
   gameDir: string | null;
   /** The Vite process itself, never the `bun run` wrapper that launched it. */
@@ -281,10 +274,6 @@ async function servesWebsite(base: string): Promise<boolean> {
   return localOk(`${base}/games`, 1_000);
 }
 
-/**
- * The dev server already serving this checkout, or null — website dev first, then the
- * runner. Kept for callers that only need one.
- */
 export async function findRunningDevServer(cwd = process.cwd(), dir = tmpdir()): Promise<RunningDevServer | null> {
   const servers = await listRunningDevServers(cwd, dir);
   return servers[0] ?? null;
@@ -307,10 +296,8 @@ type ViteServerLike = {
 
 type IdentityResponse = { statusCode: number; setHeader(name: string, value: string): void; end(body: string): void };
 
-/** Minutes a dev server may sit with no open connection before it exits. */
 export const DEFAULT_IDLE_EXIT_MINUTES = 20;
 
-/** `JG_DEV_IDLE_MINUTES`, else 20; `0` keeps the server up forever. */
 export function resolveIdleExitMs(env: NodeJS.ProcessEnv = process.env): number {
   const raw = env["JG_DEV_IDLE_MINUTES"];
   if (raw === undefined || raw.trim() === "") return DEFAULT_IDLE_EXIT_MINUTES * 60_000;
@@ -332,7 +319,6 @@ export function idleVerdict(state: {
   openSockets: number;
   rootExists: boolean;
   idleMs: number;
-  /** False once the broker that started this server is gone; nothing would ever stop it then. */
   ownerAlive?: boolean;
 }): IdleVerdict {
   if (!state.rootExists || state.ownerAlive === false) return "orphaned";
@@ -340,7 +326,6 @@ export function idleVerdict(state: {
   return state.now - state.lastActivity >= state.idleMs ? "idle" : "keep";
 }
 
-/** Watch one server's sockets and exit the process when {@link idleVerdict} says so. */
 export function startIdleWatchdog(
   server: ViteServerLike,
   options: {
@@ -348,7 +333,6 @@ export function startIdleWatchdog(
     checkEveryMs?: number;
     now?: () => number;
     rootExists?: (root: string) => boolean;
-    /** Pid of the broker that owns this server (`JG_BROKER_PID`); its death stops the server. */
     ownerPid?: number;
     isAlive?: (pid: number) => boolean;
     exit?: (verdict: Exclude<IdleVerdict, "keep">) => void;

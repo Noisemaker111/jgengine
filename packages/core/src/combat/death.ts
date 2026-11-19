@@ -8,7 +8,6 @@ export type DeathReasonKind = DeathReason["kind"];
 
 export interface OnDeathDropRule {
   table: string;
-  /** `"any"` explicitly permits world item drops without a player killer. */
   when?: { reason: DeathReasonKind | "any" };
 }
 
@@ -30,15 +29,9 @@ export type DropMode = "grant" | "world";
 export interface OnDeathSpec {
   drops?: string | OnDeathDropRule[];
   command?: string | OnDeathCommandRule;
-  /** "grant" (default) puts drops straight into the killer's inventory; "world" scatters them as ground `worldItem`s instead (#32). */
   dropMode?: DropMode;
   /** Scatter-offset tuning when `dropMode` is `"world"`; defaults to `DEFAULT_SCATTER` from `loot/groundItem`. */
   scatter?: ScatterOptions;
-  /**
-   * The game owns what a death means for this entity (a downed window, a revive, a respawn in place):
-   * `entity.died` still fires with `kept: true` and drops/commands still run, but the entity stays in
-   * the scene with its stats, and it can die again once something lifts its last pool off the floor.
-   */
   keep?: boolean;
 }
 
@@ -91,11 +84,7 @@ function matchesReason(when: { reason: DeathReasonKind | "any" } | undefined, re
   return when === undefined || when.reason === "any" || when.reason === reason.kind;
 }
 
-/**
- * Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
- *
- * @capability death-system resolve entity death and its on-death consequences
- */
+/** @capability death-system resolve entity death and its on-death consequences */
 export function createDeathSystem(deps: DeathSystemDeps): DeathSystem {
   const dead = new Set<string>();
 
@@ -161,10 +150,6 @@ export function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason {
     : { kind: "environment", source: "effect", attacker: ctx.from };
 }
 
-/**
- * Whether a death took the entity out of the scene. Presentation that plays a body's last moment
- * (a ragdoll, a death clip, a topple) skips a kept death, whose entity the game keeps on its feet.
- */
 export function deathRemovesEntity(event: Pick<EntityDiedEvent, "kept">): boolean {
   return event.kept !== true;
 }

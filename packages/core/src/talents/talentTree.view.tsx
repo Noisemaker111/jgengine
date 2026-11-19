@@ -13,10 +13,8 @@ import { GameIcon, iconForAction, iconForItemId, isGameIconName, type GameIconNa
 import { HudFrame, type HudFrameVariation } from "@jgengine/core/hud/hudFrame.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
-/** How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default. */
 export type TalentIcon = GameIconName | ReactNode | null;
 
-/** Props for {@link TalentTreePanel}. */
 export interface TalentTreeProps<TStat extends string = string> {
   /**
    * A precomputed render view (from `talentTreeView` or `talentTreeViewFrom`). Supply this to drive the
@@ -24,13 +22,9 @@ export interface TalentTreeProps<TStat extends string = string> {
    * When given, `nodes`/`tree` are ignored. Otherwise pass `nodes` + `tree` for the point-spend path.
    */
   view?: TalentTreeView;
-  /** The tree's node definitions — the same array passed to `createTalentTree`. Used when `view` is omitted. */
   nodes?: readonly TalentNodeDef<TStat>[];
-  /** The live talent-tree instance whose ranks/points drive node state. Used when `view` is omitted. */
   tree?: TalentTreeModel<TStat>;
-  /** Fired with a node id when the player clicks a node that is currently allocatable. Wire it to your unlock/allocate effect (e.g. `tree.allocate`, or spend cash, or set a flag). */
   onLearn?: (nodeId: string) => void;
-  /** Show the points-remaining badge in the frame header. Default `true`; pass `false` for trees with no point currency. */
   showPoints?: boolean;
   /** Resolve a node id to its icon. Default: keyword-match the id, else the node's initials. */
   icon?: (nodeId: string) => TalentIcon;
@@ -38,9 +32,7 @@ export interface TalentTreeProps<TStat extends string = string> {
   label?: (nodeId: string) => ReactNode;
   /** Resolve a branch key to a column header. Default: the branch string (blank branch → no header). */
   branchLabel?: (branch: string) => ReactNode;
-  /** Frame title. Default `Talents`. Pass `null` to render without a frame header. */
   title?: ReactNode;
-  /** {@link HudFrame} skin. Default `themed`. */
   variation?: HudFrameVariation;
   /** Node tile diameter in px. Default 54. */
   nodeSize?: number;
@@ -93,7 +85,6 @@ interface Placement {
   y: Map<string, number>;
   width: number;
   height: number;
-  /** Branch header anchors: label + center x + top y. */
   headers: { branch: string; cx: number; top: number }[];
 }
 

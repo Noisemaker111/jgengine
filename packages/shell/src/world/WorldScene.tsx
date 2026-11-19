@@ -90,7 +90,6 @@ function trackedVisual(parent: THREE.Object3D, root: THREE.Object3D): { dispose(
 interface EntityMarkerSnapshot {
   /** Custom UI content claimed this entity (never `null`/`undefined`). */
   hasCustom: boolean;
-  /** `renderEntity` was absent entirely (`undefined`), which alone gates crowd batching. */
   customMissing: boolean;
   model: ModelConfig | undefined;
   sprite: EntitySpriteConfig | undefined;
@@ -778,13 +777,7 @@ function WorldEntities({
   );
 }
 
-/** The scene's placed objects: one draw per batch of alike static props, and a marker for the rest. */
-/**
- * The placed object ids as of the last placement. Removals alone keep the same list: a batch keeps a
- * removed member, which draws nothing, and a lone prop's marker hides itself once its object is gone,
- * so clearing props away re-renders nothing. The list may name removed objects until the next placement.
- * @internal
- */
+/** @internal */
 export function placedObjectIds(store: Pick<ObjectStore, "ids" | "placements">): () => readonly string[] {
   let seen = -1;
   let ids: readonly string[] = [];
@@ -925,12 +918,12 @@ export function WorldView({
 
 let worldEntityPointerDown: ((entityId: string) => void) | null = null;
 
-/** WorldEntities registers its entity-select handler here; the shell dispatches canvas pointer-down hits. @internal */
+/** @internal */
 export function registerWorldEntityPointerDown(handler: ((entityId: string) => void) | null): void {
   worldEntityPointerDown = handler;
 }
 
-/** Dispatch a canvas pointer-down that hit `entityId` to the world select handler, if one is mounted. @internal */
+/** @internal */
 export function dispatchWorldEntityPointerDown(entityId: string): void {
   worldEntityPointerDown?.(entityId);
 }

@@ -158,7 +158,6 @@ function isShiftStation(kind: ShiftKind, obj: SceneObject): boolean {
   return kind === "work" ? FURNITURE_BY_ID[obj.catalogId]?.role === "work" : obj.catalogId === "bloom_planter";
 }
 
-/** A being with nothing of its own to finish and a paid window still ahead. */
 function freeForShift(ctx: GameContext, state: HouseholdState, member: MemberState): boolean {
   if (member.recovering || shiftRan(ctx, member.id, state.day) || member.workToday > 0 || member.harvestToday > 0) return false;
   return member.action.kind === "idle" || member.action.kind === "wander";

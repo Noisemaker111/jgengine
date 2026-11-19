@@ -12,39 +12,31 @@ import { registerSceneKind, type SceneKindObject, type SceneKindResolveContext }
 import { type ParamSchema, type ParsedParams } from "../generator/paramSchema";
 import { seededRng } from "../random/rng";
 
-/**
- * The editor path kind marking a polyline as a pole/cable run.
- * @capability pole-line editor-authorable poles + sagging cables along a path
- */
+/** @capability pole-line editor-authorable poles + sagging cables along a path */
 export const POLE_LINE_KIND = "pole_line";
 
-/** One placed pole: grounded base position plus facing yaw along the run. */
 export interface Pole {
   id: string;
   position: Vec3;
   yaw: number;
 }
 
-/** One resolved cable span: a point string to loft into a tube, plus its radius. */
 export interface Cable {
   id: string;
   points: Vec3[];
   radius: number;
 }
 
-/** The renderable payload the resolver returns and the shell renderer consumes. */
 export interface ResolvedPoleLine {
   poles: Pole[];
   cables: Cable[];
   poleHeight: number;
   poleAsset: string;
-  /** Wires per span — drives the renderer's crossarm width and insulator count. */
   wireCount: number;
   /** Lateral spread between adjacent wires, meters — the renderer hangs insulators at these offsets. */
   wireSpacing: number;
 }
 
-/** The pole-line parameter schema — drives the inspector and `meta` parse via the studio seam. */
 export const POLE_LINE_SCHEMA: ParamSchema = {
   fields: [
     { type: "text", key: "poleAsset", label: "pole asset", default: "", group: "poles" },
@@ -68,12 +60,6 @@ export const POLE_LINE_SCHEMA: ParamSchema = {
   ],
 };
 
-/**
- * Resolve poles + cables from a document object's points and parsed params. Poles come from the
- * generic `placeAlongPath` sampler; between each consecutive pair, `wireCount` parallel cables are
- * strung with lateral offset and quadratic-Bézier `sag` (deeper on longer spans). Each span's sag
- * varies by up to `sagJitter` of itself, drawn from `seed` (the object id when blank). Pure data.
- */
 export function resolvePoleLine(object: SceneKindObject, params: ParsedParams, context?: SceneKindResolveContext): ResolvedPoleLine {
   const spacing = params["spacing"] as number;
   const poleHeight = params["poleHeight"] as number;
@@ -119,7 +105,7 @@ export function resolvePoleLine(object: SceneKindObject, params: ParsedParams, c
   return { poles, cables, poleHeight, poleAsset: params["poleAsset"] as string, wireCount, wireSpacing };
 }
 
-/** Registers the pole-line scene kind (schema + resolver + inspector note). Called by `registerBuiltinSceneKinds`. @internal */
+/** @internal */
 export function registerPoleLineKind(): void {
   registerSceneKind<ResolvedPoleLine>({
     kind: POLE_LINE_KIND,

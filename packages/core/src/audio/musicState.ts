@@ -1,45 +1,29 @@
-/**
- * Hysteretic music-state selector: turns a continuous intensity signal (nearby threat,
- * alert count, chase proximity) into a stable theme id. The engine can already crossfade
- * a soundtrack; this decides *when*, without the flapping a bare threshold produces when
- * one enemy walks in and out of range.
- */
 export interface MusicTier {
   id: string;
-  /** Theme id passed to `ctx.game.audio.music`; null silences the soundtrack in this tier. */
   theme: string | null;
-  /** Intensity at or above which this tier may be entered. */
   enter: number;
-  /** Minimum time in this tier before it may drop to a lower one. Default 0. */
   holdMs?: number;
 }
 
-/** The tier ladder plus the release margin that keeps a hovering intensity from flapping between tiers. */
 export interface MusicStateConfig {
-  /** Ordered or unordered; the highest `enter` at or below the intensity wins. */
   tiers: readonly MusicTier[];
   /** Intensity must fall this far below a tier's `enter` before leaving it. Default 0.2. */
   release?: number | undefined;
 }
 
-/** Which tier is playing and when it was entered, on the caller's clock. Serialisable. */
 export interface MusicStateSnapshot {
   tierId: string | null;
-  /** Timestamp the current tier was entered, on the caller's clock. */
   sinceMs: number;
 }
 
-/** The current intensity signal and clock reading for one resolve. */
 export interface MusicStateInput {
   intensity: number;
   nowMs: number;
 }
 
-/** Next state, the theme that should be playing, and whether this advance is the one that changed it. */
 export interface MusicStateResult {
   state: MusicStateSnapshot;
   theme: string | null;
-  /** True only on the advance the tier changed — the caller's cue to crossfade. */
   changed: boolean;
 }
 
@@ -61,10 +45,6 @@ function highestTierAt(config: MusicStateConfig, intensity: number): MusicTier |
   return best;
 }
 
-/**
- * Pick the theme for the current intensity. Escalation is immediate; de-escalation waits for the
- * tier's `holdMs` and needs the intensity to fall a `release` margin below the tier it is leaving.
- */
 export function resolveMusicState(
   state: MusicStateSnapshot,
   input: MusicStateInput,

@@ -18,7 +18,6 @@ export function touchCode(action: string): string {
   return `${TOUCH_CODE_PREFIX}${action}`;
 }
 
-/** Every action gains a synthetic touch code alongside its physical codes. */
 export function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap {
   const result: ActionCodesMap = {};
   for (const [action, codes] of Object.entries(map ?? {})) {
@@ -37,7 +36,6 @@ export function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap 
 }
 
 export interface TouchDragBinding {
-  /** Action fired once per `stepPx` of travel toward that side. */
   left?: string;
   right?: string;
   up?: string;
@@ -46,14 +44,11 @@ export interface TouchDragBinding {
 }
 
 export interface TouchGestureBindings {
-  /** Action fired by a quick still tap on the play surface. */
   tap?: string;
-  /** Actions fired by a fast flick past the swipe threshold. */
   swipeUp?: string;
   swipeDown?: string;
   swipeLeft?: string;
   swipeRight?: string;
-  /** Continuous drag: repeats the directional action every `stepPx` of travel. Wins over swipes on its axis, except a flick can still fire the swipe binding for a direction the drag leaves unbound. */
   drag?: TouchDragBinding;
 }
 
@@ -81,17 +76,10 @@ export type TouchAnchor =
   | "top-center"
   | "top-right";
 
-/**
- * Player-selectable skin for the whole touch layer. A style is a material +
- * geometry preset (not just colours), chosen in Settings → Controls and
- * persisted; `glass` is the translucent default, the rest are opt-in looks.
- */
 export type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal";
 
-/** Every touch skin id, in menu order. */
 export const TOUCH_STYLES: readonly TouchStyle[] = ["glass", "arcade", "mechanical", "minimal"];
 
-/** Touch skins as `{ value, label }` rows for the Settings → Controls selector. */
 export const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] = [
   { value: "glass", label: "Glass" },
   { value: "arcade", label: "Arcade" },
@@ -99,7 +87,6 @@ export const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[
   { value: "minimal", label: "Minimal" },
 ];
 
-/** Skin used when neither the game nor the player picks one. */
 export const DEFAULT_TOUCH_STYLE: TouchStyle = "glass";
 
 /**
@@ -110,29 +97,21 @@ export const DEFAULT_TOUCH_STYLE: TouchStyle = "glass";
  */
 export type TouchJoystickVariant = "fixed" | "floating";
 
-/** Every joystick variant id, in menu order. */
 export const TOUCH_JOYSTICK_VARIANTS: readonly TouchJoystickVariant[] = ["fixed", "floating"];
 
-/** Joystick variants as `{ value, label }` rows for the Settings → Controls selector. */
 export const TOUCH_JOYSTICK_VARIANT_OPTIONS: readonly { value: TouchJoystickVariant; label: string }[] = [
   { value: "floating", label: "Floating (under your thumb)" },
   { value: "fixed", label: "Fixed" },
 ];
 
-/** Variant used when the player has not picked one. */
 export const DEFAULT_TOUCH_JOYSTICK_VARIANT: TouchJoystickVariant = "floating";
 
-/** Where each touch cluster docks; unset falls back to the classic bottom layout. */
 export interface TouchLayoutConfig {
-  /** Virtual joystick / movement zone. Default `bottom-left`. */
   movement?: TouchAnchor;
-  /** Primary action cluster. Default `bottom-right`. */
   actions?: TouchAnchor;
-  /** Utility (menu-type) buttons. Default `bottom-right`: small icon buttons above the action cluster, folded into one overflow button past two. */
   utility?: TouchAnchor;
 }
 
-/** The dock zone each cluster resolved to, after applying game config over the bottom-layout defaults. */
 export interface ResolvedTouchLayout {
   movement: TouchAnchor;
   actions: TouchAnchor;
@@ -142,13 +121,9 @@ export interface ResolvedTouchLayout {
 export interface TouchButtonSpec {
   action: string;
   label?: string;
-  /** Glyph for the button face: a `GameIconName` (`@jgengine/core/ui/icons/gameIcons.view`) or touch glyph (`fire`, `reload`, `aim`), or a 1–3 character text glyph such as `"R"`; unset derives one from the action name, `false` shows short initials of the label. */
   icon?: string | false;
-  /** Makes this the large main button the thumb cluster arcs around. Unset picks the first fire/shoot/attack action, else the first primary button. */
   main?: boolean;
-  /** Overrides the derived classification: `primary` renders as a large thumb button, `utility` as a small chip away from the thumb zones. */
   kind?: TouchButtonKind;
-  /** Physical silhouette; unset derives one from the action name (`brake`→pedal, `handbrake`→lever, `fire`→trigger, …). */
   shape?: TouchButtonShape;
   /** Docks this button on its own instead of joining its cluster — e.g. a brake pedal pinned to the right rail. */
   anchor?: TouchAnchor;
@@ -156,12 +131,10 @@ export interface TouchButtonSpec {
   image?: string;
 }
 
-/** Restricts the virtual joystick to one axis — a `horizontal` zone reads as a steering control, freeing throttle/brake to become pedal buttons. */
 export interface TouchMovementConfig {
   axis?: "both" | "horizontal" | "vertical";
 }
 
-/** One named control context's touch config — the same shape as the base config, minus nested modes. */
 export type TouchControlsModeConfig = Omit<TouchControlsConfig, "modes">;
 
 /** Edge bands, in CSS pixels, that touch clusters stay clear of. */
@@ -170,23 +143,16 @@ export interface TouchReserve {
   bottom?: number;
 }
 
-/** Game-authored refinement of the derived touch scheme on `defineGame({ touch })` — gestures, curated buttons, hidden actions, cluster layout, skin, and per-context `modes`. */
 export interface TouchControlsConfig {
-  /** `false` removes the virtual joystick even when movement actions are bound; an object restricts it to one axis. */
   movement?: false | TouchMovementConfig;
-  /** Curated on-screen buttons (order preserved); omit to derive one button per remaining action. Derivation skips session-lifecycle actions (start/restart/pause/menu/…); list one here to dock it anyway. */
   buttons?: readonly (string | TouchButtonSpec)[];
-  /** Play-surface gestures; actions consumed here stop appearing as derived buttons. */
   gestures?: TouchGestureBindings;
   /** Drag-to-look on the play surface; defaults to true for first-person games. */
   look?: boolean;
   /** Radians of look rotation per pixel of touch travel. Default 0.005. */
   lookSensitivity?: number;
-  /** Actions to leave off the derived button cluster. */
   hidden?: readonly string[];
-  /** Dock each cluster to a screen zone; omit for the classic bottom layout. */
   layout?: TouchLayoutConfig;
-  /** Suggested default skin; the player's Settings choice overrides it. Default `glass`. */
   style?: TouchStyle;
   /** Screen bands the clusters keep clear of, in CSS pixels, for HUD the game docks at an edge (a bottom tab bar, a top banner). Default 0. */
   reserve?: TouchReserve;
@@ -212,17 +178,12 @@ export type TouchButtonKind = "primary" | "utility";
 export interface TouchButton {
   action: string;
   label: string;
-  /** Glyph hint for the capture layer: a name or short text glyph to render, `false` to force initials, null to derive from the action name. */
   icon: string | false | null;
   /** Set when the game marked this the cluster's main button; otherwise the dock picks one. */
   main?: boolean;
-  /** `primary` = frequent gameplay verb, rendered as a large thumb button; `utility` = meta action (start, restart, pause, toggles), rendered as a small chip. */
   kind: TouchButtonKind;
-  /** Physical silhouette to draw. */
   shape: TouchButtonShape;
-  /** Per-button dock override; null joins the cluster's anchor. */
   anchor: TouchAnchor | null;
-  /** Custom face art (image/SVG URL); null draws the built-in silhouette. */
   image: string | null;
 }
 
@@ -234,11 +195,8 @@ export interface TouchScheme {
   gestures: TouchGestureBindings | null;
   look: boolean;
   lookSensitivity: number;
-  /** Resolved dock zones for the three clusters. */
   layout: ResolvedTouchLayout;
-  /** Game-suggested default skin; the shell swaps in the player's choice when set. */
   style: TouchStyle;
-  /** Edge bands the clusters keep clear of. */
   reserve: { top: number; bottom: number };
 }
 
@@ -275,14 +233,9 @@ const SHAPE_BY_ACTION: ReadonlyMap<string, TouchButtonShape> = new Map([
 ]);
 
 const WHEEL_PREFIXES = ["steer"] as const;
-/** Slot-like verbs read as square tiles (inventory, spell/item/ability slots). */
 const SQUARE_PREFIXES = ["spell", "slot", "item"] as const;
 
-/**
- * Default silhouette for an action; `circle` when nothing more specific fits.
- *
- * @capability touch-controls default on-screen button silhouette for a touch action
- */
+/** @capability touch-controls default on-screen button silhouette for a touch action */
 export function touchButtonShape(action: string): TouchButtonShape {
   const direct = SHAPE_BY_ACTION.get(action);
   if (direct !== undefined) return direct;
@@ -377,7 +330,6 @@ function gestureActions(gestures: TouchGestureBindings | undefined): Set<string>
   return used;
 }
 
-/** Game-routed slot pickers (`selectSlot2`, `equipSlot1`, `weaponSlot3`); the bare `slot1`/`hotbarSlot1` the shell selects natively stay off the dock. */
 const TOUCH_SLOT_ACTION = /^(?:select|equip|use|switchTo|weapon|item)(?:hotbar|weapon|item)?slot(\d+)$/i;
 
 /**
@@ -390,7 +342,6 @@ export function touchSlotNumber(action: string): number | null {
   return match === null ? null : Number(match[1]);
 }
 
-/** Thumb-cluster closeness: lower ranks sit on the inner ring next to the main button. */
 const ACTION_PRIORITY: readonly (readonly [readonly string[], number])[] = [
   [["fire", "shoot", "attack"], 0],
   [["aim", "ads", "scope"], 1],
@@ -416,11 +367,9 @@ export interface DeriveTouchSchemeOptions {
   reserved: ReadonlySet<string>;
   firstPerson: boolean;
   config?: TouchControlsConfig | false | undefined;
-  /** Active control context (see {@link TouchControlsConfig.modes}); null/unknown falls back to the base config. */
   mode?: string | null;
 }
 
-/** Resolve the effective config for a mode: mode fields replace base fields; the base is the default mode. */
 function resolveModeConfig(
   config: TouchControlsConfig | false | undefined,
   mode: string | null | undefined,
@@ -439,10 +388,6 @@ function resolveModeConfig(
  */
 const DERIVED_BUTTON_BUDGET = 9;
 
-/**
- * Null means "render no touch controls" — either the game opted out or there
- * is nothing to synthesize.
- */
 export function deriveTouchScheme(
   input: ActionCodesMap | undefined,
   { reserved, firstPerson, config: rawConfig, mode }: DeriveTouchSchemeOptions,

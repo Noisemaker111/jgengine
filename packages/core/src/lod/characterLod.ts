@@ -10,7 +10,6 @@ export interface CharacterLodPolicy {
   crowdCapacity: number;
 }
 
-/** The engine's default character tiers: full under 15 m, half under 40 m, GPU crowd beyond 25 m. */
 export const DEFAULT_CHARACTER_LOD: CharacterLodPolicy = {
   fullRateDistance: 15,
   halfRateDistance: 40,
@@ -82,7 +81,6 @@ export function characterViewTier(view: {
   local: boolean;
   lod: ModelLodConfig | false | undefined;
   distance: number;
-  /** Whether a ready crowd batch could draw this character. */
   crowd: boolean;
   /**
    * The player's focus: the entity the camera follows, or the one targeted or selected. It keeps its
@@ -97,7 +95,7 @@ export function characterViewTier(view: {
   return view.crowd && view.focus !== true ? characterLodTier(view.distance, view.lod, view.previous) : characterRigTier(view.distance, view.lod);
 }
 
-/** Share of frames a tier poses the rig: 1, 0.5, 0.25, and 0 once the GPU crowd draws it or it is out of view. @internal */
+/** @internal */
 export function characterLodRate(tier: CharacterLodTier): number {
   switch (tier) {
     case "full":
@@ -119,9 +117,7 @@ export function characterLodInterval(tier: CharacterLodTier): number {
 }
 
 interface RigRecord {
-  /** Skinned meshes the model renders. */
   parts: number;
-  /** Bones one pose write touches. */
   bones: number;
 }
 
@@ -135,7 +131,7 @@ const crowdInstances = new Map<string, number>();
 const planted = new Set<string>();
 const glancing = new Set<string>();
 
-/** Record whether a character's feet are planted by IK / its head is turned this frame, for the probe. @internal */
+/** @internal */
 export function noteCharacterMotion(instanceId: string, kind: "feet" | "glance", active: boolean): void {
   const set = kind === "feet" ? planted : glancing;
   if (active) set.add(instanceId);
@@ -147,7 +143,7 @@ export function registerCharacterRig(instanceId: string, parts: number, bones: n
   rigs.set(instanceId, { parts, bones });
 }
 
-/** Drop a character rig that unmounted. @internal */
+/** @internal */
 export function unregisterCharacterRig(instanceId: string): void {
   rigs.delete(instanceId);
   tiers.delete(instanceId);
@@ -161,17 +157,17 @@ export function setCharacterLodTier(instanceId: string, tier: CharacterLodTier):
   tiers.set(instanceId, tier);
 }
 
-/** Forget a tier when its marker unmounts. @internal */
+/** @internal */
 export function clearCharacterLodTier(instanceId: string): void {
   tiers.delete(instanceId);
 }
 
-/** The tier a mounted character is on; full rate when nothing decided (previews, custom renderers). @internal */
+/** @internal */
 export function characterLodTierOf(instanceId: string | undefined): CharacterLodTier {
   return instanceId === undefined ? "full" : tiers.get(instanceId) ?? "full";
 }
 
-/** Record one pose write (a mixer update) for a rig, in bones. @internal */
+/** @internal */
 export function noteCharacterPose(instanceId: string): void {
   const rig = rigs.get(instanceId);
   if (rig === undefined) return;
@@ -195,22 +191,22 @@ export function animationPhaseOf(instanceId: string): { clip: string; time: numb
   return phases.get(instanceId);
 }
 
-/** Record how many crowd members each batch drew this frame. @internal */
+/** @internal */
 export function noteCrowdInstances(kind: string, count: number): void {
   crowdInstances.set(kind, count);
 }
 
-/** Drop a crowd batch's instance count when it unmounts. @internal */
+/** @internal */
 export function clearCrowdKind(kind: string): void {
   crowdInstances.delete(kind);
 }
 
-/** Count one animated frame, so pose writes report as a per-frame average. @internal */
+/** @internal */
 export function noteCharacterFrame(): void {
   frames += 1;
 }
 
-/** Clear every character counter. For tests and between capture runs. @internal */
+/** @internal */
 export function resetCharacterLodStats(): void {
   rigs.clear();
   tiers.clear();

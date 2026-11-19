@@ -4,11 +4,9 @@ import type { CrownForm } from "../../packages/core/src/plants/species/plantSpec
 import { CROWN_ARCHITECTURE_MEASURES, CROWN_ARCHITECTURE_MISSES_ALLOWED, crownArchitectureMisses, crownShapeBands, type CrownArchitecture, type CrownArchitectureTarget, type MeasureBand } from "../../packages/core/src/plants/validation/crownArchitecture";
 import type { Trial, TrialReading } from "./speciesTrial";
 
-/** What a fit holds one species to beyond its reference tables. */
 export interface FitTarget {
   reference: SpeciesReference;
   form: CrownForm;
-  /** Fork, limbs, openness and leaf shell of the open-grown tree at the architecture age. */
   architecture: CrownArchitectureTarget;
   maxCrownRadiusM: number;
   /** Shade-tolerant species must keep a leafy crown for 100 years under 0.2 light. */
@@ -21,13 +19,11 @@ const logRatio = (a: number, b: number): number => Math.log(Math.max(1e-6, a) / 
 
 const inBand = (x: number, b: MeasureBand | undefined, scale: number): number => (b === undefined ? 0 : hinge(x, b[0], b[1], scale));
 
-/** Crown-shape bands of each form, as the crown tests check them. */
 function shapePenalty(form: CrownForm, r: TrialReading): number {
   const bands = crownShapeBands(form, r.age);
   return inBand(r.centroid, bands.centroid, 0.03) + inBand(r.shoulder, bands.shoulder, 0.03) + inBand(r.crownWidthM / Math.max(0.1, r.heightM), bands.widthPerHeight, 0.03);
 }
 
-/** How far a measure may stray outside its band before it costs as much as a 1-sigma height miss. */
 const ARCHITECTURE_SCALE: Readonly<Record<keyof CrownArchitecture, number>> = {
   forkRatio: 0.05,
   forkHeightShare: 0.05,
@@ -68,9 +64,6 @@ function architecturePenalty(target: CrownArchitectureTarget, measured: CrownArc
  */
 const TEST_MISS_COST = 100;
 
-/**
- * Guardrail misfit of the seeded individuals, leaving out the worst ones a fit allows to miss, plus a fixed cost for each further seed that misses.
- */
 function seededArchitecturePenalty(target: CrownArchitectureTarget, individuals: readonly CrownArchitecture[]): number {
   const penalties = individuals.map((measured) => architecturePenalty(target, measured)).sort((a, b) => a - b);
   const misses = individuals.filter((measured) => crownArchitectureMisses(target, measured).length > 0).length;
@@ -78,13 +71,11 @@ function seededArchitecturePenalty(target: CrownArchitectureTarget, individuals:
   return near + TEST_MISS_COST * Math.max(0, misses - CROWN_ARCHITECTURE_MISSES_ALLOWED);
 }
 
-/** A trial's total misfit and its parts; lower is better. */
 export interface TrialScore {
   total: number;
   parts: Record<string, number>;
 }
 
-/** Sum of squared misfits of a trial against its target, by part; lower is better. */
 export function scoreTrial(target: FitTarget, trial: Trial): TrialScore {
   const { reference } = target;
   const parts: Record<string, number> = {};

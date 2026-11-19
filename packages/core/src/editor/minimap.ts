@@ -18,7 +18,6 @@ import type { EditorDocument, EditorVolume } from "./types";
  * with no new render path. Deterministic for a fixed scene — safe for verify/CI.
  */
 
-/** A volume that carries a `color` tints the bake over its XZ footprint. */
 function volumeFootprint(volume: EditorVolume): readonly Vec2[] | null {
   const half =
     volume.halfExtents !== undefined
@@ -53,32 +52,21 @@ export function documentBakeZones(doc: EditorDocument): MinimapBakeZone[] {
   return zones;
 }
 
-/** Options for {@link bakeMinimapFromDocument}. */
 export interface DocumentBakeOptions extends MinimapBakeOptions {
   /** Explicit bounds; default = the document's object bounds padded by `padding`. */
   bounds?: MinimapBakeBounds;
-  /** Padding (m) around the derived bounds when `bounds` is omitted. Default 16. */
   padding?: number;
-  /** Ground normal sampler for slope shading (optional). */
   sampleNormal?: (x: number, z: number) => readonly [number, number, number];
-  /** Water level — ground at or below renders as water. */
   waterLevel?: number;
 }
 
-/** Falls back to a small square when the document has no spatial objects. */
 function boundsFromDocument(doc: EditorDocument, padding: number): MinimapBakeBounds {
   const b = editorDocumentBounds(doc);
   if (b === null) return { minX: -32, minZ: -32, maxX: 32, maxZ: 32 };
   return { minX: b.min.x - padding, minZ: b.min.z - padding, maxX: b.max.x + padding, maxZ: b.max.z + padding };
 }
 
-/**
- * Bakes a minimap image from a scene document plus a terrain height sampler: sizes the footprint to
- * the authored objects (or an explicit `bounds`), tints biome-colored volumes, and rasterizes the
- * terrain top-down. Returns `{ background, mapBounds }` for the `Minimap` props. The editor runs this
- * as its bake action and stores the result on the document.
- * @capability minimap-bake bake a minimap PNG + bounds from the authored scene document
- */
+/** @capability minimap-bake bake a minimap PNG + bounds from the authored scene document */
 export function bakeMinimapFromDocument(
   doc: EditorDocument,
   sampleHeight: (x: number, z: number) => number,

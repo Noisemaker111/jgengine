@@ -10,9 +10,7 @@ function pascalCase(name: string): string {
 }
 
 export interface ModelSnippetOptions {
-  /** URL prefix the app serves pulled GLBs from (matches `buildCatalog({ basePath })`). */
   basePath?: string;
-  /** Which `defineGame` model seam to wire the id into. */
   seam?: "objectModels" | "entityModels";
 }
 
@@ -35,7 +33,6 @@ export function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}
   ].join("\n");
 }
 
-/** Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model. */
 export function materialWiringSnippet(id: string, basePath = "/materials"): string {
   return [
     `// src/game/assets.ts`,
@@ -53,7 +50,6 @@ export function materialWiringSnippet(id: string, basePath = "/materials"): stri
   ].join("\n");
 }
 
-/** Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage. */
 export function componentWiringSnippet(component: RegistryComponent): string {
   const symbol = pascalCase(component.name);
   return [
@@ -66,7 +62,6 @@ export function componentWiringSnippet(component: RegistryComponent): string {
   ].join("\n");
 }
 
-/** Copy-paste wiring for a pulled sprite/icon-pack file: resolve through the sprite catalog. */
 export function spriteWiringSnippet(id: string, basePath = "/sprites"): string {
   return [
     `// src/game/assets.ts`,
@@ -77,7 +72,6 @@ export function spriteWiringSnippet(id: string, basePath = "/sprites"): string {
   ].join("\n");
 }
 
-/** Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog. */
 export function iconWiringSnippet(name: string): string {
   return [
     `# once per project, install the icon catalog:`,

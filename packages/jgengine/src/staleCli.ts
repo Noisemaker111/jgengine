@@ -3,7 +3,6 @@ import { dirname, join, relative, isAbsolute } from "node:path";
 
 import { findUp, readPackageJson } from "./pkg";
 
-/** The running CLI: its package version, its package directory and the SDK line it was built for. */
 export interface RunningCli {
   version: string;
   packageDir: string;
@@ -64,7 +63,6 @@ export function staleCliWarnings(cwd: string, running: RunningCli): string[] {
   return warnings;
 }
 
-/** The running CLI's own identity, read from the package that contains this module. */
 export function runningCli(moduleDir: string, version: string, sdkVersion: string): RunningCli {
   const packageDir = findUp(moduleDir, (dir) => readPackageJson(join(dir, "package.json"))?.name === "jgengine") ?? dirname(moduleDir);
   return { version, packageDir, sdkVersion };

@@ -18,7 +18,6 @@ import { BAD, Button, GOOD, INK, Meter, PENCIL, Row, Rows, Stepper, Text, WARN, 
 
 const PHASE_LABEL: Record<string, string> = { idle: "Ready", loading: "Boarding", riding: "On the ride", unloading: "Unloading", broken: "Broken down" };
 
-/** What a guest is doing, read from its own phase/target - the "thought" the window shows. */
 function activity(name: string | null, phase: string): string {
   if (phase === "leaving") return "Leaving the park";
   if (phase === "riding") return name === null ? "On a ride" : `Riding the ${name}`;
@@ -28,7 +27,6 @@ function activity(name: string | null, phase: string): string {
   return "Looking for something to do";
 }
 
-/** The guest window: the mood the shared agent loop holds, what it is thinking, its needs, and what it is doing. */
 function GuestPanel({ id }: { id: string }) {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -53,10 +51,6 @@ function GuestPanel({ id }: { id: string }) {
   </Window>;
 }
 
-/**
- * One structure, as the world holds it: its facts (broken, stock sold), the crew order on it and
- * what each action would cost, with buttons that run `brightway.act` and `build.demolish`.
- */
 export function Inspector() {
   const { commands } = useGame();
   const ctx = useGameContext();
@@ -106,7 +100,6 @@ function repairProgress(ctx: GameContext, id: string): number {
   return park.of(ctx).orders("crew").find((entry) => entry.target === id)?.progress ?? 1;
 }
 
-/** Everything {@link Inspector} prints about one structure, as plain values: the card redraws when a printed value changes, not every tick. */
 function inspectorView(ctx: GameContext, selectedId: string | null) {
   const w = park.of(ctx);
   const obj = parkObject(ctx, selectedId);

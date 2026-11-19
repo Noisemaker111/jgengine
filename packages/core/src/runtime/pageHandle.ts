@@ -27,15 +27,10 @@ export function publishOnPage<K extends keyof JgPage>(key: K, value: NonNullable
   };
 }
 
-/** What the page holds at `window.__jg[key]`, if anything. */
 export function onPage<K extends keyof JgPage>(key: K): JgPage[K] | undefined {
   return globalThis.__jg?.[key];
 }
 
-/**
- * {@link publishOnPage} for a live readout (`read()` or `measure()` returns counters): the capability
- * probe samples every field published this way on a running game and fails one that reports nothing.
- */
 export function publishReadout<K extends keyof JgPage>(key: K, value: NonNullable<JgPage[K]>): () => void {
   return publishOnPage(key, value);
 }

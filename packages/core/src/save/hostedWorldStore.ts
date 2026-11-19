@@ -1,7 +1,6 @@
 // @skill jgengine-gameplay
 import type { WorldSnapshot } from "../runtime/worldSnapshot";
 
-/** One hosted world's persisted authoritative state — the unit a {@link HostedWorldStore} loads and saves. */
 export interface HostedWorldRecord {
   snapshot: WorldSnapshot;
   revision: number;
@@ -17,7 +16,6 @@ export interface HostedWorldStore {
   save(record: HostedWorldRecord): Promise<void>;
 }
 
-/** Already-loaded store adapter: synchronous reads, with synchronous or asynchronous writes. */
 export interface SyncHostedWorldStore {
   load(): HostedWorldRecord | null;
   save(record: HostedWorldRecord): void | Promise<void>;

@@ -12,7 +12,6 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-/** What makes two runs of one game the same measurement. */
 export interface PerfConditions {
   size: { width: number; height: number };
   quality: string | undefined;
@@ -25,12 +24,10 @@ export interface PerfConditions {
   state: string | undefined;
   params: readonly (readonly [string, string])[];
   settings: readonly { id: string; value: unknown }[];
-  /** The build measured (`production` or `dev`) and the CPU slowdown: neither compares with the other. */
   build: string;
   cpuRate: number;
 }
 
-/** A short stable name for a set of run conditions. */
 export function conditionsKey(conditions: PerfConditions): string {
   const canonical = JSON.stringify([
     `${conditions.size.width}x${conditions.size.height}`,
@@ -50,7 +47,6 @@ export function conditionsKey(conditions: PerfConditions): string {
   return createHash("sha1").update(canonical).digest("hex").slice(0, 10);
 }
 
-/** Where the cached record of `game` at `commit` under `key` lives. */
 export function baselinePath(root: string, game: string, commit: string, key: string): string {
   return join(root, ".scratch", "perf", "baselines", game, `${commit}-${key}.json`);
 }
@@ -77,7 +73,6 @@ export function cleanCommitFor(root: string, game: string): string | null {
   return resolveCommit(root, "HEAD");
 }
 
-/** Keep a clean run's record as the baseline of its commit. */
 export function saveBaseline(path: string, record: unknown): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);

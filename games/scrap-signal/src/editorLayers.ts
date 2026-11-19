@@ -12,12 +12,6 @@ import { enemyById } from "./game/entities/enemies/catalog";
 import { TRAVEL_STATIONS } from "./game/world/sites";
 import { ZONES } from "./game/world/zones";
 
-/**
- * Authored spatial content lives in `editor.scene.json` (zones, clusters, chests, bosses, travel,
- * vendors, POIs, props, roads). This module loads that document and appends derived AI volumes
- * (aggro / leash / respawn-skip / discover) whose radii come from enemy catalogs and constants —
- * not placeable layout.
- */
 const LEASH_RADIUS = 46;
 const RESPAWN_SKIP_RADIUS = 38;
 const DISCOVER_RADIUS = 8;
@@ -26,7 +20,6 @@ function xz(x: number, z: number, y = 0): { x: number; y: number; z: number } {
   return { x, y, z };
 }
 
-/** Volumes whose sizes depend on AI tuning catalogs, projected onto scene-resolved centers. */
 function derivedAiVolumes(): EditorVolume[] {
   const volumes: EditorVolume[] = [];
 

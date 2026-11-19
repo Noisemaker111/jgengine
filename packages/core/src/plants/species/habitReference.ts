@@ -11,17 +11,11 @@ export interface HabitReference {
   heightAt20M: number | null;
   /** PLANTS "Height, Mature", metres. */
   matureHeightM: number;
-  /** PLANTS growth form: a multi-stemmed shrub keeps several live stems. */
   multiStem: boolean;
-  /** PLANTS growth rate class. */
   growthRate: "Slow" | "Moderate" | "Rapid";
 }
 
-/**
- * Height a habit species should reach by 20 years: PLANTS' 20-year height, or its mature height for a
- * fern or herb that is full grown within a few years.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export function habitHeightAt20M(reference: HabitReference): number {
   return reference.heightAt20M ?? reference.matureHeightM;
 }
@@ -35,22 +29,13 @@ export function habitHeightCeilingM(reference: HabitReference): number {
   return Math.max(reference.matureHeightM, reference.heightAt20M ?? 0);
 }
 
-/**
- * Ages a habit species is grown to and checked at.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export const HABIT_CHECK_AGES = [5, 10, 20, 40] as const;
 
-/**
- * Most stems a multi-stemmed shrub should keep alive at 20 years, and fewest.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export const SHRUB_STEMS = { min: 3, max: 30 } as const;
 
-/**
- * Live basal stems of a grown structure: the order-0 segments rising straight from the collar.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export function basalStemCount(segments: { parent: Int32Array; order: Uint8Array; region: Uint8Array }, deadwoodRegion: number): number {
   let stems = 0;
   for (let i = 0; i < segments.parent.length; i += 1) {

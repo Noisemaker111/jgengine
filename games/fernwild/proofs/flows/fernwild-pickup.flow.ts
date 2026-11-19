@@ -1,7 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** First person at spawn: punch the nearest tree, then pick up stones, and shoot what the HUD says about each. */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

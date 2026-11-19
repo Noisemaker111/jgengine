@@ -34,7 +34,6 @@ function VariantPanel() {
   );
 }
 
-/** The editor's variant grid on its own: one generator, twenty live tiles, built from the schema alone. */
 export const generatorVariantsGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "generator-variants" },

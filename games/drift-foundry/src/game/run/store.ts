@@ -8,10 +8,8 @@ export interface WorldRuntime {
   cursor: { index: number };
   removedMarkers: Set<string>;
   removedGates: Set<string>;
-  /** Set-piece barricades already fallen this run. */
   droppedGates: Set<string>;
   lastRunTime: number;
-  /** The track whose run objects are on the yard. */
   trackId: string;
   /** Run clock of the last slag spurt burst per vent, so vents puff on a beat instead of every frame. */
   spurts: Map<string, number>;

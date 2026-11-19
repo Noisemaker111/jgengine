@@ -10,7 +10,6 @@ import { BODY_SOURCE_IDS } from "./assets";
 import { TOOL_MODELS } from "./models";
 import { itemIconCredits } from "./data/itemIcons";
 
-/** One credit line per author and licence of the creature models, naming each model. */
 function creatureCredits(): string[] {
   const byAuthor = new Map<string, string[]>();
   for (const source of Object.values(CREATURE_MODEL_SOURCES) as CreatureModelSource[]) {
@@ -22,7 +21,6 @@ function creatureCredits(): string[] {
   return [...byAuthor].map(([key, titles]) => `Creature models (${titles.join(", ")}): ${key} via poly.pizza.`);
 }
 
-/** Keys, as the Controls pane lists them; the bindings live in `game.config.ts`. ARK's PC layout. */
 export const CONTROLS: readonly (readonly [string, string])[] = [
   ["W A S D", "Move"],
   ["Shift", "Run (costs stamina; your mount's when riding)"],
@@ -38,7 +36,6 @@ export const CONTROLS: readonly (readonly [string, string])[] = [
   ["Esc", "Pause"],
 ];
 
-/** The title screen's briefing, in the order a fresh survivor meets it. */
 export const BRIEFING: readonly string[] = [
   "You wake on a beach with nothing.",
   "Punch trees for thatch and wood, pick bushes for fiber and berries, gather stones from the ground.",

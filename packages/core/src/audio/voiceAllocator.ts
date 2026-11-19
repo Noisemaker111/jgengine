@@ -1,4 +1,3 @@
-/** One reserved playback slot, including sources still loading. */
 export interface AudioVoice {
   id: number;
   soundId: string;
@@ -11,21 +10,17 @@ export interface VoiceAllocatorSnapshot {
   voices: AudioVoice[];
 }
 
-/** Caller-owned reservation storage. Reads and writes use detached state. */
 export interface VoiceAllocatorStorage {
   read(): VoiceAllocatorSnapshot;
   write(state: VoiceAllocatorSnapshot): void;
 }
 
-/** Playback budget. Zero disables playback; default 64. */
 export interface VoiceAllocatorConfig {
   maxTotal?: number | undefined;
-  /** At capacity, steal the lowest-priority oldest voice, or reject new voices. Default "steal-lowest". */
   overflow?: "steal-lowest" | "reject" | undefined;
   storage?: VoiceAllocatorStorage;
 }
 
-/** Admission result; stop every stolen source before starting the admitted voice. */
 export type VoiceAllocation = { ok: false } | { ok: true; voiceId: number; stolen: number[] };
 
 /** Bounded reservations with higher-priority protection and oldest-first ties. */
@@ -34,7 +29,6 @@ export interface VoiceAllocator {
   release(voiceId: number): void;
   snapshot(): VoiceAllocatorSnapshot;
   restore(state: VoiceAllocatorSnapshot): void;
-  /** Return reservations removed to meet the new limit; the playback owner stops them. */
   retune(config: Pick<VoiceAllocatorConfig, "maxTotal" | "overflow">): number[];
 }
 

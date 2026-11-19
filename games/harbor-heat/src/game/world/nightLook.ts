@@ -3,11 +3,9 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { roadSource, WET_ROAD } from "./cityLayout";
 
-/** Hours (game clock) the city's lamps are lit and its asphalt shines: dusk to just before dawn. */
 const LAMPS_ON = 19;
 const LAMPS_OFF = 5.5;
 
-/** Whether the game clock is in the night the art direction lights with sodium and neon. */
 export function isNightHour(hour: number): boolean {
   return hour >= LAMPS_ON || hour < LAMPS_OFF;
 }

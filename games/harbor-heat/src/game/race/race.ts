@@ -10,13 +10,11 @@ import { rivalsFor, type StreetRival } from "./rivals";
 export const RIVAL_RACER_ID = "race_rival";
 /** How close to a circuit's start line a car must be for that circuit to start. */
 export const RACE_START_RADIUS = 14;
-/** A gate's half-height above and below the ground it stands on. */
 const GATE_HALF_HEIGHT = 6;
 
 export interface RaceSnapshot {
   routeId: string;
   label: string;
-  /** Who the player is racing, and in what. */
   rival: string;
   active: boolean;
   checkpoint: number;
@@ -47,7 +45,6 @@ function startOf(route: RaceRoute): readonly [number, number] | undefined {
   return route.checkpoints[route.checkpoints.length - 1];
 }
 
-/** The circuit whose start line is nearest a world position, and how far it is. */
 export function nearestRoute(pos: readonly [number, number, number]): { route: RaceRoute; distance: number } | null {
   let best: { route: RaceRoute; distance: number } | null = null;
   for (const route of RACE_ROUTES) {

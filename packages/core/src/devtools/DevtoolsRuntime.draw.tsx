@@ -13,12 +13,11 @@ import { publishOnPage } from "@jgengine/core/runtime/pageHandle";
 
 declare module "@jgengine/core/runtime/pageHandle" {
   interface JgPage {
-    /** The devtools runtime agents read (`window.__jg.devtools.snapshot()`). */
     devtools?: { snapshot(): unknown; snapshotFull(): unknown; [part: string]: unknown };
   }
 }
 
-/** Keeps saved overrides and diagnostic registration live while the visual panel is closed. @internal */
+/** @internal */
 export function DevtoolsRuntime({ ctx, playable }: { ctx: GameContext; playable: PlayableGame }) {
   useEffect(() => {
     devtools.logs.captureConsole();

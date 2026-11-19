@@ -1,4 +1,3 @@
-/** One recorded frame of play: how long it was, the actions held and newly pressed, and the look. */
 export interface ReplayFrame {
   dt: number;
   held: readonly string[];
@@ -14,21 +13,15 @@ export interface ReplayCommand {
   input: unknown;
 }
 
-/**
- * A session as input plus seed, plain JSON: replaying the frames and commands against a new world built
- * from the same game and seed gives the same run.
- */
 export interface ReplayRecording {
   version: 1;
   /** The game's name, so a replay is not played against another game. */
   game: string;
-  /** The world seed the run's `ctx.rng` came from; `null` when the game's default seed was used. */
   seed: string | number | null;
   frames: ReplayFrame[];
   commands: ReplayCommand[];
 }
 
-/** Options for {@link createReplayRecorder}. */
 export interface ReplayRecorderOptions {
   game: string;
   seed?: string | number | null;
@@ -36,11 +29,9 @@ export interface ReplayRecorderOptions {
   maxFrames?: number;
 }
 
-/** Records a session's input as an {@link ReplayRecording}; its state is the replay itself. */
 export interface ReplayRecorder {
   frame(frame: ReplayFrame): void;
   command(name: string, input: unknown): void;
-  /** Frames recorded so far. */
   frames(): number;
   full(): boolean;
   snapshot(): ReplayRecording;
@@ -106,7 +97,6 @@ export function replayRecordingProblem(value: unknown): string | null {
 
 declare module "../runtime/pageHandle" {
   interface JgPage {
-    /** The last replay the shell saved with F2+R, for an agent or the console to read. */
     replay?: ReplayRecording;
   }
 }

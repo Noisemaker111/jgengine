@@ -214,11 +214,7 @@ function FallbackLights({ ambientIntensity }: { ambientIntensity: number }) {
   return null;
 }
 
-/**
- * What the shell's look resolution sees: the look `defineGame` already resolved, the mood that
- * produced it and the world's sky shape, so resolving again lands on the same light, sky and grade.
- * @internal
- */
+/** @internal */
 export function presentationLookInput(playable: PlayableGame, hasWorldSky: boolean): GameLookInput {
   const world = playable.game.world;
   return {
@@ -232,7 +228,7 @@ export function presentationLookInput(playable: PlayableGame, hasWorldSky: boole
   };
 }
 
-/** 3D play surface: canvas, world overlays, and shared chrome. @internal */
+/** @internal */
 export function Shell3dPresentation({
   playable,
   ctx,
@@ -428,10 +424,6 @@ export function Shell3dPresentation({
     const sky = bearing === undefined ? authoredSky : { ...authoredSky, sun: bearing };
     return authoredSky.timeOfDay ? skyNoonKeyframes(sky, sceneLighting, backdrop?.fog?.color) : sky;
   }, [authoredSky, sunFromLighting, sceneLighting, backdrop?.fog?.color]);
-  /**
-   * Under a day cycle the sky scales the game's authored sun and ambient fill; without this a
-   * time-of-day sky only repaints the dome and the world stays lit like noon after dark.
-   */
   const skyBands = useMemo(() => biomeBandsForSky(authoredSky, worldSky, biomeBands), [authoredSky, worldSky, biomeBands]);
   const authoredDaylight = effectiveSky?.timeOfDay === true && sceneLighting?.directional !== undefined;
   const daylightModulation = useMemo<DaylightModulation>(
@@ -487,7 +479,6 @@ export function Shell3dPresentation({
     return ids;
   };
 
-  /** DOM UI sits in the same wrapper as the canvas — only canvas-targeted clicks are world input. */
   const isWorldPointerTarget = (event: { target: EventTarget | null }) =>
     event.target instanceof HTMLCanvasElement;
 

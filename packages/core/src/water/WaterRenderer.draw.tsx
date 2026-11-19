@@ -8,7 +8,6 @@ import { Ocean } from "./Ocean.draw";
 import type { OceanConfig } from "./OceanConfig.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
-/** Map the editor-authored water params onto the shell Ocean shader config. */
 function toOceanConfig({ rules, size, surface }: ResolvedWater, depthRange: number): OceanConfig {
   const maxSpan = Math.max(size[0], size[1]);
   return {
@@ -57,7 +56,7 @@ function OneWater({ object, context }: { object: SceneKindObject; context: Scene
   return <Ocean config={config} position={[centerX, surfaceY, centerZ]} bedAt={bedAt} />;
 }
 
-/** Registers the `water` volume runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerWaterRenderer(): void {
   registerSceneKindRenderer("water", ({ objects, context }) => (
     <>

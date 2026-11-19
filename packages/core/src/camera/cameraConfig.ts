@@ -10,20 +10,17 @@ export interface CameraFollowState {
   distance: number;
 }
 
-/** What a camera rig reads about the held weapon each frame; see `GameCameraConfig.weapon`. */
 export interface CameraWeaponView {
   handling: WeaponHandlingFrame;
   presentation?: WeaponPresentationTuning;
 }
 
 export interface FirstPersonCameraConfig {
-  /** Camera height above the followed entity's origin. Default 1.6. */
   eyeHeight?: number;
   /** Mouse-look radians per pixel of pointer movement. Default 0.0025. */
   sensitivity?: number;
   /** Clamp on look pitch in radians (± from horizon). Default 1.45. */
   maxPitch?: number;
-  /** Show the centered crosshair overlay. Default true. */
   reticle?: boolean;
   /**
    * Draw the player's own body instead of hiding it: a humanoid body keeps its arms, hands and held
@@ -42,11 +39,9 @@ export interface FirstPersonCameraConfig {
   collision?: false | FirstPersonCollisionConfig;
 }
 
-/** Clearance tuning for the first-person camera's collision pull-in. */
 export interface FirstPersonCollisionConfig {
   /** Gap kept between the camera and the surface it would enter, world units. Defaults to the near plane plus 0.15. */
   clearance?: number;
-  /** How far behind the eye the boom anchors, giving the pull somewhere to travel. Default 1.5. */
   armBack?: number;
 }
 
@@ -82,123 +77,81 @@ export type CameraRigKind =
   | "inspection"
   | "none";
 
-/** Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective". */
 export type CameraProjection = "perspective" | "orthographic";
 
 /** Pixel-art orthographic camera tuning. `pixelsPerUnit` is the authored pixel density. */
 export interface PixelPerfectCameraConfig {
   pixelsPerUnit: number;
-  /** Increase density in whole-number steps to use the largest scale that fits the viewport. */
   integerScale?: boolean;
 }
 
 /** Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input. */
 export interface SideScrollCameraConfig {
-  /** World axis the action travels along; the camera watches from the perpendicular side. Default "x". */
   axis?: "x" | "z";
-  /** Camera distance from the followed entity along the perpendicular axis. Default 10. */
   distance?: number;
-  /** Camera height above the followed entity. Default 3. */
   height?: number;
-  /** Height of the look point above the entity. Default 1. */
   lookHeight?: number;
   /** Per-second smoothing factor for the follow (0 hard-locks). Default 8. */
   followSmoothing?: number;
   fov?: number;
 }
 
-/** Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow. */
 export interface TopDownCameraConfig {
-  /** Camera height above the follow point. Default 18. */
   height?: number;
   /** Elevation of the camera above the ground plane in radians (PI/2 = straight down, near 0 = grazing; values below 0.05 clamp to 0.05). Default ~1.02 (~58°, ARPG iso). */
   pitch?: number;
   /** Fixed azimuth in radians; ~PI/4 reads as isometric, 0 as straight top-down. Default PI/4. */
   yaw?: number;
-  /** Horizontal look offset applied to the follow point. */
   targetOffset?: { x?: number; y?: number; z?: number };
-  /** Exponential follow smoothing (higher = snappier, decoupled from any orbit drag). Default 8. */
   followSmoothing?: number;
-  /** Scroll zoom bounds as a height multiplier. */
   zoom?: { min?: number; max?: number; speed?: number };
 }
 
-/** Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar. */
 export interface RtsCameraConfig extends TopDownCameraConfig {
   /** WASD / arrow pan speed in world units per second. Default 24. */
   panSpeed?: number;
-  /** Edge-scroll when the pointer nears a screen edge; number sets the margin fraction. Default true. */
   edgeScroll?: boolean | { margin?: number; speed?: number };
   /** Yaw rotate speed (radians/sec) for rotate keys / middle-drag. Default 1.4. */
   rotateSpeed?: number;
   /** World-space clamp for the pan center. */
   bounds?: { minX?: number; maxX?: number; minZ?: number; maxZ?: number };
-  /** Start centered on this world point when there is no follow target. */
   start?: { x?: number; z?: number };
-  /** Read WASD/arrow pan, edge-scroll, Q/E rotate, and wheel zoom (WASD and Q/E step aside when the game binds them). `false` sits static at the start/bounds position — a backdrop camera, no input at all. Default true. */
   pan?: boolean;
 }
 
-/** Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle. */
 export interface ShoulderCameraConfig {
-  /** Lateral shoulder offset (world units, sign flips on swap). Default 0.6. */
   shoulderOffset?: number;
-  /** Vertical offset above the follow point. Default 1.6. */
   heightOffset?: number;
-  /** Boom distance behind the shoulder. Default 3.2. */
   distance?: number;
-  /** Starting shoulder side. Default "right". */
   side?: "left" | "right";
-  /** Aim-down-sights framing, blended in while `aim` is held. */
   ads?: { distance?: number; shoulderOffset?: number; fov?: number; heightOffset?: number };
-  /** ADS blend speed (higher = snappier). Default 10. */
   adsTransitionSpeed?: number;
   /** Screen-space reticle offset (fraction of viewport), decoupled from camera center. */
   reticleOffset?: { x?: number; y?: number };
   /** Mouse-look sensitivity (radians per pixel). Default 0.0025. */
   sensitivity?: number;
-  /** Base field of view. Default 55. */
   fov?: number;
 }
 
-/** Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe. */
 export interface LockOnCameraConfig {
   /** Target instance id; when omitted the rig reads the follower's current `getTarget`. */
   targetEntityId?: string;
-  /** Boom distance behind the player, away from the target. Default 5. */
   distance?: number;
-  /** Camera height above the follow point. Default 2.4. */
   height?: number;
-  /** Height of the framed look point above the midpoint. Default 1.2. */
   lookHeight?: number;
-  /** 0 frames the player, 1 frames the target, 0.5 the midpoint. Default 0.5. */
   framingBias?: number;
-  /** Exponential yaw smoothing toward the player→target vector. Default 9. */
   yawSmoothing?: number;
 }
 
-/** Fixed interior view for the chase rig (#27). */
 export type ChaseView = "chase" | "cockpit" | "hood" | "rear";
 
-/** Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views. */
 export interface ChaseCameraConfig {
-  /** Heading the chase boom follows: target body (default), or independent input/aim yaw for camera-relative walking. Seat views always follow the body. */
   headingSource?: "body" | "input";
-  /** Boom distance behind the vehicle. Default 6. */
   distance?: number;
-  /** Camera height above the follow point. Default 2.6. */
   height?: number;
-  /** Height of the look point above the follow point. Default 1.2. */
   lookHeight?: number;
-  /** Spring-arm damping (higher = stiffer, less lag). Default 6. */
   springDamping?: number;
-  /**
-   * Speed→FOV curve: FOV lerps from `base` to `max` as speed climbs to `speedForMax`. Speed is the
-   * followed entity's sim `velocity` when it publishes one. `response` (default 6) eases the FOV
-   * toward the curve with `1-exp(-response*dt)`; `Infinity` applies it unsmoothed.
-   */
   fov?: { base?: number; max?: number; speedForMax?: number; response?: number };
-  /** Pull the boom back by up to `extra` world units as speed climbs to `speedForMax` (default the FOV curve's `speedForMax`). */
   distanceBySpeed?: { extra: number; speedForMax?: number };
   /**
    * Tilt the boom with the target's body pitch (`rotationX`) so the camera stays behind it on
@@ -208,7 +161,6 @@ export interface ChaseCameraConfig {
   pitchFollow?: { blend?: number; max?: number; response?: number };
   /** How `ctx.camera.kickFov(degrees)` impulses feel: the kick decays at `decay` per second (default 7) and the summed kick is clamped to `max` degrees (default 20). */
   fovKick?: { decay?: number; max?: number };
-  /** Input action that, while held, swings the chase view to look back at what is behind the target. */
   lookBackAction?: string;
   /**
    * Pull the boom in past scene colliders, objects, terrain and walls via `ctx.scene.raycast`
@@ -216,7 +168,6 @@ export interface ChaseCameraConfig {
    * (default 0.8) is the closest the camera gets to the look pivot. Default on; `false` disables.
    */
   collision?: boolean | { radius?: number; minDistance?: number };
-  /** Procedural shake amplitude per unit of speed (adds to the trauma channel). Default 0.0. */
   shakePerSpeed?: number;
   /** Velocity-lead / predictive follow (#286.9): the rig aims `time` seconds ahead of the target along its velocity, clamped to `max` world units (default 4). */
   lead?: { time: number; max?: number };
@@ -240,9 +191,7 @@ export interface ChaseCameraConfig {
    * rigid follow (yaw exactly equals body facing every frame).
    */
   yawResponse?: number;
-  /** Which view to mount. Default "chase". */
   view?: ChaseView;
-  /** Local offset for cockpit/hood/rear seats (relative to the vehicle, +z forward). */
   seatOffsets?: {
     cockpit?: { x?: number; y?: number; z?: number };
     hood?: { x?: number; y?: number; z?: number };
@@ -252,13 +201,9 @@ export interface ChaseCameraConfig {
 
 /** Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input. */
 export interface ObserverCameraConfig {
-  /** What the observer looks at. Omit to stay on a fixed point at the origin (or `point`, if given). */
   bind?: { kind: "entity"; entityId: string } | { kind: "point"; position: { x: number; y: number; z: number } };
-  /** Orbit distance from the bound subject. Default 8. */
   distance?: number;
-  /** Camera height above the bound subject. Default 3. */
   height?: number;
-  /** Height of the look point above the subject. Default 1.2. */
   lookHeight?: number;
   /** Radians/second of automatic orbit around the subject (CCTV-style sweep); 0 holds a fixed angle. Default 0.2. */
   orbitSpeed?: number;
@@ -275,13 +220,9 @@ export interface ObserverCameraConfig {
  * `camera.turntable` and the rig is inferred — you don't also write `rig`.
  */
 export interface TurntableCameraConfig {
-  /** World point the camera circles. Default the world origin. */
   target?: { x: number; y: number; z: number };
-  /** Orbit radius from the target. Default 8. */
   distance?: number;
-  /** Camera height above the target. Default 3. */
   height?: number;
-  /** Height of the look point above the target. Default 1.2. */
   lookHeight?: number;
   /** Radians/second of rotation; 0 holds a fixed angle. Default 0.2. */
   orbitSpeed?: number;
@@ -302,38 +243,30 @@ export type InspectionZoomAnchor = "target" | "cursor" | "center";
 
 /** Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input. */
 export interface InspectionCameraConfig {
-  /** Where scroll-zoom re-anchors the view. Default "target". */
   anchor?: InspectionZoomAnchor;
-  /** Orbit target (the point orbited/panned around). Default origin. */
   target?: { x?: number; y?: number; z?: number };
-  /** Camera distance from `target` used to seed the initial camera position when `initialPosition` is unset. Default 6. */
   initialDistance?: number;
-  /** Explicit starting camera world position; overrides `initialDistance` when set. */
   initialPosition?: { x?: number; y?: number; z?: number };
   minDistance?: number;
   maxDistance?: number;
   /** Vertical orbit clamp (radians). Unset allows a full pole-to-pole orbit, unlike the tighter default on the classic orbit rig. */
   minPolarAngle?: number;
   maxPolarAngle?: number;
-  /** Middle-mouse pan. Default true for this rig. */
   pan?: boolean;
   rotateSpeed?: number;
   zoomSpeed?: number;
   dampingFactor?: number;
 }
 
-/** One stop on a scripted camera path (#29). */
 export interface CameraKeyframe {
   position: { x: number; y: number; z: number };
   lookAt: { x: number; y: number; z: number };
   fov?: number;
   /** Seconds to travel from the previous keyframe to this one. Default 1. */
   duration?: number;
-  /** Interpolation into this keyframe. Default "smooth" (smoothstep ease). */
   ease?: "linear" | "smooth";
 }
 
-/** Scripted keyframe / path player (#29). When set it overrides the active rig. */
 export interface CinematicCameraConfig {
   keyframes: readonly CameraKeyframe[];
   /** Restart from the first keyframe after the last. Default false. */
@@ -344,62 +277,44 @@ export type { CameraRigShakeConfig };
 
 export const CAMERA_FRUSTUM_DEFAULTS = { fov: 55, near: 0.1, far: 300, zoom: 50 } as const;
 
-/** Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it. */
 export interface PlayerFovConfig {
-  /** Inclusive lower bound for the slider and persisted values. Default 40. */
   min?: number;
-  /** Inclusive upper bound for the slider and persisted values. Default 120. */
   max?: number;
   /** Initial FOV when nothing is persisted. Defaults to `frustum.fov` or 55. */
   default?: number;
-  /** Persist the preference in localStorage across reloads. Default true. */
   persist?: boolean;
-  /** Show the shell FOV slider. Default true for perspective cameras; forced off for orthographic. */
   control?: boolean;
 }
 
-/** Projection and frustum of the canvas camera. */
 export interface GameCameraLensConfig {
-  /** Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default perspective. */
   projection?: CameraProjection;
   /** Pixel-perfect orthographic rendering; ignored for perspective cameras. */
   pixelPerfect?: PixelPerfectCameraConfig;
   /** Render frustum overrides applied to the canvas camera. `far` defaults to 300 — raise it for worlds whose content spans more than a few hundred units, or distant scenery silently clips. `zoom` is the orthographic zoom in canvas pixels per world unit, read only when `projection` is "orthographic"; default 50. */
   frustum?: { fov?: number; near?: number; far?: number; zoom?: number };
-  /** Universal player FOV preference (slider + persistence) for perspective rigs. Ignored when `projection` is `"orthographic"`. */
   playerFov?: PlayerFovConfig;
 }
 
 /** Per-rig tuning blocks; each is read only when its rig is selected. */
 export interface GameCameraRigConfigs {
-  /** First-person tuning; only read when the rig resolves to "first". */
   firstPerson?: FirstPersonCameraConfig;
-  /** Top-down / isometric tuning (#23); read when `rig: "topDown"`. */
   topDown?: TopDownCameraConfig;
-  /** Free-pan / edge-scroll RTS tuning (#24); read when `rig: "rts"`. */
   rts?: RtsCameraConfig;
-  /** Over-the-shoulder tuning (#25); read when `rig: "shoulder"`. */
   shoulder?: ShoulderCameraConfig;
-  /** Lock-on / strafe tuning (#26); read when `rig: "lockOn"`. */
   lockOn?: LockOnCameraConfig;
-  /** Vehicle chase tuning (#27); read when `rig: "chase"`. */
   chase?: ChaseCameraConfig;
   /** Detached spectator/photo cam tuning (#120); read when `rig: "observer"`. */
   observer?: ObserverCameraConfig;
-  /** Turntable / showcase tuning; setting this selects the `turntable` rig on its own. */
   turntable?: TurntableCameraConfig;
-  /** Fixed side-on follow tuning; read when `rig: "sideScroll"`. */
   sideScroll?: SideScrollCameraConfig;
   /** Model-viewer / inspection tuning (#207.7); read when `rig: "inspection"`. */
   inspection?: InspectionCameraConfig;
 }
 
-/** Boom, orbit and input-feel tuning of the default orbit rig. */
 export interface GameCameraOrbitConfig {
   minDistance?: number;
   maxDistance?: number;
   targetHeight?: number;
-  /** Extra offset on top of entity position for the orbit target. */
   targetOffset?: { x?: number; y?: number; z?: number };
   initialDistance?: number;
   initialHeight?: number;
@@ -422,15 +337,11 @@ export interface GameCameraOrbitConfig {
   collision?: { enabled?: boolean; padding?: number; minTargetDistance?: number };
 }
 
-/** What the camera follows and what it reads from the followed entity. */
 export interface GameCameraFollowConfig {
-  /** Lock orbit radius while the follow target moves (default true in shell). */
   followLock?: boolean;
-  /** When false, orbit target stays fixed (cinematic / debug). Default true. */
   followEnabled?: boolean;
   /** Instance id to follow, or null for an avatar-less free camera; defaults to local player in the dev shell. */
   followEntityId?: string | null;
-  /** Fired each frame after cameraFollow lock is applied. */
   onCameraFollow?: (state: CameraFollowState) => void;
   /**
    * The followed entity's held weapon, read every frame by the `first` and `shoulder` rigs. Return the
@@ -442,9 +353,7 @@ export interface GameCameraFollowConfig {
   weapon?: (entityId: string, ctx: GameContext) => CameraWeaponView | null;
 }
 
-/** Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig. */
 export interface GameCameraConfig {
-  /** Selects the rig — the one camera-selection knob. Overrides the legacy `perspective` shorthand. */
   rig?: CameraRigKind;
   /** @deprecated Legacy shorthand for `rig: "orbit" | "first"` — set `rig` instead. "third" mounts the orbit camera (default); "first" mounts pointer-lock mouse-look. */
   perspective?: "third" | "first";
@@ -452,9 +361,7 @@ export interface GameCameraConfig {
   rigs?: GameCameraRigConfigs;
   orbit?: GameCameraOrbitConfig;
   follow?: GameCameraFollowConfig;
-  /** Camera-shake / trauma channel defaults (#28); read by every rig. */
   shake?: CameraRigShakeConfig;
-  /** Scripted keyframe path (#29); when set, plays over the active rig. */
   cinematic?: CinematicCameraConfig;
   /** Seconds to cross-fade the camera when the rig changes (#29). 0 hard-cuts. Default 0.6. */
   transitionSeconds?: number;

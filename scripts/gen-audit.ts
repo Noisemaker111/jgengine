@@ -52,7 +52,6 @@ export interface AuditArgs {
   half?: number;
   out: string;
   png: boolean;
-  /** Generate under the simulated other libm and compare fingerprints. */
   otherLibm: boolean;
 }
 
@@ -90,7 +89,6 @@ export function parseAuditArgs(argv: readonly string[]): AuditArgs | string {
   return args;
 }
 
-/** A river valley (8 m deep, 50 m wide) across the district, a 25 m hill and a gentle tilt. */
 function valleyTerrain(x: number, z: number): number {
   const d = Math.abs(z - 0.3 * x - 20);
   const river = d < 25 ? -8 * (1 - (d / 25) ** 2) : 0;
@@ -98,15 +96,12 @@ function valleyTerrain(x: number, z: number): number {
   return river + hill + x * 0.02;
 }
 
-/** One preset to run over seeds. */
 interface AuditCase {
   generator: AuditGenerator;
   preset: string;
-  /** Profile lookup: which band family and preset id. */
   bands: { generator: ReferenceGenerator; preset: string };
   meta: Record<string, unknown>;
   heightAt?: (x: number, z: number) => number;
-  /** City district half-extent (the city generator takes its footprint as input, not params). */
   cityHalf?: number;
 }
 
@@ -147,20 +142,17 @@ export function auditCases(args: Pick<AuditArgs, "generators" | "presets" | "hal
   return args.presets.length === 0 ? cases : cases.filter((c) => args.presets.includes(c.preset));
 }
 
-/** One seed's result. */
 export interface AuditRun {
   generator: AuditGenerator;
   preset: string;
   profile: string | undefined;
   seed: string;
   ms: number;
-  /** With `--other-libm`: whether the output's rounded fingerprint matched the native-libm run. */
   libmStable?: boolean;
   metrics: Record<string, unknown>;
   verdicts: { metric: string; band: string; kind: string; value: number | null; verdict: string }[];
 }
 
-/** A square world window for a panel. */
 interface View {
   minX: number;
   minZ: number;
@@ -231,10 +223,6 @@ function circuitCaption(seed: string, ms: number, m: CircuitMetrics): string[] {
   ];
 }
 
-/**
- * Run one generator call; under `--other-libm` the drawn output comes from the simulated libm and the
- * run notes whether its rounded fingerprint matches a native run.
- */
 function generate<T>(otherLibm: boolean, make: () => T): { out: T; ms: number; libmStable?: boolean } {
   const started = performance.now();
   if (!otherLibm) {

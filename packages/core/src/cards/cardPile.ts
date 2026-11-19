@@ -43,8 +43,6 @@ export interface PileMoveRejected {
 
 export type PileResult = PileMoveResult | PileMoveRejected;
 
-
-/** The cards in `zone`, top first; an undeclared zone throws. */
 function cardsIn(state: CardPileState, zone: ZoneName): readonly string[] {
   const cards = Object.hasOwn(state.zones, zone) ? state.zones[zone] : undefined;
   if (cards === undefined) throw new Error(`unknown card-pile zone: ${zone}`);

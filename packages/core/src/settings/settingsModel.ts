@@ -5,7 +5,6 @@ export type SettingValue = number | boolean | string;
 export type SettingKind = "slider" | "toggle" | "select";
 
 export type BuiltInSettingCategory = "sound" | "graphics" | "gameplay" | "controls" | "accessibility";
-/** Built-in category ids keep autocomplete; any other string makes a fresh category. */
 export type SettingCategory = BuiltInSettingCategory | (string & {});
 
 export const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] = [
@@ -21,14 +20,12 @@ export interface SettingOption {
   label: string;
 }
 
-/** Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins. */
 export interface SettingCategoryDef {
   id: SettingCategory;
   label: string;
   order?: number;
 }
 
-/** Extra setting a game appends to a built-in category via `defineGame({ settings: { extra } })`. */
 export interface GameSettingDef {
   id: string;
   label: string;
@@ -40,42 +37,29 @@ export interface GameSettingDef {
   max?: number;
   step?: number;
   options?: readonly SettingOption[];
-  /** Applies the new value to game state; the value is already persisted before this runs. */
   onChange?: (value: SettingValue, ctx: GameContext) => void;
 }
 
-/** `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`. */
 export type SettingsSurface = "quick";
 
-/** The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens. */
 export type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen";
 
 /** A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key. */
 export interface SettingsActionDef {
   id: string;
   label: string;
-  /** `danger` styles destructive actions (restart, quit) apart from neutral ones. */
   kind?: "default" | "danger";
-  /** Optional one-line hint under the label. */
   description?: string;
-  /** Runs the action; the menu closes right after. */
   run: (ctx: GameContext) => void;
 }
 
 export interface GameSettingsConfig {
-  /** Layout + skin of the menu; all four theme off `--jg-*`. Default `panel`. */
   variant?: SettingsVariant;
-  /** `quick` shows compact on-screen volume/graphics buttons; omitted mounts no engine trigger — open the menu yourself with `<SettingsTrigger>` / `useSettings().open()`, or render `useSettings().categories` your own way. */
   surface?: SettingsSurface | false;
-  /** Rows appended to any category — built-in or a brand-new one named by `category`. */
   extra?: readonly GameSettingDef[];
-  /** Declare custom category tabs, or relabel/reorder the built-ins. */
   categories?: readonly SettingCategoryDef[];
-  /** Built-in categories to hide. */
   hide?: readonly SettingCategory[];
-  /** Game-state actions (Restart, Quit…) — become the first "Game" tab, shown before anything else. */
   actions?: readonly SettingsActionDef[];
-  /** Input actions to drop from the rebindable Controls list — game-state keys like `restart` that belong in `actions`, not the rebind grid. */
   hideBindings?: readonly string[];
 }
 
@@ -115,7 +99,6 @@ export const DEFAULT_MASTER_VOLUME = 1;
 export const DEFAULT_GRAPHICS_QUALITY: GraphicsQuality = "high";
 export const DEFAULT_GRAPHICS_SHADOWS = true;
 
-/** Player-controlled multiplier on the HUD's computed fit scale — one lever on desktop and mobile alike. */
 export const DEFAULT_UI_SCALE = 1;
 export const UI_SCALE_MIN = 0.5;
 export const UI_SCALE_MAX = 1.5;
@@ -246,7 +229,6 @@ export interface SettingsStore {
   subscribe(listener: () => void): () => void;
 }
 
-/** Reactive, localStorage-backed settings store shared by the shell wiring and UI hooks. */
 export function createSettingsStore(
   storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage(),
 ): SettingsStore {

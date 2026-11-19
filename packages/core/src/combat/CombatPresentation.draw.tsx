@@ -15,7 +15,7 @@ import { POSTFX_OVERLAY_USERDATA } from "@jgengine/core/postfx/postfxOverlay.dra
 import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { ResolvedPresentationEffects } from "@jgengine/shell/presentationResolve";
 
-/** Mounts the opt-in combat VFX stack inside the 3D canvas. @internal */
+/** @internal */
 export function CombatPresentation({ effects }: { effects: ResolvedPresentationEffects }) {
   return (
     <>

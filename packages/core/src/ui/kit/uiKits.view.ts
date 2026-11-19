@@ -8,7 +8,6 @@ import { parchmentKit } from "./uiKitParchment.view";
 import { signalKit } from "./uiKitSignal.view";
 import { terminalKit } from "./uiKitTerminal.view";
 
-/** The built-in kit names, for tools and previews that list every kit. */
 export type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal";
 
 /**

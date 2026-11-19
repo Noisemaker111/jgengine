@@ -1,4 +1,3 @@
-/** Wave sum and bed lookup shared by the ocean's vertex and fragment shaders. */
 const oceanCommon = `
 uniform float uTime;
 uniform vec2 uWaveDirections[6];

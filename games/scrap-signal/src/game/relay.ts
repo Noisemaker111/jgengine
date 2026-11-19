@@ -9,33 +9,23 @@ import { reservePhase } from "./handroll";
 import { activeCharacter } from "./characters";
 import { earn } from "./cash";
 
-/** Fixed authored location; independent of capture-time spawn overrides. */
 export const RELAY = { x: -505, z: 581, radius: 22, seconds: 150, uploadSeconds: 6 };
 const WAVES = [["ripper_pup", "ripper_pup"], ["bruiser_brat", "bruiser_brat"], ["husk", "ripper_pup", "bruiser_brat"]] as const;
 export interface RelayState {
   phase: "idle" | "defend" | "upload" | "won" | "lost";
-  /** Published from the session loop: the wave the contract is on. */
   wave: number;
   enemies: readonly string[];
   remaining: number;
-  /** Published from the session loop: the signal this wave has banked. */
   upload: number;
   rewarded: boolean;
   reason: string;
-  /** Optional so pre-uplink saves restore the clear-first strategy. */
   overclock?: boolean;
-  /** The contract's result once its last wave closed, cleared when the player dismisses the report. */
   outcome?: "won" | "lost" | undefined;
   /** The loop's own state, so a reload resumes the same wave with the signal it had banked. */
   session?: SessionLoopState;
 }
 export const relayStore = defineStore<RelayState>("scrap.deadAir", () => ({ phase: "idle", wave: 0, enemies: [], remaining: RELAY.seconds, upload: 0, rewarded: false, reason: "" }));
 
-/**
- * The contract as a session loop: each ambush is a session, it carries the signal it banks, and its
- * boundary settles that signal. The loop owns which wave is live, how many have closed and what the
- * wave carries; the relay store republishes all three for the HUD and the save.
- */
 const relaySessions = perContext((ctx: GameContext) => {
   const loop: SessionLoop<never, void, { signal: number }> = createSessionLoop<never, void, { signal: number }>({
     kind: "wave",
@@ -55,7 +45,6 @@ export function relayLoop(ctx: GameContext): SessionLoop<never, void, { signal: 
   return slot.loop;
 }
 
-/** Write the loop's phase, wave and carried signal into the store; nothing else decides them. */
 function publishRelay(ctx: GameContext, current: RelayState): void {
   const loop = relayLoop(ctx);
   const open = loop.phase() === "open";

@@ -68,12 +68,11 @@ export function readSelectSnapshot<TSnapshot, TSelected>(
   return cache.value;
 }
 
-/** Frames or ticks a selection is watched over before it is judged. @internal */
+/** @internal */
 export const HOT_SELECTION_WINDOW = 60;
-/** Share of those frames or ticks it may change on before it counts as a per-frame or per-tick re-render. @internal */
+/** @internal */
 export const HOT_SELECTION_SHARE = 0.9;
 
-/** Which clock a hot selection kept pace with. */
 export type HotSelectionPace = "frame" | "tick";
 
 /**
@@ -126,7 +125,7 @@ const devFrames = perContext((ctx) => {
   return counter;
 });
 
-/** Rendered frames since `ctx`'s first store hook mounted, counted on the page's animation frames until the game closes (dev builds only). @internal */
+/** @internal */
 export function devFrameIndex(ctx: GameContext): number {
   return devFrames(ctx).frames;
 }

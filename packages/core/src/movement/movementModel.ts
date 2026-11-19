@@ -1,18 +1,5 @@
 import type { InputBuffer } from "../input/inputBuffer";
 
-/**
- * Movement core (pure model).
- *
- * This module owns the raw key model, the pure translation from held keys
- * into a frame-independent {@link MovementIntent}, and the kinematics
- * integration. Keeping it framework-free means the kinematics controller,
- * the keyboard handler and the on-screen touch D-pad all speak the same
- * vocabulary, and the translation is unit testable without a renderer.
- * DOM capture lives in `@jgengine/shell`'s GamePlayerShell (keyboard and
- * touch controls) and its camera rigs (pointer lock, the per-frame look
- * channel).
- */
-
 export type MovementKey = "w" | "a" | "s" | "d" | "shift" | "control" | "c" | "space";
 
 export type MovementKeysState = Record<MovementKey, boolean>;
@@ -33,7 +20,6 @@ export interface MovementIntent {
   crouching: boolean;
   running: boolean;
   jumping: boolean;
-  /** True when there is any directional input this frame. */
   moving: boolean;
 }
 
@@ -98,7 +84,6 @@ export const MOVEMENT_TUNING = {
   walkSpeedMultiplier: 1.75,
   runSpeedMultiplier: 2.25,
   crouchSpeedMultiplier: 0.45,
-  /** Backward (S) travels this fraction of walk speed so retreating reads slower than advancing. */
   backpedalSpeedMultiplier: 0.65,
   groundAcceleration: 26,
   airAcceleration: 12,
@@ -113,18 +98,11 @@ export const MOVEMENT_TUNING = {
   crouchBobAmplitude: 0.02,
   walkBobAmplitude: 0.045,
   runBobAmplitude: 0.06,
-  /** Below this horizontal speed the avatar is treated as standing still. */
   movingSpeedThreshold: 0.2,
   /** Largest physics step we integrate so a stalled tab can't teleport the player. */
   maxFrameSeconds: 0.05,
 } as const;
 
-/**
- * Speed (units/s) the avatar should target given the active intent. Crouch and run
- * take precedence over backpedal; a plain backward intent (`forward < 0`) slows to
- * {@link MOVEMENT_TUNING.backpedalSpeedMultiplier} (overridable via `tuning`), while a
- * pure strafe keeps full speed.
- */
 function resolveTargetSpeed(intent: MovementIntent, baseSpeed: number, tuning?: MovementTuningOverrides): number {
   const backpedal = tuning?.backpedalSpeedMultiplier ?? MOVEMENT_TUNING.backpedalSpeedMultiplier;
   const speedMultiplier = intent.crouching
@@ -137,11 +115,6 @@ function resolveTargetSpeed(intent: MovementIntent, baseSpeed: number, tuning?: 
   return baseSpeed * MOVEMENT_TUNING.walkSpeedMultiplier * speedMultiplier;
 }
 
-/**
- * Mutable kinematic state carried between frames by the controller. Kept here so
- * the velocity / jump / gravity integration is a pure function testable without
- * a renderer — the controller just owns the ref.
- */
 export interface PlayerMotionState {
   horizontalVelocityX: number;
   horizontalVelocityZ: number;
@@ -151,13 +124,10 @@ export interface PlayerMotionState {
   jumpHeld: boolean;
   /** Integrated time, ms; the clock jump buffering and coyote time read. */
   clockMs: number;
-  /** `clockMs` of the last grounded frame; `null` after a jump spends it. */
   groundedAtMs: number | null;
   /** `clockMs` of the last landing; `null` before the first. */
   landedAtMs: number | null;
-  /** Rising from the player's own jump, so releasing jump may cut it. */
   jumpRising: boolean;
-  /** Ended the last frame in the air. */
   wasAirborne: boolean;
 }
 
@@ -178,30 +148,19 @@ export function createPlayerMotionState(): PlayerMotionState {
   };
 }
 
-/** Horizontal step (world units) the avatar should commit this frame. */
 export interface MovementFrameStep {
   stepX: number;
   stepZ: number;
 }
 
-/**
- * Per-game overrides for the gravity/jump feel, sourced from
- * `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
- */
 export interface MovementTuningOverrides {
   gravityAcceleration?: number | undefined;
   jumpVelocity?: number | undefined;
-  /** Fraction of walk speed while backpedalling; overrides {@link MOVEMENT_TUNING.backpedalSpeedMultiplier}. */
   backpedalSpeedMultiplier?: number | undefined;
-  /** Ground velocity response, 1/s: how fast the body reaches its target velocity (default 26). */
   groundAcceleration?: number | undefined;
-  /** Air velocity response, 1/s: air control (default 12; `0` locks the jump arc). */
   airAcceleration?: number | undefined;
-  /** Ground stopping response with no input, 1/s (default 18; lower slides). */
   groundFriction?: number | undefined;
-  /** Sprint speed as a multiple of walk speed (default 2.25). */
   runSpeedMultiplier?: number | undefined;
-  /** Crouch speed as a multiple of walk speed (default 0.45). */
   crouchSpeedMultiplier?: number | undefined;
   /** A jump pressed up to this many ms before landing still fires on landing (default 0). Needs {@link MotionFrameOptions.buffer}. */
   jumpBufferMs?: number | undefined;
@@ -209,33 +168,21 @@ export interface MovementTuningOverrides {
   coyoteMs?: number | undefined;
   /** Rising speed kept when jump is released early, 0..1 (default 1: no cut). Lower makes a tap a hop. */
   jumpCutFactor?: number | undefined;
-  /** Gravity multiplier near the peak, while vertical speed is under {@link MovementTuningOverrides.apexSpeed} (default 1). */
   apexGravityScale?: number | undefined;
   /** Vertical speed under which the apex gravity scale applies, m/s (default 1.5). */
   apexSpeed?: number | undefined;
-  /** Gravity multiplier while falling (default 1). Above 1 drops faster than it rose. */
   fallGravityScale?: number | undefined;
   /** After landing, jumps wait and walk speed ramps back from {@link MovementTuningOverrides.landingSpeedScale} over this many ms (default 0). */
   landingRecoveryMs?: number | undefined;
-  /** Walk speed share right after landing when `landingRecoveryMs` is set (default 0.5). */
   landingSpeedScale?: number | undefined;
 }
 
-/**
- * Per-frame dynamic modifiers for {@link advancePlayerMotion} — state the caller
- * recomputes each tick (unlike the static {@link MovementTuningOverrides}). Omitted
- * fields leave the integrator at its default behavior.
- */
 export interface MotionFrameOptions {
   /** Integrate a caller-clamped simulation step in full, including scaled game time. Default false. */
   authoritativeStep?: boolean | undefined;
-  /** Extra multiplier applied on top of the resolved target speed (e.g. swimming). Default 1. */
   speedScale?: number | undefined;
-  /** Suppress gravity/jump integration and hold the avatar afloat this frame (e.g. swimming). Default false. */
   floating?: boolean | undefined;
-  /** Buffers jump presses for `jumpBufferMs`. Without it a jump fires only on the press frame. */
   buffer?: InputBuffer;
-  /** A collision controller supplies grounded state; integrate jump velocity without landing on the synthetic offset origin. */
   externalGrounding?: boolean;
 }
 
@@ -396,12 +343,9 @@ export function motionStepSeconds(seconds: number, authoritativeStep = false): n
   return authoritativeStep ? seconds : Math.min(seconds, MOVEMENT_TUNING.maxFrameSeconds);
 }
 
-/** A placed scene object the walking player collides against as a circle-vs-AABB obstacle. */
 export interface CollisionObstacle {
   position: readonly [number, number, number];
-  /** Box half-size on each axis. Default `[0.5, 0.5, 0.5]` (unit-box scene objects). Ignored when `boxes` is set. */
   halfExtents?: readonly [number, number, number] | undefined;
-  /** Local center shift added to `position` for the single-AABB path (the collider's yaw-rotated offset). Ignored when `boxes` is set. */
   offset?: readonly [number, number, number] | undefined;
   /**
    * Optional compound solid: axis-aligned sub-boxes as `min`/`max` **relative to `position`** (add
@@ -424,13 +368,7 @@ function verticalContactTolerance(feetY: number, headY: number, minY: number, ma
   return Number.EPSILON * 8 * Math.max(1, Math.abs(feetY), Math.abs(headY), Math.abs(minY), Math.abs(maxY));
 }
 
-/**
- * Sweep a heightfield walker's vertical step at its accepted XZ position against blocking bounds.
- * The nearest crossed underside stops ascent; the nearest crossed top catches descent, including
- * thin geometry crossed in one step. Compound boxes are relative to obstacle.position; offset is
- * used only for a single AABB. Real starting intersections are reported separately, not repaired.
- * @internal
- */
+/** @internal */
 export function resolveObstacleVerticalStep(
   position: readonly [number, number, number],
   stepY: number,
@@ -481,13 +419,6 @@ export function resolveObstacleVerticalStep(
   return result;
 }
 
-/**
- * Swept clamp of a single-axis step against a box span. Entering from outside stops on the near
- * face — including when the raw target would land *beyond* the far face (the old form returned the
- * full step there, tunneling a fast mover straight through the box in one frame). Starting inside
- * the span still permits full exits (the depenetration path owns true stuck-inside cases), and
- * motion beginning at or past a face moving away is untouched.
- */
 function clampAxisStep(originalCoord: number, step: number, min: number, max: number): number {
   if (step === 0) return 0;
   const target = originalCoord + step;
@@ -716,9 +647,7 @@ export function obstacleSupportHeight(
 
 const OBSTACLE_GATHER_RADIUS = 3;
 
-/** Placed objects within `radius` (XZ) of `center`, as {@link CollisionObstacle}s to pre-filter for {@link resolveObstacleStep}.
- * @internal
- */
+/** @internal */
 export function nearbyObstacles(
   objects: readonly { position: readonly [number, number, number] }[],
   center: readonly [number, number, number],
@@ -734,29 +663,19 @@ export function nearbyObstacles(
   return result;
 }
 
-/** Zeroes the off-axis component so travel is locked to a single world axis (`PlayerMovementConfig.mode: "axis"`).
- * @internal
- */
+/** @internal */
 export function constrainStepToAxis(stepX: number, stepZ: number, axis: "x" | "z"): MovementFrameStep {
   return axis === "x" ? { stepX, stepZ: 0 } : { stepX: 0, stepZ };
 }
 
-/**
- * Snap a world position to its containing cell's center, matching the
- * bounds-free form of `navGrid`'s and `tacticalGrid`'s `floor` + half-cell
- * convention (`PlayerMovementConfig.mode: "grid"`).
-  * @internal
-  */
+/** @internal */
 export function snapPositionToGrid(x: number, z: number, cellSize: number): [number, number] {
   return [(Math.floor(x / cellSize) + 0.5) * cellSize, (Math.floor(z / cellSize) + 0.5) * cellSize];
 }
 
-/** Peak jump height from MOVEMENT_TUNING.jumpVelocity + gravity, with small buffer. */
 export const MAX_JUMP_OFFSET = 1.15;
 
-/** Camera yaw looks along -Z; character mesh faces +Z at body rotation.y = 0.
- * @internal
- */
+/** @internal */
 export function cameraYawToAvatarBodyYaw(cameraYaw: number): number {
   return cameraYaw + Math.PI;
 }

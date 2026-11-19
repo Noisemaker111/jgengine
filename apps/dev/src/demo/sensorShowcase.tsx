@@ -108,7 +108,6 @@ function darkSightStateFor(ctx: GameContext): DarkSightState {
   return state;
 }
 
-/** Dark Sight toggle shared between the WorldOverlay (3D reveal) and GameUI (screen tint + button) — both mount as separate React trees over the same GameContext. */
 function useDarkSight(): [boolean, () => void] {
   const ctx = useGameContext();
   const state = darkSightStateFor(ctx);

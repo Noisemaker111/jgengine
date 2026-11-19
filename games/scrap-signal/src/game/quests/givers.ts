@@ -12,7 +12,6 @@ import { speechStore } from "../stores";
 import { moveNpcTo, respawnForJob, spawnQuestEnemy } from "../world/setup";
 import { NPCS, quests, scrapQuestById, type NpcId, type ScrapObjective, type ScrapQuest } from "./catalog";
 
-/** The conversation on screen: who is talking, and the quest they are offering, if any. */
 export interface NpcDialog {
   npc: NpcId;
   questId: string | null;
@@ -29,7 +28,6 @@ function playerLevel(ctx: GameContext): number {
   return ctx.scene.entity.stats.get(ctx.player.userId, "level")?.current ?? 1;
 }
 
-/** What `npc` has for the player now, under the game's level rule. */
 export function offerFrom(ctx: GameContext, npc: NpcId): GiverOffer {
   const journal = ctx.game.quest;
   if (journal === undefined) return { kind: "none" };
@@ -39,10 +37,6 @@ export function offerFrom(ctx: GameContext, npc: NpcId): GiverOffer {
   });
 }
 
-/**
- * Add progress to every active objective of `kind` aimed at `target`. The engine credits kills of an
- * enemy's own catalog id itself; `kill` here is only for a local breed counting toward its base.
- */
 export function creditObjective(ctx: GameContext, kind: ScrapObjective["kind"], target: string, amount = 1): void {
   const journal = ctx.game.quest;
   if (journal === undefined) return;
@@ -66,13 +60,8 @@ function payQuest(ctx: GameContext, quest: ScrapQuest): void {
   ctx.scene.entity.floatText({ instanceId: userId, text: `MISSION COMPLETE · +${quest.reward.xp} XP`, kind: "pickup" });
 }
 
-/** How far from the giver a reward is set down: past the talk prompt's reach, so E takes the gun, not the conversation. */
 const REWARD_CLEARANCE = 4.6;
 
-/**
- * A quest's unique gun, rolled at the player's level and set down between the player and the giver,
- * just outside the giver's talk range, to read and take.
- */
 function giveUniqueGun(ctx: GameContext, name: string, quest: ScrapQuest): void {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return;
@@ -95,7 +84,6 @@ function giveUniqueGun(ctx: GameContext, name: string, quest: ScrapQuest): void 
   ctx.game.notices.push({ text: `Reward: ${gun.name}`, tone: "info" });
 }
 
-/** The level at which `npc` next has work, when the only thing holding it back is the player's level. */
 function nextWorkLevel(ctx: GameContext, npc: NpcId): number | null {
   const journal = ctx.game.quest;
   if (journal === undefined) return null;
@@ -163,7 +151,6 @@ export function talkTo(ctx: GameContext, npc: NpcId): void {
   npcDialogStore.write(ctx, { npc, questId: null, line });
 }
 
-/** Take the quest the open conversation offers. */
 export function acceptOffer(ctx: GameContext): void {
   const open = npcDialogStore.read(ctx);
   if (open === null || open.questId === null) return;
@@ -173,7 +160,6 @@ export function acceptOffer(ctx: GameContext): void {
   if (accept(ctx, quest)) npcDialogStore.clear(ctx);
 }
 
-/** A radio quest turns itself in the moment its last objective is done. */
 export function settleRadioQuests(ctx: GameContext): void {
   const journal = ctx.game.quest;
   if (journal === undefined) return;
@@ -186,10 +172,6 @@ export function settleRadioQuests(ctx: GameContext): void {
   }
 }
 
-/**
- * Re-grant what a loaded run has already earned: the roads its accepted quests opened and the
- * unlocks its finished ones paid, and re-place a quest enemy that is still to be killed.
- */
 export function reconcileQuestWorld(ctx: GameContext): void {
   const journal = ctx.game.quest;
   if (journal === undefined) return;

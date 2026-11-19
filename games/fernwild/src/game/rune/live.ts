@@ -20,9 +20,7 @@ function frameCached<T>(compute: (ctx: GameContext) => T): (ctx: GameContext) =>
   };
 }
 
-/** The survivor's view as bound leaves read it: computed at most once a frame. */
 export const liveSurvivor: (ctx: GameContext) => SurvivorView = frameCached(survivorView);
-/** The aimed, viewed and ridden creature cards as bound leaves read them. */
 export const liveCreatures: (ctx: GameContext) => CreaturesView = frameCached(creaturesView);
 
 export const same = <T,>(a: T, b: T): boolean => JSON.stringify(a) === JSON.stringify(b);

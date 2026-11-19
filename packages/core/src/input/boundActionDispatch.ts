@@ -34,7 +34,7 @@ export function heldActionsFor(
   return actions.filter((action) => tracker.isDown(action));
 }
 
-/** Whether a bound action should fire this frame: on press, or on repeat interval while held (shared by `FrameDriver` and `HudOnlyDriver`). @internal */
+/** @internal */
 export function shouldFireBoundAction(
   tracker: Pick<ActionStateTracker<string>, "isDown" | "wasPressed">,
   action: string,

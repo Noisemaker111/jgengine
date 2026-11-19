@@ -5,12 +5,6 @@ import { creatureIntent, diverVisibility, SPECIES, type Creature, type Species }
 import { STRATA, type Stratum } from "./strata";
 import type { Dive } from "./state";
 
-/**
- * One tick of Bellwether's living floors: the creatures of the stratum the diver stands in sense,
- * decide (engine temperament) and move (engine navigation), and a lure on the floor pulls predators
- * off the diver. The game's own parts are only the numbers each species carries and what a strike
- * costs the suit.
- */
 export interface Senses {
   of(species: Species): PerceptionService;
   route(id: string): Navigator;
@@ -33,12 +27,10 @@ export function createSenses(make: (species: Species) => PerceptionService): Sen
   };
 }
 
-/** A noise, a smell or a wound, delivered to every species' senses at once. */
 export function broadcast(senses: Senses, stimulus: PerceptionStimulus): void {
   for (const species of Object.keys(SPECIES) as Species[]) senses.of(species).pushStimulus(stimulus);
 }
 
-/** Which hazard patches the diver is standing in on this floor. */
 export function hazardsAt(at: Point, stratum: Stratum, steamOn: boolean): Set<HazardKind> {
   const out = new Set<HazardKind>();
   for (const hazard of HAZARDS) {
@@ -52,11 +44,6 @@ export function hazardsAt(at: Point, stratum: Stratum, steamOn: boolean): Set<Ha
 export interface DiverPose { id: string; at: Point; lamp: boolean }
 export interface CreatureTick { fauna: Dive["fauna"]; thrown: Dive["thrown"]; damage: number; hint: string | null; windup: boolean; struck: string | null }
 
-/**
- * Advance every creature on the diver's floor by `dt`. A creature's target can be the diver or a
- * lure; reaching a lure ends it (the blood is eaten), reaching the diver after a visible windup lands
- * the species' strike.
- */
 export function tickCreatures(dive: Dive, diver: DiverPose, senses: Senses, dt: number, nowMs: number): CreatureTick {
   const stratum = dive.stratum, ambient = STRATA[stratum].ambient;
   const fauna: Dive["fauna"] = { ...dive.fauna };
@@ -121,7 +108,6 @@ export function tickCreatures(dive: Dive, diver: DiverPose, senses: Senses, dt: 
   return { fauna, thrown, damage, hint, windup, struck };
 }
 
-/** Try the flee heading turned further from straight on, and take the step that opens the most distance from the threat behind it. */
 function sidestep(route: Navigator, from: Point, goal: Point, budget: number, stratum: Stratum): Point {
   const dx = goal[0] - from[0], dz = goal[2] - from[2], length = Math.hypot(dx, dz) || 1, heading = Math.atan2(dx, dz);
   const threat: Point = [from[0] - dx / length * 3, 0, from[2] - dz / length * 3];
@@ -136,7 +122,6 @@ function sidestep(route: Navigator, from: Point, goal: Point, budget: number, st
   return best;
 }
 
-/** The nearest live creature the diver is looking at, inside `reach` and in plain sight. */
 export function creatureInSight(dive: Dive, at: Point, aim: Point, reach: number): Creature | null {
   let best: { creature: Creature; along: number } | null = null;
   const flat = Math.hypot(aim[0], aim[2]) || 1;

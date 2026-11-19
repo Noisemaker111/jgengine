@@ -10,35 +10,24 @@ import { HudFrame, type HudFrameVariation } from "@jgengine/core/hud/hudFrame.vi
 export interface CameraShakeReadout {
   /** Current trauma in `[0, 1]`. */
   trauma: number;
-  /** The last free-string `kind` handed to the controller, or `undefined`. */
   kind: string | undefined;
 }
 
-/**
- * Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). It only
- * reads: the camera rig that applies the shake is what advances it. Returns the current trauma + kind
- * for a HUD readout.
- *
- * @capability use-camera-shake UI hook reading a camera-shake controller's live trauma and kind
- */
+/** @capability use-camera-shake UI hook reading a camera-shake controller's live trauma and kind */
 export function useCameraShakeReadout(controller: CameraShakeController): CameraShakeReadout {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => controller.subscribe(bump), [controller]);
   return { trauma: controller.trauma(), kind: controller.kind() };
 }
 
-/** Props for {@link CameraShakeMeter}. */
 export interface CameraShakeMeterProps {
-  /** The controller to read. */
   controller: CameraShakeController;
-  /** Header label. Default `"CAMERA SHAKE"`. */
   title?: string;
   /**
    * Human labels per game-owned `kind`, so the readout can show "Explosion" for a
    * `"explosion"` impact. The model never interprets `kind`; this is pure display.
    */
   kindLabels?: Record<string, string>;
-  /** Frame skin. Default `"glass"`. */
   variation?: HudFrameVariation;
   className?: string;
   style?: CSSProperties;

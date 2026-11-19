@@ -1,10 +1,5 @@
 import { plantExp, plantPow } from "../growth/plantMath";
 
-/**
- * A Carmean, Hahn & Jacobs 1989 (GTR NC-128) site-index curve in its Chapman–Richards form,
- * H = BH + b1·SI^b2·(1 − e^(b3·A))^(b4·SI^b5), heights in feet. Coefficients as printed in NC-128 and
- * reproduced in the Forest Vegetation Simulator's Lake States `htcalc.f` (both US public domain).
- */
 export interface SiteIndexCurve {
   speciesId: string;
   curve: number;
@@ -14,7 +9,6 @@ export interface SiteIndexCurve {
   b3: number;
   b4: number;
   b5: number;
-  /** Feet added for curves fitted on breast-height age; 0 means A is total age. */
   breastHeightFt: number;
 }
 

@@ -19,10 +19,6 @@ function ostinato(
   return out;
 }
 
-/**
- * Wide, slow, and mostly empty — a D-minor pad drone with a reed line that answers it every other
- * bar. Written to be ignorable: it should read as the sound of the flats, not as a track playing.
- */
 const wastes: MusicTheme = {
   id: "wastes",
   bpm: 62,
@@ -42,7 +38,6 @@ const wastes: MusicTheme = {
   ],
 };
 
-/** Driving, mechanical, and short — a bass ostinato under a war drum, with brass stabs on the turn. */
 const skirmish: MusicTheme = {
   id: "skirmish",
   bpm: 138,

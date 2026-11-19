@@ -16,23 +16,17 @@ import type { EngineRecord } from "./engineIdentity";
 
 export interface ShotRecord {
   v: 1;
-  /** ISO timestamp of the capture that wrote the PNG beside this file. */
   capturedAt: string;
-  /** The exact command that produced it, for a reproducible re-shoot. */
   command: string;
   /** sha256 of the PNG bytes. */
   sha: string;
   width?: number;
   height?: number;
-  /** Commit the tree was on, plus whether the tree was dirty. */
   git?: { head: string; dirty: boolean };
   /** Which engine the frame actually rendered, so a saved shot can be audited later. */
   engine?: EngineRecord;
-  /** Coarse luminance fingerprint, for comparing this shot against a later re-capture. */
   signature?: number[];
-  /** sha256 of the shot this one replaced, when there was one. */
   replacedSha?: string;
-  /** Set when this capture shows the same picture as the shot it replaced. */
   unchanged?: { changedShare: number; maxDelta: number };
 }
 

@@ -25,7 +25,6 @@ export function sampleGripCurve(curve: GripCurve, slip: number): number {
   return pts[pts.length - 1]![1];
 }
 
-/** A street tire: full grip to slip `0.2`, then it lets go to 55% fully sideways. */
 export const DEFAULT_GRIP_CURVE: GripCurve = {
   points: [
     [0, 1],
@@ -35,7 +34,6 @@ export const DEFAULT_GRIP_CURVE: GripCurve = {
   ],
 };
 
-/** The peak of a grip curve: its highest grip, the far end of a flat plateau as the breakaway slip, and the grip left at slip `1`. */
 export function gripCurvePeak(curve: GripCurve): { peakGrip: number; peakSlip: number; slideGrip: number } {
   let peakGrip = 0;
   let peakSlip = 0;

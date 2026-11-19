@@ -25,7 +25,6 @@ import { EditorApp, type EditorSaveFn } from "./EditorApp";
 export type { AssetImporter, StandaloneAsset } from "./assetImport";
 export { importAssetToHost, loadDroppedAssets, mergeStandaloneAssets } from "./assetImport";
 
-/** Options for the blank, gameless world the standalone editor authors over. */
 export interface BlankPlayableOptions {
   name?: string;
   assets?: readonly StandaloneAsset[];
@@ -47,7 +46,6 @@ export function blankWorld(_seed = "standalone"): EnvironmentWorldFeature {
   });
 }
 
-/** Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over. */
 export function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame {
   const assets = createAssetCatalog();
   for (const asset of options.assets ?? []) assets.register(asset.id, { url: asset.url });
@@ -60,7 +58,6 @@ export function createBlankPlayable(options: BlankPlayableOptions = {}): Playabl
   });
 }
 
-/** A save fn that hands the scene JSON back to the browser as a downloaded file — the exit path when no dev server is listening. */
 export function downloadSaver(filename = "editor.scene.json"): EditorSaveFn {
   return async (json) => {
     try {
@@ -80,11 +77,8 @@ export function downloadSaver(filename = "editor.scene.json"): EditorSaveFn {
 
 /** Props for the gameless scene editor — everything optional so it boots on a blank world with nothing wired. */
 export interface StandaloneEditorProps {
-  /** Prefs/draft namespace; also the gameId the save endpoint resolves. Default `"standalone"`. */
   sceneId?: string;
-  /** Scene document (or its JSON) to open on — a loaded world file. */
   scene?: EditorLayersInput;
-  /** Models the user can place. */
   assets?: readonly StandaloneAsset[];
   /** World to author over. Default: a flat grass field. */
   world?: EnvironmentWorldFeature;
@@ -95,7 +89,6 @@ export interface StandaloneEditorProps {
    * persists to disk and survives reload; when no host answers the import degrades to an ephemeral blob URL.
    */
   importAsset?: AssetImporter;
-  /** Hide the built-in open-scene / add-assets strip (host supplies its own loading UI). */
   hidePickers?: boolean;
 }
 

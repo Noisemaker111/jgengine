@@ -3,12 +3,9 @@ import type { CrownForm } from "../species/plantSpecies";
 import { CROWN_HULL_BINS, CROWN_HULL_SECTORS, PLANT_SHOOT_LEAF_SPAN, type PlantStructure } from "../structure/plantStructure";
 import { crownProfile } from "./crownAllometry";
 
-/** Leaf area of one leaf of size `sizeM`, as the growth model counts it. */
 const LEAF_AREA_PER_SIZE_SQ = 0.55;
-/** Mean projection of a randomly oriented leaf onto a plane (spherical leaf angles). */
 const PROJECTION = 0.5;
 
-/** Measures of how a crown is built, beyond its size: where it forks, its main limbs and how open it is. */
 export interface CrownArchitecture {
   /**
    * Diameter of the stoutest limb leaving the trunk in the lower `forkHeight` of the tree, over the
@@ -16,36 +13,24 @@ export interface CrownArchitecture {
    * leader running straight up.
    */
   forkRatio: number;
-  /** Height of the lowest codominant fork (a limb {@link CODOMINANT_RATIO} of its stem or more) over the tree's height; 1 with none. */
   forkHeightShare: number;
-  /** Limbs leaving a stem in the lower `forkHeight` of the tree at least `scaffoldRatio` of its diameter there. */
   scaffoldLimbs: number;
-  /** Share of leaf area within `shellDepthShare` of the crown radius of the crown's outer surface. */
   shellShare: number;
-  /** Share of the crown's side-on outline where sky shows through leaves and wood. */
   gapFraction: number;
   /** Mean angle from vertical of the limbs leaving the trunk at their base, degrees, weighted by cross-section. */
   limbAngleDeg: number;
-  /** Where the crown carries its spread, 0 at its base and 1 at its top ({@link crownProfile}). */
   centroid: number;
-  /** Radius three quarters up the crown over its widest radius ({@link crownProfile}). */
   shoulder: number;
 }
 
 /** A limb this share of the diameter of the stem it leaves, or more, is a codominant stem (Gilman 2011). */
 export const CODOMINANT_RATIO = 0.6;
 
-/** Thresholds {@link crownArchitecture} reads limbs and the leaf shell with. */
 export interface CrownArchitectureOptions {
-  /** Share of the tree's height, from the ground, a fork is looked for in; default 0.6. */
   forkHeight?: number;
-  /** Limb over the diameter of the stem it leaves that counts as a scaffold limb; default 1/3. */
   scaffoldRatio?: number;
-  /** Depth of the outer leaf shell as a share of crown radius; default 0.25. */
   shellDepthShare?: number;
-  /** Side views averaged for the gap fraction; default 4. */
   views?: number;
-  /** Raster cells across the crown height for the gap fraction; default 64. */
   cells?: number;
 }
 
@@ -237,19 +222,15 @@ function gapFraction(structure: PlantStructure, views: number, cells: number, st
   return crownCells > 0 ? gapSum / crownCells : 0;
 }
 
-/** The measures of a {@link CrownArchitecture}, in a fixed order. */
 export const CROWN_ARCHITECTURE_MEASURES = ["forkRatio", "forkHeightShare", "scaffoldLimbs", "shellShare", "gapFraction", "limbAngleDeg", "centroid", "shoulder"] as const satisfies readonly (keyof CrownArchitecture)[];
 
-/** Age in years an open-grown tree is held to its {@link CrownArchitectureTarget}. */
 export const CROWN_ARCHITECTURE_AGE = 40;
 
 /** Closed band `[low, high]` a measure must fall in. */
 export type MeasureBand = readonly [low: number, high: number];
 
-/** Bands a species' open-grown crown falls in at {@link CROWN_ARCHITECTURE_AGE}; an absent band is not checked. */
 export type CrownArchitectureTarget = Partial<Record<keyof CrownArchitecture, MeasureBand>>;
 
-/** Crown-shape bands of one crown form at one age; `widthPerHeight` bounds crown width over tree height. */
 export interface CrownShapeBands {
   centroid: MeasureBand;
   shoulder?: MeasureBand;
@@ -302,17 +283,11 @@ export function crownArchitectureTarget(species: Pick<PlantSpecies, "architectur
   };
 }
 
-/** Seeds whose own individuals a species' crown guardrails are checked on: each grows its own tree. */
 export const CROWN_ARCHITECTURE_SEEDS = ["a", "b", "c"] as const;
 
-/** Seeds of {@link CROWN_ARCHITECTURE_SEEDS} that may miss a guardrail: an odd tree is allowed, a habit is not. */
 export const CROWN_ARCHITECTURE_MISSES_ALLOWED = 1;
 
-/**
- * The measures of `architecture` outside their band in `target`, as readable lines; empty when the
- * crown meets it.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export function crownArchitectureMisses(target: CrownArchitectureTarget, architecture: CrownArchitecture): string[] {
   const misses: string[] = [];
   for (const key of CROWN_ARCHITECTURE_MEASURES) {

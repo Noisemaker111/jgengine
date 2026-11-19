@@ -89,11 +89,7 @@ export function contactShadowFragment(steps: number): string {
 const lightPosition = new THREE.Vector3();
 const targetPosition = new THREE.Vector3();
 
-/**
- * The scene's key light: the strongest shadow-casting directional light, which is the sun or the
- * moon the shadow map already follows. A cascaded rig has several lights pointing the same way, so
- * any of them gives the direction. @internal
- */
+/** @internal */
 export function findKeyLight(scene: THREE.Object3D): THREE.DirectionalLight | null {
   let best: THREE.DirectionalLight | null = null;
   visitVisible(scene, (object) => {
@@ -104,7 +100,7 @@ export function findKeyLight(scene: THREE.Object3D): THREE.DirectionalLight | nu
   return best;
 }
 
-/** Unit vector from the scene toward `light`, in world space. @internal */
+/** @internal */
 export function towardLight(light: THREE.DirectionalLight, target: THREE.Vector3): THREE.Vector3 {
   light.getWorldPosition(lightPosition);
   light.target.getWorldPosition(targetPosition);
@@ -113,10 +109,9 @@ export function towardLight(light: THREE.DirectionalLight, target: THREE.Vector3
   return target.normalize();
 }
 
-/** Frames between key-light searches; a light added or removed mid-play is picked up within this. */
 const LIGHT_RESCAN_FRAMES = 90;
 
-/** Multiplies the shadow factor onto the colour target it is drawn over. @internal */
+/** @internal */
 export const CONTACT_APPLY_FRAGMENT = /* glsl */ `
   uniform sampler2D tShadow;
   varying vec2 vUv;
@@ -200,7 +195,6 @@ export class ContactShadowPass extends Pass {
     this.applyQuad = new FullScreenQuad(this.applyMaterial);
   }
 
-  /** The light the pass is shadowing from, refreshed every {@link LIGHT_RESCAN_FRAMES} frames. */
   keyLight(): THREE.DirectionalLight | null {
     this.framesSinceScan += 1;
     const lost = this.light !== null && (this.light.parent === null || !this.light.castShadow);

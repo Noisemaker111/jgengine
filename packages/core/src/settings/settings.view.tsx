@@ -18,7 +18,6 @@ export function SettingsProvider({ store, children }: { store: SettingsStore; ch
   return <SettingsStoreContext.Provider value={store}>{children}</SettingsStoreContext.Provider>;
 }
 
-/** The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell). */
 export function useSettingsStore(): SettingsStore {
   const store = useContext(SettingsStoreContext);
   return store ?? fallbackStore();
@@ -30,7 +29,6 @@ function fallbackStore(): SettingsStore {
   return standalone;
 }
 
-/** Read + write one persisted setting; re-renders when the value changes anywhere. */
 export function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] {
   const store = useSettingsStore();
   const value = useSyncExternalStore(
@@ -42,7 +40,6 @@ export function useSetting<T extends SettingValue>(id: string, fallback: T): rea
   return [value, set];
 }
 
-/** One editable setting rendered in a settings menu category. */
 export interface SettingsRow {
   id: string;
   label: string;
@@ -56,7 +53,6 @@ export interface SettingsRow {
   set: (value: SettingValue) => void;
 }
 
-/** One rebindable action row rendered in the controls settings category. */
 export interface SettingsKeybindRow {
   action: string;
   label: string;
@@ -68,7 +64,6 @@ export interface SettingsKeybindRow {
   reset: () => void;
 }
 
-/** A settings menu category with its rows and keybinds, ready to render. */
 export interface SettingsCategoryView {
   id: SettingCategory;
   label: string;
@@ -76,7 +71,6 @@ export interface SettingsCategoryView {
   keybinds: SettingsKeybindRow[];
 }
 
-/** A resolved game-state action — `run` is already bound to the game context and closes the menu. */
 export interface SettingsActionView {
   id: string;
   label: string;
@@ -85,10 +79,8 @@ export interface SettingsActionView {
   run: () => void;
 }
 
-/** The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu. */
 export interface SettingsController {
   categories: SettingsCategoryView[];
-  /** Game-state actions (Restart, Quit…) — the menu shows them as its first "Game" tab. */
   actions: SettingsActionView[];
   variant: SettingsVariant;
   surface: SettingsSurface | false;
@@ -110,7 +102,6 @@ export function SettingsControllerProvider({
   return <SettingsControllerContext.Provider value={controller}>{children}</SettingsControllerContext.Provider>;
 }
 
-/** The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell. */
 export function useSettings(): SettingsController {
   return useContext(SettingsControllerContext) ?? EMPTY_CONTROLLER;
 }
@@ -127,17 +118,11 @@ const EMPTY_CONTROLLER: SettingsController = {
   setOpen: noop,
 };
 
-/** True when the game has any setting or game-action to show — gate your own settings entry on it. */
 export function useHasSettings(): boolean {
   const s = useSettings();
   return s.categories.length > 0 || s.actions.length > 0;
 }
 
-/**
- * Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button
- * games re-authored seven times. Pass your own `className` only to override placement
- * or brand chrome; the gear glyph already scales with `text-base` / `1em`.
- */
 export const SETTINGS_TRIGGER_CLASSNAME =
   "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[var(--jg-accent)]";
 

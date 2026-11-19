@@ -2,65 +2,44 @@ import type { GameContext } from "./gameContext";
 import { createInputSnapshot, type InputSnapshot } from "./inputSnapshot";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
-/** One local seat on a shared screen: a stable slot id, the user id the game spawns for it, and the device driving it. */
 export interface LocalPlayerSlot {
   readonly slotId: string;
   readonly index: number;
   readonly userId: string;
-  /** Device that claimed the seat (`"gamepad:1"`), `null` for the primary seat before a device claims it. */
   readonly deviceId: string | null;
 }
 
-/** Retunable seat policy. */
 export interface LocalPlayersConfig {
-  /** Seats on this screen, including the primary (default `1`: every device drives the primary player). */
   maxSlots: number;
-  /**
-   * Whether the first device to press something claims the primary seat alongside keyboard and touch
-   * (`"first"`, default), or the primary stays keyboard/touch-only and every pad opens a new seat (`"none"`).
-   */
   claimPrimary?: "first" | "none";
 }
 
-/** Options for {@link createLocalPlayers}. */
 export interface LocalPlayersOptions extends LocalPlayersConfig {
-  /** User id of seat 0 — `ctx.player.userId`. */
   primaryUserId: string;
-  /** Input of seat 0 — `ctx.input`; other seats get their own snapshot. */
   primaryInput?: InputSnapshot;
-  /** User id for seat `index >= 1` (default `` `${primaryUserId}:p${index + 1}` ``). */
   userIdFor?: (index: number) => string;
 }
 
-/** Result of {@link LocalPlayers.assign}. */
 export interface LocalPlayerAssignment {
   slot: LocalPlayerSlot;
-  /** True when this call opened the seat: spawn its entity through `onNewPlayer`. */
   joined: boolean;
 }
 
-/** Serializable seat table. */
 export interface LocalPlayersSnapshot {
   maxSlots: number;
   claimPrimary: "first" | "none";
   slots: LocalPlayerSlot[];
 }
 
-/** Seats for couch co-op: devices hot-join into slots, each slot has its own input. */
 export interface LocalPlayers {
-  /** Seat for a device that just produced input: its existing seat, the primary seat, a newly opened seat, or `null` when full. */
   assign(deviceId: string): LocalPlayerAssignment | null;
-  /** Free a seat other than the primary; its device may hot-join again. */
   release(slotId: string): boolean;
   slots(): readonly LocalPlayerSlot[];
   slot(slotId: string): LocalPlayerSlot | null;
   slotForDevice(deviceId: string): LocalPlayerSlot | null;
-  /** The seat's user id and input, or `null` for an unknown seat. Seat 0 returns `ctx.player`'s id and `ctx.input`. */
   local(slotId: string): { userId: string; input: InputSnapshot } | null;
-  /** Called after every assign that changes the table, release, restore and retune; returns an unsubscribe. */
   subscribe(listener: () => void): () => void;
   config(): Required<LocalPlayersConfig>;
-  /** Change seat count or claim policy mid-game; seats above a lowered `maxSlots` stay until released. */
   retune(next: LocalPlayersConfig): void;
   snapshot(): LocalPlayersSnapshot;
   restore(snapshot: LocalPlayersSnapshot): void;
@@ -68,10 +47,7 @@ export interface LocalPlayers {
 
 const PRIMARY_SLOT = "slot:0";
 
-/**
- * Seat table for local multiplayer on one screen.
- * @capability local-players Couch co-op seats: devices hot-join into slots, each with its own user id and input snapshot.
- */
+/** @capability local-players Couch co-op seats: devices hot-join into slots, each with its own user id and input snapshot. */
 export function createLocalPlayers(options: LocalPlayersOptions): LocalPlayers {
   const userIdFor = options.userIdFor ?? ((index: number) => `${options.primaryUserId}:p${index + 1}`);
   const primaryInput = options.primaryInput ?? createInputSnapshot();
@@ -168,10 +144,6 @@ export function createLocalPlayers(options: LocalPlayersOptions): LocalPlayers {
 
 const LOCAL_PLAYERS = new ContextMap<LocalPlayers>();
 
-/**
- * The seat table of a game context, created on first use with one seat for `ctx.player` and `ctx.input`.
- * The shell retunes it from `defineGame({ localPlayers })` and hot-joins pads into it.
- */
 export function localPlayers(ctx: GameContext): LocalPlayers {
   let players = LOCAL_PLAYERS.get(ctx);
   if (players === undefined) {

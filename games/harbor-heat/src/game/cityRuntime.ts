@@ -20,7 +20,6 @@ import { publishForContext } from "@jgengine/core/runtime/contextDisposal";
 
 declare module "@jgengine/core/runtime/pageHandle" {
   interface JgPage {
-    /** This game's dev readout, as its proofs read it. */
     harborCity?: { read(): unknown };
   }
 }
@@ -28,26 +27,20 @@ declare module "@jgengine/core/runtime/pageHandle" {
 /** The whole world model's state: one store, so the world snapshot saves it and the host replicates it. */
 export const worldStore = defineStore<WorldModelState | undefined>("harbor.world", undefined);
 
-/** Whether the phone is out: a menu, not world state. */
 export const phoneStore = defineStore<boolean | undefined>("harbor.phone", undefined);
 
 const CICADA_STAGE_ID = "cicada_stage_car";
-/** Fear at which residents and pedestrians drop what they are doing. */
 export const PANIC_FEAR = 35;
 
 interface CityRuntime {
   model: WorldModel;
-  /** World events seen since the last tick, for the mission machine's counters. */
   pending: MissionWorldEvent[];
   cicadaWrecked: boolean;
   panicking: boolean;
-  /** Whether the Protection job has set up its raid yet. */
   protectionStaged: boolean;
-  /** Job crews already put down this job, by id prefix. */
   staged: Set<string>;
 }
 
-/** Hours HHPD and the crews count as night: the clubs fill, the crews double up. */
 export const isNight = (hour: number) => hour >= 20 || hour < 6;
 
 /**
@@ -98,12 +91,10 @@ const runtimes = perContext((ctx: GameContext): CityRuntime => ({
   staged: new Set(),
 }));
 
-/** The city's world model for this context. */
 export function cityOf(ctx: GameContext): WorldModel {
   return runtimes(ctx).model;
 }
 
-/** Report something that happened in the city: it ripples into fear, moods, heat and the log. */
 export function cityEvent(ctx: GameContext, event: WorldEvent): void {
   cityOf(ctx).emit(event);
 }
@@ -112,7 +103,6 @@ function playerPosition(ctx: GameContext): readonly [number, number, number] | n
   return ctx.scene.entity.get(streetPlayOf(ctx).drivingVehicleId() ?? ctx.player.userId)?.position ?? null;
 }
 
-/** Fear where a point stands, 0 when it is in no declared place. */
 export function fearAt(ctx: GameContext, x: number, z: number): number {
   const model = cityOf(ctx);
   const place = model.placeAt(x, z);
@@ -166,10 +156,6 @@ export function registerCity(ctx: GameContext): void {
   });
 }
 
-/**
- * Dev-only proof hooks: a warp, a shot aimed at the nearest named target through the real fire path,
- * and `window.__harborCity`, the world model's readout a drive asserts against.
- */
 function registerCityDev(ctx: GameContext): void {
   if (!import.meta.env.DEV) return;
   ctx.game.commands.define<{ x: number; z: number }>("city.dev.warp", {
@@ -263,7 +249,6 @@ export function startCareer(ctx: GameContext): void {
   if (cityOf(ctx).job("welcome")?.status === "available") cityOf(ctx).startJob("welcome");
 }
 
-/** A death or an arrest drops the job on the floor; its giver offers it again. */
 export function failActiveJob(ctx: GameContext): void {
   const model = cityOf(ctx);
   if (model.missionView() === null) return;
@@ -273,10 +258,6 @@ export function failActiveJob(ctx: GameContext): void {
   }
 }
 
-/**
- * Put each job's cast where its current stage needs it. This is content, not a system: the convoy
- * is the engine's wave runner, Sal's guard and the Cicada are spawned once per stage.
- */
 function stageJob(ctx: GameContext, dt: number): void {
   const view = cityOf(ctx).missionView();
   if (view === null) return;
@@ -394,7 +375,6 @@ export function tickCity(ctx: GameContext, dt: number): void {
   tickCover(ctx, safehouseStore.read(ctx) === true);
 }
 
-/** A crew's soldiers notice you from further away the angrier their crew is. */
 export function gangAggroRadius(ctx: GameContext, gang: string, base: number): number {
   return base + Math.max(0, -cityOf(ctx).num(`${gang}.mood`)) * 0.2;
 }

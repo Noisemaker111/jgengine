@@ -12,7 +12,6 @@ import {
   type BuiltInstance,
 } from "./entityModelDraw.draw";
 
-/** Model loading, placement, shadows and animation for a custom renderer. */
 export type ModelInstanceConfig = Pick<
   ModelConfig,
   | "url"
@@ -32,22 +31,13 @@ export type ModelInstanceConfig = Pick<
 /** Caller-owned styling runs on the isolated clone, never the loader cache. */
 export interface ModelInstanceOptions {
   instanceId?: string | undefined;
-  /** Configure each new clone before placement measurement. Memoize this callback; changing it replaces the instance. Materials are isolated; geometry/textures stay borrowed. */
   configure?: (content: THREE.Object3D) => void;
-  /**
-   * Drive the default locomotion graph from the entity's velocity when the model leaves `animation`
-   * unset. `false` holds the idle clip instead. Default true.
-   */
   locomotion?: boolean | undefined;
 }
 
-/** The built instance handed to `onReady` once the model has loaded and placed. */
 export interface ModelInstanceReady {
-  /** The unscaled content group the animation/IK drivers pose. */
   content: THREE.Object3D;
-  /** The unscaled content wrapper group. */
   scene: THREE.Group;
-  /** The placed group (position + uniform scale) added under the draw's parent. */
   group: THREE.Group;
   scale: number;
   position: [number, number, number];

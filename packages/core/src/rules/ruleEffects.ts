@@ -7,13 +7,9 @@
 
 import type { PredicateValue } from "./predicate";
 
-/** A declared effect a triggered rule may reference. Behavior lives in the game; this is metadata. */
 export interface RuleEffectDefinition {
-  /** Effect id used in {@link TriggeredRule.effect} references. */
   id: string;
-  /** Human label for debug/inspector surfaces. */
   label?: string;
-  /** Default params merged under a rule's own params, for authoring convenience. */
   defaults?: Readonly<Record<string, PredicateValue>>;
 }
 
@@ -39,16 +35,12 @@ export function getRuleEffect(id: string): RuleEffectDefinition | undefined {
   return registry.get(id);
 }
 
-/**
- * Every declared rule effect, for populating inspector dropdowns and validating a content set.
- *
- * @capability triggered-rules event-conditioned effects with declarative predicates, lifetimes, and stacking
- */
+/** @capability triggered-rules event-conditioned effects with declarative predicates, lifetimes, and stacking */
 export function listRuleEffects(): RuleEffectDefinition[] {
   return [...registry.values()];
 }
 
-/** Clear the rule-effect registry — tests only. @internal */
+/** @internal */
 export function clearRuleEffects(): void {
   registry.clear();
 }

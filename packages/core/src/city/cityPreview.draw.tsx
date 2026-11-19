@@ -25,7 +25,6 @@ function variantCity({ definition, variant }: GeneratorPreviewProps): ResolvedCi
   return city;
 }
 
-/** Every lot as one massing block (footprint × floors), in one instanced draw. */
 function lotBlocks(city: ResolvedCity): THREE.InstancedMesh | null {
   if (city.lots.length === 0) return null;
   const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -83,7 +82,7 @@ function CityPreview(props: GeneratorPreviewProps) {
   return null;
 }
 
-/** Registers the city variant-tile preview: the district's streets and lot massing blocks from above. Called by `registerCityRenderer`. @internal */
+/** @internal */
 export function registerCityPreview(): void {
   registerGeneratorPreview(CITY_OUTPUT, {
     Component: CityPreview,

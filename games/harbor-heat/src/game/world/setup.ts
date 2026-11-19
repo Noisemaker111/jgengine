@@ -144,7 +144,6 @@ function districtProp(x: number, z: number, index: number, rng: () => number): s
   }
 }
 
-/** A building lot's world footprint, as the city layout placed it. */
 export interface BuildingFootprintXZ {
   x: number;
   z: number;
@@ -155,7 +154,6 @@ export interface BuildingFootprintXZ {
   halfD: number;
 }
 
-/** A grounded box body spanning a scaled unit block: the building's real walls, not the 1 m model. */
 function blockColliders(size: readonly [number, number, number]): EntityColliderSet {
   return {
     body: {
@@ -185,9 +183,7 @@ function pickFor<T>(list: readonly T[], x: number, z: number): T | undefined {
   return list[hash % list.length];
 }
 
-/** Roof pieces a building may carry, one pick per lot by position. */
 const ROOF_PIECES = ["obj_roof_a", "obj_roof_b", "obj_roof_c", "obj_roof_a"] as const;
-/** Library props at the front of a lot by zone: planting where people live and shop, drums and cabinets at the docks. */
 const YARD_PROPS: Partial<Record<CityZone, readonly [string, string]>> = {
   commercial: ["obj_planter", "obj_planter"],
   residential: ["obj_bush", "obj_fern"],
@@ -277,14 +273,8 @@ function placeBuildings(ctx: GameContext, layout: CityLayout, ids: string[]): Bu
   return placed;
 }
 
-/** World units between palms on an authored promenade; benches and planters land on alternate steps. */
 const PROMENADE_SPACING = 18;
 
-/**
- * Dress every `promenade` path from the scene document: a double row of palms with benches and
- * flowering planters between them. The walk's route, length and shape all come from the authored
- * polyline, so moving the boardwalk is dragging it in the editor.
- */
 function dressPromenades(ctx: GameContext, rng: () => number): void {
   let step = 0;
   for (const walk of PROMENADES) {
@@ -331,10 +321,6 @@ function dressPromenades(ctx: GameContext, rng: () => number): void {
   }
 }
 
-/**
- * Lamps and district dressing along every street as the layout draws it now: lamps just inside the
- * kerb, the district's furniture along the sidewalk's outer half, so neither reaches a building.
- */
 function placeStreetFurniture(ctx: GameContext, layout: CityLayout, ids: string[]): void {
   const rng = seededRng("harbor-heat-street-props");
   const propOutset = Math.max(0.4, layout.sidewalkWidth - 1.6);
@@ -367,9 +353,7 @@ function placeStreetFurniture(ctx: GameContext, layout: CityLayout, ids: string[
   setLampSpots(ctx, lamps);
 }
 
-/** The open square at Mainsail's bounty marker; its dressing keeps this radius clear for the fight. */
 const PLAZA_CLEAR = 5;
-/** How far from the marker the square's dressing reaches. */
 const PLAZA_REACH = 24;
 /** Candidate spots are a grid this many metres apart. */
 const PLAZA_GRID = 2;
@@ -455,7 +439,6 @@ function dressPlaza(ctx: GameContext, layout: CityLayout, boxes: readonly Buildi
   }
 }
 
-/** Everything the city layout decides: buildings, driveways, street furniture and the plaza. */
 function layCity(ctx: GameContext, layout: CityLayout): { ids: string[]; buildings: BuildingFootprintXZ[] } {
   const ids: string[] = [];
   const buildings = placeBuildings(ctx, layout, ids);
@@ -464,19 +447,11 @@ function layCity(ctx: GameContext, layout: CityLayout): { ids: string[]; buildin
   return { ids, buildings };
 }
 
-/**
- * Lay the city and keep it laid: the layout's sliders (Tune tab, `?debug=1`) re-lay the buildings,
- * driveways and furniture on every change, while the shell redraws the streets from `roadSource`.
- */
 const cityRelay = perContext(() => ({
   stop: null as (() => void) | null,
   listeners: new Set<(buildings: readonly BuildingFootprintXZ[]) => void>(),
 }));
 
-/**
- * Hear every slider re-lay of this context's city with the lots it now has, so systems built on the
- * blocks (resident walking routes) rebuild with them. Returns the unsubscribe.
- */
 export function onCityRelaid(ctx: GameContext, listener: (buildings: readonly BuildingFootprintXZ[]) => void): () => void {
   const relay = cityRelay(ctx);
   relay.listeners.add(listener);
@@ -498,7 +473,6 @@ function setupCity(ctx: GameContext): readonly BuildingFootprintXZ[] {
   return laid.buildings;
 }
 
-/** Stop re-laying this context's city on layout changes. */
 export function disposeWorld(ctx: GameContext): void {
   const relay = cityRelay(ctx);
   relay.stop?.();

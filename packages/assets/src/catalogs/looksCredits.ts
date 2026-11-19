@@ -4,19 +4,13 @@ import { FONT_LICENSE, fontOf } from "./fontLibrary";
 import { HDRI_LICENSE, hdriOf } from "./hdriLibrary";
 import { LUT_GRADE_LICENSE, lutGradeOf } from "./lutGrades";
 
-/** The curated looks a game ships, by id. Omit a list to credit none of that kind. */
 export interface LooksUsed {
   hdri?: readonly string[];
   lut?: readonly string[];
   fonts?: readonly string[];
 }
 
-/**
- * Credit sections for the HDRIs, colour grades and fonts a game ships, each entry with its author
- * and licence. Fold the result into a game's credits with `mergeCredits`.
- *
- * @capability looks-credits credit lines for the shipped HDRIs, colour grades and fonts a game uses
- */
+/** @capability looks-credits credit lines for the shipped HDRIs, colour grades and fonts a game uses */
 export function creditsForLooks(used: LooksUsed): CreditsSection[] {
   const sections: CreditsSection[] = [];
   if (used.hdri !== undefined && used.hdri.length > 0) {
@@ -43,7 +37,6 @@ export function creditsForLooks(used: LooksUsed): CreditsSection[] {
   return sections;
 }
 
-/** {@link creditsForLooks} as a ready credits document. */
 /** @internal */
 export function creditsDocumentForLooks(used: LooksUsed, title = "Looks"): CreditsDocument {
   return { title, sections: creditsForLooks(used) };

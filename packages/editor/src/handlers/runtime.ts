@@ -11,7 +11,6 @@ import {
 
 import type { HandlerTable } from "./context";
 
-/** Live-sync document patches, the ephemeral runtime reverse channel, and play-mode poke verbs. */
 export const runtimeHandlers: Pick<
   HandlerTable,
   | "push_document_patch"

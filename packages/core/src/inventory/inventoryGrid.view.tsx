@@ -11,18 +11,7 @@ import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
 import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
 import { useGame, useInventoryGrid } from "@jgengine/ui/hooks";
 
-/**
- * A drop-in NxN inventory grid bound to a live inventory: `<InventoryGrid inventoryId="bag" columns={4} />`
- * renders every slot (painted {@link IconTreatment} tile + count badge for filled, a themed `--jg-slot-*`
- * placeholder for empty), and wires the real mechanics on top of the engine's inventory model —
- * drag-to-move, swap, stack-merge with remainder (all via the `inventory.move` command), and stack-split
- * (shift/right-click a stack, via `inventory.split`). Fully keyboard-accessible: `role="grid"`, arrow-key
- * roving focus, Enter/Space to pick up and drop. Grids that share one {@link useInventoryTransfer} also
- * move stacks between their inventories (bag to stash), by drag or by keyboard. Games own placement,
- * skin, and terminology; the engine ships the working grid.
- *
- * @capability inventory-grid-hud drop-in NxN inventory grid with drag/swap/stack/split bound to a live inventory
- */
+/** @capability inventory-grid-hud drop-in NxN inventory grid with drag/swap/stack/split bound to a live inventory */
 
 const ARROW_DIRECTIONS: Record<string, FocusDirection> = {
   ArrowRight: "right",
@@ -33,7 +22,6 @@ const ARROW_DIRECTIONS: Record<string, FocusDirection> = {
   End: "last",
 };
 
-/** A refused move: the model's reason and the slot the stack was dropped on. */
 export interface InventoryMoveRefusal {
   reason: string;
   from: InventorySlotRef;
@@ -46,12 +34,9 @@ export interface InventoryMoveRefusal {
  */
 export interface InventoryTransfer {
   layer: DragLayer<InventorySlotRef>;
-  /** The stack picked up with Enter/Space, in any grid sharing this transfer. */
   picked: InventorySlotRef | null;
   pick(ref: InventorySlotRef | null): void;
-  /** Move the stack at `from` onto `to` through `inventory.move`; a refusal lands in `refusal`. */
   move(from: InventorySlotRef, to: InventorySlotRef): void;
-  /** The newest refused move; the next pick or accepted move clears it. */
   refusal: InventoryMoveRefusal | null;
 }
 
@@ -118,23 +103,16 @@ const REFUSAL_TEXT: Record<string, string> = {
   "invalid-slot": "Not a slot",
 };
 
-/** Props for {@link InventoryGrid}. */
 export interface InventoryGridProps {
-  /** The declared inventory id to bind (its slot count sets the tile count). */
   inventoryId: string;
-  /** Grid columns; default derives a squarish grid from the slot count. */
   columns?: number;
   /** Tile size in px. Default 44. */
   size?: number;
   /** Gap between tiles in px. Default 6. */
   gap?: number;
-  /** Shared with another grid (from {@link useInventoryTransfer}) so stacks move between the two inventories. */
   transfer?: InventoryTransfer;
-  /** Words for a refused drop onto this grid, by the model's reason; default short English lines. */
   describeRefusal?: (reason: string) => string;
-  /** Caller-supplied item id → icon/glyph registry; return null/undefined to fall back to the default `GameIcon`. */
   itemIcon?: (itemId: string) => ReactNode;
-  /** Invoked when a filled slot is activated (double-click) — e.g. use/equip the item. */
   onActivate?: (slot: number) => void;
   className?: string;
   style?: CSSProperties;
@@ -159,7 +137,6 @@ function EmptySlot({ size, picked }: { size: number; picked: boolean }) {
   );
 }
 
-/** A drop-in inventory grid with drag/swap/stack-merge/split and full keyboard control, bound to `inventoryId`. */
 export function InventoryGrid({
   inventoryId,
   columns,

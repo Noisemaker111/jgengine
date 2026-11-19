@@ -11,7 +11,6 @@ import { useGameContext } from "@jgengine/ui/provider";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Which entities reveal vision finds: origin, radius, wanted tags and how to read an entity's tags. */
 export interface RevealVisionOptions {
   originEntityId?: string;
   radius: number;
@@ -49,7 +48,6 @@ export function useRevealHits(options: RevealVisionOptions): readonly RevealHit[
   );
 }
 
-/** Props for `RevealHighlights`: reveal options, on/off and highlight colour. */
 export interface RevealHighlightsProps extends RevealVisionOptions {
   enabled: boolean;
   color?: string;
@@ -178,14 +176,12 @@ export function RevealHighlights(props: RevealHighlightsProps) {
   return null;
 }
 
-/** Props for `RevealScreenTint`: on/off, tint colour and class name. */
 export interface RevealScreenTintProps {
   enabled: boolean;
   color?: string;
   className?: string;
 }
 
-/** Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision). */
 export function RevealScreenTint({ enabled, color = "rgba(56, 189, 248, 0.16)", className }: RevealScreenTintProps) {
   if (!enabled) return null;
   return (

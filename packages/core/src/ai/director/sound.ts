@@ -1,28 +1,22 @@
 import type { PerceptionService, PerceptionPosition } from "../../sensor/perception";
 import type { Vec3 } from "../../world/geometry";
 
-/** A unit that could hear a noise: its id and where it stands when the noise lands. */
 export interface SoundHunter {
   id: string;
   position: Vec3;
 }
 
-/** One noise in the world, as the game produces it. */
 export interface NoiseEvent {
-  /** Who made the noise — the hearing owner records the memory against this id. */
   sourceId: string;
   position: Vec3;
   /** Seconds on the game clock, the same clock the perception service is given. */
   at: number;
-  /** Multiplies `hearingRange` exactly as `PerceptionStimulus.loudness` does. Default `1`. */
   loudness?: number;
 }
 
-/** A hunter still working a noise, as the squad layer reads it this tick. */
 export interface Investigation {
   hunterId: string;
   sourceId: string;
-  /** Where the noise came from: the hearing owner's remembered position. */
   position: Vec3;
   /** Confidence left in the memory, `0..1`; it falls as the memory decays and ends the hunt at 0. */
   confidence: number;
@@ -36,25 +30,19 @@ export interface SoundHuntEntry {
   hunters: string[];
 }
 
-/** Serializable book-keeping: which noises are still being worked, and by whom. */
 export interface SoundHuntSnapshot {
   entries: SoundHuntEntry[];
 }
 
-/** Everything the hunt reads and its bounds. */
 export interface SoundHuntConfig {
   perception: PerceptionService;
   /** Candidates near a noise, bounded by the caller's roster. Called once per noise, not per tick. */
   hunters: (position: Vec3, hearingRange: number) => readonly SoundHunter[];
-  /** The same hearing range given to `createPerception`. */
   hearingRange: number;
-  /** Most hunters one noise sends. Default `3`. */
   maxInvestigators?: number;
-  /** Confidence at or below which a hunter gives up and returns to its post. Default `0.15`. */
   giveUpConfidence?: number;
   /** Longest one hunt survives, seconds. Default `20`. */
   maxSeconds?: number;
-  /** Most noises remembered at once; the oldest is dropped first. Default `16`. */
   maxNoises?: number;
 }
 
@@ -66,7 +54,6 @@ export interface SoundHunt {
    * the give-up are read back through {@link SoundHunt.investigations}.
    */
   noise(event: NoiseEvent): readonly string[];
-  /** Hunters still working their noise at `nowMs`, with the memory's remaining confidence. */
   investigations(nowMs: number): Investigation[];
   snapshot(): SoundHuntSnapshot;
   restore(snapshot: SoundHuntSnapshot): void;

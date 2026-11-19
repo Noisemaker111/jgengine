@@ -3,11 +3,9 @@ import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import type { RuneTheme } from "@jgengine/core/ui/rune/primitives";
 import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.view";
 
-/** Bangers on every sign and number, Barlow for reading: the boulevard's two faces, both from the shared font library. */
 export const HARBOR_FONTS = libraryFontPairing("bangers", "barlow");
 
 let registered = false;
-/** Hand both faces to the native surface before it mounts. */
 export function registerHarborFonts(): void {
   if (registered) return;
   registered = true;
@@ -15,7 +13,6 @@ export function registerHarborFonts(): void {
   registerNativeRuneFont(resolveAssetBaseUrl(HARBOR_FONTS.body.src));
 }
 
-/** Mainsail at sundown: harbor-night teal, cream card stock, amber backlight, coral neon. The one palette. */
 export const HH = {
   night: "#071d25",
   ink: "#0e2c38",

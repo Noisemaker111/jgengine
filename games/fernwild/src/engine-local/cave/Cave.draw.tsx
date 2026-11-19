@@ -17,7 +17,6 @@ function geometryOf(part: CaveMeshPart): THREE.BufferGeometry {
   return geometry;
 }
 
-/** Colours of a cave's rock: the inside you walk through, the hill outside and the floor underfoot. */
 export interface CaveColors {
   inner: string;
   outer: string;

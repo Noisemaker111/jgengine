@@ -8,7 +8,6 @@ import { CREEP_CATALOG, type CreepDef } from "./entities/enemies/catalog";
 const HEXAGON = "kaykit-medieval-hexagon";
 const FOREST = "kaykit-forest";
 
-/** Height of a raider at scale 1; each catalog entry's scale multiplies it. */
 const RAIDER_HEIGHT = 1.8;
 
 function gearOf(def: CreepDef): ModelAttachment[] {
@@ -76,10 +75,8 @@ function buildEntityModels(): Record<string, ModelConfig> {
 
 export const entityModels: Record<string, ModelConfig> = buildEntityModels();
 
-/** The pack's spring lime pulled toward the highland's wet moss (`#5b7a3a`); trunks darken with it. */
 const MOSS = { color: "#a9b48e" };
 
-/** Each authored scatter item's KayKit Forest model: tall pines on the edge, round oaks, low bushes and stones. */
 const SCATTER_PLAN: Record<string, ModelPick> = {
   pine: { model: `${FOREST}/Tree_4_A_Color1`, style: { targetHeight: 7.2, material: MOSS } },
   oak: { model: `${FOREST}/Tree_1_A_Color1`, style: { targetHeight: 5, material: MOSS } },
@@ -89,5 +86,4 @@ const SCATTER_PLAN: Record<string, ModelPick> = {
   stone: { model: `${FOREST}/Rock_1_A_Color1`, style: { targetHeight: 0.5 } },
 };
 
-/** Scatter palette item → resolved model when its pack is live; else InstancedScatter stylized proxy. */
 export const scatterModels: Record<string, ModelConfig> = resolveModelPlan(assets, SCATTER_PLAN);

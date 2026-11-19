@@ -21,10 +21,8 @@ import { ROW_SIX_TRACK, TRACKS, type Track } from "../tracks/catalog";
 
 const CORRIDOR_AVOID = { minX: -21, maxX: 21 };
 const PROP_COUNT_PER_ZONE = 46;
-/** Floodlights alternate sides down the corridor edge — the vertical beat that reads as speed. */
 const LAMP_SPACING_Z = 34;
 const LAMP_X = 23.5;
-/** Water towers punctuate the skyline; sparse on purpose, they are the tallest thing in the yard. */
 const TOWER_POSITIONS: readonly (readonly [number, number])[] = [
   [-58, 74],
   [62, 168],
@@ -51,7 +49,6 @@ function placeIdempotent(
   ctx.scene.object.place(catalogId, x, y, z, { instanceId, ...(rotation === undefined ? {} : { rotation }) });
 }
 
-/** Row Six's corridor scenery: the zone scatter, the floodlights and the water towers the crusher eats. */
 export function placeZoneDressing(ctx: GameContext): readonly PropRow[] {
   const rows: PropRow[] = [];
   for (const zone of ZONES) {
@@ -95,11 +92,6 @@ function placeYardTowers(ctx: GameContext): PropRow[] {
   });
 }
 
-/**
- * Every other track's standing scenery, placed once for the whole yard: posts down each route edge,
- * lamps alternating sides, clutter scattered off the road, the landmarks, and the set-pieces that
- * show where each hazard is — vents beside the slag, belts in the road, signals at the crossings.
- */
 export function placeTrackScenery(ctx: GameContext): number {
   let placed = 0;
   const put = (catalogId: string, x: number, z: number, instanceId: string, rotation?: number, lift = 0) => {
@@ -183,7 +175,6 @@ export function placeTrackScenery(ctx: GameContext): number {
   return placed;
 }
 
-/** Width covered by a single barricade prop — segments are tiled to seal a wider span. */
 const BARRICADE_SEGMENT_WIDTH = 8;
 const gateSegments = (span: number) => Math.max(1, Math.ceil(span / BARRICADE_SEGMENT_WIDTH) + 1);
 
@@ -210,7 +201,6 @@ function removeGate(ctx: GameContext, gate: RouteGate): void {
   ctx.scene.object.remove(`cue-${gate.id}`);
 }
 
-/** The track's barricades. A set-piece barricade (`dropsAt`) is open road until it falls; see {@link syncDroppedGates}. */
 export function placeGateBarricades(ctx: GameContext, track: Track = ROW_SIX_TRACK): void {
   for (const gate of track.gates) {
     if (gate.dropsAt !== undefined) {
@@ -243,14 +233,12 @@ export function placeExitGate(ctx: GameContext, track: Track = ROW_SIX_TRACK): v
   placeIdempotent(ctx, EXIT_GATE_ARCH, at.x, ctx.world.groundHeightAt(at.x, at.z), at.z, "exit-gate", track === ROW_SIX_TRACK ? undefined : at.heading);
 }
 
-/** Take one track's run objects off the yard before another track's go down. */
 export function clearRunObjects(ctx: GameContext, track: Track): void {
   for (const gate of track.gates) removeGate(ctx, gate);
   for (const pickup of track.pickups) ctx.scene.object.remove(`marker-${pickup.id}`);
   ctx.scene.object.remove("exit-gate");
 }
 
-/** Everything one run on `track` races through: its barricades, its drops and its exit gate. */
 export function placeRunObjects(ctx: GameContext, track: Track): void {
   placeGateBarricades(ctx, track);
   placePickupMarkers(ctx, track);
@@ -281,14 +269,9 @@ export function syncClearedGates(ctx: GameContext, cleared: ReadonlySet<string>,
   }
 }
 
-/** Freight wagons per train, and each wagon's length. */
 const TRAIN_WAGONS = 5;
 const WAGON_LENGTH = 17.25;
 
-/**
- * Where the freight is on each crossing at `time`: a train long enough to fill the crossing for its
- * whole red window, rolling in before it and out after it, square across the road.
- */
 export function freightWagons(track: Track, time: number): { id: string; position: [number, number, number]; rotationY: number }[] {
   const out: { id: string; position: [number, number, number]; rotationY: number }[] = [];
   for (const span of track.hazardSpans) {

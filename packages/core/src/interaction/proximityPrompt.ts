@@ -6,7 +6,6 @@ export interface PromptPoint {
 export interface KeybindPromptDisplay {
   kind: "keybind";
   actionId: string;
-  /** What the interaction does, shown beside the key glyph (e.g. `"Open Chest"`, `"Talk"`); omit for key-only. */
   label?: string;
 }
 
@@ -66,13 +65,7 @@ export interface PositionedPrompt {
   prompt: ProximityPrompt;
 }
 
-/**
- * Nearest prompt strictly within its radius wins; a higher-priority prompt in
- * range beats any lower-priority one regardless of distance; equal priority
- * and distance keep the earliest prompt in the list.
- *
- * @capability proximity-prompt a "press E" contextual prompt shown near an interactable
- */
+/** @capability proximity-prompt a "press E" contextual prompt shown near an interactable */
 export function resolveActivePrompt<T extends PositionedPrompt>(
   playerPosition: PromptPoint,
   prompts: readonly T[],

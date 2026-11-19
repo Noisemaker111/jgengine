@@ -1,23 +1,18 @@
 import { rngStateOf, restoreRng } from "../random/rng";
 import type { GameContext } from "./gameContext";
 
-/** One piece of simulation state that can be captured and restored by id. */
 export interface SimSnapshotContributor<T = unknown> {
   id: string;
   capture(): T;
   restore(data: T): void;
 }
 
-/** Captured contributor data keyed by contributor id. */
 export type SimSnapshot = Record<string, unknown>;
 
-/** Registry of {@link SimSnapshotContributor}s that captures and restores them together. */
 export interface SimSnapshotRegistry {
   register<T>(contributor: SimSnapshotContributor<T>): () => void;
   capture(): SimSnapshot;
-  /** Alias of {@link capture}, matching the engine's snapshot/restore naming. */
   snapshot(): SimSnapshot;
-  /** Restore every contributor present in `snapshot`; contributors missing from it are left untouched. */
   restore(snapshot: SimSnapshot): void;
   ids(): string[];
 }
@@ -57,10 +52,6 @@ export function createSimSnapshotRegistry(): SimSnapshotRegistry {
   };
 }
 
-/**
- * The engine's own contributors for a context: authoritative world state with every system save, the sim clock, the loop and pose
- * history, and the rng cursor when `ctx.rng` is a seeded stream. Games register theirs on the same registry.
- */
 export function createContextSimSnapshot(ctx: GameContext): SimSnapshotRegistry {
   const registry = createSimSnapshotRegistry();
   // The authoritative state, save-only modules included: a system's declared `save` round-trips with the

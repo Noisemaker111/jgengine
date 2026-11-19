@@ -17,10 +17,6 @@ export interface EffectVia {
    * `combat.damage` announcement so a hit marker or a cue can tell a crit from a plain hit.
    */
   crit?: boolean;
-  /**
-   * This application is one tick of a carried status (`"burn"`), not a direct hit. Carried onto the
-   * `combat.damage` announcement, where hit markers, sparks and hit-stop skip status ticks.
-   */
   status?: string;
 }
 
@@ -66,11 +62,6 @@ export interface EffectResult {
   effect: string;
   applied: AppliedPoolDelta[];
   lethal: boolean;
-  /**
-   * Present only on a lethal hit: the slain entity's identity, captured before despawn so
-   * kill-credit / XP can read `catalogId`/`name` without a game-side spawn-time registry.
-   * A non-lethal hit omits this field.
-   */
   slain?: SlainIdentity;
 }
 
@@ -125,51 +116,28 @@ export function resolveAreaTargets(
  * has no damage table, so the caller names the channel (`effect`) and reads health its own way.
  */
 export interface EffectDamageApplication {
-  /** The entity that took the drain. */
   target: string;
-  /** Who dealt it: the effect's `from` instance id (attacker, hazard, projectile owner). */
   source: string;
-  /** The effect id that landed (`"damage"`, `"bullet"`, `"fire"`). */
   effect: string;
-  /** Magnitude before receive modifiers and area falloff. */
   incoming: number;
-  /** Magnitude drained after modifiers, falloff and available pool headroom. */
   dealt: number;
   /** The last pool's current after the drain — the pool whose exhaustion is `lethal`. */
   remaining: number | null;
-  /** True when the last pool reached its minimum. */
   lethal: boolean;
-  /** The target's position when the spatial seam knows it, for a panned cue or a decal at the hit. */
   at?: EntityPosition;
-  /** The effect's `via.crit`: the blow rolled a critical hit upstream. */
   crit?: boolean;
-  /** The effect's `via.status`: the carried status this application is a tick of. */
   status?: string;
 }
 
 export interface EffectSystemDeps {
   resolveReceive(instanceId: string): ReceiveMap | null | undefined;
-  /** Preferred portable bridge to caller-owned resource state. */
   statPools?: StatPoolAccess;
-  /**
-   * Legacy native bridge retained for source compatibility. New integrations
-   * should provide {@link statPools} and keep their own state model.
-   */
   resolveStats?(instanceId: string): Record<string, StatPool> | undefined;
   getStat(itemId: string, stat: string): number | null;
   spatial: CombatSpatialDeps;
   drainStatByEffect?: Record<string, string>;
-  /**
-   * Resolve the target's identity, called on a lethal hit *before* {@link onLethal} despawns it.
-   * The returned {@link SlainIdentity} is attached to the lethal {@link EffectResult.slain} so kill
-   * credit works without a parallel registry. Return `null`/`undefined` to omit identity.
-   */
   resolveSlainIdentity?(instanceId: string): SlainIdentity | null | undefined;
   onLethal?(instanceId: string, ctx: LethalContext): void;
-  /**
-   * Called once per target a draining effect lands on, after its pools changed and before
-   * {@link onLethal} despawns it. Restorative applications (`via.amount` below zero) stay silent.
-   */
   onDamage?(application: EffectDamageApplication): void;
 }
 
@@ -181,12 +149,7 @@ export interface EffectSystem {
 
 const DEFAULT_DRAIN_STAT = "damage";
 
-/**
- * Resolve direct or area resource effects through caller-owned stat pools,
- * including ordered absorption, restoration, modifiers, and lethal context.
- *
- * @capability status-effects commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results
- */
+/** @capability status-effects commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results */
 export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
   const statPools: StatPoolAccess = deps.statPools ?? {
     get(instanceId, statId) {

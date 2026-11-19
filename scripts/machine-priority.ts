@@ -21,7 +21,6 @@ export type PriorityLabel = "low" | "below-normal" | "normal" | "above-normal" |
 
 const { PRIORITY_BELOW_NORMAL, PRIORITY_NORMAL } = os.constants.priority;
 
-/** The name for an `os.getPriority` value (Node's cross-platform scale: 19 low … -20 realtime). */
 export function priorityLabel(priority: number): PriorityLabel {
   if (priority >= 19) return "low";
   if (priority >= 10) return "below-normal";
@@ -53,7 +52,6 @@ export function stayOutOfTheWay(): PriorityLabel {
   return currentPriority();
 }
 
-/** Put another process (a browser started outside this one's tree) below normal, as {@link stayOutOfTheWay} does for this one. */
 export function lowerToBelowNormal(pid: number): PriorityLabel {
   try {
     if (os.getPriority(pid) < PRIORITY_BELOW_NORMAL) os.setPriority(pid, PRIORITY_BELOW_NORMAL);

@@ -6,7 +6,6 @@ import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 
 const MODEL_PACKS = [quaterniusTexturedCuteMonsterPack, quaterniusStylizedNature, kaykitFurniture, kaykitSpaceBase];
 
-/** Preferred CC0 packs — pull + reindex to light up MODEL_PLAN ids. */
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
   packs: MODEL_PACKS,

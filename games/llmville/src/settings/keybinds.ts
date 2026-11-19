@@ -73,7 +73,6 @@ export const KEYBIND_ACTION = {
   cycleItemNext: "cycleItemNext",
 } as const satisfies Record<string, KeybindActionId>;
 
-/** Action ids saved settings used before they matched the shell's movement actions. */
 const RENAMED_ACTIONS: Partial<Record<KeybindActionId, string>> = { moveBack: "moveBackward" };
 
 export const BINDABLE_KEY = {
@@ -86,10 +85,6 @@ export type Keybind = ActionBinding<BindableKey>;
 
 export type AppKeybinds = ActionBindingMap<KeybindActionId, BindableKey>;
 
-/**
- * Where an action is read: walking the world, placing a build item, or browsing the storage tablet.
- * Actions in different contexts share keys on purpose (the arrows walk and also page storage).
- */
 export type KeybindContext = "walk" | "build" | "storage";
 
 export const KEYBIND_ACTIONS: readonly {
@@ -216,7 +211,6 @@ function sanitizeSingleKeybind(input: object, actionId: KeybindActionId): Keybin
   return { primary, secondary };
 }
 
-/** A keybind's slots as engine rebind codes, primary first; an unbound secondary is left out. */
 export function keybindToCodes(keybind: Keybind): string[] {
   return keybind.secondary === null ? [keybind.primary] : [keybind.primary, keybind.secondary];
 }
@@ -238,7 +232,6 @@ export function keybindsEqual(a: Keybind, b: Keybind): boolean {
   return a.primary === b.primary && a.secondary === b.secondary;
 }
 
-/** A rebind session over every LLMville action, seeded with the player's keybinds. */
 export function keybindRebindSession(keybinds: AppKeybinds): RebindSession {
   const overrides: BindingOverrides = {};
   for (const { id } of KEYBIND_ACTIONS) {

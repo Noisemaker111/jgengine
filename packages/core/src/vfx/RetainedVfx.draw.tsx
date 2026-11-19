@@ -7,7 +7,6 @@ import { useGameContext } from "@jgengine/ui/provider";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** The renderer's view of a retained instance: its authoritative state plus fade bookkeeping. */
 interface LiveEntry {
   state: VfxInstanceState;
   /** Non-null once stopped: fade duration (ms) and the wall-clock time the fade began. */
@@ -168,14 +167,7 @@ export function retainedVfxDraw(ctx: GameContext): EngineDraw {
   };
 }
 
-/**
- * Renders retained VFX instances (`combat.vfxInstance` ops from the context's
- * `scene.entity.vfxInstance` store) as long-lived beams whose endpoints follow live entity poses.
- * Auto-mounted by the player shell alongside the one-shot spell overlay. Beam is the first shipped
- * retained renderer; other kinds are ignored here for a future renderer to claim.
- *
- * @internal
- */
+/** @internal */
 export function RetainedVfx() {
   const ctx = useGameContext();
   return <EngineDrawMount create={() => retainedVfxDraw(ctx)} deps={[ctx]} />;

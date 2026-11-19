@@ -1,9 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/**
- * Scripting workspace: lists every document object with an authored behavior trigger, selects them
- * for framing/inspection, and reuses {@link TriggerInspector} for edits. Writes go only through
- * session `setMarker` / `setVolume` meta patches (same path as the inspector Components tab).
- */
 
 import { memo, useMemo } from "@jgengine/core/ui/jsx";
 
@@ -21,10 +16,7 @@ function bindingSummary(entry: DocumentTriggerEntry): string {
   return entry.bindings.map((binding) => `${binding.on} → ${binding.action}`).join(" · ");
 }
 
-/**
- * Left-dock scripting workspace: document-wide trigger list + selected-object editor.
- * @internal — mounted by `EditorChrome` when the scripting rail workspace is active.
- */
+/** @internal — mounted by `EditorChrome` when the scripting rail workspace is active. */
 export const ScriptingPanel = memo(function ScriptingPanel({
   session,
   api,

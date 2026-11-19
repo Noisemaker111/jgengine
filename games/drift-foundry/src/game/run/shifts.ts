@@ -15,7 +15,6 @@ export type ShiftId = "hobbs-line" | "tally-honest" | "crusher-lead" | "night-sh
 
 /** How one shift changes the corridor. Every field is optional, so a shift says only what it touches. */
 export interface ShiftEffect {
-  /** One rival's line, pace or catch-up band. */
   rival?: { id: string; paceScale?: number; lineScale?: number; band?: number };
   /** Metres added to where the crusher starts; negative starts it closer. */
   compactorStartZ?: number;
@@ -56,7 +55,6 @@ for (const entry of SHIFT_TABLE) {
   if (SHIFT_LABELS[entry.id as ShiftId] === undefined) throw new Error(`shifts: "${entry.id}" has no label`);
 }
 
-/** The label and hint for a shift id, or `null` for a run with no shift. */
 export function shiftInfo(changeId: string | null): { id: string; label: string; hint: string } | null {
   if (changeId === null) return null;
   const entry = SHIFT_LABELS[changeId as ShiftId];
@@ -68,7 +66,6 @@ function effectOf(changeId: string | null): ShiftEffect {
   return SHIFT_TABLE.find((entry) => entry.id === changeId)?.value ?? {};
 }
 
-/** The field this run races: the authored rivals, with the shift's line and pace applied. */
 export function rivalsForShift(changeId: string | null, defs: readonly RivalDef[] = RIVAL_DEFS): readonly RivalDef[] {
   const change = effectOf(changeId).rival;
   if (change === undefined) return defs;
@@ -97,7 +94,6 @@ function surgePlan(changeId: string | null): readonly CompactorSurge[] {
   }));
 }
 
-/** The crusher this run races: start line and surge schedule with the shift applied. */
 export function compactorPlanForShift(changeId: string | null): CompactorPlan {
   const effect = effectOf(changeId);
   return {

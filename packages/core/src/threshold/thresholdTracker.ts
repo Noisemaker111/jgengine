@@ -17,64 +17,43 @@
 
 import type { ThresholdBoundary } from "./thresholds";
 
-/** The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it. */
 export type CrossingDirection = "falling" | "rising";
 
-/** Which directions should emit crossings. */
 export type CrossingTrigger = "falling" | "rising" | "both";
 
-/** Whether a threshold may fire repeatedly (`repeat`) or at most once per direction (`once`). */
 export type CrossingPolicy = "once" | "repeat";
 
-/** Caller configuration for a threshold tracker. */
 export interface ThresholdCrossingConfig {
-  /** Thresholds to watch; order is irrelevant, the tracker sorts by `at`. */
   thresholds: readonly ThresholdBoundary[];
   /** Directions that emit crossings; defaults to `"both"`. */
   trigger?: CrossingTrigger;
   /** Symmetric dead-band around each mark that a value must fully clear to flip sides; defaults to `0`. */
   hysteresis?: number;
-  /** `repeat` (default) re-fires on every crossing; `once` fires each threshold at most once per direction. */
   policy?: CrossingPolicy;
-  /** Seed value. When provided, initial sides are computed from it and no crossing is emitted for the seed. */
   initial?: number;
 }
 
-/** One emitted crossing: which threshold, which way, and the value span that produced it. */
 export interface ThresholdTrackerCrossing {
-  /** The crossed threshold's id. */
   id: string;
-  /** The crossed threshold's value. */
   at: number;
-  /** Direction of the crossing. */
   direction: CrossingDirection;
-  /** Value before this update. */
   from: number;
-  /** Value after this update. */
   to: number;
 }
 
-/** Serializable tracker state for save/load. */
 export interface ThresholdTrackerSnapshot {
   /** Last observed value, or `null` before the first observation. */
   last: number | null;
-  /** Committed side (`"above"`/`"below"`) per threshold id. */
   sides: Record<string, "above" | "below">;
-  /** Fired ledger entries (`"<id>:<direction>"`) for the `once` policy. */
   fired: string[];
 }
 
-/** A stateful crossing tracker over one numeric source. */
 export interface ThresholdTracker {
-  /** Observe a new value and return the crossings it produced, in travel order. */
   update(value: number): ThresholdTrackerCrossing[];
   /** The last observed value, or `null` before the first `update`/seed. */
   value(): number | null;
-  /** Clear the fired ledger; reseed sides from `initial` if given, else await the next `update`. */
   reset(initial?: number): void;
-  /** Serializable snapshot. */
   snapshot(): ThresholdTrackerSnapshot;
-  /** Restore from a snapshot. */
   restore(snap: ThresholdTrackerSnapshot): void;
 }
 

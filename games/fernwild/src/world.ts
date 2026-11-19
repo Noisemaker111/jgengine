@@ -6,16 +6,9 @@ import { environment, ocean, sky, terrain } from "@jgengine/core/world/features"
 import { editorLayers } from "./editorLayers";
 import { BROOD_LAIR } from "./game/data/bosses";
 
-/** Sea level; the survey's shores ease the land down to the sand just above it. */
 export const SEA_LEVEL = 0;
-/** The map square: ARK's Island at 3/8 scale (30 m a grid unit) with sea all round. */
 const SIZE = 3300;
 
-/**
- * The Island lives in editor.scene.json: shores, summits, mountain chains, hills, cliffs, rivers, biome outlines,
- * spawn zones and foliage (F2+E). This file only says how the plains roll and how ground, sea and
- * sky are drawn.
- */
 const survey = surveyFromDocument(editorLayers);
 const authored = environmentContentFromDocument(editorLayers, { minBounds: { w: SIZE, d: SIZE } });
 const shaped = surveyTerrain(survey, {
@@ -75,5 +68,4 @@ export const world = environment({
   clearings: authored.clearings,
 });
 
-/** ARK's default day is about an hour of play; the survivor wakes late morning. */
 export const time = { dayLength: 3600, start: (11 / 24) * 3600 };

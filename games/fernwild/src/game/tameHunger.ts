@@ -14,7 +14,6 @@ import { STARVE_HEALTH_SHARE, TAME_DIET, TAME_FOOD_DRAIN_SECONDS } from "./data/
  */
 interface Hunger {
   bodies: Map<string, Vitals>;
-  /** Drain multiplier per tame; 1 when unset. */
   pace: Map<string, number>;
 }
 
@@ -22,7 +21,6 @@ const hungerOf = perContext((): Hunger => ({ bodies: new Map(), pace: new Map() 
 
 const foodBody = (max: number, start: number): Vitals => createVitals([{ id: "food", max, start, rate: -max / TAME_FOOD_DRAIN_SECONDS }]);
 
-/** The tame's body, made full the first time it is asked for, its max kept to the food stat. */
 function bodyOf(ctx: GameContext, id: string): Vitals | null {
   const max = foodMaxOf(ctx, id);
   if (!(max > 0)) return null;
@@ -65,13 +63,11 @@ export function tameFood(ctx: GameContext, id: string): { value: number; max: nu
   return body === null || body === undefined ? null : { value: body.value("food"), max: body.max("food") };
 }
 
-/** Set a tame's food to a share of its max (a newborn starts with a tenth). */
 export function setTameFood(ctx: GameContext, id: string, share: number): void {
   const body = bodyOf(ctx, id);
   if (body !== null) body.change("food", body.max("food") * Math.max(0, Math.min(1, share)) - body.value("food"));
 }
 
-/** How fast a tame's food drains, as a multiple of a grown tame's (a growing baby eats faster). */
 export function setFoodPace(ctx: GameContext, id: string, pace: number): void {
   const hunger = hungerOf(ctx);
   if (pace === 1) hunger.pace.delete(id);

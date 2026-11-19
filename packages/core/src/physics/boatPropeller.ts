@@ -1,4 +1,3 @@
-/** One B-series polynomial term: coefficient and the powers of `J`, `P/D`, `A_E/A_0` and `Z`. */
 type BSeriesTerm = readonly [number, number, number, number, number];
 
 // Oosterveld and van Oossanen (1975), Table 1: K_T and K_Q of the Wageningen B-screw series at Re = 2·10⁶.
@@ -26,32 +25,23 @@ const KQ_TERMS: readonly BSeriesTerm[] = [
   [-0.0004659, 0, 6, 2, 2], [0.0000554194, 1, 6, 2, 2],
 ];
 
-/** A propeller's open-water curve: a Wageningen B-series screw, or a polynomial in the advance ratio `J`. */
 export type PropellerOpenWater =
   | {
       kind: "bseries";
-      /** Blades, 2–7. */
       blades: number;
-      /** Expanded blade-area ratio `A_E/A_0`, 0.3–1.05. */
       areaRatio: number;
-      /** Pitch–diameter ratio, 0.5–1.4. */
       pitchRatio: number;
-      /** Apply the ITTC-1978 model-to-full-scale correction at this blade roughness, m (omit for the model-scale series). */
       fullScaleRoughness?: number;
     }
   | {
       kind: "polynomial";
-      /** `K_T = k0 + k1·J + k2·J²`. */
       thrust: readonly [number, number, number];
       /** `K_Q = q0 + q1·J + q2·J²`; needed for a power-limited engine. */
       torque?: readonly [number, number, number];
     };
 
-/** What turns the propeller: a governor holding `throttle · maxRevs`, or an engine of `maxPower` limited to `maxRevs`. */
 export interface BoatEngine {
-  /** Largest propeller shaft speed, rev/s. */
   maxRevs: number;
-  /** Largest power delivered to the propeller, W; with it, throttle sets the power share and the propeller's torque sets the revs. */
   maxPower?: number;
 }
 
@@ -63,29 +53,19 @@ export interface BoatEngine {
 export interface BoatPropeller {
   /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Diameter, m. */
   diameter: number;
   openWater: PropellerOpenWater;
-  /** Propellers on the boat, sharing the engine power equally (default `1`). */
   count?: number;
-  /** Effective wake fraction in straight running `w` (default `0`). */
   wake?: number;
-  /** Thrust deduction `t` (default `0`). */
   thrustDeduction?: number;
-  /** MMG wake change with inflow angle: `(1 − w)/(1 − w0) = 1 + (1 − e^(−c1·|β_P|))·(c2 − 1)`, `c2` per sign of `β_P`. */
   wakeChange?: { c1: number; c2Positive: number; c2Negative: number };
-  /** Longitudinal position over the length from midship, negative aft (default `-0.48`). */
   position?: number;
   engine: BoatEngine;
-  /** Astern thrust as a share of the ahead bollard thrust at full revs (default `0.4`). */
   reverseScale?: number;
 }
 
-/** A propeller's open-water curve reduced to cubics in `J`, ready to evaluate. */
 export interface PreparedOpenWater {
-  /** `K_T` at an advance ratio. */
   thrust(advance: number): number;
-  /** `K_Q` at an advance ratio, or `undefined` when the curve has no torque. */
   torque: ((advance: number) => number) | undefined;
 }
 
@@ -95,12 +75,7 @@ function collapse(terms: readonly BSeriesTerm[], pitchRatio: number, areaRatio: 
   return out;
 }
 
-/**
- * Reduces an open-water description to cubics in `J`: the B-series polynomials with pitch, area ratio and blades fixed
- * (plus the ITTC-1978 correction `K_T −= ΔC_D·0.3·(P/D)·(cZ/D)`, `K_Q += ΔC_D·0.25·(cZ/D)` when full scale), or the given
- * polynomial.
- * @capability boat-propeller Wageningen B-series and polynomial open-water curves (K_T, K_Q against advance ratio)
- */
+/** @capability boat-propeller Wageningen B-series and polynomial open-water curves (K_T, K_Q against advance ratio) */
 export function prepareOpenWater(openWater: PropellerOpenWater, diameter: number): PreparedOpenWater {
   if (openWater.kind === "polynomial") {
     const [k0, k1, k2] = openWater.thrust;
@@ -128,15 +103,10 @@ export function prepareOpenWater(openWater: PropellerOpenWater, diameter: number
   };
 }
 
-/** Where the propeller runs this instant. */
 export interface PropellerPoint {
-  /** Shaft speed, rev/s. */
   revs: number;
-  /** Advance ratio. */
   advance: number;
-  /** Open-water thrust of all propellers, N (before thrust deduction; negative astern). */
   thrust: number;
-  /** Power absorbed, W (`0` when the curve has no torque). */
   power: number;
   /** Share of the engine's limit in use, `0..1`. */
   load: number;

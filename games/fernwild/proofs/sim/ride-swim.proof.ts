@@ -16,7 +16,6 @@ function deepWaterNear(ground: (x: number, z: number) => number, from: readonly 
   return null;
 }
 
-/** Which way the sea lies from the beach setup picked. */
 let seaward = 0;
 
 // A swimming tame carries its rider through water. Setup finds the beach between the spawn and the nearest deep

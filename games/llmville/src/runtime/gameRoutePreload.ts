@@ -15,7 +15,6 @@ export function loadGameSessionModule() {
   return gameSessionModulePromise;
 }
 
-/** Warm the world screen's code and its heavy runtime modules ahead of the press that opens it. */
 export function preloadGameRoute(): void {
   void loadGameSessionModule();
   void preloadSceneAssets();

@@ -36,12 +36,7 @@ function toVec(at: readonly [number, number, number] | undefined): Xyz | undefin
   return at === undefined ? undefined : { x: at[0], y: at[1], z: at[2] };
 }
 
-/**
- * Subscribe game audio events to the shell audio engine. Manages the retained-loop registry
- * (`audio.loopStart`/`audio.loopSet`/`audio.loopStop`), keyed by stable id. Returns a single
- * unsubscribe that tears every listener down and stops any loops still playing.
- * @internal
- */
+/** @internal */
 export function attachAudioEventWire(
   events: AudioEventBus,
   audioEngine: Pick<AudioEngine, "playOneShot" | "playLoop" | "playMusic" | "resume"> & Partial<Pick<AudioEngine, "speak" | "stopSpeech" | "duck" | "setZoneLevel">>,

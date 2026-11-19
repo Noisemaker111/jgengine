@@ -22,33 +22,23 @@ export interface NatureMesh {
   indices: Uint32Array;
   bounds: { min: [number, number, number]; max: [number, number, number] };
   triangles: number;
-  /** The generated surface material its faces take (`"rock"`, `"bark"`); omitted draws vertex colour only. */
   surface?: NatureSurface;
-  /** Index ranges drawn with their own surface (a tree's bark trunk and its leaves); overrides `surface`. */
   parts?: readonly NatureMeshPart[];
 }
 
-/** Generated surface materials a nature mesh can be drawn with; `"leaf"` is vertex colour lit from both faces. */
 export type NatureSurface = "rock" | "bark" | "leaf";
 
-/** One run of a nature mesh's index buffer drawn with one surface (none: plain vertex colour). */
 export interface NatureMeshPart {
   surface?: NatureSurface;
-  /** First index (not triangle) of the run. */
   start: number;
-  /** Indices in the run, a multiple of three. */
   count: number;
 }
 
-/**
- * True when a generator output is a {@link NatureMesh}.
- * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
- */
+/** @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter */
 export function isNatureMesh(value: unknown): value is NatureMesh {
   return typeof value === "object" && value !== null && "positions" in value && value.positions instanceof Float32Array && "indices" in value && value.indices instanceof Uint32Array;
 }
 
-/** A point or direction in a nature mesh's local space. */
 export type NatureVec = readonly [number, number, number];
 
 /** An sRGB colour, 0..1 per channel. */
@@ -68,7 +58,7 @@ export function shade(color: NatureRgb, light: number, tint: NatureVec = [0, 0, 
   return [clamp01(color[0] * light + tint[0] * amount), clamp01(color[1] * light + tint[1] * amount), clamp01(color[2] * light + tint[2] * amount)];
 }
 
-/** Linear blend between two colours. @internal */
+/** @internal */
 export function mixRgb(a: NatureRgb, b: NatureRgb, t: number): NatureRgb {
   const k = clamp01(t);
   return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
@@ -104,7 +94,7 @@ export function natureNoise(seed: number, x: number, y: number, z: number): numb
   return total;
 }
 
-/** A numeric seed for {@link natureNoise} from a seed string. @internal */
+/** @internal */
 export function noiseSeed(seed: string): number {
   return hashString(seed) | 0;
 }
@@ -118,13 +108,12 @@ function cross(a: NatureVec, b: NatureVec): [number, number, number] {
   return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
 
-/** A unit vector perpendicular to `axis`. */
 function perpendicular(axis: NatureVec): [number, number, number] {
   const helper: NatureVec = Math.abs(axis[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
   return normalize(cross(axis, helper));
 }
 
-/** Accumulates vertices and triangles, then emits a {@link NatureMesh} with smooth normals. @internal */
+/** @internal */
 export class NatureMeshBuilder {
   private readonly positions: number[] = [];
   private readonly colors: number[] = [];
@@ -136,7 +125,6 @@ export class NatureMeshBuilder {
     this.runs.set("", this.indices);
   }
 
-  /** Draw the triangles added from now on with `surface` (none: plain vertex colour). */
   surface(surface?: NatureSurface): void {
     const key = surface ?? "";
     let run = this.runs.get(key);
@@ -147,7 +135,6 @@ export class NatureMeshBuilder {
     this.indices = run;
   }
 
-  /** Vertex count so far. */
   get vertexCount(): number {
     return this.positions.length / 3;
   }
@@ -167,10 +154,6 @@ export class NatureMeshBuilder {
     this.indices.push(a, b, c);
   }
 
-  /**
-   * Emit the mesh: smooth area-weighted normals, bounds and triangle count, drawn with `surface` when
-   * given. Triangles added under {@link surface} come out as parts, one per surface.
-   */
   build(surface?: NatureSurface): NatureMesh {
     const positions = Float32Array.from(this.positions);
     const used = [...this.runs].filter(([, run]) => run.length > 0);
@@ -237,11 +220,8 @@ export class NatureMeshBuilder {
   }
 }
 
-/** Options for {@link addTube}. */
 export interface TubeOptions {
-  /** Ring vertex count, at least 3. */
   sides: number;
-  /** Colour of ring `index` (0 at the base). */
   color(index: number, t: number): NatureRgb;
   /** Close the far end with a point (twig tip) instead of leaving it open. Default true. */
   closeTip?: boolean;
@@ -318,7 +298,7 @@ const ICO_FACES: [number, number, number][] = [
 
 const sphereCache = new Map<number, { vertices: NatureVec[]; faces: [number, number, number][] }>();
 
-/** A unit icosphere with `level` subdivisions (0: 20 faces, 1: 80, 2: 320), cached. @internal */
+/** @internal */
 export function icosphere(level: number): { vertices: readonly NatureVec[]; faces: readonly (readonly [number, number, number])[] } {
   const depth = Math.max(0, Math.min(3, Math.floor(level)));
   const cached = sphereCache.get(depth);
@@ -352,7 +332,6 @@ export function icosphere(level: number): { vertices: readonly NatureVec[]; face
   return sphere;
 }
 
-/** Options for {@link addBlob}. */
 export interface BlobOptions {
   center: NatureVec;
   radii: NatureVec;
@@ -368,10 +347,7 @@ export interface BlobOptions {
   shadeBelow: number;
 }
 
-/**
- * A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut.
- * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
- */
+/** @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter */
 export function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void {
   const { vertices, faces } = icosphere(options.level);
   const base = builder.vertexCount;
@@ -386,13 +362,11 @@ export function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void 
   for (const [a, b, c] of faces) builder.triangle(base + a, base + b, base + c);
 }
 
-/** Options for {@link addCone}. */
 export interface ConeOptions {
   base: NatureVec;
   height: number;
   radius: number;
   sides: number;
-  /** How far the rim hangs below the base, as a fraction of height. */
   droop: number;
   /** Rim radius jitter 0..1 for a ragged tier. */
   ragged: number;
@@ -401,10 +375,7 @@ export interface ConeOptions {
   rimColor: NatureRgb;
 }
 
-/**
- * A closed, drooping cone: one conifer tier.
- * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
- */
+/** @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter */
 export function addCone(builder: NatureMeshBuilder, options: ConeOptions): void {
   const sides = Math.max(4, Math.floor(options.sides));
   const [bx, by, bz] = options.base;
@@ -427,19 +398,14 @@ export function addCone(builder: NatureMeshBuilder, options: ConeOptions): void 
   }
 }
 
-/** Options for {@link addStone}. */
 export interface StoneOptions {
   center: NatureVec;
-  /** Half extents before shaping. */
   radii: NatureVec;
   level: number;
   /** Noise displacement 0..1. */
   roughness: number;
-  /** Number of flat cuts that give the stone faces and edges. */
   facets: number;
-  /** 0 keeps cuts sharp; 1 rounds them back toward a pebble. */
   erosion: number;
-  /** Fraction of the height buried below y = center. */
   sink: number;
   seed: number;
   random: () => number;
@@ -448,7 +414,6 @@ export interface StoneOptions {
   /** Moss cover on upward faces, 0..1. */
   moss: number;
   colorVariance: number;
-  /** Ridged crags and stacked ledges cut into the surface, 0 (none) to 1 (weathered cliff rock). */
   crag?: number;
   /** Share vertices so the stone shades rounded instead of as flat low-poly triangles. */
   smooth?: boolean;
@@ -458,13 +423,7 @@ function ridged(seed: number, x: number, y: number, z: number): number {
   return 1 - Math.abs(natureNoise(seed, x, y, z) * 2 - 1);
 }
 
-/**
- * One stone: an icosphere displaced by noise, sliced by `facets` random planes (sharp edges), with
- * `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried
- * base. `crag` adds ridged cracks and stacked ledges; vertices are shared when `smooth` is set, else
- * each face keeps its own and the stone shades faceted like a low-poly rock.
- * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
- */
+/** @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter */
 export function addStone(builder: NatureMeshBuilder, options: StoneOptions): void {
   const { vertices, faces } = icosphere(options.level);
   const planes: { n: [number, number, number]; d: number }[] = [];

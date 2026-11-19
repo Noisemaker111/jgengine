@@ -21,59 +21,46 @@
  */
 import { coefficientOfVariation, mean, quantile } from "../math/stats";
 
-/** A plan-view point, `[x, z]`. */
 export type PlanPoint = readonly [number, number];
 
-/** One graph node in plan view. */
 export interface MetricGraphNode {
   readonly id: number;
   readonly x: number;
   readonly z: number;
 }
 
-/** One graph edge: endpoint node ids and its centerline polyline from `a` to `b`. */
 export interface MetricGraphEdge {
   readonly a: number;
   readonly b: number;
   readonly points: readonly PlanPoint[];
-  /** Road hierarchy level ("boulevard", "avenue", "street", "lane", ...). */
   readonly level?: string;
   /** Carriageway width (m), used for the land-in-blocks estimate. */
   readonly width?: number;
 }
 
-/** The graph a street metric reads; a `StreetNetwork` is one. */
 export interface MetricStreetGraph {
   readonly nodes: readonly MetricGraphNode[];
   readonly edges: readonly MetricGraphEdge[];
-  /** Chained streets the generator kept (for {@link StreetNetworkMetrics.keptLengthShare}). */
   readonly streets?: readonly { readonly points: readonly PlanPoint[] }[];
 }
 
-/** District bounds: a centered `halfX` × `halfZ` box or explicit extents. */
 export type MetricBounds = { readonly halfX: number; readonly halfZ: number } | { readonly minX: number; readonly maxX: number; readonly minZ: number; readonly maxZ: number };
 
 export interface StreetMetricsOptions {
   readonly bounds: MetricBounds;
-  /** A dead end within this distance (m) of the bounds is a road leaving the district, not a cul-de-sac. Default 3. */
   readonly rimMargin?: number;
-  /** Levels counted as arterial. Default boulevard and avenue. */
   readonly arterialLevels?: readonly string[];
-  /** Dijkstra sources for the detour ratio, spread evenly over the nodes. Default 32. */
   readonly detourSources?: number;
-  /** Only node pairs at least this far apart (m) count toward the detour ratio. Default min(150, ¼ of the shorter side). */
   readonly detourMinDistance?: number;
   /** Two arms within this many degrees of a straight line continue through a node. Default 25. */
   readonly straightThroughDeg?: number;
 }
 
-/** Face-of-graph block size distribution. */
 export interface BlockMetrics {
   count: number;
   medianHa: number;
   p10Ha: number;
   p90Ha: number;
-  /** Coefficient of variation of block area. */
   cv: number;
 }
 
@@ -94,29 +81,20 @@ export interface StreetNetworkMetrics {
   /** Mean degree of the non-degree-2 nodes. */
   streetsPerNode: number;
   components: number;
-  /** Shannon entropy of edge bearings (nats, 36 bins). */
   orientationEntropy: number;
-  /** Boeing's orientation order φ: 1 = one perfect grid, 0 = uniform bearings. */
   orientationOrder: number;
-  /** Total edge length over total endpoint chord length. */
   edgeCircuity: number;
-  /** Mean network-over-straight-line distance between sampled node pairs. */
   detourRatio: number;
   detourRatioP90: number;
   /** Length share per level, 0..1. */
   levelShares: Record<string, number>;
   /** Length share on arterial levels, 0..1. */
   arterialShare: number;
-  /** Arterial continuations straight through a node. */
   straightThroughArterial: number;
-  /** Of those, how many change level at the node. */
   levelFlips: number;
-  /** `levelFlips / straightThroughArterial` (0 when there are none). */
   levelFlipRate: number;
   blocks: BlockMetrics;
-  /** Share of the district enclosed by graph faces. */
   enclosedShare: number;
-  /** Share of the district left as land inside faces once half of each street's width is taken off. */
   landInBlocksShare: number;
   /** Chained street length over raw edge length (1 = nothing dropped); `NaN` without `streets`. */
   keptLengthShare: number;
@@ -128,7 +106,6 @@ export function boundsBox(bounds: MetricBounds): { minX: number; maxX: number; m
   return "halfX" in bounds ? { minX: -bounds.halfX, maxX: bounds.halfX, minZ: -bounds.halfZ, maxZ: bounds.halfZ } : bounds;
 }
 
-/** Length of an open polyline (closed adds the closing segment). */
 export function polylineLength(points: readonly PlanPoint[], closed = false): number {
   let total = 0;
   for (let i = 0; i + 1 < points.length; i += 1) total += Math.hypot(points[i + 1]![0] - points[i]![0], points[i + 1]![1] - points[i]![1]);
@@ -155,7 +132,6 @@ interface SimpleEdge {
   a: number;
   b: number;
   points: PlanPoint[];
-  /** Widest half-width among the raw edges the chain merged. */
   halfWidth: number;
 }
 
@@ -203,7 +179,6 @@ function contract(nodes: ReadonlyMap<number, MetricGraphNode>, edges: readonly M
   return out;
 }
 
-/** Signed shoelace area of a ring of plan points. */
 function signedArea(ring: readonly PlanPoint[]): number {
   let twice = 0;
   for (let i = 0; i < ring.length; i += 1) {
@@ -216,11 +191,9 @@ function signedArea(ring: readonly PlanPoint[]): number {
 
 interface Face {
   area: number;
-  /** Σ perimeter length × half the bounding street's width. */
   edgeBand: number;
 }
 
-/** Faces of a plane graph by half-edge traversal; areas carry the traversal sign. */
 function faces(edges: readonly SimpleEdge[]): Face[] {
   type Half = { edge: number; from: number; to: number; angle: number; points: readonly PlanPoint[] };
   const halves: Half[] = [];
@@ -306,10 +279,7 @@ class MinHeap {
   }
 }
 
-/**
- * Measure a street graph inside its district bounds. See the module comment for each figure.
- * @capability generator-metrics measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them
- */
+/** @capability generator-metrics measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them */
 export function streetNetworkMetrics(graph: MetricStreetGraph, options: StreetMetricsOptions): StreetNetworkMetrics {
   const box = boundsBox(options.bounds);
   const spanX = box.maxX - box.minX;
@@ -518,7 +488,6 @@ export function streetNetworkMetrics(graph: MetricStreetGraph, options: StreetMe
   };
 }
 
-/** One street as the elevation metric reads it: centerline, per-point road heights and bridge/tunnel spans. */
 export interface ElevatedStreet {
   readonly points: readonly PlanPoint[];
   readonly heights?: readonly number[];
@@ -529,19 +498,13 @@ export interface ElevatedStreet {
 export interface RoadElevationMetrics {
   /** Steepest grade (rise over run, 0..1) over any stretch of at least `gradeBaseline` metres. */
   maxGrade: number;
-  /** Largest height difference where one street's end meets another street (m). */
   junctionStepMax: number;
   /** Mean |road surface − ground| over sampled points, off bridge/tunnel spans (m); `NaN` without `heightAt`. */
   roadVsGroundMean: number;
   roadVsGroundMax: number;
-  /** Road surface relief: highest minus lowest point (m). */
   reliefM: number;
 }
 
-/**
- * Road-surface elevation quality: grades, steps where streets meet, and how far the road surface sits
- * from the ground it should follow. Streets without `heights` are skipped.
- */
 export function roadElevationMetrics(
   streets: readonly ElevatedStreet[],
   options: { readonly heightAt?: (x: number, z: number) => number; readonly gradeBaseline?: number; readonly junctionTolerance?: number } = {},

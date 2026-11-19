@@ -10,16 +10,12 @@ import { ITEMS, itemIssues, rollItem, type Item, type ItemKind } from "./items";
 import { newHome, type Dive, type Home, type Result } from "./state";
 import { newDeep, readDeep, type Deep } from "./deep";
 
-/** Where v1-v4 records live. They are read once and rewritten as a record under {@link RECORD_KEY}. */
 export const SAVE_KEY = "deepward.marrow.v1";
-/** The game-save document: one section for the persistent record, one for the live run. */
 export const RECORD_KEY = "deepward.marrow.record";
 export const RECORD_SLOT = "marrow";
-/** The three records the save-select pane offers: the original slot plus two more. */
 export const RECORD_SLOTS = ["marrow", "marrow-2", "marrow-3"] as const;
 /** A record's own name, in the game's words rather than a bare slot id. */
 export const RECORD_LABEL: Record<string, string> = { marrow: "Record I", "marrow-2": "Record II", "marrow-3": "Record III" };
-/** The backend key the save store actually writes (`<key>:<slot>`); the storage event and isCurrent compare it. */
 export function recordEntry(slot: string): string {
   return `${RECORD_KEY}:${slot}`;
 }
@@ -38,13 +34,11 @@ export interface StoragePort {
 const UNREADABLE = "Marrow's save is unreadable. It has been preserved; restore it before diving.";
 const DAMAGED = "Marrow's save is damaged or from another version. It has been preserved.";
 
-/** A stored object read through the keys a check names. Every field stays unknown, so any object fits. */
 type Fields<K extends string> = { readonly [P in K]?: unknown };
 function fields<K extends string>(value: unknown): value is Fields<K> {
   return isRecord(value);
 }
 type HomeKey = "version" | "revision" | "nextDive" | "life" | "extractions" | "deaths" | "activeDive" | "last" | "stash" | "refits" | "reprintPending" | "bank" | "standing" | "ledger" | "books";
-/** A stored record before its fields are checked. */
 type RawHome = Fields<HomeKey>;
 const natural = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 const bankAmount = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
@@ -128,13 +122,11 @@ function validHomeShape(value: unknown): value is Home {
   if (!validBooks(value.books)) return false;
   return !value.reprintPending || (value.activeDive === null && lostLast(value.last));
 }
-/** The last dive, when it ended with the diver lost. */
 function lostLast(last: unknown): boolean {
   return fields<"kind">(last) && last.kind === "lost";
 }
 
 interface LegacyItem { uid: string; kind: ItemKind; level: number }
-/** v1-v3 stored an item as kind + level only; migrating rolls the instance the catalog would have. */
 function legacyItem(value: unknown): value is LegacyItem {
   return fields<"uid" | "kind" | "level">(value) && typeof value.uid === "string" && typeof value.kind === "string" && KINDS.includes(value.kind) && value.level === 1;
 }
@@ -165,7 +157,6 @@ function migrate(value: RawHome, version: number, stash: readonly LegacyItem[]):
   return { ...(refitted as unknown as Home), version: 5, bank: blank.bank, standing: blank.standing, ledger: {}, books: blank.books, stash: items };
 }
 
-/** The live run, as one save section: what the HUD shows and where the diver stands. */
 export interface RunSnapshot {
   mode: "home" | "dive" | "saving" | "reprinting";
   dive: Dive | null;
@@ -178,17 +169,14 @@ export interface RunSnapshot {
   hand: string | null;
 }
 
-/** What save.ts needs from the running game to snapshot and restore the live run. */
 export interface RunHooks {
   snapshot(): RunSnapshot;
   restore(next: RunSnapshot | null): void;
-  /** The descent section: body, gear, scans, charted strata and Marrow's base world. */
   deep?: { snapshot(): Deep; restore(next: Deep): void };
 }
 
 export interface RecordSession {
   readonly home: Home;
-  /** The run section the last load applied, or null for a record with no run. */
   readonly restoredRun: RunSnapshot | null;
   load(): Promise<Home>;
   /**
@@ -196,15 +184,10 @@ export interface RecordSession {
    * a return lands both sections in one document before the screen changes.
    */
   commit(next: Home, run?: RunSnapshot | null): Promise<void>;
-  /** The record this session currently reads and writes. */
   slot(): string;
-  /** Read another record's document without applying it - the save-select pane's data source. */
   peek(slot: string): Promise<PeekResult<GameSaveDocument>>;
-  /** Records already written on this profile. */
   slots(): Promise<string[]>;
-  /** Open another record (an empty slot resets both sections to a fresh Marrow). */
   switchSlot(slot: string): Promise<Home>;
-  /** Delete a record's document; deleting the open record leaves a fresh one live. */
   deleteSlot(slot: string): Promise<boolean>;
   isCurrent(): boolean;
   digest(): string;
@@ -218,7 +201,6 @@ function decodeLegacy(raw: string): Home {
   return home;
 }
 
-/** A stored record's section, checked against the same catalog as the live game. */
 function readRecord(raw: string): GameSaveDocument {
   let parsed: unknown;
   try { parsed = JSON.parse(raw); } catch { throw new Error(UNREADABLE); }
@@ -352,12 +334,10 @@ export function openRecord(storage: StoragePort, run: RunHooks, initialSlot: str
   };
 }
 
-/** Whether any Marrow record is on disk - the title's Continue gate, not a remembered flag. */
 export function storedMarrow(storage: StoragePort): boolean {
   return RECORD_SLOTS.some(slot => storage.getItem(recordEntry(slot)) !== null) || storage.getItem(SAVE_KEY) !== null;
 }
 
-/** The save backend Marrow's records write through, over the game's storage port. */
 export function recordBackend(storage: StoragePort): SaveBackend {
   return localSaveBackend({
     getItem: key => storage.getItem(key),

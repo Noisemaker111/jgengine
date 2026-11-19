@@ -3,10 +3,7 @@ import { plantCos, plantSin } from "../growth/plantMath";
 import type { LeafShapeParams } from "../species/plantSpecies";
 
 const GOLDEN_ANGLE = 2.399963;
-/**
- * Spine steps the structure's height and crown read; the mesh draws its own.
- * @internal
- */
+/** @internal */
 export const FROND_STATS_SEGMENTS = 6;
 /** Rise of a frond just unfolded, radians above horizontal. */
 const NEWEST_RISE = 1.05;
@@ -25,28 +22,19 @@ export function isFrondShape(shape: LeafShapeParams): boolean {
   return shape.kind === "frond" || shape.kind === "fan";
 }
 
-/**
- * Share of full length the fronds a plant grows in `year` reach: a tenth at first, full size after
- * its frond establishment years.
- * @internal
- */
+/** @internal */
 export function frondLengthShare(growth: { frondEstablishmentYears?: number }, year: number): number {
   const years = growth.frondEstablishmentYears;
   if (years === undefined || years <= 0) return 1;
   return Math.min(1, 0.1 + (0.9 * year) / years);
 }
 
-/**
- * Fronds a leaf row stands for: its leaf area over one frond's (0.55 of length squared, as
- * `createPlantGrowth` grows them).
- * @internal
- */
+/** @internal */
 export function frondCount(foliageM2: number, lengthM: number): number {
   const one = 0.55 * lengthM * lengthM;
   return Math.max(1, Math.min(4000, Math.round(foliageM2 / Math.max(1e-9, one))));
 }
 
-/** Where frond `k` of a row points: azimuth round the stem, rise above horizontal and sag to its tip. */
 export interface FrondPose {
   azimuth: number;
   elevation: number;

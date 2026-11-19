@@ -16,7 +16,6 @@ const EDITOR_TOOLS: readonly (readonly [glyph: string, title: string, body: stri
   ["06", "Agents can drive it", "Every button is also a command, so a coding agent can place things and take screenshots without clicking."],
 ];
 
-/** The standalone scene editor, live in the page, with what it does and how to open it on a folder. */
 export function EditorEmbed() {
   return (
     <section id="editor" aria-labelledby="editor-heading" className="scroll-mt-20 border-t border-line">

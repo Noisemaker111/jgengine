@@ -1,10 +1,8 @@
 import { intersectAabb } from "../scene/objectQuery";
 import type { WorldSolid, WorldSolids } from "../world/worldSolids";
 
-/** The indexing floor a sight test needs from world collision: boxes, narrowed by a ray when available. */
 export type SightSolids = Pick<WorldSolids, "inBox"> & Partial<Pick<WorldSolids, "inRay">>;
 
-/** One world point in `[x, y, z]` order, as a sight test takes it. */
 export type SightPoint = readonly [number, number, number];
 
 function solidAlong(solid: WorldSolid, origin: SightPoint, direction: SightPoint, maxDistance: number): boolean {

@@ -9,10 +9,6 @@ import type { Blackboard, DecisionGraph } from "../ai/decisionGraph";
 import type { CooldownMode } from "../ai/pursuit";
 import type { ThreatTableConfig } from "../ai/threat";
 
-/** Scheduled chase/attack behavior; the default declares hostility toward player-role entities.
- * GameDefinition.pursuit.eligible can further restrict every target source using the live world.
- * Explicit targets and optional threat override nearest-player acquisition, not eligibility.
- */
 export interface PursueBehavior {
   kind: "pursue";
   aggroRadius: number;
@@ -23,7 +19,6 @@ export interface PursueBehavior {
   /** Seconds between acquisition/movement/attack ticks; default .1. Zero advances every frame. */
   thinkInterval?: number;
   cooldownMode?: CooldownMode;
-  /** Opt into a per-instance table available through `behaviorControl(ctx).threat(id)`. */
   threat?: ThreatTableConfig;
   /**
    * Entity whose side this one keeps: home moves with it, the leash is measured from it, and with no
@@ -65,12 +60,10 @@ export interface PlayerBehavior {
   kind: "player";
 }
 
-/** Decision graph behavior descriptor using a named registered action set. */
 export interface DecisionGraphBehavior {
   kind: "decisionGraph";
   graph: DecisionGraph;
   actions: string;
-  /** Initial facts for this entity's persistent blackboard; systems write more through `behaviorControl(ctx).blackboard(id)`. */
   blackboard?: Blackboard;
   /** Seconds between graph ticks (`0` = every frame). Siblings are staggered; actions receive the elapsed time. */
   thinkInterval?: number;
@@ -96,9 +89,7 @@ export function behaviorDataEqual(a: unknown, b: unknown): boolean {
     && keys.every(key => Object.hasOwn(right, key) && behaviorDataEqual(left[key], right[key]));
 }
 
-/** Attach aggro, collision-aware chase, cooldown attack and latched return-to-spawn as data.
- * @capability pursue-behavior scheduled pursuit with bounded target acquisition and saved cooldown/leash state
- */
+/** @capability pursue-behavior scheduled pursuit with bounded target acquisition and saved cooldown/leash state */
 export function pursue(options: Omit<PursueBehavior, "kind">): PursueBehavior {
   for (const [name, value] of Object.entries({ aggroRadius: options.aggroRadius, reach: options.reach,
     leashRange: options.leashRange, speed: options.speed, intervalSec: options.attack.intervalSec,

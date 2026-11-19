@@ -46,7 +46,6 @@ function controlNamesExpr(input: boolean): string {
   })(${input})`;
 }
 
-/** `; closest controls: "a", "b" (covered by another element)` for a click that found nothing to press. */
 export function controlHint(text: string, controls: readonly { name: string; covered: boolean }[], what: string): string {
   const covered = new Set(controls.filter((control) => control.covered).map((control) => control.name.replace(/\s+/g, " ").trim()));
   const close = closestMatches(text, controls.map((control) => control.name));
@@ -83,7 +82,6 @@ async function findClickPoint(session: CdpSession, text: string, input = false):
   throw new Error(`drive: no settled actionable element matching "${text}"${hint}`);
 }
 
-/** Click the control whose text or accessible name contains `text`, once it stops moving. */
 export async function clickText(session: CdpSession, text: string, count = 1, input = false): Promise<void> {
   await session.send("Page.bringToFront");
   const point = await findClickPoint(session, text, input);
@@ -96,7 +94,6 @@ export async function clickText(session: CdpSession, text: string, count = 1, in
   }
 }
 
-/** Replace a labelled text field's value with native keyboard input, then Tab to commit it. */
 export async function fillField(session: CdpSession, label: string, value: string): Promise<void> {
   await clickText(session, label, 1, true);
   if (!await session.evaluate<boolean>(driveInputPointExpr(label, true, true))) {
@@ -138,19 +135,16 @@ export async function readFrames(session: CdpSession): Promise<number> {
   return (await session.evaluate<number>(`globalThis.__jgFrames ?? 0`)) ?? 0;
 }
 
-/** The waits and surface helpers the shared hold and view steps run on. */
 export const driveDeps: DriveInputDeps = {
   focusGameSurface, holdComplete, mouseButtonForCode, gameSurfaceCenter,
   sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)),
   now: () => Date.now(),
 };
 
-/** Shared with the portable drive.mjs: key, chord or mouse hold that waits for a rendered frame. */
 export function holdKey(session: CdpSession, chord: string, holdMs: number, until?: DriveHoldUntil): Promise<void> {
   return holdDriveInput(session, chord, holdMs, driveDeps, until);
 }
 
-/** Send one raw agent-bridge (or editor host) request and print its answer. */
 export async function rpc(session: CdpSession, json: string): Promise<void> {
   JSON.parse(json);
   const value = await session.evaluate<string>(
@@ -164,7 +158,6 @@ export async function rpc(session: CdpSession, json: string): Promise<void> {
   console.log(value ?? JSON.stringify({ ok: false, error: "rpc evaluation returned nothing" }));
 }
 
-/** Call the page's agent bridge and return its answer; a page with no bridge answers `ok: false`. */
 export async function bridge(session: CdpSession, request: { method: string } & Record<string, unknown>): Promise<BridgeAnswer> {
   const raw = await session.evaluate<string>(
     `(async () => {
@@ -180,7 +173,6 @@ export async function bridge(session: CdpSession, request: { method: string } & 
   return { ok: false, error: "error" in answer && typeof answer.error === "string" ? answer.error : "the agent bridge refused" };
 }
 
-/** The game's `capture.probe` numbers, or `null` when the page exposes none. */
 export async function readProbe(session: CdpSession): Promise<Record<string, number> | null> {
   const value = await session.evaluate<Record<string, number> | null>(`(() => {
       const probe = globalThis.__jg?.probe;
@@ -228,15 +220,12 @@ export interface DriveClock {
   readonly virtualNow: number;
 }
 
-/** What only the caller knows: how to reload its page and where a shot goes. */
 export interface PageDriverOptions {
-  /** The lockstep clock under `--record`, or null for wall time. */
   clock: DriveClock | null;
   reload(): Promise<void>;
   shot(name: string): Promise<void>;
 }
 
-/** The {@link BrowserFlowDriver} for one page: every flow call carried out over CDP. */
 export function pageFlowDriver(session: CdpSession, options: PageDriverOptions): BrowserFlowDriver {
   const { clock } = options;
   // Let the UI react on the virtual clock so an input's effect is in frame.

@@ -24,12 +24,10 @@ export type DocumentPatch =
       commands: readonly EditorCommand[];
     };
 
-/** Result of applying a {@link DocumentPatch} to a document + revision pair. */
 export type ApplyDocumentPatchResult =
   | { ok: true; document: EditorDocument; revision: number; patch: DocumentPatch }
   | { ok: false; error: string; commandIndex?: number };
 
-/** One live entity row the runtime may stream to the editor (play-mode inspector feed). */
 export interface RuntimeEntityState {
   id: string;
   position?: EditorVec3 | undefined;
@@ -56,7 +54,6 @@ export interface RuntimeStateDelta {
   tunables?: Record<string, unknown>;
 }
 
-/** Event emitted when the authoritative document changes on a {@link DocumentLiveSync}. */
 export interface DocumentLiveEvent {
   document: EditorDocument;
   revision: number;
@@ -120,11 +117,7 @@ export function applyDocumentPatch(
   };
 }
 
-/**
- * Merges a runtime delta into a snapshot without touching the scene document — runtime overrides
- * stay ephemeral until an explicit write-back produces a document patch.
- * @capability editor-live-sync merge a runtime state delta into the reverse-channel snapshot
- */
+/** @capability editor-live-sync merge a runtime state delta into the reverse-channel snapshot */
 export function applyRuntimeStateDelta(
   snapshot: RuntimeStateSnapshot,
   delta: Omit<RuntimeStateDelta, "seq"> & { seq?: number },
@@ -193,7 +186,6 @@ export function runtimeEntityWriteBackCommand(
   return null;
 }
 
-/** Two-way live-sync bus: document patches out, runtime state deltas back. */
 export interface DocumentLiveSync {
   getDocument(): EditorDocument;
   getRevision(): number;
@@ -201,9 +193,7 @@ export interface DocumentLiveSync {
     patch: DocumentPatch,
     options?: { force?: boolean },
   ): ApplyDocumentPatchResult;
-  /** Document-authoritative full replace (editor session mirror). */
   replaceDocument(document: EditorDocument): DocumentLiveEvent;
-  /** Returns a current snapshot when the requested revision predates retained history. */
   pullPatches(sinceRevision: number): DocumentPatch[];
   subscribeDocument(listener: (event: DocumentLiveEvent) => void): () => void;
   getRuntimeState(): RuntimeStateSnapshot;
@@ -213,18 +203,10 @@ export interface DocumentLiveSync {
   setRuntimeOverride(entity: RuntimeEntityState): void;
   clearRuntimeOverride(id: string): void;
   getRuntimeOverrides(): Readonly<Record<string, RuntimeEntityState>>;
-  /**
-   * Promote an ephemeral override into a document command patch when the id exists in the
-   * document. Clears the override only after a successful apply.
-   */
   writeBackOverride(id: string): ApplyDocumentPatchResult | { ok: false; error: string };
 }
 
-/**
- * Creates an in-memory two-way live-sync bus seeded from an initial document. Document is
- * authoritative; runtime overrides are ephemeral until {@link DocumentLiveSync.writeBackOverride}.
- * @capability editor-live-sync two-way document/runtime live-sync bus for editor↔game
- */
+/** @capability editor-live-sync two-way document/runtime live-sync bus for editor↔game */
 export function createDocumentLiveSync(initial: EditorDocument): DocumentLiveSync {
   let document = cloneEditorDocument(initial);
   let revision = 0;
@@ -349,7 +331,6 @@ declare module "../runtime/pageHandle" {
 }
 const INSTALL_LISTENERS = new Set<() => void>();
 
-/** Publishes a live-sync bus globally so AuthoredScene / games can subscribe without prop drilling. */
 export function installDocumentLiveSync(sync: DocumentLiveSync): () => void {
   const unpublish = publishOnPage("liveSync", sync);
   for (const listener of INSTALL_LISTENERS) listener();
@@ -364,10 +345,6 @@ export function getDocumentLiveSync(): DocumentLiveSync | null {
   return onPage("liveSync") ?? null;
 }
 
-/**
- * Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the
- * editor host mounts over a running game).
- */
 export function subscribeDocumentLiveSyncInstall(listener: () => void): () => void {
   INSTALL_LISTENERS.add(listener);
   return () => {

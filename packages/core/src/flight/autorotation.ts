@@ -16,30 +16,21 @@ export interface AircraftAutorotation {
   inertia?: number;
   /** Rated rotor speed, rad/s (default `44.5`, the Bo-105). */
   ratedSpeed?: number;
-  /** Shaft power at sea level and full throttle, W; it falls with air density (default `626 000`, two Allison 250-C20B). */
   enginePower?: number;
   /** Governor closed-loop bandwidth, rad/s (default `2`), and damping ratio (default `0.7`). */
   governorFrequency?: number;
   governorDamping?: number;
-  /** Extra shaft load for the tail rotor and accessories, share of the main rotor's torque (default `0.08`). */
   tailShare?: number;
 }
 
-/** One substep of rotor speed dynamics. */
 export interface AutorotationRates {
-  /** d(rotor speed share)/dt, 1/s. */
   speedRate: number;
   /** d(governor integral)/dt, rad/s. */
   governorRate: number;
-  /** Torque the engine puts on the shaft, N·m; the airframe takes it back. */
   engineTorque: number;
 }
 
-/**
- * Rotor speed and governor rates for a speed share, governor integral, throttle (engine power share) and aerodynamic
- * rotor torque, N·m, in air of `densityRatio` to sea level.
- * @capability aircraft-autorotation rotor speed inertia with an engine governor, so a dead engine autorotates
- */
+/** @capability aircraft-autorotation rotor speed inertia with an engine governor, so a dead engine autorotates */
 export function autorotationRates(effect: AircraftAutorotation, strength: number, speedShare: number, governor: number, throttle: number, rotorTorque: number, densityRatio: number, out: AutorotationRates): AutorotationRates {
   const rated = effect.ratedSpeed ?? 44.5;
   const inertia = (effect.inertia ?? 926.8) * Math.max(1, strength);
@@ -57,10 +48,7 @@ export function autorotationRates(effect: AircraftAutorotation, strength: number
   return out;
 }
 
-/**
- * The governor integral that holds rated speed against a steady rotor torque, for a clean start.
- * @capability aircraft-autorotation settle the governor for a steady rotor load
- */
+/** @capability aircraft-autorotation settle the governor for a steady rotor load */
 export function settledGovernor(effect: AircraftAutorotation, strength: number, rotorTorque: number): number {
   const frequency = effect.governorFrequency ?? 2;
   return (rotorTorque * (1 + (effect.tailShare ?? 0.08))) / ((effect.inertia ?? 926.8) * Math.max(1, strength) * frequency * frequency);

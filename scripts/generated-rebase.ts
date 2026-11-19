@@ -32,7 +32,6 @@ export const GENERATED_PATHS: readonly RegExp[] = GEN_TARGETS.flatMap((target) =
 /** Files only the lane writes, so a conflict there keeps the lane's side. */
 export const LANE_OWNED_PATHS: readonly RegExp[] = [/^changes\/[^/]+\.md$/];
 
-/** The commands that rewrite `GENERATED_PATHS` from source, in order. */
 export const REGENERATE: readonly (readonly string[])[] = [["bun", "run", "gen"]];
 
 export const REGENERATED_SUBJECT = "Regenerate generated files after rebasing";
@@ -45,26 +44,22 @@ export function isLaneOwned(path: string): boolean {
   return LANE_OWNED_PATHS.some((pattern) => pattern.test(path));
 }
 
-/** Generated blocks inside hand-written files, from the gen table. */
 export const GENERATED_BLOCKS: readonly GeneratedBlock[] = GEN_TARGETS.flatMap((target) => target.blocks ?? []);
 
 function blocksOf(path: string): GeneratedBlock[] {
   return GENERATED_BLOCKS.filter((block) => block.paths.test(path));
 }
 
-/** Whether a generator writes this file, whole or in a marked block. */
 export function isRegenerated(path: string): boolean {
   return isGenerated(path) || blocksOf(path).length > 0;
 }
 
-/** The three sides of a conflicted file: the commits' common ancestor, the base rebased onto, and the lane's commit. */
 export interface ConflictStages {
   base: string;
   ours: string;
   theirs: string;
 }
 
-/** A three-way merge of rows keyed by `key`: a row one side left as the base had it takes the other side's; both changed, the lane's. */
 function mergeRows<T>(base: readonly T[], ours: readonly T[], theirs: readonly T[], key: (row: T) => string): T[] {
   const text = (row: T | undefined): string | undefined => (row === undefined ? undefined : JSON.stringify(row));
   const index = (rows: readonly T[]): Map<string, T> => new Map(rows.map((row) => [key(row), row]));
@@ -137,18 +132,8 @@ const OPEN = `<<<<<<< ${SIDE}-ours`;
 const BASE_PART = `||||||| ${SIDE}-base`;
 const SPLIT = "=======";
 const CLOSE = `>>>>>>> ${SIDE}-theirs`;
-/**
- * The `git merge-file` style and labels {@link keepBothInsertions} reads. Plain `--diff3`, not `--zdiff3`: zdiff3
- * lifts the lines two insertions share at their start or end (an `import {`, a closing `}),`) out of the
- * conflict, so keeping both sides kept those lines once and broke the code.
- */
 export const MERGE_FILE_ARGS: readonly string[] = ["--diff3", ...["ours", "base", "theirs"].flatMap((side) => ["-L", `${SIDE}-${side}`])];
 
-/**
- * Both sides' added lines, the base's first. When one side's lines open or close with every line the other
- * added (a lane branched from another unlanded lane carries that lane's additions), the longer is kept alone,
- * since two copies of one import name or field would not compile.
- */
 function unionOfInsertions(ours: readonly string[], theirs: readonly string[]): string[] {
   const holds = (long: readonly string[], short: readonly string[]): boolean =>
     short.length <= long.length &&
@@ -188,7 +173,6 @@ export function keepBothInsertions(merged: string): string | null {
   return ours === null ? out.join("\n") : null;
 }
 
-/** Each generated block in the text, markers included, in order. */
 function blocksIn(text: string, { start, end }: GeneratedBlock): { at: number; to: number }[] {
   const found: { at: number; to: number }[] = [];
   for (let from = 0; ; ) {
@@ -201,7 +185,6 @@ function blocksIn(text: string, { start, end }: GeneratedBlock): { at: number; t
   }
 }
 
-/** The text with each of its generated blocks replaced by `fill(block, index)`. */
 function replaceBlocks(text: string, blocks: readonly GeneratedBlock[], fill: (block: GeneratedBlock, index: number) => string): string {
   let out = text;
   for (const block of blocks) {
@@ -235,13 +218,10 @@ export function resolveBlockConflict(
 }
 
 export interface GeneratedRebase {
-  /** The rebase finished (possibly after resolving generated files). */
   ok: boolean;
-  /** Files that conflicted and are not generated: the lane's to resolve. Empty when `ok`. */
   conflicts: string[];
   /** Generated files whose conflict was resolved, so the caller regenerates. */
   regenerate: string[];
-  /** The failing step's output when `ok` is false. */
   detail: string;
 }
 
@@ -251,10 +231,6 @@ const lines = (text: string): string[] =>
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
-/**
- * `git rebase <onto>`, resolving every conflict with one right answer as it goes (see the header). A real
- * conflict aborts the rebase and is returned. The caller regenerates when `regenerate` is non-empty.
- */
 export function rebaseResolvingGenerated(git: (args: string[]) => Run, onto: string): GeneratedRebase {
   let step = git(["rebase", onto]);
   const regenerated = new Set<string>();

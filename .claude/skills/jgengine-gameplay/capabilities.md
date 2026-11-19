@@ -2,1157 +2,272 @@
 
 # jgengine-gameplay — capability index
 
-Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
-
-## achievement-gallery — responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header
-
-- `AchievementGallery` (function) · `import { AchievementGallery } from "@jgengine/core/achievements/achievements.view"`
-
-## achievement-toast — unlock-moment banner (icon, heading, name, points) for an achievement toast queue
-
-- `AchievementToast` (function) · `import { AchievementToast } from "@jgengine/core/achievements/achievements.view"`
-
-## achievements — track achievement/trophy unlocks over counter goals and boolean flags, with score, completion, an onUnlock seam, and serializable snapshot/restore
-
-- `createAchievementTracker` (function) · `import { createAchievementTracker } from "@jgengine/core/gameplay"`
-
-## advance-ledger — settle due scheduled transactions through a policy pipeline
-
-- `advanceLedger` (function) · `import { advanceLedger } from "@jgengine/core/gameplay"`
-
-## affix-roller — roll randomized gear (guns, armor, loot) with rarity tiers, stat scaling and prefix/suffix affixes from a seed
-
-- `createAffixRoller` (function) · `import { createAffixRoller } from "@jgengine/core/gameplay"`
-
-## agent-schedule — an authored per-agent day plan with a work beat and off-hours behaviour
-
-- `createAgentSchedule` (function) · `import { createAgentSchedule } from "@jgengine/core/agents/schedule"`
-
-## agents — a needs, thought, action and mood loop an agent runs on the world clock
-
-- `createAgent` (function) · `import { createAgent } from "@jgengine/core/agents/agent"`
-- `createAgentSystem` (function) · `import { createAgentSystem } from "@jgengine/core/agents/system"`
-
-## ambient-temperature — air temperature from climate, time of day, weather, altitude, wetness and nearby heat
-
-- `ambientTemperature` (function) · `import { ambientTemperature } from "@jgengine/core/gameplay"`
-
-## auction-book — timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement
-
-- `createAuctionBook` (function) · `import { createAuctionBook } from "@jgengine/core/gameplay"`
-
-## best-record — persist personal-best times/scores with safe storage fallback
-
-- `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
-
-## body-temperature — hypothermia and hyperthermia from ambient temperature, insulation and fortitude, as vital drain and exposure damage
-
-- `bodyComfort` (function) · `import { bodyComfort } from "@jgengine/core/gameplay"`
-
-## breeding — pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care
-
-- `createBreedingField` (function) · `import { createBreedingField } from "@jgengine/core/breeding/breeding"`
-
-## build — a serializable directed/undirected pair key that resists delimiter collisions
-
-- `createPairKeyCodec` (function) · `import { createPairKeyCodec } from "@jgengine/core/gameplay"`
-
-## build-keys — one numbered build command per build piece
-
-- `defineBuildKeys` (function) · `import { defineBuildKeys } from "@jgengine/core/worldModel/buildTool"`
-
-## cancel-scheduled-rule — remove a scheduled rule and its cursor entirely
-
-- `cancelRule` (function) · `import { cancelRule } from "@jgengine/core/gameplay"`
-
-## cancel-work — remove a job and compute its refund from reservation and progress
-
-- `cancelJob` (function) · `import { cancelJob } from "@jgengine/core/gameplay"`
-
-## career-bank — persistent career money with a run haul that can be banked or lost
-
-- `createCareerBank` (function) · `import { createCareerBank } from "@jgengine/core/progression/careerBank"`
-
-## carry-encumbrance — gate a pickup against the carrier's remaining capacity
-
-- `canCarry` (function) · `import { canCarry } from "@jgengine/core/inventory/carryLoad"`
-- `characterLoad` (function) · `import { characterLoad } from "@jgengine/core/inventory/carryLoad"`
-- `resolveEncumbrance` (function) · `import { resolveEncumbrance } from "@jgengine/core/inventory/encumbrance"`
-
-## carry-load — read carried stacks out of one or more inventories for a weight query
-
-- `carriedEntries` (function) · `import { carriedEntries } from "@jgengine/core/inventory/carryLoad"`
-- `totalLoad` (function) · `import { totalLoad } from "@jgengine/core/inventory/encumbrance"`
-
-## cell-grid — immutable 2D board of cells with row clears, gravity collapse, and match runs
-
-- `createCellGrid` (function) · `import { createCellGrid } from "@jgengine/core/puzzle/cellGrid"`
-
-## character-paperdoll — equip-slot paperdoll — flanking columns around a portrait, activatable slots
-
-- `Paperdoll` (function) · `import { Paperdoll } from "@jgengine/core/inventory/characterSheet.view"`
-
-## character-sheet — drop-in paperdoll + derived-stat sheet in a HudFrame — game supplies slots/stats
-
-- `CharacterSheet` (function) · `import { CharacterSheet } from "@jgengine/core/inventory/characterSheet.view"`
-
-## character-statlist — derived-stat readout — grouped small-caps label→value rows, token-themed
-
-- `StatList` (function) · `import { StatList } from "@jgengine/core/inventory/characterSheet.view"`
-
-## clip-roles — map a rigged asset's pack-specific clip name to its semantic animation role
-
-- `classifyClip` (function) · `import { classifyClip } from "@jgengine/core/game/clipRoles"`
-- `defaultAnimationForClips` (function) · `import { defaultAnimationForClips } from "@jgengine/core/game/clipRoles"`
-
-## codex — codex/bestiary/lorebook of defined entries with discovery tracking, fragment scans, categories, secret masking, completion, an onDiscover seam, and serializable state
-
-- `createCodex` (function) · `import { createCodex } from "@jgengine/core/gameplay"`
-
-## codex-gallery — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
-
-- `CodexPanel` (function) · `import { CodexPanel } from "@jgengine/core/codex/codex.view"`
-
-## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
-
-- `composeGameLoop` (function) · `import { composeGameLoop } from "@jgengine/core/gameplay"`
-
-## consumables — use/consume items with cooldowns and effects
-
-- `createItemUse` (function) · `import { createItemUse } from "@jgengine/core/gameplay"`
-
-## content-progression-validation — diagnose unavailable sources and blocked cross-content progression under explicit game-owned rules without rejecting intentional seeded cycles
-
-- `validateContentProgression` (function) · `import { validateContentProgression } from "@jgengine/core/game/contentValidation"`
-
-## content-reference-validation — locate duplicate content ids and broken references across game-owned catalog namespaces with repair guidance
-
-- `validateContentReferences` (function) · `import { validateContentReferences } from "@jgengine/core/game/contentValidation"`
-
-## control-suspension — Suspend player input across overlapping menus without stopping shared simulation.
-
-- `suspendPlayControls` (function) · `import { suspendPlayControls } from "@jgengine/core/game/controlGate"`
-
-## cosmetics — equip cosmetic skins and customizations by slot
-
-- `createCosmetics` (function) · `import { createCosmetics } from "@jgengine/core/gameplay"`
-
-## currency-major-units — convert safe minor-unit integers into currency amounts
-
-- `fromMinorUnits` (function) · `import { fromMinorUnits } from "@jgengine/core/economy/currency"`
-
-## currency-minor-units — round decimal currency into safe integer minor units
-
-- `toMinorUnits` (function) · `import { toMinorUnits } from "@jgengine/core/economy/currency"`
-
-## currency-precision-format — display a currency using its declared decimal precision
-
-- `formatCurrency` (function) · `import { formatCurrency } from "@jgengine/core/economy/currency"`
-
-## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
-
-- `decayMeterMoodles` (function) · `import { decayMeterMoodles } from "@jgengine/core/gameplay"`
-- `decayMeterSnapshot` (function) · `import { decayMeterSnapshot } from "@jgengine/core/gameplay"`
-- `decayMeterState` (function) · `import { decayMeterState } from "@jgengine/core/gameplay"`
-- `decayMeters` (function) · `import { decayMeters } from "@jgengine/core/gameplay"`
-- `decayMetersInPlace` (function) · `import { decayMetersInPlace } from "@jgengine/core/survival/decayMeter"`
-- `initDecayMeters` (function) · `import { initDecayMeters } from "@jgengine/core/gameplay"`
-- `refillMeter` (function) · `import { refillMeter } from "@jgengine/core/gameplay"`
-
-## declarative-predicate — serializable data-driven conditions with no callbacks in saved content
-
-- `evaluatePredicate` (function) · `import { evaluatePredicate } from "@jgengine/core/gameplay"`
-- `predicateFloor` (function) · `import { predicateFloor } from "@jgengine/core/rules/predicate"`
-- `predicateLeaves` (function) · `import { predicateLeaves } from "@jgengine/core/rules/predicate"`
-- `readPath` (function) · `import { readPath } from "@jgengine/core/gameplay"`
-
-## define-system — composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`
-
-- `defineSystem` (function) · `import { defineSystem } from "@jgengine/core/gameplay"`
-
-## defined-fields — pass maybe-missing values on as optional fields, leaving out the ones that are undefined
-
-- `DefinedFields` (type) · `import { DefinedFields } from "@jgengine/core/data/definedFields"`
-
-## detect — fire-once threshold/milestone/tier crossings when a value moves
-
-- `crossThresholds` (function) · `import { crossThresholds } from "@jgengine/core/gameplay"`
-
-## dialogue-bridge — open/close the talkable→DialogueBox flow with no per-game store or command glue
-
-- `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/gameplay"`
-
-## dialogue-graph-validation — diagnose duplicate ids, broken branches, unreachable dialogue, and nodes without a route to an ending before play
-
-- `validateDialogueGraph` (function) · `import { validateDialogueGraph } from "@jgengine/core/dialogue/dialogueGraph"`
-
-## dialogue-graph-view — select a conversation node's render-ready view (speaker, line, branching choices) from a serializable dialogue graph
-
-- `selectDialogueView` (function) · `import { selectDialogueView } from "@jgengine/core/gameplay"`
-
-## dialogue-run — walk a serializable branching dialogue graph — current node view, choose-to-advance traversal, visited history, snapshot/restore
-
-- `createDialogueRun` (function) · `import { createDialogueRun } from "@jgengine/core/gameplay"`
-
-## dialogue-view — drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun
-
-- `DialogueView` (function) · `import { DialogueView } from "@jgengine/core/dialogue/dialogueView.view"`
-
-## drag-layer — composable pointer-owned drag, drop targets and cancellation for custom cards and inventory UI
-
-- `useDragLayer` (function) · `import { useDragLayer } from "@jgengine/core/inventory/dragLayer.view"`
-
-## durability — track item wear, breakage, and repair
-
-- `applyWear` (function) · `import { applyWear } from "@jgengine/core/gameplay"`
-
-## encumbrance-move-curve — progressive move-speed multiplier from a carry-load fraction
-
-- `encumbranceMoveMultiplier` (function) · `import { encumbranceMoveMultiplier } from "@jgengine/core/inventory/encumbrance"`
-
-## enqueue-work — reserve inputs and add a timed job, honoring capacity and validation policy
-
-- `enqueue` (function) · `import { enqueue } from "@jgengine/core/gameplay"`
-
-## equipment-slot-inventory — wear gear by slot with item-kind rules, two-handed blocking and replace-on-equip
-
-- `createEquipment` (function) · `import { createEquipment } from "@jgengine/core/inventory/equipment"`
-
-## event-bus — typed publish/subscribe bus for gameplay events
-
-- `createGameEvents` (function) · `import { createGameEvents } from "@jgengine/core/gameplay"`
-
-## event-feed — a rolling feed of recent gameplay events for a HUD ticker or killfeed
-
-- `createGameFeed` (function) · `import { createGameFeed } from "@jgengine/core/gameplay"`
-
-## event-ticker — rolling capped, timed-fade event/kill-feed ticker of free-string entries over the feed helpers — push/recent-with-fade, snapshot/restore
-
-- `createEventTicker` (function) · `import { createEventTicker } from "@jgengine/core/gameplay"`
-
-## expedition-dispatch — dispatch a saveable timed away mission with finite supplies and a seeded RNG cursor
-
-- `dispatchExpedition` (function) · `import { dispatchExpedition } from "@jgengine/core/gameplay"`
-
-## expedition-recall — begin a safe fractional-time return after settling the pending expedition frontier
-
-- `recallExpedition` (function) · `import { recallExpedition } from "@jgengine/core/gameplay"`
-
-## expedition-return — complete an authorized instant return without skipping unsettled ticks or reviving death
-
-- `returnExpeditionNow` (function) · `import { returnExpeditionNow } from "@jgengine/core/gameplay"`
-
-## expedition-settle — settle bounded offline expedition ticks without losing supplies rewards or RNG continuity
-
-- `settleExpedition` (function) · `import { settleExpedition } from "@jgengine/core/gameplay"`
-
-## fair-chance — chance rolls with the right odds and no long lucky or unlucky streaks
-
-- `fairChance` (function) · `import { fairChance } from "@jgengine/core/random/fairChance"`
-- `longestStreak` (function) · `import { longestStreak } from "@jgengine/core/random/fairChance"`
-
-## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger
-
-- `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/gameplay"`
-
-## game-flow — title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus
-
-- `createGameFlowSystem` (function) · `import { createGameFlowSystem } from "@jgengine/core/game/gameFlow"`
-
-## game-save — one versioned save document with per-system sections, named slots, caller-policy autosave, migration and a state digest
-
-- `createGameSave` (function) · `import { createGameSave } from "@jgengine/core/gameplay"`
-- `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/gameplay"`
-
-## game-save-digest — hash a save document's state for a determinism test or a diff
-
-- `gameSaveDigest` (function) · `import { gameSaveDigest } from "@jgengine/core/gameplay"`
-
-## game-spec — a whole game as one declaration the engine runs, with named code hooks for the rest
-
-- `defineGameSpec` (function) · `import { defineGameSpec } from "@jgengine/core/worldModel/gameSpec"`
-
-## game-suite-run — run every suite proof and the content check of one game into the report its score is read from
-
-- `runGameSuite` (function) · `import { runGameSuite } from "@jgengine/core/suite/runSuiteProof.draw"`
-
-## game-suite-score — score a game against the engine's game suite: proven, failing, not simulatable, missing and cut, by area
-
-- `scoreGameSuite` (function) · `import { scoreGameSuite } from "@jgengine/core/suite/gameSuite"`
-
-## game-system — declare a composable capability with its own schedule and lifecycle
-
-- `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
-
-## gear-score — score a loadout from stat weights, level, rarity and slot coverage
-
-- `gearScore` (function) · `import { gearScore } from "@jgengine/core/gameplay"`
-
-## grant-drops — deliver rolled loot drops into inventory and currency
-
-- `grantDrops` (function) · `import { grantDrops } from "@jgengine/core/loot/lootTable"`
-
-## hud-slots — atomic themed equipment/weapon/armor/potion slot grids with painted icons
-
-- `SlotItem` (interface) · `import { SlotItem } from "@jgengine/core/inventory/slots.view"`
-
-## inventory-grid — a bag of stackable items with add, remove, and move
-
-- `createEmptyInventory` (function) · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
-
-## inventory-slot-key — encode a slot of a named inventory as one drag/drop string and read it back, for moves between two grids
-
-- `parseInventorySlotKey` (function) · `import { parseInventorySlotKey } from "@jgengine/core/inventory/inventoryModel"`
-
-## inventory-split — split a stack into a target or first-empty slot, honoring a stack limit
-
-- `splitStack` (function) · `import { splitStack } from "@jgengine/core/inventory/inventoryModel"`
-
-## inventory-transfer — drag or keyboard-move a stack between two inventory grids (bag to stash) with swap, merge remainder and refusal reasons
-
-- `useInventoryTransfer` (function) · `import { useInventoryTransfer } from "@jgengine/core/inventory/inventoryGrid.view"`
-
-## item-comparison — show per-stat deltas and a weighted verdict for a drop against equipped gear
-
-- `compareToEquipped` (function) · `import { compareToEquipped } from "@jgengine/core/loot/drop"`
-
-## item-generation — compose constraints, weighted pools, transforms, and provenance into a deterministic generated item
-
-- `defineItemGenerator` (function) · `import { defineItemGenerator } from "@jgengine/core/gameplay"`
-- `generate` (function) · `import { generate } from "@jgengine/core/gameplay"`
-- `rollItemRecipe` (function) · `import { rollItemRecipe } from "@jgengine/core/gameplay"`
-
-## item-identity — resolve which match/set bonuses an item qualifies for
-
-- `activeSetBonuses` (function) · `import { activeSetBonuses } from "@jgengine/core/gameplay"`
-- `applySetBonuses` (function) · `import { applySetBonuses } from "@jgengine/core/gameplay"`
-- `candidateViolatesForbid` (function) · `import { candidateViolatesForbid } from "@jgengine/core/gameplay"`
-- `captureProvenance` (function) · `import { captureProvenance } from "@jgengine/core/gameplay"`
-- `countSetMembers` (function) · `import { countSetMembers } from "@jgengine/core/gameplay"`
-- `identityOf` (function) · `import { identityOf } from "@jgengine/core/gameplay"`
-- `isIdentityValid` (function) · `import { isIdentityValid } from "@jgengine/core/gameplay"`
-- `matchesQuery` (function) · `import { matchesQuery } from "@jgengine/core/gameplay"`
-- `validateIdentity` (function) · `import { validateIdentity } from "@jgengine/core/gameplay"`
-
-## item-instance-registry — a runtime store for procedurally generated item instances
-
-- `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/gameplay"`
-- `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/gameplay"`
-
-## item-ledger — track which rolled item instances are still owned, salvaged or sold
-
-- `createItemLedger` (function) · `import { createItemLedger } from "@jgengine/core/loot/salvage"`
-
-## item-run-haul — carry loot with a weight gate, bank it into a persistent stash, or lose it when the run fails
-
-- `createRunHaul` (function) · `import { createRunHaul } from "@jgengine/core/loot/haul"`
-
-## item-salvage — break an item down for the currency its level and rarity say, once
-
-- `salvageItem` (function) · `import { salvageItem } from "@jgengine/core/loot/salvage"`
-
-## item-salvage-value — compute the currency an item of a level and rarity breaks down into
-
-- `salvageValue` (function) · `import { salvageValue } from "@jgengine/core/loot/salvage"`
-
-## item-use-composition — compose pluggable, ordered item use-behaviors from serializable references
-
-- `createUseBehaviorRegistry` (function) · `import { createUseBehaviorRegistry } from "@jgengine/core/gameplay"`
-
-## item-vendor — stock a vendor with rolled items priced through the shared economy
-
-- `stockVendor` (function) · `import { stockVendor } from "@jgengine/core/loot/vendor"`
-
-## item-vendor-price — price an item from its level and rarity through the economy's currency
-
-- `itemPrice` (function) · `import { itemPrice } from "@jgengine/core/loot/vendor"`
-
-## item-vendor-rotation — decide when a vendor's shelf is due for a restock
-
-- `createVendorRotation` (function) · `import { createVendorRotation } from "@jgengine/core/loot/vendor"`
-
-## item-weight — read a rolled item's mass for a carry check
-
-- `itemMass` (function) · `import { itemMass } from "@jgengine/core/loot/drop"`
-
-## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
-
-- `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/gameplay"`
-- `rebindAction` (function) · `import { rebindAction } from "@jgengine/core/game/controlGate"`
-
-## kill-feed — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
-
-- `KillFeed` (const) · `import { KillFeed } from "@jgengine/core/feed/killFeed.view"`
-
-## lap-splits — per-lap durations from a cumulative split book
-
-- `lapDurations` (function) · `import { lapDurations } from "@jgengine/core/gameplay"`
-- `parDelta` (function) · `import { parDelta } from "@jgengine/core/gameplay"`
-- `splitSegments` (function) · `import { splitSegments } from "@jgengine/core/gameplay"`
-
-## lap-timer — wall-clock current/last/best lap timing with splits
-
-- `createLapTimer` (function) · `import { createLapTimer } from "@jgengine/core/gameplay"`
-
-## leaderboard — ranked score tracking across global, server, and per-profile scopes
-
-- `createLeaderboard` (function) · `import { createLeaderboard } from "@jgengine/core/gameplay"`
-
-## leveling-track — grant XP, resolve level-ups against a curve, and write level+xp stats back through a stat adapter
-
-- `leveling` (function) · `import { leveling } from "@jgengine/core/gameplay"`
-
-## lifecycle — declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions
-
-- `LifecycleConfig` (interface) · `import { LifecycleConfig } from "@jgengine/core/gameplay"`
-
-## limb-health — per-body-part/region health tracked separately
-
-- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/gameplay"`
-
-## listing-book — player-driven marketplace listings with a house cut, expiry sweep, and seller collection box
-
-- `createListingBook` (function) · `import { createListingBook } from "@jgengine/core/gameplay"`
-
-## loadouts — save and swap named equipment loadouts
-
-- `createLoadouts` (function) · `import { createLoadouts } from "@jgengine/core/gameplay"`
-
-## loan-schedule — build a loan's interest and principal repayment schedule in integer minor units
-
-- `buildLoanSchedule` (function) · `import { buildLoanSchedule } from "@jgengine/core/gameplay"`
-
-## loans — draw, schedule, service and default a loan with interest, posted to a ledger
-
-- `createLoanBook` (function) · `import { createLoanBook } from "@jgengine/core/gameplay"`
-
-## local-save — persist a game to on-device localStorage (offline)
-
-- `localSaveBackend` (function) · `import { localSaveBackend } from "@jgengine/core/gameplay"`
-
-## loot-beams — rarity-colored loot beams and labels on dropped items via defineGame({ worldItem: { rarityStyle, beamHeight } })
-
-- `RarityStyle` (interface) · `import { RarityStyle } from "@jgengine/core/gameplay"`
-
-## loot-comparison — compare two rolled items with per-stat deltas and a weighted score
-
-- `compareLootItems` (function) · `import { compareLootItems } from "@jgengine/core/gameplay"`
-
-## loot-filter — filter and highlight drops by rarity/name rules
-
-- `evaluateLootFilter` (function) · `import { evaluateLootFilter } from "@jgengine/core/gameplay"`
-
-## loot-generation — roll a named item from bases, parts, affixes, rarity weights, manufacturer personalities and level scaling
-
-- `defineLootGenerator` (function) · `import { defineLootGenerator } from "@jgengine/core/gameplay"`
-- `rollLoot` (function) · `import { rollLoot } from "@jgengine/core/gameplay"`
-
-## loot-pipeline — compose ordered loot pools with fallbacks, roll modifiers, and provenance
-
-- `createLootPipeline` (function) · `import { createLootPipeline } from "@jgengine/core/gameplay"`
-- `defineLootPipeline` (function) · `import { defineLootPipeline } from "@jgengine/core/gameplay"`
-
-## loot-roller — roll items from one validated catalog while counting drops per rarity for a debug probe
-
-- `createLootRoller` (function) · `import { createLootRoller } from "@jgengine/core/gameplay"`
-
-## loot-score — split one stat block into per-stat weighted contributions
-
-- `lootStatContributions` (function) · `import { lootStatContributions } from "@jgengine/core/gameplay"`
-- `scoreLootStats` (function) · `import { scoreLootStats } from "@jgengine/core/gameplay"`
-
-## loot-table — register loot tables and roll weighted randomized drops
-
-- `createLootRegistry` (function) · `import { createLootRegistry } from "@jgengine/core/gameplay"`
-- `lootTable` (function) · `import { lootTable } from "@jgengine/core/gameplay"`
-
-## loot-validation — check a rolled item against its catalog and report each defect with its code
-
-- `validateLootItem` (function) · `import { validateLootItem } from "@jgengine/core/gameplay"`
-
-## loot-weapon — feed a rolled item into a weapon definition so generated gear fires through the weapon system
-
-- `lootWeaponDefinition` (function) · `import { lootWeaponDefinition } from "@jgengine/core/gameplay"`
-
-## medal-board — per-event bronze/silver/gold targets over a stored best, with tiers that open on medal points
-
-- `createMedalBoard` (function) · `import { createMedalBoard } from "@jgengine/core/progression/medalBoard"`
-
-## mission-compositions — build escort, chase and defend missions from the shared objective kinds
-
-- `chaseMission` (function) · `import { chaseMission } from "@jgengine/core/gameplay"`
-- `defendMission` (function) · `import { defendMission } from "@jgengine/core/gameplay"`
-- `escortMission` (function) · `import { escortMission } from "@jgengine/core/gameplay"`
-
-## mission-events — count constrained kills and fail a mission on a matching world event
-
-- `MissionWorldEvent` (interface) · `import { MissionWorldEvent } from "@jgengine/core/gameplay"`
-
-## mission-rewards — pay mission rewards through the quest appliers and the loot registry
-
-- `applyMissionRewards` (function) · `import { applyMissionRewards } from "@jgengine/core/gameplay"`
-
-## mission-runtime — missions as a data-driven objective state machine with fail states, timers, branches and rewards
-
-- `createMissionRuntime` (function) · `import { createMissionRuntime } from "@jgengine/core/gameplay"`
-
-## mission-triggers — place mission triggers from the editor palette
-
-- `MISSION_MARKER_KIND` (const) · `import { MISSION_MARKER_KIND } from "@jgengine/core/gameplay"`
-- `MISSION_TRIGGER_ACTIONS` (const) · `import { MISSION_TRIGGER_ACTIONS } from "@jgengine/core/gameplay"`
-- `createMissionTriggerBridge` (function) · `import { createMissionTriggerBridge } from "@jgengine/core/gameplay"`
-- `missionMarkerSchema` (function) · `import { missionMarkerSchema } from "@jgengine/core/gameplay"`
-- `missionMarkers` (function) · `import { missionMarkers } from "@jgengine/core/gameplay"`
-- `missionTriggerActions` (function) · `import { missionTriggerActions } from "@jgengine/core/gameplay"`
-- `registerMissionMarkerKind` (function) · `import { registerMissionMarkerKind } from "@jgengine/core/gameplay"`
-- `registerMissionTriggerActions` (function) · `import { registerMissionTriggerActions } from "@jgengine/core/gameplay"`
-- `validateMissionMarkers` (function) · `import { validateMissionMarkers } from "@jgengine/core/gameplay"`
-
-## mission-validation — tell whether an objective kind completes from a counter alone
-
-- `isCounterObjective` (function) · `import { isCounterObjective } from "@jgengine/core/gameplay"`
-- `validateMissionCatalog` (function) · `import { validateMissionCatalog } from "@jgengine/core/gameplay"`
-
-## modular-item — attach parts into item mount slots to compute combined stats
-
-- `slotAccepts` (function) · `import { slotAccepts } from "@jgengine/core/gameplay"`
-
-## mood — a mood derived from how satisfied an agent's needs are
-
-- `createMoodReader` (function) · `import { createMoodReader } from "@jgengine/core/agents/mood"`
-- `moodTierOf` (function) · `import { moodTierOf } from "@jgengine/core/agents/mood"`
-- `readMood` (function) · `import { readMood } from "@jgengine/core/agents/mood"`
-
-## move — a keyed value toward a target by a bounded step
-
-- `towardValue` (function) · `import { towardValue } from "@jgengine/core/gameplay"`
-
-## name-generator — generate procedural names from templates and word banks
-
-- `defineNameGenerator` (function) · `import { defineNameGenerator } from "@jgengine/core/gameplay"`
-
-## narrative-batch-validation — locate stale canon, oversized batches, explicit character/fact/chronology contradictions and dialogue graph issues for bounded repair
-
-- `validateNarrativeBatch` (function) · `import { validateNarrativeBatch } from "@jgengine/core/game/narrativeAuthoring"`
-
-## narrative-canon — freeze caller-reviewed character ids, facts and chronology for a narrative authoring revision
-
-- `freezeNarrativeCanon` (function) · `import { freezeNarrativeCanon } from "@jgengine/core/game/narrativeAuthoring"`
-
-## near-agents — nav crowd plus per-agent needs and utility brains for on-screen residents
-
-- `createNearAgents` (function) · `import { createNearAgents } from "@jgengine/core/gameplay"`
-
-## needs — decaying needs an agent reads by index to decide what it wants next
-
-- `createNeedSet` (function) · `import { createNeedSet } from "@jgengine/core/gameplay"`
-
-## new-game-state — declare what the player has at second 0 (cash, kit, unlocks, prebuilt pieces, systems that start on their own) as data the engine builds from and checks read
-
-- `NewGameConfig` (interface) · `import { NewGameConfig } from "@jgengine/core/game/newGame"`
-
-## notice-feed — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)
-
-- `NoticeStack` (function) · `import { NoticeStack } from "@jgengine/core/notifications/notices.view"`
-- `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`
-- `createNoticeFeed` (function) · `import { createNoticeFeed } from "@jgengine/core/notifications/notices"`
-- `pruneFeed` (function) · `import { pruneFeed } from "@jgengine/core/gameplay"`
-
-## notification-bell — icon button with a live unread-count badge over a notification store
-
-- `NotificationBell` (function) · `import { NotificationBell } from "@jgengine/core/notifications/notificationCenter.view"`
-
-## notification-center — persistent, read-tracked notification log (newest-first, capped, serializable) behind an unread badge — the durable counterpart to transient toasts
-
-- `createNotificationCenter` (function) · `import { createNotificationCenter } from "@jgengine/core/gameplay"`
-
-## notification-center-panel — scrollable notification log with kind markers, read tracking, relative time, and mark-all-read/clear
-
-- `NotificationCenter` (function) · `import { NotificationCenter } from "@jgengine/core/notifications/notificationCenter.view"`
-
-## objective-banner — serializable, clock-driven stage/objective banner queue — flies a big transient centered title + optional subtitle in, holds, and fades out one at a time, with phase + progress for animation, free-string kinds the game styles, and snapshot/restore
-
-- `createObjectiveBanner` (function) · `import { createObjectiveBanner } from "@jgengine/core/mission/objectiveBanner"`
-
-## objective-banner-host — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
-
-- `ObjectiveBannerHost` (const) · `import { ObjectiveBannerHost } from "@jgengine/core/mission/objectiveBanner.view"`
-
-## objectives — check progress of a threshold objective against a live metric
-
-- `evaluateObjective` (function) · `import { evaluateObjective } from "@jgengine/core/gameplay"`
-
-## offscreen-world — schedules agents near the player as real state and far ones as cheap state
-
-- `createOffScreenWorld` (function) · `import { createOffScreenWorld } from "@jgengine/core/gameplay"`
-
-## onboarding — declared tutorial steps that point at world things (arrow, minimap marker, waypoint), complete from events or conditions, lock commands until done, grant on completion, skip and save — as a separate tutorial level, a teaching start area or hints blended into stage one
-
-- `createOnboardingSystem` (function) · `import { createOnboardingSystem } from "@jgengine/core/onboarding/onboardingSystem"`
-
-## onboarding-banner — announces each finished onboarding step and the next one on the objective banner
-
-- `OnboardingBanner` (function) · `import { OnboardingBanner } from "@jgengine/core/onboarding/onboarding.view"`
-
-## onboarding-callout — anchored or centred tutorial callouts with a spotlight, Next and Skip, driven by the onboarding steps
-
-- `OnboardingCallout` (function) · `import { OnboardingCallout } from "@jgengine/core/onboarding/onboardingCallout.view"`
-
-## onboarding-callout-card — one onboarding step as a card with N of M, Next and Skip, theme-reskinnable
-
-- `OnboardingCalloutCard` (function) · `import { OnboardingCalloutCard } from "@jgengine/core/onboarding/onboardingCallout.view"`
-
-## onboarding-hud — onboarding steps in the quest tracker with Next and Skip
-
-- `OnboardingHud` (function) · `import { OnboardingHud } from "@jgengine/core/onboarding/onboarding.view"`
-
-## onboarding-lock — which onboarding step still locks a command or UI id, so a HUD can grey it out
-
-- `onboardingLock` (function) · `import { onboardingLock } from "@jgengine/core/onboarding/onboardingSystem"`
-
-## onboarding-pointer — on-screen pin or edge arrow with distance to the current onboarding step's target
-
-- `OnboardingPointer` (function) · `import { OnboardingPointer } from "@jgengine/core/onboarding/OnboardingPointer.draw"`
-
-## param-layers — register parameter layers by stable id and resolve serialized selections
-
-- `createLayerRegistry` (function) · `import { createLayerRegistry } from "@jgengine/core/gameplay"`
-- `diffParams` (function) · `import { diffParams } from "@jgengine/core/gameplay"`
-- `orderLayers` (function) · `import { orderLayers } from "@jgengine/core/gameplay"`
-- `resolveParams` (function) · `import { resolveParams } from "@jgengine/core/gameplay"`
-- `resolveSelection` (function) · `import { resolveSelection } from "@jgengine/core/gameplay"`
-- `validateLayers` (function) · `import { validateLayers } from "@jgengine/core/gameplay"`
-
-## part-motion — sample the root bob/sway/squash/flinch/death pose for a rig-less part-composed character
-
-- `sampleBodyPose` (function) · `import { sampleBodyPose } from "@jgengine/core/game/partAnimation"`
-- `samplePartPose` (function) · `import { samplePartPose } from "@jgengine/core/game/partAnimation"`
-
-## pause-scheduled-rule — stop a scheduled rule from firing while retaining its cursor
-
-- `pauseRule` (function) · `import { pauseRule } from "@jgengine/core/gameplay"`
-
-## pause-work — pause a queued or active job in place, retaining its progress
-
-- `pauseJob` (function) · `import { pauseJob } from "@jgengine/core/gameplay"`
-
-## ping-wheel — contextual ping/marker communication between teammates
-
-- `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
-
-## place-piece — place a build piece in a world model with on-screen refusals
-
-- `placePiece` (function) · `import { placePiece } from "@jgengine/core/worldModel/buildTool"`
-
-## pointer-commands — click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select, Shift/double-click select modifiers, RTS control groups)
-
-- `PointerConfig` (interface) · `import { PointerConfig } from "@jgengine/core/gameplay"`
-
-## policy-annotate — tag a scheduled transaction's provenance without changing its value
-
-- `annotate` (function) · `import { annotate } from "@jgengine/core/gameplay"`
-
-## policy-cap — cap a scheduled transaction amount by context
-
-- `capAmount` (function) · `import { capAmount } from "@jgengine/core/gameplay"`
-
-## policy-curve — scale a transaction by a curve over context
-
-- `curveScale` (function) · `import { curveScale } from "@jgengine/core/gameplay"`
-
-## policy-redirect — redirect a scheduled transaction's source or recipient
-
-- `redirect` (function) · `import { redirect } from "@jgengine/core/gameplay"`
-
-## policy-reject — reject scheduled transactions by predicate
-
-- `rejectWhen` (function) · `import { rejectWhen } from "@jgengine/core/gameplay"`
-
-## policy-tax — split off a fraction of a transaction as tax or transfer
-
-- `taxFraction` (function) · `import { taxFraction } from "@jgengine/core/gameplay"`
-
-## policy-threshold — scale a transaction by a context threshold band
-
-- `thresholdScale` (function) · `import { thresholdScale } from "@jgengine/core/gameplay"`
-
-## price-history — rolling per-item sale records aggregated into market price stats
-
-- `createPriceHistory` (function) · `import { createPriceHistory } from "@jgengine/core/gameplay"`
-
-## production-building — a factory building converting inputs to outputs over time
-
-- `createProductionState` (function) · `import { createProductionState } from "@jgengine/core/gameplay"`
-
-## progression-curve — evaluate a level/rank curve (const, linear, power, geometric, steps, piecewise) at a point
-
-- `evalCurve` (function) · `import { evalCurve } from "@jgengine/core/gameplay"`
-
-## quest-catalog-validation — diagnose authored quest ids, prerequisite and reward references, quantities, and blocked dependencies with caller-declared external unlocks
-
-- `validateQuestCatalog` (function) · `import { validateQuestCatalog } from "@jgengine/core/mission/questCatalog"`
-
-## quest-giver — an NPC that hands out its quests one at a time and takes them back when done
-
-- `giverOffer` (function) · `import { giverOffer } from "@jgengine/core/mission/questGivers"`
-
-## quest-log — track accepted quests and their objective progress from game events
-
-- `createQuestEvaluator` (function) · `import { createQuestEvaluator } from "@jgengine/core/mission/quest"`
-- `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/mission/quest"`
-
-## quest-objective-label — readable default label for a quest objective in a tracker
-
-- `defaultObjectiveLabel` (function) · `import { defaultObjectiveLabel } from "@jgengine/core/mission/quest"`
-
-## quest-rewards — grant a quest or mission reward bundle: items, XP, currency and unlocks
-
-- `applyQuestRewards` (function) · `import { applyQuestRewards } from "@jgengine/core/mission/quest"`
-
-## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
-
-- `QuestTracker` (function) · `import { QuestTracker } from "@jgengine/core/mission/questTracker.view"`
-
-## quest-tracker-view — join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker
-
-- `describeTrackedQuest` (function) · `import { describeTrackedQuest } from "@jgengine/core/mission/quest"`
-
-## race-placements — look up one racer's place + win/lose within a finish order
-
-- `placementOf` (function) · `import { placementOf } from "@jgengine/core/gameplay"`
-- `racePlacements` (function) · `import { racePlacements } from "@jgengine/core/gameplay"`
-
-## race-session — pure idle→countdown→racing→finished clock every racer wraps around its state
-
-- `idleRaceSession` (function) · `import { idleRaceSession } from "@jgengine/core/gameplay"`
-
-## race-track — a checkpoint race with laps, standings, splits, and win conditions
-
-- `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
-
-## recipe-catalog-validation — locate broken crafting item/station/unlock references, duplicate inputs and invalid authored quantities with repair guidance
-
-- `validateRecipeCatalog` (function) · `import { validateRecipeCatalog } from "@jgengine/core/crafting/recipeCatalog"`
-
-## refusal-feedback — surface a refused command's player-facing message in the notice feed automatically
-
-- `attachRefusalNotices` (function) · `import { attachRefusalNotices } from "@jgengine/core/notifications/notices"`
-
-## relationships — familiarity and opinion between agents, with a bond that changes behaviour
-
-- `createRelationshipBook` (function) · `import { createRelationshipBook } from "@jgengine/core/agents/relationships"`
-
-## resolve — the current tier/band label for a keyed or scalar value
-
-- `tierAt` (function) · `import { tierAt } from "@jgengine/core/gameplay"`
-
-## resolve-rng — resolve an optional injected RNG, warning once per site when it falls back to `Math.random`
-
-- `resolveRng` (function) · `import { resolveRng } from "@jgengine/core/random/resolveRng"`
-
-## resource-ledger — schedule recurring resource transactions with policy transforms
-
-- `createResourceLedger` (function) · `import { createResourceLedger } from "@jgengine/core/gameplay"`
-
-## resume-scheduled-rule — resume a paused scheduled rule, deferring missed cycles to its catch-up policy
-
-- `resumeRule` (function) · `import { resumeRule } from "@jgengine/core/gameplay"`
-
-## resume-work — resume a paused job back into the queue's slot competition
-
-- `resumeJob` (function) · `import { resumeJob } from "@jgengine/core/gameplay"`
-
-## retained-vfx — create/update/stop long-lived dynamic visual effects (beam, tether, zone, target line) by stable id
-
-- `createVfxInstanceStore` (function) · `import { createVfxInstanceStore } from "@jgengine/core/gameplay"`
-
-## ride-appeal — how much one guest likes one ride, from its ratings and their taste
-
-- `rideAppeal` (function) · `import { rideAppeal } from "@jgengine/core/gameplay"`
-
-## ride-choice — guests pick rides by taste and queue tolerance through the utility brain
-
-- `createRideChooser` (function) · `import { createRideChooser } from "@jgengine/core/gameplay"`
-- `rideChoiceCandidates` (function) · `import { rideChoiceCandidates } from "@jgengine/core/gameplay"`
-- `rideChoiceOptions` (function) · `import { rideChoiceOptions } from "@jgengine/core/gameplay"`
-- `rideQueueCostWeight` (function) · `import { rideQueueCostWeight } from "@jgengine/core/gameplay"`
-
-## ride-sim — rides with capacity, cycles, queues, ratings, breakdowns and maintenance
-
-- `createRideSystem` (function) · `import { createRideSystem } from "@jgengine/core/gameplay"`
-
-## routine-timeline — authored daily routines (home, work, meal) resolved against the world clock
-
-- `resolveRoutine` (function) · `import { resolveRoutine } from "@jgengine/core/gameplay"`
-
-## rule-selection — register rules and bridge a selection to its contributed parameter layers
-
-- `createRuleRegistry` (function) · `import { createRuleRegistry } from "@jgengine/core/gameplay"`
-- `rerollRules` (function) · `import { rerollRules } from "@jgengine/core/gameplay"`
-- `selectRules` (function) · `import { selectRules } from "@jgengine/core/gameplay"`
-
-## run-modifiers — a roguelike run built from stacking drafted modifier picks
-
-- `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
-
-## runtime-save — save/load the whole game world through a pluggable backend, autosave or save points
-
-- `createRuntimeSave` (function) · `import { createRuntimeSave } from "@jgengine/core/save/snapshotSave"`
-
-## save-backend-contract — the checks every save backend passes, for a backend's own test file
-
-- `saveBackendContract` (function) · `import { saveBackendContract } from "@jgengine/core/save/saveBackendContract"`
-
-## save-envelope-upgrade — lift an older or pre-versioned save payload into the current document envelope
-
-- `upgradeSaveEnvelope` (function) · `import { upgradeSaveEnvelope } from "@jgengine/core/save/saveDocument"`
-
-## save-slot-index — refresh a save-select index from the game's save documents
-
-- `refreshSaveSlots` (function) · `import { refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex"`
-
-## save-slot-meta — project a save document onto save-select display metadata
-
-- `saveSlotMeta` (function) · `import { saveSlotMeta } from "@jgengine/core/save/saveSlotIndex"`
-
-## save-slots — serializable save-slot / profile metadata index — write/clear/rename/mostRecent over free-string per-slot meta, powering New/Continue/Load/Delete menus, with snapshot/restore
-
-- `createSaveSlots` (function) · `import { createSaveSlots } from "@jgengine/core/gameplay"`
-
-## scatter-harvest — strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow
-
-- `createScatterHarvest` (function) · `import { createScatterHarvest } from "@jgengine/core/harvest/scatterHarvest"`
-
-## scatter-points — spread points over fields at random so equal totals differ
-
-- `scatterPoints` (function) · `import { scatterPoints } from "@jgengine/core/inheritance/inheritance"`
-
-## scoreboard — pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table
-
-- `rankLeaderboard` (function) · `import { rankLeaderboard } from "@jgengine/core/gameplay"`
-
-## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
-
-- `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/core/leaderboard/scoreboard.view"`
-
-## seed-sweep — test a random system by its odds across many seeds, not one lucky run
-
-- `acrossSeeds` (function) · `import { acrossSeeds } from "@jgengine/core/random/seedSweep"`
-
-## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
-
-- `hashString` (function) · `import { hashString } from "@jgengine/core/random/rng"`
-- `hashUnit` (function) · `import { hashUnit } from "@jgengine/core/random/rng"`
-- `hashWords` (function) · `import { hashWords } from "@jgengine/core/random/rng"`
-- `seededRng` (function) · `import { seededRng } from "@jgengine/core/gameplay"`
-
-## server-session — join a multiplayer host with status, retry, and teardown
-
-- `useServerSession` (function) · `import { useServerSession } from "@jgengine/core/session/useServerSession.view"`
-
-## session-loop — open and close a game session, settle the quantity it carried and optionally draw the next session's authored option
-
-- `createSessionLoop` (function) · `import { createSessionLoop } from "@jgengine/core/run/sessionLoop"`
-- `installSessionProbe` (function) · `import { installSessionProbe } from "@jgengine/core/run/sessionLoop"`
-
-## set — a bounded keyed value in a caller-owned serializable record
-
-- `setValue` (function) · `import { setValue } from "@jgengine/core/gameplay"`
-
-## setup-window — hand setup code a live object that stops working when setup ends, so nothing it kept can write later
-
-- `openSetupWindow` (function) · `import { openSetupWindow } from "@jgengine/core/suite/setupWindow"`
-
-## shaped-grid — a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
-
-- `canPlace` (function) · `import { canPlace } from "@jgengine/core/inventory/shapedGrid"`
-- `createShapedGrid` (function) · `import { createShapedGrid } from "@jgengine/core/inventory/shapedGrid"`
-- `moveShaped` (function) · `import { moveShaped } from "@jgengine/core/inventory/shapedGrid"`
-- `placeShaped` (function) · `import { placeShaped } from "@jgengine/core/inventory/shapedGrid"`
-- `removeShaped` (function) · `import { removeShaped } from "@jgengine/core/inventory/shapedGrid"`
-
-## shaped-placement — find a shaped inventory item's first fit with ordered rotations, row-major placement, and an explicit search budget
-
-- `findShapedPlacement` (function) · `import { findShapedPlacement } from "@jgengine/core/inventory/shapedGrid"`
-- `fitShapedItem` (function) · `import { fitShapedItem } from "@jgengine/core/inventory/shapedGrid"`
-
-## shop-grid — serializable vendor/shop stock with buy/sell over a caller-owned wallet — finite/unlimited qty, sell-back, restock/setPrice, snapshot/restore
-
-- `createShopStock` (function) · `import { createShopStock } from "@jgengine/core/gameplay"`
-
-## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
-
-- `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/core/inventory/shopGrid.view"`
-
-## shrink-capture — downscale a captured frame to a save-card thumbnail data URL
-
-- `shrinkCapture` (function) · `import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view"`
-
-## side-jobs — offer and run repeatable side jobs (fares, deliveries, races) with fare math, deadlines, tips, streaks and wagers
-
-- `createSideJobs` (function) · `import { createSideJobs } from "@jgengine/core/mission/sideJobs"`
-
-## skill-tree — spend, refuse and refund points over an authored tree with passives, actives and synergies
-
-- `createSkillTree` (function) · `import { createSkillTree } from "@jgengine/core/gameplay"`
-
-## social-emotes — emotes and social interactions between nearby players
-
-- `createSocial` (function) · `import { createSocial } from "@jgengine/core/gameplay"`
-
-## spawn-points — register spawn locations and pick where entities respawn
-
-- `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/gameplay"`
-
-## split-screen — Split the screen into one viewport per local seat, each with its own follow camera.
-
-- `splitViewports` (function) · `import { splitViewports } from "@jgengine/core/game/viewports"`
-
-## staffed-station-rate — turn bounded caller-owned worker stats and efficiency into a production rate
-
-- `stationOutputRate` (function) · `import { stationOutputRate } from "@jgengine/core/gameplay"`
-
-## standalone-chat — render persisted chat with focus controls and visible send failures
-
-- `StandaloneChatPanel` (function) · `import { StandaloneChatPanel } from "@jgengine/core/chat/standaloneChatPanel.view"`
-
-## standing — per-track standing moved by authored outcomes, with tiers and one snapshot
-
-- `createStanding` (function) · `import { createStanding } from "@jgengine/core/progression/standing"`
-- `evaluateStandingPredicate` (function) · `import { evaluateStandingPredicate } from "@jgengine/core/progression/standing"`
-- `standingTracksRead` (function) · `import { standingTracksRead } from "@jgengine/core/progression/standing"`
-
-## stat-graph — fold ordered add, multiply, override and clamp contributions onto one value
-
-- `applyStatOp` (function) · `import { applyStatOp } from "@jgengine/core/progression/statGraph"`
-- `applyStatRate` (function) · `import { applyStatRate } from "@jgengine/core/progression/statGraph"`
-- `boundStatValue` (function) · `import { boundStatValue } from "@jgengine/core/progression/statGraph"`
-- `createStatGraph` (function) · `import { createStatGraph } from "@jgengine/core/gameplay"`
-- `foldStatContributions` (function) · `import { foldStatContributions } from "@jgengine/core/progression/statGraph"`
-
-## stat-graph-bridge — feed an existing StatModifierSet into a stat-graph source
-
-- `statModifierContributions` (function) · `import { statModifierContributions } from "@jgengine/core/gameplay"`
-
-## stat-points — level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap
-
-- `createStatPoints` (function) · `import { createStatPoints } from "@jgengine/core/progression/statPoints"`
-
-## suite-content-audit — prove the game suite's data entries (item sources and uses, placeables, ammo, unlock runway) from a game's content
-
-- `auditSuiteContent` (function) · `import { auditSuiteContent } from "@jgengine/core/suite/contentAudit"`
-
-## suite-proof — prove a game suite entry by simulating the real game headless, with setup that may cheat and play that may not
-
-- `defineProof` (function) · `import { defineProof } from "@jgengine/core/suite/suiteProof"`
-
-## suite-proof-run — run a game suite proof headless and refuse a proof whose outcome came from setup or a cheat
-
-- `runSuiteProof` (function) · `import { runSuiteProof } from "@jgengine/core/suite/runSuiteProof.draw"`
-
-## suite-recipe-content — turn engine recipes into the game suite's content sources and uses
-
-- `recipeContent` (function) · `import { recipeContent } from "@jgengine/core/suite/contentAudit"`
-
-## supply-demand-pricing — price goods from finite stock and live demand on a stated curve
-
-- `createMarket` (function) · `import { createMarket } from "@jgengine/core/gameplay"`
-
-## survival-vitals — a body's linked meters — drain, delayed regen that costs other vitals, starvation links, knockout-style flags, and doses that land now or over time up to a cap
-
-- `createVitals` (function) · `import { createVitals } from "@jgengine/core/gameplay"`
-
-## system-schedule — compile fixed/frame/interval system ticks into deterministic ordered stages
-
-- `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
-
-## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
-
-- `TalentTreePanel` (function) · `import { TalentTreePanel } from "@jgengine/core/talents/talentTree.view"`
-
-## talent-tree-view — flatten a talent tree into a placed, per-node render view — branch/tier layout, learned/available/locked/maxed state, prerequisite edges
-
-- `talentTreeView` (function) · `import { talentTreeView } from "@jgengine/core/gameplay"`
-
-## talent-tree-view-from — build a placed talent/upgrade-tree render view from any per-node unlock rule (points, currency, level, flag) — branch/tier layout, learned/available/locked/maxed state, prerequisite edges
-
-- `talentTreeViewFrom` (function) · `import { talentTreeViewFrom } from "@jgengine/core/gameplay"`
-
-## threshold-crossings — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy
-
-- `createThresholdTracker` (function) · `import { createThresholdTracker } from "@jgengine/core/threshold/thresholdTracker"`
-
-## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
-
-- `tick` (function) · `import { tick } from "@jgengine/core/gameplay"`
-
-## time-scaled-loot — shape loot odds by elapsed hours with caller-authored curves and pipeline provenance
-
-- `timeScaledRarity` (function) · `import { timeScaledRarity } from "@jgengine/core/gameplay"`
-
-## touch-controls — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode)
-
-- `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/gameplay"`
-- `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/gameplay"`
-
-## transaction-ledger — record every money movement with its reason over per-account integer minor-unit balances
-
-- `createTransactionLedger` (function) · `import { createTransactionLedger } from "@jgengine/core/gameplay"`
-
-## tribe-group — shared-ownership group (tribe/guild/clan) with ranked permissions, group vs personal assets, alliances, and a bounded event log
-
-- `createTribe` (function) · `import { createTribe } from "@jgengine/core/game/tribe"`
-
-## tribe-registry — registry of tribes with mutual alliances and cross-tribe relation lookup
-
-- `createTribeRegistry` (function) · `import { createTribeRegistry } from "@jgengine/core/game/tribe"`
-
-## triggered-rules — event-conditioned effects with declarative predicates, lifetimes, and stacking
-
-- `createTriggeredRuleEngine` (function) · `import { createTriggeredRuleEngine } from "@jgengine/core/gameplay"`
-- `getRuleEffect` (function) · `import { getRuleEffect } from "@jgengine/core/gameplay"`
-- `listRuleEffects` (function) · `import { listRuleEffects } from "@jgengine/core/gameplay"`
-- `registerRuleEffect` (function) · `import { registerRuleEffect } from "@jgengine/core/gameplay"`
-
-## turf-war — blocks that change hands between any number of sides, with fronts that push on their own clock
-
-- `defineTurfWar` (function) · `import { defineTurfWar } from "@jgengine/core/worldModel/turfWar"`
-
-## typed-keyed-store — a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative
-
-- `defineKeyedStore` (function) · `import { defineKeyedStore } from "@jgengine/core/store/defineKeyedStore"`
-
-## typed-store — a cast-free typed handle onto one reactive game-store slot, replayable and host-authoritative
-
-- `defineStore` (function) · `import { defineStore } from "@jgengine/core/store/defineStore"`
-
-## unit-training — compose a timed work queue that trains catalog units into spawn orders
-
-- `unitTrainingConfig` (function) · `import { unitTrainingConfig } from "@jgengine/core/gameplay"`
-
-## unlock-gates — milestones gated by standing or money, validated against the content they grant
-
-- `createGateSet` (function) · `import { createGateSet } from "@jgengine/core/progression/gates"`
-
-## unlock-points — spendable point pool earned per level and spent to unlock nodes, with refund and respec
-
-- `createUnlockPoints` (function) · `import { createUnlockPoints } from "@jgengine/core/economy/unlockPoints"`
-
-## unlockables — gate content behind unlock conditions the player earns
-
-- `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/gameplay"`
-
-## untyped-read — narrow parsed JSON, old saves and other unknown values to records and typed maps without casts
-
-- `isRecord` (function) · `import { isRecord } from "@jgengine/core/data/untyped"`
-
-## upgrade-options — list the next upgrade steps a placed thing can take, priced and checked by the world
-
-- `upgradeOptions` (function) · `import { upgradeOptions } from "@jgengine/core/worldModel/upgradePaths"`
-
-## upgrade-paths — branching upgrade ladders for placed things: a shared trunk, then exclusive branches priced and refused by the world model
-
-- `upgradePathActions` (function) · `import { upgradePathActions } from "@jgengine/core/worldModel/upgradePaths"`
-
-## upgrade-tree — ranked upgrades priced by a cost curve, gated by prerequisites and standing
-
-- `createUpgradeTree` (function) · `import { createUpgradeTree } from "@jgengine/core/progression/upgrades"`
-
-## use-dialogue-run — UI hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
-
-- `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/core/dialogue/dialogueView.view"`
-
-## use-event-ticker — UI hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
-
-- `useEventTicker` (function) · `import { useEventTicker } from "@jgengine/core/feed/killFeed.view"`
-
-## use-notice-list — read the live notice feed in a game's own notice view
-
-- `useNoticeList` (function) · `import { useNoticeList } from "@jgengine/core/notifications/notices.view"`
-
-## use-notifications — read a notification store's live list in a game's own inbox view
-
-- `useNotifications` (function) · `import { useNotifications } from "@jgengine/core/notifications/notificationCenter.view"`
-
-## use-objective-banner — UI hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
-
-- `useObjectiveBanner` (function) · `import { useObjectiveBanner } from "@jgengine/core/mission/objectiveBanner.view"`
-
-## use-save-slots — UI hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
-
-- `useSaveSlots` (function) · `import { useSaveSlots } from "@jgengine/core/save/saveSlots.view"`
-
-## use-shop-stock — UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list
-
-- `useShopStock` (function) · `import { useShopStock } from "@jgengine/core/inventory/shopGrid.view"`
-
-## value-inheritance — a child's values from two parents per field, picked or blended, with rare mutations
-
-- `inheritValues` (function) · `import { inheritValues } from "@jgengine/core/inheritance/inheritance"`
-
-## visitor-population — a crowd whose on-site and daily counts are the bodies the game made
-
-- `createVisitorPopulation` (function) · `import { createVisitorPopulation } from "@jgengine/core/gameplay"`
-
-## wait-queue — a real line whose wait estimate comes from its own measured throughput
-
-- `createWaitQueue` (function) · `import { createWaitQueue } from "@jgengine/core/gameplay"`
-
-## wallet — hold currency balances with charge and affordability checks
-
-- `createEmptyWallet` (function) · `import { createEmptyWallet } from "@jgengine/core/gameplay"`
-
-## wallet-books — journal every movement of a wallet or world-fact balance with its reason, kept square to the live balance
-
-- `createWalletBooks` (function) · `import { createWalletBooks } from "@jgengine/core/gameplay"`
-
-## weapon-stats — resolve per-weapon stat values for combat math
-
-- `createWeaponStats` (function) · `import { createWeaponStats } from "@jgengine/core/gameplay"`
-
-## weighted-pick — pick one item from a set with an injected random source
-
-- `pickKeyed` (function) · `import { pickKeyed } from "@jgengine/core/random/pick"`
-- `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/gameplay"`
-- `shuffleWithRng` (function) · `import { shuffleWithRng } from "@jgengine/core/gameplay"`
-
-## work-active-jobs — list jobs currently progressing in a work queue
-
-- `activeJobs` (function) · `import { activeJobs } from "@jgengine/core/gameplay"`
-
-## work-job-by-id — look up a queued job by id
-
-- `jobById` (function) · `import { jobById } from "@jgengine/core/gameplay"`
-
-## work-job-progress — compute a job's fractional progress
-
-- `jobProgress` (function) · `import { jobProgress } from "@jgengine/core/gameplay"`
-
-## work-order-fifo — order queued jobs by enqueue sequence
-
-- `fifoOrdering` (function) · `import { fifoOrdering } from "@jgengine/core/gameplay"`
-
-## work-order-priority — order queued jobs by priority, then FIFO within equal priority
-
-- `priorityOrdering` (function) · `import { priorityOrdering } from "@jgengine/core/gameplay"`
-
-## work-queue — a serializable timed job queue with reservation, cancellation, completion, and output routing
-
-- `createWorkQueue` (function) · `import { createWorkQueue } from "@jgengine/core/gameplay"`
-
-## work-queue-size — count non-terminal jobs in a work queue
-
-- `queueSize` (function) · `import { queueSize } from "@jgengine/core/gameplay"`
-
-## work-queued-jobs — list jobs waiting for a slot, in selection order
-
-- `queuedJobs` (function) · `import { queuedJobs } from "@jgengine/core/gameplay"`
-
-## world-model — one declarative world of people, places, factions, things, jobs and ripples
-
-- `createWorldModel` (function) · `import { createWorldModel } from "@jgengine/core/worldModel/worldModel"`
-- `defineWorldModel` (function) · `import { defineWorldModel } from "@jgengine/core/worldModel/worldModel"`
-
-## xp-curve — resolve an authored xp growth rule into per-level thresholds, totals and a level cap
-
-- `defineXpCurve` (function) · `import { defineXpCurve } from "@jgengine/core/gameplay"`
+Discover with `bun run find <intent>` or `npx jgengine find <intent>`.
+
+- **achievement-gallery** — responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header · `import { AchievementGallery } from "@jgengine/core/achievements/achievements.view"`
+- **achievement-toast** — unlock-moment banner (icon, heading, name, points) for an achievement toast queue · `import { AchievementToast } from "@jgengine/core/achievements/achievements.view"`
+- **achievements** — track achievement/trophy unlocks over counter goals and boolean flags, with score, completion, an onUnlock seam, and serializable snapshot/restore · `import { createAchievementTracker } from "@jgengine/core/gameplay"`
+- **advance-ledger** — settle due scheduled transactions through a policy pipeline · `import { advanceLedger } from "@jgengine/core/gameplay"`
+- **affix-roller** — roll randomized gear (guns, armor, loot) with rarity tiers, stat scaling and prefix/suffix affixes from a seed · `import { createAffixRoller } from "@jgengine/core/gameplay"`
+- **agent-schedule** — an authored per-agent day plan with a work beat and off-hours behaviour · `import { createAgentSchedule } from "@jgengine/core/agents/schedule"`
+- **agents** — a needs, thought, action and mood loop an agent runs on the world clock · `import { createAgent } from "@jgengine/core/agents/agent"` · `import { createAgentSystem } from "@jgengine/core/agents/system"`
+- **ambient-temperature** — air temperature from climate, time of day, weather, altitude, wetness and nearby heat · `import { ambientTemperature } from "@jgengine/core/gameplay"`
+- **auction-book** — timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement · `import { createAuctionBook } from "@jgengine/core/gameplay"`
+- **best-record** — persist personal-best times/scores with safe storage fallback · `import { createRecordBook } from "@jgengine/core/gameplay"`
+- **body-temperature** — hypothermia and hyperthermia from ambient temperature, insulation and fortitude, as vital drain and exposure damage · `import { bodyComfort } from "@jgengine/core/gameplay"`
+- **breeding** — pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care · `import { createBreedingField } from "@jgengine/core/breeding/breeding"`
+- **build** — a serializable directed/undirected pair key that resists delimiter collisions · `import { createPairKeyCodec } from "@jgengine/core/gameplay"`
+- **build-keys** — one numbered build command per build piece · `import { defineBuildKeys } from "@jgengine/core/worldModel/buildTool"`
+- **cancel-scheduled-rule** — remove a scheduled rule and its cursor entirely · `import { cancelRule } from "@jgengine/core/gameplay"`
+- **cancel-work** — remove a job and compute its refund from reservation and progress · `import { cancelJob } from "@jgengine/core/gameplay"`
+- **career-bank** — persistent career money with a run haul that can be banked or lost · `import { createCareerBank } from "@jgengine/core/progression/careerBank"`
+- **carry-encumbrance** — gate a pickup against the carrier's remaining capacity · `import { canCarry, characterLoad } from "@jgengine/core/inventory/carryLoad"` · `import { resolveEncumbrance } from "@jgengine/core/inventory/encumbrance"`
+- **carry-load** — read carried stacks out of one or more inventories for a weight query · `import { carriedEntries } from "@jgengine/core/inventory/carryLoad"` · `import { totalLoad } from "@jgengine/core/inventory/encumbrance"`
+- **cell-grid** — immutable 2D board of cells with row clears, gravity collapse, and match runs · `import { createCellGrid } from "@jgengine/core/puzzle/cellGrid"`
+- **character-paperdoll** — equip-slot paperdoll — flanking columns around a portrait, activatable slots · `import { Paperdoll } from "@jgengine/core/inventory/characterSheet.view"`
+- **character-sheet** — drop-in paperdoll + derived-stat sheet in a HudFrame — game supplies slots/stats · `import { CharacterSheet } from "@jgengine/core/inventory/characterSheet.view"`
+- **character-statlist** — derived-stat readout — grouped small-caps label→value rows, token-themed · `import { StatList } from "@jgengine/core/inventory/characterSheet.view"`
+- **clip-roles** — map a rigged asset's pack-specific clip name to its semantic animation role · `import { classifyClip, defaultAnimationForClips } from "@jgengine/core/game/clipRoles"`
+- **codex** — codex/bestiary/lorebook of defined entries with discovery tracking, fragment scans, categories, secret masking, completion, an onDiscover seam, and serializable state · `import { createCodex } from "@jgengine/core/gameplay"`
+- **codex-gallery** — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header · `import { CodexPanel } from "@jgengine/core/codex/codex.view"`
+- **compose-game-loop** — fold composable systems into the game loop without a manual tick fan-out · `import { composeGameLoop } from "@jgengine/core/gameplay"`
+- **consumables** — use/consume items with cooldowns and effects · `import { createItemUse } from "@jgengine/core/gameplay"`
+- **content-progression-validation** — diagnose unavailable sources and blocked cross-content progression under explicit game-owned rules without rejecting intentional seeded cycles · `import { validateContentProgression } from "@jgengine/core/game/contentValidation"`
+- **content-reference-validation** — locate duplicate content ids and broken references across game-owned catalog namespaces with repair guidance · `import { validateContentReferences } from "@jgengine/core/game/contentValidation"`
+- **control-suspension** — Suspend player input across overlapping menus without stopping shared simulation. · `import { suspendPlayControls } from "@jgengine/core/game/controlGate"`
+- **cosmetics** — equip cosmetic skins and customizations by slot · `import { createCosmetics } from "@jgengine/core/gameplay"`
+- **currency-major-units** — convert safe minor-unit integers into currency amounts · `import { fromMinorUnits } from "@jgengine/core/economy/currency"`
+- **currency-minor-units** — round decimal currency into safe integer minor units · `import { toMinorUnits } from "@jgengine/core/economy/currency"`
+- **currency-precision-format** — display a currency using its declared decimal precision · `import { formatCurrency } from "@jgengine/core/economy/currency"`
+- **decay-meter** — survival meters that drain/refill over game time (hunger, water, oxygen, stamina) · `import { decayMeterMoodles, decayMeterSnapshot, decayMeterState, decayMeters, initDecayMeters, refillMeter } from "@jgengine/core/gameplay"` · `import { decayMetersInPlace } from "@jgengine/core/survival/decayMeter"`
+- **declarative-predicate** — serializable data-driven conditions with no callbacks in saved content · `import { evaluatePredicate, readPath } from "@jgengine/core/gameplay"` · `import { predicateFloor, predicateLeaves } from "@jgengine/core/rules/predicate"`
+- **define-system** — composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })` · `import { defineSystem } from "@jgengine/core/gameplay"`
+- **defined-fields** — pass maybe-missing values on as optional fields, leaving out the ones that are undefined · `import { DefinedFields } from "@jgengine/core/data/definedFields"`
+- **detect** — fire-once threshold/milestone/tier crossings when a value moves · `import { crossThresholds } from "@jgengine/core/gameplay"`
+- **dialogue-bridge** — open/close the talkable→DialogueBox flow with no per-game store or command glue · `import { createGameDialogue } from "@jgengine/core/gameplay"`
+- **dialogue-graph-validation** — diagnose duplicate ids, broken branches, unreachable dialogue, and nodes without a route to an ending before play · `import { validateDialogueGraph } from "@jgengine/core/dialogue/dialogueGraph"`
+- **dialogue-graph-view** — select a conversation node's render-ready view (speaker, line, branching choices) from a serializable dialogue graph · `import { selectDialogueView } from "@jgengine/core/gameplay"`
+- **dialogue-run** — walk a serializable branching dialogue graph — current node view, choose-to-advance traversal, visited history, snapshot/restore · `import { createDialogueRun } from "@jgengine/core/gameplay"`
+- **dialogue-view** — drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun · `import { DialogueView } from "@jgengine/core/dialogue/dialogueView.view"`
+- **drag-layer** — composable pointer-owned drag, drop targets and cancellation for custom cards and inventory UI · `import { useDragLayer } from "@jgengine/core/inventory/dragLayer.view"`
+- **durability** — track item wear, breakage, and repair · `import { applyWear } from "@jgengine/core/gameplay"`
+- **encumbrance-move-curve** — progressive move-speed multiplier from a carry-load fraction · `import { encumbranceMoveMultiplier } from "@jgengine/core/inventory/encumbrance"`
+- **enqueue-work** — reserve inputs and add a timed job, honoring capacity and validation policy · `import { enqueue } from "@jgengine/core/gameplay"`
+- **equipment-slot-inventory** — wear gear by slot with item-kind rules, two-handed blocking and replace-on-equip · `import { createEquipment } from "@jgengine/core/inventory/equipment"`
+- **event-bus** — typed publish/subscribe bus for gameplay events · `import { createGameEvents } from "@jgengine/core/gameplay"`
+- **event-feed** — a rolling feed of recent gameplay events for a HUD ticker or killfeed · `import { createGameFeed } from "@jgengine/core/gameplay"`
+- **event-ticker** — rolling capped, timed-fade event/kill-feed ticker of free-string entries over the feed helpers — push/recent-with-fade, snapshot/restore · `import { createEventTicker } from "@jgengine/core/gameplay"`
+- **expedition-dispatch** — dispatch a saveable timed away mission with finite supplies and a seeded RNG cursor · `import { dispatchExpedition } from "@jgengine/core/gameplay"`
+- **expedition-recall** — begin a safe fractional-time return after settling the pending expedition frontier · `import { recallExpedition } from "@jgengine/core/gameplay"`
+- **expedition-return** — complete an authorized instant return without skipping unsettled ticks or reviving death · `import { returnExpeditionNow } from "@jgengine/core/gameplay"`
+- **expedition-settle** — settle bounded offline expedition ticks without losing supplies rewards or RNG continuity · `import { settleExpedition } from "@jgengine/core/gameplay"`
+- **fair-chance** — chance rolls with the right odds and no long lucky or unlucky streaks · `import { fairChance, longestStreak } from "@jgengine/core/random/fairChance"`
+- **fire-input** — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger · `import { ActionCodesMap } from "@jgengine/core/gameplay"`
+- **game-flow** — title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus · `import { createGameFlowSystem } from "@jgengine/core/game/gameFlow"`
+- **game-save** — one versioned save document with per-system sections, named slots, caller-policy autosave, migration and a state digest · `import { createGameSave, createSaveStore } from "@jgengine/core/gameplay"`
+- **game-save-digest** — hash a save document's state for a determinism test or a diff · `import { gameSaveDigest } from "@jgengine/core/gameplay"`
+- **game-spec** — a whole game as one declaration the engine runs, with named code hooks for the rest · `import { defineGameSpec } from "@jgengine/core/worldModel/gameSpec"`
+- **game-suite-run** — run every suite proof and the content check of one game into the report its score is read from · `import { runGameSuite } from "@jgengine/core/suite/runSuiteProof.draw"`
+- **game-suite-score** — score a game against the engine's game suite: proven, failing, not simulatable, missing and cut, by area · `import { scoreGameSuite } from "@jgengine/core/suite/gameSuite"`
+- **game-system** — declare a composable capability with its own schedule and lifecycle · `import { SystemDefinition } from "@jgengine/core/gameplay"`
+- **gear-score** — score a loadout from stat weights, level, rarity and slot coverage · `import { gearScore } from "@jgengine/core/gameplay"`
+- **grant-drops** — deliver rolled loot drops into inventory and currency · `import { grantDrops } from "@jgengine/core/loot/lootTable"`
+- **hud-slots** — atomic themed equipment/weapon/armor/potion slot grids with painted icons · `import { SlotItem } from "@jgengine/core/inventory/slots.view"`
+- **inventory-grid** — a bag of stackable items with add, remove, and move · `import { createEmptyInventory } from "@jgengine/core/inventory/inventoryModel"`
+- **inventory-slot-key** — encode a slot of a named inventory as one drag/drop string and read it back, for moves between two grids · `import { parseInventorySlotKey } from "@jgengine/core/inventory/inventoryModel"`
+- **inventory-split** — split a stack into a target or first-empty slot, honoring a stack limit · `import { splitStack } from "@jgengine/core/inventory/inventoryModel"`
+- **inventory-transfer** — drag or keyboard-move a stack between two inventory grids (bag to stash) with swap, merge remainder and refusal reasons · `import { useInventoryTransfer } from "@jgengine/core/inventory/inventoryGrid.view"`
+- **item-comparison** — show per-stat deltas and a weighted verdict for a drop against equipped gear · `import { compareToEquipped } from "@jgengine/core/loot/drop"`
+- **item-generation** — compose constraints, weighted pools, transforms, and provenance into a deterministic generated item · `import { defineItemGenerator, generate, rollItemRecipe } from "@jgengine/core/gameplay"`
+- **item-identity** — resolve which match/set bonuses an item qualifies for · `import { activeSetBonuses, applySetBonuses, candidateViolatesForbid, captureProvenance, countSetMembers, identityOf, isIdentityValid, matchesQuery, validateIdentity } from "@jgengine/core/gameplay"`
+- **item-instance-registry** — a runtime store for procedurally generated item instances · `import { createItemInstanceRegistry, proceduralLootEntry } from "@jgengine/core/gameplay"`
+- **item-ledger** — track which rolled item instances are still owned, salvaged or sold · `import { createItemLedger } from "@jgengine/core/loot/salvage"`
+- **item-run-haul** — carry loot with a weight gate, bank it into a persistent stash, or lose it when the run fails · `import { createRunHaul } from "@jgengine/core/loot/haul"`
+- **item-salvage** — break an item down for the currency its level and rarity say, once · `import { salvageItem } from "@jgengine/core/loot/salvage"`
+- **item-salvage-value** — compute the currency an item of a level and rarity breaks down into · `import { salvageValue } from "@jgengine/core/loot/salvage"`
+- **item-use-composition** — compose pluggable, ordered item use-behaviors from serializable references · `import { createUseBehaviorRegistry } from "@jgengine/core/gameplay"`
+- **item-vendor** — stock a vendor with rolled items priced through the shared economy · `import { stockVendor } from "@jgengine/core/loot/vendor"`
+- **item-vendor-price** — price an item from its level and rarity through the economy's currency · `import { itemPrice } from "@jgengine/core/loot/vendor"`
+- **item-vendor-rotation** — decide when a vendor's shelf is due for a restock · `import { createVendorRotation } from "@jgengine/core/loot/vendor"`
+- **item-weight** — read a rolled item's mass for a carry check · `import { itemMass } from "@jgengine/core/loot/drop"`
+- **key-rebinding** — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore · `import { rebindAction } from "@jgengine/core/game/controlGate"` · `import { createRebindSession } from "@jgengine/core/gameplay"`
+- **kill-feed** — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens · `import { KillFeed } from "@jgengine/core/feed/killFeed.view"`
+- **lap-splits** — per-lap durations from a cumulative split book · `import { lapDurations, parDelta, splitSegments } from "@jgengine/core/gameplay"`
+- **lap-timer** — wall-clock current/last/best lap timing with splits · `import { createLapTimer } from "@jgengine/core/gameplay"`
+- **leaderboard** — ranked score tracking across global, server, and per-profile scopes · `import { createLeaderboard } from "@jgengine/core/gameplay"`
+- **leveling-track** — grant XP, resolve level-ups against a curve, and write level+xp stats back through a stat adapter · `import { leveling } from "@jgengine/core/gameplay"`
+- **lifecycle** — declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions · `import { LifecycleConfig } from "@jgengine/core/gameplay"`
+- **limb-health** — per-body-part/region health tracked separately · `import { createMultiRegionHealth } from "@jgengine/core/gameplay"`
+- **listing-book** — player-driven marketplace listings with a house cut, expiry sweep, and seller collection box · `import { createListingBook } from "@jgengine/core/gameplay"`
+- **loadouts** — save and swap named equipment loadouts · `import { createLoadouts } from "@jgengine/core/gameplay"`
+- **loan-schedule** — build a loan's interest and principal repayment schedule in integer minor units · `import { buildLoanSchedule } from "@jgengine/core/gameplay"`
+- **loans** — draw, schedule, service and default a loan with interest, posted to a ledger · `import { createLoanBook } from "@jgengine/core/gameplay"`
+- **local-save** — persist a game to on-device localStorage (offline) · `import { localSaveBackend } from "@jgengine/core/gameplay"`
+- **loot-beams** — rarity-colored loot beams and labels on dropped items via defineGame({ worldItem: { rarityStyle, beamHeight } }) · `import { RarityStyle } from "@jgengine/core/gameplay"`
+- **loot-comparison** — compare two rolled items with per-stat deltas and a weighted score · `import { compareLootItems } from "@jgengine/core/gameplay"`
+- **loot-filter** — filter and highlight drops by rarity/name rules · `import { evaluateLootFilter } from "@jgengine/core/gameplay"`
+- **loot-generation** — roll a named item from bases, parts, affixes, rarity weights, manufacturer personalities and level scaling · `import { defineLootGenerator, rollLoot } from "@jgengine/core/gameplay"`
+- **loot-pipeline** — compose ordered loot pools with fallbacks, roll modifiers, and provenance · `import { createLootPipeline, defineLootPipeline } from "@jgengine/core/gameplay"`
+- **loot-roller** — roll items from one validated catalog while counting drops per rarity for a debug probe · `import { createLootRoller } from "@jgengine/core/gameplay"`
+- **loot-score** — split one stat block into per-stat weighted contributions · `import { lootStatContributions, scoreLootStats } from "@jgengine/core/gameplay"`
+- **loot-table** — register loot tables and roll weighted randomized drops · `import { createLootRegistry, lootTable } from "@jgengine/core/gameplay"`
+- **loot-validation** — check a rolled item against its catalog and report each defect with its code · `import { validateLootItem } from "@jgengine/core/gameplay"`
+- **loot-weapon** — feed a rolled item into a weapon definition so generated gear fires through the weapon system · `import { lootWeaponDefinition } from "@jgengine/core/gameplay"`
+- **medal-board** — per-event bronze/silver/gold targets over a stored best, with tiers that open on medal points · `import { createMedalBoard } from "@jgengine/core/progression/medalBoard"`
+- **mission-compositions** — build escort, chase and defend missions from the shared objective kinds · `import { chaseMission, defendMission, escortMission } from "@jgengine/core/gameplay"`
+- **mission-events** — count constrained kills and fail a mission on a matching world event · `import { MissionWorldEvent } from "@jgengine/core/gameplay"`
+- **mission-rewards** — pay mission rewards through the quest appliers and the loot registry · `import { applyMissionRewards } from "@jgengine/core/gameplay"`
+- **mission-runtime** — missions as a data-driven objective state machine with fail states, timers, branches and rewards · `import { createMissionRuntime } from "@jgengine/core/gameplay"`
+- **mission-triggers** — place mission triggers from the editor palette · `import { MISSION_MARKER_KIND, MISSION_TRIGGER_ACTIONS, createMissionTriggerBridge, missionMarkerSchema, missionMarkers, missionTriggerActions, registerMissionMarkerKind, registerMissionTriggerActions, validateMissionMarkers } from "@jgengine/core/gameplay"`
+- **mission-validation** — tell whether an objective kind completes from a counter alone · `import { isCounterObjective, validateMissionCatalog } from "@jgengine/core/gameplay"`
+- **modular-item** — attach parts into item mount slots to compute combined stats · `import { slotAccepts } from "@jgengine/core/gameplay"`
+- **mood** — a mood derived from how satisfied an agent's needs are · `import { createMoodReader, moodTierOf, readMood } from "@jgengine/core/agents/mood"`
+- **move** — a keyed value toward a target by a bounded step · `import { towardValue } from "@jgengine/core/gameplay"`
+- **name-generator** — generate procedural names from templates and word banks · `import { defineNameGenerator } from "@jgengine/core/gameplay"`
+- **narrative-batch-validation** — locate stale canon, oversized batches, explicit character/fact/chronology contradictions and dialogue graph issues for bounded repair · `import { validateNarrativeBatch } from "@jgengine/core/game/narrativeAuthoring"`
+- **narrative-canon** — freeze caller-reviewed character ids, facts and chronology for a narrative authoring revision · `import { freezeNarrativeCanon } from "@jgengine/core/game/narrativeAuthoring"`
+- **near-agents** — nav crowd plus per-agent needs and utility brains for on-screen residents · `import { createNearAgents } from "@jgengine/core/gameplay"`
+- **needs** — decaying needs an agent reads by index to decide what it wants next · `import { createNeedSet } from "@jgengine/core/gameplay"`
+- **new-game-state** — declare what the player has at second 0 (cash, kit, unlocks, prebuilt pieces, systems that start on their own) as data the engine builds from and checks read · `import { NewGameConfig } from "@jgengine/core/game/newGame"`
+- **notice-feed** — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance) · `import { appendFeed, pruneFeed } from "@jgengine/core/gameplay"` · `import { createNoticeFeed } from "@jgengine/core/notifications/notices"` · `import { NoticeStack } from "@jgengine/core/notifications/notices.view"`
+- **notification-bell** — icon button with a live unread-count badge over a notification store · `import { NotificationBell } from "@jgengine/core/notifications/notificationCenter.view"`
+- **notification-center** — persistent, read-tracked notification log (newest-first, capped, serializable) behind an unread badge — the durable counterpart to transient toasts · `import { createNotificationCenter } from "@jgengine/core/gameplay"`
+- **notification-center-panel** — scrollable notification log with kind markers, read tracking, relative time, and mark-all-read/clear · `import { NotificationCenter } from "@jgengine/core/notifications/notificationCenter.view"`
+- **objective-banner** — serializable, clock-driven stage/objective banner queue — flies a big transient centered title + optional subtitle in, holds, and fades out one at a time, with phase + progress for animation, free-string kinds the game styles, and snapshot/restore · `import { createObjectiveBanner } from "@jgengine/core/mission/objectiveBanner"`
+- **objective-banner-host** — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable · `import { ObjectiveBannerHost } from "@jgengine/core/mission/objectiveBanner.view"`
+- **objectives** — check progress of a threshold objective against a live metric · `import { evaluateObjective } from "@jgengine/core/gameplay"`
+- **offscreen-world** — schedules agents near the player as real state and far ones as cheap state · `import { createOffScreenWorld } from "@jgengine/core/gameplay"`
+- **onboarding** — declared tutorial steps that point at world things (arrow, minimap marker, waypoint), complete from events or conditions, lock commands until done, grant on completion, skip and save — as a separate tutorial level, a teaching start area or hints blended into stage one · `import { createOnboardingSystem } from "@jgengine/core/onboarding/onboardingSystem"`
+- **onboarding-banner** — announces each finished onboarding step and the next one on the objective banner · `import { OnboardingBanner } from "@jgengine/core/onboarding/onboarding.view"`
+- **onboarding-callout** — anchored or centred tutorial callouts with a spotlight, Next and Skip, driven by the onboarding steps · `import { OnboardingCallout } from "@jgengine/core/onboarding/onboardingCallout.view"`
+- **onboarding-callout-card** — one onboarding step as a card with N of M, Next and Skip, theme-reskinnable · `import { OnboardingCalloutCard } from "@jgengine/core/onboarding/onboardingCallout.view"`
+- **onboarding-hud** — onboarding steps in the quest tracker with Next and Skip · `import { OnboardingHud } from "@jgengine/core/onboarding/onboarding.view"`
+- **onboarding-lock** — which onboarding step still locks a command or UI id, so a HUD can grey it out · `import { onboardingLock } from "@jgengine/core/onboarding/onboardingSystem"`
+- **onboarding-pointer** — on-screen pin or edge arrow with distance to the current onboarding step's target · `import { OnboardingPointer } from "@jgengine/core/onboarding/OnboardingPointer.draw"`
+- **param-layers** — register parameter layers by stable id and resolve serialized selections · `import { createLayerRegistry, diffParams, orderLayers, resolveParams, resolveSelection, validateLayers } from "@jgengine/core/gameplay"`
+- **part-motion** — sample the root bob/sway/squash/flinch/death pose for a rig-less part-composed character · `import { sampleBodyPose, samplePartPose } from "@jgengine/core/game/partAnimation"`
+- **pause-scheduled-rule** — stop a scheduled rule from firing while retaining its cursor · `import { pauseRule } from "@jgengine/core/gameplay"`
+- **pause-work** — pause a queued or active job in place, retaining its progress · `import { pauseJob } from "@jgengine/core/gameplay"`
+- **ping-wheel** — contextual ping/marker communication between teammates · `import { createPingSystem } from "@jgengine/core/gameplay"`
+- **place-piece** — place a build piece in a world model with on-screen refusals · `import { placePiece } from "@jgengine/core/worldModel/buildTool"`
+- **pointer-commands** — click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select, Shift/double-click select modifiers, RTS control groups) · `import { PointerConfig } from "@jgengine/core/gameplay"`
+- **policy-annotate** — tag a scheduled transaction's provenance without changing its value · `import { annotate } from "@jgengine/core/gameplay"`
+- **policy-cap** — cap a scheduled transaction amount by context · `import { capAmount } from "@jgengine/core/gameplay"`
+- **policy-curve** — scale a transaction by a curve over context · `import { curveScale } from "@jgengine/core/gameplay"`
+- **policy-redirect** — redirect a scheduled transaction's source or recipient · `import { redirect } from "@jgengine/core/gameplay"`
+- **policy-reject** — reject scheduled transactions by predicate · `import { rejectWhen } from "@jgengine/core/gameplay"`
+- **policy-tax** — split off a fraction of a transaction as tax or transfer · `import { taxFraction } from "@jgengine/core/gameplay"`
+- **policy-threshold** — scale a transaction by a context threshold band · `import { thresholdScale } from "@jgengine/core/gameplay"`
+- **price-history** — rolling per-item sale records aggregated into market price stats · `import { createPriceHistory } from "@jgengine/core/gameplay"`
+- **production-building** — a factory building converting inputs to outputs over time · `import { createProductionState } from "@jgengine/core/gameplay"`
+- **progression-curve** — evaluate a level/rank curve (const, linear, power, geometric, steps, piecewise) at a point · `import { evalCurve } from "@jgengine/core/gameplay"`
+- **quest-catalog-validation** — diagnose authored quest ids, prerequisite and reward references, quantities, and blocked dependencies with caller-declared external unlocks · `import { validateQuestCatalog } from "@jgengine/core/mission/questCatalog"`
+- **quest-giver** — an NPC that hands out its quests one at a time and takes them back when done · `import { giverOffer } from "@jgengine/core/mission/questGivers"`
+- **quest-log** — track accepted quests and their objective progress from game events · `import { createQuestEvaluator, createQuestJournal } from "@jgengine/core/mission/quest"`
+- **quest-objective-label** — readable default label for a quest objective in a tracker · `import { defaultObjectiveLabel } from "@jgengine/core/mission/quest"`
+- **quest-rewards** — grant a quest or mission reward bundle: items, XP, currency and unlocks · `import { applyQuestRewards } from "@jgengine/core/mission/quest"`
+- **quest-tracker** — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views · `import { QuestTracker } from "@jgengine/core/mission/questTracker.view"`
+- **quest-tracker-view** — join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker · `import { describeTrackedQuest } from "@jgengine/core/mission/quest"`
+- **race-placements** — look up one racer's place + win/lose within a finish order · `import { placementOf, racePlacements } from "@jgengine/core/gameplay"`
+- **race-session** — pure idle→countdown→racing→finished clock every racer wraps around its state · `import { idleRaceSession } from "@jgengine/core/gameplay"`
+- **race-track** — a checkpoint race with laps, standings, splits, and win conditions · `import { createRaceState } from "@jgengine/core/gameplay"`
+- **recipe-catalog-validation** — locate broken crafting item/station/unlock references, duplicate inputs and invalid authored quantities with repair guidance · `import { validateRecipeCatalog } from "@jgengine/core/crafting/recipeCatalog"`
+- **refusal-feedback** — surface a refused command's player-facing message in the notice feed automatically · `import { attachRefusalNotices } from "@jgengine/core/notifications/notices"`
+- **relationships** — familiarity and opinion between agents, with a bond that changes behaviour · `import { createRelationshipBook } from "@jgengine/core/agents/relationships"`
+- **resolve** — the current tier/band label for a keyed or scalar value · `import { tierAt } from "@jgengine/core/gameplay"`
+- **resolve-rng** — resolve an optional injected RNG, warning once per site when it falls back to `Math.random` · `import { resolveRng } from "@jgengine/core/random/resolveRng"`
+- **resource-ledger** — schedule recurring resource transactions with policy transforms · `import { createResourceLedger } from "@jgengine/core/gameplay"`
+- **resume-scheduled-rule** — resume a paused scheduled rule, deferring missed cycles to its catch-up policy · `import { resumeRule } from "@jgengine/core/gameplay"`
+- **resume-work** — resume a paused job back into the queue's slot competition · `import { resumeJob } from "@jgengine/core/gameplay"`
+- **retained-vfx** — create/update/stop long-lived dynamic visual effects (beam, tether, zone, target line) by stable id · `import { createVfxInstanceStore } from "@jgengine/core/gameplay"`
+- **ride-appeal** — how much one guest likes one ride, from its ratings and their taste · `import { rideAppeal } from "@jgengine/core/gameplay"`
+- **ride-choice** — guests pick rides by taste and queue tolerance through the utility brain · `import { createRideChooser, rideChoiceCandidates, rideChoiceOptions, rideQueueCostWeight } from "@jgengine/core/gameplay"`
+- **ride-sim** — rides with capacity, cycles, queues, ratings, breakdowns and maintenance · `import { createRideSystem } from "@jgengine/core/gameplay"`
+- **routine-timeline** — authored daily routines (home, work, meal) resolved against the world clock · `import { resolveRoutine } from "@jgengine/core/gameplay"`
+- **rule-selection** — register rules and bridge a selection to its contributed parameter layers · `import { createRuleRegistry, rerollRules, selectRules } from "@jgengine/core/gameplay"`
+- **run-modifiers** — a roguelike run built from stacking drafted modifier picks · `import { createRunDraft } from "@jgengine/core/gameplay"`
+- **runtime-save** — save/load the whole game world through a pluggable backend, autosave or save points · `import { createRuntimeSave } from "@jgengine/core/save/snapshotSave"`
+- **save-backend-contract** — the checks every save backend passes, for a backend's own test file · `import { saveBackendContract } from "@jgengine/core/save/saveBackendContract"`
+- **save-envelope-upgrade** — lift an older or pre-versioned save payload into the current document envelope · `import { upgradeSaveEnvelope } from "@jgengine/core/save/saveDocument"`
+- **save-slot-index** — refresh a save-select index from the game's save documents · `import { refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex"`
+- **save-slot-meta** — project a save document onto save-select display metadata · `import { saveSlotMeta } from "@jgengine/core/save/saveSlotIndex"`
+- **save-slots** — serializable save-slot / profile metadata index — write/clear/rename/mostRecent over free-string per-slot meta, powering New/Continue/Load/Delete menus, with snapshot/restore · `import { createSaveSlots } from "@jgengine/core/gameplay"`
+- **scatter-harvest** — strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow · `import { createScatterHarvest } from "@jgengine/core/harvest/scatterHarvest"`
+- **scatter-points** — spread points over fields at random so equal totals differ · `import { scatterPoints } from "@jgengine/core/inheritance/inheritance"`
+- **scoreboard** — pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table · `import { rankLeaderboard } from "@jgengine/core/gameplay"`
+- **scoreboard-table** — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven · `import { Scoreboard } from "@jgengine/core/leaderboard/scoreboard.view"`
+- **seed-sweep** — test a random system by its odds across many seeds, not one lucky run · `import { acrossSeeds } from "@jgengine/core/random/seedSweep"`
+- **seeded-random** — injected deterministic randomness for game logic — never `Math.random` in a simulation · `import { seededRng } from "@jgengine/core/gameplay"` · `import { hashString, hashUnit, hashWords } from "@jgengine/core/random/rng"`
+- **server-session** — join a multiplayer host with status, retry, and teardown · `import { useServerSession } from "@jgengine/core/session/useServerSession.view"`
+- **session-loop** — open and close a game session, settle the quantity it carried and optionally draw the next session's authored option · `import { createSessionLoop, installSessionProbe } from "@jgengine/core/run/sessionLoop"`
+- **set** — a bounded keyed value in a caller-owned serializable record · `import { setValue } from "@jgengine/core/gameplay"`
+- **setup-window** — hand setup code a live object that stops working when setup ends, so nothing it kept can write later · `import { openSetupWindow } from "@jgengine/core/suite/setupWindow"`
+- **shaped-grid** — a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement · `import { canPlace, createShapedGrid, moveShaped, placeShaped, removeShaped } from "@jgengine/core/inventory/shapedGrid"`
+- **shaped-placement** — find a shaped inventory item's first fit with ordered rotations, row-major placement, and an explicit search budget · `import { findShapedPlacement, fitShapedItem } from "@jgengine/core/inventory/shapedGrid"`
+- **shop-grid** — serializable vendor/shop stock with buy/sell over a caller-owned wallet — finite/unlimited qty, sell-back, restock/setPrice, snapshot/restore · `import { createShopStock } from "@jgengine/core/gameplay"`
+- **shop-grid-host** — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed · `import { ShopGrid } from "@jgengine/core/inventory/shopGrid.view"`
+- **shrink-capture** — downscale a captured frame to a save-card thumbnail data URL · `import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view"`
+- **side-jobs** — offer and run repeatable side jobs (fares, deliveries, races) with fare math, deadlines, tips, streaks and wagers · `import { createSideJobs } from "@jgengine/core/mission/sideJobs"`
+- **skill-tree** — spend, refuse and refund points over an authored tree with passives, actives and synergies · `import { createSkillTree } from "@jgengine/core/gameplay"`
+- **social-emotes** — emotes and social interactions between nearby players · `import { createSocial } from "@jgengine/core/gameplay"`
+- **spawn-points** — register spawn locations and pick where entities respawn · `import { createSpawnPoints } from "@jgengine/core/gameplay"`
+- **split-screen** — Split the screen into one viewport per local seat, each with its own follow camera. · `import { splitViewports } from "@jgengine/core/game/viewports"`
+- **staffed-station-rate** — turn bounded caller-owned worker stats and efficiency into a production rate · `import { stationOutputRate } from "@jgengine/core/gameplay"`
+- **standalone-chat** — render persisted chat with focus controls and visible send failures · `import { StandaloneChatPanel } from "@jgengine/core/chat/standaloneChatPanel.view"`
+- **standing** — per-track standing moved by authored outcomes, with tiers and one snapshot · `import { createStanding, evaluateStandingPredicate, standingTracksRead } from "@jgengine/core/progression/standing"`
+- **stat-graph** — fold ordered add, multiply, override and clamp contributions onto one value · `import { createStatGraph } from "@jgengine/core/gameplay"` · `import { applyStatOp, applyStatRate, boundStatValue, foldStatContributions } from "@jgengine/core/progression/statGraph"`
+- **stat-graph-bridge** — feed an existing StatModifierSet into a stat-graph source · `import { statModifierContributions } from "@jgengine/core/gameplay"`
+- **stat-points** — level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap · `import { createStatPoints } from "@jgengine/core/progression/statPoints"`
+- **suite-content-audit** — prove the game suite's data entries (item sources and uses, placeables, ammo, unlock runway) from a game's content · `import { auditSuiteContent } from "@jgengine/core/suite/contentAudit"`
+- **suite-proof** — prove a game suite entry by simulating the real game headless, with setup that may cheat and play that may not · `import { defineProof } from "@jgengine/core/suite/suiteProof"`
+- **suite-proof-run** — run a game suite proof headless and refuse a proof whose outcome came from setup or a cheat · `import { runSuiteProof } from "@jgengine/core/suite/runSuiteProof.draw"`
+- **suite-recipe-content** — turn engine recipes into the game suite's content sources and uses · `import { recipeContent } from "@jgengine/core/suite/contentAudit"`
+- **supply-demand-pricing** — price goods from finite stock and live demand on a stated curve · `import { createMarket } from "@jgengine/core/gameplay"`
+- **survival-vitals** — a body's linked meters — drain, delayed regen that costs other vitals, starvation links, knockout-style flags, and doses that land now or over time up to a cap · `import { createVitals } from "@jgengine/core/gameplay"`
+- **system-schedule** — compile fixed/frame/interval system ticks into deterministic ordered stages · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
+- **talent-tree** — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn · `import { TalentTreePanel } from "@jgengine/core/talents/talentTree.view"`
+- **talent-tree-view** — flatten a talent tree into a placed, per-node render view — branch/tier layout, learned/available/locked/maxed state, prerequisite edges · `import { talentTreeView } from "@jgengine/core/gameplay"`
+- **talent-tree-view-from** — build a placed talent/upgrade-tree render view from any per-node unlock rule (points, currency, level, flag) — branch/tier layout, learned/available/locked/maxed state, prerequisite edges · `import { talentTreeViewFrom } from "@jgengine/core/gameplay"`
+- **threshold-crossings** — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy · `import { createThresholdTracker } from "@jgengine/core/threshold/thresholdTracker"`
+- **tick-work** — advance jobs over time, completing work and emitting typed lifecycle events · `import { tick } from "@jgengine/core/gameplay"`
+- **time-scaled-loot** — shape loot odds by elapsed hours with caller-authored curves and pipeline provenance · `import { timeScaledRarity } from "@jgengine/core/gameplay"`
+- **touch-controls** — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode) · `import { setTouchControlsMode, touchButtonShape } from "@jgengine/core/gameplay"`
+- **transaction-ledger** — record every money movement with its reason over per-account integer minor-unit balances · `import { createTransactionLedger } from "@jgengine/core/gameplay"`
+- **tribe-group** — shared-ownership group (tribe/guild/clan) with ranked permissions, group vs personal assets, alliances, and a bounded event log · `import { createTribe } from "@jgengine/core/game/tribe"`
+- **tribe-registry** — registry of tribes with mutual alliances and cross-tribe relation lookup · `import { createTribeRegistry } from "@jgengine/core/game/tribe"`
+- **triggered-rules** — event-conditioned effects with declarative predicates, lifetimes, and stacking · `import { createTriggeredRuleEngine, getRuleEffect, listRuleEffects, registerRuleEffect } from "@jgengine/core/gameplay"`
+- **turf-war** — blocks that change hands between any number of sides, with fronts that push on their own clock · `import { defineTurfWar } from "@jgengine/core/worldModel/turfWar"`
+- **typed-keyed-store** — a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative · `import { defineKeyedStore } from "@jgengine/core/store/defineKeyedStore"`
+- **typed-store** — a cast-free typed handle onto one reactive game-store slot, replayable and host-authoritative · `import { defineStore } from "@jgengine/core/store/defineStore"`
+- **unit-training** — compose a timed work queue that trains catalog units into spawn orders · `import { unitTrainingConfig } from "@jgengine/core/gameplay"`
+- **unlock-gates** — milestones gated by standing or money, validated against the content they grant · `import { createGateSet } from "@jgengine/core/progression/gates"`
+- **unlock-points** — spendable point pool earned per level and spent to unlock nodes, with refund and respec · `import { createUnlockPoints } from "@jgengine/core/economy/unlockPoints"`
+- **unlockables** — gate content behind unlock conditions the player earns · `import { createUnlockCatalog } from "@jgengine/core/gameplay"`
+- **untyped-read** — narrow parsed JSON, old saves and other unknown values to records and typed maps without casts · `import { isRecord } from "@jgengine/core/data/untyped"`
+- **upgrade-options** — list the next upgrade steps a placed thing can take, priced and checked by the world · `import { upgradeOptions } from "@jgengine/core/worldModel/upgradePaths"`
+- **upgrade-paths** — branching upgrade ladders for placed things: a shared trunk, then exclusive branches priced and refused by the world model · `import { upgradePathActions } from "@jgengine/core/worldModel/upgradePaths"`
+- **upgrade-tree** — ranked upgrades priced by a cost curve, gated by prerequisites and standing · `import { createUpgradeTree } from "@jgengine/core/progression/upgrades"`
+- **use-dialogue-run** — UI hook binding a branching dialogue run to a component — re-renders as the player advances the conversation · `import { useDialogueRun } from "@jgengine/core/dialogue/dialogueView.view"`
+- **use-event-ticker** — UI hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views · `import { useEventTicker } from "@jgengine/core/feed/killFeed.view"`
+- **use-notice-list** — read the live notice feed in a game's own notice view · `import { useNoticeList } from "@jgengine/core/notifications/notices.view"`
+- **use-notifications** — read a notification store's live list in a game's own inbox view · `import { useNotifications } from "@jgengine/core/notifications/notificationCenter.view"`
+- **use-objective-banner** — UI hook binding an objective-banner controller — advances its clock per frame and returns the current banner view · `import { useObjectiveBanner } from "@jgengine/core/mission/objectiveBanner.view"`
+- **use-save-slots** — UI hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list · `import { useSaveSlots } from "@jgengine/core/save/saveSlots.view"`
+- **use-shop-stock** — UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list · `import { useShopStock } from "@jgengine/core/inventory/shopGrid.view"`
+- **value-inheritance** — a child's values from two parents per field, picked or blended, with rare mutations · `import { inheritValues } from "@jgengine/core/inheritance/inheritance"`
+- **visitor-population** — a crowd whose on-site and daily counts are the bodies the game made · `import { createVisitorPopulation } from "@jgengine/core/gameplay"`
+- **wait-queue** — a real line whose wait estimate comes from its own measured throughput · `import { createWaitQueue } from "@jgengine/core/gameplay"`
+- **wallet** — hold currency balances with charge and affordability checks · `import { createEmptyWallet } from "@jgengine/core/gameplay"`
+- **wallet-books** — journal every movement of a wallet or world-fact balance with its reason, kept square to the live balance · `import { createWalletBooks } from "@jgengine/core/gameplay"`
+- **weapon-stats** — resolve per-weapon stat values for combat math · `import { createWeaponStats } from "@jgengine/core/gameplay"`
+- **weighted-pick** — pick one item from a set with an injected random source · `import { pickUniform, shuffleWithRng } from "@jgengine/core/gameplay"` · `import { pickKeyed } from "@jgengine/core/random/pick"`
+- **work-active-jobs** — list jobs currently progressing in a work queue · `import { activeJobs } from "@jgengine/core/gameplay"`
+- **work-job-by-id** — look up a queued job by id · `import { jobById } from "@jgengine/core/gameplay"`
+- **work-job-progress** — compute a job's fractional progress · `import { jobProgress } from "@jgengine/core/gameplay"`
+- **work-order-fifo** — order queued jobs by enqueue sequence · `import { fifoOrdering } from "@jgengine/core/gameplay"`
+- **work-order-priority** — order queued jobs by priority, then FIFO within equal priority · `import { priorityOrdering } from "@jgengine/core/gameplay"`
+- **work-queue** — a serializable timed job queue with reservation, cancellation, completion, and output routing · `import { createWorkQueue } from "@jgengine/core/gameplay"`
+- **work-queue-size** — count non-terminal jobs in a work queue · `import { queueSize } from "@jgengine/core/gameplay"`
+- **work-queued-jobs** — list jobs waiting for a slot, in selection order · `import { queuedJobs } from "@jgengine/core/gameplay"`
+- **world-model** — one declarative world of people, places, factions, things, jobs and ripples · `import { createWorldModel, defineWorldModel } from "@jgengine/core/worldModel/worldModel"`
+- **xp-curve** — resolve an authored xp growth rule into per-level thresholds, totals and a level cap · `import { defineXpCurve } from "@jgengine/core/gameplay"`

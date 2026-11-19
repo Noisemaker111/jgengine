@@ -1,10 +1,3 @@
-/**
- * Live specimen: a cable that actually hangs. Two poles stand on a ground plane and
- * a glowing festoon cord is lofted between their tips by the real `catenaryCurve()`
- * from `@jgengine/core/world/catenary` — the true cosh hyperbolic curve, not a bezier.
- * Drag either pole (raycast against the ground) and the cable re-solves from the live
- * anchor positions; the slack dial is the extra length as a fraction of the span.
- */
 import * as THREE from "three";
 
 import { catenaryCurve } from "@jgengine/core/world/catenary";
@@ -125,7 +118,6 @@ export function createCatenarySpecimen(container: HTMLElement): CatenarySpecimen
   handle.camera.position.set(0, 6, 21);
   handle.camera.lookAt(0, 3.6, 0);
 
-  // --- pointer interaction: drag a pole across the ground plane ---
   const canvas = handle.renderer.domElement;
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();

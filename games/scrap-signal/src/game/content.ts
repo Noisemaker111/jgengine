@@ -82,7 +82,6 @@ function entityById(catalogId: string): GameContextEntityEntry | null {
   return null;
 }
 
-/** Chests, vendors and travel stations are interacted with during play, and the explosive barrel is kept transient as a destructible kind; the rest is fixed set dressing. */
 const TRANSIENT_OBJECTS = new Set([
   "red_chest",
   "ammo_chest",

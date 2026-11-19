@@ -9,7 +9,6 @@ import { demoGame } from "./demoGame";
 
 const params = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
 
-/** `?mode=flat` keeps the authored colour, `dense` puts the 2 m turf scan on the ground, `macro` the 24 m variant. */
 const MODES = { flat: null, dense: "foliage/grass", macro: "foliage/grass-macro" } as const;
 type Mode = keyof typeof MODES;
 const mode = (params.get("mode") ?? "macro") as Mode;
@@ -31,7 +30,6 @@ const feature = environment({
   }),
 });
 
-/** One flat field seen from the same RTS height in each mode; only the ground material differs. */
 function Ground() {
   return (
     <>

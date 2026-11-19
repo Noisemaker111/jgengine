@@ -19,7 +19,6 @@ export interface LaneNode {
   at: Waypoint;
 }
 
-/** One directed lane span to resolve into the graph. */
 export interface LaneEdgeConfig {
   id: string;
   /** World-space centerline, in travel order. */
@@ -35,29 +34,19 @@ export interface LaneEdgeConfig {
   right?: string | undefined;
   /** Arc positions, in metres, of parking spots on this lane. */
   parking?: readonly number[];
-  /** Allowed as a traffic spawn point. */
   entry?: boolean;
-  /** Allowed as a traffic removal point. */
   exit?: boolean;
 }
 
-/** Signal timing for one intersection; phases list the in-lanes each green window serves. */
 export interface LaneSignalProgram {
   greenSeconds: number;
   yellowSeconds: number;
-  /** Red-for-all interval between phases. Default 0. */
   allRedSeconds?: number;
-  /**
-   * In-lane ids served by each green phase, in cycle order. Omitted lets the traffic runtime derive
-   * them: one green per line of travel, so opposite approaches share a window.
-   */
   phases?: readonly (readonly string[])[];
 }
 
-/** How an intersection resolves which approach may enter next. */
 export type LaneRightOfWay = "signal" | "priority";
 
-/** Right-of-way and signal timing for one authored crossing. */
 export interface LaneIntersectionConfig {
   node: string;
   /** Default `"priority"` (first come, first served) unless a signal program is given. */
@@ -69,13 +58,11 @@ export interface LaneIntersectionConfig {
   offsetSeconds?: number;
 }
 
-/** A resolved lane span: centerline, arc lengths, limit and adjacency. */
 export interface LaneSpan {
   id: string;
   from: string;
   to: string;
   points: readonly Waypoint[];
-  /** Per-segment lengths; one fewer than `points`. */
   segmentLengths: readonly number[];
   length: number;
   speed: number;
@@ -87,7 +74,6 @@ export interface LaneSpan {
   exit: boolean;
 }
 
-/** A resolved crossing: the lanes that feed it, the lanes that leave it, and its right-of-way. */
 export interface LaneIntersection {
   node: string;
   at: Waypoint;
@@ -99,7 +85,6 @@ export interface LaneIntersection {
   offsetSeconds: number;
 }
 
-/** A parking spot projected onto one lane at an arc position. */
 export interface LaneSpot {
   id: string;
   lane: string;
@@ -107,16 +92,13 @@ export interface LaneSpot {
   arc: number;
 }
 
-/** World pose of a lane at an arc position. */
 export interface LanePose {
   laneId: string;
   arc: number;
   position: Waypoint;
-  /** Yaw of travel, matching engine `rotationY`. */
   heading: number;
 }
 
-/** The authored lane graph: junctions, directed spans, crossings and parking spots. */
 export interface LaneGraphConfig {
   /** Junction positions; lanes may name them in `from`/`to` instead of joining by geometry. */
   nodes?: readonly LaneNode[];
@@ -143,9 +125,7 @@ export interface LaneGraph {
   intersections(): readonly LaneIntersection[];
   spots(): readonly LaneSpot[];
   spot(id: string): LaneSpot | null;
-  /** Lanes a car may spawn on: an authored entry, or a lane whose start has no inbound traffic. */
   entries(): readonly string[];
-  /** Lanes that leave the graph: an authored exit, or a lane that ends where nothing continues. */
   exits(): readonly string[];
   /** World pose at `arc` metres, shifted `lateral` metres to the driver's left. */
   pose(laneId: string, arc: number, lateral?: number): LanePose | null;
@@ -171,11 +151,8 @@ function totalLength(lengths: readonly number[]): number {
   return total;
 }
 
-/** Interpolated world point and heading at `arc` along a polyline. */
-/** Scratch for a heading read, which needs the sample and keeps none of it. */
 const headingSample = { x: 0, y: 0, z: 0, heading: 0 };
 
-/** The point and heading at `arc` along a polyline, written into `out`: the per-car, per-tick form. */
 function samplePolylineInto(
   points: readonly Waypoint[],
   lengths: readonly number[],
@@ -210,11 +187,7 @@ function endpointHeading(a: Waypoint, b: Waypoint): number {
   return Math.atan2(b[0] - a[0], b[2] - a[2]);
 }
 
-/**
- * Write the world pose at `arc` along a lane into a caller-owned record — the allocation-free form
- * {@link LaneGraph.pose} wraps, for a runtime that poses hundreds of cars per tick.
- * @internal
- */
+/** @internal */
 export function lanePoseInto(
   lane: LaneSpan,
   arc: number,
@@ -572,21 +545,15 @@ export function createLaneGraph(config: LaneGraphConfig): LaneGraph {
   };
 }
 
-/** How the document reader recognizes authored lane content. */
 export interface LaneGraphDocumentOptions {
-  /** Path kinds authored as one directed lane each. Default `["traffic_lane"]`. */
   laneKinds?: readonly string[];
-  /** Path kinds authored as a two-way road centerline, expanded into a lane per direction. Default `["road"]`. */
   roadKinds?: readonly string[];
-  /** Marker kinds that carry an intersection's right-of-way in `meta`. Default `["traffic_intersection"]`. */
   intersectionKinds?: readonly string[];
-  /** Marker kinds that place a parking spot. Default `["traffic_parking"]`. */
   parkingKinds?: readonly string[];
   /** Distance within which lane endpoints and markers join a junction. Default 3. */
   joinRadius?: number;
   /** Speed limit, in world units per second, by authored `meta.level`. */
   speedByLevel?: Readonly<Record<string, number>>;
-  /** Speed limit for a path with no recognized level. Default 13. */
   defaultSpeed?: number;
 }
 
@@ -662,10 +629,6 @@ function indexCenterlines(paths: readonly { id: string; points: readonly Waypoin
   return { cell: radius, buckets };
 }
 
-/**
- * Interior vertices that another centerline passes through: those are junctions the road crosses, and
- * splitting there is what turns a street centerline into lane spans that meet at a crossing.
- */
 function junctionCuts(index: CenterlineIndex, pathId: string, points: readonly Waypoint[]): number[] {
   const radiusSq = index.cell * index.cell;
   const cuts: number[] = [];
@@ -691,7 +654,6 @@ function junctionCuts(index: CenterlineIndex, pathId: string, points: readonly W
   }
   return cuts;
 }
-
 
 function nearestLaneAt(
   graph: LaneGraph,
@@ -763,7 +725,6 @@ export function laneGraphFromDocument(
     joinRadius,
   );
 
-  /** Cut a centerline into the runs between junctions, as `[first,last]` point index pairs. */
   const runsOf = (pathId: string, points: readonly Waypoint[]): [number, number][] => {
     const cuts = junctionCuts(centerlines, pathId, points);
     const runs: [number, number][] = [];
@@ -776,7 +737,6 @@ export function laneGraphFromDocument(
     return runs;
   };
 
-  /** Parking arcs authored along the centerline, moved into one run's own arc space. */
   const parkingForRun = (
     arcs: readonly number[],
     arcsAt: readonly number[],

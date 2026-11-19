@@ -15,7 +15,6 @@ export interface EngineCanvasProps {
   /** From `useEngineRendererFactory`; the canvas remounts per `factory.backend`. */
   rendererFactory: EngineRendererFactory;
   orthographic?: boolean | undefined;
-  /** Camera fov/zoom and near/far planes. */
   camera?: { fov?: number; zoom?: number; near?: number; far?: number } | undefined;
   /** Enable PCFShadowMap ("percentage") shadows. */
   shadows?: boolean | undefined;

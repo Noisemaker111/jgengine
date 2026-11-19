@@ -18,7 +18,6 @@ export const OPEN_FRACTION = 0.24;
 
 export const CLOSE_FRACTION = 0.92;
 
-/** What a guest cap looks like: a base crowd the rating then grows. */
 export function guestCap(rating: number): number {
   return Math.round(GUEST_CAP_BASE + rating * GUEST_CAP_PER_RATING);
 }

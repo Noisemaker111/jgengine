@@ -24,7 +24,6 @@ function parse(raw: string): OrbitSave {
   return JSON.parse(raw) as OrbitSave;
 }
 
-/** The first member of the household, in the state the axis asks for. */
 function withMember(edit: (member: OrbitSave["household"]["members"][string]) => void): (base: string) => string {
   return (raw) => {
     const save = parse(raw);

@@ -1,13 +1,7 @@
 import { clamp01 } from "../../math/scalar";
 
-/**
- * One damage type's row in a damage table: a caller-owned id (`"kinetic"`, `"fire"`) and how it
- * fares against each resistance class a target can present (`"flesh"`, `"shield"`, `"armor"`).
- * Values below `1` are resisted, `1` is neutral, above `1` is a weakness, and `0` is immune.
- */
 export interface DamageTypeDef {
   id: string;
-  /** Resistance class → multiplier. A class the type omits uses the table's `defaultMultiplier`. */
   vs?: Readonly<Record<string, number>>;
   /** True when armor points never reduce this type. Defaults to false. */
   bypassArmor?: boolean;
@@ -19,37 +13,24 @@ export interface DamageTypeDef {
  * `halfValue` halves the hit, and mitigation approaches the cap without ever reaching it.
  */
 export interface ArmorConfig {
-  /** Armor points at which the hit is halved. Default `100`. */
   halfValue?: number;
   /** Ceiling on the mitigated fraction, so armor never fully negates a hit. Default `0.9`. */
   maxMitigation?: number;
 }
 
-/**
- * A serializable damage table: damage types scored against resistance classes, plus the armor curve
- * those rows are read with. It is data a generated gun (B3.1) and a weapon runtime (B2.3) pass in;
- * the engine holds no built-in elemental chart.
- */
 export interface DamageTableDef {
   types: readonly DamageTypeDef[];
-  /** Multiplier for a type/class pair the table does not list. Default `1`. */
   defaultMultiplier?: number;
   armor?: ArmorConfig;
 }
 
-/** One readable row: a type against a resistance class at a given armor value. */
 export interface DamageTableRow {
   type: string;
   resistance: string;
-  /** Type × resistance multiplier before armor. */
   multiplier: number;
-  /** Armor points this row was read at. */
   armor: number;
-  /** Fraction of the hit armor removes, in `[0, maxMitigation]`. */
   mitigation: number;
-  /** `multiplier × (1 - mitigation)` — the fraction of the base that lands. */
   net: number;
-  /** `base × net`, when the read supplied a base. */
   damage?: number;
 }
 
@@ -66,9 +47,7 @@ export class UnknownDamageTypeError extends Error {
   }
 }
 
-/** Raised when a table lists the same damage type twice, which would make the winner depend on order.
- * @capability damage-type-duplicate reject a damage table that defines one type twice
- */
+/** @capability damage-type-duplicate reject a damage table that defines one type twice */
 export class DuplicateDamageTypeError extends Error {
   readonly type: string;
 
@@ -79,14 +58,11 @@ export class DuplicateDamageTypeError extends Error {
   }
 }
 
-/** Default armor points at which a hit is halved. */
 export const DEFAULT_ARMOR_HALF_VALUE = 100;
 /** Default ceiling on armor mitigation, so armor never fully negates a hit. */
 export const DEFAULT_MAX_MITIGATION = 0.9;
 
-/** Validate a table once at construction: duplicate ids and non-finite multipliers fail loudly.
- * @capability damage-table-validate reject a damage table with duplicate types or non-finite multipliers before combat runs
- */
+/** @capability damage-table-validate reject a damage table with duplicate types or non-finite multipliers before combat runs */
 export function assertDamageTable(table: DamageTableDef): void {
   const seen = new Set<string>();
   for (const type of table.types) {
@@ -109,9 +85,7 @@ function findType(table: DamageTableDef, type: string): DamageTypeDef {
   throw new UnknownDamageTypeError(type);
 }
 
-/** Fraction of a hit that armor removes at `armor` points; `0` at zero armor, capped by config.
- * @capability armor-mitigation read the fraction of a hit armor removes at a given armor value
- */
+/** @capability armor-mitigation read the fraction of a hit armor removes at a given armor value */
 export function armorMitigation(armor: number, config?: ArmorConfig): number {
   const points = Math.max(0, armor);
   if (points <= 0) return 0;
@@ -120,13 +94,7 @@ export function armorMitigation(armor: number, config?: ArmorConfig): number {
   return Math.min(cap, points / (points + halfValue));
 }
 
-/**
- * The type × resistance multiplier for one class, before armor. An unknown type throws; an unknown
- * resistance class uses the table's `defaultMultiplier`, since target classes may be narrower than
- * the table's coverage.
- *
- * @capability damage-table score a data-defined damage type against a resistance class, with the outcome readable as a table
- */
+/** @capability damage-table score a data-defined damage type against a resistance class, with the outcome readable as a table */
 export function typeMultiplier(table: DamageTableDef, type: string, resistance: string): number {
   const entry = findType(table, type);
   const listed = entry.vs?.[resistance];
@@ -134,9 +102,7 @@ export function typeMultiplier(table: DamageTableDef, type: string, resistance: 
   return table.defaultMultiplier ?? 1;
 }
 
-/** Whether armor points reduce this damage type.
- * @capability armor-bypass ask whether a damage type ignores armor points
- */
+/** @capability armor-bypass ask whether a damage type ignores armor points */
 export function typeBypassesArmor(table: DamageTableDef, type: string): boolean {
   return findType(table, type).bypassArmor === true;
 }
@@ -212,9 +178,7 @@ function pad(value: string, width: number): string {
   return value.length >= width ? value : value + " ".repeat(width - value.length);
 }
 
-/** Render rows as fixed-width lines for a devtools probe, a CLI dump, or a test's diff.
- * @capability damage-table-format render damage-table rows as fixed-width lines for a probe, a CLI dump, or a test
- */
+/** @capability damage-table-format render damage-table rows as fixed-width lines for a probe, a CLI dump, or a test */
 export function formatDamageTable(rows: readonly DamageTableRow[]): string[] {
   const typeWidth = Math.max(4, ...rows.map((row) => row.type.length));
   const resistanceWidth = Math.max(10, ...rows.map((row) => row.resistance.length));

@@ -3,7 +3,6 @@ import { findEditorCollection, type EditorCollection } from "@jgengine/core/edit
 import type { EditorBridgeResponse } from "../session";
 import type { HandlerContext, HandlerTable } from "./context";
 
-/** Runs `fn` with the named collection, or short-circuits with an honest not-found response. */
 function withCollection(
   ctx: HandlerContext,
   id: string,
@@ -14,7 +13,6 @@ function withCollection(
   return fn(collection);
 }
 
-/** Named collection / selection-set verbs. */
 export const collectionHandlers: Pick<
   HandlerTable,
   | "list_collections"

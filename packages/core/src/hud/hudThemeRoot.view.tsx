@@ -7,20 +7,7 @@ import type { AccessibilityState } from "@jgengine/core/ui/accessibility";
 import { useEngineStyles } from "@jgengine/ui/engineStyles";
 import { defaultHudTheme, hudThemeVars, type HudTheme } from "./hudTheme.view";
 
-/**
- * The HUD root the shell mounts around every `GameUI`: a layout-free (`display: contents`)
- * `[data-jg-hud]` element carrying the theme's `--jg-*` variables, plus the engine stylesheet. Unset
- * `theme` applies {@link defaultHudTheme}; a game's own theme on any descendant still wins by
- * inheritance. `false` opts out of the default theme and the generic HUD control defaults; the
- * keyframes stay so engine blocks still animate.
- *
- * `accessibility` applies the player's preferences to the same root: `--jg-text-scale` scales every
- * type token, `data-reduced-motion` zeroes motion, and `data-high-contrast` / `data-colorblind` /
- * `data-captions` give CSS a hook. Pass the state an `AccessibilityProvider` would carry when the
- * game mounts its own root.
- *
- * @capability hud-theme-root apply the default (or a game) HudTheme, the player's accessibility preferences and the engine stylesheet at the HUD root
- */
+/** @capability hud-theme-root apply the default (or a game) HudTheme, the player's accessibility preferences and the engine stylesheet at the HUD root */
 export function HudThemeRoot({
   theme,
   accessibility,
@@ -52,7 +39,7 @@ export function HudThemeRoot({
   );
 }
 
-/** The attribute on the element {@link HudOverlay} renders into. @internal */
+/** @internal */
 export const HUD_OVERLAY_HOST_ATTRIBUTE = "data-jg-hud-overlay-host";
 
 /**
@@ -65,7 +52,7 @@ export function HudOverlayHost({ style }: { style?: CSSProperties }): ReactNode 
   return <div {...{ [HUD_OVERLAY_HOST_ATTRIBUTE]: "" }} style={{ display: "contents", ...style }} />;
 }
 
-/** The overlay host among `anchor`'s siblings and their descendants, or `null`. @internal */
+/** @internal */
 export function findHudOverlayHost(anchor: Element | null): HTMLElement | null {
   return anchor?.parentElement?.querySelector<HTMLElement>(`[${HUD_OVERLAY_HOST_ATTRIBUTE}]`) ?? null;
 }

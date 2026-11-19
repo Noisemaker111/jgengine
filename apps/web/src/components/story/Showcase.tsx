@@ -1,10 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { GAME_IDS, gameCover, gameTitle } from "../../lib/games";
 
-/**
- * The homepage's pick of the games, chosen by their cover captures: the frames that read best at
- * card size. Every game stays on /games; this list only decides which ones the homepage leads with.
- */
 const FEATURED: readonly { id: string; genre: string; pitch: string }[] = [
   { id: "fernwild", genre: "Survival", pitch: "Tame dinosaurs and survive the wild." },
   { id: "drift-foundry", genre: "Racing", pitch: "Race a welded buggy ahead of a compactor." },

@@ -15,17 +15,13 @@ import { advancedMaterialControls, materialAuthoringNotes, materialControlGroups
 import { CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 import { withField } from "@jgengine/core/data/withField";
 
-/** A callback-driven physical material editor; the host owns persistence, undo and preview rendering. */
 export interface MaterialAssetEditorProps {
   asset: MaterialAsset;
   onChange(asset: MaterialAsset, coalesce?: string): void;
   preview?: ((asset: MaterialAsset, mode: "neutral" | "game") => ReactNode) | undefined;
 }
 
-/**
- * Edits sparse reusable material assets without replacing untouched imported material values.
- * @internal Mounted by the material workspace.
- */
+/** @internal Mounted by the material workspace. */
 export function MaterialAssetEditor({ asset, onChange, preview }: MaterialAssetEditorProps) {
   const [previewMode, setPreviewMode] = useState<"neutral" | "game">("neutral");
   const [mapRole, setMapRole] = useState<MaterialTextureRole>("color");

@@ -11,11 +11,6 @@ import {
 import { FOCUS_RING } from "./theme";
 import { Kbd } from "./ui";
 
-/**
- * Modal command palette (Ctrl/Cmd+K): fuzzy-filters every executable editor command (plus scene
- * object jump rows), surfaces recent commands when the query is empty, and runs the highlighted
- * entry on Enter. Esc or backdrop click cancels without side effects.
- */
 export function CommandPalette({
   commands,
   onClose,
@@ -23,7 +18,6 @@ export function CommandPalette({
 }: {
   commands: readonly PaletteCommand[];
   onClose: () => void;
-  /** Pre-filled filter (e.g. "add " to open straight into placement commands). */
   initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);

@@ -35,7 +35,6 @@ const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string
 
 const chunk = (key: string): ManifestChunk => manifest[key] ?? fail(`the client build has no chunk for ${key}`);
 
-/** A chunk's own file, the chunks it statically imports, and all their CSS. */
 function closure(key: string, js: Set<string>, css: Set<string>): void {
   const entry = chunk(key);
   if (js.has(entry.file)) return;

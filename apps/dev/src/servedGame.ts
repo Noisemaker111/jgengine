@@ -11,13 +11,10 @@ function toPosix(path: string): string {
 }
 
 export interface ServedGame {
-  /** The folder's own name, which is the id the runner looks the game up by. */
   id: string;
-  /** Absolute path, forward slashes, without a trailing separator. */
   root: string;
 }
 
-/** The served game implied by a `VITE_JG_GAME_DIR` value, or null for the in-repo `games/`. */
 export function servedGameFrom(raw: string | undefined): ServedGame | null {
   if (raw === undefined || raw.trim() === "") return null;
   const root = toPosix(raw);
@@ -37,7 +34,6 @@ export function engineCopySources(paths: readonly string[], gameId: string, serv
   return paths.filter((path) => path.startsWith(prefix));
 }
 
-/** One file of the served game, as the browser would fetch it through the dev server. */
 export function servedModule<T>(relative: string): Promise<T> {
   if (servedGame === null) return Promise.reject(new Error("no served game: pass --game-dir"));
   return import(/* @vite-ignore */ `/@fs/${servedGame.root}/${relative}`) as Promise<T>;

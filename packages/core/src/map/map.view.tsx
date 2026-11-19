@@ -165,7 +165,6 @@ export interface MarkerAccess<TMarker extends MarkerView> {
   getServerSnapshot: () => readonly TMarker[];
 }
 
-/** Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories. */
 export function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView> {
   if (Array.isArray(markers)) {
     const snapshot = markers as readonly MarkerView[];
@@ -187,7 +186,6 @@ export function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView
   };
 }
 
-/** Subscribe to a native marker set or external marker source, or read a static marker array. */
 export function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[];
 export function useMarkers<TMarker extends MarkerView>(
   markers: readonly TMarker[] | MarkerSource<TMarker>,
@@ -198,17 +196,12 @@ export function useMarkers(markers: MarkerCollection): readonly MarkerView[] {
   return useSyncExternalStore(access.subscribe, access.getSnapshot, access.getServerSnapshot);
 }
 
-/**
- * Re-render a component when a fog field reveals cells; returns its current cells.
- * @capability use-fog UI binding that returns a fog-of-war field's live cells
- */
+/** @capability use-fog UI binding that returns a fog-of-war field's live cells */
 export function useFog(fog: FogField): ReturnType<FogField["cells"]> {
   return useSyncExternalStore(fog.subscribe, fog.cells, fog.cells);
 }
 
-/** Props for `Minimap`: markers, centre, world radius, fog, size, terrain background and look. */
 export interface MinimapProps {
-  /** Static views, an external marker source, or a native JGengine MarkerSet. */
   markers: MarkerCollection;
   center: WorldXZ;
   worldRadius: number;
@@ -236,7 +229,6 @@ export interface MinimapProps {
   children?: ReactNode;
 }
 
-/** World-XZ rectangle a world map shows. */
 export interface MapBounds {
   minX: number;
   minZ: number;
@@ -244,14 +236,7 @@ export interface MapBounds {
   maxZ: number;
 }
 
-/**
- * Framed circular minimap: optional baked terrain background, reveal-on-event
- * fog overlay, categorized marker icons, and a facing arrow. Reads static
- * marker views, an external marker source, or a native `MarkerSet`; supply
- * your own `kindStyles` palette to reskin. Does not require `GameProvider`.
- *
- * @capability minimap framed circular minimap with terrain bake, fog, markers, and facing arrow
- */
+/** @capability minimap framed circular minimap with terrain bake, fog, markers, and facing arrow */
 export function Minimap({
   markers,
   center,
@@ -448,7 +433,6 @@ export function Minimap({
   );
 }
 
-/** One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`. */
 export interface MinimapChromeMarker {
   id: string;
   position: WorldXZ | readonly [number, number, number];
@@ -460,25 +444,16 @@ export interface MinimapChromeMarker {
   glyphColor?: string;
   strokeColor?: string;
   strokeWidth?: number;
-  /** Clamp to the minimap edge when outside `view.worldRadius` (off-screen indicator); `false` hides it instead. Default `true`. */
   clampToEdge?: boolean;
 }
 
-/** Props for `MinimapChrome`. */
 export interface MinimapChromeProps {
   /** Shared with `projectToMinimap`/`clampToMinimapEdge` — pass `view.rotate` to keep a rotating map's arrows pointed correctly. */
   view: MinimapView;
-  /** Ring outline (+ `cardinalLabel`). Default `false` — most games draw their own frame/panel around the chrome. */
   frame?: boolean;
   frameColor?: string;
   frameStrokeWidth?: number;
-  /** Label drawn at the top of the ring when `frame` is on; `false` omits it. */
   cardinalLabel?: string | false;
-  /**
-   * The blips. Give `live(() => markers)` for units that move every frame: the chrome re-renders only
-   * when a marker appears, leaves or changes its look, and moves the drawn ones to their new positions
-   * each frame.
-   */
   markers?: Live<readonly MinimapChromeMarker[]>;
   markerColor?: string;
   markerRadius?: number;
@@ -491,11 +466,6 @@ export interface MinimapChromeProps {
   handle?: RefObject<MinimapChromeHandle | null>;
 }
 
-/**
- * Moves an already-drawn `MinimapChrome`'s markers in place. `place` writes the same positions,
- * rotations and visibility a render with these props would, to markers with the ids the chrome last
- * rendered; markers it has not rendered yet need a render first.
- */
 export interface MinimapChromeHandle {
   place(view: MinimapView, markers: readonly MinimapChromeMarker[]): void;
 }
@@ -630,7 +600,6 @@ export function MinimapChrome({
 
 const NO_CHROME_MARKERS: readonly MinimapChromeMarker[] = [];
 
-/** The same blips drawn the same way, wherever they stand: a moved marker needs no render. */
 function sameMarkerLooks(previous: readonly MinimapChromeMarker[], next: readonly MinimapChromeMarker[]): boolean {
   if (previous === next) return true;
   if (previous.length !== next.length) return false;
@@ -665,11 +634,9 @@ const COMPASS_TICKS: readonly { cardinal: Cardinal; bearing: number }[] = [
   { cardinal: "NW", bearing: (7 * Math.PI) / 4 },
 ];
 
-/** Props for `Compass`: the tracked facing yaw, optional centre and markers, strip width and field of view. */
 export interface CompassProps {
   /** Facing yaw (`rotationY`, forward = `(sin yaw, cos yaw)`) of the tracked entity — pass it raw, never pre-converted to a bearing. */
   facingYaw: number;
-  /** Where bearings to markers are measured from; unset while the tracked entity has no position. */
   center?: WorldXZ | undefined;
   markers?: MarkerCollection;
   width?: number;
@@ -678,11 +645,6 @@ export interface CompassProps {
   className?: string;
 }
 
-/**
- * Horizontal compass strip centered on the player's facing direction, with the
- * eight cardinals and optional marker pips from static views, an external
- * source, or a native `MarkerSet`.
- */
 export function Compass({
   facingYaw,
   center,
@@ -778,13 +740,9 @@ export function Compass({
   );
 }
 
-/** Props for `MinimapPanel` — all `MinimapProps` plus the zone-label/clock header and compass slots. */
 export interface MinimapPanelProps extends MinimapProps {
-  /** Zone/area name slot rendered in the chrome header — the game supplies its own zone lookup. */
   zoneLabel?: ReactNode;
-  /** Clock readout slot rendered in the chrome header — pair with `useGameClock()` + `calendar()`. */
   clock?: ReactNode;
-  /** Compass strip beneath the circle. Default true; pass `false` to omit it entirely. */
   showCompass?: boolean;
   compassProps?: Partial<Omit<CompassProps, "className">>;
   headerClassName?: string;
@@ -793,14 +751,7 @@ export interface MinimapPanelProps extends MinimapProps {
   compassClassName?: string;
 }
 
-/**
- * Composed circular-minimap chrome: optional zone-label + clock header above
- * the `Minimap`, optional `Compass` strip below. Purely a wiring layer over
- * the existing primitives — the game supplies the zone name and clock text,
- * this only places them; omit either slot and the header disappears.
- *
- * @capability minimap-panel circular minimap with zone label, clock, and compass composed together
- */
+/** @capability minimap-panel circular minimap with zone label, clock, and compass composed together */
 export function MinimapPanel({
   zoneLabel,
   clock,
@@ -874,7 +825,6 @@ export interface MinimapTrackSpan {
   end: number;
   /** Fill color; defaults to a translucent white. */
   color?: string;
-  /** Tooltip / accessible label for the span. */
   label?: string;
 }
 
@@ -885,25 +835,18 @@ export interface MinimapTrackPip {
   at: number;
   /** Marker color; defaults to the rail foreground. */
   color?: string;
-  /** Accessible label for the marker. */
   label?: string;
-  /** Tooltip text (rendered as the `title` attribute). */
   title?: string;
-  /** Silhouette: `gate` (thin tall bar) or a `dot`/`exit`/`player` circle of increasing size (default `dot`). */
   shape?: "gate" | "dot" | "exit" | "player";
 }
 
-/** Props for {@link MinimapTrack}. */
 export interface MinimapTrackProps {
-  /** Colored zone spans painted along the rail. */
   spans?: readonly MinimapTrackSpan[];
   /** Point markers (gates, exit, player) placed by 0..1 fraction. */
   pips?: readonly MinimapTrackPip[];
-  /** Rail width (default `100%`). */
   width?: number | string;
   /** Rail thickness in px (default 12). */
   height?: number;
-  /** Rail track color (default `rgba(255,255,255,0.10)`). */
   railColor?: string;
   className?: string;
   style?: CSSProperties;
@@ -1032,9 +975,7 @@ function WorldMapFogImage({
   return <image href={fogImage} x={0} y={0} width={width} height={mapH} preserveAspectRatio="none" />;
 }
 
-/** Props for {@link WorldMap}: markers, world bounds, the player and facing, fog, background and layers. */
 export interface WorldMapProps {
-  /** Static views, an external marker source, or a native JGengine MarkerSet. */
   markers: MarkerCollection;
   bounds: MapBounds;
   player?: WorldXZ;
@@ -1067,9 +1008,7 @@ export function worldMapLabelPlacement(markerX: number, mapWidth: number): { x: 
   return markerX > mapWidth * (2 / 3) ? { x: markerX - 12, textAnchor: "end" } : { x: markerX + 12, textAnchor: "start" };
 }
 
-/** Pan/zoom transform applied to a {@link WorldMapSurface}'s content group. */
 export interface MapViewport {
-  /** Uniform zoom factor; 1 = fit. */
   scale: number;
   /** Content-group translation in canvas px. */
   tx: number;
@@ -1078,7 +1017,6 @@ export interface MapViewport {
 
 const IDENTITY_VIEWPORT: MapViewport = { scale: 1, tx: 0, ty: 0 };
 
-/** Props for {@link WorldMapSurface}. */
 export interface WorldMapSurfaceProps {
   markers: MarkerCollection;
   bounds: MapBounds;
@@ -1103,13 +1041,7 @@ export interface WorldMapSurfaceProps {
   style?: CSSProperties;
 }
 
-/**
- * The bare top-down map `<svg>` shared by {@link WorldMap} (framed panel) and
- * {@link FullscreenMap} (pan/zoom overlay): baked terrain background, fog, map
- * layers, markers with labels, and the player arrow, drawn under an optional
- * viewport transform. Rectangular linear projection over the world `bounds`.
- * @capability world-map-surface bare top-down map svg with terrain background, fog, layers, labelled markers and player arrow under a viewport transform
- */
+/** @capability world-map-surface bare top-down map svg with terrain background, fog, layers, labelled markers and player arrow under a viewport transform */
 export function WorldMapSurface({
   markers,
   bounds,
@@ -1216,13 +1148,7 @@ export function WorldMapSurface({
   );
 }
 
-/**
- * Full-bounds top-down world map (the "press M" overlay): baked terrain
- * background, reveal-on-event fog, all markers with labels, and the player.
- * Rectangular linear projection over the supplied world `bounds`. Framed panel
- * wrapper over {@link WorldMapSurface}.
- * @capability world-map framed full-bounds world map panel with terrain background, fog, labelled markers and the player
- */
+/** @capability world-map framed full-bounds world map panel with terrain background, fog, labelled markers and the player */
 export function WorldMap({
   markers,
   bounds,
@@ -1302,30 +1228,19 @@ function mapControlEvent(event: { currentTarget: Element; nativeEvent: Event }):
   return false;
 }
 
-/** Props for {@link FullscreenMap}. */
 export interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> {
-  /** Render nothing when false. Default true. */
   open?: boolean;
   /** Content layout width in px before zoom; height derives from the bounds aspect. Default 900. */
   contentWidth?: number;
-  /** Zoom bounds. Default 0.5 / 8. */
   minScale?: number;
   maxScale?: number;
   title?: string;
   onClose?: () => void;
-  /**
-   * Interaction mode. `"pan"` (default) drags to pan and click-to-place fires
-   * `onWorldClick`; `"draw"` drags to paint a freehand stroke, committed to
-   * `onStrokeComplete` (panning and click-to-place are suppressed).
-   */
   tool?: "pan" | "draw";
-  /** Called with a finished freehand stroke (world-XZ points) in `"draw"` mode — wire to an annotation layer's `addStroke`. */
   onStrokeComplete?: (points: readonly WorldXZ[]) => void;
-  /** Tone of the in-progress stroke while drawing. Default `"info"`. */
   drawTone?: MapLayerTone;
   /** Width (map px) of the in-progress stroke. Default 3. */
   drawWidth?: number;
-  /** Overlay chrome drawn above the map (legend, tool palette, hints). */
   children?: ReactNode;
   overlayClassName?: string;
   overlayStyle?: CSSProperties;
@@ -1582,11 +1497,8 @@ export function FullscreenMap({
   );
 }
 
-/** Props for {@link MapLegend}. */
 export interface MapLegendProps {
-  /** Marker kinds to key, in order. */
   kinds: readonly string[];
-  /** Human labels per kind; falls back to the kind id. */
   labels?: Record<string, string>;
   kindStyles?: Record<string, MarkerKindStyle>;
   title?: string;
@@ -1646,11 +1558,9 @@ export function MapLegend({
   );
 }
 
-/** Props for {@link WaypointArrow}. */
 export interface WaypointArrowProps {
   /** Bearing to the target relative to facing (radians); 0 = dead ahead. From `WaypointStore.guidance().relative`. */
   relative: number;
-  /** XZ distance in world units; renders a readout when supplied. */
   distance?: number;
   label?: string;
   /** Format the distance readout; defaults to whole units + "m". */
@@ -1661,13 +1571,7 @@ export interface WaypointArrowProps {
   style?: CSSProperties;
 }
 
-/**
- * On-screen guide arrow to the tracked waypoint — a HUD compass needle rotated
- * by the facing-relative bearing, with an optional label and distance readout.
- * Pair with `WaypointStore.guidance(playerXZ, facingYaw)`.
- *
- * @capability waypoint-arrow on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
- */
+/** @capability waypoint-arrow on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout */
 export function WaypointArrow({
   relative,
   distance,

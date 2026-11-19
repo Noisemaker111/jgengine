@@ -18,7 +18,6 @@ interface InvoiceBillCardProps {
   children?: ReactNode;
 }
 
-/** A paper invoice: what it is for, the amount, a line-art watermark, the period and Pay. */
 export function InvoiceBillCard({ label, amountUsd, billType, canAfford, disabled = false, isOverdue = false, onPay, readOnly = false, children }: InvoiceBillCardProps) {
   const amount = `$${amountUsd.toLocaleString()}`;
   return <RuneView variant="sticky" width={FULL} gap={8} border={{ width: isOverdue ? 2 : 0, color: C.destructive }}>

@@ -13,21 +13,17 @@ export interface GhostPose {
   rotationY: number;
 }
 
-/** One saved ghost: the time it set and its frames as compact `[t, x, y, z, heading]` rows. */
 export interface SavedGhost {
   time: number;
   frames: readonly (readonly [number, number, number, number, number])[];
 }
 
-/** Where an older build kept the ghosts; the yard document lifts them into its `ghosts` section. */
 export const GHOST_KEY = "drift-foundry.ghost.v1";
 const SAMPLE_SECONDS = 0.1;
-/** A long stall at a wall still fits: two and a half minutes of frames at the sample rate. */
 const MAX_FRAMES = 1500;
 
 const round = (value: number): number => Math.round(value * 100) / 100;
 
-/** The stored `ghosts` section: each event's ghost whose frames are whole numbers rows; the rest drop. */
 export function readGhosts(value: unknown): Record<string, SavedGhost> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return {};
   const clean: Record<string, SavedGhost> = {};
@@ -39,7 +35,6 @@ export function readGhosts(value: unknown): Record<string, SavedGhost> {
   return clean;
 }
 
-/** Records the live run; `take` hands back the frames once it escapes. */
 export interface GhostRecorder {
   record(t: number, pose: GhostPose): void;
   take(time: number): SavedGhost;
@@ -68,7 +63,6 @@ export function createGhostRecorder(): GhostRecorder {
   };
 }
 
-/** A saved ghost played back on the run clock: its pose at `t`, or `null` once it has crossed the gate. */
 export interface GhostReplay {
   time: number;
   poseAt(t: number): GhostPose | null;

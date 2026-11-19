@@ -14,14 +14,8 @@ import { GROUND_MAPS } from "./game/assets";
 import { initialRoads, roadSource } from "./game/world/cityLayout";
 import { DISTRICTS, ROADS, SHORE_X, WORLD_D, WORLD_W } from "./game/world/districts";
 
-/** The sky the scene document authors; the day/night cycle runs on it. */
 const authoredSky = skyFromDocument(editorLayers);
 
-/**
- * The streets at boot. Their widths, kerbs and sidewalks come from the one layout block in
- * `game/world/cityLayout.ts`; `roadSource` below keeps the drawn streets in step when a layout slider
- * moves.
- */
 export const streets = initialRoads;
 
 /**
@@ -52,7 +46,6 @@ const pavementRegions: TerrainMaterialRegion[] = ROADS.map((segment) => ({
   colors: { low: "#bcb1a0", high: "#cbc0ae" },
 }));
 
-/** Beach and wet-sand bands, hugging the coastline the terrain's shore falloff already carves. */
 const beachRegions: TerrainMaterialRegion[] = [
   {
     shape: "polyline",

@@ -10,17 +10,8 @@ import { chargeMonth } from "./bank";
 import { guestPopulation } from "./guests";
 import { ratingTarget } from "./rating";
 
-/**
- * The park's day and month, on the world. Money moves continuously (the `upkeep_*` flows and the
- * `pay_*` ripples), so midnight only restocks the stalls (their `restock_*` action) and files the
- * day's takings. Every `MONTH_DAYS` days the month closes: the loan's interest (the `interest`
- * ripple), the month's report, and the till's check.
- */
-
-/** Month-ends in a row in the red that close the park. */
 export const RED_MONTH_LIMIT = 2;
 
-/** Close the day at midnight: restock, the day's summary, and the month's close when it ends. */
 export function closeDay(ctx: GameContext): void {
   const w = park.of(ctx);
   if (w.fact("park.game_over") === true) return;
@@ -104,7 +95,6 @@ export function closeMonth(ctx: GameContext, monthIndex: number): void {
  */
 export const RATING_EASE = 0.012;
 
-/** The rating eases toward its target; its best-ever value is `park.peak`, and each award crossed pays once. */
 export function tickRating(ctx: GameContext, dt: number, metrics: ParkMetrics): void {
   const w = park.of(ctx);
   // The crowd the rating judges: today's visitors, or the guests still inside across midnight.

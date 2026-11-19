@@ -1,7 +1,6 @@
 import { SPORT_FRONT_120_70_ZR17, SPORT_REAR_180_55_ZR17 } from "./motorcycleTire";
 import type { ReferenceMotorcycleSpec } from "./referenceMotorcycle";
 
-/** Published figures a reference motorcycle is checked against, with where each came from. */
 export interface PublishedMotorcyclePerformance {
   zeroTo100: number;
   zeroTo200: number;
@@ -12,7 +11,6 @@ export interface PublishedMotorcyclePerformance {
   sources: readonly string[];
 }
 
-/** A real motorcycle: the multibody spec and its published performance. */
 export interface RealMotorcycle {
   name: string;
   spec: ReferenceMotorcycleSpec;
@@ -84,7 +82,6 @@ export const GSXR1000_SHARP_2004: ReferenceMotorcycleSpec = {
   brakes: { front: 3200, rear: 700 },
 };
 
-/** Real motorcycles with published tests, each with its reference multibody spec. */
 export const REAL_MOTORCYCLES: readonly RealMotorcycle[] = [
   {
     name: "Suzuki GSX-R1000 K1",

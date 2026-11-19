@@ -1,7 +1,6 @@
 import type { RenderBounds } from "./bounds";
 import type { Vec3 } from "../world/geometry";
 
-/** 3D perspective camera (the default game camera). */
 export interface PerspectiveView {
   readonly kind: "perspective";
   readonly position: Vec3;
@@ -9,13 +8,11 @@ export interface PerspectiveView {
   readonly up?: Vec3;
   /** Vertical field of view in degrees. Default 55. */
   readonly fovDeg?: number;
-  /** Width / height. Default 16 / 9. */
   readonly aspect?: number;
   readonly near?: number;
   readonly far?: number;
 }
 
-/** 2D / orthographic camera (top-down, side-scroller, minimap). */
 export interface OrthographicView {
   readonly kind: "orthographic";
   readonly position: Vec3;
@@ -32,7 +29,6 @@ export type CameraView = PerspectiveView | OrthographicView;
 export interface Frustum {
   /** 6 inward-facing planes, packed [nx,ny,nz,d] × 6. A point p is inside plane i when nx·px+ny·py+nz·pz+d ≥ 0. */
   readonly planes: Float64Array;
-  /** 8 world corners, packed xyz × [ntl,ntr,nbl,nbr,ftl,ftr,fbl,fbr]. */
   readonly corners: Float64Array;
   minX: number;
   minY: number;
@@ -218,17 +214,13 @@ export function sphereInFrustum(f: Frustum, cx: number, cy: number, cz: number, 
   return true;
 }
 
-/** Sphere broad-phase reject, then the tight AABB test. Both conservative.
- * @internal
- */
+/** @internal */
 export function boundsInFrustum(f: Frustum, b: RenderBounds): boolean {
   if (!sphereInFrustum(f, b.centerX, b.centerY, b.centerZ, b.radius)) return false;
   return aabbInFrustum(f, b.minX, b.minY, b.minZ, b.maxX, b.maxY, b.maxZ);
 }
 
-/** Push every plane outward by `margin` (unit normals ⇒ d += margin) to form a preload/hysteresis region.
- * @internal
- */
+/** @internal */
 export function dilateFrustum(src: Frustum, margin: number, out: Frustum): Frustum {
   const sp = src.planes;
   const op = out.planes;

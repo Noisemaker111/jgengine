@@ -1,20 +1,13 @@
-/** Options for {@link createCmaEvolutionStrategy}. */
 export interface CmaOptions {
-  /** Starting mean. */
   mean: readonly number[];
-  /** Starting step size (one standard deviation, in the units of the coordinates). */
   sigma: number;
-  /** Uniform random numbers in [0, 1); inject a seeded generator for reproducible runs. */
   random: () => number;
-  /** Population per generation (default `4 + ⌊3 ln n⌋`). */
   populationSize?: number;
 }
 
-/** Serializable state of a {@link CmaEvolutionStrategy}. */
 export interface CmaState {
   mean: number[];
   sigma: number;
-  /** Covariance, row-major `n × n`. */
   covariance: number[];
   pathSigma: number[];
   pathC: number[];
@@ -22,20 +15,17 @@ export interface CmaState {
   best: { x: number[]; f: number } | null;
 }
 
-/** An ask/tell minimiser: `ask()` a population, evaluate it anywhere (other processes included), `tell()` the costs. */
 export interface CmaEvolutionStrategy {
   readonly dimension: number;
   readonly populationSize: number;
   ask(): number[][];
   tell(population: readonly (readonly number[])[], costs: readonly number[]): void;
-  /** Best point seen so far and its cost. */
   best(): { x: number[]; f: number } | null;
   sigma(): number;
   snapshot(): CmaState;
   restore(state: CmaState): void;
 }
 
-/** Eigen-decomposition of a symmetric matrix by cyclic Jacobi rotations: `A = B·diag(d)·Bᵀ`. */
 function symmetricEigen(a: Float64Array, n: number, vectors: Float64Array, values: Float64Array): void {
   const m = Float64Array.from(a);
   vectors.fill(0);
@@ -78,12 +68,7 @@ function symmetricEigen(a: Float64Array, n: number, vectors: Float64Array, value
   for (let i = 0; i < n; i++) values[i] = Math.max(1e-20, m[i * n + i] ?? 0);
 }
 
-/**
- * Creates a CMA-ES minimiser (N. Hansen, "The CMA Evolution Strategy: A Tutorial", arXiv:1604.00772, 2016) with
- * the tutorial's default weights and learning rates, rank-one and rank-μ covariance updates and cumulative step-size
- * adaptation. Derivative-free and robust to noisy, discontinuous costs such as a controller that sometimes falls.
- * @capability cma-es derivative-free ask/tell minimiser for tuning controllers and fitting models
- */
+/** @capability cma-es derivative-free ask/tell minimiser for tuning controllers and fitting models */
 export function createCmaEvolutionStrategy(options: CmaOptions): CmaEvolutionStrategy {
   const n = options.mean.length;
   const lambda = options.populationSize ?? 4 + Math.floor(3 * Math.log(n));

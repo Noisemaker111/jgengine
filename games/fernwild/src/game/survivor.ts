@@ -34,14 +34,12 @@ import { feedAdded, feedConsumed } from "./pickupFeed";
 import { openScreen } from "./screens";
 import { COMFORT, ENGRAM_POINTS, LEVEL_STATS, MAX_LEVEL, SURVIVOR, survivorVitals, XP_TO_LEVEL, type LevelStat } from "./data/survivor";
 
-
 type StatId = LevelStat["id"];
 
 interface CraftSpec {
   recipeId: string;
 }
 
-/** Everything that is the survivor's own and not the world's: vitals, levels, engrams, the crafting queue. */
 interface Survivor {
   vitals: Vitals;
   points: Record<StatId, number>;
@@ -52,24 +50,15 @@ interface Survivor {
   activeSlot: number | null;
   swingReady: number;
   comfort: BodyComfort;
-  /** The air and weather where the survivor stood last tick. */
   climate: ClimateHere | null;
-  /** Head under water this step: breath drains. */
   underwater: boolean;
-  /** The hostile air the survivor stands in (a cave's gas, heat or cold), by name. */
   hazards: readonly string[];
-  /** What sits in front of the survivor: the struck node in reach, or what E would pick. */
   aim: { strike: string | null; pick: string | null; pickAt: { x: number; z: number } | null; water: boolean };
   dead: boolean;
-  /** Webbed (the Broodmother's spit): moving at this share of speed until this game time. */
   web: { slow: number; until: number } | null;
-  /** Lifetime tallies: gathers that took something, items crafted, drinks from water. */
   tally: Tally;
-  /** Meat going off in the bag and on the hotbar. Timers restart on load. */
   spoilage: Spoilage;
-  /** Armour worn in ARK's five body slots. */
   gear: Equipment;
-  /** Each worn tool's durability, by item id: one carried pick or bow shares its kind's wear. Absent is like new. */
   wear: Record<string, DurabilityState>;
 }
 
@@ -81,7 +70,6 @@ interface Tally {
 
 const NO_TALLY: Tally = { gathered: 0, crafted: 0, drinks: 0 };
 
-/** ARK's survivor stats: pools start at the survivor's base, percentages at 100%, fortitude at 0. */
 const POINTS = createStatPoints({
   stats: Object.fromEntries(
     LEVEL_STATS.map((stat) => [stat.id, { base: stat.id === "melee" || stat.id === "speed" || stat.id === "crafting" ? 100 : stat.id === "fortitude" ? 0 : SURVIVOR[stat.id], perPoint: stat.per }]),
@@ -122,24 +110,19 @@ function createGear(): Equipment {
   );
 }
 
-/** No engram known; the new-game declaration (`data/start.ts`) teaches the starting ones. */
 function freshEngrams(): UnlockPoints {
   return createUnlockPoints({ perLevel: ENGRAM_POINTS });
 }
 
-/** Know an engram without spending points: how the new game hands out the level-1 ones. */
 export function learnFree(ctx: GameContext, engramId: string): void {
   if (engramDef(engramId) === null) throw new Error(`fernwild: no engram "${engramId}"`);
   survivorOf(ctx).engrams.spend(engramId, 0);
 }
 
-// --- stats --------------------------------------------------------------------------------
-
 function statValue(survivor: Survivor, id: StatId): number {
   return POINTS.value(survivor.points, id);
 }
 
-/** The survivor's level, 1 at the start. */
 export function survivorLevel(ctx: GameContext): number {
   return ctx.scene.entity.stats.get(ctx.player.userId, "level")?.current ?? 1;
 }
@@ -148,7 +131,6 @@ function unspentPoints(ctx: GameContext, survivor: Survivor): number {
   return POINTS.unspent(survivor.points, survivorLevel(ctx) - 1);
 }
 
-/** Push levelled maxes into the vitals and the entity's health pool. */
 function applyMaxes(ctx: GameContext, survivor: Survivor, fill: boolean): void {
   for (const id of ["health", "stamina", "oxygen", "food", "water"] as const) {
     survivor.vitals.setMax(id, statValue(survivor, id), fill);
@@ -165,8 +147,6 @@ export function grantXp(ctx: GameContext, amount: number): void {
   if (survivorLevel(ctx) !== before) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "Level up!", kind: "pickup" });
 }
 
-// --- inventory ---------------------------------------------------------------------------
-
 function slotsOf(state: InventoryState) {
   return state.slots.flatMap((slot) => (slot === null ? [] : [{ itemId: slot.itemId, quantity: slot.count }]));
 }
@@ -175,12 +155,10 @@ function carried(ctx: GameContext) {
   return [...slotsOf(ctx.player.inventory.state(BAG)), ...slotsOf(ctx.player.inventory.state(HOTBAR))];
 }
 
-/** Worn armour weighs what it does in the bag, as in ARK. */
 function worn(survivor: Survivor) {
   return survivor.gear.worn().map((entry) => ({ itemId: entry.itemId, quantity: 1 }));
 }
 
-/** What the worn armour adds to each end of the comfortable band, in °C. */
 function insulation(survivor: Survivor): { heat: number; cold: number } {
   let heat = 0;
   let cold = 0;
@@ -192,14 +170,12 @@ function insulation(survivor: Survivor): { heat: number; cold: number } {
   return { heat, cold };
 }
 
-/** Fernwild's carrying bands: encumbered from 85% of the weight stat, slowing toward half speed at the limit. */
 const ENCUMBRANCE = { soft: 0.85, floor: 0.5 } as const;
 
 function encumbrance(ctx: GameContext, survivor: Survivor) {
   return resolveEncumbrance(totalLoad([...carried(ctx), ...worn(survivor)], (id) => itemDef(id)?.weight ?? 0), statValue(survivor, "weight"), ENCUMBRANCE);
 }
 
-/** Put items in the bag; whatever does not fit is lost with a notice. */
 export function give(ctx: GameContext, itemId: string, count: number): number {
   if (count <= 0) return 0;
   const put = ctx.player.inventory.put(BAG, itemId, count);
@@ -211,7 +187,6 @@ export function give(ctx: GameContext, itemId: string, count: number): number {
   return count;
 }
 
-/** Take `count` of an item from the bag, then the hotbar; false (and nothing taken) when there are not that many. */
 export function takeAnywhere(ctx: GameContext, itemId: string, count: number): boolean {
   const inBag = ctx.player.inventory.count(BAG, itemId);
   const fromBag = Math.min(inBag, count);
@@ -221,7 +196,6 @@ export function takeAnywhere(ctx: GameContext, itemId: string, count: number): b
   return true;
 }
 
-/** The item in the active hotbar slot: a tool, or a structure to place. */
 export function heldItem(ctx: GameContext): string | null {
   const survivor = survivorOf(ctx);
   if (survivor.activeSlot === null) return null;
@@ -234,8 +208,6 @@ function heldTool(ctx: GameContext, survivor: Survivor): { id: string | null; to
   const tool = slot === null ? undefined : itemDef(slot.itemId)?.tool;
   return tool === undefined || slot === null ? { id: null, tool: FIST } : { id: slot.itemId, tool };
 }
-
-// --- gathering ---------------------------------------------------------------------------
 
 function ensurePlacements(ctx: GameContext, survivor: Survivor): void {
   if (survivor.placed) return;
@@ -283,7 +255,6 @@ function pickSpec(position: readonly [number, number, number], yaw: number) {
   return { x: position[0], z: position[2], yaw, reach: PICK_UP.reach, cone: PICK_CONE, accepts: gatheredBy("pick") };
 }
 
-/** Half-angle of what E reaches: what is in front, as ARK picks what the crosshair is on. */
 const PICK_CONE = 0.7;
 
 function aimAt(ctx: GameContext, survivor: Survivor, position: readonly [number, number, number], yaw: number): Survivor["aim"] {
@@ -301,7 +272,6 @@ function aimAt(ctx: GameContext, survivor: Survivor, position: readonly [number,
   return { strike: label(strike), pick: label(pick), pickAt: pick === null ? null : { x: pick.x, z: pick.z }, water: inWater(ctx, position) };
 }
 
-/** Left click with a ranged weapon: spend the first carried ammo it takes and hit what lies along the aim. */
 function fire(ctx: GameContext, survivor: Survivor, tool: ToolDef, yaw: number): void {
   const ranged = tool.ranged;
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -350,7 +320,6 @@ function repairOf(survivor: Survivor, itemId: string) {
   return repairQuote(spec, state);
 }
 
-/** Repair a worn tool with materials from the bag and hotbar, back to like new. */
 export function repairTool(ctx: GameContext, itemId: string): boolean {
   const survivor = survivorOf(ctx);
   const quote = repairOf(survivor, itemId);
@@ -367,7 +336,6 @@ export function repairTool(ctx: GameContext, itemId: string): boolean {
   return true;
 }
 
-/** Left click: swing whatever is in hand at what is in front. */
 export function swing(ctx: GameContext, yaw?: number): void {
   const survivor = survivorOf(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -420,10 +388,6 @@ export function swing(ctx: GameContext, yaw?: number): void {
   wearHeld(ctx, survivor);
 }
 
-/**
- * The E prompts, one source for the key and the HUD: harvest what is in reach by hand, or drink when
- * standing in water. The engine routes E to whichever prompt is active.
- */
 export function survivorPrompts(ctx: GameContext): PositionedPrompt[] {
   const survivor = survivorOf(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -438,7 +402,6 @@ export function survivorPrompts(ctx: GameContext): PositionedPrompt[] {
   return prompts;
 }
 
-/** E: pick a bush or stones within reach, or drink when standing in water. */
 export function use(ctx: GameContext): void {
   const survivor = survivorOf(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -458,9 +421,6 @@ export function use(ctx: GameContext): void {
   }
 }
 
-
-// --- eating ------------------------------------------------------------------------------
-
 export function consume(ctx: GameContext, inventoryId: string, slot: number): boolean {
   const survivor = survivorOf(ctx);
   const stack = ctx.player.inventory.state(inventoryId).slots[slot] ?? null;
@@ -479,7 +439,6 @@ export function consume(ctx: GameContext, inventoryId: string, slot: number): bo
   return true;
 }
 
-/** Number key: equip the tool there (again to put it away), or eat what is there. */
 export function selectSlot(ctx: GameContext, slot: number): void {
   const survivor = survivorOf(ctx);
   const stack = ctx.player.inventory.state(HOTBAR).slots[slot] ?? null;
@@ -492,7 +451,6 @@ export function selectSlot(ctx: GameContext, slot: number): void {
   survivor.activeSlot = survivor.activeSlot === slot || !holdable ? null : slot;
 }
 
-/** Double-click in the inventory: armour is worn, tools and food go to the hotbar, hotbar items come back. */
 export function shuttle(ctx: GameContext, from: string, slot: number): void {
   if (wearArmour(ctx, from, slot)) return;
   const to = from === BAG ? HOTBAR : BAG;
@@ -502,9 +460,6 @@ export function shuttle(ctx: GameContext, from: string, slot: number): void {
   if (from === HOTBAR && survivor.activeSlot === slot) survivor.activeSlot = null;
 }
 
-// --- armour ------------------------------------------------------------------------------
-
-/** Wear the armour in this slot; whatever its body slot held goes back where it came from. */
 export function wearArmour(ctx: GameContext, inventoryId: string, slot: number): boolean {
   const stack = ctx.player.inventory.state(inventoryId).slots[slot] ?? null;
   if (stack === null || itemDef(stack.itemId)?.wear === undefined) return false;
@@ -517,7 +472,6 @@ export function wearArmour(ctx: GameContext, inventoryId: string, slot: number):
   return true;
 }
 
-/** Take off what a body slot holds, into the bag; refused when the bag is full. */
 export function takeOff(ctx: GameContext, slotId: string): void {
   const gear = survivorOf(ctx).gear;
   const entry = gear.worn().find((worn) => worn.slotId === slotId);
@@ -530,15 +484,12 @@ export function takeOff(ctx: GameContext, slotId: string): void {
   dress(ctx);
 }
 
-/** The survivor's body wears what its gear slots hold. */
 function dress(ctx: GameContext): void {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return;
   const wearing = survivorOf(ctx).gear.worn().map((entry) => entry.itemId);
   if ((me.worn ?? []).join() !== wearing.join()) ctx.scene.entity.update(me.id, { worn: wearing });
 }
-
-// --- engrams and crafting ----------------------------------------------------------------
 
 export function knowsEngram(ctx: GameContext, engramId: string): boolean {
   return survivorOf(ctx).engrams.isUnlocked(engramId);
@@ -565,7 +516,6 @@ function queueConfig(survivor: Survivor): WorkQueueConfig<CraftSpec, undefined, 
   };
 }
 
-/** What a recipe checks against: learned engrams, and the stations placed near the survivor. */
 function craftContext(ctx: GameContext, survivor: Survivor) {
   const me = ctx.scene.entity.get(ctx.player.userId);
   const origin: readonly [number, number] = me === null ? [0, 0] : [me.position[0], me.position[2]];
@@ -623,8 +573,6 @@ function finishCraft(ctx: GameContext, spec: CraftSpec): void {
   grantXp(ctx, Math.max(1, craftSeconds(recipe) * 0.4));
 }
 
-// --- levelling -----------------------------------------------------------------------------
-
 export function levelStat(ctx: GameContext, stat: StatId): void {
   const survivor = survivorOf(ctx);
   if (!POINTS.spend(survivor.points, stat, survivorLevel(ctx) - 1)) return;
@@ -632,8 +580,6 @@ export function levelStat(ctx: GameContext, stat: StatId): void {
   const def = LEVEL_STATS.find((entry) => entry.id === stat)!;
   if (["health", "stamina", "oxygen", "food", "water"].includes(stat)) survivor.vitals.change(stat, def.per);
 }
-
-// --- the tick ------------------------------------------------------------------------------
 
 export function tickSurvivor(ctx: GameContext, dt: number): void {
   const survivor = survivorOf(ctx);
@@ -706,7 +652,6 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   ctx.touch();
 }
 
-/** Carried meat goes off: each spoiled unit leaves its stack and spoiled meat (or nothing) takes its place. */
 function spoil(ctx: GameContext, survivor: Survivor, dt: number): void {
   const stacks = [BAG, HOTBAR].flatMap((inventoryId) =>
     ctx.player.inventory.state(inventoryId).slots.flatMap((slot, index) => (slot === null ? [] : [{ key: `${inventoryId}:${index}`, itemId: slot.itemId, count: slot.count }])),
@@ -718,11 +663,6 @@ function spoil(ctx: GameContext, survivor: Survivor, dt: number): void {
   }
 }
 
-/**
- * Death, as in ARK: everything carried stays with the body where the survivor fell, and they wake on the beach (or
- * the last sleeping bag they placed, which it uses up) with empty hands and full vitals, keeping their level and
- * engrams. The body lasts an hour.
- */
 function die(ctx: GameContext, survivor: Survivor): void {
   survivor.dead = true;
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -748,12 +688,10 @@ export function webSurvivor(ctx: GameContext, slow: number, seconds: number): vo
   survivorOf(ctx).web = { slow, until: ctx.time.now() + seconds };
 }
 
-/** Torpor from venom or acid: enough of it and the survivor passes out. */
 export function drugSurvivor(ctx: GameContext, torpor: number): void {
   survivorOf(ctx).vitals.change("torpor", torpor);
 }
 
-/** Shift sprints while there is stamina for it: the mount's when riding, else the survivor's. */
 export function canRun(ctx: GameContext): boolean {
   const mount = mountCanSprint(ctx);
   if (mount !== null) return mount;
@@ -761,7 +699,6 @@ export function canRun(ctx: GameContext): boolean {
   return survivor.vitals.value("stamina") > 1 && encumbrance(ctx, survivor).canSprint && !survivor.vitals.has("unconscious");
 }
 
-/** First spawn: the survivor's pools from their level. */
 export function setUpSurvivor(ctx: GameContext): void {
   const survivor = survivorOf(ctx);
   ctx.scene.entity.stats.set(ctx.player.userId, "level", { current: 1, max: MAX_LEVEL });
@@ -772,8 +709,6 @@ export function setUpSurvivor(ctx: GameContext): void {
   ensurePlacements(ctx, survivor);
 }
 
-// --- save ----------------------------------------------------------------------------------
-
 interface SurvivorSave {
   vitals: VitalsState;
   points: Record<StatId, number>;
@@ -783,9 +718,7 @@ interface SurvivorSave {
   tally: Tally;
   /** Seconds each carried perishable stack has been going off; absent in saves from before spoilage. */
   spoilage?: Record<string, number>;
-  /** Worn armour; absent in saves from before armour could be worn. */
   gear?: EquipmentState;
-  /** Worn tools' durability; absent in saves from before tools wore. */
   wear?: Record<string, DurabilityState>;
 }
 
@@ -826,8 +759,6 @@ export function resetSurvivor(ctx: GameContext): void {
   survivor.gear.reset();
   survivor.wear = {};
 }
-
-// --- what the HUD reads ----------------------------------------------------------------------
 
 export function survivorView(ctx: GameContext) {
   const survivor = survivorOf(ctx);
@@ -884,7 +815,6 @@ export function survivorView(ctx: GameContext) {
 
 export type SurvivorView = ReturnType<typeof survivorView>;
 
-/** Recipes the crafting tab lists: learned engrams plus cooking. */
 export function craftable(ctx: GameContext) {
   return CRAFTING_RECIPES.filter((recipe) => recipe.requires === undefined || survivorOf(ctx).engrams.isUnlocked(recipe.id)).map((recipe) => ({
     id: recipe.id,

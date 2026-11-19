@@ -10,13 +10,11 @@ export interface HapticPulse extends HapticLevel {
   ms: number;
 }
 
-/** Options for {@link createHapticChannels}. */
 export interface HapticChannelsOptions {
   /** Scale applied to channels below the highest active priority (default `0.4`), so an impact cuts through the engine hum. */
   duck?: number;
 }
 
-/** Serializable channel state. */
 export interface HapticChannelsSnapshot {
   duck: number;
   channels: { name: string; strong: number; weak: number; priority: number; remainingMs: number | null; totalMs: number | null }[];
@@ -27,15 +25,11 @@ export interface HapticChannelsSnapshot {
  * levels from its own telemetry (engine rpm, road surface, impacts); the shell mixes and drives the pad.
  */
 export interface HapticChannels {
-  /** Hold a channel at a level until changed; `0`/`0` silences it. Higher `priority` (default `0`) ducks lower channels. */
   set(channel: string, level: HapticLevel, priority?: number): void;
-  /** Start a fading one-shot on a channel, replacing what it held. */
   pulse(channel: string, pulse: HapticPulse, priority?: number): void;
-  /** Silence one channel, or all of them. */
   clear(channel?: string): void;
   /** Advance pulses by `dt` seconds and return the mixed level. */
   mix(dt: number): HapticLevel;
-  /** The last mixed level. */
   level(): HapticLevel;
   retune(options: HapticChannelsOptions): void;
   snapshot(): HapticChannelsSnapshot;
@@ -52,10 +46,7 @@ interface Channel {
 
 const clamp01 = (value: number) => (Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0);
 
-/**
- * Per-player haptic channels mixed by priority.
- * @capability haptics Continuous gamepad rumble from named channels (engine, road, impact) mixed by priority, plus fading pulses.
- */
+/** @capability haptics Continuous gamepad rumble from named channels (engine, road, impact) mixed by priority, plus fading pulses. */
 export function createHapticChannels(options: HapticChannelsOptions = {}): HapticChannels {
   let duck = clamp01(options.duck ?? 0.4);
   const channels = new Map<string, Channel>();

@@ -7,12 +7,9 @@ import type { EntityPosition } from "./entityStore";
  * the generated index without the runtime ever touching the rendered scene graph.
  */
 export interface CollisionMeshData {
-  /** Model-space bounds of the encoded vertices — the quantization frame. */
   min: readonly [number, number, number];
   max: readonly [number, number, number];
-  /** Welded vertex count; `positions` holds exactly `vertexCount * 3` u16 values. */
   vertexCount: number;
-  /** Triangle count; `indices` holds exactly `triangleCount * 3` values. */
   triangleCount: number;
   /** Base64 little-endian u16 xyz triples, each axis normalized 0..65535 across `min`..`max`. */
   positions: string;
@@ -27,7 +24,6 @@ export interface CollisionMeshData {
   boxes?: readonly { min: readonly [number, number, number]; max: readonly [number, number, number] }[];
 }
 
-/** Raw triangle soup for {@link encodeCollisionMesh}: model-space xyz triples plus triangle indices. */
 export interface CollisionMeshSource {
   positions: ArrayLike<number>;
   indices: ArrayLike<number>;
@@ -39,17 +35,11 @@ export interface CollisionMeshSource {
  * run allocation-free over flat arrays.
  */
 export interface PreparedCollisionMesh {
-  /** Dequantized model-space vertex xyz triples. */
   readonly positions: Float32Array;
-  /** Triangle vertex indices, 3 per triangle. */
   readonly indices: Uint32Array;
-  /** Per-node AABBs, 6 floats (minXYZ, maxXYZ) per node. */
   readonly nodeBounds: Float32Array;
-  /** Leaf: first slot in `triOrder`. Internal: right-child node index (left child is `node + 1`). */
   readonly nodeStart: Int32Array;
-  /** Leaf: triangle count (> 0). Internal: 0. */
   readonly nodeCount: Int32Array;
-  /** Triangle indices grouped by leaf ranges. */
   readonly triOrder: Uint32Array;
 }
 
@@ -223,7 +213,6 @@ function triangleSeparatedOnAxis(
   return min > radius || max < -radius;
 }
 
-/** Akenine–Möller triangle vs axis-aligned box overlap (13-axis SAT), box given by center + half-size. */
 function triangleOverlapsBox(
   ax: number, ay: number, az: number,
   bx: number, by: number, bz: number,

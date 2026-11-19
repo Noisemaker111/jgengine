@@ -6,14 +6,11 @@ export interface FeedEntry<T = unknown> {
   data: T;
 }
 
-/** Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning. */
 export interface TimedFeedEntry {
   at: number;
 }
 
-/** Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window. */
 export interface FeedWindow {
-  /** Keep only the newest `limit` entries. Omit for no count cap. */
   limit?: number;
   /** Drop entries older than `ttl` game-seconds before the newest `at`. Omit for no age cap. */
   ttl?: number;
@@ -23,14 +20,7 @@ export interface GameFeedOptions {
   limit?: number;
 }
 
-/**
- * Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the
- * appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry
- * shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event
- * logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
- *
- * @capability notice-feed serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
- */
+/** @capability notice-feed serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed) */
 export function appendFeed<T extends TimedFeedEntry>(
   list: readonly T[],
   entry: T,
@@ -80,11 +70,7 @@ export interface GameFeed {
   hydrate(data: Record<string, FeedEntry[]>): void;
 }
 
-/**
- * A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
- *
- * @capability event-feed a rolling feed of recent gameplay events for a HUD ticker or killfeed
- */
+/** @capability event-feed a rolling feed of recent gameplay events for a HUD ticker or killfeed */
 export function createGameFeed(options?: GameFeedOptions): GameFeed {
   const limit = options?.limit ?? 20;
   const buffers = new Map<string, FeedEntry[]>();

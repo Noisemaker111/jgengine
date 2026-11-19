@@ -1,11 +1,3 @@
-/**
- * Missions driven from authored scene markers. A designer places a `mission_marker` (or sets a
- * mission action on any marker or volume) in the editor — `mission_start`, `mission_objective` or
- * `mission_fail` — and the runtime starts, advances or fails the mission when an actor trips it.
- * Nothing about the marker is mission-specific code; it is the shared authored trigger vocabulary,
- * plus the marker positions a positional objective reads.
- */
-
 import type { ParamField, ParamSchema } from "../generator/paramSchema";
 import {
   DEFAULT_TRIGGER_RADIUS,
@@ -25,11 +17,7 @@ import { registerSceneKind } from "../scene/sceneKinds";
 import type { SceneDocumentLike, ScenePoint3 } from "../world/sceneShapes";
 import type { MissionDef, MissionRuntime } from "./mission";
 
-/**
- * Marker positions from an authored scene, keyed by marker id — what a positional objective reads.
- *
- * @capability mission-triggers read authored scene marker positions for positional objectives
- */
+/** @capability mission-triggers read authored scene marker positions for positional objectives */
 export function missionMarkers(document: SceneDocumentLike): Record<string, ScenePoint3> {
   const out: Record<string, ScenePoint3> = {};
   for (const marker of document.markers) {
@@ -38,16 +26,12 @@ export function missionMarkers(document: SceneDocumentLike): Record<string, Scen
   return out;
 }
 
-/** The mission trigger actions, in inspector order. */
 export const MISSION_TRIGGER_ACTION_IDS = ["mission_start", "mission_objective", "mission_fail"] as const;
 
-/** One of {@link MISSION_TRIGGER_ACTION_IDS}. */
 export type MissionTriggerActionId = (typeof MISSION_TRIGGER_ACTION_IDS)[number];
 
-/** The events a mission action fires on: walking in, or pressing interact in range. */
 const MISSION_TRIGGER_EVENTS: readonly TriggerEvent[] = ["enter", "interact"];
 
-/** The fail state a mission lands in when nothing names one. */
 const DEFAULT_FAIL_STATE = "failed";
 
 interface MissionIdOptions {
@@ -56,7 +40,6 @@ interface MissionIdOptions {
   states: { value: string; label: string }[];
 }
 
-/** Every mission, objective and fail-state id a catalog declares, as dropdown options. */
 function missionIdOptions(missions: readonly MissionDef[]): MissionIdOptions {
   const objectiveOwners = new Map<string, string[]>();
   const stateOwners = new Map<string, string[]>([[DEFAULT_FAIL_STATE, []]]);
@@ -77,19 +60,12 @@ function missionIdOptions(missions: readonly MissionDef[]): MissionIdOptions {
   };
 }
 
-/** A dropdown of the catalog's ids when one is given, else a free text id. */
 function idField(key: string, label: string, options: readonly { value: string; label: string }[] | undefined): ParamField {
   if (options === undefined) return { type: "text", key, label, default: "" };
   return { type: "select", key, label, options: [{ value: "", label: "— choose —" }, ...options], default: "" };
 }
 
-/**
- * The mission actions, as the editor inspector lists them. Given the game's mission catalog, the
- * mission, objective and fail-state params are dropdowns of its ids; without one they are free text.
- * Params land flat on the object's `meta` beside `on`/`action`, like any authored trigger.
- *
- * @capability mission-triggers start, advance and fail a mission from authored scene markers
- */
+/** @capability mission-triggers start, advance and fail a mission from authored scene markers */
 export function missionTriggerActions(missions?: readonly MissionDef[]): TriggerActionDefinition[] {
   const options = missions === undefined ? undefined : missionIdOptions(missions);
   const mission = idField("mission", "Mission", options?.missions);
@@ -110,11 +86,7 @@ export function missionTriggerActions(missions?: readonly MissionDef[]): Trigger
   ];
 }
 
-/**
- * The mission actions with free-text ids, for a game that registers them without its catalog.
- *
- * @capability mission-triggers start, advance and fail a mission from authored scene markers
- */
+/** @capability mission-triggers start, advance and fail a mission from authored scene markers */
 export const MISSION_TRIGGER_ACTIONS: readonly TriggerActionDefinition[] = missionTriggerActions();
 
 /**
@@ -128,22 +100,10 @@ export function registerMissionTriggerActions(missions?: readonly MissionDef[]):
   for (const action of missionTriggerActions(missions)) registerTriggerAction(action);
 }
 
-/**
- * The scene kind a designer places for a mission trigger: a marker whose inspector edits exactly the
- * `meta` the mission trigger runtime reads (`on`, `action`, `mission`/`objective`/`state`,
- * `triggerRadius`), so `collectAuthoredTriggers` and {@link createMissionTriggerBridge} read
- * it like any other authored trigger.
- *
- * @capability mission-triggers place mission triggers from the editor palette
- */
+/** @capability mission-triggers place mission triggers from the editor palette */
 export const MISSION_MARKER_KIND = "mission_marker";
 
-/**
- * The `mission_marker` inspector schema. Given the game's mission catalog, the id fields are
- * dropdowns of its ids.
- *
- * @capability mission-triggers place mission triggers from the editor palette
- */
+/** @capability mission-triggers place mission triggers from the editor palette */
 export function missionMarkerSchema(missions?: readonly MissionDef[]): ParamSchema {
   const options = missions === undefined ? undefined : missionIdOptions(missions);
   return {
@@ -202,11 +162,8 @@ export function registerMissionMarkerKind(missions?: readonly MissionDef[]): str
   return MISSION_MARKER_KIND;
 }
 
-/** One problem {@link validateMissionMarkers} found on an authored mission trigger. */
 export interface MissionMarkerIssue {
-  /** Marker or volume id. */
   sourceId: string;
-  /** The `meta` key at fault. */
   key: string;
   message: string;
 }
@@ -233,13 +190,7 @@ function missionTriggerRows(meta: Record<string, unknown> | undefined): { on: un
   return out;
 }
 
-/**
- * Check every authored mission trigger in a document against the game's mission catalog: each names
- * a known mission, an objective of that mission, a fail state of that mission, and an event mission
- * actions fire on. A `mission_marker` with no trigger set is reported too. Empty means valid.
- *
- * @capability mission-triggers validate authored mission triggers against the mission catalog
- */
+/** @capability mission-triggers validate authored mission triggers against the mission catalog */
 export function validateMissionMarkers(document: SceneDocumentLike, missions: readonly MissionDef[]): MissionMarkerIssue[] {
   const issues: MissionMarkerIssue[] = [];
   const byId = new Map(missions.map((mission) => [mission.id, mission]));
@@ -281,9 +232,7 @@ export function validateMissionMarkers(document: SceneDocumentLike, missions: re
   return issues;
 }
 
-/** Watches a document's authored mission triggers against moving actors. */
 export interface MissionTriggerBridge {
-  /** Advance one tick; fires the mission actions the actors tripped. */
   step(input: {
     actors: readonly {
       id: string;
@@ -291,7 +240,6 @@ export interface MissionTriggerBridge {
     }[];
     interact?: readonly string[];
   }): readonly TriggerDispatchEvent[];
-  /** The mission triggers this bridge was built from. */
   triggers(): readonly AuthoredTrigger[];
   /** Drop membership so the next step re-fires enters for still-inside actors. */
   reset(): void;
@@ -302,13 +250,7 @@ function textParam(event: TriggerDispatchEvent, key: string): string | undefined
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-/**
- * Wire authored markers to a {@link MissionRuntime}: an actor entering a `mission_start` marker starts
- * the named mission, `mission_objective` completes the named objective, and `mission_fail` lands the
- * named fail state. Pure membership math over the document, exactly like any other authored trigger.
- *
- * @capability mission-triggers start, advance and fail a mission from authored scene markers
- */
+/** @capability mission-triggers start, advance and fail a mission from authored scene markers */
 export function createMissionTriggerBridge(options: {
   runtime: MissionRuntime;
   document: SceneDocumentLike;

@@ -57,7 +57,6 @@ function digitalTarget(binding: AxisBinding, isDown: (code: string) => boolean):
   return positive - negative;
 }
 
-/** Strongest magnitude across a side's codes — with a `value` source an analog stick contributes its actual deflection; without one this degrades to {@link digitalTarget}'s 0/1. */
 function sideValue(codes: readonly string[] | undefined, value: (code: string) => number): number {
   if (codes === undefined) return 0;
   let strongest = 0;
@@ -72,14 +71,7 @@ function analogTarget(binding: AxisBinding, value: (code: string) => number): nu
   return sideValue(binding.positive, value) - sideValue(binding.negative, value);
 }
 
-/**
- * Analog control channel — distinct from the digital action bindings. Throttle/brake/steer/handbrake
- * are continuous values ramped from held keys (a keyboard feels like a pedal) or driven directly from
- * a gamepad axis via `setAnalog`. `sample(dt, isDown, pointer?)` folds the current held-key state into
- * the smoothed value; a binding's `pointer` source takes over from its keys while a pointer is active,
- * and a `setAnalog` override replaces both for that axis until cleared.
-  * @internal
-  */
+/** @internal */
 export class AxisChannel {
   private readonly bindings: AxisBindingMap;
   private readonly smoothing: number;
@@ -126,10 +118,6 @@ export class AxisChannel {
   }
 }
 
-/**
- * Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`. `ctx.input.axis`
- * samples action names instead, so bind it to the game's input actions (e.g. `moveForward`), not this map.
- */
 export const DRIVE_AXIS_BINDINGS: AxisBindingMap = {
   throttle: { positive: ["KeyW", "ArrowUp"] },
   brake: { positive: ["KeyS", "ArrowDown"] },

@@ -39,7 +39,6 @@ export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = 
   shell: { defineGame: MAIN, gameKit: MAIN, GameHost: MAIN },
 };
 
-/** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
 export const CORE_MODULE_OVERRIDES: Record<string, string> = {
   "material/appearanceSignals": "jgengine-world",
   "runtime/worldProjection": "jgengine-multiplayer",

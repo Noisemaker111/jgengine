@@ -18,7 +18,6 @@ const TICKET_MIN = 4;
 const TICKET_MAX = 60;
 const FAR_FUTURE = 1_000_000_000;
 
-/** The base save: a park this build started and saved, with no guests or scenario in it. */
 function base(): string {
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
   runner.ui.invoke("park.start");
@@ -29,7 +28,6 @@ function parse(raw: string): ParkSave {
   return JSON.parse(raw) as ParkSave;
 }
 
-/** One world fact set to the axis value. */
 function withFact(key: string): (value: unknown, raw: string) => string {
   return (value, raw) => {
     const save = parse(raw);
@@ -40,7 +38,6 @@ function withFact(key: string): (value: unknown, raw: string) => string {
 
 const fact = (key: string) => (save: unknown) => (save as ParkSave).world.facts[key];
 
-/** One guest in the save, in the state the axis asks for. */
 function withGuest(edit: (state: GuestState) => void): (base: string) => string {
   return (raw) => {
     const save = parse(raw);

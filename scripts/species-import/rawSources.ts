@@ -10,11 +10,9 @@ import { assetStoreRoot } from "../../packages/assets/src/assetStore";
  * Only public-domain, CC0, MIT or CC BY sources are allowed.
  */
 export interface RawSource {
-  /** Path under `plant-sources/`. */
   file: string;
   url: string;
   licence: string;
-  /** Extract a downloaded zip into the file's folder. */
   unzip?: boolean;
 }
 
@@ -36,7 +34,6 @@ export const BAAD: RawSource = {
   unzip: true,
 };
 
-/** The raw store folder: `plant-sources/` in the shared asset store. */
 export function rawStore(repoRoot: string): string {
   return join(assetStoreRoot(repoRoot), "plant-sources");
 }
@@ -62,7 +59,6 @@ export function ensureRaw(repoRoot: string, source: RawSource): string {
   return path;
 }
 
-/** A raw source's text, downloading it first if needed. */
 export function readRaw(repoRoot: string, source: RawSource): string {
   return readFileSync(ensureRaw(repoRoot, source), "latin1");
 }

@@ -35,10 +35,6 @@ export function clearEnemyPower(ctx: GameContext, id: string): void {
   powerOf(ctx).delete(id);
 }
 
-/**
- * What one swing or bolt from this fighter deals, times its power. Swings grow with level; bolts keep
- * their weapon's authored damage, which is how the world was tuned against the reclaimer's health.
- */
 export function enemyHitDamage(ctx: GameContext, def: EnemyDef, enemyId: string, at: EntityPosition): number {
   const power = powerOf(ctx).get(enemyId);
   const base =
@@ -57,13 +53,9 @@ const homesOf = perContext(() => new Map<string, EntityPosition>());
 const nextAttackAtOf = perContext(() => new Map<string, number>());
 
 export interface EnemyAttackMods {
-  /** Multiplier on this enemy's walk speed while closing. Default `1`. */
   speedScale?: number;
-  /** Multiplier on the authored attack interval. Default `1`. */
   intervalScale?: number;
-  /** Multiplier on a melee reach. Default `1`. */
   reachScale?: number;
-  /** True when the caller already walked it into position and only wants the swing. */
   stationary?: boolean;
 }
 
@@ -86,7 +78,6 @@ function distance2d(a: EntityPosition, b: EntityPosition): number {
   return Math.hypot(a[0] - b[0], a[2] - b[2]);
 }
 
-/** Drop cadence entries for enemies that no longer exist; called once per tick by the zone AI. */
 export function pruneAttackCadence(ctx: GameContext): void {
   const cadence = nextAttackAtOf(ctx);
   if (cadence.size <= 512) return;
@@ -187,12 +178,9 @@ export function tickEnemyAttack(
   });
 }
 
-/** How far past its reach a swing's cone runs, and how wide it sweeps: the room a sidestep has to beat. */
 const SWING_REACH_SLACK = 1.25;
 const SWING_ARC = (80 * Math.PI) / 180;
-/** Width of the line a gunner draws while it aims. */
 const AIM_LINE_WIDTH = 0.7;
-/** A gunner closer to its target than this share of its preferred range backs away. */
 export const BACK_OFF_SHARE = 0.45;
 
 /**
@@ -213,7 +201,6 @@ export function windupMs(def: EnemyDef, kind: "swing" | "shot"): number {
 interface Windup {
   kind: "swing" | "shot";
   targetId: string;
-  /** Where the attack locked: the target's spot when the wind-up began. */
   at: EntityPosition;
   telegraph: TelegraphConfig;
   landsAtMs: number;
@@ -222,7 +209,6 @@ interface Windup {
 
 const windupsOf = perContext(() => new Map<string, Windup>());
 
-/** How many attacks are winding up right now, and the heading from the player to the nearest, for the capture probe. */
 export function windupProbe(ctx: GameContext): { windups: number; windupHeading: number } {
   const player = ctx.scene.entity.get(ctx.player.userId);
   let heading = 0;
@@ -238,7 +224,6 @@ export function windupProbe(ctx: GameContext): { windups: number; windupHeading:
   return { windups: windupsOf(ctx).size, windupHeading: Math.round(heading * 1000) / 1000 };
 }
 
-/** The attack a fighter is winding up, if any, for a probe or a test. */
 export function pendingWindup(ctx: GameContext, enemyId: string): { kind: "swing" | "shot"; landsAtMs: number; at: EntityPosition } | null {
   const pending = windupsOf(ctx).get(enemyId);
   return pending === undefined ? null : { kind: pending.kind, landsAtMs: pending.landsAtMs, at: pending.at };

@@ -13,26 +13,18 @@ export function useAchievements(tracker: AchievementTracker): readonly Achieveme
   return useSyncExternalStore(tracker.subscribe, tracker.list, tracker.list);
 }
 
-/** Props for {@link AchievementToast}. */
 export interface AchievementToastProps {
   name: string;
   description?: string;
   /** Icon/glyph node the game supplies; the engine never picks art. */
   icon?: ReactNode;
   points?: number;
-  /** Small heading above the name. Default `"Achievement Unlocked"`. */
   heading?: string;
   className?: string;
   style?: CSSProperties;
 }
 
-/**
- * The unlock-moment banner — icon, "Achievement Unlocked" heading, name, and
- * optional points. Purely presentational; pair the game's `onUnlock` seam with
- * a toast queue and render one of these per entry.
- *
- * @capability achievement-toast unlock-moment banner (icon, heading, name, points) for an achievement toast queue
- */
+/** @capability achievement-toast unlock-moment banner (icon, heading, name, points) for an achievement toast queue */
 export function AchievementToast({
   name,
   description,
@@ -98,13 +90,10 @@ export function AchievementToast({
   );
 }
 
-/** Props for {@link AchievementGallery}. */
 export interface AchievementGalleryProps {
   achievements: readonly AchievementView[];
   title?: string;
-  /** Render secret + still-locked achievements as masked "???". Default true. */
   maskSecrets?: boolean;
-  /** Optional per-achievement icon; falls back to the def `icon` glyph then a lock/trophy. */
   renderIcon?: (achievement: AchievementView) => ReactNode;
   columns?: number;
   emptyLabel?: string;
@@ -114,14 +103,7 @@ export interface AchievementGalleryProps {
 
 const MASK = "???";
 
-/**
- * Achievement/trophy gallery — a responsive grid of cards showing unlocked vs.
- * locked state, a progress bar for counter achievements, and a header summary
- * of completion and score. Secret+locked entries mask their name/description.
- * Feed it `useAchievements(tracker)`.
- *
- * @capability achievement-gallery responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header
- */
+/** @capability achievement-gallery responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header */
 export function AchievementGallery({
   achievements,
   title = "Achievements",

@@ -1,37 +1,29 @@
 import type { Footprint, Vec2 } from "./geometry";
 import type { PlacementObstacle } from "../placement/placement";
 
-/** One integer cell address on a {@link FootprintGrid}. */
 export interface GridCell {
   col: number;
   row: number;
 }
 
-/** Config for {@link createFootprintGrid}. */
 export interface FootprintGridOptions {
-  /** World units per cell. Default 1. */
   cellSize?: number;
 }
 
-/** A live claim on a {@link FootprintGrid}: which cells `id` (a `kind` tag for adjacency checks) holds. */
 export interface FootprintReservation {
   id: string;
   kind: string;
   cells: readonly GridCell[];
 }
 
-/** Plain JSON state of a {@link FootprintGrid}: live reservations in claim order. */
 export interface FootprintGridState {
   reservations: FootprintReservation[];
 }
 
-/** Handle returned by {@link createFootprintGrid}. */
 export interface FootprintGrid {
   readonly cellSize: number;
-  /** The cells a `footprint` centered on `origin` (world units) covers, honoring `quarterTurns` — feed straight into `reserve`/`isFree`. */
   cellsFor(origin: Vec2, footprint: Footprint, quarterTurns?: number): GridCell[];
   isFree(cells: readonly GridCell[]): boolean;
-  /** Claims every cell for `id`/`kind`; fails (no partial reservation) if `id` already holds a reservation or any cell is occupied. */
   reserve(id: string, kind: string, cells: readonly GridCell[]): boolean;
   release(id: string): boolean;
   occupantAt(cell: GridCell): string | null;
@@ -40,7 +32,6 @@ export interface FootprintGrid {
   list(): readonly FootprintReservation[];
   clear(): void;
   snapshot(): FootprintGridState;
-  /** Replaces every reservation with `next`'s and rebuilds cell occupancy from them. */
   restore(next: FootprintGridState): void;
 }
 
@@ -137,13 +128,11 @@ const CARDINAL_OFFSETS: readonly GridCell[] = [
   { col: -1, row: 0 },
 ];
 
-/** One occupied neighbor cell reported by {@link boundaryNeighbors}. */
 export interface AdjacentCell {
   cell: GridCell;
   kind: string;
 }
 
-/** Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set. */
 export function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] {
   const own = new Set(cells.map(cellKey));
   const seen = new Set<string>();
@@ -185,35 +174,29 @@ export interface RegionFootprint {
   readonly kind: string;
   readonly tier: number;
   readonly cells: readonly GridCell[];
-  /** Nonnegative finite contribution; independent of occupied area. */
   readonly capacity: number;
 }
 
-/** Original footprint identity and capacity retained when regions pool. */
 export interface RegionContribution {
   readonly id: string;
   readonly cells: readonly GridCell[];
   readonly capacity: number;
 }
 
-/** Plain JSON pooled region. Contributions partition its cells and sum to its capacity. */
 export interface MergedRegion extends RegionFootprint {
   readonly contributions: readonly RegionContribution[];
 }
 
-/** Optional caller work limits, checked before cell traversal. Omitted limits follow input size. */
 export interface RegionWorkBudget {
   readonly maxCells?: number;
   readonly maxContributions?: number;
 }
 
-/** Identities for split sides containing multiple contributions; singletons retain their original id. */
 export interface RegionSplitIds {
   readonly left?: string;
   readonly right?: string;
 }
 
-/** A standalone footprint or a pooled region carrying its original contributions. */
 export type FootprintRegion = RegionFootprint | MergedRegion;
 type CheckedRegion = {
   cells: Map<string, GridCell>;
@@ -331,9 +314,7 @@ function pooledRegion(id: string, kind: string, tier: number, parts: readonly Re
     cells: contributions.flatMap(part => copyRegionCells(part.cells)), contributions };
 }
 
-/** Matching kind/tier, disjoint valid source identities/cells, and cardinal contact. Linear in input size.
- * @capability mergeable-footprint-regions check compatible adjacent regions within caller work budgets
- */
+/** @capability mergeable-footprint-regions check compatible adjacent regions within caller work budgets */
 export function canMerge(a: FootprintRegion, b: FootprintRegion, budget: RegionWorkBudget = {}): boolean {
   return mergeableRegions(a, b, budget) !== null;
 }
@@ -398,7 +379,6 @@ export function splitRegion(
   return [a, b];
 }
 
-/** Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the grid's committed footprints unchanged. */
 export function footprintObstacles(grid: FootprintGrid): PlacementObstacle[] {
   return grid.list().map((reservation) => {
     let minCol = Infinity;

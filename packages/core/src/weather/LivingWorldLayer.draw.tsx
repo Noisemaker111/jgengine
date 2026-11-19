@@ -142,7 +142,7 @@ const birdEuler = new THREE.Euler();
 const focus = new THREE.Vector3();
 const forward = new THREE.Vector3();
 
-/** Where the camera looks on the ground plane, or a point ahead of it when it looks at the sky. @internal */
+/** @internal */
 export function flockFocus(camera: THREE.Camera, target: THREE.Vector3): THREE.Vector3 {
   camera.getWorldPosition(target);
   camera.getWorldDirection(forward);
@@ -152,7 +152,6 @@ export function flockFocus(camera: THREE.Camera, target: THREE.Vector3): THREE.V
   return target;
 }
 
-/** Props for {@link birdsDraw}: the resolved flock parameters. */
 export interface BirdsDrawProps {
   flock: NonNullable<ResolvedAmbientLife["birds"]>;
 }
@@ -264,7 +263,6 @@ const LITTER_FRAGMENT = /* glsl */ `
   void main() { gl_FragColor = vec4(vec3(0.82, 0.8, 0.74) * vShade, uOpacity); }
 `;
 
-/** Props for {@link litterDraw}: the resolved drifting-debris field. */
 export interface LitterDrawProps {
   litter: NonNullable<ResolvedAmbientLife["litter"]>;
 }
@@ -281,11 +279,6 @@ function litterGeometry(count: number): THREE.InstancedBufferGeometry {
   return instanced;
 }
 
-/**
- * Draw-side form of `Litter`: wind-blown debris on a camera-anchored ground plane, visible only
- * while the wind is up. Rebuilds geometry on `count` and material on `groundY`, matching the old
- * `useDisposable` dep boundaries.
- */
 export function litterDraw(getProps: () => LitterDrawProps): EngineDraw {
   let geometry: THREE.InstancedBufferGeometry | null = null;
   let material: THREE.ShaderMaterial | null = null;
@@ -392,7 +385,6 @@ const STEAM_FRAGMENT = /* glsl */ `
 
 const STEAM_PUFFS = 14;
 
-/** Props for {@link steamDraw}: the vent list and the quality tier that thins it. */
 export interface SteamDrawProps {
   vents: readonly Required<SteamVent>[];
   lowTier: boolean;
@@ -418,11 +410,6 @@ function steamGeometry(vents: readonly Required<SteamVent>[], puffs: number): TH
   return instanced;
 }
 
-/**
- * Draw-side form of `Steam`: rising vent puffs whose density follows cold and rain. Rebuilds the
- * instanced geometry when the vent list or puff count changes, matching the old `useDisposable`
- * deps.
- */
 export function steamDraw(getProps: () => SteamDrawProps): EngineDraw {
   let geometry: THREE.InstancedBufferGeometry | null = null;
   let material: THREE.ShaderMaterial | null = null;
@@ -483,7 +470,6 @@ export function steamDraw(getProps: () => SteamDrawProps): EngineDraw {
   };
 }
 
-/** Props for {@link LivingWorld}: the ambient-life config, quality tier and indoor flag. */
 export interface LivingWorldProps {
   ambientLife: AmbientLifeConfig | false | undefined;
   lowTier: boolean;

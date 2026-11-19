@@ -115,11 +115,8 @@ export interface AssetSpace {
   footprint?: Footprint;
   /** Authored grid cell size in engine meters this asset snaps to. */
   gridSize?: number;
-  /** Where the model origin sits within {@link footprint}. Default `center`. */
   anchor?: AssetAnchor;
-  /** Optional asset-local placement bounds (XZ) a tool clamps a drop position into. */
   bounds?: Aabb;
-  /** Default rotation constraint when this asset is placed. Absent means free rotation. */
   rotation?: PlacementRotationPolicy;
 }
 
@@ -136,7 +133,7 @@ export function resolveFacingRotationY(
   return headingToRotationY(headingDegrees - (space?.forwardDegrees ?? 0));
 }
 
-/** The effective, guarded unit scale for an asset — a finite positive `unitScale`, else `1`. @internal */
+/** @internal */
 export function assetUnitScale(space?: Pick<AssetSpace, "unitScale">): number {
   const s = space?.unitScale;
   return typeof s === "number" && Number.isFinite(s) && s > 0 ? s : 1;
@@ -265,12 +262,7 @@ export function validateAssetSpace(raw: unknown): AssetSpaceIssue[] {
   return issues;
 }
 
-/**
- * Parse an untrusted rotation policy (from a scene document or catalog JSON) into a valid
- * {@link PlacementRotationPolicy}, defaulting to `free` when absent or malformed. The lenient companion
- * to {@link validateAssetSpace} for the read path.
- * @capability placement-rotation parse a serialized rotation policy, defaulting to free
- */
+/** @capability placement-rotation parse a serialized rotation policy, defaulting to free */
 export function parseRotationPolicy(raw: unknown): PlacementRotationPolicy {
   if (isRecord(raw)) {
     if (raw["mode"] === "locked") {
@@ -283,11 +275,7 @@ export function parseRotationPolicy(raw: unknown): PlacementRotationPolicy {
   return { mode: "free" };
 }
 
-/**
- * Parse untrusted JSON into an {@link AssetSpace}, dropping malformed fields, or `undefined` when
- * nothing valid remains — the round-trippable read path for serialized catalog/scene metadata.
- * @capability asset-space parse serialized asset-space metadata into a validated shape
- */
+/** @capability asset-space parse serialized asset-space metadata into a validated shape */
 export function parseAssetSpace(raw: unknown): AssetSpace | undefined {
   if (!isRecord(raw)) return undefined;
   const out: {

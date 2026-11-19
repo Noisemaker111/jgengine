@@ -17,7 +17,6 @@ import { printHelpIfAsked, type Usage } from "./script-help";
 
 export type Layer = "model" | "view" | "draw";
 
-/** What an import pulls in, as far as the layer rules care. */
 type Reach = Layer | "ui" | "three" | "editor" | null;
 
 export interface LayerViolation {
@@ -42,7 +41,6 @@ export function layerOfFile(path: string): Layer | null {
   return "model";
 }
 
-/** The layer a module name names: by package, then by the `.view` / `.draw` suffix of its file. */
 function layerOfModule(packageName: string, subpath: string): Layer {
   if (packageName === "ui") return "view";
   if (packageName === "shell") return "draw";
@@ -51,7 +49,6 @@ function layerOfModule(packageName: string, subpath: string): Layer {
   return "model";
 }
 
-/** What one import specifier reaches, seen from `file`. */
 export function reachOf(file: string, specifier: string): Reach {
   // UI code is written against the engine UI runtime; a model file reaches for neither it nor React.
   if (/^(react|react-dom)(\/|$)/.test(specifier) || /^@jgengine\/core\/ui\/jsx(\/|$)/.test(specifier)) return "ui";
@@ -108,7 +105,6 @@ export function violationsIn(file: string, source: string): LayerViolation[] {
   return found;
 }
 
-/** Every violation in the tracked and untracked engine source under `root`. */
 export function scanLayers(root: string): { files: number; violations: LayerViolation[] } {
   const listed = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", "packages/core/src", "packages/ui/src", "packages/shell/src"], {
     cwd: root,

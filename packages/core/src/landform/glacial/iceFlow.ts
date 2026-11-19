@@ -37,62 +37,47 @@ const SHORTEST_STEP = 1 / 16;
 /** Weight of ice per unit volume, ρg in Pa/m (910 kg/m³ × 9.81 m/s²). */
 export const ICE_WEIGHT = 910 * 9.81;
 
-/** Glen's flow rate factor A of temperate ice in Pa⁻³ yr⁻¹ (2.4·10⁻²⁴ Pa⁻³ s⁻¹, Cuffey & Paterson 2010). */
 export const GLEN_RATE_FACTOR = 7.57e-17;
 
-/**
- * Γ = 2A(ρg)³/(n + 2) of the shallow-ice flux for Glen's n = 3, in m⁻³ yr⁻¹.
- * @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
- */
+/** @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines */
 export function iceDeformationRate(rateFactor: number = GLEN_RATE_FACTOR): number {
   return (2 * rateFactor * ICE_WEIGHT * ICE_WEIGHT * ICE_WEIGHT) / 5;
 }
 
-/** How ice flows and gains mass. @internal */
+/** @internal */
 export interface IceFlowSettings {
-  /** Γ of the deformation flux, m⁻³ yr⁻¹. */
   deformation: number;
-  /** Sliding coefficient C in m yr⁻¹ Pa⁻¹. */
   sliding: number;
   /** Equilibrium line altitude in metres. */
   ela: number;
   /** Mass balance gradient β in (m/yr of ice) per metre of altitude. */
   balanceGradient: number;
-  /** Largest accumulation in m/yr. */
   maxAccumulation: number;
-  /** Effective ice viscosity in Pa·yr coupling neighbouring columns' sliding; 0 slides each column alone. */
   lateralDrag: number;
   /** Per cell, the share of the bed at the pressure-melting point, 0 frozen to 1 sliding; scales `sliding`. Default 1. */
   temperate?: Float64Array;
-  /** Per cell i, a multiplier on the flux through the face between i and i + 1 (its east face). Default 1. */
   eastScale?: Float64Array;
-  /** Per cell i, a multiplier on the flux through the face between i and i + cols (its south face). Default 1. */
   southScale?: Float64Array;
 }
 
-/** How an {@link IceFlow.advance} runs. @internal */
+/** @internal */
 export interface IceAdvanceOptions {
-  /** Mass balance in m/yr per cell, replacing the altitude rule. */
   balance?: Float64Array;
-  /** Longest implicit step in years. Default 50. */
   maxStep?: number;
-  /** Largest mass-conservation residual in m/yr that counts as solved. Default 10⁻⁴. */
   tolerance?: number;
 }
 
-/** What an {@link IceFlow.advance} did. @internal */
+/** @internal */
 export interface IceAdvanceReport {
-  /** Implicit steps taken. */
   steps: number;
   /** Steps halved because Newton's method did not converge. */
   halvings: number;
   newtonIterations: number;
   linearIterations: number;
-  /** Largest |∂H/∂t| in m/yr at the end; 0 at steady state. */
   rate: number;
 }
 
-/** A reusable ice solver for one grid. @internal */
+/** @internal */
 export interface IceFlow {
   /** Sliding speed in m/yr at each cell centre after the last {@link IceFlow.advance}. */
   readonly sliding: Float64Array;
@@ -107,15 +92,15 @@ export interface IceFlow {
   matchFaces(bed: Float64Array, ice: Float64Array, settings: IceFlowSettings, meanX: Float64Array, meanY: Float64Array, eastScale: Float64Array, southScale: Float64Array): void;
 }
 
-/** Least face flux scale {@link IceFlow.matchFaces} sets. @internal */
+/** @internal */
 export const FACE_SCALE_MIN = 0.02;
-/** Largest face flux scale {@link IceFlow.matchFaces} sets. @internal */
+/** @internal */
 export const FACE_SCALE_MAX = 50;
 // Faces are matched only between columns at least this thick, in metres; thinner ice is a margin the
 // first-order solve holds nearly still, where the ratio says nothing about the flow.
 const MATCH_THICKNESS = 5;
 
-/** An ice solver for a topology. @internal */
+/** @internal */
 // stateless: scratch arrays; the ice itself lives in the caller's array.
 export function createIceFlow(topology: LandformTopology): IceFlow {
   const { cols, rows, cells, cellSize, base } = topology;

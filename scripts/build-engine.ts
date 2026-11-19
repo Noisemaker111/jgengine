@@ -9,7 +9,6 @@ import { fileURLToPath } from "node:url";
 
 import { printHelpIfAsked } from "./script-help";
 
-/** The packages that compile together, in the order their dist/ folders are written. */
 export const ENGINE_PACKAGES = ["core", "ui", "shell"] as const;
 
 interface BuildConfig {
@@ -17,7 +16,6 @@ interface BuildConfig {
   exclude?: string[];
 }
 
-/** The one-program tsconfig: every engine package's include/exclude, rooted at `packages/`. */
 export function engineBuildConfig(root: string, outDir: string, configDir: string): object {
   const include: string[] = [];
   const exclude: string[] = [];
@@ -49,7 +47,6 @@ function walk(dir: string): string[] {
   });
 }
 
-/** Relative specifiers in a package's emitted files that climb out of that package. */
 export function escapingSpecifiers(distDir: string): string[] {
   const pkgDir = dirname(distDir);
   const found: string[] = [];
@@ -67,7 +64,6 @@ export function escapingSpecifiers(distDir: string): string[] {
 /** Files the source loads at runtime by URL (`new URL("./x.wasm", import.meta.url)`), which tsgo does not emit. */
 const RUNTIME_ASSET = /\.wasm$/;
 
-/** Copy every runtime asset under `src` to the same place under `dist`. */
 export function copyAssets(src: string, dist: string): string[] {
   const copied: string[] = [];
   const walk = (dir: string): void => {

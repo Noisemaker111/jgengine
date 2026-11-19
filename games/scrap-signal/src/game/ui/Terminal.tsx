@@ -17,13 +17,8 @@ import { HUD_PANELS, scrapHudPanels } from "./hudPanels";
 import { blackMarketOpenStore, characterIdStore, skillsOpenStore, travelOpenStore, vendorOpenStore } from "../stores";
 import { useCompact, Button, C, ControlKeys, FULL, Heading, Hull, Icon, idleFade, Label, Pips, Portrait, Row, SignalBars, Small, Stamp, Text, Tube } from "./kit";
 
-/** True while a settings line is waiting for a key; Escape then cancels the rebind, not the run. */
 export const rebindArmed = { action: null as string | null };
 
-/**
- * The run's operations: the Dead Air contract card, the pause key, the pause terminal and the
- * contract's field report. It owns pausing, as before: a manual hold or any open terminal pauses time.
- */
 export function Operations() {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -81,10 +76,6 @@ export function Operations() {
   </>;
 }
 
-/**
- * The Dead Air salvage contract: distance, the ambush, the upload and the overclock switch. An idle
- * contract gives way to a live Overdrive run, as the mission log does.
- */
 export function ContractCard() {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -116,10 +107,6 @@ export function ContractCard() {
   </Hull>;
 }
 
-/**
- * The reclaimer's forearm terminal, raised into view: a carbon housing with the chassis ID at the
- * left and the working screen at the right. On a phone the ID folds into the header.
- */
 function FieldTerminal({ label, signal = 1, onBack, children, foot }: { label: string; signal?: number; onBack: () => void; children: ReactNode; foot?: ReactNode }) {
   const { width, height } = useRuneViewport(), { compact, portrait } = useCompact();
   const character = CHARACTERS.find(c => c.id === useStore(characterIdStore)) ?? CHARACTERS[0]!;
@@ -142,7 +129,6 @@ function FieldTerminal({ label, signal = 1, onBack, children, foot }: { label: s
   </RuneView>;
 }
 
-/** The chassis ID tube: portrait, name, class and the wallet. */
 function TerminalId() {
   const ctx = useGameContext();
   const character = CHARACTERS.find(c => c.id === useStore(characterIdStore)) ?? CHARACTERS[0]!;
@@ -167,7 +153,6 @@ const MENU = [
   { id: "settings", label: "Settings & controls", note: "Display, sound, keys" },
 ] as const;
 
-/** A terminal command line: prompt, label and its note. */
 function Command({ label, note, onPress }: { label: string; note: string; onPress: () => void }) {
   return <RuneAction label={label} run={onPress} layout="row" items="center" gap={10} padding={[8, 10, 8, 10]} minHeight={44} fill="#0b2a2266" border={{ width: 1, color: "#1f5a48" }} hover="#9ff5d622" press="#00000044">
     <Text color={C.amber} size={16}>&gt;</Text>
@@ -175,7 +160,6 @@ function Command({ label, note, onPress }: { label: string; note: string; onPres
   </RuneAction>;
 }
 
-/** The pause screen: the run on hold, three commands on the tube, the controls on the keys below. */
 export function PauseTerminal({ page, onPage, onResume, onSave, saveMessage }: { page: "menu" | "settings"; onPage: (page: "menu" | "settings") => void; onResume: () => void; onSave: () => void; saveMessage: string }) {
   const { compact } = useCompact();
   const confirm = (id: string) => { if (id === "resume") onResume(); else if (id === "save") onSave(); else onPage("settings"); };
@@ -193,7 +177,6 @@ export function PauseTerminal({ page, onPage, onResume, onSave, saveMessage }: {
   </FieldTerminal>;
 }
 
-/** Dead Air's field report, printed on the forearm terminal when the contract closes. */
 function DeadAirReport({ won, wave, remaining, reason, onContinue }: { won: boolean; wave: number; remaining: number; reason: string; onContinue: () => void }) {
   return <FieldTerminal label="Dead Air / field report" signal={won ? 4 : 0} onBack={onContinue}>
     <Small color={C.phosphorDim}>&gt; contract closed</Small>
@@ -208,10 +191,6 @@ function DeadAirReport({ won, wave, remaining, reason, onContinue }: { won: bool
   </FieldTerminal>;
 }
 
-/**
- * The terminal's setup page: page keys along the top, each setting one phosphor line with a pip
- * slider, a rocker or a row of options, and each control a rebindable key line.
- */
 export function TerminalSettings() {
   const settings = useSettings();
   const [chosen, setChosen] = useState<string | null>(null);
@@ -239,7 +218,6 @@ export function TerminalSettings() {
   </RuneView>;
 }
 
-/** The rig's panel chips: each one shows or hides its HUD panel, remembered on this device. */
 export function HudChips() {
   const panels = scrapHudPanels();
   return <RuneView gap={4}>

@@ -27,7 +27,6 @@ export function playableGames(root: string = join(import.meta.dirname, "..")): s
     .sort();
 }
 
-/** {@link playableGames} of this checkout. */
 export const FRAME_GAMES: readonly string[] = playableGames();
 
 /**
@@ -38,26 +37,15 @@ export const FRAME_GAMES: readonly string[] = playableGames();
 export const REPRESENTATIVE_GAME = "harbor-heat";
 
 export interface Verdict {
-  /** `full` measures every game, `surface` boots the representative one, `none` runs neither. */
   scope: GameScope;
-  /** `none` skips the test shards: the diff is change notes, which no test reads. */
   tests: "all" | "none";
   /** The game matrix the `perf-game` job runs; never empty, so the matrix always expands. */
   games: readonly string[];
-  /** The games under `games/` whose type-check and tests the `games` job runs; empty skips it. */
   gameChecks: readonly string[];
-  /** One line for the check summary: what ran, and what a skip skipped. */
   reason: string;
-  /** Changed paths that decided it. */
   matched: string[];
 }
 
-/**
- * A path that runs in a game's frame: the systems the tick loop calls, the movement queries
- * that read them, the object and obstacle index they scan, the stepper and its clock, the
- * scheduler, the shell's render passes, the games themselves, the scripts that boot them,
- * and the release that publishes them. A change here pays for every game.
- */
 const FULL = [
   /^packages\/core\/src\/(render|scene|sim|ai|nav|physics|movement|runtime|time)\//,
   // Frame work moved home from shell/render, postfx, scatter and world.
@@ -86,10 +74,8 @@ const SURFACE = [
   /^games\/tsconfig[^/]*\.json$/,
 ];
 
-/** `games/<id>/...`: a change inside one game reaches that game and no other. */
 const GAME_PATH = /^games\/([^/]+)\//;
 
-/** The folders under `games/` that hold no game. */
 const NON_GAME_DIRS = new Set(["shared", "scripts", "docs", "registry", "node_modules"]);
 
 /**
@@ -113,7 +99,6 @@ const INERT = [
   /^(?:\.github|\.vscode|\.devcontainer)\//,
 ];
 
-/** Change notes and examples: the only prose no test parses. */
 const PROSE_ONLY = [/^changes\//, /^examples\//];
 
 const TEST_FILE = /\.(?:test|spec)\.(?:ts|tsx|mts|cts)$|^(?:scripts|packages)\/.*\/(?:__snapshots__|fixtures)\//;
@@ -177,13 +162,11 @@ function verdict(
   return { scope, tests: testsNeeded(paths), games, gameChecks, reason, matched: [...matched] };
 }
 
-/** The game a path sits in, or `null` outside `games/<id>/`. */
 function gameOf(path: string): string | null {
   const id = GAME_PATH.exec(path)?.[1];
   return id === undefined || NON_GAME_DIRS.has(id) || id.startsWith(".") ? null : id;
 }
 
-/** Every game under `games/` and the engine packages it declares. */
 export interface GameWorkspace {
   games: readonly { id: string; engine: readonly string[] }[];
 }
@@ -219,10 +202,6 @@ const EVERY_GAME = [
   /^\.github\/workflows\/ci\.yml$/,
 ];
 
-/**
- * The games the `games` job type-checks and tests: each game a changed file sits in, each game
- * that declares a changed engine package, and every game for a change they all resolve.
- */
 export function gameChecks(paths: readonly string[], workspace: GameWorkspace): string[] {
   const all = workspace.games.map((game) => game.id).sort();
   if (paths.some((path) => EVERY_GAME.some((pattern) => pattern.test(path)))) return all;
@@ -243,7 +222,6 @@ function summary(paths: readonly string[]): string {
   return paths.length > 3 ? `${shown} and ${paths.length - 3} more` : shown;
 }
 
-/** Every path that turns on a game run, for the local `verify:fast` map. */
 export function scopePattern(): RegExp {
   return new RegExp(`(?:${[...FULL, ...SURFACE].map((pattern) => pattern.source).join("|")})`);
 }

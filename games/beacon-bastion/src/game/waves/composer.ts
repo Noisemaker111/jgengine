@@ -3,10 +3,8 @@ import { seededRng } from "@jgengine/shell/gameKit";
 
 import { FLANK_POINT_KEY, SPAWN_POINT_KEY } from "../world/path";
 
-/** First wave the composer writes. Everything before it is authored in `manifest.ts`. */
 export const COMPOSE_FROM_WAVE = 7;
 
-/** A composed boss lands on every wave divisible by this, so wave 8 and wave 12 carry one. */
 export const BOSS_EVERY_WAVES = 4;
 
 /** A named elite per group, so the HUD can name each one instead of saying "3 elites". */
@@ -16,7 +14,6 @@ export const ELITE_ROSTER: readonly { unit: string; name: string }[] = [
   { unit: "raider_breaker", name: "Hollow" },
 ];
 
-/** The boss each composed boss wave calls up, in the order they appear: wave 8, wave 12, wave 16. */
 export const BOSS_ORDER: readonly string[] = ["raider_warlord", "raider_warden"];
 
 /**
@@ -32,11 +29,8 @@ export const SQUAD_PATTERNS: readonly {
   grunts: number;
   brutes: number;
   elites: number;
-  /** Wraiths over the flank road: only towers that hit air answer them. */
   wraiths?: number;
-  /** Shield-bearers whose ward regrows. */
   bulwarks?: number;
-  /** Shamans that mend the column. */
   shamans?: number;
   /** Hulks that break into bonelings. */
   hulks?: number;
@@ -48,18 +42,15 @@ export const SQUAD_PATTERNS: readonly {
   { id: "host", label: "Barrow Host", weight: 2, scouts: 0, grunts: 2, brutes: 0, elites: 1, wraiths: 2, bulwarks: 1, shamans: 1, hulks: 1 },
 ];
 
-/** The wave number's rank inside the composed band: 0 on the first composed wave. */
 export function composeRank(wave: number): number {
   return Math.max(0, wave - COMPOSE_FROM_WAVE);
 }
 
-/** How much a pattern's counts grow by the wave's rank. */
 function scaleCount(count: number, rank: number): number {
   if (count <= 0) return 0;
   return Math.max(1, Math.round(count * (1 + rank * 0.4)));
 }
 
-/** The boss a composed wave calls up, or null on a wave that is not a boss wave. */
 export function bossForWave(wave: number): string | null {
   if (wave < COMPOSE_FROM_WAVE || wave % BOSS_EVERY_WAVES !== 0) return null;
   const bossIndex = wave / BOSS_EVERY_WAVES - 2;
@@ -135,7 +126,6 @@ export function composeWave(seed: number, wave: number): EncounterWave {
   };
 }
 
-/** Every composed wave from `COMPOSE_FROM_WAVE` through `lastWave`, in order. */
 export function composeWaves(seed: number, lastWave: number): EncounterWave[] {
   const waves: EncounterWave[] = [];
   for (let wave = COMPOSE_FROM_WAVE; wave <= lastWave; wave += 1) waves.push(composeWave(seed, wave));

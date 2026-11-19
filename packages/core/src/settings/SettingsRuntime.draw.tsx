@@ -42,7 +42,7 @@ export function SettingsRuntime({ variant, surface, actions, children, ...input 
   return <SettingsControllerProvider controller={controller}>{children}</SettingsControllerProvider>;
 }
 
-/** Owns settings' suspension for this live context, including close, replacement and unmount. @internal */
+/** @internal */
 export function SettingsPlayControlGate({ ctx }: { ctx: GameContext }) {
   const { isOpen } = useSettings();
   const anchor = useRef<HTMLSpanElement | null>(null);

@@ -12,7 +12,6 @@ export * from "./bookcaseStudio";
 
 import { registerBookcaseStudio } from "./bookcaseStudio";
 
-/** Register every example studio (scene kinds + renderers + generators). Call once at app startup. */
 export function registerExampleStudios(): void {
   registerBookcaseStudio();
 }

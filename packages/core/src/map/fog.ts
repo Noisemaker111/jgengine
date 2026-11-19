@@ -1,4 +1,3 @@
-/** World-XZ rectangle a fog field covers. */
 export interface FogBounds {
   minX: number;
   minZ: number;
@@ -6,31 +5,22 @@ export interface FogBounds {
   maxZ: number;
 }
 
-/** Fog field settings: bounds, cell size and the cells revealed at the start. */
 export interface FogConfig {
   bounds: FogBounds;
   cellSize: number;
-  /** Cells revealed on construction (start-of-run known area). */
   revealed?: readonly number[];
 }
 
-/** A fog field's grid: size, origin, cell size and row-major revealed flags. */
 export interface FogCells {
   cols: number;
   rows: number;
   minX: number;
   minZ: number;
   cellSize: number;
-  /** Row-major flags; index = row * cols + col. */
   revealed: readonly boolean[];
   revealedCount: number;
 }
 
-/**
- * Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and
- * digging/acting (`reveal`) clear cells; once revealed a cell stays revealed.
- * Pure and renderer-free — the shell/react map draws `cells()`.
- */
 export interface FogField {
   reveal(x: number, z: number, radius?: number): number;
   revealAlong(
@@ -53,7 +43,6 @@ function clampInt(value: number, min: number, max: number): number {
   return rounded < min ? min : rounded > max ? max : rounded;
 }
 
-/** Create a fog-of-war field over `bounds`; reveal cells as the player explores. Throws on a non-positive cell size. */
 export function createFogField(config: FogConfig): FogField {
   const { minX, minZ, maxX, maxZ } = config.bounds;
   const cellSize = config.cellSize;

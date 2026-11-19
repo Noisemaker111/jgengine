@@ -14,10 +14,7 @@ import { SceneCompositePass } from "./sceneCompositePass.draw";
 /** Frames between audited frames, so the audit's extra draws and readback barely move the frame rate. */
 const AUDIT_EVERY = 20;
 
-
-/** What the changed draws did and, with the audit on, what comparing them with three's draws found. */
 export type PostAuditStats = {
-  /** Frames that drew at least one changed draw. */
   changedFrames: number;
   /**
    * Audited frames; those dropped because a program either way was still linking (the engine holds
@@ -96,22 +93,17 @@ export class PostAudit {
     blendSrcAlpha: THREE.ZeroFactor,
     blendDstAlpha: THREE.OneFactor,
   });
-  /** three-stdlib's quad (a plane), which the beauty copy, contact apply, atmosphere and sharpen draw with. */
   private readonly plane: Quad = new PlaneQuad(this.copyMaterial);
-  /** three's quad (one triangle), which GTAO's blend draws with. */
   private readonly triangle: Quad & { dispose(): void } = new FullScreenQuad();
   private readonly half = [0, 1, 2].map(() => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false }));
   private bloom: UnrealBloomPass | null = null;
-  /** The atmosphere march as it was before it truncated its own output, sharing the pass's uniforms. */
   private march: { pass: AtmospherePass; material: THREE.ShaderMaterial } | null = null;
-  /** What bloom read on the frame being audited, and whether that copy is this frame's and complete. */
   private readonly bloomInput = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
   private bloomInputFresh = false;
   private frame = 0;
 
   constructor(private readonly auditing: boolean) {}
 
-  /** Bloom's input tap: on a frame about to be audited, copy the frame bloom reads, before it draws. */
   private copyBloomInput(renderer: THREE.WebGLRenderer, input: THREE.WebGLRenderTarget): void {
     // afterFrame audits when this count is a multiple of AUDIT_EVERY, and counts the frame after this draw.
     if (this.frame % AUDIT_EVERY !== 0) return;
@@ -131,7 +123,6 @@ export class PostAudit {
     this.bloomInputFresh = program !== undefined && program.isReady?.() !== false && renderer.info.render.frame !== renders;
   }
 
-  /** Count what the frame just drawn changed, and on an audit frame compare each changed draw with three's. */
   afterFrame(renderer: THREE.WebGLRenderer, passes: readonly Pass[]): void {
     const find = <T>(kind: abstract new (...args: never[]) => T): T | null => (passes.find((pass) => pass instanceof kind && pass.enabled) as T | undefined) ?? null;
     const composite = find(SceneCompositePass);

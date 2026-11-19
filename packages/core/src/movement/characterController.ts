@@ -1,23 +1,16 @@
 import type { BodyHandle, BodyShape, CharacterMotion, CharacterMotionResult, PhysicsBackend, PhysicsVec3 } from "../physics/physicsBackend";
 
-/** Capsule dimensions and the walk rules a controller applies; every field is retunable during play. */
 export interface CharacterControllerConfig {
   radius: number;
-  /** Standing height from feet to crown, at least twice `radius`. */
   height: number;
-  /** Height the feet may pop up to clear a ledge in one move. Default 0.35. */
   stepHeight?: number;
   /** Steepest walkable slope in degrees; steeper surfaces are walls to slide along. Default 50. */
   maxSlopeDeg?: number;
   /** Gap kept between the capsule and any surface so casts never start inside geometry. Default 0.02. */
   skinWidth?: number;
-  /** Height while crouched, between the capsule diameter and standing height. Default max(`height * 0.6`, diameter). */
   crouchHeight?: number;
-  /** How far below the feet the ground may be while still counting as grounded (stairs down, small bumps). Default 0.3. */
   snapDistance?: number;
-  /** Slide iterations per move. Default 4. */
   maxSlides?: number;
-  /** Collision mask for the controller's casts. Default all layers. */
   mask?: number;
   /**
    * Resolve walls, steps, slopes and ground snap with the backend's own character mover when it has one
@@ -27,7 +20,6 @@ export interface CharacterControllerConfig {
   backendMotion?: boolean;
 }
 
-/** The controller's serializable state. `position` is the feet point; the capsule stands above it. */
 export interface CharacterControllerState {
   position: [number, number, number];
   verticalVelocity: number;
@@ -37,27 +29,17 @@ export interface CharacterControllerState {
   crouching: boolean;
 }
 
-/** One step of intent for {@link CharacterController.move}. */
 export interface CharacterMoveInput {
-  /** Desired horizontal displacement this step, world units. */
   motion: PhysicsVec3;
   dt: number;
-  /** Downward acceleration applied to `verticalVelocity`. Default 0 (caller integrates vertical motion itself). */
   gravity?: number;
   /** Upward velocity to set this step; ignored unless grounded. */
   jumpVelocity?: number;
-  /** Request crouch (`true`) or stand (`false`); standing waits until there is headroom. */
   crouch?: boolean;
-  /** Body the controller itself is represented by, excluded from its own casts. */
   self?: BodyHandle;
-  /**
-   * Vertical displacement for this move when the caller already integrated it (a movement model that
-   * owns jump/gravity feel). Overrides the controller's own `verticalVelocity * dt` for the sweep.
-   */
   verticalStep?: number;
 }
 
-/** What one move did. */
 export interface CharacterMoveResult {
   moved: [number, number, number];
   grounded: boolean;
@@ -65,25 +47,20 @@ export interface CharacterMoveResult {
   hitWall: boolean;
   hitCeiling: boolean;
   steppedUp: boolean;
-  /** Set when a stand request was refused for lack of headroom. */
   crouchBlocked: boolean;
 }
 
-/** The controller handle: config, state, and the per-step move. */
 export interface CharacterController {
   config(): Readonly<Required<CharacterControllerConfig>>;
   retune(next: Partial<CharacterControllerConfig>): void;
   state(): CharacterControllerState;
   snapshot(): CharacterControllerState;
   restore(next: CharacterControllerState): void;
-  /** Current capsule as a backend shape (crouch-aware). */
   shape(): BodyShape;
-  /** Capsule center for the current state. */
   center(): [number, number, number];
   /** Set stance before resolving movement intent. Returns false only when standing lacks headroom. */
   setCrouch(backend: PhysicsBackend, crouch: boolean, self?: BodyHandle): boolean;
   move(backend: PhysicsBackend, input: CharacterMoveInput): CharacterMoveResult;
-  /** Free the backend character mover `backendMotion` created, if any. */
   dispose(): void;
 }
 
@@ -186,7 +163,6 @@ export function createCharacterController(initial: CharacterControllerConfig): C
     });
   }
 
-  /** Move along `motion`, stopping `skinWidth` short of the first hit. Returns the fraction travelled and the hit. */
   function sweep(backend: PhysicsBackend, pos: [number, number, number], height: number, motion: PhysicsVec3, self?: BodyHandle) {
     const len = Math.hypot(motion[0], motion[1], motion[2]);
     if (!(len > 1e-9)) return { fraction: 1, hit: null };

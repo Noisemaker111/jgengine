@@ -135,7 +135,6 @@ function UserModelSection({ model, baseModel, baseModelId, onViewBaseModel, onQu
   </>;
 }
 
-/** The lab terminal's model page: a base model's catalog entry, or one of your trained models. */
 export function ModelDetailView({ baseModelId, userModel, initialMode, estimatedTrainingDurationSeconds, onClose, onViewBaseModel, onQuantizeModel }: ModelDetailViewProps) {
   const [mode, setMode] = useState<ModelDetailViewMode>(initialMode);
   const baseModel = baseModelId ? getBaseModelDefinition(baseModelId) : undefined;

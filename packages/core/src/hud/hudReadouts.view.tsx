@@ -46,7 +46,6 @@ export const Hotbar = memoView("Hotbar", function Hotbar({
   activeSlot?: number;
   keys?: readonly string[];
   slotSize?: number;
-  /** Caller-supplied item id → icon registry; return null/undefined to fall back to the default glyph. */
   itemIcon?: (itemId: string) => ReactNode;
   style?: CSSProperties;
   className?: string;
@@ -231,9 +230,7 @@ function ClockPill({ label, active, onClick }: { label: string; active: boolean;
   );
 }
 
-/** A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`.  *
- * @capability hud-coins currency counter widget bound to a currency id
- */
+/** @capability hud-coins currency counter widget bound to a currency id */
 export function Coins({
   currencyId,
   icon = "🪙",
@@ -254,7 +251,6 @@ export function Coins({
   );
 }
 
-/** A minimal center crosshair reticle — four ticks around a gap. Purely presentational. */
 export const Crosshair = memoView("Crosshair", function Crosshair({
   size = 18,
   gap = 5,

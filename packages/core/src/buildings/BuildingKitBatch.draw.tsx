@@ -29,24 +29,20 @@ import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.dr
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Props for {@link BuildingKitBatch}: one resolved model URL and every kit instance bound to it. @internal */
+/** @internal */
 export interface BuildingKitBatchProps {
   url: string;
   instances: readonly BuildingKitInstance[];
   materialAssets?: readonly MaterialAsset[] | undefined;
 }
 
-/** One kit part instance as a shared-batch placement, with its world matrix. @internal */
+/** @internal */
 export interface KitPlacement extends PooledPlacement {
   readonly index: number;
   readonly matrix: THREE.Matrix4;
 }
 
-/**
- * A chunk's instances in world space, for the shared static batches: `anchor` is the world matrix of
- * the group the chunk's matrices are relative to. `cell` is the batch cell its bounds centre falls in;
- * `sphere` is its world bounds, for the distance budget. @internal
- */
+/** @internal */
 export function kitChunkPlacements(anchor: THREE.Matrix4, chunk: InstanceChunk): { members: KitPlacement[]; cell: string; sphere: THREE.Sphere } {
   const members = chunk.matrices.map((matrix, index) => ({ instanceId: "", index, matrix: new THREE.Matrix4().multiplyMatrices(anchor, matrix) }));
   const sphere = chunk.bounds.clone().applyMatrix4(anchor).getBoundingSphere(new THREE.Sphere());
@@ -58,7 +54,6 @@ const NO_PLACEMENTS: readonly KitPlacement[] = [];
 const kitSlotOf = (member: KitPlacement): number => member.index;
 const kitMatrixOf = (member: KitPlacement, out: THREE.Matrix4): THREE.Matrix4 => out.copy(member.matrix);
 
-/** Shows a pooled chunk while the building distance budget keeps it, and hides it past that. */
 function pooledKitChunkDraw(slot: StaticDrawSlot, members: readonly KitPlacement[], sphere: THREE.Sphere): EngineDraw {
   const state = { eye: new THREE.Vector3(), shown: null as boolean | null };
   return {
@@ -75,11 +70,6 @@ function pooledKitChunkDraw(slot: StaticDrawSlot, members: readonly KitPlacement
   };
 }
 
-/**
- * One chunk of one kit source: joins the shared static batch for its material and cell when the pool
- * accepts it (several materials on one mesh or a see-through material keeps its own instanced draw),
- * then follows the building distance budget either way.
- */
 function kitSourceChunkDraw(source: ScatterModelSource, material: THREE.Material | THREE.Material[], chunk: InstanceChunk): EngineDraw {
   let pooled: EngineDraw | null = null;
   let instanced: EngineDraw | null = null;
@@ -134,7 +124,6 @@ function kitSourceChunkDraw(source: ScatterModelSource, material: THREE.Material
   };
 }
 
-/** One source's chunk draws under the batch's scoped parent; frames forward in mount order. */
 function kitSourceInstancesDraw(source: ScatterModelSource, material: THREE.Material | THREE.Material[], matrices: readonly THREE.Matrix4[]): EngineDraw {
   const chunks = partitionInstances(source.geometry, matrices, { localMatrix: source.localMatrix });
   const children = chunks.map((chunk) => kitSourceChunkDraw(source, material, chunk));

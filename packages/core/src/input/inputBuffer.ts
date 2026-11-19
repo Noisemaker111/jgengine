@@ -1,4 +1,3 @@
-/** One action's press history inside an {@link InputBuffer}. */
 export interface BufferedAction {
   pressedAt: number;
   previousPressAt: number | null;
@@ -6,7 +5,6 @@ export interface BufferedAction {
   consumed: boolean;
 }
 
-/** Serializable state for an {@link InputBuffer}. */
 export interface InputBufferSnapshot {
   windowMs: number;
   actions: Record<string, BufferedAction>;
@@ -14,9 +12,7 @@ export interface InputBufferSnapshot {
 
 /** Remembers recent action presses so a press slightly early (a jump before landing) still counts. Times are caller-supplied ms, so it runs the same on a client, a host or in a replay. */
 export interface InputBuffer {
-  /** Record a press edge. */
   press(action: string, nowMs: number): void;
-  /** Record a release edge; {@link InputBuffer.hold} stops growing. */
   release(action: string, nowMs: number): void;
   /** `true` once for a press no older than `windowMs` (default: the buffer's window), then the press is spent. */
   consume(action: string, nowMs: number, windowMs?: number): boolean;
@@ -24,18 +20,13 @@ export interface InputBuffer {
   coyote(groundedAtMs: number | null, nowMs: number, windowMs: number): boolean;
   /** How long the action has been held, ms; `0` when released or never pressed. */
   hold(action: string, nowMs: number): number;
-  /** `true` when the last two presses were at most `gapMs` apart and the latest is no older than `gapMs`. */
   doubleTap(action: string, nowMs: number, gapMs: number): boolean;
-  /** Change the default buffer window. */
   retune(next: { windowMs: number }): void;
   snapshot(): InputBufferSnapshot;
   restore(snapshot: InputBufferSnapshot): void;
 }
 
-/**
- * Creates an input buffer for jump buffering, coyote time, hold duration and double taps.
- * @capability input-buffer buffer early presses, coyote time, hold duration and double tap for responsive controls
- */
+/** @capability input-buffer buffer early presses, coyote time, hold duration and double tap for responsive controls */
 export function createInputBuffer(options: { windowMs: number }): InputBuffer {
   let windowMs = options.windowMs;
   let actions = new Map<string, BufferedAction>();

@@ -4,7 +4,6 @@ import { simulateHousehold } from "./sim/simulate";
 import { householdStore } from "./session/store";
 import { DAY_LENGTH } from "../world";
 
-/** What a staged household should look like when the capture takes it. */
 export type StageMode = "shift" | "week" | "transmission" | "review";
 
 /** The half-second step the household sim is written for; `simulateHousehold` clamps longer frames. */
@@ -24,13 +23,6 @@ function advanceToShift(ctx: GameContext, maxSeconds: number): void {
   }
 }
 
-/**
- * Dev-only staging for the played household. `shift` stops at the moment somebody is at a station
- * on paid work; `week` runs the same simulation four days on, which is where mastery tiers and
- * promotion rungs move and where the roster stops looking like a fresh household; `transmission`
- * stops when the first transmission waits on an answer; `review` runs to the first term's review. Play reaches
- * both by starting a household and waiting; `shoot --state mid-shift|mid-week` jumps here instead.
- */
 export function stageHousehold(ctx: GameContext, mode: StageMode = "shift"): void {
   if (mode === "week") {
     advanceFor(ctx, DAY_LENGTH * 3);
@@ -47,7 +39,6 @@ export function stageHousehold(ctx: GameContext, mode: StageMode = "shift"): voi
   advanceToShift(ctx, 180);
 }
 
-/** Step the household for a fixed span, at the cadence the sim is written for. */
 function advanceFor(ctx: GameContext, seconds: number): void {
   for (let elapsed = 0; elapsed < seconds; elapsed += STEP) {
     ctx.time.advance(STEP);
@@ -70,10 +61,6 @@ export function stageReadout(ctx: GameContext): { working: number; walking: numb
   return { working, walking, shifts, day: state.day };
 }
 
-/**
- * Dev-only capture staging for a household already in its shift block. Play reaches the same
- * morning by starting a household and letting the clock run.
- */
 export function registerCaptureCommands(ctx: GameContext): void {
   if (!import.meta.env.DEV) return;
   ctx.game.commands.define<{ mode?: StageMode }>("household.stage", {

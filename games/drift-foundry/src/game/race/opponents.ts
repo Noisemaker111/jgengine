@@ -26,10 +26,8 @@ import { createVehicleController, type VehicleController, type VehicleTelemetry 
  * `VehicleDynamics` kart the player drives. This module is the grid, the lines, and the contact rule.
  */
 
-/** The yard's three decision-quality tiers, sloppiest first. */
 type RivalTier = "easy" | "standard" | "expert";
 
-/** How each of the yard's tiers decides: reaction delay, steering wobble and planned depth. */
 const RIVAL_DIFFICULTY: Readonly<Record<RivalTier, DifficultyProfile>> = {
   easy: {
     reactionSeconds: 0.9,
@@ -60,18 +58,14 @@ const RIVAL_DIFFICULTY: Readonly<Record<RivalTier, DifficultyProfile>> = {
   },
 };
 
-/** The kart a rival drives, and the line it drives. All numbers are authored feel. */
 export interface RivalDef {
   id: string;
   name: string;
   entityKind: string;
-  /** Decision quality: reaction delay, steering wobble, how late obstacles are perceived. */
   tier: RivalTier;
-  /** Fraction of the composed top speed the driver holds on a straight. */
   pace: number;
   /** Pure-pursuit distance, metres. Longer cuts a wide, clean entry; shorter hunts segment to segment. */
   lookahead: number;
-  /** The build bolted onto this kart - the same parts and the same composer the player uses. */
   parts: readonly PartIconId[];
   /**
    * How much of the field's pace aid this driver accepts, 0..1. The yard champion runs honest and
@@ -133,9 +127,7 @@ export const RIVAL_IDS = RIVAL_DEFS.map((def) => def.id);
 
 /** Combined body radius two karts must keep apart, metres. */
 const CONTACT_RADIUS = 1.7;
-/** A rival keeps this long off its line after a knock - what the HUD reads as `recovering`. */
 const RECOVER_SECONDS = 1.2;
-/** Cars this far ahead in the same lane are what a rival perceives as a blocker. */
 const CAR_SIGHT = 12;
 
 /**
@@ -151,7 +143,6 @@ export interface RivalBody {
   position: readonly [number, number, number];
   heading: number;
   speedKmh: number;
-  /** Shoved off its line, or backing out of something it ground against. */
   recovering: boolean;
   /** Run metres along the track and the road height under the kart. */
   run: number;
@@ -169,14 +160,12 @@ export interface OpponentField {
   positions(): Record<string, readonly [number, number, number]>;
   /** Push a rival by a world-space offset - a knock from contact. False when it was out of reach. */
   knock(id: string, dx: number, dz: number): boolean;
-  /** Back to the grid, every driver state fresh. */
   reset(): void;
 }
 
 /** Rivals roll past the arch and park in the run-out, so they never stop on the finish line. */
 export const RIVAL_ROLLOUT = 24;
 
-/** The authored route with this rival's lateral bias sampled in: spawn, each barricade, the exit. */
 export function rivalLine(def: RivalDef, track: Track = ROW_SIX_TRACK): readonly DrivePathPoint[] {
   if (track.id === ROW_SIX_TRACK.id) {
     const zs = [SPAWN_Z, ...ROUTE_GATES.map((gate) => gate.atZ), EXIT_Z];
@@ -199,7 +188,6 @@ export function rivalLine(def: RivalDef, track: Track = ROW_SIX_TRACK): readonly
   });
 }
 
-/** Where the rival's line sits laterally at `z` - the reference an off-line kart is judged against. */
 export function lineOffsetAt(def: RivalDef, z: number): number {
   const line = rivalLine(def);
   for (let index = 0; index < line.length - 1; index += 1) {
@@ -255,7 +243,6 @@ function createRival(def: RivalDef, groundHeightAt: (x: number, z: number) => nu
   };
 }
 
-/** Springs under the nose: a rival hops the ramp it is about to reach, exactly like the HUD cue tells the player to. */
 function rampAhead(pose: VehicleTelemetry, track: Track): boolean {
   const run = pose.run ?? pose.position[2];
   const route = pose.route ?? MAIN_ROUTE;
@@ -299,7 +286,6 @@ export function createOpponentField(options: {
   seed?: string;
   /** Receives the player's half of a bumper-to-bumper contact, so a shove costs both karts. */
   onPlayerKnock?: (dx: number, dz: number) => void;
-  /** The track the field races; Row Six by default. */
   track?: Track;
 } = {}): OpponentField {
   const groundHeightAt = options.groundHeightAt ?? (() => 0);

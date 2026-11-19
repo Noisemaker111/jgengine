@@ -1,12 +1,5 @@
 // @skill jgengine-world
-/**
- * Ground cover an editor places: a `ground_cover` volume whose sown species mix and care (mowing, trampling, grazing,
- * shade) are grown by the tiller model ({@link createTillerField}) for a number of weeks, and whose grown sward becomes
- * the grass look the volume renders with ({@link tillerCellLook}). A lawn, a hay meadow and a worn path are one kind
- * with different care.
- *
- * @capability ground-cover-field place a lawn, meadow or path the tiller model grows into the grass renderer's look
- */
+/** @capability ground-cover-field place a lawn, meadow or path the tiller model grows into the grass renderer's look */
 import { defineParamSchema, parseParams, type ParamsOf } from "../../generator/paramSchema";
 import { GRASS_DEFAULTS, resolveGrassObject, type GrassLook, type ResolvedGrass } from "../../grass/grassKind";
 import { GRASS_STYLE_SCHEMA, resolveGrassStyle, type GrassStyleSettings } from "../../grass/grassStyle";
@@ -14,10 +7,8 @@ import { registerSceneKind, type SceneKindObject } from "../../scene/sceneKinds"
 import { GROUND_COVER_LIBRARY, type GroundCoverSpecies } from "./groundCoverSpecies";
 import { createTillerField, tillerCellLook } from "./tillerSim";
 
-/** The editor volume kind a ground-cover field is placed as. */
 export const GROUND_COVER_FIELD_KIND = "ground_cover";
 
-/** The `ground_cover` params. */
 export const GROUND_COVER_SCHEMA = defineParamSchema({
   fields: [
     { type: "weightedList", key: "species", label: "sown (share)", itemLabel: "ground-cover species id", default: [{ item: "lolium-perenne", weight: 2 }, { item: "trifolium-repens", weight: 1 }] },
@@ -30,7 +21,6 @@ export const GROUND_COVER_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Parsed `ground_cover` params. */
 export type GroundCoverParams = ParamsOf<typeof GROUND_COVER_SCHEMA>;
 
 const looks = new Map<string, GrassLook>();
@@ -66,7 +56,6 @@ export function growGroundCoverLook(params: GroundCoverParams): GrassLook {
   return look;
 }
 
-/** A ground-cover volume's footprint and grown look, the same shape a `grass_field` resolves to, drawn in the world's grass style. */
 export function resolveGroundCoverObject(object: SceneKindObject, worldStyle?: GrassStyleSettings): ResolvedGrass | null {
   const footprint = resolveGrassObject({ ...object, meta: {} });
   if (footprint === null) return null;
@@ -75,7 +64,7 @@ export function resolveGroundCoverObject(object: SceneKindObject, worldStyle?: G
   return { ...footprint, look: { ...grown, style: resolveGrassStyle(object.meta?.["style"], worldStyle, undefined) } };
 }
 
-/** Registers the `ground_cover` volume kind. Called by `registerBuiltinSceneKinds`. @internal */
+/** @internal */
 export function registerGroundCoverKind(): void {
   registerSceneKind<ResolvedGrass | null>({
     kind: GROUND_COVER_FIELD_KIND,

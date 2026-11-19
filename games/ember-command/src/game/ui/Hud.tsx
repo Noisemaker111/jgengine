@@ -29,7 +29,6 @@ export function orderClock(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-/** One entry on the ledger strip: a glyph and its bound count. */
 function LedgerEntry({ icon, value, warn, label }: { icon: string; value: () => string; warn?: () => boolean; label: string }) {
   return <Row gap={5} label={label}>
     <Glyph name={icon} size={18} color={OCHRE} />
@@ -43,7 +42,6 @@ function KeepGauge({ name, hp, max, color, warn, phoneGauge }: { phoneGauge: boo
   </RuneView>;
 }
 
-/** The ledger strip: stores, both keeps' walls and the reinforcement clock, each bound at its leaf. */
 function Ledger({ phone }: { phone: boolean }) {
   const food = () => { const h = hud(); return `${h.foodUsed}${h.foodReserved ? `+${h.foodReserved}` : ""}/${h.foodCap}`; };
   return <RuneView variant="note" layout={phone ? "grid" : "row"} {...(phone ? { columns: 3 } : {})} gap={phone ? 8 : 16} items="center" label="Ledger">
@@ -63,7 +61,6 @@ function Ledger({ phone }: { phone: boolean }) {
   </RuneView>;
 }
 
-/** The orders note: the campaign's live order with its step marks, clock and count, or the skirmish's aim. */
 function OrdersNote({ width }: { width: number }) {
   const shape = useHudSlice((h) => {
     const c = h.campaign;
@@ -124,7 +121,6 @@ function researchTone(h: HudSnapshot, id: UpgradeId): Tone {
   const c = up.cost(rank);
   return (c.gold ?? 0) <= h.gold && (c.lumber ?? 0) <= h.lumber ? "ready" : "locked";
 }
-/** A doctrine whose rival was chosen reads as closed, not just unaffordable. */
 const RIVAL_DOCTRINE: Partial<Record<UpgradeId, UpgradeId>> = { assault: "bulwark", bulwark: "assault" };
 function researchFoot(h: HudSnapshot, id: UpgradeId): string {
   const up = UPGRADES[id], { rank, have } = h.research[id];
@@ -141,7 +137,6 @@ const RESEARCH_DESC: Record<UpgradeId, string> = {
   bulwark: `Doctrine: −${BULWARK_GUARD_PER_RANK} damage taken and −${BULWARK_DULL_PER_RANK} damage dealt per rank. Choosing it closes Assault for this battle.`,
 };
 
-/** One stone token on the command board: its glyph, carved key, badge and foot, tone bound to the stores. */
 function Slot({ icon, hotkey, foot, badge, tone, tip, setTip, command, size }: {
   icon: string | (() => string); hotkey: string; foot?: () => string; badge?: () => string; tone: () => Tone; tip: () => Tip;
   setTip: (tip: Tip | null) => void; command?: { name: string; input?: unknown }; size: number;
@@ -157,7 +152,6 @@ function Slot({ icon, hotkey, foot, badge, tone, tip, setTip, command, size }: {
   </RuneAction>;
 }
 
-/** The command board: eighteen stone tokens in a leather case, with a writ above for the one in hand. */
 function CommandBoard({ columns, size }: { columns: number; size: number }) {
   // The writ stays mounted and binds to the token in hand, so hovering a token patches leaves instead of resubmitting the tree mid-press.
   const held = useMemo(() => ({ tip: null as Tip | null }), []);
@@ -219,7 +213,6 @@ function CommandBoard({ columns, size }: { columns: number; size: number }) {
   </RuneView>;
 }
 
-/** Bram's card: a medallion with his level, ink bars for health, mana and experience, and his stat line. */
 function HeroCard({ ctx, width }: { ctx: GameContext; width: number }) {
   const barWidth = Math.max(60, width - 24 - 58 - 64);
   const stat = (id: string) => ctx.scene.entity.stats.get("hero", id);
@@ -254,7 +247,6 @@ function HeroCard({ ctx, width }: { ctx: GameContext; width: number }) {
   </Row>;
 }
 
-/** Every fielded fighting unit as a stone token with a health rule under it; whole tokens per page. */
 function ArmyRow({ rowWidth }: { rowWidth: number }) {
   const troops = useHudSlice((h) => h.army.filter((u) => !isWorker(u)).map((u) => ({ id: u.id, kind: u.kind })));
   const [requested, setRequested] = useState(0);
@@ -298,7 +290,6 @@ function HeroPanel({ ctx, width }: { ctx: GameContext; width: number }) {
   </RuneView>;
 }
 
-/** Formation tabs under the map: the active shape carries the wax. */
 function FormationTabs() {
   const formation = useHudSlice((h) => h.formation);
   return <Row gap={4}>{FORMATIONS.map((option) => <RuneAction key={option.id} command={{ name: "unit.formation", input: { kind: option.id } }} label={`${option.label} formation`}
@@ -318,7 +309,6 @@ function MapPanel({ ctx }: { ctx: GameContext }) {
   </RuneView>;
 }
 
-/** The level-up writ: two picks, an act for the command board or an item Bram carries. */
 function LevelUpWrit({ width }: { width: number }) {
   const offer = useHudSlice((h) => (h.heroOffer !== null && h.phase === "playing" ? h.heroOffer : null));
   if (offer === null) return null;
@@ -350,11 +340,6 @@ function ModeBanner() {
   return <RuneView anchor="top" inset={110} gap={6} items="center">{lines.map((line) => <RuneView key={line} variant="note" padding={[6, 16, 6, 16]}><Text text={line} align="center" /></RuneView>)}</RuneView>;
 }
 
-/**
- * The war table's HUD: the ledger and pinned orders along the top, the survey map, Bram's card and the
- * command board along the bottom, and the wax seal top right. Order reports and refusals come from
- * the engine notice feed, drawn by GameUI.
- */
 export function RtsHud({ ctx, width, height, pause, mapOpen, toggleMap }: { ctx: GameContext; width: number; height: number; pause: ReactNode; mapOpen: boolean; toggleMap: () => void }): ReactNode {
   const phone = width < 700;
   if (phone) {

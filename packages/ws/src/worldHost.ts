@@ -9,30 +9,16 @@ import type {
 import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
 import type { GameServerHost, HostChangeEvent } from "./host";
 
-/** Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server. */
 export interface WorldGameHostOptions {
-  /**
-   * Resolve (or lazily build) the authoritative {@link HostedWorldSession} for a server — called once per new
-   * loaded `serverId`, and again after successful unload. Create a fresh session on reload. Return `null` for an
-   * unknown game. Bind the game's definition + content here.
-   */
   session(args: { gameId: string; serverId: string }): HostedWorldSession | Promise<HostedWorldSession | null> | null;
   now?: () => number;
   /** Maximum active players per world; reconnecting members and spectators do not consume a new slot. */
   slotsPerServer?: number | undefined;
 }
 
-/** A {@link GameServerHost} backed by `HostedWorldSession`s; `tick` advances worlds and `unload` explicitly saves and releases idle world references. */
 export interface WorldGameHost extends GameServerHost {
-  /** Advance every live world by `dtSeconds` and emit a `server` change for each whose revision moved. */
   tick(dtSeconds: number): void;
-  /**
-   * Save and release an unoccupied world's host references. Returns `occupied` for admitted players/spectators or
-   * resident members, and `missing` for an unloaded world. Save failure rejects and retains the world for retry.
-   * Later joins resolve a fresh session; external resources remain caller-owned. Closed hosts reject new unloads.
-   */
   unload(serverId: string): Promise<"unloaded" | "missing" | "occupied">;
-  /** Permanently close admission/ticks, drain accepted world operations, and save. Repeated calls share completion. */
   stop(): Promise<void>;
 }
 

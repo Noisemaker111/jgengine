@@ -4,7 +4,6 @@ import type { CameraView } from "./frustum";
 export interface OcclusionInput {
   readonly camera: CameraView;
   readonly bounds: RenderBounds;
-  /** Candidate blockers already known to be in front of the object (nearer to the camera). */
   readonly occluders: Iterable<RenderBounds>;
 }
 
@@ -27,7 +26,6 @@ export const noOcclusion: OcclusionTester = {
 
 export interface AxisOccluderOptions {
   enabled?: boolean;
-  /** An occluder is only trusted when its bounding sphere is at least this large (world units). Default 8. */
   minOccluderRadius?: number;
 }
 

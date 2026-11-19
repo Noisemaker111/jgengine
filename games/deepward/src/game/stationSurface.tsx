@@ -2,7 +2,6 @@
 import { RepeatWrapping, SRGBColorSpace, TextureLoader, type MeshStandardMaterial, type Texture } from 'three';
 import type { IndustrialSurface } from './industrialMaterials';
 
-/** Surfaces whose box parts swap the flat material for the imported PBR maps. */
 export const STATION_TEXTURED_SURFACES: readonly IndustrialSurface[] = ['paint', 'printed', 'floor'];
 
 export function stationSurfaceTextured(surface: IndustrialSurface): boolean {

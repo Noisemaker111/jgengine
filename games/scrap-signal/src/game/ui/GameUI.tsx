@@ -22,12 +22,6 @@ import { ContractCard, Operations, TerminalSettings } from "./Terminal";
 
 for (const face of [GAME_FONTS.display, GAME_FONTS.body]) if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
 
-/**
- * The reclaimer's rig: everything the HUD shows is a piece of salvaged kit at the edge of the view.
- * The wrist unit, the magazine counter and the weapon cartridges sit along the foot; the contract
- * and mission log hang top-left; the wallet counters and the pause key top-right. Each piece dims
- * when nothing on it is changing and comes back the moment it does.
- */
 export function GameUI() {
   const ctx = useGameContext();
   const { phase } = useGamePhase();
@@ -42,7 +36,6 @@ export function GameUI() {
   </RuneRoot>;
 }
 
-/** A rig panel the player can hide from the terminal's HUD chips; hiding is a bound native patch. */
 function Hideable({ id, end = false, start = false, when = true, children }: { id: HudPanelId; end?: boolean; start?: boolean; when?: boolean; children: ReactNode }) {
   const panels = scrapHudPanels();
   // An empty panel mounts no wrapper, so it leaves no gap in its column.

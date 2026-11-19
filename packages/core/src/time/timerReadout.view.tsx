@@ -3,13 +3,8 @@ import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } fro
 
 import type { TimerRead, TimerSet } from "@jgengine/core/time/timerSet";
 
-/**
- * Which value a readout leads with. `"auto"` follows the timer's direction —
- * remaining for a countdown, elapsed for a countup charge.
- */
 export type TimerReadoutSource = "auto" | "remaining" | "elapsed";
 
-/** Digital text format for a timer readout. */
 export type TimerFormat = "mm:ss" | "m:ss.d" | "ss.d";
 
 function pad2(n: number): string {
@@ -81,17 +76,12 @@ export function useTimerRead(timer: TimerSet, id: string, active = true): TimerR
   return timer.read(id, out.current);
 }
 
-/** Props for {@link TimerReadout}. */
 export interface TimerReadoutProps {
-  /** The timer set to read from. */
   timer: TimerSet;
-  /** Id of the timer to display (free string). */
   id: string;
-  /** Which value to show. Default `"auto"` (remaining for countdown, elapsed for countup). */
   source?: TimerReadoutSource;
   /** Digital format. Default `"mm:ss"`. */
   format?: TimerFormat;
-  /** Text shown when the timer id is unknown. Default `"--:--"`. */
   placeholder?: string;
   /** Freeze the per-frame tick when false. Default `true`. */
   active?: boolean;
@@ -134,27 +124,16 @@ export function TimerReadout({
   );
 }
 
-/** Props for {@link TimerRing}. */
 export interface TimerRingProps {
-  /** The timer set to read from. */
   timer: TimerSet;
-  /** Id of the timer to display (free string). */
   id: string;
   /** Outer diameter in px. Default `72`. */
   size?: number;
   /** Ring stroke thickness in px. Default `8`. */
   thickness?: number;
-  /**
-   * How the arc maps to time. `"fill"` (default) sweeps from empty to full as
-   * time passes (a charge/cooldown filling); `"drain"` starts full and empties
-   * (a countdown running out).
-   */
   mode?: "fill" | "drain";
-  /** Ring color. Default the HudTheme accent token. */
   color?: string;
-  /** Track (unfilled) color. Default the HudTheme bar-track token. */
   trackColor?: string;
-  /** Optional center content (e.g. a {@link TimerReadout} or an icon). */
   children?: ReactNode;
   /** Freeze the per-frame tick when false. Default `true`. */
   active?: boolean;
@@ -162,15 +141,7 @@ export interface TimerRingProps {
   style?: CSSProperties;
 }
 
-/**
- * A radial charge/cooldown ring driven off a {@link TimerSet}'s `progress01`.
- * Re-reads every frame and sweeps an SVG arc as the timer advances — ability
- * charge, cooldown wipe, respawn ring, capture progress, all the same widget.
- * `mode` chooses filling vs. draining; center `children` can hold a readout.
- * HudTheme-skinned via `--jg-accent` / `--jg-surface-deep`.
- *
- * @capability timer-ring radial SVG charge/cooldown ring bound to a TimerSet's progress
- */
+/** @capability timer-ring radial SVG charge/cooldown ring bound to a TimerSet's progress */
 export function TimerRing({
   timer,
   id,

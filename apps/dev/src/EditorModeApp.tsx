@@ -15,7 +15,6 @@ export function EditorModeApp({
 }: {
   gameId: string;
   playable: PlayableGame;
-  /** Closes the editor and returns to the game; powers the chrome's "Exit to game" control. */
   onExitEditor?: (() => void) | undefined;
 }) {
   const [EditorApp, setEditorApp] = useState<ComponentType<EditorAppProps> | null>(null);

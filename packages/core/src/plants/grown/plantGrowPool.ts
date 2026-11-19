@@ -16,42 +16,32 @@ export interface PlantGrowRequest {
   seed: string;
   age: number;
   day: number;
-  /** Years the plant has stood dead after reaching `age`; 0 is alive. */
   deadYears: number;
 }
 
-/** A mesh to build where the plant grows: the style and generator detail it is drawn at. */
 export interface PlantMeshOrder {
   style: PlantStyle;
   detail: number;
 }
 
-/** A grown plant, with its mesh when one was ordered. */
 export interface PlantGrowResult {
   grown: CachedPlantStructure;
   mesh: PlantMesh | null;
 }
 
-/** Grows plants somewhere other than the caller's frame and hands back their structure. */
 export interface PlantGrower {
-  /** Grow a plant and, with `mesh`, build that mesh of it in the same place. */
   grow(request: PlantGrowRequest, mesh?: PlantMeshOrder): Promise<PlantGrowResult>;
-  /** Stop every worker; pending growth rejects. */
   dispose(): void;
 }
 
-/** What a worker pool is doing: jobs waiting, jobs running and workers alive. */
 export interface WorkerPlantGrowerState {
   queued: number;
   running: number;
   workers: number;
 }
 
-/** A {@link PlantGrower} backed by workers. */
 export interface WorkerPlantGrower extends PlantGrower {
-  /** Jobs waiting, jobs running and workers alive. */
   state(): WorkerPlantGrowerState;
-  /** Cancel every job (they reject) and stop every worker; the pool starts workers again on the next grow. */
   reset(): void;
 }
 
@@ -60,7 +50,6 @@ export interface PlantGrowJob {
   id: number;
   request: PlantGrowRequest;
   mesh: PlantMeshOrder | null;
-  /** Also bake the leaf atlas of the plant's leaf shape, the first time this pool meets that shape. */
   atlas: boolean;
 }
 
@@ -78,11 +67,9 @@ function isPlantGrowReply(value: unknown): value is PlantGrowReply {
   return "bytes" in value && value.bytes instanceof Uint8Array && "meshBytes" in value && (value.meshBytes === null || value.meshBytes instanceof Uint8Array) && "atlas" in value;
 }
 
-/** Options for {@link createWorkerPlantGrower}. */
 export interface WorkerPlantGrowerOptions {
   /** Most workers alive at once. Default: one less than the machine's cores, 1..6. */
   workers?: number;
-  /** Start one worker; default spawns `plantGrowWorker.ts` as a module worker. */
   spawn?: () => Worker;
 }
 

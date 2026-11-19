@@ -2,7 +2,6 @@ import type { ParticleAttachOptions, ParticleBlendHint, ParticleRenderHint } fro
 import type { EmitterConfig } from "./particles";
 import type { Vec3 } from "../world/geometry";
 
-/** The family an effect belongs to; groups the library browser and the contact sheet. */
 export type EffectGroup =
   | "fire"
   | "smoke"
@@ -14,12 +13,6 @@ export type EffectGroup =
   | "magic"
   | "weather";
 
-/**
- * The procedural sprite family a particle draws with on the GPU path. Each family maps to a
- * {@link ParticleRenderHint} shape: `soft` puffs, velocity-stretched `spark` streaks, `flake`
- * crystals, `flame` tongues, `smoke` puffs, connected `ribbon` trails and flat `ring` ripples.
- * There is no image file to load or credit — the field is the authored name for the sprite.
- */
 export type EffectTexture = "soft" | "spark" | "flake" | "flame" | "smoke" | "ribbon" | "ring";
 
 const TEXTURE_SHAPE: Record<EffectTexture, ParticleRenderHint["shape"]> = {
@@ -38,9 +31,7 @@ const TEXTURE_SHAPE: Record<EffectTexture, ParticleRenderHint["shape"]> = {
  * renders on the existing pooled GPU path without a second implementation.
  */
 export interface ParticleEffect {
-  /** Stable name, e.g. `fire/flame`. Names are the data contract; configs are not. */
   name: string;
-  /** Human label for pickers and contact sheets. */
   title: string;
   group: EffectGroup;
   /**
@@ -48,20 +39,16 @@ export interface ParticleEffect {
    * Gameplay-loud effects (explosions, muzzle flashes) outrank ambient dressing (dust, weather).
    */
   priority: number;
-  /** `continuous` emits from `rate`; `burst` emits `burst` particles per play. */
   mode: "continuous" | "burst";
-  /** Particles emitted per one-shot `play`, and the pool size a standing emitter may reach. */
   burst: number;
   texture: EffectTexture;
   /** Velocity streak length in seconds for `spark`/`ribbon` textures. Default 0.08. */
   stretch?: number;
   blending: ParticleBlendHint;
   config: EmitterConfig;
-  /** Attachment defaults (follow, offset, space, collision child, environment influence). */
   options?: Omit<ParticleAttachOptions, "priority">;
 }
 
-/** Ambient dressing drops first, then gameplay-loud effects last. */
 export const EFFECT_PRIORITY = {
   weather: 20,
   dust: 40,
@@ -206,40 +193,31 @@ const byName = new Map(EFFECT_LIBRARY.map((effect) => [effect.name, effect]));
 /** The fallback effect used when a play call names an unknown effect — a typo still shows a spark. */
 export const DEFAULT_EFFECT = "sparks/weld";
 
-/** Every library effect name, for editor pickers and runtime discovery. */
 export function effectNames(): readonly string[] {
   return EFFECT_LIBRARY.map((effect) => effect.name);
 }
 
-/** The named effect, or `undefined` when the name is not in the library.
- * @capability find-effect look up one named particle effect in the shared library, or undefined when unknown
- */
+/** @capability find-effect look up one named particle effect in the shared library, or undefined when unknown */
 export function findEffect(name: string): ParticleEffect | undefined {
   return byName.get(name);
 }
 
-/** Per-call overrides merged over a library effect; each field wins over the authored default. */
 export interface EffectOverride {
   config?: Partial<EmitterConfig>;
   options?: Partial<ParticleAttachOptions>;
-  /** World position, or the standing emitter's origin when it does not follow an entity. */
   position?: Vec3;
-  /** One-shot particle count; overrides the effect's authored `burst`. */
   burst?: number;
 }
 
-/** A library effect resolved into the exact data the director and renderer consume. */
 export interface ResolvedEffect {
   name: string;
   group: EffectGroup;
   mode: ParticleEffect["mode"];
   priority: number;
-  /** Particles a one-shot `play` emits. */
   burst: number;
   config: EmitterConfig;
   render: ParticleRenderHint;
   blending: ParticleBlendHint;
-  /** Attach options including the resolved `priority`, ready for the director. */
   options: ParticleAttachOptions;
 }
 

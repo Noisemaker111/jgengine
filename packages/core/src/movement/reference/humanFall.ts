@@ -13,44 +13,23 @@ export const PELVIS_ON_FLOOR: ContactParameters = { stiffness: 1.5e5, damping: 0
 /** Scalp and skull on a hard floor: about 4 kN at 4 mm of compression, nearly elastic. */
 export const HEAD_ON_FLOOR: ContactParameters = { stiffness: 1.6e7, damping: 0.2, friction: 0.5, stickStiffness: 5e5, stickDamping: 1e3 };
 
-/** Soft tissue of one segment that moves against its bone: a share of the segment's mass on a nonlinear spring-damper. */
 export interface WobblingMass {
-  /** Share of the segment's mass that wobbles. */
   share: number;
-  /** Coupling `F = K·d³ + C·ḋ` per connection, with two connections in parallel: `K` in N/m³ and `C` in N·s/m. */
   stiffness: number;
   damping: number;
 }
 
-/**
- * Wobbling soft tissue of the trunk, thigh and shank from the drop-landing model of K. Gruber, H. Ruder, J. Denoth and
- * K. Schneider ("A comparative study of impact dynamics: wobbling mass model versus rigid body models", *J. Biomech.*
- * 31, 1998), as tabulated by M. T. G. Pain and J. H. Challis (*J. Appl. Biomech.* 20, 2004, table 1): soft-tissue
- * shares 0.50, 0.66 and 0.46 of segment mass, coupling stiffness 2.3, 1.8 and 0.9 × 10⁸ N/m³, damping 700, 560 and
- * 280 N·s/m.
- */
 export const GRUBER_WOBBLING_MASSES: Record<"trunk" | "thigh" | "shank", WobblingMass> = {
   trunk: { share: 0.5, stiffness: 2.3e8, damping: 700 },
   thigh: { share: 10.5 / 15.8, stiffness: 1.8e8, damping: 560 },
   shank: { share: 2.6 / 5.6, stiffness: 0.9e8, damping: 280 },
 };
 
-/**
- * Extensor activation of a person landing on their feet, as a share of full strength: calf muscles fully pre-activated,
- * as in drop landings (M. Santello and M. J. N. McDonagh, *Exp. Physiol.* 83, 1998), and hip and knee extensors at 0.4,
- * which flexes the knee about 40° from 0.3 m and 110° from 1 m.
- */
 export const LANDING_ACTIVATION = { ankle: 1, hipKnee: 0.4 } as const;
 
-/**
- * How the faller holds their joints. `limp`: no muscle torque (a faint); `rigid`: every joint servoed to standing with
- * full strength; `landing`: knees and hips bent 15° in the air; on touchdown the extensors work eccentrically at {@link LANDING_ACTIVATION}, as a person drops onto their feet.
- */
 export type FallTone = "limp" | "rigid" | "landing";
 
-/** Settings for {@link simulateFall}; every field has a default. */
 export interface FallOptions {
-  /** `backward` (default) or `forward`. */
   direction?: "backward" | "forward";
   tone?: FallTone;
   /** Body mass, kg (default 80) and stature, m (default 1.8). */
@@ -58,34 +37,26 @@ export interface FallOptions {
   stature?: number;
   /** Starting rotation rate about the ankles, rad/s (default 0.3: a slip or a shove). */
   push?: number;
-  /** Height the feet start above the floor, m (default 0: falling from standing). */
   dropHeight?: number;
   ground?: GroundProfile;
-  /** Share of full strength the extensors work at once a `landing` faller's feet touch (default {@link LANDING_ACTIVATION}). */
   landingActivation?: { ankle: number; hipKnee: number };
-  /** Soft tissue that wobbles on the trunk, thighs and shanks (default {@link GRUBER_WOBBLING_MASSES}); `null` makes every segment rigid. */
   wobbling?: Record<"trunk" | "thigh" | "shank", WobblingMass> | null;
 }
 
 /** What a fall does to the body. Speeds are m/s at first touch, forces N; `NaN` when that part never touched. */
 export interface FallReport {
-  /** Release to first touch of the pelvis and of the head, s. */
   pelvisTime: number;
   headTime: number;
-  /** Downward speed of the pelvis and total speed of the head at first touch. */
   pelvisImpactSpeed: number;
   headImpactSpeed: number;
-  /** Peak floor force on the pelvis, the head, and under one foot. */
   peakPelvisForce: number;
   peakHeadForce: number;
   peakFootForce: number;
   /** Head Injury Criterion over a 15 ms window, from the head's acceleration. */
   hic15: number;
-  /** Peak axial force along the thigh (the femur load the injury criteria use). */
   peakFemurForce: number;
 }
 
-/** Torque sign that extends each leg joint: hip and ankle extend negative, the knee positive. */
 const EXTENSION_SIGN: Record<LegJoint, 1 | -1> = { hip: -1, knee: 1, ankle: -1 };
 
 const SEG = { trunk: 0, rightThigh: 1, rightShank: 2, rightFoot: 3, leftThigh: 4, leftShank: 5, leftFoot: 6, head: 7 } as const;

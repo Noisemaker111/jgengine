@@ -6,7 +6,6 @@ import type { ChatSendOutcome } from "@jgengine/core/chat/chatContract";
 type StatefulClass = string | ((expanded: boolean) => string);
 const classFor = (value: StatefulClass | undefined, expanded: boolean) => typeof value === "function" ? value(expanded) : value;
 
-/** Message-store inputs and caller-owned styling for standalone chat. */
 export interface StandaloneChatPanelProps<T extends ChatMessage = ChatMessage> {
   messages: readonly T[];
   userId: string;
@@ -30,10 +29,7 @@ export interface StandaloneChatPanelProps<T extends ChatMessage = ChatMessage> {
   renderMessage?: (message: T, state: { own: boolean; expanded: boolean; index: number; count: number }) => ReactNode;
 }
 
-/**
- * Headless chat interaction for external message stores. Prefer the ChatPanel entrypoint.
- * @capability standalone-chat render persisted chat with focus controls and visible send failures
- */
+/** @capability standalone-chat render persisted chat with focus controls and visible send failures */
 export function StandaloneChatPanel<T extends ChatMessage>({ messages, userId, onSend, className, logClassName, inputClassName, inputFieldClassName, messageClassName, ownMessageClassName, style, defaultExpanded = false, collapsedLimit = 3, limit = 50, maxLength = DEFAULT_CHAT_BODY_LENGTH, hotkeysEnabled = true, onFocus, placeholder = "Message the world...", collapsedPlaceholder = "Enter to chat", emptyLabel = "Press Enter to chat", renderMessage }: StandaloneChatPanelProps<T>) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [draft, setDraft] = useState("");

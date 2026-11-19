@@ -1,7 +1,6 @@
 import { devtools } from "../devtools/devtools";
 import { length2 } from "../math/scalar";
 
-/** One agent's circular footprint and top speed; positions and velocities live in the crowd. */
 export interface RvoAgentSpec {
   x: number;
   z: number;
@@ -12,13 +11,10 @@ export interface RvoAgentSpec {
   vz?: number;
 }
 
-/** Serializable avoidance tuning, retunable in play through {@link RvoCrowd.retune}. */
 export interface RvoTunables {
   /** Seconds of look-ahead over which the agent avoids an upcoming collision. */
   timeHorizon: number;
-  /** Radial distance, in world units, at which other agents enter the solve. */
   neighborDist: number;
-  /** Hard cap on agents one agent considers per tick — the bound that keeps a dense crowd linear. */
   maxNeighbors: number;
   /**
    * Radians every preferred direction is turned the same rotational way. A perfectly mirrored pair
@@ -34,7 +30,6 @@ export interface RvoTunables {
   overlapRelief: number;
 }
 
-/** One agent's live kinematics, as the crowd exposes them. */
 export interface RvoAgentView {
   x: number;
   z: number;
@@ -44,7 +39,6 @@ export interface RvoAgentView {
   maxSpeed: number;
 }
 
-/** Serializable crowd state: tuning plus every agent's position, velocity and footprint. */
 export interface RvoSnapshot {
   tunables: RvoTunables;
   agents: { id: string; x: number; z: number; vx: number; vz: number; radius: number; maxSpeed: number }[];
@@ -57,30 +51,24 @@ export interface RvoSnapshot {
  * ties break on slot index rather than chance.
  */
 export interface RvoCrowd {
-  /** Add an agent; returns false when the id is already present. */
   add(id: string, spec: RvoAgentSpec): boolean;
   remove(id: string): boolean;
   has(id: string): boolean;
   count(): number;
-  /** Agent ids in slot order. */
   ids(): readonly string[];
   agent(id: string): RvoAgentView | null;
   /** Copy one agent's kinematics into a caller-owned record, for hot loops that must not allocate. */
   readInto(id: string, out: { x: number; z: number; vx: number; vz: number }): boolean;
-  /** Where the agent wants to go this tick; `step` consumes and clears it. */
   setPreferredVelocity(id: string, vx: number, vz: number): boolean;
-  /** Overwrite kinematics, e.g. after a teleport or an external controller. */
   setKinematics(id: string, position: { x: number; z: number; vx?: number; vz?: number }): boolean;
   /** Solve avoidance for every agent and integrate positions by `dt` seconds. */
   step(dt: number): void;
   retune(patch: Partial<RvoTunables>): void;
   snapshot(): RvoSnapshot;
   restore(next: RvoSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
-/** Options for {@link createRvoCrowd}. */
 export interface RvoCrowdOptions extends Partial<RvoTunables> {
   /** Register a devtools probe under this name so the perf overlay shows crowd counters. */
   devtoolsName?: string | undefined;
@@ -106,16 +94,11 @@ function det(ax: number, az: number, bx: number, bz: number): number {
   return ax * bz - az * bx;
 }
 
-/** Point on line `lineNo` at parameter `t`, stored into `out`. */
 function linePointAt(buffer: Float64Array, lineNo: number, t: number, out: [number, number]): void {
   out[0] = buffer[lineNo * LINE_STRIDE]! + buffer[lineNo * LINE_STRIDE + 2]! * t;
   out[1] = buffer[lineNo * LINE_STRIDE + 1]! + buffer[lineNo * LINE_STRIDE + 3]! * t;
 }
 
-/**
- * Furthest point toward `opt` on line `lineNo` that also satisfies lines `0..lineNo-1`.
- * Returns `false` when the line makes the set infeasible. Result lands in `solution`.
- */
 function linearProgram1(
   buffer: Float64Array,
   lineNo: number,
@@ -160,7 +143,6 @@ function linearProgram1(
   return true;
 }
 
-/** Velocity closest to `opt` inside every line in `buffer`; returns the violated line index, or `lineCount`. */
 function linearProgram2(
   buffer: Float64Array,
   lineCount: number,
@@ -264,7 +246,6 @@ export function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd {
     return `${slots.length} agents ${tickCount} ticks ${solveCount} solves ${slowestStepMs.toFixed(2)} ms slowest`;
   }
 
-  /** Fill `lines` with this agent's constraints; returns the line count. */
   function buildLines(agentIndex: number, dt: number, candidateCount: number): number {
     const agent = slots[agentIndex]!;
     const invHorizon = 1 / tunables.timeHorizon;
@@ -343,10 +324,6 @@ export function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd {
     return count;
   }
 
-  /**
-   * Preferred direction unreachable: relax the constraints by the smallest common margin, as RVO2's
-   * third program does. `lines` stays intact — the projected set lives in `projection`.
-   */
   function relaxConstraints(lineCount: number, radius: number, optX: number, optZ: number): void {
     let distance = 0;
     for (let i = 0; i < lineCount; i += 1) {

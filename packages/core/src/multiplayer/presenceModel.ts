@@ -18,14 +18,12 @@ export interface PoseSyncRules {
   maxSpeed: number;
   /** Minimum time between accepted pose writes. Defaults to 100 ms. */
   minIntervalMs?: number;
-  /** Vertical offset clamp above floorY (e.g. peak jump height). */
   maxVerticalOffset: number;
   /** World-floor Y used as the base of the jump band. Defaults to 0. */
   floorY?: number;
   /** Elapsed-time clamp so stale or bursty clients cannot teleport. */
   minElapsedSec: number;
   maxElapsedSec: number;
-  /** Unchanged poses refresh the keep-alive stamp at most this often. */
   keepAliveRefreshMs: number;
 }
 
@@ -44,9 +42,7 @@ export interface PoseSyncDecision {
   rotationY: number;
   rotationPitch: number;
   appearance?: Record<string, string> | undefined;
-  /** True when the pose differs and a pose write is needed. */
   changed: boolean;
-  /** True when only the keep-alive stamp should be written. */
   refreshKeepAlive: boolean;
 }
 
@@ -161,7 +157,6 @@ export function shouldPersistWorldSnapshot(
 
 export interface ActivePresenceResolution<T> {
   active: T | null;
-  /** Other unrevoked rows for the same actor — a session may only have one. */
   extras: T[];
 }
 

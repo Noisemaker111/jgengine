@@ -46,7 +46,6 @@ export const lifecycle: LifecycleConfig<RunSession> = {
 
 const foundryBoot = perContext(() => ({ ready: Promise.resolve() }));
 
-/** Settles once the boot read of the yard's document has finished. */
 export function yardReady(ctx: GameContext): Promise<void> {
   return foundryBoot(ctx).ready;
 }
@@ -186,7 +185,6 @@ export function onTick(ctx: GameContext, dt: number): void {
   runSessionStore.write(ctx, session);
 }
 
-/** The crusher's wall, square across the track's road at its run mark. */
 function compactorBody(ctx: GameContext, track: Track, compactorRun: number) {
   if (track === ROW_SIX_TRACK) {
     return { id: COMPACTOR_ENTITY, kind: COMPACTOR_ENTITY, position: [0, ctx.world.groundHeightAt(0, compactorRun), compactorRun] as [number, number, number], role: "prop" as const };

@@ -26,7 +26,6 @@ import { useCameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
 
 export { resolveRigKind } from "./rigResolve";
 
-/** Props for GameCameraRig: shared yaw/pitch refs, the game's camera config and pointer/key control switches. */
 export interface GameCameraRigProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
@@ -43,7 +42,6 @@ export interface GameCameraRigProps {
   viewmodel?: ComponentType<ViewmodelProps> | undefined;
 }
 
-/** Mounts the camera rig the game's camera config selects (orbit, first person, top-down, RTS, shoulder, chase, cinematic and the rest). */
 export function GameCameraRig({
   yawRef,
   pitchRef,

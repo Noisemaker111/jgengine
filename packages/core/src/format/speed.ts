@@ -1,7 +1,6 @@
 /** Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s. */
 export type SpeedUnit = "kmh" | "mph" | "knots" | "ms";
 
-/** Options for {@link formatSpeed}. */
 export interface SpeedFormat {
   /** Target unit to convert into from the m/s input. Defaults to `"kmh"`. */
   unit?: SpeedUnit;

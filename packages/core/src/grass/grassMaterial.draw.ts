@@ -5,16 +5,13 @@ import { grassMownAmount } from "@jgengine/core/grass/grassDrawn";
 import { grassColourFactor, grassDetailScale, grassExaggerationAmount, grassShadingAmounts } from "@jgengine/core/grass/grassStyle";
 import type { GrassWindLook } from "./grassWind";
 
-/** Uniforms the grass shader reads; the stream rewrites the `uLod` row per camera. */
 export interface GrassShaderUniforms {
   uTime: THREE.IUniform<number>;
   /** x: share numerator (share = min(1, x / d²)), y: 1 perspective / 0 orthographic, z: reach in metres, w: orthographic share. */
   uLod: THREE.IUniform<THREE.Vector4>;
   uWind: THREE.IUniform<THREE.Vector4>;
   uWindDirection: THREE.IUniform<THREE.Vector2>;
-  /** x profile, y normal lift, z twist, w fold. */
   uShape: THREE.IUniform<THREE.Vector4>;
-  /** x tip droop, y resting lean, z head shape. */
   uForm: THREE.IUniform<THREE.Vector4>;
   uFlower: THREE.IUniform<number>;
   uBaseColor: THREE.IUniform<THREE.Color>;
@@ -28,18 +25,13 @@ export interface GrassShaderUniforms {
   uLight: THREE.IUniform<THREE.Vector2>;
   /** Mow stripes: x width in metres (0 off), y contrast, zw heading as a unit vector. */
   uStripe: THREE.IUniform<THREE.Vector4>;
-  /** x variegated margins, y cross bands, z head shape. */
   uPattern: THREE.IUniform<THREE.Vector4>;
   uPatternColor: THREE.IUniform<THREE.Color>;
-  /** Style shape: x torn tips (mown blades at the natural end), y round tips (the cartoon end), z blades drawn per blade grown (`grassDetailScale`). */
   uStyle: THREE.IUniform<THREE.Vector4>;
-  /** Style light and colour: x cel bands, y sheen, z colour steps, w outline (all 0 at the default style). */
   uStyleLook: THREE.IUniform<THREE.Vector4>;
-  /** Style colour factors: x saturation, y root-to-tip contrast (both 1 at the default style). */
   uStyleColour: THREE.IUniform<THREE.Vector2>;
 }
 
-/** The grass blade material and the uniforms behind it. */
 export interface GrassMaterialHandle {
   material: THREE.MeshStandardMaterial;
   uniforms: GrassShaderUniforms;
@@ -317,10 +309,7 @@ reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * uLi
 if (uStyleLook.y > 0.0) reflectedLight.directSpecular *= 1.0 + 1.2 * uStyleLook.y;
 `;
 
-/**
- * Write a look's wind numbers into the material's wind uniforms (each frame, for a patch in a shared wind).
- * @internal
- */
+/** @internal */
 export function setGrassWindUniforms(uniforms: Pick<GrassShaderUniforms, "uWind" | "uWindDirection">, look: GrassWindLook & Pick<GrassBlade, "stiffness">): void {
   const heading = (look.windDirection * Math.PI) / 180;
   const softness = 1.25 - look.stiffness;
@@ -328,12 +317,7 @@ export function setGrassWindUniforms(uniforms: Pick<GrassShaderUniforms, "uWind"
   uniforms.uWindDirection.value.set(Math.cos(heading), Math.sin(heading));
 }
 
-/**
- * The shader's style shape row for a look: x torn tips, the natural end of `exaggeration` on a mown
- * look; y round tips, its cartoon end (both 0 at the default style); z blades drawn per blade grown
- * (`grassDetailScale`, 1 at the default style).
- * @internal
- */
+/** @internal */
 export function grassStyleShape(look: Pick<GrassLook, "blade" | "style">): THREE.Vector4 {
   const amount = grassExaggerationAmount(look.style.exaggeration);
   return new THREE.Vector4(Math.max(0, -amount) * grassMownAmount(look), Math.max(0, amount), grassDetailScale(look.style.detail), 0);
@@ -354,7 +338,6 @@ export function grassStyleLighting(look: Pick<GrassLook, "style">): { look: THRE
   };
 }
 
-/** Build the one grass material for a look; `groundColor` is the terrain the roots blend into. */
 export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRepresentation): GrassMaterialHandle {
   const base = new THREE.Color(look.colour.baseColor);
   const heading = (look.wind.windDirection * Math.PI) / 180;

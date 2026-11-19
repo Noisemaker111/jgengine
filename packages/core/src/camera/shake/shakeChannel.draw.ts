@@ -6,17 +6,12 @@ import { defaultCameraShake, type CameraShakeController, type CameraShakeOffset 
 /** Override which controller the rigs below apply; defaults to {@link defaultCameraShake}. */
 export const CameraShakeContext = createContext<CameraShakeController>(defaultCameraShake);
 
-/** The controller the active rig applies. @internal */
+/** @internal */
 export function useCameraShake(): CameraShakeController {
   return useContext(CameraShakeContext);
 }
 
-/**
- * Advance `controller` by `dt` and kick `camera` by its offset in the camera's own frame. Writes the kick it
- * applied into `applied`, so {@link removeCameraShake} can take exactly that back off before a rig that
- * reads the camera's pose (orbit controls) runs again.
- * @internal
- */
+/** @internal */
 export function applyCameraShake(camera: Camera, controller: CameraShakeController, dt: number, applied?: CameraShakeOffset): void {
   controller.update(dt);
   const offset = controller.offset();
@@ -29,7 +24,7 @@ export function applyCameraShake(camera: Camera, controller: CameraShakeControll
   if (applied !== undefined) Object.assign(applied, offset);
 }
 
-/** Undo the kick {@link applyCameraShake} recorded in `applied`, leaving the rig's own pose. @internal */
+/** @internal */
 export function removeCameraShake(camera: Camera, applied: CameraShakeOffset): void {
   camera.rotateZ(-applied.roll);
   camera.rotateY(-applied.yaw);

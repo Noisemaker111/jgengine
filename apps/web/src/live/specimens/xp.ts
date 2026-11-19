@@ -1,8 +1,3 @@
-/**
- * Live demo: the engine's leveling track over a save the page owns. A hero clears slimes; every kill calls
- * `grantXp`, which rolls surplus XP into the next level and calls back once per level reached. The chart
- * draws the curve the sliders define. Click the stage to land a kill yourself.
- */
 import { leveling, type LevelingTrack } from "@jgengine/core/progression/leveling";
 
 import { drawPill, mountCanvas2d, takeover } from "../canvas2d";

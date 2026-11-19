@@ -5,13 +5,10 @@ import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from 
 /** World metres one cover-texture tile spans; the mat's own grain is sampled in world space. */
 export const GRASS_COVER_TILE_METRES = 3;
 
-/** Largest grid a cover mat bakes to, per axis — a 66 m park stays one draw at ~1 m cells. */
 export const GRASS_COVER_MAX_SEGMENTS = 96;
 
-/** Fewest grid segments a default mat bakes to; with fewer, the edge feather fades a small patch's whole mat. */
 const GRASS_COVER_MIN_SEGMENTS = 16;
 
-/** Inputs for {@link createGrassCoverGeometry}. */
 export interface GrassCoverGeometryOptions {
   area: TerrainArea;
   seed: number;
@@ -32,7 +29,6 @@ export interface GrassCoverGeometryOptions {
   shadeAt?: TerrainHeightSampler;
 }
 
-/** Bake result for {@link createGrassCoverGeometry}; empty arrays when the mat is switched off. */
 export interface GrassCoverGeometry {
   positions: Float32Array;
   normals: Float32Array;

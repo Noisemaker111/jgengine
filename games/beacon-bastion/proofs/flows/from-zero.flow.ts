@@ -3,22 +3,14 @@ import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 import { BUILD_PLOTS } from "../../src/game/world/path";
 
-/** A tower's hotbar key: 1 archers, 2 cannon, as the build bar's number badges read. */
 const ARCHERS = "Digit1";
 const CANNON = "Digit2";
-/** What archers and a cannon cost, the gold a build waits for. */
 const TOWER_GOLD = 50;
 const CANNON_GOLD = 90;
 /** A player glances at the field and the purse about once a second. */
 const LOOK_MS = 1000;
-/** A run is a few dozen waves; past this the run has not ended and the flow fails. */
 const MAX_LOOKS = 3600;
 
-/**
- * A new keep defended the way a first-time player defends it: take the plots one by one in the order
- * the road reaches them (archers first, a cannon every third), call each wave when the horn is ready,
- * and spend spare gold on the towers that stand, until the run ends with the keep held or fallen.
- */
 export default defineFlow(game, {
   async run(f) {
     await f.expect((p) => p.wave === 1 && p.creeps === 0 && p.towers === 0, "a new keep: wave 1 waiting, the road empty, no towers yet");

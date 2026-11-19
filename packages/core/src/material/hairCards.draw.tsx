@@ -33,7 +33,6 @@ export function hairCardsDraw(cards: HairCardAuthoring, material: THREE.Material
   };
 }
 
-/** Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned. */
 export function HairCards({ cards, material: asset }: { cards: HairCardAuthoring; material: MaterialAsset }) {
   const key = JSON.stringify([cards, asset]);
   useEngineDraw(

@@ -10,21 +10,14 @@
 import { createGranularLayer } from "./granularLayer";
 import type { GranularMaterial } from "./granularMaterial";
 
-/** Where a released column of the continuum came to rest. */
 export interface ContinuumCollapse {
-  /** Edge of the deposit over the column radius, r_∞ / r_i. */
   runout: number;
-  /** Final over initial height. */
   height: number;
   /** Seconds until the last cell stopped. */
   duration: number;
 }
 
-/**
- * Release a column of `aspect` = h_i / r_i, radius `radius` m, on a flat bed and measure the deposit. The edge
- * is the farthest cell deeper than 1% of the initial height.
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 export function continuumCollapse(material: GranularMaterial, aspect: number, radius = 0.1, cellsPerRadius = 20): ContinuumCollapse {
   const dx = radius / cellsPerRadius;
   const reach = radius * (aspect < 1.7 ? 1 + 1.24 * aspect : 1 + 1.6 * Math.sqrt(aspect)) * 1.6;
@@ -52,11 +45,9 @@ export function continuumCollapse(material: GranularMaterial, aspect: number, ra
   return { runout: edge / radius, height: top / (aspect * radius), duration };
 }
 
-/** Steady flow down a rough incline, read at the middle of a long channel. */
 export interface FlumeFlow {
   depth: number;
   velocity: number;
-  /** u / √(g h). */
   froude: number;
 }
 
@@ -82,20 +73,15 @@ export function inclinedFlume(material: GranularMaterial, angle: number, depth: 
   return { depth: h, velocity, froude: velocity / Math.sqrt(gravity * h) };
 }
 
-/** A heap poured from a point. */
 export interface PouredHeap {
   height: number;
   /** Mean flank slope between 15% and 85% of the height, along the grid axis and along the diagonal, degrees. */
   axisSlope: number;
   diagonalSlope: number;
-  /** Solid volume in the layer over the volume poured. */
   conserved: number;
 }
 
-/**
- * Pour `volume` m³ in small batches onto the middle of a flat bed of `cell` m cells and measure the heap once still.
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 export function pouredHeap(material: GranularMaterial, volume = 0.6, cell = 0.1, cells = 61): PouredHeap {
   const layer = createGranularLayer({ cols: cells, rows: cells, spacingX: cell, materials: [material] });
   const mid = (cells - 1) / 2;

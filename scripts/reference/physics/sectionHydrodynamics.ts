@@ -20,7 +20,6 @@ function cexp(a: Complex): Complex {
   return [m * Math.cos(a[1]), m * Math.sin(a[1])];
 }
 
-/** Exponential integral `E1(u)` on the principal branch: series near the origin and deep in the left half-plane, continued fraction elsewhere, asymptotic far out. */
 function expIntegral(u: Complex): Complex {
   const size = Math.hypot(u[0], u[1]);
   const arg = Math.atan2(u[1], u[0]);
@@ -66,10 +65,6 @@ function expIntegral(u: Complex): Complex {
   return [-EULER_GAMMA - Math.log(size) - sum[0], -arg - sum[1]];
 }
 
-/**
- * Wave part of the 2-D pulsating-source Green's function, `−2·PV∫e^(k(y+η))cos k(x−ξ)/(k−ν) dk − 2πi·e^(ν(y+η))cos ν(x−ξ)`,
- * and its x and y derivatives, from `J(Z) = e^(νZ)(E1(νZ) + iπ·sgn X)` with `Z = (y+η) + iX`, `X = x − ξ`.
- */
 function waveTerm(dx: number, sy: number, nu: number): { value: Complex; dx: Complex; dy: Complex } {
   const z: Complex = [sy, dx];
   const u: Complex = [nu * sy, nu * dx];
@@ -88,7 +83,6 @@ function waveTerm(dx: number, sy: number, nu: number): { value: Complex; dx: Com
   };
 }
 
-/** `∫ ln|P − Q| ds` over the segment `a → b`, and its gradient at `P`. */
 function logSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): { value: number; gx: number; gy: number } {
   const lx = bx - ax;
   const ly = by - ay;
@@ -113,25 +107,17 @@ function logSegment(px: number, py: number, ax: number, ay: number, bx: number, 
   return { value, gx: fPrime[0], gy: -fPrime[1] };
 }
 
-/**
- * Half a symmetric ship section below the waterline: points from the keel on the centreline to the waterline, as
- * `[half-breadth, depth]` pairs with depth ≤ 0 (the waterline at 0).
- */
 export type HalfSection = readonly (readonly [number, number])[];
 
 /** Heave added mass, kg/m, and radiation damping, N·s/m², of a section at one frequency, with what the strip method needs. */
 export interface SectionHeave {
   addedMass: number;
   damping: number;
-  /** Far-field wave amplitude per heave amplitude, both sides alike. */
   waveRatio: number;
-  /** `∫ φ₃·n_z·e^(k·z) ds` over the whole contour, per unit heave velocity: the diffraction force integral. */
   diffraction: Complex;
-  /** `∫ e^(k·z)·n_z ds` over the whole contour: the Froude–Krylov force integral (negative of the attenuated beam). */
   froudeKrylov: number;
 }
 
-/** Splits a half-section into `panels` straight panels, equal in arc length. */
 function resample(section: HalfSection, panels: number): [number, number][] {
   const lengths = [0];
   for (let i = 1; i < section.length; i += 1) {
@@ -156,12 +142,7 @@ function resample(section: HalfSection, panels: number): [number, number][] {
   return out;
 }
 
-/**
- * Heave added mass and damping of a symmetric section by Frank's close-fit source method: pulsating sources of
- * constant strength on straight panels (mirrored to port) with the deep-water free-surface Green's function, the body
- * condition met at panel midpoints. `frequency` `Infinity` uses the high-frequency limit (`φ = 0` on the surface).
- * @capability section-hydrodynamics 2-D heave added mass and radiation damping of a ship section (Frank close-fit)
- */
+/** @capability section-hydrodynamics 2-D heave added mass and radiation damping of a ship section (Frank close-fit) */
 export function sectionHeave(section: HalfSection, frequency: number, density = 1025, gravity = 9.80665, panels = 24): SectionHeave {
   const nodes = resample(section, panels);
   const n = panels;
@@ -270,11 +251,7 @@ export function sectionHeave(section: HalfSection, frequency: number, density = 
   return { addedMass, damping, waveRatio, diffraction: [diffRe, diffIm], froudeKrylov: fk };
 }
 
-/**
- * A Lewis-form half-section `x = M((1 + a1) sin θ − a3 sin 3θ)`, `y = −M((1 − a1) cos θ + a3 cos 3θ)` from the keel
- * (`θ = 0`) to the waterline (`θ = π/2`), fitted to a half-breadth, draft and section area coefficient.
- * @capability section-hydrodynamics Lewis-form ship section from beam, draft and area coefficient
- */
+/** @capability section-hydrodynamics Lewis-form ship section from beam, draft and area coefficient */
 export function lewisSection(halfBreadth: number, draft: number, areaCoefficient: number, points = 41): { section: HalfSection; a1: number; a3: number; scale: number } {
   const h = halfBreadth / draft;
   const sigma = areaCoefficient;

@@ -8,7 +8,6 @@ export interface LootFilterItem {
 
 export interface LootFilterRule {
   id: string;
-  /** Over the facts `rarity`, `baseType` and `affixTier` (0 when the item has none); omitted matches every item. */
   when?: Predicate;
   hide?: boolean;
   color?: string;

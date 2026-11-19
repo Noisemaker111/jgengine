@@ -5,22 +5,14 @@ import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 
-/** Adopting a library name writes a real, editable material asset into the scene document. */
 export interface MaterialLibraryBrowserProps {
-  /** URL prefix the pulled maps resolve under; matches `assets pull library --dir <public>`. */
   basePath?: string;
-  /** Called with the asset the author should now assign to a mesh or slot. */
   onAdopt(asset: MaterialAsset): void;
   /** Reports a name that could not be built, so a broken library entry is visible instead of silent. */
   onError(message: string): void;
 }
 
-/**
- * Browses the shared ambientCG material library by name and adds one entry to the document's
- * material assets. Names, response parameters and CC0 attribution come from `@jgengine/assets`;
- * this panel owns presentation only.
- * @internal Mounted by the materials workspace.
- */
+/** @internal Mounted by the materials workspace. */
 export function MaterialLibraryBrowser({ basePath = "/materials", onAdopt, onError }: MaterialLibraryBrowserProps) {
   const [query, setQuery] = useState("");
   const rows = useMemo(() => filterLibraryMaterials(query), [query]);

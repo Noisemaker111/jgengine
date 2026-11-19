@@ -9,13 +9,11 @@ export interface PointerAxisState {
   active: boolean;
 }
 
-/** Maps one pointer axis onto an analog axis target — the pointer-backed counterpart of an `AxisBinding`'s key lists. */
 export interface PointerAxisBinding {
   source: "x" | "y";
   invert?: boolean;
   /** Fraction of the half-range around center treated as zero; the remainder rescales to the full `[-1, 1]`. */
   deadzone?: number;
-  /** Response-curve exponent on the magnitude: `1` linear (default), `>1` finer control near center. */
   curve?: number;
 }
 

@@ -4,7 +4,6 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 const boot = perContext(() => ({ runStarted: false }));
 
-/** A run was started this session: a pick, a Continue or a dev menu run. */
 export function noteRunStarted(ctx: GameContext): void {
   boot(ctx).runStarted = true;
 }

@@ -15,16 +15,12 @@ const noSubscribe = (): (() => void) => () => undefined;
 /** How long the model loader must stay idle after Play before the entering screen lifts. */
 export const ENTER_QUIET_MS = 250;
 
-/** What the boot reads each check: the game's phase, the scene warmup, the prefetch and the model loader. */
 export interface BootSignals {
   phase: ReturnType<typeof gamePhase>;
-  /** The scene warmup still covers the canvas. */
   warming: boolean;
-  /** Every near file the game named has been fetched. */
   nearReady: boolean;
   /** Ms the shared model loader has been idle; 0 while a model is in flight. */
   loaderIdleMs: number;
-  /** World pieces still loading behind a boot guard. */
   areasLoading: number;
 }
 
@@ -44,11 +40,7 @@ export function nextBootStep(step: ReturnType<typeof pageBoot.step>, signals: Bo
   return signals.nearReady && worldIn && signals.loaderIdleMs >= ENTER_QUIET_MS ? "playing" : "entering";
 }
 
-/**
- * Moves the page's boot from the game's own state, and draws the entering screen with the real
- * share of near files fetched. Mounted once per game view.
- * @internal
- */
+/** @internal */
 export function BootDirector({ ctx, warmup }: { ctx: GameContext; warmup?: SceneWarmupStore }) {
   const step = useBootStep();
   const prefetch = useSyncExternalStore(pagePrefetch.subscribe, pagePrefetch.state, pagePrefetch.state);

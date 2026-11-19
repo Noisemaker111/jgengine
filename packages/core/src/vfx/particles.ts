@@ -9,13 +9,11 @@ export interface Range {
   max: number;
 }
 
-/** A per-life start→end curve (linear interpolation from birth to death). */
 export interface ParticleCurve {
   start: number;
   end: number;
 }
 
-/** Serializable spawn volume in emitter coordinates; cone widens from its base along +Y. */
 export interface ParticleSpawnShape {
   kind: "disc" | "sphere" | "cone";
   radius: number;
@@ -33,7 +31,6 @@ export interface ParticleCollisionConfig {
   maxEvents?: number;
 }
 
-/** One contact from an injected scene query, in simulation coordinates. */
 export interface ParticleCollisionHit {
   position: Vec3;
   normal: Vec3;
@@ -48,10 +45,8 @@ export interface ParticleEvent {
   normal?: Vec3;
 }
 
-/** Optional geometry adapter; queries are capped independently of rendering. */
 export interface ParticleSystemOptions {
   collision?: (from: Vec3, to: Vec3) => ParticleCollisionHit | null;
-  /** External cosmetic acceleration; return `out` to reuse its allocation. */
   acceleration?: (position: Vec3, velocity: Vec3, out: [number, number, number]) => Vec3;
 }
 
@@ -65,9 +60,7 @@ export interface EmitterConfig {
   max?: number;
   /** Continuous emission rate in particles/second. Default 0 (burst-only). */
   rate?: number;
-  /** Spawn origin. Default `[0, 0, 0]`. */
   position?: Vec3;
-  /** Half-extents of a box the spawn point is jittered within. Default `[0, 0, 0]`. */
   spawnJitter?: Vec3;
   spawnShape?: ParticleSpawnShape;
   /** Particle lifetime in seconds. Default `{ min: 1, max: 1 }`. */
@@ -78,13 +71,10 @@ export interface EmitterConfig {
   direction?: Vec3;
   /** Cone half-angle in radians around `direction`; `Math.PI` emits in all directions. Default 0. */
   spread?: number;
-  /** Constant acceleration (e.g. gravity `[0, -9.8, 0]`). Default `[0, 0, 0]`. */
   gravity?: Vec3;
   /** Linear velocity damping per second, `0` (none) to `1` (stop instantly). Default 0. */
   drag?: number;
-  /** Particle radius over life. Default `{ start: 1, end: 1 }`. */
   size?: ParticleCurve;
-  /** `0xRRGGBB` color at birth. Default `0xffffff`. */
   colorStart?: number;
   /** `0xRRGGBB` color at death. Default = `colorStart`. */
   colorEnd?: number;
@@ -92,7 +82,6 @@ export interface EmitterConfig {
   alpha?: ParticleCurve;
   /** Seed for deterministic births; retuning it resets future randomness. */
   seed?: string | number;
-  /** Shared physical field descriptors, sampled as cosmetic acceleration; at most eight per particle. */
   forces?: readonly ForceFieldConfig[];
   collision?: ParticleCollisionConfig;
   /** Enable bounded death events. Collision events use `collision.maxEvents`. */
@@ -106,17 +95,13 @@ export interface EmitterConfig {
  */
 export interface ParticleBuffers {
   count: number;
-  /** `count * 3` floats: x, y, z per particle. */
   positions: Float32Array;
-  /** `count` floats: current radius per particle. */
   sizes: Float32Array;
   /** `count * 3` floats: r, g, b in `0..1` per particle. */
   colors: Float32Array;
   /** `count` floats: opacity `0..1` per particle. */
   alphas: Float32Array;
-  /** Stable birth ids, retained through pool compaction. */
   ids: Float64Array;
-  /** Packed velocity and prior integration positions for streak/ribbon outputs. */
   velocities: Float32Array;
   previousPositions: Float32Array;
 }
@@ -134,25 +119,17 @@ export interface ParticleSnapshot {
   config?: EmitterConfig;
 }
 
-/** A live, dt-driven particle simulation. */
 export interface ParticleSystem {
   /** Advance the sim by `dt` seconds: emit from `rate`, integrate, and reap dead particles. */
   update(dt: number): void;
-  /** Spawn `n` particles immediately (a one-shot puff/explosion), independent of `rate`. */
   emit(n: number): void;
-  /** Resume continuous emission without replacing the live pool. */
   start(): void;
-  /** Stop spawning while existing particles continue aging. */
   stop(): void;
   /** Consume bounded presentation collision/death events exactly once. */
   drainEvents(): ParticleEvent[];
-  /** Live particle count. */
   count(): number;
-  /** The packed buffers for rendering (valid until the next `update`/`emit`). */
   buffers(): ParticleBuffers;
-  /** Kill all particles and reset the emission accumulator (keeps the seed stream). */
   clear(): void;
-  /** Patch tuning in place; `replace` resets omitted fields to defaults while retaining live particles. */
   configure(patch: Partial<EmitterConfig>, replace?: boolean): void;
   subscribe(listener: () => void): () => void;
   snapshot(): ParticleSnapshot;
@@ -165,7 +142,6 @@ type ResolvedEmitterConfig = Required<Omit<EmitterConfig, "seed" | "forces" | "c
   spawnShape: EmitterConfig["spawnShape"];
 };
 
-/** The serializable config a resolved one stands for: unset optional fields stay absent. */
 function emitterConfigOf(cfg: ResolvedEmitterConfig, seed: EmitterConfig["seed"]): EmitterConfig {
   const { forces, collision, spawnShape, ...rest } = cfg;
   return {
@@ -345,7 +321,6 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
     p.a1 = cfg.alpha.end;
   }
 
-  /** Retire the live record at `i` by swapping it with the last live one. */
   function swapRemove(i: number): void {
     const last = live - 1;
     const retired = pool[i];
@@ -524,7 +499,6 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
   return system;
 }
 
-/** Numbers per particle in {@link ParticleSnapshot.data}. */
 const SNAPSHOT_STRIDE = 18;
 
 /** One pooled particle: position, velocity, the position before the last step, and its baked life curves. */
@@ -545,10 +519,7 @@ function blankParticle(): Particle {
     sizeStart: 1, sizeEnd: 1, r0: 1, g0: 1, b0: 1, r1: 1, g1: 1, b1: 1, a0: 1, a1: 0 };
 }
 
-/**
- * Validate the serializable spawn/update descriptor before authoring or loading it.
- * @capability particle-emitter-validation validate finite spawn volumes, force fields, lifetimes, appearance curves, and bounded particle collision policies
- */
+/** @capability particle-emitter-validation validate finite spawn volumes, force fields, lifetimes, appearance curves, and bounded particle collision policies */
 export function validateEmitterConfig(value: unknown): string[] {
   const errors: string[] = [];
   if (value === null || typeof value !== "object" || Array.isArray(value)) return ["emitter must be an object"];

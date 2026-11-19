@@ -143,7 +143,6 @@ const staticPrompts: readonly PositionedPrompt[] = [
   })),
 ];
 
-/** A talk prompt on each quest giver, wherever the story has them standing now. */
 function npcPrompts(ctx: GameContext): PositionedPrompt[] {
   const out: PositionedPrompt[] = [];
   for (const [npc, info] of Object.entries(NPCS)) {
@@ -363,7 +362,6 @@ export const game = defineGame({
       ],
     },
     // GTAO was dropped here after perf profiling: it re-renders the whole scene
-  // for depth/normals and doubled the frame's draw calls/triangles for a subtle
   // contact-shadow gain this bright, fogged desert barely shows.
     postProcessing: {
       toneMapping: "aces",
@@ -395,6 +393,4 @@ export const game = defineGame({
     lens: { frustum: { far: 4200 } },
   },
 });
-
-
 

@@ -8,37 +8,31 @@ import {
   type CrowdSpeedBands,
 } from "./crowdRegistry.draw";
 
-/** How a batch places every member of one character kind. @internal */
+/** @internal */
 export interface CrowdBatchPlacement {
-  /** Uniform scale applied to the baked geometry. */
   scale: number;
   /** Translation applied after the member's own pose, so the baked rig stands where its own rig would. */
   offset: THREE.Vector3;
 }
 
-/** The clip and time offset a batch is playing for one member. @internal */
+/** @internal */
 export interface CrowdPlayback {
   clip: number;
   offset: number;
 }
 
-/** Everything one frame of a character batch needs. @internal */
+/** @internal */
 export interface CrowdBatchFrame {
   mesh: THREE.InstancedMesh;
-  /** Per-instance clip, time offset and speed; `null` for a static character kind. */
   play: THREE.InstancedBufferAttribute | null;
-  /** Drawn members in batch order, already filtered by visibility. */
   members: readonly { id: string; member: CrowdMember }[];
   placement: CrowdBatchPlacement;
-  /** Baked clip names in `[idle, walk, run]` order. */
   clips: readonly string[];
   bands?: CrowdSpeedBands | undefined;
   clipIndex: ReadonlyMap<string, number>;
   /** Seconds of batch time, so a member entering mid-clip continues the pose it was holding. */
   time: number;
-  /** Per-member playback state, kept across frames; cleared by the caller when the batch unmounts. */
   playback: Map<string, CrowdPlayback>;
-  /** Ids written into the compacted instance slots, in draw order. */
   ids: string[];
 }
 
@@ -51,7 +45,6 @@ const scratchScale = new THREE.Vector3();
 const WHITE = new THREE.Color(1, 1, 1);
 const tints = new Map<string, THREE.Color>();
 
-/** A member's tint as a colour, parsed once per distinct value; white (no change) for none. */
 function tintColor(tint: string | undefined): THREE.Color {
   if (tint === undefined) return WHITE;
   let color = tints.get(tint);

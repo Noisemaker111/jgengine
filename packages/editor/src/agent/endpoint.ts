@@ -2,46 +2,36 @@ import type { EditorMcpTool } from "../mcp/tools";
 import type { AgentEditorContext } from "./context";
 import type { AgentToolCall } from "./toolBridge";
 
-/** One message in an agent chat transcript (user, assistant, or tool result). */
 export type AgentChatRole = "user" | "assistant" | "tool" | "system";
 
-/** One turn message exchanged with a pluggable agent endpoint (user, assistant, tool, or system). */
 export interface AgentChatMessage {
   role: AgentChatRole;
   content: string;
-  /** Present on tool-result messages. */
   toolCallId?: string;
   name?: string;
 }
 
-/** Payload sent to a pluggable agent backend for one model turn. */
 export interface AgentChatRequest {
   messages: readonly AgentChatMessage[];
   context: AgentEditorContext;
   tools: readonly EditorMcpTool[];
 }
 
-/** Model reply: optional prose plus zero or more tool calls to run via editor RPC. */
 export interface AgentChatResponse {
   message?: string;
   toolCalls?: AgentToolCall[] | undefined;
 }
 
-/** Pluggable agent backend — HTTP, Claude SDK adapter, or a local rule engine. */
 export interface AgentEndpoint {
-  /** Stable id for UI status (e.g. "http", "local"). */
   id: string;
   chat(request: AgentChatRequest): Promise<AgentChatResponse>;
 }
 
-/** Env var name for the remote agent HTTP URL (`JGENGINE_EDITOR_AGENT_URL`). */
 export const EDITOR_AGENT_URL_ENV = "JGENGINE_EDITOR_AGENT_URL";
-/** Env var name for the optional Bearer token (`JGENGINE_EDITOR_AGENT_KEY`). */
 export const EDITOR_AGENT_KEY_ENV = "JGENGINE_EDITOR_AGENT_KEY";
 /** Fallback API-key env when `JGENGINE_EDITOR_AGENT_KEY` is unset (`ANTHROPIC_API_KEY`). */
 export const EDITOR_AGENT_KEY_FALLBACK_ENV = "ANTHROPIC_API_KEY";
 
-/** Resolved remote agent settings: optional URL and optional Bearer API key. */
 export interface AgentEndpointConfig {
   url?: string | undefined;
   apiKey?: string | undefined;
@@ -52,11 +42,6 @@ function readProcessEnv(): Record<string, string | undefined> {
   return root.process?.env ?? {};
 }
 
-/**
- * Reads agent endpoint config from an env map.
- * Prefer `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (falls back to `ANTHROPIC_API_KEY`).
- * Empty URL → local offline agent; set the URL for a remote model/tool-call backend.
- */
 export function resolveAgentEndpointConfig(
   env: Record<string, string | undefined> = readProcessEnv(),
 ): AgentEndpointConfig {
@@ -66,10 +51,6 @@ export function resolveAgentEndpointConfig(
   return { url, apiKey };
 }
 
-/**
- * HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`.
- * Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
- */
 export function createHttpAgentEndpoint(config: {
   url: string;
   apiKey?: string | undefined;
@@ -120,11 +101,7 @@ function normalizeChatResponse(raw: AgentChatResponse): AgentChatResponse {
   };
 }
 
-/**
- * Offline rule-based agent for demos and tests when no remote URL is configured.
- * Understands slash-style commands that map onto editor RPC verbs.
- * @internal
- */
+/** @internal */
 export function createLocalAgentEndpoint(): AgentEndpoint {
   return {
     id: "local",

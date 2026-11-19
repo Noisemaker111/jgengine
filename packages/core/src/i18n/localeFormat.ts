@@ -15,37 +15,30 @@ function cached<T>(store: Map<string, T>, locale: Locale, options: object | unde
   return made;
 }
 
-/** Number grouping, decimals and digits for `locale`. */
 export function formatLocaleNumber(locale: Locale, value: number, options?: Intl.NumberFormatOptions): string {
   return cached(numberFormats, locale, options, () => new Intl.NumberFormat(locale, options)).format(value);
 }
 
-/** An amount of money in an ISO 4217 `currency` (`"USD"`, `"JPY"`), with that currency's own decimals. */
 export function formatLocaleCurrency(locale: Locale, value: number, currency: string, options?: Intl.NumberFormatOptions): string {
   return formatLocaleNumber(locale, value, { ...options, style: "currency", currency });
 }
 
-/** A fraction as a percentage: `0.256` is `25.6%` with `maximumFractionDigits: 1`. */
 export function formatPercent(locale: Locale, fraction: number, options?: Intl.NumberFormatOptions): string {
   return formatLocaleNumber(locale, fraction, { ...options, style: "percent" });
 }
 
-/** A short large number: `12500` is `12.5K` in English, `1.25万` in Japanese. */
 export function formatCompact(locale: Locale, value: number, options?: Intl.NumberFormatOptions): string {
   return formatLocaleNumber(locale, value, { ...options, notation: "compact", maximumFractionDigits: options?.maximumFractionDigits ?? 1 });
 }
 
-/** A number with a unit (`"kilometer-per-hour"`, `"celsius"`). */
 export function formatUnit(locale: Locale, value: number, unit: string, options?: Intl.NumberFormatOptions): string {
   return formatLocaleNumber(locale, value, { unitDisplay: "short", ...options, style: "unit", unit });
 }
 
-/** An absolute date and time. */
 export function formatDate(locale: Locale, value: number | Date, options?: Intl.DateTimeFormatOptions): string {
   return cached(dateFormats, locale, options, () => new Intl.DateTimeFormat(locale, options)).format(value);
 }
 
-/** The units a duration is written in, largest first. */
 const DURATION_UNITS = [
   { unit: "day", seconds: 86400 },
   { unit: "hour", seconds: 3600 },
@@ -53,11 +46,9 @@ const DURATION_UNITS = [
   { unit: "second", seconds: 1 },
 ] as const;
 
-/** Bounds and style of {@link formatLocaleDuration}. */
 export interface DurationFormatOptions {
   /** Smallest unit shown. Default `second`. */
   smallest?: (typeof DURATION_UNITS)[number]["unit"];
-  /** Largest unit shown; time above it rolls into it. Default `day`. */
   largest?: (typeof DURATION_UNITS)[number]["unit"];
   unitDisplay?: "long" | "short" | "narrow";
 }
@@ -87,7 +78,6 @@ export function formatLocaleDuration(locale: Locale, totalSeconds: number, optio
   return cached(listFormats, locale, { unitDisplay }, () => new Intl.ListFormat(locale, { type: "unit", style: unitDisplay })).format(parts);
 }
 
-/** "in 3 days", "2 hours ago": `value` is negative for the past. */
 export function formatRelative(locale: Locale, value: number, unit: Intl.RelativeTimeFormatUnit, options?: Intl.RelativeTimeFormatOptions): string {
   return cached(relativeFormats, locale, options, () => new Intl.RelativeTimeFormat(locale, { numeric: "auto", ...options })).format(value, unit);
 }

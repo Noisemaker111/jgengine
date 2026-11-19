@@ -24,7 +24,6 @@ export interface SteadyRun {
   endCash: number;
 }
 
-/** Play `minutes` of a new game as the steady player, writing the minute-by-minute table to `log`. */
 export function playSteady(minutes: number, log: (line: string) => void = () => {}, reserve = 1500): SteadyRun {
   const records = new Map<string, string>();
   Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {

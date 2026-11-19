@@ -19,7 +19,6 @@ interface Autopilot {
 }
 const autopilotStore = defineStore<Autopilot | undefined>("driftAutopilot", undefined);
 
-/** The pilot's controls for this frame, or `null` when nobody engaged it (always, outside dev). */
 export function autopilotFrame(ctx: GameContext, snap: SessionSnapshot, track: Track): PilotFrame | null {
   const auto = autopilotStore.peek(ctx);
   if (auto === undefined || snap.phase !== "running" || snap.paused) return null;
@@ -30,10 +29,8 @@ export function autopilotFrame(ctx: GameContext, snap: SessionSnapshot, track: T
   return auto.pilot(snap);
 }
 
-/** What a staged run should look like when the capture takes it. */
 export type StageMode = "midrun" | "result" | "walled";
 
-/** One simulated step at the frame rate the run is tuned for. */
 const STEP = 1 / 60;
 
 export interface StageReadout {
@@ -47,11 +44,6 @@ export interface StageReadout {
   outcome: string;
 }
 
-/**
- * Drive the run's own session forward with the throttle pinned, pressing jump for the ramps.
- * The pickups, gates, crusher, damage, rivals and the finish are the real systems: this is the
- * corridor driven quickly, not a pose dropped onto the track.
- */
 function drive(ctx: GameContext, seconds: number): void {
   const session = runSessionStore.peek(ctx);
   if (session === undefined) return;
@@ -62,7 +54,6 @@ function drive(ctx: GameContext, seconds: number): void {
   }
 }
 
-/** Swing wide past Row Six's plow drop and drive on until the first plow wall stops the kart. */
 function driveIntoWall(ctx: GameContext): void {
   const session = runSessionStore.peek(ctx);
   const plow = PICKUPS.find((pickup) => pickup.partId === "plow_blade");
@@ -77,7 +68,6 @@ function driveIntoWall(ctx: GameContext): void {
   }
 }
 
-/** Stage on another event's track: the course driver follows its line, through `take` shortcuts. */
 export interface StageCourse {
   event?: string;
   seconds?: number;
@@ -116,10 +106,6 @@ export function stageReadout(ctx: GameContext): StageReadout {
   };
 }
 
-/**
- * Dev-only capture staging for the two states that need a driven corridor: a mid-run with the
- * compactor on the kart, and a finished run with its result card. Play reaches both by racing.
- */
 export function registerCaptureCommands(ctx: GameContext): void {
   if (!import.meta.env.DEV) return;
   ctx.game.commands.define<{ on?: boolean; take?: readonly string[]; sweep?: boolean; event?: string; openAll?: boolean }>("run.autopilot", {

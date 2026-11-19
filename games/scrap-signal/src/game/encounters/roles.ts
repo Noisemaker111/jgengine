@@ -66,12 +66,10 @@ const TABLES: Record<Faction, Record<FightIntent, SquadRole>> = {
   ripper: RIPPER,
 };
 
-/** The role one crew gives a duty. This is the `roleFor` `compositionForIntents` reads. */
 export function roleFor(faction: Faction): (intent: FightIntent) => SquadRole {
   return (intent) => TABLES[faction][intent];
 }
 
-/** The dials only, for a test or a probe. */
 export function factionRole(faction: Faction, intent: FightIntent): SquadRole {
   return TABLES[faction][intent];
 }

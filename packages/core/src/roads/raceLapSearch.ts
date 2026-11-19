@@ -21,7 +21,6 @@
 import { seededRng } from "../random/rng";
 import type { StreetEdge, StreetLevel, StreetNetwork, StreetVec2 } from "./streetGenerator";
 
-/** Road hierarchy rank — higher is wider/more arterial. */
 const LEVEL_RANK: Record<StreetLevel, number> = { lane: 0, street: 1, avenue: 2, boulevard: 3 };
 
 /** Sharpest turn a lap takes at a junction (radians). Beyond this it doubles back on itself. */
@@ -31,20 +30,14 @@ export const MAX_LAP_TURN = (120 * Math.PI) / 180;
 const SQUARE_MIN = 75;
 const SQUARE_MAX = 105;
 
-/** A straight at least this long, ending in a slow corner, is an overtaking spot (m). */
 export const OVERTAKE_STRAIGHT = 250;
-/** Radius (m) under which the line counts as a slow corner for overtaking and braking. */
 export const SLOW_CORNER_RADIUS = 40;
-/** Radius (m) over which the line counts as straight. */
 export const STRAIGHT_RADIUS = 250;
-/** Bridged straight-run gaps: shorter than this (m)… */
 const BLIP_LENGTH = 15;
 /** …and never tighter than this radius (m). */
 const BLIP_RADIUS = 100;
-/** Chord span (m) the line metrics measure curvature across. */
 export const METRIC_CHORD = 10;
 
-/** Length of (a, b): `sqrt` is correctly rounded on every libm, `Math.hypot` is not (and is slower). */
 export function planar(a: number, b: number): number {
   return Math.sqrt(a * a + b * b);
 }
@@ -56,34 +49,23 @@ export function angleDelta(a: number, b: number): number {
   return d;
 }
 
-// ---------------------------------------------------------------------------------------------
 // Graph
-// ---------------------------------------------------------------------------------------------
 
-/**
- * The street graph as directed links (each edge both ways), dense node indices and per-link headings,
- * built once per search. Link `2k` runs edge `k` from `a` to `b`, link `2k + 1` back.
- */
 export interface LapGraph {
   nodeIds: number[];
   nodeIndex: Map<number, number>;
   nodeX: Float64Array;
   nodeZ: Float64Array;
   edges: StreetEdge[];
-  /** Per directed link: start node index, end node index, edge index into `edges`. */
   from: Int32Array;
   to: Int32Array;
   edge: Int32Array;
   /** Heading leaving `from`, and heading of travel arriving at `to` (radians, atan2(dx, dz)). */
   depart: Float64Array;
   arrive: Float64Array;
-  /** Edge length (m) per directed link. */
   length: Float64Array;
-  /** Outgoing directed links per node index. */
   outgoing: number[][];
-  /** Node indices that sit on at least one cycle (dead-end trees peeled off), ascending. */
   cyclic: number[];
-  /** 1 where a node index is in {@link LapGraph.cyclic}. */
   cyclicSet: Uint8Array;
 }
 
@@ -183,7 +165,6 @@ export function buildLapGraph(network: StreetNetwork): LapGraph {
   return { nodeIds, nodeIndex, nodeX, nodeZ, edges, from, to, edge, depart, arrive, length, outgoing, cyclic, cyclicSet };
 }
 
-/** Nearest cyclic node index to a point, skipping `exclude`. */
 function nearestCyclic(graph: LapGraph, x: number, z: number, exclude?: ReadonlySet<number>): number {
   let best = -1;
   let bestD = Infinity;
@@ -284,14 +265,11 @@ function anchorStops(graph: LapGraph, anchors: readonly LapAnchor[]): { stops: n
   return { stops, forced };
 }
 
-// ---------------------------------------------------------------------------------------------
 // Turn-penalised shortest path
-// ---------------------------------------------------------------------------------------------
 
 interface LegCosts {
   /** Integer path cost (mm-equivalent) per directed link. */
   linkCost: Float64Array;
-  /** Cost (m-equivalent) of a full 90° turn. */
   turnPenalty: number;
   /** Cheapest cost per meter any link charges (×1000): scales the A* distance bound. */
   perMeter: number;
@@ -446,10 +424,6 @@ function leg(
   return path;
 }
 
-/**
- * Chain legs through `waypoints` in order (closing back to the first for a lap). Every node is
- * visited once: a later leg may not cross an earlier one, nor an anchor it has not reached yet.
- */
 function chain(graph: LapGraph, costs: LegCosts, waypoints: readonly number[], closed: boolean, forced: ReadonlyMap<string, number> = new Map()): number[] | null {
   const stops = waypoints.filter((node, i) => i === 0 || node !== waypoints[i - 1]);
   if (closed && stops.length > 1 && stops[stops.length - 1] === stops[0]) stops.pop();
@@ -481,49 +455,35 @@ function chain(graph: LapGraph, costs: LegCosts, waypoints: readonly number[], c
   return links;
 }
 
-// ---------------------------------------------------------------------------------------------
 // Lap outline + proxy scoring
-// ---------------------------------------------------------------------------------------------
 
 /** A corner as the scorer sees it: absolute turn (radians), direction, and arc position (m). */
 export interface LapCornerSummary {
   angle: number;
   direction: -1 | 1;
   at: number;
-  /** Apex radius (m), when the line has been shaped. */
   radius?: number;
 }
 
-/** Everything the lap score reads: measured off the graph outline or off a shaped racing line. */
 export interface LapSummary {
   length: number;
   closed: boolean;
-  /** Straight lengths (m) in lap order. */
   straights: number[];
   corners: LapCornerSummary[];
-  /** Straights ≥ {@link OVERTAKE_STRAIGHT} that end in heavy braking. */
   overtakes: number;
-  /** Heavy braking zones (lap simulation), when known. */
   brakingZones?: number;
   arterialShare: number;
-  /** Share of lap length running close beside and parallel to another part of the lap. */
   parallelShare: number;
-  /** Landmarks passed within reach. */
   landmarks: number;
-  /** Share of lap length shared with laps the caller wants this one to differ from. */
   overlap: number;
 }
 
-/** One planned barrier chicane: arc distance (m, along the street centerline) of its first barrier. */
 export interface PlannedChicane {
   at: number;
-  /** Spacing (m) between the two barriers. */
   spacing: number;
-  /** Side (-1 left / 1 right of travel) the FIRST barrier blocks. */
   side: -1 | 1;
 }
 
-/** Assembled street-centerline outline of a candidate, at the network's own sampling. */
 export interface LapOutline {
   links: number[];
   nodes: number[];
@@ -531,7 +491,6 @@ export interface LapOutline {
   points: StreetVec2[];
   widths: number[];
   heights: number[] | null;
-  /** Arc distance (m) of each lap node along `points`. */
   nodeAt: number[];
   length: number;
   arterialShare: number;
@@ -572,7 +531,6 @@ export function outlineOf(graph: LapGraph, links: readonly number[], closed: boo
   return { links: [...links], nodes, edges, points, widths, heights: anyHeights ? heights : null, nodeAt, length, arterialShare: length > 0 ? arterial / length : 0 };
 }
 
-/** Douglas–Peucker on an open polyline; returns kept indices. */
 function simplify(points: readonly StreetVec2[], tolerance: number): number[] {
   const n = points.length;
   if (n <= 2) return points.map((_, i) => i);
@@ -612,7 +570,6 @@ function simplify(points: readonly StreetVec2[], tolerance: number): number[] {
 interface OutlineLeg {
   a: StreetVec2;
   b: StreetVec2;
-  /** Arc distance (m) where this leg starts. */
   at: number;
   length: number;
 }
@@ -631,7 +588,6 @@ function outlineLegs(outline: LapOutline, closed: boolean, tolerance: number): O
   return legs;
 }
 
-/** Share of lap length running within `reach` of, and parallel to, a non-neighbouring stretch. */
 function parallelShareOf(legs: readonly OutlineLeg[], total: number, reach: number): number {
   let shared = 0;
   const n = legs.length;
@@ -664,7 +620,6 @@ function parallelShareOf(legs: readonly OutlineLeg[], total: number, reach: numb
   return total > 0 ? shared / total : 0;
 }
 
-/** Arc span (m) a corner of `angle` occupies either side of its vertex on a street of `width`. */
 function cornerHalfSpan(angle: number, width: number): number {
   return Math.max(6, width * 1.4 * Math.min(1.6, angle / (Math.PI / 2)));
 }
@@ -672,25 +627,15 @@ function cornerHalfSpan(angle: number, width: number): number {
 export interface LapScoreRules {
   lapLength: number;
   arterialBias: number;
-  /** Landmarks (volume-local XZ) a lap earns credit for passing within `landmarkReach`. */
   landmarks?: readonly StreetVec2[];
   landmarkReach?: number;
-  /** Edge ids of laps this one should differ from. */
   avoidEdges?: ReadonlySet<number>;
-  /** Plan barrier chicanes on secondary straights. */
   chicanes: boolean;
 }
 
-/** Minimum straight (m) that gets a barrier chicane when it is not the lap's main straight. */
 const CHICANE_MIN_STRAIGHT = 110;
-/** Narrowest street (m) a chicane fits on while leaving a car-width gap at each barrier. */
 const CHICANE_MIN_WIDTH = 8.5;
 
-/**
- * The lap as the designer reads it off the street outline, before any line is shaped: corners from
- * the simplified outline (close turns merged into hairpins or straightened into esses), straights
- * between them, and the barrier chicanes the secondary straights will get.
- */
 export function summarizeOutline(outline: LapOutline, closed: boolean, rules: LapScoreRules): { summary: LapSummary; chicanes: PlannedChicane[] } {
   const total = outline.length;
   const sortedWidths = [...outline.widths].sort((a, b) => a - b);
@@ -884,7 +829,6 @@ function overlapShare(outline: LapOutline, avoid: ReadonlySet<number> | undefine
   return shared / outline.length;
 }
 
-/** Corner class the variety score counts. */
 export function cornerClass(corner: Pick<LapCornerSummary, "angle" | "radius">): "hairpin" | "square" | "tight" | "medium" | "sweeper" | "kink" {
   const deg = (corner.angle * 180) / Math.PI;
   if (deg >= 140) return "hairpin";
@@ -894,7 +838,6 @@ export function cornerClass(corner: Pick<LapCornerSummary, "angle" | "radius">):
   return deg > SQUARE_MAX ? "tight" : "medium";
 }
 
-/** Share of corners that are plain right angles. */
 export function squareShare(corners: readonly Pick<LapCornerSummary, "angle" | "radius">[]): number {
   if (corners.length === 0) return 0;
   return corners.filter((corner) => cornerClass(corner) === "square").length / corners.length;
@@ -930,9 +873,7 @@ export function quantizedScore(score: number): number {
   return Math.round(score * 1e5);
 }
 
-// ---------------------------------------------------------------------------------------------
 // Candidate generation
-// ---------------------------------------------------------------------------------------------
 
 export interface LapSearchRequest {
   closed: boolean;
@@ -940,12 +881,9 @@ export interface LapSearchRequest {
   arterialBias: number;
   /** Anchors the route must pass, in order (the start anchor first when given). */
   anchors: LapAnchor[];
-  /** A lap's `anchors` holds only a start hint: route a free lap through it. */
   startOnly?: boolean;
-  /** Sprint finish (sprints only). */
   finish: LapAnchor | null;
   seed: string;
-  /** Upper bound on routing attempts. */
   attempts?: number;
 }
 
@@ -1097,7 +1035,6 @@ export function lapCandidates(graph: LapGraph, request: LapSearchRequest): numbe
   return out;
 }
 
-/** Same lap whatever node it starts at or direction it runs: sorted edge set. */
 function cycleKey(graph: LapGraph, links: readonly number[]): string {
   return links
     .map((link) => graph.edge[link]!)
@@ -1117,9 +1054,7 @@ function estimateLength(graph: LapGraph, waypoints: readonly number[], closed: b
   return total;
 }
 
-// ---------------------------------------------------------------------------------------------
 // Racing line
-// ---------------------------------------------------------------------------------------------
 
 /** A lateral window the line must pass through at one sample (offset along the street's left normal). */
 export interface LineGate {
@@ -1184,7 +1119,6 @@ export function shapeRacingLine(base: readonly StreetVec2[], widths: readonly nu
   const nx = new Float64Array(n);
   const nz = new Float64Array(n);
 
-  /** Pull (x, z) back inside the union of street capsules around sample `i`, then through its gate; writes xs/zs[i]. */
   const constrain = (i: number, x: number, z: number): void => {
     let bestSlack = Infinity;
     let cx = x;
@@ -1295,11 +1229,8 @@ export function chicaneGates(chicanes: readonly PlannedChicane[], widths: readon
   return { gates, barriers };
 }
 
-// ---------------------------------------------------------------------------------------------
 // Line metrics
-// ---------------------------------------------------------------------------------------------
 
-/** Radius of the circle through three points; Infinity when they are collinear. */
 export function circumRadius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
   const abx = b[0] - a[0];
   const abz = b[1] - a[1];
@@ -1329,7 +1260,6 @@ export function radiusProfile(points: readonly StreetVec2[], span: number, close
   return radii;
 }
 
-/** Arc length at each point and the total (closed: including the closing span). */
 export function arcProfile(points: readonly StreetVec2[], closed: boolean): { at: number[]; total: number } {
   const at = new Array<number>(points.length).fill(0);
   let total = 0;
@@ -1343,7 +1273,6 @@ export function arcProfile(points: readonly StreetVec2[], closed: boolean): { at
   return { at, total };
 }
 
-/** Straight runs (arc start, length; m) of the line — radius over {@link STRAIGHT_RADIUS} at a {@link METRIC_CHORD} chord — in lap order. */
 export function straightRuns(radii: readonly number[], at: readonly number[], total: number, closed: boolean, bridge = false): { start: number; length: number }[] {
   const n = radii.length;
   const runs: { start: number; length: number }[] = [];

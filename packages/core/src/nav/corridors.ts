@@ -2,18 +2,13 @@
 export type CorridorPoint = readonly [number, number];
 
 export interface CorridorEdge {
-  /** Centerline polyline in XZ; at least two points. */
   points: readonly CorridorPoint[];
-  /** Full corridor width around the centerline. */
   width: number;
 }
 
 export interface CorridorSample {
-  /** Distance from the query point to the nearest centerline. */
   distance: number;
-  /** Nearest point on that centerline. */
   closest: CorridorPoint;
-  /** Index of the edge owning the nearest centerline point. */
   edgeIndex: number;
 }
 
@@ -24,11 +19,9 @@ export interface CorridorSample {
  */
 export interface CorridorField {
   contains(x: number, z: number): boolean;
-  /** Nearest-centerline sample, or `null` for an empty field. */
   nearest(x: number, z: number): CorridorSample | null;
   /** The input point when inside; otherwise the nearest point on the corridor boundary — the movement clamp. */
   clamp(x: number, z: number): CorridorPoint;
-  /** Signed distance to the corridor edge: negative inside, positive outside. */
   distanceToBoundary(x: number, z: number): number;
 }
 

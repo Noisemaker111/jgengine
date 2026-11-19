@@ -3,10 +3,8 @@ import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { hudElevation, hudFont, hudType } from "./hudTokens";
 
-/** Frame skin — `glass` (the shared dark-glass panel), `plate` (a heavier opaque plate), `retro` (a hard black-outlined frame), or `themed` (driven by the `--jg-frame-*` `HudTheme` tokens). */
 export type HudFrameVariation = "glass" | "plate" | "retro" | "themed";
 
-/** Frame corner shape — `rounded` (the variation's default radius), `circle` (fully round), or `square` (no radius). */
 export type HudFrameShape = "rounded" | "circle" | "square";
 
 /**
@@ -65,38 +63,22 @@ export function hudFrameStyle(
   return base;
 }
 
-/** Props for {@link HudFrame}. */
 export interface HudFrameProps {
-  /** Frame skin (default `glass`). */
   variation?: HudFrameVariation;
-  /** Corner shape (default `rounded`). */
   shape?: HudFrameShape | undefined;
-  /** Small uppercase header label rendered at the top-left of the frame. */
   title?: ReactNode;
-  /** Header content rendered at the top-right, opposite `title` (e.g. a readout or cardinal). */
   aside?: ReactNode;
-  /** Inner padding of the frame. */
   padding?: number | string;
-  /** Fixed frame width. */
   width?: number | string | undefined;
   /** Accept pointer events (default off, so the frame never eats clicks meant for the game). */
   interactive?: boolean;
-  /** Extra class on the frame element. */
   className?: string | undefined;
   /** Style overrides merged last, so callers can pin exact gradients/colors. */
   style?: CSSProperties | undefined;
-  /** Frame body. */
   children?: ReactNode;
 }
 
-/**
- * Optional framed panel primitive — a single `<div data-hud-frame>` with a `glass`,
- * `plate`, `retro`, or `themed` skin, optional `title`/`aside` header, and caller
- * `style` merged last. Shared building block for demos and token-themed widgets;
- * games own product chrome and art direction (see AGENTS.md).
- *
- * @capability hud-frame optional framed panel skins (glass/plate/retro/themed) — games own product chrome
- */
+/** @capability hud-frame optional framed panel skins (glass/plate/retro/themed) — games own product chrome */
 export function HudFrame({
   variation = "glass",
   shape = "rounded",

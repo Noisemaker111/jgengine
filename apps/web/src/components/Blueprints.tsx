@@ -9,7 +9,6 @@ import { gameTitle, isGameId } from "../lib/games";
 import { InlineCode } from "./InlineCode";
 import { CodeBlock } from "./marketing";
 
-/** Tabbed "big game → the primitives an agent would reach for" examples, from real capability rows. */
 export function Blueprints() {
   const [active, setActive] = useState(0);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);

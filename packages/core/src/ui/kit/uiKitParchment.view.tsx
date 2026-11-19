@@ -21,7 +21,6 @@ function cx(...names: (string | false | undefined)[]): string {
   return names.filter(Boolean).join(" ");
 }
 
-/** Tick marks around the ring bezel, in a 48 x 48 box centred on 24, 24. */
 const RING_TICKS = Array.from({ length: 36 }, (_, index) => {
   const angle = (index / 36) * 2 * Math.PI;
   const major = index % 3 === 0;

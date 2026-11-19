@@ -9,37 +9,25 @@ import { FLOW_AIM_TOLERANCE_PX, FLOW_PRESS_MS, FLOW_WAIT_MS, flowKeyList, type B
 import type { FlowStepper } from "../packages/core/src/play/flowSteps";
 import { closestHint } from "./closestMatch";
 
-/** What the page answers through the agent bridge: `ok` plus the verb's fields, or an error. */
 export type BridgeAnswer = { ok: true; [key: string]: unknown } | { ok: false; error: string };
 
-/** The page work a browser flow needs; drive-dev implements it over CDP. */
 export interface BrowserFlowDriver {
-  /** Hold a `+`-joined chord for at least `minMs`, then until `until` passes when given. */
   hold(chord: string, minMs: number, until?: { check: () => Promise<boolean>; timeoutMs: number; describe: string }): Promise<void>;
   click(text: string, count: 1 | 2): Promise<void>;
   clickAt(x: number, y: number, button: "left" | "right"): Promise<void>;
-  /** Hover the real pointer, no button. */
   moveMouse(x: number, y: number): Promise<void>;
-  /** Press, move in steps and release, by mouse or finger. */
   drag(from: { x: number; y: number }, to: { x: number; y: number }, pointer: "mouse" | "touch"): Promise<void>;
-  /** A finger tap. */
   touch(x: number, y: number): Promise<void>;
   wheel(x: number, y: number, deltaY: number, deltaX: number): Promise<void>;
-  /** Lock the pointer to the canvas and turn by real mouse movement; the movement the page saw. */
   look(dx: number, dy: number): Promise<{ x: number; y: number }>;
-  /** Turn until the page's screen point for `expression` sits within `tolerancePx` of the crosshair. */
   aimAt(expression: string, tolerancePx: number): Promise<{ point: { x: number; y: number }; moves: number }>;
   fill(label: string, value: string): Promise<void>;
   type(text: string): Promise<void>;
-  /** Evaluate a page expression (awaited when it is a promise). */
   evaluate(expression: string): Promise<unknown>;
-  /** Call `window.__jg?.agent.handle(request)`. */
   bridge(request: { method: string } & Record<string, unknown>): Promise<BridgeAnswer>;
-  /** The game's `capture.probe` readings, or `null` when the page exposes none. */
   readProbe(): Promise<ProbeReadings | null>;
   reload(): Promise<void>;
   shot(name: string): Promise<void>;
-  /** The run's clock: wall time, or a lockstep recording's virtual time. */
   sleep(ms: number): Promise<void>;
   now(): number;
 }
@@ -78,7 +66,6 @@ export function probeKeyHint(check: { toString(): string }, readings: ProbeReadi
     .join("");
 }
 
-/** The visible text lines closest to what `see` looked for. */
 function seeHint(wanted: string | RegExp, body: unknown): string {
   if (typeof wanted !== "string" || typeof body !== "string") return "";
   return closestHint(wanted, body.split("\n"), "text on the page");
@@ -88,7 +75,6 @@ function sameValue(actual: unknown, expected: unknown): boolean {
   return expected === undefined ? Boolean(actual) : JSON.stringify(actual) === JSON.stringify(expected);
 }
 
-/** A `BrowserFlow` over a driver, with every call a numbered step of `stepper`. */
 export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowStepper, reports: { label: string; probe: unknown }[]): BrowserFlow<ProbeReadings> {
   const probe = async (): Promise<ProbeReadings> => {
     const readings = await driver.readProbe();

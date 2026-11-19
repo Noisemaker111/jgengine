@@ -1,22 +1,15 @@
 import type { HumanBody, HumanSide } from "./humanBody";
 import type { ReflexWalker } from "./reflexWalker";
 
-/** Vertical ground force of one foot over one stance, in body weights. */
 export interface StanceForce {
-  /** Highest force in the first 10% of stance: the heel-strike transient. */
   impactPeak: number;
-  /** Highest force in 10–50% of stance (loading) and in 50–95% (push-off). */
   firstPeak: number;
   secondPeak: number;
-  /** Lowest force between the two peaks. */
   valley: number;
-  /** 2 when the valley dips under both peaks (a walking double hump), else 1. */
   humps: number;
-  /** Contact time, s. */
   contactTime: number;
 }
 
-/** Steady-state gait measures of the reference human. */
 export interface GaitReport {
   fell: boolean;
   /** Seconds before the fall, or the full run. */
@@ -25,21 +18,15 @@ export interface GaitReport {
   speed: number;
   /** Strides (two steps) per second. */
   strideFrequency: number;
-  /** Mean stride length (two steps), m. */
   strideLength: number;
-  /** Share of a stride a foot is on the ground. */
   dutyFactor: number;
-  /** Share of the measured time with neither foot on the ground. */
   flightShare: number;
-  /** Coefficient of variation of step times. */
   stepVariation: number;
-  /** Mean vertical ground force shape over the measured stances. */
   force: StanceForce;
   /** Gross metabolic cost of transport (resting included), J/(kg·m). */
   grossCost: number;
   /** Net metabolic cost of transport (resting excluded), J/(kg·m). */
   netCost: number;
-  /** Mechanical cost of transport: positive actuator work per weight and distance (dimensionless). */
   mechanicalCost: number;
 }
 
@@ -72,31 +59,21 @@ function stanceShape(samples: readonly number[], dt: number): StanceForce {
   return { impactPeak: smooth[impactAt] ?? 0, firstPeak, secondPeak, valley, humps, contactTime: n * dt };
 }
 
-/** A controller driving a {@link HumanBody} one step at a time, as {@link analyzeLocomotion} needs it. */
 export interface LocomotionDriver {
   readonly body: HumanBody;
-  /** Advance the controller and the body by one body step. */
   step(): void;
-  /** Metabolic energy spent by the actuators so far, J (resting excluded). */
   metabolicEnergy(): number;
-  /** Touchdown listener. */
   onStrike?: ((side: HumanSide, time: number) => void) | undefined;
 }
 
-/**
- * A {@link LocomotionDriver} for the muscle-reflex walker.
- * @internal
- */
+/** @internal */
 export function reflexDriver(body: HumanBody, walker: ReflexWalker): LocomotionDriver {
   const driver: LocomotionDriver = { body, step: () => walker.step(), metabolicEnergy: () => walker.metabolicEnergy() };
   walker.onStrike = (side, time) => driver.onStrike?.(side, time);
   return driver;
 }
 
-/**
- * Whether the body has fallen: hips sunk under 55% of leg length above the lower ankle, or the trunk past 1.2 rad.
- * @internal
- */
+/** @internal */
 export function hasFallen(body: HumanBody): boolean {
   const com = body.centerOfMass();
   const groundY = Math.min(body.footPoint("right", "ankle")[1] ?? 0, body.footPoint("left", "ankle")[1] ?? 0);

@@ -4,7 +4,6 @@ import type { ReplayRecording } from "@jgengine/core/replay/replayRecording";
 
 import { createPlaySession, type PlaySession } from "@jgengine/core/play/playSession.draw";
 
-/** What a replay played to. */
 export interface ReplayPlayback {
   session: PlaySession;
   frames: number;
@@ -14,7 +13,6 @@ export interface ReplayPlayback {
 
 type ReplayPlayable = HeadlessPlayable & { capture?: GameCaptureConfig<ProbeReadings> | undefined };
 
-/** Boot the way New game does for a capture: the game's `capture.play` commands. */
 function bootNewGame(session: PlaySession, capture: GameCaptureConfig<ProbeReadings> | undefined): void {
   for (const entry of capture?.play ?? []) {
     const name = typeof entry === "string" ? entry : entry.name;

@@ -11,7 +11,6 @@
 import type { PlanPoint } from "./streetMetrics";
 
 export interface LapSimOptions {
-  /** Tyre friction coefficient (lateral grip = μ·g). Default 1.7. */
   readonly mu?: number;
   /** Gravity (m/s²). Default 9.81. */
   readonly gravity?: number;
@@ -23,23 +22,17 @@ export interface LapSimOptions {
   readonly brake?: number;
 }
 
-/** One maximal run of braking, as point indices into the lap. */
 export interface BrakingZone {
-  /** Point where braking starts. */
   start: number;
-  /** Point where it ends (the corner's slowest point). */
   end: number;
   /** Speed at `start` and at `end` (m/s). */
   from: number;
   to: number;
-  /** Distance spent braking (m). */
   length: number;
 }
 
 export interface LapSimResult {
-  /** Lap time (s). */
   time: number;
-  /** Lap length (m). */
   length: number;
   avgSpeed: number;
   minSpeed: number;
@@ -53,11 +46,7 @@ export interface LapSimResult {
 
 const EPS = 1e-6;
 
-/**
- * Simulate one flying lap of a closed loop. `radii[i]` is the radius of curvature (m) at `points[i]`;
- * `Infinity` (or any radius whose cornering limit exceeds top speed) is a straight.
- * @capability generator-metrics measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them
- */
+/** @capability generator-metrics measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them */
 export function simulateLap(points: readonly PlanPoint[], radii: readonly number[], options: LapSimOptions = {}): LapSimResult {
   const n = points.length;
   const mu = options.mu ?? 1.7;

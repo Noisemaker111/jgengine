@@ -7,7 +7,6 @@ interface BloomInternals {
   copyUniforms: Record<string, THREE.IUniform>;
 }
 
-/** three-stdlib sets these statics at runtime but leaves them out of its typings; the blur reads the same vectors. */
 const { BlurDirectionX, BlurDirectionY } = UnrealBloomPass as unknown as { BlurDirectionX: THREE.Vector2; BlurDirectionY: THREE.Vector2 };
 
 /**

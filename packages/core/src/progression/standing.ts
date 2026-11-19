@@ -5,28 +5,21 @@ import {
   type ReputationTier,
 } from "../faction/reputation";
 
-/** One standing track: a faction, a district, a licence board — whatever an authored outcome moves. */
 export interface StandingTrackDef {
   id: string;
   label?: string;
-  /** Tiers this track crosses, ascending by `min`. Required: the game's own names and cut points. */
   tiers: readonly ReputationTier[];
-  /** Standing every actor starts at (default `0`). */
   initial?: number;
-  /** Floor and ceiling; omitted means unbounded. */
   min?: number;
   max?: number;
 }
 
-/** One outcome a game can report, and the standing it moves on each track. */
 export interface StandingOutcomeDef {
   id: string;
   label?: string;
-  /** Track id → signed standing. A negative number is the fall. */
   impacts: Readonly<Record<string, number>>;
 }
 
-/** Authored standing content: the tracks an actor stands with, and the outcomes that move them. */
 export interface StandingConfig {
   tracks: readonly StandingTrackDef[];
   outcomes?: readonly StandingOutcomeDef[];
@@ -42,11 +35,7 @@ export interface StandingChange {
   tier: string;
 }
 
-/**
- * Track ids a predicate reads through `standing.<trackId>` paths.
- *
- * @capability standing read per-track standing in gates, upgrades and other predicates
- */
+/** @capability standing read per-track standing in gates, upgrades and other predicates */
 export function standingTracksRead(predicate: Predicate | undefined): string[] {
   const tracks: string[] = [];
   for (const leaf of predicateLeaves(predicate)) {
@@ -55,11 +44,7 @@ export function standingTracksRead(predicate: Predicate | undefined): string[] {
   return tracks;
 }
 
-/**
- * Evaluate a predicate over `standing.<trackId>` facts read from `reader` for one actor; an unknown track throws.
- *
- * @capability standing read per-track standing in gates, upgrades and other predicates
- */
+/** @capability standing read per-track standing in gates, upgrades and other predicates */
 export function evaluateStandingPredicate(
   predicate: Predicate | undefined,
   reader: Pick<Standing, "standing">,
@@ -70,28 +55,19 @@ export function evaluateStandingPredicate(
   return evaluatePredicate(predicate, { standing });
 }
 
-/** Plain JSON state of a {@link Standing}; tracks left at their authored `initial` are absent. */
 export interface StandingState {
   records: Record<string, Record<string, number>>;
 }
 
-/**
- * Live standing over authored tracks, moved by named outcomes or direct adjustments, with the
- * tier on each track and a serializable snapshot.
- */
 export interface Standing {
   tracks(): readonly StandingTrackDef[];
   hasTrack(trackId: string): boolean;
   hasOutcome(outcomeId: string): boolean;
   standing(actorId: string, trackId: string): number;
   tier(actorId: string, trackId: string): ReputationTier;
-  /** Every track's standing for one actor, authored tracks included at their initial value. */
   standings(actorId: string): Record<string, number>;
-  /** Apply an authored outcome; returns each track it moved. Throws on an unknown outcome id. */
   apply(actorId: string, outcomeId: string): readonly StandingChange[];
-  /** Move one track directly; returns the change. Throws on an unknown track id. */
   adjust(actorId: string, trackId: string, delta: number): StandingChange;
-  /** Whether a predicate over `standing.<trackId>` facts holds for the actor; throws on an unknown track. */
   meets(actorId: string, requirement: Predicate): boolean;
   snapshot(): StandingState;
   restore(next: StandingState): void;
@@ -105,7 +81,6 @@ function isFiniteNumber(value: number): boolean {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-/** Check authored standing content before use; throws `RangeError` naming the offending field. */
 export function assertStandingConfig(config: StandingConfig): void {
   const trackIds = new Set<string>();
   for (const track of config.tracks) {
@@ -151,14 +126,7 @@ export function assertStandingConfig(config: StandingConfig): void {
   }
 }
 
-/**
- * Per-faction or per-district standing that rises and falls from named outcomes, over authored
- * tracks. Numbers live in the shared reputation ledger (`faction/reputation`); this adds the
- * authored outcome table, tier-per-track and the one snapshot a save stores. An outcome id or
- * track id that resolves to nothing throws at the call, so authored content fails loudly.
- *
- * @capability standing per-track standing moved by authored outcomes, with tiers and one snapshot
- */
+/** @capability standing per-track standing moved by authored outcomes, with tiers and one snapshot */
 export function createStanding(config: StandingConfig): Standing {
   assertStandingConfig(config);
   const tracks = new Map<string, StandingTrackDef>();

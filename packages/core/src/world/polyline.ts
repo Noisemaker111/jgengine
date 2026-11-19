@@ -3,14 +3,12 @@ import { vec2 } from "./vec2";
 
 const { distance, lerp, normalize, perp, sub } = vec2;
 
-/** A polyline prepared for repeated distance/fraction sampling, with cumulative arc-length precomputed. */
 export interface Polyline {
   readonly points: readonly Vec2[];
   readonly cumulative: readonly number[];
   readonly length: number;
 }
 
-/** The closest point on a polyline to a query point, with where it lands along the line. */
 export interface PolylineHit {
   readonly point: Vec2;
   readonly distanceAlong: number;
@@ -18,9 +16,7 @@ export interface PolylineHit {
   readonly lateral: number;
 }
 
-/** Prepare a polyline from ordered points, computing cumulative arc-length once for O(log n) sampling.
- * @internal
- */
+/** @internal */
 export function polyline(points: readonly Vec2[]): Polyline {
   const cumulative: number[] = [0];
   for (let i = 1; i < points.length; i += 1) {
@@ -61,18 +57,14 @@ export function pointAtFraction(line: Polyline, fraction: number): Vec2 {
   return pointAtDistance(line, fraction * line.length);
 }
 
-/** Unit tangent (direction of travel) at an absolute distance along the line.
- * @internal
- */
+/** @internal */
 export function tangentAtDistance(line: Polyline, dist: number): Vec2 {
   if (line.points.length < 2) return [0, 1];
   const { index } = segmentAt(line, dist);
   return normalize(sub(line.points[index]!, line.points[index - 1]!));
 }
 
-/** Closest point on the line to `query`, reporting arc-length position, segment index, and signed lateral offset.
- * @internal
- */
+/** @internal */
 export function closestPoint(line: Polyline, query: Vec2): PolylineHit {
   const { points, cumulative } = line;
   if (points.length === 0) return { point: [0, 0], distanceAlong: 0, segment: 0, lateral: 0 };

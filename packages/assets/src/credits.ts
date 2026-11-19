@@ -28,12 +28,7 @@ export function sourcesForAssetIds(ids: Iterable<string>): AssetSource[] {
   return resolved;
 }
 
-/**
- * The distinct sources behind a set of source ids — the `id`s of the packs a game hands to
- * `buildCatalog({ packs })`, plus its material sources. Unknown ids are skipped.
- *
- * @capability sources-for-source-ids resolve the asset pack metadata behind the source ids a game declares
- */
+/** @capability sources-for-source-ids resolve the asset pack metadata behind the source ids a game declares */
 export function sourcesForSourceIds(ids: Iterable<string>): AssetSource[] {
   const resolved: AssetSource[] = [];
   const seen = new Set<string>();
@@ -47,7 +42,6 @@ export function sourcesForSourceIds(ids: Iterable<string>): AssetSource[] {
   return resolved;
 }
 
-/** Grouping for {@link creditsForSources} — one section per license (default) or per provider. */
 export type CreditsGrouping = "license" | "provider";
 
 /**
@@ -86,12 +80,7 @@ export function creditsForAssetIds(
   };
 }
 
-/**
- * One call from the source ids a game declares to a ready {@link CreditsDocument} — the usual entry
- * point, since the packs a game hands to `buildCatalog({ packs })` already carry them.
- *
- * @capability credits-for-source-ids build a credits document from the asset source ids a game declares
- */
+/** @capability credits-for-source-ids build a credits document from the asset source ids a game declares */
 export function creditsForSourceIds(
   ids: Iterable<string>,
   options: { title?: string; grouping?: CreditsGrouping; notice?: string } = {},
@@ -103,7 +92,6 @@ export function creditsForSourceIds(
   };
 }
 
-/** Every catalogued source, for a credits screen that lists the whole shipped catalog. */
 export function allAssetSources(): readonly AssetSource[] {
   return sources;
 }

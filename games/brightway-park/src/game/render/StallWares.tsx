@@ -26,7 +26,6 @@ const WARES: Readonly<Record<string, readonly { model: string; size: number; x: 
 
 const gltfLoader = new GLTFLoader();
 
-/** Food-pack props on the counter of a stall, in the stall's own frame. */
 export function stallWaresDraw(ctx: GameContext, object: ParkObject): EngineDraw | null {
   const wares = WARES[object.kind];
   if (wares === undefined) return null;

@@ -4,7 +4,6 @@ import type { GameContext } from "../runtime/gameContext";
 import type { LiveGameBackend } from "../runtime/transport";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
-/** A UI command completes locally or after its authoritative host acknowledges it. */
 export type DispatchedCommandResult = CommandResult<GameContext> | Promise<CommandResult<GameContext>>;
 
 type Route = { transport: LiveGameBackend["transport"]; serverId: () => string | null };
@@ -16,7 +15,6 @@ export function bindCommandTransport(ctx: GameContext, route: Route): () => void
   return () => { if (routes.get(ctx) === route) routes.delete(ctx); };
 }
 
-/** Dispatch a player's command through the bound host, or locally for an unbound offline context. Await the result before showing success. */
 export function dispatchCommand(ctx: GameContext, name: string, input: unknown): DispatchedCommandResult {
   const route = routes.get(ctx);
   if (route === undefined) return ctx.game.commands.run(name, input);

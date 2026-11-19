@@ -10,11 +10,7 @@ export function isKtx2(bytes: ArrayBuffer): boolean {
   return head.length === KTX2_IDENTIFIER.length && KTX2_IDENTIFIER.every((byte, index) => head[index] === byte);
 }
 
-/**
- * The URL asking a dev or measuring server for the image's GPU-compressed twin
- * (`games/shared/textureVariants.ts`), in the row order the loader stores; a host without twins
- * ignores the query and sends the image itself. @internal
- */
+/** @internal */
 export function ktx2TwinUrl(url: string, flipY: boolean): string {
   if (url.startsWith("data:") || url.startsWith("blob:")) return url;
   const [path = "", hash] = url.split("#", 2);
@@ -38,7 +34,6 @@ export function ktx2TwinUrl(url: string, flipY: boolean): string {
  * @internal
  */
 export class ImageTextureLoader extends THREE.Loader<THREE.Texture> {
-  /** Store the image bottom row first, as `TextureLoader` does by default. */
   flipY = true;
 
   override load(url: string, onLoad?: (texture: THREE.Texture) => void, onProgress?: (event: ProgressEvent) => void, onError?: (error: unknown) => void): THREE.Texture {

@@ -41,10 +41,8 @@ const noopSubscribe = (): (() => void) => () => undefined;
 import { createSelectCache, createSelectionHeat, devFrameIndex, HOT_SELECTION_WINDOW, readSelectSnapshot, selectionEqual, type HotSelectionPace } from "./selectSnapshot";
 
 const BUILD_ENV = readBuildEnv();
-/** Dev builds and tests judge every store selection's pace; a production build pays nothing for it. */
 const WATCH_PACE = BUILD_ENV.DEV === true || BUILD_ENV.NODE_ENV === "test";
 
-/** The error a component that re-renders every frame or tick from the store fails with in a dev build or test. */
 export class PerFrameRenderError extends Error {
   constructor(component: string, pace: HotSelectionPace) {
     super(
@@ -126,7 +124,6 @@ export function useGameStoreValue<T>(key: string, fallback: T): T {
   return useGameStore((ctx) => (ctx.game.store.get(key) as T | undefined) ?? fallback);
 }
 
-/** UI command surface. Hosted commands return a promise; await it to display acknowledgement or rejection. Registration and runAs remain trusted local APIs. */
 export function useGame(): { commands: Omit<GameContext["game"]["commands"], "run"> & { run(name: string, input: unknown): DispatchedCommandResult }; events: GameEvents } {
   const ctx = useGameContext();
   return useMemo(() => ({ commands: { ...ctx.game.commands, run: (name: string, input: unknown) => dispatchCommand(ctx, name, input) }, events: ctx.game.events }), [ctx]);
@@ -137,7 +134,6 @@ export function usePlayer(): { userId: string; isNew: boolean } {
   return useMemo(() => ({ userId: ctx.player.userId, isNew: ctx.player.isNew }), [ctx]);
 }
 
-/** Live run phase + a setter that also gates the shell's touch controls. `menu`/`paused`/`ended` hide the touch dock; `playing` shows it. */
 export function useGamePhase(): { phase: GamePhase; setPhase: (phase: GamePhase) => void } {
   const ctx = useGameContext();
   const phase = useGameStore((c) => gamePhase(c));
@@ -161,10 +157,6 @@ function sameRecordList<T>(previous: readonly T[], next: readonly T[]): boolean 
   return true;
 }
 
-/**
- * Object records are replaced on every write, so compare the placement and leave pose out: a move or
- * rotate keeps the list identity. Read a live pose with `ctx.scene.object.get(instanceId)`.
- */
 function sameObjectPlacements(previous: readonly SceneObject[], next: readonly SceneObject[]): boolean {
   if (previous.length !== next.length) return false;
   for (let index = 0; index < previous.length; index += 1) {
@@ -212,7 +204,6 @@ export function useSceneEntityIds(): readonly string[] {
   return useSyncExternalStore(entity.subscribeMembership, entity.ids, entity.ids);
 }
 
-/** Membership-only object id list — the object counterpart of {@link useSceneEntityIds}; stable across move/rotate/setVisual, changes only on place/remove. */
 export function useSceneObjectIds(): readonly string[] {
   const ctx = useGameContext();
   const object = ctx.scene.object;
@@ -229,7 +220,6 @@ export function useWorldItems(): readonly WorldItemRecord[] {
   return useGameStore((ctx) => ctx.scene.worldItem.list(), sameRecordList<WorldItemRecord>);
 }
 
-/** Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight. */
 export function useNearestWorldItem(radius: number): WorldItemRecord | null {
   return useGameStore((ctx) => {
     const player = localPlayerEntity(ctx);
@@ -243,11 +233,7 @@ export function useEntityStat(instanceId: string, statId: string): StatValue | n
   return useGameStore((ctx) => ctx.scene.entity.stats.get(instanceId, statId));
 }
 
-/**
- * The entity `fromInstanceId` currently targets (set by `ctx.scene.entity.setTarget` or `cycleTarget`), for a target frame.
- *
- * @capability current-target read the player's selected target (click or tab target) to drive a target frame
- */
+/** @capability current-target read the player's selected target (click or tab target) to drive a target frame */
 export function useTarget(fromInstanceId: string): string | null {
   return useGameStore((ctx) => ctx.scene.entity.getTarget(fromInstanceId));
 }
@@ -256,13 +242,8 @@ export function useInventory(inventoryId: string): readonly InventorySlot[] {
   return useGameStore((ctx) => ctx.player.inventory.state(inventoryId).slots);
 }
 
-/** Live slots plus `move`/`split` actions bound to `inventoryId`, routed through the notifying `inventory.move`/`inventory.split` commands so UI re-renders. */
 export interface InventoryGridBinding {
   slots: readonly InventorySlot[];
-  /**
-   * Move the stack at `from` onto slot `to` of this inventory, or of `toInventoryId` (bag to stash).
-   * A refusal carries the model's reason (`wrong-kind`, `no-space`, `empty-slot`) and changes nothing.
-   */
   move(from: number, to: number, toInventoryId?: string): DispatchedCommandResult;
   split(slot: number, amount: number, toSlot?: number): void;
 }
@@ -313,7 +294,6 @@ export function useFeed({ action, limit }: { action: string; limit?: number }): 
 
 const EMPTY_QUESTS: QuestInstance[] = [];
 
-/** `list()` builds fresh rows per call, so compare the fields it emits and leave nothing else to identity. */
 function sameQuestViews(previous: readonly QuestInstance[], next: readonly QuestInstance[]): boolean {
   if (previous.length !== next.length) return false;
   for (let index = 0; index < previous.length; index += 1) {
@@ -610,7 +590,6 @@ export function useAbilitySlot(
   return kit.state(slotId, resourceAvailable);
 }
 
-/** A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag. */
 export interface EventMeterView {
   value: number;
   fraction: number;
@@ -722,7 +701,6 @@ export function useTicker(hz = 10): number {
   return tick;
 }
 
-/** Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements). */
 export interface DomEventTarget {
   addEventListener(type: string, listener: (event: never) => void, options?: unknown): void;
   removeEventListener(type: string, listener: (event: never) => void, options?: unknown): void;

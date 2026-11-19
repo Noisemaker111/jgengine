@@ -9,7 +9,6 @@ import { steppedCatchUp } from "../time/idleProgress";
 /** Timestamped serializable event. `at` is epoch milliseconds, compatible with `appendFeed`. */
 export interface ExpeditionEvent {
   at: number;
-  /** Lifecycle kinds are loot/hazard/supply/death/recall/return; encounter notices may use caller kinds. */
   kind: string;
   text: string;
   /** Accepted drops; `loot.drops` records the full roll before the item-unit capacity bound. */
@@ -20,7 +19,6 @@ export interface ExpeditionEvent {
   supply?: string;
 }
 
-/** Plain saveable expedition data. Persist this whole value, including the RNG cursor and tick frontier. */
 export interface ExpeditionState {
   readonly id: string;
   readonly status: "exploring" | "returning" | "home" | "dead";
@@ -33,7 +31,6 @@ export interface ExpeditionState {
   /** Caller-interpreted hazard meter; its meaning and effective max-HP policy are injected. */
   readonly exposure: number;
   readonly supplies: Readonly<Record<string, number>>;
-  /** Counts are merged by item/currency id; currency does not consume item capacity. */
   readonly carried: readonly Drop[];
   readonly log: readonly ExpeditionEvent[];
   readonly seed: string;
@@ -50,7 +47,6 @@ export interface ExpeditionDispatch {
   seed: string;
 }
 
-/** One encounter's mechanical effects and optional caller-authored notices. */
 export interface ExpeditionHazard {
   damage?: number;
   exposure?: number;
@@ -74,17 +70,12 @@ export interface ExpeditionConfig<TCtx> {
   maxHp: (state: ExpeditionState) => number;
   hazard?: (state: ExpeditionState, rng: () => number) => ExpeditionHazard;
   supplies?: readonly ExpeditionSupplyRule[];
-  /** Nonnegative fraction of exploring elapsed time spent returning. */
   returnFraction: number;
-  /** Positive whole item units; currency is carried without consuming item slots. */
   carryCap: number;
   /** Bounded work per call, default 10,000; excess ticks remain unsettled for the next call. */
   maxTicksPerSettle?: number;
-  /** Newest event count retained by appendFeed, default 200; rewards and RNG are retained separately. */
   logLimit?: number;
-  /** Optional alternative persisted RNG recurrence; returns a [0,1) value and its next cursor. */
   randomStep?: (cursor: RandomSeed) => readonly [number, RandomSeed];
-  /** All lifecycle prose is caller-authored; omit for headless logs with empty text. */
   describe?: (event: Omit<ExpeditionEvent, "text">, state: ExpeditionState) => string;
 }
 
@@ -156,11 +147,7 @@ function beginReturn<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionStat
   return arrive(config, record(config, { ...state, status: "returning", elapsedMs, returnUntilMs, lastSettledMs: at }, { at, kind: "recall" }), at);
 }
 
-/**
- * Dispatch plain expedition state with a persisted seeded cursor; no clock, scheduler or storage is owned.
- *
- * @capability expedition-dispatch dispatch a saveable timed away mission with finite supplies and a seeded RNG cursor
- */
+/** @capability expedition-dispatch dispatch a saveable timed away mission with finite supplies and a seeded RNG cursor */
 export function dispatchExpedition(input: ExpeditionDispatch): ExpeditionState {
   if (!Number.isFinite(input.startAtMs)) throw new RangeError("startAtMs must be finite");
   nonnegative(input.hp, "hp");

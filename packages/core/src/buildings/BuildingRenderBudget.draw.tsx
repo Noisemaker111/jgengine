@@ -9,7 +9,7 @@ import { DEFAULT_CULLING_SETTINGS } from "@jgengine/core/visibility/settings";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
-/** Resolved shell distance policy for generated facade batches. @internal */
+/** @internal */
 export interface BuildingRenderPolicy {
   enabled: boolean;
   minDistance: number;
@@ -20,15 +20,15 @@ export interface BuildingRenderPolicy {
 const UNLIMITED: BuildingRenderPolicy = { enabled: false, minDistance: 0, maxDistance: Infinity, hysteresis: 0 };
 const BuildingRenderContext = createContext<BuildingRenderPolicy>(UNLIMITED);
 
-/** The policy the most recently mounted {@link BuildingRenderBudget} resolved; draws read it without UI context. @internal */
+/** @internal */
 let currentPolicy: BuildingRenderPolicy = UNLIMITED;
 
-/** The distance policy facade parts under the nearest budget follow, for draw-side chunks. @internal */
+/** @internal */
 export function buildingRenderPolicy(): BuildingRenderPolicy {
   return currentPolicy;
 }
 
-/** Resolve existing visibility overrides over the already resolved graphics-tier distance. @internal */
+/** @internal */
 export function resolveBuildingRenderPolicy(drawDistance: number, config?: VisibilityConfig, cullingDisabled = false): BuildingRenderPolicy {
   const culling = config?.culling;
   const scene = config?.scene;
@@ -42,7 +42,7 @@ export function resolveBuildingRenderPolicy(drawDistance: number, config?: Visib
   };
 }
 
-/** Forward the shell's resolved graphics distance without registering generated parts as scene objects. @internal */
+/** @internal */
 export function BuildingRenderBudget({ drawDistance, visibility, cullingDisabled = false, children }: {
   drawDistance: number;
   visibility?: VisibilityConfig | undefined;
@@ -57,12 +57,12 @@ export function BuildingRenderBudget({ drawDistance, visibility, cullingDisabled
   return <BuildingRenderContext.Provider value={policy}>{children}</BuildingRenderContext.Provider>;
 }
 
-/** The distance policy facade parts under this budget follow. @internal */
+/** @internal */
 export function useBuildingRenderPolicy(): BuildingRenderPolicy {
   return useContext(BuildingRenderContext);
 }
 
-/** Test world bounds; transforming the box first also conservatively encloses affine shear. @internal */
+/** @internal */
 export function buildingChunkWithinBudget(
   bounds: THREE.Box3,
   matrixWorld: THREE.Matrix4,
@@ -107,7 +107,7 @@ export function useBuildingChunkBudget(meshRef: RefObject<THREE.InstancedMesh | 
   }, CAMERA_POST_FRAME_PRIORITY);
 }
 
-/** Scratch state for {@link syncBuildingChunkBudget}; one per draw instance. @internal */
+/** @internal */
 export interface BuildingChunkBudgetScratch {
   box: THREE.Box3;
   sphere: THREE.Sphere;
@@ -122,12 +122,7 @@ export function buildingChunkBudgetScratch(): BuildingChunkBudgetScratch {
   return { box: new THREE.Box3(), sphere: new THREE.Sphere(), camera: new THREE.Vector3(), placed: new THREE.Matrix4(), mesh: null, bounds: null, frustum: undefined };
 }
 
-/**
- * The draw-side form of {@link useBuildingChunkBudget}: the same one-distance-test-per-chunk frame
- * at camera-post priority, reading the policy from {@link buildingRenderPolicy} when `policy` is
- * omitted. Call once per frame from the owning draw.
- * @internal
- */
+/** @internal */
 export function syncBuildingChunkBudget(
   mesh: THREE.InstancedMesh,
   bounds: THREE.Box3,

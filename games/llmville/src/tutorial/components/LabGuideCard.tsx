@@ -4,7 +4,6 @@ import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { Button, C, FULL, Icon, Muted, Panel, Row, Text } from "../../ui/kit";
 import type { LabGuideState } from "../labGuide";
 
-/** The HUD's lab guide: what to do next and the one button that does it. */
 export function LabGuideCard({ guide, canEdit }: { guide: LabGuideState; canEdit: boolean }) {
   return <Panel shell="toast" width={FULL} gap={8} padding={16} label="Lab guide">
     <Row justify="between" width={FULL}>

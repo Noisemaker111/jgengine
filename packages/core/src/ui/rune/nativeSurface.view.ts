@@ -28,7 +28,7 @@ export function syncNativeSurface(root: RuneNode): void {
  * `null` when no field is being edited. It is checked before captures, back and menu navigation.
  * @internal
  */
-/** The first visible, enabled `autoFocus` field not focused this way before; marks it seen. @internal */
+/** @internal */
 export function nextAutoFocusField(nodes: readonly RuneNode[], seen: WeakSet<RuneNode>): RuneNode | null {
   const field = nodes.find(node => node.tag === "rune-field" && node.props.autoFocus === true && nativeEnabled(node) && !seen.has(node));
   if (field === undefined) return null;
@@ -43,7 +43,7 @@ export function nativeFieldKey(code: string, editing: boolean): "field" | "leave
   return "field";
 }
 
-/** Release a detached native tree and all its listeners/slots. @internal */
+/** @internal */
 export function removeNativeSurface(root: RuneNode): void {
   surfaces.get(root)?.destroy();
   surfaces.delete(root);
@@ -65,10 +65,8 @@ class NativeSurface {
   private padLastFiredAt: number | null = null;
   private readonly activation = new RuneActivation(() => performance.now());
   private keyHeld: RuneNode | undefined;
-  /** The native field that owns the keyboard, if any. */
   private editing: RuneNode | null = null;
   private readonly autoFocused = new WeakSet<RuneNode>();
-  /** Offscreen input that raises the phone keyboard for {@link editing} on touch devices. */
   private proxy: HTMLInputElement | HTMLTextAreaElement | null = null;
 
   constructor(private readonly root: RuneNode) {
@@ -197,7 +195,6 @@ class NativeSurface {
     this.autoFocusFields();
   }
 
-  /** A field marked `autoFocus` takes the keyboard the first time it appears (chat opened by Enter). */
   private autoFocusFields(): void {
     const field = nextAutoFocusField(this.visibleNodes(), this.autoFocused);
     if (field !== null && this.editing !== field) this.enterField(field, true);

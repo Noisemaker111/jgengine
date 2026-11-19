@@ -17,31 +17,24 @@ function brakeFrom60mph(feet: number): number {
   return feet * FT * (KMH_100 / MPH_60) ** 2;
 }
 
-/** Numbers a magazine or the maker published for a car, with where each came from. */
 export interface RealCarTestData {
   /** Standing start to 100 km/h, s. */
   zeroTo100: number;
   /** 100 km/h to rest, m. */
   brake100To0: number;
-  /** Steady lateral acceleration on a skidpad of `skidpadRadius`, g. */
   skidpadG: number;
-  /** Radius of the skidpad that number was measured on, m. */
   skidpadRadius: number;
-  /** Source of each number, keyed like the fields above. */
   sources: { zeroTo100: string; brake100To0: string; skidpadG: string };
 }
 
-/** A real car: the {@link ReferenceCarSpec} built from its published specifications, and its published test results. */
 export interface RealCar {
   id: string;
   name: string;
   spec: ReferenceCarSpec;
   tested: RealCarTestData;
-  /** Source of each specification; fields marked "estimate" have no published value and use typical figures for the class. */
   specSources: Readonly<Record<string, string>>;
 }
 
-/** 2016 Mazda MX-5 Miata Club (ND, 2.0 L, six-speed manual, limited-slip differential): light, 50:50, rear drive. */
 export const MAZDA_MX5_ND: RealCar = {
   id: "mazda-mx5-nd",
   name: "Mazda MX-5 (ND) 2.0 manual",
@@ -156,7 +149,6 @@ export const MAZDA_MX5_ND: RealCar = {
   },
 };
 
-/** 2013 Scion FR-S (Toyota 86 / Subaru BRZ, 2.0 L flat-four, six-speed manual, Torsen differential). */
 export const SCION_FRS_2013: RealCar = {
   id: "scion-frs-2013",
   name: "Scion FR-S (Toyota 86) 2013 manual",
@@ -270,5 +262,4 @@ export const SCION_FRS_2013: RealCar = {
   },
 };
 
-/** Every real car with published test numbers the reference is checked against. */
 export const REAL_CARS: readonly RealCar[] = [MAZDA_MX5_ND, SCION_FRS_2013];

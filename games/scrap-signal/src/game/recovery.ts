@@ -10,7 +10,6 @@ import { discoveredStationsStore, talentRanksStore } from "./stores";
 import { TRAVEL_STATIONS } from "./world/sites";
 import { PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "./world/setup";
 
-/** The discovered station nearest the chassis (or the start), where a rebuilt chassis stands up. */
 export function nearestDiscoveredStation(ctx: GameContext): { x: number; z: number; name: string | null } {
   const discovered = discoveredStationsStore.read(ctx);
   const from = ctx.scene.entity.get(ctx.player.userId)?.position ?? PLAYER_SPAWN;
@@ -31,7 +30,6 @@ export interface ChassisRecovery {
   level: number;
   fee: number;
   station: string | null;
-  /** What the save could not give back, in the words the notice uses. */
   lost: string[];
 }
 

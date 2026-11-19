@@ -28,23 +28,16 @@ import { applyThickening, createPipeCost, hasCambium, pipeDemand } from "./pipeM
 import { bendTowardsTropisms, lateralDirection, normalize3, type TropismWeights } from "./tropism";
 import { individualGrowth } from "./individualVariation";
 
-/** Bumped whenever a rule changes what a seed grows into; part of every structure cache key. */
 export const PLANT_SIM_VERSION = 7;
 
-/** Caps that bound one plant's memory and per-year work. */
 export interface GrowthLimits {
-  /** Most growing shoot tips (terminal buds) alive at once. */
   maxBuds: number;
-  /** Most internodes alive at once. */
   maxNodes: number;
 }
 
-/** Most buds and nodes a plant may hold: 4000 and 60000. */
 export const DEFAULT_GROWTH_LIMITS: GrowthLimits = { maxBuds: 4000, maxNodes: 60000 };
 
-/** How {@link createPlantGrowth} grows a plant beyond its species, site and seed. */
 export interface PlantGrowthOptions {
-  /** Bud and node caps; {@link DEFAULT_GROWTH_LIMITS} when left out. */
   limits?: GrowthLimits;
   /**
    * `"seeded"` (the default) grows the seed's own individual: branch angle, apical control, vigour,
@@ -55,7 +48,6 @@ export interface PlantGrowthOptions {
   individual?: "seeded" | "typical";
 }
 
-/** A grown plant's whole state as JSON-safe values: typed arrays travel as base64. */
 export interface PlantGrowthSnapshot {
   simVersion: number;
   speciesId: string;
@@ -68,27 +60,19 @@ export interface PlantGrowthSnapshot {
   arrays: Readonly<Record<string, string>>;
 }
 
-/** One plant growing year by year. */
 export interface PlantGrowth {
-  /** Grow this many years (default 1). */
   step(years?: number): void;
   ageYears(): number;
-  /** The plant's structure on a day of the current year (default midsummer, day 200). */
   structure(dayOfYear?: number): PlantStructure;
-  /** Live counters: nodes and buds against their caps, health, carbon. */
   stats(): PlantGrowthStats;
   snapshot(): PlantGrowthSnapshot;
   restore(snapshot: PlantGrowthSnapshot): void;
-  /** Back to a germinating seed with the same species, environment and seed. */
   reset(): void;
-  /** Change the environment from the next year on (a gap opens, a drought starts). */
   retune(env: Partial<PlantEnvironment>): void;
-  /** Kill the plant now (felled by fire, girdled, drowned): it stands as a snag and decays from the next year on. */
   kill(): void;
   environment(): PlantEnvironment;
 }
 
-/** Counters a {@link PlantGrowth} reports each year. */
 export interface PlantGrowthStats {
   ageYears: number;
   alive: boolean;
@@ -99,9 +83,7 @@ export interface PlantGrowthStats {
   health: number;
   /** Last year's gross photosynthesis, kg dry mass. */
   photosynthesisKg: number;
-  /** Leaf area this year, m². */
   leafAreaM2: number;
-  /** Sapwood cross-section of the stem at breast height (1.3 m), m²; 0 below that height. */
   sapwoodAtBreastHeightM2: number;
   shedKg: number;
   /**
@@ -115,10 +97,8 @@ export interface PlantGrowthStats {
 const CELL_M = 0.5;
 const BREAST_HEIGHT_M = 1.3;
 const SEEDLING_LENGTH_M = 0.04;
-/** Fronds of a node read for light; its leaf area is spread over up to FROND_LIGHT_FRONDS fronds. */
 const FROND_LIGHT_SAMPLES = 6;
 const FROND_LIGHT_FRONDS = 48;
-/** Points along each frond its leaf area is spread over. */
 const FROND_SPINE_POINTS = 3;
 /** Lean of each further basal stem of a multi-stemmed seedling from vertical, radians. */
 const BASAL_STEM_LEAN = (20 * Math.PI) / 180;
@@ -126,16 +106,13 @@ const BASAL_STEM_LEAN = (20 * Math.PI) / 180;
 const GROUND_TIP_M = 0.05;
 const MERGE_COS = 0.985;
 const MERGE_MAX_LENGTH_M = 3;
-/** Wood older than this may merge across a wider bend: its shape is set and only the node budget matters. */
 const SETTLED_WOOD_YEARS = 8;
 const SETTLED_MERGE_COS = 0.906;
 const SETTLED_MERGE_MAX_LENGTH_M = 6;
-/** Share of sapwood dry mass that can be held as non-structural carbohydrate reserve. */
 const RESERVE_SHARE_OF_SAPWOOD = 0.1;
 /** Share of photosynthesis lost at the species' height limit (Koch et al. 2004). */
 const TOP_GAS_EXCHANGE_LOSS = 0.5;
 
-/** The value that would sit at `nth` if `values[0..count)` were sorted ascending (Hoare quickselect; reorders them). */
 function selectNth(values: Float64Array, count: number, nth: number): number {
   let low = 0;
   let high = count - 1;
@@ -291,7 +268,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   const latentShare = new Float64Array(nodeCap);
   const movedArrays: GrowthState["nodes"][(typeof NODE_FIELDS)[number]][] = [];
   const movedWidths: number[] = [];
-  /** Light-field cell of each leafy node's shoot midpoint, from this year's flush. */
   const midCell = new Int32Array(nodeCap);
   const need = new Float64Array(nodeCap);
   const firstChild = new Int32Array(nodeCap);
@@ -401,7 +377,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     maxBudsSeen = state.slots.budCount;
   }
 
-  /** Child lists in index order: firstChild, nextSibling, lastChild and childCount per node. */
   function buildChildren(): void {
     const n = state.slots.nodeCount;
     firstChild.fill(-1, 0, n);
@@ -419,7 +394,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     if (n > 0) nextSibling[0] = -1;
   }
 
-  /** Append nodes `from..nodeCount` (all newer than every other node) to their parents' child lists. */
   function appendChildren(from: number): void {
     for (let i = from; i < state.slots.nodeCount; i += 1) {
       firstChild[i] = -1;
@@ -453,11 +427,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     state.vitals.health = 0;
   }
 
-  /**
-   * Years a piece of dead wood of this radius stays on: twigs drop in a few years, limbs in a decade, a
-   * trunk rots through at its base in a few decades. Denser wood lasts longer, and decay doubles every
-   * 10 °C warmer (Q10 of 2; Harmon et al. 1986).
-   */
   function deadwoodYears(radiusCm: number, standing: boolean): number {
     if (!standing) return 2 + 2 * radiusCm;
     const size = 2 + 2 * Math.min(radiusCm, 5) + 0.5 * Math.max(0, radiusCm - 5);
@@ -487,11 +456,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     return ((state.nodes.flags[i] ?? 0) & NODE_DEAD) !== 0;
   }
 
-  /**
-   * Per-node carbon balance, gathered basipetally into each branch. A branch (axis start) that has run
-   * a deficit for `pruneDeficitYears` dies here, as soon as its subtree is summed, and leaves the
-   * totals; `removed` marks it for {@link markDeadBranches}. Returns true when any branch died.
-   */
   function gatherCarbon(): boolean {
     const n = state.slots.nodeCount;
     const lue = (c.lueGPerMJ / 1000) * season.parMJ * site * g.extinction;
@@ -589,7 +553,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     return killed;
   }
 
-  /** Flag every node under a branch {@link gatherCarbon} killed as dead wood and drop its buds. */
   function markDeadBranches(): void {
     const n = state.slots.nodeCount;
     for (let i = 1; i < n; i += 1) {
@@ -607,10 +570,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     dropBuds((node) => isDead(node));
   }
 
-  /**
-   * Kill every basal stem past its lifespan and raise a sucker from the collar in its place, keeping
-   * the clump's stem count.
-   */
   function renewStems(lifespanYears: number): void {
     const n = state.slots.nodeCount;
     removed.fill(0, 0, n);
@@ -661,11 +620,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     state.slots.budCount = kept;
   }
 
-  /**
-   * The year's leaf flush and light. Each live node re-leafs by its short-shoot age and its dormant
-   * buds age, then leaves are deposited (lit at the shoot midpoint) and the shadow is propagated; buds
-   * read light at the shoot tip. Dead wood just ages.
-   */
   function flushAndLight(): void {
     const n = state.slots.nodeCount;
     const { parent, flags, foliage: leaves, end, born, leafBorn, latent, latentAge, metamers, deadAge, flowers } = state.nodes;
@@ -742,7 +696,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     }
   }
 
-  /** Extended Borchert–Honda: split the root's vigour down the tree by light, with apical control λ. */
   function distributeVigour(): void {
     const n = state.slots.nodeCount;
     const lambda = apicalControlAt(g, state.vitals.year);
@@ -792,11 +745,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     }
   }
 
-  /** Carbon of one new metamer itself: its leaves, their fine roots and its wood with coarse roots. */
   const metamerWoodKg = shootArea * g.internodeMax * species.wood.densityKgM3 * (1 + c.coarseRootShare);
   let metamerCostKg = (leafAreaPerNode / species.leaf.sla) * (1 + c.rootPerFoliage) + metamerWoodKg;
 
-  /** Leaf area and metamer cost of the fronds grown this year. */
   function syncLeafArea(): void {
     if (g.frondEstablishmentYears === undefined) return;
     leafAreaPerNode = leafAreaIn(state.vitals.year);
@@ -896,7 +847,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     candidateRef[k] = shortShootRef(candidates.node[k] ?? 0);
   }
 
-  /** Add `metamers` leafy short-shoot metamers to a node's leaf pool; returns how many fit. */
   function addShortShoots(node: number, metamers: number): number {
     const leafy = (state.nodes.foliage[node] ?? 0) > 0 ? leafMetamers(node) : 0;
     const room = 255 - leafy;
@@ -907,7 +857,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     return add;
   }
 
-  /** Tropism weights per branch order for the current environment and year; cleared when either changes. */
   const weightsByOrder: (TropismWeights | undefined)[] = [];
   let weightsYear = -1;
 
@@ -976,7 +925,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     return addNode(fromNode, order, firstFlags, axisDir, length, startPhase + (metamers - 1) * divergence, metamers);
   }
 
-  /** Grow every candidate at vigour scale α; returns the metamers added as short shoots. */
   function grow(scale: number): number {
     if (scale <= 0) return 0;
     const year = state.vitals.year;
@@ -1086,7 +1034,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     return ((state.nodes.flags[i] ?? 0) & NODE_NO_SPUR) !== 0 ? 0 : (state.nodes.metamers[i] ?? 0);
   }
 
-  /** Pool node `from`'s leaf cohort into node `into`'s, keeping the leaf-weighted mean flush year. */
   function poolLeaves(into: number, from: number): void {
     const a = leafMetamers(into);
     const b = leafMetamers(from);
@@ -1104,10 +1051,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     else state.nodes.flags[i] = (state.nodes.flags[i] ?? 0) | NODE_NO_SPUR;
   }
 
-  /**
-   * A tip twig that stopped growing (no bud, no live lateral buds, older than the bud lifetime) folds its
-   * leaves into its parent's leaf pool and leaves the arrays.
-   */
   function foldTwig(i: number): void {
     if (i === 0 || (budAt[i] ?? -1) >= 0 || (state.nodes.latent[i] ?? 0) > 0 || (state.nodes.flowers[i] ?? 0) > 0) return;
     if (state.vitals.year - (state.nodes.born[i] ?? 0) <= g.dormantBudYears) return;
@@ -1121,10 +1064,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     removed[i] = 3;
   }
 
-  /**
-   * Drop long-dead branches (leaving a scar), fold finished twigs into their parent's leaf pool and merge
-   * straight internodes, keeping creation order.
-   */
   function compact(): void {
     const n = state.slots.nodeCount;
     // Child lists are current: growth appends to them and nothing else changes the topology.
@@ -1457,7 +1396,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   return growth;
 }
 
-
 function copyEnvironment(env: PlantEnvironment): PlantEnvironment {
   const { stand, ...rest } = env;
   return { ...rest, wind: { ...env.wind }, slope: { ...env.slope }, ...(stand ? { stand: { ...stand } } : {}) };
@@ -1485,13 +1423,11 @@ function crownShedLightShare(shadeTolerance: number): number {
   return 0.25 - 0.2 * t;
 }
 
-/** λ at an age: from the young value towards the mature one, halfway at `apicalControlHalfYears`. */
 function apicalControlAt(g: PlantSpecies["growth"], ageYears: number): number {
   const half = g.apicalControlHalfYears;
   return g.apicalControlMature + ((g.apicalControl - g.apicalControlMature) * half) / (half + ageYears);
 }
 
-/** Ryan & Yoder hydraulic limitation along a water path: 1 − (path / maxPath)^p, floored at 0. */
 function hydraulicFactorWith(path: number, maxPath: number, exponent: number): number {
   const ratio = path > 0 ? path / maxPath : 0;
   let power = 1;

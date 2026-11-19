@@ -4,20 +4,11 @@ import { game } from "../../src/game.config";
 import { characterById } from "../../src/game/characters";
 import { WAYPOINT_KINDS } from "../../src/game/progression/probe";
 
-/**
- * A new game played like a first-time player reading the HUD: follow the quest marker, press E on
- * whoever or whatever it points at, shoot what it marks, take a dropped gun when it hits harder, and
- * spend each skill point when one comes. Keys, the camera, the skill tree's own button, and the fire
- * command with an aim up or down, which is what a mouse gives the trigger (the headless camera only turns).
- */
 const PLAY_SECONDS = 10.5 * 60;
 const STEP_MS = 400;
-/** Pistol range: close enough that a wandering aim still lands most shots. */
 const FIGHT_RANGE = 9;
-/** Where the player's eye and a target's chest sit above their feet, for aiming up or down a slope. */
 const EYE_HEIGHT = 1.62;
 const TARGET_CHEST = 1.1;
-/** Trigger pulls per fighting step: the fire command gates each gun to its own rate of fire. */
 const PULLS_PER_STEP = 4;
 /** A first-time player reads what an NPC says at about 20 characters a second, a few seconds at least. */
 const READ_CHARS_PER_SECOND = 20;
@@ -25,10 +16,8 @@ const MIN_READ_MS = 2000;
 function readingMs(chars: number): number {
   return Math.max(MIN_READ_MS, (chars / READ_CHARS_PER_SECOND) * 1000);
 }
-/** Reading the skill tree the first time it opens, then finding the next node on later visits. */
 const TREE_FIRST_LOOK_MS = 15_000;
 const TREE_LOOK_MS = 4_000;
-/** Reading a dropped gun's card against the gun in hand. */
 const CARD_READ_MS = 2_500;
 /**
  * A first-time player's aim wanders a few degrees off the target, so some shots miss. The wobble
@@ -36,9 +25,7 @@ const CARD_READ_MS = 2_500;
  */
 const AIM_WOBBLE = (6 * Math.PI) / 180;
 const GOLDEN_ANGLE = 2.399963;
-/** Close enough to a drop to stand on it, and the short steps that get there. */
 const CLOSE_TO_LOOT = 4;
-/** Inside the pickup prompt's radius. */
 const PICKUP_REACH = 2.5;
 const ON_LOOT = 0.45;
 const NUDGE_MS = 60;
@@ -46,7 +33,6 @@ const MAX_NUDGES = 14;
 const SLOT_KEYS =["Digit1", "Digit2", "Digit3", "Digit4"] as const;
 const kind = (name:(typeof WAYPOINT_KINDS)[number]): number => WAYPOINT_KINDS.indexOf(name);
 
-/** The skill tree's nodes in the order this player looks at them: the first tier of every branch, then deeper. */
 const GUNK = characterById("gunk");
 const SKILL_ORDER = GUNK === undefined ? [] : [...GUNK.nodes].sort((a, b) => (a.requiresPointsInBranch ?? 0) - (b.requiresPointsInBranch ?? 0)).map((node) => node.id);
 
@@ -68,7 +54,6 @@ interface Stuck {
   count: number;
 }
 
-/** Walk toward a point for one step, sidestepping when the last two steps went nowhere. */
 async function stepToward<R extends At & Readonly<Record<string, number>>>(f: Flow<R>, p: R, x: number, z: number, stuck: Stuck): Promise<void> {
   const moved = Math.hypot(p.playerX - stuck.at[0], p.playerZ - stuck.at[1]);
   stuck.count = moved < 0.4 ? stuck.count + 1 : 0;
@@ -86,7 +71,6 @@ interface Trigger {
   shots: number;
 }
 
-/** Aim the way a mouse does, up or down onto the target's chest, and pull the trigger for a step. */
 async function shootAt<R extends At & { playerY: number } & Readonly<Record<string, number>>>(
   f: Flow<R>,
   p: R,

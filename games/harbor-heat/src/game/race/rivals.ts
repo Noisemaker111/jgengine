@@ -6,7 +6,6 @@
  */
 export interface StreetRival {
   name: string;
-  /** Vehicle catalog id of the car they bring. */
   car: string;
   pace: number;
 }
@@ -35,7 +34,6 @@ const STREET_REGULARS: readonly StreetRival[] = [
   { name: "A weekend racer", car: "car_sport", pace: 13.8 },
 ];
 
-/** The crew that races a circuit; a circuit nobody has claimed gets the street regulars. */
 export function rivalsFor(routeId: string | null): readonly StreetRival[] {
   return (routeId === null ? undefined : ROUTE_RIVALS[routeId]) ?? STREET_REGULARS;
 }

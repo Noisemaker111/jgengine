@@ -21,10 +21,8 @@ export type FlowKey =
   | "Backquote" | "Minus" | "Equal" | "BracketLeft" | "BracketRight" | "Backslash" | "Semicolon" | "Quote" | "Comma" | "Period" | "Slash" | "CapsLock"
   | "mouse0" | "mouse1" | "mouse2";
 
-/** One key, or several held together as a chord (`["ShiftLeft", "KeyW"]`, pressed in that order). */
 export type FlowKeys = FlowKey | readonly [FlowKey, ...FlowKey[]];
 
-/** A question about the game's own `capture.probe` readings, typed from the game's probe. */
 export type ProbeCheck<TProbe extends ProbeReadings> = (probe: TProbe) => boolean;
 
 /** How long a wait may take before the flow fails at that step. */
@@ -35,61 +33,37 @@ export interface FlowWaitOptions {
   note?: string;
 }
 
-/** How long {@link Flow.hold} keeps the keys down. */
 export type FlowHold<TProbe extends ProbeReadings> =
   /** A fixed hold, in milliseconds. */
   | { ms: number; until?: never; timeoutMs?: never }
   /** Hold until the check passes (`ms` is then the minimum), failing at `timeoutMs` (default 15 000). */
   | { until: ProbeCheck<TProbe>; ms?: number; timeoutMs?: number };
 
-/** The result a game command gave. */
 export type FlowCommandResult = { status: "applied" } | { status: "rejected"; reason: string; message?: string };
 
-/**
- * What a flow can do in both runners: hold keys, turn the camera, teleport, run commands, wait on the
- * game's probe. Each call is one step; a failing step stops the flow and names itself.
- */
 export interface Flow<TProbe extends ProbeReadings> {
-  /** Hold keys (a chord with an array) for a time or until a probe check passes. */
   hold(keys: FlowKeys, how: FlowHold<TProbe>): Promise<void>;
-  /** Tap keys: down for one short beat, then up. */
   press(keys: FlowKeys): Promise<void>;
   /** Face this heading (radians, the walk controller's yaw): the same `ctx.camera.turnTo` a game's own cheat uses, no pointer drag. */
   heading(yaw: number): Promise<void>;
-  /** Move the player (their mount while riding) to a point, dropping carried velocity. */
   teleport(to: TeleportTarget): Promise<void>;
-  /** Run a game command; a rejected or unknown command fails the step. */
   command(name: string, input?: unknown): Promise<void>;
-  /** Run a game command and return its result, for a step that expects a refusal. */
   tryCommand(name: string, input?: unknown): Promise<FlowCommandResult>;
-  /** Scale the game clock (1 normal, up to 120) to fast-forward timers and day cycles. */
   timeScale(scale: number): Promise<void>;
-  /** Let time pass with nothing held. Prefer {@link waitFor}: a fixed wait guesses. */
   wait(ms: number): Promise<void>;
-  /** Wait until the check passes; returns the readings that passed. */
   waitFor(check: ProbeCheck<TProbe>, options?: FlowWaitOptions): Promise<TProbe>;
-  /** Check once, now; a false check fails the flow with the readings. Assert arrival, not that a key went down. */
   expect(check: ProbeCheck<TProbe>, note: string): Promise<TProbe>;
-  /** The game's probe readings right now. */
   probe(): Promise<TProbe>;
-  /** Print the probe readings under a label in the run's output. */
   report(label: string): Promise<void>;
-  /** Screenshot into `shots/<game>/<name>.png`; headless runs skip it. */
   shot(name: string): Promise<void>;
 }
 
-/** A browser-only flow: everything a {@link Flow} does, plus the page itself. */
 export interface BrowserFlow<TProbe extends ProbeReadings> extends Flow<TProbe> {
-  /** Click the first settled, enabled element showing this text (or aria-label). */
   click(text: string, options?: { double?: boolean }): Promise<void>;
   /** Native click at CSS viewport pixels (canvas targets, map orders). */
   clickAt(x: number, y: number, options?: { button?: "left" | "right" }): Promise<void>;
   /** Hover the real pointer at CSS viewport pixels, no button. */
   moveMouse(x: number, y: number): Promise<void>;
-  /**
-   * Press at `from`, move through intermediate points to `to`, and release: a real mouse drag, or a
-   * finger drag with `pointer: "touch"` (needs a touch device such as `--device mobile`).
-   */
   drag(from: { x: number; y: number }, to: { x: number; y: number }, options?: { pointer?: "mouse" | "touch" }): Promise<void>;
   /** A real finger tap at CSS viewport pixels (needs a touch device such as `--device mobile`). */
   touch(x: number, y: number): Promise<void>;
@@ -101,27 +75,14 @@ export interface BrowserFlow<TProbe extends ProbeReadings> extends Flow<TProbe> 
    * movement the page saw.
    */
   look(dx: number, dy: number): Promise<{ x: number; y: number }>;
-  /**
-   * Bring the crosshair onto a target: `expression` evaluates on the page to the target's CSS screen
-   * point `{ x, y }` (or `null` while hidden). The step learns the game's look response as it goes and
-   * fails when the target is not within `tolerancePx` (default 6) after its corrections.
-   */
   aimAt(expression: string, options?: { tolerancePx?: number }): Promise<{ x: number; y: number }>;
-  /** Replace a text field's value by its accessible label, then Tab to commit. */
   fill(label: string, value: string): Promise<void>;
-  /** Type into whatever has focus (a field the flow just clicked, wherever it is drawn). */
   type(text: string): Promise<void>;
-  /** Wait until the page's text shows this. */
   see(text: string | RegExp, options?: FlowWaitOptions): Promise<void>;
-  /** Evaluate a page expression and return its value, unchecked: narrow it before use. */
   page(expression: string): Promise<unknown>;
-  /** Wait until a page expression is truthy (or deep-equals `value`). */
   waitForPage(expression: string, options?: FlowWaitOptions & { value?: unknown }): Promise<unknown>;
-  /** Check a page expression once: truthy, or deep-equal to `value`. */
   expectPage(expression: string, note: string, value?: unknown): Promise<unknown>;
-  /** Reload the page and wait for it to be ready again, keeping this run's storage. */
   reload(): Promise<void>;
-  /** Call the page's agent bridge (`run_command`, `debug_snapshot`, ...) and return its answer. */
   rpc(request: { method: string } & Record<string, unknown>): Promise<unknown>;
 }
 
@@ -136,13 +97,11 @@ export interface HeadlessFlowSpec<TProbe extends ProbeReadings> extends FlowSpec
   run(flow: Flow<TProbe>): Promise<void>;
 }
 
-/** A flow that needs the page: menus, DOM text, clicks. */
 export interface BrowserFlowSpec<TProbe extends ProbeReadings> extends FlowSpecBase {
   browser: true;
   run(flow: BrowserFlow<TProbe>): Promise<void>;
 }
 
-/** A defined flow that both runners can play. */
 export interface HeadlessProofFlow<TProbe extends ProbeReadings = ProbeReadings> {
   readonly kind: "jgengine-flow";
   readonly game: HeadlessPlayable<TProbe>;
@@ -151,17 +110,14 @@ export interface HeadlessProofFlow<TProbe extends ProbeReadings = ProbeReadings>
   run(flow: Flow<TProbe>): Promise<void>;
 }
 
-/** A defined flow that only the browser runner can play. */
 export interface BrowserProofFlow<TProbe extends ProbeReadings = ProbeReadings> {
   readonly kind: "jgengine-flow";
-  /** The game it plays; `null` for an app that is not a `PlayableGame`. */
   readonly game: HeadlessPlayable<TProbe> | null;
   readonly browser: true;
   readonly state: string | undefined;
   run(flow: BrowserFlow<TProbe>): Promise<void>;
 }
 
-/** A defined flow, as `<game>/proofs/flows/<name>.flow.ts` exports it by default. */
 export type ProofFlow<TProbe extends ProbeReadings = ProbeReadings> = HeadlessProofFlow<TProbe> | BrowserProofFlow<TProbe>;
 
 /**
@@ -184,23 +140,18 @@ export function defineFlow<TProbe extends ProbeReadings>(
   return { kind: "jgengine-flow", game, browser: false, state: spec.state, run: (flow) => spec.run(flow) };
 }
 
-/** Whether a module's default export is a {@link ProofFlow}.
- * @internal the drive runner's loader check
- */
+/** @internal the drive runner's loader check */
 export function isProofFlow(value: unknown): value is ProofFlow {
   return typeof value === "object" && value !== null && "kind" in value && value.kind === "jgengine-flow";
 }
 
-/** The keys of a {@link FlowKeys}, in press order.
- * @internal
- */
+/** @internal */
 export function flowKeyList(keys: FlowKeys): readonly FlowKey[] {
   return typeof keys === "string" ? [keys] : keys;
 }
 
 /** Default wait cap for a flow step, in milliseconds. */
 export const FLOW_WAIT_MS = 15_000;
-/** How long {@link Flow.press} holds its keys. */
 export const FLOW_PRESS_MS = 120;
 /** How close {@link BrowserFlow.aimAt} must bring the target to the crosshair, in CSS pixels. */
 export const FLOW_AIM_TOLERANCE_PX = 6;

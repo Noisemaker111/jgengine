@@ -1,9 +1,7 @@
 // @skill jgengine-world
 import { KG_M2_PER_LB_FT2, KJ_KG_PER_BTU_LB, M_PER_FT, type FuelModel, type FuelMoisture } from "./fuelModels";
 
-/** kW/m² per Btu/ft²/min. */
 const KW_M2_PER_BTU_FT2_MIN = (1055.05585262 / (M_PER_FT * M_PER_FT)) / 60 / 1000;
-/** kW/m per Btu/ft/s. */
 export const KW_M_PER_BTU_FT_S = 1055.05585262 / M_PER_FT / 1000;
 /** m/s per ft/min. */
 const MPS_PER_FT_MIN = M_PER_FT / 60;
@@ -19,30 +17,18 @@ const EFFECTIVE_SILICA = 0.01;
 const TEN_HOUR_SAVR = 109;
 const HUNDRED_HOUR_SAVR = 30;
 
-/**
- * A fuel bed reduced to the wind- and slope-independent terms of Rothermel's model. Compute it once
- * per fuel and moisture, then spread it under any wind and slope with {@link surfaceSpread}.
- */
 export interface SurfaceFuelbed {
-  /** True when the bed carries fire: some load, and dead or live moisture under extinction. */
   burnable: boolean;
   /** No-wind, no-slope rate of spread R0, m/s. */
   noWindNoSlopeRate: number;
-  /** Reaction intensity I_R, kW/m². */
   reactionIntensity: number;
   /** Flame residence time t_r = 384/σ (Anderson 1969), s. */
   residenceTime: number;
-  /** Heat released per unit area I_R·t_r, kJ/m². */
   heatPerUnitArea: number;
-  /** Characteristic surface-area-to-volume ratio σ, 1/m. */
   characteristicSavr: number;
-  /** Packing ratio β. */
   packingRatio: number;
-  /** β / β_op. */
   relativePackingRatio: number;
-  /** Characteristic dead moisture, fraction. */
   deadMoisture: number;
-  /** Characteristic live moisture, fraction. */
   liveMoisture: number;
   /** Live moisture of extinction (Albini 1976), fraction. */
   liveExtinctionMoisture: number;
@@ -50,17 +36,12 @@ export interface SurfaceFuelbed {
   deadLoad: number;
   /** Live fuel load after dynamic curing, kg/m². */
   liveLoad: number;
-  /** Heat sink ρ_b·ε·Q_ig, Btu/ft³ (English, as Rothermel 1972 states it). */
   heatSink: number;
-  /** Propagating flux ratio ξ. */
   propagatingFluxRatio: number;
-  /** Wind coefficient C, exponent B and E of φ_w = C·U^B·(β/β_op)^-E (U in ft/min). */
   windC: number;
   windB: number;
   windE: number;
-  /** Slope factor coefficient: φ_s = slopeK·tan²θ. */
   slopeK: number;
-  /** Reaction intensity, Btu/ft²/min (Rothermel's units, kept for the wind limit). */
   reactionIntensityEnglish: number;
 }
 
@@ -77,7 +58,6 @@ function sum(values: readonly number[]): number {
   return total;
 }
 
-/** Albini 1976 size bins for weighting net load: σ ≥ 1200, 192, 96, 48, 16 (1/ft). */
 function savrBin(savr: number): number {
   if (savr >= 1200) return 0;
   if (savr >= 192) return 1;
@@ -155,13 +135,7 @@ export function curedHerbFraction(liveHerbMoisture: number): number {
   return 0;
 }
 
-/**
- * Reduce a fuel model at a moisture state to Rothermel's 1972 fuel bed terms, with Albini's 1976
- * corrections: size-class weighting of net load, the live moisture of extinction and the
- * computer-model forms of A and Γ'. Dynamic models first cure live herbs to dead.
- *
- * @capability fire-surface-fuelbed reduce a fuel model and moisture to Rothermel reaction intensity, residence time and no-wind spread rate
- */
+/** @capability fire-surface-fuelbed reduce a fuel model and moisture to Rothermel reaction intensity, residence time and no-wind spread rate */
 export function surfaceFuelbed(fuel: FuelModel, moisture: FuelMoisture): SurfaceFuelbed {
   assertMoisture(moisture);
   const lb = (kgM2: number): number => kgM2 / KG_M2_PER_LB_FT2;
@@ -294,18 +268,15 @@ export function surfaceFuelbed(fuel: FuelModel, moisture: FuelMoisture): Surface
  */
 export type WindLimit = "none" | "rothermel1972" | "andrews2013";
 
-/** Wind and terrain under which a fuel bed spreads. */
 export interface SpreadConditions {
   /** Midflame wind speed, m/s. */
   midflameWind: number;
   /** Direction the wind blows towards, radians from the upslope direction. */
   windAngle: number;
-  /** Slope steepness as rise over run (tan of the slope angle). */
   slope: number;
   windLimit?: WindLimit;
 }
 
-/** The head of a surface fire: its rate, direction, intensity and the ellipse it grows in. */
 export interface SurfaceSpread {
   /** Head fire rate of spread, m/s. */
   headRate: number;
@@ -315,19 +286,15 @@ export interface SurfaceSpread {
   flankingRate: number;
   /** Direction of maximum spread, radians from upslope in the same rotational sense as `windAngle`. */
   headingAngle: number;
-  /** Wind factor φ_w and slope factor φ_s. */
   windFactor: number;
   slopeFactor: number;
   /** Wind speed that alone would drive the combined wind and slope spread, m/s. */
   effectiveWind: number;
-  /** True when the wind limit capped the spread. */
   windLimited: boolean;
   /** Ellipse length-to-breadth ratio (Anderson 1983) and its eccentricity. */
   lengthToBreadth: number;
   eccentricity: number;
-  /** Byram fireline intensity at the head, kW/m. */
   firelineIntensity: number;
-  /** Byram flame length at the head, m. */
   flameLength: number;
 }
 
@@ -346,11 +313,7 @@ export function surfaceLengthToBreadth(effectiveWind: number): number {
   return Math.min(8, Math.max(1, lb));
 }
 
-/**
- * Eccentricity of a fire ellipse with length-to-breadth ratio `lb`.
- *
- * @capability fire-ellipse-eccentricity eccentricity of a fire ellipse from its length-to-breadth ratio
- */
+/** @capability fire-ellipse-eccentricity eccentricity of a fire ellipse from its length-to-breadth ratio */
 export function ellipseEccentricity(lb: number): number {
   const x = lb * lb - 1;
   return x > 0 ? Math.sqrt(x) / lb : 0;
@@ -375,11 +338,7 @@ export function flameLength(firelineIntensityKWm: number): number {
   return i < 1e-7 ? 0 : 0.45 * Math.pow(i, 0.46) * M_PER_FT;
 }
 
-/**
- * Fireline intensity (kW/m) that gives a flame length (m); the inverse of {@link flameLength}.
- *
- * @capability fire-intensity-for-flame fireline intensity that gives a flame length
- */
+/** @capability fire-intensity-for-flame fireline intensity that gives a flame length */
 export function intensityForFlameLength(flameLengthM: number): number {
   if (flameLengthM <= 0) return 0;
   return Math.pow(flameLengthM / M_PER_FT / 0.45, 1 / 0.46) * KW_M_PER_BTU_FT_S;
@@ -399,13 +358,7 @@ export function scorchHeight(firelineIntensityKWm: number, midflameWind: number,
   return ((63 / (140 - tF)) * Math.pow(i, 7 / 6)) / Math.sqrt(i + u * u * u) * M_PER_FT;
 }
 
-/**
- * Spread a fuel bed under wind and slope: Rothermel's wind and slope factors combined as vectors
- * (Albini & Chase 1980, as in BehavePlus), the effective wind speed, the Anderson 1983 ellipse and
- * Byram intensity and flame length at the head.
- *
- * @capability fire-surface-spread Rothermel 1972 surface fire rate, heading, ellipse, Byram intensity and flame length under wind and slope
- */
+/** @capability fire-surface-spread Rothermel 1972 surface fire rate, heading, ellipse, Byram intensity and flame length under wind and slope */
 export function surfaceSpread(bed: SurfaceFuelbed, conditions: SpreadConditions): SurfaceSpread {
   const { midflameWind, windAngle, slope } = conditions;
   if (!Number.isFinite(midflameWind) || midflameWind < 0) throw new Error("fire midflameWind must be finite and nonnegative");

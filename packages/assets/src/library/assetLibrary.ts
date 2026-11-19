@@ -8,7 +8,6 @@ import { fillLibraryTemplate, LIBRARY_KINDS, librarySource, type LibraryKind, ty
  * JSON under `library/generated/`; the bytes stay upstream until `assets pull <key>`.
  */
 export interface LibraryRecord {
-  /** The provider's own id (`ArmChair_01`, `lorc/broadsword`, a Sketchfab uid). */
   id: string;
   title: string;
   kind: LibraryKind;
@@ -17,28 +16,22 @@ export interface LibraryRecord {
   license?: LibraryLicense;
   thumbnail?: string;
   page?: string;
-  /** Stored triangle count the provider reports. */
   triangles?: number;
   /** Bounding size in metres, `[width, height, depth]`. */
   size?: readonly [number, number, number];
   rigged?: boolean;
   /** The `AssetSource` pack whose archive holds the bytes (KayKit, Quaternius, game-icons). */
   pack?: string;
-  /** The entry's file inside {@link pack}. */
   file?: string;
 }
 
-/** A committed ingest result: one source's records. */
 export interface LibraryRecordFile {
   source: LibrarySourceId;
-  /** When ingest last read the upstream (ISO date). */
   ingested: string;
   records: readonly LibraryRecord[];
 }
 
-/** One asset in the shared library, with its source defaults filled in. */
 export interface LibraryEntry extends LibraryRecord {
-  /** `<source>:<id>`: the stable key games quote and `assets pull` takes. */
   key: string;
   source: LibrarySourceId;
   license: LibraryLicense;
@@ -55,12 +48,7 @@ const isNumber = (value: unknown): value is number => typeof value === "number" 
 const isKind = (value: unknown): value is LibraryKind => typeof value === "string" && LIBRARY_KINDS.some((kind) => kind === value);
 const isSourceId = (value: unknown): value is LibrarySourceId => typeof value === "string" && librarySource(value) !== undefined;
 
-/**
- * Reads one committed ingest file from untyped JSON, refusing a record whose id, title, kind, tags or
- * licence is malformed. Optional fields of the wrong type are dropped.
- *
- * @internal
- */
+/** @internal */
 export function readLibraryRecordFile(value: unknown): LibraryRecordFile {
   if (typeof value !== "object" || value === null || !("source" in value) || !("records" in value)) throw new Error("library file: expected { source, records }");
   const source = field(value.source, isSourceId);
@@ -104,29 +92,17 @@ export function readLibraryRecordFile(value: unknown): LibraryRecordFile {
   return { source, ingested, records };
 }
 
-/**
- * The {@link LibraryKind} a string names, or undefined.
- *
- * @internal
- */
+/** @internal */
 export function parseLibraryKind(value: string | undefined): LibraryKind | undefined {
   return isKind(value) ? value : undefined;
 }
 
-/**
- * The {@link LibrarySourceId} a string names, or undefined.
- *
- * @internal
- */
+/** @internal */
 export function parseLibrarySourceId(value: string | undefined): LibrarySourceId | undefined {
   return isSourceId(value) ? value : undefined;
 }
 
-/**
- * Fills a record's source defaults into a {@link LibraryEntry}. Throws for an unknown source.
- *
- * @internal
- */
+/** @internal */
 export function expandLibraryRecord(source: LibrarySourceId, record: LibraryRecord): LibraryEntry {
   const info = librarySource(source);
   if (info === undefined) throw new Error(`unknown library source: ${source}`);
@@ -143,27 +119,17 @@ export function expandLibraryRecord(source: LibrarySourceId, record: LibraryReco
   };
 }
 
-/**
- * Expands every record of each committed file.
- *
- * @internal
- */
+/** @internal */
 export function expandLibraryFiles(files: readonly LibraryRecordFile[]): LibraryEntry[] {
   return files.flatMap((file) => file.records.map((record) => expandLibraryRecord(file.source, record)));
 }
 
-/** One reason a library entry is refused. */
 export interface LibraryIssue {
   key: string;
   problem: string;
 }
 
-/**
- * Checks every entry carries an accepted licence, an author, a page and a credit-ready title, that
- * kinds are known, keys are unique and tags are lowercase. An empty array means the library is clean.
- *
- * @capability library-validate check every library entry has an allowed licence and full credit fields
- */
+/** @capability library-validate check every library entry has an allowed licence and full credit fields */
 export function validateLibrary(entries: readonly LibraryEntry[]): LibraryIssue[] {
   const issues: LibraryIssue[] = [];
   const seen = new Set<string>();
@@ -184,19 +150,15 @@ export function validateLibrary(entries: readonly LibraryEntry[]): LibraryIssue[
   return issues;
 }
 
-/** Filters for {@link searchLibrary}. */
 export interface LibrarySearchOptions {
   kind?: LibraryKind | readonly LibraryKind[];
   source?: LibrarySourceId;
   /** Every tag must be present. */
   tags?: readonly string[];
-  /** Keep only entries that need no visible credit (CC0 and public domain). */
   noCredit?: boolean;
-  /** Most results returned. Default 60; 0 returns every match. */
   limit?: number;
 }
 
-/** A ranked {@link searchLibrary} hit. */
 export interface LibraryHit {
   entry: LibraryEntry;
   score: number;
@@ -268,7 +230,6 @@ export function searchLibrary(entries: readonly LibraryEntry[], query: string, o
   return limit === 0 ? hits : hits.slice(0, limit);
 }
 
-/** How many entries carry each tag, most common first: the browser's tag chips. */
 export function libraryTagCounts(entries: readonly LibraryEntry[], limit = 40): { tag: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const entry of entries) for (const tag of entry.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
@@ -278,11 +239,7 @@ export function libraryTagCounts(entries: readonly LibraryEntry[], limit = 40): 
     .slice(0, limit);
 }
 
-/**
- * The entry with this key (`polyhaven:ArmChair_01`), or undefined.
- *
- * @internal
- */
+/** @internal */
 export function findLibraryEntry(entries: readonly LibraryEntry[], key: string): LibraryEntry | undefined {
   return entries.find((entry) => entry.key === key);
 }
@@ -295,18 +252,11 @@ const LICENSE_LABEL: Record<LibraryLicense, string> = {
   "CC-BY-4.0": "CC BY 4.0",
 };
 
-/** A short human label for a licence (`CC BY 3.0`). */
 export function libraryLicenseLabel(license: LibraryLicense): string {
   return LICENSE_LABEL[license];
 }
 
-/**
- * Credit sections for the library entries a game ships: one section per source, one line per
- * credited author (game-icons.net's "Icons made by …" rule) with the entries listed, and one line
- * per CC0 source. Fold it into the game's own credits with `mergeCredits`.
- *
- * @capability library-credits generate in-game credits from the library assets a game ships
- */
+/** @capability library-credits generate in-game credits from the library assets a game ships */
 export function libraryCreditSections(used: readonly LibraryEntry[]): CreditsSection[] {
   const bySource = new Map<LibrarySourceId, LibraryEntry[]>();
   for (const entry of used) {
@@ -340,11 +290,7 @@ export function libraryCreditSections(used: readonly LibraryEntry[]): CreditsSec
   return sections;
 }
 
-/**
- * {@link libraryCreditSections} as a ready {@link CreditsDocument}.
- *
- * @capability library-credits-document a ready credits document from the library assets a game ships
- */
+/** @capability library-credits-document a ready credits document from the library assets a game ships */
 export function libraryCredits(used: readonly LibraryEntry[], options: { title?: string; notice?: string } = {}): CreditsDocument {
   return { title: options.title, sections: libraryCreditSections(used), notice: options.notice };
 }

@@ -15,59 +15,41 @@
 
 import type { EntityPosition } from "../scene/entityStore";
 
-/**
- * The area a source occupies this tick. `sphere` is first-class; `custom` leaves a seam for authored
- * volumes and other shapes while still exposing a bounding sphere (`center`/`radius`) for the caller's
- * broad-phase candidate query.
- */
 export type AreaShape =
   | { readonly kind: "sphere"; readonly center: EntityPosition; readonly radius: number }
   | {
       readonly kind: "custom";
-      /** Bounding-sphere center the caller's broad-phase `candidates` query is built from. */
       readonly center: EntityPosition;
-      /** Bounding-sphere radius the caller's broad-phase `candidates` query is built from. */
       readonly radius: number;
-      /** Authoritative containment test applied to each broad-phase candidate. */
       readonly contains: (point: EntityPosition) => boolean;
     };
 
-/** Descriptor for one continuous area source; re-supplied each tick so its shape follows the emitter. */
 export interface AreaSourceSpec<P> {
-  /** Stable source id (the emitter). Re-using an id updates the descriptor and preserves membership. */
   readonly id: string;
-  /** The source's area this tick — pass the emitter's live position so membership follows it. */
   readonly shape: AreaShape;
-  /** Caller data describing what this source does (damage amount, heal, buff key, capture rate…). */
   readonly payload: P;
   /** Milliseconds between `refresh` edges emitted for each member; omit for enter/leave only. */
   readonly refreshMs?: number;
   /** Aggregation group key for stacking policies; defaults to the source id. */
   readonly stackKey?: string;
-  /** When false the source keeps its descriptor but holds no members (current members `leave`). Default true. */
   readonly enabled?: boolean;
 }
 
 /** Why a `leave` edge fired. */
 export type AreaLeaveReason = "exit" | "source-removed" | "disabled" | "cleared";
 
-/** The three membership edges a step can emit. */
 export type AreaEventKind = "enter" | "refresh" | "leave";
 
-/** One membership edge emitted by `step`, `removeSource`, or `clear`. */
 export interface AreaEffectEvent<P> {
   readonly kind: AreaEventKind;
   readonly sourceId: string;
   readonly receiverId: string;
   readonly stackKey: string;
   readonly payload: P;
-  /** Number of refresh cadences crossed this step (>= 1 on `refresh`; a large dt can cross several). */
   readonly ticks?: number;
-  /** Present only on `leave`. */
   readonly reason?: AreaLeaveReason;
 }
 
-/** One active (source, receiver) membership — feed a receiver's list to a stacking policy. */
 export interface AreaMembership<P> {
   readonly sourceId: string;
   readonly receiverId: string;
@@ -75,19 +57,15 @@ export interface AreaMembership<P> {
   readonly payload: P;
 }
 
-/** Per-tick inputs the field needs to reconcile membership without scanning the world. */
 export interface AreaStepInput {
   /** Milliseconds since the previous step; negative values are clamped to 0. */
   readonly dtMs: number;
   /** Bounded broad-phase: receiver ids possibly inside `shape` (e.g. `spatialIndex.querySphere`). */
   readonly candidates: (shape: AreaShape) => Iterable<string>;
-  /** Precise receiver position; `undefined` means the receiver is gone (removed/dead) and is dropped. */
   readonly positionOf: (receiverId: string) => EntityPosition | undefined;
-  /** Optional per-pair gate (team filter, immunity, line-of-sight already resolved by the caller). */
   readonly eligible?: (sourceId: string, receiverId: string, payload: unknown) => boolean;
 }
 
-/** Serialized field state: source descriptors (minus their transient shape) and per-member refresh phase. */
 export interface AreaFieldState<P> {
   readonly sources: {
     readonly id: string;
@@ -103,26 +81,17 @@ export interface AreaFieldState<P> {
   }[];
 }
 
-/** Runtime handle tracking continuous area membership across ticks. */
 export interface AreaEffectField<P> {
-  /** Register or update a source (upsert by id); an update preserves existing membership and refresh phase. */
   setSource(spec: AreaSourceSpec<P>): void;
-  /** Remove a source and return a `leave` (reason `source-removed`) for each of its members. */
   removeSource(id: string): AreaEffectEvent<P>[];
   hasSource(id: string): boolean;
   sourceIds(): string[];
-  /** Reconcile every source against the receivers its `candidates` query returns; emit enter/refresh/leave. */
   step(input: AreaStepInput): AreaEffectEvent<P>[];
-  /** Receiver ids currently inside `sourceId`. */
   members(sourceId: string): string[];
   isMember(sourceId: string, receiverId: string): boolean;
-  /** Every active membership across all sources. */
   memberships(): AreaMembership<P>[];
-  /** Active memberships affecting a single receiver — the input to a stacking policy. */
   membershipsOf(receiverId: string): AreaMembership<P>[];
-  /** Drop all sources and members; returns a `leave` (reason `cleared`) for each member. */
   clear(): AreaEffectEvent<P>[];
-  /** Snapshot the persistent membership lifecycle for save/load; shapes are transient and re-supplied via `setSource`. */
   serialize(): AreaFieldState<P>;
   /**
    * Replace sources and membership with a {@link serialize} result — the save/load counterpart.

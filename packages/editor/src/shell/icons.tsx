@@ -131,7 +131,6 @@ const PATHS: Record<IconName, string> = {
   command: "M6 6h4v4H6zM6 6H4.5A1.5 1.5 0 1 1 6 4.5zM10 6h1.5A1.5 1.5 0 1 0 10 4.5zM6 10H4.5A1.5 1.5 0 1 0 6 11.5zM10 10h1.5a1.5 1.5 0 1 1-1.5 1.5z",
 };
 
-/** One 16px stroke icon from the shell's internal set; sized via the `size` prop. */
 export function Icon({
   name,
   size = 14,
@@ -155,7 +154,6 @@ export function Icon({
   );
 }
 
-/** Icon assigned to a scene-object kind for hierarchy rows and inspector headers. */
 export function kindIcon(kind: string): IconName {
   if (kind === "note") return "note";
   if (kind.includes("spawn") || kind.includes("start") || kind.includes("marker")) return "pin";

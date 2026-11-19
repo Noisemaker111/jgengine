@@ -1,16 +1,9 @@
 import type { SelectionSet } from "./selection";
 
-/**
- * The serializable shape of a {@link SelectionBookmarks} store: each key maps to
- * its ordered, deduplicated id list. Plain data — safe to persist in a save file
- * or replicate over the wire, and the exact input {@link createSelectionBookmarks}
- * restores.
- */
 export interface SelectionBookmarkSnapshot {
   bookmarks: Record<string, readonly string[]>;
 }
 
-/** Outcome of a {@link SelectionBookmarks.prune} pass — what the validity predicate removed. */
 export interface SelectionPruneResult {
   /** Ids dropped from at least one bookmark because the predicate rejected them. */
   removedIds: string[];
@@ -32,23 +25,15 @@ export interface SelectionPruneResult {
  * bookmark preserves insertion order and dedupes, matching {@link SelectionSet}.
  */
 export interface SelectionBookmarks {
-  /** Replace the set under `key` with `ids` (ordered, deduped). Binding an empty set removes the key, so `has(key)` is then false and it drops out of {@link serialize}. */
   bind(key: string, ids: Iterable<string>): void;
-  /** Add `ids` to the set under `key` (creating it if absent), skipping ones already present so order is stable. */
   append(key: string, ids: Iterable<string>): void;
-  /** Remove `ids` from the set under `key`; if that empties the set, the key is deleted. No-op when the key is absent. */
   remove(key: string, ids: Iterable<string>): void;
   /** The ordered ids saved under `key`, or an empty array when the key is absent. The returned array is a fresh copy — mutating it never touches the store. */
   recall(key: string): string[];
-  /** True when `key` holds a non-empty set. */
   has(key: string): boolean;
-  /** Delete `key`; returns true when a set was removed. */
   clear(key: string): boolean;
-  /** Delete every bookmark. */
   clearAll(): void;
-  /** All bookmark keys in insertion order. */
   keys(): string[];
-  /** Count of ids saved under `key`, or 0 when absent. */
   size(key: string): number;
   /**
    * Drop every id the `isValid` predicate rejects from all bookmarks — the seam
@@ -57,9 +42,7 @@ export interface SelectionBookmarks {
    * removed. Returns what was removed so callers can surface it.
    */
   prune(isValid: (id: string) => boolean): SelectionPruneResult;
-  /** A plain-data copy of every bookmark — the exact input {@link createSelectionBookmarks} restores. */
   serialize(): SelectionBookmarkSnapshot;
-  /** Replace every bookmark with a {@link serialize} snapshot — re-deduped, empty sets dropped. */
   restore(snapshot: SelectionBookmarkSnapshot): void;
 }
 
@@ -157,12 +140,9 @@ export function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): 
   };
 }
 
-/** How a recalled bookmark folds into the active selection. */
 export type BookmarkRecallMode = "replace" | "merge";
 
-/** Caller hooks for {@link recallSelectionBookmark} — kept out of the store so focus and validity stay genre-owned. */
 export interface RecallBookmarkOptions {
-  /** `"replace"` (default) swaps the active selection for the bookmark; `"merge"` unions it in. */
   mode?: BookmarkRecallMode;
   /**
    * Validity predicate applied to the bookmark before it reaches the selection —

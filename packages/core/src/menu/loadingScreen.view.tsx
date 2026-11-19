@@ -8,27 +8,18 @@ import { hudSpace, hudType } from "@jgengine/core/hud/hudTokens";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { MenuScreen, type MenuScreenScrim } from "@jgengine/core/menu/menuScreen.view";
 
-/** Props for {@link LoadingScreen}. */
 export interface LoadingScreenProps {
   /** Load progress from 0 to 1. Omit for an indeterminate bar. */
   progress?: number;
-  /** Heading. Default `"Loading"`. */
   title?: ReactNode;
-  /** The game's tips, shown one at a time. Omit to show no tip. */
   tips?: readonly string[] | TipRotation;
   /** How long each tip stays up, ms. Default 6000. */
   tipIntervalMs?: number;
-  /** Show the "press to continue" prompt and accept confirm. */
   ready?: boolean;
-  /** Called when the player confirms a ready screen (any key, A/Cross, or a click). */
   onReady?: () => void;
-  /** Called on Escape/back while loading — a "skip" the game may honour. */
   onSkip?: () => void;
-  /** A live scene or artwork painted behind the loading screen. */
   backdrop?: ReactNode;
-  /** Dim/blur treatment over the scene behind. Default `"blur"`. */
   scrim?: MenuScreenScrim;
-  /** Extra content under the bar (a spinner, a status line). */
   children?: ReactNode;
   open?: boolean;
   reducedMotion?: boolean;

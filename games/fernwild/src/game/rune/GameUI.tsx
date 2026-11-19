@@ -10,7 +10,6 @@ import { fernTheme } from "./kit";
 import { PauseMenu, TitleMenu } from "./Menu";
 import { InventoryScreen } from "./Screens";
 
-/** Title over the standing island, the survivor HUD while playing, the survivor screens and the pause menu over it. */
 export function GameUI(): ReactNode {
   const ctx = useGameContext();
   const { phase } = useGamePhase();

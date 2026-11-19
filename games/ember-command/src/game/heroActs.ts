@@ -22,34 +22,16 @@ import { session } from "./session";
 import type { Faction } from "./tuning";
 import { factionDamage } from "./upgrades";
 
-/**
- * Bram's acts and the field kit he carries between battles.
- *
- * Three engine seams do the work; Ember supplies the content and the effect of each act:
- * - `@jgengine/core/combat/abilityKit` owns charge/cooldown/mana gating per act (`cast` refuses a
- *   cooling slot, and `retuneSlot` is how a pick makes them recharge faster);
- * - `@jgengine/core/stats/statModifiers` owns the timed line buffs the banner and the ward ride
- *   (`addSource` with an expiry, resolved on read);
- * - `@jgengine/core/talents/talents` owns the picks (points, one rank per pick, the ability and stat
- *   resolution), and `heroPicks.ts` owns the offers this vale makes.
- *
- * Battle state (cooldowns, buffs, the live tree) rides `session` and dies with the battle; the picked
- * ranks are the only hero state the campaign save keeps.
- */
-
-/** A hero act: what the command card shows, what the kit gates, and what casting does. */
 export interface HeroActDef {
   id: "thunderclap" | "banner" | "volley" | "ward";
   label: string;
   blurb: string;
   icon: string;
   hotkey: string;
-  /** Mana the cast spends. */
   manaCost: number;
   cooldownSeconds: number;
   /** Radius around Bram the act reaches, in metres. Line acts affect the whole Vanguard line. */
   radius: number;
-  /** True for the act Bram starts every battle with; the rest are picked at a level-up. */
   baseline?: boolean;
 }
 
@@ -103,28 +85,23 @@ export const THUNDERCLAP_BASE_DMG = 26;
 export const THUNDERCLAP_DMG_PER_LEVEL = 8;
 export const VOLLEY_BASE_DMG = 34;
 export const VOLLEY_DMG_PER_LEVEL = 6;
-/** Line damage the banner adds, and how long it holds. */
 export const BANNER_DAMAGE = 1.3;
 export const BANNER_SECONDS = 8;
-/** Damage the line takes under the ward, and how long it holds. */
 export const WARD_TAKEN = 0.55;
 export const WARD_SECONDS = 6;
 
 /** Line stats the engine block resolves: damage dealt, damage taken. Base 1 so a source multiplies. */
 export type HeroLineStat = "damage" | "damageTaken";
 
-/** Battle-scoped hero runtime: the kit's cooldowns, the line's timed buffs, and the live pick tree. */
 export interface HeroActsRuntime {
   kit: ReturnType<typeof createAbilityKit>;
   line: Stats<HeroLineStat>;
   picks: TalentTree<HeroPickStat>;
-  /** The hero level whose pick point has already been granted. */
   pointsAtLevel: number;
   /** Max-health bonus already added to the live hero pool, so a re-apply never stacks. */
   bonusHealth: number;
 }
 
-/** The battle's hero runtime, built on first use and dropped by `resetSession`. */
 export function heroRuntime(): HeroActsRuntime {
   const existing = session.heroActs;
   if (existing !== null) return existing;
@@ -144,7 +121,6 @@ export function heroRuntime(): HeroActsRuntime {
   return runtime;
 }
 
-/** Acts Bram can cast: the baseline act he always has, plus whatever his picks grant. */
 export function ownedActs(): ReadonlySet<string> {
   const owned = new Set<string>();
   for (const act of HERO_ACTS) if (act.baseline === true) owned.add(act.id);
@@ -152,7 +128,6 @@ export function ownedActs(): ReadonlySet<string> {
   return owned;
 }
 
-/** Bram's current mana, or 0 when he is not on the field. */
 export function heroMana(ctx: GameContext): number {
   const mana = ctx.scene.entity.stats.get(HERO_ID, "mana");
   return mana === null ? 0 : Math.max(0, mana.current);
@@ -163,11 +138,6 @@ export function manaRegenPerSecond(): number {
   return MANA_REGEN + (pickStats(heroRuntime().picks).manaRegen?.add ?? 0);
 }
 
-/**
- * Damage scale for one hit: the banner and the zeal pick lift the Vanguard's blows, the ward and the
- * signet soften blows that land on it. Everything else resolves at 1, so research and matchups keep
- * owning their own numbers.
- */
 export function lineMultiplier(attacker: Faction, defender: Faction): number {
   if (!isHostile(attacker, defender)) return 1;
   const line = heroRuntime().line;
@@ -177,7 +147,6 @@ export function lineMultiplier(attacker: Faction, defender: Faction): number {
   return scale;
 }
 
-/** Push the picked passives onto the line and retune every act's cooldown for the tempo pick. */
 function applyPicks(): void {
   const runtime = heroRuntime();
   const stats = pickStats(runtime.picks);
@@ -213,7 +182,6 @@ export function heroActViews(ctx: GameContext): HeroActView[] {
   });
 }
 
-/** True when the act is owned and off cooldown with the mana to pay for it. */
 export function heroActReady(ctx: GameContext, id: string): boolean {
   if (session.over || ctx.scene.entity.get(HERO_ID) === null) return false;
   if (!ownedActs().has(id)) return false;
@@ -224,7 +192,6 @@ export function heroActReady(ctx: GameContext, id: string): boolean {
 export type HeroActRefusal = AbilityCastReason | "not-picked";
 export type HeroActCast = { ok: true; act: HeroActDef } | { ok: false; reason: HeroActRefusal };
 
-/** Burst every Marauder body inside `radius` of Bram. Bodies only: keeps and camps are siege work. */
 function burst(ctx: GameContext, radius: number, base: number): number {
   const hero = ctx.scene.entity.get(HERO_ID);
   if (hero === null) return 0;
@@ -248,10 +215,6 @@ function lineBuff(sourceId: string, stat: HeroLineStat, multiply: number, second
   heroRuntime().line.addSource(sourceId, { [stat]: { multiply } }, { expiresAtMs: session.elapsed * 1000 + seconds * 1000 });
 }
 
-/**
- * Cast one of Bram's acts. The kit refuses a cooling or unaffordable slot before anything happens, and
- * only an accepted cast spends mana and starts the recharge.
- */
 export function castHeroAct(ctx: GameContext, id: string): HeroActCast {
   const act = ACT_BY_ID.get(id as HeroActDef["id"]);
   if (act === undefined) return { ok: false, reason: "unknown-slot" };
@@ -293,9 +256,7 @@ export interface HeroOfferOption {
   blurb: string;
   icon: string;
   kind: HeroPickDef["kind"];
-  /** Already in Bram's kit (a campaign card can re-offer a pick a later battle already took). */
   taken: boolean;
-  /** Whether the model would accept this pick right now. */
   allocatable: boolean;
 }
 
@@ -326,7 +287,6 @@ export function pendingHeroOffer(ctx: GameContext): HeroOffer | null {
   return { level: offer.level, options: [offerOption(offer.options[0]!), offerOption(offer.options[1]!)] };
 }
 
-/** Take one of the two offered picks. A pick outside the live offer is refused, not force-spent. */
 export function chooseHeroPick(ctx: GameContext, id: string): boolean {
   const runtime = heroRuntime();
   const offer = pendingHeroOffer(ctx);
@@ -340,15 +300,10 @@ export function chooseHeroPick(ctx: GameContext, id: string): boolean {
   return true;
 }
 
-/** The picks Bram carries into this battle, for the command card's kit line. */
 export function carriedHeroPicks(): readonly HeroPickDef[] {
   return carriedPicks(heroRuntime().picks);
 }
 
-/**
- * Load the saved kit into this battle. A saved pick this build does not author fails here, at load,
- * before any act or offer reaches play.
- */
 export function restoreHeroPicks(ctx: GameContext): void {
   const saved = heroPickStore.peek(ctx);
   const runtime = heroRuntime();
@@ -376,7 +331,6 @@ export function loadHeroPicks(ctx: GameContext): void {
   }
 }
 
-/** Grant the pick point a hero level earns, without needing a level-up callback wired in. */
 function reconcilePickPoints(ctx: GameContext): void {
   const runtime = heroRuntime();
   const level = heroLevel(ctx);
@@ -386,7 +340,6 @@ function reconcilePickPoints(ctx: GameContext): void {
   }
 }
 
-/** Add (or remove) the standard pick's max health on the live pool exactly once. */
 function reconcileBonusHealth(ctx: GameContext, runtime: HeroActsRuntime): void {
   const want = pickStats(runtime.picks).maxHealth?.add ?? 0;
   if (runtime.bonusHealth === want) return;
@@ -397,7 +350,6 @@ function reconcileBonusHealth(ctx: GameContext, runtime: HeroActsRuntime): void 
   runtime.bonusHealth = want;
 }
 
-/** Per-frame hero upkeep: cooldowns, buff expiry, the pick point a level earns, and mana. */
 export function tickHero(ctx: GameContext, dt: number): void {
   if (session.over) return;
   const runtime = heroRuntime();

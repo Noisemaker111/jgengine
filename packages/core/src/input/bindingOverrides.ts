@@ -59,7 +59,6 @@ export function loadBindingOverrides(
   }
 }
 
-/** Store a game's whole rebind map (an empty one clears it), as the shell does whenever the game's rebinds change. */
 export function saveBindingOverrides(
   gameId: string,
   overrides: BindingOverrides,

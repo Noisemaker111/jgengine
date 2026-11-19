@@ -38,40 +38,25 @@ export function useComboMeter(meter: ComboMeter, animate = true): ComboMeterView
   return meter.view();
 }
 
-/** Reskin tokens for {@link ComboMeterHud}. */
 export interface ComboMeterTheme {
-  /** Accent used when no tier is active (below the first threshold). Default reads `--jg-accent`. */
   accent?: string;
-  /** Combo count text color. Default near-white. */
   count?: string;
-  /** Tier label + multiplier text color. Default reads the active tier color. */
   label?: string;
-  /** Font family. Default the HUD sans stack. */
   fontFamily?: string;
-  /** Count font size (CSS length). Default `"clamp(2rem, 6vw, 4rem)"`. */
   countSize?: string;
 }
 
-/** Props for {@link ComboMeterHud}. */
 export interface ComboMeterHudProps {
   /** The combo meter to render. */
   meter: ComboMeter;
-  /**
-   * Per-tier color keyed by the free-string tier id the game configured
-   * ("good"/"great"/"savage", …). The active tier's color drives the count glow,
-   * label, and draining window bar. Missing ids fall back to the accent.
-   */
   tierColors?: Record<string, string>;
-  /** Base reskin tokens. */
   theme?: ComboMeterTheme;
   /**
    * Drive re-renders on an animation frame so the window bar drains live. Default
    * `true`. Turn off if the game already re-renders the HUD each frame.
    */
   animate?: boolean;
-  /** Hide the whole HUD while the combo count is zero. Default `true`. */
   hideWhenEmpty?: boolean;
-  /** Width of the draining window bar (any CSS length). Default `220`. */
   barWidth?: number | string;
   className?: string;
   style?: CSSProperties;

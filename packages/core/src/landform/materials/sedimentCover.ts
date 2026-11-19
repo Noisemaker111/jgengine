@@ -12,19 +12,14 @@
  */
 import { plantExp, plantLog } from "../../plants/growth/plantMath";
 
-/** Classes of loose cover, in their order in {@link SedimentCover.thickness}. */
 export const COVER_CLASSES = ["gravel", "sand", "silt", "scree", "soil", "till", "beach"] as const;
 
-/** One class of loose cover. */
 export type CoverClass = (typeof COVER_CLASSES)[number];
 
-/** River-carried grain sizes, in their order in grain arrays. */
 export const GRAIN_CLASSES = ["gravel", "sand", "silt"] as const;
 
-/** One river-carried grain size. */
 export type GrainClass = (typeof GRAIN_CLASSES)[number];
 
-/** Share of each grain size, summing to 1. */
 export interface GrainMix {
   gravel: number;
   sand: number;
@@ -47,7 +42,6 @@ export const DEFAULT_ROCK_YIELD: GrainMix = { gravel: 0.2, sand: 0.5, silt: 0.3 
 /** What scree breaks into when a river picks it up: angular, coarse. */
 export const SCREE_YIELD: GrainMix = { gravel: 0.55, sand: 0.3, silt: 0.15 };
 
-/** What soil is made of when a river picks it up. */
 export const SOIL_YIELD: GrainMix = { gravel: 0, sand: 0.4, silt: 0.6 };
 
 /** What glacial till breaks into: unsorted, from boulders to rock flour. */
@@ -95,12 +89,7 @@ export function relativeDeposition(velocity: number, sandVelocity: number, shear
   return ratio * concentrationAverage(sandRouse) / concentrationAverage(grainRouse);
 }
 
-/**
- * Soil thickness after weathering for `dt` years from `depth`, solving dh/dt = P₀ e^(−h/h₀) exactly:
- * h' = h₀ ln(e^(h/h₀) + P₀ dt / h₀).
- * Inputs are nonnegative and finite, with a positive depth scale. Results beyond the finite range saturate.
- * @capability landform-materials per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation
- */
+/** @capability landform-materials per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation */
 export function weatheredDepth(depth: number, production: number, depthScale: number, dt: number): number {
   if (production <= 0 || dt <= 0) return depth;
   const logAmount = plantLog(production) + plantLog(dt) - depth / depthScale;
@@ -117,7 +106,7 @@ export function weatheredDepth(depth: number, production: number, depthScale: nu
   return Math.min(Number.MAX_VALUE, depth + increase);
 }
 
-/** Per-cell thickness of each cover class. @internal */
+/** @internal */
 export interface SedimentCover {
   /** `cells × 7` thicknesses in metres, cell-major, in {@link COVER_CLASSES} order. */
   readonly thickness: Float64Array;
@@ -125,11 +114,10 @@ export interface SedimentCover {
   remove(i: number, loss: number, grains?: Float64Array): number;
   /** Lay `amount` metres of one class on cell `i`. */
   add(i: number, cls: number, amount: number): void;
-  /** Total cover thickness on cell `i`. */
   total(i: number): number;
 }
 
-/** Cover storage for `cells` cells. @internal */
+/** @internal */
 export function createSedimentCover(cells: number): SedimentCover {
   const thickness = new Float64Array(cells * CLASS_COUNT);
   const total = (i: number): number => {
@@ -171,5 +159,5 @@ export function createSedimentCover(cells: number): SedimentCover {
   };
 }
 
-/** Cover class indices. @internal */
+/** @internal */
 export const COVER = { gravel: GRAVEL, sand: SAND, silt: SILT, scree: SCREE, soil: SOIL, till: TILL, beach: BEACH } as const;

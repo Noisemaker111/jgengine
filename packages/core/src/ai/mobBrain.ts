@@ -6,41 +6,28 @@ export type MobBrainMode = "idle" | "wander" | "chase" | "engage" | "evade";
 export type MobVec3 = readonly [number, number, number];
 
 export interface MobWanderConfig {
-  /** Radius around home the wander points are drawn from. */
   radius: number;
   /** Seconds between wander-point picks; default `4`. */
   intervalSeconds?: number;
-  /** Movement speed multiplier while wandering; default `0.35`. */
   speedScale?: number;
-  /** Distance at which a wander point counts as reached; default `0.6`. */
   arriveRadius?: number;
 }
 
 export interface MobBrainConfig {
-  /** Distance at which an unaggroed candidate pulls threat and becomes the target. */
   aggroRadius: number;
-  /** Distance inside which the step reports `inAttackRange` and stops chasing. */
   attackRange: number;
-  /** Distance from home beyond which the mob drops all threat and evades back. */
   leashDistance: number;
-  /** Idle wandering around home; omit or `false` to stand still. */
   wander?: MobWanderConfig | false;
-  /** Movement speed multiplier while evading home; default `1.4`. */
   evadeSpeedScale?: number;
-  /** Target-switch stickiness passed to the threat table's `highest`; default `1.15`. */
   stickiness?: number;
-  /** Distance to home at which an evade completes; default `1.2`. */
   homeArriveRadius?: number;
   threat?: ThreatTableConfig;
 }
 
 export interface MobBrainDeps {
   home: MobVec3;
-  /** The mob's current position; `null` pauses the brain (despawned). */
   position(): MobVec3 | null;
-  /** A target's current position; `null` drops it from the threat table (despawned, dead). */
   targetPosition(targetId: string): MobVec3 | null;
-  /** Potential aggro targets near the mob — the brain distance-filters against `aggroRadius`. */
   candidates(): readonly string[];
   rng?: () => number;
 }
@@ -48,29 +35,17 @@ export interface MobBrainDeps {
 export interface MobBrainStep {
   mode: MobBrainMode;
   targetId: string | null;
-  /** Where to step this tick — feed to `moveToward`; `null` holds position. */
   moveTo: MobVec3 | null;
-  /** Multiplier on the mob's base move speed for this step. */
   speedScale: number;
-  /** The target is inside `attackRange` — the swing/cast window. */
   inAttackRange: boolean;
-  /** Fires on the single step an evade run reaches home — the reset/full-heal hook. */
   arrivedHome: boolean;
 }
 
-/**
- * The wander → aggro → chase → engage → leash-evade loop every MMO-shaped game hand-rolls,
- * composed over `ai/threat`. The brain decides intent; the game executes it (`moveToward`,
- * ground-snap, facing, swings) and routes damage into `addThreat`. Pack aggro is game-side:
- * call `addThreat` on nearby packmates' brains when one aggros.
- */
 export interface MobBrain {
   readonly threat: ThreatTable;
   mode(): MobBrainMode;
-  /** Route damage/heal aggro here — sugar over `threat.add`; ignored while the mob is evading. */
   addThreat(sourceId: string, amount: number): void;
   tick(dt: number): MobBrainStep;
-  /** Back to idle at full rest (respawn) — clears threat, evade, and wander state. */
   reset(): void;
 }
 

@@ -8,7 +8,6 @@ type Track = typeof ROW_SIX_TRACK;
 export type SignTone = "plow" | "jump" | "launch" | "stop" | "home";
 
 const mainGateLists = new WeakMap<Track, Track["gates"]>();
-/** The main-line barriers of a track, one stable list per track. */
 function mainGates(track: Track): Track["gates"] {
   const known = mainGateLists.get(track);
   if (known !== undefined) return known;
@@ -71,10 +70,6 @@ export type RaceHud = ReturnType<typeof raceHud>;
 /** A label with its metre count taken out: the count is bound live, the rest changes at a moment. */
 const withoutMetres = (text: string) => text.replace(/\d+ ?m\b/g, "");
 
-/**
- * What the composed screen depends on, as one string. Two snapshots with the same key draw the same
- * tree; everything else (speed, distances, clocks, the jaw, the ghost gap) is bound at its leaf.
- */
 export function screenKey(snapshot: SessionSnapshot): string {
   const base = [snapshot.phase, snapshot.paused];
   if (snapshot.phase === "running" && !snapshot.paused) {
@@ -92,7 +87,6 @@ export function screenKey(snapshot: SessionSnapshot): string {
     PART_SLOTS.map((slot) => snapshot.installed[slot]?.id ?? null)]);
 }
 
-/** One snapshot per store write, shared by every bound leaf in a frame. */
 export function liveRace(ctx: GameContext, session: RunSession) {
   let version = -1, snapshot: SessionSnapshot | undefined, hud: RaceHud | null | undefined;
   const read = (): SessionSnapshot => {

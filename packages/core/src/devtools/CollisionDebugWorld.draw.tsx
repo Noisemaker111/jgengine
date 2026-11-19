@@ -72,11 +72,6 @@ interface DebugDrawInputs {
   laser: AimLaserDebug | null;
 }
 
-/**
- * All collision-debug wire geometry as one draw: collider shapes, projectile path lines,
- * muzzle markers, the aim laser and its endpoint mark. Reconciles on `update`, which the
- * UI bridge calls after every commit.
- */
 function collisionDebugDraw(getInputs: () => DebugDrawInputs): EngineDraw {
   const group = new THREE.Group();
   const shapes = new Map<string, THREE.Object3D>();
@@ -277,10 +272,6 @@ function collisionDebugDraw(getInputs: () => DebugDrawInputs): EngineDraw {
   };
 }
 
-/**
- * DOM name labels for the debug shapes — the old per-shape `<Html>` overlays projected each
- * frame with the same `distanceFactor` scaling (14).
- */
 function DebugLabelOverlay({ latest }: { latest: { current: DebugDrawInputs } }) {
   const host = useEngineHost();
   const nodesRef = useRef(new Map<string, HTMLDivElement>());

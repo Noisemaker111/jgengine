@@ -6,10 +6,6 @@ import { EGG_LABEL, EGG_SIZES, eggItem, KIBBLE_LABEL, KIBBLE_TIERS, kibbleItem }
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
 
-/**
- * Food goes off in the bag, a unit at a time per stack, as in ARK: raw meat in 10 minutes, cooked meat
- * in 20, both into spoiled meat, the narcotic's base. Spoiled meat itself rots away in an hour.
- */
 export const SPOILS: Readonly<Record<string, SpoilRule>> = {
   raw_meat: { seconds: 600, into: "spoiled_meat" },
   raw_prime_meat: { seconds: 600, into: "spoiled_meat" },
@@ -20,7 +16,6 @@ export const SPOILS: Readonly<Record<string, SpoilRule>> = {
   ...Object.fromEntries(KIBBLE_TIERS.map((tier) => [kibbleItem(tier), { seconds: 7200, into: null }])),
 };
 
-/** What eating or drinking one unit does to the survivor. */
 export interface Consume {
   food?: number;
   water?: number;
@@ -29,21 +24,15 @@ export interface Consume {
   torpor?: number;
 }
 
-/** A tool's swing: how it gathers, how far it reaches and what it hits for. */
 export interface ToolDef {
-  /** Gathering against trees, rocks and bushes. */
   gather: ToolProfile;
   /** Metres. */
   reach: number;
-  /** Damage at 100% melee. */
   damage: number;
-  /** What a hit doses into a creature's body, at 100% melee (a club's torpor knocks out). */
   hits?: readonly VitalDose[];
-  /** Stamina per swing. */
   stamina: number;
   /** Seconds between swings. */
   cooldown: number;
-  /** What a structure tier sees this hit as (ARK: wood ignores fists and stone tools). Default `"primitive"`. */
   damageClass?: "fist" | "primitive" | "ranged" | "metal";
   /** A weapon that fires instead of swinging: a click spends one ammo and hits the first creature along the aim. */
   ranged?: RangedDef;
@@ -51,13 +40,11 @@ export interface ToolDef {
   durability?: number;
 }
 
-/** What one shot of an ammo lands: damage, and doses into the body it hits (a tranq arrow's torpor, a bola's hold). */
 export interface ShotDef {
   damage: number;
   doses: readonly VitalDose[];
 }
 
-/** A firing weapon: how far it hits, and its ammo in the order it reaches for them (the first one carried fires). */
 export interface RangedDef {
   /** Metres. */
   range: number;
@@ -75,13 +62,10 @@ export interface ItemDef {
   stack: number;
   consume?: Consume;
   tool?: ToolDef;
-  /** Armour: the body slot it is worn in and how far it widens the comfortable band, in °C. */
   wear?: WearDef;
-  /** Short words for the tooltip, ours not ARK's. */
   note: string;
 }
 
-/** ARK's armour slots, in the order its inventory lists them. */
 export const GEAR_SLOTS = [
   { id: "head", label: "Head" },
   { id: "torso", label: "Torso" },
@@ -94,13 +78,10 @@ export type GearSlot = (typeof GEAR_SLOTS)[number]["id"];
 
 export interface WearDef {
   slot: GearSlot;
-  /** °C added to the top of the comfortable band (ARK's hyperthermal insulation). */
   heatC: number;
-  /** °C taken off the bottom of the comfortable band (ARK's hypothermal insulation). */
   coldC: number;
 }
 
-/** Cloth keeps the sun off more than it keeps the cold out; five pieces add 10 °C at the hot end and 7.5 °C at the cold end. */
 const cloth = (id: string, label: string, slot: GearSlot, weight: number): ItemDef => ({
   id, label, kind: "armor", weight, stack: 1, wear: { slot, heatC: 2, coldC: 1.5 }, note: "Keeps the sun off. Double-click to wear it.",
 });
@@ -123,7 +104,6 @@ export const FIST: ToolDef = {
   cooldown: 0.55,
 };
 
-/** Hand picking with E: fiber and berries from bushes, stones off the ground. */
 export const PICK_UP: ToolDef = {
   gather: { power: 1, biases: { fiber: 1, stone: 1, flint: 1 }, defaultBias: 1 },
   reach: 2.2,
@@ -264,7 +244,6 @@ export function itemLabel(id: string): string {
   return BY_ID.get(id)?.label ?? id;
 }
 
-/** Stack limits and kinds for the engine's inventory model. */
 export const itemTraits = {
   stackLimit: (id: string) => BY_ID.get(id)?.stack ?? 1,
   kind: (id: string) => BY_ID.get(id)?.kind ?? null,

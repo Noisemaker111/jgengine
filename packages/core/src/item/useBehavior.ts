@@ -6,10 +6,6 @@ import type { ItemUseInput } from "./use";
  */
 export type BehaviorConfig = Record<string, unknown>;
 
-/**
- * A single behavior's mutable, serializable runtime state (e.g. current charge,
- * rounds queued). Composed state is a map of these keyed by behavior id.
- */
 export type BehaviorState = Record<string, unknown>;
 
 /**
@@ -29,10 +25,6 @@ export interface UseBehaviorRef {
   order?: number;
 }
 
-/**
- * The context handed to each behavior hook: the shared folded `world`, this
- * behavior's own `config` and `state` slice, and the triggering use input.
- */
 export interface UseBehaviorContext<TWorld> {
   world: TWorld;
   config: BehaviorConfig;
@@ -40,11 +32,6 @@ export interface UseBehaviorContext<TWorld> {
   input: ItemUseInput;
 }
 
-/**
- * The result of applying one behavior: the (possibly advanced) world, this
- * behavior's updated state, an optional error that aborts the chain, and an
- * optional `stop` that ends the chain after a successful apply.
- */
 export interface UseBehaviorOutcome<TWorld> {
   world: TWorld;
   state?: BehaviorState;
@@ -52,17 +39,10 @@ export interface UseBehaviorOutcome<TWorld> {
   stop?: boolean;
 }
 
-/** A reason a behavior refused a use, surfaced from `can`. */
 export interface UseBehaviorRejection {
   reason: string;
 }
 
-/**
- * A registered behavior implementation. The combat/game side registers these
- * (charge, thrown-reload, projectile-replacement, …); the item core only ever
- * stores a {@link UseBehaviorRef} to one by id. Hooks are the lifecycle: `init`
- * builds serializable state, `can` gates, `apply` folds the world.
- */
 export interface UseBehaviorDef<TWorld> {
   id: string;
   /** Lower runs first; ties break on the item's ref order. Default 0. */
@@ -75,7 +55,6 @@ export interface UseBehaviorDef<TWorld> {
   init?(config: BehaviorConfig): BehaviorState;
   /** Gate the use before applying; return a rejection or null to allow. */
   can?(ctx: UseBehaviorContext<TWorld>): UseBehaviorRejection | null;
-  /** Apply the behavior, folding the shared world and this behavior's state. */
   apply(ctx: UseBehaviorContext<TWorld>): UseBehaviorOutcome<TWorld>;
 }
 
@@ -86,13 +65,9 @@ export interface UseBehaviorDef<TWorld> {
  * first error.
  */
 export interface ComposedUse<TWorld> {
-  /** The resolved run order as behavior ids. */
   order(): readonly string[];
-  /** Fresh per-behavior state for a new item instance, keyed by behavior id. */
   initialState(): SerializedBehaviorState;
-  /** First rejection across behaviors (in order), or null if all allow the use. */
   can(world: TWorld, state: SerializedBehaviorState, input: ItemUseInput): UseBehaviorRejection | null;
-  /** Run the chain in order; commit folded world+state only on full success. */
   apply(
     world: TWorld,
     state: SerializedBehaviorState,
@@ -100,10 +75,6 @@ export interface ComposedUse<TWorld> {
   ): { world: TWorld; state: SerializedBehaviorState; error?: string };
 }
 
-/**
- * The outcome of composing an item's behavior refs: either a ready
- * {@link ComposedUse} or a structured error naming the offending behavior.
- */
 export type CompositionResult<TWorld> =
   | { status: "ok"; composed: ComposedUse<TWorld> }
   | { status: "error"; reason: "unknown-behavior"; id: string }
@@ -111,18 +82,11 @@ export type CompositionResult<TWorld> =
   | { status: "error"; reason: "missing-capability"; id: string; capability: string }
   | { status: "error"; reason: "conflict"; id: string; conflictsWith: string };
 
-/**
- * A registry of use-behavior implementations plus a composer that turns an
- * item's stored refs into an ordered, conflict-checked {@link ComposedUse}.
- */
 export interface UseBehaviorRegistry<TWorld> {
-  /** Register behavior implementations; throws on a duplicate id. */
   register(defs: readonly UseBehaviorDef<TWorld>[]): void;
   has(id: string): boolean;
   get(id: string): UseBehaviorDef<TWorld> | null;
-  /** All registered behavior ids, in registration order. */
   ids(): string[];
-  /** Resolve an item's refs into a composed dispatcher, or a structured error. */
   compose(
     refs: readonly UseBehaviorRef[],
     options?: { capabilities?: readonly string[] },
@@ -138,13 +102,7 @@ function orderOf<TWorld>(entry: ResolvedBehavior<TWorld>): number {
   return entry.ref.order ?? entry.def.order ?? 0;
 }
 
-/**
- * Create an empty use-behavior registry. Games register their behaviors, then
- * compose each item's stored refs into a dispatcher whose serializable state
- * lives with the item.
- *
- * @capability item-use-composition compose pluggable, ordered item use-behaviors from serializable references
- */
+/** @capability item-use-composition compose pluggable, ordered item use-behaviors from serializable references */
 export function createUseBehaviorRegistry<TWorld>(): UseBehaviorRegistry<TWorld> {
   const defs = new Map<string, UseBehaviorDef<TWorld>>();
 

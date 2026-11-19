@@ -14,7 +14,6 @@ function creepEntry(id: string): GameContextEntityEntry {
   };
 }
 
-/** The keep is scenery the raiders walk to; its lives are a world fact (`keep.lives`), not an entity stat. */
 function baseEntry(): GameContextEntityEntry {
   return { role: "npc" };
 }

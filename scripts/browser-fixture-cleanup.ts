@@ -2,7 +2,6 @@ export interface OwnedBrowserProcess {
   kill: () => Promise<void>;
 }
 
-/** Bind only the unique browser PID returned by the newly launched browser's CDP session. */
 export function ownBrowserProcess(
   processes: readonly { type: string; id: number }[],
   kill: (pid: number) => Promise<void>,
@@ -22,7 +21,6 @@ export interface BrowserFixtureResources {
   removeScratch: () => Promise<void>;
 }
 
-/** Retire only this fixture's owned browser process, including partial startup. */
 export async function cleanupBrowserFixture(resources: BrowserFixtureResources): Promise<void> {
   let failed = false;
   let firstError: unknown;

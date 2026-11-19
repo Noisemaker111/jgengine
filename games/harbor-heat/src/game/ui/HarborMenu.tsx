@@ -19,7 +19,6 @@ import { harborFocus } from "./menuFocus";
 import { PhoneSettings } from "./PhoneSettings";
 import { DISPLAY, HH } from "./theme";
 
-/** Harbor's dispatch bays; a parcel run is kept in one of them. */
 export const HARBOR_BAYS = [
   { id: "coast", label: "The Coast" },
   { id: "docks", label: "The Docks" },
@@ -28,7 +27,6 @@ export const HARBOR_BAYS = [
 
 const BAY_LABELS: Record<string, string> = Object.fromEntries(HARBOR_BAYS.map((bay) => [bay.id, bay.label]));
 const DEFAULT_DRIVER = "Mara Vell";
-/** Names a courier can sign without a keyboard: the licence's Shuffle steps through them. */
 const DRIVERS = ["Mara Vell", "Dex Okafor", "Lu Marchetti", "Rey Santos", "Jo Kincaid", "Nico Bell"] as const;
 
 const harborSlots = createSaveSlots({
@@ -36,7 +34,6 @@ const harborSlots = createSaveSlots({
   slots: HARBOR_BAYS.map((bay) => ({ id: bay.id, empty: true, meta: {} })),
 });
 
-/** Keep the slot index in step with the dispatch documents. */
 export async function refreshHarborSlots(ctx: ReturnType<typeof useGameContext>): Promise<void> {
   await refreshSaveSlots(gameSaveSlotSource(harborSave(ctx)), harborSlots, {
     nameOf: (_slot, document) => {
@@ -57,7 +54,6 @@ export async function refreshHarborSlots(ctx: ReturnType<typeof useGameContext>)
   });
 }
 
-/** Started flag the shell reveals play chrome with. */
 export function useGameStarted(): boolean {
   return useStore(startedStore, (value) => value === true);
 }
@@ -72,7 +68,6 @@ function bayForNew(): string {
 type TitleId = "continue" | "new" | "keeps" | "settings" | "credits";
 interface TitleItem { id: TitleId; label: string; hint?: string; disabled?: boolean }
 
-/** Harbor Heat's front end: the roadside sign at dusk, and the burner phone when you step off the clock. */
 export function HarborMenu() {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -160,9 +155,6 @@ export function HarborMenu() {
   );
 }
 
-// --- The roadside sign ---------------------------------------------------------------------------
-
-/** The roadside sign's neon: two words in glass tube over an enamel box ringed with chaser bulbs. */
 function NeonSign({ small }: { small: boolean }) {
   const bulbs = Array.from({ length: small ? 9 : 13 }, (_, i) => i);
   const row = <Row justify="between" padding={[0, 6, 0, 6]}>{bulbs.map((i) => <RuneView key={i} width={small ? 5 : 7} height={small ? 5 : 7} radius={4} fill={i % 2 === 0 ? "#fff3c4" : "#ffcf6a"} shadow={{ y: 0, blur: 6, color: "#ffd27a" }} />)}</Row>;
@@ -179,7 +171,6 @@ function NeonSign({ small }: { small: boolean }) {
   );
 }
 
-/** One marquee line: every letter its own black plastic tile on the board. */
 function MarqueeLetters({ text, small }: { text: string; small: boolean }) {
   return (
     <Row gap={small ? 1 : 2}>
@@ -192,12 +183,6 @@ function MarqueeLetters({ text, small }: { text: string; small: boolean }) {
   );
 }
 
-/**
- * The title as a Mainsail roadside sign at dusk: the HARBOR HEAT neon over the motel-style marquee
- * board where tonight's choices are spelled in plastic letters. Each choice opens its own object beside
- * the sign: the last run's parcel tag, a courier licence, the bays' tags, the burner's settings and a
- * Tribune clipping of credits. On an upright phone the object replaces the sign until you go back.
- */
 function HarborTitle({ items, initial, detail, notice }: {
   items: readonly TitleItem[];
   initial: TitleId;
@@ -255,7 +240,6 @@ function HarborTitle({ items, initial, detail, notice }: {
   );
 }
 
-/** A courier frame stapled to a tag, or a stencilled blank where none was kept. */
 function Snapshot({ src, width = 150 }: { src: string | null; width?: number }) {
   const height = Math.round(width * 0.5625);
   return (
@@ -266,7 +250,6 @@ function Snapshot({ src, width = 150 }: { src: string | null; width?: number }) 
   );
 }
 
-/** A manila parcel tag with a punched hole and a two-part header. */
 function Tag({ head, title, children, width }: { head: string; title: string; children: ReactNode; width?: number }) {
   return (
     <RuneView variant="paper" {...(width === undefined ? {} : { width })} gap={8}>
@@ -279,7 +262,6 @@ function Tag({ head, title, children, width }: { head: string; title: string; ch
   );
 }
 
-/** The last run's parcel tag, with the frame its courier left and the button that picks it up. */
 function ContinueTag({ slot, bayLabel, onContinue }: { slot: SaveSlotMeta | null; bayLabel: string; onContinue: () => void }) {
   return (
     <Tag head="Mainsail express" title="Parcel tag">
@@ -302,19 +284,13 @@ function ContinueTag({ slot, bayLabel, onContinue }: { slot: SaveSlotMeta | null
 }
 
 const KEY_CHARS: Record<string, string> = { Space: " ", Minus: "-", Quote: "'", Period: "." };
-/** The character a key code types into the name, or null. */
 export function typedChar(code: string): string | null {
   if (code.startsWith("Key") && code.length === 4) return code.slice(3).toLowerCase();
   if (code.startsWith("Digit") && code.length === 6) return code.slice(5);
   return KEY_CHARS[code] ?? null;
 }
-/** Each word of a signed name starts with a capital. */
 export const signName = (text: string): string => text.replace(/(^|[\s-])([a-z])/g, (_, gap: string, ch: string) => gap + ch.toUpperCase());
 
-/**
- * The courier licence: the runner's mark, the name you sign, the bay the run goes in. Press the name
- * line to sign it from the keyboard (Enter or Escape finishes); Shuffle picks a name with no keyboard.
- */
 function CourierLicence({ name, onName, bayLabel, onBegin }: { name: string; onName: (next: string) => void; bayLabel: string; onBegin: () => void }) {
   const [editing, setEditing] = useState(false);
   // Keys can land faster than renders: the typed name and the replace-on-first-key flag live in refs.
@@ -363,7 +339,6 @@ function CourierLicence({ name, onName, bayLabel, onBegin }: { name: string; onN
   );
 }
 
-/** One dispatch bay's tag each: who is kept there, how long they've run, and what you can do with it. */
 function BayTags({ bays, onLoad, onNew, onClear }: { bays: readonly SaveSlotMeta[]; onLoad: (slot: SaveSlotMeta) => void; onNew: (slot: SaveSlotMeta) => void; onClear: (slot: SaveSlotMeta) => void }) {
   const sound = useMenuSound();
   const room = useRoom();
@@ -406,7 +381,6 @@ function BayTags({ bays, onLoad, onNew, onClear }: { bays: readonly SaveSlotMeta
   );
 }
 
-/** The settings, on the same burner phone the pause menu uses. */
 function TitlePhone({ onBack }: { onBack: () => void }) {
   const { height } = useRuneViewport();
   return (
@@ -418,7 +392,6 @@ function TitlePhone({ onBack }: { onBack: () => void }) {
   );
 }
 
-/** Credits as a clipping from the Mainsail Tribune's back page. */
 function TribuneCredits() {
   const ink = "#1e1a14";
   const room = useRoom();
@@ -449,18 +422,12 @@ function TribuneCredits() {
   );
 }
 
-// --- Off the clock -------------------------------------------------------------------------------
-
 const HOME = [
   { id: "resume", label: "Back to the coast" },
   { id: "save", label: "Save progress" },
   { id: "settings", label: "Settings & controls" },
 ] as const;
 
-/**
- * Off the clock: the city stops and the courier pulls out the burner. The home screen resumes, saves
- * the bay or opens the Settings app; Escape resumes from home and goes back from settings.
- */
 function PausePhone({ onResume, onSave, notice, bayLabel, kept }: { onResume: () => void; onSave: () => void; notice: string; bayLabel: string; kept: string }) {
   const sound = useMenuSound();
   const room = useRoom();
@@ -504,7 +471,6 @@ function PausePhone({ onResume, onSave, notice, bayLabel, kept }: { onResume: ()
   );
 }
 
-/** Settings opened from the shell (its gear or a binding) on the same burner. */
 export function SettingsPhone({ close }: { close: () => void }) {
   const { height } = useRuneViewport();
   return (

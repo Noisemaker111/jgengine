@@ -185,7 +185,6 @@ function nearestEgg(eggs: readonly { at: readonly [number, number, number] }[], 
 
 const PIECES: ReadonlySet<string> = new Set(STRUCTURES.map((entry) => entry.id));
 
-/** Animals only the northern snow keeps, and only the south-coast beach keeps: what the biome probes count. */
 const SNOW_KINDS = new Set(["woolly_rhino", "mammoth", "sabertooth", "ovis", "kairuku", "yutyrannus", "purlovia"]);
 const COAST_KINDS = new Set(["dodo", "phiomia", "lystrosaurus", "parasaur", "dilophosaur", "moschops", "compy", "pachy"]);
 

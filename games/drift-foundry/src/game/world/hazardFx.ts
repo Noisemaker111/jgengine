@@ -11,7 +11,6 @@ export interface HazardBurst {
 
 /** Seconds between puffs from one vent while its spurt is live. */
 const SPURT_BEAT = 0.12;
-/** Vents farther than this from the kart stay quiet: nobody sees them and particles cost. */
 const SPURT_RANGE = 140;
 
 function cycleLive(cycle: { period: number; active: number; phase?: number } | undefined, time: number): boolean {

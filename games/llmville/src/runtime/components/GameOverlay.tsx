@@ -1,9 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/**
- * In-world HUD: resources, model warnings and news tweets at the edges, the lab guide, chat and the
- * world prompt, and the tablet and rack menu above them, all on the one native surface.
- * Walk/look input lives in the shell, not here.
- */
 import { useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneFor, RuneView, RuneWorldAnchor, type RuneProjection } from "@jgengine/core/ui/rune/primitives.view";
 import { worldLabels } from "../../scene/worldLabels";
@@ -37,9 +32,7 @@ interface GameOverlayProps {
   /** When true, the tablet draws inside a dev preview frame instead of the browser viewport. */
   embedded?: boolean;
   chatFixtureMessages?: readonly ChatMessage[];
-  /** World to screen through the live camera, for the interaction prompt. */
   project?: RuneProjection | undefined;
-  /** Shown over the HUD when the account went bankrupt; the dev preview leaves it out. */
   bankrupt?: ReactNode;
 }
 
@@ -61,7 +54,6 @@ function Diagnostics({ diagnostics }: { diagnostics: readonly WorldModelDiagnost
   </RuneView>;
 }
 
-/** The native HUD layer alone (inside a `LlmRoot`). */
 export function GameHud({ world, build, tutorial, isTouch, project, tweet, dismissTweet, diagnostics, goalSelection, chatOpen, chat }: GameOverlayProps & {
   tweet: NotificationEntry | null; dismissTweet: (id: string) => void; diagnostics: readonly WorldModelDiagnostic[];
   goalSelection: LabGoalSelection; chatOpen: boolean; chat: ReactNode;
@@ -98,7 +90,6 @@ export function GameHud({ world, build, tutorial, isTouch, project, tweet, dismi
   </>;
 }
 
-/** The whole in-world UI on LLMville's native surface: the HUD, then the tablet and rack menu over it. */
 export function GameOverlay(props: GameOverlayProps) {
   const [chatOpen, setChatOpen] = useState(false);
   const [goalId, setGoalId] = useState<string | null>(null);

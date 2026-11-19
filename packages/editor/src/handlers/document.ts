@@ -29,7 +29,6 @@ import { EDITOR_RUN_MODES } from "../session";
 import { boundsCenter, frameDistanceForBounds } from "../camera/orbitFraming";
 import type { HandlerTable } from "./context";
 
-/** Optional orbit-camera placement fields a `camera_goto`/`camera_frame` request may carry. */
 interface CameraPlacementRequest {
   distance?: number;
   pitch?: number;
@@ -37,7 +36,6 @@ interface CameraPlacementRequest {
   height?: number;
 }
 
-/** Collect the finite placement fields present on a camera request into a focus-target patch. */
 function cameraPlacement(request: CameraPlacementRequest): {
   distance?: number;
   pitch?: number;
@@ -71,7 +69,6 @@ type MetaTarget =
   | { target: "path"; object: EditorPath; kind: string; meta: Record<string, unknown> | undefined }
   | { target: "note"; object: EditorNote; kind: string; meta: Record<string, unknown> | undefined };
 
-/** Which document collection an object lives in, plus its current kind + meta — for generic `set_meta`. */
 function findMetaTarget(doc: EditorDocument, id: string): MetaTarget | null {
   const marker = doc.markers.find((m) => m.id === id);
   if (marker !== undefined) return { target: "marker", object: marker, kind: marker.kind, meta: marker.meta };
@@ -84,7 +81,6 @@ function findMetaTarget(doc: EditorDocument, id: string): MetaTarget | null {
   return null;
 }
 
-/** The one command that replaces an object's meta bag, whichever collection it lives in. */
 function metaPatchCommand(target: MetaTarget["target"], id: string, meta: Record<string, unknown>): EditorCommand {
   switch (target) {
     case "marker":
@@ -100,7 +96,6 @@ function metaPatchCommand(target: MetaTarget["target"], id: string, meta: Record
 
 const MAX_GENERATOR_VARIANTS = 64;
 
-/** The variant-grid options shared by `generator_variants`, `apply_variant` and `place_variant`. */
 interface VariantGridRequest {
   count?: number;
   explore?: number;
@@ -108,7 +103,6 @@ interface VariantGridRequest {
   keep?: Record<string, unknown>[];
 }
 
-/** A variant pick: a grid index, or a variant `meta` bag the caller already holds (wins over `index`). */
 interface VariantPickRequest extends VariantGridRequest {
   index?: number;
   meta?: Record<string, unknown>;
@@ -138,7 +132,6 @@ function objectGenerator(doc: EditorDocument, id: string): { target: MetaTarget;
     : { error: `kind "${target.kind}" names generator "${kindGenerator}", which is not registered` };
 }
 
-/** The schema-owned keys of a variant bag (every value field plus the seed), so non-schema meta like `assetId` stays put. */
 function variantMetaPatch(schema: ParamSchema, meta: Readonly<Record<string, unknown>>): Record<string, unknown> {
   const keys = schema.fields.filter((field) => field.type !== "action").map((field) => field.key);
   if (!schema.fields.some((field) => field.type === "seed")) keys.push("seed");
@@ -160,7 +153,6 @@ function chosenVariant(
   return { meta: variant.meta, index: variant.index };
 }
 
-/** The object's meta with a picked variant's schema fields and seed written over it, validated. */
 function variantMeta(
   definition: GeneratorDefinition,
   target: MetaTarget,
@@ -185,7 +177,6 @@ function withoutPrefabLink(meta: Record<string, unknown> | undefined): Record<st
   return copy;
 }
 
-/** A fresh copy of `target`'s geometry shifted by `offset`, carrying `meta`; null for notes. */
 function placedVariantCommand(target: MetaTarget, id: string, offset: EditorVec3, meta: Record<string, unknown>): EditorCommand | null {
   const shift = (point: EditorVec3): EditorVec3 => ({ x: point.x + offset.x, y: point.y + offset.y, z: point.z + offset.z });
   switch (target.target) {
@@ -243,7 +234,6 @@ function placedVariantCommand(target: MetaTarget, id: string, offset: EditorVec3
   }
 }
 
-/** Validates a merged meta bag against a registered kind's schema; returns an error string or null. */
 function validateMetaForKind(kind: string, meta: Record<string, unknown> | undefined): string | null {
   const definition = getSceneKind(kind);
   if (definition === undefined || meta === undefined) return null;
@@ -252,7 +242,6 @@ function validateMetaForKind(kind: string, meta: Record<string, unknown> | undef
   return `invalid ${kind} params: ${issues.map((issue) => `${issue.key} (${issue.message})`).join(", ")}`;
 }
 
-/** Document, selection, camera, mode, asset placement, and status verbs. */
 export const documentHandlers: Pick<
   HandlerTable,
   | "editor_status"

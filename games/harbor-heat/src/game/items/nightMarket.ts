@@ -52,7 +52,6 @@ const catalog: LootCatalog = {
   levelScale: [[1, 1], [10, 1.7], [20, 2.4]],
 };
 
-/** The night market's shelf as a loot generator: a day's seed and the player's cred level roll its guns. */
 export const NIGHT_MARKET_LOOT = defineLootGenerator({ id: "harbor-heat.night-market", label: "Harbor Heat night market", catalog, defaults: { count: 3 } });
 registerGenerator(NIGHT_MARKET_LOOT);
 
@@ -88,7 +87,6 @@ function parseId(id: string): { day: number; level: number; index: number } | nu
   return { day: Number(match[1]), level: Number(match[2]), index: Number(match[3]) };
 }
 
-/** The first `count` guns a market day rolls at `level`; a shorter roll is a prefix of a longer one. */
 function marketShelf(day: number, level: number, count: number): LootItem[] {
   return runGenerator(NIGHT_MARKET_LOOT, { seed: `harbor-market:${day}`, level, count });
 }
@@ -97,7 +95,6 @@ function toWeapon(def: WeaponDef): WeaponDef {
   return def;
 }
 
-/** The generated gun behind a night-market id, rebuilt deterministically from the id itself. */
 export function marketGunById(id: string): WeaponDef | null {
   const parsed = parseId(id);
   if (parsed === null) return null;
@@ -116,7 +113,6 @@ export function marketGunById(id: string): WeaponDef | null {
   });
 }
 
-/** Refresh the night market once per authored day and publish its rows to the HUD. */
 export function ensureNightMarket(ctx: GameContext): MarketView {
   const day = Math.floor(ctx.time.now() / DAY_SECONDS);
   const current = marketStore.read(ctx);
@@ -141,7 +137,6 @@ export function ensureNightMarket(ctx: GameContext): MarketView {
   return view;
 }
 
-/** Buy one night-market gun with cash through the shared economy, then hand it to the hotbar. */
 export function buyNightMarket(ctx: GameContext, id: string): boolean {
   const view = ensureNightMarket(ctx);
   const row = view.items.find((item) => item.id === id);

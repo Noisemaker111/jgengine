@@ -11,18 +11,14 @@ import { DEFAULT_EVENT_ID, eventById, MEDAL_BOARD, YARD_EVENTS } from "./events/
 
 import { partById, PART_SLOTS, PARTS, type DriftFoundryPartDef, type PartSlotId } from "./parts/catalog";
 
-/** The pit pays in yard credits; the same money buys the next build. */
 export const CREDITS = { id: "credits", name: "Yard credits", unit: "cr" };
 
-/** One driver, so standing and money belong to the profile, not a seat list. */
 export const DRIVER = "driver";
 
 /** Credits a single swept salvage drop is worth, before the escape bonus. */
 export const SALVAGE_CREDITS = 25;
-/** Credits for bringing the buggy through the 470 m gate. */
 export const ESCAPE_BONUS = 100;
 
-/** The one price curve every ladder rank is priced from. */
 export const PART_PRICE: Curve = { kind: "power", base: 150, exponent: 1.35, round: "round", min: 120 };
 
 export const YARD_STANDING = {
@@ -47,7 +43,6 @@ export const YARD_STANDING = {
   ],
 };
 
-/** Parts the yard will not sell until the driver is known well enough. */
 const PART_GATES: readonly GateDef[] = [
   { id: "part_plow", unlock: "plow_blade", requires: { gte: ["standing.yard", 0] } },
   { id: "part_treads", unlock: "monster_treads", label: "Monster treads", requires: { gte: ["standing.yard", 12] } },
@@ -62,7 +57,6 @@ export const YARD_COUNTER = createGateSet({
   standing: createStanding(YARD_STANDING),
 });
 
-/** Each slot is a ladder: rank `n` is the `n`th catalog part for that slot. */
 export const LADDERS: Record<PartSlotId, readonly string[]> = {
   engine: ["salvage_v6", "truck_engine", "ev_conversion"],
   front: ["hood_plate", "fan_blade_vanes", "plow_blade"],
@@ -77,17 +71,13 @@ const NODES = PART_SLOTS.map((slot) => ({
   maxRank: LADDERS[slot].length,
 }));
 
-/** Plain career state: money, standing and which ladder rungs are owned. */
 export interface CareerSave {
   version: 1;
   bank: CareerBankState;
   standing: StandingState;
   ladders: UpgradeState;
-  /** Best result per calendar event; the medals and open tiers are read from it. */
   medals: MedalBoardState;
-  /** The calendar event the next run races. */
   event: string;
-  /** The track each event ran on when its best was set; a best set on another track is dropped. */
   courses: Record<string, string>;
 }
 
@@ -95,7 +85,6 @@ export interface CareerSave {
 const eventCourses = (): Record<string, string> => Object.fromEntries(YARD_EVENTS.map((event) => [event.id, event.track]));
 const LEGACY_COURSE = "row-six";
 
-/** Bests kept only for events still on the track they were set on. */
 function sameCourseBests(medals: MedalBoardState, courses: unknown): MedalBoardState {
   const saved = isRecord(courses) ? courses : {};
   const now = eventCourses();
@@ -106,7 +95,6 @@ function sameCourseBests(medals: MedalBoardState, courses: unknown): MedalBoardS
   return { ...medals, best };
 }
 
-/** Where an older build kept the career; the yard document lifts it into its `career` section. */
 export const CAREER_KEY = "drift-foundry.career.v1";
 
 export function newCareer(): CareerSave {
@@ -121,7 +109,6 @@ export function newCareer(): CareerSave {
   };
 }
 
-/** The stored `career` section, field by field; a missing or unreadable career is a new one. */
 export function readCareer(data: unknown): CareerSave {
   try {
     if (!isRecord(data) || data["version"] !== 1) return newCareer();
@@ -185,7 +172,6 @@ function readMedals(value: unknown): MedalBoardState | null {
   return best === null ? null : { best };
 }
 
-/** The career as live handles over its stored state. */
 export function standingOf(career: CareerSave) {
   const standing = createStanding(YARD_STANDING);
   standing.restore(career.standing);
@@ -201,7 +187,6 @@ export function laddersOf(career: CareerSave) {
   return createUpgradeTree({ nodes: NODES, state: career.ladders, standing: standingOf(career) });
 }
 
-/** One rung of a slot ladder: the part, its rank and its price, plus whether the yard will sell it. */
 export interface GarageRow {
   slot: PartSlotId;
   part: DriftFoundryPartDef | null;
@@ -236,7 +221,6 @@ export function garageRows(career: CareerSave): GarageRow[] {
   });
 }
 
-/** Buy the next rung of a slot ladder; throws a readable reason when the yard refuses. */
 export function buyPart(career: CareerSave, slot: PartSlotId): CareerSave {
   const row = garageRows(career).find((entry) => entry.slot === slot);
   if (row === undefined) throw new Error(`The yard has no ${slot} ladder`);
@@ -249,7 +233,6 @@ export function buyPart(career: CareerSave, slot: PartSlotId): CareerSave {
   return { ...career, bank: bank.snapshot(), ladders: ladders.snapshot(), standing: standingOf(career).snapshot() };
 }
 
-/** The built part in each slot, bolted on when a run starts. */
 export function ownedParts(career: CareerSave): DriftFoundryPartDef[] {
   const ladders = laddersOf(career);
   const parts: DriftFoundryPartDef[] = [];
@@ -262,7 +245,6 @@ export function ownedParts(career: CareerSave): DriftFoundryPartDef[] {
   return parts;
 }
 
-/** Settle a finished run: the haul banks on an escape and is lost to the compactor. */
 export function settleRun(
   career: CareerSave,
   run: { kind: "escape" | "crushed"; place: number; haul: number; medals?: MedalBoardState | undefined },

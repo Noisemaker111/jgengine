@@ -1,4 +1,3 @@
-/** Three-dimensional acceleration vector sampled from a gravity field. */
 export type GravityVector = readonly [number, number, number];
 
 /** Position-dependent gravity source used by movement and vehicle simulations. */
@@ -6,7 +5,6 @@ export interface GravityField {
   sample(position: GravityVector): GravityVector;
 }
 
-/** Center, strength, and falloff for radial gravity. */
 export interface PointGravityOptions {
   center: GravityVector;
   strength: number;
@@ -14,16 +12,12 @@ export interface PointGravityOptions {
   minRadius?: number;
 }
 
-/** Constant vector gravity for ordinary worlds, space stations, and sideways-gravity levels.
- * @capability gravity-field sample configurable uniform, radial, or combined gravity
- */
+/** @capability gravity-field sample configurable uniform, radial, or combined gravity */
 export function uniformGravity(vector: GravityVector = [0, -9.81, 0]): GravityField {
   return { sample: () => vector };
 }
 
-/** Radial gravity toward one center, with optional inverse-square falloff for planetary worlds.
- * @capability gravity-field sample configurable uniform, radial, or combined gravity
- */
+/** @capability gravity-field sample configurable uniform, radial, or combined gravity */
 export function pointGravity(options: PointGravityOptions): GravityField {
   const minRadius = Math.max(0.001, options.minRadius ?? 1);
   return {
@@ -38,9 +32,7 @@ export function pointGravity(options: PointGravityOptions): GravityField {
   };
 }
 
-/** Adds several gravity sources into one field.
- * @capability gravity-field sample configurable uniform, radial, or combined gravity
- */
+/** @capability gravity-field sample configurable uniform, radial, or combined gravity */
 export function combineGravity(fields: readonly GravityField[]): GravityField {
   return {
     sample(position) {

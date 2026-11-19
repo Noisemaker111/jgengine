@@ -8,7 +8,6 @@ import { parkDuration } from "../books";
 import { park, RESEARCH_PACE, researched } from "../park";
 import { Button, GOOD, Meter, PENCIL, Row, Tag, Text, WARN, Window } from "./look";
 
-/** The lab's families: every ride group, then shops, theming and staff. */
 function families(): { id: string; label: string; topics: BuildableDef[] }[] {
   const all = Object.values(BUILDABLES);
   const researchable = (list: BuildableDef[]) => list.filter((def) => def.research !== undefined);
@@ -21,10 +20,6 @@ function families(): { id: string; label: string; topics: BuildableDef[] }[] {
 }
 const FAMILIES = families();
 
-/**
- * The research lab. Each topic is the world's `research_<kind>` action: its fee up front, its time
- * in the `lab` queue. The panel reads the queue and every topic's refusal from the world.
- */
 export function ResearchPanel({ onClose }: { onClose: () => void }) {
   const { commands } = useGame();
   const ctx = useGameContext();

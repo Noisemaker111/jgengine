@@ -52,7 +52,6 @@ const COMPACTOR_TILE_COUNT = 9;
 const COMPACTOR_TILE_SPAN = COMPACTOR_TILE_SPACING * (COMPACTOR_TILE_COUNT - 1);
 const COMPACTOR_WALL_HEIGHT = 24;
 
-/** The wall's lower course: space-base structure towers in gunmetal, shoulder to shoulder. */
 function compactorWallTile(index: number): Part {
   const x = -COMPACTOR_TILE_SPAN / 2 + index * COMPACTOR_TILE_SPACING;
   return at(sized("kaykit-space-base/structure_tall", COMPACTOR_WALL_HEIGHT, { material: { color: GUNMETAL, metalness: 0.55, roughness: 0.55 } }), [x, 0, 0]);
@@ -89,7 +88,6 @@ const COMPACTOR_MODEL: ModelConfig = {
   ],
 };
 
-/** Scrapped cars keep their own paint — a yard of identically rust-tinted hulks reads as one prop. */
 function wreckPile(main: string, tilt1: string, tilt2: string): ModelConfig {
   return sized(main, 1.1, {
     material: { roughness: 0.86, metalness: 0.22 },
@@ -100,7 +98,6 @@ function wreckPile(main: string, tilt1: string, tilt2: string): ModelConfig {
   });
 }
 
-/** A single stripped hull with a drum and a rock rubble beside it — the yard's flat, wide silhouette between the tall stacks. */
 function strippedCar(): ModelConfig {
   return sized("kaykit-city-builder/car_stationwagon", 1.6, {
     material: { roughness: 0.9, metalness: 0.2 },
@@ -121,7 +118,6 @@ function dumpsterRow(): ModelConfig {
   });
 }
 
-/** Yard floodlight — the emissive head is the vertical rhythm that sells the corridor at speed. */
 function yardLamp(): ModelConfig {
   return sized("kaykit-city-builder/streetlight", 9.5, {
     material: { color: "#4a4038", metalness: 0.6, roughness: 0.5 },
@@ -129,7 +125,6 @@ function yardLamp(): ModelConfig {
   });
 }
 
-/** Skyline landmark: the only silhouette in the yard that is neither a box nor a stack. */
 function yardTower(): ModelConfig {
   return sized("kaykit-city-builder/watertower", 17, {
     material: { color: "#6b5140", metalness: 0.5, roughness: 0.65 },
@@ -137,7 +132,6 @@ function yardTower(): ModelConfig {
   });
 }
 
-/** A wall of drums two high: space-base containers stand in for the old barrels. */
 function barrelWall(): ModelConfig {
   const drum = (x: number, y: number): Part => at(sized("kaykit-space-base/containers_C", 1.7, { material: { color: OIL_BLACK, metalness: 0.3, roughness: 0.8 } }), [x, y, 0]);
   return {
@@ -153,7 +147,6 @@ function applianceStack(): ModelConfig {
   });
 }
 
-/** A heap of rock and cargo with a taxi shell wedged in its top. */
 function scrapHeap(): ModelConfig {
   return sized("kaykit-space-base/rocks_B", 3, {
     material: { color: HAZARD_YELLOW, roughness: 0.8, metalness: 0.3 },
@@ -206,7 +199,6 @@ function exitGateArch(): ModelConfig {
   });
 }
 
-/** A token standing in a pylon: a bare flat disc at this scale reads as a glowing smear head-on. */
 function pickupMarker(): ModelConfig {
   return sized("kaykit-space-base/containers_D", 1.5, {
     material: { color: OIL_BLACK, metalness: 0.6, roughness: 0.5 },
@@ -243,7 +235,6 @@ export const objectModels: Record<string, ModelConfig> = {
   ...trackObjectModels,
 };
 
-/** Gulls over the dumps: the authored habitats' species, sized to read as a bird from the road. */
 export const flockModels: Record<string, ModelConfig> = {
   gull: sized("quaternius-5-low-poly-animals/bird", 1.4, { material: { color: "#ece3cc", roughness: 0.8 } }),
 };

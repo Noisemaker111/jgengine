@@ -50,7 +50,6 @@ export const GAMEICONS_ARTISTS: Readonly<Record<string, string>> = {
 /** game-icons.net artists who release under CC0 instead of CC BY 3.0 (`license.txt`). */
 export const GAMEICONS_CC0_ARTISTS: ReadonlySet<string> = new Set(["viscious-speed", "zeromancer"]);
 
-/** The pack every game-icons.net library entry is pulled with (`assets pull gameicons-icons`). */
 export const GAMEICONS_PACK = "gameicons-icons";
 
 function titleCase(name: string): string {
@@ -88,22 +87,13 @@ export function libraryIconEntry(key: string): LibraryEntry {
   });
 }
 
-/**
- * The URL a pulled game-icons.net icon is served at (`/sprites/gameicons-icons/lorc/broadsword.svg`).
- * Draw it with `SpriteIcon` from `@jgengine/core/ui/icons/spriteIcon.view`, which tints it.
- *
- * @capability library-icon-url resolve a game-icons.net library key to the icon a game serves
- */
+/** @capability library-icon-url resolve a game-icons.net library key to the icon a game serves */
 export function libraryIconUrl(key: string, options: { basePath?: string } = {}): string {
   const entry = libraryIconEntry(key);
   return `${options.basePath ?? "/sprites"}/${GAMEICONS_PACK}/${entry.file ?? ""}`;
 }
 
-/**
- * Credit sections for the game-icons.net icons a game ships: one "Icons made by …" line per artist.
- *
- * @capability library-icon-credits credit game-icons.net icons per artist from the keys a game ships
- */
+/** @capability library-icon-credits credit game-icons.net icons per artist from the keys a game ships */
 export function libraryIconCredits(keys: Iterable<string>): CreditsSection[] {
   return libraryCreditSections([...new Set(keys)].map(libraryIconEntry));
 }

@@ -9,7 +9,6 @@ const LINE_MS = 4000;
 
 const tickers = perContext((ctx: GameContext): EventTicker => createEventTicker({ limit: 4, ttlMs: LINE_MS, now: () => ctx.time.now() * 1000 }));
 
-/** ARK's item lines at the top of the screen: "ADDED: 3x Thatch", "CONSUMED: 1x Cooked Meat". */
 export function pickupFeed(ctx: GameContext): EventTicker {
   return tickers(ctx);
 }

@@ -19,7 +19,6 @@ import type { WorldSnapshot } from "../runtime/worldSnapshot";
 export interface RuntimeSaveTarget {
   snapshot(): WorldSnapshot;
   hydrate(snapshot: WorldSnapshot): void;
-  /** Complete authoritative capture when the target distinguishes persistence from replication. */
   state?(): WorldSnapshot;
   /** Authoritative inverse of `state`; used together with it instead of replication hydration. */
   restore?(state: WorldSnapshot): void;
@@ -29,19 +28,14 @@ export interface RuntimeSaveTarget {
 /** `"autosave"` writes a fresh capture on a trailing timer while the world changes (at most once per `autosaveMs`, so a never-idle world still persists); `"manual"` writes only on an explicit `save()`/`checkpoint()` — the save-point / quest-trigger model. */
 export type RuntimeSaveMode = "autosave" | "manual";
 
-/** How {@link createRuntimeSave} is wired — the live world `target`, the `backend` it persists through, and optional mode/slot/versioning/cadence knobs. */
 export interface RuntimeSaveConfig {
-  /** The live world to capture from and restore into — pass the `GameContext`. */
   target: RuntimeSaveTarget;
   /** Where the save lives — `localSaveBackend()` (offline) or a cloud/Convex backend; the only thing that changes between offline and cloud. */
   backend: SaveBackend;
   /** `"autosave"` (default) persists on world change; `"manual"` only when the game calls `save()`/`checkpoint()`. */
   mode?: RuntimeSaveMode | undefined;
-  /** Storage namespace. Default `"runtime"`. */
   key?: string;
-  /** Active save slot. Default `"default"`. */
   slot?: string;
-  /** Save-format version; bump + pass {@link migrate} on a breaking world-shape change. */
   version?: number | undefined;
   migrate?: ((data: unknown, fromVersion: number) => WorldSnapshot) | undefined;
   /** Trailing autosave interval (ms) for `autosave` mode — the world persists at most once per interval and always within one interval of its first unsaved change. Default `3000`. */
@@ -51,7 +45,6 @@ export interface RuntimeSaveConfig {
   onError?: (error: unknown) => void;
 }
 
-/** {@link RuntimeSaveConfig} without `target` — what a host (`createGameContext`) accepts to build `ctx.game.save` and bind it to the context itself. */
 export type RuntimeSaveOptions = Omit<RuntimeSaveConfig, "target">;
 
 /**
@@ -60,29 +53,16 @@ export type RuntimeSaveOptions = Omit<RuntimeSaveConfig, "target">;
  * {@link WorldSnapshot}, so a game reads its own systems out of it (commander, mission, playtime,
  * thumbnail) with the same keys `ctx.state()` writes.
  */
-/**
- * Whole-world save/load bound to a live world and a pluggable backend. `save()`
- * captures `target.state()` and writes it; `load()` reads it back and
- * calls `target.restore()`. Older targets use `snapshot()`/`hydrate()`. In `autosave` mode it also writes on a
- * trailing timer while the world keeps changing. Named slots, versioned migration, and offline↔cloud
- * (backend swap) all come for free from the underlying save store.
- */
 export interface RuntimeSave {
-  /** The backend this save writes through — where a game reads keys an older build left beside it. */
   readonly backend: SaveBackend;
   status(): SaveStatus;
   slot(): string;
-  /** Capture the live world and persist it now (serialized against any in-flight write). */
   save(): Promise<SaveResult>;
-  /** Semantic alias for `save()` — call it from a save point, a quest-complete or area-enter handler. */
   checkpoint(): Promise<SaveResult>;
-  /** Load the active slot and hydrate the whole world when it holds a save (`loaded`). An empty, damaged or unreadable slot restores nothing and says which it was. */
   load(): Promise<LoadResult<WorldSnapshot>>;
   /** Delete the active slot's save. A pending autosave is cancelled, so the slot stays empty until the world changes again. Resolves `false` when the backend refused. */
   clear(): Promise<boolean>;
-  /** Switch slot and load it, hydrating the world when that slot has a save. A failed flush of the slot being left keeps the old slot and resolves `failed`. */
   switchSlot(slot: string): Promise<LoadResult<WorldSnapshot>>;
-  /** The slots this game has written — back a load/save menu. */
   slots(): Promise<string[]>;
   /**
    * Read any slot's stored world without applying it: no hydrate/restore, no slot switch, no write, no
@@ -103,7 +83,6 @@ export interface RuntimeSave {
    */
   deleteSlot(slot: string): Promise<boolean>;
   subscribe(listener: () => void): () => void;
-  /** Stop autosave and release the world subscription. */
   dispose(): void;
 }
 

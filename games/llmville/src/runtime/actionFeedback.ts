@@ -1,20 +1,13 @@
 import { createNoticeFeed } from "@jgengine/core/notifications/notices";
 
-/** How long a refused action's reason stays up: long enough to read a two-sentence reason. */
 const ACTION_NOTICE_TTL_MS = 4000;
 
-/** Refused-action notices for every LLMville screen, drawn by the kit's toast wherever a notice stack mounts this feed. */
 export const actionNotices = createNoticeFeed({ denyTtlMs: ACTION_NOTICE_TTL_MS });
 
 function showDenied(text: string): void {
   actionNotices.push({ text, tone: "deny" });
 }
 
-/**
- * Player-facing labels for rejection reasons returned by backend mutations.
- * The backend computes precise reasons; until now they were dropped on the
- * floor and failed actions looked like dead buttons.
- */
 const REASON_LABELS: Record<string, string> = {
   // Auth / access
   Unauthorized: "You don't have edit access to this lab.",
@@ -53,7 +46,6 @@ const REASON_LABELS: Record<string, string> = {
 
 const GENERIC_ERROR = "That didn't work — try again.";
 
-/** Raise a notice for a backend rejection reason string. */
 export function showActionError(reason: string | undefined): void {
   if (!reason) {
     showDenied(GENERIC_ERROR);

@@ -52,9 +52,7 @@ import {
 const here = dirname(fileURLToPath(import.meta.url));
 const packageTreeRoot = resolvePackageTreeRoot(here);
 const pkgRoot = resolvePackageRoot(here);
-/** Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import. */
 export const generatedDir = resolveGeneratedDir(here);
-/** Sprite-pack counterpart of `generatedDir`. */
 export const generatedSpritesDir = resolveGeneratedSpritesDir(here);
 export { resolveGeneratedDir } from "./paths";
 const singlesJson = join(packageTreeRoot, "singles.json");
@@ -74,7 +72,6 @@ function fail(message: string): never {
 
 let cachedToken: { value: string | undefined } | null = null;
 
-/** The GitHub token every pull uses, read once per run: env first, then `gh auth token`. */
 export function pullGithubToken(): string | undefined {
   cachedToken ??= { value: resolveGithubToken() };
   return cachedToken.value;

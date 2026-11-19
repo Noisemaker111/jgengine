@@ -32,11 +32,6 @@ if (shifted !== undefined && shifted !== "") {
   shiftFileTimes(offset);
 }
 
-/**
- * The same day for files: a file this run writes is stamped by the real clock, so without this a
- * tool that ages its temp files (a lock, a capture profile, a render slot) would see every file it
- * just made as years old. Stats read through `fs` come back shifted, and times written are unshifted.
- */
 function shiftFileTimes(offset: number): void {
   const fs = require("node:fs") as typeof import("node:fs");
   const shiftStats = <T>(stats: T): T => {

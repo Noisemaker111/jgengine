@@ -18,7 +18,6 @@ import { recordOutcome } from "../preferences";
 
 const wiredContexts = new WeakSet<GameContext>();
 
-/** Retained id of the hall drone (sound id `bed` in audio.ts); live at full gain, silent while paused. */
 const BED_LOOP = "bed";
 
 const GUARD_LEASH = 16;
@@ -88,7 +87,6 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
 export const OPENING_NOTICE = "Select your workers and right-click a gold seam or logging camp.";
 const OPENING_NOTICE_MS = 12_000;
 
-/** Spawn the authored roster + resource nodes, wire economy + win/lose, and register the RTS commands. */
 export function setupSkirmish(ctx: GameContext): void {
   for (const entity of ctx.scene.entity.list()) ctx.scene.entity.despawn(entity.id);
   resetSession();
@@ -124,7 +122,6 @@ export function setupSkirmish(ctx: GameContext): void {
       };
       if (def.kind === "building") {
         // Every building carries a guard point: for the player it is the peasants' depot anchor, and
-        // for the Marauders it is the camp a wave musters from (the director reads `guardPoint`).
         unit.guardPoint = { x: pos[0], z: pos[2] };
       }
       if (def.kind === "unit" && def.faction === "enemy") {

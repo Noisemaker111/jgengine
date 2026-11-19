@@ -3,7 +3,6 @@ import type { ParamSchema } from "@jgengine/core/generator/paramSchema";
 
 import { TOWER_CATALOG, TOWER_IDS } from "./game/entities/towers/catalog";
 
-/** Tunable tower combat/economy fields — drives the editor Data panel via SchemaInspector. */
 export const TOWER_SCHEMA: ParamSchema = {
   fields: [
     { key: "cost", type: "number", default: 50, min: 0, max: 500, step: 5, label: "Cost" },
@@ -14,10 +13,6 @@ export const TOWER_SCHEMA: ParamSchema = {
   ],
 };
 
-/**
- * Gameplay data catalogs for the scene editor — schemas stay in code; entry values seed
- * `document.catalogs` and are what agents/designers edit via list/get/set_catalog_entry.
- */
 export const editorCatalogs: readonly EditorCatalogDefinition[] = [
   {
     id: "towers",

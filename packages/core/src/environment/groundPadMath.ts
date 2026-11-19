@@ -3,7 +3,6 @@ import type { PadEnvironmentDescriptor, PadSize } from "@jgengine/core/world/fea
 /** Thickness in metres of a ground pad slab. */
 export const PAD_THICKNESS = 0.1;
 
-/** A pad's resolved footprint: a circle with a radius, or a width by depth rectangle. */
 export type PadShape = { circular: true; radius: number } | { circular: false; width: number; depth: number };
 
 /** @internal */

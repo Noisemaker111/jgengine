@@ -1,19 +1,8 @@
-/**
- * The storyteller: what happens to a colony, a household or a crew between the player's own
- * decisions. Threat points build with play time (and with whatever the game says makes it a richer
- * target), and every gap an incident is drawn from the ones the points can afford, so early days
- * get small trouble and boons while later days can afford the big ones. A threat that spends a lot
- * buys extra quiet afterwards. The game owns what an incident does; this owns when and which.
- */
-
 import { pickWeighted } from "../../random/pick";
 
-/** One thing that can happen. Boons cost nothing; threats spend the points they cost. */
 export interface StoryIncident<R = unknown> {
   id: string;
-  /** Points this incident spends when it fires. `0` for a boon or a neutral beat. */
   cost: number;
-  /** Relative pick weight among the incidents that can fire. Default `1`. */
   weight?: number;
   /** Seconds after it fires before it may fire again. Default `0`. */
   cooldownSeconds?: number;
@@ -23,16 +12,13 @@ export interface StoryIncident<R = unknown> {
   when?: (reading: R) => boolean;
 }
 
-/** Pacing: how fast points build, how far apart incidents are and how picks lean. */
 export interface StorytellerConfig<R = unknown> {
   incidents: readonly StoryIncident<R>[];
   /** Points gained per second, or a ramp read from elapsed seconds. */
   pointsPerSecond: number | ((elapsedSeconds: number) => number);
-  /** Multiplier on point gain read from the game (wealth, notoriety). Default `1`. */
   scale?: (reading: R) => number;
   /** Points never build past this. Default unbounded. */
   maxPoints?: number;
-  /** Points at the start. Default `0`. */
   startPoints?: number;
   /** Seconds between incidents, drawn uniformly. */
   gap: { min: number; max: number };
@@ -40,9 +26,7 @@ export interface StorytellerConfig<R = unknown> {
   firstAfter?: number;
   /** Extra quiet seconds per point a threat spent. Default `0`. */
   restPerPoint?: number;
-  /** Weight multiplier for an incident among the last `memory` picks. Default `0.25`. */
   repeatPenalty?: number;
-  /** How many recent picks the repeat penalty remembers. Default `3`. */
   memory?: number;
   /**
    * How strongly picks lean toward spending the points on hand, `0..` (default `0`). At `1` an
@@ -51,7 +35,6 @@ export interface StorytellerConfig<R = unknown> {
   preferSpend?: number;
 }
 
-/** Serializable storyteller state. */
 export interface StorytellerState {
   elapsed: number;
   points: number;
@@ -64,7 +47,6 @@ export interface StorytellerState {
   fired: number;
 }
 
-/** One incident the storyteller chose, with the points it spent. */
 export interface StoryBeat<R = unknown> {
   incident: StoryIncident<R>;
   spent: number;
@@ -73,7 +55,6 @@ export interface StoryBeat<R = unknown> {
   elapsed: number;
 }
 
-/** The storyteller as a HUD or probe reads it. */
 export interface StorytellerView {
   points: number;
   secondsToNext: number;
@@ -81,16 +62,12 @@ export interface StorytellerView {
   elapsed: number;
 }
 
-/** A running storyteller: advance it with play time and apply the incidents it draws. */
 export interface Storyteller<R = unknown> {
-  /** Advance by `dtSeconds`; returns the incident drawn on this step, or null. The caller applies it. */
   advance(dtSeconds: number, reading: R, rng: () => number): StoryBeat<R> | null;
-  /** Incident ids that could fire right now with the points on hand. */
   eligible(reading: R): string[];
   view(): StorytellerView;
   snapshot(): StorytellerState;
   restore(next: StorytellerState): void;
-  /** Change pacing or the incident list; points, history and the next draw time are kept. */
   retune(config: StorytellerConfig<R>): void;
 }
 
@@ -98,11 +75,7 @@ function finite(value: number, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
-/**
- * Build a storyteller that paces incidents by threat points.
- *
- * @capability storyteller incident pacing by threat points that build with play time, with cooldowns, repeat damping and rest after big threats
- */
+/** @capability storyteller incident pacing by threat points that build with play time, with cooldowns, repeat damping and rest after big threats */
 export function createStoryteller<R = unknown>(config: StorytellerConfig<R>): Storyteller<R> {
   let current = config;
   const gapMin = () => Math.max(0, finite(current.gap.min, 0));

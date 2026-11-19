@@ -8,7 +8,6 @@ import { join } from "node:path";
 
 import { defaultHudTheme, hudThemeVars } from "../packages/core/src/hud/hudTheme.view";
 
-/** Tokens that are deliberately not theme values. */
 const NON_THEME = [
   // layout metrics the shell measures at runtime
   "--jg-hud-pad-",

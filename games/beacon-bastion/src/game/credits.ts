@@ -4,7 +4,6 @@ import { mergeCredits } from "@jgengine/core/menu/credits";
 import { lookCredits } from "../art/look";
 import { ASSET_SOURCE_IDS } from "./assets";
 
-/** The keep's own work, then every pack it actually ships - both derived, neither retyped by hand. */
 const AUTHORED = {
   title: "BEACON BASTION",
   sections: [

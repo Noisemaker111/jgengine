@@ -17,21 +17,13 @@ import { pickWeighted } from "../random/pick";
 import { seededStreams } from "../random/rng";
 import { type ParamLayer, type LayerSelection } from "./paramLayers";
 
-/**
- * A selectable rule over a tagged pool. `tags` classify it for include/exclude filtering and for
- * `requires`/`conflicts` matching (which match either another rule's id or one of its tags). `layers`
- * are the parameter layers this rule contributes when active; `payload` is opaque caller data.
- */
 export interface RuleDef<TPayload = unknown> {
   readonly id: string;
   readonly tags?: readonly string[];
-  /** Relative pick weight; non-positive or omitted is treated as `1`. */
   readonly weight?: number;
   /** Ids/tags that must already be selected for this rule to become eligible. */
   readonly requires?: readonly string[];
-  /** Ids/tags that, if already selected (either direction), make this rule ineligible. */
   readonly conflicts?: readonly string[];
-  /** Parameter layers contributed when this rule is active, read back via {@link RuleRegistry.layersFor}. */
   readonly layers?: readonly ParamLayer[];
   readonly payload?: TPayload;
 }
@@ -40,15 +32,11 @@ export interface RuleDef<TPayload = unknown> {
 export interface RuleSelectionConfig {
   readonly count: number;
   readonly seed: string | number;
-  /** If set, only rules carrying at least one of these tags are eligible. */
   readonly includeTags?: readonly string[];
-  /** Rules carrying any of these tags are excluded outright. */
   readonly excludeTags?: readonly string[];
-  /** Rule ids force-selected first, in order; counts toward `count`. Unknown ids are ignored. */
   readonly locked?: readonly string[];
 }
 
-/** The result of a selection — the chosen rules and their ids (a serializable {@link LayerSelection}-style list). */
 export interface RuleSelection<TPayload = unknown> {
   readonly rules: readonly RuleDef<TPayload>[];
   readonly ids: readonly string[];
@@ -142,13 +130,11 @@ export function rerollRules<TPayload = unknown>(
   });
 }
 
-/** Registered pool of {@link RuleDef}s — the install seam games register mutators/modes/events into. */
 export interface RuleRegistry<TPayload = unknown> {
   register(rule: RuleDef<TPayload>): void;
   has(id: string): boolean;
   get(id: string): RuleDef<TPayload> | undefined;
   all(): readonly RuleDef<TPayload>[];
-  /** Run {@link selectRules} over the registered pool. */
   select(config: RuleSelectionConfig): RuleSelection<TPayload>;
   /**
    * Collect the parameter layers contributed by the given selected rule ids, in id order. Unknown ids

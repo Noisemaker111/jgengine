@@ -5,9 +5,7 @@ export type AudioBusId = string;
 export type FalloffCurve = "linear" | "inverse" | "none";
 
 export interface AudioFalloffConfig {
-  /** Distance (world units) at/under which gain is 1. Default 1. */
   minDistance?: number;
-  /** Distance at/beyond which gain is 0. Default 24. */
   maxDistance?: number;
   /** "linear" ramps 1→0 between min/max; "inverse" is an inverse-square-style rolloff clamped to the same range; "none" is always 1 (no distance attenuation). Default "linear". */
   curve?: FalloffCurve;
@@ -21,15 +19,11 @@ export interface AudioBusDef {
 
 export interface SoundDef {
   id: string;
-  /** Sample source — a URL/data URI the shell's Web Audio glue fetches and decodes. Provide exactly one of `url` or `synth`. */
   url?: string;
-  /** Procedural source — a pure synth patch the shell realises on Web Audio, no file fetch. Provide exactly one of `url` or `synth`. */
   synth?: SynthPatch;
   bus: AudioBusId;
-  /** Base gain before bus/falloff multipliers. Default 1. */
   gain?: number;
   loop?: boolean;
-  /** Maximum simultaneous reservations for this sound, including pending loads. Default the engine's total voice limit. */
   maxVoices?: number;
   /** Playback priority; higher priorities survive voice-budget pressure. Default 0. */
   priority?: number;
@@ -38,19 +32,15 @@ export interface SoundDef {
    * line cuts through the music and ambience, then return to exactly the player's own level.
    */
   duck?: {
-    /** Buses to lower. Default `["music"]`. */
     buses?: readonly string[];
     /** How far to lower them, 0..1 (0.6 leaves 40% of the player's level). Default 0.6. */
     amount?: number;
     /** Seconds to hold the duck. Default the cue's own length: synth patch duration or decoded sample length. */
     seconds?: number;
   };
-  /** Positional emitters attenuate by distance from the listener; non-positional sounds (UI, music) play at flat gain. Default true. */
   positional?: boolean;
   falloff?: AudioFalloffConfig;
-  /** Doppler strength for retained loops: 1 is physical, 0 or absent is off. Emitter velocity comes from `setLoop({ velocity })`, listener velocity from the camera. */
   doppler?: number;
-  /** Web Audio spatial panning configuration. When present, the shell uses a PannerNode. */
   spatial?: {
     panning: "hrtf" | "equalpower";
     refDistance?: number;

@@ -3,9 +3,9 @@ import type { PointerHit, PointerVec3 } from "@jgengine/core/input/pointer";
 
 export const POINTER_ENTITY_KEY = "jgEntityId";
 export const POINTER_OBJECT_KEY = "jgObjectId";
-/** Object-store identities indexed by the current compacted GPU instance slot. @internal */
+/** @internal */
 export const POINTER_OBJECT_INSTANCES_KEY = "jgObjectInstances";
-/** Entity identities indexed by the current compacted GPU batch slot. @internal */
+/** @internal */
 export const POINTER_ENTITY_INSTANCES_KEY = "jgEntityInstances";
 
 export type PointerHitFilter = (object: THREE.Object3D) => boolean;
@@ -17,12 +17,6 @@ interface PointerDeps {
   height: number;
   layers?: THREE.Layers;
   filter?: PointerHitFilter;
-  /**
-   * The world's terrain height at x/z (bound only for a world with a real terrain, not a flat
-   * arena, so geometry below y=0 stays clickable there). When bound, a cursor over open ground lands on the ground
-   * itself (terrain hills included) even where no ground mesh answers the raycast, and a mesh hit
-   * farther away than the ground (a sky dome, a backdrop) loses to the ground in front of it.
-   */
   groundHeightAt?: (x: number, z: number) => number;
 }
 
@@ -82,9 +76,7 @@ export interface PointerService {
   /** The world ray under the cursor, with no scene test; null when the cursor is off-canvas or nothing is bound. */
   cursorRay(): { origin: PointerVec3; direction: PointerVec3 } | null;
   bind(deps: PointerDeps | null): void;
-  /** The cursor the casts read. */
   state(): PointerCursor;
-  /** Move the cursor (a pointer event, a pointer-lock center, a restored session). */
   setState(cursor: PointerCursor): void;
 }
 

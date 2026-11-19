@@ -10,8 +10,6 @@ import { modelBindPosePositions } from "./modelBindPose.draw";
  * paying BVH build + per-ray traversal on a hero-detail mesh. Game-ready low-poly assets sit far under it. */
 const MAX_COLLISION_TRIANGLES = 60_000;
 
-/** Entity-local triangle soup of the meshes under a measured root, plus the contributing mesh count
- * (same async fill-in detection as measured bounds). Satisfies {@link CollisionMeshSource}. */
 export interface MeasuredCollisionTriangles extends CollisionMeshSource {
   positions: Float32Array;
   indices: Uint32Array;

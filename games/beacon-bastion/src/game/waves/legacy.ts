@@ -12,20 +12,15 @@ import { currentWaveNumber } from "../session";
 import { DIRECTOR_SEED, TOTAL_WAVES } from "./manifest";
 
 export interface BoonEffect {
-  /** Extra gold in the next defense's opening purse. */
   gold?: number;
-  /** Extra lives on the next keep. */
   lives?: number;
-  /** Added to the kill-pay multiplier for the whole run, as a fraction (0.4 = +40%). */
   bounty?: number;
 }
 
-/** A relic the result card can offer: banked progress the next defense carries in. */
 export interface BoonDef {
   id: string;
   label: string;
   detail: string;
-  /** Relative odds in the engine's seeded draw. */
   weight: number;
   effect: BoonEffect;
 }
@@ -50,25 +45,18 @@ export const RELIC_TABLE: readonly SessionOfferOption<BoonEffect>[] = BOONS.map(
   after: 1,
 }));
 
-/** The same relics as the engine's draft offers: it presents the three and validates the pick. */
 const RELIC_OFFERS: readonly RunModifierOffer[] = BOONS.map((boon) => ({
   id: boon.id,
   weight: boon.weight,
   label: boon.label,
 }));
 
-/** How much of the purse is banked, how much the vault holds, and how many relics are offered. */
 export const BANK_RULE = { share: 0.5, cap: 200, offerCount: 3 } as const;
 
-/** What a completed defense leaves behind for the next one. Persisted with its keep. */
 export interface LegacyState {
-  /** Waves reached across every finished defense under this keep. */
   standing: number;
-  /** Gold the last defense banked for the next opening purse, as the keep's vault caps it. */
   bankedGold: number;
-  /** The relics the result card is offering right now, in draw order. */
   offer: string[];
-  /** The engine session loop: the defense in progress, the purse it carries, and the relic it opened with. */
   run: SessionLoopState;
 }
 
@@ -85,7 +73,6 @@ export function freshLegacy(): LegacyState {
 /** The keep's banked progress, in the reactive store so the HUD and the save document see one value. */
 export const legacy = defineStore<LegacyState>("beacon:legacy", freshLegacy);
 
-/** What a settled defense hands the bank: the purse share it kept. */
 export interface DefenseBank {
   banked: number;
 }
@@ -116,7 +103,6 @@ export function boonDef(id: string | null): BoonDef | null {
   return BOONS.find((boon) => boon.id === id) ?? null;
 }
 
-/** The relic the defense in progress opened with, as the engine loop holds it. */
 export function carriedRelic(state: LegacyState): BoonDef | null {
   return boonDef(state.run.optionId);
 }
@@ -200,10 +186,6 @@ export function openingLives(state: LegacyState): number {
   return STARTING_LIVES + (carriedRelic(state)?.effect.lives ?? 0);
 }
 
-/**
- * The purse and walls a new defense opens with: the bank and relic, then the difficulty's swing and
- * the war council's seats.
- */
 export function openingKeep(ctx: GameContext): { gold: number; lives: number } {
   const banked = legacy.read(ctx);
   const difficulty = difficultyOf(ctx);
@@ -213,7 +195,6 @@ export function openingKeep(ctx: GameContext): { gold: number; lives: number } {
   };
 }
 
-/** The relic's multiplier on every kill bounty, on top of the wave's. */
 export function relicBountyScale(state: LegacyState): number {
   return 1 + (carriedRelic(state)?.effect.bounty ?? 0);
 }
@@ -221,7 +202,6 @@ export function relicBountyScale(state: LegacyState): number {
 const count = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 
-/** A loop state plain JSON can carry, or `null` when it is not one this loop could have written. */
 function readRun(value: unknown): SessionLoopState | null {
   if (typeof value !== "object" || value === null) return null;
   const run = value as Partial<SessionLoopState> & { run?: unknown; completed?: unknown; haul?: unknown; changeId?: unknown };
@@ -247,7 +227,6 @@ function migratedRun(runs: unknown, boonId: unknown): SessionLoopState | null {
   };
 }
 
-/** A stored keep as this build holds it: the current document, or the pre-loop one migrated. */
 export function upgradeLegacy(value: unknown): LegacyState | null {
   if (typeof value !== "object" || value === null) return null;
   const section = value as Partial<LegacyState> & { runs?: unknown; boonId?: unknown };
@@ -262,7 +241,6 @@ export function readLegacy(ctx: GameContext): LegacyState {
   return legacy.read(ctx);
 }
 
-/** Put a stored keep back on both the store and its engine loop - one owner for the loop's state. */
 export function writeLegacy(ctx: GameContext, next: LegacyState): void {
   relicLoop(ctx).restore(next.run);
   legacy.write(ctx, next);

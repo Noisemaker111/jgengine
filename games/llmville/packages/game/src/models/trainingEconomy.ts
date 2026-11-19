@@ -1,8 +1,4 @@
 /**
- * Training economy: job duration and schema union sources for training jobs.
- */
-
-/**
  * Catalog UI hint for base-model cards (seconds shown on “Fine-tune / Distill” copy).
  * Live training duration is computed on the server from committed data tokens or distill pool vs
  * `drainTokensPerSecond` (= base `tokensPerSecond` × allocated training TFLOPs).

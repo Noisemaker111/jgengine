@@ -6,10 +6,8 @@ import { REPO_URL } from "../../lib/site";
 
 export const CREATE_COMMAND = 'npx jgengine create "My Game"';
 
-/** The game on the hero screen: its cover is the strongest frame, and its orange matches the brand accent. */
 const HERO_GAME = "drift-foundry";
 
-/** One-line pitch, three calls to action, and a real game running on the engine. */
 export function HomeHero() {
   const cover = gameCover(HERO_GAME);
   return (

@@ -16,7 +16,6 @@
 import { execFileSync } from "node:child_process";
 
 export interface CiRun {
-  /** Short id or database id, for the message. */
   id: string | number;
   headSha: string;
   status: string;
@@ -57,7 +56,6 @@ export function decideCiRuns(runs: readonly CiRun[], sha: string): CiVerdict {
   };
 }
 
-/** The `ci.yml` runs the Actions API reports for `sha`, newest first. */
 export function readCiRuns(repo: string, sha: string): CiRun[] {
   return parseCiRuns(
     execFileSync("gh", ["api", `repos/${repo}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=50`], {
@@ -68,7 +66,6 @@ export function readCiRuns(repo: string, sha: string): CiRun[] {
   );
 }
 
-/** The runs in one Actions API `workflow_runs` answer. */
 export function parseCiRuns(raw: string): CiRun[] {
   const parsed = JSON.parse(raw) as {
     workflow_runs?: Array<{

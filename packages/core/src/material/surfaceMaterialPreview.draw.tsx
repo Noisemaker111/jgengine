@@ -54,7 +54,7 @@ function SurfaceMaterialPreview(props: GeneratorPreviewProps) {
   return null;
 }
 
-/** Registers the surface material variant-tile preview: a lit 2x2-tile patch of the baked maps. @internal */
+/** @internal */
 export function registerSurfaceMaterialDraw(): void {
   registerGeneratorPreview(SURFACE_MATERIAL_OUTPUT, {
     Component: SurfaceMaterialPreview,

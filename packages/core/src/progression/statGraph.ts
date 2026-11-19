@@ -9,15 +9,11 @@ export interface StatInputDef {
   id: string;
   /** Default base value a fresh sheet starts at. Defaults to `min ?? 0`. */
   base?: number;
-  /** Lower bound applied to the resolved value. */
   min?: number;
-  /** Upper bound applied to the resolved value. */
   max?: number;
-  /** Free-form, engine-ignored metadata (labels, descriptions, UI hints). */
   meta?: Readonly<Record<string, unknown>>;
 }
 
-/** How a single contribution folds into a running value. */
 export type StatOp = "add" | "mul" | "override" | "clampMin" | "clampMax";
 
 /**
@@ -25,18 +21,15 @@ export type StatOp = "add" | "mul" | "override" | "clampMin" | "clampMax";
  * "why is this value 42?" — every step carries the source that produced it.
  */
 export interface StatContribution {
-  /** Provenance label — who/what produced this contribution. */
   source: string;
   op: StatOp;
   value: number;
 }
 
-/** A modifier entry targeting one stat: a single contribution or an ordered list. */
 export type StatModEntry = StatContribution | readonly StatContribution[];
 
 /** The read-only view a derived formula gets: resolved values of its declared dependencies. */
 export interface StatDeriveContext {
-  /** Resolved (fully modified) value of a declared dependency (input or derived). */
   value(id: string): number;
 }
 
@@ -48,7 +41,6 @@ export interface StatDeriveContext {
  */
 export interface StatDerivedDef {
   id: string;
-  /** ids (inputs or other derived) this formula reads — drives ordering, cycle detection, and selective recompute. */
   deps?: readonly string[];
   min?: number;
   max?: number;
@@ -57,48 +49,36 @@ export interface StatDerivedDef {
   compute(ctx: StatDeriveContext): number | readonly StatContribution[];
 }
 
-/** The full schema of a stat graph: its named inputs and caller-authored derived formulas. */
 export interface StatGraphDef {
   inputs: readonly StatInputDef[];
   derived?: readonly StatDerivedDef[];
 }
 
-/** Plain-data, JSON-safe sheet state: input base values plus registered modifier sources. */
 export interface StatSheetState {
   base: Record<string, number>;
   sources: Record<string, Record<string, StatContribution[]>>;
 }
 
-/** One line of a provenance trace: a contribution plus the running total after it folds in. */
 export interface StatContributionStep extends StatContribution {
-  /** Running total after this contribution folds in. */
   subtotal: number;
 }
 
-/** A full provenance trace for one stat: the ordered steps that produced its value. */
 export interface StatExplanation {
   id: string;
   value: number;
   steps: StatContributionStep[];
 }
 
-/** A live per-entity instance of a {@link StatGraph}: mutable base values and modifier sources over a shared schema. */
 export interface StatSheet {
-  /** Resolve the fully modified value of an input or derived stat. */
   get(id: string): number;
-  /** The stored base of an input stat (before modifiers/clamping). */
   getBase(id: string): number;
   setBase(id: string, value: number): void;
-  /** Register (or replace) a named modifier source targeting one or more stats. */
   addSource(sourceId: string, mods: Record<string, StatModEntry>): void;
   removeSource(sourceId: string): boolean;
   hasSource(sourceId: string): boolean;
   sources(): string[];
-  /** Resolve every input and derived stat into a plain record. */
   values(): Record<string, number>;
-  /** Ordered contribution trace explaining a stat's current value. */
   explain(id: string): StatExplanation;
-  /** Resolve values under a proposed, uncommitted mutation (e.g. a previewed allocation). */
   preview(mutate: (draft: StatSheet) => void): Record<string, number>;
   toJSON(): StatSheetState;
 }
@@ -117,13 +97,7 @@ function normalizeEntry(entry: StatModEntry): StatContribution[] {
   return Array.isArray(entry) ? [...entry] : [entry as StatContribution];
 }
 
-/**
- * A data-driven stat graph: game-owned named inputs feed caller-authored derived
- * formulas, with contribution provenance, uncommitted previews, cycle detection, and
- * selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
- *
- * @capability stat-graph derive game-defined stats from named inputs with provenance and preview
- */
+/** @capability stat-graph derive game-defined stats from named inputs with provenance and preview */
 export function createStatGraph(def: StatGraphDef): StatGraph {
   const inputs = new Map<string, StatInputDef>();
   for (const input of def.inputs) {
@@ -392,12 +366,7 @@ export function statModifierContributions<TStat extends string>(
   return out;
 }
 
-/**
- * Apply one {@link StatOp} to a running value — the engine's one definition of what add,
- * multiply, override and clamp mean.
- *
- * @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value
- */
+/** @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value */
 export function applyStatOp(value: number, op: StatOp, operand: number): number {
   switch (op) {
     case "add":
@@ -413,13 +382,7 @@ export function applyStatOp(value: number, op: StatOp, operand: number): number 
   }
 }
 
-/**
- * Fold contributions onto `base` in the order given, with no reordering — the stack a caller
- * applies to one number (a damage roll, a move speed, a loot weight) without building a graph.
- * A stat graph sorts its sources by op first; an ordered stack keeps the caller's sequence.
- *
- * @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value
- */
+/** @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value */
 export function foldStatContributions(base: number, contributions: Iterable<StatContribution>): number {
   let value = base;
   for (const contribution of contributions) value = applyStatOp(value, contribution.op, contribution.value);
@@ -437,11 +400,7 @@ export type StatRateModifier =
   | readonly StatContribution[]
   | Readonly<Record<string, number | readonly StatContribution[]>>;
 
-/**
- * Scale one id's `rate` by a {@link StatRateModifier}; an omitted modifier leaves it unchanged.
- *
- * @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value
- */
+/** @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value */
 export function applyStatRate(rate: number, modifier: StatRateModifier | undefined, id: string): number {
   if (modifier === undefined) return rate;
   const entry = typeof modifier === "number" || isContributionList(modifier) ? modifier : modifier[id];
@@ -453,18 +412,13 @@ function isContributionList(value: StatRateModifier): value is readonly StatCont
   return Array.isArray(value);
 }
 
-/** Bounds of a caller-owned value, applied in the order min, max, then rounding. */
 export interface StatBounds {
   min?: number;
   max?: number;
   round?: "floor" | "ceil" | "round";
 }
 
-/**
- * Clamp and round a value to {@link StatBounds} — the same bounds a stat input or derived node applies.
- *
- * @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value
- */
+/** @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value */
 export function boundStatValue(value: number, bounds: StatBounds): number {
   let out = value;
   if (bounds.min !== undefined) out = Math.max(bounds.min, out);

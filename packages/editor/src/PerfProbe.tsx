@@ -11,7 +11,6 @@ import { frameBudgetFromStats } from "./shell/perfHistory";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const SAMPLE_WINDOW_MS = 500;
-/** Sum-of-abs delta on camera position/orientation above which a frame counts as camera activity. */
 const CAMERA_MOVE_EPSILON = 1e-4;
 
 /** In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms. */

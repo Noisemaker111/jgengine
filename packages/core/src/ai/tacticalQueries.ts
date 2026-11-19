@@ -1,10 +1,7 @@
 import type { NavMeshData } from "../nav/navMesh";
 import type { Vec3 } from "../world/geometry";
 
-/**
- * Returns boundary locations that are hidden from a threat.
- * @capability tactical-cover-points derive cover candidates from navigation-mesh boundaries
- */
+/** @capability tactical-cover-points derive cover candidates from navigation-mesh boundaries */
 export function coverPoints(
   mesh: NavMeshData,
   threatPos: Vec3,
@@ -32,14 +29,12 @@ export function coverPoints(
   return result;
 }
 
-/** Functions that score one candidate position; higher values are preferred. */
 export interface TacticalPositionEvaluators {
   distanceTo?: (point: Vec3) => number;
   flankOf?: (point: Vec3) => number;
   retreatFrom?: (point: Vec3) => number;
 }
 
-/** Weights and a hard bound for tactical candidate scoring. */
 export interface TacticalPositionWeights {
   distanceTo?: number;
   flankOf?: number;
@@ -53,10 +48,7 @@ export interface ScoredPosition {
   score: number;
 }
 
-/**
- * Score positions and retain at most `maxCandidates`, ordered highest score first.
- * @capability tactical-position-score rank bounded tactical positions with caller-defined weights
- */
+/** @capability tactical-position-score rank bounded tactical positions with caller-defined weights */
 export function scorePositions(
   points: readonly Vec3[],
   evaluators: TacticalPositionEvaluators,

@@ -14,15 +14,12 @@ import { publishForContext } from "@jgengine/core/runtime/contextDisposal";
 
 declare module "@jgengine/core/runtime/pageHandle" {
   interface JgPage {
-    /** This game's dev readout, as its proofs read it. */
     harborRadio?: { read(): unknown; [control: string]: unknown };
   }
 }
 
-/** The radio bus every station mixes through; the settings app shows it as "Radio volume". */
 export const RADIO_BUS = "radio";
 
-/** What the in-car readout shows; null while the radio is off. */
 export interface RadioReadout {
   frequency: string;
   station: string;
@@ -33,7 +30,6 @@ export interface RadioReadout {
   bulletin: boolean;
 }
 
-/** The HUD's view of the radio, written whenever what it shows changes. */
 export const radioStore = defineStore<RadioReadout | null>("harbor.radio", null);
 
 interface RadioRuntime {
@@ -65,7 +61,6 @@ const runtimes = perContext((ctx: GameContext): RadioRuntime => {
   };
 });
 
-/** The radio for this context. */
 export function radioOf(ctx: GameContext): Radio {
   return runtimes(ctx).radio;
 }
@@ -90,7 +85,6 @@ function report(runtime: RadioRuntime, bulletin: RadioBulletin | null): void {
   if (runtime.radio.report(bulletin)) runtime.last = bulletin;
 }
 
-/** New city log lines since the last tick, each at most once; the history from before boot stays unread. */
 function feedLog(ctx: GameContext, runtime: RadioRuntime): void {
   const log = cityOf(ctx).log();
   const key = (entry: { at: number; kind: string; text: string }) => `${entry.kind}|${entry.text}`;
@@ -127,7 +121,6 @@ function feedRace(ctx: GameContext, runtime: RadioRuntime): void {
   runtime.raceSeen = done;
 }
 
-/** The radio sits a little under a car at speed, the way a real one fights road and engine noise. */
 function duckUnderRoad(ctx: GameContext, runtime: RadioRuntime, driving: boolean): void {
   const kmh = driving ? streetPlayOf(ctx).carSpeedKmh() : 0;
   const target = Math.round(Math.min(0.35, (kmh / 200) * 0.35) * 20) / 20;
@@ -151,10 +144,6 @@ function publish(ctx: GameContext, radio: Radio): void {
   if (JSON.stringify(current) !== JSON.stringify(next)) radioStore.write(ctx, next);
 }
 
-/**
- * Radio only plays from a driver's seat: getting in powers it on to the last station, getting out
- * powers it off, and the broadcast keeps running underneath either way. Pausing silences it.
- */
 export function tickRadio(ctx: GameContext, dt: number): void {
   const runtime = runtimes(ctx);
   if (!live(ctx)) {

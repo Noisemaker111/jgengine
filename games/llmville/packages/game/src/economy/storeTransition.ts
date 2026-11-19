@@ -32,7 +32,6 @@ export function computeInstalledPowerDrawKw(racks: readonly RackSnapshot[]): num
   return Math.max(0, hw.totalPowerDrawWatts / 1000) + getRackCoolerOverheadKw(rackThermalInputs(racks));
 }
 
-/** Full-activity draw of cards sitting in stock — owning them commits the same grid capacity. */
 export function computeStockedHardwarePowerDrawKw(inventory: Record<string, number>): number {
   return HARDWARE_CATALOG.reduce(
     (kw, hardware) => kw + ((inventory[hardware.id] ?? 0) * hardware.tdpWatts) / 1000,
@@ -127,7 +126,6 @@ export function decideResearchUnlock(args: {
 
 export const MAX_PURCHASE_QUANTITY = 99;
 
-/** Researched items buy with money; locked items show their research price in data tokens. */
 export function canAffordShopPurchase(args: {
   researched: boolean;
   cost: number;

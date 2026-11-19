@@ -10,11 +10,7 @@ export function hierarchyRowDomId(objectId: string): string {
   return `hierarchy-row-${objectId}`;
 }
 
-/**
- * Object ids that arrow-key navigation can land on (skips kind group headers).
- *
- * @internal
- */
+/** @internal */
 export function selectableIds(rows: readonly OutlinerFlatRow[]): string[] {
   const ids: string[] = [];
   for (const row of rows) {

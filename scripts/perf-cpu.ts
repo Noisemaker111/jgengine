@@ -1,10 +1,5 @@
 import type { CdpSession } from "./browser-lib";
 
-/*
- * A CPU profile over a drive, read against the page's hitch log. The log names the handler a stalled
- * frame ran (a keydown, a frame callback); the profile says which functions inside it took the time.
- */
-
 export interface CpuProfileNode {
   id: number;
   callFrame: { functionName: string; url: string; lineNumber: number; columnNumber: number };
@@ -13,13 +8,11 @@ export interface CpuProfileNode {
 
 export interface CpuProfile {
   nodes: CpuProfileNode[];
-  /** Microseconds, on the clock `startedAtMs` was read against. */
   startTime: number;
   samples: number[];
   timeDeltas: number[];
 }
 
-/** Start sampling; returns the page clock (performance.now) at the start, for lining samples up with hitches. */
 export async function startCpuProfile(session: CdpSession): Promise<number> {
   await session.send("Profiler.enable");
   await session.send("Profiler.setSamplingInterval", { interval: 500 });
@@ -39,21 +32,14 @@ export async function stopCpuProfile(session: CdpSession): Promise<CpuProfile> {
 export interface ProfiledHitch {
   atS: number;
   ms: number;
-  /** Functions by self time inside the hitch, most first. */
   top: { fn: string; at: string; ms: number }[];
-  /** The game's and engine's own functions by time including what they called: which of ours drove it. */
   ours: { fn: string; at: string; ms: number }[];
 }
 
-/** Our source, not a dependency's: what `ours` lists. */
 function isOurs(url: string): boolean {
   return /\/(packages|games)\//.test(url) && !url.includes("node_modules");
 }
 
-/**
- * For each hitch, the functions that ran longest (self time) inside it. `zeroMs` is the page clock
- * at the hitch log's zero and `startedAtMs` the page clock when sampling began.
- */
 export function profileHitches(profile: CpuProfile, startedAtMs: number, zeroMs: number, hitches: { atS: number; ms: number }[], top = 6): ProfiledHitch[] {
   const byId = new Map(profile.nodes.map((node) => [node.id, node]));
   const parentOf = new Map<number, number>();

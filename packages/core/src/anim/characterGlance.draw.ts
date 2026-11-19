@@ -11,7 +11,6 @@ import type { EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
  * radians, distances metres.
  */
 export interface GlanceTuning {
-  /** Starts looking inside this distance. */
   reach: number;
   /** Stops looking beyond this distance, so a player standing at the edge does not flicker it. */
   release: number;
@@ -19,7 +18,6 @@ export interface GlanceTuning {
   maxPitch: number;
   /** A target further round than this (behind the character) is ignored instead of clamped. */
   ignoreYaw: number;
-  /** Share of the turn the neck takes when the rig has one. */
   neckShare: number;
   /** How fast the aim follows the target, per second. */
   followRate: number;
@@ -27,7 +25,6 @@ export interface GlanceTuning {
   fadeRate: number;
 }
 
-/** Default glance: starts at 7 m, lets go at 8.5 m, head turns up to 65° sideways and 30° up or down. */
 export const DEFAULT_GLANCE: GlanceTuning = {
   reach: 7,
   release: 8.5,
@@ -39,14 +36,12 @@ export const DEFAULT_GLANCE: GlanceTuning = {
   fadeRate: 3,
 };
 
-/** Head and neck bones the glance turns, found by name on the loaded rig. */
 export interface GlanceRig {
   head: THREE.Object3D;
   neck: THREE.Object3D | null;
   written: Map<THREE.Object3D, { animated: THREE.Quaternion; written: THREE.Quaternion }>;
 }
 
-/** Carried between frames: the smoothed aim and the faded weight. */
 export interface GlanceState {
   yaw: number;
   pitch: number;
@@ -54,10 +49,7 @@ export interface GlanceState {
   engaged: boolean;
 }
 
-/**
- * A fresh glance state: looking straight ahead with no turn applied.
- * @internal
- */
+/** @internal */
 export function createGlanceState(): GlanceState {
   return { yaw: 0, pitch: 0, weight: 0, engaged: false };
 }
@@ -66,12 +58,7 @@ function boneKey(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-/**
- * Finds the head (and neck) of a humanoid or animal rig by bone name: KayKit `head`, Mixamo
- * `mixamorigHead`, Rocketbox `Bip01 Head`, Quaternius `Head`. End markers (`HeadTop_End`) are
- * skipped. Returns `null` when no head bone exists.
- * @internal
- */
+/** @internal */
 export function findGlanceRig(scene: THREE.Object3D): GlanceRig | null {
   let head: THREE.Object3D | null = null;
   let neck: THREE.Object3D | null = null;
@@ -223,7 +210,6 @@ export class GlanceDriver {
     this.rig = options.enabled ? findGlanceRig(options.scene) : null;
   }
 
-  /** Whether the driver has a resolved rig, live context and entity. */
   get active(): boolean {
     return this.rig !== null && this.ctx !== null && this.instanceId !== undefined;
   }
@@ -252,7 +238,6 @@ export class GlanceDriver {
     noteCharacterMotion(instanceId, "glance", this.state.weight > 0);
   }
 
-  /** Restore the animated pose and release the rig. */
   dispose(): void {
     const rig = this.rig;
     if (rig === null) return;

@@ -19,11 +19,6 @@ import type { Deep } from "./deep";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
-/**
- * What the strata below receiving look like: the seams, shelves, wrecks and lifts the descent is
- * played through, the prints that live there, and Marrow's bays as the base fills up. Each floor
- * keeps the station's industrial kit and changes its light, fog and colour.
- */
 function Sign({ at, title, sub, color = C.cyan, turn = 0, width = 2.4 }: { at: Triple; title: string; sub: string; color?: string; turn?: number; width?: number }) {
   const texture = useMemo(() => signTexture(title, sub, color), [title, sub, color]);
   useEffect(() => () => texture.dispose(), [texture]);
@@ -43,7 +38,6 @@ function Glow({ at, radius, color, opacity = 0.9 }: { at: Triple; radius: number
 }
 const RESOURCE = { wire: C.amber, polymer: "#c8d3b5", cells: "#8bd7bf", ink: "#be9adc" } as const;
 
-/** Seams, cable runs and scrap heaps: lit while they still yield, dark once worked out. */
 function Nodes({ place, harvested }: { place: Place; harvested: Dive["harvested"] }) {
   return <>{NODES.filter(node => node.place === place).map(node => {
     const spent = (harvested[node.id] ?? 0) >= node.amount, color = spent ? C.panel : RESOURCE[node.yields];
@@ -63,7 +57,6 @@ function Nodes({ place, harvested }: { place: Place; harvested: Dive["harvested"
     </SceneObjectGroup>;
   })}</>;
 }
-/** Shelves of rations and flasks: full until taken this Life. */
 function Supplies({ place, collected }: { place: Place; collected: Dive["collected"] }) {
   return <>{SUPPLIES.filter(supply => supply.place === place).map(supply => {
     const taken = collected.includes(`supply:${supply.id}`), color = supply.gives === "ration" ? C.amber : "#7fc6ff";
@@ -74,7 +67,6 @@ function Supplies({ place, collected }: { place: Place; collected: Dive["collect
     </SceneObjectGroup>;
   })}</>;
 }
-/** Wrecks, suits, logs and the relay: what the scanner reads. A scanned one goes dark. */
 function Fragments({ place, scanned }: { place: Place; scanned: Deep["scanned"] }) {
   return <>{FRAGMENTS.filter(fragment => fragment.place === place).map(fragment => {
     const done = scanned.includes(fragment.id), mark = done ? C.panel : C.cyan;
@@ -97,7 +89,6 @@ function Fragments({ place, scanned }: { place: Place; scanned: Deep["scanned"] 
     </SceneObjectGroup>;
   })}</>;
 }
-/** Lift cages, with where they go and whether the cage code is known. */
 function Lifts({ place, signal, relay, crawler }: { place: Place; signal: boolean; relay: boolean; crawler: boolean }) {
   return <>{LIFTS.filter(lift => lift.place === place).map(lift => {
     const to = STRATA[lift.to], up = to.pressure < (place === "home" ? 0 : STRATA[place].pressure);
@@ -142,7 +133,6 @@ export function faunaAnimation(creature: Pick<Creature, "species" | "mode" | "wi
   return { clip: moving ? "walk" : "idle", loop: true, timeScale: moving ? Math.max(0.6, def.run / 3) : 1 };
 }
 const hunting = (creature: Creature): boolean => creature.mode === "winding" || creature.mode === "attack" || creature.mode === "stalk";
-/** Reads one creature as it is now, or undefined once it is gone. */
 export type CreatureRead = (id: string) => Creature | undefined;
 /**
  * A creature's body: a rigged hand, courier or tank-crawler from the same pipeline as the Fitter. It
@@ -181,14 +171,12 @@ function Lures({ thrown }: { thrown: Dive["thrown"] }) {
     })} deps={[]} />
   </SceneObjectGroup>)}</>;
 }
-/** What the floor's fixed dressing shows: what has been worked, taken and scanned this Life. */
 export interface StratumMarks {
   crawler: boolean;
   harvested: Dive["harvested"];
   collected: Dive["collected"];
   scanned: Deep["scanned"];
   zeroTaken: boolean;
-  /** The story facts that unlock the lifts down to the wells and the choir. */
   signal: boolean;
   relay: boolean;
 }
@@ -208,7 +196,6 @@ export function StratumDressing({ place, marks }: { place: Place; marks: Stratum
 }
 /** The overrun crawlers' alarm lamps: a fixed pair, so a crawler arriving or dying never changes the scene's lights. */
 export const ALARM_LAMPS = 2;
-/** The hunting crawlers on `place` whose alarm lamps burn, at most {@link ALARM_LAMPS}. */
 export function alarmCreatures(fauna: Dive["fauna"], place: Place): Creature[] {
   const alarms: Creature[] = [];
   for (const creature of Object.values(fauna)) {
@@ -217,7 +204,6 @@ export function alarmCreatures(fauna: Dive["fauna"], place: Place): Creature[] {
   }
   return alarms;
 }
-/** Where a crawler's alarm lamp hangs: ahead of it and overhead. */
 export function alarmLampAt(creature: Creature): Triple {
   return [creature.at[0] + Math.sin(creature.facing) * 4.6, 2.8, creature.at[2] + Math.cos(creature.facing) * 4.6];
 }
@@ -257,7 +243,6 @@ const MODULE_LOOK: Record<string, { color: string; build: (ready: boolean) => Re
     <Glow at={[0, 4.45, 0]} radius={0.1} color={ready ? C.danger : C.panel} />
   </> },
 };
-/** Marrow's six bays and whatever has been built in them, plus the fabricator itself. */
 export function MarrowBays({ world }: { world: WorldModel }) {
   const instances = world.instances(), power = world.num("marrow.power");
   return <>
@@ -282,10 +267,6 @@ export function MarrowBays({ world }: { world: WorldModel }) {
     })}
   </>;
 }
-/**
- * Each floor's air: fog closes in and the ambient light drops the deeper you go. The shell owns the
- * lights and fog; this only retunes them when the floor changes.
- */
 const STRATA_FILL = 1;
 export function StratumAtmosphere({ place }: { place: Place }) {
   const host = useEngineHost();

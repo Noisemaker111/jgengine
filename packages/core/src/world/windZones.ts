@@ -12,21 +12,17 @@ export interface WindZoneConfig {
   id: string;
   center: readonly [number, number];
   radius: number;
-  /** The zone's scheduled wind states; a single phase makes a static zone. */
   phases: readonly SchedulePhase<WindZoneState>[];
-  /** Staggers this zone's schedule against identical ones. */
   offsetSeconds?: number;
 }
 
 export interface WindZonesConfig {
   zones: readonly WindZoneConfig[];
-  /** Wind outside every zone; omit for dead air. */
   ambient?: WindField;
 }
 
 export interface WindShiftForecast {
   zoneId: string;
-  /** Absolute time the zone's next state begins. */
   at: number;
   /** Seconds from the queried time until the shift. */
   inSeconds: number;
@@ -40,13 +36,9 @@ export interface WindShiftForecast {
  */
 export interface WindZones {
   zoneIds(): readonly string[];
-  /** Innermost zone containing the point (later declarations win ties); `null` in open air. */
   zoneAt(x: number, z: number): string | null;
-  /** The wind vector at a point and time: the containing zone's scheduled state, else ambient. */
   windAt(x: number, z: number, t: number): WindVector;
-  /** A zone's live state; `null` for an unknown zone. */
   stateAt(zoneId: string, t: number): WindZoneState | null;
-  /** The zone's next scheduled shift after `t`; `null` for unknown or single-phase zones. */
   forecastShift(zoneId: string, t: number): WindShiftForecast | null;
 }
 

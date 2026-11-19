@@ -5,12 +5,6 @@ import type { RecipeDef } from "@jgengine/core/crafting/recipe";
 import { BAYS } from "../world";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
-/**
- * Marrow as a living base, declared once and run by the engine's world model: modules built in the
- * workshop bays draw or make power, the growbed and the still fill the galley while you are down in
- * Bellwether, and the radio mast is how the story reaches you. The salvage a module costs is paid
- * from the stash by the fabricator; the world model owns everything after that.
- */
 export type Module = "generator" | "scrubber" | "still" | "growbed" | "mast";
 export interface ModuleDef { name: string; effect: string; recipe: RecipeDef; power: number }
 const cost = (id: Module, inputs: RecipeDef["inputs"]): RecipeDef => ({ id: `module-${id}`, inputs, outputs: [], category: "bay" });
@@ -23,10 +17,8 @@ export const MODULES: Record<Module, ModuleDef> = {
 };
 export const MODULE_ORDER: readonly Module[] = ["generator", "still", "growbed", "scrubber", "mast"];
 const POWERED: WorldConditions = { "marrow.power": { atLeast: 0 } };
-/** The galley holds this much of each; past it the growbed and still idle. */
 export const GALLEY_MAX = 12;
 
-/** What the rest of the game tells the world each read: whether a blueprint is known, where the diver is. */
 export interface MarrowLive { growbedKnown: boolean; home: boolean }
 
 export const marrowSpec = defineGameSpec({
@@ -94,6 +86,5 @@ function liveOf(ctx: GameContext): MarrowLive { return lives.get(ctx) ?? { growb
 
 export function marrowOf(ctx: GameContext): WorldModel { return marrowSpec.of(ctx); }
 export function marrowState(ctx: GameContext): WorldModelState | undefined { return marrowSpec.store.read(ctx); }
-/** Put a saved base back (or a fresh one for a new record); the world model reads its store on every call. */
 export function restoreMarrow(ctx: GameContext, saved: WorldModelState | null): void { marrowSpec.store.write(ctx, saved ?? undefined); }
 export function powered(world: WorldModel): boolean { return world.num("marrow.power") >= 0; }

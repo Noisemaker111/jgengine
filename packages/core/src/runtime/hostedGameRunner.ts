@@ -13,14 +13,11 @@ import type { SnapshotModule, SnapshotViewer, WorldSnapshot } from "./worldSnaps
 
 export type { InputFrame };
 
-/** Reserved command name the authoritative host intercepts on the existing `runCommand` transport to route a client's {@link InputFrame} to `session.input`, so per-tick input needs no separate wire. */
 export const INPUT_COMMAND = "engine.input";
 
-/** Config for {@link createHostedGameRunner}: the game definition, its content lookup, and an optional host identity. */
 export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> {
   definition: GameDefinition<TAssetRef, TMultiplayer>;
   content: GameContextContent;
-  /** The world's own authoritative identity (`ctx.player` server-side); real players join as members. */
   host?: LoopPlayer;
   now?: () => number;
   /**
@@ -29,9 +26,7 @@ export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMulti
    * snapshot overlays the world state it seeded. Omit for a long-lived stateful host (ws) that keeps one runner.
    */
   restore?: WorldSnapshot;
-  /** Persisted replication cursor; restored hosts continue above it. */
   revision?: number;
-  /** Render-model lookup for collider auto-fit — pass the same lookup the shell derives from `entityModels`/`objectModels` so host and clients resolve identical hitboxes. */
   models?: GameContextModels;
   /** Process-local reconnect protection. Departed admission marks expire after 5 minutes or the oldest is evicted above 256 users; zero disables retention. Live members and staged replay ticks are never evicted. */
   inputRetention?: {
@@ -51,37 +46,27 @@ export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMulti
  */
 export interface HostedGameRunner {
   join(userId: string, isNew: boolean): void;
-  /** Re-attach an already-joined member on a reconstructed runner — restores membership and `ctx.game.players` without re-firing `onNewPlayer`. Stateless hosts call it once per persisted member after `restore`. */
   resume(userId: string): void;
   leave(userId: string): void;
-  /** Record a joined/resumed client's latest input frame; nonmember input is ignored. Stashed for {@link heldInput} and sampled onto `ctx.game.players` in `onTick`. */
   input(userId: string, frame: InputFrame): void;
-  /** Counts actual retained input storage for host health checks; elapsed recorder history is excluded and staged future replay ticks remain. */
   inputStats(): { members: number; recorders: number; recordedFrames: number; latestInputs: number; wireSequences: number; pressSequences: number; departedUsers: number };
   heldInput(userId: string): InputFrame | null;
   command(userId: string, name: string, input: unknown): CommandResult<GameContext>;
   tick(dt: number): number;
   diff(sinceRevision: number): WorldDiff;
-  /** The diff narrowed to what `viewer` holds under the replication policy's interest radius; `state` is that viewer's connection-owned cursor. */
   diffFor(viewer: SnapshotViewer, sinceRevision: number, state: WorldViewState): WorldDiff;
   revision(): number;
-  /** The full world baseline — projected to only what `viewer` may see when the context carries a replication policy, else the whole world. */
   snapshot(viewer?: SnapshotViewer): WorldSnapshot;
-  /** Complete detached authoritative state for persistence, including save-only modules. */
   state(): WorldSnapshot;
-  /** Commit replication without advancing simulation or running game ticks. */
   commit(): number;
   /** True when {@link snapshot} is viewer-dependent (a replication policy projects private/AOI state); a host must then serve each viewer its own frame. */
   projectsViewers(): boolean;
-  /** True when each viewer can be served diffs of its own view; false when a throttled module needs a fresh projected baseline per tick. */
   viewerDiffs(): boolean;
   members(): readonly string[];
   context(): GameContext;
 }
 
-/** Build a {@link HostedGameRunner} — one authoritative GameContext world driven server-side from the game's own loop.
- * @internal
- */
+/** @internal */
 export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: HostedGameRunnerOptions<TAssetRef, TMultiplayer>,
 ): HostedGameRunner {
@@ -199,7 +184,6 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   syncLifecyclePhase(ctx, definition.lifecycle);
   if (restore !== undefined) ctx.restore(restore);
 
-  /** One authoritative simulation step: recorded inputs, movement, the game's tick, behaviors and stages. */
   function hostStep(stepDt: number, tick: number, gameDt: number): void {
     for (const [userId, recorder] of inputs) {
       const frame = recorder.frameAt(tick);

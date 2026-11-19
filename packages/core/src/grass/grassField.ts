@@ -79,7 +79,6 @@ export function grassBareAt(look: Pick<GrassLook, "growth" | "season">, seed: nu
   return smoothstep(threshold - 0.05, threshold + 0.05, noise);
 }
 
-/** One draw-detail level of the tuft template: an index range drawing every blade at `segments`. */
 export interface GrassTemplateLod {
   segments: number;
   start: number;
@@ -101,13 +100,11 @@ export interface GrassTuftTemplate {
   bladeBend: Float32Array;
   index: Uint16Array;
   lods: readonly GrassTemplateLod[];
-  /** Largest per-blade height and width scale and splay radius, for conservative bounds. */
   heightScale: number;
   widthScale: number;
   radius: number;
 }
 
-/** What a tuft template is built from: the look, the patch seed, the full-detail blade segments and the look's blade density. */
 export interface GrassTuftInputs {
   look: GrassLook;
   seed: string;
@@ -131,7 +128,6 @@ function wrapAngle(angle: number): number {
   return Math.atan2(Math.sin(angle), Math.cos(angle));
 }
 
-/** Build the shared tuft template for a patch. Pure and seeded: the same inputs give the same buffers. */
 export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTemplate {
   const { look } = inputs;
   const segments = Math.max(1, Math.floor(inputs.segments));

@@ -9,12 +9,7 @@ import type { EditorHostApi } from "./session";
 const SELECT_TAGS = ["jgEditorId", "jgEntityId", "jgObjectId"] as const;
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-/**
- * Viewport half of drag-drop material assignment: drop a material chip (dragged from the asset
- * browser's palette) onto a tagged object to assign it, or onto bare ground/terrain to paint that
- * material at the drop point. No-op when the drag payload isn't a material id.
- * @internal — mounted by `EditorApp`'s world overlay.
- */
+/** @internal — mounted by `EditorApp`'s world overlay. */
 export const MaterialDropZone = memo(function MaterialDropZone({ api }: { api: EditorHostApi }) {
   const { gl, camera, scene } = useEngineHost().frame;
 

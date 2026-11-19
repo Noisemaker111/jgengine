@@ -4,58 +4,38 @@ import { sampleAxisBindings, type AxisBinding } from "../input/axisInput";
 import type { PointerAxisState } from "../input/pointerAxis";
 import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 
-/** Free-flight families — character-scale 6DOF movement, distinct from vehicle aerodynamics. */
 export type FreeFlightMode = "creative" | "spectator" | "noclip" | "hover";
 
-/** Per-axis bindings for free-flight — which actions drive each flight axis. Positive is forward/right/up. */
 export interface FreeFlightBindings {
-  /** Forward/back — default `moveForward` / `moveBack` (W/S). */
   forward?: AxisBinding;
-  /** Strafe right/left — default `moveRight` / `moveLeft` (D/A). */
   strafe?: AxisBinding;
-  /** Ascend/descend — default `jump` / `crouch` (Space / Ctrl+C). */
   vertical?: AxisBinding;
-  /** Sprint — default `sprint` (Shift) held. */
   sprint?: AxisBinding;
 }
 
-/** Data-first tuning for one free-flight profile. */
 export interface FreeFlightTuning {
   mode: FreeFlightMode;
-  /** Horizontal base speed (units/s) before sprint. Default 8. */
   speed?: number | undefined;
   /** Vertical base speed for ascend/descend. Default = `speed`. */
   verticalSpeed?: number | undefined;
-  /** Sprint multiplier while shift is held. Default 1.8. */
   sprintMultiplier?: number | undefined;
-  /** Lerp rate toward target velocity. Default 20. */
   acceleration?: number | undefined;
-  /** Extra damping applied when no input (0 = rely on lerp). Default 0. */
   damping?: number;
-  /** Downward acceleration for hover mode. Default 0 (weightless). */
   gravity?: number | undefined;
-  /** Upward thrust acceleration while ascending in hover. Default 32. */
   thrust?: number | undefined;
-  /** When true, forward moves along the look pitch (spectator). Default false. */
   alignWithLook?: boolean | undefined;
-  /** Top vertical fall speed in hover. Default 20. */
   maxFallSpeed?: number;
-  /** Whether to slide against world solids. Default true for creative/hover, false for spectator/noclip. */
   collide?: boolean | undefined;
-  /** Axis bindings for this flight profile — which actions drive each axis. Unlisted axes keep the defaults above. */
   bindings?: FreeFlightBindings | undefined;
-  /** Camera POV while this flight is active — chase tuning overlay applied on mount, cleared on dismount. Null clears. */
   camera?: ChaseCameraTuning | null | undefined;
 }
 
-/** Velocity state for a free-flight actor — serializable and ownable by the caller. */
 export interface FreeFlightState {
   vx: number;
   vy: number;
   vz: number;
 }
 
-/** Intent for one free-flight tick — forward/right from WASD/analog, vertical from jump/crouch. */
 export interface FreeFlightIntent {
   forward: number;
   right: number;
@@ -64,14 +44,12 @@ export interface FreeFlightIntent {
   moving: boolean;
 }
 
-/** World displacement produced by one free-flight tick. */
 export interface FreeFlightStep {
   stepX: number;
   stepY: number;
   stepZ: number;
 }
 
-/** Stateful handle for any free-flight actor with snapshot/restore/retune. */
 export interface FreeFlightController {
   tick(dt: number, intent: FreeFlightIntent, yaw: number, pitch?: number): FreeFlightStep;
   velocity(): readonly [number, number, number];
@@ -83,7 +61,6 @@ export interface FreeFlightController {
 
 const ANALOG_EPSILON = 0.02;
 
-/** Create an empty flight velocity state. */
 export function createFreeFlightState(): FreeFlightState {
   return { vx: 0, vy: 0, vz: 0 };
 }
@@ -93,11 +70,6 @@ const DEFAULT_STRAFE_BINDING: AxisBinding = { positive: ["moveRight"], negative:
 const DEFAULT_VERTICAL_BINDING: AxisBinding = { positive: ["jump"], negative: ["crouch", "control", "c"] };
 const DEFAULT_SPRINT_BINDING: AxisBinding = { positive: ["sprint"] };
 
-/**
- * Translate held keys + analog into a free-flight intent.
- * Vertical is `space - (control|c)` so jump ascends and crouch descends — the same
- * keys that walk/jump/crouch use, re-mapped for flight without re-binding.
- */
 export function resolveFreeFlightIntent(
   keys: MovementKeysState,
   analog: AnalogMoveIntent | null | undefined,
@@ -114,11 +86,6 @@ export function resolveFreeFlightIntent(
   return { forward, right, vertical, sprint, moving };
 }
 
-/**
- * Translate live input (held actions + analog + pointer) into a flight intent using
- * per-profile axis bindings. Unlisted bindings fall back to the defaults above so
- * existing games keep WASD/Space/Ctrl/Shift without declaring anything.
- */
 export function resolveFreeFlightIntentFromInput(
   isDown: (action: string) => boolean,
   value: (action: string) => number,
@@ -265,7 +232,6 @@ export function advanceFreeFlight(
   return { stepX: state.vx * delta, stepY: state.vy * delta, stepZ: state.vz * delta };
 }
 
-/** Resolve a flight step against world solids (XZ slide + Y clamp). */
 export function resolveFlightStep(
   position: readonly [number, number, number],
   stepX: number,
@@ -321,12 +287,7 @@ export function resolveFlightStep(
   return { stepX, stepY: clampedY, stepZ };
 }
 
-/**
- * Totally free flight for any actor — character, camera, drone, or debug rig.
- * Horizontal is always yaw-relative strafe; vertical is jump/crouch. Use `alignWithLook`
- * for a 6DOF spectator that flies where the camera looks.
- * @capability free-flight camera-relative creative/spectator/noclip/hover flight with correct strafe, sprint, and optional gravity
- */
+/** @capability free-flight camera-relative creative/spectator/noclip/hover flight with correct strafe, sprint, and optional gravity */
 export function createFreeFlightController(
   initialTuning: FreeFlightTuning,
   options: { yaw?: number; pitch?: number; state?: FreeFlightState } = {},
@@ -360,7 +321,6 @@ export function createFreeFlightController(
   };
 }
 
-/** Preset for Minecraft-like creative flight — weightless, collides, yaw-relative strafe. */
 export const CREATIVE_FLIGHT_TUNING: FreeFlightTuning = {
   mode: "creative",
   speed: 8,
@@ -370,7 +330,6 @@ export const CREATIVE_FLIGHT_TUNING: FreeFlightTuning = {
   collide: true,
 };
 
-/** Preset for spectator — weightless, noclips, flies where the camera looks. */
 export const SPECTATOR_FLIGHT_TUNING: FreeFlightTuning = {
   mode: "spectator",
   speed: 12,
@@ -381,7 +340,6 @@ export const SPECTATOR_FLIGHT_TUNING: FreeFlightTuning = {
   alignWithLook: true,
 };
 
-/** Preset for noclip — weightless, noclips, yaw-relative with independent vertical. */
 export const NOCLIP_FLIGHT_TUNING: FreeFlightTuning = {
   mode: "noclip",
   speed: 14,
@@ -392,7 +350,6 @@ export const NOCLIP_FLIGHT_TUNING: FreeFlightTuning = {
   alignWithLook: false,
 };
 
-/** Preset for hover/jetpack — gravity + thrust, useful for short bursts. */
 export const HOVER_FLIGHT_TUNING: FreeFlightTuning = {
   mode: "hover",
   speed: 6,

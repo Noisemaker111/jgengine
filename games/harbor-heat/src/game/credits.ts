@@ -4,7 +4,6 @@ import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { ASSET_SOURCE_IDS } from "./assets";
 import { LIBRARY_CREDITS } from "./world/props";
 
-/** One classified on the Tribune's credits page: what was borrowed, who made it, where it lives. */
 export interface TribuneAd {
   title: string;
   who: string;
@@ -14,7 +13,6 @@ export interface TribuneAd {
 /** Every pack Harbor ships, generated from the source ids its catalogs load, so the page cannot drift. */
 export const HARBOR_PACK_CREDITS = creditsForSourceIds(ASSET_SOURCE_IDS);
 
-/** The sky, grade and type the art direction names, credited from the ids the config and theme load. */
 export const HARBOR_LOOK_CREDITS = creditsForLooks({ hdri: ["harbour-sunset"], lut: ["neon-sunset"], fonts: ["bangers", "barlow"] });
 
 function libraryAd(line: string): TribuneAd {
@@ -27,7 +25,6 @@ function libraryAd(line: string): TribuneAd {
   };
 }
 
-/** The packs first, then each realistic library model, as the Tribune prints them. */
 export function tribuneAds(): TribuneAd[] {
   const packs = [...HARBOR_PACK_CREDITS.sections, ...HARBOR_LOOK_CREDITS].flatMap((section) =>
     section.entries.map((entry) => ({

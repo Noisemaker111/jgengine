@@ -1,7 +1,6 @@
 import type { RecordingBuffer } from "./recordingBuffer";
 
 export interface ReplayLoopOptions<T> {
-  /** Blend between the two frames straddling the seek time; omit to hold the earlier frame. */
   interpolate?: (before: T, after: T, alpha: number) => T;
   /** Returns `null` for this long at the start of every loop pass — a spawn-grace gap so a looping ghost blinks out instead of teleporting. Default `0`. */
   spawnGraceSeconds?: number;
@@ -55,9 +54,7 @@ export interface RecordedPoseLike {
   rotationY?: number;
 }
 
-/** Linear pose blend for `ReplayLoopOptions.interpolate` — position lerp plus shortest-arc yaw.
- * @internal
- */
+/** @internal */
 export function interpolateRecordedPose<T extends RecordedPoseLike>(before: T, after: T, alpha: number): T {
   let yawDelta = (after.rotationY ?? 0) - (before.rotationY ?? 0);
   while (yawDelta > Math.PI) yawDelta -= Math.PI * 2;

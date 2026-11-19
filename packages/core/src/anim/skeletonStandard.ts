@@ -13,11 +13,6 @@
  * missing a slot never silently borrows a neighbour's bone.
  */
 
-/**
- * One canonical bone on the standard. Names are the authored names in the KayKit armature; the
- * loaded runtime name drops `.` (see {@link runtimeBoneName}), so `upperleg.l` is `upperlegl` in
- * the scene graph and both spellings resolve through `resolveRigNode`.
- */
 export type SkeletonSlot =
   | "root"
   | "hips"
@@ -41,7 +36,6 @@ export type SkeletonSlot =
   | "toes.l"
   | "toes.r";
 
-/** Every standard slot, in parent-before-child order. */
 export const SKELETON_SLOTS: readonly SkeletonSlot[] = [
   "root",
   "hips",
@@ -66,7 +60,6 @@ export const SKELETON_SLOTS: readonly SkeletonSlot[] = [
   "toes.r",
 ];
 
-/** The parent slot of each slot that has one; `root` has none. */
 export const SKELETON_PARENT: Readonly<Partial<Record<SkeletonSlot, SkeletonSlot>>> = {
   hips: "root",
   spine: "hips",
@@ -90,19 +83,13 @@ export const SKELETON_PARENT: Readonly<Partial<Record<SkeletonSlot, SkeletonSlot
   "toes.r": "foot.r",
 };
 
-/** A named skeleton standard: its id and the authored bone name for each slot it defines. */
 export interface SkeletonStandard {
   id: string;
   label: string;
   slots: Readonly<Partial<Record<SkeletonSlot, string>>>;
 }
 
-/**
- * The one humanoid skeleton standard. Bone names are the authored KayKit names; the loaded
- * hierarchy spells them without `.` and `resolveRigNode` accepts either.
- *
- * @capability skeleton-standard the shared humanoid bone standard every rigged character maps onto
- */
+/** @capability skeleton-standard the shared humanoid bone standard every rigged character maps onto */
 export const SKELETON_STANDARD: SkeletonStandard = {
   id: "kaykit-humanoid",
   label: "KayKit character rig (adventurers + skeletons)",
@@ -131,28 +118,16 @@ export const SKELETON_STANDARD: SkeletonStandard = {
   },
 };
 
-/**
- * A source naming scheme and the bone names on it that fill each standard slot. A slot lists every
- * accepted spelling; matching is case- and punctuation-insensitive, so `mixamorigLeftUpLeg` and
- * `LeftUpLeg` are the same candidate.
- */
 export interface RigScheme {
   id: string;
   label: string;
-  /** Where the scheme comes from, for credits and diagnostics. */
   source: string;
   slots: Readonly<Partial<Record<SkeletonSlot, readonly string[]>>>;
 }
 
-/** Prefixes stripped from a bone name before matching: exporter scopes, not rig vocabulary. */
 const NAME_PREFIXES = ["mixamorig", "armature"];
 
-/**
- * The standard itself, as a scheme: a KayKit rig already is the standard, so its own names are the
- * candidates. Both authored (`upperleg.l`) and runtime (`upperlegl`) spellings are accepted.
- *
- * @capability skeleton-standard map a rig on the standard scheme onto the standard's slots
- */
+/** @capability skeleton-standard map a rig on the standard scheme onto the standard's slots */
 export const KAYKIT_SCHEME: RigScheme = {
   id: "kaykit-humanoid",
   label: "KayKit character rig",
@@ -165,12 +140,6 @@ export const KAYKIT_SCHEME: RigScheme = {
   ) as Partial<Record<SkeletonSlot, readonly string[]>>,
 };
 
-/**
- * Mixamo exports (`mixamorig*` names, or the same names without the prefix). Mixamo has a neck and
- * a shoulder per side, which the standard folds into `chest` and `upperArm`; its toe is
- * `ToeBase`, which is the standard's `toes`. Mixamo's topmost bone is `Hips`, so `root` and `hips`
- * both resolve to it — a rig on this scheme has no bone above the pelvis.
- */
 export const MIXAMO_SCHEME: RigScheme = {
   id: "mixamo",
   label: "Mixamo humanoid",
@@ -216,12 +185,6 @@ export const QUATERNIUS_ALIEN_SCHEME: RigScheme = {
   },
 };
 
-/**
- * Quaternius humanoids (Ultimate Modular Men and Women, Toon Shooter): `Root > Body > Hips >
- * Abdomen > Torso > Chest`, a shoulder per side the standard folds into `chest`, and `Wrist.L/.R`
- * as the hand. Toon Shooter rigs stop at the forearm and have no `Chest`, so their hands stay empty
- * and `Torso` fills the chest. No bone is a toe or a weapon slot.
- */
 export const QUATERNIUS_HUMANOID_SCHEME: RigScheme = {
   id: "quaternius-humanoid",
   label: "Quaternius humanoid",
@@ -247,11 +210,6 @@ export const QUATERNIUS_HUMANOID_SCHEME: RigScheme = {
   },
 };
 
-/**
- * 3ds Max Biped rigs (`Bip01 Pelvis`, `Bip01 L UpperArm`), which every Microsoft Rocketbox human
- * shares: the engine's realistic default body. Biped has a clavicle and a neck the standard folds
- * into `chest`, and no hand-slot bone, so props attach to `hand.l`/`hand.r`.
- */
 export const BIPED_SCHEME: RigScheme = {
   id: "biped",
   label: "3ds Max Biped (Microsoft Rocketbox)",
@@ -279,7 +237,6 @@ export const BIPED_SCHEME: RigScheme = {
   },
 };
 
-/** Every scheme the engine ships a mapping for, keyed by {@link RigScheme.id}. */
 export const RIG_SCHEMES: Readonly<Record<string, RigScheme>> = {
   [KAYKIT_SCHEME.id]: KAYKIT_SCHEME,
   [MIXAMO_SCHEME.id]: MIXAMO_SCHEME,
@@ -334,7 +291,6 @@ export function runtimeBoneName(authored: string): string {
   return authored.replace(/[[\].:/]/g, "");
 }
 
-/** Lowercase alphanumerics of a bone name, with exporter scope prefixes removed. */
 function matchKey(name: string): string {
   let key = name.toLowerCase().replace(/[^a-z0-9]/g, "");
   for (const prefix of NAME_PREFIXES) {
@@ -343,15 +299,10 @@ function matchKey(name: string): string {
   return key;
 }
 
-/** The result of mapping a rig's bones onto {@link SKELETON_STANDARD}. */
 export interface SkeletonMap {
-  /** Scheme the map was built from. */
   scheme: string;
-  /** Standard slot → the bone name on this rig that fills it. */
   slots: Partial<Record<SkeletonSlot, string>>;
-  /** Slots the standard defines that this rig has no bone for. */
   missing: SkeletonSlot[];
-  /** Bones on the rig that fill no standard slot (helpers, props, IK targets). */
   unmapped: string[];
 }
 
@@ -397,10 +348,8 @@ export function mapRigToStandard(bones: readonly string[], scheme: RigScheme | s
   return { scheme: resolved.id, slots, missing, unmapped: bones.filter((bone) => !used.has(bone)) };
 }
 
-/** A standard slot and the rest-pose length of the bone chain that reaches it. */
 export interface SlotLength {
   slot: SkeletonSlot;
-  /** Distance from the slot's bone to its parent bone, in the rig's own units. */
   length: number;
 }
 
@@ -425,17 +374,9 @@ export function retargetBoneScales(
   return scales;
 }
 
-/** Track-name property suffixes three writes on an `AnimationClip`. */
 const TRACK_PROPERTIES = ["quaternion", "position", "scale", "morphTargetInfluences"] as const;
 
-/**
- * Bone-name prefixes for a set of standard slots, for an {@link AnimLayer.mask}. A slot on one side
- * contributes its side-less prefix (`upperLeg.l` → `upperleg`), which matches both sides' tracks; an
- * unsided slot contributes its own runtime name. Masking by slot means a rig mapped onto the
- * standard is masked without hand-typing its bone names.
- *
- * @capability skeleton-standard build a layer mask from the standard's own slots
- */
+/** @capability skeleton-standard build a layer mask from the standard's own slots */
 export function standardBoneMask(slots: readonly SkeletonSlot[]): string[] {
   const out = new Set<string>();
   for (const slot of slots) {
@@ -447,7 +388,6 @@ export function standardBoneMask(slots: readonly SkeletonSlot[]): string[] {
   return [...out];
 }
 
-/** Standard slots an upper-body action layer drives: spine, chest, head and both arms. */
 export const UPPER_BODY_SLOTS: readonly SkeletonSlot[] = [
   "spine",
   "chest",
@@ -462,7 +402,6 @@ export const UPPER_BODY_SLOTS: readonly SkeletonSlot[] = [
   "handSlot.r",
 ];
 
-/** Standard slots a lower-body layer drives: hips, both legs and both feet. */
 export const LOWER_BODY_SLOTS: readonly SkeletonSlot[] = [
   "hips",
   "upperLeg.l",
@@ -475,10 +414,8 @@ export const LOWER_BODY_SLOTS: readonly SkeletonSlot[] = [
   "toes.r",
 ];
 
-/** Layer mask for an upper-body action layer (aim, reload, hit reaction) on a standard rig. */
 export const UPPER_BODY_MASK: readonly string[] = standardBoneMask(UPPER_BODY_SLOTS);
 
-/** Layer mask for a lower-body layer on a standard rig. */
 export const LOWER_BODY_MASK: readonly string[] = standardBoneMask(LOWER_BODY_SLOTS);
 
 /**

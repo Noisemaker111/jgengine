@@ -1,11 +1,9 @@
 export type TrailPoint = readonly [number, number, number];
 
 export interface LeaderTrailConfig {
-  /** Arc-length gap between consecutive followers. */
   spacing: number;
   /** Followers the trail must be able to serve; history is capped to cover them. Default `16`. */
   maxFollowers?: number;
-  /** Minimum leader movement before a new trail sample is recorded; default `spacing / 8`. */
   sampleDistance?: number;
 }
 
@@ -15,26 +13,14 @@ export interface TrailPose {
   heading: number;
 }
 
-/**
- * A live breadcrumb trail recorded from a moving leader, with followers placed by arc-length
- * behind the head — conga lines, convoys, duckling chains, snake bodies. Call `record` with the
- * leader's position every tick; read `followerAt(i)` for the pose `spacing * (i + 1)` behind.
- */
 export interface LeaderTrail {
   record(position: TrailPoint): void;
-  /** Pose for follower `index` (0 = closest behind the leader); `null` until enough trail exists. */
   followerAt(index: number): TrailPose | null;
-  /** Recorded arc length available behind the leader. */
   length(): number;
-  /** Drop all history (teleport, respawn) and optionally restart from a position. */
   reset(position?: TrailPoint): void;
 }
 
-/**
- * A trailing follower formation that chases a leader along its past path — snake/convoy trails.
- *
- * @capability follow-trail trailing follower/snake formation that chases a leader
- */
+/** @capability follow-trail trailing follower/snake formation that chases a leader */
 export function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail {
   if (!(config.spacing > 0)) throw new Error(`leader trail spacing must be positive, got ${config.spacing}`);
   const spacing = config.spacing;

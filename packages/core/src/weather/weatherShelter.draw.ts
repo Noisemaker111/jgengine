@@ -4,7 +4,6 @@ import type { EditorVolume } from "@jgengine/core/editor/types";
 /** Cosmetic roof clipping is bounded independently of authoritative shelter queries. */
 export const WEATHER_SHELTER_BUDGET = 32;
 
-/** Reusable buffers for the nearest authored shelters submitted to weather shaders. */
 export interface WeatherShelterUniforms {
   shelterCenters: THREE.IUniform<THREE.Vector4[]>;
   shelterShapes: THREE.IUniform<THREE.Vector4[]>;

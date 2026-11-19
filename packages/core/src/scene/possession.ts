@@ -34,9 +34,7 @@ export interface Possession {
   listOwned(userId: string): readonly string[];
   active(userId: string): string;
   possess(userId: string, entityId: string): { reason: string } | null;
-  /** Snapshot every user's owned entities and active pawn for a whole-world save. */
   snapshotAll(): PossessionSnapshot;
-  /** Restore every user's owned entities and active pawn from a {@link snapshotAll} payload. Entity roles are restored by the entity snapshot, not re-applied here. */
   hydrateAll(state: PossessionSnapshot): void;
 }
 

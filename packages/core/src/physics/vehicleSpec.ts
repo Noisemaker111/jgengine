@@ -6,7 +6,6 @@ const GRAVITY = 9.81;
 
 /** An optional gearbox for a {@link VehicleSpec}: the HUD gets a gear and rpm, and shifts cost a beat of drive. */
 export interface VehicleSpecGearbox {
-  /** Forward ratios, first to top. */
   gears: readonly number[];
   /** Redline rpm (default `7200`). */
   redlineRpm?: number;
@@ -19,7 +18,6 @@ export interface VehicleSpecGearbox {
   wheelRadius?: number;
 }
 
-/** Drive: how fast the car goes and how it gets there. */
 export interface VehicleSpecEngine {
   /** Top speed, m/s. A governor holds it, so drive stays smooth up to it. */
   topSpeed: number;
@@ -27,27 +25,22 @@ export interface VehicleSpecEngine {
   accel: number;
   /** Reverse top speed, m/s (default 30% of `topSpeed`, at most 9). */
   reverseSpeed?: number;
-  /** Peak power, W (default enough for `accel` to taper gently toward `topSpeed`). */
   power?: number;
   /** Deceleration with the throttle lifted, m/s² (default `1`; a `gearbox` car brakes on its engine and adds this on top only when set). */
   coast?: number;
-  /** Drive to the front axle, `0` RWD … `1` FWD (default `0`, or `0.5` when `accel` needs both axles). */
   driveFront?: number;
   /** Gear and rpm; omit for a single-speed drive. */
   gearbox?: VehicleSpecGearbox;
 }
 
-/** Brakes: what the pedal asks for and how the handbrake behaves. */
 export interface VehicleSpecBrakes {
   /** Braking deceleration the brakes ask for, m/s²; grip caps what is delivered. */
   brake: number;
   /** Rear grip left under full handbrake, `0..1` (default from `tires.drift`). */
   handbrakeGrip?: number;
-  /** Anti-lock brakes, `0` off … `1` full (default `0.7`). */
   abs?: number;
 }
 
-/** Steering: lock, rack speed and self-alignment. */
 export interface VehicleSpecSteering {
   /** Yaw rate at `turnSpeed` with full lock, rad/s: how hard the car turns in at town speed. */
   turnRate: number;
@@ -59,9 +52,7 @@ export interface VehicleSpecSteering {
   selfAlign?: number;
 }
 
-/** Tires: peak grip, compound and rear balance. */
 export interface VehicleSpecTires {
-  /** Peak tire grip, in g (0.7 bus, 0.9 street, 1.2 sport, 1.5 arcade). */
   grip: number;
   /**
    * Tire compound: grip (`0..1` of `grip`) against slip, the sideways/forward speed ratio. Where the curve
@@ -69,11 +60,9 @@ export interface VehicleSpecTires {
    * {@link DEFAULT_GRIP_CURVE}, a street tire.
    */
   gripCurve?: GripCurve;
-  /** Rear balance, `0` planted … `1` loose: less rear grip, more front roll stiffness share, a sharper handbrake. Default `0.2`. */
   drift?: number;
 }
 
-/** Driver aids that keep the car on the road. */
 export interface VehicleSpecAids {
   /** Traction control, `0` off … `1` full (default `0.49·(1 − drift/2)`). */
   tractionControl?: number;
@@ -83,21 +72,14 @@ export interface VehicleSpecAids {
   maxSideslip?: number;
 }
 
-/** Chassis: mass, geometry, body motion and aero. */
 export interface VehicleSpecChassis {
   /** Mass, kg (default `1300`). Heavier cars shove lighter ones and carry more into walls. */
   weight?: number;
-  /** Wheelbase, m (default `2.6`). */
   wheelbase?: number;
-  /** Track width, m (default `1.6`). */
   trackWidth?: number;
-  /** Centre-of-mass height, m (default `0.5`). */
   comHeight?: number;
-  /** Body roll and pitch: `0` stiff … `1` soft (default `0.5`). */
   bodyRoll?: number;
-  /** Sprung suspension riding the terrain: omit or `0` for none (flat), `0.1` stiff … `1` soft. */
   suspension?: number;
-  /** Aero downforce area, m² — grip that grows with speed (default `0`). */
   downforce?: number;
 }
 

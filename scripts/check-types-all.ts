@@ -4,14 +4,9 @@ import { join } from "node:path";
 import { printHelpIfAsked } from "./script-help";
 
 const ROOTS = ["packages", "apps", "examples"];
-/**
- * Dirs that are not workspaces but carry their own tsconfig and `check-types`: the repository's
- * `scripts/` are run as often as any package and had no typecheck until they were listed here.
- */
 const EXTRA_DIRS = ["scripts"];
 const CONCURRENCY = 4;
 
-/** Every dir this runs a `check-types` in: the workspaces plus {@link EXTRA_DIRS}. */
 export function typecheckedDirs(root: string = process.cwd()): string[] {
   const dirs: string[] = [];
   for (const workspaceRoot of ROOTS) {

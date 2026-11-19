@@ -9,13 +9,6 @@ import { FLAG_ARTWORK, GEAR_ARTWORK, LEFT_ARTWORK, PAUSE_ARTWORK, RIGHT_ARTWORK,
 import { FULL, GUNMETAL, HazardBand, INK, DIM, Label, PEN, ORANGE, RED, Row, STEEL, STENCIL, Stencil, TEAL, Text, YELLOW } from "./pit";
 import type { LiveRace, RaceHud as RaceHudModel } from "./hudModel";
 
-/*
- * Row Six from the driver's seat. The pit-lane timing board hangs top-left, the next barrier is a
- * painted gate sign over the road, the dash rail and build rack sit top-right, the speed cluster is
- * bottom-left, the compactor's jaw closes along the bottom, and the corridor is a steel rule with the
- * barriers punched into it. The tree is composed when something changes at a moment; speed, clocks,
- * distances and the jaw are bound to their leaves.
- */
 const MAX_KMH = 140;
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 
@@ -52,7 +45,6 @@ export function RaceHud({ live, hud, onPause, onSettings, drive, touch }: HudPro
 
 type Now = () => RaceHudModel;
 
-/** The pit-lane timing board: place, lap and the field in order. */
 function Tower({ hud, now, phone }: { hud: RaceHudModel; now: Now; phone: boolean }) {
   const { race, event } = hud;
   return <RuneView anchor="top-left" safe inset={phone ? 10 : 16} width={phone ? 150 : 230}>
@@ -78,7 +70,6 @@ function Tower({ hud, now, phone }: { hud: RaceHudModel; now: Now; phone: boolea
   </RuneView>;
 }
 
-/** The next barrier as a painted gate sign hung over the road. */
 function Sign({ hud, now, phone }: { hud: RaceHudModel; now: Now; phone: boolean }) {
   const { tone, call, sub } = hud.sign;
   const tint = tone === "launch" ? TEAL : tone === "stop" ? "#e2452e" : YELLOW;
@@ -92,7 +83,6 @@ function Sign({ hud, now, phone }: { hud: RaceHudModel; now: Now; phone: boolean
   </RuneView>;
 }
 
-/** Four sockets on the dash: what is bolted on. */
 function Rack({ hud, phone }: { hud: RaceHudModel; phone: boolean }) {
   const count = PART_SLOTS.filter((slot) => hud.installed[slot] !== null).length;
   return <RuneView variant="hud" gap={4} label={`Build ${count} of 4`} items="end">
@@ -104,7 +94,6 @@ function Rack({ hud, phone }: { hud: RaceHudModel; phone: boolean }) {
   </RuneView>;
 }
 
-/** A manila parts tag tied on when a swap is coming up. */
 function SalvageTag({ tag, now, phone }: { tag: NonNullable<RaceHudModel["tag"]>; now: Now; phone: boolean }) {
   const { offered, replacing, armed } = tag;
   const speedDelta = (claimedChange(offered, "topSpeed") - claimedChange(replacing, "topSpeed")) * 3.6;
@@ -118,7 +107,6 @@ function SalvageTag({ tag, now, phone }: { tag: NonNullable<RaceHudModel["tag"]>
   </RuneView>;
 }
 
-/** The speed cluster: a stencilled readout over a lit bar with the redline painted in. */
 function Dash({ hud, now, width }: { hud: RaceHudModel; now: Now; width: number }) {
   const { redline, airborne, bent, armor } = hud.dash;
   const red = clamp01(Math.max(20, Math.round(redline)) / MAX_KMH);
@@ -134,7 +122,6 @@ function Dash({ hud, now, width }: { hud: RaceHudModel; now: Now; width: number 
   </RuneView>;
 }
 
-/** The compactor behind you: the striped jaw grows across the bar as it closes. */
 function Crusher({ hud, now, width }: { hud: RaceHudModel; now: Now; width: number }) {
   const { danger, surge } = hud.crusher;
   const metres = () => Math.max(0, Math.round(now().crusher.gap));
@@ -151,7 +138,6 @@ function Crusher({ hud, now, width }: { hud: RaceHudModel; now: Now; width: numb
   </RuneView>;
 }
 
-/** The corridor as a steel rule: barriers punched in, the buggy riding along it, the haul at stake. */
 function Route({ hud, now, width }: { hud: RaceHudModel; now: Now; width: number }) {
   const { gates, length, cleared, clearedIds, atRisk } = hud.route;
   const rule = width - 20 - 16;
@@ -170,7 +156,6 @@ function Route({ hud, now, width }: { hud: RaceHudModel; now: Now; width: number
   </RuneView>;
 }
 
-/** Touch pedals: each pad holds its action while a finger is down on it. */
 function TouchPads({ drive, phone }: { drive: DriveInput | undefined; phone: boolean }) {
   const pad = (action: string, label: string, width: number, height: number, fill: string, color: string, art?: string) =>
     <RuneAction key={action} label={label} width={width} height={height} fill={fill} color={color} border={{ width: 2, color: "#0b0d0e" }} items="center" justify="center" press="#00000040"

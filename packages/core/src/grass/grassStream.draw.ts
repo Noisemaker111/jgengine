@@ -18,19 +18,16 @@ import type { GrassMaterialHandle } from "./grassMaterial.draw";
  * however far the field runs and however dense the look is.
  */
 export const GRASS_SCREEN_DENSITY = 1 / 16;
-/** A node splits while the camera is closer than this many node widths. */
 const SPLIT = 2;
 /** Blade height on screen, in pixels, below which a blade is not drawn at all. */
 const MIN_BLADE_PIXELS = 1.25;
 /** Bake headroom: a node bakes this much more than it needs, so an approaching camera does not re-bake every step. */
 const BAKE_HEADROOM = 1.5;
 
-/** The camera-dependent numbers a frame's LOD reads. */
 interface CameraLod {
   perspective: boolean;
   /** Pixels per metre at unit distance (perspective) or everywhere (orthographic). */
   pixelsPerMetre: number;
-  /** share = min(1, shareNumerator / d²) in perspective. */
   shareNumerator: number;
   orthoShare: number;
   reach: number;
@@ -45,7 +42,6 @@ interface Leaf {
   tufts: GrassTufts;
   geometry: THREE.InstancedBufferGeometry;
   mesh: THREE.Mesh;
-  /** Patch-local root box grown by blade and wind reach. */
   bounds: THREE.Box3;
   used: number;
   growing: GrowingGrassAttribute[];
@@ -60,7 +56,6 @@ function nodeKey(level: number, ix: number, iz: number): number {
   return (level * 8388608 + ix) * 8388608 + iz;
 }
 
-/** The tuft template's per-vertex attributes, which every leaf shares. */
 const TEMPLATE_ATTRIBUTES = ["position", "grassUv", "bladeOffset", "bladeVary", "bladeBend"] as const;
 
 /**
@@ -89,19 +84,13 @@ class GrowingGrassAttribute extends THREE.InstancedBufferAttribute {
   }
 }
 
-/** Per-frame bookkeeping the stream reports, for tests and devtools. */
 export interface GrassStreamStats {
-  /** Leaves drawn this frame. */
   leaves: number;
-  /** Tufts resident in drawn leaves. */
   tufts: number;
-  /** Leaves held in the cache, drawn or not. */
   cached: number;
-  /** Nonzero while selection, baking or a newer view remains unfinished. */
   pending: number;
 }
 
-/** Options for {@link GrassStream}. */
 export interface GrassStreamOptions {
   castShadow?: boolean;
   receiveShadow?: boolean;
@@ -118,7 +107,6 @@ export interface GrassStreamOptions {
  * draw trims its instance count and segment detail to that camera's distance.
  */
 export class GrassStream {
-  /** Parent of every leaf mesh; mount it inside the patch's transform. */
   readonly group = new THREE.Group();
   private readonly template: GrassTuftTemplate;
   /**
@@ -128,7 +116,6 @@ export class GrassStream {
    */
   private readonly templateGeometry: THREE.BufferGeometry;
   private readonly cache = new Map<number, Leaf>();
-  /** Each node's ground height range, by {@link nodeKey}. */
   private readonly heights = new Map<number, [number, number]>();
   private readonly rect: [number, number, number, number] = [0, 0, 0, 0];
   private drawn: Leaf[] = [];
@@ -451,7 +438,6 @@ export class GrassStream {
     return this.job !== undefined || this.refresh;
   }
 
-  /** What the stream holds and draws now. */
   stats(): GrassStreamStats {
     return {
       leaves: this.drawn.length + (this.preview === undefined ? 0 : 1),
@@ -461,7 +447,6 @@ export class GrassStream {
     };
   }
 
-  /** Free every leaf's GPU buffers. */
   dispose(): void {
     this.job?.return();
     this.job = undefined;

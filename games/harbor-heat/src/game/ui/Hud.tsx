@@ -32,10 +32,8 @@ import { DISPLAY, HH } from "./theme";
 import { HitMarkerCue } from "@jgengine/core/combat/HitMarkerCue.view";
 import { HARBOR_HIT_MARKER } from "../combat/impactLook";
 
-/** Four short slashes around an open centre, square-capped like the dash's segment digits. */
 const HIT_TICK_ART = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 3 L9 9 M21 3 L15 9 M3 21 L9 15 M21 21 L15 15" stroke="#ffffff" stroke-width="3" stroke-linecap="square"/></svg>`;
 
-/** The hit tick over screen centre: cream on a hit, amber on a crit, siren red on a takedown. */
 export function HitTick() {
   return <HitMarkerCue timing={HARBOR_HIT_MARKER} artwork={HIT_TICK_ART} size={24} gap={26}
     colors={{ hit: HH.cream, crit: HH.amber, kill: HH.siren }}
@@ -52,13 +50,11 @@ export function turned(points: readonly Pt[], radians: number, cx: number, cy: n
   return points.map(([x, y]) => [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c]);
 }
 
-/** A five-point star in a 24 box. */
 const STAR: Pt[] = Array.from({ length: 10 }, (_, i) => { const a = (Math.PI / 5) * i - Math.PI / 2, r = i % 2 === 0 ? 11 : 4.6; return [12 + Math.cos(a) * r, 12.5 + Math.sin(a) * r]; });
 export function Star({ size, fill }: { size: number; fill: string }) {
   return <RuneView width={size} height={size} fill={fill} shape={{ points: STAR, viewBox: [24, 24] }} />;
 }
 
-/** The glyph a slot or prompt shows for `action` on this device; touch has its own buttons. */
 function useGlyph(action: string, fallback?: string): string | undefined {
   const keybinds = useActionBindings();
   const device = useInputDevice();
@@ -66,9 +62,6 @@ function useGlyph(action: string, fallback?: string): string | undefined {
   return actionGlyph(keybinds, action, device) ?? fallback;
 }
 
-// --- The pager ---------------------------------------------------------------------------------
-
-/** The longest each job timer has shown, so its countdown has a total to warn against. */
 const timerTotals = new Map<string, number>();
 
 interface Goal {
@@ -79,7 +72,6 @@ interface Goal {
   deadline?: { remaining: number; total: number } | undefined;
   hint?: string | undefined;
   rush?: string | undefined;
-  /** An open gig offer the pager can take with one tap. */
   offer?: { id: string; label: string };
 }
 
@@ -179,14 +171,12 @@ function promptLabel(id: string): string {
   return labels[id] ?? "Talk";
 }
 
-/** Where the courier is and which way they face: the car when driving, else on foot. */
 function bodyOf(ctx: GameContext) {
   const player = ctx.scene.entity.get(ctx.player.userId);
   const body = ctx.scene.entity.get(drivingStore.read(ctx) ?? ctx.player.userId) ?? player;
   return body === null || player === null ? null : { player, body };
 }
 
-/** What the pager says, which changes at discrete moments; the distance, arrow and clock are bound leaves. */
 function objectiveView(ctx: GameContext) {
   const found = bodyOf(ctx);
   if (found === null) return null;
@@ -203,7 +193,6 @@ function objectiveView(ctx: GameContext) {
 
 const sameView = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** This frame's distance, arrow and clock. */
 function livePager(ctx: GameContext) {
   const found = bodyOf(ctx);
   if (found === null) return null;
@@ -306,9 +295,6 @@ export function Objective() {
   );
 }
 
-// --- Wallet, scanner, belt, keys -----------------------------------------------------------------
-
-/** A thin bar cut into ticks, like the charge strip on a phone; its fill is bound. */
 function Strip({ label, read, max, color }: { label: string; read: () => number; max: number; color: () => string }) {
   return (
     <Row gap={6}>
@@ -320,10 +306,6 @@ function Strip({ label, read, max, color }: { label: string; read: () => number;
   );
 }
 
-/**
- * Cash in hand, painted big like a boulevard billboard price, street cred on a stamped tab and slim
- * health and armor strips. It dims when nothing changes and stays lit while you bleed.
- */
 export function StatusPanel() {
   const ctx = useGameContext();
   const { userId } = usePlayer();
@@ -356,10 +338,6 @@ function heatLine(wanted: Pick<WantedSnapshot, "response" | "stars">): string {
 
 const SEGMENTS = Array.from({ length: 20 }, (_, i) => i);
 
-/**
- * The police scanner on the dash, only on while HHPD wants you: a red-and-blue light bar that strobes
- * once they are hunting, a row of star badges, and red LED lines for dispatch, heat and the search circle.
- */
 export function WantedStars() {
   const ctx = useGameContext();
   const room = useRoom();
@@ -388,7 +366,6 @@ export function WantedStars() {
   );
 }
 
-/** Small item marks for the belt: guns, a grenade, a medkit, armor; drawn as native shapes. */
 const MARKS: Record<string, Pt[]> = {
   gun: [[2, 8], [20, 8], [20, 12], [10, 12], [9, 19], [5, 19], [6, 12], [2, 12]],
   long: [[1, 9], [23, 9], [23, 12], [12, 12], [10, 17], [6, 17], [7, 12], [1, 12]],
@@ -404,11 +381,6 @@ function markOf(itemId: string): Pt[] {
   return MARKS["gun"]!;
 }
 
-/**
- * What you carry, as the pouches of a courier's belt: each filled slot with its item mark, the rounds
- * left on an amber tab and the key that draws it. The held one sits up and glows; the belt dims while
- * nothing changes. Tappable on touch.
- */
 export function BeltHotbar() {
   const ctx = useGameContext();
   const { userId } = usePlayer();
@@ -445,7 +417,6 @@ export function BeltHotbar() {
   );
 }
 
-/** A little rubber key on the HUD's top edge: an icon mark, the printed name and the bound key. */
 function HudKey({ label, action, run }: { label: string; action: string; run: () => void }) {
   const glyph = useGlyph(action);
   return (
@@ -467,12 +438,6 @@ export function HudKeys() {
   );
 }
 
-// --- The dash: stereo and speedo -----------------------------------------------------------------
-
-/**
- * Only while driving: the car stereo's faceplate with the dial position, the station, what is on and
- * the DJ's line. A news bulletin lights it coral. Tapping the faceplate or the tune key changes station.
- */
 export function RadioReadout() {
   const view = useGameStore((ctx) => radioStore.read(ctx), sameView);
   const glyph = useGlyph("radio", "R");
@@ -495,7 +460,6 @@ export function RadioReadout() {
 /** Label steps a dial face can count in; the face shows six of them, so every number is round. */
 const STEPS = [10, 20, 25, 30, 40, 50, 60, 80, 100, 125, 150, 200];
 
-/** The dial's full scale for a vehicle: its top speed with a little headroom, in round numbers. */
 export function dialTop(topKmh: number): number {
   const need = (Math.max(60, topKmh) * 1.08) / 6;
   return (STEPS.find((step) => step >= need) ?? Math.ceil(need / 50) * 50) * 6;
@@ -531,7 +495,6 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
 function at(angle: number, radius: number): Pt {
   return [70 + Math.sin(rad(angle)) * radius, 70 - Math.cos(rad(angle)) * radius];
 }
-/** A thick arc band between two radii, as a polygon. */
 function band(from: number, to: number, inner: number, outer: number): Pt[] {
   const n = 24, out: Pt[] = [], back: Pt[] = [];
   for (let i = 0; i <= n; i += 1) { const a = from + ((to - from) * i) / n; out.push(at(a, outer)); back.push(at(a, inner)); }

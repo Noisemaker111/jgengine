@@ -5,7 +5,6 @@ import { pathToFileURL } from "node:url";
 const CHANGELOG_URL = "https://raw.githubusercontent.com/Noisemaker111/jgengine/beta/CHANGELOG.md";
 const FETCH_TIMEOUT_MS = 8000;
 
-/** One published release's notes, by Keep a Changelog section. */
 export interface ReleaseNotes {
   version: string;
   migrate: string[];
@@ -14,7 +13,6 @@ export interface ReleaseNotes {
   removed: string[];
 }
 
-/** Parse CHANGELOG.md (Keep a Changelog shape: `## x.y.z` + `### Migrate/Added/Changed/Removed`). */
 export function parseChangelogMarkdown(markdown: string): ReleaseNotes[] {
   const releases: ReleaseNotes[] = [];
   let release: ReleaseNotes | null = null;
@@ -46,7 +44,6 @@ export function parseChangelogMarkdown(markdown: string): ReleaseNotes[] {
   return releases;
 }
 
-/** Numeric semver comparison over `x.y.z` strings: negative when a < b. */
 export function compareSemver(a: string, b: string): number {
   const pa = a.split(".").map(Number);
   const pb = b.split(".").map(Number);
@@ -57,14 +54,12 @@ export function compareSemver(a: string, b: string): number {
   return 0;
 }
 
-/** Releases strictly after `from` up to and including `to`, oldest first (migrate order). */
 export function releasesBetween(releases: ReleaseNotes[], from: string, to: string): ReleaseNotes[] {
   return releases
     .filter((entry) => compareSemver(entry.version, from) > 0 && compareSemver(entry.version, to) <= 0)
     .sort((a, b) => compareSemver(a.version, b.version));
 }
 
-/** The lowest stable `x.y.z` among SDK version ranges (`^0.43.0`, `0.44.1`), or null. */
 export function lowestSdkVersion(ranges: string[]): string | null {
   const versions = ranges.map((range) => range.replace(/^[\^~]/, "")).filter((version) => /^\d+\.\d+\.\d+$/.test(version));
   return versions.length === 0 ? null : versions.sort(compareSemver)[0]!;
@@ -91,7 +86,6 @@ async function installedChangelog(projectDir: string): Promise<ReleaseNotes[] | 
   }
 }
 
-/** The published CHANGELOG.md, falling back to the project's installed `@jgengine/core/meta/changelog`. */
 export async function loadReleaseNotes(projectDir: string): Promise<{ releases: ReleaseNotes[]; source: string }> {
   try {
     const response = await fetch(CHANGELOG_URL, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
@@ -105,7 +99,6 @@ export async function loadReleaseNotes(projectDir: string): Promise<{ releases: 
   return { releases: (await installedChangelog(projectDir)) ?? [], source: "installed @jgengine/core (may lag; check the network)" };
 }
 
-/** What moving from `from` to `to` asks of a game: per release, Migrate, then Adopt, Changed and Removed. */
 export function renderReleaseNotes(from: string, to: string, releases: ReleaseNotes[], source: string): string {
   const lines = [`@jgengine ${from} → ${to} (notes: ${source})`];
   if (releases.length === 0) {

@@ -8,10 +8,8 @@
  * harness embeds it with `Function.prototype.toString`.
  */
 
-/** Which CLI a flag belongs to. */
 export type CaptureTool = "shoot" | "drive";
 
-/** The graphics tiers a capture can pin; the game shell resolves the same four. */
 export type GraphicsTier = "low" | "medium" | "high" | "ultra";
 
 /**
@@ -26,7 +24,6 @@ export function parseGraphicsTier(value: string | undefined): GraphicsTier {
   return found as GraphicsTier;
 }
 
-/** One capture CLI flag. `engineOnly` flags parse everywhere but only the engine dev runner honors them. */
 export interface CaptureFlag {
   flag: string;
   tools: readonly CaptureTool[];
@@ -34,7 +31,6 @@ export interface CaptureFlag {
   value: "none" | "required" | "optional";
   /** Ordered interaction step instead of a session option. */
   step?: boolean;
-  /** Collects every occurrence. */
   repeat?: boolean;
   /** Why only the engine dev runner (apps/dev + daemon) can honor it. */
   engineOnly?: string;
@@ -44,7 +40,6 @@ export interface CaptureFlag {
 
 const RUNNER = "needs the engine dev runner";
 
-/** The single source of truth for shoot/drive flags, help text and host support. */
 export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
   { flag: "--flow", tools: ["drive"], value: "required", arg: "<name>", engineOnly: "needs the engine dev runner to load <game>/proofs/flows/", help: "play the TypeScript flow <game>/proofs/flows/<name>.flow.ts: headless (no browser, game time) unless it sets browser: true or you pass --browser; --flows lists them" },
   { flag: "--flows", tools: ["drive"], value: "none", engineOnly: "needs the engine dev runner to list <game>/proofs/flows/", help: "list the game's flows and whether each runs headless or in the browser, then exit" },
@@ -106,7 +101,6 @@ export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
   { flag: "--record-width", tools: ["drive"], value: "required", arg: "<px>", engineOnly: "needs the engine's video encoder", help: "screencast max width in realtime mode (default 640)" },
 ];
 
-/** One ordered drive interaction from the command line. */
 export type CaptureStep =
   | { kind: "click"; text: string }
   | { kind: "double-click"; text: string }
@@ -119,12 +113,10 @@ export type CaptureStep =
   | { kind: "rpc"; json: string; summarized: boolean }
   | { kind: "probe"; name: string };
 
-/** Parsed command line: session options keyed by flag name without dashes, ordered steps, bare positionals. */
 export interface ParsedCaptureArgs {
   tool: CaptureTool;
   help: boolean;
   positionals: string[];
-  /** Switches are `true`; repeatable flags are arrays; `optional` flags given bare are `""`. */
   options: Record<string, string | true | string[]>;
   steps: CaptureStep[];
 }
@@ -240,12 +232,10 @@ export function parseCaptureArgs(tool: CaptureTool, argv: readonly string[], fla
   return out;
 }
 
-/** How long a step can hold the run: a key's hold or a wait's pause. */
 export function stepDurationMs(step: CaptureStep): number {
   return step.kind === "key" ? step.holdMs : step.kind === "wait" ? step.ms : 0;
 }
 
-/** One line of the step log: what the step is. */
 export function describeStep(step: CaptureStep): string {
   switch (step.kind) {
     case "click": return "click \"" + step.text + "\"";

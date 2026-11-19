@@ -6,7 +6,6 @@ import { useInView } from "./useInView";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "2026-11-07" → "7 Nov". */
 function shortDate(iso: string): string {
   const [, month, day] = iso.split("-");
   return `${Number(day)} ${MONTHS[Number(month) - 1]}`;
@@ -17,7 +16,6 @@ function outcomeOf(decision: Decision): string {
   return decision.kind === "remove" ? "removed" : "shipped";
 }
 
-/** The project's history as a commit graph: shipped decisions on the main line, experiments on branches. */
 export function DecisionLog() {
   const extras: Record<string, ReactNode> = { "native-rust": <Benchmark /> };
   return (

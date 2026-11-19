@@ -34,7 +34,6 @@ function actuatorOf(pad: GamepadSample | Gamepad | null | undefined): GamepadHap
 
 function ignore(): void {}
 
-/** Pad index a user's rumble goes to: their seat's pad, else the first connected pad for the primary seat. */
 function padIndexForUser(userId: string, seats: LocalPlayers | undefined, pads: ArrayLike<GamepadSample | null>): number {
   const legacy = /^gamepad:(\d+)$/.exec(userId)?.[1];
   if (legacy !== undefined) return Number(legacy);
@@ -65,7 +64,6 @@ function syntheticPads(): readonly GamepadSample[] | null {
   return Array.from({ length: count }, () => ({ axes: [0, 0, 0, 0], buttons, connected: true }));
 }
 
-/** Poll browser gamepads and feed semantic actions into the shell tracker. */
 export function GamepadSource({
   tracker,
   bindings,
@@ -80,13 +78,9 @@ export function GamepadSource({
   bindings: ActionCodesMap;
   analogRef: { current: Readonly<Record<string, number>> | null };
   input: InputSnapshot;
-  /** Game-level pad feel (`defineGame({ gamepad })`); unset keeps the shell defaults. */
   feel?: GamepadFeelConfig | undefined;
-  /** Local seats; pads claimed by a seat other than the primary publish to that seat's input. */
   seats?: LocalPlayers;
-  /** A pad just opened a new seat; the shell spawns its player here. */
   onSeatJoin?: (slot: LocalPlayerSlot) => void;
-  /** False while play controls are gated (menus, orientation lock): seats publish nothing held. */
   seatsActive?: () => boolean;
 }) {
   const poll = useRef(emptyGamepadPoll());

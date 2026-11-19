@@ -17,29 +17,20 @@ import type { GranularLayerSnapshot, GranularPressReport, GranularStepReport } f
 import type { GranularMaterial } from "./granularMaterial";
 import { createGranularTerrain, type GranularTerrain, type GranularTerrainOptions } from "./granularTerrain";
 
-/** Options for {@link createSoftGround}. */
 export interface SoftGroundOptions {
-  /** The soil: materials, loose depth and material per point. */
   soil: GranularTerrainOptions;
-  /** Contact-load dial. Default 1. */
   sinkage?: number;
-  /** Slumping-rate dial. Default 1. */
   recovery?: number;
 }
 
-/** One wheel's contact this tick: where it is, the load it carries and its size. */
 export interface SoftGroundWheel {
   x: number;
   z: number;
-  /** Load on the wheel, N. */
   load: number;
-  /** Tyre width, m. */
   width: number;
-  /** Wheel diameter, m. */
   diameter: number;
 }
 
-/** Plain JSON of a {@link SoftGround}: the soil, where it started, each wheel's last contact and the dials. */
 export interface SoftGroundSnapshot {
   layer: GranularLayerSnapshot;
   start: number[];
@@ -48,23 +39,15 @@ export interface SoftGroundSnapshot {
   recovery: number;
 }
 
-/** Soft ground bound to a terrain. */
 export interface SoftGround {
   readonly ground: GranularTerrain;
-  /** Roll wheel `key` (a vehicle id plus a wheel index) from where it last pressed to this contact. */
   wheel(key: string, contact: SoftGroundWheel): GranularPressReport;
-  /** The wheel left the ground: its next contact starts a new rut. */
   lift(key: string): void;
-  /** A foot or pad pressing `load` N over a disc of `radius` m. */
   foot(x: number, z: number, radius: number, load: number): GranularPressReport;
-  /** Advance the slumping and write what moved into the terrain. */
   step(dt: number): GranularStepReport & { delta: TerraformDelta };
-  /** How far the surface sits below where it started, m (negative on a berm). */
   rutDepthAt(x: number, z: number): number;
-  /** Retune the dials during play. */
   retune(dials: Pick<SoftGroundOptions, "sinkage" | "recovery">): void;
   snapshot(): SoftGroundSnapshot;
-  /** Put a snapshot back and write its surface into the terrain. */
   restore(snapshot: SoftGroundSnapshot): TerraformDelta;
 }
 
@@ -76,10 +59,7 @@ function dial(value: number | undefined, label: string): number {
   return value;
 }
 
-/**
- * Lay soft ground over a terrain's vertex grid.
- * @capability soft-ground wheels and feet rut granular soil by the material's published sinkage, with sinkage and recovery dials
- */
+/** @capability soft-ground wheels and feet rut granular soil by the material's published sinkage, with sinkage and recovery dials */
 export function createSoftGround(terrain: EditableTerrain, options: SoftGroundOptions): SoftGround {
   const ground = createGranularTerrain(terrain, options.soil);
   let sinkage = dial(options.sinkage, "sinkage");
@@ -142,17 +122,12 @@ export function createSoftGround(terrain: EditableTerrain, options: SoftGroundOp
   };
 }
 
-/** A painted terrain surface that is soft: the material it is made of and how deep it lies over firm ground, m. */
 export interface SoftSurfaceClass {
   material: GranularMaterial;
   looseDepthM: number;
 }
 
-/**
- * The soil for {@link createSoftGround} from the terrain's paint: each surface id listed is that material that deep,
- * and every other surface stays hard ground, as it is with no soft ground at all.
- * @capability soft-ground wheels and feet rut granular soil by the material's published sinkage, with sinkage and recovery dials
- */
+/** @capability soft-ground wheels and feet rut granular soil by the material's published sinkage, with sinkage and recovery dials */
 export function softSurfaceSoil(terrain: Pick<EditableTerrain, "surfaceAt">, classes: Readonly<Record<string, SoftSurfaceClass>>): GranularTerrainOptions {
   const ids = Object.keys(classes);
   const materials = ids.map((id) => classes[id]?.material).filter((material): material is GranularMaterial => material !== undefined);

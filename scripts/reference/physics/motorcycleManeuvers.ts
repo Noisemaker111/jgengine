@@ -1,6 +1,5 @@
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 
-/** The slice of a single-track sim the bike scenarios drive: a `VehicleDynamics` with a `lean` block or a {@link RiddenMotorcycle}. */
 export interface BikeCourseSubject {
   tick(
     dt: number,
@@ -10,25 +9,19 @@ export interface BikeCourseSubject {
   pose(): { position: readonly [number, number, number]; heading: number };
 }
 
-/** Settings for {@link measureBikeHandling}. */
 export interface BikeHandlingOptions {
-  /** Lean the subject holds at full steer, rad: steer input is a lean request `steer · maxLean` for both kinds of bike. */
   maxLean: number;
-  /** Fixed tick, s (default `1/60`). */
   dt?: number;
   /** Speed of the lean test, m/s (default `20`). */
   leanSpeed?: number;
-  /** Bike width and length for the lane-change corners, m (default `0.8`, `2.1`). */
   width?: number;
   length?: number;
   /** Scenarios to run (default all); the metrics of the others are `NaN`. */
   tests?: readonly BikeScenario[];
 }
 
-/** One scenario of {@link measureBikeHandling}. */
 export type BikeScenario = "launch" | "brake" | "lean" | "laneChange" | "slalom";
 
-/** Bike metrics comparable across any {@link BikeCourseSubject}. */
 export interface BikeHandlingMetrics {
   /** Standing start to 100 and 200 km/h, s. */
   zeroTo100: number;
@@ -80,7 +73,6 @@ function wrap(angle: number): number {
   return Math.atan2(Math.sin(angle), Math.cos(angle));
 }
 
-/** Drive `pathY` (course x forward, y left) at `entry`; `fails` sees each pose in course axes. */
 function followPath(
   bike: BikeCourseSubject,
   entry: number,

@@ -1,37 +1,23 @@
 import type { FogBounds } from "@jgengine/core/map/fog";
 
-/** Numeric code for a cell no group member has seen, or has fully forgotten. */
 export const VISIBILITY_HIDDEN = 0;
-/** Numeric code for a cell seen before but not currently in view (last-known). */
 export const VISIBILITY_REMEMBERED = 1;
-/** Numeric code for a cell a group currently observes. */
 export const VISIBILITY_OBSERVED = 2;
 
 /** One viewer group's knowledge of a cell: never/forgotten, last-known, or live. */
 export type VisibilityState = "hidden" | "remembered" | "observed";
 
-/**
- * How a cell decays after a group stops observing it — the terrain-memory policy.
- * `permanent` keeps last-known terrain forever (RTS explored map); `none` drops
- * it straight back to hidden the moment it leaves view (pure line-of-sight
- * stealth); `decay` remembers it for `updates` observe cycles, then hides it.
- * Day/night, height, sensor, and stealth rules are NOT encoded here — the caller
- * bakes those into which cells it reports as observed each update.
- */
 export type VisibilityMemory =
   | { readonly kind: "permanent" }
   | { readonly kind: "none" }
   | { readonly kind: "decay"; readonly updates: number };
 
-/** Construction options for {@link createVisibilityField}. */
 export interface VisibilityFieldConfig {
   /** World-space rectangle the grid covers (reused from `world/fog`). */
   readonly bounds: FogBounds;
   /** World units per grid cell. Must be positive. */
   readonly cellSize: number;
-  /** Default memory policy applied to every group. Default `{ kind: "permanent" }`. */
   readonly memory?: VisibilityMemory;
-  /** Rehydrate from a previously serialized field (see {@link VisibilityField.toState}). */
   readonly restore?: VisibilityFieldState;
 }
 
@@ -43,27 +29,19 @@ export interface VisibilityFieldConfig {
  */
 export interface VisibilityDelta {
   readonly group: string;
-  /** Cells that entered observation this update. */
   readonly observed: readonly number[];
-  /** Cells that left observation into remembered (last-known) state. */
   readonly remembered: readonly number[];
-  /** Cells that fell out of memory entirely (decay expiry or `none` policy). */
   readonly hidden: readonly number[];
 }
 
-/** Sparse serialized knowledge for one group — only non-hidden cells are stored. */
 export interface VisibilityGroupState {
-  /** Currently observed cell indices. */
   readonly observed: readonly number[];
-  /** Remembered cells as `[cellIndex, lastObservedTick]` pairs. */
   readonly remembered: readonly (readonly [number, number])[];
   /** Monotonic update counter, used to age remembered cells under a decay policy. */
   readonly tick: number;
-  /** Per-group memory override, when it differs from the field default. */
   readonly memory?: VisibilityMemory;
 }
 
-/** Serializable snapshot of a whole field — JSON round-trips losslessly. */
 export interface VisibilityFieldState {
   readonly cols: number;
   readonly rows: number;
@@ -74,14 +52,12 @@ export interface VisibilityFieldState {
   readonly groups: Readonly<Record<string, VisibilityGroupState>>;
 }
 
-/** Dense per-cell readout for one group, shaped for minimap/overlay drawing. */
 export interface VisibilityCells {
   readonly cols: number;
   readonly rows: number;
   readonly minX: number;
   readonly minZ: number;
   readonly cellSize: number;
-  /** Row-major `VISIBILITY_*` codes; index = row * cols + col. */
   readonly codes: Uint8Array;
 }
 
@@ -106,7 +82,6 @@ export interface VisibilityField {
   ensureGroup(group: string, memory?: VisibilityMemory): void;
   hasGroup(group: string): boolean;
   groups(): string[];
-  /** Forget everything for a group and drop it. */
   removeGroup(group: string): void;
 
   /**
@@ -123,14 +98,12 @@ export interface VisibilityField {
    * sets — it never scans the whole grid. Returns the resulting {@link VisibilityDelta}.
    */
   observe(group: string, cells: Iterable<number>): VisibilityDelta;
-  /** Convenience {@link observe} over a single disc around a source. */
   observeCircle(group: string, x: number, z: number, radius: number): VisibilityDelta;
 
   stateAtCell(group: string, cell: number): VisibilityState;
   stateAt(group: string, x: number, z: number): VisibilityState;
   isObserved(group: string, x: number, z: number): boolean;
   isRemembered(group: string, x: number, z: number): boolean;
-  /** Terrain disclosure: observed OR remembered (anything the group has ever mapped). */
   isKnown(group: string, x: number, z: number): boolean;
 
   observedCount(group: string): number;
@@ -149,11 +122,8 @@ export interface VisibilityField {
     positionOf: (entity: T) => { readonly x: number; readonly z: number },
   ): T[];
 
-  /** Dense per-cell codes for a group, for minimap/overlay rendering. */
   cells(group: string): VisibilityCells;
-  /** Sparse serializable snapshot; round-trips through {@link createVisibilityField}'s `restore`. */
   toState(): VisibilityFieldState;
-  /** Forget one group's knowledge, or every group when `group` is omitted. */
   reset(group?: string): void;
 }
 

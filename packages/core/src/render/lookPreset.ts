@@ -18,22 +18,16 @@ import type { PostProcessingConfig } from "./postProcessing";
  */
 export type LookPreset = "neutral" | "photoreal" | "toon" | "comic" | "retro" | "cinematic" | "flat";
 
-/** Every look preset name, for pickers and validating a preset read from a URL or file. */
 export const LOOK_PRESETS: readonly LookPreset[] = ["neutral", "photoreal", "cinematic", "toon", "comic", "retro", "flat"];
 
-/** Explicit graphics knobs a game may set; the preset only fills the ones left undefined. */
 export interface GameLookInput {
   look?: LookPreset | undefined;
-  /** Lighting mood; see {@link resolveGameLook} for when an unset mood is filled in. */
   mood?: LookMood | undefined;
   lighting?: LightingConfig | undefined;
   backdrop?: BackdropConfig | undefined;
   postProcessing?: PostProcessingConfig | undefined;
-  /** True when the world already declares its own sky — the preset then leaves the sky to the world. */
   hasWorldSky?: boolean | undefined;
-  /** The sky the world declares. A mood keeps its shape (radius, clouds, day cycle) and repaints its colours and sun. */
   worldSky?: SkyEnvironmentConfig | undefined;
-  /** Sky fields the scene document authored; they win over the mood and the world. */
   documentSky?: SkyEnvironmentConfig | undefined;
 }
 
@@ -44,14 +38,8 @@ export interface ResolvedGameLook {
   postProcessing?: PostProcessingConfig | undefined;
 }
 
-/** A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill. */
 export const CINEMATIC_SKY: SkyEnvironmentConfig = { preset: "day" };
 
-/**
- * Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look. ACES,
- * not the pipeline's AgX: under a sunny sky AgX's flat curve reads as a milky veil over the whole
- * frame, and every shipped game had already switched this preset to ACES by hand.
- */
 export const CINEMATIC_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "aces",
   bloom: { strength: 0.22, radius: 0.5, threshold: 0.95 },
@@ -60,23 +48,17 @@ export const CINEMATIC_POST_PROCESSING: PostProcessingConfig = {
   grade: {},
 };
 
-/**
- * For a game that lit its own scene and left `look` unset: ACES and the cinematic bloom, with AO,
- * grade, contact shadows and antialiasing at the engine defaults.
- */
 const OWN_RIG_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "aces",
   ...(CINEMATIC_POST_PROCESSING.bloom === undefined ? {} : { bloom: CINEMATIC_POST_PROCESSING.bloom }),
 };
 
-/** Unstyled baseline: no bloom or grade; contact AO stays at the graphics-tier default. */
 export const NEUTRAL_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "agx",
   bloom: false,
   grade: false,
 };
 
-/** High-contrast physically based presentation for authored HDR environments. */
 export const PHOTOREAL_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "agx",
   bloom: { strength: 0.28, radius: 0.58, threshold: 0.9 },
@@ -85,11 +67,6 @@ export const PHOTOREAL_POST_PROCESSING: PostProcessingConfig = {
   grade: { saturation: 1.04, vignette: 0.08, grain: 0.004 },
 };
 
-/**
- * The key light's angular size each look gives a sun that leaves `lightSize` unset, so its shadows
- * soften like daylight while the player's soft-shadows setting is on. Looks not named here keep the
- * fixed filter.
- */
 export const LOOK_SUN_SIZE: Readonly<Partial<Record<LookPreset, number>>> = {
   cinematic: SUN_ANGULAR_DIAMETER_DEG,
   photoreal: SUN_ANGULAR_DIAMETER_DEG,
@@ -102,7 +79,6 @@ function withSunSize(lighting: LightingConfig | undefined, look: LookPreset): Li
   return { ...lighting, directional: [{ ...key, lightSize: size }, ...(lighting.directional ?? []).slice(1)] };
 }
 
-/** Clean graphic presentation; toon materials remain game-owned while this sets the grade. */
 export const TOON_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "linear",
   bloom: { strength: 0.08, radius: 0.35, threshold: 1.1 },
@@ -110,7 +86,6 @@ export const TOON_POST_PROCESSING: PostProcessingConfig = {
   grade: { saturation: 1.18, gamma: 1, vignette: 0, grain: 0 },
 };
 
-/** Ink outlines, four cel bands and a punchy grade — a hand-inked comic look on any model. */
 export const COMIC_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "agx",
   exposure: 1.05,
@@ -151,22 +126,13 @@ function mergeStage(preset: unknown, authored: unknown): unknown {
   return merged;
 }
 
-/**
- * Deep-merge a game's partial post chain over a preset's. Every field the game set wins, including
- * `false` to drop a stage; fields it left unset come from the preset, and stage objects merge field by
- * field (tuples such as `grade.lift` replace whole).
- * @capability merge-post-processing layer a partial post chain over a look preset without losing its stages
- */
+/** @capability merge-post-processing layer a partial post chain over a look preset without losing its stages */
 export function mergePostProcessing(preset: PostProcessingConfig, authored: PostProcessingConfig | undefined): PostProcessingConfig {
   if (authored === undefined) return preset;
   return mergeStage(preset, authored) as PostProcessingConfig;
 }
 
-/**
- * Layer `top`'s defined sky fields over `base`, merging the nested `sun` and `fog` objects field by
- * field. Either side may be absent.
- * @internal
- */
+/** @internal */
 export function overlaySky(base: SkyEnvironmentConfig | undefined, top: SkyEnvironmentConfig | undefined): SkyEnvironmentConfig | undefined {
   if (top === undefined) return base;
   if (base === undefined) return top;
@@ -180,12 +146,10 @@ function definedFields<T extends object>(value: T): Partial<T> {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
 }
 
-/** True when lighting sets its own key or fill; lamps alone (point/spot) leave the rig to the mood. */
 function authorsLightRig(lighting: LightingConfig | undefined): boolean {
   return lighting !== undefined && (lighting.ambient !== undefined || lighting.hemisphere !== undefined || (lighting.directional?.length ?? 0) > 0);
 }
 
-/** The sky's own sun and fill strength at which a mood rig is left as tuned (the dome's defaults). */
 const SKY_SUN_BASELINE = 1;
 const SKY_FILL_BASELINE = 0.6;
 
@@ -213,7 +177,6 @@ function steeredMood(mood: LookMood, steer: SkyEnvironmentConfig | undefined): R
   };
 }
 
-/** Post fields a mood's own tokens set; unlike the preset's values, they win over the style. */
 function moodTokenPost(mood: LookMood | undefined, gradeOn: boolean): PostProcessingConfig | undefined {
   if (mood === undefined || typeof mood === "string") return undefined;
   const saturation = gradeOn ? mood.saturation : undefined;

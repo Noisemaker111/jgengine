@@ -18,17 +18,13 @@ export const EXIT_LOST = 5;
 export interface TaskStatus {
   id: string;
   command: string;
-  /** `running`, `exited` with its code, or `lost`: the runner is gone and left no code. */
   state: "running" | "exited" | "lost";
   code: number | null;
   startedAt: Date;
-  /** Until the exit was written, or until now while it runs. */
   elapsedMs: number;
-  /** The log's last `lines` non-empty lines. */
   tail: string[];
 }
 
-/** The last `lines` non-empty lines of `text`. */
 export function tailLines(text: string, lines: number): string[] {
   return text
     .split(/\r?\n/)
@@ -59,7 +55,6 @@ export function formatStatus(status: TaskStatus, logPath: string): string {
   return lines.join("\n");
 }
 
-/** `<id>` and `--lines <n>` (default 15). */
 export function parseStatusArgs(argv: readonly string[]): { id: string; lines: number } {
   const rest = argv[0] === "--" ? argv.slice(1) : argv;
   let id: string | null = null;

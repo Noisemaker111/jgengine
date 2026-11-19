@@ -1,16 +1,7 @@
 import type { ModelLibraryEntry } from "./modelLibrary";
 
-/**
- * Library entries beyond the Poly Haven scans: rigged Rocketbox humans and animals (MIT), a Khronos
- * sample car (CC-BY 4.0, credit required), larger Poly Haven trees, and engine-authored models.
- */
-
 const ROCKETBOX = "https://github.com/microsoft/Microsoft-Rocketbox/tree/master/Assets";
 
-/**
- * The library entries beyond the Poly Haven scans: rigged Rocketbox humans and animals, the Khronos
- * sports car, foliage scans that need thinning and the engine-authored sci-fi props.
- */
 export const MODEL_LIBRARY_RIGGED_ENTRIES: readonly ModelLibraryEntry[] = [
   {
     name: "human/man-casual",

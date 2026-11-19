@@ -1,23 +1,14 @@
 import type { LootEntry } from "@jgengine/core/loot/lootTable";
 
-/** One colour of supply crate, as ARK's wiki gives them for The Island. */
 export interface SupplyTier {
   id: string;
   label: string;
-  /** The level a survivor needs to open it (ARK wiki, The Island). */
   minLevel: number;
-  /** Its beam's colour. */
   color: string;
-  /** How many picks from `loot` one crate holds. */
   rolls: number;
   loot: readonly LootEntry[];
 }
 
-/**
- * The six crate colours and what each holds. Levels are ARK's. The white and green resource ranges are the wiki's
- * (stone and flint 7–15, thatch 30–90 … for white; 20–40, 40–100 … for green); higher tiers and the items in each are
- * approximate, scaled the same way over the things Fernwild has: better crates, more metal, stone walls and saddles.
- */
 export const SUPPLY_TIERS: readonly SupplyTier[] = [
   {
     id: "white", label: "White", minLevel: 3, color: "#f2f2f2", rolls: 3,

@@ -31,11 +31,6 @@ function markerCatalogId(meta: Record<string, unknown> | undefined): string {
   return id;
 }
 
-/**
- * The starter-park placement order, derived from `editor.scene.json`. Rides and stalls seed first,
- * then the coaster's `route` path becomes track pieces, then the remaining scenery and path markers.
- * Coordinates live only in the authored document — this reads them back in that order.
- */
 export function seedPlacements(): SeedPlacement[] {
   const rides: SeedPlacement[] = [];
   const rest: SeedPlacement[] = [];
@@ -52,24 +47,14 @@ export function seedPlacements(): SeedPlacement[] {
   return [...rides, ...trackPieces, ...rest];
 }
 
-/** The paved plaza inside the gate a new park opens with: two path cells the player builds out from. */
 export const GATE_PLAZA: readonly (readonly [number, number])[] = [[14, 27], [14, 28]];
 
-/**
- * What a reset lays down:
- * - `lot`: a new game - the empty lot, the gate plaza, the gate shut and nobody inside;
- * - `starter`: the authored starter park from `editor.scene.json` with a crowd already in it (the
- *   capture staging and the screenshots of a running park);
- * - `blank`: nothing at all, for a save to be restored into.
- */
 export type ResetLayout = "lot" | "starter" | "blank";
 
 export interface ResetOptions {
   /** Cash the fresh park opens with; the catalog default when omitted. */
   cash?: number;
-  /** Default `lot`. */
   layout?: ResetLayout;
-  /** The crowd a `starter` park opens with. */
   guests?: number;
 }
 
@@ -102,7 +87,6 @@ export function resetPark(ctx: GameContext, options: ResetOptions = {}): void {
   spawnAll(ctx);
 }
 
-/** Begin a scenario from a fresh park: the world starts over and its job's mission starts the clock. */
 export function beginScenario(ctx: GameContext, id: string): boolean {
   const scenario = scenarioDef(id);
   if (scenario === null || scenarioLock(id, scenariosWon(ctx)) !== null) return false;
@@ -119,7 +103,6 @@ export function beginScenario(ctx: GameContext, id: string): boolean {
   return true;
 }
 
-/** Leave the scenario and keep the park as a free-play sandbox. */
 export function endScenario(ctx: GameContext): void {
   const w = park.of(ctx);
   if (w.fact("scenario.id") === "") return;
@@ -135,13 +118,11 @@ export function endScenario(ctx: GameContext): void {
   savePark(ctx);
 }
 
-/** Replay the current scenario from a fresh park. */
 export function replayScenario(ctx: GameContext): boolean {
   const id = park.of(ctx).fact("scenario.id");
   return typeof id === "string" && id !== "" && beginScenario(ctx, id);
 }
 
-/** The HUD's read of the active run: goal, countdown and result, all from the world. */
 export function scenarioView(ctx: GameContext): {
   title: string;
   goal: string;

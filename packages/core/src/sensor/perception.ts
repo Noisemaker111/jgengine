@@ -4,21 +4,12 @@ import { sightLineBlocked, type SightSolids } from "./sightLine";
 /** A world position used by perception, in `[x, y, z]` order. */
 export type PerceptionPosition = readonly [number, number, number];
 
-/**
- * The kinds of stimulus the perception service can retain. A `scent` (blood, bait, fuel) carries
- * `scentRange × loudness` and, like a sound, needs no clear line: it seeps around corners.
- */
 export type PerceptionStimulusKind = "sight" | "sound" | "damage" | "scent";
 
-/** An event that can seed an observer's memory. */
 export interface PerceptionStimulus {
   kind: PerceptionStimulusKind;
   sourceId: string;
   position: PerceptionPosition;
-  /**
-   * Multiplies the range of this signal: `hearingRange` for a sound (a footstep might be `0.3`, a
-   * gunshot `4`), `scentRange` for a scent (a graze `0.5`, an open wound `2`). Default `1`.
-   */
   loudness?: number;
   at: number;
 }
@@ -30,46 +21,29 @@ export interface PerceptionObserver {
   yaw: number;
 }
 
-/** A candidate target considered by a sight check. */
 export interface PerceptionCandidate {
   id: string;
   position: PerceptionPosition;
-  /**
-   * How far this target can be seen, as a multiple of `sightRange`: a diver with a lamp on in a dark
-   * hall might be `1.6`, one standing unlit `0.35`. Default `1`. Range only; the cone is unchanged.
-   */
   visibility?: number;
 }
 
-/** A remembered target and its linearly decaying confidence. */
 export interface PerceptionMemory {
   targetId: string;
-  /** When the fact was observed, on the same clock `observe` is given; its age is `now − lastSeenAt`. */
   lastSeenAt: number;
   lastKnownPos: PerceptionPosition;
-  /** 1 at the moment of the sighting, falling to 0 across `memorySeconds`. */
   confidence: number;
-  /** Whose senses produced the fact: this observer's id for its own sighting, a squadmate's for a shared one. */
   sourceId: string;
   /** Observe pass that recorded the fact, so a shared sighting is attributable to the tick it arrived. */
   sourceTick: number;
-  /**
-   * Which sense produced the fact: a predator that only smelled blood investigates, one that saw
-   * you charges. A squadmate's shared sighting reads `"sight"`. Absent on facts restored from an
-   * older save.
-   */
   cue?: PerceptionStimulusKind;
 }
 
-/** Configuration for sight, hearing, memory decay, squad sharing and optional occlusion. */
 export interface PerceptionConfig {
   sightRange: number;
   sightConeDeg: number;
   hearingRange: number;
-  /** How far a scent of loudness 1 carries. Default `0`: the observer smells nothing. */
   scentRange?: number;
   memorySeconds: number;
-  /** Most stimuli retained at once; the oldest are dropped first. Default 256. */
   maxStimuli?: number;
   /**
    * Cheap "nothing blocks the segment from `from` to `to`" test, supplied by the game's collision
@@ -101,58 +75,42 @@ export interface PerceptionConfig {
   devtoolsName?: string;
 }
 
-/** Counters a perf test or a devtools probe reads. Reset with {@link PerceptionService.resetStats}. */
 export interface PerceptionStats {
-  /** Observe passes run. Keeps counting across `resetStats`, since it is also the recorded tick. */
   passes: number;
-  /** `(observer, candidate)` pairs examined — one check per pair per pass. */
   pairChecks: number;
-  /** Pairs rejected by distance before any cone or occlusion work. */
   rangeCulled: number;
   /** Pairs inside sight range, so they paid the cone test. */
   coneTests: number;
-  /** Sight lines tested for occlusion: calls into `isSegmentClear`, else rays against `solids`. */
   occlusionChecks: number;
   /** Sightings the per-pass ray budget stopped us checking; they fail closed, so no sighting was granted. */
   occlusionDropped: number;
-  /** Pairs that produced the observer's own sighting. */
   sightings: number;
-  /** Sound, scent and damage stimuli an observer resolved inside its range. */
   heard: number;
-  /** Sightings written into a squadmate's memory. */
   shares: number;
-  /** Sightings the per-pass share cap kept from being broadcast. */
   shareDropped: number;
 }
 
-/** Serializable state for a perception service. */
 export interface PerceptionSnapshot {
   memories: Array<{ observerId: string; memory: PerceptionMemory }>;
   stimuli: Array<PerceptionStimulus & { seq?: number }>;
   nowMs: number;
-  /** Per observer, the last stimulus sequence number it has already judged. Absent in older saves. */
   heard?: Record<string, number>;
   nextSeq?: number;
-  /** Observe passes recorded, which is also the tick a memory carries. Absent in older saves. */
   passes?: number;
 }
 
-/** Stateful perception API with retuning and save/restore support. */
 export interface PerceptionService {
   pushStimulus(stimulus: PerceptionStimulus): void;
   observe(observer: PerceptionObserver, candidates: readonly PerceptionCandidate[], nowMs: number): void;
   memory(observerId: string): PerceptionMemory[];
   /** One remembered target with its confidence now, or `null` when never seen or already faded. */
   memoryOf(observerId: string, targetId: string): PerceptionMemory | null;
-  /** Drop one remembered target, or everything an observer remembers (despawn, reset, disguise). */
   forget(observerId: string, targetId?: string): void;
   stats(): PerceptionStats;
-  /** Zero the work counters, keeping the pass count that memories are stamped with. */
   resetStats(): void;
   retune(patch: Partial<Omit<PerceptionConfig, "devtoolsName">>): void;
   snapshot(): PerceptionSnapshot;
   restore(snapshot: PerceptionSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -270,7 +228,6 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
     if (drop > 0) stimuli.splice(0, drop);
   }
 
-  /** Every observer's memory, not just the one that just observed — saving, retuning and restoring only. */
   function pruneAll(): void {
     for (const observerId of memories.keys()) pruneObserver(observerId);
     pruneStimuli();
@@ -491,7 +448,6 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
   };
 }
 
-/** How many observers {@link observeNearby} asks, and from how far. */
 export interface NearbyObserverLimit {
   /** Ground (XZ) distance from the candidate, metres. */
   radius: number;

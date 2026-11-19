@@ -1,36 +1,24 @@
 // @skill jgengine-world
 import { createCoefficientTable, evenBreakpoints, type CoefficientTable } from "./coefficientTable";
 
-/** Lift and drag of one blade section at an angle of attack and Mach number. */
 export type BladeSection = (alpha: number, mach: number, radiusFraction: number) => { cl: number; cd: number };
 
-/** A fixed-pitch propeller's geometry. */
 export interface PropellerGeometry {
-  /** Diameter, m. */
   diameter: number;
   blades: number;
-  /** Hub (spinner) radius as a fraction of the tip radius. */
   hubFraction: number;
   /** Chord, m, at a radius fraction `0..1`. */
   chord: (radiusFraction: number) => number;
-  /** Blade angle to the plane of rotation, rad, at a radius fraction, measured from the section's flat lower surface. */
   bladeAngle: (radiusFraction: number) => number;
   section: BladeSection;
 }
 
-/** Thrust and power coefficients `CT = T/(ρn²D⁴)`, `CP = P/(ρn³D⁵)` by advance ratio `J = V/(nD)` and tip Mach. */
 export interface PropellerMap {
   thrust: CoefficientTable;
   power: CoefficientTable;
 }
 
-/**
- * The section data of a flat-bottomed propeller airfoil in the Clark Y family: a thin-airfoil lift slope corrected by
- * Prandtl–Glauert up to Mach 0.7, zero lift at −4° to the flat lower surface, a stall near `cl = 1.2` that falls to
- * flat-plate lift, a parabolic drag bucket, Lock's compressibility drag rise past a critical Mach that drops as the
- * section thickens toward the hub, and flat-plate drag past the stall.
- * @capability propeller-bemt Clark Y propeller section lift and drag
- */
+/** @capability propeller-bemt Clark Y propeller section lift and drag */
 export function clarkYPropellerSection(alpha: number, mach: number, radiusFraction: number): { cl: number; cd: number } {
   const zeroLift = (-4 * Math.PI) / 180;
   const beta = Math.sqrt(1 - Math.min(0.7, mach) ** 2);
@@ -54,12 +42,7 @@ export function clarkYPropellerSection(alpha: number, mach: number, radiusFracti
   return { cl, cd };
 }
 
-/**
- * Solves blade-element momentum theory for one operating point: each annulus balances the thrust and torque its blade
- * sections make against the axial and swirl momentum it puts into the slipstream, with Prandtl's tip and hub loss.
- * Returns `CT` and `CP`; `J` is the advance ratio and `tipMach` the tip's rotational Mach number.
- * @capability propeller-bemt blade-element momentum propeller thrust and power with tip loss and compressibility
- */
+/** @capability propeller-bemt blade-element momentum propeller thrust and power with tip loss and compressibility */
 export function solvePropeller(geometry: PropellerGeometry, advanceRatio: number, tipMach: number, speedOfSound = 340.294): { ct: number; cp: number } {
   const radius = geometry.diameter / 2;
   const n = (tipMach * speedOfSound) / (Math.PI * geometry.diameter);

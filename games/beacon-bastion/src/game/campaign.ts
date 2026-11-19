@@ -3,30 +3,19 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { createSkillTree, type SkillNodeDef, type SkillResolution, type SkillTree, type SkillTreeState } from "@jgengine/core/progression/skillTree";
 
-/**
- * The campaign above every defense: the difficulty the next keep is raised on, the best stars each
- * difficulty has earned, and the War Council those stars buy. The council is the engine skill tree,
- * so its ranks, exclusive doctrines and respec are the engine's rules; this file is its content.
- */
-
 export type DifficultyId = "squire" | "knight" | "warlord";
 
 export interface DifficultyDef {
   id: DifficultyId;
   label: string;
   detail: string;
-  /** Raider health multiplier. */
   health: number;
-  /** Armor every raider gains. */
   armor: number;
   lives: number;
-  /** Gold added to (or taken from) the opening purse. */
   gold: number;
-  /** Kill-pay multiplier. */
   bounty: number;
   /** Seconds between a wave arriving in full and the next one marching on its own. */
   intermission: number;
-  /** Stars a hold on this difficulty can add on top of the lives it kept. */
   bonusStar: number;
 }
 
@@ -37,7 +26,6 @@ export const DIFFICULTIES: Record<DifficultyId, DifficultyDef> = {
 };
 export const DIFFICULTY_IDS: readonly DifficultyId[] = ["squire", "knight", "warlord"];
 
-/** Stars a defense earns: none for a fall, then by the share of lives kept, plus the difficulty's bonus. */
 export function starsFor(held: boolean, lives: number, livesMax: number, difficulty: DifficultyId): number {
   if (!held) return 0;
   const kept = livesMax <= 0 ? 0 : lives / livesMax;
@@ -45,7 +33,6 @@ export function starsFor(held: boolean, lives: number, livesMax: number, difficu
   return base + DIFFICULTIES[difficulty].bonusStar;
 }
 
-/** The council's stats: multipliers on tower damage, ability strength and cooldown, and flat purse and walls. */
 export type CouncilStat =
   | "archer_damage"
   | "cannon_damage"
@@ -79,7 +66,6 @@ export const COUNCIL_NODES: readonly (SkillNodeDef<CouncilStat> & { label: strin
 
 export interface CampaignState {
   difficulty: DifficultyId;
-  /** Best stars each difficulty has earned. */
   stars: Record<DifficultyId, number>;
   /** The council's spent ranks; its points are the stars, so they are not stored. */
   council: SkillTreeState;
@@ -91,7 +77,6 @@ export function freshCampaign(): CampaignState {
 
 export const campaign = defineStore<CampaignState>("beacon:campaign", freshCampaign);
 
-/** Council points: every best star across the difficulties. */
 export function councilPoints(state: CampaignState): number {
   return DIFFICULTY_IDS.reduce((sum, id) => sum + state.stars[id], 0);
 }
@@ -107,7 +92,6 @@ function buildTree(state: CampaignState): SkillTree<CouncilStat> {
 
 const trees = perContext(() => ({ key: "", tree: null as SkillTree<CouncilStat> | null }));
 
-/** The live council for the stored campaign, rebuilt when the stars or ranks change. */
 export function councilTree(ctx: GameContext): SkillTree<CouncilStat> {
   const state = campaign.read(ctx);
   const cache = trees(ctx);
@@ -120,22 +104,18 @@ export function councilTree(ctx: GameContext): SkillTree<CouncilStat> {
   return cache.tree;
 }
 
-/** What the council grants this run. */
 export function councilBuild(ctx: GameContext): SkillResolution<CouncilStat> {
   return councilTree(ctx).resolved();
 }
 
-/** A council multiplier (1 when nothing is ranked). */
 export function councilScale(ctx: GameContext, stat: CouncilStat): number {
   return councilBuild(ctx).stats[stat]?.multiply ?? 1;
 }
 
-/** A council flat bonus (0 when nothing is ranked). */
 export function councilAdd(ctx: GameContext, stat: CouncilStat): number {
   return councilBuild(ctx).stats[stat]?.add ?? 0;
 }
 
-/** Spend one point on a council seat; refused (false) when the tree's rules say no. */
 export function rankCouncil(ctx: GameContext, nodeId: string): boolean {
   const tree = councilTree(ctx);
   if (!tree.spend(nodeId).ok) return false;
@@ -144,7 +124,6 @@ export function rankCouncil(ctx: GameContext, nodeId: string): boolean {
   return true;
 }
 
-/** Hand every council point back. */
 export function resetCouncil(ctx: GameContext): void {
   const state = campaign.read(ctx);
   campaign.write(ctx, { ...state, council: { points: 0, ranks: {} } });
@@ -158,7 +137,6 @@ export function difficultyOf(ctx: GameContext): DifficultyDef {
   return DIFFICULTIES[campaign.read(ctx).difficulty];
 }
 
-/** Record a finished defense's stars, keeping the best per difficulty. Returns the stars it earned. */
 export function recordStars(ctx: GameContext, stars: number): number {
   const state = campaign.read(ctx);
   const best = Math.max(state.stars[state.difficulty], stars);

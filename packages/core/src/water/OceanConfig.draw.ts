@@ -3,13 +3,10 @@ import * as THREE from "three";
 import { clamp } from "@jgengine/core/math/scalar";
 import { synthesizeWaves, type GerstnerWave, type WaterSurfaceConfig } from "@jgengine/core/water/waterSurface";
 
-/** Waves the ocean shader draws; a longer {@link synthesizeWaves} set keeps its first six. */
 export const MAX_OCEAN_WAVES = 6;
 
-/** Ocean mesh quality tier; picks the sheet size and vertex resolution from {@link OCEAN_QUALITY_PRESETS}. */
 export type OceanQualityPreset = "low" | "medium" | "high" | "ultra";
 
-/** Ocean body colours: shallow and deep tones, crest and foam colour, opacity, fresnel and sun sparkle. */
 export interface OceanColorConfig {
   shallow?: THREE.ColorRepresentation;
   deep?: THREE.ColorRepresentation;
@@ -18,9 +15,7 @@ export interface OceanColorConfig {
   opacity?: number;
   fresnelStrength?: number;
   horizonBlend?: number;
-  /** Water depth (m) at which the body color reaches the full `deep` tone. Default 2.6. */
   depthRange?: number;
-  /** Sun-glint sparkle intensity, 0 disables. Default 0.35. */
   sparkle?: number;
   /**
    * How far you see into the water, in metres of depth: shallower than this the bed shows through,
@@ -29,19 +24,15 @@ export interface OceanColorConfig {
   clarity?: number;
 }
 
-/** Where foam shows on the ocean: wave-crest threshold, softness, intensity, coverage and shoreline width. */
 export interface OceanFoamConfig {
   crestThreshold?: number;
   softness?: number;
   intensity?: number;
   coverage?: number;
-  /** Shoreline foam lick width (m of water depth it covers). Default 0.5. */
   shoreWidth?: number;
-  /** Strength of the foam lines that roll in over the shallows toward the shore, 0 for none. Default 0.6. */
   shoreWaves?: number;
 }
 
-/** Authored ocean settings; every field is optional and {@link createOceanConfig} fills the rest. */
 export interface OceanConfig {
   quality?: OceanQualityPreset;
   /** Ocean plane width in world units (X). When `depth` is omitted, also used for depth (square). */
@@ -49,11 +40,6 @@ export interface OceanConfig {
   /** Ocean plane depth in world units (Z). Defaults to `size` for a square sheet. */
   depth?: number;
   resolution?: number;
-  /**
-   * The sheet follows the camera and packs its vertices close to it, so near waves are smooth and
-   * the sea runs to the far plane in every direction. `size` is then the sheet's full width around
-   * the camera; the waves and the bed stay fixed to the world. Default false: a fixed sheet.
-   */
   follow?: boolean;
   /**
    * Texels per side of the bed-height map the shader reads for depth colour, shore foam and wave
@@ -71,7 +57,6 @@ export interface OceanConfig {
   foam?: OceanFoamConfig;
 }
 
-/** {@link OceanColorConfig} with every field filled in. */
 export interface ResolvedOceanColorConfig {
   shallow: THREE.ColorRepresentation;
   deep: THREE.ColorRepresentation;
@@ -85,7 +70,6 @@ export interface ResolvedOceanColorConfig {
   clarity: number;
 }
 
-/** {@link OceanFoamConfig} with every field filled in. */
 export interface ResolvedOceanFoamConfig {
   crestThreshold: number;
   softness: number;
@@ -95,7 +79,6 @@ export interface ResolvedOceanFoamConfig {
   shoreWaves: number;
 }
 
-/** {@link OceanConfig} with every field filled in, as the ocean material reads it. */
 export interface ResolvedOceanConfig {
   quality: OceanQualityPreset;
   size: number;
@@ -111,7 +94,6 @@ export interface ResolvedOceanConfig {
   waves: readonly GerstnerWave[];
 }
 
-/** Sheet size (world units) and vertex resolution for each {@link OceanQualityPreset}. */
 export const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> = {
   low: { size: 220, resolution: 80 },
   medium: { size: 360, resolution: 128 },
@@ -119,7 +101,6 @@ export const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; r
   ultra: { size: 720, resolution: 256 },
 };
 
-/** The ocean an empty {@link OceanConfig} resolves to: medium quality, teal shallows over deep blue. */
 export const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig = {
   quality: "medium",
   size: OCEAN_QUALITY_PRESETS.medium.size,

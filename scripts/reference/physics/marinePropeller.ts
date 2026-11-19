@@ -1,6 +1,5 @@
 // @skill jgengine-world
 
-/** One polynomial term: coefficient and the powers of `J`, `P/D`, `A_E/A_0` and `Z`. */
 type BSeriesTerm = readonly [number, number, number, number, number];
 
 // Oosterveld and van Oossanen (1975), Table 1: K_T and K_Q of the Wageningen B-screw series at Re = 2·10⁶.
@@ -102,44 +101,30 @@ function polynomial(terms: readonly BSeriesTerm[], j: number, pitchRatio: number
   return sum;
 }
 
-/** Geometry of a Wageningen B-series propeller. */
 export interface BSeriesPropeller {
   diameter: number;
-  /** Number of blades, 2–7. */
   blades: number;
-  /** Expanded blade-area ratio `A_E/A_0`, 0.3–1.05. */
   areaRatio: number;
-  /** Pitch–diameter ratio, 0.5–1.4. */
   pitchRatio: number;
-  /** Blade surface roughness for the ITTC-1978 scale correction, m (default `30e-6`, a new propeller). */
   roughness?: number;
 }
 
-/** Open-water thrust and torque coefficients at one advance ratio. */
 export interface OpenWaterPoint {
   advance: number;
   thrust: number;
   torque: number;
-  /** Open-water efficiency `J·K_T / (2π·K_Q)`. */
   efficiency: number;
 }
 
-/**
- * Open-water `K_T` and `K_Q` of a Wageningen B-series propeller from the Oosterveld–van Oossanen regression polynomials
- * (model scale, Re = 2·10⁶). Valid for positive thrust; past the zero-thrust advance the polynomials are extrapolations.
- * @capability marine-propeller Wageningen B-series open-water K_T, K_Q polynomials
- */
+/** @capability marine-propeller Wageningen B-series open-water K_T, K_Q polynomials */
 export function bSeriesOpenWater(propeller: BSeriesPropeller, advance: number): OpenWaterPoint {
   const thrust = polynomial(KT_TERMS, advance, propeller.pitchRatio, propeller.areaRatio, propeller.blades);
   const torque = polynomial(KQ_TERMS, advance, propeller.pitchRatio, propeller.areaRatio, propeller.blades);
   return { advance, thrust, torque, efficiency: torque > 0 ? (advance * thrust) / (2 * Math.PI * torque) : 0 };
 }
 
-/** Blade chord and thickness at 0.75R, the section the ITTC-1978 correction scales. */
 export interface ScrewBladeSection {
-  /** Chord at 0.75R, m. */
   chord: number;
-  /** Thickness–chord ratio at 0.75R. */
   thicknessRatio: number;
 }
 
@@ -152,19 +137,12 @@ export function bSeriesBladeSection(propeller: BSeriesPropeller): ScrewBladeSect
   return { chord, thicknessRatio: ((0.0185 - 0.00125 * propeller.blades) * propeller.diameter) / chord };
 }
 
-/**
- * ITTC-1978 profile drag change `ΔC_D` between the model-scale series and a full-scale propeller of the given roughness.
- * @capability marine-propeller ITTC-1978 propeller scale correction
- */
+/** @capability marine-propeller ITTC-1978 propeller scale correction */
 export function propellerProfileDragIncrement(section: ScrewBladeSection, roughness = 30e-6): number {
   return (2 + 4 * section.thicknessRatio) * (0.003605 - (1.89 + 1.62 * Math.log10(section.chord / roughness)) ** -2.5);
 }
 
-/**
- * Full-scale open water of a B-series propeller: the series polynomials with the ITTC-1978 correction
- * `K_T −= ΔC_D·0.3·(P/D)·(c·Z/D)`, `K_Q += ΔC_D·0.25·(c·Z/D)`.
- * @capability marine-propeller full-scale open-water curve of a B-series propeller
- */
+/** @capability marine-propeller full-scale open-water curve of a B-series propeller */
 export function bSeriesShipOpenWater(propeller: BSeriesPropeller, advance: number): OpenWaterPoint {
   const model = bSeriesOpenWater(propeller, advance);
   const section = bSeriesBladeSection(propeller);
@@ -175,19 +153,12 @@ export function bSeriesShipOpenWater(propeller: BSeriesPropeller, advance: numbe
   return { advance, thrust, torque, efficiency: torque > 0 ? (advance * thrust) / (2 * Math.PI * torque) : 0 };
 }
 
-/** Where a propeller runs to deliver a thrust at an inflow speed. */
 export interface PropellerOperatingPoint extends OpenWaterPoint {
-  /** Shaft speed, rev/s. */
   revolutions: number;
-  /** Delivered power in open water, W. */
   power: number;
 }
 
-/**
- * The shaft speed at which a full-scale B-series propeller delivers `thrust` with inflow `advanceSpeed`: solves
- * `K_T(J)/J² = T/(ρ·D²·V_A²)` for `J` by bisection on the falling branch.
- * @capability marine-propeller propeller operating point for a required thrust
- */
+/** @capability marine-propeller propeller operating point for a required thrust */
 export function propellerForThrust(propeller: BSeriesPropeller, thrust: number, advanceSpeed: number, density = 1025): PropellerOperatingPoint {
   const D = propeller.diameter;
   const target = thrust / (density * D * D * advanceSpeed * advanceSpeed);
@@ -205,11 +176,7 @@ export function propellerForThrust(propeller: BSeriesPropeller, thrust: number, 
   return { ...point, revolutions, power: 2 * Math.PI * revolutions * point.torque * density * revolutions * revolutions * D ** 5 };
 }
 
-/**
- * The pitch ratio that delivers `thrust` at `advanceSpeed` with the best open-water efficiency, searched over
- * `P/D` 0.5–1.4 (golden section on the efficiency of {@link propellerForThrust}).
- * @capability marine-propeller optimum-pitch propeller for a required thrust and diameter
- */
+/** @capability marine-propeller optimum-pitch propeller for a required thrust and diameter */
 export function optimumPitchPropeller(propeller: Omit<BSeriesPropeller, "pitchRatio">, thrust: number, advanceSpeed: number, density = 1025): { propeller: BSeriesPropeller; point: PropellerOperatingPoint } {
   const efficiency = (pitchRatio: number) => propellerForThrust({ ...propeller, pitchRatio }, thrust, advanceSpeed, density).efficiency;
   let a = 0.5;
@@ -227,37 +194,24 @@ export function optimumPitchPropeller(propeller: Omit<BSeriesPropeller, "pitchRa
   return { propeller: best, point: propellerForThrust(best, thrust, advanceSpeed, density) };
 }
 
-/** A waterjet: an inlet in the hull bottom, a pump, and a nozzle. */
 export interface Waterjet {
-  /** Nozzle exit area, m². */
   nozzleArea: number;
-  /** Inlet velocity over ship speed, `1 − w` (default `0.95`; the boundary layer the inlet swallows). */
   inletVelocityRatio?: number;
-  /** Pump efficiency (default `0.9`). */
   pumpEfficiency?: number;
-  /** Nozzle loss as a share of the jet's kinetic energy (default `0.02`). */
   nozzleLoss?: number;
-  /** Inlet loss as a share of the inflow's kinetic energy (default `0.2`). */
   inletLoss?: number;
 }
 
-/** A waterjet's thrust at one speed and power. */
 export interface WaterjetPoint {
   thrust: number;
   /** Jet velocity at the nozzle, m/s. */
   jetVelocity: number;
   /** Mass flow, kg/s. */
   massFlow: number;
-  /** Thrust power over shaft power, `T·V/P`. */
   efficiency: number;
 }
 
-/**
- * Momentum theory of a waterjet: the pump lifts the swallowed flow from inlet to jet velocity,
- * `η_p·P = ṁ·((1 + k_n)·V_j²/2 − (1 − k_i)·V_in²/2)`, and the thrust is the momentum it adds, `T = ṁ·(V_j − V_in)`,
- * with `ṁ = ρ·A_n·V_j`. Solves the jet velocity for a shaft power by bisection.
- * @capability marine-propeller waterjet thrust from shaft power by momentum theory
- */
+/** @capability marine-propeller waterjet thrust from shaft power by momentum theory */
 export function waterjetThrust(jet: Waterjet, power: number, speed: number, density = 1025): WaterjetPoint {
   const inflow = (jet.inletVelocityRatio ?? 0.95) * speed;
   const kn = jet.nozzleLoss ?? 0.02;

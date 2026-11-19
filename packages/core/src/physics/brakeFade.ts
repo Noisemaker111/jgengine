@@ -12,13 +12,10 @@ export interface VehicleBrakeFadeEffect {
   strength?: number;
   /** Heat capacity of all the discs together, J/K (default `9600`: a road car's four cast-iron discs, ~21 kg at 460 J/(kg·K)). */
   heatCapacity?: number;
-  /** Share of the braking energy that goes into the discs (default `0.9`; the pads and air take the rest). */
   discShare?: number;
   /** Heat the discs shed per kelvin above ambient, W/K, at rest and per m/s of speed (default `4` and `1.2`). */
   cooling?: { rest: number; perSpeed: number };
-  /** Ambient temperature, °C (default `20`). */
   ambient?: number;
-  /** Pad friction against disc temperature, `[°C, share of cold friction]` in rising °C (default a road pad: full to 350 °C, 0.6 at 600 °C, 0.35 at 800 °C). */
   fade?: readonly (readonly [number, number])[];
 }
 
@@ -43,10 +40,7 @@ function sample(curve: readonly (readonly [number, number])[], x: number): numbe
   return curve[curve.length - 1]?.[1] ?? 1;
 }
 
-/**
- * The share of cold brake force the pads give at disc temperature `temperature` °C, with the fade scaled by `strength`.
- * @capability brake-fade brake force that fades as the discs heat up under repeated hard stops and recovers as they cool
- */
+/** @capability brake-fade brake force that fades as the discs heat up under repeated hard stops and recovers as they cool */
 export function brakeFadeShare(effect: VehicleBrakeFadeEffect, temperature: number, strength: number): number {
   const share = sample(effect.fade ?? ROAD_PAD, temperature);
   return strength === 1 ? share : Math.max(0.1, Math.min(1, 1 - strength * (1 - share)));

@@ -46,7 +46,6 @@ import { useTextDirection } from "../i18n/textDirection.view";
 import { subscribeFrameBind, useFrameBind } from "../ui/liveBind.view";
 import { memoView } from "../ui/memoView.view";
 
-/** Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default). */
 export function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean {
   return showDuring === undefined || showDuring.includes(phase);
 }
@@ -56,7 +55,6 @@ const DRAG_THRESHOLD_PX = 4;
 const PERSIST_DELAY_MS = 200;
 const EDIT_BAR_Z = 100000;
 const PANEL_GAP = 10;
-/** Least time between two HUD overflow checks; each one measures every panel and forces a layout. */
 const HUD_CHECK_INTERVAL_MS = 500;
 const COMPACT_HUD_SCALE = 0.85;
 
@@ -66,7 +64,6 @@ const COMPACT_HUD_SCALE = 0.85;
  * skips it. Opt-out, on purpose: the default is that shown UI must fit on screen.
  */
 const ALLOW_OVERFLOW_ATTR = "data-hud-allow-overflow";
-/** Opt-in marker for a custom window mounted deeper than a direct HudCanvas child. */
 const WINDOW_ATTR = "data-hud-window";
 
 /**
@@ -221,24 +218,12 @@ function ResizeHandles({
   );
 }
 
-/**
- * Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
- *
- * @capability hud-layout persistent, live-editable HUD panel layout state for `HudCanvas`
- */
+/** @capability hud-layout persistent, live-editable HUD panel layout state for `HudCanvas` */
 export function useHudLayout(options?: {
   storageKey?: string;
   snap?: number;
   locked?: boolean;
-  /**
-   * Scene-document `ui` section — source of truth for panel placement/size.
-   * When provided, hydrates the layout store (and wins over legacy localStorage).
-   */
   documentUi?: EditorUiDocument;
-  /**
-   * When true (default), canvas moves/resizes invoke the injected {@link HudLayoutPersist}
-   * port (`HudLayoutPersistProvider` / `onPanelCommit`). No-op when no host has provided one.
-   */
   documentPatches?: boolean;
 }): HudLayoutStore {
   const storageKey = options?.storageKey;
@@ -296,7 +281,6 @@ export function useHudLayout(options?: {
 interface HudCanvasContextValue {
   layout: HudLayoutStore;
   canvasRef: RefObject<HTMLDivElement | null>;
-  /** Element flowing panels portal into; `null` until the canvas has committed it. */
   layer: HTMLDivElement | null;
   /** The HUD's own size in HUD pixels, once measured. */
   frame: HudSize | null;
@@ -307,13 +291,11 @@ interface HudCanvasContextValue {
   reportPanelSize: (id: string, size: HudSize, collapsed: boolean) => void;
 }
 
-/** A flowing panel's claim before it has been measured. */
 interface PanelDeclaration {
   id: string;
   anchor: HudAnchor;
   order?: number | undefined;
   priority?: HudPriority | undefined;
-  /** Toggle label, for sizing the toggle before it has been drawn. */
   chip: string;
 }
 
@@ -321,7 +303,6 @@ const EMPTY_PLACEMENTS: HudPanelLayout = { scale: 1, rects: {}, collapsed: [], o
 
 const HudCanvasContext = createContext<HudCanvasContextValue | null>(null);
 
-/** Where one flowing panel sits: its rectangle and whether it is drawn as its toggle. */
 interface PanelPlacement {
   rect: HudRect | undefined;
   collapsed: boolean;
@@ -330,7 +311,6 @@ interface PanelPlacement {
 interface PlacementHub {
   publish(next: HudPanelLayout): void;
   subscribe(listener: () => void): () => void;
-  /** The panel's placement, the same object until its rectangle or collapse changes. */
   of(id: string): PanelPlacement;
 }
 
@@ -433,7 +413,6 @@ function localSize(element: HTMLElement): HudSize {
   return { width: element.offsetWidth, height: element.offsetHeight };
 }
 
-/** The HUD host's top-left corner on screen; control zones are measured on screen and placed relative to it. */
 interface HostOrigin {
   left: number;
   top: number;
@@ -458,7 +437,6 @@ function controlObstacles(zones: readonly LayoutRect[], origin: HostOrigin, view
   return obstacles;
 }
 
-/** A toggle's size before it has been drawn: the label's letters plus the pill's padding and caret. */
 function estimateChipSize(label: string): HudSize {
   return { width: Math.round(label.length * 8 + 44), height: 26 };
 }
@@ -483,7 +461,6 @@ export const HudCanvas = memoView("HudCanvas", function HudCanvas({
 }: {
   layout: HudLayoutStore;
   editChord?: HudEditChord | false;
-  /** Opt-in play-phase gate: render the HUD only during these phases (e.g. `["playing"]`). Omit for always-visible (default). */
   showDuring?: readonly GamePhase[];
   className?: string;
   style?: CSSProperties;
@@ -811,7 +788,6 @@ export const HudCanvas = memoView("HudCanvas", function HudCanvas({
   );
 });
 
-/** Human-readable edge list for the dev boundary badge, e.g. `right +260 · bottom +56`. */
 function overflowEdges(overflow: HudOverflow): string {
   const parts: string[] = [];
   if (overflow.left > 0) parts.push(`left +${overflow.left}`);
@@ -893,15 +869,7 @@ function HudChip({
   );
 }
 
-/**
- * A HUD block anchored to a corner, edge or the centre. `HudCanvas` places every panel together: panels
- * sharing an anchor stack outward from the screen edge in ascending `order`, and a panel that would
- * cover another slides to the nearest free spot. When the screen is too small, lower-`priority` panels
- * fold into a toggle first. On fine pointers panels stay draggable through the edit chord; a dragged
- * panel leaves the flow and keeps its custom placement.
-  *
- * @capability hud-panel anchored HUD slot — drop any widget in a named, player-movable panel
- */
+/** @capability hud-panel anchored HUD slot — drop any widget in a named, player-movable panel */
 export const HudPanel = memoView("HudPanel", function HudPanel({
   id,
   anchor = "top-left",
@@ -925,7 +893,6 @@ export const HudPanel = memoView("HudPanel", function HudPanel({
 }: {
   id: string;
   anchor?: HudAnchor;
-  /** Stack position within the anchor, ascending outward from the screen edge. Default 0. */
   order?: number;
   /** Label of the toggle the panel folds into when the screen has no room for it. Defaults to the panel id. */
   chip?: string;
@@ -937,26 +904,21 @@ export const HudPanel = memoView("HudPanel", function HudPanel({
    */
   inset?: { x: number; y: number };
   locked?: boolean;
-  /** Opt-in play-phase gate: render this panel only during these phases. Omit for always-visible (default). */
   showDuring?: readonly GamePhase[];
   /**
    * How much the panel matters when the screen is short of room. `critical` panels never fold and place
    * first; `secondary` (the default) and then `tertiary` panels fold into a toggle when nothing else fits.
    */
   priority?: HudPriority;
-  /** How the panel adapts on mobile. `"hidden"` unmounts on phones; `"transient"` softens its collision policy; others tag the element for game CSS. */
   mobileBehavior?: MobileHudBehavior;
-  /** Region ids this panel may overlap without a forbidden-collision report. */
   allowOverlapWith?: readonly string[];
   /** Regions sharing a non-empty group never collide with each other. */
   collisionGroup?: string;
-  /** Register this panel as a collision-tracked layout region. Default true. */
   region?: boolean;
   /** Fallback width when the document has not authored a size. */
   width?: number;
   /** Fallback height when the document has not authored a size. */
   height?: number;
-  /** Panel type id ({@link registerHudPanelType}) — drives resize axes + ParamSchema. */
   type?: string;
   className?: string;
   style?: CSSProperties;
@@ -1271,7 +1233,6 @@ export const HudPanel = memoView("HudPanel", function HudPanel({
   );
 });
 
-/** Props for {@link HudFade}. */
 export interface HudFadeProps {
   /**
    * What the group shows, read every frame (`() => [health, ammo]`). When it changes (health drops,
@@ -1282,15 +1243,12 @@ export interface HudFadeProps {
   watch: () => unknown;
   /** Quiet time before fading, in ms. Default 3500. */
   idleMs?: number;
-  /** Opacity once faded; 0 hides it entirely. Default 0.18. */
   dimTo?: number;
-  /** Read every frame: keep it at full strength while true (in combat, low health, aiming, a menu open). */
   hold?: () => boolean;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
-
 
 const NEVER_HOLD = (): boolean => false;
 
@@ -1361,7 +1319,6 @@ export const HudFade = memoView("HudFade", function HudFade({ watch, idleMs = 35
   );
 }, { readLater: ["watch", "hold"] });
 
-/** The eight edge slots of {@link HudSlots}. */
 export type HudSlot = "topLeft" | "top" | "topRight" | "left" | "right" | "bottomLeft" | "bottom" | "bottomRight";
 
 const HUD_SLOT_ANCHORS: Record<HudSlot, { anchor: HudAnchor; inset: { x: number; y: number } }> = {
@@ -1388,67 +1345,39 @@ const MIRRORED_SLOT: Record<HudSlot, HudSlot> = {
   bottomRight: "bottomLeft",
 };
 
-/** The edge a slot sits at for a reading direction: a right-to-left HUD swaps left and right, so `topLeft` (the start corner) lands top right. * @internal
- */
+/** @internal */
 export function hudSlotEdge(slot: HudSlot, direction: TextDirection): HudSlot {
   return direction === "rtl" ? MIRRORED_SLOT[slot] : slot;
 }
 
-/** The anchor and inset a slot's panels take for a reading direction. * @internal
- */
+/** @internal */
 export function hudSlotPlacement(slot: HudSlot, direction: TextDirection): { anchor: HudAnchor; inset: { x: number; y: number } } {
   return HUD_SLOT_ANCHORS[hudSlotEdge(slot, direction)];
 }
 
-/** The widest a corner card draws, at the 1600x900 design size the HUD scales from. */
 export const HUD_CORNER_WIDTH = 248;
 
-/**
- * A panel inside a {@link HudSlots} slot, for a slot that holds more than one or needs panel options.
- * `id` is the key the player's moved position is remembered under.
- */
 export interface HudSlotPanel {
   id: string;
   content: ReactNode;
-  /** Stacking within the slot, ascending outward from the edge. */
   order?: number;
-  /** Which panels fold into a toggle first on a small screen. */
   priority?: HudPriority;
-  /** `false` lets clicks pass through to the world. */
   interactive?: boolean;
-  /** Label of the toggle this panel folds into on a small screen. */
   chip?: string;
 }
 
-/** Props for {@link HudSlots}. */
 export interface HudSlotsProps {
-  /** Remembers the player's moved panels under this key (the game's id). */
   storageKey: string;
-  /** What sits at each edge; unset or `null` slots draw nothing. */
   slots?: Partial<Record<HudSlot, ReactNode>>;
-  /** Several panels at one edge, each with its own id and options; drawn after that edge's `slots` entry. */
   panels?: Partial<Record<HudSlot, readonly HudSlotPanel[]>>;
-  /** Drawn over the slots (an end card, a centred moment). */
   overlay?: ReactNode;
-  /** Phases the HUD shows in. Default playing and ended; `null` shows it in every phase. */
   showDuring?: readonly GamePhase[] | null;
-  /** Class on the HUD root, for the game's own skin. */
   className?: string;
 }
 
 const DEFAULT_SLOT_PHASES: readonly GamePhase[] = ["playing", "ended"];
 
-/**
- * The play HUD in one line: a few small panels pinned to the screen's edges, scaled from a 1600x900
- * design to any window and movable by the player (the layout is remembered per `storageKey`). Keep
- * it to a handful of slots; the world is the picture.
- *
- * ```tsx
- * <HudSlots storageKey={idea.id} slots={{ topLeft: <Vitals />, top: <WaveClock />, bottom: <BuildBar /> }} overlay={<Ending />} />
- * ```
- *
- * @capability hud-slots a play HUD of edge-pinned, player-movable panels in one component
- */
+/** @capability hud-slots a play HUD of edge-pinned, player-movable panels in one component */
 export function HudSlots({ storageKey, slots = {}, panels = {}, overlay, showDuring = DEFAULT_SLOT_PHASES, className }: HudSlotsProps): ReactNode {
   const layout = useHudLayout({ storageKey });
   const direction = useTextDirection();

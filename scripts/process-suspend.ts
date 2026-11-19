@@ -52,12 +52,10 @@ async function apply(pid: number, freeze: boolean): Promise<void> {
   }
 }
 
-/** Stop every thread of each process; pair every call with {@link resumeProcesses}. */
 export async function suspendProcesses(pids: readonly number[]): Promise<void> {
   for (const pid of pids) await apply(pid, true);
 }
 
-/** Let processes run again. A pid that already exited is skipped. */
 export async function resumeProcesses(pids: readonly number[]): Promise<void> {
   for (const pid of pids) {
     try {

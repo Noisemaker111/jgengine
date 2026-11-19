@@ -29,7 +29,6 @@ export const timingGateOn = (): boolean => process.env[TIMING_GATE_ENV] === "1";
  */
 const REFERENCE_MS = 24.6;
 
-/** Keep a slowdown-tolerant ceiling while still failing a genuine regression. */
 const MAX_MACHINE_FACTOR = 4;
 
 function referenceRun(): number {

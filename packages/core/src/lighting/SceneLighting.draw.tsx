@@ -26,7 +26,6 @@ import { publishOnPage } from "../runtime/pageHandle";
 /** three.js lights default to white; an unset light colour means this. */
 const LIGHT_DEFAULT_COLOR = "#ffffff";
 const DEFAULT_BACKDROP_FOG_COLOR = "#1a1c22";
-/** Default cap for combined dynamic point and spot lights. */
 export const POINT_LIGHT_BUDGET = 8;
 
 /**
@@ -74,8 +73,6 @@ export function syncShadowProjection(light: DirectionalLight): void {
   light.shadow.camera.updateProjectionMatrix();
 }
 
-/** Draw-side form of the single-shadow directional: one DirectionalLight whose shadow frustum
- * and filter retune on prop change, with daylight modulation applied per frame. */
 function singleShadowLightDraw(getProps: () => {
   entry: DirectionalLightingConfig;
   profile?: GraphicsProfile | undefined;
@@ -161,11 +158,7 @@ function singleShadowLightDraw(getProps: () => {
   };
 }
 
-/**
- * Draw-side form of {@link ShadowPipeline}: the small caster cull, the static shadow cache and
- * their devtools probes, installed once on the root scene for every shadow-casting light.
- * @internal
- */
+/** @internal */
 export function shadowPipelineDraw(getProps: () => { profile?: GraphicsProfile | undefined }): EngineDraw {
   let cull: ShadowCasterCull | null = null;
   let casterRadius = -1;
@@ -280,9 +273,6 @@ export function ShadowPipeline(props: { profile?: GraphicsProfile | undefined })
   return <EngineDrawMount create={() => shadowPipelineDraw(() => latest.current)} deps={[]} />;
 }
 
-/** Draw-side form of {@link ConfiguredLighting}: all authored lights live in one group; the light
- * set rebuilds when the `lighting` config or `profile` identity changes, and daylight modulation
- * retunes ambient, hemisphere and the first directional per frame. */
 export function configuredLightingDraw(getProps: () => {
   lighting: LightingConfig;
   profile?: GraphicsProfile | undefined;
@@ -414,13 +404,9 @@ export function configuredLightingDraw(getProps: () => {
   };
 }
 
-/**
- * Mounts the game's authored lights (ambient, hemisphere, directional with shadows, point and spot within the light budget) for the active graphics profile.
- */
 export function ConfiguredLighting(props: {
   lighting: LightingConfig;
   profile?: GraphicsProfile;
-  /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */
   modulation?: DaylightModulation;
 }) {
   const latest = useRef(props);
@@ -471,7 +457,6 @@ export function backdropFogDraw(getProps: () => { fog: BackdropConfig["fog"] }):
   };
 }
 
-/** Attaches the backdrop's linear or exponential fog to the scene; renders nothing without fog. */
 export function BackdropFog(props: { fog: BackdropConfig["fog"] }) {
   const latest = useRef(props);
   latest.current = props;

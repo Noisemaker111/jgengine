@@ -10,17 +10,13 @@ import type { AssetAlias } from "../manifest";
  * @capability starter-packs themed CC0 model ids (props/nature/urban) ready for objectModels
  */
 
-/** props | nature | urban — the three curated starter themes. */
 export type StarterTheme = "props" | "nature" | "urban";
 
-/** One curated starter model: short id, theme, live catalog target, license, suggested height. */
 export interface StarterAsset {
-  /** Short id — also registered as `asset:<id>` and `starter/<id>`. */
   id: string;
   theme: StarterTheme;
   /** Live catalog id (pack/file); must exist in the generated index. */
   target: string;
-  /** Suggested height when used as a character/prop figure. */
   targetHeight?: number;
   title: string;
   license: "CC0-1.0";
@@ -177,23 +173,16 @@ const URBAN: readonly StarterAsset[] = [
   },
 ];
 
-/** Flat list of every curated starter asset across themes. */
 export const STARTER_ASSETS: readonly StarterAsset[] = [...PROPS, ...NATURE, ...URBAN];
 
-/** Theme → assets table for browse/docs (`STARTER_PACKS.props`, …). */
 export const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> = {
   props: PROPS,
   nature: NATURE,
   urban: URBAN,
 };
 
-/** Ordered starter theme ids: props, nature, urban. */
 export const STARTER_THEMES: readonly StarterTheme[] = ["props", "nature", "urban"];
 
-/**
- * The model-library people a fresh game pulls with the starter packs: realistic rigged humans, a
- * man and a woman, that `libraryModel(name)` animates with the full humanoid clip set.
- */
 export const STARTER_PEOPLE: readonly string[] = ["human/man-casual", "human/woman-casual"];
 
 /** Source pack ids a game must pull so every starter asset URL resolves on disk. */

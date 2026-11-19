@@ -10,7 +10,6 @@ export interface AffixDef {
   op?: AffixOp;
   roll: number | [number, number];
   weight: number;
-  /** Lowest item level whose roll pool includes this affix; omitted means every level. */
   minLevel?: number;
   namePart?: { position: "prefix" | "suffix"; text: string };
 }
@@ -20,7 +19,6 @@ export interface AffixPool {
   affixes: readonly AffixDef[];
 }
 
-/** A rarity step of the Ladder: `at` is its place in the rarity order, the roll itself is by `weight`. */
 export interface RarityTier extends ThresholdBoundary {
   weight: number;
   affixCount: number | [number, number];
@@ -77,7 +75,6 @@ function assertConfig(config: RollerConfig): void {
   }
 }
 
-/** Per-stat modifier stack: every add before every multiply, as the roller has always folded them. */
 function affixStacks(affixes: readonly RolledAffix[]): Map<string, StatContribution[]> {
   const byStat = new Map<string, StatContribution[]>();
   const push = (affix: RolledAffix): void => {

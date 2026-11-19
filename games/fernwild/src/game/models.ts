@@ -15,13 +15,10 @@ import { itemDef } from "./data/items";
 
 const NATURE = "/models/imported/quaternius-stylized-nature";
 const nature = (file: string, targetHeight: number): ModelConfig => ({ url: `${NATURE}/${file}.glb`, targetHeight });
-/** A rock tinted to read as the ore it holds. */
 const ore = (file: string, targetHeight: number, material: NonNullable<ModelConfig["material"]>): ModelConfig => ({ ...nature(file, targetHeight), material });
 
-/** A survivor stands 1.8 m, slim beside every creature over dodo size. */
 const SURVIVOR_HEIGHT = 1.8;
 
-/** The packs' own idle, walk and run, plus the engine's authored jump, swim, punch, swing and gather. */
 const SURVIVOR_ANIMATION = humanoidAnimation({ idle: "CharacterArmature|Idle", walk: "CharacterArmature|Walk", run: "CharacterArmature|Run" });
 
 const BODY_MODELS: Record<string, ModelConfig> = resolveModelPlan(
@@ -35,10 +32,8 @@ function bodyModel(id: string): ModelConfig {
   return model;
 }
 
-/** A tool in the right fist: the haft runs down out of the grip, its head swings over and down. */
 const GRIP: [number, number, number] = [2.62, 0, 0];
 
-/** Each tool item the survivor shows in hand, and how the fist holds it; anything else leaves the fist empty. */
 const TOOLS: Record<string, { model: string; rotation: [number, number, number] }> = {
   stone_pick: { model: "survival/stone-pick", rotation: GRIP },
   stone_hatchet: { model: "survival/stone-hatchet", rotation: GRIP },
@@ -56,10 +51,8 @@ const inHand = (tool: { model: string; rotation: [number, number, number] }): Mo
 
 const HELD: Record<string, ModelAttachment> = Object.fromEntries(Object.entries(TOOLS).map(([item, tool]) => [item, inHand(tool)]));
 
-/** Rough plant-fibre weave: ambientCG's CC0 canvas scan ("ambientcg-fabric007") for the grain, each piece keeping its own dye. */
 const FIBRE = librarySurfaceScan("fabric/canvas", { tint: 0, repeat: 0.35 });
 
-/** ARK's cloth set in undyed tans and browns, each drawn over the body area its slot covers. */
 const CLOTH_DYES: Record<string, string> = {
   cloth_hat: "#8a6a43",
   cloth_shirt: "#a3845a",
@@ -81,13 +74,8 @@ const WORN: Record<string, WornLayer> = Object.fromEntries(
   }),
 );
 
-/** The model-library names the survivor's tools draw, for the credits. */
 export const TOOL_MODELS: readonly string[] = [...new Set(Object.values(TOOLS).map((tool) => tool.model))];
 
-/**
- * The survivor and every species: free animal models (data/creatureModels.ts), each drawn at the
- * species' standing height and tinted where a relative stands in for it.
- */
 export const entityModels: Record<string, ModelConfig> = {
   player: { ...bodyModel(BODIES[0].id), held: HELD, worn: WORN, looks: Object.fromEntries(BODIES.map((body) => [body.id, bodyModel(body.id)])) },
   ...Object.fromEntries(
@@ -100,16 +88,10 @@ export const entityModels: Record<string, ModelConfig> = {
 
 export const objectModels: Record<string, ModelConfig> = {};
 
-/** A palette item grown by an engine nature generator: a few seeded variants of one species. */
 const grown = (generator: string, preset: string, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({ generator, preset, params, variants });
 
-/** The island's tree look: textured leaf cards over the grown wood, lit, a touch more saturated than life. */
 const TREE_LOOK = { foliage: "leaves", shading: "lit", saturation: 1.15, brightness: 1.05, barkGrain: true };
 
-/**
- * A tree grown by the plant simulation: a species at an age (and day of year). Every tree grows from
- * its own seed; the nearest few of each kind draw as their own mesh, the rest as shared stand-ins.
- */
 const tree = (species: string, age: number, params: Record<string, unknown> = {}): ScatterGeneratorItem => ({
   generator: "plant.grown",
   params: { species, age, ...TREE_LOOK, ...params },

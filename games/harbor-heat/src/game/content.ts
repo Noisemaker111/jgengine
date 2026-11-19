@@ -45,7 +45,6 @@ function itemById(itemId: string): GameContextItemEntry | null {
   return null;
 }
 
-/** The boats in the bay and the helicopter over the city: scenery that moves along authored circuits. */
 const AMBIENT_VESSELS: ReadonlySet<string> = new Set(["boat_sail", "boat_runabout", "heli_ambient"]);
 
 function entityById(catalogId: string): GameContextEntityEntry | null {
@@ -58,7 +57,6 @@ function entityById(catalogId: string): GameContextEntityEntry | null {
   return null;
 }
 
-/** Placed per job and removed on delivery; everything else is fixed city dressing. */
 const TRANSIENT_OBJECTS = new Set(["obj_delivery_1", "obj_delivery_2", "obj_delivery_3"]);
 
 function objectById(catalogId: string): GameContextObjectEntry | null {

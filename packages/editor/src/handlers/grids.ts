@@ -36,7 +36,6 @@ function gridLayerSummary(layer: EditorGridLayer): {
   };
 }
 
-/** Runs `fn` with the grid layer in `state`, or short-circuits with an honest not-found response. */
 function withGridLayer(
   state: EditorSessionState,
   id: string,
@@ -47,7 +46,6 @@ function withGridLayer(
   return fn(layer);
 }
 
-/** Grid/tile layer verbs — create, edit, paint, fill, and import. */
 export const gridHandlers: Pick<
   HandlerTable,
   | "list_grids"

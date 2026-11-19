@@ -5,10 +5,6 @@ import type { SceneMarkerLike } from "./sceneShapes";
 /** A placement's authored rig animation override — the stored `marker.meta.animation` contract (#1274). */
 export type AuthoredAnimation = ModelAnimationConfig | "auto" | "none";
 
-/**
- * One authored catalog prop resolved from an editor marker — grounded at `x`/`z` with yaw, ready
- * for `ctx.scene.object.place` or {@link placeAuthoredObjects}.
- */
 export interface AuthoredObject {
   catalogId: string;
   x: number;
@@ -25,18 +21,15 @@ export interface AuthoredObject {
   animation?: AuthoredAnimation;
 }
 
-/** Minimal marker shape {@link resolveAuthoredObjects} reads; any `EditorMarker` satisfies it. */
 export interface AuthoredObjectMarkerLike extends SceneMarkerLike {
   catalogId?: string;
   rotationY?: number;
 }
 
-/** Minimal document shape {@link resolveAuthoredObjects} walks; any `EditorDocument` satisfies it. */
 export interface AuthoredObjectsDocumentLike {
   markers: readonly AuthoredObjectMarkerLike[];
 }
 
-/** Structural place target — any `ObjectStore` satisfies it. */
 export interface AuthoredObjectPlaceTarget {
   place(
     catalogId: string,
@@ -52,11 +45,9 @@ export interface AuthoredObjectPlaceTarget {
   ): string;
 }
 
-/** Options for {@link placeAuthoredObjects}. */
 export interface PlaceAuthoredObjectsOptions {
   /** Extra lift in meters applied to every placement after terrain height + per-object offset. */
   verticalOffset?: number;
-  /** How to treat instance ids already in the store. Default `"throw"` (ObjectStore default). */
   onExisting?: "throw" | "replace" | "keep";
 }
 
@@ -105,19 +96,11 @@ function markerVerticalOffset(marker: AuthoredObjectMarkerLike): number {
  */
 export const ENTITY_MARKER_KINDS: readonly string[] = ["mob", "boss"];
 
-/** Options for {@link resolveAuthoredObjects}. */
 export interface ResolveAuthoredObjectsOptions {
-  /** Marker kinds to skip (they are handled elsewhere). Default {@link ENTITY_MARKER_KINDS}. */
   excludeKinds?: readonly string[];
 }
 
-/**
- * Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to
- * {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places.
- * Entity-spawn kinds (`mob`/`boss`) are skipped by default — they carry a `catalogId` for their
- * entity definition, but are spawned via `authoredEntitySpawns`, not placed as static meshes.
- * @capability authored-objects place catalog mesh props from an editor document
- */
+/** @capability authored-objects place catalog mesh props from an editor document */
 export function resolveAuthoredObjects(
   document: AuthoredObjectsDocumentLike,
   options: ResolveAuthoredObjectsOptions = {},
@@ -125,7 +108,6 @@ export function resolveAuthoredObjects(
   return resolveAuthoredObjectsWithDiagnostics(document, options).objects;
 }
 
-/** Resolved catalog props and located repairs for rejected per-placement animation overrides. */
 export interface AuthoredObjectsResult {
   objects: AuthoredObject[];
   diagnostics: readonly AuthoredAnimationDiagnostic[];
@@ -165,11 +147,7 @@ export function resolveAuthoredObjectsWithDiagnostics(
   return { objects: out, diagnostics };
 }
 
-/**
- * Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus
- * per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
- * @capability authored-objects place catalog mesh props from an editor document
- */
+/** @capability authored-objects place catalog mesh props from an editor document */
 export function placeAuthoredObjects(
   store: AuthoredObjectPlaceTarget,
   objects: readonly AuthoredObject[],
@@ -193,7 +171,6 @@ export function placeAuthoredObjects(
   return ids;
 }
 
-/** Convenience: resolve a document then place every authored catalog prop. */
 export function placeAuthoredObjectsFromDocument(
   store: AuthoredObjectPlaceTarget,
   document: AuthoredObjectsDocumentLike,

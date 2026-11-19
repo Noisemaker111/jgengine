@@ -15,7 +15,6 @@ const markers: MarkerSpec[] = [];
 const volumes: Record<string, unknown>[] = [];
 let n = 0;
 
-// ---------- helpers ----------
 function mark(id: string, kind: string, place: Place, x: number, z: number, label: string, meta: Meta = {}, rotationY?: number, y = 0) {
   markers.push({ id, kind, x, y, z, ...(rotationY === undefined ? {} : { rotationY }), label, meta: { place, ...meta } });
 }
@@ -27,7 +26,6 @@ function fauna(place: Place, creatureId: string, x: number, z: number, label: st
 function sign(place: Place, key: string, x: number, y: number, z: number, turn: number, title: string, subtitle: string, width = 2.4) {
   mark(`strata-sign-${place}-${key}`, 'deepward-station-sign', place, x, z, title, { subtitle, width }, turn, y);
 }
-/** A room: x0..x1, z0..z1, floor at 0 and ceiling at `height`. */
 function room(place: Place, key: string, label: string, x0: number, x1: number, z0: number, z1: number, height: number) {
   volumes.push({ id: `strata-room-${place}-${key}`, kind: 'deepward-room', shape: 'box', center: { x: (x0 + x1) / 2, y: height / 2, z: (z0 + z1) / 2 }, halfExtents: { x: (x1 - x0) / 2, y: height / 2, z: (z1 - z0) / 2 }, label, meta: { place } });
 }
@@ -42,14 +40,12 @@ function drum(place: Place, role: string, at: number[], radius: number, height: 
 }
 const facing = (x: number, z: number, cx: number, cz: number) => Math.atan2(cx - x, cz - z);
 
-// ---------- Marrow: fabricator and six base bays ----------
 anchor('fabricator-marrow', 'home', -5.2, 16.4, 'Fabricator', { role: 'fabricator', reach: 2.1 }, Math.PI / 2);
 const bays: [number, number][] = [[5.6, 9.6], [5.6, 12.4], [5.6, 17.6], [2.8, 17.9], [0, 17.9], [-2.8, 17.9]];
 bays.forEach(([x, z], i) => anchor(`bay-${i + 1}`, 'home', x, z, `Bay ${i + 1}`, { role: 'bay' }, facing(x, z, 0, 13)));
 sign('home', 'bays', 6.85, 2.5, 11, -Math.PI / 2, 'BAYS / MARROW', 'BUILD WITH WHAT YOU BRING HOME', 2.6);
 for (const [x, z] of bays) box('home', 'bay-floor-plate', [x, 0.012, z], [1.7, 0.024, 1.7], '#3a4446', false, 'floor');
 
-// ---------- I Receiving additions ----------
 anchor('lift-vault-down', 'vault', -1.2, -42.6, 'Descent lift / II', { role: 'lift', to: 'cold', reach: 2 });
 anchor('spawn-vault-lift', 'vault', -1.2, -41.1, 'Lift landing', { role: 'stratum-spawn' });
 box('vault', 'lift-cage-post', [-2.45, 1.7, -43.6], [0.16, 3.4, 0.16], '#d59b48');
@@ -65,7 +61,6 @@ fragment('vault', 'vault-shift-log', 3.2, -8.2, 'Shift log terminal', 'log-recei
 fauna('vault', 'vault-hand-1', -4.5, -17, 'Hand', 'hand');
 fauna('vault', 'vault-hand-2', 3.5, -24.5, 'Hand', 'hand');
 
-// ---------- II Cold Stores ----------
 {
   const P: Place = 'cold', H = 4.4, enamel = '#c9d6dc', ice = '#9fc4dd', deep = '#3b5568', frost = '#e6f2f8', lamp = '#d4e8ff';
   room(P, 'landing', '05 / lift landing', -4, 4, 10, 19, H);
@@ -128,7 +123,6 @@ fauna('vault', 'vault-hand-2', 3.5, -24.5, 'Hand', 'hand');
   sign(P, 'icehouse', -3.1, 2.6, -13.75, 0, '07 / ICE HOUSE', 'LIFT III  ↓');
 }
 
-// ---------- III Ink Wells ----------
 {
   const P: Place = 'wells', H = 4.2, tank = '#5a3d75', band = '#9279aa', rail = '#4a4552', dark = '#1d1824', lamp = '#b48cff';
   room(P, 'sump', '08 / lift sump', -9, -1, 11, 19, H);
@@ -186,7 +180,6 @@ fauna('vault', 'vault-hand-2', 3.5, -24.5, 'Hand', 'hand');
   sign(P, 'floor', 3.5, 2.4, -35.85, 0, '10 / INK WELL FLOOR', 'LIFT IV  ↓  SEAL 4');
 }
 
-// ---------- IV Choir Deep ----------
 {
   const P: Place = 'choir', H = 6, pillar = '#2a1416', red = '#7a1f1a', black = '#0e0a0b', ember = '#ff6a52';
   room(P, 'hall', '11 / choir hall', -8, 8, -14, 16, H);
@@ -219,7 +212,6 @@ fauna('vault', 'vault-hand-2', 3.5, -24.5, 'Hand', 'hand');
   sign(P, 'sanctum', -2.75, 3, -13.75, 0, '12 / SANCTUM', 'PRINTER ZERO');
 }
 
-// ---------- apply: remove what this script authored before, then add ----------
 const OWN_IDS = new Set([...markers.map(m => m.id), ...volumes.map(v => v.id as string)]);
 const doc = session.getState().document;
 for (const entry of [...doc.markers, ...doc.volumes]) if (entry.id.startsWith('strata-') || OWN_IDS.has(entry.id)) session.dispatch({ type: 'remove', id: entry.id });

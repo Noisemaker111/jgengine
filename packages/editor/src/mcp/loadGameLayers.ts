@@ -8,24 +8,15 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { importOptionalGameModule } from "./importOptionalGameModule";
 
-/** Result of {@link loadGameLayers}: a validated document, or every diagnostic collected while decoding it. */
 export type LoadGameLayersResult =
   | { ok: true; document: EditorDocument }
   | { ok: false; errors: EditorDocumentDiagnostic[] };
 
-/** Validates an already-resolved `editorLayers` export value (post module-load, post factory-call)
- * against the editor document schema — the exact check {@link loadGameLayers} applies at the
- * untrusted-input boundary between game-authored code and a live editor session.
- */
 export function decodeGameLayers(resolved: unknown): LoadGameLayersResult {
   if (resolved === undefined) return { ok: true, document: createEmptyEditorDocument() };
   return decodeEditorDocument(resolved);
 }
 
-/** Node-only: resolves a game's `editorLayers` export straight from games/<id>/src and validates
- * its shape before it reaches a live editor session — the untrusted-input boundary between
- * game-authored code and the engine.
- */
 export async function loadGameLayers(gameId: string): Promise<LoadGameLayersResult> {
   let resolved: unknown;
   try {

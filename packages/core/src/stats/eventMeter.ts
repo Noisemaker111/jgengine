@@ -42,9 +42,7 @@ export interface EventMeterState {
 }
 
 export interface EventMeter {
-  /** Detached value, hold latch, and decay-delay timers. */
   state(): EventMeterState;
-  /** Restore using the caller's existing event and decay configuration. */
   restore(next: EventMeterState): void;
   value(): number;
   fraction(): number;
@@ -54,7 +52,6 @@ export interface EventMeter {
   consume(): boolean;
   drain(amount: number): void;
   reset(): void;
-  /** Advance decay and its delay; pass false to pause both while a source is visible. */
   tick(dtSeconds: number, decayEnabled?: boolean): void;
 }
 
@@ -78,7 +75,6 @@ export function createEventMeter(config: EventMeterConfig): EventMeter {
   const ready = (): boolean =>
     mode === "hold" ? held : meter.pool.current >= 0 && statPoolFraction(meter.pool) >= 1;
 
-  /** Fill by `amount`; report the fill and, in `reset` mode, carry what did not fit into the next cycle. */
   function add(amount: number): { value: number; fired: boolean; overflow: number; tierChanged: boolean } {
     const before = tierId();
     const change = changeMeter(meter, amount);

@@ -1,9 +1,6 @@
 import { plantCos, plantSin } from "./plantMath";
 
-/**
- * Normalise the 3-vector in `v` in place; leaves straight up when it is degenerate.
- * @internal
- */
+/** @internal */
 export function normalize3(v: Float64Array): void {
   const x = v[0] ?? 0;
   const y = v[1] ?? 0;
@@ -51,27 +48,18 @@ export function lateralDirection(axis: Float64Array, angle: number, azimuth: num
   normalize3(out);
 }
 
-/** The weights Palubicki et al. 2009 combine into a new metamer's direction. */
 export interface TropismWeights {
-  /** Pull towards the least-shaded neighbour. */
   optimal: number;
-  /** Gravitropic pull for this branch order. */
   gravity: number;
-  /** Cosine and sine of this order's set-point angle from vertical. */
   setpointCos: number;
   setpointSin: number;
-  /** Pull along the wind. */
   wind: number;
   windX: number;
   windZ: number;
   jitter: number;
 }
 
-/**
- * Next metamer direction: the previous direction plus the weighted optimal-growth direction, the
- * gravitropic pull towards the set-point angle and the wind, plus a random tilt drawn from the bud's own stream. Written into `dir`.
- * @internal
- */
+/** @internal */
 export function bendTowardsTropisms(dir: Float64Array, optimal: Float64Array, weights: TropismWeights, randomA: number, randomB: number, randomC: number): void {
   // Gravitropism pulls towards the set-point direction: same azimuth, set-point angle from vertical.
   const x = dir[0] ?? 0;

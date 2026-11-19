@@ -1,23 +1,14 @@
-/**
- * ARK's Small Crop Plot: plant a seed, keep it watered and fertilized, and it grows a crop that is picked
- * again and again. Rain fills the plot's water, as does a waterskin poured into it; fertilizer is ground
- * from spoiled meat and thatch. ARK's numbers (water, fertilizer drain, growth time) are approximate here.
- */
 export interface Plot {
-  /** The seed planted, or null for bare soil. */
   seed: string | null;
   water: number;
   fertilizer: number;
-  /** 0 just planted, 1 ripe. */
   growth: number;
 }
 
 export const PLOT = {
   waterMax: 100,
   fertilizerMax: 100,
-  /** Water one waterskin pours in. */
   pour: 25,
-  /** Fertilizer one bag of it adds. */
   fertilizerEach: 50,
   /** Game seconds from planting to ripe, with water and fertilizer the whole time. */
   growSeconds: 600,
@@ -26,12 +17,10 @@ export const PLOT = {
   fertilizerUse: 0.05,
   /** Water open rain adds per second at full strength. */
   rainFill: 2,
-  /** What one picking gives, and how far back the crop drops to grow the next. */
   harvest: 10,
   regrow: 0.5,
 } as const;
 
-/** Each seed and the crop it grows. */
 export const SEEDS: Readonly<Record<string, string>> = { mejoberry_seed: "mejoberry" };
 
 export function emptyPlot(): Plot {

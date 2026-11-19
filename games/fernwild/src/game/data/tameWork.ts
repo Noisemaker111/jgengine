@@ -21,23 +21,16 @@ export const TAME_GATHER: Readonly<Record<string, ToolProfile>> = {
   paraceratherium: { power: 1.5, biases: { ...berries(5), thatch: 4, wood: 2 }, defaultBias: 0 },
 };
 
-/** The meat-and-hide bite every species has on a body, by diet (a carnivore cuts more meat). */
 export const DIET_BITE: Readonly<Record<"carnivore" | "herbivore", Readonly<Record<string, number>>>> = {
   carnivore: { raw_meat: 2, hide: 1 },
   herbivore: { raw_meat: 0.5, hide: 1.5 },
 };
 
-/** A species' whole bite: its gathering specialty, plus its diet's cut from a body. */
 export function biteProfile(species: string, diet: "carnivore" | "herbivore"): ToolProfile {
   const special = TAME_GATHER[species];
   return { power: special?.power ?? 1, biases: { ...DIET_BITE[diet], ...special?.biases }, defaultBias: 0 };
 }
 
-/**
- * What a specialist carries lighter: the share of an item's weight it feels, by species (ARK's weight
- * reductions; the Doedicurus and Ankylosaurus carry their ores at a quarter, the wood gatherers wood at half,
- * the Argentavis meat at half). Approximate where the wiki gives no figure.
- */
 export const LIGHTER_LOADS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   ankylosaurus: { metal: 0.25, flint: 0.25, crystal: 0.25, obsidian: 0.25 },
   doedicurus: { stone: 0.25 },

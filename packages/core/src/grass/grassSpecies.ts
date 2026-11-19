@@ -11,13 +11,11 @@
 import type { GrassSpeciesKnobs } from "@jgengine/core/grass/grassKind";
 import type { GrassStyleTuning } from "@jgengine/core/grass/grassStyle";
 
-/** One named grass: an id a field selects, the label and heading the inspector lists it under, its knobs, and any style sliders it tunes. */
 export interface GrassSpecies {
   id: string;
   label: string;
   group: string;
   values: GrassSpeciesKnobs;
-  /** Style sliders this species draws differently at the default realism (a putting green lit as one soft surface); realism still moves them. */
   style?: GrassStyleTuning;
 }
 
@@ -33,7 +31,6 @@ const ORNAMENTAL = "Ornamental";
 const MOSS = "Moss & groundcover";
 const STYLISED = "Stylised & fantasy";
 
-/** Every shipped grass species, grouped by habitat. Ids are stable: scenes store them. */
 export const GRASS_SPECIES = [
   // Lawn & sport turf
   { id: "green", label: "Putting green", group: LAWN, values: { density: 1, bladeHeight: 0.02, heightVariation: 0.05, bladeWidth: 0.01, widthVariation: 0.2, profile: 0.3,
@@ -417,5 +414,4 @@ export const GRASS_SPECIES = [
     baseColor: "#2a0a0e", tipColor: "#a01e2a", valueNoise: 0.25, clumping: 0.6, patchiness: 0.3, translucency: 0.8, windStrength: 0.4, windSpeed: 0.9, groundCover: 0.8 } },
 ] as const satisfies readonly GrassSpecies[];
 
-/** A shipped grass species id. */
 export type GrassSpeciesId = (typeof GRASS_SPECIES)[number]["id"];

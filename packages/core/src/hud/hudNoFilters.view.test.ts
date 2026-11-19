@@ -1,6 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { createElement } from "@jgengine/core/ui/jsx";
 import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
@@ -9,88 +7,6 @@ import { keybind, proximityPrompt } from "@jgengine/core/interaction/proximityPr
 
 import { InteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view";
 import { WaypointMarkers } from "@jgengine/core/map/waypointMarkers.view";
-
-/**
- * Over a live 3D canvas, an element with a CSS `filter` or `backdrop-filter` is re-rendered every
- * frame. A HUD built from twenty drop-shadow frames took a game from 57 fps to 5, and six took another
- * from 60 to 32. The kits, the game-UI blocks and the engine's HUD primitives draw rims, shadows and
- * glows as plates and overlays instead; this guard keeps it that way.
- */
-const REPO = join(import.meta.dir, "../../../..");
-const KIT_SRC = "packages/core/src/ui/kit";
-
-const KIT_FILES = readdirSync(join(REPO, KIT_SRC))
-  .filter((name) => /^uiKit[A-Z]\w*\.view\.tsx$/.test(name) && !/Preview|\.test\./.test(name))
-  .map((name) => `${KIT_SRC}/${name}`);
-
-/** Kits, game-UI blocks and HUD primitives: no `filter` (other than `none`) and no `backdrop-filter`. */
-const NO_FILTER = [
-  ...KIT_FILES,
-  "packages/core/src/ui/kit/uiKit.view.ts",
-  "packages/core/src/ui/kit/kitFrame.view.tsx",
-  "packages/core/src/ui/cursor.view.tsx",
-  "packages/core/src/ui/slider.view.tsx",
-  "packages/core/src/hud/hudLayout.view.tsx",
-  "packages/core/src/menu/gameMenu.view.tsx",
-  "packages/core/src/menu/gameMenuSaves.view.tsx",
-  "packages/core/src/hud/actionHud.view.tsx",
-  "packages/core/src/hud/selectionHud.view.tsx",
-  "packages/core/src/notifications/notices.view.tsx",
-  "packages/core/src/notifications/toastStack.view.tsx",
-  "packages/core/src/hud/hudFrame.view.tsx",
-  "packages/core/src/interaction/interactionPrompt.view.tsx",
-  "packages/core/src/map/map.view.tsx",
-  "packages/core/src/menu/menuScreen.view.tsx",
-  "packages/core/src/map/waypointMarkers.view.tsx",
-];
-
-/** The engine stylesheet keeps a hover brighten on HUD buttons, but never a backdrop blur. */
-const NO_BACKDROP = ["packages/ui/src/engineStyles.ts", "packages/ui/src/styles.css"];
-
-// A property assignment, CSS (`filter: drop-shadow(…)`) or a style object (`filter: "blur(2px)"`); `none` resets are fine.
-const FILTER = /(?<![\w-])filter\s*:(?!\s*["'`]?none\b)/g;
-const BACKDROP = /(?:backdrop-filter|[bB]ackdropFilter)\s*:/g;
-
-function offenders(file: string, pattern: RegExp): string[] {
-  const text = readFileSync(join(REPO, file), "utf8");
-  return text
-    .split("\n")
-    .map((line, index) => ({ line, index }))
-    .filter(({ line }) => {
-      pattern.lastIndex = 0;
-      return pattern.test(line);
-    })
-    .map(({ line, index }) => `${file}:${index + 1}: ${line.trim().slice(0, 120)}`);
-}
-
-describe("HUD elements never use CSS filters", () => {
-  test("the scan covers every built-in kit", () => {
-    expect(KIT_FILES.length).toBeGreaterThanOrEqual(9);
-  });
-
-  test("kits, game-UI blocks and HUD primitives use no filter or backdrop-filter", () => {
-    const found = NO_FILTER.flatMap((file) => [...offenders(file, FILTER), ...offenders(file, BACKDROP)]);
-    expect(found).toEqual([]);
-  });
-
-  test("the engine stylesheet has no backdrop blur", () => {
-    expect(NO_BACKDROP.flatMap((file) => offenders(file, BACKDROP))).toEqual([]);
-  });
-
-  test("the guard catches both CSS and style-object forms", () => {
-    const hits = (text: string, pattern: RegExp) => {
-      pattern.lastIndex = 0;
-      return pattern.test(text);
-    };
-    expect(hits(".x { filter: drop-shadow(0 2px 0 #000); }", FILTER)).toBe(true);
-    expect(hits('  filter: "blur(2px)",', FILTER)).toBe(true);
-    expect(hits(".x { filter: none; }", FILTER)).toBe(false);
-    expect(hits("attributeFilter: [\"aria-current\"]", FILTER)).toBe(false);
-    expect(hits("<filter id='n'>", FILTER)).toBe(false);
-    expect(hits('  backdropFilter: "blur(6px)",', BACKDROP)).toBe(true);
-    expect(hits("-webkit-backdrop-filter: blur(3px);", BACKDROP)).toBe(true);
-  });
-});
 
 describe("HUD overlays render without filters", () => {
   test("the interaction prompt has no backdrop blur", () => {

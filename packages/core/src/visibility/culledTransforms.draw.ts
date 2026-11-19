@@ -19,11 +19,7 @@ export function setCulled(node: THREE.Object3D, isCulled: boolean): void {
   }
 }
 
-/**
- * Show or hide a node that drew nothing useful while hidden (an emptied instanced chunk, a field
- * chunk past its draw distance), leaving the matrix pass with it; a no-op when nothing changes.
- * @internal
- */
+/** @internal */
 export function showCulled(node: THREE.Object3D, shown: boolean): void {
   if (node.visible === shown) return;
   node.visible = shown;
@@ -36,7 +32,6 @@ interface Tracked {
   [LOCAL]?: Float64Array | undefined;
 }
 
-/** The node with the pass's snapshot slot; a symbol property is the cheapest per-node lookup. */
 function tracked(node: THREE.Object3D): THREE.Object3D & Tracked {
   return node as THREE.Object3D & Tracked;
 }
@@ -85,11 +80,6 @@ function signatureChanged(node: THREE.Object3D, snapshot: Float64Array, composes
   return false;
 }
 
-/**
- * Whether something other than the pass wrote this world matrix since the pass last did (a pose held
- * for one render, say). Unrolled, and the bottom row skipped (a world matrix is affine): it runs for
- * every shown node every frame, and the loop form was most of the pass's cost.
- */
 function worldChanged(node: THREE.Object3D, snapshot: Float64Array): boolean {
   const e = node.matrixWorld.elements;
   return snapshot[WORLD + 12] !== e[12] || snapshot[WORLD + 13] !== e[13] || snapshot[WORLD + 14] !== e[14] ||
@@ -159,10 +149,8 @@ function startsWalk(node: THREE.Object3D): boolean {
 
 /** The step runs the matrix update (off for a frozen subtree, visited only to start the walk there). */
 const MATRIX = 1;
-/** The node is shown (it and every ancestor visible) and no walk start is above it. */
 const COLLECT = 2;
 
-/** The walk starts the scene's last matrix pass found; `serial` changes with every pass. */
 export interface SceneWalkStarts {
   readonly starts: readonly THREE.Object3D[];
   readonly serial: number;
@@ -182,11 +170,6 @@ const walkNodes: THREE.Object3D[] = [];
 const walkForced: boolean[] = [];
 const walkModes: number[] = [];
 
-/**
- * Parents before children, with its own stack: a recursive walk over a scene's mix of node classes
- * cost several times more than the work it did at each node. The same pass lists the scene's walk
- * starts (see {@link startsWalk}), in three's walk order, into `starts`.
- */
 function updateShownMatrixWorld(root: THREE.Object3D, force: boolean, starts: THREE.Object3D[]): void {
   starts.length = 0;
   const nodes = walkNodes;
@@ -254,11 +237,7 @@ export function skipCulledMatrices(scene: THREE.Object3D): void {
   };
 }
 
-/**
- * The walk starts the last matrix pass of `scene` found, or undefined before its first pass. Valid
- * only until something shows a hidden node, adds a node or moves one: use it straight after a pass.
- * @internal
- */
+/** @internal */
 export function sceneWalkStarts(scene: THREE.Object3D): SceneWalkStarts | undefined {
   return walkStarts.get(scene);
 }

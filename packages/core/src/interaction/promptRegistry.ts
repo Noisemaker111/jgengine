@@ -5,24 +5,11 @@ import {
   type PromptPoint,
 } from "./proximityPrompt";
 
-/**
- * A partial edit applied to an already-registered {@link PositionedPrompt} by
- * {@link PromptRegistry.update}. Any subset of the mutable fields — everything
- * but the stable `id` — may be supplied; omitted fields keep their prior value.
- */
 export type PositionedPromptPatch = Partial<Omit<PositionedPrompt, "id">>;
 
-/**
- * The serializable shape {@link PromptRegistry.snapshot} returns and
- * {@link PromptRegistry.restore} consumes: the full set of positioned prompts
- * (in registration order) plus the id of the prompt that was active when the
- * snapshot was taken. Prompt display/command payloads are free strings and ids —
- * keep them serializable and this round-trips through a save cleanly.
- */
 export interface PromptRegistrySnapshot {
   /** Every registered prompt, in registration order (tie-break order for resolve). */
   prompts: readonly PositionedPrompt[];
-  /** Id of the active prompt at snapshot time, or `null` if none was active. */
   activeId: string | null;
 }
 
@@ -41,15 +28,8 @@ export interface PromptRegistry {
    * notifies immediately; selection is recalculated by the next {@link resolve}.
    */
   register(prompt: PositionedPrompt): void;
-  /**
-   * Patch a registered prompt in place. No-op if `id` is unknown. Only the fields
-   * present in `patch` change; the rest are preserved. Changed active content
-   * notifies immediately without recalculating selection.
-   */
   update(id: string, patch: PositionedPromptPatch): void;
-  /** Remove the prompt with this id, if present. Returns whether one was removed. */
   unregister(id: string): boolean;
-  /** Remove every prompt and clear the active selection. */
   clear(): void;
   /** All registered prompts in registration order (do not mutate the returned array). */
   all(): readonly PositionedPrompt[];
@@ -61,13 +41,9 @@ export interface PromptRegistry {
    * prompt or `null`.
    */
   resolve(playerPosition: PromptPoint): PositionedPrompt | null;
-  /** The prompt selected by the most recent {@link resolve}, or `null`. */
   active(): PositionedPrompt | null;
-  /** Observe active-prompt content changes, selection transitions, clear and restore. Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): PromptRegistrySnapshot;
-  /** Restore prompts + active id from a {@link PromptRegistrySnapshot}. */
   restore(snapshot: PromptRegistrySnapshot): void;
 }
 

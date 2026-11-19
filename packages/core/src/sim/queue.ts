@@ -7,18 +7,14 @@ import { devtools } from "../devtools/devtools";
  */
 export const DEFAULT_QUEUE_SEED_SERVICE_SECONDS = 8;
 
-/** Boarding events the throughput window keeps. */
 export const DEFAULT_QUEUE_WINDOW = 8;
 
-/** One guest waiting their turn, and when they joined the line. */
 export interface QueueEntry {
   readonly id: string;
   readonly joinedAt: number;
 }
 
-/** A wait estimate read off the queue's own measured throughput. */
 export interface QueueWait {
-  /** Guests in front of the reader (the whole line for a new arrival). */
   readonly ahead: number;
   /** Seconds that wait. */
   readonly seconds: number;
@@ -30,17 +26,14 @@ export interface QueueWait {
   readonly seeded: boolean;
 }
 
-/** Tunables for {@link createWaitQueue}, every one retunable through a restore. */
 export interface WaitQueueOptions {
   /** Seconds per guest used before the queue has measured an interval. Default 8. */
   readonly seedServiceSeconds?: number | undefined;
-  /** Boarding events the throughput window keeps. Default 8. */
   readonly window?: number;
   /** Register a devtools probe under this name so the perf overlay shows the live line. */
   readonly devtoolsName?: string;
 }
 
-/** Serializable line state: who is waiting, and the boardings the estimate is measured from. */
 export interface WaitQueueSnapshot {
   entries: QueueEntry[];
   boards: { at: number; count: number }[];
@@ -48,39 +41,23 @@ export interface WaitQueueSnapshot {
   window: number;
 }
 
-/**
- * A real line: guests join the back, leave the head, and the wait a new arrival faces comes from how
- * fast this queue has actually been boarding — not from a configured constant. A broken ride stops
- * boarding, the line grows, and the estimate grows with it.
- */
 export interface WaitQueue {
-  /** Join the back of the line; false when the id is already waiting. */
   enqueue(id: string, now: number): boolean;
-  /** Leave from anywhere in the line. */
   remove(id: string): boolean;
   has(id: string): boolean;
   /** 0-based place in line, or `-1` when not waiting. */
   positionOf(id: string): number;
-  /** When the guest joined, or `null` when not waiting. */
   joinedAt(id: string): number | null;
   size(): number;
   headId(): string | null;
   /** Id at a 0-based index from the head, or `null` past the end. */
   at(index: number): string | null;
-  /** Everyone in line, head first. Allocates — debug and tests. */
   ids(): readonly string[];
-  /** Take the guest at the head, or `null` when the line is empty. */
   dequeue(): string | null;
-  /** Record that `count` guests left the head at `now`; the throughput window reads these. */
   recordBoard(now: number, count: number): void;
-  /**
-   * Wait facing `id`, or the whole line when `id` is omitted or not waiting — what a guest joining
-   * now would face.
-   */
   wait(id?: string): QueueWait;
   snapshot(): WaitQueueSnapshot;
   restore(next: WaitQueueSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 

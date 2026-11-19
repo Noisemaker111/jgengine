@@ -6,17 +6,13 @@ import type { TerrainPathProfile } from "./pathTerrain";
 import { fractalNoise, seedFrom, seedPhase, type FractalNoiseConfig } from "./terrain";
 import { clamp01 } from "../math/scalar";
 
-/** Scene kinds a surveyed landmass reads: shore outlines, summits, mountain chains, hills, cliffs, rivers and biome outlines. */
 export const SURVEY_KINDS = {
-  /** Closed path: one landmass's shoreline. */
   coast: "coast",
   /** Marker: a summit; `position.y` is its height, `meta.radius` its base radius, `meta.erosion` 0..1 how deeply gullies cut it. */
   peak: "peak",
   /** Path: a mountain chain; each point's `y` is the crest height there, `width` the base width, `meta.erosion` 0..1 how deeply gullies cut it. */
   ridge: "ridge",
-  /** Path: a river channel cut to `meta.bed` (default 1.5 below sea level), `width` wide. */
   river: "river",
-  /** Closed path: a biome outline; `meta.biome` names it, `meta.material`/`meta.colors` paint its ground. */
   biome: "biome",
   /**
    * Closed path: rolling hills inside the outline. `meta.height` is how high they rise (default 20),
@@ -32,42 +28,31 @@ export const SURVEY_KINDS = {
   cliff: "cliff",
 } as const;
 
-/** A summit raised over the plains: a cone `radius` wide at its base, optionally with a crater. */
 export interface SurveyPeak {
   id: string;
   at: EnvironmentVec2;
-  /** Summit height above sea level. */
   height: number;
-  /** Base radius where the mountain meets the plains. */
   radius: number;
-  /** Profile exponent: 1 a smooth dome, 2 a sharp spire. Default 1.4. */
   sharpness?: number;
-  /** A bowl cut into the summit — a volcano's mouth. */
   crater?: { radius: number; depth: number };
   /** 0..1 how deeply gullies and spurs break up the cone. Default 0. */
   erosion?: number;
 }
 
-/** A mountain chain: crest heights along a centerline, falling off to the plains across `width / 2`. */
 export interface SurveyRidge {
   id: string;
-  /** `[x, z, crestHeight]` along the chain. */
   points: readonly (readonly [number, number, number])[];
-  /** Base width of the chain. */
   width: number;
   /** 0..1 how deeply gullies and spurs break up its flanks. Default 0. */
   erosion?: number;
 }
 
-/** Rolling hills inside an outline, eased in from its edge. */
 export interface SurveyHills {
   id: string;
   ring: readonly EnvironmentVec2[];
-  /** How high the hills rise over the plains. */
   height: number;
   /** Metres between hilltops. */
   scale: number;
-  /** 0 round hills, 1 sharp-crested ones. */
   ridged: number;
   /** Metres inside the outline over which the hills ease in. */
   falloff: number;
@@ -82,32 +67,25 @@ export interface SurveyCliff {
   face: number;
   /** Metres the raised side holds before it eases back to the plains. */
   reach: number;
-  /** `1`: the raised side is left of the drawn direction; `-1`: right. */
   side: 1 | -1;
 }
 
-/** A river channel carved through the land to `bed`, banks easing back over `width / 2`. */
 export interface SurveyRiver {
   id: string;
   points: readonly EnvironmentVec2[];
   width: number;
-  /** Bed height; below sea level lets the sea fill the channel. */
   bed: number;
 }
 
-/** A named biome outline with the ground it paints. */
 export interface SurveyBiome {
   id: string;
-  /** What kind of place it is (`"snow"`, `"swamp"`, `"redwood"`); several outlines may share one. */
   biome: string;
   ring: readonly EnvironmentVec2[];
   material?: TerrainMaterial;
   colors?: TerrainColors;
-  /** Ground blend width past the outline. */
   falloff?: number;
 }
 
-/** Everything a surveyed landmass is built from: shores, summits, chains, hills, cliffs, rivers and biomes. */
 export interface Survey {
   coasts: readonly (readonly EnvironmentVec2[])[];
   peaks: readonly SurveyPeak[];
@@ -118,11 +96,8 @@ export interface Survey {
   biomes: readonly SurveyBiome[];
 }
 
-/** The rolling ground between the mountains. */
 export interface SurveyPlains {
-  /** Mean plains height above sea level. Default 8. */
   height?: number;
-  /** How far the plains roll above and below `height`. Default 6. */
   roll?: number;
   /** Rolls per metre. Default 0.004. */
   frequency?: number;
@@ -147,12 +122,7 @@ function pathsOf(doc: SceneDocumentLike, kind: string): readonly ScenePathLike[]
   return doc.paths.filter((path) => path.kind === kind);
 }
 
-/**
- * Reads a landmass survey from a scene document: `coast`, `hills` and `biome` outlines, `peak` markers,
- * `ridge`, `cliff` and `river` paths (see {@link SURVEY_KINDS}). Pure; the document stays the one place the map lives.
- *
- * @capability survey-terrain build a real-world-style landmass (shores, summits, chains, rivers, biomes) from authored scene shapes
- */
+/** @capability survey-terrain build a real-world-style landmass (shores, summits, chains, rivers, biomes) from authored scene shapes */
 export function surveyFromDocument(doc: SceneDocumentLike): Survey {
   return {
     coasts: pathsOf(doc, SURVEY_KINDS.coast)
@@ -275,7 +245,6 @@ interface IndexedHills {
   hills: SurveyHills;
   edge: PolylineIndex;
   bounds: Bounds;
-  /** 0 unknown, 1 inside and past the falloff from the edge, 2 outside and past it, 3 nearer; per {@link HILLS_ZONE_CELLS} cell. */
   zones: Uint8Array;
   zoneCell: number;
   zoneColumns: number;
@@ -283,14 +252,8 @@ interface IndexedHills {
   crest: FractalNoiseConfig;
 }
 
-/** Most zone cells along a hills outline's longer side. */
 const HILLS_ZONE_CELLS = 256;
 
-/**
- * Where a point stands against a hills outline: 1 inside and farther than the falloff from its edge,
- * 2 outside and farther, 3 nearer. A cell with no edge within the falloff plus half its diagonal of its
- * centre lies wholly on its centre's side, so most samples skip the ring test and the edge search.
- */
 function hillsZone(entry: IndexedHills, x: number, z: number): number {
   const { bounds, zoneCell, zoneColumns, zones } = entry;
   const column = Math.min(zoneColumns - 1, Math.floor((x - bounds.minX) / zoneCell));
@@ -309,11 +272,9 @@ interface IndexedCliff {
   cliff: SurveyCliff;
   index: PolylineIndex;
   bounds: Bounds;
-  /** Distance along the line at each point, for tapering the two ends. */
   along: readonly number[];
 }
 
-/** How much of an eroded mountain's rise its deepest gullies take away, at erosion 1. */
 const GULLY_DEPTH = 0.45;
 
 /** 0 on a spur's crest to 1 in a gully floor, with gullies about `size` metres apart. */
@@ -467,14 +428,11 @@ export function surveyHeightField(survey: Survey, plains: SurveyPlains = {}): (x
   };
 }
 
-/** Knobs for {@link surveyTerrain}: the plains, the shore, the sea floor. */
 export interface SurveyTerrainOptions {
   plains?: SurveyPlains;
-  /** Shore shaping passed to the terrain coast (falloff, shelf, sea floor, wobble). */
   shore?: Omit<TerrainCoast, "outlines" | "radius" | "center" | "stretch">;
 }
 
-/** The terrain config a survey resolves to — spread it into `terrain({ ... })`. */
 export interface SurveyTerrainConfig {
   heightField: (x: number, z: number) => number;
   coast: TerrainCoast;
@@ -482,10 +440,6 @@ export interface SurveyTerrainConfig {
   pathProfiles: TerrainPathProfile[];
 }
 
-/**
- * Turns a survey into terrain config: its height field, its shore outlines as the coast, its biomes as
- * polygon ground regions and its rivers as carved channels.
- */
 export function surveyTerrain(survey: Survey, options: SurveyTerrainOptions = {}): SurveyTerrainConfig {
   return {
     heightField: surveyHeightField(survey, options.plains),
@@ -503,10 +457,7 @@ export function surveyTerrain(survey: Survey, options: SurveyTerrainOptions = {}
   };
 }
 
-/**
- * The biome at a point: the last outline (in survey order) that contains it, or null outside them all.
- * @capability survey-terrain build a real-world-style landmass (shores, summits, chains, rivers, biomes) from scene shapes and ask it where land and biomes are
- */
+/** @capability survey-terrain build a real-world-style landmass (shores, summits, chains, rivers, biomes) from scene shapes and ask it where land and biomes are */
 export function surveyBiomeAt(survey: Survey, x: number, z: number): SurveyBiome | null {
   for (let i = survey.biomes.length - 1; i >= 0; i -= 1) {
     const biome = survey.biomes[i]!;
@@ -515,10 +466,7 @@ export function surveyBiomeAt(survey: Survey, x: number, z: number): SurveyBiome
   return null;
 }
 
-/**
- * Whether a point is on land: inside one of the survey's shore outlines.
- * @capability survey-terrain build a real-world-style landmass (shores, summits, chains, rivers, biomes) from scene shapes and ask it where land and biomes are
- */
+/** @capability survey-terrain build a real-world-style landmass (shores, summits, chains, rivers, biomes) from scene shapes and ask it where land and biomes are */
 export function surveyIsLand(survey: Survey, x: number, z: number): boolean {
   return survey.coasts.some((ring) => pointInPolygon(ring, x, z));
 }

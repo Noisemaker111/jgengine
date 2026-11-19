@@ -28,14 +28,14 @@ export function recordCompileLayer(
   for (const key of owns.userData ?? []) layerUserData.add(key);
 }
 
-/** The material's own compile hook under every recorded scene-wide layer. @internal */
+/** @internal */
 export function ownCompileHook(material: THREE.Material): CompileHook {
   let hook = material.onBeforeCompile;
   for (let prior = priorHooks.get(hook); prior !== undefined; prior = priorHooks.get(hook)) hook = prior;
   return hook;
 }
 
-/** The material's own program cache key function under every recorded scene-wide layer. @internal */
+/** @internal */
 export function ownCacheKey(material: THREE.Material): CacheKey {
   let key = material.customProgramCacheKey;
   for (let prior = priorKeys.get(key); prior !== undefined; prior = priorKeys.get(key)) key = prior;
@@ -65,31 +65,27 @@ export function markBatchSafe(hook: CompileHook, own: { signature?: string; user
   for (const key of own.userData ?? []) hookUserData.add(key);
 }
 
-/** A batch-safe hook's signature, or undefined for a hook not declared batch-safe. @internal */
+/** @internal */
 export function batchSafeSignature(hook: CompileHook): string | undefined {
   return batchSafe.get(hook);
 }
 
-/** Whether a material's own hook (scene-wide layers aside) compiles correctly under a `BatchedMesh`. @internal */
+/** @internal */
 export function compilesBatched(material: THREE.Material): boolean {
   return batchSafe.has(ownCompileHook(material));
 }
 
-/** What a material's own batch-safe hook draws with, beyond the material's values; empty for none. @internal */
+/** @internal */
 export function batchHookSignature(material: THREE.Material): string {
   return batchSafe.get(ownCompileHook(material)) ?? "";
 }
 
-/** Whether a `userData` key holds a hook's own state (see {@link markBatchSafe}). @internal */
+/** @internal */
 export function isHookUserData(key: string): boolean {
   return hookUserData.has(key);
 }
 
-/**
- * A copy of `material` as it was before any scene-wide layer: its own compile hook and cache key, and
- * none of the layers' defines or `userData` keys. The layers' binders patch the copy when it is drawn.
- * @internal
- */
+/** @internal */
 export function withoutCompileLayers(material: THREE.Material): THREE.Material {
   const copy = material.clone();
   copy.onBeforeCompile = ownCompileHook(material);

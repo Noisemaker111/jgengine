@@ -1,39 +1,27 @@
 import type { SquadComposition, SquadRole } from "../../combat/squadTactics";
 import type { Vec3 } from "../../world/geometry";
 
-/**
- * The five duties a fighter can be given in a fight. A duty is *who does what*; the squad role a
- * game dials (range, angles, fire discipline) is *how that duty fights* and stays content.
- */
 export type FightIntent = "retreat" | "hold" | "flank" | "cover" | "assault";
 
-/** One fighter the director can order, with the state the decision reads. */
 export interface FighterState {
   id: string;
-  /** Position on the ground plane; only `x` and `z` are read. */
   position: Vec3;
   /** Health fraction `0..1`. */
   health: number;
-  /** True while the fighter is taking fire this tick. */
   underFire?: boolean;
 }
 
-/** The squad as it stands and the enemy it is facing, or no enemy at all. */
 export interface FightSituation {
   fighters: readonly FighterState[];
   /** Where the squad last knew the enemy to be, or null when it has no contact. */
   threat: Vec3 | null;
-  /** Health fraction at or below which a fighter falls back. Default `0.25`. */
   retreatBelow?: number;
 }
 
 /** What the director decided, per fighter, and why. */
 export interface FightOrders {
-  /** Duty per fighter id. Every fighter in the situation appears exactly once. */
   intents: Map<string, FightIntent>;
-  /** How many fighters took each duty, for a HUD or a test. */
   counts: Record<FightIntent, number>;
-  /** One line naming the terms that drove the split. */
   reason: string;
 }
 

@@ -1,13 +1,6 @@
 import { TRACK_OBJECT as O } from "../objects/catalog";
 import type { TrackTheme } from "./course";
 
-/**
- * The Reroute: the foreman re-lays the haul roads across the south lot every shift. The course is the
- * `reroute` course in editor.scene.json, grown by the engine's course generator from its dials and
- * a seed that changes each day; its pinned gantry drops a container in late. This file fills the
- * generator's slots with the yard's own content: slag spills on the timed slots, half-lane belts on
- * the lane slots, oil on the glazed corners, tyre ramps and scrap walls on the barricades.
- */
 export const REROUTE: TrackTheme = {
   id: "reroute",
   label: "The Reroute",

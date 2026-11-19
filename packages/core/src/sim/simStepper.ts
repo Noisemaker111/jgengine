@@ -6,17 +6,16 @@
  */
 export type SimStep = (rawDt: number) => boolean;
 
-/** What one {@link advanceSimulation} call did: frames that really advanced, and whether play was gated. @internal */
+/** @internal */
 export interface SimAdvanceResult {
   /** Frames the simulation actually stepped; gated frames are never counted. */
   frames: number;
-  /** True when a frame found play gated (a menu, a control suspension, the shell's gate) and the advance stopped there. */
   gated: boolean;
 }
 
 let current: SimStep | null = null;
 
-/** Register the active driver's step; returns the unregister. Last registration wins. @internal */
+/** @internal */
 export function registerSimStepper(step: SimStep): () => void {
   current = step;
   return () => {

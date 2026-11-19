@@ -75,7 +75,6 @@ export function SettingsSlider({ row, itemProps }: { row: SettingsRow; itemProps
   );
 }
 
-/** One on/off row from a {@link SettingsRow}. */
 export function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps | undefined }): ReactNode {
   const on = Boolean(row.value);
   return (
@@ -115,7 +114,6 @@ export function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps
   );
 }
 
-/** One choice row from a {@link SettingsRow}, rendered as a pressed-state option group. */
 export function SettingsSelect({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps | undefined }): ReactNode {
   const current = String(row.value);
   return (
@@ -151,23 +149,17 @@ export function SettingsSelect({ row, itemProps }: { row: SettingsRow; itemProps
   );
 }
 
-/** Render the control a {@link SettingsRow} kind asks for. `itemProps` carries `useMenuNav` focus tracking from {@link SettingsSection}. */
 export function SettingsRowControl({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode {
   if (row.kind === "slider") return <SettingsSlider row={row} itemProps={itemProps} />;
   if (row.kind === "toggle") return <SettingsToggle row={row} itemProps={itemProps} />;
   return <SettingsSelect row={row} itemProps={itemProps} />;
 }
 
-/** One rebindable action row: current key glyph, armed-capture state and a reset button. */
 export interface SettingsKeybindControlProps {
   row: SettingsKeybindRow;
-  /** This row is waiting for a key. */
   armed?: boolean;
-  /** Click on the binding — the caller arms capture. */
   onArm?: (() => void) | undefined;
-  /** Props the caller can spread onto the binding button for focus tracking. */
   buttonProps?: Record<string, unknown>;
-  /** Props for the row element (a `useMenuNav` item). */
   rowProps?: MenuNavItemProps;
 }
 
@@ -255,17 +247,11 @@ export function SettingsKeybindControl({ row, armed = false, onArm, buttonProps,
   );
 }
 
-/** How a {@link SettingsSection} handles a rebind capture. */
 export interface SettingsSectionProps {
-  /** The category to render: its rows and its rebindable actions. */
   category: SettingsCategoryView;
-  /** Render the category label above the rows. Default true. */
   heading?: boolean;
-  /** Allow click-to-rebind on the controls rows. Default true. */
   capture?: boolean;
-  /** Take arrow keys, the d-pad and the left stick for row navigation and value edits. Default true. */
   enabled?: boolean;
-  /** Row focused on mount. Default the first row. */
   initialId?: string;
   className?: string;
   style?: CSSProperties;
@@ -425,14 +411,10 @@ export function SettingsSection({
   );
 }
 
-/** The live category tabs for a settings screen: a scrollable rail with pressed state. */
 export interface SettingsTabsProps {
-  /** The live categories from the settings controller. */
   categories: readonly SettingsCategoryView[];
-  /** Id of the category on screen. */
   activeId: string;
   onSelect: (id: string) => void;
-  /** Extra leading tab (the controller's game actions). */
   leading?: { id: string; label: string };
   /** Per-tab props from a `useMenuNav` controller, so a tab rail is keyboard/gamepad navigable. */
   tabProps?: (id: string) => object;
@@ -440,12 +422,7 @@ export interface SettingsTabsProps {
   style?: CSSProperties;
 }
 
-/**
- * The category tab rail for a settings screen: a scrollable row of buttons with pressed state. The
- * game owns the surrounding layout; this block keeps every category reachable on narrow screens.
- *
- * @capability settings-tabs scrollable settings category tabs with pressed state
- */
+/** @capability settings-tabs scrollable settings category tabs with pressed state */
 export function SettingsTabs({ categories, activeId, onSelect, leading, tabProps, className, style }: SettingsTabsProps): ReactNode {
   const tabs = leading === undefined ? categories : [{ id: leading.id, label: leading.label }, ...categories];
   return (
@@ -485,5 +462,4 @@ export function SettingsTabs({ categories, activeId, onSelect, leading, tabProps
     </div>
   );
 }
-
 

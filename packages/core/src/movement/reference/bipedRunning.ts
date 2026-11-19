@@ -1,35 +1,25 @@
 import type { HumanValidationRow } from "./humanReferenceValidation";
 import { animalTopSpeed, froudeNumber, speedAtFroude } from "./quadrupedGait";
 
-/** The three leg joints whose extensors hold a biped up at mid-stance. */
 export type BipedJoint = "hip" | "knee" | "ankle";
 
 const JOINTS: readonly BipedJoint[] = ["hip", "knee", "ankle"];
 
-/** One joint's extensor muscles and lever at mid-stance of fast running. */
 export interface BipedJointMuscle {
-  /** Mean extensor fascicle length, m. */
   fascicleLength: number;
-  /** Mean fascicle pennation, rad. */
   pennation: number;
-  /** Mean extensor moment arm, m. */
   muscleMomentArm: number;
-  /** Moment arm of the ground force about the joint, m. */
   loadMomentArm: number;
-  /** Extensor muscle mass dissected about the joint, % of body mass; absent for extinct animals. */
   actualMass?: number;
-  /** Required mass Hutchinson published for this joint, % of body mass. */
   publishedRequired?: number;
 }
 
-/** A biped's support leg as J. R. Hutchinson modelled it. */
 export interface BipedLimb {
   animal: string;
   /** Body mass, kg. */
   mass: number;
   /** Segment masses of the support leg, kg. */
   segments: { thigh: number; shank: number; metatarsus: number; foot: number };
-  /** Thigh + shank + metatarsus length, m. */
   legLength: number;
   joints: Record<BipedJoint, BipedJointMuscle | null>;
 }
@@ -102,23 +92,14 @@ export const HUTCHINSON_BIPEDS: Record<"human" | "chicken" | "turkey" | "emu" | 
   },
 };
 
-/**
- * Peak ground force on the one support leg at mid-stance of fast running, body weights: 2.5, which most fast runners
- * reach or exceed (Hutchinson 2004, part I, table 2).
- */
 export const FAST_RUNNING_GROUND_FORCE = 2.5;
 
-/**
- * Hutchinson's limits for extensors (2004, part II): no living biped has more than 7% of body mass acting about one
- * joint, and a generous 15% of body mass for all of one leg's extensors.
- */
 export const BIPED_EXTENSOR_LIMITS = { perJoint: 7, perLeg: 15 } as const;
 
 const MUSCLE_DENSITY = 1060;
 const MAX_ISOMETRIC_STRESS = 3e5;
 const G = 9.81;
 
-/** Fraction of body mass carried above `joint` of the support leg. */
 function massAbove(limb: BipedLimb, at: BipedJoint): number {
   const s = limb.segments;
   const below = at === "hip" ? s.thigh + s.shank + s.metatarsus + s.foot : at === "knee" ? s.shank + s.metatarsus + s.foot : s.metatarsus + s.foot;
@@ -138,21 +119,14 @@ export function requiredExtensorMass(limb: BipedLimb, at: BipedJoint, groundForc
   return (100 * groundForce * G * massAbove(limb, at) * lever * MUSCLE_DENSITY) / MAX_ISOMETRIC_STRESS;
 }
 
-/** Whether a biped's legs carry fast running. */
 export interface BipedRunningSupport {
-  /** Required extensor mass per joint, % of body mass. */
   required: Record<BipedJoint, number>;
-  /** Sum over the hip, knee and ankle, % of body mass per leg. */
   total: number;
   /** Least ratio of muscle there (dissected, else {@link BIPED_EXTENSOR_LIMITS}) to muscle needed; below 1 it cannot run fast. */
   support: number;
 }
 
-/**
- * Required extensor masses at each joint of `limb` for fast running, and the least ratio of the muscle it has
- * (dissected, or Hutchinson's limits for an extinct animal) to the muscle it needs.
- * @capability biped-running-support whether a biped's leg muscles could carry fast running, joint by joint
- */
+/** @capability biped-running-support whether a biped's leg muscles could carry fast running, joint by joint */
 export function bipedRunningSupport(limb: BipedLimb, groundForce = FAST_RUNNING_GROUND_FORCE): BipedRunningSupport {
   const required = { hip: 0, knee: 0, ankle: 0 };
   let total = 0;
@@ -171,11 +145,7 @@ export function bipedRunningSupport(limb: BipedLimb, groundForce = FAST_RUNNING_
   return { required, total, support };
 }
 
-/**
- * Scale `limb` isometrically to a leg `legLength` (m) long: every length by the same factor and every mass by its cube.
- * Required extensor masses then grow in proportion to leg length.
- * @capability biped-limb-scale scale a published biped limb model to another size by geometric similarity
- */
+/** @capability biped-limb-scale scale a published biped limb model to another size by geometric similarity */
 export function scaleBipedLimb(limb: BipedLimb, legLength: number): BipedLimb {
   const k = legLength / limb.legLength;
   const k3 = k ** 3;
@@ -209,17 +179,14 @@ export function theropodMassFromLegLength(legLength: number): number {
   return rex.mass * (legLength / rex.legLength) ** 3;
 }
 
-/** A game biped's speeds and size for {@link compareBiped}. */
 export interface BipedCreature {
   walkSpeed: number;
   runSpeed?: number;
-  /** Hip height standing, m, taken as the leg length. */
   hipHeight: number;
   /** Body mass, kg (default {@link theropodMassFromLegLength}). */
   mass?: number;
 }
 
-/** One game biped against the theropod and bird references of its size. */
 export interface BipedComparison {
   mass: number;
   hipHeight: number;
@@ -231,11 +198,8 @@ export interface BipedComparison {
   runGait: "walk" | "run";
   /** Top speed for the mass, m/s. */
   referenceTopSpeed: number;
-  /** Game run (or walk) speed over the reference top speed. */
   topSpeedRatio: number;
-  /** Leg extensor mass a fast run needs, % of body mass per leg, from the scaled Tyrannosaurus model. */
   extensorMassNeeded: number;
-  /** Below 1 its legs could not carry a fast run (see {@link bipedRunningSupport}). */
   runningSupport: number;
 }
 
@@ -266,7 +230,6 @@ export function compareBiped(creature: BipedCreature): BipedComparison {
   };
 }
 
-/** Hutchinson's other theropod models (2004, part II, tables 2 and 4): leg length, m, and required extensor mass per leg, %. */
 export const HUTCHINSON_THEROPODS: readonly { animal: string; legLength: number; required: number }[] = [
   { animal: "Compsognathus", legLength: 0.061 + 0.083 + 0.035, required: 1.3 },
   { animal: "Coelophysis", legLength: 0.16 + 0.233 + 0.116, required: 3.0 },

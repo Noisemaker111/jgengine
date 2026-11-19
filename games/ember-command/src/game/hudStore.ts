@@ -9,7 +9,6 @@ import { UPGRADE_IDS, type UpgradeId } from "./upgrades";
 
 export type MatchPhase = "ready" | "playing" | "paused" | "won" | "lost";
 
-/** One live entry in the army row: a player combat unit with its current health. */
 export interface ArmyUnit {
   id: string;
   kind: string;
@@ -17,7 +16,6 @@ export interface ArmyUnit {
   max: number;
 }
 
-/** One pick Bram carries: the command card's kit line and the choice card's option copy. */
 export interface HeroKitEntry {
   id: string;
   label: string;
@@ -42,33 +40,26 @@ export interface HudSnapshot {
   playerKeepHp: number;
   playerKeepMax: number;
   attackMoveArmed: boolean;
-  /** The marching shape the command card highlights: line, wedge or column. */
   formation: FormationKind;
   /** Marauder reinforcement pressure: waves mustered so far, and whole seconds to the next one. */
   wavesSent: number;
   nextWaveIn: number;
-  /** What the Marauder plan is doing: scouting, expanding or attacking. */
   marauderPhase: string;
   /** The pressure tier the Marauder waves are sized at, 0..2. */
   marauderTier: number;
   /** Units currently queued/training at the Town Hall, and the active job's 0..1 progress. */
   producing: number;
   trainProgress: number;
-  /** A Barracks exists (unlocks Footman/Rifleman), and any building armed for placement. */
   hasBarracks: boolean;
   buildArmed: string | null;
   building: number;
-  /** Research per upgrade (achieved rank, achieved+pending "have", requirement met), plus jobs in the queue. */
   research: Record<UpgradeId, ResearchView>;
   researching: number;
-  /** Hero: current level, his acts with their cooldowns, the picks he carries and an open offer. */
   heroLevel: number;
   heroActs: HeroActView[];
   heroOffer: HeroOffer | null;
   heroKit: HeroKitEntry[];
-  /** Live roster of the player's fielded combat units (for the army row). */
   army: ArmyUnit[];
-  /** The vale campaign: the objective card's mission, its clock and the field desk's offer. */
   campaign: CampaignReadout | null;
 }
 
@@ -113,8 +104,6 @@ const initial: HudSnapshot = {
   campaign: null,
 };
 
-/** Army rows churn every frame as HP ticks; compare on id/kind and integer HP to bound re-renders. */
-/** One upgrade's research state as the command card reads it. */
 export interface ResearchView {
   rank: number;
   have: number;
@@ -138,7 +127,6 @@ function armyChanged(a: ArmyUnit[], b: ArmyUnit[]): boolean {
   return false;
 }
 
-/** The campaign card only changes on a mission beat, so compare its readable fields only. */
 function campaignChanged(a: CampaignReadout | null, b: CampaignReadout | null): boolean {
   if (a === b) return false;
   if (a === null || b === null) return true;
@@ -159,7 +147,6 @@ function campaignChanged(a: CampaignReadout | null, b: CampaignReadout | null): 
   );
 }
 
-/** Act slots change on a cast and as the cooldown counts down, so compare the letters the card draws. */
 function actsChanged(a: HeroActView[], b: HeroActView[]): boolean {
   if (a.length !== b.length) return true;
   for (let i = 0; i < a.length; i += 1) {
@@ -170,14 +157,12 @@ function actsChanged(a: HeroActView[], b: HeroActView[]): boolean {
   return false;
 }
 
-/** A kit only grows on a pick, so its ids are enough to tell the card to redraw. */
 function kitChanged(a: HeroKitEntry[], b: HeroKitEntry[]): boolean {
   if (a.length !== b.length) return true;
   for (let i = 0; i < a.length; i += 1) if (a[i]!.id !== b[i]!.id) return true;
   return false;
 }
 
-/** An offer appears on a level-up and leaves on the pick, so its level and two ids are the change. */
 function offerChanged(a: HeroOffer | null, b: HeroOffer | null): boolean {
   if (a === b) return false;
   if (a === null || b === null) return true;

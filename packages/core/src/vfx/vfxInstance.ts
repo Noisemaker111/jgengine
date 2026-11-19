@@ -8,19 +8,12 @@ import type { RetainedVfxKind, VfxRef } from "../game/events";
  * frame, so an endpoint bound to a moving entity follows it without any per-frame command traffic.
  */
 export interface VfxInstanceSpec {
-  /** Caller-stable handle. Repeated `upsert` with the same id replaces the instance; omitted mints a fresh id. */
   id?: string;
-  /** Open effect archetype (e.g. `"beam"`). Renderers register kinds, so new visuals need no central branch. */
   kind: RetainedVfxKind;
-  /** `0xRRGGBB` tint. */
   color: number;
-  /** Origin endpoint: an entity instance id (followed live) or a fixed world point. */
   from?: VfxRef;
-  /** Target endpoint: an entity instance id (followed live) or a fixed world point. */
   to?: VfxRef;
-  /** Effect radius/thickness in world units, interpreted per kind. */
   radius?: number;
-  /** Extra numeric knobs a renderer reads by name (intensity, spin, width, ...), kept a flat serializable bag. */
   params?: Readonly<Record<string, number>>;
   /** Optional time-to-live in ms: the instance auto-stops if `tick` runs past `ttlMs` since its last touch (heartbeat). */
   ttlMs?: number;
@@ -32,19 +25,12 @@ export interface VfxInstanceSpec {
  * themselves. `updatedAtMs` is the last create/update time and drives TTL heartbeat eviction.
  */
 export interface VfxInstanceState {
-  /** Stable instance id. */
   readonly id: string;
-  /** Effect archetype. */
   readonly kind: RetainedVfxKind;
-  /** `0xRRGGBB` tint. */
   readonly color: number;
-  /** Origin endpoint, if any. */
   readonly from?: VfxRef;
-  /** Target endpoint, if any. */
   readonly to?: VfxRef;
-  /** Effect radius/thickness. */
   readonly radius?: number;
-  /** Renderer knobs. */
   readonly params?: Readonly<Record<string, number>> | undefined;
   /** TTL in ms, if the instance heartbeats. */
   readonly ttlMs?: number;
@@ -58,46 +44,27 @@ export interface VfxInstanceState {
  * Applying a patch refreshes the instance heartbeat.
  */
 export interface VfxInstancePatch {
-  /** New tint. */
   color?: number;
-  /** New origin endpoint. */
   from?: VfxRef;
-  /** New target endpoint. */
   to?: VfxRef;
-  /** New radius/thickness. */
   radius?: number;
-  /** Knobs shallow-merged into the current `params`. */
   params?: Readonly<Record<string, number>>;
 }
 
-/** Options for {@link VfxInstanceStore.stop}. */
 export interface VfxInstanceStopOptions {
   /** Fade-out duration in ms handed to the renderer; `0` (default) disposes immediately. */
   fadeMs?: number;
 }
 
-/**
- * The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged
- * {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration.
- * This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
- */
 export interface CombatVfxInstanceEvent {
   /** `upsert` creates/replaces, `update` mutates dynamic params, `stop` disposes (with optional fade). */
   readonly op: "upsert" | "update" | "stop";
-  /** The affected instance id. */
   readonly id: string;
-  /** The full merged state, present for `upsert` and `update`. */
   readonly instance?: VfxInstanceState;
   /** Fade-out duration in ms, present for `stop`. */
   readonly fadeMs?: number;
 }
 
-/**
- * A headless registry of retained VFX instances: create/replace, partially update, and stop long-lived effects
- * addressed by stable id, independent of any renderer. It owns the authoritative serializable state and exposes
- * inspection counts; wire {@link VfxInstanceStoreOptions.onOp} to a renderer (via the `combat.vfxInstance` event)
- * to drive visuals.
- */
 export interface VfxInstanceStore {
   /**
    * Create the instance, or replace it in place when its id already exists (idempotent by id). Returns the id
@@ -111,29 +78,22 @@ export interface VfxInstanceStore {
   update(id: string, patch: VfxInstancePatch): boolean;
   /** Dispose the instance, emitting a `stop` op with the resolved fade. Returns `false` for an unknown id. */
   stop(id: string, options?: VfxInstanceStopOptions): boolean;
-  /** The current state of `id`, or `null` if absent. */
   get(id: string): VfxInstanceState | null;
-  /** Every live instance, insertion-ordered. */
   list(): readonly VfxInstanceState[];
-  /** Live instance count, for debug/inspection HUDs. */
   count(): number;
   /** Auto-stop instances whose TTL has elapsed as of `nowMs` (defaults to the store clock). Returns the number stopped. */
   tick(nowMs?: number): number;
   /** Dispose every instance (scene change / reset), emitting a `stop` op for each. */
   clear(): void;
-  /** Plain JSON copy of every live instance plus the id counter. */
   snapshot(): VfxInstanceStoreState;
-  /** Replaces the live set: emits `stop` for each current instance, then `upsert` for each restored one. */
   restore(next: VfxInstanceStoreState): void;
 }
 
-/** Plain JSON state of a {@link VfxInstanceStore}. */
 export interface VfxInstanceStoreState {
   instances: VfxInstanceState[];
   seq: number;
 }
 
-/** Options for {@link createVfxInstanceStore}. */
 export interface VfxInstanceStoreOptions {
   /** Sink for lifecycle ops; wire to `events.emit("combat.vfxInstance", op)` so the shell renders them. */
   onOp?: (op: CombatVfxInstanceEvent) => void;

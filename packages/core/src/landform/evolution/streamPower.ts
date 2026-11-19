@@ -11,17 +11,13 @@
 import { plantPow } from "../../plants/growth/plantMath";
 import type { FlowRouting } from "../flow/flowRouting";
 
-/** One implicit stream-power update's inputs. @internal */
+/** @internal */
 export interface IncisionInput {
   height: Float64Array;
   routing: FlowRouting;
-  /** 1 where a cell lies under standing water (a lake or the sea): no incision there. */
   wet: Uint8Array;
-  /** 1 where glacier ice covers the bed: no river incision there. Default none. */
   shielded?: Uint8Array;
-  /** Bedrock K per cell, its rock layer applied. */
   erodibility: Float64Array;
-  /** K of loose sediment. */
   looseErodibility: number;
   /** Loose sediment thickness per cell in metres, cut at the loose K before the rock beneath. */
   sediment: Float64Array;
@@ -39,7 +35,7 @@ function areaTerm(area: number, m: number): number {
   return m === 0.5 ? Math.sqrt(area) : plantPow(area, m);
 }
 
-/** Solve x − h + G (x − t)^n = 0 for x in (t, h]. @internal */
+/** @internal */
 export function solveIncision(h: number, target: number, g: number, n: number): number {
   if (n === 1) return (h + g * target) / (1 + g);
   let lo = target;
@@ -59,7 +55,7 @@ export function solveIncision(h: number, target: number, g: number, n: number): 
   return x;
 }
 
-/** Run one implicit stream-power update down the stack. @internal */
+/** @internal */
 export function incise(input: IncisionInput): void {
   const { height, routing, wet, shielded, erodibility, looseErodibility, sediment, areaExponent, slopeExponent, dt, erosion } = input;
   const { stack, receiver, receiverDistance, area, water } = routing;

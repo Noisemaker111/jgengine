@@ -23,11 +23,8 @@ const FIXTURES = "scripts/fixtures/gate-proof";
 
 export interface ProofCase {
   name: string;
-  /** The gate under proof, as a lane names it. */
   gate: "verify-fast" | "check" | "test";
-  /** The regression: a patch under `scripts/fixtures/gate-proof/`. */
   patch: string;
-  /** What the regression is, in plain words. */
   breaks: string;
   command: string[];
   /** Every one must appear in the gate's output for the red to count as useful. */
@@ -83,7 +80,6 @@ export function judge(exitCode: number | null, output: string, expect: readonly 
   return { ok: true };
 }
 
-/** The files a patch touches, from its `+++ b/` lines. */
 export function patchedFiles(patch: string): string[] {
   return [...patch.matchAll(/^\+\+\+ b\/(.+)$/gm)].map((match) => match[1] ?? "").filter((path) => path.length > 0);
 }

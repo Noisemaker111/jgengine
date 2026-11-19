@@ -1,19 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-/** The file at a game's root that says what the game is and what it uses. */
 export const PROJECT_CONFIG_FILE = "jgengine.json";
 
-/** What `jgengine create --template` starts a game from; `jgengine sync` keeps its shared files current. */
 export const GAME_TEMPLATES = ["3d", "2d", "builder"] as const;
 export type GameTemplate = (typeof GAME_TEMPLATES)[number];
 
-/**
- * What an engine monorepo game writes about capabilities. Adoption is not written: it is read from
- * the game's imports.
- */
 export interface CapabilityAnswers {
-  /** Boot probes, by module, that prove an adopted system live on the running page. */
   probes?: Record<string, string[]>;
 }
 
@@ -28,46 +21,27 @@ export interface ProjectSuite {
   notSimulatable?: Record<string, string>;
 }
 
-/** One credited line in `jgengine.json`: a person, a studio, an asset pack, a tool. */
 export interface ProjectCreditLine {
   label: string;
   detail?: string;
   href?: string;
 }
 
-/** The `credits` field of `jgengine.json`, in the shape the engine's credits screens read. */
 export interface ProjectCredits {
   title?: string;
   sections: { heading: string; entries: ProjectCreditLine[] }[];
   notice?: string;
 }
 
-/**
- * A game's `jgengine.json`: the one place that says what the game is and uses. `jgengine create`
- * writes it and `jgengine sync` makes the game match it and the running engine.
- */
 export interface ProjectConfig {
-  /** The player-facing title. */
   name: string;
-  /** Kebab-case id: the package name (`@games/<id>` in the engine monorepo). */
   id: string;
-  /**
-   * The template the game was created from. Sync rewrites that template's shared files (wiring,
-   * page, tooling scripts, agent guide) from the running engine. No template: the game owns every
-   * file and sync manages its engine packages only.
-   */
   template?: GameTemplate;
-  /** The scene editor wiring (`F2+E`); templates 3d and builder. Default true. */
   editor?: boolean;
-  /** `@jgengine/*` packages the game runs on, without the scope, as npm names them: `["core", "ui", "shell"]`. */
   engine: string[];
-  /** Template files this game rewrote and owns; sync leaves them alone. */
   owns?: string[];
-  /** Engine monorepo games: boot probes (adoption itself is read from source). */
   capabilities?: CapabilityAnswers;
-  /** Who made the game and what it uses; the main menu's Credits reads it. */
   credits?: ProjectCredits;
-  /** The game's genres and answers for the game suite score. */
   suite?: ProjectSuite;
   /**
    * The asset pipeline's plan (`bun run games:provision build <id>` in the engine monorepo): which
@@ -77,7 +51,6 @@ export interface ProjectConfig {
   assetBuild?: Record<string, unknown>;
 }
 
-/** Read and validate `<dir>/jgengine.json`; throws with the field at fault. */
 export function readProjectConfig(dir: string): ProjectConfig {
   const path = join(dir, PROJECT_CONFIG_FILE);
   if (!existsSync(path)) throw new Error(`no ${PROJECT_CONFIG_FILE} in ${dir} (jgengine create writes one)`);
@@ -117,7 +90,6 @@ export function readProjectConfig(dir: string): ProjectConfig {
   return config as ProjectConfig;
 }
 
-/** The credits a new game starts with: the game, the engine and the starter art it ships with. */
 export function starterCredits(name: string, art: boolean): ProjectCredits {
   return {
     sections: [
@@ -139,7 +111,6 @@ export function starterCredits(name: string, art: boolean): ProjectCredits {
   };
 }
 
-/** `jgengine.json` text in its fixed key order. */
 export function renderProjectConfig(config: ProjectConfig): string {
   const ordered: ProjectConfig = {
     name: config.name,

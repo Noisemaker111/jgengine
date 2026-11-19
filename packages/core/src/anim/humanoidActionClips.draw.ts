@@ -17,9 +17,7 @@ interface BaseNode {
   node: THREE.Object3D;
   quaternion: THREE.Quaternion;
   position: THREE.Vector3;
-  /** Model-space matrix in the base pose, relative to the scene root. */
   world: THREE.Matrix4;
-  /** Model-space rotation in the base pose. */
   rotation: THREE.Quaternion;
 }
 
@@ -28,7 +26,6 @@ function firstValue(clip: THREE.AnimationClip | null, name: string, size: number
   return track === undefined || track.values.length < size ? undefined : Array.from(track.values.subarray(0, size));
 }
 
-/** Every node's local and model-space transform in the base pose: the idle clip's first frame, else the bind pose. */
 function basePose(scene: THREE.Object3D, base: THREE.AnimationClip | null): Map<string, BaseNode> {
   const nodes = new Map<string, BaseNode>();
   const scale = new THREE.Vector3();
@@ -109,7 +106,6 @@ function buildClip(action: HumanoidActionClip, map: SkeletonMap, pose: ReadonlyM
 const cache = new WeakMap<readonly THREE.AnimationClip[], THREE.AnimationClip[]>();
 const socketCache = new WeakMap<THREE.Object3D, readonly { bone: string; name: string; local: THREE.Matrix4 }[]>();
 
-/** Standard slots that get a socket; each socket node takes its slot's name. */
 export const HUMANOID_SOCKETS: readonly SkeletonSlot[] = ["hand.r", "hand.l"];
 
 function rigBones(scene: THREE.Object3D): string[] {
@@ -163,9 +159,7 @@ export function addHumanoidSockets(instance: THREE.Object3D, source: THREE.Objec
 
 interface CarryBone {
   bone: string;
-  /** The bone's local rotation in the idle pose. */
   rest: THREE.Quaternion;
-  /** The carry turn in the bone's own frame: W⁻¹ · D · W. */
   turn: THREE.Quaternion;
 }
 
@@ -244,10 +238,6 @@ export function buildHumanoidActionClips(
   return names.filter((name) => !have.has(name)).map((name) => buildClip(HUMANOID_ACTIONS[name], map, pose, base));
 }
 
-/**
- * A rig's clips plus the authored humanoid actions it lacks, built once per loaded model and shared
- * by every instance of it. The source scene only supplies bone names and base transforms.
- */
 export function withHumanoidActionClips(scene: THREE.Object3D, clips: readonly THREE.AnimationClip[]): THREE.AnimationClip[] {
   const hit = cache.get(clips);
   if (hit !== undefined) return hit;

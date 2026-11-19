@@ -1,7 +1,3 @@
-/**
- * Rack hardware session — one warehouse↔rack move mutation plus cooler mutations for one play session.
- */
-
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { api } from "@llmville/backend/convex/_generated/api";
 import { useMutation } from "convex/react";

@@ -4,34 +4,22 @@
  * sound and the whole thing unmounts with the screen.
  */
 
-/** Which feedback sound to play. */
 export type GameMenuSoundKind = "move" | "confirm" | "back";
 
-/** The sound player's readable state: on/off, gain, and whether audio is actually running. */
 export interface GameMenuSoundState {
-  /** Whether the player will make sound. */
   enabled: boolean;
-  /** Peak gain per tick. */
   volume: number;
-  /** Whether an audio context exists and is running - what a test or a settings preview reads. */
   ready: boolean;
 }
 
-/** A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu. */
 export interface GameMenuSound {
-  /** Play one tick. A no-op when audio is unavailable or the browser blocked it. */
   play(kind: GameMenuSoundKind): void;
-  /** Release the audio context. Safe to call twice. */
   dispose(): void;
-  /** Read the player state without starting audio. */
   state(): GameMenuSoundState;
-  /** Apply a saved player state - a settings toggle muting the menu without rebuilding it. */
   restore(next: GameMenuSoundState): void;
 }
 
-/** How {@link createGameMenuSound} is tuned. */
 export interface GameMenuSoundConfig {
-  /** Turn sound off entirely. Default true. */
   enabled?: boolean;
   /** Peak gain per tick. Default 0.045 — audible, never a jingle. */
   volume?: number;
@@ -111,6 +99,4 @@ export function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuS
     },
   };
 }
-
-
 

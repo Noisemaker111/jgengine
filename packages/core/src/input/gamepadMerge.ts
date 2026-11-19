@@ -1,12 +1,10 @@
 import type { GamepadFrame } from "@jgengine/core/input/gamepadModel";
 
-/** Per-frame gamepad actions and analog values ready to merge with another input source. */
 export interface GamepadInputFrame {
   held: readonly string[];
   analog: Readonly<Record<string, number>>;
 }
 
-/** Merge one resolved gamepad frame with another input source's semantic state. */
 export function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame {
   const held = [...new Set([...base.held, ...gamepad.held])];
   const analog = { ...base.analog };

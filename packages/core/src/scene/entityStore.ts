@@ -6,7 +6,6 @@ export type EntityRole = "player" | "npc" | "prop";
 
 export interface EntityMovement {
   walkSpeed?: number;
-  /** Sprint speed as a multiple of this body's walk speed; overrides the game's `feel.runMultiplier` (a mount sprints at its own ratio). */
   runMultiplier?: number;
   frozen?: boolean;
 }
@@ -27,7 +26,6 @@ export interface SceneEntity<TMeta = unknown> {
   role: EntityRole;
   movement: EntityMovement;
   behaviors: readonly BehaviorDescriptor[];
-  /** Render-only visibility: `true` skips the entity's visual entirely (seated vehicle riders, cutscene actors, stealth cloaks) while the entity keeps simulating — position, stats, AI targeting, and queries are untouched. Absent/`false` renders normally. */
   hidden?: boolean;
   /**
    * Per-instance size: the model draws at this many times its catalog scale, so one kind can be a hatchling
@@ -35,28 +33,12 @@ export interface SceneEntity<TMeta = unknown> {
    * @capability entity-size grow or shrink one entity's model without a new kind, for babies growing up
    */
   size?: number;
-  /**
-   * The item id this entity holds in its hand, drawn from its model's `held` table at the hand
-   * socket. Render-only, like `size`; absent means empty hands.
-   * @capability entity-held-item show the item an entity holds in its hand
-   */
+  /** @capability entity-held-item show the item an entity holds in its hand */
   held?: string;
-  /**
-   * The item ids this entity wears, drawn from its model's `worn` table on its body. Render-only,
-   * like `held`; absent means nothing worn.
-   * @capability entity-worn-items show the clothing an entity wears on its body
-   */
+  /** @capability entity-worn-items show the clothing an entity wears on its body */
   worn?: readonly string[];
-  /**
-   * Which of its model's `looks` this entity draws (a body picked in a character creator, a skin);
-   * render-only, like `size`. Absent, or a name the model lacks, draws the model itself.
-   * @capability entity-look pick one of a model's alternative bodies per entity, for character creators and skins
-   */
+  /** @capability entity-look pick one of a model's alternative bodies per entity, for character creators and skins */
   look?: string;
-  /**
-   * This entity's own switches for the default character motion (foot IK, glance, locomotion), over
-   * its model's and the game's; `false` turns all three off. Render-only, like `look`.
-   */
   characterMotion?: CharacterMotionConfig | false;
   /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with {@link entityMetaOf} (or a type guard) on read (#286.1); never encode state in the id/name string. */
   meta: TMeta;
@@ -139,17 +121,13 @@ export interface PoseConstraintFrame {
   dt?: number;
 }
 
-/** Return a replacement position to constrain the step, or nothing to accept it. */
 export type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, number, number] | undefined | void;
 
 export type EntityUpdatePatch<TMeta = unknown> = Partial<
   Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "size" | "meta">
 > & {
-  /** The item now in hand; `null` empties the hands. */
   held?: string | null;
-  /** What is now worn; `null` or `[]` takes everything off. */
   worn?: readonly string[] | null;
-  /** The look now drawn; `null` goes back to the model itself. */
   look?: string | null;
   /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not derived; use `setPose` with `dt` for that. */
   position?: SpawnPositionInput;
@@ -162,17 +140,12 @@ export type EntityUpdatePatch<TMeta = unknown> = Partial<
  * deadline under a key, `get`/`set` store arbitrary scratch.
  */
 export interface EntityBlackboard {
-  /** Read a scratch value; `undefined` if unset or the entity has despawned. */
   get<T>(id: string, key: string): T | undefined;
-  /** Write a scratch value; does not notify subscribers, and clears when the entity despawns. */
   set(id: string, key: string, value: unknown): void;
   has(id: string, key: string): boolean;
   delete(id: string, key: string): void;
-  /** Drop all scratch and timers for one entity. */
   clear(id: string): void;
-  /** Arm a cooldown for `key` that stays busy until absolute time `untilMs`. */
   arm(id: string, key: string, untilMs: number): void;
-  /** True when no cooldown is armed for `key`, or its deadline has passed. */
   ready(id: string, key: string, nowMs: number): boolean;
   /** Milliseconds until the armed cooldown elapses; 0 when ready. */
   remaining(id: string, key: string, nowMs: number): number;
@@ -192,34 +165,23 @@ export interface EntityBlackboard {
  * @capability entity-columns integer handles and typed-array pose columns for engine systems stepping many entities per tick
  */
 export interface EntityColumns {
-  /** The handle a live id holds, or -1. */
   handleOf(id: string): number;
-  /** The id a live handle holds, or `undefined`. */
   idOf(handle: number): string | undefined;
-  /** Bumped every time a handle is given to a new entity (a spawn, a replacing spawn, a hydrated newcomer). */
   generationOf(handle: number): number;
   isLive(handle: number): boolean;
-  /** One past the highest handle in use; iterate `0..span()` and skip handles that are not live. */
   span(): number;
-  /** x, y, z per handle, equal to each entity's `position`. Read only: write through {@link setPosition}. */
   positions(): Float64Array;
-  /** x, y, z per handle, equal to each entity's `velocity`. Read only: write through {@link setVelocity}. */
   velocities(): Float64Array;
-  /** rotationX, rotationY, rotationZ per handle. Read only. */
   rotations(): Float64Array;
-  /** `setPose(id, { position: [x, y, z], dt })` by handle: same constraint, derived velocity and notifications, no id lookup. False for a handle that is not live. */
   setPosition(handle: number, x: number, y: number, z: number, dt?: number): boolean;
-  /** `setVelocity(id, [x, y, z])` by handle. False for a handle that is not live or a non-finite component. */
   setVelocity(handle: number, x: number, y: number, z: number): boolean;
 }
 
-/** Entity state, pose writes, keyed behavior notifications and snapshot/hydration under stable instance IDs. */
 export interface EntityStore<TMeta = unknown> {
   spawn(name: string, options?: SpawnOptions<TMeta>): string;
   despawn(id: string): boolean;
   update(id: string, patch: EntityUpdatePatch<TMeta>): boolean;
   setPose(id: string, pose: EntityPose): boolean;
-  /** Replace velocity without moving the entity. Copies a finite three-number tuple; invalid input or a missing id returns false unchanged. */
   setVelocity(id: string, velocity: EntityPosition): boolean;
   /** Register a constraint applied inside every `setPose` for this entity — the self-driven sibling of the shell's `beforeCommit` (#282.9): nav clamps, corridor walls, arena bounds without wrapping every call site. `null` clears; despawn clears automatically. */
   setPoseConstraint(id: string, constraint: PoseConstraint | null): void;
@@ -234,22 +196,12 @@ export interface EntityStore<TMeta = unknown> {
   /** Changed behavior data or removal, keyed by id and notified before ordinary subscribers. Equal-data hydration and pose writes do not fire. */
   subscribeBehaviors(listener: (id: string) => void): () => void;
   snapshot(): readonly SceneEntity<TMeta>[];
-  /**
-   * Apply a `snapshot()` (e.g. from an authoritative host) to this store — the counterpart of `snapshot()`
-   * for host→client world mirroring: spawns entities present in the snapshot but not here, overwrites
-   * existing ones field-for-field (including velocity), and despawns any local entity absent from it.
-   */
   hydrate(entities: readonly SceneEntity<TMeta>[]): void;
   spawnPoseOf(id: string): SpawnPose | null;
-  /**
-   * Move where `resetToSpawn` returns this entity (a chosen start region, a sleeping bag); the entity
-   * itself stays put. False for an id that is not spawned.
-   * @capability entity-spawn-pose move where an entity respawns without respawning it
-   */
+  /** @capability entity-spawn-pose move where an entity respawns without respawning it */
   setSpawnPose(id: string, pose: SpawnPose): boolean;
   resetToSpawn(id: string): boolean;
   blackboard: EntityBlackboard;
-  /** Integer handles and typed-array pose columns for engine systems; see {@link EntityColumns}. */
   columns: EntityColumns;
 }
 
@@ -315,7 +267,6 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
     rotationColumn[base + 2] = entity.rotationZ;
   }
 
-  /** Bind `entity` to its id's handle (a new one for a new id, a bumped generation for a fresh body) and mirror it. */
   function bindHandle(entity: SceneEntity<TMeta>, fresh: boolean): void {
     let handle = handles.get(entity.id);
     if (handle === undefined) {

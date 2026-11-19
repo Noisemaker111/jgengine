@@ -22,7 +22,6 @@ export interface SaveBackend {
   keys(prefix: string): Promise<string[]>;
 }
 
-/** A {@link KeyValueStorage} that can also enumerate its keys the way the browser's `localStorage` does. */
 export interface SaveStorage extends KeyValueStorage {
   readonly length: number;
   key(index: number): string | null;
@@ -86,10 +85,8 @@ export function remoteSaveBackend(backend: SaveBackend): SaveBackend {
   return backend;
 }
 
-/** Lifecycle of the last save/load — drive a "Saving…"/"Saved" indicator or a loading gate off it. `"error"` covers a rejected read, write or removal and a damaged payload. */
 export type SaveStatus = "idle" | "loading" | "saving" | "saved" | "error";
 
-/** What one write did: kept at `savedAt`, or failed with the backend's error and the slot left as it was. */
 export type SaveResult = { readonly kind: "saved"; readonly savedAt: number } | { readonly kind: "failed"; readonly error: unknown };
 
 /**
@@ -125,36 +122,25 @@ export interface SaveTimers {
   clear(handle: unknown): void;
 }
 
-/** The versioned envelope written to the backend — `version` lets a later game build detect and {@link SaveStoreConfig.migrate | migrate} an older payload. */
 export interface SaveEnvelope<T> {
   version: number;
   savedAt: number;
   value: T;
 }
 
-/** How a {@link createSaveStore} is wired — the backend it persists through, the initial value, and optional slot/versioning/autosave/serialization knobs. */
 export interface SaveStoreConfig<T> {
-  /** Where saves live — {@link localSaveBackend}, {@link memorySaveBackend}, or a {@link remoteSaveBackend}. */
   backend: SaveBackend;
-  /** The value a fresh save starts from (nothing stored yet, or after `clear`). */
   initial: T;
-  /** Storage namespace, joined with the slot into the backend key. Default `"save"`. */
   key?: string;
-  /** Active save slot — pass distinct slots for multiple parallel saves. Default `"default"`. */
   slot?: string | undefined;
-  /** Current save-format version. Default `1`. Bump it on a breaking shape change and pass {@link migrate}. */
   version?: number | undefined;
-  /** Upgrade an older payload to the current shape. Receives the stored value and the version it was written at (`0` for a pre-versioned/raw payload). Throwing marks the slot `corrupt`. */
   migrate?: ((data: unknown, fromVersion: number) => T) | undefined;
-  /** Autosave on every `set`/`patch`. `false` (default) saves only on an explicit `save()`. */
   autosave?: boolean | SaveAutoConfig | undefined;
   serialize?: (envelope: SaveEnvelope<T>) => string;
   deserialize?: (raw: string) => unknown;
   /** Injectable clock (ms). Default `Date.now`. */
   now?: (() => number) | undefined;
-  /** Injectable timers for autosave. Default ambient `setTimeout`/`clearTimeout`. */
   timers?: SaveTimers | undefined;
-  /** Notified on every failed or damaged read and every failed write, autosave included — status is already `"error"` when it runs. */
   onError?: ((error: unknown) => void) | undefined;
 }
 
@@ -171,23 +157,12 @@ export interface SaveStore<T> {
   slot(): string;
   /** Monotonic change counter — bumps on any value or status change; drive `useSyncExternalStore` off it. */
   revision(): number;
-  /** Hydrate the active slot from the backend into `value()`. */
   load(): Promise<LoadResult<T>>;
-  /** Replace the value and mark it dirty (schedules autosave). */
   set(value: T): void;
-  /** Read-modify-write the value and mark it dirty; returns the next value. */
   patch(mutate: (previous: T) => T): T;
-  /** Flush the current value to the backend now (serialized against in-flight saves). */
   save(): Promise<SaveResult>;
-  /** Delete the active slot and reset `value()` to `initial`. Resolves `false` when the backend refused, leaving the value as it was. */
   clear(): Promise<boolean>;
-  /**
-   * Delete any slot's stored payload, so `slots()` and `peek()` stop seeing it. Resolves `true` when
-   * a payload was removed and `false` when the slot held nothing or the backend refused. Deleting the
-   * active slot resets `value()` to `initial`; other slots leave the live value alone.
-   */
   deleteSlot(slot: string): Promise<boolean>;
-  /** Read a stored slot without touching the live value, active slot or status — what a save-select menu shows. */
   peek(slot?: string): Promise<PeekResult<T>>;
   /**
    * Switch to `slot` and load it, flushing dirty state first unless `flush` is false. When that flush
@@ -195,10 +170,8 @@ export interface SaveStore<T> {
    * result is `failed`.
    */
   switchSlot(slot: string, options?: { flush?: boolean }): Promise<LoadResult<T>>;
-  /** The slots holding a payload under this store's key, read from the backend, in natural order. */
   slots(): Promise<string[]>;
   subscribe(listener: () => void): () => void;
-  /** Stop autosave timers and drop listeners. */
   dispose(): void;
 }
 

@@ -5,7 +5,6 @@ import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing"
 /** The render effects `?effects=` can switch; `softShadows` takes a light size in degrees (`softShadows:2`). */
 export const PREVIEW_EFFECTS = ["ssr", "fog", "fogBanks", "motionBlur", "softShadows"] as const;
 
-/** One effect a preview turns on (with an optional number) or off. */
 export interface EffectToggle {
   effect: (typeof PREVIEW_EFFECTS)[number];
   on: boolean;

@@ -15,10 +15,6 @@ import { useTabletNav } from "../../tablet/tablet";
 import { LlmvilleSessionProvider, WorldSceneFeedProvider, createWorldSceneFeed } from "../llmvilleSession";
 import { LlmvilleGameUI } from "./LlmvilleGameUI";
 
-/**
- * LLMville's world for a host that mounts the shell itself (the dev runner), where nothing wraps the
- * HUD and the scene together: each side brings the backend, and both read one scene feed.
- */
 const hostedBackend = perContext((ctx) => {
   const client = createConvexClient();
   onContextDispose(ctx, () => void client.close());
@@ -56,7 +52,6 @@ function HostedSession({ scene }: { scene: ReturnType<typeof createWorldSceneFee
   );
 }
 
-/** The shell's `GameUI` when a host mounts the shell: the world's HUD with its own backend and session. */
 export function HostedGameUI() {
   const { client, scene } = hostedBackend(useGameContext());
   return (
@@ -66,7 +61,6 @@ export function HostedGameUI() {
   );
 }
 
-/** A scene component for a host-mounted shell: it reads the backend and the scene feed the hosted HUD writes. */
 export function hostedScenePart<Props extends object>(Part: ComponentType<Props>): ComponentType<Props> {
   return function HostedScenePart(props: Props) {
     const { client, scene } = hostedBackend(useGameContext());

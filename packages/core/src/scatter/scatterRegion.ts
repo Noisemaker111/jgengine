@@ -15,7 +15,6 @@ import { SCATTER_INSTANCE_BUDGET } from "./scatterCoverage";
 import type { SceneDocumentLike, ScenePathLike } from "../world/sceneShapes";
 import type { TerrainNormal } from "../terrain/terrain";
 
-/** The editor path kind that marks a closed polyline as a foliage/scatter region. */
 export const SCATTER_PATH_KIND = "scatter";
 
 /**
@@ -47,13 +46,10 @@ export const SCATTER_SCHEMA = defineParamSchema({
   ],
 });
 
-/** A scatter region's parsed params. */
 export type ScatterParams = ParamsOf<typeof SCATTER_SCHEMA>;
 
-/** Default clearance radius (m) for an auto-avoided gameplay marker with no explicit `meta.clearance`. */
 export const DEFAULT_MARKER_CLEARANCE = 3.5;
 
-/** Marker/volume kinds that repel scatter and flatten terrain by default (spawns, objectives, vendors). */
 export const DEFAULT_CLEARANCE_KINDS: readonly string[] = [
   "player_spawn",
   "spawn",
@@ -65,18 +61,15 @@ export const DEFAULT_CLEARANCE_KINDS: readonly string[] = [
   "travel",
 ];
 
-/** A resolvable scatter region: a closed polygon footprint, its params and seed, and its own clearance discs. */
 export interface ScatterRegion {
   id: string;
   /** The region's injected seed; placements hash `id` with it, so two regions with one seed still differ. */
   seed: string;
   polygon: readonly Vec2[];
   params: ScatterParams;
-  /** Explicit no-scatter clearance discs this region always honors (manual exclusion). */
   avoid: readonly AvoidZone[];
 }
 
-/** A single placed scatter instance — grounded world position plus per-instance variation. */
 export interface ScatterInstance {
   id: string;
   regionId: string;
@@ -89,7 +82,6 @@ export interface ScatterInstance {
   normal?: TerrainNormal;
 }
 
-/** Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground). */
 export interface ScatterTerrain {
   sampleHeight(x: number, z: number): number;
   sampleNormal(x: number, z: number): TerrainNormal;
@@ -179,15 +171,11 @@ export function resolveScatterRegion(
   return instances;
 }
 
-/** True when an editor path is a foliage/scatter region. */
 export function isScatterPath(path: ScenePathLike): boolean {
   return path.kind === SCATTER_PATH_KIND;
 }
 
-/**
- * Parses a region's manual clearance discs from `meta.avoid` (array of {x,z,radius,feather?}).
- * @internal — part of a region's shape, read by {@link scatterRegionFromPath}.
- */
+/** @internal — part of a region's shape, read by {@link scatterRegionFromPath}. */
 export function readAvoidZones(meta: Record<string, unknown> | undefined): AvoidZone[] {
   const raw = meta?.["avoid"];
   if (!Array.isArray(raw)) return [];
@@ -206,10 +194,6 @@ export function readAvoidZones(meta: Record<string, unknown> | undefined): Avoid
   return zones;
 }
 
-/**
- * Builds a resolvable {@link ScatterRegion} from a scatter path, or null: its XZ polygon, its `meta`
- * parsed against {@link SCATTER_SCHEMA}, and its seed (the schema's seed field, unset reading as "").
- */
 export function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null {
   if (!isScatterPath(path) || path.points.length < 3) return null;
   return {
@@ -221,20 +205,16 @@ export function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null
   };
 }
 
-/** Estimated placement count for a scatter path — density × polygon area, for a live UI readout. */
 export function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } {
   if (!isScatterPath(path)) return { area: 0, count: 0 };
   const area = polygonArea(path.points.map((point) => [point.x, point.z] as Vec2));
   return { area, count: Math.floor(area * parseParams(SCATTER_SCHEMA, path.meta).density) };
 }
 
-/** The output family of {@link SCATTER_GENERATOR}: a {@link ScatterPlot}. */
 export const SCATTER_OUTPUT = "scatter-plot";
 
-/** Side (m) of the square sample plot {@link SCATTER_GENERATOR} fills. */
 export const SCATTER_PLOT_SIZE = 24;
 
-/** A scatter region's params grown over a flat square sample plot centred on the origin. */
 export interface ScatterPlot {
   /** Side of the plot in metres. */
   size: number;
@@ -259,7 +239,6 @@ export const SCATTER_GENERATOR = defineGenerator({
   },
 });
 
-/** Reads a gameplay object's clearance radius: explicit `meta.clearance`, else a kind default, else 0. */
 function clearanceOf(
   kind: string,
   meta: Record<string, unknown> | undefined,
@@ -271,17 +250,11 @@ function clearanceOf(
   return kinds.includes(kind) ? defaultClearance : 0;
 }
 
-/** Controls which gameplay objects auto-repel scatter (and, for markers, flatten terrain). */
 export interface ClearanceOptions {
-  /** Marker/volume/path kinds that auto-clear even without a `meta.clearance` tag. Default {@link DEFAULT_CLEARANCE_KINDS}. */
   kinds?: readonly string[];
-  /** Restrict auto-clearing to these object ids only (any kind); overrides `kinds` when set. */
   ids?: readonly string[];
-  /** Clearance radius (m) for a kind-matched object with no explicit tag. Default {@link DEFAULT_MARKER_CLEARANCE}. */
   defaultClearance?: number;
-  /** Soft outer band (m) on every derived zone/corridor. Default 2. */
   feather?: number;
-  /** Include a corridor along non-scatter paths (roads/routes) in {@link clearanceMasksFrom}. Default true. */
   includePaths?: boolean;
 }
 
@@ -339,20 +312,11 @@ export function clearanceMasksFrom(doc: SceneDocumentLike, options: ClearanceOpt
   return { discs: clearanceZonesFrom(doc, options), corridors };
 }
 
-/** Extra inputs for {@link resolveScatter}: manual discs plus the auto-clearance toggle/scoping. */
 export interface ResolveScatterOptions extends ClearanceOptions {
-  /** Additional clearance discs applied to every region regardless of per-region `autoAvoid`. */
   avoid?: readonly AvoidZone[];
-  /** Master switch for document-derived auto-clearance; false = per-region `avoid` (and `options.avoid`) only. */
   autoAvoid?: boolean;
 }
 
-/**
- * Every scatter region's placements across a document, grounded on `terrain` when provided. Regions
- * honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and
- * `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom}
- * — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
- */
 export function resolveScatter(
   doc: SceneDocumentLike,
   terrain?: ScatterTerrain,
@@ -373,11 +337,6 @@ export function resolveScatter(
   return resolved;
 }
 
-/**
- * Fills one authored path of a kind other than `scatter` with placements (a forest stand from its growth model). It
- * receives the clearance masks the region would honor; placements join the document's scatter, so rendering, solids,
- * harvest and navigation read them like any other.
- */
 export type ScatterSource = (path: ScenePathLike, terrain: ScatterTerrain | undefined, masks: AvoidMasks) => readonly ScatterInstance[];
 
 const scatterSources = new Map<string, ScatterSource>();

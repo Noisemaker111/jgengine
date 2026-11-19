@@ -31,9 +31,7 @@ export const DEFAULT_GESTURE_TUNING: GestureSurfaceTuning = {
 
 export interface GestureSurfaceTracker {
   begin(x: number, y: number, nowMs: number): void;
-  /** Drag-step actions fired by this movement, in travel order. */
   move(x: number, y: number): readonly string[];
-  /** Tap or swipe action resolved by lifting the finger, if any. */
   end(x: number, y: number, nowMs: number): readonly string[];
   cancel(): void;
   isActive(): boolean;

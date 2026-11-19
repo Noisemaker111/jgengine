@@ -130,17 +130,12 @@ export interface WorldInvites {
   listFor(userId: string): WorldInvite[];
 }
 
-/** One party's replicated membership — id, current leader, and ordered member ids. */
 export interface SocialPartySnapshot {
   id: string;
   leader: string;
   members: string[];
 }
 
-/**
- * Full friends/party/world-invite state as one serializable baseline — the host→client replication
- * payload behind the `social` snapshot module. Presence and emotes are derived from live deps, not stored.
- */
 export interface SocialSnapshot {
   friendships: Record<string, string[]>;
   blocked: Record<string, string[]>;
@@ -184,11 +179,7 @@ interface PartyInvite {
 
 const DEFAULT_INVITE_TTL_MS = 60_000;
 
-/**
- * Emotes and lightweight social interactions between nearby players.
- *
- * @capability social-emotes emotes and social interactions between nearby players
- */
+/** @capability social-emotes emotes and social interactions between nearby players */
 export function createSocial(deps: SocialDeps): Social {
   const now = deps.now ?? Date.now;
   const events = deps.events;

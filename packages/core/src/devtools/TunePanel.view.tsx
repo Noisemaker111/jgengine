@@ -12,11 +12,7 @@ import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 
 import { persistDevtoolsOverrides } from "./devtoolsOverrides.view";
 
-/**
- * Accessible names for one tunable's inputs: the number field answers to the control name itself,
- * so `drive --fill "<name>=<value>"` and a screen reader both find it; the range is `<name> slider`.
- * @capability tune-control-labels find a Tune panel field by its control name (drive --fill, screen readers)
- */
+/** @capability tune-control-labels find a Tune panel field by its control name (drive --fill, screen readers) */
 export function tuneControlLabels(name: string): { range: string; number: string } {
   return { range: `${name} slider`, number: name };
 }

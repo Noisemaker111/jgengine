@@ -3,10 +3,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { householdStore } from "./store";
 
-/** What a shift's boundary hands back: whether it was worked to the end, and the pay it carried. */
 export interface ShiftSettlement {
   finished: boolean;
-  /** Credits the shift earned and the household ledger already holds. */
   pay: number;
 }
 
@@ -20,10 +18,6 @@ interface ShiftSessions {
 
 const sessions = perContext<ShiftSessions>(() => ({ loops: new Map(), probedId: null, uninstall: null }));
 
-/**
- * One career per member: each paid shift is a session on the shared loop. The loop owns which day's
- * shift is live, whether it has closed, and the pay it carries; the member keeps only career data.
- */
 export function shiftLoop(ctx: GameContext, memberId: string): ShiftLoop {
   const slot = sessions(ctx);
   let loop = slot.loops.get(memberId);
@@ -58,7 +52,6 @@ export function shiftRan(ctx: GameContext, memberId: string, day: number): boole
   return loop.snapshot().session === day + 1 && loop.phase() === "closed";
 }
 
-/** Close this day's shift and hand back what it carried; an unopened day opens first. */
 export function closeShift(loop: ShiftLoop, day: number, finished: boolean): ShiftSettlement {
   if (loop.phase() !== "open") {
     if (loop.snapshot().session === day + 1) return { finished: true, pay: 0 };

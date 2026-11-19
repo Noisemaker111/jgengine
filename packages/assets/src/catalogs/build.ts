@@ -12,7 +12,6 @@ import { singles } from "../singles";
  * literal), so at runtime an extra resolves to exactly `{ url }`.
  */
 export interface CatalogExtra {
-  /** Catalog id the entry resolves under (matches what a folder rescan would produce). */
   id: string;
   /** URL the shipped game serves the model from (e.g. `/models/imported/Ship.glb`). */
   url: string;
@@ -26,7 +25,6 @@ export interface CatalogExtra {
 }
 
 export interface BuildCatalogOptions {
-  /** URL prefix where pulled pack GLBs live (consumer's `public/models`). */
   basePath?: string;
   /**
    * The model packs this catalog registers, imported by name from `@jgengine/assets/generated/packs`
@@ -48,13 +46,6 @@ export function entryUrl(basePath: string, entry: IndexEntry): string {
   return `${basePath.replace(/\/+$/, "")}/${entry.source}/${entry.file}`;
 }
 
-/**
- * Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases.
- * Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases:
- * packs and singles come first, extras override them last-writer-wins, and aliases resolve last so
- * they can target an extra; an alias whose target is in no named pack is skipped. See
- * {@link BuildCatalogOptions} for the pack list and opt-outs.
- */
 export function buildCatalog(options: BuildCatalogOptions): AssetCatalog {
   const basePath = options.basePath ?? "/models";
   const includeAliases = options.includeAliases ?? true;

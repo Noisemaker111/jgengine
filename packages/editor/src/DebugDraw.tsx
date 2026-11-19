@@ -52,7 +52,6 @@ function volumeColor(volume: EditorVolume): string {
   return colorFor(volume.kind, volume.color);
 }
 
-/** Where a nav link gizmo draws its arrowheads: at the landing end, and at the start too when it runs both ways. */
 export function navLinkArrows(path: EditorPath): { at: EditorVec3; toward: EditorVec3 }[] {
   if (path.kind !== NAV_LINK_KIND || path.points.length < 2) return [];
   const first = path.points[0]!;
@@ -97,11 +96,6 @@ function ringPoint(radius: number, offset: number, axis: "y" | "x" | "z", t: num
   return [c, s, offset];
 }
 
-/**
- * Line-segment vertices of a volume's gizmo, relative to `volume.center`. Every shape is drawn centred
- * on `center`, the bounds runtime containment, nav areas and water read ({@link volumeHalfSize}); the
- * box and cylinder once drew from `center.y` upward, half a height above the volume the game used.
- */
 export function volumeWireframe(volume: EditorVolume): Float32Array {
   const out: number[] = [];
   const half = volumeHalfSize(volume);
@@ -135,9 +129,7 @@ export function volumeWireframe(volume: EditorVolume): Float32Array {
   return new Float32Array(out);
 }
 
-/** Shell-cyan selection fill — replaces the old white debug tint. */
 const SELECTION_COLOR = "#67e8f9";
-/** Pre-selection hover fill (softer cyan, not selected). */
 const HOVER_COLOR = "#22d3ee";
 
 function emphasisColor(selected: boolean, hovered: boolean, base: string): string {
@@ -220,7 +212,6 @@ const MarkerMesh = memo(function MarkerMesh({
   );
 });
 
-/** Shape-true wireframe — ground ring plus vertical profile for spheres, cylinders, and boxes. */
 const VolumeShapeLines = memo(function VolumeShapeLines({
   volume,
   selected,
@@ -446,7 +437,6 @@ const NotePin = memo(function NotePin({
   );
 });
 
-/** Live preview of an in-progress path drawing: placed points and the connecting line. */
 export function PathDraftPreview({ points }: { points: readonly EditorVec3[] }) {
   const object = useMemo(() => {
     if (points.length < 2) return null;
@@ -500,7 +490,6 @@ export function PathDraftPreview({ points }: { points: readonly EditorVec3[] }) 
   );
 }
 
-/** Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos. */
 export function EditorLayerOverlays({
   document,
   visibility,
@@ -512,7 +501,6 @@ export function EditorLayerOverlays({
   document: EditorDocument;
   visibility: EditorKindVisibility;
   selection: readonly string[];
-  /** Pre-selection hover id from viewport pointer pick; ignored when already selected. */
   hoverId?: string | null;
   activePathPoint?: { pathId: string; index: number } | null;
   groundHeightAt?: (x: number, z: number) => number;

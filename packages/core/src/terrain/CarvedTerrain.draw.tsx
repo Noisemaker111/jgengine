@@ -13,9 +13,7 @@ import { useEngineDraw, type DrawAttachProps } from "@jgengine/core/frame/useEng
 import { CHUNKED_GROUND_MIN_VERTICES, GroundChunks } from "./terrainChunks.draw";
 import { fieldGroundGeometryJob, resolveFieldGroundGrid, type FieldGroundOptions } from "./terrainMath.draw";
 
-/** Props for `CarvedTerrain`: the terrain field to mesh, its size, resolution, colouring and material settings. */
 export interface CarvedTerrainProps extends DrawAttachProps {
-  /** The terrain field to mesh — a `CarvableField` renders its craters and mounds. */
   field: TerrainField;
   size?: FieldGroundOptions["size"];
   segments?: FieldGroundOptions["segments"] | undefined;
@@ -28,7 +26,6 @@ export interface CarvedTerrainProps extends DrawAttachProps {
   metalness?: number;
   /** Override the default vertex-colour material (e.g. a procedural detail material). The caller owns its lifecycle; it is not disposed here. */
   surfaceMaterial?: THREE.Material | undefined;
-  /** Bump after a runtime carve/deposit to re-mesh the deformed surface. */
   epoch?: number;
 }
 
@@ -87,7 +84,6 @@ function applyMeshProps(object: THREE.Object3D, props: CarvedTerrainProps, flags
   }
 }
 
-/** Run a sliced job the way `useSlicedValue` did: scene work counted, result on done. */
 function startSliced<T>(label: string, job: SlicedJob<T>, onResult: (value: T) => void): SlicedRun<T> {
   const done = trackSceneWork(label);
   const run = runSliced(job);
@@ -104,7 +100,7 @@ function startSliced<T>(label: string, job: SlicedJob<T>, onResult: (value: T) =
   return run;
 }
 
-/** {@link carvedTerrainDraw} plus its prop/material sync, shared by `frame` and `update`. @internal */
+/** @internal */
 export interface CarvedTerrainDraw extends EngineDraw {
   syncSurface(): void;
 }

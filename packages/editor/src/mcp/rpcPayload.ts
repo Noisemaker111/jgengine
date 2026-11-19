@@ -1,24 +1,22 @@
 import { readFile } from "node:fs/promises";
 
-/** Where an RPC JSON body is read from for the headless editor CLI. */
 export type RpcPayloadSource =
   | { kind: "inline"; raw: string }
   | { kind: "file"; path: string }
   | { kind: "stdin" };
 
-/** Result of reading or JSON-decoding an RPC payload for the CLI. */
 export type RpcPayloadResult =
   | { ok: true; value: unknown; raw: string; sourceLabel: string }
   | { ok: false; error: string };
 
-/** Human-readable label for error messages (and tests). @internal */
+/** @internal */
 export function rpcSourceLabel(source: RpcPayloadSource): string {
   if (source.kind === "inline") return "inline --rpc";
   if (source.kind === "file") return `--rpc-file ${source.path}`;
   return "stdin (--rpc -)";
 }
 
-/** True when braces/brackets/quotes look cut off — common when a shell truncates a long --rpc arg. @internal */
+/** @internal */
 export function looksTruncatedJson(raw: string): boolean {
   let depth = 0;
   let inString = false;
@@ -83,7 +81,7 @@ export function parseRpcJson(raw: string, source: RpcPayloadSource): RpcPayloadR
   }
 }
 
-/** Reads the raw RPC text from an inline arg, file path, or stdin. @internal */
+/** @internal */
 export async function readRpcText(
   source: RpcPayloadSource,
   readStdin: () => Promise<string> = defaultReadStdin,
@@ -107,7 +105,7 @@ export async function readRpcText(
   }
 }
 
-/** Load + parse an RPC payload from the resolved CLI source. @internal */
+/** @internal */
 export async function loadRpcPayload(
   source: RpcPayloadSource,
   readStdin?: () => Promise<string>,

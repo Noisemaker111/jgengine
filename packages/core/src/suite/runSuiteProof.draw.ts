@@ -13,13 +13,11 @@ import type { SuiteProofResult, SuiteReport } from "./gameSuite";
 import { openSetupWindow } from "./setupWindow";
 import { CHEAT_COMMAND_NAME, type ProofPlay, type ProofSetup, type SuiteProof } from "./suiteProof";
 
-/** Options for {@link runSuiteProof}. */
 export interface SuiteProofRunOptions {
   /** Seed for `ctx.rng`. Default `"suite"`, so every run of a proof draws the same numbers. */
   seed?: string | number;
 }
 
-/** What one proof run produced: the flow report of its steps, and the entries it proved when it passed. */
 export interface SuiteProofRun {
   proves: readonly string[];
   report: FlowRunReport;
@@ -272,7 +270,6 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
   return { proves: proof.proves, report };
 }
 
-/** A proof loaded from a game's `proofs/sim/` folder, with the file it came from. */
 export interface LoadedSuiteProof {
   file: string;
   proof: SuiteProof;

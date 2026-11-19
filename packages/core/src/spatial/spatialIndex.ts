@@ -4,7 +4,6 @@ import type { Frustum } from "../visibility/frustum";
 import { aabbInFrustum } from "../visibility/frustum";
 
 export interface SpatialIndexOptions {
-  /** Grid cell size in world units. Default 16. Objects are hashed into every cell their AABB overlaps. */
   readonly cellSize?: number;
   /**
    * An object whose AABB spans more cells than this on any axis is parked in an "oversized"
@@ -13,7 +12,6 @@ export interface SpatialIndexOptions {
   readonly maxCellSpan?: number;
 }
 
-/** Integer cell bounds an object covers, inclusive on both ends. */
 export interface SpatialCellRange {
   x0: number; y0: number; z0: number;
   x1: number; y1: number; z1: number;
@@ -24,7 +22,6 @@ export interface SpatialCellRange {
  * keeps its ids' order, so a restored index returns query results in the same order.
  */
 export interface SpatialIndexState {
-  /** Per object: its cell range (`null` when oversized) and whether it was inserted as dynamic. */
   entries: [id: string, range: SpatialCellRange | null, dynamic: boolean][];
   cells: [x: number, y: number, z: number, ids: string[]][];
   oversized: string[];
@@ -43,11 +40,8 @@ export interface SpatialIndex {
   remove(id: string): void;
   has(id: string): boolean;
   size(): number;
-  /** Collect ids whose cells the frustum's world-AABB touches (broad phase). Reuses `out`. */
   queryFrustum(frustum: Frustum, out: string[]): string[];
-  /** Collect ids whose cells the box touches (broad phase). Clears and reuses `out`; allocates nothing once `out` has grown. */
   queryBox(minX: number, minY: number, minZ: number, maxX: number, maxY: number, maxZ: number, out: string[]): string[];
-  /** Collect ids whose cells the sphere's bounding box touches (broad phase). Clears and reuses `out`; allocates nothing once `out` has grown. */
   querySphere(cx: number, cy: number, cz: number, radius: number, out: string[]): string[];
   cells(): { key: string; count: number; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number }[];
   cellSize(): number;
@@ -561,5 +555,4 @@ export function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIn
   };
 }
 
-/** Precise AABB-vs-AABB test re-exported for callers refining a broad-phase result. */
 export { aabbIntersects };

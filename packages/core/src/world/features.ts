@@ -33,30 +33,16 @@ export interface TerrainColors {
   waterline?: string;
 }
 
-/**
- * Procedural detail-surface layer for terrain: a noise-driven shader that keeps the
- * biome-tinted base ground (from `colors`/`biomeBands`) and blends distinct rock,
- * sand, and snow over it by slope, height, and waterline — turning a flat
- * vertex-colour surface into varied, textured-reading ground with no image assets.
- */
 export interface TerrainDetailConfig {
-  /** Steep-slope rock colour. Default "#6f7175". */
   rockColor?: string;
-  /** Waterline/beach sand colour. Default "#c2b283". */
   sandColor?: string;
-  /** High-altitude snow colour. Default "#eef3f7". */
   snowColor?: string;
-  /** Slope (0 flat … 1 vertical) at which rock starts taking over. Default 0.42. */
   rockSlopeStart?: number;
-  /** World height above which snow appears. Default 26. */
   snowHeight?: number;
   /** Water level for the sand band; defaults to the terrain's `waterLevel`, and no band is drawn when the terrain has none. */
   waterLevel?: number;
-  /** Fine detail noise wavelength in world units. Default 5. */
   detailScale?: number;
-  /** Large-scale colour-variation wavelength in world units. Default 45. */
   macroScale?: number;
-  /** Surface roughness of the detail material. Default 0.9. */
   roughness?: number;
   /** Overall detail intensity 0..1. Default 1. */
   strength?: number;
@@ -71,26 +57,13 @@ export interface TerrainDetailConfig {
    * top-down projection to side projections (triplanar), so cliffs are not smeared. Default 45.
    */
   scanTriplanarAngle?: number;
-  /**
-   * RGB multipliers for the two macro colour sweeps painted over the base ground. `dry` tints the
-   * sun-bleached patches, `wet` the cooler pockets between them. The defaults ([1.14, 1.05, 0.76]
-   * and [0.78, 1.0, 0.86]) suit temperate meadows; the green-leaning `wet` default paints mossy
-   * pockets onto any biome that keeps it, so arid/ashen worlds should supply warm or neutral tints.
-   */
   sweeps?: { dry?: readonly [number, number, number]; wet?: readonly [number, number, number] };
   /** Real PBR texture maps blended over the procedural detail — the seam for `@jgengine/assets` `buildMaterialCatalog` output. Omit to keep the procedural-only look. */
   material?: TerrainDetailMaterialConfig;
-  /**
-   * Generated PBR surfaces (`@jgengine/core/material/surfaceMaterialGenerator`) for the unpainted
-   * ground, the waterline sand band and slope rock, baked once at load and tiled by world position.
-   * A role left out keeps its procedural look.
-   */
   surfaces?: TerrainSurfacesConfig;
 }
 
-/** One terrain surface: a generated material spec or a scanned `scan`, plus how it tiles and tints. */
 export interface TerrainSurfaceLayer extends SurfaceMaterialSpec {
-  /** Scanned maps (e.g. `libraryTerrainSurface(name)` from `@jgengine/assets`); replaces the generated spec. */
   scan?: TerrainMaterialMaps;
   /** World metres one tile covers. Default 5 ground, 4 sand, 8 rock. */
   tile?: number;
@@ -101,13 +74,9 @@ export interface TerrainSurfaceLayer extends SurfaceMaterialSpec {
   tint?: number;
 }
 
-/** Which generated surface draws each terrain role. */
 export interface TerrainSurfacesConfig {
-  /** Unpainted ground between the sand band and slope rock, e.g. `{ preset: "grass" }`. */
   ground?: TerrainSurfaceLayer;
-  /** The waterline sand band, e.g. `{ preset: "beach-sand" }`. */
   sand?: TerrainSurfaceLayer;
-  /** Steep slopes, e.g. `{ preset: "cliff" }`; projected onto the cliff face, not stretched. */
   rock?: TerrainSurfaceLayer;
 }
 
@@ -136,9 +105,7 @@ export interface TerrainMaterialMaps {
  * existing vertex-colour + noise look.
  */
 export interface TerrainDetailMaterialConfig {
-  /** e.g. `buildMaterialCatalog({ basePath: "/materials" }).resolve("material/grass")!.maps`. */
   maps: TerrainMaterialMaps;
-  /** World units per texture tile; smaller tiles the texture more densely. Default 4. */
   repeat?: number;
   /** Blend strength of the texture over the procedural/vertex-colour base, 0..1. Default 1. */
   strength?: number;
@@ -164,20 +131,16 @@ export interface TerrainFlattenMask {
   radius: number;
   /** Target flat height; defaults to the noise field's height at `center`. */
   height?: number;
-  /** Extra blend-ring width outside `radius` where the flat height smoothsteps back to the noise value; default `radius * 0.5`. */
   falloff?: number;
 }
 
-/** Palette and blend fields shared by every `TerrainMaterialRegion` shape. */
 export interface TerrainRegionStyle {
-  /** Named palette preset for this region (see `TERRAIN_MATERIAL_PALETTES` in `terrain/terrain`); overridden field-by-field by `colors`. */
   material?: TerrainMaterial;
   colors?: TerrainColors;
   /** Blend-ring width outside the region core back to the surrounding palette; default: half the region's characteristic size. */
   falloff?: number;
 }
 
-/** A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles. */
 export interface TerrainCircleRegion extends TerrainRegionStyle {
   shape?: "circle";
   center: EnvironmentVec2;
@@ -187,7 +150,6 @@ export interface TerrainCircleRegion extends TerrainRegionStyle {
 /** A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles. */
 export interface TerrainPolylineRegion extends TerrainRegionStyle {
   shape: "polyline";
-  /** Centerline vertices in world XZ; needs at least two points. */
   points: readonly EnvironmentVec2[];
   /** Full ribbon width; the painted core extends `width / 2` either side of the centerline. `falloff` defaults to `width * 0.5`. */
   width: number;
@@ -196,11 +158,9 @@ export interface TerrainPolylineRegion extends TerrainRegionStyle {
 /** A palette zone filling a closed outline — a biome drawn as a shape (swamp, snowfield, redwood stand). `falloff` defaults to 16. */
 export interface TerrainPolygonRegion extends TerrainRegionStyle {
   shape: "polygon";
-  /** Outline vertices in world XZ, at least three; the ring closes itself. */
   points: readonly EnvironmentVec2[];
 }
 
-/** A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts. */
 export interface TerrainRectRegion extends TerrainRegionStyle {
   shape: "rect";
   center: EnvironmentVec2;
@@ -210,14 +170,8 @@ export interface TerrainRectRegion extends TerrainRegionStyle {
   rotationY?: number;
 }
 
-/**
- * A palette zone painted over the base terrain palette. Circle (the default when no `shape` is given),
- * `polyline` ribbons for roads/rivers, rotatable `rect` districts and `polygon` outlines all paint fully
- * inside their core and blend back across `falloff`; later regions in the list win overlaps.
- */
 export type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion | TerrainPolygonRegion;
 
-/** Per-band fog override cross-faded along z by `createBiomeFogSampler`; unset fields fall through to the base sky fog. */
 export interface BiomeFog {
   color?: string;
   near?: number;
@@ -225,7 +179,6 @@ export interface BiomeFog {
   density?: number;
 }
 
-/** Per-band sky/light override cross-faded along z by `createBiomeSkySampler`; unset fields fall through to the base sky. */
 export interface BiomeSky {
   horizonColor?: string;
   zenithColor?: string;
@@ -243,17 +196,11 @@ export interface BiomeSky {
 export interface BiomeBand {
   /** World-space center z of the zone. */
   z: number;
-  /** Cross-fade window width straddling the boundary to the next band. Default 64. */
   fade?: number;
-  /** Named palette preset for the zone (see `TERRAIN_MATERIAL_PALETTES`); overridden field-by-field by `colors`. */
   material?: TerrainMaterial;
-  /** Explicit low/high/waterline hex colors for the zone. */
   colors?: TerrainColors;
-  /** Fog color/near/far/density for the zone, cross-faded per camera z; unset fields keep the base sky fog. */
   fog?: BiomeFog;
-  /** Sky horizon/zenith colors and sun/ambient intensity for the zone, cross-faded per camera z; unset fields keep the base sky. */
   sky?: BiomeSky;
-  /** Precipitation covering the zone — expands into a full-width weather strip centered at `[0, z]`, `fade`-deep. */
   weather?: "rain" | "snow";
 }
 
@@ -270,13 +217,9 @@ export interface TerrainEnvironmentConfig {
   heightField?: (x: number, z: number) => number;
   /** Revision of a changing height function; return undefined if its changes cannot be tracked. */
   heightRevision?: () => number | undefined;
-  /** Named palette preset (see `TERRAIN_MATERIAL_PALETTES` in `terrain/terrain`); default "grass". Overridden field-by-field by `colors`. */
   material?: TerrainMaterial;
-  /** Explicit low/high/waterline hex colors; any field left unset falls back to the resolved `material` preset. */
   colors?: TerrainColors;
-  /** Palette zones blended over the base `material`/`colors` for multi-biome readability. */
   materialRegions?: readonly TerrainMaterialRegion[];
-  /** Ordered z-banded ground palettes that cross-fade along the world's z axis (vale → marsh → peaks). Painted under `materialRegions`. */
   biomeBands?: readonly BiomeBand[];
   /**
    * Grid segments per axis, or `[x, z]` for a non-square grid. Honoured as-is for compatibility,
@@ -299,17 +242,9 @@ export interface TerrainEnvironmentConfig {
   ridged?: boolean;
   baseHeight?: number;
   waterLevel?: number;
-  /** Shape the ground into a landmass in the sea: everything past the coastline sinks to the sea floor. */
   coast?: TerrainCoast;
-  /** Flat pads carved into the noise field, e.g. for building pads or spawn circles. */
   flatten?: readonly TerrainFlattenMask[];
-  /** Authored path profiles that flatten/grade/carve the heightfield along a centerline (roads, rivers, ramps) with optional retaining walls. Applied after `flatten`. */
   pathProfiles?: readonly TerrainPathProfile[];
-  /**
-   * Procedural detail surface (per-surface painted ground, slope rock, sand and snow over the biome
-   * base). Omitted, the ground still renders with default detail; `false` opts out to the flat
-   * vertex-colour ground.
-   */
   detail?: TerrainDetailConfig | false;
 }
 
@@ -333,7 +268,6 @@ export interface RainEnvironmentConfig {
   dropLength?: number;
   wind?: EnvironmentVec2;
   color?: string;
-  /** Streak width of each raindrop quad, in world units. Default 0.018 — raise for a heavier-reading storm without enlarging `area`. */
   width?: number;
   /** Drop opacity, 0-1. Default 0.48 — raise for a denser-reading storm without enlarging `area`. */
   opacity?: number;
@@ -371,7 +305,6 @@ export interface SnowEnvironmentConfig {
  * range that still reads as full ground cover.
  */
 export interface GrassEnvironmentConfig extends GrassLookGroups {
-  /** A shipped grass species (`"kentucky-bluegrass"`, `"cushion-moss"`, `"pampas"`, ...) whose knobs back every one this config leaves unset. */
   species?: GrassSpeciesId;
   area?: EnvironmentArea;
   /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`, letting a biome zone site its own vegetation away from the origin. */
@@ -390,20 +323,10 @@ export interface OceanEnvironmentConfig {
    */
   levelAt?: (time: number) => number;
   waveHeight?: number;
-  /** Primary Gerstner wavelength in world units (shared with shell Ocean `waveScale`; default 18). */
   waveScale?: number;
   waveSpeed?: number;
   color?: string;
-  /**
-   * The rest of the surface's colors, for a body that is not sea water — molten slag, toxic sludge,
-   * oil. `color` stays the shallow tone; any field left out keeps the shell's ocean default.
-   */
   palette?: OceanPalette;
-  /**
-   * The sea runs to the horizon: the surface follows the camera out to the far plane in every
-   * direction, with its finest waves near the viewer. `bounds` then only limits where the bed under
-   * it is read for shallows and shore foam. Default false: a sheet the size of `bounds`.
-   */
   horizon?: boolean;
   /** Metres of water you see through before it takes its colour: clear shallows want 3 or more. Default 1.2. */
   clarity?: number;
@@ -411,13 +334,9 @@ export interface OceanEnvironmentConfig {
   bedResolution?: number;
 }
 
-/** Optional ocean surface colors beyond the shallow `color` (all hex). */
 export interface OceanPalette {
-  /** The tone the body reaches at full depth. */
   deep?: string;
-  /** Wave-crest highlight. */
   crest?: string;
-  /** Shoreline and crest foam. */
   foam?: string;
   /** How much of the sky the surface mirrors, 0..1 (default 0.7). */
   fresnel?: number;
@@ -435,7 +354,6 @@ export interface SkySunConfig {
 }
 
 export interface SkyEnvironmentConfig {
-  /** Fixed look used when `timeOfDay` is off (or no clock is available); default "day". */
   preset?: "day" | "dusk" | "night";
   /** Drive sun/sky from the world clock's `calendar().dayFraction` instead of the fixed `preset`. */
   timeOfDay?: boolean;
@@ -446,21 +364,12 @@ export interface SkyEnvironmentConfig {
   horizonColor?: string;
   /** Zenith tint at noon; same `timeOfDay` crossfade caveat as `horizonColor`. */
   zenithColor?: string;
-  /**
-   * Under `timeOfDay`, how long the noon sky holds either side of noon, as a fraction of the day:
-   * 0.2 keeps full daylight from about 7:00 to 17:00 and leaves dawn and dusk short. Default 0, which
-   * cross-fades from noon straight toward dusk.
-   */
   dayHold?: number;
   sunIntensity?: number;
   ambientIntensity?: number;
-  /** Authored noon sun colour; the atmosphere reddens it toward the horizon. Default warm white. */
   sunColor?: string;
-  /** Authored noon fog colour. Dawn, dusk and night cross-fade to their own haze so fog matches the sky. */
   fogColor?: string;
-  /** Peak moonlight as a fraction of `sunIntensity`. Default the engine's readable night value. */
   moonIntensity?: number;
-  /** Moonlight colour. Default cool moonlight blue. */
   moonColor?: string;
   /**
    * Sun placement for the dome glow and the sky-owned sun light. With a fixed `preset` this is the
@@ -471,28 +380,16 @@ export interface SkyEnvironmentConfig {
   sun?: SkySunConfig;
   /** Sky-dome sphere radius in world units. Enlarge for a playfield sited far from the origin so the viewer never exits the dome. The dome draws on the far plane, so any radius shows. Default 260. */
   radius?: number;
-  /** Horizon haze-band strength: 0 removes the dusty band, ~1 makes it heavy. Default 0.5. */
   hazeStrength?: number;
-  /** Sun-glow brightness multiplier around the sun disc. Default 1. */
   sunGlowStrength?: number;
-  /**
-   * How fast the gradient reaches `zenithColor` off the horizon. Below 1 pulls the zenith hue down
-   * into the frame — the difference between a sky an eye-level camera actually sees and a horizon
-   * wash; above 1 keeps colour banked overhead. Default 0.65.
-   */
   gradientExponent?: number;
-  /** Procedural cloud-band opacity over the gradient: 0 is a clear sky, 1 is heavy overcast. Default 0.35. */
   cloudiness?: number;
   fog?: { color?: string; near?: number; far?: number };
-  /** Raymarched volumetric cloud layer over the sky dome. Off by default — omit for no clouds. */
   volumetricClouds?: VolumetricCloudsConfig;
 }
 
-/** One road a `building({ along })` frontage lines with buildings: centerline, width and sidewalks. A `road()` descriptor fits as-is. */
 export interface BuildingFrontageRoad {
-  /** Road centerline vertices in world XZ; at least two points. */
   path: readonly EnvironmentVec2[];
-  /** Carriageway full width in world units, kerb to kerb. */
   width: number;
   /** Sidewalk on each side: metres, a `road()` sidewalk band, or `false`/absent for none. Lots stand behind it. */
   sidewalk?: number | { width: number } | false;
@@ -505,11 +402,8 @@ export interface BuildingFrontageRoad {
  * `spacing` (along-road gap) are shared with the grid mode. Deterministic and bounded by `maxLots`.
  */
 export interface BuildingFrontageConfig {
-  /** Roads whose frontage is lined with lots. */
   roads: readonly BuildingFrontageRoad[];
-  /** Gap between the back of the sidewalk (the kerb when there is none) and the building front, world units. Default 3. */
   setback?: number;
-  /** Place lots on both sides of each road. Default true. */
   bothSides?: boolean;
   /** Clip region; lots whose center falls outside are dropped. Omit to keep every lot. */
   area?: { center?: EnvironmentVec2; halfExtents: EnvironmentVec2 };
@@ -524,9 +418,7 @@ export interface BuildingEnvironmentConfig {
   stories?: readonly [number, number];
   storyHeight?: number;
   spacing?: number;
-  /** Named palette archetype (see `BUILDING_STYLE_PALETTES` in `world/buildings`); default "generic". Overridden part-by-part by `palette`. */
   style?: BuildingStyle;
-  /** Explicit per-part-kind hex colors; any part left unset falls back to the resolved `style` palette. */
   palette?: BuildingPaletteOverrides;
   /** Facade part probabilities (windows, shopfronts, awnings, …); unset parts follow the `style`. */
   probabilities?: Partial<BuildingProbabilities>;
@@ -536,15 +428,7 @@ export interface BuildingEnvironmentConfig {
    * back by a sidewalk strip) instead of the grid around `position`. See {@link BuildingFrontageConfig}.
    */
   along?: BuildingFrontageConfig;
-  /**
-   * Binds facade part slots to real models (see `world/buildingKit`). Unbound kinds keep the
-   * untextured block; without a kit the whole facade stays blocks, as before.
-   */
   kit?: BuildingKit;
-  /**
-   * Whether the buildings block movement and physics through `ctx.world.solids` (default `true`).
-   * `false` keeps them render-only, e.g. a distant skyline nobody can reach.
-   */
   solid?: boolean;
 }
 
@@ -553,12 +437,10 @@ export type PadSize = readonly [number, number] | { radius: number };
 export interface PadEnvironmentConfig {
   center: EnvironmentVec2;
   size: PadSize;
-  /** Surface offset above the terrain height at `center`; default `0.05` — just proud of the ground. Ignored when `elevation` is set. */
   height?: number;
   /** Absolute world-space Y for the pad surface — a landing pad on a rooftop, a floating platform. Skips the implicit terrain flatten (there's no ground to flatten toward). */
   elevation?: number;
   color?: string;
-  /** Rotation applied to rectangular pads; ignored for circular pads. */
   rotationY?: number;
 }
 
@@ -567,10 +449,6 @@ export type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required<
 > &
   Omit<TerrainEnvironmentConfig, "bounds" | "height">;
 
-/**
- * An island coastline over a terrain: a wobbling shore, a beach shelf and a sea floor beyond. The shore
- * is either a ring (`radius`, `stretch`, `center`) or authored `outlines`, one closed ring per landmass.
- */
 export interface TerrainCoast {
   /** Island centre `[x, z]` of the ring shore. Default `[0, 0]`. */
   center?: readonly [number, number];
@@ -585,15 +463,12 @@ export interface TerrainCoast {
   stretch?: readonly [number, number];
   /** Metres over which land falls from full height to the shore. Default `radius * 0.25`, or 120 with `outlines`. */
   falloff?: number;
-  /** Height of the shore line (sand at the water). Default 1. */
   shoreHeight?: number;
-  /** Sea floor height far offshore. Default -30. */
   seaFloor?: number;
   /** Metres the sea floor takes to reach `seaFloor` past the shore. Default 120. */
   shelf?: number;
   /** 0..1 how much the shoreline wanders (bays, capes). Default 0.25. */
   wobble?: number;
-  /** Seed for the wobble. Default "coast". */
   seed?: string;
 }
 
@@ -616,12 +491,10 @@ export type SnowEnvironmentDescriptor = { kind: "snow" } & Required<
   Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity">
 >;
 
-/** A resolved grass patch: its area and the fully-defaulted {@link GrassLook} the shell draws. */
 export interface GrassEnvironmentDescriptor {
   kind: "grass";
   area: EnvironmentArea;
   look: GrassLook;
-  /** The flat grass `meta` the look was read from, so `environment({ grassStyle })` redraws the band in the world's style. */
   meta: Readonly<Record<string, unknown>>;
 }
 
@@ -645,17 +518,11 @@ export type SkyEnvironmentDescriptor = { kind: "sky" } & Required<
 > &
   Omit<SkyEnvironmentConfig, "preset" | "timeOfDay">;
 
-/** Config for {@link road}: a flat asphalt ribbon draped over the terrain along a centerline. */
 export interface RoadEnvironmentConfig {
-  /** Centerline vertices in world XZ; at least two points. */
   path: readonly (readonly [number, number])[];
-  /** Ribbon width in world units. Default 8. */
   width?: number;
-  /** Asphalt color. Default "#3b3e47". */
   color?: string;
-  /** Paint a dashed centerline. Default true. */
   markings?: boolean;
-  /** Centerline dash color. Default "#e8c74a". */
   markingColor?: string;
   /** Lift above the terrain to avoid z-fighting; stagger overlapping roads. Default 0.08. */
   elevation?: number;
@@ -666,20 +533,8 @@ export interface RoadEnvironmentConfig {
    * `kerb` is the kerb height in metres (default 0.14; US kerbs run 0.15).
    */
   sidewalk?: { width?: number; color?: string; slabs?: number | false; kerb?: number } | false;
-  /**
-   * Procedural surface the carriageway shades with, named like terrain paint (`"asphalt"`,
-   * `"gravel"`, `"dirt"`). `false` keeps flat colour. Default `"road"` (asphalt grain and tyre wear).
-   */
   surface?: string | false;
-  /**
-   * Scanned PBR maps for the carriageway, sidewalks and curb, e.g.
-   * `{ road: librarySurfaceScan("asphalt/dry"), sidewalk: librarySurfaceScan("concrete/smooth") }` from
-   * `@jgengine/assets/catalogs/materialLibrary`. The procedural tyre wear and edge grime still layer on
-   * top; a layer left out, a map that fails to load, or the `low` graphics tier keeps the procedural
-   * surface. `tint` 1 (the default) shows the scan's own colour, lower keeps `color` and takes its grain.
-   */
   materials?: RoadSurfaceScans;
-  /** The path loops: its last point joins back to its first (a circuit, a ring road). Default false. */
   closed?: boolean;
   /**
    * Fillet radius for sharp bends, metres, so a turn reads as an arc instead of overlapping
@@ -688,7 +543,6 @@ export interface RoadEnvironmentConfig {
   cornerRadius?: number;
   /** Tyre ruts and polished lanes, 0..1. Default 1 on soft ground, 0.6 on paving. */
   wear?: number;
-  /** Multiplier on the soft edge fade of an unpaved surface. Default 1; 0 keeps a hard edge. */
   edgeSoftness?: number;
 }
 
@@ -710,28 +564,21 @@ export const DEFAULT_ROAD_SCAN: TerrainDetailMaterialConfig = {
   tint: 1,
 };
 
-/** Surfaces a road paves with asphalt (and so wears {@link DEFAULT_ROAD_SCAN} by default). @internal */
+/** @internal */
 export function isAsphaltSurface(surface: string | false | undefined): boolean {
   return surface === undefined || surface === "road" || surface === "asphalt" || surface === "street";
 }
 
-/** Scanned surfaces for each layer of a {@link road}; see {@link RoadEnvironmentConfig.materials}. */
 export interface RoadSurfaceScans {
-  /** Carriageway, tiled in world XZ so junctions and ribbons meet without a seam. */
   road?: TerrainDetailMaterialConfig;
-  /** Sidewalk bands, tiled along the road so slabs line up with the kerb. */
   sidewalk?: TerrainDetailMaterialConfig;
-  /** Gutter strip and kerb face. */
   curb?: TerrainDetailMaterialConfig;
 }
 
-/** Resolved road descriptor produced by {@link road} and rendered by the shell environment scene. */
 export type RoadEnvironmentDescriptor = { kind: "road" } & Required<
   Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation">
 > & {
-  /** Resolved sidewalk band, or `false` when the road has none. `slabs` absent means the 1.5 m default, `kerb` absent the 0.14 m kerb. */
   sidewalk: { width: number; color: string; slabs?: number | false; kerb?: number } | false;
-  /** Procedural carriageway surface; absent means `"road"`, `false` flat colour. */
   surface?: string | false;
   /** Scanned surfaces per layer; a paved road carries {@link DEFAULT_ROAD_SCAN} on `road` unless it names one. */
   materials?: RoadSurfaceScans;
@@ -751,34 +598,16 @@ export type EnvironmentDescriptorList<T> = T | readonly T[];
 
 export interface EnvironmentWorldConfig {
   terrain?: TerrainEnvironmentDescriptor;
-  /** Disconnected landmasses at independent altitudes over the base `terrain` (or over void without one) — see `island()`. */
   islands?: readonly TerrainIslandDescriptor[];
   sky?: SkyEnvironmentDescriptor;
   weather?: EnvironmentDescriptorList<WeatherEnvironmentDescriptor>;
   vegetation?: EnvironmentDescriptorList<VegetationEnvironmentDescriptor>;
   water?: EnvironmentDescriptorList<WaterEnvironmentDescriptor>;
   structures?: EnvironmentDescriptorList<StructureEnvironmentDescriptor>;
-  /** Road ribbons draped over the terrain — see `road()`. */
   roads?: EnvironmentDescriptorList<RoadEnvironmentDescriptor>;
-  /**
-   * Roads that change while the game runs, such as a city re-laid from a layout slider. The renderer
-   * draws `current()` and redraws on each notify; `roads` stays the boot value for collision and
-   * summaries. See `cityLayout`'s `cityRoadSource`.
-   */
   roadSource?: LiveRoadSource;
-  /** Ground pads, e.g. platforms or paved patches; each implicitly flattens the terrain beneath it. */
   pads?: readonly PadEnvironmentDescriptor[];
-  /**
-   * An authored editor {@link TerraformSnapshot} whose offsets layer over the base terrain — the
-   * editor-to-runtime ground seam. The same snapshot in a game's `editorLayers.terrain` renders and
-   * collides identically at runtime.
-   */
   sculpt?: TerraformSnapshot | undefined;
-  /**
-   * Clearance discs flattened into the ground (spawns, plots, paths) — the terrain half of a
-   * clearance zone whose foliage half is scatter's `avoid`. Derive them from a document with
-   * `clearanceZonesFrom`.
-   */
   clearings?: readonly AvoidZone[];
   /**
    * The world's grass style (realism 0 cartoon .. 1 photoreal, any slider by hand, or a preset): every
@@ -799,34 +628,26 @@ export interface EnvironmentWorldFeature {
   structures?: readonly StructureEnvironmentDescriptor[];
   roads?: readonly RoadEnvironmentDescriptor[];
   pads?: readonly PadEnvironmentDescriptor[];
-  /** Authored sculpt snapshot layered over the base terrain — see {@link EnvironmentWorldConfig.sculpt}. */
   sculpt?: TerraformSnapshot;
-  /** Clearance discs flattened into the ground — see {@link EnvironmentWorldConfig.clearings}. */
   clearings?: readonly AvoidZone[];
-  /** Live roads the renderer draws over `roads` — see {@link EnvironmentWorldConfig.roadSource}. */
   roadSource?: LiveRoadSource;
 }
 
-/** A road list that changes at runtime: read `current()`, and `subscribe` to hear when it changed. */
 export interface LiveRoadSource {
   current(): readonly RoadEnvironmentDescriptor[];
-  /** Calls `listener` after every change; returns the unsubscribe. */
   subscribe(listener: () => void): () => void;
 }
 
 export interface WorldGridCell {
   x: number;
   z: number;
-  /** Extruded box height for this cell; falls back to the config's `baseHeight`, then `1`. */
   height?: number;
-  /** Per-cell tint; falls back to the config's `defaultColor`. */
   color?: string;
 }
 
 /** Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer. */
 export interface WorldGridConfig {
   cells?: readonly WorldGridCell[];
-  /** World-unit size of one grid cell. Default 1. */
   cellSize?: number;
   /** Height used for cells that omit their own `height`. Default 1. */
   baseHeight?: number;
@@ -853,18 +674,10 @@ export interface PlotsWorldConfig extends WorldGridConfig {
 
 export interface TilemapWorldConfig extends WorldGridConfig {
   map: string;
-  /** Atlas-backed tile rendering; cell glyphs map to atlas frame ids. */
   tileSet?: { atlas: SpriteAtlas; tiles: Record<string, string> };
-  /** Render ordering key consumed by the shell tile renderer. */
   sortingLayer?: string;
 }
 
-/**
- * A declared world shape passed to `defineGame`. The preferred model is the place feature from
- * `world()` (`@jgengine/core/placement/place`): substrate + laws, with all dressing authored in the
- * editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the
- * legacy code-declared shapes kept for existing games.
- */
 export type WorldFeature =
   | PlaceWorldFeature
   | ({ kind: "biomes" } & BiomesWorldConfig)
@@ -888,7 +701,6 @@ function withOptional<TBase extends object, TOptional extends object>(
   return optional === undefined ? base : { ...base, ...optional };
 }
 
-/** Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it. Elevated pads (absolute `elevation`) float free and carve nothing. */
 export function padFlattenMasks(pads: readonly PadEnvironmentDescriptor[]): readonly TerrainFlattenMask[] {
   return pads
     .filter((padDescriptor) => padDescriptor.elevation === undefined)
@@ -913,7 +725,6 @@ function withPadFlatten(
   };
 }
 
-/** Expands each `biomeBand.weather` into a full-width precipitation strip centered on the band's z, `fade`-deep. */
 function bandWeatherDescriptors(
   terrainDescriptor: TerrainEnvironmentDescriptor | undefined,
 ): readonly WeatherEnvironmentDescriptor[] {
@@ -1025,7 +836,6 @@ function terrainSegments(
   return x === z ? x : ([x, z] as const);
 }
 
-/** Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks. */
 export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor {
   if (
     config.baseHeight !== undefined &&
@@ -1107,11 +917,6 @@ function withAreaPosition(area: EnvironmentArea, position: EnvironmentVec2 | und
   return position !== undefined && area.position === undefined ? { ...area, position } : area;
 }
 
-/**
- * Practical ceiling (world units per axis) past which an author-specified rain/snow `area` is almost
- * certainly a world-region size mistakenly handed to the camera-anchored wrap-volume — see the
- * `area` doc on `RainEnvironmentConfig`/`SnowEnvironmentConfig`.
- */
 const WEATHER_AREA_CAMERA_SCALE_HINT = 120;
 
 function warnIfOversizedWeatherArea(kind: "rain" | "snow", area: EnvironmentArea): void {
@@ -1128,7 +933,6 @@ function warnIfOversizedWeatherArea(kind: "rain" | "snow", area: EnvironmentArea
   );
 }
 
-/** Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity. */
 export function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor {
   const area = withAreaPosition(config.area ?? { w: 256, d: 256, h: 80 }, config.position);
   if (config.area !== undefined) warnIfOversizedWeatherArea("rain", area);
@@ -1162,7 +966,6 @@ export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescrip
   };
 }
 
-/** Declares a grass vegetation patch for `environment()` — the same blade field and knobs as an editor `grass_field` volume. */
 export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor {
   const { area, position, species, ...groups } = config;
   const meta = { ...(species === undefined ? {} : { species }), ...flattenGrassLook(groups) };
@@ -1174,7 +977,6 @@ export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDesc
   };
 }
 
-/** Declares an ocean water body for `environment()` — bounds, level, and wave tuning. */
 export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor {
   return {
     kind: "ocean",
@@ -1193,7 +995,6 @@ export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDesc
   };
 }
 
-/** Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain. */
 export function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor {
   if (config.path.length < 2) {
     throw new Error("road: path needs at least two points");
@@ -1278,27 +1079,22 @@ export function pad(config: PadEnvironmentConfig): PadEnvironmentDescriptor {
   );
 }
 
-/** Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain. */
 export function biomes(config: BiomesWorldConfig): WorldFeature {
   return { kind: "biomes", ...config };
 }
 
-/** Declares a voxel-grid world for block-based games. */
 export function voxel(config: VoxelWorldConfig): WorldFeature {
   return { kind: "voxel", ...config };
 }
 
-/** Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts. */
 export function plots(config: PlotsWorldConfig = {}): WorldFeature {
   return { kind: "plots", ...config };
 }
 
-/** Declares a 2D tilemap world from a map string. */
 export function tilemap(config: TilemapWorldConfig): WorldFeature {
   return { kind: "tilemap", ...config };
 }
 
-/** Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own. */
 export function flat(): WorldFeature {
   return { kind: "flat" };
 }

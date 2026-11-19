@@ -18,11 +18,9 @@ import { clamp01 } from "../../math/scalar";
 
 const P = "jgk-arcade";
 
-/** Cells in the chunky block bar. */
 const BAR_CELLS = 20;
 /** Segments in the crisp pixel ring. */
 const RING_SEGMENTS = 16;
-/** Ring radius, in the 44-unit ring viewBox. */
 const RING_R = 16;
 
 /** An 8x8 pixel circle as a stepped polygon: no smooth curves anywhere. */
@@ -34,7 +32,6 @@ const PIXEL_ARROW =
 /** Notched 4px ends for the pixel banner. */
 const PIXEL_BANNER =
   "polygon(4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px), 0 4px, 4px 4px)";
-/** Hard 2px dark outline for every label. */
 const OUTLINE = "2px 0 0 var(--kit-shade), -2px 0 0 var(--kit-shade), 0 2px 0 var(--kit-shade), 0 -2px 0 var(--kit-shade)";
 
 /** A pixel border drawn with stacked box-shadows: `w` px on each side, corners left notched. */

@@ -9,7 +9,6 @@ export interface ZoneAir {
   rate: number;
   /** Distant-machinery bed gain 0..1. */
   industry: number;
-  /** Airborne particulate colour for this zone. */
   dust: string;
 }
 

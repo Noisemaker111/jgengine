@@ -10,7 +10,7 @@ interface CatalogEntry {
   path: string[];
 }
 
-/** A workspace root's `@jgengine` catalog entries, read for `jgengine sync`. @internal */
+/** @internal */
 export interface WorkspaceCatalog {
   root: string;
   file: string;

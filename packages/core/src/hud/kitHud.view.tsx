@@ -16,24 +16,16 @@ import { memoView } from "../ui/memoView.view";
  * (`./actionHud.view`).
  */
 
-/** Props for {@link KitCount}. */
 export interface KitCountProps {
-  /** The number, or a node that draws it (a `TweenNumber` that rolls to each new value). */
   value: ReactNode;
   label: string;
-  /** Marks the readout for tests and drives as `data-count`. Default the label. */
   id?: string;
-  /** A small line under the count (a rate, a cap). */
   detail?: ReactNode;
   /** Draws the detail in the warning colour (a falling rate). */
   detailBad?: boolean;
 }
 
-/**
- * A number and its word, side by side: the HUD's resource readout.
- *
- * @capability kit-count a HUD resource readout — a number and its word, with an optional rate line
- */
+/** @capability kit-count a HUD resource readout — a number and its word, with an optional rate line */
 export const KitCount = memoView("KitCount", function KitCount({ value, label, id, detail, detailBad = false }: KitCountProps): ReactNode {
   const count = (
     <span data-count={id ?? label} style={{ display: "inline-flex", gap: 5, alignItems: "baseline", whiteSpace: "nowrap" }}>
@@ -50,7 +42,7 @@ export const KitCount = memoView("KitCount", function KitCount({ value, label, i
   );
 });
 
-/** A row of {@link KitCount}s with even gaps. @capability kit-counts a row of HUD resource counts */
+/** @capability kit-counts a row of HUD resource counts */
 export const KitCounts = memoView("KitCounts", function KitCounts({ children }: { children?: ReactNode }): ReactNode {
   return <div style={{ display: "flex", gap: 14, alignItems: "baseline", flexWrap: "wrap" }}>{children}</div>;
 });
@@ -60,26 +52,19 @@ export interface KitVital {
   label: ReactNode;
   value: number;
   max: number;
-  /** Default `good`. */
   tone?: KitTone;
   /** Below this fraction of `max` the meter turns `lowTone`. Unset never turns. */
   lowAt?: number;
-  /** Default `bad`. */
   lowTone?: KitTone;
 }
 
-/** The current objective under a {@link KitVitals} card: who asks, what, and the one step. */
 export interface KitVitalsObjective {
-  /** Stable id of the beat; a new id restarts the objective's idle hint. */
   id?: string | undefined;
-  /** Who gives it, drawn as the objective's label ("Mara", "The reeve asks"). */
   label: ReactNode;
   title: ReactNode;
-  /** The one step to do now; unset draws the title alone. */
   goal?: ReactNode | undefined;
 }
 
-/** Props for {@link KitVitals}. */
 export interface KitVitalsProps {
   eyebrow?: ReactNode;
   title?: ReactNode;
@@ -87,9 +72,7 @@ export interface KitVitalsProps {
   vitals?: readonly KitVital[];
   /** Drawn above the meters (counts, a clock). */
   children?: ReactNode;
-  /** The objective card under the vitals; `null` or unset draws none. */
   objective?: KitVitalsObjective | null;
-  /** Default {@link HUD_CORNER_WIDTH}. */
   width?: number;
 }
 
@@ -122,24 +105,14 @@ export const KitVitals = memoView("KitVitals", function KitVitals({ eyebrow, tit
   );
 });
 
-/** Props for {@link KitWaveClock}. */
 export interface KitWaveClockProps {
-  /** The headline: "Night 3 in 42s", "Wave 2 - 6 left". */
   text: ReactNode;
-  /** The quieter note beside it: "N - call it early". */
   detail?: ReactNode;
-  /** A wave is on: the strip turns `bad`. */
   alarm?: boolean;
-  /** The big banner shown when the wave starts. */
   banner?: KitBannerProps;
 }
 
-/**
- * The wave clock across the top of a defense HUD: how long until the next wave or how many are
- * left, a note on what to do, and the banner when a wave arrives.
- *
- * @capability kit-wave-clock a HUD wave clock — countdown or enemies left, a note, and the wave banner
- */
+/** @capability kit-wave-clock a HUD wave clock — countdown or enemies left, a note, and the wave banner */
 export const KitWaveClock = memoView("KitWaveClock", function KitWaveClock({ text, detail, alarm = false, banner }: KitWaveClockProps): ReactNode {
   return (
     <div style={{ pointerEvents: "none" }}>
@@ -154,13 +127,9 @@ export const KitWaveClock = memoView("KitWaveClock", function KitWaveClock({ tex
   );
 });
 
-/** Props for {@link KitHint}. */
 export interface KitHintProps {
-  /** What the player is doing now ("Placing a Farm - click the ground"); `null` draws no strip. */
   text: ReactNode | null;
-  /** Default `accent`. */
   tone?: KitTone;
-  /** A banner shown when its cue changes (a new tier, a raid). */
   banner?: KitBannerProps;
 }
 
@@ -183,38 +152,28 @@ export const KitHint = memoView("KitHint", function KitHint({ text, tone = "acce
   );
 });
 
-/** One pool on a {@link KitVitalIcons} strip. */
 export interface KitVitalIcon {
-  /** Marks the pool for tests and drives as `data-vital`. */
   id: string;
-  /** Spoken name and the readout's label ("Health"). */
   label: string;
-  /** A served one-colour glyph (`libraryIconUrl("gameicons:lorc/heart-plus")`), drawn like {@link SpriteIcon}. */
   icon: string;
   value: number;
   max: number;
-  /** Default `accent`. */
   tone?: KitTone;
   /** A colour of its own instead of the tone's. */
   color?: string;
   /** Below this fraction of `max` the glyph turns `lowTone`. Unset never turns. */
   lowAt?: number;
-  /** Default `bad`. */
   lowTone?: KitTone;
-  /** Turns the glyph `lowTone` whatever the value (hungry, encumbered). */
   warn?: boolean;
   /** What the readout prints under the label instead of `value / max` ("24°C"). */
   text?: string;
 }
 
-/** Props for {@link KitVitalIcons}. */
 export interface KitVitalIconsProps {
   vitals: readonly KitVitalIcon[];
   /** Glyph edge in px. Default 32. */
   size?: number;
-  /** Prints each pool's label and `value / max` beside each glyph in a column (on its left, toward the screen), under it in a row. Default `false`. */
   readout?: boolean;
-  /** Default `column`. */
   direction?: "column" | "row";
 }
 

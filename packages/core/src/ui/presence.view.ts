@@ -1,6 +1,5 @@
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
-/** Mount state for an element with an exit transition: `closed` keeps it mounted until the exit ends. */
 export type PresenceState = "open" | "closed" | "unmounted";
 
 /**

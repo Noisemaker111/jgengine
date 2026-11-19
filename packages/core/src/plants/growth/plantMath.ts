@@ -10,7 +10,6 @@ const PIO2_HI = 1.57079632673412561417;
 const PIO2_LO = 6.07710050650619224932e-11;
 const SQRT_HALF = 0.70710678118654752440;
 
-/** π to double precision. */
 export const PLANT_PI = 3.14159265358979311600;
 
 const bits = new Float64Array(1);
@@ -50,7 +49,6 @@ const E11 = taylor(11);
 const E12 = taylor(12);
 const E13 = taylor(13);
 const E14 = taylor(14);
-/** 1/n for the odd n of the log series, built by division once. */
 const R3 = 1 / 3;
 const R5 = 1 / 5;
 const R7 = 1 / 7;
@@ -67,10 +65,7 @@ function roundHalfAway(x: number): number {
   return x < 0 ? -Math.floor(-x + 0.5) : Math.floor(x + 0.5);
 }
 
-/**
- * e^x, bit-identical on every JS engine.
- * @internal
- */
+/** @internal */
 export function plantExp(x: number): number {
   if (x !== x) return x;
   if (x > 709) return Number.POSITIVE_INFINITY;
@@ -113,10 +108,7 @@ export function plantLog(x: number): number {
   return 2 * sum + e * LN2_LO + e * LN2_HI;
 }
 
-/**
- * x^y for x > 0 (and x = 0, y > 0), bit-identical on every JS engine.
- * @internal
- */
+/** @internal */
 export function plantPow(x: number, y: number): number {
   if (y === 0) return 1;
   if (x === 0) return y > 0 ? 0 : Number.POSITIVE_INFINITY;
@@ -153,10 +145,7 @@ function quadrant(x: number): { q: number; r: number } {
   return { q: ((k % 4) + 4) % 4, r: x - k * PIO2_HI - k * PIO2_LO };
 }
 
-/**
- * sin x, bit-identical on every JS engine (accurate for |x| up to about 1e6).
- * @internal
- */
+/** @internal */
 export function plantSin(x: number): number {
   const { q, r } = quadrant(x);
   if (q === 0) return sinKernel(r);
@@ -165,10 +154,7 @@ export function plantSin(x: number): number {
   return -cosKernel(r);
 }
 
-/**
- * cos x, bit-identical on every JS engine (accurate for |x| up to about 1e6).
- * @internal
- */
+/** @internal */
 export function plantCos(x: number): number {
   const { q, r } = quadrant(x);
   if (q === 0) return cosKernel(r);
@@ -189,10 +175,7 @@ function atanSmall(x: number): number {
   return sum;
 }
 
-/**
- * atan x, bit-identical on every JS engine.
- * @internal
- */
+/** @internal */
 export function plantAtan(x: number): number {
   if (x !== x) return x;
   const negative = x < 0;
@@ -210,10 +193,7 @@ export function plantAtan(x: number): number {
   return negative ? -result : result;
 }
 
-/**
- * atan2(y, x), bit-identical on every JS engine.
- * @internal
- */
+/** @internal */
 export function plantAtan2(y: number, x: number): number {
   if (x > 0) return plantAtan(y / x);
   if (x < 0) return y >= 0 ? plantAtan(y / x) + PLANT_PI : plantAtan(y / x) - PLANT_PI;

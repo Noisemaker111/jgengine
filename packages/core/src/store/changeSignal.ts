@@ -4,10 +4,6 @@ export interface ChangeSignal {
   subscribe(listener: () => void): () => void;
   notify(): void;
   version(): number;
-  /**
-   * Run `work` with listeners held: each notify inside still bumps the version, and listeners fire
-   * once when the outermost batch ends, if anything changed. Nested batches join the outer one.
-   */
   batch<T>(work: () => T): T;
 }
 

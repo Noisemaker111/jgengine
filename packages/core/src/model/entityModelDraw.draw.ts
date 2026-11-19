@@ -60,7 +60,6 @@ import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 
-/** Where a measured model reports its rendered bounds: an entity kind or an object catalog id. */
 export interface MeasureTarget {
   target: "entity" | "object";
   key: string;
@@ -70,9 +69,7 @@ export interface EntityModelDrawOptions {
   model: ModelConfig;
   instanceId?: string | undefined;
   measure?: MeasureTarget | undefined;
-  /** The variant level being drawn; past the source level a simplified asset may drop a slot. */
   lodLevel?: number;
-  /** Live game context; null in previews and inspectors. */
   ctx: GameContext | null;
   /** Fallback-seam label for load/render failures (the measure target when present). */
   seam?: FallbackSeam | undefined;
@@ -80,7 +77,6 @@ export interface EntityModelDrawOptions {
   fallback?: (() => EngineDraw) | undefined;
 }
 
-/** A mounted child draw, its scene-graph parent, and the state scoped to it at mount. */
 interface MountedChild {
   draw: EngineDraw;
   parent: THREE.Object3D;
@@ -127,7 +123,6 @@ class ModelChildren implements EngineDraw {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Async asset loading (the useLoader / useModelMaterialTextures replacements)
 
 const gltfLoads = new Map<string, Promise<GLTF>>();
@@ -229,14 +224,11 @@ export async function loadModelMaterialTextures(model: Pick<ModelConfig, "materi
   }
 }
 
-// ---------------------------------------------------------------------------
 // The placed instance: clone, configure, animate, pose
 
 /** @internal Shared with modelInstanceDraw. */
 export interface BuiltInstance {
-  /** The placed group (position + uniform scale) added under the composition root. */
   group: THREE.Group;
-  /** The unscaled content group the animation/IK drivers pose. */
   scene: THREE.Group;
   content: THREE.Object3D;
   scale: number;
@@ -276,9 +268,6 @@ export interface InstanceSpec {
   onBindPose?: ((scene: THREE.Object3D, scale: number, offset: readonly [number, number, number]) => void) | undefined;
 }
 
-/**
- * Clone, configure, place and bind the animation driver for one loaded model.
- */
 /** @internal Shared with modelInstanceDraw. */
 export function buildInstance(spec: InstanceSpec, renderer: THREE.WebGLRenderer | null): BuiltInstance {
   const { model, gltf, instanceId, ctx } = spec;
@@ -365,18 +354,12 @@ export function disposeInstance(built: BuiltInstance): void {
   disposeModelScene(built.content);
 }
 
-// ---------------------------------------------------------------------------
 // Procedural part motion (the PartMotionRig replacement)
 
 const FLINCH_RELEASE_SEC = 0.35;
 const DEATH_RAMP_PER_SEC = 2.5;
 const SPEED_SMOOTHING = 12;
 
-/**
- * Procedural motion for a rig-less part composition: bob/flinch/topple on the
- * root group, per-role swings on each tagged part group. Children mount their
- * content under `partGroup(index)` or, for the base model, the root itself.
- */
 class PartMotionDraw implements EngineDraw {
   private readonly root = new THREE.Group();
   private readonly partGroups: { part: ModelPart; group: THREE.Group }[] = [];
@@ -403,7 +386,6 @@ class PartMotionDraw implements EngineDraw {
     }
   }
 
-  /** The group under the rig root (added to the composition root on mount). */
   get host(): THREE.Group {
     return this.root;
   }
@@ -472,7 +454,6 @@ class PartMotionDraw implements EngineDraw {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Attachments
 
 /**
@@ -542,7 +523,6 @@ function boneAttachmentDraw(spec: {
   };
 }
 
-// ---------------------------------------------------------------------------
 // The full EntityModel draw
 
 const ENGINE_MOTION_CAMERA_DISTANCE = 20;
@@ -554,19 +534,11 @@ function motionSignature(plan: CharacterMotionPlan, locomotion: boolean, lowTier
   return `${ik}|${plan.glance ? 1 : 0}|${locomotion ? 1 : 0}|${lowTier ? 1 : 0}`;
 }
 
-/**
- * Draws an entity's model without the UI runtime: loading, cloning, materials, paint,
- * attachments, parts, animation, foot IK, glance, bounds and collision
- * measurement — the `EntityModel` contract on the engine frame loop. A live
- * `instanceId` follows `look`, `held`, `worn`, `characterMotion` and death
- * through context notifications, rebuilding only what changed.
- */
 export function entityModelDraw(options: EntityModelDrawOptions): EngineDraw {
   const { model, instanceId, measure, lodLevel = 0, ctx } = options;
   const seam = options.seam ?? measure?.target;
   const children = new ModelChildren();
   let built: BuiltInstance | null = null;
-  /** The model the current build used (post-look resolution). */
   let activeModel: ModelConfig = model;
   let materialTextures: ModelTextureEntries | null = null;
   let mounted = false;
@@ -992,10 +964,8 @@ export function entityModelDraw(options: EntityModelDrawOptions): EngineDraw {
   };
 }
 
-// ---------------------------------------------------------------------------
 // Single-variant LOD and sprites
 
-/** Whether an isolated model switches variant levels: it needs both levels and a live instance to measure from. */
 export function isolatedModelUsesVariants(model: ModelConfig, instanceId: string | undefined): boolean {
   return model.variants !== undefined && instanceId !== undefined;
 }
@@ -1010,10 +980,6 @@ export function isolatedEntityModelDraw(options: EntityModelDrawOptions): Engine
     : entityModelDraw(options);
 }
 
-/**
- * One prop at its own camera distance with level switching — the
- * `SingleVariantModel` contract as a draw.
- */
 export function singleVariantModelDraw(options: EntityModelDrawOptions): EngineDraw {
   const { model, instanceId, measure, ctx, lodLevel: _lodLevel, seam, fallback } = options;
   const variants = model.variants;
@@ -1077,7 +1043,6 @@ export function singleVariantModelDraw(options: EntityModelDrawOptions): EngineD
   };
 }
 
-/** Draws an entity as a camera-facing sprite, playing its atlas clip when it has one. */
 export function entitySpriteDraw(sprite: EntitySpriteConfig): EngineDraw {
   const material = new THREE.SpriteMaterial({ transparent: true, alphaTest: 0.08, depthWrite: false });
   const spriteObject = new THREE.Sprite(material);

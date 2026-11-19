@@ -217,7 +217,6 @@ function ContextChatPanel({
   sendButtonClassName?: string;
   placeholder?: string;
   renderMessage?: (message: ChatMessage) => ReactNode;
-  /** Overrides a tab's label — e.g. render channel id `"proximity"` as "Nearby". */
   renderTab?: (channelId: string, isActive: boolean) => ReactNode;
   onRejected?: (reason: string) => void;
 }) {
@@ -288,8 +287,6 @@ function ContextChatPanel({
   );
 }
 
-
-/** Chat behavior over a game context or externally supplied server messages. */
 export function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>) {
   return "messages" in props ? <StandaloneChatPanel {...props} /> : <ContextChatPanel {...props} />;
 }

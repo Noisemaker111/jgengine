@@ -23,7 +23,6 @@ export function bossDropFor(bossId: string): BossDrop | undefined {
   return BOSS_DROPS.find((entry) => entry.bossId === bossId);
 }
 
-/** The boss that farms a named legendary, for the card's "Drops from" line. */
 export function dropsFrom(legendaryName: string): string | undefined {
   return BOSS_DROPS.find((entry) => entry.legendaries.includes(legendaryName))?.boss;
 }

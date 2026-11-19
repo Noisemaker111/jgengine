@@ -5,35 +5,24 @@ import { createRungeKutta4 } from "./rungeKutta";
 import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra";
 import { createSuspensionSample, createSuspensionTable, solveSuspension, type SuspensionGeometry, type SuspensionSample, type SuspensionTable } from "./suspensionKinematics";
 
-/** One axle's suspension: linkage geometry plus springs, dampers, bar, stops and bushings, rated at the wheel. */
 export interface ReferenceAxle {
-  /** Left-corner linkage; z above the ground and x from the axle line at design ride height. */
   geometry: SuspensionGeometry;
-  /** Spring wheel rate per corner at design ride height, N/m (the coil rate follows from the linkage's motion ratio). */
   wheelRate: number;
-  /** Damper rate per corner at the wheel, N·s/m, in compression and extension. */
   bumpDamping: number;
   reboundDamping: number;
-  /** Anti-roll bar stiffness, N·m per rad of body roll. */
   antiRollRate: number;
-  /** Wheel travel from design to the bump stop and to full droop, m. */
   bumpTravel: number;
   droopTravel: number;
   /** Unsprung mass per corner, kg (wheel, tyre, upright, brake and half the links). */
   unsprungMass: number;
-  /** Bushing compliance: steer away from the lateral force, rad/N, and camber toward the outside under inboard force, rad/N. */
   compliance?: { steer?: number; camber?: number };
 }
 
-/** Rack-and-pinion steering. */
 export interface ReferenceSteering {
-  /** Overall ratio, handwheel angle over road-wheel angle at centre. */
   ratio: number;
-  /** Handwheel angle at full lock, rad. */
   maxHandwheel: number;
   /** Driver's handwheel speed, rad/s (default `8`). */
   rate?: number;
-  /** Steering-system compliance, road-wheel rad per N·m of summed kingpin torque (default `0`). */
   compliance?: number;
 }
 
@@ -50,9 +39,7 @@ export interface ReferenceEngine {
   frictionTorque?: number;
 }
 
-/** Gearbox and final drive with a test driver's shifts. */
 export interface ReferenceGearbox {
-  /** Forward ratios, first to top. */
   ratios: readonly number[];
   finalDrive: number;
   /** Driveline efficiency under drive, `0..1` (default `0.92`). */
@@ -67,9 +54,7 @@ export interface ReferenceGearbox {
   inputInertia?: number;
 }
 
-/** Clutch and the driver's launch. */
 export interface ReferenceClutch {
-  /** Torque the fully engaged clutch can hold, N·m (default 1.6 × peak engine torque). */
   maxTorque?: number;
   /** Engine speed the driver holds while letting the clutch out from rest, rpm. */
   launchRpm: number;
@@ -77,66 +62,48 @@ export interface ReferenceClutch {
   engageSeconds?: number;
 }
 
-/** Differential on the driven axle. */
 export type ReferenceDifferential =
   | { kind: "open" }
   | {
-      /** Plate-type limited slip: locking torque = preload + ramp share of the axle torque. */
       kind: "clutch";
       preload: number;
       powerLock: number;
       coastLock: number;
     }
   | {
-      /** Torsen: the wheels' torques may differ by at most the bias ratio. */
       kind: "torsen";
       biasRatio: number;
     };
 
-/** Service brake, ABS and handbrake. */
 export interface ReferenceBrakes {
-  /** Total brake torque at full pedal across four wheels, N·m. */
   maxTorque: number;
   /** Share of brake torque on the front axle, `0..1`. */
   frontShare: number;
-  /** Slip-tracking anti-lock control (default `true`). */
   abs?: boolean;
-  /** Handbrake torque across the rear wheels, N·m (default `2500`). */
   handbrakeTorque?: number;
-  /** Brake hydraulic time constant, s (default `0.03`). */
   hydraulicLag?: number;
 }
 
 /** Aero, air density 1.225 kg/m³. */
 export interface ReferenceAero {
-  /** Drag coefficient × frontal area, m². */
   dragArea: number;
-  /** Lift coefficient × area at each axle, m²; negative is downforce (default `0`). */
   liftAreaFront?: number;
   liftAreaRear?: number;
 }
 
-/** The tyre fitted to all four corners. */
 export interface ReferenceTire {
   coefficients: Readonly<MagicFormulaCoefficients>;
-  /** Override the file's unloaded radius for a different size, m. */
   unloadedRadius?: number;
   /** Wheel, tyre, hub and rotor polar inertia per corner, kg·m² (default the tyre's `IYY` + 0.45). */
   wheelInertia?: number;
-  /** Inflation pressure, Pa (default the file's `INFLPRES`). */
   pressure?: number;
 }
 
-/**
- * A real car's physical description for {@link createReferenceCar}. SI units throughout. Every field a manufacturer
- * or magazine publishes is a direct input; the rest are engineering estimates the car's data marks as such.
- */
 export interface ReferenceCarSpec {
   /** Test mass including driver, kg. */
   massKg: number;
   /** Static share of weight on the front axle, `0..1`. */
   frontWeight: number;
-  /** Centre-of-mass height at design ride, m. */
   comHeight: number;
   wheelbase: number;
   /** Sprung-body inertia about its own centre, kg·m² (defaults from typical radii of gyration). */
@@ -149,39 +116,30 @@ export interface ReferenceCarSpec {
   engine: ReferenceEngine;
   gearbox: ReferenceGearbox;
   clutch: ReferenceClutch;
-  /** Halfshaft torsional stiffness, N·m/rad, and damping, N·m·s/rad, per shaft (defaults `12000`, `25`). */
   halfshaft?: { stiffness?: number; damping?: number };
   differential: ReferenceDifferential;
   brakes: ReferenceBrakes;
   aero: ReferenceAero;
-  /** Driver throttle modulation that keeps driven-wheel slip near 0.12 once the clutch is in (default `true`). */
   launchControl?: boolean;
   /** Integration step, s; divides the 1 ms control sample (default `1/2000`). */
   step?: number;
 }
 
-/** Spawn pose for {@link createReferenceCar}, in engine world axes (x, y up, z; heading 0 faces +z). */
 export interface ReferenceCarOptions {
   position?: readonly [number, number, number];
   heading?: number;
 }
 
-/** Serializable state of a {@link ReferenceCar}: the integrator's plant vector plus the driver and controller state. */
 export interface ReferenceCarState {
-  /** Plant state (see {@link createReferenceCar} for the layout). */
   plant: number[];
   gear: number;
   shiftRemaining: number;
   /** Driver's clutch foot `0..1`, and whether it is letting the clutch out from a launch. */
   clutch: number;
   launching: boolean;
-  /** Road-wheel steer command, rad, positive left. */
   steer: number;
-  /** Driver throttle modulation share. */
   launchScale: number;
-  /** ABS pressure share per wheel. */
   abs: [number, number, number, number];
-  /** Time not yet integrated, s. */
   carry: number;
 }
 
@@ -192,18 +150,10 @@ export interface ReferenceCarStep {
    * `lateralAccel` is positive toward the right.
    */
   motion: VehicleStepMotion;
-  /**
-   * `steerAngle` is the handwheel angle over the overall steering ratio, rad, positive steering right like `AxisInput.steer`:
-   * the steer measure of ISO 4138, so steering and bushing compliance count toward understeer as on a real test.
-   * `roadWheelAngle` is the mean front road-wheel angle the wheels actually reach, after compliance and kinematics, same sign.
-   */
   steering: VehicleStepSteering;
-  /** Nose-down pitch and roll (positive dropping the right side), rad. */
   body: Pick<VehicleStepBody, "bodyPitch" | "bodyRoll">;
   engine: Pick<VehicleStepEngine, "rpm" | "gear">;
-  /** Vertical tyre loads, N (front-left, front-right, rear-left, rear-right). */
   loads: Pick<VehicleStepLoads, "wheelLoads">;
-  /** Per-corner tyre state: longitudinal slip κ, slip angle (rad) and inclination against the road (rad; automotive camber: negative tops the wheel inboard). */
   wheels: {
     slipRatios: readonly [number, number, number, number];
     slipAngles: readonly [number, number, number, number];
@@ -226,7 +176,6 @@ export interface ReferenceCar {
   spec(): ReferenceCarSpec;
   snapshot(): ReferenceCarState;
   restore(state: Readonly<ReferenceCarState>): void;
-  /** Back to the spawn at rest. */
   reset(): void;
 }
 
@@ -261,15 +210,12 @@ const PLANT_SIZE = RACK + 1;
 
 interface Corner {
   front: boolean;
-  /** +1 left, −1 right. */
   side: 1 | -1;
   axle: ReferenceAxle;
   table: SuspensionTable;
-  /** Body-frame offset added to the (mirrored) linkage point, m. */
   offset: [number, number, number];
   thetaMin: number;
   thetaMax: number;
-  /** Wheel-centre height (linkage z) at design, for wheel travel. */
   designZ: number;
   springRate: number;
   springPreload: number;
@@ -508,7 +454,6 @@ export function createReferenceCar(spec: ReferenceCarSpec, options: ReferenceCar
   const shaftTorque: [number, number, number, number] = [0, 0, 0, 0];
   const corner = { force: [0, 0, 0], moment: [0, 0, 0], point: [0, 0, 0] };
 
-  /** Plant right-hand side: `out = f(x)` with the controls held. */
   function derivative(x: Float64Array, out: Float64Array, record: boolean): void {
     out.fill(0);
     const qw = x[3] ?? 1;
@@ -890,7 +835,6 @@ export function createReferenceCar(spec: ReferenceCarSpec, options: ReferenceCar
     return (2 * Math.sqrt((cx * wheelInertia) / (r0 * r0))) / kxk;
   }
 
-  /** Driveline right-hand side: engine, clutch, gearbox, differential and halfshafts. Writes shaft torques for the wheels. */
   function driveline(x: Float64Array, out: Float64Array): void {
     const ratio = (gears[control.gear - 1] ?? 1) * spec.gearbox.finalDrive;
     const engineSpin = x[ENGINE] ?? 0;
@@ -953,7 +897,6 @@ export function createReferenceCar(spec: ReferenceCarSpec, options: ReferenceCar
     if ((plant[ENGINE] ?? 0) < 0) plant[ENGINE] = 0;
   }
 
-  /** The 1 kHz driver and controllers: steering, pedals, clutch foot, shifts, launch modulation and ABS. */
   function controlStep(input: AxisInput): void {
     derivative(plant, k1, true);
     const throttleIn = clamp(input.throttle, 0, 1);

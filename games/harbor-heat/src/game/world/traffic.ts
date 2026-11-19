@@ -11,13 +11,6 @@ import { editorLayers } from "../../editorLayers";
 import { cityLayout, LOT_ROADS } from "./cityLayout";
 
 /**
- * Mainsail's street traffic (D1.1): the lane graph, its signals, its kerbside spots and the fleet on
- * it all come from the authored scene document through the engine's lane-graph reader. This module
- * owns only the city's own policy — how busy the streets are at each hour, how the fleet is seeded,
- * and when a car pulls over — and mirrors the fleet onto scene entities with the shared body bind.
- */
-
-/**
  * Every authored lane span is cut at its own junction, so an endpoint that meets a crossing marker
  * sits within this radius of it. Mainsail's crossings are 120 m apart, so nothing else joins.
  */
@@ -26,16 +19,11 @@ const JOIN_RADIUS = 7.5;
 /** Authored lane levels are the speed policy: an avenue carries 16 m/s, a side street 13. */
 const SPEED_BY_LEVEL = { avenue: 16, street: 13 };
 
-/** The car models a traffic variant picks from, indexed by the injected generator's `variant`. */
 const CAR_KINDS = [
   "car_compact", "car_taxi", "car_sedan", "car_sport", "car_hatch", "car_suv", "car_muscle", "car_coupe",
   "car_taxi", "car_sedan", "car_compact", "car_hatch", "car_sport", "car_coupe", "car_suv", "car_muscle",
 ];
 
-/**
- * Fleet target by in-game hour. Mainsail has a morning and an evening rush, a busy working day and
- * almost empty small hours — the density change the player watches as the clock runs.
- */
 const FLEET_BY_HOUR = [
   8, 6, 5, 5, 6, 12, 24, 44, 66, 78, 72, 68, 72, 68, 72, 80, 92, 100, 94, 84, 70, 50, 34, 20,
 ];
@@ -54,9 +42,7 @@ interface CityTraffic {
   parkedAt: Map<string, number>;
   /** Cars that have parked once; they do not take a second spot, so the kerbs stay a sample. */
   hasParked: Set<string>;
-  /** Game time of the last demand/parking pass. */
   lastPolicy: number;
-  /** One body snapshot per car, refilled every tick for the body bind, which keeps none of them. */
   bodies: BodySnapshot[];
 }
 
@@ -68,7 +54,6 @@ function city(ctx: GameContext): CityTraffic | null {
 
 type LotRoad = (typeof LOT_ROADS)[number];
 
-/** The street a lane or kerb spot runs along: the nearest centreline running the same way. */
 function streetFor(x: number, z: number, dirX: number, dirZ: number): { road: LotRoad; side: number; at: readonly [number, number]; normal: readonly [number, number] } | null {
   let best: { road: LotRoad; side: number; at: readonly [number, number]; normal: readonly [number, number]; distance: number } | null = null;
   for (const road of LOT_ROADS) {
@@ -188,7 +173,6 @@ function seedFleet(traffic: Traffic, graph: LaneGraph, count: number): void {
   }
 }
 
-/** How many of the authored kerb spaces start the scene already occupied. */
 const KERB_FILLED_AT_BOOT = 10;
 
 /** Park cars in the authored kerb spaces so the avenue reads as a working street from the first frame. */
@@ -203,7 +187,6 @@ function seedKerb(traffic: Traffic, graph: LaneGraph, world: CityTraffic, now: n
   }
 }
 
-/** Pull over into a free kerbside spot on the car's own lane, and later give the kerb back. */
 function parkPass(ctx: GameContext, now: number): void {
   const world = city(ctx);
   if (world === null) return;
@@ -275,7 +258,6 @@ function buildTraffic(ctx: GameContext): void {
   cityStore(ctx).value = world;
 }
 
-/** Advance the fleet, mirror its cars onto scene entities, and re-aim the city's density at the clock. */
 export function tickTraffic(ctx: GameContext, dt: number): void {
   const world = city(ctx);
   if (world === null) return;
@@ -307,12 +289,10 @@ export function tickTraffic(ctx: GameContext, dt: number): void {
   ctx.scene.entity.bind("traffic").sync(bodies);
 }
 
-/** Fleet counters for a probe or a test. */
 export function trafficStats(ctx: GameContext): ReturnType<Traffic["stats"]> | null {
   return city(ctx)?.traffic.stats() ?? null;
 }
 
-/** Drop the fleet and its devtools probe; used when a world is torn down. */
 export function disposeTraffic(ctx: GameContext): void {
   const store = cityStore(ctx);
   store.stop?.();

@@ -24,7 +24,6 @@ import {
   type MissionFlags,
 } from "./runState";
 
-/** The document's own format version; bump it with a `migrate` when a section changes shape. */
 export const HARBOR_SAVE_VERSION = 2;
 
 /**
@@ -95,7 +94,6 @@ export const STORE_POLICY: Readonly<Record<string, { kind: SystemPolicy; reason:
   "harbor.away": { kind: "transient", reason: "The morning paper on screen is a menu; the catch-up already landed in the world." },
 };
 
-/** True for a store key this game defines, for the test that keeps the policy table honest. */
 export function isKnownStore(key: string): boolean {
   return STORE_POLICY[key] !== undefined;
 }
@@ -133,7 +131,6 @@ function wantedSystem(ctx: GameContext): GameSaveSystem {
   };
 }
 
-/** The convoy director: wave, alert, budget and the spawn counters it escalates on. */
 function convoySystem(ctx: GameContext): GameSaveSystem<SpawnDirectorState | null> {
   return {
     name: "convoy",
@@ -145,7 +142,6 @@ function convoySystem(ctx: GameContext): GameSaveSystem<SpawnDirectorState | nul
   };
 }
 
-/** The run: mission flags, the parcel, the mission machine behind it and what it is carrying. */
 function runSystem(ctx: GameContext): GameSaveSystem {
   return {
     name: "run",
@@ -182,7 +178,6 @@ function runSystem(ctx: GameContext): GameSaveSystem {
   };
 }
 
-/** Write a section value back, or clear the slot when the document holds nothing for it. */
 function restoreNullable<T>(store: StoreHandle<T | null>, ctx: GameContext, value: unknown): void {
   if (value === null || value === undefined) store.clear(ctx);
   else store.write(ctx, value as T | null);
@@ -200,7 +195,6 @@ function vehiclesSystem(ctx: GameContext): GameSaveSystem {
   };
 }
 
-/** The cash journal: the wallet is the balance, this section is the reason behind it. */
 function cashSystem(ctx: GameContext): GameSaveSystem {
   return {
     name: "cash",
@@ -215,7 +209,6 @@ function cashSystem(ctx: GameContext): GameSaveSystem {
   };
 }
 
-/** The game's document, one per context, writing beside the world snapshot. */
 export function createHarborSave(ctx: GameContext, options: { backend?: SaveBackend; slot?: string } = {}): GameSave {
   return createGameSave({
     backend: options.backend ?? localSaveBackend(),
@@ -235,7 +228,6 @@ export function createHarborSave(ctx: GameContext, options: { backend?: SaveBack
 
 const boundSave = perContext(() => ({ save: null as GameSave | null }));
 
-/** This context's document; play writes it to local storage beside the world snapshot. */
 export function harborSave(ctx: GameContext): GameSave {
   const slot = boundSave(ctx);
   if (slot.save === null) slot.save = createHarborSave(ctx);
@@ -266,7 +258,6 @@ export async function loadHarborSave(ctx: GameContext): Promise<boolean> {
   return true;
 }
 
-/** Seed the wanted section from the world snapshot's HUD mirror, once, then keep it as the authority. */
 function adoptLegacyWanted(ctx: GameContext): boolean {
   const stored = wantedStoreValue(ctx);
   if (stored === null || stored.heat <= 0) return false;
@@ -295,19 +286,16 @@ export function holdSavesUntil(ctx: GameContext, settled: Promise<void>): void {
   bootGate(ctx).settled = settled;
 }
 
-/** Write both halves of a checkpoint: the world snapshot is the engine's, this document is the run's. */
 export async function saveHarborState(ctx: GameContext): Promise<void> {
   await bootGate(ctx).settled;
   await ctx.game.save?.save();
   await harborSave(ctx).save();
 }
 
-/** A digest over the systems this document owns, for a determinism test or a diff between builds. */
 export function harborSaveDigest(ctx: GameContext, backend?: SaveBackend): string {
   return backend === undefined ? harborSave(ctx).digest() : createHarborSave(ctx, { backend }).digest();
 }
 
-/** Reason a run system's section exists, for the PR and the doc comment above. */
 export const RUN_SECTION_REASON: Record<string, CashReason | string> = {
   wanted: "engine #2243 tracks the general gap: a mounted primitive's state had no saved section",
 };

@@ -31,7 +31,6 @@ const booksOf = perContext((ctx: GameContext): WalletBooks => createWalletBooks(
   opening: "starting-stockpile",
 }));
 
-/** The vale's books: every gold and lumber movement with the reason it happened. */
 export function treasuryBooks(ctx: GameContext): WalletBooks {
   return booksOf(ctx);
 }
@@ -42,7 +41,6 @@ export function earn(ctx: GameContext, currency: string, amount: number, reason:
   booksOf(ctx).track(reason, () => ctx.game.economy.grant(ctx.player.userId, currency, amount), ref);
 }
 
-/** Pay a whole cost if the stockpile covers every part of it, booking each part. Returns false without moving anything. */
 export function spend(ctx: GameContext, cost: Readonly<Record<string, number>>, reason: TreasuryReason, ref?: string): boolean {
   const userId = ctx.player.userId;
   for (const [currency, amount] of Object.entries(cost)) if (ctx.game.economy.balance(userId, currency) < amount) return false;

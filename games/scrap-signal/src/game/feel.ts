@@ -23,12 +23,9 @@ export function lastShot(): { atMs: number; family: string } {
   return { atMs: signals.lastShotAtMs, family: signals.lastShotFamily };
 }
 
-/** How long the muzzle flash stays on screen after a shot. */
 export const MUZZLE_FLASH_MS = 70;
-/** How long the viewmodel's recoil kick runs after a shot. */
 export const RECOIL_MS = 140;
 
-/** Whether the muzzle flash should be drawn right now. False for a run that has not fired yet. */
 export function muzzleFlashVisible(nowMs: number): boolean {
   const since = nowMs - signals.lastShotAtMs;
   return since >= 0 && since < MUZZLE_FLASH_MS;
@@ -51,11 +48,6 @@ export function lastHurtAtMs(): number {
 
 let lastHealth: number | null = null;
 
-/**
- * Feed the player's current health once per tick; a drop from the previous reading counts as a hurt.
- * Reading the stat covers every damage source — bullets, auras, burn ticks — without each one
- * remembering to call {@link noteHurt}.
- */
 export function notePlayerHealth(nowMs: number, health: number | null): void {
   if (lastHealth !== null && health !== null && health < lastHealth) noteHurt(nowMs);
   lastHealth = health;

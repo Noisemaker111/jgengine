@@ -3,14 +3,12 @@ import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 
 import { readGlbMetrics, type GlbMetrics } from "./glbMetrics";
 
-/** Per-model limits chosen by the game; equality passes and omitted limits only report. */
 export interface AssetBudget {
   maxBytes?: number;
   maxTriangles?: number;
   maxTextureDimension?: number;
 }
 
-/** One model's measured inventory or actionable inspection/budget errors. */
 export interface AssetBudgetEntry {
   file: string;
   metrics?: GlbMetrics;

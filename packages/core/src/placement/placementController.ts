@@ -16,7 +16,6 @@ export interface PlacementSlot {
   center: PlacementVec3;
   /** Capture radius around `center`. Defaults to `config.slotRadius`, then `1.5`. */
   radius?: number;
-  /** `false` hides the slot from hover resolution without releasing it. Default `true`. */
   enabled?: boolean;
 }
 
@@ -41,7 +40,6 @@ export interface PlacementPreview {
   reason?: "out-of-bounds" | "overlap" | "no-slot" | "territory.blocked";
   snapMode: SnapMode;
   normal: PlacementVec3;
-  /** Id of the resolved slot, when the controller is in slot mode and a slot matched. */
   slotId?: string;
 }
 
@@ -52,7 +50,6 @@ export interface PlacementCommit {
   quarterTurns: number;
   footprint: Footprint;
   aabb: Aabb;
-  /** Id of the slot this commit occupied, when the controller is in slot mode. */
   slotId?: string;
 }
 
@@ -66,7 +63,6 @@ export interface PlacementController {
   setRules(rules: PlacementRules): void;
   setGrid(grid: number): void;
   setSlots(slots: readonly PlacementSlot[]): void;
-  /** Id of the currently hovered slot, or `null` when idle, out of slot mode, or unmatched. */
   hoveredSlotId(): string | null;
   /** Frees a previously committed slot so it can match again. */
   releaseSlot(id: string): void;
@@ -87,11 +83,7 @@ export function quarterTurnsToRotationY(quarterTurns: number): number {
   return turns === 0 ? 0 : -turns * (Math.PI / 2);
 }
 
-/**
- * Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
- * Pair with `PlacementGhost` (`./PlacementGhost.draw`) and {@link placeAssetFromCommit}.
- * @capability placement-controller interactive build-mode ghost preview and commit
- */
+/** @capability placement-controller interactive build-mode ghost preview and commit */
 export function createPlacementController(config: PlacementControllerConfig): PlacementController {
   let footprint = config.footprint;
   let rules = config.rules ?? {};

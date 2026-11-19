@@ -8,13 +8,11 @@ import type { SkeletonSlot } from "../skeletonStandard";
 
 /** `userData` flag on every worn shell, so a second layer never shells a shell. */
 const WORN_SHELL = "jgWornShell";
-/** Undyed plant fibre, for a layer that names no colour. */
 const FIBRE = "#9c8462";
 
 interface SkinRead {
   slots: (SkeletonSlot | null)[];
   frame: BodyFrame;
-  /** Bind-space units per unit of the mesh's own geometry. */
   bindScale: number;
 }
 
@@ -24,7 +22,6 @@ const shellGeometries = new WeakMap<THREE.BufferGeometry, Map<string, THREE.Buff
 const scratch = new THREE.Vector3();
 const scratchMatrix = new THREE.Matrix4();
 
-/** Bind-space position of the bone that fills `slot` itself (the topmost bone of that slot). */
 function bonePosition(mesh: THREE.SkinnedMesh, slots: readonly (SkeletonSlot | null)[], parents: readonly number[], slot: SkeletonSlot): number[] | null {
   const index = slots.findIndex((own, at) => own === slot && slots[parents[at] ?? -1] !== slot);
   const inverse = mesh.skeleton.boneInverses[index];
@@ -33,7 +30,6 @@ function bonePosition(mesh: THREE.SkinnedMesh, slots: readonly (SkeletonSlot | n
   return [scratch.x, scratch.y, scratch.z];
 }
 
-/** Each bone's slot, and where the body stands in the skin's bind space; `null` for a skin that is not a humanoid. */
 function readSkin(mesh: THREE.SkinnedMesh): SkinRead | null {
   const cached = skinReads.get(mesh.geometry);
   if (cached !== undefined) return cached;
@@ -182,7 +178,6 @@ export function attachWornLayer(rig: THREE.Object3D, layer: WornLayer): () => vo
   };
 }
 
-/** Keep `layers` worn on `rig` while mounted; a changed list takes the old pieces off first. Pass a stable array. */
 export function useWornLayers(rig: THREE.Object3D, layers: readonly WornLayer[]): void {
   useEffect(() => {
     if (layers.length === 0) return;

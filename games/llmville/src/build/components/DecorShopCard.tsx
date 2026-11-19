@@ -7,7 +7,6 @@ import { C } from "../../ui/kit";
 
 type DecorKind = "plant" | "seating" | "utility" | "workspace" | "neon" | "display";
 
-/** Which family a decor item belongs to, for its tile colour. */
 export function decorKind(itemId: PlaceableBuildItemId): DecorKind {
   if (itemId.includes("plant") || itemId.includes("tree") || itemId === "cable_tidy_bin") return "plant";
   if (itemId.includes("chair") || itemId.includes("beanbag") || itemId.includes("rug") || itemId.includes("yoga") || itemId === "server_plushie") return "seating";
@@ -26,7 +25,6 @@ const TILE: Record<DecorKind, [string, string]> = {
   display: ["#3a4a48", C.teal],
 };
 
-/** A decor listing's tile: its family's colour, with a ring when it has a 3D model. */
 export function DecorThumb({ itemId }: { itemId: PlaceableBuildItemId }) {
   const [base, light] = TILE[decorKind(itemId)];
   const modeled = getWorldModelAsset(itemId)?.modelPath != null;

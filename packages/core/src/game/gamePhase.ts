@@ -13,13 +13,6 @@ export type GamePhase = "menu" | "playing" | "paused" | "ended";
 
 export const GAME_PHASE_STORE_KEY = "jg.phase";
 
-/**
- * Set the current phase. Publishes it to `ctx.game.store` (the UI reads it via
- * `useGamePhase`) and gates the shell's on-screen touch controls in one call —
- * `playing` shows them, every other phase hides them. This is the whole
- * "main menu shouldn't show touch controls" wiring: call it once per phase
- * transition and the dock follows.
- */
 export function setGamePhase(ctx: GameContext, phase: GamePhase): void {
   ctx.game.store.set(GAME_PHASE_STORE_KEY, phase);
   setPlayControlsActive(ctx, phase === "playing");

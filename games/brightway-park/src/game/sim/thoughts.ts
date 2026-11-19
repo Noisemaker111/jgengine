@@ -1,10 +1,5 @@
 import type { GuestState } from "../session";
 
-/**
- * What a guest is thinking, in words a player reads: each thought is an id the park counts and a
- * line the guest window shows. A guest keeps its last few; the park tallies the fresh ones into the
- * dashboard's "guests are saying" list and the rating's complaint share.
- */
 export type ThoughtId =
   | "too_expensive"
   | "queue_long"
@@ -29,7 +24,6 @@ export interface Thought {
   at: number;
 }
 
-/** Thoughts that are complaints: their share of the crowd pulls the rating down. */
 export const COMPLAINTS: ReadonlySet<ThoughtId> = new Set<ThoughtId>([
   "too_expensive",
   "queue_long",
@@ -62,9 +56,7 @@ export const THOUGHT_LABEL: Record<ThoughtId, string> = {
   lovely_park: "Lovely park",
 };
 
-/** How long a thought counts toward the park's tally. */
 export const THOUGHT_FRESH_SECONDS = 45;
-/** A guest does not repeat the same thought more often than this. */
 const REPEAT_SECONDS = 20;
 const KEEP = 4;
 
@@ -81,13 +73,11 @@ export function think(guest: GuestState, id: ThoughtId, text: string, now: numbe
 }
 
 export interface ThoughtTally {
-  /** Fresh thoughts by id, most common first. */
   top: { id: ThoughtId; label: string; count: number; complaint: boolean }[];
   /** Share of guests (0-1) whose freshest thought is a complaint. */
   complaintShare: number;
 }
 
-/** The crowd's fresh thoughts, counted. */
 export function tallyThoughts(guests: Iterable<GuestState>, now: number): ThoughtTally {
   const counts = new Map<ThoughtId, number>();
   let people = 0;

@@ -5,15 +5,10 @@
  * `bun run shoot --board grass` shoots them beside the photos.
  */
 
-/** A real photo the board puts beside our matching view. */
 export interface GrassReferencePhoto {
-  /** Board row id; the demo's capture view is `ref-<id>`. */
   id: string;
-  /** File under `scripts/reference/grass/photos/`. */
   file: string;
-  /** Species the matching patch grows. */
   species: string;
-  /** What the photo shows, in a few words. */
   subject: string;
   /** Camera height above the ground, metres. */
   height: number;
@@ -22,7 +17,6 @@ export interface GrassReferencePhoto {
   credit: { author: string; license: string; source: string };
 }
 
-/** Every reference photo, in board order. Credits are repeated in CREDITS.md. */
 export const GRASS_REFERENCE_PHOTOS: readonly GrassReferencePhoto[] = [
   {
     id: "lawn-frog",
@@ -80,18 +74,13 @@ export const GRASS_REFERENCE_PHOTOS: readonly GrassReferencePhoto[] = [
   },
 ];
 
-/** A stylised end of the realism range: our own game's art as the reference, and what grass there should be. */
 export interface GrassStyleTarget {
   id: string;
-  /** Where the range sits for this target, 0 cartoon to 1 photoreal. */
   realism: number;
-  /** Game views (from {@link GRASS_GAME_VIEWS}) whose art sets the target. */
   views: readonly string[];
-  /** The written target. */
   target: string;
 }
 
-/** The cartoon and animated targets, set by our own games' art; no other studio's frames are committed. */
 export const GRASS_STYLE_TARGETS: readonly GrassStyleTarget[] = [
   {
     id: "cartoon",
@@ -117,9 +106,7 @@ export const GRASS_STYLE_TARGETS: readonly GrassStyleTarget[] = [
 export interface GrassGameView {
   id: string;
   game: string;
-  /** `--spawn` for the player, when the game's start does not already show its grass. */
   spawn?: string;
-  /** What the view shows, for a person reading the board. */
   shows: string;
 }
 
@@ -138,7 +125,6 @@ export const GRASS_GAME_VIEWS: readonly GrassGameView[] = [
   { id: "ss-scrub", game: "scrap-signal", spawn: "-524,20,569,0", shows: "first-person, facing the crash site's west desert bunchgrass scrub" },
 ];
 
-/** The games that place grass, each measured by the board's perf pair. */
 export const GRASS_GAMES = ["harbor-heat", "fernwild", "beacon-bastion", "brightway-park", "ember-command", "scrap-signal"] as const;
 
 /** Side of one reference patch, metres: deep enough that a standing view reaches its horizon over grass. */
@@ -146,12 +132,10 @@ export const GRASS_REFERENCE_PATCH = 360;
 /** Spacing between reference patches along x, metres. */
 export const GRASS_REFERENCE_SPACING = 420;
 
-/** Centre of reference patch `index`. */
 export function grassReferenceCentre(index: number): [number, number] {
   return [(index - (GRASS_REFERENCE_PHOTOS.length - 1) / 2) * GRASS_REFERENCE_SPACING, 0];
 }
 
-/** The capture rig aims this far above its look point (the observer rig's default `lookHeight`). */
 const OBSERVER_LOOK_HEIGHT = 1.2;
 
 /**

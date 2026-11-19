@@ -1,7 +1,6 @@
 import type { WorldXZ } from "./minimap";
 import type { MapLayerTone, MapRoute, MapZone, MapZoneShape } from "./mapLayers";
 
-/** A freehand drawn line on the map — a world-XZ polyline. */
 export interface MapStroke {
   id: string;
   points: readonly WorldXZ[];
@@ -10,7 +9,6 @@ export interface MapStroke {
   width?: number;
 }
 
-/** A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary. */
 export interface MapShapeAnnotation {
   id: string;
   shape: MapZoneShape;
@@ -18,7 +16,6 @@ export interface MapShapeAnnotation {
   label?: string;
 }
 
-/** A text note pinned at a world point. */
 export interface MapNote {
   id: string;
   position: WorldXZ;
@@ -26,16 +23,13 @@ export interface MapNote {
   tone?: MapLayerTone;
 }
 
-/** Whole serializable state of an annotation layer — drop into a save blob. */
 export interface AnnotationSnapshot {
   strokes: readonly MapStroke[];
   shapes: readonly MapShapeAnnotation[];
   notes: readonly MapNote[];
 }
 
-/** Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data. */
 export interface AnnotationLayer {
-  /** Add a freehand stroke; returns its id. Ignored (returns "") when fewer than 2 points. */
   addStroke(points: readonly WorldXZ[], options?: { id?: string; tone?: MapLayerTone | undefined; width?: number | undefined }): string;
   addShape(shape: MapZoneShape, options?: { id?: string; tone?: MapLayerTone | undefined; label?: string | undefined }): string;
   addNote(position: WorldXZ, text: string, options?: { id?: string; tone?: MapLayerTone | undefined }): string;
@@ -44,30 +38,18 @@ export interface AnnotationLayer {
   strokes(): readonly MapStroke[];
   shapes(): readonly MapShapeAnnotation[];
   notes(): readonly MapNote[];
-  /** Project strokes into `MapRoute`s for a map's `routes` prop. Stable identity between changes. */
   routes(): readonly MapRoute[];
-  /** Project shapes into `MapZone`s for a map's `zones` prop. Stable identity between changes. */
   zones(): readonly MapZone[];
   subscribe(listener: () => void): () => void;
   snapshot(): AnnotationSnapshot;
   restore(snapshot: AnnotationSnapshot): void;
 }
 
-/** Options for {@link createAnnotationLayer}. */
 export interface AnnotationLayerOptions {
-  /** Default tone applied to strokes/shapes/notes added without an explicit one. Default `"info"`. */
   defaultTone?: MapLayerTone;
 }
 
-/**
- * Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and
- * pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project
- * strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap`
- * already render via their `routes`/`zones` props, so drawing needs no new
- * renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
- *
- * @capability map-annotations player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable
- */
+/** @capability map-annotations player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable */
 export function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer {
   const defaultTone = options.defaultTone ?? "info";
   const strokeStore = new Map<string, MapStroke>();

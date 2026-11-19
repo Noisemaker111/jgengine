@@ -20,12 +20,10 @@ import { blackMarketOpenStore, blackMarketStore, discoveredStationsStore, skills
 import { TRAVEL_STATIONS } from "../world/sites";
 import { useCompact, Button, C, FULL, Hull, Icon, Label, Pips, Plate, Row, RowButton, Sheet, Small, Stamp, Text, Tube } from "./kit";
 
-/** An open terminal frees the mouse so its buttons can be clicked. */
 export function useReleasePointer(open: boolean): void {
   useEffect(() => { if (open && typeof document !== "undefined") document.exitPointerLock?.(); }, [open]);
 }
 
-/** A conversation with a quest giver: what they say, and the quest they are offering with its pay. */
 export function NpcDialog() {
   const { commands } = useGame();
   const dialog = useStore(npcDialogStore);
@@ -44,7 +42,6 @@ export function NpcDialog() {
   </Sheet>;
 }
 
-/** Dr. Sparx's meds and Rigg's munitions. */
 export function VendorPanel() {
   const { commands } = useGame();
   const vendor = useStore(vendorOpenStore);
@@ -71,7 +68,6 @@ function GunRow({ itemId, action, onPress }: { itemId: string; action: string; o
   return <RowButton title={gun.name} titleColor={RARITY_COLORS[gun.rarity]} detail={`lvl ${gun.level} ${gun.rarity} ${gun.manufacturer} ${gun.family}${gun.element === "none" ? "" : ` · ${gun.element}`} · ${gun.weapon.damage} dmg`} value={action.toUpperCase()} onPress={onPress} />;
 }
 
-/** The Coretown vault: store the guns you are not carrying, take them back when you want them. */
 export function VaultPanel() {
   const { commands } = useGame();
   const open = useStore(vaultOpenStore);
@@ -89,7 +85,6 @@ export function VaultPanel() {
   </Sheet>;
 }
 
-/** Points in a branch that open each tier (`requiresPointsInBranch`). */
 const TIERS = [0, 5, 10, 15, 20] as const;
 function NodeButton({ node, onSpend }: { node: CharacterNode; onSpend: () => void }) {
   const tree = talentTree();
@@ -98,7 +93,6 @@ function NodeButton({ node, onSpend }: { node: CharacterNode; onSpend: () => voi
   return <RowButton title={node.name} detail={node.blurb} value={`${rank}/${node.maxRank}`} valueColor={maxed ? C.amber : "#bef264"} disabled={!tree.canAllocate(node.id).ok} onPress={onSpend} />;
 }
 
-/** The reclaimer's three talent branches, tier by tier. */
 export function TalentsPanel() {
   const { commands } = useGame();
   const { userId } = usePlayer();
@@ -133,7 +127,6 @@ export function TalentsPanel() {
   </Sheet>;
 }
 
-/** The fast-travel network between registered stations. */
 export function TravelPanel() {
   const { commands } = useGame();
   const open = useStore(travelOpenStore);
@@ -147,7 +140,6 @@ export function TravelPanel() {
   </Sheet>;
 }
 
-/** The Switchboard Exchange: permanent upgrades bought with cores. */
 export function BlackMarketPanel() {
   const { commands } = useGame();
   const open = useStore(blackMarketOpenStore);
@@ -175,7 +167,6 @@ function Chip({ color, children, tooltip }: { color: string; children: string; t
   return <RuneView padding={[2, 6, 2, 6]} border={{ width: 1, color: `${color}99` }} {...(tooltip === undefined ? {} : { tooltip })}><Small size={11} color={color}>{children}</Small></RuneView>;
 }
 
-/** The wreck's overdrive console: every tier, its medal, its best time, and the tuned tier's mutators. */
 export function OverdriveTerminal() {
   const { commands } = useGame();
   const { userId } = usePlayer();
@@ -219,7 +210,6 @@ export function OverdriveTerminal() {
   </Sheet>;
 }
 
-/** The live run on the rig: tier, clock against the next medal, the wave, its mutators, and its result. */
 export function OverdriveCard() {
   const ctx = useGameContext();
   const { commands } = useGame();

@@ -1,36 +1,22 @@
 // @skill jgengine-gameplay
-/**
- * Composed item rolls on the generator contract. An {@link ItemRecipe} names the params a roll takes
- * (a param schema), the choice steps those params produce ({@link GenSchema} from `item/itemgen`),
- * the steps they pin, and how the resolved choices become the game's item. {@link rollItemRecipe}
- * rolls one from any random stream (a session's chest stream, a loot table's rng);
- * {@link defineItemGenerator} turns the same recipe into a seeded generator the editor and agents
- * list and roll variants of.
- */
 import { defineGenerator, type GeneratorDefinition } from "../generator/generator";
 import { registerGeneratorText } from "../generator/generatorText";
 import type { ParamSchema, ParamsOf } from "../generator/paramSchema";
 import { generate, type GenProvenance, type GenResult, type GenSchema } from "./itemgen";
 
-/** The output family every item generator writes: one {@link RolledItem}. */
 export const ROLLED_ITEM_OUTPUT = "rolled-item";
 
-/** One rolled item, the provenance of its choices, and a few lines of text that name it. */
 export interface RolledItem<Item> {
   item: Item;
   provenance: GenProvenance;
-  /** Short text lines for the variant tile and agents, most telling first. */
   summary: readonly string[];
 }
 
-/** A game's composed item roll: its params, the choice steps they produce, and how the choices become an item. */
 export interface ItemRecipe<Schema extends ParamSchema, Item> {
   id: string;
   label: string;
   schema: Schema;
-  /** The choice steps a roll with these params resolves (weights and pools may read the params). */
   steps(params: ParamsOf<Schema>): GenSchema;
-  /** Steps these params fix to one option id (a pinned rarity, a named legendary). */
   pin?(params: ParamsOf<Schema>): Readonly<Record<string, string>>;
   /** The item the resolved choices make; further randomness comes from `rng`, after the choices. */
   build(result: GenResult, params: ParamsOf<Schema>, rng: () => number): Item;
@@ -74,7 +60,7 @@ export function defineItemGenerator<Schema extends ParamSchema, Item>(recipe: It
   });
 }
 
-/** Register the text tile for {@link ROLLED_ITEM_OUTPUT}: the item's summary lines. Called by `registerBuiltinSceneKinds`. @internal */
+/** @internal */
 export function registerItemGeneratorText(): void {
   registerGeneratorText(ROLLED_ITEM_OUTPUT, (output) => {
     const summary = typeof output === "object" && output !== null ? (output as Partial<RolledItem<unknown>>).summary : undefined;

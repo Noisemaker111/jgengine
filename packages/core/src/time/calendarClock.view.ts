@@ -3,7 +3,6 @@ import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import { computeClientServerOffset, computeGameTime, type GameTime } from "@jgengine/core/time/calendarClock";
 import { getCurrentGameTimestamp, sanitizeGameTimeScale } from "@jgengine/core/time/gameClock";
 
-/** Options for {@link useCalendarClock}. */
 export interface CalendarClockOptions {
   /** In-world seconds per real second. Default from `sanitizeGameTimeScale`. */
   timeScale?: number | undefined;
@@ -13,12 +12,7 @@ export interface CalendarClockOptions {
   now?: () => number;
 }
 
-/**
- * The in-world calendar of a world created at `createdAt`, aligned to the server's clock from one
- * `serverNow` reading and re-read every `tickMs`. Null until both are known.
- *
- * @capability calendar-clock-hook live in-world date and time for a HUD, aligned to the server clock
- */
+/** @capability calendar-clock-hook live in-world date and time for a HUD, aligned to the server clock */
 export function useCalendarClock(
   createdAt: number | undefined,
   serverNow: number | undefined,

@@ -9,7 +9,6 @@ import { IconButton, Kbd, ToolbarDivider } from "./ui";
 /** @internal Re-export for historical TopAppBar importers. */
 export { formatSavedRelative } from "./formatSavedRelative";
 
-/** Document save lifecycle mirrored from `useDocumentSave`. */
 export type TopBarSaveState = "idle" | "saving" | "saved" | "error";
 
 function SaveStatus({
@@ -67,12 +66,6 @@ function SaveStatus({
   );
 }
 
-/**
- * Global application bar: identity + save state on the left, command palette in the center,
- * history / run controls / document actions on the right. Pause and Step stay disabled in
- * edit mode; Play mode mounts {@link PlayModeBar}, which wires the same controls to the
- * runtime pause/step RPCs so mode switches keep shell chrome.
- */
 export function TopAppBar({
   gameId,
   onExitToGame,
@@ -98,7 +91,6 @@ export function TopAppBar({
   onResetLayout,
 }: {
   gameId: string;
-  /** When set (editor summoned over a game), renders an "Exit to game" control that closes the editor. */
   onExitToGame?: (() => void) | undefined;
   exitLabel?: string | undefined;
   dirty: boolean;

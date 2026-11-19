@@ -69,21 +69,15 @@ function resolveDive(dive: SwimDiveConfig | boolean | undefined): Required<SwimD
   const own = dive === true ? {} : dive;
   return { down: own.down ?? 2, up: own.up ?? 3, drift: own.drift ?? 0.5 };
 }
-/** Minimum ground-normal `y` the player can stand on before slope-slide kicks in — cos(50°) ≈ 0.643. */
 const DEFAULT_MAX_CLIMB_NORMAL_Y = Math.cos((50 * Math.PI) / 180);
-/** Downhill slide speed (units/s) per unit of slope steepness while on too-steep ground. */
 const SLOPE_SLIDE_SPEED = 4;
-/** Tallest object ledge walked up (and largest ground drop still snapped down) without jumping/falling. */
 const DEFAULT_PLAYER_STEP_HEIGHT = 0.4;
 
-/** The resolved, per-world movement configuration {@link stepPlayerMovement} integrates against — the same inputs the shell FrameDriver used to read piecemeal, gathered into one struct so single-player and host movement run identical math. */
 export interface PlayerMovementTuning {
-  /** The simulation driver already clamps frame stalls; integrate its scaled step in full. */
   authoritativeStep?: boolean | undefined;
   collision?: VoxelCollisionConfig | undefined;
   movement?: PlayerMovementConfig | undefined;
   physics?: MovementTuningOverrides | undefined;
-  /** Optional physics-backed capsule controller; when present it replaces terrain/AABB walking collision. */
   controller?: { backend: PhysicsBackend; capsule: CharacterControllerConfig } | undefined;
   ground: TerrainField;
   hasTerrain: boolean;
@@ -106,7 +100,6 @@ export function resolvePhysicsTuning(physics: PhysicsConfig | undefined): Moveme
   };
 }
 
-/** Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}. */
 export function resolvePlayerMovementTuning(opts: {
   collision?: VoxelCollisionConfig | undefined;
   movement?: PlayerMovementConfig | undefined;
@@ -157,15 +150,11 @@ export interface PlayerMovementTelemetry {
   grounded: boolean;
   verticalVelocity: number;
   crouching: boolean;
-  /** Floating in water under `movement.swim` this step. */
   swimming: boolean;
   /** Metres dived below the surface under `movement.swim.dive`; 0 at the surface or out of the water. */
   diveDepth: number;
-  /** Accepted physical height for heightfield walking; absent for other collision paths. */
   collisionHeight?: number;
-  /** Live authored height requested for this completed heightfield step. */
   requestedCollisionHeight?: number | undefined;
-  /** Growth is waiting for headroom; the accepted physical height remains collisionHeight. */
   collisionHeightBlocked?: boolean | undefined;
 }
 
@@ -328,7 +317,6 @@ export function playerMovementHeading(ctx: GameContext, userId: string): number 
   return stores.get(ctx)?.players.get(userId)?.heading ?? 0;
 }
 
-/** One player's serializable movement state: heading, facing, velocities, jump latch and controller capsule. The entity pose lives in the entity store. */
 export interface PlayerMovementSnapshot {
   heading: number;
   facing: number | null;
@@ -337,13 +325,10 @@ export interface PlayerMovementSnapshot {
   flight: FreeFlightState | null;
   controller: CharacterControllerState | null;
   controllerJumpHeld: boolean;
-  /** Buffered jump presses; absent in snapshots taken before jump buffering existed. */
   jumpBuffer?: InputBufferSnapshot | null;
   /** Metres dived below the surface. */
   diveDepth?: number;
-  /** Accepted heightfield body height. Older walking snapshots retain their historical 1.8m span. */
   heightfieldHeight?: number | null;
-  /** Pawn that accepted heightfieldHeight; omission binds legacy dimensions to the active pawn on restore. */
   heightfieldEntityId?: string | null;
 }
 
@@ -351,7 +336,6 @@ function copyController(state: CharacterControllerState): CharacterControllerSta
   return { ...state, position: [...state.position], groundNormal: [...state.groundNormal] };
 }
 
-/** Copy one player's movement state for prediction, rollback or a save; `null` when the player has not moved yet. */
 export function snapshotPlayerMovement(ctx: GameContext, userId: string): PlayerMovementSnapshot | null {
   const state = stores.get(ctx)?.players.get(userId);
   if (state === undefined) return null;
@@ -470,15 +454,6 @@ function flightTuningFor(
   return null;
 }
 
-/**
- * Integrate one player's movement for a tick from their held-input frame and commit the pose — the single
- * genre-agnostic controller both the shell (its local player) and a host (each connected player in `onTick`) call,
- * so single-player and server-authoritative movement are identical. Reads the player's controlled entity, terrain,
- * scene solids, and pending motion impulses; writes the entity pose via `setPose`. Retains heading + kinematic body
- * per `userId` on the `ctx`. Pass `heading` to override the internally-integrated yaw (the shell owns yaw for its
- * camera); omit it and the controller turns from the frame's `turnLeft`/`turnRight` actions. Pass `pitch` for
- * 6DOF spectator flight when `alignWithLook` is set.
- */
 export function stepPlayerMovement(
   ctx: GameContext,
   userId: string,
@@ -1149,10 +1124,6 @@ export function stepPlayerMovement(
   else invalidateTelemetry(state);
 }
 
-/**
- * The player's blocking obstacles for this step, from the shared solid seam. A walking NPC calls
- * `resolveWalkerStep` against the same query, so "solid" means one thing engine-wide.
- */
 function gatherMovementObstacles(
   ctx: GameContext,
   position: EntityPosition,

@@ -1,8 +1,3 @@
-/**
- * Models/training slice of the WorldViewModel — derived model lists, the
- * training library, and every model/training action, composed into the
- * world state as one memoized object.
- */
 import { useMemo, useState } from "@jgengine/core/ui/jsx";
 import type { FunctionReturnType } from "convex/server";
 

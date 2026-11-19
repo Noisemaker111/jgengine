@@ -1,10 +1,8 @@
 import type { WorldSolid, WorldSolids } from "./worldSolids";
 
-/** {@link solidOverhead} knobs. */
 export interface OverheadOptions {
   /** Height above the point the search starts (over the head, so the floor and the body's own box never count). Default 1.9. */
   clearance?: number;
-  /** How far up to look. Default 40. */
   reach?: number;
 }
 
@@ -23,12 +21,7 @@ function covers(solid: WorldSolid, x: number, z: number, low: number, high: numb
   return Math.abs(lx) <= hx && Math.abs(lz) <= hz;
 }
 
-/**
- * Whether something solid is overhead: a ceiling, a roof, cave rock, anything in the world's solids straight above
- * `at`, between `clearance` and `reach` over it. What keeps the rain off a survivor and lets a roof count as shelter.
- *
- * @capability solid-overhead test whether a roof, ceiling or rock overhangs a point, from the world's solids
- */
+/** @capability solid-overhead test whether a roof, ceiling or rock overhangs a point, from the world's solids */
 export function solidOverhead(solids: Pick<WorldSolids, "inBox">, at: readonly [number, number, number], options: OverheadOptions = {}): boolean {
   const low = at[1] + (options.clearance ?? 1.9);
   const high = at[1] + (options.reach ?? 40);
@@ -39,25 +32,14 @@ export function solidOverhead(solids: Pick<WorldSolids, "inBox">, at: readonly [
   return false;
 }
 
-/** {@link solidEnclosure} knobs, beside {@link solidOverhead}'s for the roof. */
 export interface EnclosureOptions extends OverheadOptions {
-  /** How many ways round the compass to look for a wall. Default 8. */
   directions?: number;
-  /** How far out a wall still counts. Default 6. */
   wallReach?: number;
-  /** Height above the point the walls are looked for at (chest height, over a doorstep or a floor's lip). Default 1. */
   wallHeight?: number;
-  /** Spacing of the samples along each way out. Default 0.25. */
   step?: number;
 }
 
-/**
- * How shut in a point is: the share of the ways round it that meet a wall within reach, and 0 under open sky.
- * 1 is a closed room, roof and walls all round; an open door or a missing wall leaves it short of 1.
- * What decides whether a building keeps out the weather and the cold.
- *
- * @capability solid-enclosure measure how enclosed a point is by a roof and walls, from the world's solids
- */
+/** @capability solid-enclosure measure how enclosed a point is by a roof and walls, from the world's solids */
 export function solidEnclosure(solids: Pick<WorldSolids, "inBox">, at: readonly [number, number, number], options: EnclosureOptions = {}): number {
   if (!solidOverhead(solids, at, options)) return 0;
   const directions = options.directions ?? 8;

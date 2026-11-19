@@ -16,7 +16,6 @@ const HERO = "hero";
 const MACHINE = "machine";
 const WALL = "wall";
 
-/** A foot on each side of x=12: the camera crosses one boundary in the middle of the room. */
 const ZONES: readonly AmbienceZoneDef[] = [
   {
     id: "meadow",
@@ -137,7 +136,6 @@ function AmbienceUI(): ReactNode {
   );
 }
 
-/** Capture probe: measured mix, zone mix and occlusion cost as plain numbers a headless drive can print. */
 function probe(ctx: GameContext): Record<string, number> {
   void ctx;
   const audio = typeof window === "undefined"
@@ -169,7 +167,6 @@ function probe(ctx: GameContext): Record<string, number> {
   return out;
 }
 
-/** Probe for the audio depth layer: zone beds crossfaded by listener position, geometry occlusion and cue ducking. */
 export const ambienceDemoGame: PlayableGame = {
   game,
   content: {

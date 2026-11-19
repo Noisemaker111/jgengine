@@ -26,10 +26,6 @@ export const LIBRARY_SOURCES = {
 } as const;
 export type LibrarySurfaceName = keyof typeof LIBRARY_SOURCES;
 
-/**
- * Scans whose colour map is a strong hue of its own (blue diamond plate, gold steel, blue and green
- * paint). The floors keep their grain, normal and roughness but take the floor's tint as the colour.
- */
 const OWN_HUE: ReadonlySet<LibrarySurfaceName> = new Set(["metal/diamond-plate", "metal/steel", "metal/chipped", "metal/painted"]);
 
 /** A library scan as an instanced-box surface: its maps tiled in metres, its own response, a tint. */
@@ -49,32 +45,22 @@ export function librarySurface(name: LibrarySurfaceName, tint: string, extra: Pa
   return Object.assign(base, extra);
 }
 
-/** Everything that makes one floor its own place: its shell, its dressing and its light. */
 export interface FloorLook {
   wall: AuthoredSurfaceConfig;
   floor: AuthoredSurfaceConfig;
   ceiling: AuthoredSurfaceConfig;
-  /** What the authored station parts wear here, by their editor surface. */
   structure: { paint: LibrarySurfaceName; steel: LibrarySurfaceName; floor: LibrarySurfaceName; printed: LibrarySurfaceName; brass: LibrarySurfaceName };
   /** How far an authored part's colour is pulled toward this floor's palette, 0..1. */
   structureBlend: number;
   structureTint: string;
   dressing: InteriorDressingSurfaces;
   cable: string;
-  /** Wall-lamp light: colour, strength, range and how many lamps light at once. */
   practical: { color: string; intensity: number; distance: number; count: number; shadowed: number };
 }
 
 const lens = (color: string, intensity: number): AuthoredSurfaceConfig => ({ color: "#ffffff", emissive: color, emissiveIntensity: intensity, roughness: 0.3, metalness: 0 });
-/** A burned-out lamp's lens: grey glass, no glow. */
 const dark: AuthoredSurfaceConfig = { color: "#3a3835", roughness: 0.3, metalness: 0 };
 
-/**
- * I Receiving reads like a working dock (painted plate, diamond-plate floor, cream service pipes,
- * warm wall lamps under cool strips); II the cold stores are white tile and bare concrete under
- * blue-white strips; III the ink wells are dark wet rock over rusted catwalk, sodium lamps over
- * violet ink; IV the choir is rough brutalist concrete and terrazzo lit red.
- */
 export const FLOOR_LOOK: Readonly<Record<Stratum, FloorLook>> = {
   vault: {
     wall: librarySurface("metal/painted", "#3b4d54"),

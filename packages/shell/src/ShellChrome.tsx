@@ -27,7 +27,7 @@ const DevtoolsOverlay = lazy(() =>
   import("@jgengine/core/devtools/DevtoolsOverlay.draw").then((module) => ({ default: module.DevtoolsOverlay })),
 );
 
-/** Mounts the game's `uiKit` (with its bindings, for prompts) around the GameUI; no kit renders children as-is. @internal */
+/** @internal */
 export function ShellUiKit({ playable, children }: { playable: PlayableGame; children?: ReactNode }): ReactNode {
   const kit = playable.uiKit ?? null;
   // The overlay host lets the shell's settings dialog draw inside the HUD theme and the kit, so it takes
@@ -42,7 +42,7 @@ export function ShellUiKit({ playable, children }: { playable: PlayableGame; chi
   );
 }
 
-/** Shared GameUI mount: error boundary → GameProvider → phase stamp → HudViewport → HUD theme root. @internal */
+/** @internal */
 export function ShellGameUiChrome({
   ctx,
   playable,
@@ -98,7 +98,7 @@ export function ShellGameUiChrome({
   );
 }
 
-/** Devtools + diagnostic overlays shared by HUD and 3D presentation paths. @internal */
+/** @internal */
 export function ShellDebugOverlays({
   ctx,
   playable,
@@ -134,7 +134,7 @@ export function ShellDebugOverlays({
   );
 }
 
-/** Key-down fields the shell key handlers read. @internal */
+/** @internal */
 export type ShellKeyDownEvent = {
   code: string;
   target?: EventTarget | null;
@@ -147,14 +147,14 @@ export type ShellKeyDownEvent = {
   preventDefault: () => void;
 };
 
-/** Key handler bundle shared by HUD and 3D presentation paths. @internal */
+/** @internal */
 export type ShellKeyHandlers = {
   onKeyDown: (event: ShellKeyDownEvent) => void;
   onKeyUp: (event: { code: string; target?: EventTarget | null }) => void;
   onBlur: () => void;
 };
 
-/** F2 chord + gameplay action tracker key handlers shared by both presentation paths. @internal */
+/** @internal */
 export function createShellKeyHandlers({
   f2HeldRef,
   tracker,
@@ -171,13 +171,9 @@ export function createShellKeyHandlers({
   devtoolsEnabled: boolean;
   setDevtoolsOpen: (update: boolean | ((current: boolean) => boolean)) => void;
   controlsActive: () => boolean;
-  /** 3D path exits pointer lock when opening devtools. */
   exitPointerLockOnDevtools?: boolean;
-  /** Play-surface key-down hook that runs before action bindings; returning true consumes the key (and its key-up). */
   claimKey?: ((event: ShellKeyDownEvent) => boolean) | undefined;
-  /** F3 opens and closes the performance overlay, in every phase. */
   togglePerfOverlay?: (() => void) | undefined;
-  /** F2+R saves the input recording of this session. */
   saveReplay?: (() => void) | undefined;
 }): ShellKeyHandlers {
   const claimed = new Set<string>();

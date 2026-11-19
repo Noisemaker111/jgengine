@@ -1,8 +1,6 @@
 import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
 import type { Xyz } from "@jgengine/core/math/xyz";
-/** Horizontal facing derived from an orbit camera orbiting a target on the XZ plane.
- * @internal
- */
+/** @internal */
 export function orbitYawFromCamera(
   cameraX: number,
   cameraZ: number,
@@ -22,7 +20,6 @@ export function cameraLookPitch(camera: Xyz, target: Xyz): number {
   return Math.atan2(target.y - camera.y, horizontal);
 }
 
-/** Orbit camera tuning: distance limits, target height, initial pose, smoothing, pitch clamp and collision. */
 export interface OrbitCameraConfig {
   minDistance?: number;
   maxDistance?: number;
@@ -35,22 +32,15 @@ export interface OrbitCameraConfig {
   initialPitch?: number;
   /** Signed boom-elevation clamp `[min, max]` (radians): min < 0 dips below the target, max > 0 rises overhead. Maps onto `minPolarAngle`/`maxPolarAngle` (polar = PI/2 − pitch); explicit polar fields win. */
   pitchClamp?: readonly [number, number];
-  /** Extra offset applied on top of entity position for the orbit target. */
   targetOffset?: Partial<Xyz>;
-  /** Keep orbit radius locked while the follow target moves. */
   followLock?: boolean;
-  /** When false, orbit target stays fixed (cinematic / debug). Default true. */
   followEnabled?: boolean;
-  /** Orbit drag sensitivity (lower = smoother). Default OrbitControls is 1. */
   rotateSpeed?: number;
   zoomSpeed?: number;
-  /** Inertia decay while orbiting (lower = longer coast). */
   dampingFactor?: number;
-  /** Exponential smoothing when the follow target moves. Higher = snappier. */
   targetSmoothing?: number;
   /** Faster target follow while orbiting (defaults to ~1.8× targetSmoothing). */
   dragTargetSmoothing?: number;
-  /** Exponential smoothing when re-locking orbit distance. */
   distanceSmoothing?: number;
   /**
    * A target that lands farther than this from where the camera is following (a teleport, a respawn) is cut to at
@@ -64,24 +54,18 @@ export interface OrbitCameraConfig {
   collision?: OrbitCollisionConfig;
 }
 
-/** Spring-arm occlusion config for the orbit rig. */
 export interface OrbitCollisionConfig {
-  /** Enable the pull-in raycast. Default false (unchanged chase camera). */
   enabled?: boolean;
-  /** Gap kept between the camera and the hit surface, world units. Default 0.35. */
   padding?: number;
-  /** Ignore hits closer than this to the target — the player's own body. Default 1.2. */
   minTargetDistance?: number;
 }
 
-/** An {@link OrbitCollisionConfig} with every field resolved to a concrete value. */
 export interface ResolvedOrbitCollision {
   enabled: boolean;
   padding: number;
   minTargetDistance: number;
 }
 
-/** Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA. */
 export interface ResolvedOrbitCameraConfig {
   minDistance: number;
   maxDistance: number;
@@ -105,7 +89,6 @@ export interface ResolvedOrbitCameraConfig {
   collision: ResolvedOrbitCollision;
 }
 
-/** Orbit camera config with the engine defaults. */
 export const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig = {
   minDistance: 4,
   maxDistance: 28,
@@ -126,12 +109,9 @@ export const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig = {
   collision: { enabled: false, padding: 0.35, minTargetDistance: 1.2 },
 };
 
-/** Run simulation/movement before orbit follow so poses are current. */
 export const GAME_SIM_FRAME_PRIORITY = 0;
-/** Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY. */
 export const ORBIT_CAMERA_FRAME_PRIORITY = -1;
 
-/** Per-frame orbit follow state: smoothed target, camera position and the locked boom distance. */
 export interface OrbitFollowRuntimeState {
   target: Xyz;
   camera: Xyz;
@@ -177,12 +157,7 @@ export function resolveOrbitCameraConfig(patch?: Partial<OrbitCameraConfig>): Re
   return resolved;
 }
 
-/**
- * FOV that keeps a target's on-screen size constant as the spring-arm pulls the
- * camera in. Widens the base FOV by the desired/pulled distance ratio; a no-op
- * (returns the base) whenever the camera sits at or beyond its desired distance.
-  * @internal
-  */
+/** @internal */
 export function compensatedFov(baseFovDegrees: number, desiredDistance: number, pulledDistance: number): number {
   if (pulledDistance <= 0 || desiredDistance <= 0 || pulledDistance >= desiredDistance) {
     return baseFovDegrees;
@@ -266,12 +241,7 @@ export function seedOrbitFollowState(input: {
   };
 }
 
-/**
- * Pure orbit follow step — smooth target tracking, camera carries target delta
- * (OrbitControls alone keeps camera fixed when only target moves), optional
- * distance lock. Call each frame before OrbitControls.update() in the shell.
-  * @internal
-  */
+/** @internal */
 export function orbitFollowStep(input: {
   state: OrbitFollowRuntimeState;
   desiredTarget: Xyz;
@@ -325,7 +295,8 @@ export function orbitFollowStep(input: {
   return { target, camera, lockedDistance, distance: distanceBetween(camera, target) };
 }
 
-/** @deprecated Use orbitFollowStep — kept for older call sites.
+/**
+ * @deprecated Use orbitFollowStep — kept for older call sites.
  * @internal
  */
 export function cameraFollowStep(input: {

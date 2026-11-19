@@ -13,7 +13,6 @@ function releaseSurface(node: RuneNode): void {
   removeNativeSurface(node);
 }
 
-/** One JSX tree can contain native surfaces and ordinary page tooling, sharing all providers. */
 export const pageHost: Host<PageNode> = {
   createElement(tag, parent) {
     if (tag.startsWith("rune-")) return native.createElement(tag, parent instanceof RuneNode ? parent : null);

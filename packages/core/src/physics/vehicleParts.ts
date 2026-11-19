@@ -1,7 +1,6 @@
 import { DEFAULT_GRIP_CURVE, gripCurvePeak, type GripCurve } from "./gripCurve";
 import type { VehicleSpec } from "./vehicleSpec";
 
-/** A tunable vehicle number a part can move; each names a numeric {@link VehicleSpec} field. */
 export type VehicleStat =
   | "topSpeed"
   | "accel"
@@ -29,7 +28,6 @@ export interface VehiclePart {
   id: string;
   slot: string;
   effects?: Partial<Record<VehicleStat, VehiclePartEffect>>;
-  /** Tire compound: replaces the base grip curve when installed. */
   gripCurve?: GripCurve;
 }
 
@@ -48,11 +46,9 @@ export interface VehicleFeel {
   peakGrip: number;
   /** Slip where that peak sits — the far end of a flat plateau, so it reads as the breakaway slip. */
   peakSlip: number;
-  /** Share of the peak left once the tire is fully sliding (the curve at slip 1 over its peak). */
   slideGrip: number;
 }
 
-/** Read the handling numbers out of any spec — base or parts-composed. */
 export function feelOf(spec: VehicleSpec): VehicleFeel {
   const curve = gripCurvePeak(spec.tires.gripCurve ?? DEFAULT_GRIP_CURVE);
   return {
@@ -67,11 +63,9 @@ export function feelOf(spec: VehicleSpec): VehicleFeel {
   };
 }
 
-/** A composed vehicle: the spec to build the sim from, the feel it produces, and what was installed. */
 export interface VehicleSetup {
   spec: VehicleSpec;
   feel: VehicleFeel;
-  /** Installed part ids, in install order. */
   parts: readonly string[];
 }
 

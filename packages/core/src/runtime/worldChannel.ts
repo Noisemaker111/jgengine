@@ -5,19 +5,16 @@ import { createWorldMirror } from "./worldMirror";
 import { diffSnapshots, type WorldDiff } from "./worldReplication";
 import type { WorldSnapshot } from "./worldSnapshot";
 
-/** Host→client frame: the full baseline a joiner needs, then per-tick diffs. What a transport marshals downstream. */
 export type WorldServerFrame =
   | { t: "baseline"; revision: number; snapshot: WorldSnapshot }
   | { t: "diff"; diff: WorldDiff };
 
-/** Client→host frame: a player's session verbs. What a transport marshals upstream. */
 export type WorldClientFrame =
   | { t: "join"; isNew: boolean }
   | { t: "leave" }
   | { t: "command"; name: string; input: unknown }
   | { t: "input"; frame: InputFrame };
 
-/** One client's link on the host side: routes its upstream frames into the shared session, pushes it sync frames. */
 export interface WorldHostConnection {
   receive(frame: WorldClientFrame): void;
   push(): void;
@@ -36,9 +33,7 @@ export interface WorldHost {
   session(): HostedWorldSession;
 }
 
-/** Build a {@link WorldHost} fanning one {@link HostedWorldSession} out to many cursor-tracked connections.
- * @internal
- */
+/** @internal */
 export function createWorldHost(session: HostedWorldSession): WorldHost {
   const connections = new Set<WorldHostConnection>();
   const connectionsByUser = new Map<string, Set<WorldHostConnection>>();
@@ -125,7 +120,6 @@ export function createWorldHost(session: HostedWorldSession): WorldHost {
   };
 }
 
-/** The client end of a {@link WorldHost} connection: applies server frames to a local `ctx`, sends session verbs upstream. */
 export interface WorldClientLink {
   receive(frame: WorldServerFrame): void;
   join(isNew: boolean): void;
@@ -135,9 +129,7 @@ export interface WorldClientLink {
   revision(): number;
 }
 
-/** Build a {@link WorldClientLink} — the client end that mirrors host frames into `ctx` and sends session verbs upstream.
- * @internal
- */
+/** @internal */
 export function createWorldClientLink(
   ctx: Pick<GameContext, "hydrate">,
   send: (frame: WorldClientFrame) => void,

@@ -14,26 +14,19 @@ import { WIRE_DESYNC, createWireEncoder, decodeWireValue, encodeWireValue, type 
 
 export const WS_PROTOCOL_VERSION = 1;
 
-/** One transport frame: JSON text, or a binary frame from {@link encodeWsFrame}. */
 export type WsFrame = string | Uint8Array<ArrayBuffer>;
 
-/** Wire codec a client asks for in `hello`: `binary` (default for {@link createWsBackend}) or `json` for debugging. */
 export type WsCodecName = "json" | "binary";
 
-/** Max length of a `runCommand` command name, in UTF-16 code units. */
 export const MAX_COMMAND_LENGTH = 4_096;
-/** Max length of a `pushFeed` action name, in UTF-16 code units. */
 export const MAX_FEED_ACTION_LENGTH = 256;
 /** Max serialized size of a `pushFeed` entry payload, in bytes. */
 export const MAX_FEED_ENTRY_BYTES = 65_536;
-/** Max number of keys in a pose `appearance` tag map. */
 export const MAX_APPEARANCE_ENTRIES = 32;
-/** Max length of a single `appearance` tag string value, in UTF-16 code units. */
 export const MAX_APPEARANCE_VALUE_LENGTH = 256;
 
 export type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice";
 
-/** Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only. */
 export type WsAppearance = Record<string, string | number | boolean>;
 
 export type WsPose = PlayerPose & { appearance?: WsAppearance | undefined };
@@ -65,7 +58,6 @@ export type WsClientMessage =
       attributes?: SessionAttributes | undefined;
       code?: string | undefined;
       role?: "player" | "spectator" | undefined;
-      /** Client session holding this join; see `GameRuntimeTransport.joinServer`. */
       sessionId?: string | undefined;
     }
   | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string; role?: "player" | "spectator" | undefined }
@@ -105,12 +97,7 @@ export function encodeWsMessage(message: WsClientMessage | WsServerMessage): str
   return JSON.stringify(message);
 }
 
-/**
- * Encode a message as JSON text, or as a binary frame when `encoder` is given. A server passes the
- * encoder it keeps for that connection so world frames go out as deltas; a client's encoder-less
- * binary frames are stateless.
- * @internal
- */
+/** @internal */
 export function encodeWsFrame(
   message: WsClientMessage | WsServerMessage,
   codec: WsCodecName,
@@ -120,7 +107,7 @@ export function encodeWsFrame(
   return encoder === undefined ? encodeWireValue(message) : encoder.encode(message);
 }
 
-/** A fresh stateful encoder for one connection's outgoing binary frames. @internal */
+/** @internal */
 export const createWsWireEncoder = createWireEncoder;
 
 function isOptionalSessionId(value: unknown): boolean {

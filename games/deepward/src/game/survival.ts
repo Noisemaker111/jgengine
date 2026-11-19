@@ -11,13 +11,10 @@ export const BODY: readonly DecayMeterConfig[] = [
   { id: "food", max: 100, rate: 100 / 600, thresholds: [{ id: "hungry", label: "Hungry", at: 30, when: "below", severity: "warning" }, { id: "starving", label: "Starving", at: 1, when: "below", severity: "critical" }] },
   { id: "water", max: 100, rate: 100 / 420, thresholds: [{ id: "thirsty", label: "Thirsty", at: 30, when: "below", severity: "warning" }, { id: "parched", label: "Parched", at: 1, when: "below", severity: "critical" }] },
 ];
-/** What one ration or one flask puts back. */
 export const MEAL = { food: 45, water: 50 } as const;
-/** Marrow's galley feeds you below this, so walking in hungry is enough. */
 export const GALLEY_FEEDS_BELOW = 70;
 /** Suit damage a second for each empty meter during a dive. */
 export const STARVE_DAMAGE = 1.5;
-/** Time at home drains the body at this fraction of the dive rate. */
 export const HOME_DRAIN = 0.35;
 
 export function createBody(saved?: NeedSnapshot): NeedSet {

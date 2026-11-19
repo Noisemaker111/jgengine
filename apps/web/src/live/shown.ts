@@ -8,7 +8,6 @@ export interface ShownGate {
   setTabHidden(hidden: boolean): void;
 }
 
-/** The rule itself, without the DOM: `onChange` runs when `shown()` flips. */
 export function createShownGate(onChange: (shown: boolean) => void, tabHidden = false): ShownGate {
   let onScreen = true;
   let hidden = tabHidden;
@@ -32,7 +31,6 @@ export function createShownGate(onChange: (shown: boolean) => void, tabHidden = 
   };
 }
 
-/** Tracks `element` with an IntersectionObserver and the tab's visibility. */
 export function watchShown(element: Element, onChange: (shown: boolean) => void): { shown(): boolean; dispose(): void } {
   const gate = createShownGate(onChange, document.hidden);
   const onVisibility = () => gate.setTabHidden(document.hidden);

@@ -1,7 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** Noon on the south beach: the jungle wall from the sand, the sea behind, then first person under the canopy. */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

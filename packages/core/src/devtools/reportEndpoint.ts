@@ -15,18 +15,15 @@ export const REPORT_ENDPOINT_PATH = "/__jgengine/report";
  */
 export const DEV_REPORT_COOKIE = "jg_report_route";
 
-/** Whether `cookie` (a `document.cookie` string) carries {@link DEV_REPORT_COOKIE}. */
 export function servedByDevServer(cookie: string): boolean {
   return cookie.split(";").some((part) => part.trim() === `${DEV_REPORT_COOKIE}=1`);
 }
 
-/** Body the page POSTs: the game it measured and the record itself. */
 export interface ReportPushBody {
   gameId: string;
   report: PerfReport;
 }
 
-/** Body sent when there is nothing to return yet. */
 export interface ReportRouteError {
   error: string;
 }

@@ -2,25 +2,18 @@ import { clamp } from "../math/scalar";
 import { createPairKeyCodec } from "../relation/keyedValues";
 import { crossThresholds, type ThresholdBoundary } from "../threshold/thresholds";
 
-/** One labelled bond level on the opinion scale. */
 export interface RelationshipMilestone {
   readonly id: string;
   readonly label: string;
-  /** Opinion at which the pair reaches this level. */
   readonly at: number;
-  /** Familiarity the pair also needs; a bond wants time shared, not one good afternoon. */
   readonly requiresFamiliarity?: number;
 }
 
-/** How one pair stands: how much time they have shared, and what they think of each other. */
 export interface Relationship {
-  /** 0 (strangers) . 1 (they know each other well). */
   readonly familiarity: number;
-  /** The game's opinion scale, default -100 (rivals) . 100 (inseparable). */
   readonly opinion: number;
 }
 
-/** Tunables a game owns, every one reachable through {@link RelationshipBook.retune}. */
 export interface RelationshipPolicy {
   readonly opinionMin?: number;
   readonly opinionMax?: number;
@@ -28,23 +21,19 @@ export interface RelationshipPolicy {
   readonly milestones?: readonly RelationshipMilestone[];
 }
 
-/** Opinion and familiarity one interaction adds; a game passes its own for a hug, a row or a shift. */
 export interface SocialContact {
   readonly familiarity?: number;
   readonly opinion?: number;
 }
 
-/** What one social action did to a pair. */
 export interface SocialOutcome {
   readonly a: string;
   readonly b: string;
   readonly before: Relationship;
   readonly after: Relationship;
-  /** Milestones newly crossed upward, lowest first - what a notice feed or a journal line reads. */
   readonly crossed: readonly RelationshipMilestone[];
 }
 
-/** Serializable relationship state: every known pair plus the dials in play. */
 export interface RelationshipBookSnapshot {
   pairs: Record<string, Relationship>;
   policy: RelationshipPolicy;
@@ -53,15 +42,7 @@ export interface RelationshipBookSnapshot {
 /** What a plain social action adds: a shared moment nudges both dials, never maxes either. */
 export const DEFAULT_SOCIAL_CONTACT: Required<SocialContact> = { familiarity: 0.08, opinion: 4 };
 
-/**
- * Everyone's view of everyone else: familiarity and opinion per pair, changed by social actions,
- * with the pair levels that make a friendship a preference and a bond a refusal to split.
- *
- * One book serves a whole world (a park, a household, a squad). Pairs are undirected, so
- * `opinion(a, b) === opinion(b, a)` and one interaction is enough for both sides.
- */
 export interface RelationshipBook {
-  /** How a pair stands; strangers read as `familiarity 0, opinion 0`. */
   get(a: string, b: string): Relationship;
   familiarity(a: string, b: string): number;
   opinion(a: string, b: string): number;
@@ -71,16 +52,11 @@ export interface RelationshipBook {
    * ignored, so a wide query that includes the actor cannot self-bond.
    */
   socialise(a: string, b: string, contact?: SocialContact): SocialOutcome;
-  /** The highest milestone a pair has reached, or `null` for strangers. */
   milestone(a: string, b: string): RelationshipMilestone | null;
-  /** Id of the highest milestone reached, or `null`. */
   label(a: string, b: string): string | null;
   friends(a: string, b: string): boolean;
-  /** A bonded pair. */
   bonded(a: string, b: string): boolean;
-  /** The strongest bonded partner of `a`, or `null`. A tie keeps the first pair recorded. */
   bondedWith(a: string): string | null;
-  /** Friends or closer - the pair prefers each other's company when both are free. */
   prefersCompanyOf(a: string, b: string): boolean;
   /** WHY: the rule that keeps a couple from being posted to opposite shifts is an opinion threshold, not a flag. */
   refusesToSplit(a: string, b: string): boolean;

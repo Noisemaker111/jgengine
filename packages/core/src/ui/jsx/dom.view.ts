@@ -1,8 +1,3 @@
-/**
- * The DOM-facing types of engine UI: what a handler receives, what each host tag
- * accepts, and the `JSX` namespace the compiler reads.
- */
-
 import type { ComponentClass, FunctionComponent, UiElement, UiNode } from "./element";
 import type { CSSProperties, Key, Ref } from "./types";
 
@@ -15,7 +10,6 @@ type Synthetic<T, E, Target = EventTarget> = Omit<E, "currentTarget" | "target" 
   isPropagationStopped(): boolean;
 };
 
-/** An event as a handler sees it: the DOM event, with `currentTarget` typed as the element the handler is on. */
 export type SyntheticEvent<T = Element, E = Event> = Synthetic<T, E>;
 export type UIEvent<T = Element, E = globalThis.UIEvent> = Synthetic<T, E>;
 export type MouseEvent<T = Element, E = globalThis.MouseEvent> = Synthetic<T, E> & { readonly relatedTarget: EventTarget | null };
@@ -31,13 +25,11 @@ export type TransitionEvent<T = Element> = Synthetic<T, globalThis.TransitionEve
 export type InputEvent<T = Element> = Synthetic<T, globalThis.InputEvent>;
 export type FormEvent<T = Element> = Synthetic<T, Event>;
 export type InvalidEvent<T = Element> = Synthetic<T, Event, EventTarget & T>;
-/** `target` is the field itself, so `event.target.value` reads without a cast. */
 export type ChangeEvent<T = Element> = Synthetic<T, Event, EventTarget & T>;
 export type FocusEvent<Target = Element, RelatedTarget = Element> = Synthetic<Target, globalThis.FocusEvent, EventTarget & Target> & {
   readonly relatedTarget: (EventTarget & RelatedTarget) | null;
 };
 
-/** A handler property takes a function of a wider or a narrower event, as handlers always have. */
 export type EventHandler<E> = { bivarianceHack(event: E): void }["bivarianceHack"];
 export type ReactEventHandler<T = Element> = EventHandler<SyntheticEvent<T>>;
 export type MouseEventHandler<T = Element> = EventHandler<MouseEvent<T>>;
@@ -92,7 +84,6 @@ export interface AriaAttributes {
   [aria: `aria-${string}`]: string | number | boolean | undefined;
 }
 
-/** The attributes every HTML tag takes. */
 export interface HTMLAttributes<T> extends AriaAttributes, DOMAttributes<T> {
   [data: `data-${string}`]: unknown;
   defaultChecked?: boolean | undefined;
@@ -306,7 +297,6 @@ export interface TdHTMLAttributes<T> extends HTMLAttributes<T> {
 
 export type ThHTMLAttributes<T> = TdHTMLAttributes<T>;
 
-/** Every attribute of every tag, for the tags with no narrower set here. */
 export interface AllHTMLAttributes<T>
   extends Omit<AnchorHTMLAttributes<T>, "type" | "media">,
     Omit<InputHTMLAttributes<T>, "type" | "size" | "value" | "height" | "width">,
@@ -351,7 +341,6 @@ export interface AllHTMLAttributes<T>
   wrap?: string | undefined;
 }
 
-/** SVG presentation and geometry attributes; any other one is accepted as a string or number. */
 export interface SVGAttributes<T> extends AriaAttributes, DOMAttributes<T> {
   [attribute: string]: unknown;
   className?: string | undefined;
@@ -392,7 +381,6 @@ interface NarrowTags {
   video: Tag<VideoHTMLAttributes<HTMLVideoElement>, HTMLVideoElement>;
 }
 
-/** Tags whose attributes go beyond the common set but have no interface of their own above. */
 type WideTagNames =
   | "area" | "base" | "blockquote" | "col" | "colgroup" | "data" | "del" | "embed" | "fieldset" | "html" | "ins" | "li" | "link" | "map" | "meta"
   | "meter" | "object" | "ol" | "optgroup" | "output" | "progress" | "q" | "script" | "slot" | "source" | "style" | "table" | "time" | "track";
@@ -403,7 +391,6 @@ type PlainTags = {
 };
 type SvgTags = { [K in Exclude<keyof SVGElementTagNameMap, keyof HTMLElementTagNameMap>]: SVGProps<SVGElementTagNameMap[K]> };
 
-/** What the compiler checks JSX against. */
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JSX {
   export type Element = UiElement;
@@ -425,7 +412,6 @@ export namespace JSX {
   }
 }
 
-/** Props a host tag or a component takes: `ComponentProps<"div">`, `ComponentProps<typeof Panel>`. */
 export type ComponentProps<T> = T extends keyof JSX.IntrinsicElements
   ? JSX.IntrinsicElements[T]
   : T extends (props: infer P) => unknown

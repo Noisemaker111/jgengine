@@ -10,10 +10,8 @@ import { useRef } from "@jgengine/core/ui/jsx";
 
 import { artifactHere, cavesOf, type IslandCave } from "../caves";
 
-/** Hard caves are lit a hotter colour, the rest by pale crystal. */
 const GLOW = { soft: "#7fd6ff", hard: "#ff7a3c" };
 
-/** The Island's caves: the rock, glowing crystals down the tunnel and the artifact on its pedestal in each chamber. */
 export function cavesDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
   const ground = ctx.world.groundHeightAt;
   const caves = cavesOf(ctx);

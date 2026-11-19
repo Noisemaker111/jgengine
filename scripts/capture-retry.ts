@@ -51,9 +51,7 @@ export function isStaleCaptureFailure(message: string): boolean {
 export interface CaptureRetryDecision {
   /** 1-based attempt that just failed. */
   attempt: number;
-  /** Total attempts allowed (>= 1). */
   maxAttempts: number;
-  /** The failure message thrown by the readiness wait. */
   message: string;
 }
 
@@ -78,33 +76,27 @@ export function retrySettleMs(attempt: number, baseMs = 1_500): number {
   return clampedBase * clampedAttempt;
 }
 
-/** CPU time across every core at one moment; two of them say how busy the PC was in between. */
 export interface CpuSample {
   idle: number;
   total: number;
 }
 
-/** Share of the PC's CPU in use between two samples, 0 to 100. */
 export function cpuBusyPercent(from: CpuSample, to: CpuSample): number {
   const total = to.total - from.total;
   if (!(total > 0)) return 0;
   return Math.round(Math.min(100, Math.max(0, (1 - (to.idle - from.idle) / total) * 100)));
 }
 
-/** A readiness wait on a PC this busy gets one more window before it fails. */
 export const BUSY_PC_PERCENT = 80;
 
-/** What the page showed when its readiness wait ran out. */
 export interface ReadinessTimeout {
   waitedMs: number;
   /** `data-jg-capture` when the wait ended; null when the page never set it. */
   status: string | null;
   /** The page's address; a `chrome-error://` page means the document itself never loaded. */
   href: string | null;
-  /** The URL the capture opened. */
   url: string;
   cpuBusy: number;
-  /** What the page's gate was still waiting on (`data-jg-capture-stage`): the canvas, the run, or models still streaming. */
   stage?: string | null;
 }
 

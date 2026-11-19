@@ -28,29 +28,22 @@ import type { CharacterControllerConfig } from "../movement/characterController"
 export interface PersistConfig {
   /** `"autosave"` (default) writes on a trailing timer while the world changes — at most once per `autosaveMs`, so a never-idle world (AI, physics, day/night) still persists; `"manual"` writes only on `ctx.game.save.checkpoint()` (save points / quest triggers). */
   mode?: RuntimeSaveMode;
-  /** Where the whole-world save goes: `"local"` (default) is `localStorage`, `"memory"` keeps saves in-session only (tests, "no persistence" mode), or any {@link SaveBackend} (e.g. `createConvexSaveBackend` for cloud saves). */
   storage?: "local" | "memory" | SaveBackend;
-  /** Save-format version. Supply `migrate` for incompatible older shapes; without it, mismatched versions retain compatible load behavior. */
   version?: number;
-  /** Convert a mismatched version (or raw payload, version 0) before world restoration. Throw to reject without hydrating or changing the stored save. Current-version payloads bypass this hook. */
   migrate?: RuntimeSaveOptions["migrate"] | undefined;
   /** Autosave debounce in ms (autosave mode). Default 3000. */
   autosaveMs?: number;
 }
 
-/** World gravity and jump tuning, plus the optional rigid-body backend and character capsule. */
 export interface PhysicsConfig {
   gravity?: number | undefined;
   jumpVelocity?: number | undefined;
   /** Physics solver used by the shell movement controller and the context's physics stage. */
   backend?: PhysicsBackend;
-  /** Capsule dimensions for players using the configured physics backend. */
   controller?: CharacterControllerConfig;
-  /** Opt placed scene objects into projectile raycasts as blocking cover AABBs. Default false — enabling changes where shots land. */
   projectileObstacles?: boolean;
 }
 
-/** Shape of one named inventory a game declares — slot count, accepted item types, HUD binding. */
 export interface InventoryDeclaration {
   slots: number;
   hud?: string;
@@ -60,24 +53,19 @@ export interface InventoryDeclaration {
   tier?: StorageTier;
 }
 
-/** Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options. */
 export type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown };
 
-/** Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks. */
 export interface LoopPlayer {
   userId: string;
   isNew: boolean;
 }
 
-/** Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave. */
 export interface GameLoop<TContext = unknown> {
   onInit?(ctx: TContext): void;
-  /** Once per join. `player` identifies the joiner in a hosted world; single-player callers may omit it. */
   onNewPlayer?(ctx: TContext, player?: LoopPlayer): void;
   onTick?(ctx: TContext, dt: number): void;
   /** Once per leave in a hosted world (never fired single-player). Despawn the player's entities / release their slots here. */
   onPlayerLeave?(ctx: TContext, player: LoopPlayer): void;
-  /** Scenario/run reset — clear run-scoped state. Composed system `reset` hooks run here too. */
   onReset?(ctx: TContext): void;
   /** World teardown (mode switch, unmount). Composed system `dispose` hooks run here too. */
   onDispose?(ctx: TContext): void;
@@ -129,31 +117,19 @@ export function createDisposer(): Disposer {
  * leaderboard/roster/turn plumbing it never asked for.
  */
 export interface GameFeatures {
-  /** Quest/mission journal (`ctx.game.quest`) — quest-driven games. */
   quest?: boolean;
-  /** Shop/vendor barter (`ctx.game.trade`) — games with buy/sell economies. */
   trade?: boolean;
-  /** Earned unlockable content (`ctx.game.unlocks`) — progression-gated games. */
   unlocks?: boolean;
-  /** Cosmetic skins/customization (`ctx.player.cosmetics`) — appearance-customization games. */
   cosmetics?: boolean;
-  /** Owned/captured entity roster (`ctx.game.roster`) — pet/monster collection games. */
   roster?: boolean;
-  /** Card pile zones (`ctx.game.cards`) — deckbuilders, card games. */
   cards?: boolean;
-  /** Turn/phase loop (`ctx.game.turn`) — turn-based games. */
   turn?: boolean;
-  /** Talkable-NPC dialogue bridge (`ctx.game.dialogue`) — auto-registers `dialogue.open`/`dialogue.close`; dialogue-driven games. */
   dialogue?: boolean;
   /** Lap/checkpoint race state (`ctx.game.race`) — racers. */
   race?: boolean;
-  /** Competitive score tracking (`ctx.game.leaderboard`) — ranked/arcade games. */
   leaderboard?: boolean;
-  /** Friends/party/presence/emotes/world-invites (`ctx.game.social`) — social/MMO games. */
   social?: boolean;
-  /** Channels + messages (`ctx.game.chat`) — implies `social`; multiplayer/social games. */
   chat?: boolean;
-  /** Connected-player set (`ctx.game.players`) — shared-world hosts whose loop ticks every player, not just `ctx.player`. */
   players?: boolean;
 }
 
@@ -169,15 +145,12 @@ export interface GameFeatures {
  * @capability lifecycle declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions
  */
 export interface LifecycleConfig<TState = unknown> {
-  /** The store slot holding this game's run state; `start`/`restart` transform its current value. */
   store: StoreHandle<TState>;
-  /** Pure transition into a live run. `input` is whatever the `start` command was invoked with (e.g. a chosen difficulty/tier). */
   start(state: TState, ctx: GameContext, input?: unknown): TState;
   /** Pure transition back into a fresh live run — same shape as `start` but never re-shows the menu first. */
   restart(state: TState, ctx: GameContext): TState;
   /** Derive the canonical {@link GamePhase} from the run state. The runtime calls this after every loop hook (`onInit`/`onNewPlayer`/`onTick`) as well as after `start`/`restart`, publishing the result only when it changed — so a game never hand-writes a per-tick `setGamePhase` ternary or its own previous-phase diff. */
   phaseOf(state: TState): GamePhase;
-  /** Override the registered command names — default `"start"`/`"restart"` — for games whose input bindings already name them differently. */
   commands?: {
     start?: string;
     restart?: string;
@@ -199,19 +172,15 @@ export interface LifecycleConfig<TState = unknown> {
  */
 export type GameLifecycle<TState = unknown> = LifecycleConfig<TState> | "always-live";
 
-/** Context-aware projectile policy; callbacks are not included in saved shot state. */
 export interface GameProjectileTravelOptions extends Pick<ProjectileTravelDeps, "maxActive" | "maxRetained"> {
   /** Collision-source limit, default 2048; an oversized source throws rather than dropping targets. */
   maxTargets?: number;
-  /** Override the default centerline cover query with a radius-aware collision provider. */
   sweep?: (ctx: GameContext, ...args: Parameters<NonNullable<ProjectileTravelDeps["sweep"]>>) => ReturnType<NonNullable<ProjectileTravelDeps["sweep"]>>;
-  /** Full acceleration override; call ctx.environment.accelerationAt explicitly to compose authored forces. */
   acceleration?: (ctx: GameContext, ...args: Parameters<NonNullable<ProjectileTravelDeps["acceleration"]>>) => ReturnType<NonNullable<ProjectileTravelDeps["acceleration"]>>;
   /** Bounded entity IDs for the default moving-target query; omission uses this world's entities. */
   targets?(ctx: GameContext): readonly string[];
 }
 
-/** Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems. */
 export interface GameDefinition<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
@@ -221,7 +190,6 @@ export interface GameDefinition<
   multiplayer: TMultiplayer;
   /** @deprecated No longer the runtime store — `createGameContext` mints a fresh per-context `EntityStore` so one host can serve many worlds without state bleed (#632). Retained only for API compatibility; read `ctx.scene.entity` instead. */
   scene: EntityStore;
-  /** Opt-in `ctx.game.*` subsystems beyond the always-on base; omitted systems are `undefined` on `ctx.game`. */
   features?: GameFeatures | undefined;
   /**
    * Composable game capabilities — the preferred authoring path for runtime behavior.
@@ -230,13 +198,7 @@ export interface GameDefinition<
    * Classic `loop` hooks still run for incremental migration (systems tick first, then `loop.onTick`).
    */
   systems?: readonly SystemDefinition[];
-  /**
-   * The place this game happens in — preferred shape is `world()` from `@jgengine/core/placement/place`
-   * (ground + per-place laws; dressing lives in the editor's scene document). Omit entirely for
-   * pure UI/rules games that are not a spatial place.
-   */
   world?: WorldFeature;
-  /** Validated authored scene inputs consumed by the environmental authority. */
   authoredDocument?: EditorDocument;
   /** Bounded projectile travel providers receive their live world; the authoritative clock stays engine-owned. */
   projectileTravel?: GameProjectileTravelOptions;
@@ -250,20 +212,15 @@ export interface GameDefinition<
      */
     eligible(ctx: GameContext, selfId: string, candidateId: string): boolean;
   };
-  /** Game-level default physics laws; a place world's own `physics` resolves over this. */
   physics?: PhysicsConfig;
-  /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */
   time?: TimeConfig;
   /** How the simulation is stepped — a fixed `hz` with render interpolation, or `"variable"` (default) once per frame. Exposed as `ctx.sim`. */
   simulation?: SimulationConfig;
-  /** Per-action ring-buffer capacity for `ctx.game.feed`. Default 20. */
   feed?: GameFeedOptions;
   inventories?: Record<string, InventoryDeclaration>;
   input?: ActionCodesMap;
   server?: GameServerConfig;
-  /** Hosted per-player save policy, read only by an authoritative multiplayer host. Solo games leave this unset (nothing persists by default) and use `persist` when they want a save at all. */
   save?: SaveConfig;
-  /** The one save knob for solo games: offline whole-world save. **On by default** — an offline game autosaves the entire world to `localStorage` and binds `ctx.game.save` with no config at all; the game only drives save points and restore (`ctx.game.save.load()` at boot). Pass `false` to opt out entirely, or a config object to tune the mode/cadence/target (`storage: "memory"` for in-session-only, or a `SaveBackend` such as a cloud one). Ignored for multiplayer worlds (the host persists via `save`). */
   persist?: boolean | PersistConfig;
   ui?: unknown;
   /**
@@ -289,7 +246,6 @@ export interface GameDefinition<
   replication?: ReplicationPolicy;
 }
 
-/** Input to {@link defineGameDefinition} — a `GameDefinition` with `scene` derived and `assets` optional. */
 export type GameDefinitionConfig<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
@@ -321,12 +277,6 @@ function withNewGame(loop: GameLoop<GameContext>, config: GameDefinitionConfig<M
   };
 }
 
-/**
- * Host-level constructor for a bare `GameDefinition`: fills in `scene` and default `assets`, validates
- * `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic
- * hooks. Games author through `defineGame` from `@jgengine/shell/defineGame`, which calls this and adds
- * the presentation layer; call this directly only from headless hosts that mount no shell.
- */
 export function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplayer>(
   config: GameDefinitionConfig<TAssetRef, TMultiplayer>,
 ): GameDefinition<TAssetRef, TMultiplayer> {

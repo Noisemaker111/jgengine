@@ -16,23 +16,17 @@
 
 export type JobId = string;
 
-/** Lifecycle phase of a single queued job. Terminal jobs are removed from state. */
 export type JobStatus = "queued" | "active" | "paused";
 
-/** One unit of timed work. Plain serializable data (given serializable `TSpec`/`TReserve`). */
 export interface Job<TSpec, TReserve = undefined> {
-  /** Stable id, unique within the queue for its lifetime. */
   readonly id: JobId;
-  /** Caller-owned description of the work (e.g. `{ unitId }`). */
   readonly spec: TSpec;
-  /** Reserved inputs computed at enqueue time (e.g. resource cost, population). */
   readonly reservation: TReserve;
   readonly status: JobStatus;
   /** Seconds of work the job requires. */
   readonly duration: number;
   /** Seconds of work completed so far (0…duration). */
   readonly elapsed: number;
-  /** Higher runs sooner under priority ordering; FIFO within equal priority. */
   readonly priority: number;
   /** Monotonic enqueue index — the FIFO tiebreak. */
   readonly seq: number;
@@ -45,19 +39,16 @@ export interface WorkQueueState<TSpec, TReserve = undefined> {
   readonly seq: number;
 }
 
-/** Comparator over jobs; negative means the first job runs sooner. */
 export type JobOrdering<TSpec, TReserve = undefined> = (
   a: Job<TSpec, TReserve>,
   b: Job<TSpec, TReserve>,
 ) => number;
 
-/** Result of pre-enqueue validation (population caps, prerequisites, affordability). */
 export interface JobValidation {
   readonly ok: boolean;
   readonly reason?: string;
 }
 
-/** Optional per-enqueue overrides. */
 export interface EnqueueOptions {
   /** Higher runs sooner under priority ordering. Defaults to 0. */
   readonly priority?: number;
@@ -74,37 +65,28 @@ export interface WorkQueueConfig<TSpec, TReserve = undefined, TOutput = undefine
   duration: (spec: TSpec) => number;
   /** Max concurrent active jobs (multi-server queue). Defaults to 1. */
   concurrency?: number | undefined;
-  /** Max non-terminal jobs; further enqueues are rejected with `"capacity"`. */
   capacity?: number | undefined;
   /** Selection order for queued jobs. Defaults to {@link priorityOrdering}. */
   ordering?: JobOrdering<TSpec, TReserve>;
-  /** Compute the reservation stored on the job (charge-now is the caller's job). */
   reserve?: (spec: TSpec) => TReserve;
-  /** Validate before enqueue; a non-ok result rejects with its reason. */
   validate?: (spec: TSpec, state: WorkQueueState<TSpec, TReserve>) => JobValidation;
-  /** Map a completed job to its output payload for a completion adapter to route. */
   output?: (job: Job<TSpec, TReserve>) => TOutput;
-  /** Compute a refund on cancellation from the reservation and progress (0…1). */
   refund?: (job: Job<TSpec, TReserve>, progress: number) => TReserve | null;
 }
 
-/** Typed lifecycle event emitted from {@link tick}. */
 export type WorkQueueEvent<TSpec, TReserve = undefined, TOutput = undefined> =
   | { readonly type: "started"; readonly job: Job<TSpec, TReserve> }
   | { readonly type: "completed"; readonly job: Job<TSpec, TReserve>; readonly output: TOutput };
 
-/** Outcome of {@link tick}: advanced state plus the events produced. */
 export interface TickResult<TSpec, TReserve = undefined, TOutput = undefined> {
   readonly state: WorkQueueState<TSpec, TReserve>;
   readonly events: readonly WorkQueueEvent<TSpec, TReserve, TOutput>[];
 }
 
-/** Outcome of {@link enqueue}. On rejection the state is returned unchanged. */
 export type EnqueueResult<TSpec, TReserve = undefined> =
   | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve> }
   | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string };
 
-/** Outcome of {@link cancelJob}, carrying the removed job and its computed refund. */
 export type CancelResult<TSpec, TReserve = undefined> =
   | {
       readonly ok: true;
@@ -114,20 +96,12 @@ export type CancelResult<TSpec, TReserve = undefined> =
     }
   | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string };
 
-/**
- * Pure FIFO ordering by enqueue sequence.
- *
- * @capability work-order-fifo order queued jobs by enqueue sequence
- */
+/** @capability work-order-fifo order queued jobs by enqueue sequence */
 export function fifoOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number {
   return a.seq - b.seq;
 }
 
-/**
- * Priority-first ordering (higher priority sooner), FIFO within equal priority.
- *
- * @capability work-order-priority order queued jobs by priority, then FIFO within equal priority
- */
+/** @capability work-order-priority order queued jobs by priority, then FIFO within equal priority */
 export function priorityOrdering<TSpec, TReserve = undefined>(
   a: Job<TSpec, TReserve>,
   b: Job<TSpec, TReserve>,
@@ -135,29 +109,17 @@ export function priorityOrdering<TSpec, TReserve = undefined>(
   return b.priority - a.priority || a.seq - b.seq;
 }
 
-/**
- * Create an empty timed work queue.
- *
- * @capability work-queue a serializable timed job queue with reservation, cancellation, completion, and output routing
- */
+/** @capability work-queue a serializable timed job queue with reservation, cancellation, completion, and output routing */
 export function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> {
   return { jobs: [], nextId: 1, seq: 0 };
 }
 
-/**
- * Non-terminal job count (queued + active + paused).
- *
- * @capability work-queue-size count non-terminal jobs in a work queue
- */
+/** @capability work-queue-size count non-terminal jobs in a work queue */
 export function queueSize<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): number {
   return state.jobs.length;
 }
 
-/**
- * Look up a job by id, or `null` if absent/terminal.
- *
- * @capability work-job-by-id look up a queued job by id
- */
+/** @capability work-job-by-id look up a queued job by id */
 export function jobById<TSpec, TReserve>(
   state: WorkQueueState<TSpec, TReserve>,
   id: JobId,
@@ -165,11 +127,7 @@ export function jobById<TSpec, TReserve>(
   return state.jobs.find((job) => job.id === id) ?? null;
 }
 
-/**
- * Jobs waiting for a slot, in selection order.
- *
- * @capability work-queued-jobs list jobs waiting for a slot, in selection order
- */
+/** @capability work-queued-jobs list jobs waiting for a slot, in selection order */
 export function queuedJobs<TSpec, TReserve>(
   state: WorkQueueState<TSpec, TReserve>,
   ordering: JobOrdering<TSpec, TReserve> = priorityOrdering,
@@ -177,32 +135,18 @@ export function queuedJobs<TSpec, TReserve>(
   return state.jobs.filter((job) => job.status === "queued").sort(ordering);
 }
 
-/**
- * Jobs currently progressing.
- *
- * @capability work-active-jobs list jobs currently progressing in a work queue
- */
+/** @capability work-active-jobs list jobs currently progressing in a work queue */
 export function activeJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): Job<TSpec, TReserve>[] {
   return state.jobs.filter((job) => job.status === "active");
 }
 
-/**
- * Fractional progress of a job (0…1); a zero-duration job reads as complete.
- *
- * @capability work-job-progress compute a job's fractional progress
- */
+/** @capability work-job-progress compute a job's fractional progress */
 export function jobProgress<TSpec, TReserve>(job: Job<TSpec, TReserve>): number {
   if (job.duration <= 0) return 1;
   return Math.min(1, Math.max(0, job.elapsed / job.duration));
 }
 
-/**
- * Enqueue a new job. Validates capacity and the injected `validate` policy, then
- * computes and stores the reservation. Charging the reservation (now or later) is
- * the caller's responsibility using {@link EnqueueResult.job}'s `reservation`.
- *
- * @capability enqueue-work reserve inputs and add a timed job, honoring capacity and validation policy
- */
+/** @capability enqueue-work reserve inputs and add a timed job, honoring capacity and validation policy */
 export function enqueue<TSpec, TReserve, TOutput>(
   state: WorkQueueState<TSpec, TReserve>,
   config: WorkQueueConfig<TSpec, TReserve, TOutput>,
@@ -234,13 +178,7 @@ export function enqueue<TSpec, TReserve, TOutput>(
   };
 }
 
-/**
- * Cancel a job and compute its refund. Removes the job from the queue and returns
- * a refund payload (full reservation by default, or `config.refund` applied to the
- * job's progress for partial/no refund). Applying the refund is the caller's job.
- *
- * @capability cancel-work remove a job and compute its refund from reservation and progress
- */
+/** @capability cancel-work remove a job and compute its refund from reservation and progress */
 export function cancelJob<TSpec, TReserve, TOutput>(
   state: WorkQueueState<TSpec, TReserve>,
   config: WorkQueueConfig<TSpec, TReserve, TOutput>,
@@ -271,11 +209,7 @@ function setStatus<TSpec, TReserve>(
   return changed ? { ...state, jobs } : state;
 }
 
-/**
- * Pause a queued or active job in place; a paused job keeps its progress and yields its slot.
- *
- * @capability pause-work pause a queued or active job in place, retaining its progress
- */
+/** @capability pause-work pause a queued or active job in place, retaining its progress */
 export function pauseJob<TSpec, TReserve>(
   state: WorkQueueState<TSpec, TReserve>,
   id: JobId,
@@ -284,11 +218,7 @@ export function pauseJob<TSpec, TReserve>(
   return active !== state ? active : setStatus(state, id, "queued", "paused");
 }
 
-/**
- * Resume a paused job; it re-enters the queue and competes for a slot by ordering.
- *
- * @capability resume-work resume a paused job back into the queue's slot competition
- */
+/** @capability resume-work resume a paused job back into the queue's slot competition */
 export function resumeJob<TSpec, TReserve>(
   state: WorkQueueState<TSpec, TReserve>,
   id: JobId,

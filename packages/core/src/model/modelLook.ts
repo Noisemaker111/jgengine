@@ -27,7 +27,6 @@ export function modelForLook(model: ModelConfig, look: string | undefined): Mode
 
 const drawnLooks = new WeakMap<ModelConfig, Map<string, { over: object; drawn: ModelConfig }>>();
 
-/** Every body a model can draw: itself, then each of its looks, for preloading or crowd batching. */
 export function modelLooks(model: ModelConfig): ModelConfig[] {
   return [model, ...Object.keys(model.looks ?? {}).map((look) => modelForLook(model, look))];
 }

@@ -15,7 +15,6 @@ const VIEW: MinimapView = { center: [0, 0], worldRadius: RADIUS, size: MAP_SIZE 
 const FOG_INK = "#3a2a18";
 
 interface Blip { color: string; radius: number; stroke: boolean }
-/** Marks per kind, in the survey's inks: the Vanguard blue, the hero brass, Marauders red, gold seams ochre. */
 const BLIP: Record<string, Blip> = {
   playerHero: { color: BRASS, radius: 3.6, stroke: true },
   playerBuilding: { color: VANGUARD_INK, radius: 4.2, stroke: true },
@@ -28,7 +27,6 @@ const BLIP: Record<string, Blip> = {
 
 export interface FogRun { key: string; x: number; y: number; w: number; h: number; kind: "unseen" | "explored" }
 
-/** One rectangle per row's run of cells in one fog state; cells in sight now are left clear. */
 export function fogRuns(snapshot: FogCellsSnapshot): FogRun[] {
   const cells = snapshot.explored, seen = snapshot.visible.revealed;
   const cellPx = cells.cellSize * (MAP_SIZE / 2 / RADIUS);
@@ -56,7 +54,6 @@ const round = (v: number) => Math.round(v * 10) / 10;
 
 interface Dot { id: string; kind: string }
 
-/** Every blip the map may show now: friendly and sighted enemy units, buildings and surveyed seams. */
 function tacticalDots(ctx: GameContext): Dot[] {
   const dots: Dot[] = [];
   for (const e of ctx.scene.entity.list()) {
@@ -95,10 +92,6 @@ function polledSource<T>(scan: () => T[], key: (items: T[]) => string, everyMs: 
   };
 }
 
-/**
- * The survey map: parchment with the Warcamp's half washed red, ruled squares, fog runs re-read at the
- * fog tick and blips that move at their leaves. Enemy units out of Vanguard sight have no blip.
- */
 export function TacticalMinimap({ ctx }: { ctx: GameContext }) {
   const fog = useMemo(() => polledSource(() => fogRuns(fogSnapshot(session.fog)),
     (runs) => runs.map((r) => `${r.key}${r.kind[0]}${r.w}`).join(","), 200), []);

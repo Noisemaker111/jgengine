@@ -5,7 +5,6 @@
  * throttled so drag-resizing never writes localStorage per pointer move.
  */
 
-/** Left-rail workspace modes. Scene/terrain/assets/materials/ai/multiplayer open real home panels; the rest are staged. */
 export type EditorWorkspace =
   | "scene"
   | "terrain"
@@ -18,19 +17,14 @@ export type EditorWorkspace =
   | "ai"
   | "multiplayer";
 
-/** Bottom dock tool tabs. */
 export type BottomDockTab = "content" | "console" | "profiler" | "animation" | "assistant";
 
-/** Inspector header tabs. */
 export type InspectorTab = "inspector" | "components" | "materials";
 
-/** Left dock content pages (hierarchy plus the existing data panels). */
 export type LeftDockPage = "hierarchy" | "collections" | "prefabs" | "catalogs";
 
-/** Content-browser presentation density. */
 export type BrowserViewMode = "grid" | "list";
 
-/** The persisted + live shell layout state. */
 export interface ShellLayoutState {
   workspace: EditorWorkspace;
   leftOpen: boolean;
@@ -43,7 +37,6 @@ export interface ShellLayoutState {
   bottomTab: BottomDockTab;
   inspectorTab: InspectorTab;
   browserView: BrowserViewMode;
-  /** Inspector section collapse state, keyed by section id; absent = open. */
   collapsed: Record<string, boolean>;
 }
 
@@ -54,7 +47,6 @@ export const LAYOUT_LIMITS = {
   bottomHeight: { min: 160, max: 480 },
 } as const;
 
-/** Default shell layout, matching the reference composition. */
 export const DEFAULT_LAYOUT: ShellLayoutState = {
   workspace: "scene",
   leftOpen: true,
@@ -117,10 +109,8 @@ export interface ShellLayoutStore {
   subscribe(listener: () => void): () => void;
   /** Applies a resize delta to one panel dimension, clamped to {@link LAYOUT_LIMITS}. */
   resize(dimension: "leftWidth" | "rightWidth" | "bottomHeight", delta: number): void;
-  /** Switches workspace; opening a workspace re-opens its home panel. */
   setWorkspace(workspace: EditorWorkspace): void;
   toggleSection(id: string): void;
-  /** Restores {@link DEFAULT_LAYOUT}. */
   reset(): void;
 }
 
@@ -128,10 +118,8 @@ function storageKey(gameId: string): string {
   return `jgeditor:shell:${gameId}`;
 }
 
-/** How long resize/patch churn batches before one localStorage write. */
 export const LAYOUT_PERSIST_DELAY_MS = 400;
 
-/** Creates the shell layout store, seeded from localStorage when available. */
 export function createShellLayoutStore(gameId: string): ShellLayoutStore {
   let state: ShellLayoutState = { ...DEFAULT_LAYOUT };
   try {

@@ -31,13 +31,6 @@ import { lastPickupStore } from "../stores";
 import { zoneLevelAt } from "../world/sites";
 import { isFluxed, type GunHitMods, type HitOutcome } from "./hitModel";
 
-/**
- * Gun perks on the engine's triggered-rules seam. The engine owns matching, predicates, stacking,
- * durations, cooldowns and rate limits; this file only stamps a gun's perk templates as rules the first
- * time the gun fires, raises the five gun events, and applies the effect ids the rules name. Timed
- * buffs (Rampage, Kill Clip, Outlaw) are the engine's live instances, read back on the next hit.
- */
-
 const EFFECTS = [
   ["perk.damage", "Timed damage buff (pct per stack)"],
   ["perk.reload", "Timed reload-speed buff"],
@@ -57,13 +50,11 @@ for (const [id, label] of EFFECTS) registerRuleEffect({ id, label });
 interface PerkRuntime {
   rules: TriggeredRuleEngine;
   stamped: Set<string>;
-  /** The gun whose AoE (launcher round, explosive splash) is landing right now, for kill credit. */
   splashGun: { gun: GunDef; from: string } | null;
   /** The aim of the last trigger pull (dev only), so the capture can stand its husks in the line of fire. */
   lastAim: unknown;
   /** True while a perk's own effect lands, so a perk burst never chains into another perk. */
   applyingPerk: boolean;
-  /** Bodies that died while one pellet was landing; the world may drop a dead body's stats at once. */
   deathsThisHit: Set<string> | null;
   /** Boss legendary rolls ride their own stream, so the normal drop stream never moves. */
   bossRng: () => number;
@@ -137,7 +128,6 @@ function callout(ctx: GameContext, text: string, at?: string | readonly [number,
   }
 }
 
-/** Reset a counter rule so its stacks start again from zero. */
 function resetCounter(ctx: GameContext, firing: RuleFiring): void {
   const rules = perksOf(ctx).rules;
   const rule = rules.rules().find((entry) => entry.id === firing.ruleId);
@@ -146,7 +136,6 @@ function resetCounter(ctx: GameContext, firing: RuleFiring): void {
   rules.add(rule);
 }
 
-/** What an in-flight shot or hit firing asks of the hit; counters that fill also land their refunds. */
 function shapeFrom(ctx: GameContext, gun: GunDef, firings: readonly RuleFiring[], mods: GunHitMods): GunHitMods {
   let damageScale = mods.damageScale ?? 1;
   let forceCrit = mods.forceCrit === true;
@@ -168,7 +157,6 @@ function shapeFrom(ctx: GameContext, gun: GunDef, firings: readonly RuleFiring[]
   return { damageScale, forceCrit };
 }
 
-/** The live timed damage buff on a gun: Rampage stacks, Kill Clip, Skullsplit. 1 with none. */
 export function perkDamageScale(ctx: GameContext, gun: GunDef): number {
   const runtime = perksOf(ctx);
   if (!runtime.stamped.has(gun.id)) return 1;
@@ -183,7 +171,6 @@ export function perkDamageScale(ctx: GameContext, gun: GunDef): number {
   return 1 + pct;
 }
 
-/** The live reload-speed multiplier (Outlaw). 1 with none. */
 export function perkReloadScale(ctx: GameContext, gun: GunDef): number {
   const runtime = perksOf(ctx);
   if (!runtime.stamped.has(gun.id)) return 1;
@@ -196,7 +183,6 @@ export function perkReloadScale(ctx: GameContext, gun: GunDef): number {
   return 1 + pct;
 }
 
-/** Live buff readout for the HUD: label and stacks of each timed perk on a gun. */
 export function activePerkBuffs(ctx: GameContext, gun: GunDef): { label: string; stacks: number; leftMs: number }[] {
   const runtime = perksOf(ctx);
   if (!runtime.stamped.has(gun.id)) return [];
@@ -221,20 +207,17 @@ export function perkShot(ctx: GameContext, gun: GunDef, aim?: unknown): GunHitMo
   return shapeFrom(ctx, gun, dispatch(ctx, gun, "gun.shot", { fullMag }), {});
 }
 
-/** The mods for one pellet: the shot's shaping, live damage buffs, and pre-hit perks (Fluxer, Last Word). */
 export function perkHitMods(ctx: GameContext, gun: GunDef, targetId: string, shot: GunHitMods): GunHitMods {
   const firings = dispatch(ctx, gun, "gun.prehit", { fluxed: isFluxed(ctx, targetId), downed: reservePhase(ctx) === "downed" });
   const shaped = shapeFrom(ctx, gun, firings, shot);
   return { ...shaped, damageScale: (shaped.damageScale ?? 1) * perkDamageScale(ctx, gun) };
 }
 
-/** After a pellet resolved: crit counters, then the kill perks when this pellet dropped the body. */
 export function perkAfterHit(ctx: GameContext, gun: GunDef, from: string, targetId: string, outcome: HitOutcome, killed: boolean): void {
   shapeFrom(ctx, gun, dispatch(ctx, gun, "gun.hit", { crit: outcome.crit }), {});
   if (killed) perkKill(ctx, gun, from, targetId, outcome.crit);
 }
 
-/** A reload started on a gun: Kill Clip's window check. */
 function perkReload(ctx: GameContext, gun: GunDef): void {
   const runtime = perksOf(ctx);
   if (!runtime.stamped.has(gun.id)) return;
@@ -256,7 +239,6 @@ function livingEnemiesNear(ctx: GameContext, at: readonly [number, number, numbe
     .map((entry) => entry.id);
 }
 
-/** A kill credited to a gun: raise `gun.kill` and land every effect the rules fire. */
 export function perkKill(ctx: GameContext, gun: GunDef, from: string, victimId: string, crit: boolean): void {
   const runtime = perksOf(ctx);
   if (runtime.applyingPerk) return;
@@ -350,10 +332,6 @@ export function withGunKills(ctx: GameContext, gun: GunDef, from: string, land: 
   }
 }
 
-/**
- * Run one pellet's damage and report which bodies died during it. A kill is read from the world's own
- * `entity.died`, not from the target's health afterwards, since a dead body can leave the scene at once.
- */
 export function watchDeaths<T>(ctx: GameContext, land: () => T): { value: T; died: ReadonlySet<string> } {
   const runtime = perksOf(ctx);
   const previous = runtime.deathsThisHit;
@@ -370,7 +348,6 @@ function isPlayerKill(ctx: GameContext, event: EntityDiedEvent): boolean {
   return event.reason.kind === "player_kill" && event.reason.killerUserId === ctx.player.userId;
 }
 
-/** A boss's own pool: a 22% roll, on its own stream, for one of its two named legendaries. */
 export function dropBossLegendary(ctx: GameContext, event: EntityDiedEvent, rng: () => number = perksOf(ctx).bossRng): GunDef | null {
   const pool = bossDropFor(event.catalogId);
   if (pool === undefined || rng() >= BOSS_DROP_CHANCE) return null;
@@ -391,10 +368,6 @@ export function dropBossLegendary(ctx: GameContext, event: EntityDiedEvent, rng:
 
 setMagazineHooks({ reloadScale: perkReloadScale, reloadStarted: perkReload });
 
-/**
- * Hook the perk runtime into a session: splash kills earn their gun's kill perks, and bosses roll
- * their dedicated legendaries. Called once from `onInit`.
- */
 export function registerPerks(ctx: GameContext): void {
   ctx.game.events.on("entity.died", (event) => {
     if (event.instanceId === ctx.player.userId || !isPlayerKill(ctx, event)) return;

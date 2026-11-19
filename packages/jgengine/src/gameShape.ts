@@ -1,11 +1,3 @@
-/**
- * Canonical game `src/` shape — single source of truth for doctor
- * and create/template tests.
- *
- * `src/` holds only the skeleton; game-specific modules live under `src/game/`.
- */
-
-/** Top-level src/ files the scaffold ships and the shape docs list as the core skeleton. */
 export const GAME_SKELETON_REQUIRED_FILES = [
   "game.config.ts",
   "index.tsx",
@@ -43,7 +35,6 @@ export const GAME_SKELETON_OPTIONAL_FILES = [
  */
 const EDITOR_MODULE_RE = /^editor[A-Z][A-Za-z0-9]*(\.test)?\.tsx?$/;
 
-/** Top-level directories allowed under src/ (everything game-specific lives under these). */
 export const GAME_SKELETON_DIRS = ["game"] as const;
 
 const ALLOWED_FILES: ReadonlySet<string> = new Set([
@@ -53,7 +44,6 @@ const ALLOWED_FILES: ReadonlySet<string> = new Set([
 
 const ALLOWED_DIRS: ReadonlySet<string> = new Set(GAME_SKELETON_DIRS);
 
-/** Union allowlist for "is this top-level src entry legal?" checks. */
 export function gameSkeletonAllowedFiles(): ReadonlySet<string> {
   return ALLOWED_FILES;
 }
@@ -62,13 +52,11 @@ export function gameSkeletonAllowedDirs(): ReadonlySet<string> {
   return ALLOWED_DIRS;
 }
 
-/** True when a direct child of `src/` is either a skeleton file or an allowed dir. */
 export function isAllowedGameSrcEntry(name: string, isDirectory: boolean): boolean {
   if (isDirectory) return ALLOWED_DIRS.has(name);
   return ALLOWED_FILES.has(name) || EDITOR_MODULE_RE.test(name);
 }
 
-/** Human-readable core skeleton list for doctor/check error copy. */
 export function gameSkeletonRequiredSummary(): string {
   return GAME_SKELETON_REQUIRED_FILES.join(", ");
 }
@@ -82,7 +70,6 @@ export function moduleGlobalName(line: string): string | null {
   return /^(?:export )?let (\w+)/.exec(line)?.[1] ?? null;
 }
 
-/** A game source file the source gates read: a non-test `.ts` / `.tsx` under a game's `src`. */
 export function isGameSourceFile(fileName: string): boolean {
   return /\.tsx?$/.test(fileName) && !/\.test\.tsx?$/.test(fileName);
 }

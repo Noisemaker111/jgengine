@@ -13,7 +13,6 @@ import { fileURLToPath } from "node:url";
 
 export const ENGINE_PACKAGE = "@jgengine/core";
 
-/** The checkout whose source the dev runner serves. */
 export interface ServedEngine {
   package: string;
   version: string;
@@ -26,7 +25,6 @@ export interface ServedEngine {
 
 export interface EngineIdentity {
   served: ServedEngine | null;
-  /** The one line every run prints. */
   line: string;
 }
 
@@ -67,13 +65,11 @@ export function readServedEngine(root: string = repoRoot): ServedEngine | null {
   };
 }
 
-/** `serving engine source 2f3b956a (@jgengine/core 0.38.1, C:\...\jgengine)` — one phrase, both facts. */
 export function describeServedEngine(served: ServedEngine): string {
   const dirty = served.dirty ? " +uncommitted edits" : "";
   return `serving engine source ${served.commit ?? "unknown"}${dirty} (${served.package} ${served.version}, ${served.path})`;
 }
 
-/** The served engine and the line a run prints. */
 export function resolveEngineIdentity(options: { root?: string } = {}): EngineIdentity {
   const root = options.root ?? repoRoot;
   const served = readServedEngine(root);

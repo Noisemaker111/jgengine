@@ -25,7 +25,6 @@ const JSON_LD = {
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
 
-/** The tags every page carries; a page's own `head` replaces the ones it names again. */
 export const ROOT_HEAD: HeadTags = {
   meta: [
     { charSet: "utf-8" },
@@ -57,9 +56,7 @@ export interface PageAssets {
   stylesheets: readonly string[];
   fonts: readonly string[];
   modulePreloads: readonly string[];
-  /** Module scripts run at the end of `<body>`. */
   scripts: readonly string[];
-  /** Production pages only: load the visitor analytics tag on the live host (`src/lib/analytics.ts`). */
   analytics?: boolean;
 }
 
@@ -69,10 +66,8 @@ function HeadTag({ tag }: { tag: Tag }) {
   return <meta {...tag} />;
 }
 
-/** `</script>` inside inline JSON would end the tag early. */
 const inlineJson = (value: unknown): string => JSON.stringify(value).replace(/</g, "\\u003c");
 
-/** The whole HTML document of one page; the body is drawn again on the client by `SiteRoot`. */
 export function Document({ head, assets, children }: { head: HeadTags; assets: PageAssets; children: ReactNode }) {
   return (
     <html lang="en">
@@ -96,7 +91,6 @@ export function Document({ head, assets, children }: { head: HeadTags; assets: P
   );
 }
 
-/** Every page's body: provides the location and flags the page ready for screenshot tooling. */
 export function SiteRoot({ location, children }: { location: SiteLocation; children: ReactNode }) {
   // Screenshot tooling (jgengine-verify) waits for data-jg-capture="ready". Live canvases
   // mark themselves "pending" in their own (earlier-running) effects and flag ready when drawn.

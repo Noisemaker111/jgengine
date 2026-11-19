@@ -4,65 +4,43 @@ import type { InventorySet, InventoryState, InventorySlot } from "../inventory/i
 import type { ItemStack } from "../inventory/storageTier";
 import type { KeyValueStorage } from "../game/keyValueStore";
 
-/** What a carry attempt returns: the new load, or the rule that refused it. */
 export type CarryOutcome =
   | { ok: true; mass: number; remaining: number }
   | { ok: false; reason: "over-capacity" | "no-space" | "invalid-count"; mass: number; remaining: number };
 
-/** Stacks moved between a run and its stash, or lost when the run fails. */
 export interface HaulTransfer {
-  /** Stacks that reached the stash, or were lost, in slot order. */
   stacks: readonly ItemStack[];
-  /** Stacks the stash had no room for; they stay in the run inventory. */
   refused: readonly ItemStack[];
 }
 
-/** Detached run and stash contents, for a save or a debug readout. */
 export interface RunHaulState {
   run: InventoryState;
   stash: InventoryState;
 }
 
-/** What a run haul needs: two inventories, a weight rule and an optional save cell. */
 export interface RunHaulConfig<TId extends string> {
-  /** The keyed inventory set that owns both the run and stash inventories. */
   inventories: InventorySet<TId>;
-  /** Inventory carried during the run; its contents are lost on `fail`. */
   runId: TId;
   /** Inventories that survive a failed run; left out of the carry weight. */
   stashId: TId;
-  /** Per-instance mass in the caller's weight unit; unknown ids weigh 0 only if the caller says so. */
   weightOf: WeightLookup;
-  /** Carrying capacity in the same unit as `weightOf`. */
   capacity: number;
-  /** Where the run's encumbered band and slow floor sit — the game's own tuning. */
   encumbrance: EncumbranceConfig;
-  /** Worn item ids, one unit each; they weigh against capacity. */
   worn?: readonly string[];
-  /** Fraction of worn weight that counts (default `1`). */
   wornFactor?: number;
-  /** Save backend for the stash; `null` keeps it in memory for the session only. */
   storage?: KeyValueStorage | null;
   /** Storage key; defaults to `"jgengine.items.stash"`. */
   key?: string;
 }
 
-/** A run's carried loot and the stash that outlives it. */
 export interface RunHaul {
-  /** Add `count` of `itemId` to the run if the carrier can take its weight and there is slot room. */
   carry(itemId: string, count?: number): CarryOutcome;
-  /** Move everything the stash fits out of the run and save; returns what moved and what did not. */
   bank(): HaulTransfer;
-  /** Discard the run's haul and save the untouched stash; returns the lost stacks. */
   fail(): HaulTransfer;
-  /** Load the stash from storage; false when absent or malformed. */
   load(): boolean;
-  /** Write the stash to storage. */
   save(): void;
   state(): RunHaulState;
-  /** Replace run and stash contents; false without mutation when either is malformed. */
   restore(next: RunHaulState): boolean;
-  /** Carried and stashed mass plus capacity left, for the HUD. */
   mass(): { run: number; stash: number; remaining: number };
 }
 
@@ -78,13 +56,7 @@ function stacksOf(state: InventoryState): ItemStack[] {
   return out;
 }
 
-/**
- * A run's haul beside a persistent stash. Carrying is gated by the shared encumbrance rules;
- * `bank` moves what the stash fits and saves; `fail` throws the run's haul away and leaves the
- * stash as it was. The game decides when a run succeeds or fails and calls one of them.
- *
- * @capability item-run-haul carry loot with a weight gate, bank it into a persistent stash, or lose it when the run fails
- */
+/** @capability item-run-haul carry loot with a weight gate, bank it into a persistent stash, or lose it when the run fails */
 export function createRunHaul<TId extends string>(config: RunHaulConfig<TId>): RunHaul {
   const { inventories, runId, stashId } = config;
   const key = config.key ?? DEFAULT_KEY;

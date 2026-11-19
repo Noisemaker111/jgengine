@@ -15,10 +15,8 @@ export const editorLayers: EditorDocument = seedEditorCatalogs(
 
 export const TERRAIN_SCULPT = editorLayers.terrain;
 
-/** Clearance discs derived from the authored gameplay spots — flattened into the runtime ground. */
 export const CLEARINGS: readonly AvoidZone[] = clearanceZonesFrom(editorLayers);
 
-/** The creep-path polyline (XZ), read from the authored document — the single source for enemy nav. */
 export const PATH_WAYPOINTS_XZ: readonly Vec2[] = (
   editorLayers.paths.find((path) => path.id === "creep-path")?.points ?? []
 ).map((point) => [point.x, point.z] as const);
@@ -31,7 +29,6 @@ export const FLANK_WAYPOINTS_XZ: readonly Vec2[] = (
   editorLayers.paths.find((path) => path.id === "creep-path-flank")?.points ?? []
 ).map((point) => [point.x, point.z] as const);
 
-/** Build-plot centers (XZ), read from the authored plot markers — the single source for tower placement. */
 export const BUILD_PLOT_XZ: readonly { id: string; xz: Vec2 }[] = editorLayers.markers
   .filter((marker) => marker.id.startsWith("plot-"))
   .map((marker) => ({ id: marker.id, xz: editorMarkerXZ(marker) }));

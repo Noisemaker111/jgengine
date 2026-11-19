@@ -16,9 +16,7 @@ export interface KeyedStoreHandle<T> {
   read(ctx: GameContext, id: string): T;
   /** The raw stored value for `id`, or `undefined` when unset — distinguishes "never written" from the initial. */
   peek(ctx: GameContext, id: string): T | undefined;
-  /** Overwrite `id`'s slot; bumps `ctx.version()` and notifies `ctx.subscribe`. */
   write(ctx: GameContext, id: string, value: T): void;
-  /** Read-modify-write `id`'s slot in one step, returning the next value. `mutate` receives the current value (or initial when unset). */
   update(ctx: GameContext, id: string, mutate: (previous: T) => T): T;
   /** Delete `id`'s slot, so the next {@link read} for that id returns the initial again. */
   clear(ctx: GameContext, id: string): void;

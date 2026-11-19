@@ -1,12 +1,9 @@
 // @skill jgengine-gameplay
-/** How one field passes from parents to child. */
 export type InheritRule =
-  /** The whole value from one parent; the higher one with chance higherChance (default 0.5). */
   | { pick: "either"; higherChance?: number }
   /** a*weight + b*(1-weight) (weight default 0.5), plus a uniform random offset in ±spread (default 0). */
   | { pick: "blend"; weight?: number; spread?: number };
 
-/** Rare extra changes after inheritance: `rolls` tries, each with `chance`, adding `amount` to one random field of `fields`. */
 export interface InheritMutation<K extends string> {
   rolls: number;
   chance: number;
@@ -14,16 +11,12 @@ export interface InheritMutation<K extends string> {
   fields: readonly K[];
 }
 
-/** How a child's values come from two parents. */
 export interface InheritOptions<K extends string> {
-  /** Per-field rules; fields without one use defaultRule. */
   rules?: Partial<Record<K, InheritRule>>;
-  /** Default { pick: "either" }. */
   defaultRule?: InheritRule;
   mutation?: InheritMutation<K>;
 }
 
-/** The child's values and the fields that mutated, in roll order. */
 export interface Inherited<K extends string> {
   values: Record<K, number>;
   mutations: K[];
@@ -43,12 +36,7 @@ function oneValue(rule: InheritRule, fromA: number, fromB: number, rng: () => nu
   return rng() < (rule.higherChance ?? EITHER_SHARE) ? higher : lower;
 }
 
-/**
- * A child's values from two parents, field by field: each field picked whole from one parent or blended between
- * them, then a few rare mutation rolls adding to random fields.
- *
- * @capability value-inheritance a child's values from two parents per field, picked or blended, with rare mutations
- */
+/** @capability value-inheritance a child's values from two parents per field, picked or blended, with rare mutations */
 export function inheritValues<K extends string>(
   a: Readonly<Record<K, number>>,
   b: Readonly<Record<K, number>>,

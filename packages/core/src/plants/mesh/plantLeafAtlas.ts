@@ -1,10 +1,8 @@
 // @skill jgengine-world
 import type { LeafShapeParams } from "../species/plantSpecies";
 
-/** Cells of a {@link PlantLeafAtlas}, left to right: one leaf, a leafy shoot, a crown cluster. */
 export const PLANT_LEAF_ATLAS_CELLS = { leaf: 0, shoot: 1, cluster: 2 } as const;
 
-/** Cell count across a {@link PlantLeafAtlas}. */
 export const PLANT_LEAF_ATLAS_CELL_COUNT = 3;
 
 /**
@@ -28,10 +26,6 @@ function hash01(a: number, b: number): number {
   return ((h ^ (h >>> 15)) >>> 0) / 4294967296;
 }
 
-/**
- * Brightness of a leaf at local (u across, v along: 0 base .. 1 tip) for its outline, or -1 outside.
- * The petiole runs below v = 0.
- */
 function leafShade(shape: LeafShapeParams, u: number, v: number): number {
   const petiole = Math.max(0.02, shape.petioleFraction * 0.5);
   if (v < 0) return v > -petiole && Math.abs(u) < 0.018 ? 0.55 : -1;
@@ -105,10 +99,8 @@ interface Stamp {
   y: number;
   /** Direction base → tip, radians from +y. */
   angle: number;
-  /** Length, cell units. */
   length: number;
   brightness: number;
-  /** Fascicle: needles in one bundle (1 for a broad leaf). */
   bundle: number;
 }
 
@@ -162,11 +154,8 @@ function stampsFor(cell: number, shape: LeafShapeParams): Stamp[] {
 }
 
 const SUPERSAMPLE = 2;
-/** Darkening under the edge of a leaf lying over others. */
 const CONTACT_SHADOW = 0.45;
-/** How far below a leaf its contact shadow falls, cell units. */
 const CONTACT_OFFSET = 0.016;
-/** Mean brightness of the leaves in every cell. */
 const CELL_MEAN_BRIGHTNESS = 0.82;
 
 /** Rasterise one leaf (or needle) of a stamp into its cell, handing each covered texel to `write`. */
@@ -271,21 +260,14 @@ export function bakePlantLeafAtlas(shape: LeafShapeParams, cellPx = 128): PlantL
   return { width, height, data };
 }
 
-/**
- * A key that is equal for two leaf shapes exactly when they bake the same atlas.
- * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
- */
+/** @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets */
 export function plantLeafAtlasKey(shape: LeafShapeParams): string {
   return `${shape.kind}/${shape.lobes}/${shape.lobeDepth}/${shape.aspect}/${shape.petioleFraction}`;
 }
 
 const bakedAtlases = new Map<string, PlantLeafAtlas>();
 
-/**
- * The leaf atlas of a shape at the default size, baked once per shape and kept; an atlas a worker
- * baked ({@link keepPlantLeafAtlas}) is used as is.
- * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
- */
+/** @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets */
 export function plantLeafAtlas(shape: LeafShapeParams): PlantLeafAtlas {
   const key = plantLeafAtlasKey(shape);
   const known = bakedAtlases.get(key);

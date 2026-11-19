@@ -82,13 +82,10 @@ export interface LandArgs {
   base: string;
   /** Stage and commit this worktree's changes first, so the lane needs no git command after land. */
   commit: boolean;
-  /** Paths to commit although a `--commit` guard refuses them; repeatable. */
   allow: string[];
-  /** `-m`: the lane's own words for its change note; repeatable. */
   messages: string[];
 }
 
-/** `-m`, `--title`, `--body-file`, `--verify`, `--base beta`, `--commit` and `--allow <path>`; anything else is a typo. */
 export function parseArgs(argv: readonly string[]): LandArgs {
   const args: LandArgs = { base: "beta", commit: false, allow: [], messages: [] };
   for (let i = 0; i < argv.length; i += 1) {
@@ -134,7 +131,6 @@ export interface FragmentFile {
   mtimeMs: number;
 }
 
-/** Every `changes/` fragment in this checkout, including other lanes' notes that share the directory. */
 export function fragmentFiles(dir = join(root, "changes")): FragmentFile[] {
   let names: string[];
   try {
@@ -148,11 +144,6 @@ export function fragmentFiles(dir = join(root, "changes")): FragmentFile[] {
   });
 }
 
-/**
- * Split the fragments on disk into the ones this branch's own diff adds and the strangers'. A
- * fragment is named after nothing and shared through `changes/`, so another lane's note sits in the
- * same directory; the diff is the only thing that says which notes describe this PR.
- */
 export function ownFragments(
   files: readonly FragmentFile[],
   added: readonly string[],
@@ -182,7 +173,6 @@ export function commitsBody(messages: readonly string[]): string {
   return ["Changed on this branch:", ...bullets].join("\n");
 }
 
-/** Paths this branch adds or changes against `origin/<base>`, as git reports them. */
 export function diffPaths(base: string, git: Git = (args) => run("git", args)): string[] {
   const result = git(["diff", "--name-only", `origin/${base}...HEAD`]);
   return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
@@ -209,7 +199,6 @@ export function noteLines(messages: readonly string[]): string[] {
 /** A record separator between whole messages; git writes `%x1e` as the byte, and a message never holds one. */
 const MESSAGE_END = "\u001e";
 
-/** This branch's commit messages against `origin/<base>`, subject and body, newest first. */
 export function branchCommits(base: string, git: Git = (args) => run("git", args)): string[] {
   const result = git(["log", "--format=%B%x1e", `origin/${base}..HEAD`]);
   if (result.status !== 0) return [];
@@ -234,9 +223,7 @@ export function chooseBody(sources: {
 
 export interface PrBody {
   text: string;
-  /** True when the text came from `--body-file`, so land may write it over an open PR's body. */
   explicit: boolean;
-  /** The "Bends" section read from the diff (`scripts/bends.ts`), "" for none; a reused PR's body gets it too. */
   bends?: string;
 }
 
@@ -252,9 +239,7 @@ export function landBody(options: {
   summary: string;
   read?: (path: string) => string;
   files?: () => readonly FragmentFile[];
-  /** Paths this branch's diff against origin/<base> adds; a fragment not among them is not this PR's. */
   added?: () => readonly string[];
-  /** This branch's commit messages, whole. */
   commits?: () => readonly string[];
   log?: (line: string) => void;
 }): PrBody {
@@ -283,7 +268,6 @@ export function landBody(options: {
   return { text: summary.trim(), explicit: false };
 }
 
-/** The commit subject a fragment gives: its first bullet, as one line. */
 export function fragmentSubject(text: string): string {
   for (const line of text.split("\n")) {
     const trimmed = line.trim();
@@ -295,7 +279,6 @@ export function fragmentSubject(text: string): string {
   return "";
 }
 
-/** The fragment's bullets without its `###` headings, as a commit body. */
 export function fragmentBody(text: string): string {
   return text
     .split("\n")
@@ -305,7 +288,6 @@ export function fragmentBody(text: string): string {
     .trim();
 }
 
-/** The generated API surfaces (`.claude/skills/<skill>/api.md`) a diff changed. */
 const API_SURFACE = /^\.claude\/skills\/[^/]+\/api\.md$/;
 
 /**
@@ -336,7 +318,6 @@ export function apiChangesIn(
 /** What `--commit` did, so the landing can print it and a test can read it. */
 export interface LaneCommitOutcome {
   kind: "committed" | "clean" | "failed";
-  /** The fragment the message and the PR body come from. */
   fragment?: string;
   subject?: string;
   /** True when this run wrote the fragment because the branch's diff had none. */
@@ -347,7 +328,6 @@ export interface LaneCommitOutcome {
   refused?: CommitGuard[];
 }
 
-/** One staged path `--commit` will not take, and the rule that stopped it. */
 export interface CommitGuard {
   path: string;
   why: string;
@@ -407,13 +387,9 @@ export interface CommitOptions {
   base: string;
   branch: string;
   git: Git;
-  /** The checkout the git runs in; the repo root by default. */
   checkout?: string;
-  /** Paths the author wants committed although a guard refuses them. */
   allow?: readonly string[];
-  /** `-m` messages: added to the note the branch already has, or the note is written from them. */
   messages?: readonly string[];
-  /** Fragments in this checkout, `changes/` by default. */
   files?: () => readonly FragmentFile[];
   read?: (path: string) => string;
   write?: (path: string, text: string) => void;
@@ -546,7 +522,6 @@ function lines(result: Run): string[] {
   return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
 }
 
-/** A branch is landable when it is not the base and has nothing uncommitted. */
 export function landRefusal(branch: string, dirty: string, base: string): string | null {
   if (branch === base) return `refusing to land ${branch}: land a task branch into ${base}, never ${branch} itself.`;
   if (dirty.trim().length > 0) return "refusing to land a dirty tree: pass --commit, or commit or stash first.";
@@ -561,7 +536,6 @@ export function refusalFor(args: LandArgs, branch: string, status: string): stri
   return landRefusal(branch, args.commit ? "" : status, args.base);
 }
 
-/** `42s`, `2m30s`, `1h05m`: how long a landing, or a wait, took. */
 export function duration(ms: number): string {
   if (ms <= 0) return "0s";
   if (ms < 1000) return "<1s";
@@ -576,7 +550,6 @@ export function duration(ms: number): string {
 
 /** One queue behind another landing's lock, kept so a landing can report what it actually lost. */
 export interface LockWait {
-  /** The branch of the landing this one queued behind. */
   holder: string;
   waitedMs: number;
 }
@@ -610,9 +583,7 @@ export interface LandLock {
   startedAt: number;
 }
 
-/** A lock nobody refreshed for this long is broken even if its pid still answers. */
 export const LOCK_STALE_MS = 30 * 60_000;
-/** How often a waiting landing looks again once it has been queueing a while. */
 export const LOCK_POLL_MS = 500;
 /** The first seconds of a wait poll this fast, so a short hold costs a short wait, not a whole poll. */
 export const LOCK_POLL_FAST_MS = 50;
@@ -780,7 +751,6 @@ export function landLocked<T>(options: LockOptions, body: () => T, waits?: LockW
   }
 }
 
-/** The git directory every worktree of this repo shares, or the checkout's own when git says nothing. */
 export function gitCommonDir(git: Git): string {
   const common = git(["rev-parse", "--path-format=absolute", "--git-common-dir"]);
   if (common.status === 0 && common.stdout.trim().length > 0) {
@@ -826,13 +796,8 @@ function git(args: string[], timeout?: number): Run {
   return runAt(root, "git", args, timeout, env);
 }
 
-/** Any git command in one checkout; the land test binds this to a throwaway remote. */
 export type Git = (args: string[]) => Run;
 
-/**
- * The only force land is allowed: after its own push and rebase, with a lease on the branch it
- * pushed. The lease makes the push fail if anyone else moved that branch in between.
- */
 export function forcePushArgs(branch: string): string[] {
   return ["push", `--force-with-lease=${branch}`, "origin", `HEAD:${branch}`];
 }
@@ -843,7 +808,6 @@ export interface SyncResult {
   refusal: string | null;
 }
 
-/** `git` that runs a push or fetch again when GitHub's outage answered it, as the GitHub client does. */
 export function retryServerErrors(git: Git, pause: (ms: number) => void = sleepSync): Git {
   return (args) => retryOutages(() => git(args), pause);
 }
@@ -858,9 +822,7 @@ export function syncOntoBase(options: {
   branch: string;
   base: string;
   git: Git;
-  /** Runs a generator in this checkout; a rebase that resolved generated files reruns them. */
   exec?: (command: readonly string[]) => Run;
-  /** Waits between tries of a command GitHub answered with a server error. */
   pause?: (ms: number) => void;
 }): SyncResult {
   const { branch, base } = options;
@@ -936,7 +898,6 @@ function firstLine(text: string): string {
 export interface LandIo {
   git: Git;
   github: GitHub;
-  /** Runs `--verify`; true when the command passed. */
   verify: (command: string) => boolean;
   log: (line: string) => void;
   error: (line: string) => void;
@@ -955,10 +916,6 @@ export interface PrRef {
   url: string;
 }
 
-/**
- * Replace a PR's body (or rewrite it from the current one) and, when given, its title, leaving each
- * alone when it already reads the same.
- */
 export function updatePr(
   number: number,
   next: { body: string | ((current: string) => string); title?: string },
@@ -1046,7 +1003,6 @@ export function baseMoved(detail: string): boolean {
   return BASE_MOVED.test(detail);
 }
 
-/** How many times a merge is tried when GitHub answers that the base moved under it. */
 export const MERGE_ATTEMPTS = 3;
 
 /**
@@ -1071,10 +1027,6 @@ export function mergeVerified(
   return { ok: false, error: firstLine(last), baseMoved: true };
 }
 
-/**
- * Branches no landing deletes, whatever merged from them: the bases, releases, the backup and rescue
- * copies people keep on purpose, and the branch the PR screenshots live on.
- */
 export const KEPT_BRANCH = /^(?:beta|pr-shots|(?:backup|rescue)\/.+)$/;
 
 /**
@@ -1116,7 +1068,6 @@ export function deleteLandedBranch(github: GitHub, input: { branch: string; land
   return { kind: "warn", line: `could not delete origin/${branch}: ${firstLine(deleted.error)}` };
 }
 
-/** Push, rebase and open or reuse the PR: the part that needs the lock, and nothing after it. */
 function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
   const sync = syncOntoBase({ branch, base: args.base, git: io.git });
   if (sync.refusal !== null) {
@@ -1144,7 +1095,6 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
   return pr ?? EXIT_COULD_NOT_MERGE;
 }
 
-/** What an author reads when land is done: the PR, and who merges it. */
 export function handOffLines(pr: PrRef): string[] {
   return [pr.url, "lane:close merges it once its verify:fast receipt covers this head"];
 }
@@ -1152,19 +1102,13 @@ export function handOffLines(pr: PrRef): string[] {
 export interface LandRun {
   args: LandArgs;
   branch: string;
-  /** The repo's landing lock file. */
   lock: string;
   io: LandIo;
-  /** Where `--commit` reads and writes fragments; the checkout's `changes/` by default. */
   commitIo?: Pick<CommitOptions, "files" | "read" | "write">;
   /** Waits on the lock are appended here, so the caller can print what the landing spent queueing. */
   waits?: LockWait[];
 }
 
-/**
- * Land `branch`: push it, open or reuse its PR, and return. The lock is held only around the push,
- * rebase and PR.
- */
 export function landBranch(run: LandRun): number {
   const waits = run.waits ?? [];
   const startedAt = Date.now();

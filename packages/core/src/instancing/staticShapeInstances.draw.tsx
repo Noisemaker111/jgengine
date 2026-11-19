@@ -8,7 +8,6 @@ import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengi
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { composeInstance, uploadInstances } from "./instanceUpload.draw";
 
-/** One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale. */
 export interface StaticShapeInstance {
   shape: SurfaceShape;
   position: readonly [number, number, number];
@@ -16,11 +15,10 @@ export interface StaticShapeInstance {
   scale: readonly [number, number, number];
   surface: AuthoredSurfaceConfig;
   shadows?: ModelShadowMode;
-  /** Cylinder tessellation; default 16. */
   radialSegments?: number;
 }
 
-/** A compatible static draw group. @internal */
+/** @internal */
 export interface StaticShapeBatch {
   key: string;
   shape: SurfaceShape;
@@ -30,7 +28,7 @@ export interface StaticShapeBatch {
   instances: readonly StaticShapeInstance[];
 }
 
-/** Plan compatible material/shape/shadow groups without changing authored transforms. @internal */
+/** @internal */
 export function groupStaticShapeInstances(instances: readonly StaticShapeInstance[]): StaticShapeBatch[] {
   const groups = new Map<string, StaticShapeBatch>();
   for (const instance of instances) {
@@ -50,7 +48,7 @@ export function groupStaticShapeInstances(instances: readonly StaticShapeInstanc
   return [...groups.values()];
 }
 
-/** Upload static transforms and refresh conservative aggregate bounds after a prop change. @internal */
+/** @internal */
 export function writeStaticShapeInstances(mesh: THREE.InstancedMesh, instances: readonly StaticShapeInstance[]): void {
   const surface = instances[0]?.surface;
   let pad = 0;
@@ -67,7 +65,7 @@ export function writeStaticShapeInstances(mesh: THREE.InstancedMesh, instances: 
   );
 }
 
-/** One instanced batch as an {@link EngineDraw}; `sync` retunes matrices in place when only instances change. @internal */
+/** @internal */
 export interface StaticShapeBatchDraw extends EngineDraw {
   sync(batch: StaticShapeBatch): void;
 }

@@ -12,9 +12,7 @@
 
 import type { OrderKind, OrderProgress, OrderVec3 } from "./orderQueue";
 
-/** Result of one movement step, from the game's motion adapter. */
 export interface OrderMoveResult {
-  /** The mover reached the point within its arrive radius this step. */
   arrived: boolean;
   /** Remaining distance to the point after the step. */
   distance: number;
@@ -26,73 +24,48 @@ export interface OrderMoveResult {
  * entity; the kind never touches the scene directly.
  */
 export interface OrderMover {
-  /** Current position, or `null` if the entity is gone (despawned) -- the kind then fails cleanly. */
   position(): OrderVec3 | null;
-  /** Step toward `point` this tick and report arrival/remaining distance. */
   moveToward(point: OrderVec3, options?: { speedScale?: number | undefined; arriveRadius?: number }): OrderMoveResult;
   /** Stop moving (release throttle / clear steering) — used by stop/hold and on cancel. */
   halt(): void;
 }
 
-/**
- * Narrow targeting adapter for engagement verbs. `acquire` returns the id of a
- * hostile within `radius` (nearest, or whatever policy the game injects), and
- * `positionOf` locates a known target. Actual damage/effects stay game-side.
- */
 export interface OrderTargeting {
-  /** Acquire a hostile within `radius`, or `null` if none. */
   acquire(radius: number): string | null;
-  /** Current position of a target id, or `null` if it is gone. */
   positionOf(targetId: string): OrderVec3 | null;
 }
 
-/** Payload for a move order: go to a point and complete on arrival. */
 export interface MoveOrderPayload {
   point: OrderVec3;
-  /** Distance that counts as arrived; falls back to the factory default. */
   arriveRadius?: number;
-  /** Per-order speed multiplier passed to the mover. */
   speedScale?: number;
 }
 
-/** Payload for stop/hold orders — no data; the verb is the intent. */
 export type EmptyOrderPayload = Record<string, never>;
 
-/** Payload for an attack-move: advance toward `point`, engaging hostiles encountered en route. */
 export interface AttackMoveOrderPayload {
   point: OrderVec3;
-  /** Radius scanned for hostiles each tick; falls back to the factory default. */
   aggroRadius?: number;
-  /** Distance at which an acquired target is "in range" to attack; falls back to the factory default. */
   attackRange?: number;
-  /** Arrive radius for the destination when no hostile is engaged. */
   arriveRadius?: number;
   speedScale?: number;
 }
 
-/** Live intent an attack-move/targeted order writes into `Order.state`; the game reads it to run the actual attack. Serializable. */
 export interface EngagementOrderState {
-  /** Target currently pursued/engaged, or `null` while travelling. */
   engaging: string | null;
-  /** The engaged target is within attack range this tick — the swing/cast window. */
   inRange: boolean;
 }
 
-/** Payload for a targeted action: pursue one target until in range, holding within a leash. */
 export interface TargetedOrderPayload {
   targetId: string;
-  /** Distance at which the target is "in range"; falls back to the factory default. */
   range?: number;
   speedScale?: number;
 }
 
-/** Serializable patrol progress. */
 export interface PatrolOrderState {
-  /** Index of the waypoint currently being approached. */
   index: number;
 }
 
-/** Payload for a patrol: walk a waypoint route, optionally looping forever. */
 export interface PatrolOrderPayload {
   waypoints: OrderVec3[];
   /** Loop back to the first waypoint after the last; otherwise complete at the end. Default `true`. */
@@ -107,7 +80,6 @@ export interface OrderKindConfig {
   kind?: string;
 }
 
-/** Move + engagement config carrying the default radii the payload may override. */
 export interface EngagementKindConfig extends OrderKindConfig {
   arriveRadius?: number;
   aggroRadius?: number;
@@ -123,13 +95,7 @@ function gone(): OrderProgress {
   return { status: "failed", reason: "mover has no position (despawned)" };
 }
 
-/**
- * The plain "go here" verb: step toward a point each tick, complete on arrival,
- * fail if the entity despawns. The completion predicate is arrival within
- * `arriveRadius`.
- *
- * @capability move-order go-to-point order that completes on arrival, composed over a motion adapter
- */
+/** @capability move-order go-to-point order that completes on arrival, composed over a motion adapter */
 export function defineMoveOrder<TCtx extends OrderMover>(config: OrderKindConfig & { arriveRadius?: number } = {}): OrderKind<TCtx, MoveOrderPayload> {
   const arriveDefault = config.arriveRadius ?? DEFAULT_ARRIVE;
   return {
@@ -146,12 +112,7 @@ export function defineMoveOrder<TCtx extends OrderMover>(config: OrderKindConfig
   };
 }
 
-/**
- * Stop: halt immediately and complete the same tick — the interrupt that clears
- * a unit's intent to standstill.
- *
- * @capability stop-order halt-and-complete order that brings a unit to an immediate standstill
- */
+/** @capability stop-order halt-and-complete order that brings a unit to an immediate standstill */
 export function defineStopOrder<TCtx extends OrderMover>(config: OrderKindConfig = {}): OrderKind<TCtx, EmptyOrderPayload> {
   return {
     kind: config.kind ?? "stop",
@@ -267,13 +228,7 @@ export function defineTargetedOrder<TCtx extends OrderMover & OrderTargeting>(
   };
 }
 
-/**
- * Patrol: walk a waypoint route, advancing the serialized `index` as each point
- * is reached. Loops forever by default, or completes at the last waypoint when
- * `loop` is `false`.
- *
- * @capability patrol-order waypoint-route order that cycles a path, looping or completing at the end
- */
+/** @capability patrol-order waypoint-route order that cycles a path, looping or completing at the end */
 export function definePatrolOrder<TCtx extends OrderMover>(config: OrderKindConfig & { arriveRadius?: number } = {}): OrderKind<TCtx, PatrolOrderPayload> {
   const arriveDefault = config.arriveRadius ?? DEFAULT_ARRIVE;
   return {

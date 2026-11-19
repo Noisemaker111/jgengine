@@ -3,9 +3,7 @@ export const SPEED_OF_SOUND = 343;
 
 type Vec3Tuple = readonly [number, number, number];
 
-/** Options for {@link dopplerRate}. */
 export interface DopplerOptions {
-  /** Scales both velocities; 1 is physical, 0 disables the shift. Default 1. */
   factor?: number;
   /** World units per second sound travels. Default {@link SPEED_OF_SOUND}. */
   speedOfSound?: number;
@@ -13,13 +11,7 @@ export interface DopplerOptions {
   range?: readonly [number, number];
 }
 
-/**
- * Doppler pitch multiplier for an emitter heard by a listener: `(c + vListener) / (c - vEmitter)`,
- * where each speed is the component along the line between them, positive when closing. Multiply a
- * loop's playback rate by it. Pure and allocation-free.
- *
- * @capability doppler-pitch pitch a moving sound up as it approaches and down as it passes, from listener and emitter velocity
- */
+/** @capability doppler-pitch pitch a moving sound up as it approaches and down as it passes, from listener and emitter velocity */
 export function dopplerRate(
   listenerPosition: Vec3Tuple,
   listenerVelocity: Vec3Tuple,

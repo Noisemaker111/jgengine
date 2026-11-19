@@ -6,44 +6,31 @@ import type { WorldSolid } from "@jgengine/core/world/worldSolids";
 /** A `[x, y, z]` triple in metres. */
 export type BaseVec3 = readonly [number, number, number];
 
-/** One solid box of a piece, in the piece's local space (origin at the piece's snap origin). */
 export interface StructureBox {
   min: BaseVec3;
   max: BaseVec3;
 }
 
-/** Where a shape may stand without snapping to another piece. */
 export interface StructureGroundRule {
   /** Metres the origin sits above the highest ground under the piece. Default `0`. */
   lift?: number;
-  /** Largest ground height difference under the piece's corners before it is too steep. Default `1`. */
   maxStep?: number;
 }
 
-/**
- * A piece shape: its solid boxes (the same boxes collide, raycast and draw), its snap sockets and where
- * it may stand. Socket positions are local; socket `yaw` follows `placement/buildSockets` (the angle
- * `atan2(z, x)` of the socket's outward direction).
- */
 export interface StructureShapeDef {
   id: string;
   boxes: readonly StructureBox[];
   sockets?: readonly SocketDef[];
-  /** Boxes while toggled open (a door swung on its hinge); omit for shapes with no open state. */
   openBoxes?: readonly StructureBox[];
-  /** Placeable on bare terrain. */
   ground?: StructureGroundRule;
-  /** Placeable freely on top of another piece (a campfire on a floor). */
   floor?: boolean;
 }
 
-/** A material tier, a Ladder step (`at` is its place in the material order): how much of each damage class reaches its pieces. */
 export interface StructureTierDef extends ThresholdBoundary {
   /** Damage class → multiplier; `"*"` is the fallback, default `1`. `0` makes the tier immune to that class. */
   damage?: Readonly<Record<string, number>>;
 }
 
-/** One buildable piece: a shape in a tier with its hit points. */
 export interface StructurePieceDef {
   id: string;
   shape: string;
@@ -51,20 +38,15 @@ export interface StructurePieceDef {
   health: number;
 }
 
-/** Everything a base-building model is made from. */
 export interface BaseBuildingConfig {
   shapes: readonly StructureShapeDef[];
   tiers: readonly StructureTierDef[];
   pieces: readonly StructurePieceDef[];
-  /** Which socket kinds mate, as in `placement/buildSockets`. */
   rules: readonly ConnectionRule[];
-  /** Farthest a mate point may sit from the build cursor and still snap. Default `2`. */
   snapDistance?: number;
-  /** Share of the smaller piece's volume two pieces may overlap before placement is refused. Default `0.4`. */
   overlapTolerance?: number;
 }
 
-/** A piece standing in the world. `rotationY` uses the engine's entity convention. */
 export interface BasePiece {
   id: string;
   pieceId: string;
@@ -72,9 +54,7 @@ export interface BasePiece {
   rotationY: number;
   health: number;
   open: boolean;
-  /** Stood on terrain: a root of the support graph. */
   grounded: boolean;
-  /** The piece it was set down on when placed freely on a floor. */
   restsOn: string | null;
   owner: string | null;
 }
@@ -82,85 +62,65 @@ export interface BasePiece {
 /** Why a plan cannot be placed: an unknown piece, something in the way, nothing to stand on, or ground too steep. */
 export type StructurePlanBlock = "unknown-piece" | "overlap" | "no-support" | "too-steep";
 
-/** Where a piece would go for a cursor, and whether it may. */
 export interface StructurePlan {
   pieceId: string;
   position: BaseVec3;
   rotationY: number;
   valid: boolean;
   reason?: StructurePlanBlock;
-  /** How it stands: snapped to another piece, on terrain, or on a floor. */
   mode: "snap" | "ground" | "floor";
-  /** The piece it snaps to or rests on. */
   targetId: string | null;
   /** Reaches the terrain, so it holds itself up (a foundation snapped beside another still touches ground). */
   grounded: boolean;
 }
 
-/** Options for {@link BaseBuilding.plan}. */
 export interface StructurePlanOptions {
-  /** Yaw for a piece stood on terrain or a floor (engine convention). Default `0`. */
   rotationY?: number;
-  /** Picks among equally near snaps (a door's swing side, a ramp's direction); counts up with each rotate press. Default `0`. */
   variant?: number;
   /** Terrain height; required for ground placement. */
   groundHeightAt?: (x: number, z: number) => number;
 }
 
-/** A piece hit by {@link BaseBuilding.raycast}. */
 export interface StructureHit {
   id: string;
   distance: number;
   point: BaseVec3;
 }
 
-/** What a removal or a destroying blow took down: the piece itself first, then everything that lost support. */
 export interface StructureRemoval {
   removed: readonly BasePiece[];
 }
 
-/** Result of {@link BaseBuilding.damage}. */
 export interface StructureDamage extends StructureRemoval {
   /** Hit points actually taken off after the tier's multiplier. */
   applied: number;
 }
 
-/** Serializable contents of a {@link BaseBuilding}. */
 export interface BaseBuildingState {
   pieces: readonly BasePiece[];
   nextId: number;
 }
 
-/** A world box of a placed or planned piece, ready for a mesh or a solid. */
 export interface StructureWorldBox {
   center: BaseVec3;
   halfExtents: BaseVec3;
   rotationY: number;
 }
 
-/** Handle returned by {@link createBaseBuilding}. */
 export interface BaseBuilding {
   piece(pieceId: string): StructurePieceDef | null;
   shape(pieceId: string): StructureShapeDef | null;
-  /** Where `pieceId` would go for a cursor: the nearest free snap, else terrain or floor when the shape allows. */
   plan(pieceId: string, cursor: BaseVec3, options?: StructurePlanOptions): StructurePlan;
-  /** Stand a valid plan up; `null` when the plan is invalid or no longer fits. */
   place(plan: StructurePlan, options?: { owner?: string }): BasePiece | null;
   /** Take a piece down, and everything that only stood because of it. */
   remove(id: string): StructureRemoval;
-  /** Hit a piece with `amount` of `damageClass`; at zero health it falls, with whatever it held up. */
   damage(id: string, amount: number, damageClass: string): StructureDamage;
-  /** Swing an openable piece; returns the new open state, or `null` when it has none. */
   toggle(id: string): boolean | null;
   get(id: string): BasePiece | null;
   list(): readonly BasePiece[];
-  /** Nearest piece a ray hits within `maxDistance`. */
   raycast(origin: BaseVec3, direction: BaseVec3, maxDistance: number): StructureHit | null;
-  /** World boxes of a placed piece (open or shut) or of a plan. */
   worldBoxes(item: { pieceId: string; position: BaseVec3; rotationY: number; open?: boolean }): StructureWorldBox[];
-  /** Every placed box as a world solid, for `ctx.world.solids`. */
   solids(): WorldSolid[];
-  /** Bumps on every change; a cheap cache key. */
   version(): number;
   snapshot(): BaseBuildingState;
   restore(state: BaseBuildingState): void;
@@ -215,7 +175,6 @@ function intersection(a: Aabb, b: Aabb): number {
   return total;
 }
 
-/** Ray against a local box: entry distance or null (slab test). */
 function rayBox(origin: BaseVec3, direction: BaseVec3, box: StructureBox, maxDistance: number): number | null {
   let near = 0;
   let far = maxDistance;
@@ -242,15 +201,7 @@ function copyPlaced(piece: BasePiece): BasePiece {
   return { ...piece, position: [piece.position[0], piece.position[1], piece.position[2]] };
 }
 
-/**
- * Snap-together base building: pieces of a shape and a material tier, snapped socket to socket through
- * `placement/buildSockets` or stood on terrain, refused when they overlap what stands, held up by a
- * support graph that drops whatever loses its last path to the ground, damaged per tier and damage
- * class, with doors that swing and solids that collide. Pure and serializable; the game owns items,
- * costs and input, `BaseStructures.draw` draws it.
- *
- * @capability base-building snap-together base pieces with tiers, health, support collapse, doors, overlap rejection and collision solids
- */
+/** @capability base-building snap-together base pieces with tiers, health, support collapse, doors, overlap rejection and collision solids */
 export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
   const snapDistance = config.snapDistance ?? 2;
   const overlapTolerance = config.overlapTolerance ?? 0.4;
@@ -394,7 +345,6 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
   const socketKey = (position: BaseVec3): string =>
     `${Math.round(position[0] / SOCKET_GRID)}:${Math.round(position[1] / SOCKET_GRID)}:${Math.round(position[2] / SOCKET_GRID)}`;
 
-  /** Pieces joined by mated sockets or by resting one on another. */
   const neighbours = (): Map<string, Set<string>> => {
     const links = new Map<string, Set<string>>();
     const link = (a: string, b: string) => {
@@ -421,7 +371,6 @@ export function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding {
     return links;
   };
 
-  /** Drop every piece with no path to a grounded one. */
   const collapse = (): BasePiece[] => {
     const links = neighbours();
     const held = new Set<string>();

@@ -6,7 +6,7 @@ import { useGameContext } from "@jgengine/ui/provider";
 import { CALIBRATED_TRAUMA_DECAY_PER_SECOND } from "./cameraShake";
 import { useCameraShake } from "./shakeChannel.draw";
 
-/** Feeds `combat.hitReaction` events into the active rig's camera shake: calibrated trauma, or a raw amplitude and decay. @internal */
+/** @internal */
 export function HitReactionShake() {
   const ctx = useGameContext();
   const shake = useCameraShake();

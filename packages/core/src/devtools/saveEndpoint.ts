@@ -1,6 +1,5 @@
 import { onPage, publishOnPage } from "../runtime/pageHandle";
 
-/** One write request the dev save endpoint accepts: a scene document or tunable deltas. */
 export type SaveEndpointRequest =
   | { kind: "editor-document"; gameId: string; json: string }
   | {
@@ -9,23 +8,19 @@ export type SaveEndpointRequest =
       deltas: readonly { table: string; key: string; value: unknown }[];
     };
 
-/** Result envelope the dev save endpoint returns for every write request. */
 export interface SaveEndpointResponse {
   ok: boolean;
   path?: string;
   applied?: number;
   skipped?: readonly { table: string; key: string; reason: string }[];
-  /** Scene saves: code-built (`meta.derived`) entries left out of the file. */
   derivedSkipped?: number;
   error?: string;
 }
 
-/** Where dev-time saves land: the endpoint URL plus the games/<gameId> directory it targets. */
 export interface SaveEndpointInfo {
   url: string;
   gameId: string;
 }
-
 
 declare module "../runtime/pageHandle" {
   interface JgPage {
@@ -33,7 +28,7 @@ declare module "../runtime/pageHandle" {
   }
 }
 
-/** The bundler-provided build flags the engine reads. @internal */
+/** @internal */
 export interface BuildEnv {
   DEV?: boolean;
   PROD?: boolean;
@@ -69,11 +64,7 @@ function readProcessNodeEnv(): string | undefined {
   return proc?.env?.NODE_ENV;
 }
 
-/** True once a bundler or Node marks the build as production — the signal
- * `installSaveEndpoint` refuses to run under, even if a caller forgot its own
- * `import.meta.env.DEV` guard.
- * @internal
- */
+/** @internal */
 export function isProductionEnvironment(): boolean {
   const env = readBuildEnv();
   if (env.PROD === true) return true;
@@ -81,10 +72,7 @@ export function isProductionEnvironment(): boolean {
   return (env.NODE_ENV ?? readProcessNodeEnv()) === "production";
 }
 
-/** Publishes the dev-server save endpoint so editor and devtools UIs show Save buttons.
- * No-ops in a production build even if the caller forgot its own DEV guard.
- * @internal
- */
+/** @internal */
 export function installSaveEndpoint(url: string, gameId: string): () => void {
   if (isProductionEnvironment()) return () => {};
   return publishOnPage("saveEndpoint", { url, gameId });

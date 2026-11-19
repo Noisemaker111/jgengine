@@ -1,6 +1,5 @@
 import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
 
-/** Original mechanical cues, realized and mixed by the shared Web Audio engine. */
 export const audio = {
   buses: { sfx: { id: "sfx", gain: 0.35 } },
   sounds: {

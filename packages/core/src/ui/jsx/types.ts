@@ -1,8 +1,3 @@
-/**
- * Type names UI code uses for nodes, components, refs and styles. None of them
- * needs the DOM, so models and non-view code may import them.
- */
-
 import type { ComponentClass, ContextType, ElementType, FunctionComponent, UiElement, UiNode } from "./element";
 
 export type ReactNode = UiNode;
@@ -23,7 +18,6 @@ export interface RefObject<T> {
   current: T;
 }
 export type MutableRefObject<T> = RefObject<T>;
-/** Bivariant, as a ref callback for a narrower element is passed where a wider one is asked for. */
 export type RefCallback<T> = { bivarianceHack(instance: T | null): void | (() => void) }["bivarianceHack"];
 export type Ref<T> = RefCallback<T> | RefObject<T | null> | null;
 export type ForwardedRef<T> = Ref<T>;
@@ -40,7 +34,6 @@ export type Key = string | number | bigint;
 
 type CssValue = string | number | undefined;
 
-/** An inline style object: CSS properties in camelCase, plus `--custom` properties. */
 export interface CSSProperties {
   [property: `--${string}`]: CssValue;
   accentColor?: CssValue; alignContent?: CssValue; alignItems?: CssValue; alignSelf?: CssValue; all?: CssValue; animation?: CssValue;

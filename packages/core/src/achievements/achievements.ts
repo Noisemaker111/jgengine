@@ -1,63 +1,43 @@
 // @skill jgengine-gameplay
-/** Definition of one achievement. Content-agnostic — the game supplies names, targets, and icons. */
 export interface AchievementDef {
   id: string;
   name: string;
   description?: string;
-  /**
-   * Counter goal: the achievement unlocks when accumulated progress reaches it.
-   * Omit for a boolean achievement unlocked directly with `unlock(id)`.
-   */
   target?: number;
-  /** Hide the name/description in UI until unlocked (a spoiler-guarded achievement). */
   secret?: boolean;
-  /** Optional score weight (gamerscore-style), summed by {@link AchievementTracker.score}. */
   points?: number;
   category?: string;
   /** Optional icon id / glyph the game renders; the engine never picks art. */
   icon?: string;
 }
 
-/** A definition plus its live unlock/progress state — what UI renders. */
 export interface AchievementView extends AchievementDef {
   unlocked: boolean;
-  /** Unlock time from the injected clock, or null while locked. */
   unlockedAt: number | null;
-  /** Current counter value (0 for untouched or boolean achievements). */
   progress: number;
   /** `progress / target` in `[0, 1]`; 1 when unlocked or when there is no target. */
   fraction: number;
 }
 
-/** Emitted the instant an achievement unlocks — wire to a toast, feed, or sound. */
 export interface AchievementUnlock {
   id: string;
   def: AchievementDef;
   at: number;
 }
 
-/** Whole serializable state of a tracker — drop into a save blob. */
 export interface AchievementSnapshot {
-  /** Achievement id → unlock timestamp. */
   unlocked: Record<string, number>;
-  /** Achievement id → counter progress. */
   counters: Record<string, number>;
 }
 
-/** Live achievement state over a fixed definition set — drives progress, unlocks, score, and a UI view list. */
 export interface AchievementTracker {
-  /** Add `amount` (default 1) to a counter achievement; unlocks on reaching `target`. Returns the unlock if it just crossed, else null. */
   progress(id: string, amount?: number): AchievementUnlock | null;
-  /** Set a counter achievement's absolute value; unlocks on reaching `target`. Returns the unlock if it just crossed, else null. */
   setProgress(id: string, value: number): AchievementUnlock | null;
-  /** Unlock directly (boolean or counter). Returns the unlock, or null if unknown or already unlocked. */
   unlock(id: string): AchievementUnlock | null;
   isUnlocked(id: string): boolean;
   get(id: string): AchievementView | null;
-  /** All achievements with live state, in definition order. Stable identity between changes (safe for `useSyncExternalStore`). */
   list(): readonly AchievementView[];
   unlocked(): readonly AchievementView[];
-  /** Total `points` across unlocked achievements. */
   score(): number;
   /** Fraction of achievements unlocked, `[0, 1]`. */
   completion(): number;
@@ -66,12 +46,10 @@ export interface AchievementTracker {
   restore(snapshot: AchievementSnapshot): void;
 }
 
-/** Options for {@link createAchievementTracker}. */
 export interface AchievementTrackerOptions {
   defs: readonly AchievementDef[];
   /** Injected clock (ms). Default `Date.now`. */
   now?: () => number;
-  /** Fires whenever an achievement unlocks — the seam for toasts, kill-feed lines, sounds, or telemetry. */
   onUnlock?: (unlock: AchievementUnlock) => void;
 }
 

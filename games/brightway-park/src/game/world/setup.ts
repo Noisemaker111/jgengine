@@ -21,15 +21,10 @@ export { seedPlacements, type SeedPlacement } from "../parkReset";
 
 const boot = perContext(() => ({ ready: Promise.resolve() }));
 
-/** Settles once the boot read of the saved park has finished (or stood down for a started park). */
 export function parkReady(ctx: GameContext): Promise<void> {
   return boot(ctx).ready;
 }
 
-/**
- * The saved park replaces the new one behind the title once its document is read; a park started
- * before then keeps what it made. Midnight is re-armed from wherever the save left the clock.
- */
 async function openSavedPark(ctx: GameContext): Promise<void> {
   await loadParkProfile(ctx);
   if (!(await restorePark(ctx))) return;

@@ -43,7 +43,6 @@ export function Text({ text, ...props }: RuneElementProps) { return <RuneLabel {
 export function Label(props: RuneElementProps) { return <Text {...scrapTheme.text.label} {...props} />; }
 export function Heading(props: RuneElementProps) { return <Text {...scrapTheme.text.heading} {...props} />; }
 export function Small(props: RuneElementProps) { return <Text size={12} color={C.dim} {...props} />; }
-/** A stamped label plate, like the stencilled tags riveted to salvage. */
 export function Stamp({ tone = "amber", children, text }: { tone?: Tone; children?: ReactNode; text?: RuneElementProps["text"] }) {
   return <RuneView layout="row" padding={[2, 6, 2, 6]} border={{ width: 1, color: `${TONE[tone]}88` }} fill="#00000055">
     <Label color={TONE[tone]} {...(text === undefined ? {} : { text })}>{children}</Label>
@@ -52,12 +51,10 @@ export function Stamp({ tone = "amber", children, text }: { tone?: Tone; childre
 export function Row(props: RuneViewProps) { return <RuneView layout="row" gap={8} items="center" {...props} />; }
 export function Plate(props: RuneViewProps) { return <RuneView variant="plate" {...props} />; }
 export function Hull(props: RuneViewProps) { return <RuneView variant="hull" {...props} />; }
-/** A CRT screen set into a housing. */
 export function Tube(props: RuneViewProps) { return <RuneView variant="tube" {...props} />; }
 export function Button({ onPress, ...props }: RuneViewProps & { onPress?: () => void }) {
   return <RuneAction variant="action" color={C.ink} {...props} {...(onPress === undefined ? {} : { run: onPress })} />;
 }
-/** A full-width action row: title and detail on the left, a price or verb on the right. */
 export function RowButton({ title, detail, value, valueColor = C.amber, titleColor = C.ink, disabled, onPress }: {
   title: string; detail?: string; value?: string; valueColor?: string; titleColor?: string; disabled?: boolean; onPress: () => void;
 }) {
@@ -97,13 +94,11 @@ export function idleFade(watch: () => string, hold: () => boolean, dimTo: number
   });
 }
 
-/** Phones in either orientation: a narrow or a short screen gets the folded rig. */
 export function useCompact(): { compact: boolean; portrait: boolean } {
   const { width, height } = useRuneViewport();
   return { compact: width < 600 || height < 500, portrait: width < 600 };
 }
 
-/** The dimmed modal sheet every Scrap Signal terminal (vendors, travel, exchange, talents) opens in. */
 export function Sheet({ title, aside, close, closeLabel = "Close", wide = false, modal = true, children }: {
   title: string; aside?: ReactNode; close: () => void; closeLabel?: string; wide?: boolean; modal?: boolean; children: ReactNode;
 }) {
@@ -120,7 +115,6 @@ export function Sheet({ title, aside, close, closeLabel = "Close", wide = false,
 }
 
 const icon = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffffff">${body}</svg>`;
-/** Game-owned glyph artwork; native icons tint it with `color`. */
 export const ICONS = {
   coin: icon(`<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6" fill="#00000055"/><rect x="11" y="7" width="2" height="10"/>`),
   gem: icon(`<polygon points="12,3 20,9 12,21 4,9"/><polygon points="12,3 16,9 12,21 8,9" fill="#00000033"/>`),
@@ -132,12 +126,10 @@ export function Icon({ name, color, size = 15 }: { name: keyof typeof ICONS; col
   return <RuneGlyph artwork={ICONS[name]} color={color} size={size} />;
 }
 
-/** Four signal-strength bars; `strength` 0-4. */
 export function SignalBars({ strength, color = C.phosphor }: { strength: number; color?: string }) {
   return <Row gap={2} items="end">{[0, 1, 2, 3].map(i => <RuneView key={i} width={4} height={4 + i * 4} fill={i < strength ? color : C.off} />)}</Row>;
 }
 
-/** Authored vector portraits of reclaimed machines; silhouettes mirror each build's role. */
 export function portraitArtwork(id: string, color: string): string {
   const heavy = id === "gunk", scout = id === "cipher";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120">
@@ -153,16 +145,13 @@ export function portraitArtwork(id: string, color: string): string {
     ${id === "nyx" ? `<path d="M83 57L71 26M157 57L169 26" stroke="${color}" stroke-width="3"/><circle cx="71" cy="23" r="4" fill="${color}"/><circle cx="169" cy="23" r="4" fill="${color}"/>` : ""}
   </svg>`;
 }
-/** A reclaimer's portrait on a phosphor tube. */
 export function Portrait({ id, color, size }: { id: string; color: string; size: number }) {
   return <Tube padding={2} items="center" border={{ width: 1, color: `${color}88` }}><RuneGlyph artwork={portraitArtwork(id, color)} size={size} /></Tube>;
 }
 
-/** Keycap glyph for control legends. */
 export function Key({ children }: { children: string }) {
   return <RuneView padding={[1, 5, 1, 5]} border={{ width: 1, color: "#57534e" }} fill="#1c1917"><Text size={11} color={C.ink}>{children}</Text></RuneView>;
 }
-/** The controls, printed on the terminal's lower keys. */
 export function ControlKeys() {
   const groups: [string[], string][] = [[["W", "A", "S", "D", "Shift"], "move / sprint"], [["LMB", "RMB"], "fire / aim"], [["E", "R"], "use / reload"], [["Q", "G", "K"], "heal / grenade / talents"]];
   return <RuneView layout="row" gap={12} label="Controls" responsive={{ phone: { layout: "grid", columns: 1, gap: 4 } }}>

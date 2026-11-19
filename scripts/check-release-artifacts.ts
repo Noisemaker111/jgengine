@@ -32,9 +32,7 @@ export interface Registry {
 }
 
 export interface UnpackedPackage {
-  /** Directory holding the unpacked `package/` root. */
   dir: string;
-  /** Package-relative paths, `/`-separated. */
   files: Set<string>;
   manifest: { name?: string; version?: string; exports?: Record<string, unknown> };
   cleanup?: () => void;
@@ -45,7 +43,6 @@ export type Unpack = (name: string, version: string, bytes: Uint8Array) => Unpac
 export interface PackageCheck {
   name: string;
   version: string;
-  /** Subpaths the checkout exposes for this package; empty when the checkout is at another version. */
   declared?: readonly string[];
   registry: Registry;
   unpack: Unpack;
@@ -56,14 +53,12 @@ export interface PackageVerdict {
   name: string;
   version: string;
   failures: string[];
-  /** Facts that did not fail the check, such as a dependency this checkout has not installed. */
   notes: string[];
   checkedSubpaths: number;
 }
 
 const ENTRY_CONDITIONS = ["default", "import", "module", "require", "browser", "types"];
 
-/** Every file target a conditional or array export value can resolve to. */
 function leaves(value: unknown): string[] {
   if (typeof value === "string") return [value];
   if (Array.isArray(value)) return value.flatMap(leaves);
@@ -77,11 +72,6 @@ function leaves(value: unknown): string[] {
 
 const strip = (target: string): string => target.replace(/^\.\//, "");
 
-/**
- * Package-relative target files a subpath resolves to under an exports map, following both
- * literal keys (`"./agents/system"`) and wildcard keys (`"./*"`). Empty means the map does not
- * expose the subpath at all.
- */
 export function resolveExportTargets(exportsMap: Record<string, unknown> | undefined, subpath: string): string[] {
   if (exportsMap === undefined) return [];
   const exact = exportsMap[subpath];
@@ -99,7 +89,6 @@ export function resolveExportTargets(exportsMap: Record<string, unknown> | undef
   return [...new Set(targets)].sort();
 }
 
-/** The entry a consumer's bare `import "@scope/pkg"` would load, falling back to the first literal subpath. */
 function mainEntryTargets(exportsMap: Record<string, unknown> | undefined, declared: readonly string[]): string[] {
   const direct = resolveExportTargets(exportsMap, ".");
   const candidates = direct.length > 0 ? direct : declared.flatMap((subpath) => resolveExportTargets(exportsMap, subpath));
@@ -115,7 +104,6 @@ export interface PublishedState {
   tarballStatus: number | null;
 }
 
-/** What a consumer can actually install for one name and version. */
 export async function publishedState(registry: Registry, name: string, version: string): Promise<PublishedState> {
   const metadata = await registry.metadata(name);
   if (metadata === null) return { hasMetadata: false, hasVersion: false, tarballStatus: null };
@@ -140,10 +128,6 @@ export function publishDecision(state: PublishedState): "skip" | "publish" | "re
   throw new Error(`registry did not answer (tarball status ${state.tarballStatus ?? "none"}), run again`);
 }
 
-/**
- * Check one package against a registry. Every failure names the package and, where it applies,
- * the subpath that does not resolve.
- */
 export async function checkPackage(input: PackageCheck): Promise<PackageVerdict> {
   const label = failureLabel(input.name, input.version);
   const verdict: PackageVerdict = { name: input.name, version: input.version, failures: [], notes: [], checkedSubpaths: 0 };
@@ -279,7 +263,6 @@ export function absenceOnly(failures: readonly string[]): boolean {
 export interface AwaitOptions {
   /** Total budget in seconds; 0 checks once and returns. */
   readonly waitSeconds: number;
-  /** One full check; returns the failure lines it found. */
   readonly check: () => Promise<string[]>;
   readonly now?: () => number;
   readonly sleep?: (ms: number) => Promise<void>;
@@ -291,7 +274,6 @@ export interface AwaitResult {
   readonly waitedMs: number;
 }
 
-/** Re-check while the only failures are absences and the budget lasts. */
 export async function awaitPublished(options: AwaitOptions): Promise<AwaitResult> {
   const now = options.now ?? Date.now;
   const sleep = options.sleep ?? ((ms: number) => Bun.sleep(ms));
@@ -373,7 +355,6 @@ export async function checkReleaseArtifacts(options: {
   );
 }
 
-/** The checkout's packages checked against the live registry at `version`: what a consumer installing it would hit. */
 export function checkLiveRelease(version: string, only: ReadonlySet<string> = new Set()): Promise<PackageVerdict[]> {
   return checkReleaseArtifacts({
     version,

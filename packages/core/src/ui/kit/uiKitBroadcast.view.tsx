@@ -21,10 +21,6 @@ function cx(...names: (string | false | undefined)[]): string {
   return names.filter(Boolean).join(" ");
 }
 
-/**
- * Skew discipline: the outer slab carries the skew, text inside it is counter-skewed with `${P}-up`,
- * and boxes nested in a slab inherit its skew without their own transform.
- */
 const UP = `${P}-up`;
 
 function Button({ variant = "secondary", size = "md", tone, icon, glyph, pressed, type = "button", className, children, ...rest }: KitButtonProps): ReactNode {

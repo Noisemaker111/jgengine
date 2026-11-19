@@ -47,7 +47,6 @@ const PROPERTY_NAMES: Record<string, string> = {
   fetchPriority: "fetchpriority",
 };
 
-/** SVG attributes that keep their camelCase spelling; every other one is written with hyphens. */
 const SVG_CAMEL = new Set([
   "viewBox", "preserveAspectRatio", "gradientUnits", "gradientTransform", "patternUnits", "patternTransform", "patternContentUnits",
   "spreadMethod", "stdDeviation", "baseFrequency", "numOctaves", "textLength", "lengthAdjust", "clipPathUnits", "maskUnits",
@@ -65,7 +64,6 @@ const EVENT_NAMES: Record<string, string> = {
   blur: "focusout",
 };
 
-/** Elements whose `change` really is the DOM `change` event. */
 function changeEvent(node: Element): string {
   if (node instanceof HTMLSelectElement) return "change";
   if (node instanceof HTMLInputElement && (node.type === "checkbox" || node.type === "radio" || node.type === "file" || node.type === "range" || node.type === "color")) {
@@ -178,7 +176,6 @@ function setListener(node: Element, name: string, handler: unknown): void {
   node.addEventListener(type, listener.dispatch, capture);
 }
 
-/** A controlled field shows its prop, not what the browser typed, once handlers have run. */
 function restoreControlled(node: Element, state: NodeState): void {
   const field = node as HTMLInputElement;
   if (state.value !== undefined && state.value !== null) {
@@ -251,7 +248,6 @@ function setProp(node: Element, tag: string, name: string, prev: unknown, next: 
   node.setAttribute(attribute, next === true ? (attribute.startsWith("aria-") || attribute.startsWith("data-") || attribute === "draggable" || attribute === "spellcheck" || attribute === "contenteditable" ? "true" : "") : String(next));
 }
 
-/** The host a DOM root renders through. */
 export const domHost: Host<Node> = {
   createElement(tag, parent) {
     const svg = tag === "svg" || (parent instanceof Element && parent.namespaceURI === SVG_NS && parent.localName !== "foreignObject");

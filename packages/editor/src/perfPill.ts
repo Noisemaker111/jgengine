@@ -1,4 +1,3 @@
-/** Toolbar perf-pill health, separating an idle render-on-demand loop from a genuinely slow frame. */
 export type EditorPerfTone = "idle" | "healthy" | "busy";
 
 /**

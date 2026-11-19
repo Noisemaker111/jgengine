@@ -13,13 +13,7 @@ function Chip({ label, value }: { label: string; value: string }) {
   );
 }
 
-/**
- * Five panels crowding two top corners, the shape that used to arrange blocks into each other. The
- * canvas stacks each corner, slides what does not fit beside it, and folds the lowest priority into a
- * toggle on a small screen. Screenshots at any viewport without a block landing on a neighbour.
- *
- * @capability hud-auto-layout-preview crowded HUD corners placed without overlap at any screen size
- */
+/** @capability hud-auto-layout-preview crowded HUD corners placed without overlap at any screen size */
 export function HudAutoLayoutPreview({ className }: { className?: string }) {
   const layout = useHudLayout();
   return (

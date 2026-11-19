@@ -47,7 +47,6 @@ import type {
 } from "./types";
 import type { EditorCommand, EditorSessionState } from "./commands";
 
-/** Pure document mutation helpers + exhaustive EditorCommand apply table. */
 function removeByIds(doc: EditorDocument, ids: ReadonlySet<string>): EditorDocument {
   return {
     version: 1,
@@ -204,10 +203,6 @@ function tagWithInstance<T extends { meta?: Record<string, unknown> }>(
   return { ...item, meta: { ...item.meta, prefabId, prefabInstanceId: instanceId } };
 }
 
-/**
- * Replaces one grid layer in place via `transform`, returning `null` when the layer is missing and
- * the same state when the transform is a no-op (so history skips it).
- */
 function updateGridLayer(
   state: EditorSessionState,
   id: string,
@@ -241,7 +236,6 @@ function mapPlaceables(
   };
 }
 
-/** A single mutation handler: narrows `command` to its variant and returns the next state or null. */
 type MutationHandlers = {
   [K in EditorCommand["type"]]: (
     state: EditorSessionState,
@@ -901,7 +895,7 @@ export function applyMutating(state: EditorSessionState, command: EditorCommand)
   return handler(state, command);
 }
 
-/** True when the command changes document structure (not select/undo/redo). @internal */
+/** @internal */
 export function isStructural(command: EditorCommand): boolean {
   return (
     command.type !== "select" &&

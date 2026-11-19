@@ -92,7 +92,6 @@ export const SLOW_TEST_SECONDS: Readonly<Record<string, number>> = {
   "scripts/reference/physics/seakeepingHull.test.ts": 8,
 };
 
-/** A file with no measured time: about 0.03 s of tests and its share of the loading. */
 export const UNMEASURED_FILE_SECONDS = 0.1;
 
 /**
@@ -117,7 +116,6 @@ export function namePattern(text: string, negated: boolean): string {
   return negated ? `^(?!.*${literal})` : literal;
 }
 
-/** What a lane runs: whole files, and split files as `file -t pattern`, with each one's cost. */
 export function laneUnits(files: readonly string[]): { units: string[]; cost: Record<string, number> } {
   const units: string[] = [];
   const cost: Record<string, number> = {};
@@ -156,7 +154,6 @@ export function readsWallClock(source: string): boolean {
   return source.includes("performance.now(");
 }
 
-/** The lanes for a shard's files (split files as two units), and the files that run alone after them. */
 export function planLanes(files: readonly string[], lanes: number, source: (file: string) => string): { lanes: string[][]; alone: string[] } {
   if (lanes <= 1) return { lanes: [[...files]], alone: [] };
   const alone = files.filter((file) => readsWallClock(source(file)));
@@ -164,12 +161,6 @@ export function planLanes(files: readonly string[], lanes: number, source: (file
   return { lanes: units.length === 0 ? [] : splitLanes(units, lanes, cost), alone };
 }
 
-/**
- * Units split into at most `lanes` groups of near-equal measured cost, costliest first, each to
- * the lightest group. Neither batches nor folder order beat this: sixteen batches reloaded the
- * shared modules in each process (shard h did 411 s of work for 221 s of tests), and whole
- * folders put one lane at 149 s beside one at 37 s (runs 41589157131, 41589937587).
- */
 export function splitLanes(units: readonly string[], lanes: number, cost: Readonly<Record<string, number>> = SLOW_TEST_SECONDS): string[][] {
   const groups = Array.from({ length: Math.max(1, Math.min(lanes, units.length)) }, (): { units: string[]; total: number } => ({ units: [], total: 0 }));
   const seconds = (unit: string): number => cost[unit] ?? UNMEASURED_FILE_SECONDS;
@@ -181,7 +172,6 @@ export function splitLanes(units: readonly string[], lanes: number, cost: Readon
   return groups.map((group) => group.units.sort());
 }
 
-/** Eight shards by measured cost; the CI matrix runs one job per entry, in this order. */
 export const SHARDS: readonly Shard[] = [
   {
     name: "a",
@@ -275,7 +265,6 @@ export const SHARDS: readonly Shard[] = [
   },
 ];
 
-/** Every test file under the roots, as repo-relative forward-slash paths. */
 export function walkTestFiles(dir = root, roots: readonly string[] = TEST_ROOTS): string[] {
   const found: string[] = [];
   const walk = (path: string): void => {
@@ -443,10 +432,6 @@ export function failureDetails(output: string, before = 25): string[] {
   return failedTests(output, before).flatMap((test) => [...test.lines, ""]);
 }
 
-/**
- * What a red shard puts where a reader looks first: one annotation per failed test on the run page,
- * and a list in the job summary, each naming the test and its first error line.
- */
 export function failureReport(shard: string, failed: readonly FailedTest[]): { annotations: string[]; summary: string } {
   const escape = (text: string): string => text.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
   const annotations = failed.map((test) => `::error title=${escape(`test (${shard}): ${test.name}`).replace(/[:,]/g, " ")}::${escape(test.error)}`);

@@ -39,13 +39,10 @@ import {
   type RiftScaling,
 } from "./tiers";
 
-
-/** Cores it costs to re-roll a tier's mutators. */
 export const RIFT_REROLL_CORES = 4;
 /** Seconds the reclaimer can stand outside the wreck's ring before the run is forfeit. */
 export const RIFT_LEAVE_GRACE_SECONDS = 8;
 const XP_PER_CLEAR = 300;
-/** From this tier up, the Foreman always drops a legendary. */
 export const RIFT_LEGENDARY_TIER = 4;
 
 export type RiftPhase = "running" | "intermission" | "won" | "lost";
@@ -60,7 +57,6 @@ export interface RiftRunView {
   /** Seconds left on the intermission clock, while one runs. */
   countdown: number | null;
   countdownTotal: number;
-  /** Set once the run ends. */
   medal?: string | null;
   newBest?: boolean;
   newMedals?: readonly string[];
@@ -70,10 +66,8 @@ export interface RiftRunView {
 }
 
 export interface RiftState {
-  /** The ladder opens for good once the plain front has been fought to the end. */
   unlocked: boolean;
   board: MedalBoardState;
-  /** How many times each tier's mutators were re-rolled; the roll is seeded from this. */
   rerolls: Record<string, number>;
   selected: number;
   run: RiftRunView | null;
@@ -152,7 +146,6 @@ export function riftMutatorsFor(ctx: GameContext, tier: number): readonly string
   return selectRules(RIFT_MUTATORS, { count: mutatorCountFor(tier), seed: `overdrive:${tier}:${rerolls}` }).ids;
 }
 
-/** Fold a set of mutators into one effect: multipliers multiply, the rest take the last one named. */
 export function combineMutators(ids: readonly string[]): RiftRuntime["effect"] {
   const out = neutralEffect();
   for (const id of ids) {
@@ -189,18 +182,15 @@ function patchRun(ctx: GameContext, patch: Partial<RiftRunView>): void {
   riftStore.write(ctx, { ...state, run: { ...state.run, ...patch } });
 }
 
-/** True while an Overdrive run holds the wreck. */
 export function riftActive(ctx: GameContext): boolean {
   const phase = riftStore.read(ctx).run?.phase;
   return phase === "running" || phase === "intermission";
 }
 
-/** The shield-recharge multiplier the live run lays on the reclaimer. */
 export function riftShieldRegen(ctx: GameContext): number {
   return riftActive(ctx) ? runtimeOf(ctx).effect.shieldRegen : 1;
 }
 
-/** What a rift fighter's kill is worth: its level for XP and loot, and the run's luck. */
 export function riftLootFor(
   ctx: GameContext,
   id: string,
@@ -335,7 +325,6 @@ function finish(ctx: GameContext, outcome: "won" | "lost", reason: string): void
   ctx.game.audio.play("levelup");
 }
 
-/** Start a tier: the front resets to its first wave with the tier's crews and mutators laid over it. */
 export function startRift(ctx: GameContext, tier: number): { ok: true } | { ok: false; reason: string } {
   const state = riftStore.read(ctx);
   if (!state.unlocked && !frontEverCleared(ctx)) return { ok: false, reason: "Clear the Rustflat Front first." };

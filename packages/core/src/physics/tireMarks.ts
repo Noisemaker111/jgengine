@@ -1,19 +1,15 @@
-/** One laid stretch of rubber: a dark strip from `a` to `b` on the ground at height `y`. */
 export interface TireMark {
   ax: number;
   az: number;
   bx: number;
   bz: number;
   y: number;
-  /** Strip width, m. */
   width: number;
   /** Darkness `0..1` when laid; it fades out over the store's `lifetime`. */
   strength: number;
-  /** Game time it was laid, s. */
   born: number;
 }
 
-/** Serializable {@link TireMarks} contents. */
 export interface TireMarksState {
   marks: TireMark[];
 }
@@ -24,14 +20,8 @@ export interface TireMarksState {
  * `tickDrivableVehicle`'s `tires` option; the shell draws whatever is in `ctx.tireMarks`.
  */
 export interface TireMarks {
-  /**
-   * Lay rubber under wheel `key` (a car id plus a wheel index) from where it last pressed to `[x, y, z]`.
-   * The first press after a lift only records the point; a jump of more than 3 m starts a fresh strip.
-   */
   press(key: string, x: number, y: number, z: number, strength: number, width: number, time: number): void;
-  /** The wheel stopped sliding: its next press starts a new strip. */
   lift(key: string): void;
-  /** Marks still visible at `time`, oldest first. */
   marks(time: number): readonly TireMark[];
   /** Bumps whenever a mark is laid or the store is cleared, so a renderer rebuilds only on change. */
   version(): number;
@@ -43,14 +33,10 @@ export interface TireMarks {
   reset(): void;
 }
 
-/** Shortest strip worth laying, m: shorter presses wait and join the next one. */
 const MIN_SEGMENT = 0.25;
 const MAX_GAP = 3;
 
-/**
- * Creates a {@link TireMarks} pool.
- * @capability tire-marks skid marks laid by sliding wheels that fade over time from a fixed pool
- */
+/** @capability tire-marks skid marks laid by sliding wheels that fade over time from a fixed pool */
 export function createTireMarks(options: { capacity?: number; lifetime?: number } = {}): TireMarks {
   const capacity = Math.max(16, Math.floor(options.capacity ?? 1500));
   const lifetime = Math.max(1, options.lifetime ?? 24);

@@ -1,9 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { EditorContextAction } from "./viewportContextMenu";
 
-/**
- * @internal Headless chrome-skinned viewport context menu (#866). Parent owns placement and action dispatch.
- */
+/** @internal Headless chrome-skinned viewport context menu (#866). Parent owns placement and action dispatch. */
 export function EditorContextMenu({
   x,
   y,

@@ -60,13 +60,6 @@ import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/**
- * GTAO renders the scene with an `overrideMaterial` normal/depth prepass when it has no GBuffer,
- * which stamps transparent overlay quads (additive VFX sprites, telegraphs, debug gizmos) into the
- * AO buffers as opaque squares — the AO composite then multiplies them toward black. The prepass
- * leaves marked overlay subtrees out: the beauty buffer it composites over was already rendered
- * with them in. A chain whose AO reads the beauty pass's own depth buffer draws no prepass.
- */
 const gtaoExcludes: PrepassExclusion = excludesOverlaysAndUnmodelled;
 const gtaoAndOutlineExcludes: PrepassExclusion = (node) => excludesOverlaysAndUnmodelled(node) || excludesFromOutline(node);
 
@@ -82,7 +75,7 @@ export type GtaoVisibilityHooks = {
   _restoreVisibility?: () => void;
 };
 
-/** Point three's GTAO pass at the prepass that already hid its points and lines. @internal */
+/** @internal */
 export function skipGtaoVisibilityWalk(pass: object): boolean {
   const hooks = pass as GtaoVisibilityHooks;
   if (typeof hooks._overrideVisibility !== "function" || typeof hooks._restoreVisibility !== "function") return false;
@@ -95,7 +88,6 @@ export function skipGtaoVisibilityWalk(pass: object): boolean {
   return true;
 }
 
-/** The AO and its denoise run at this fraction of the frame on each axis; the blend upsamples them. */
 const AO_RESOLUTION = 0.5;
 
 class OverlayAwareGTAOPass extends GTAOPass {
@@ -191,7 +183,6 @@ class OverlayAwareGTAOPass extends GTAOPass {
   }
 }
 
-/** DOF's depth prepass has the same `overrideMaterial` overlay-stamping problem as GTAO. */
 class OverlayAwareBokehPass extends BokehPass {
   override render(
     renderer: THREE.WebGLRenderer,
@@ -214,10 +205,10 @@ const TONE_MAPPING: Record<ToneMappingMode, THREE.ToneMapping> = {
   none: THREE.NoToneMapping,
 };
 
-/** A post chain stage that costs its own draws; the plan names the ones a chain actually builds. @internal */
+/** @internal */
 export type PostfxStage = "ao" | "contactShadows" | "ssr" | "atmosphere" | "bloom" | "dof" | "motionBlur" | "smaa" | "taa" | "exposure" | "stylize" | "grade";
 
-/** What one chain will build, resolved from the game's config, the tier and the player's toggles. @internal */
+/** @internal */
 export interface PostfxStagePlan {
   /** MSAA samples on the composer's beauty target: 2 unless AA is off or MSAA-only. */
   samples: number;
@@ -240,7 +231,6 @@ export interface PostfxStagePlan {
   /** Height haze and light shafts toward the key light, read from the beauty depth; null when off. */
   atmosphere: Required<AtmosphereConfig> | null;
   atmosphereSteps: number;
-  /** Haze-bank noise taps along each view ray; 0 keeps the haze even. */
   fogVariationTaps: number;
   /** Screen-space reflections, read from the beauty depth; null when off. */
   ssr: Required<SsrConfig> | null;
@@ -251,25 +241,18 @@ export interface PostfxStagePlan {
   motionBlur: Required<MotionBlurConfig> | null;
   motionBlurSamples: number;
   smaa: boolean;
-  /** Temporal AA in place of SMAA; the beauty pass then renders jittered into a single-sampled target. */
   taa: boolean;
   autoExposure: AutoExposureConfig | null;
   stylize: StylizeConfig | null;
   grade: GradeConfig | null;
   /** The authored exposure the meter corrects around. */
   exposure: number;
-  /**
-   * Composer backing store as a fraction of the canvas. Every stage below `1` — AO, bloom, DOF,
-   * SMAA and the beauty pass itself — renders into a smaller target, and the OutputPass stretches it
-   * back over the canvas.
-   */
   resolutionScale: number;
 }
 
 interface BuiltGraph {
   composer: EffectComposer;
   grade: ShaderPass | null;
-  /** Stages this chain actually built, in pass order. A stage absent here costs no draw. */
   stages: readonly PostfxStage[];
   /** The plan's {@link PostfxStagePlan.resolutionScale}, kept so a resize re-applies it. */
   resolutionScale: number;
@@ -278,7 +261,6 @@ interface BuiltGraph {
    * except the exposure meter and the OutputPass. A chain is built with them off; see {@link showEffects}.
    */
   effects: readonly Pass[];
-  /** The passes that fade the effects in, or null for a chain with no effects. */
   reveal: { snapshot: RevealSnapshotPass; fade: RevealFadePass } | null;
 }
 
@@ -294,7 +276,7 @@ export function showEffects(built: BuiltGraph, on: boolean): void {
   }
 }
 
-/** Turn the effects on and fade them in from the frame without them (see `REVEAL_FADE_SECONDS`). @internal */
+/** @internal */
 export function startRevealFade(built: BuiltGraph): void {
   showEffects(built, true);
   if (built.reveal === null) return;
@@ -303,7 +285,7 @@ export function startRevealFade(built: BuiltGraph): void {
   built.reveal.fade.enabled = true;
 }
 
-/** Move the fade on by one drawn frame; the fade passes switch off once it is through. @internal */
+/** @internal */
 export function advanceRevealFade(built: BuiltGraph, delta: number): void {
   const reveal = built.reveal;
   if (reveal === null || !reveal.fade.enabled) return;
@@ -322,7 +304,7 @@ export function quantizeExposure(value: number): number {
   return Math.round(value * 32) / 32;
 }
 
-/** Release each pass and the composer's owned targets. @internal */
+/** @internal */
 export function disposeGraph(built: BuiltGraph): void {
   for (const pass of built.composer.passes) pass.dispose();
   built.composer.dispose();
@@ -397,10 +379,7 @@ export function resolveMotionBlurStage(config: PostProcessingConfig["motionBlur"
   return (settings.camera <= 0 && settings.objects <= 0) || settings.shutter <= 0 ? null : settings;
 }
 
-/**
- * The stages one chain asks for, before any pass is built. `stages` are the player's toggles over
- * the tier's; a field left out keeps the tier's choice. Pure data. @internal
- */
+/** @internal */
 export function planPostStages(
   config: PostProcessingConfig,
   quality: GraphicsQuality = "high",
@@ -445,7 +424,7 @@ export function planPostStages(
   };
 }
 
-/** The stage toggles a settings surface may offer; each is a pass a chain can either build or skip. @internal */
+/** @internal */
 export type PostfxToggleStage = keyof GraphicsPostStages;
 
 const EVERY_STAGE_ON: GraphicsPostStages = { ao: true, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true };
@@ -658,12 +637,6 @@ export interface PostProcessingProps {
   immediate?: boolean;
 }
 
-/**
- * Draw form of the old `PostProcessing` component: owns the EffectComposer graph,
- * the devtools audit probe, tone-mapping override and the cover-gated effect reveal.
- * The composer renders at frame priority 1, taking over the frame like the old
- * priority-1 `useFrame` did.
- */
 export function postProcessingDraw(getProps: () => PostProcessingProps): EngineDraw {
   let built: BuiltGraph | null = null;
   let audit: PostAudit | null = null;

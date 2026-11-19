@@ -3,12 +3,10 @@ import type { RuneTheme } from "@jgengine/core/ui/rune/primitives";
 
 import type { CommanderPreferences } from "../preferences";
 
-/** IM Fell English SC for the hand that writes orders, Alegreya for the body, both from the font library. */
 export const GAME_FONTS = libraryFontPairing("im-fell-english-sc", "alegreya");
 export const DISPLAY = GAME_FONTS.display.family;
 export const BODY = GAME_FONTS.body.family;
 
-/** The war table's colours: iron-gall ink, sealing wax, brass, campaign parchment, and the two sides' inks. */
 export const INK = "#2b1d10";
 export const INK_DIM = "#5e4630";
 export const WAX = "#8e1f17";

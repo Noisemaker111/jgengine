@@ -1,4 +1,3 @@
-/** How long a resource whose last user left waits before it is freed. */
 export const LINGER_MS = 2000;
 
 /**
@@ -35,12 +34,10 @@ export class Lingering<K, V> {
     return found.value;
   }
 
-  /** Free everything parked now. */
   flush(): void {
     for (const key of [...this.parked.keys()]) this.drop(key);
   }
 
-  /** How many values wait to be freed. */
   get size(): number {
     return this.parked.size;
   }

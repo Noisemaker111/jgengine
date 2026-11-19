@@ -1,6 +1,5 @@
 import { evalCurve, leveling, type CurveDef, type LevelProgress, type LevelingTrack } from "./leveling";
 
-/** Named rule a level threshold grows by. `flat` repeats `step`; `linear` adds `growthRate` per level; `power` uses `level ^ growthRate`; `geometric` multiplies by `growthRate`; `table` reads `table`. */
 export type XpGrowthRule = "flat" | "linear" | "power" | "geometric" | "table";
 
 /**
@@ -12,44 +11,29 @@ export interface XpCurveDef {
   growth: XpGrowthRule;
   /** XP needed for the first level-up (from `startLevel` to `startLevel + 1`). */
   step: number;
-  /** Growth parameter: added XP per level (`linear`), the exponent (`power`) or the ratio (`geometric`). Ignored by `flat` and `table`. */
   growthRate?: number;
-  /** Explicit thresholds for `growth: "table"`, index `0` being the first level-up. */
   table?: readonly number[];
-  /** Highest reachable level. */
   maxLevel: number;
-  /** First level of the curve (default `1`). */
   startLevel?: number;
   /** Rounding of generated thresholds (default `ceil`, so no level costs a fraction of XP). */
   round?: "floor" | "ceil" | "round";
 }
 
-/** One row of a resolved curve: the threshold at `level`, and the lifetime XP it sits at. */
 export interface XpLevelStep {
   level: number;
-  /** XP that leaves this level; `0` at the cap. */
   xpForLevel: number;
-  /** XP accumulated from `startLevel` to reach `level`; `0` at the first level. */
   totalXp: number;
 }
 
-/** A resolved, validated {@link XpCurveDef}: thresholds, lifetime totals, a stated rule, and a leveling track bound to the same numbers. */
 export interface XpCurve {
-  /** Detached copy of the curve data, safe to save or send to a client. */
   readonly def: XpCurveDef;
   readonly maxLevel: number;
   readonly startLevel: number;
-  /** The growth rule written out, e.g. `"power: 80 x level^1.45, ceil (levels 1-40)"`. */
   readonly rule: string;
-  /** XP the given level requires to advance; `0` at or past `maxLevel`. */
   xpForLevel(level: number): number;
-  /** Lifetime XP needed to reach `level` from `startLevel`. */
   totalXpFor(level: number): number;
-  /** Resolve accumulated XP into a settled level, surplus and next threshold. */
   levelForXp(totalXp: number): LevelProgress;
-  /** Every level of the curve with its threshold and lifetime XP. */
   table(): readonly XpLevelStep[];
-  /** A `leveling` track configured with these exact thresholds and cap, for stat-adapter grants. */
   track(): LevelingTrack;
 }
 
@@ -89,7 +73,6 @@ function describeRule(def: XpCurveDef, startLevel: number): string {
   }
 }
 
-/** Check curve data before use; throws `RangeError` naming the offending field. */
 export function assertXpCurve(def: XpCurveDef): void {
   const startLevel = def.startLevel ?? 1;
   check(Number.isInteger(startLevel) && startLevel >= 1, `XP curve startLevel must be an integer >= 1; got ${String(def.startLevel)}`);

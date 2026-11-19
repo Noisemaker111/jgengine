@@ -23,5 +23,4 @@ export const LIFT_HANG = 1.4;
 /** Climb and dive speed, metres a second: Space climbs, C dives, letting go holds height. */
 export const CLIMB_SPEED = 7;
 
-/** Above the ground by more than this, a flyer counts as in the air (burning stamina, flying speed). */
 export const AIRBORNE = 0.6;

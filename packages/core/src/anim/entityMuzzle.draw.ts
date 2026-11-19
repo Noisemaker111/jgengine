@@ -1,7 +1,6 @@
 import { useLayoutEffect, useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
-/** Writes where an entity's shots visibly leave from, in world space; false when it has none right now. */
 export type EntityMuzzleReader = (target: THREE.Vector3) => boolean;
 
 const readers = new Map<string, EntityMuzzleReader>();
@@ -20,7 +19,6 @@ export function registerEntityMuzzle(instanceId: string, reader: EntityMuzzleRea
   };
 }
 
-/** The visible muzzle of `instanceId` into `target`; false leaves `target` unchanged. */
 export function readEntityMuzzle(instanceId: string, target: THREE.Vector3): boolean {
   const reader = readers.get(instanceId);
   return reader === undefined ? false : reader(target);
@@ -33,12 +31,7 @@ function boneKey(name: string): string {
 const RIGHT_HAND = /^(?:mixamorig)?righthand$|^handr$|^handslotr$|^rhand$|^bip0?1rhand$|^handright$|^wristr$/;
 const LEFT_HAND = /^(?:mixamorig)?lefthand$|^handl$|^handslotl$|^lhand$|^bip0?1lhand$|^handleft$|^wristl$/;
 
-/**
- * The bone a rigged character's shots leave from: a `muzzle` node when the model has one, else its
- * right hand (KayKit `handslot.r`, Mixamo `RightHand`, Rocketbox `Bip01 R Hand`, Quaternius `Hand.R`),
- * else its left. Exported for tests.
- * @internal
- */
+/** @internal */
 export function findMuzzleBone(scene: THREE.Object3D): THREE.Object3D | null {
   let muzzle: THREE.Object3D | null = null;
   let right: THREE.Object3D | null = null;
@@ -55,10 +48,6 @@ export function findMuzzleBone(scene: THREE.Object3D): THREE.Object3D | null {
 /** How far past the hand a shot visibly starts, so the line leaves the gun's end rather than the palm. */
 const HAND_REACH_M = 0.28;
 
-/**
- * Register a placed character's visible muzzle: its muzzle node, or a point just in front of its
- * shooting hand along its facing. A model with no hand bone registers nothing.
- */
 export function useEntityMuzzle(scene: THREE.Object3D, instanceId: string | undefined, facingYaw: () => number): void {
   const bone = useMemo(() => findMuzzleBone(scene), [scene]);
   useLayoutEffect(() => {

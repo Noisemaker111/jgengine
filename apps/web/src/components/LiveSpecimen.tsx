@@ -36,7 +36,6 @@ type Control =
   | { kind: "choice"; key: string; label: string; options: readonly ChoiceOption[] }
   | { kind: "action"; key: string; label: string; run: (dials: Dials) => Dials };
 
-/** A hint that points at one control until the visitor uses it. */
 interface Nudge {
   key: string;
   text: string;
@@ -48,7 +47,6 @@ interface SpecimenConfig {
   controls: Control[];
   nudges?: Nudge[];
   hint: string;
-  /** CSS aspect ratio of the stage. */
   aspect?: string;
 }
 
@@ -65,9 +63,7 @@ const PROJECTILE_KINDS: ChoiceOption[] = [
   { value: "taco", label: "taco", patch: { speed: 16, gravity: 9.8, pellets: 3, rpm: 140, size: 2.2 } },
 ];
 
-/** A few of the engine's grass look knobs, with ranges and labels read from its own schema. */
 const GRASS_KNOBS = ["bladeHeight", "density", "curvature", "twist", "splay", "season", "dryness", "flowerShare", "windStrength"];
-/** A spread of the engine's grass species, from moss to pampas; the full library lives in the editor. */
 const GRASS_SHOWCASE = ["meadow", "lawn", "cushion-moss", "wheat", "pampas", "cattail", "zebra-grass", "feather-grass", "fern-glade", "savanna", "crystal-grass"];
 const GRASS_CONTROLS: Control[] = [
   {
@@ -312,7 +308,6 @@ export interface LiveSpecimenProps {
   trace?: Trace;
   /** Called with every settings change, so the code can show the new values. */
   onDials?: (dials: DialSet) => void;
-  /** `side` puts the controls beside the stage on wide screens. */
   layout?: "stack" | "side";
 }
 

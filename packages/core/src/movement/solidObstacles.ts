@@ -15,11 +15,6 @@ import {
  * is missed. Floored so default unit boxes stay covered.
  */
 const OBSTACLE_MAX_HALF_EXTENT = 4;
-/**
- * Hard cap on XZ broadphase reach. City lots ~12-17 m footprint need ~17-20 m after yaw expansion;
- * beyond that we refuse to grow the query into a city-wide box (and rely on the outer AABB of each
- * solid still blocking once its *center* is in range).
- */
 const OBSTACLE_HORIZONTAL_CAP = 22;
 /**
  * Vertical broadphase floor/cap. A walker only needs nearby ground props / step-ups — never full tower
@@ -34,7 +29,6 @@ const OBSTACLE_VERTICAL_CAP = 8;
  * multiply narrowphase cost without changing the blocked footprint.
  */
 const MOVEMENT_MESH_BOX_BUDGET = 12;
-/** Most AABB strips an oriented world solid is sliced into, bounding the corner overhang a yawed box leaves. */
 const SOLID_MAX_STRIPS = 8;
 /** Yaw within this of a quarter turn is treated as axis-aligned (radians). */
 const AXIS_ALIGNED_EPSILON = 1e-4;
@@ -43,19 +37,11 @@ const WALKER_HEIGHT = 1.8;
 
 /** Largest blocking-collider extent in the scene, split so tower height cannot inflate the XZ query. */
 export interface ObstacleReach {
-  /** Max XZ center-to-face distance of any blocking collider (capped). */
   horizontal: number;
-  /** Max vertical center-to-face distance of any blocking collider (capped, much tighter than H). */
   vertical: number;
 }
 
-/**
- * The slice of the scene's object store this query needs. Narrow on purpose: the scene context wires
- * its own store here while it is still being constructed, `ctx.scene.object` satisfies it as-is, and a
- * pure rules package with no `GameContext` to import can satisfy it from its own object list.
- */
 export interface SolidObstacleSource {
-  /** Optional indexed world geometry that is not represented by scene objects. */
   solids?: Pick<WorldSolids, "count" | "inBox"> | undefined;
   list(): readonly { instanceId: string; position: EntityPosition; rotationY: number }[];
   inBox(
@@ -87,23 +73,18 @@ interface ObstacleIndex {
   groups: ObstacleGroup[];
 }
 
-/** Mutable reach cache; one per source, invalidated by object count or by the source's version. */
 export interface ObstacleReachCache {
   count: number;
   value: ObstacleReach;
-  /** Version the value and index were built from; absent for a source that reports none. */
   version?: number | undefined;
-  /** Built index, present only for a versioned source. */
   index?: ObstacleIndex | undefined;
 }
 
-/** A fresh {@link ObstacleReachCache} for a caller that owns its own source. */
 export function createObstacleReachCache(): ObstacleReachCache {
   return { count: -1, value: { horizontal: OBSTACLE_MAX_HALF_EXTENT, vertical: OBSTACLE_VERTICAL_FLOOR } };
 }
 
 const reachCache = perContext(() => createObstacleReachCache());
-
 
 /**
  * Largest blocking reach in the scene, split into horizontal vs vertical and hard-capped. Cached per
@@ -115,7 +96,6 @@ export function solidObstacleReach(ctx: GameContext): ObstacleReach {
   return sourceObstacleReach(ctx.scene.object, reachCache(ctx));
 }
 
-/** {@link solidObstacleReach} against a bare source and caller-owned cache. */
 export function sourceObstacleReach(source: SolidObstacleSource, cache: ObstacleReachCache): ObstacleReach {
   ensureSourceCache(source, cache);
   return cache.value;
@@ -124,9 +104,7 @@ export function sourceObstacleReach(source: SolidObstacleSource, cache: Obstacle
 /** Coarse XZ cell for the obstacle index: a movement box spans tens of metres, so 1 m cells would be
  * almost all empty lookups while a handful of these cover the whole query. */
 const INDEX_CELL_SIZE = 16;
-/** Beyond this many coarse cells a query walks the whole group list instead. */
 const INDEX_CELL_VOLUME_LIMIT = 4096;
-/** Two signed axis indices packed into one small-integer key (no string allocation, no boxing). */
 const INDEX_KEY_RADIX = 32768;
 const INDEX_KEY_BIAS = 16384;
 const INDEX_KEY_LIMIT = 16384;
@@ -227,7 +205,6 @@ function blockingReach(collider: ResolvedCollider): [number, number] {
   return [ox + oz + h[0] + h[2], oy + h[1]];
 }
 
-/** Every indexed obstacle whose object centre lies inside `min`..`max` — the set the broadphase promises. */
 function indexedObstaclesNear(
   index: ObstacleIndex,
   min: EntityPosition,
@@ -267,8 +244,6 @@ function pushGroup(group: ObstacleGroup, out: CollisionObstacle[]): void {
   for (const obstacle of group.obstacles) out.push(obstacle);
 }
 
-/** Yaw-rotate an entity-local AABB about the object origin and re-fit it to an axis-aligned box, expressed
- * as `min`/`max` relative to `position`. Conservative: the rotated box is grown to its enclosing AABB. */
 function yawExpandLocalBox(
   boxMin: readonly [number, number, number],
   boxMax: readonly [number, number, number],
@@ -554,10 +529,8 @@ export function resolveSourceWalkerStep(
   return slideStep(position, stepX, stepZ, obstacles, radius, options.stepUpHeight ?? 0);
 }
 
-/** The obstacles of the walker step being slid; see {@link sourceObstaclesNear}'s `out`. */
 const walkerObstacles: CollisionObstacle[] = [];
 
-/** {@link resolveWalkerStep} against an already-gathered obstacle set. */
 export function slideStep(
   position: EntityPosition,
   stepX: number,

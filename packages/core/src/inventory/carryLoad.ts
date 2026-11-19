@@ -8,7 +8,6 @@ import {
 } from "./encumbrance";
 import type { InventoryState } from "./inventoryModel";
 
-/** Per-item mass in the caller's weight unit; an unknown item weighs 0. */
 export type WeightLookup = (itemId: string) => number;
 
 /**
@@ -27,26 +26,17 @@ export function carriedEntries(states: readonly InventoryState[]): LoadEntry[] {
   return entries;
 }
 
-/** Everything a {@link characterLoad} reading takes: carried inventories, worn gear and the capacity they are measured against. */
 export interface CharacterLoadInput {
-  /** Carried inventories (bag, rig, pockets); a stash left out does not weigh anything. */
   carried?: readonly InventoryState[];
-  /** Worn item ids, one unit each — `Equipment.worn()` mapped to `itemId`. */
   worn?: readonly string[] | undefined;
   weightOf: WeightLookup;
-  /** Carrying capacity in the same unit as `weightOf`; the caller adds level and gear bonuses. */
   capacity: number;
-  /** Fraction of worn gear weight that counts against capacity (default `1`). */
   wornFactor?: number | undefined;
-  /** Where this carrier's encumbered band and slow floor sit — the game's own tuning. */
   encumbrance: EncumbranceConfig;
 }
 
-/** A carrier's load: the encumbrance state, how it splits into carried and worn, and capacity left. */
 export interface CharacterLoad extends EncumbranceState {
-  /** Mass of the carried inventories alone. */
   carriedMass: number;
-  /** Mass worn gear adds after `wornFactor`. */
   wornMass: number;
   /** Capacity left before the carrier is immobile; negative when overloaded. */
   remaining: number;

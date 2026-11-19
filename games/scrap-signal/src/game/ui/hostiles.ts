@@ -1,7 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { enemyById } from "../entities/enemies/catalog";
 
-/** The same earshot the music uses to call a skirmish (`audio/drive.ts`). */
 const THREAT_RADIUS = 42;
 const last = new WeakMap<GameContext, { at: number; near: boolean }>();
 

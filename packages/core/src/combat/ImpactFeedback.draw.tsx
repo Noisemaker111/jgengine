@@ -21,11 +21,9 @@ import { seededRng } from "../random/rng";
 // Particle scatter is look, not simulation: its own fixed stream, so it never draws from the world's `ctx.rng`.
 const scatter = seededRng("jg:impact-marks");
 
-/** What {@link ImpactFeedback} reacts with; every field defaults on. */
 export interface ImpactFeedbackOptions {
   /** Damage type / effect id → class, for names the built-in weapon words do not cover. */
   classes?: Readonly<Record<string, ImpactClass>> | undefined;
-  /** Marks where shots land on a surface. */
   marks?: boolean | undefined;
   /**
    * The game's decal look book: which kinds of mark exist (look, tint, size, life) and which surface
@@ -33,23 +31,16 @@ export interface ImpactFeedbackOptions {
    * surface a shot misses into takes {@link DEFAULT_IMPACT_DECALS}' one scorch.
    */
   decals?: ImpactDecalsConfig | undefined;
-  /** Short time stop on the local player's heavy hits, hits taken and kills. */
   hitstop?: boolean | undefined;
-  /** Killed rigged characters fall as ragdolls before they fade. */
   ragdolls?: boolean | undefined;
 }
 
-/**
- * The engine's decals when a game names none: one scorch on every surface a shot misses into, 25 s
- * with a 2 s fade. Entity hits leave nothing.
- */
 export const DEFAULT_IMPACT_DECALS: ImpactDecalsConfig = {
   kinds: { scorch: { look: "scorch", lifeSeconds: 25, fadeSeconds: 2 } },
   surfaces: { terrain: "scorch", wall: "scorch", object: "scorch" },
 };
 const MARK_LIMIT: Record<GraphicsQuality, number> = { low: 0, medium: 32, high: 64, ultra: 96 };
 const HITSTOP_SCALE = 0.05;
-/** One kick per blast: an explosion that damages five things still kicks the camera once. */
 const KICK_GAP_MS = 120;
 
 /**
@@ -63,7 +54,6 @@ export function impactKick(profile: Pick<ImpactProfile, "kick" | "kickRadius">, 
   return profile.kick * t * t;
 }
 
-/** What the layer has done since it mounted, for `debug_snapshot` under `render/impacts`. */
 const stats = { bursts: 0, marks: 0, entityMarks: 0, missedSurface: 0, kicks: 0, hitstops: 0, surfaceMsMax: 0, surfaceMsLast: 0 };
 
 /**
@@ -101,10 +91,8 @@ const surfaceRay = new THREE.Raycaster();
 const boundsScratch = new THREE.Sphere();
 const alongScratch = new THREE.Vector3();
 const instanceScratch = new THREE.Matrix4();
-/** How far back from the physics hit the drawn-surface ray starts: deeper than any road or floor slab. */
 const SURFACE_LOOKBACK_M = 1.2;
 const SURFACE_MAX_TRIANGLES = 6000;
-/** Rapid fire refines one shot in this window; the rest keep the physics hit. */
 const SURFACE_GAP_MS = 120;
 
 /**
@@ -176,11 +164,7 @@ export function drawnSurfaceHit(
   }
   return null;
 }
-/**
- * A landed shot's impact class from its weapon first, then its effect: a game's `classes` entry for
- * either wins, then a weapon name that reads as a class (`grenade_pineapple` → explosive), then the
- * effect id. Exported for tests. @internal
- */
+/** @internal */
 export function classFor(item: string, effect: string, classes?: Readonly<Record<string, ImpactClass>>): ImpactClass {
   const explicit = classes?.[item] ?? classes?.[effect];
   if (explicit !== undefined) return explicit;
@@ -191,7 +175,6 @@ export function classFor(item: string, effect: string, classes?: Readonly<Record
 /** How far below a body a hit on it looks for the ground its mark lands on, metres. */
 const ENTITY_MARK_DROP_M = 3;
 
-/** Props the impact draw reads; resolved by the UI wrapper each commit. */
 export interface ImpactFeedbackDrawProps extends ImpactFeedbackOptions {
   ctx: GameContext;
   quality: GraphicsQuality;
@@ -249,7 +232,6 @@ export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): Eng
     }
   };
 
-  /** Lay a mark of `kind` at a surface point, sized from the impact class. */
   const lay = (ctx: GameContext, kind: string | null, cls: ImpactClass, point: readonly [number, number, number], normal: readonly [number, number, number]): boolean => {
     const profile = IMPACT_PROFILES[cls];
     if (kind === null || pool === null || profile.markSize <= 0) return false;

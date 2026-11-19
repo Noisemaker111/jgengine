@@ -36,18 +36,11 @@ export function convexPresence(config?: { topology?: MultiplayerTopology }): Mul
   return { kind: "convex", topology: config?.topology ?? "shared", authority: "client" };
 }
 
-/**
- * WebSocket transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer
- * `wsPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared,
- * host-authoritative world — see `examples/HOSTED.md`.
- *
- * @capability multiplayer-ws server-hosted shared world over WebSocket — `multiplayer: ws({ authority: "server" })`
- */
+/** @capability multiplayer-ws server-hosted shared world over WebSocket — `multiplayer: ws({ authority: "server" })` */
 export function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
   return { kind: "ws", topology: config?.topology ?? "shared", url: config?.url, authority: config?.authority };
 }
 
-/** Presence-only WebSocket transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `ws({ ...config, authority: "client" })`. */
 export function wsPresence(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig {
   return { kind: "ws", topology: config?.topology ?? "shared", url: config?.url, authority: "client" };
 }
@@ -65,11 +58,7 @@ export function socketIo(config?: { topology?: MultiplayerTopology; url?: string
   return { kind: "socketio", topology: config?.topology ?? "shared", url: config?.url, authority: config?.authority };
 }
 
-/**
- * Serverless peer-to-peer (WebRTC) session — one peer hosts, friends join by room code.
- *
- * @capability multiplayer-p2p serverless co-op over WebRTC — `multiplayer: p2p({ room })`
- */
+/** @capability multiplayer-p2p serverless co-op over WebRTC — `multiplayer: p2p({ room })` */
 export function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig {
   return { kind: "p2p", topology: config?.topology ?? "private", room: config?.room, authority: config?.authority };
 }
@@ -83,17 +72,10 @@ export function lan(config?: {
   return { kind: "lan", topology: config?.topology ?? "shared", port: config?.port, path: config?.path, authority: config?.authority };
 }
 
-/** True when the adapter opts into host-authoritative world replication (`authority: "server"`). */
 export function isServerAuthoritative(multiplayer: unknown): boolean {
   return resolveAuthority(multiplayer) === "server";
 }
 
-/**
- * Resolved authority for a multiplayer config.
- * - `offline` / missing adapter → `null` (single-player; not multiplayer authority).
- * - unset or `"client"` → `"client"` (presence-only; each client ticks).
- * - `"server"` → host-authoritative shared sim.
- */
 export function resolveAuthority(multiplayer: unknown): MultiplayerAuthority | null {
   const adapter = adapterOf(multiplayer);
   if (adapter === null || adapter.kind === "offline") return null;
@@ -101,15 +83,10 @@ export function resolveAuthority(multiplayer: unknown): MultiplayerAuthority | n
   return "client";
 }
 
-/**
- * True when multiplayer is on but the world sim is not host-authoritative — presence/feeds/chat only.
- * Equivalent to `resolveAuthority(m) === "client"`.
- */
 export function isPresenceOnly(multiplayer: unknown): boolean {
   return resolveAuthority(multiplayer) === "client";
 }
 
-/** True for a single-player world — no adapter, or an explicit `offline()` one. Gates offline-only wiring like local whole-world save. */
 export function isOffline(multiplayer: unknown): boolean {
   const adapter = adapterOf(multiplayer);
   return adapter === null || adapter.kind === "offline";
@@ -154,7 +131,6 @@ export type ServersPoolConfig = {
   | { topology?: "rooms"; maxServers: number; slotsPerServer: number }
 );
 
-/** Resolve the shared-world pool to one unbounded world; room pools keep explicit capacities. */
 export function servers(config: ServersPoolConfig) {
   const shared = config.topology === "shared";
   const maxServers = shared ? 1 : config.maxServers;

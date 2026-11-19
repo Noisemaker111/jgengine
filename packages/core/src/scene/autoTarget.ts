@@ -18,15 +18,9 @@ export interface AutoTargetDeps {
   eligible?: (toId: string) => boolean;
 }
 
-/** Every policy, in the order a "cycle targeting" button steps through them. */
 export const AUTO_TARGET_POLICIES: readonly AutoTargetPolicy[] = ["first", "last", "strongest", "weakest", "nearest", "farthest", "random"];
 
-/**
- * The policy after `current` in `allowed` (default {@link AUTO_TARGET_POLICIES}), wrapping at the end;
- * a policy outside `allowed` steps to its first entry.
- *
- * @capability auto-target-cycle step a player-chosen targeting priority to the next allowed policy
- */
+/** @capability auto-target-cycle step a player-chosen targeting priority to the next allowed policy */
 export function nextAutoTargetPolicy(
   current: AutoTargetPolicy,
   allowed: readonly AutoTargetPolicy[] = AUTO_TARGET_POLICIES,

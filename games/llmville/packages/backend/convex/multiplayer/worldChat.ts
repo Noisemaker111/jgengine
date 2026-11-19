@@ -30,7 +30,6 @@ async function history(ctx: QueryCtx, channelId: string, limit: number | undefin
 
 const chatMessageValidator = v.object({ id: v.string(), channelId: v.string(), fromUserId: v.string(), fromLabel: v.optional(v.string()), body: v.string(), at: v.number() });
 
-/** The engine chat contract (`createConvexChatTransport`) over the shared world's channels, oldest first. */
 export const messages = query({
   args: { channelId: v.string() },
   returns: v.array(chatMessageValidator),
@@ -45,7 +44,6 @@ export const sendMessage = mutation({
   handler: (ctx, args) => sendAs(ctx, args.body, args.channelId),
 });
 
-/** Bot API: post to the shared world chat. */
 export const send = mutation({
   args: { text: v.string(), externalId: v.optional(v.string()) },
   handler: async (ctx, args) => {
@@ -54,7 +52,6 @@ export const send = mutation({
   },
 });
 
-/** Bot API: the latest shared world chat, newest first. */
 export const recent = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => (await history(ctx, WORLD_CHAT_CHANNEL, args.limit)).map(row => ({
@@ -64,7 +61,6 @@ export const recent = query({
 
 export const { pruneChatMessages: pruneOldChatMessages } = createChatFunctions();
 
-/** One-shot history migration preserving author identity, display name, body and event time. */
 export const migrateLegacyMessages = internalMutation({
   args: {},
   returns: v.object({ migrated: v.number(), remaining: v.boolean() }),

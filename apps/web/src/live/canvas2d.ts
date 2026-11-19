@@ -76,7 +76,6 @@ export function mountCanvas2d(
   };
 }
 
-/** Keycaps in a row, lit when held: shows which keys the demo (or the visitor) is pressing. */
 export function drawKeycaps(
   ctx: CanvasRenderingContext2D,
   keys: readonly { label: string; on: boolean; wide?: boolean }[],
@@ -104,7 +103,6 @@ export function drawKeycaps(
   ctx.restore();
 }
 
-/** A small pill label, for "Autopilot" and similar states. */
 export function drawPill(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, tone: "accent" | "live" | "muted" = "muted"): void {
   ctx.save();
   ctx.font = "600 10.5px ui-monospace, monospace";
@@ -135,7 +133,6 @@ export function takeover(idleMs = 5000): { touch(): void; byVisitor(): boolean }
   };
 }
 
-/** Tracks held key codes while `target` has focus, and stops the page scrolling on game keys. */
 export function heldKeys(target: HTMLElement, gameKeys: ReadonlySet<string>): { held: Set<string>; dispose(): void } {
   const held = new Set<string>();
   const down = (e: KeyboardEvent) => {

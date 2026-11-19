@@ -1,6 +1,5 @@
 import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
-/** Inputs for {@link createDecalDrapeGeometry}. */
 export interface DecalDrapeOptions {
   /** Decal edge length in metres. */
   size: number;
@@ -12,7 +11,6 @@ export interface DecalDrapeOptions {
   segments?: number;
 }
 
-/** Baked vertex/index buffers for one draped ground decal. */
 export interface DecalDrapeGeometry {
   positions: Float32Array;
   normals: Float32Array;

@@ -39,7 +39,6 @@ import type {
 } from "./types";
 import { applyMutating, isStructural } from "./commandApply";
 
-/** A single editor mutation — select, move, add, remove, undo/redo — dispatched to a session. */
 export type EditorCommand =
   | { type: "select"; ids: readonly string[] }
   | { type: "clearSelection" }
@@ -137,23 +136,19 @@ export type EditorCommand =
   | { type: "undo" }
   | { type: "redo" };
 
-/** Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step. */
 export interface EditorDispatchOptions {
   coalesce?: string | undefined;
 }
 
-/** The document plus current selection at a point in editor history. */
 export interface EditorSessionState {
   document: EditorDocument;
   selection: string[];
 }
 
-/** Stateful, undoable handle for driving scene edits from UI or an MCP agent. */
 export interface EditorSession {
   getState(): EditorSessionState;
   subscribe(listener: (state: EditorSessionState) => void): () => void;
   dispatch(command: EditorCommand, options?: EditorDispatchOptions): EditorSessionState;
-  /** Stage a command batch, then commit one undo step and notification; failures leave all state intact. */
   transaction(commands: readonly EditorCommand[]): EditorTransactionResult;
   exportJson(pretty?: boolean): string;
   canUndo(): boolean;
@@ -387,23 +382,15 @@ const terrainStrokes: {
   blend: { apply: applyWeightDeltaToSnapshot, revert: revertWeightDeltaFromSnapshot },
 };
 
-/** Maps a terrain-brush command type to its stroke kind. */
 const terrainStrokeKind: Record<"sculptTerrain" | "paintTerrain" | "blendTerrain", TerrainStrokeKind> = {
   sculptTerrain: "sculpt",
   paintTerrain: "paint",
   blendTerrain: "blend",
 };
 
-/**
- * A single reversible step. A `snapshot` entry restores a whole prior document; a stroke entry
- * carries only the brush's compact vertex delta.
- */
 type HistoryEntry = { kind: "snapshot"; state: EditorSessionState } | TerrainStroke;
 
-/** Creates an editor session with undo/redo history seeded from an initial document.
- * Environment commands validate and copy their candidate bag before publishing state or history.
- * @internal
- */
+/** @internal */
 export function createEditorSession(initial: EditorDocument, historyLimit = 100, validateDocument?: (document: EditorDocument) => void): EditorSession {
   validateDocument?.(initial);
   let state: EditorSessionState = {
@@ -569,9 +556,7 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100,
   };
 }
 
-/** Compact snapshot of a session state — counts, selection, and the selected object.
- * @internal
- */
+/** @internal */
 export function summarizeEditorSession(state: EditorSessionState): {
   markers: number;
   volumes: number;

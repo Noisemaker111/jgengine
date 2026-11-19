@@ -11,14 +11,10 @@ export interface AircraftNozzle {
    * `1` the back-pressure loss scales with the strength (thrust never below zero); sane over `0..4`.
    */
   strength?: number;
-  /** Total nozzle exit area at the curve's peak thrust, m²; it scales with the curve, so shutting engines in a cluster shrinks it. */
   exitArea: number;
 }
 
-/**
- * Delivered thrust, N, for the curve's vacuum thrust, its peak and the ambient pressure, Pa.
- * @capability aircraft-nozzle rocket thrust lost to ambient pressure on the nozzle exit
- */
+/** @capability aircraft-nozzle rocket thrust lost to ambient pressure on the nozzle exit */
 export function nozzleThrust(effect: AircraftNozzle, strength: number, vacuumThrust: number, peakThrust: number, ambientPressure: number): number {
   if (strength <= 0 || vacuumThrust <= 0) return vacuumThrust;
   const area = effect.exitArea * (vacuumThrust / Math.max(1e-9, peakThrust));

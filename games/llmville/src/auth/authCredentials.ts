@@ -6,7 +6,6 @@ import {
 
 export { deriveUsernameFromEmail };
 
-/** Resolve the stored profile handle (skips the founder username step). */
 export function resolveAuthUsername(
   convexUser: { username?: string | null } | null | undefined,
 ): string | null {

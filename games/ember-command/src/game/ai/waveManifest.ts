@@ -3,7 +3,6 @@ import type { EncounterSequenceConfig as PlanConfig } from "@jgengine/core/waves
 
 import { ENEMY_WAVE_INTERVAL } from "../tuning";
 
-/** The entry key an order uses; the game resolves it to the nearest Marauder camp when the unit spawns. */
 export const MARCH_ENTRY = "warcamp";
 
 /**

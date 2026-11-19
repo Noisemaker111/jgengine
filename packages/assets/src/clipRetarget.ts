@@ -1,25 +1,18 @@
 import * as THREE from "three";
 
-/** One retargeted bone: the target bone driven by a source bone, and optional children that aim each. */
 export interface RetargetBone {
   target: string;
   source: string;
-  /** Bones the two point toward at rest; aligning them corrects different rest poses (A-pose onto T-pose). */
   aim?: { target: string; source: string };
 }
 
-/** How {@link retargetClipByRest} maps one skeleton's motion onto another. */
 export interface RetargetOptions {
-  /** Name of the output clip. */
   name: string;
   bones: readonly RetargetBone[];
-  /** The hip pair whose travel and bob carry over, scaled by the hips' rest heights. */
   hip: { target: string; source: string };
-  /** Left and right legs of each skeleton, used to turn the source to face the way the target faces. */
   sides: { target: readonly [string, string]; source: readonly [string, string] };
   /** Sampling rate in frames per second. Default 30. */
   fps?: number;
-  /** Drop the hip's travel on the ground plane, keeping bob. */
   inPlace?: boolean;
 }
 
@@ -37,7 +30,6 @@ function worldQuaternion(object: THREE.Object3D): THREE.Quaternion {
   return object.getWorldQuaternion(new THREE.Quaternion());
 }
 
-/** The lowest joint's height: the floor a skeleton stands on, with or without a mesh. */
 function lowestJoint(root: THREE.Object3D): number {
   let lowest = Infinity;
   root.traverse((object) => {

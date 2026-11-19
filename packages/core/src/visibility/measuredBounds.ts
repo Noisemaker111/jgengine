@@ -1,12 +1,10 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-/** A model's measured local box (entity/object frame, Y up), as the renderer mounted it. */
 export interface RenderBox {
   readonly min: readonly [number, number, number];
   readonly max: readonly [number, number, number];
 }
 
-/** A Y-axis-centred sphere that wraps a {@link RenderBox} under any yaw. */
 export interface RenderSphere {
   readonly radius: number;
   readonly offsetY: number;
@@ -52,7 +50,7 @@ function sameBox(a: RenderBox, b: RenderBox): boolean {
   return true;
 }
 
-/** The measured box for one entity kind / object catalog id, or `undefined` before it mounts. @internal */
+/** @internal */
 export function renderBoundsOf(ctx: GameContext, target: "entity" | "object", key: string): RenderBox | undefined {
   return boxesByContext.get(ctx)?.[target].get(key);
 }

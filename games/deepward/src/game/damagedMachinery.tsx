@@ -4,7 +4,6 @@ import type { EmitterConfig } from "@jgengine/core/vfx/particles";
 import { useGameContext } from "@jgengine/ui/provider";
 import { editorLayers, type Place } from "../world";
 
-/** The vents the editor scene places, by effect name; each recipe is plain emitter data. */
 export type VentEffect = "steam" | "drip" | "spark";
 const RECIPES: Readonly<Record<VentEffect, { config: EmitterConfig; blending: "additive" | "normal"; render: { shape: "smoke" | "point" | "streak" } }>> = {
   steam: {
@@ -26,7 +25,6 @@ export function ventMarkers(place: Place) {
   return editorLayers.markers.filter(marker => marker.kind === "deepward-vent" && marker.meta?.["place"] === place);
 }
 
-/** Standing particle emitters for this floor's vents; leaving the floor detaches them. */
 export function DamagedMachinery({ place }: { place: Place }) {
   const ctx = useGameContext(), vents = useMemo(() => ventMarkers(place), [place]);
   useEffect(() => {

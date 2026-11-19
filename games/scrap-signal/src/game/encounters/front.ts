@@ -47,15 +47,12 @@ import {
   type ForemanPhase,
 } from "./waves";
 
-/** Range at which a gunshot can be heard at all; a loud gun multiplies it. */
 const HEARING_RANGE = 32;
-/** Most enemies one shot sends looking. */
 const MAX_INVESTIGATORS = 3;
 /** Seconds a noise is remembered before it is fully gone. */
 const MEMORY_SECONDS = 9;
 /** Seconds between hearing-memory reads, not per frame. */
 const HUNT_TICK = 0.25;
-/** Props that read as cover; their authored placement, not a coordinate table, places the points. */
 const COVER_PROPS = new Set(["cover_crate", "wreck", "barricade", "rock_spire", "bus_wreck", "tent", "watchtower"]);
 
 interface FrontUnit {
@@ -93,20 +90,12 @@ interface FrontRuntime {
   nextWaveIn: number;
   pressure: PressurePlan | null;
   cover: CoverPoint[];
-  /** Capture staging only: health fraction the Foreman should arrive at. */
   stageBossFraction: number | null;
   seq: number;
-  /** A run laid over the authored front (an Overdrive tier); null for the plain front. */
   run: FrontRunHooks | null;
-  /** True once the plain front has been fought to the end in this session. */
   everCleared: boolean;
 }
 
-/**
- * What a run laid over the front owns: every arrival passes through `onSpawn` (to scale it, give it a
- * mutator or a twin), `gate` decides when a cleared wave lets the next one out, and `onCleared` hears
- * the last wave fall. The front keeps the squads, cover, hearing and the Foreman's clock.
- */
 export interface FrontRunHooks {
   onSpawn?: (ctx: GameContext, id: string, catalogId: string, position: EntityPosition) => void;
   /** Called every tick between waves; true releases `nextWave` (1-based). */
@@ -141,7 +130,6 @@ function freshRuntime(): FrontRuntime {
 
 const runtimeOf = perContext(freshRuntime);
 const encounterOf = perContext(() => createEncounter({ definition: FRONT_WAVES, seed: FRONT_SEED }));
-/** The encounter as authored, before any wave opened: what a fresh run of the front restores. */
 const pristineEncounter = createEncounter({ definition: FRONT_WAVES, seed: FRONT_SEED }).snapshot();
 const huntOf = perContext((ctx) => createShotHunt(() => huntingRoster(ctx), {
   hearingRange: HEARING_RANGE,
@@ -167,11 +155,6 @@ function factionOf(def: EnemyDef): Faction {
   return def.family === "ripper" || def.id === FOREMAN_ID ? "ripper" : "scrapjack";
 }
 
-/**
- * Hand a squad its duties from where it stands right now, then give each fighter the role its crew
- * dials for that duty. This is the whole difference between the two groups: the engine decides who
- * holds, flanks and takes cover, and the crew's role table decides what those words mean.
- */
 export function assignFrontDuties(
   faction: Faction,
   fighters: readonly FighterState[],
@@ -238,12 +221,10 @@ export function isFrontUnit(ctx: GameContext, id: string): boolean {
   return runtimeOf(ctx).units.has(id);
 }
 
-/** Where an investigating enemy last heard the shot, or null once the memory has faded. */
 export function huntTargetFor(ctx: GameContext, id: string): EntityPosition | null {
   return runtimeOf(ctx).hunting.get(id) ?? null;
 }
 
-/** What the front is doing, for a HUD, a capture probe or a test. */
 export function frontStatus(ctx: GameContext): {
   started: boolean;
   cleared: boolean;
@@ -263,7 +244,6 @@ export function frontStatus(ctx: GameContext): {
   };
 }
 
-/** Numeric form for `capture.probe`, which only carries numbers. */
 export function frontProbe(ctx: GameContext) {
   const status = frontStatus(ctx);
   const phase = status.boss === null ? -1 : FOREMAN_PHASES.findIndex((entry) => entry.id === status.boss);
@@ -342,10 +322,6 @@ function spawnOrder(ctx: GameContext, order: EncounterOrder): void {
   spawnFrontUnit(ctx, order.unit, entry, order.waveId);
 }
 
-/**
- * Put one fighter on the front near `around`, enrolled in its crew and the open wave. The encounter's
- * orders come through here, and so does anything a run adds on top (a twin, an escort).
- */
 export function spawnFrontUnit(ctx: GameContext, unit: string, around: { x: number; z: number }, waveId = "extra"): string | null {
   const runtime = runtimeOf(ctx);
   const def = enemyById(unit);
@@ -392,7 +368,6 @@ export function spawnFrontUnit(ctx: GameContext, unit: string, around: { x: numb
   return id;
 }
 
-/** Where a fighter in each crew wants to be, from its duty and its crew's dials. */
 function postFor(
   ctx: GameContext,
   role: SquadRole,
@@ -441,7 +416,6 @@ function blockedSegment(ctx: GameContext, from: Vec3, to: Vec3): boolean {
   }) !== null;
 }
 
-/** The nearest hostile to a squad's centre, or the player when they are closer than any rival. */
 function threatFor(
   ctx: GameContext,
   faction: Faction,
@@ -511,7 +485,6 @@ function thinkSquad(ctx: GameContext, faction: Faction, playerId: string, player
   }
 }
 
-/** One living front fighter: walk it to its post and let it fight from there. */
 function driveUnit(ctx: GameContext, id: string, nowMs: number, dt: number): void {
   const runtime = runtimeOf(ctx);
   const entity = ctx.scene.entity.get(id);
@@ -538,7 +511,6 @@ function driveUnit(ctx: GameContext, id: string, nowMs: number, dt: number): voi
   tickEnemyAttack(ctx, def, id, entity.position, orders.threatId, orders.threat, dt, nowMs, { stationary: true });
 }
 
-/** The Foreman's own clock: advance its phase, fire its tell, and leave its stance for the driver. */
 function tickForeman(ctx: GameContext, nowMs: number, dt: number): void {
   const runtime = runtimeOf(ctx);
   const boss = runtime.boss;
@@ -638,10 +610,6 @@ function advanceWaves(ctx: GameContext, dt: number): void {
 }
 
 /**
- * One tick of the Rustflat Front: hearing first (a shot is a fact the whole battle shares), then the
- * waves, then one squad pass per crew, then the fighters and the Foreman.
- */
-/**
  * The front's crews (husk drones, elites, the Foreman) only come for the wreck once Old Tusk is down:
  * the crash site's first hour is whelps and bruisers, and the shelf's drones are the next zone's news.
  */
@@ -727,7 +695,6 @@ export function stageFrontBoss(ctx: GameContext): void {
   frameBoss(ctx);
 }
 
-/** Capture staging for the opening wave: face the wreck and put the probe on the field at once. */
 export function stageFrontFight(ctx: GameContext): void {
   const runtime = runtimeOf(ctx);
   for (const id of [...runtime.units.keys()]) ctx.scene.entity.despawn(id);
@@ -772,7 +739,6 @@ export function startFrontRun(ctx: GameContext, hooks: FrontRunHooks): void {
   openWave(ctx, 0);
 }
 
-/** Stop a run: its fighters leave the field and the front stays quiet until the next run. */
 export function abortFrontRun(ctx: GameContext): void {
   const runtime = runtimeOf(ctx);
   clearField(ctx);
@@ -786,17 +752,14 @@ export function frontRunActive(ctx: GameContext): boolean {
   return runtimeOf(ctx).run !== null;
 }
 
-/** True once the plain front was fought to the end in this session. */
 export function frontEverCleared(ctx: GameContext): boolean {
   return runtimeOf(ctx).everCleared;
 }
 
-/** The fighters on the field right now. */
 export function frontUnitIds(ctx: GameContext): readonly string[] {
   return [...runtimeOf(ctx).units.keys()];
 }
 
-/** The wreck the front is fought over. */
 export const FRONT_SITE: { readonly x: number; readonly z: number } = SITE;
 
 function frameFront(ctx: GameContext): void {
@@ -814,7 +777,6 @@ function frameFront(ctx: GameContext): void {
   });
 }
 
-/** Put the staged Foreman on the open road in the opening view, where the camera is proven to look. */
 function frameBoss(ctx: GameContext): void {
   const runtime = runtimeOf(ctx);
   const boss = runtime.boss;

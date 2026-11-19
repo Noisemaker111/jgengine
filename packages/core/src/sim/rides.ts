@@ -14,18 +14,13 @@ import { createPhaseSchedule, type PhaseSchedule } from "../time/stateSchedule";
 import { createWaitQueue, type QueueWait, type WaitQueue, type WaitQueueSnapshot } from "./queue";
 import type { NeedSet } from "./needs";
 
-/** Where a ride is in its cycle. */
 export type RidePhase = "idle" | "loading" | "riding" | "unloading" | "broken";
 
 const RIDE_PHASE_ORDER: readonly RidePhase[] = ["idle", "loading", "riding", "unloading", "broken"];
 
-/** What a ride is worth to a guest. All three come from the ride's own data. */
 export interface RideRatings {
-  /** How good the ride is; a higher rating draws more guests. */
   readonly excitement: number;
-  /** Physical force; a guest past their comfort loses interest. */
   readonly intensity: number;
-  /** Motion sickness; a guest past their comfort loses interest. */
   readonly nausea: number;
 }
 
@@ -33,21 +28,17 @@ export interface RideRatings {
 export interface RideBreakdown {
   /** Chance one completed cycle breaks the ride at zero wear. */
   readonly baseChance: number;
-  /** Added chance per cycle since the last service — the wear curve. */
   readonly wearChance: number;
   /** Seconds the ride is out while it is repaired. */
   readonly repairSeconds: number;
-  /** Money charged when a breakdown is repaired. */
   readonly repairCost: number;
   /** Money charged when a mechanic services the ride before it breaks. */
   readonly serviceCost: number;
 }
 
-/** Everything a ride is: its ratings, its cycle and its wear. Content, not code. */
 export interface RideDefinition {
   readonly id: string;
   readonly ratings: RideRatings;
-  /** Guests one cycle carries; the line keeps the rest. */
   readonly capacity: number;
   readonly loadSeconds: number;
   readonly rideSeconds: number;
@@ -56,14 +47,11 @@ export interface RideDefinition {
   readonly breakdown?: RideBreakdown | undefined;
 }
 
-/** A ride's line as a game or the devtools overlay reads it. */
 export interface RideQueueView {
   readonly size: number;
-  /** Wait facing a guest joining now, from the queue's own throughput. */
   readonly wait: QueueWait;
 }
 
-/** One ride's live state. */
 export interface RideView {
   readonly id: string;
   readonly ratings: RideRatings;
@@ -71,18 +59,14 @@ export interface RideView {
   readonly phase: RidePhase;
   /** Seconds left in the current phase; `0` while idle. */
   readonly phaseSeconds: number;
-  /** Guests on board right now. */
   readonly riders: number;
   readonly queue: RideQueueView;
   readonly cycles: number;
-  /** Completed cycles since the ride was last serviced — what the wear curve reads. */
   readonly wear: number;
   readonly breakdowns: number;
-  /** Money this ride has cost in repairs and services. */
   readonly spend: number;
 }
 
-/** Counters a devtools probe or test reads. */
 export interface RideStats {
   rides: number;
   broken: number;
@@ -91,14 +75,12 @@ export interface RideStats {
   boarded: number;
   cycles: number;
   breakdowns: number;
-  /** Money spent on repairs and services since creation. */
   spend: number;
   ticks: number;
   /** Slowest single `tick` seen so far, in milliseconds. */
   slowestTickMs: number;
 }
 
-/** Where a ride's boardings, alightings and breakdowns are announced. Every hook is optional. */
 export interface RideTickSink {
   onBoard?(rideId: string, guestId: string, at: number): void;
   onAlight?(rideId: string, guestId: string, at: number): void;
@@ -106,27 +88,21 @@ export interface RideTickSink {
   onRepaired?(rideId: string, cost: number, at: number): void;
 }
 
-/** In-play dials a ride accepts from {@link RideSystem.retune}. */
 export interface RideRetune {
   readonly ratings?: Partial<RideRatings>;
   readonly capacity?: number;
   readonly loadSeconds?: number;
   readonly rideSeconds?: number;
   readonly unloadSeconds?: number;
-  /** Merge into the breakdown curve, or `null` to make the ride reliable. */
   readonly breakdown?: Partial<RideBreakdown> | null;
 }
 
-/** What a service cost the caller. */
 export interface RideServiceResult {
   readonly id: string;
-  /** Money to debit; `0` when the ride had no wear to clear. */
   readonly cost: number;
-  /** Completed cycles the service cleared. */
   readonly wear: number;
 }
 
-/** Serializable park state: the clock, each ride's cycle position, wear and line. */
 export interface RideSystemSnapshot {
   elapsed: number;
   rides: {
@@ -144,10 +120,8 @@ export interface RideSystemSnapshot {
   }[];
 }
 
-/** Everything a ride system needs. */
 export interface RideSystemConfig {
   readonly rides: readonly RideDefinition[];
-  /** `[0,1)` source for breakdown rolls; pass `ctx.rng`. Only read when a ride has a breakdown curve. */
   readonly rng?: () => number;
   /** Seed seconds per guest for a line that has not boarded yet. Default 8. */
   readonly queueSeedServiceSeconds?: number;
@@ -169,30 +143,24 @@ export interface RideSystem {
   /** Bumped by `retune` and `restore`, so a chooser can rebuild stale options. */
   revision(): number;
   rideIds(): readonly string[];
-  /** Live definitions, including any retuning. */
   definitions(): readonly RideDefinition[];
   ride(id: string): RideView | null;
-  /** Every ride's live state. Allocates — debug and decision paths. */
   rides(): readonly RideView[];
   queue(id: string): WaitQueue | null;
-  /** Put a guest at the back of a ride's line; false on an unknown ride or a guest already waiting. */
   join(id: string, guestId: string): boolean;
   leave(id: string, guestId: string): boolean;
   /** Seconds a guest joining now would wait; `0` on an unknown ride. */
   waitSeconds(id: string): number;
   /** Advance every ride's cycle by `dt` seconds. */
   tick(dt: number, sink?: RideTickSink): void;
-  /** Pay a ride's maintenance cost and clear its wear; nothing to pay when it has none. */
   service(id: string): RideServiceResult | null;
   retune(id: string, patch: RideRetune): boolean;
   stats(): RideStats;
   snapshot(): RideSystemSnapshot;
   restore(next: RideSystemSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
-/** A ride's breakdown curve a park starts from when it has none and retunes only part of one. */
 export const DEFAULT_RIDE_BREAKDOWN: RideBreakdown = {
   baseChance: 0,
   wearChance: 0,
@@ -204,7 +172,6 @@ export const DEFAULT_RIDE_BREAKDOWN: RideBreakdown = {
 interface RideState {
   def: RideDefinition;
   queue: WaitQueue;
-  /** The ride's cycle: idle waits for a line, then load → ride → unload, and broken is entered out of order. */
   schedule: PhaseSchedule<RidePhase>;
   riders: string[];
   cycles: number;
@@ -212,7 +179,6 @@ interface RideState {
   breakdowns: number;
   repairSpend: number;
   serviceSpend: number;
-  /** Guests carried since creation. */
   boarded: number;
 }
 
@@ -573,34 +539,21 @@ export interface RideRatingRange {
   readonly nauseaMax: number;
 }
 
-/** A 0–10 rating scale, the usual shape of a ride catalog. Override it when a park rates differently. */
 export const DEFAULT_RIDE_RATING_RANGE: RideRatingRange = { excitementMax: 10, intensityMax: 10, nauseaMax: 10 };
 
-/** How empty a bored guest's fun need has to be before a ride starts to pull, by default. */
 export const DEFAULT_RIDE_FUN_CURVE: ResponseCurve = { kind: "linear", from: 0.15, to: 0.9 };
 
-/**
- * What one guest wants from a ride: the intensity and nausea they are comfortable with, and how long
- * they will stand in line. All three are the guest's own data.
- */
 export interface RideTaste {
-  /** Intensity rating this guest is happy with; a harder ride loses appeal past it. */
   readonly intensityComfort: number;
-  /** Nausea rating this guest tolerates. */
   readonly nauseaComfort: number;
   /** Seconds of queue this guest accepts; at that wait a ride's appeal is spent. */
   readonly queueTolerance: number;
 }
 
-/** Policy a park might vary when it turns taste and ride data into utility options. */
 export interface RideChoicePolicy {
-  /** Rating scale the taste curves normalize against. Default {@link DEFAULT_RIDE_RATING_RANGE}. */
   readonly range?: RideRatingRange;
-  /** Declared need whose emptiness makes every ride more attractive — a bored guest. */
   readonly funNeed?: string;
-  /** Curve sampling that need. Default {@link DEFAULT_RIDE_FUN_CURVE}. */
   readonly funCurve?: ResponseCurve;
-  /** Weight on the fun term. Default `1`. */
   readonly funWeight?: number;
 }
 
@@ -613,7 +566,6 @@ function risesTo(rating: number, max: number): number {
   return sampleResponseCurve({ kind: "linear", from: 1, to: 0 }, clamp(rating / max, 0, 1));
 }
 
-/** `1` while the rating stays inside the guest's comfort, falling to `0` at the park's maximum. */
 function comfortFit(rating: number, comfort: number, max: number): number {
   if (!(max > comfort)) return 1;
   return sampleResponseCurve(
@@ -622,12 +574,7 @@ function comfortFit(rating: number, comfort: number, max: number): number {
   );
 }
 
-/**
- * One ride's standing appeal to one guest, before queue cost. Excitement draws, force and nausea
- * push back — what a guest's own card or thought bubble can show.
- *
- * @capability ride-appeal how much one guest likes one ride, from its ratings and their taste
- */
+/** @capability ride-appeal how much one guest likes one ride, from its ratings and their taste */
 export function rideAppeal(ratings: RideRatings, taste: RideTaste, range: RideRatingRange = DEFAULT_RIDE_RATING_RANGE): number {
   return (
     risesTo(ratings.excitement, range.excitementMax) *
@@ -656,7 +603,6 @@ export function rideChoiceOptions(
   return rides.map((ride) => ({ id: ride.id, base: rideAppeal(ride.ratings, taste, range), ...terms }));
 }
 
-/** The live queue a ride-choice candidate is costed against. {@link RideSystem} satisfies this. */
 export interface RideWaitSource {
   rideIds(): readonly string[];
   waitSeconds(id: string): number;
@@ -692,13 +638,11 @@ function validateTaste(taste: RideTaste): void {
   }
 }
 
-/** Serializable chooser state: the guest's taste and the brain's held pick. */
 export interface RideChooserSnapshot {
   taste: RideTaste;
   brain: UtilityBrainSnapshot;
 }
 
-/** Everything a ride chooser needs: the park, the guest's taste, and the guest's needs. */
 export interface RideChooserConfig {
   readonly system: RideSystem;
   readonly taste: RideTaste;
@@ -718,17 +662,12 @@ export interface RideChooserConfig {
  * food picks rides, and a guest's queue tolerance is a weight rather than a rule.
  */
 export interface RideChooser {
-  /** Pick a ride for this guest now, or `null` when the park has no rides. */
   choose(): string | null;
-  /** Need-driven appeal of one ride for this guest, queue excluded. Throws on an unknown ride. */
   scoreOf(rideId: string): number;
-  /** Decay needs and age the hold timer; call once per tick before `choose`. */
   advance(dt: number): void;
-  /** Replace this guest's taste, keeping the held pick when that ride still exists. */
   setTaste(taste: RideTaste): void;
   snapshot(): RideChooserSnapshot;
   restore(next: RideChooserSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 

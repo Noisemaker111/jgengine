@@ -12,7 +12,6 @@ export interface PathFollowConfig {
 
 export interface PathFollowState {
   position: Waypoint;
-  /** Index of the waypoint the mover is currently travelling toward. */
   target: number;
   /** Yaw (radians) of the current travel direction, matching engine `rotationY`. */
   heading: number;
@@ -21,7 +20,6 @@ export interface PathFollowState {
   distanceTravelled: number;
 }
 
-/** Anything that reports ground height at an XZ point, such as a terrain heightfield. */
 export interface HeightSource {
   sampleHeight(x: number, z: number): number;
 }
@@ -55,7 +53,6 @@ export type PathProgress =
 
 /** Read-only progress readout for inspection/debug tooling, produced by {@link pathFollowProgress}. */
 export interface PathFollowProgress {
-  /** Cumulative world-distance travelled (matches {@link PathFollowState.distanceTravelled}). */
   distance: number;
   /** Fraction `0..1` of total path length at the current position. */
   normalized: number;
@@ -69,7 +66,6 @@ interface PathSegment {
   from: Waypoint;
   to: Waypoint;
   len: number;
-  /** Waypoint index this segment travels toward (the follower's `target`). */
   dest: number;
 }
 
@@ -96,24 +92,12 @@ function distanceForProgress(target: PathProgress, total: number, segments: read
   return distance;
 }
 
-/**
- * Total world-distance of a path — sum of every segment, including the wrap segment back to the
- * first waypoint when `loop` is set. Zero for a degenerate (0- or 1-waypoint) path.
- *
- * @capability path-length total polyline distance for progress math and seeding
- */
+/** @capability path-length total polyline distance for progress math and seeding */
 export function followPathLength(config: PathFollowConfig): number {
   return pathSegments(config.waypoints, config.loop ?? false).reduce((sum, seg) => sum + seg.len, 0);
 }
 
-/**
- * Place a follower at a semantic {@link PathProgress} without simulating from the start — the seek
- * adapter behavior lifecycles use to seed distributed phases and restore serialized routes. Pure;
- * returns a fresh {@link PathFollowState} whose `heading` gives travel direction. Looping paths wrap
- * the distance; non-looping paths clamp to `[0, followPathLength]` and report `done` at the end.
- *
- * @capability path-follow-seek jump a path-follower to normalized/distance/segment progress
- */
+/** @capability path-follow-seek jump a path-follower to normalized/distance/segment progress */
 export function pathFollowSeek(config: PathFollowConfig, target: PathProgress): PathFollowState {
   const { waypoints } = config;
   const loop = config.loop ?? false;
@@ -151,12 +135,7 @@ export function pathFollowSeek(config: PathFollowConfig, target: PathProgress): 
   return createPathFollow(config);
 }
 
-/**
- * Read a follower's current progress in every semantic form — the inverse of {@link pathFollowSeek},
- * for editor/debug inspection and progress HUDs. Pure and allocation-light.
- *
- * @capability path-follow-progress read normalized/distance/segment progress from follow state
- */
+/** @capability path-follow-progress read normalized/distance/segment progress from follow state */
 export function pathFollowProgress(config: PathFollowConfig, state: PathFollowState): PathFollowProgress {
   const loop = config.loop ?? false;
   const segments = pathSegments(config.waypoints, loop);
@@ -197,12 +176,6 @@ export function createPathFollow(config: PathFollowConfig): PathFollowState {
 
 const EPSILON = 1e-9;
 
-/**
- * Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns
- * the next state. Crosses multiple waypoints in one step, loops when configured, and
- * reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a
- * navmesh route via `pathFromNav` for click-to-move (#51).
- */
 export function advancePathFollow(
   config: PathFollowConfig,
   state: PathFollowState,

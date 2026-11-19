@@ -20,9 +20,7 @@ const P = "jgk-terminal";
 
 /** Cells in the ASCII bar meter. */
 const BAR_CELLS = 20;
-/** Cells in a prompt's progress row. */
 const PROGRESS_CELLS = 12;
-/** Radius of the radar ring track, in the 44-unit ring viewBox. */
 const RING_R = 17;
 
 const TOAST_TAG: Record<KitTone, string> = { good: "[ OK ]", warn: "[WARN]", bad: "[ERR!]", neutral: "[INFO]", accent: "[INFO]" };
@@ -31,7 +29,6 @@ function cx(...names: (string | false | undefined)[]): string {
   return names.filter(Boolean).join(" ");
 }
 
-/** Zero-padded `value/max` readout, like `072/100`. */
 function readoutFor(value: number, max: number): string {
   const width = String(Math.round(max)).length;
   const shown = String(Math.max(0, Math.round(value))).padStart(width, "0");

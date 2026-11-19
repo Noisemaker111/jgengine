@@ -42,7 +42,6 @@ const HEADING_TO_KEY: Record<string, keyof ChangelogSections> = {
   fixed: "changed",
 };
 
-/** Slice the lines of one `## ` section out of a markdown document. */
 export function sectionLines(markdown: string, heading: string): string[] {
   const lines = markdown.split("\n");
   const start = lines.findIndex((l) => l.trim() === heading);
@@ -57,7 +56,6 @@ export function sectionLines(markdown: string, heading: string): string[] {
   return lines.slice(start + 1, end);
 }
 
-/** Split `<!-- ... -->` guidance from the authored bullets of an `## [Unreleased]` block. */
 export function splitComment(lines: string[]): { comment: string[]; body: string[] } {
   const comment: string[] = [];
   const body: string[] = [];
@@ -74,7 +72,6 @@ export function splitComment(lines: string[]): { comment: string[]; body: string
   return { comment, body };
 }
 
-/** Markdown bullets under `### Migrate|Added|Changed|Removed|Fixed` as plain one-line strings. */
 export function parseSections(lines: string[]): ChangelogSections {
   const sections: ChangelogSections = { migrate: [], added: [], changed: [], removed: [] };
   let key: keyof ChangelogSections | null = null;
@@ -115,7 +112,6 @@ export function lockstepBullet(sdk: string, cli: string): string {
   );
 }
 
-/** Rename `## [Unreleased]` to `## <version>`, prepend the lockstep bullet, leave a fresh block. */
 export function cutChangelog(markdown: string, version: string, lockstep: string): string {
   const lines = markdown.split("\n");
   const start = lines.findIndex((l) => l.trim() === "## [Unreleased]");
@@ -158,7 +154,6 @@ function trimBlank(lines: string[]): string[] {
   return lines.slice(a, b);
 }
 
-/** Insert the new version's typed entry at the top of the `CHANGELOG` record. */
 export function mirrorEntry(source: string, version: string, sections: ChangelogSections): string {
   const anchor = "export const CHANGELOG: Record<string, ChangelogEntry> = {";
   const at = source.indexOf(anchor);
@@ -199,7 +194,6 @@ export interface AncestorReport {
   target: string;
   targetSha: string | null;
   refSha: string | null;
-  /** `<short sha> <subject>` for every commit on `ref` the target does not contain. */
   missing: string[];
   reason: string | null;
 }
@@ -249,7 +243,6 @@ export function checkReleaseAncestor(input: {
   return { ...base, ok: false, missing, reason: `${ref} has ${missing.length} commit(s) that ${target} does not contain` };
 }
 
-/** The refusal a commit off beta prints, one line per fact. */
 export function ancestorFailureLines(report: AncestorReport): string[] {
   const lines = [
     `release: refusing to publish ${report.target}: ${report.reason ?? "it is not on the branch everything lands on"}.`,
@@ -400,13 +393,11 @@ function main(): void {
 }
 
 export interface WaitRequest {
-  /** The version already cut; absent when `--wait` names none. */
   version?: string | undefined;
   /** A later beta commit to tag instead of the cut, for a release whose own commit CI failed. */
   sha?: string | undefined;
 }
 
-/** `--wait <version>` finishes a release already cut. Null without `--wait`. */
 export function waitRequest(args: readonly string[]): WaitRequest | null {
   const at = args.indexOf("--wait");
   if (at < 0) return null;
@@ -430,10 +421,6 @@ function switchBack(root: string, from: string | null): void {
   if (back.status !== 0) console.error(`release: this checkout did not switch back to ${from}: ${back.stderr.trim()}`);
 }
 
-/**
- * Commit the cut and push it straight to beta. The push is a fast-forward or nothing: a beta that
- * moved during the cut refuses it, and the release is run again from the new tip.
- */
 async function commitAndRelease(root: string, version: string, from: string | null): Promise<never> {
   const git = gitIn(root);
   const fail = (line: string): never => {
@@ -454,10 +441,6 @@ async function commitAndRelease(root: string, version: string, from: string | nu
   process.exit(await finishRelease(root, version, sha));
 }
 
-/**
- * `--wait <version>`: finish a release whose cut is already on beta. The commit is `--sha`, else the
- * commit its tag names, else beta's `Release <version>` commit.
- */
 async function resumeRelease(root: string, version: string, sha?: string): Promise<never> {
   const git = gitIn(root);
   spawnSync("git", ["fetch", "--quiet", "--tags", "origin", "beta"], { cwd: root, stdio: "ignore", timeout: 30_000 });
@@ -516,7 +499,6 @@ function ghIn(root: string): RunGh {
   };
 }
 
-/** Compute the version a normal or patch release will publish. */
 export function nextReleaseVersion(version: string, patchRelease = false): string {
   const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?$/.exec(version);
   if (!match) throw new Error(`unparseable version: ${version}`);

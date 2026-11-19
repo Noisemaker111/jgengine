@@ -8,14 +8,12 @@
  * silently in the browser.
  */
 
-/** A named thing to aim at, resolved by the runner against the live scene. */
 export interface LookSubject {
   kind: "marker" | "entity";
   id: string;
 }
 
 export interface LookAim {
-  /** `[x, z]` — ground height is sampled — or `[x, y, z]` for a point in the air. */
   point?: readonly number[];
   /** `@marker:<id>` / `@entity:<id>` — the id you already have, instead of coordinates. */
   subject?: LookSubject;
@@ -33,11 +31,6 @@ const USAGE =
   "@marker:<id>, or @entity:<id>. " +
   "Distance, height, and orbit angle go in --look-from <dist[,height[,angle[,clearance]]]>";
 
-/**
- * Parse an `@kind:id` subject token. Aiming by id is the form a caller actually has —
- * `editor.scene.json` names its markers — and unlike a coordinate it stays correct when
- * the scene moves.
- */
 function parseSubject(raw: string): LookSubject {
   const match = /^@([a-z]+):(.+)$/.exec(raw);
   if (match === null) {
@@ -114,17 +107,11 @@ function parseVantage(from: string | undefined): Omit<LookAim, "point" | "subjec
   };
 }
 
-/**
- * Write an aim onto a capture URL. The runner reads `look`/`lookFrom` from its own query string, so
- * the local dev runner and an external `--url` pointing at another checkout's runner take the same
- * encoding — that is what lets a lane aim a branch it is serving itself.
- */
 export function applyLookSearchParams(url: URL, aim: LookAim | undefined): void {
   if (aim === undefined) return;
   for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
 }
 
-/** URL params the dev runner reads for an aim — the canonical, unambiguous encoding. */
 export function lookSearchParams(aim: LookAim): Record<string, string> {
   const look = aim.subject !== undefined ? `@${aim.subject.kind}:${aim.subject.id}` : (aim.point ?? []).join(",");
   const params: Record<string, string> = look.length === 0 ? {} : { look };

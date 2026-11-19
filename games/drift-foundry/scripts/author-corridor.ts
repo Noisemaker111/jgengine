@@ -23,16 +23,13 @@ const SENTRY = ["prop_wreck_pile", "prop_tire_wall", "prop_dumpster", "prop_stri
 for (let index = 0, z = 26; z < 452; z += 26, index += 1) {
   prop(SENTRY[index % SENTRY.length]!, index % 2 === 0 ? -25.5 : 25.5, z, index * 0.7);
 }
-/** Zone crown: the tallest silhouettes sit where a driver first sees each yard. */
 const TOWERS: Array<[number, number]> = [
   [-31, 58], [33, 76], [-30, 118],
   [-33, 182], [35, 214], [-30, 262],
   [-34, 322], [32, 356], [-31, 402], [36, 436],
 ];
 for (const [x, z] of TOWERS) prop("prop_yard_tower", x, z, 0, "yard water tower");
-/** Zone pylons: a crane-leg pair either side of the road at each yard seam. */
 for (const z of [150, 300, 470]) for (const x of [-23.5, 23.5]) prop("prop_crane_leg", x, z, 0);
-/** Landmark clusters inside the near wall band, one per yard. */
 for (const [x, z, id] of [[-30, 84, "prop_container_stack"], [-34, 96, "prop_container_stack"], [30, 66, "prop_container_stack"]] as const) prop(id, x, z, 0.4);
 for (const [x, z] of [[-29, 226], [-33, 238], [31, 232], [35, 246]] as const) prop("prop_appliance_stack", x, z, 0.9);
 for (let z = 312, index = 0; z < 452; z += 22, index += 1) {

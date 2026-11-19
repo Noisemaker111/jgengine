@@ -5,7 +5,6 @@ export const PALETTE = {
   cyan: "#84e8d0", amber: "#eab379", danger: "#ee7361", ink: "#b69be0", black: "#0b171b",
 };
 
-/** Public renderer props keep every surface compatible with the same material element. */
 type StandardMaterialProps = MeshStandardMaterialParameters;
 export type IndustrialMaterialProps = Required<Pick<StandardMaterialProps, "color" | "roughness" | "metalness">>
   & Pick<StandardMaterialProps, "emissive" | "emissiveIntensity" | "transparent" | "opacity" | "depthWrite">;
@@ -30,7 +29,6 @@ export function surfaceMaterial(surface: IndustrialSurface, color?: string, emis
     ...(emission > 0 ? { emissive: color ?? INDUSTRIAL[surface].color, emissiveIntensity: emission } : {}) };
 }
 
-/** The same recipe as `MeshStandardMaterial` constructor parameters for draw-side materials. */
 export function surfaceMaterialParams(surface: IndustrialSurface, color?: string, emission = 0): MeshStandardMaterialParameters {
   const base = INDUSTRIAL[surface];
   return {

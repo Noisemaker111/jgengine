@@ -33,10 +33,8 @@ export interface BuildingKitPart {
   offset?: Vec3;
   /** Euler XYZ in radians, applied on top of the slot's facade rotation. */
   rotation?: Vec3;
-  /** Multiplier applied after `fit`. */
   scale?: Vec3;
   tint?: string;
-  /** Tiled PBR maps applied over the model's own materials; `color` tints, `repeat` sets the tiling. */
   material?: BuildingSurfaceMaterial;
   /** Editor-authored mesh/slot selectors applied after the broad tint and surface. */
   materialAssignments?: readonly MaterialAssignment[];
@@ -49,18 +47,10 @@ export interface BuildingKitPart {
   autoOrient?: boolean;
 }
 
-/**
- * Binds a building's generated part slots to models. A kit is plain serializable data — scene
- * documents can carry one — and is deliberately unopinionated about art direction: the engine ships
- * the seam, games ship the bindings.
- */
 export interface BuildingKit {
   id: string;
-  /** The caller's existing editor-document material assets; only assigned IDs are loaded. */
   materialAssets?: readonly MaterialAsset[];
-  /** Variants per part kind; `BuildingKitSlot.variant` indexes this list, wrapping. */
   parts: Readonly<Partial<Record<BuildingPartKind, readonly BuildingKitPart[]>>>;
-  /** Overrides keyed by `BuildingKitSlot.key` (`${facade}.${kind}`); beats `parts` for that facade. */
   slots?: Readonly<Record<string, readonly BuildingKitPart[]>>;
   /** Kinds this kit deliberately drops — no mesh, and no box fallback either. */
   omit?: readonly BuildingPartKind[];
@@ -68,10 +58,8 @@ export interface BuildingKit {
   fit?: BuildingKitFit;
 }
 
-/** A variant as authored: a bare model reference, or the full {@link BuildingKitPart} when it needs fit or transform tuning. */
 export type BuildingKitPartInput = string | BuildingKitPart;
 
-/** The authoring shape {@link defineBuildingKit} normalizes into a {@link BuildingKit}. */
 export interface BuildingKitInput {
   id?: string;
   materialAssets?: readonly MaterialAsset[];
@@ -81,12 +69,6 @@ export interface BuildingKitInput {
   fit?: BuildingKitFit;
 }
 
-/**
- * What a renderer should do with one generated part.
- *
- * `model` carries a resolved variant with its fit already defaulted; `box` means fall back to the
- * engine's untextured block; `omit` means draw nothing.
- */
 export type BuildingKitBinding =
   | { readonly type: "model"; readonly part: BuildingKitPart; readonly fit: BuildingKitFit }
   | { readonly type: "box" }
@@ -124,12 +106,7 @@ function normalizeList(
   return list.map((entry) => normalizePart(entry, where, assets));
 }
 
-/**
- * Validates and normalizes a kit description, accepting bare model strings as single-field variants.
- * Throws on empty variants or invalid editor material references/selectors before loading models.
- *
- * @capability building-kit bind generated facade part slots to caller models and editor-authored named materials
- */
+/** @capability building-kit bind generated facade part slots to caller models and editor-authored named materials */
 export function defineBuildingKit(input: BuildingKitInput): BuildingKit {
   const parts: Partial<Record<BuildingPartKind, readonly BuildingKitPart[]>> = {};
   for (const [kind, list] of Object.entries(input.parts)) {

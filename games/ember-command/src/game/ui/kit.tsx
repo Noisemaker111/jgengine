@@ -16,10 +16,8 @@ export function useHudSlice<T>(select: (hud: HudSnapshot) => T): T {
   const token = useSyncExternalStore(hudStore.subscribe, read, read);
   return useMemo(() => JSON.parse(token) as T, [token]);
 }
-/** A live read of the current hud snapshot for a bound leaf. */
 export const hud = (): HudSnapshot => hudStore.get();
 
-/** A game-icons.net glyph (512 units) scaled into the native 24-unit icon box and tinted. */
 export function Glyph({ name, size = 20, color = GILT, ...props }: { name: string; size?: number; color?: Live<string> } & Omit<RuneElementProps, "color" | "size">) {
   const inner = ICON_SVG[name];
   if (inner === undefined) throw new Error(`Unknown Ember Command glyph: ${name}`);
@@ -39,7 +37,6 @@ const EMBLEM = {
   star: '<path d="M32 19 L35.2 28.4 L45 28.6 L37.2 34.6 L40 44 L32 38.4 L24 44 L26.8 34.6 L19 28.6 L28.8 28.4 Z"/>',
 } as const;
 
-/** A ragged disc of poured wax pressed with the campaign's die, as native SVG artwork. */
 export function WaxSeal({ size = 64, wax = WAX, emblem = "ember" }: { size?: number; wax?: string; emblem?: keyof typeof EMBLEM }) {
   const art = `<g transform="scale(0.375)">`
     + `<path d="${WAX_RING}" fill="#000" fill-opacity="0.28" transform="translate(0,2.4)"/>`
@@ -70,7 +67,6 @@ export function InkBar({ value, max, color, width, height = 7, label }: {
   </RuneView>;
 }
 
-/** A loose sheet pinned to the war table: every detail pane is written on one. */
 export function Sheet({ children, ...props }: RuneViewProps & { children?: ReactNode }) {
   return <RuneView variant="sheet" {...props}>
     <RuneView anchor="top" inset={-6}><RuneView width={10} height={10} radius={5} fill={WAX} border={{ width: 1, color: "#3a0b06" }} /></RuneView>
@@ -78,15 +74,12 @@ export function Sheet({ children, ...props }: RuneViewProps & { children?: React
   </RuneView>;
 }
 
-/** The wax-red action that seals a choice. */
 export function SealButton({ children, ...props }: RuneActionProps) {
   return <RuneAction variant="seal" {...props}><Text textStyle="verb" color="#fbe9d6" text={String(children)} align="center" /></RuneAction>;
 }
-/** A wooden plank action for lesser choices. */
 export function PlankButton({ children, ...props }: RuneActionProps) {
   return <RuneAction variant="plank" {...props}><Text textStyle="gilt" text={String(children)} align="center" /></RuneAction>;
 }
-/** An ink-ruled button written on the sheet. */
 export function InkButton({ children, ...props }: RuneActionProps) {
   return <RuneAction minHeight={34} padding={[6, 12, 6, 12]} border={{ width: 1, color: INK }} radius={2} hover="#2b1d1014" press="#2b1d1030" items="center" justify="center" {...props}>
     <Text text={String(children)} align="center" />

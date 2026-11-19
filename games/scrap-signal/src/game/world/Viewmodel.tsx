@@ -31,13 +31,9 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 interface BlasterSpec {
   /** Receiver block: width, height, length in metres. */
   body: readonly [number, number, number];
-  /** Barrel: radius, length. */
   barrel: readonly [number, number];
-  /** Boxy magazine below the receiver, or `null` for none. */
   magazine: readonly [number, number, number] | null;
-  /** Optic block above the receiver, or `null` for iron sights. */
   optic: readonly [number, number, number] | null;
-  /** Muzzle-brake plate at the barrel tip — shotguns and launchers flare. */
   brake: number | null;
 }
 
@@ -126,13 +122,10 @@ const MANUFACTURER_ACCENTS: Record<string, string> = {
  * ambient and keeps the machined/polymer split legible in shade.
  */
 const FINISH = {
-  /** Receiver and frame: machined, mid-value, the part the silhouette is made of. */
   receiver: { color: "#59616a", metalness: 0.45, roughness: 0.36, emissive: "#39424c", emissiveIntensity: 0.35 },
-  /** Rail, bolt, muzzle collar: polished steel highlights that draw the top edge of the silhouette. */
   bright: { color: "#aeb7bf", metalness: 0.72, roughness: 0.18, emissive: "#5d6873", emissiveIntensity: 0.25 },
   /** Blued barrel — darker than the receiver so the bore end reads as a separate part. */
   barrel: { color: "#454d55", metalness: 0.82, roughness: 0.24, emissive: "#252c34", emissiveIntensity: 0.35 },
-  /** Grip, magazine, optic body, foregrip: moulded polymer, matte and near-black. */
   polymer: { color: "#1e2228", metalness: 0.04, roughness: 0.86, emissive: "#12161b", emissiveIntensity: 0.35 },
 } as const;
 
@@ -141,7 +134,6 @@ const FINISH = {
  * hand-tuned table — a table drifts out of sync the moment a barrel length changes. Matches the
  * blaster group's own `position` and `rotation={[0, PI, 0]}`, so the sign is already flipped.
  */
-/** The muzzle light's intensity while a flash shows. */
 const FLASH_LIGHT = 5;
 
 function muzzleOffsetZ(family: GunFamily): number {
@@ -150,7 +142,6 @@ function muzzleOffsetZ(family: GunFamily): number {
   return -(tip - 0.1);
 }
 
-/** Barrel-shroud vent slots, spaced along whatever barrel the family actually has. */
 function addVents(parent: Group, owned: BufferGeometry[], barrelR: number, barrelZ: number, barrelL: number, y: number, material: Material): void {
   const slots = barrelL < 0.16 ? 2 : 3;
   const step = (barrelL * 0.6) / slots;
@@ -344,10 +335,6 @@ export function FerralonWorldOverlay() {
   );
 }
 
-/**
- * The first-person rig as one draw: the gun group (rebuilt on weapon swap), the muzzle flash and
- * its light all live under a camera-posed group updated every frame — no UI state, no refs.
- */
 function viewmodelDraw(get: () => { ctx: GameContext; gun: GunDef | undefined }): EngineDraw {
   const rig = new Group();
   rig.renderOrder = 999;

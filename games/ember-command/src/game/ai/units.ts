@@ -12,7 +12,6 @@ import { lineMultiplier } from "../heroActs";
 import { matchupDamage, matchups } from "../matchups";
 import { raiseCombatNoise } from "./director";
 
-/** Extra reach against a building's broad footprint so attackers stop at the wall, not the centre. */
 const BUILDING_REACH_BONUS = 3.5;
 
 function distXZ(a: EntityPosition, b: EntityPosition): number {
@@ -32,13 +31,11 @@ function faceToward(ctx: GameContext, id: string, from: EntityPosition, tx: numb
   ctx.scene.entity.setPose(id, { position: from, rotationY: Math.atan2(dx, dz) });
 }
 
-/** Every unit step: a soldier marches at its side's researched pace; workers keep their own. */
 function stepTo(ctx: GameContext, dt: number, u: UnitRuntime, speed: number, x: number, z: number): void {
   const pace = combatantDef(u.catalogId)?.worker === true ? speed : factionSpeed(speed, u.faction);
   ctx.scene.entity.moveTowardCommit(u.id, [x, 0, z], { speed: pace, dt, face: true });
 }
 
-/** How much nearer a preferred target counts: a raider takes a worker up to ~3x as far as a soldier. */
 const PREFERRED_PULL = 0.35;
 
 function isPreferred(prefers: "worker" | "building" | undefined, target: UnitRuntime): boolean {
@@ -78,8 +75,6 @@ function hostileTarget(ctx: GameContext, u: UnitRuntime, targetId: string): Unit
   return t;
 }
 
-/** The gold-miner / lumberjack loop: walk to the node, work, haul the load to the Town Hall, deposit,
- * repeat. Composed from move steps + a resource-node harvest; the carried load rides the command. */
 function tickGather(ctx: GameContext, dt: number, u: UnitRuntime, self: EntityPosition, walkSpeed: number): void {
   if (u.command.kind !== "gather") return;
   const cmd = u.command;

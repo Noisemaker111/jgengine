@@ -20,12 +20,10 @@ import { plantSpeciesById, registerPlantSpecies } from "../species/plantSpecies"
 import { hashPlantStructure } from "../structure/plantStructure";
 import { createWorkerPlantGrower, type PlantGrower, type PlantGrowRequest, type PlantGrowResult, type PlantMeshOrder } from "./plantGrowPool";
 
-/** The generator output family a grown plant returns: a {@link PlantMesh}. */
 export const PLANT_MESH_OUTPUT = "plant-mesh";
 
 const sentenceCase = (name: string): string => name.charAt(0).toUpperCase() + name.slice(1);
 
-/** Grown-plant params: what grows (species, age, site) and how it looks (every style field). */
 export const PLANT_GROWN_SCHEMA = defineParamSchema({
   groups: [
     { id: "plant", label: "Plant" },
@@ -92,10 +90,7 @@ export const PLANT_GROWN_SCHEMA = defineParamSchema({
 
 type PlantGrownParams = ParamsOf<typeof PLANT_GROWN_SCHEMA>;
 
-/**
- * The style a grown plant's params describe.
- * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
- */
+/** @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style */
 export function plantStyleOf(params: PlantGrownParams): PlantStyle {
   return {
     foliage: params.foliage,
@@ -118,22 +113,14 @@ function growRequest(params: PlantGrownParams, context: GeneratorContext): Plant
   return { species, env: plantSiteOf(params), seed: context.seed, age, day: Math.round(params.day), deadYears: Math.max(0, Math.round(params.deadYears)) };
 }
 
-/**
- * The site a grown plant's params describe: the open temperate site under its `light`, and an
- * even-aged stand around it when `stand` is above 0. At 0 it is open-grown, as an isolated tree is.
- * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
- */
+/** @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style */
 export function plantSiteOf(params: Pick<PlantGrownParams, "light" | "stand">): PlantEnvironment {
   const env: PlantEnvironment = { ...OPEN_TEMPERATE_SITE, light: params.light };
   if (params.stand > 0) env.stand = { spacingIndex: Math.max(MIN_STAND_SPACING_INDEX, params.stand) };
   return env;
 }
 
-/**
- * The cache key of a grown structure: species and its version, simulation version, seed, age, day
- * and site. Anything that changes what grows is in it; nothing about the look is.
- * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
- */
+/** @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style */
 export function plantStructureKey(request: PlantGrowRequest): string {
   const { species, env } = request;
   return `plant/${species.id}@${species.version}/sim${PLANT_SIM_VERSION}/${request.seed}/${request.age}/${request.day}/dead${request.deadYears}/${JSON.stringify(env)}`;
@@ -173,7 +160,6 @@ function growNow(request: PlantGrowRequest): CachedPlantStructure {
   return { structure, hash: hashPlantStructure(structure) };
 }
 
-/** Options for {@link createPlantGrownGenerator}. */
 export interface PlantGrownGeneratorOptions {
   /**
    * Where `prepare` grows plants. Default: a worker pool ({@link createWorkerPlantGrower}) where the
@@ -260,24 +246,13 @@ export function createPlantGrownGenerator(cache: PlantCache, options: PlantGrown
   });
 }
 
-/**
- * The cache the built-in {@link PLANT_GROWN_GENERATOR} uses: IndexedDB in a browser, memory elsewhere.
- * Swap its storage with `setStorage`.
- * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
- */
+/** @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style */
 export const PLANT_CACHE: PlantCache = createPlantCache({ storage: createIndexedDbPlantCacheStorage() });
 
-/**
- * The built-in grown-plant generator, `plant.grown`.
- * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
- */
+/** @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style */
 export const PLANT_GROWN_GENERATOR = createPlantGrownGenerator(PLANT_CACHE);
 
-/**
- * Register the species library and the grown-plant generator, and let scenes place its output.
- * Called by `registerBuiltinSceneKinds`.
- * @internal
- */
+/** @internal */
 export function registerPlantGenerators(): void {
   for (const species of PLANT_LIBRARY) if (plantSpeciesById(species.id) === undefined) registerPlantSpecies(species);
   registerGenerator(PLANT_GROWN_GENERATOR);

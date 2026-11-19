@@ -4,17 +4,13 @@
  * (lowest {@link ParticleBudgetEntry.priority} first) rather than every effect thinning out.
  */
 
-/** One effect asking for particle capacity this frame. */
 export interface ParticleBudgetEntry {
-  /** Emitter or burst id; unique within the request. */
   id: string;
   /** Drop order: higher survives, lower is dropped first. */
   priority: number;
-  /** Particles this effect wants (its pool maximum, or a burst's count). Omit to ask for the full {@link ParticleBudgetOptions.effectCap}. */
   requested?: number;
 }
 
-/** Knobs on {@link planParticleBudget}. */
 export interface ParticleBudgetOptions {
   /**
    * The most one effect may hold: the graphics tier's `particleCap`. Each request is clamped to it
@@ -24,17 +20,13 @@ export interface ParticleBudgetOptions {
   effectCap?: number;
 }
 
-/** An admitted effect and the particles it may hold. */
 export interface ParticleBudgetGrant {
   id: string;
   particles: number;
 }
 
-/** What the tier cap admits, and what it drops. */
 export interface ParticleBudgetPlan {
-  /** Admitted effects in priority order, each with its granted particle count. */
   grants: ParticleBudgetGrant[];
-  /** Dropped effect ids, lowest priority first — the defined drop order. */
   dropped: string[];
   /** Sum of the granted particle counts, never above the cap. */
   particles: number;

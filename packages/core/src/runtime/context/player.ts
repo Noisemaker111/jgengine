@@ -39,7 +39,6 @@ export interface PlayerSubsystemDeps {
   events: GameEvents;
   catalogEntry: (instanceId: string) => GameContextEntityEntry | null | undefined;
   ensureInstanceStats: (instanceId: string) => StatValueMap;
-  /** Reads another feature after descriptor install (loadout → unlocks). */
   feature: <T>(key: keyof GameFeatures) => T | undefined;
 }
 
@@ -49,7 +48,6 @@ export interface PlayerSubsystem {
   inventoryByUser: ReadonlyMap<string, InventorySet<string>>;
   inventoryFor: (userId: string) => InventorySet<string>;
   layouts: Record<string, InventoryLayout>;
-  /** Shared stack-limit/kind table for every declared inventory — also what object slot inventories validate against. */
   itemTraits: ItemTraits;
   wallets: Map<string, WalletState>;
   walletOf: (userId: string) => WalletState;

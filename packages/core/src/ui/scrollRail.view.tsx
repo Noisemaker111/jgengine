@@ -1,10 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
-/** Props for caller-composed horizontally scrolling controls. */
 export interface ScrollRailProps {
   children: ReactNode;
-  /** Accessible name for the rail and its overflow navigation. */
   label: string;
   className?: string;
   style?: CSSProperties;
@@ -12,12 +10,7 @@ export interface ScrollRailProps {
   gap?: number;
 }
 
-/**
- * Native horizontal scrolling with overflow-only navigation and automatic focus reveal.
- * Callers own item markup, selection, keyboard semantics, and skin through HudTheme or style.
- *
- * @capability scroll-rail reachable horizontal controls with visible overflow navigation and keyboard focus reveal
- */
+/** @capability scroll-rail reachable horizontal controls with visible overflow navigation and keyboard focus reveal */
 export function ScrollRail({ children, label, className, style, gap = 6 }: ScrollRailProps) {
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);

@@ -12,7 +12,6 @@ export function keyFromFile(file: string): string {
   return file.replace(/\.gltf\.glb$/i, "").replace(/\.glb$/i, "");
 }
 
-/** Build a source-owned model entry, preserving optional measured bounds, collision, clips, and inventory. */
 export function entryForFile(
   source: AssetSource,
   file: string,
@@ -163,7 +162,6 @@ function renderBarrel(sourceIds: readonly string[], typed: boolean): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** Writes the generated pack modules and the barrel over every `<source>.json` already in `outDir`. */
 export function writeIndexBarrels(outDir: string): void {
   const barrelIds = readdirSync(outDir)
     .filter((name) => name.endsWith(".json"))

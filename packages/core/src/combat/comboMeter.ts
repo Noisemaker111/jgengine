@@ -6,7 +6,6 @@ import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
  * styles ("good", "great", "savage", …) — the model never interprets it.
  */
 export interface ComboTier {
-  /** Combo count at or above which this tier becomes active. Tiers sort ascending. */
   threshold: number;
   /** Free-string tier id the game styles; the model never branches on it. */
   id: string;
@@ -14,7 +13,6 @@ export interface ComboTier {
   multiplier?: number;
 }
 
-/** Options for {@link createComboMeter}. */
 export interface ComboMeterConfig {
   /**
    * Decay window in ms: how long after the last {@link ComboMeter.hit} the combo
@@ -22,7 +20,6 @@ export interface ComboMeterConfig {
    * combo drops (to 0, or by {@link ComboMeterConfig.dropStep}).
    */
   windowMs: number;
-  /** Tier thresholds on the integer count. Sorted ascending internally; ids are free strings. */
   tiers?: readonly ComboTier[];
   /**
    * When the window elapses, drop the count by this many instead of clearing to 0,
@@ -35,15 +32,9 @@ export interface ComboMeterConfig {
    * is always 1. Ignored where a tier sets its own `multiplier`.
    */
   multiplierPerTier?: number;
-  /**
-   * Last-resort multiplier curve when neither the active tier's `multiplier` nor
-   * `multiplierPerTier` applies. Receives the current count and active tier index
-   * (`-1` below the first tier). Not serialized — snapshot/restore carry state, not config.
-   */
   multiplierCurve?: (count: number, tierIndex: number) => number;
   /** Injected clock (ms). Default `Date.now`. Ignored once {@link ComboMeter.update} drives time. */
   now?: () => number;
-  /** Initial combo count (pre-seed a demo/save at a high chain). Default 0. */
   count?: number;
 }
 
@@ -53,15 +44,10 @@ export interface ComboMeterConfig {
  * one — read it, do not retain it. For a save, use {@link ComboMeter.snapshot}.
  */
 export interface ComboMeterView {
-  /** Current combo count. */
   count: number;
-  /** Highest count reached since the last {@link ComboMeter.reset}. */
   peak: number;
-  /** Active tier id, or `null` below the first tier. */
   tier: string | null;
-  /** Active tier index into the sorted tier list, or `-1` below the first tier. */
   tierIndex: number;
-  /** Derived multiplier for the active tier (default 1). */
   multiplier: number;
   /** Milliseconds left in the decay window before the next drop (0 when idle). */
   remainingMs: number;
@@ -71,15 +57,11 @@ export interface ComboMeterView {
   kind: string;
 }
 
-/** Serializable state for save/restore — clock-agnostic (stores time left, not an absolute deadline). */
 export interface ComboMeterSnapshot {
-  /** Combo count. */
   count: number;
-  /** Peak count reached. */
   peak: number;
   /** Milliseconds remaining in the decay window at snapshot time. */
   remainingMs: number;
-  /** Active tier id at snapshot time (recomputed on restore; kept for readability). */
   tier: string | null;
 }
 
@@ -101,13 +83,9 @@ export interface ComboMeter {
    * `now`. Notifies subscribers when the count changes.
    */
   update(dtSeconds: number): void;
-  /** Current combo count (processes any pending window expiry against the clock first). */
   count(): number;
-  /** Highest count reached since the last {@link ComboMeter.reset}. */
   peak(): number;
-  /** Active tier id, or `null` below the first tier. */
   tier(): string | null;
-  /** Derived multiplier for the active tier (default 1). */
   multiplier(): number;
   /** Milliseconds left in the decay window before the next drop (0 when idle). */
   remainingMs(): number;
@@ -115,15 +93,10 @@ export interface ComboMeter {
   fraction(): number;
   /** The pooled view to draw this frame (do not retain). */
   view(): ComboMeterView;
-  /** Clear the chain, peak, and window to empty. Notifies subscribers. */
   reset(): void;
-  /** Patch config (window, tiers, drop step, multiplier curve) in place. Notifies subscribers. */
   configure(patch: Partial<ComboMeterConfig>): void;
-  /** Observe changes (hit, drop, reset, configure, restore). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): ComboMeterSnapshot;
-  /** Restore from a {@link ComboMeterSnapshot}, re-anchoring the window to the current clock. */
   restore(snapshot: ComboMeterSnapshot): void;
 }
 
@@ -198,7 +171,6 @@ export function createComboMeter(config: ComboMeterConfig): ComboMeter {
     lastNow = t;
   }
 
-  /** Drop the chain once for each elapsed window; returns whether anything changed. */
   function processExpiry(): boolean {
     if (deadline === null || windowMs <= 0) return false;
     let changed = false;
@@ -215,18 +187,15 @@ export function createComboMeter(config: ComboMeterConfig): ComboMeter {
     return changed;
   }
 
-  /** Bring the clock and expiry state up to date before any read. */
   function pull(): void {
     syncWall();
     if (processExpiry()) notify();
   }
 
-  /** The tier the count has reached, read from the shared ladder part. */
   function tierOf(c: number): ComboTier | null {
     return tierAt(boundaries, c)?.id ?? null;
   }
 
-  /** The reached tier's index in the sorted list, or `-1` below the first tier. */
   function tierIndexAt(c: number): number {
     const tier = tierOf(c);
     return tier === null ? -1 : tiers.indexOf(tier);

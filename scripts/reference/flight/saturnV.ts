@@ -53,7 +53,6 @@ export const SATURN_V_AS506: RocketDesign = {
   payload: { mass: 659277, station: 42, length: 68.6, radius: 4.5 },
 };
 
-/** Launch Complex 39A, the Apollo 11 flight azimuth of 72.058°, the clock at hold-down release (0.3 s range time). */
 export const SATURN_V_AS506_LAUNCH: RocketLaunch = { latitude: 28.6082 * DEG, longitude: -80.6041 * DEG, azimuth: 72.058 * DEG, time: 0.3 };
 
 /**

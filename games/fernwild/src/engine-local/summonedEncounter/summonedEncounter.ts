@@ -3,27 +3,19 @@ import { evaluatePredicate, type Predicate, type PredicateFacts } from "@jgengin
 import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 import { createPacedSchedule, type PacedSchedule, type PacedScheduleState } from "@jgengine/core/time/pacedSchedule";
 
-/** One difficulty of a summoned fight, a Ladder step (`at` is its place in the difficulty order): what the summon spends and what else it asks. */
 export interface SummonTier extends ThresholdBoundary {
-  /** Counted things the summon spends from the caller's source. */
   cost?: Readonly<Record<string, number>>;
-  /** Anything else it asks, over the facts the caller passes to `check` and `summon`. */
   requirement?: Predicate;
 }
 
-/** Someone the portal could take in and where they stood to be sent back to. */
 export interface SummonCandidate {
   id: string;
-  /** What kind of party member this is; the caller names its own kinds and caps each in `partyCaps`. */
   kind: string;
-  /** Where they stood when taken; they go back here. */
   at: readonly [number, number, number];
 }
 
-/** Where a summoned encounter stands: nothing summoned, the portal counting down, the fight, or the winners' wait. */
 export type SummonedEncounterPhase = "idle" | "portal" | "fight" | "victory";
 
-/** Serializable encounter state. */
 export interface SummonedEncounterState {
   phase: SummonedEncounterPhase;
   tier: string | null;
@@ -31,26 +23,21 @@ export interface SummonedEncounterState {
   deadline: PacedScheduleState | null;
   /** The fight's own time limit, when one is set; null otherwise. */
   limit: PacedScheduleState | null;
-  /** Kind → ids taken in, in admission order. */
   party: Record<string, string[]>;
-  /** Id → where it is sent back to. */
   returns: Record<string, readonly [number, number, number]>;
 }
 
-/** What a requirement check found: what the source is short of, and whether the rest of the requirement held. */
 export interface SummonCheck {
   ok: boolean;
   missing: { item: string; need: number; have: number }[];
   requirementMet: boolean;
 }
 
-/** What the summoner carries, for a cost: how many of an item, and taking them. */
 export interface CostSource {
   count(item: string): number;
   take(item: string, count: number): void;
 }
 
-/** Who goes back where, when a fight ends. */
 export interface SummonReturn {
   id: string;
   kind: string;
@@ -63,9 +50,7 @@ export interface RefusedCandidate {
   reason: string;
 }
 
-/** Things that happened on one step of the encounter clock. */
 export type SummonedEncounterEvent<C extends SummonCandidate> =
-  /** The portal took everyone in range in; the game moves them and spawns the fight's target. */
   | { type: "entered"; tier: string; admitted: readonly C[]; refused: readonly RefusedCandidate[] }
   /** The portal closed with no lead kind in range: the cost is spent. */
   | { type: "closed"; tier: string }
@@ -75,22 +60,17 @@ export type SummonedEncounterEvent<C extends SummonCandidate> =
   /** The winners' wait is over: send each back where they came from. */
   | { type: "returned"; tier: string; returns: readonly SummonReturn[] };
 
-/** What the encounter clock asks the game each step. */
 export interface SummonedEncounterHooks<C extends SummonCandidate> {
-  /** Whether the fight's target still lives. */
   targetAlive(): boolean;
-  /** Everyone in the portal's range right now: read when it closes. */
   gather(): readonly C[];
 }
 
-/** How a summoned fight runs: the tiers, the portal, who may come in, and how long the winners stay. */
 export interface SummonedEncounterOptions {
   tiers: readonly SummonTier[];
   /** Seconds the portal counts down before it takes everyone in range. */
   portalSeconds: number;
   /** Most of each party kind one fight takes. A kind left out is never taken. */
   partyCaps: Readonly<Record<string, number>>;
-  /** Party kind whose presence keeps the fight going: when none is left, the fight is lost. */
   lead: string;
   /** Seconds the winners stay before they are sent back. */
   victorySeconds: number;
@@ -98,22 +78,15 @@ export interface SummonedEncounterOptions {
   timeLimitSeconds?: number;
 }
 
-/** What a summon did. */
 export type SummonResult =
   | { ok: true }
   | { ok: false; reason: "busy" | "unknown" | "requirement"; check?: SummonCheck };
 
-/** A fight started by meeting a requirement at a place, with its own time limit, outcome and trip home. */
 export interface SummonedEncounter<C extends SummonCandidate> {
-  /** Whether a summoner with these items and facts could summon `tier` now. */
   check(tier: string, have: (item: string) => number, facts?: PredicateFacts): SummonCheck;
-  /** Take the cost and open the portal. Fails without taking anything when busy or a requirement is short. */
   summon(tier: string, from: CostSource, facts: PredicateFacts | undefined, now: number): SummonResult;
-  /** Advance the clock. */
   tick(now: number, hooks: SummonedEncounterHooks<C>): SummonedEncounterEvent<C>[];
-  /** Someone left the fight (died, went back): they are no longer sent back. */
   leave(id: string): void;
-  /** Whether `id` is in the fight now. */
   inside(id: string): boolean;
   /** Seconds left on the portal, the winners' wait or the time limit; null when nothing counts down. */
   secondsLeft(now: number): number | null;
@@ -123,7 +96,6 @@ export interface SummonedEncounter<C extends SummonCandidate> {
   reset(): void;
 }
 
-/** A one-shot deadline on the caller's clock: the `pacedSchedule` part with one event and no repeat. */
 function deadlineAt(at: number): PacedSchedule {
   return createPacedSchedule({ firstAt: at, every: 0, count: 1 }, () => 0);
 }

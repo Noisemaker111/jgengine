@@ -1,13 +1,8 @@
 import type { OceanEnvironmentDescriptor, WorldBounds } from "@jgengine/core/world/features";
 
-/** A rect in an ocean sheet's local XZ: `[minX, minZ, maxX, maxZ]`. */
 export type OceanBedBounds = readonly [number, number, number, number];
 
-/**
- * The part of an ocean sheet worth baking a bed for, in its local XZ: the sheet, cut to the terrain
- * when there is one, since past the terrain's edge the bed is open sea floor.
- * @internal
- */
+/** @internal */
 export function oceanBedBounds(ocean: Pick<OceanEnvironmentDescriptor, "bounds" | "position">, terrain: WorldBounds | undefined): OceanBedBounds {
   const [x, z] = ocean.position ?? [0, 0];
   let minX = -ocean.bounds.w / 2;

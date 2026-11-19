@@ -53,13 +53,11 @@ const RAMP_LENGTH = 12;
 const RAMP_HEIGHT = 1.4;
 const RAMP_HALF_WIDTH = 4;
 
-/** Terrain under the demo course: flat, with one kicker ramp on the straight that drops off its lip. */
 export function handlingDemoGround(x: number, z: number): number {
   if (Math.abs(x) > RAMP_HALF_WIDTH || z < RAMP_START || z > RAMP_START + RAMP_LENGTH) return 0;
   return ((z - RAMP_START) / RAMP_LENGTH) * RAMP_HEIGHT;
 }
 
-/** Placement of the kicker ramp for rendering: centre, length along the slope, and pitch. */
 export const handlingDemoRamp = {
   center: [0, RAMP_HEIGHT / 2, RAMP_START + RAMP_LENGTH / 2] as const,
   length: Math.hypot(RAMP_LENGTH, RAMP_HEIGHT),

@@ -106,7 +106,6 @@ class Builder {
     return node;
   }
 
-  /** A capped cylinder along its local Y axis, `height` tall and centred on `at`. */
   cylinder(parent: Node, name: string, radius: number, height: number, at: Vec3, material: Material, segments = 24, rotation?: Vec3): Node {
     const positions: number[] = [];
     const normals: number[] = [];
@@ -143,7 +142,6 @@ class Builder {
     return node;
   }
 
-  /** A capped cone frustum along its local Y axis, `radiusBottom` below and `radiusTop` above, centred on `at`. */
   frustum(parent: Node, name: string, radiusBottom: number, radiusTop: number, height: number, at: Vec3, material: Material, rotation?: Vec3, segments = 16): Node {
     const positions: number[] = [];
     const normals: number[] = [];
@@ -251,7 +249,6 @@ function serverRack(): Builder {
   return b;
 }
 
-/** A floor-mounted six-axis industrial robot arm (about 2.1 m at rest), orange with steel joints. */
 function robotArm(): Builder {
   const b = new Builder("robot_arm");
   const paint = b.material("robot_paint", { color: "#e2661b", metalness: 0.15, roughness: 0.38 });
@@ -329,7 +326,6 @@ function woodenClub(): Builder {
   return b;
 }
 
-/** A 1.8 m wooden spear with a lashed flint point, gripped a third of the way up. */
 function spear(): Builder {
   const b = new Builder("spear");
   const wood = b.material("shaft_wood", WOOD);
@@ -355,7 +351,6 @@ function torch(): Builder {
   return b;
 }
 
-/** Every engine-authored builder, by the `builder` an entry names. */
 export const AUTHORED_BUILDERS: Readonly<Record<string, () => Builder>> = {
   "server-rack": serverRack,
   "robot-arm": robotArm,
@@ -366,7 +361,6 @@ export const AUTHORED_BUILDERS: Readonly<Record<string, () => Builder>> = {
   torch,
 };
 
-/** What an authored pull wrote. */
 export interface BuiltAuthoredModel {
   name: string;
   file: string;

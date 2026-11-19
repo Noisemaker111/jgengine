@@ -15,29 +15,21 @@ import { encodePng } from "./imageCodec";
 export interface LodLevelPlan {
   /** Share of the source's triangles the level keeps, 0 to 1. */
   readonly ratio: number;
-  /** Simplifier error budget as a share of the model's size. Default 0.01. */
   readonly error?: number;
 }
 
-/** How a game's models are simplified: data in the game's `jgengine.json` `assetBuild.lods`. */
 export interface LodBuildPlan {
-  /** Levels from the most to the least detailed. */
   readonly levels: readonly LodLevelPlan[];
-  /** Models below this many triangles get no levels: a crate gains nothing. Default 500. */
   readonly minTriangles?: number;
-  /** A level that keeps more than this share of the level before it is dropped, and so is every level after it. Default 0.85. */
   readonly minReduction?: number;
 }
 
-/** How far-view impostors are baked: data in `assetBuild.impostors`. */
 export interface ImpostorBakePlan {
-  /** View directions per atlas side; the atlas holds frames² views. Default 8. */
   readonly frames?: number;
   /** Pixels per view. Default 128. */
   readonly cell?: number;
 }
 
-/** A baked atlas pair as raw RGBA rows, bottom row first (as the GPU reads them back). */
 export interface BakedImpostorPixels {
   readonly size: number;
   readonly albedo: Uint8Array;
@@ -46,13 +38,10 @@ export interface BakedImpostorPixels {
   readonly radius: number;
 }
 
-/** Renders a model file's impostor atlas; the pipeline passes one backed by a headless browser. */
 export type ImpostorBaker = (file: string, frames: number, cell: number) => Promise<BakedImpostorPixels | null>;
 
-/** What one model's build did. */
 export interface ModelLodBuildResult {
   readonly file: string;
-  /** `cached`: the files on disk already match the source and plan. */
   readonly status: "built" | "cached" | "skipped";
   readonly reason?: string;
   readonly meta: BuiltLodMeta | null;
@@ -63,7 +52,6 @@ const DEFAULT_MIN_TRIANGLES = 500;
 const DEFAULT_MIN_REDUCTION = 0.85;
 const DEFAULT_FRAMES = 8;
 const DEFAULT_CELL = 128;
-/** The material extras key a level keeps its source material index under; the runtime reskins by it. */
 export const SOURCE_MATERIAL_KEY = "jgSourceMaterial";
 
 let io: NodeIO | null = null;
@@ -76,7 +64,7 @@ async function nodeIO(): Promise<NodeIO> {
   return io;
 }
 
-/** Triangles the scene draws, counting a mesh once per node that uses it. @internal */
+/** @internal */
 export function sceneTriangles(document: Document): number {
   let count = 0;
   for (const scene of document.getRoot().listScenes()) {
@@ -108,7 +96,7 @@ export function modelSourceHash(file: string): string {
   return hash.digest("hex").slice(0, 24);
 }
 
-/** Hash of everything in a plan that changes the files a build writes. @internal */
+/** @internal */
 export function lodPlanHash(plan: LodBuildPlan, impostor: ImpostorBakePlan | null): string {
   return createHash("sha256")
     .update(JSON.stringify({ v: BUILT_LOD_VERSION, levels: plan.levels, min: plan.minTriangles ?? DEFAULT_MIN_TRIANGLES, reduce: plan.minReduction ?? DEFAULT_MIN_REDUCTION, impostor }))
@@ -116,7 +104,7 @@ export function lodPlanHash(plan: LodBuildPlan, impostor: ImpostorBakePlan | nul
     .slice(0, 16);
 }
 
-/** The meta already on disk for `file`, when it matches the source and plan. @internal */
+/** @internal */
 export function cachedLodMeta(file: string, source: string, plan: string): BuiltLodMeta | null {
   const path = join(builtLodDir(file), "meta.json");
   if (!existsSync(path)) return null;
@@ -134,7 +122,6 @@ function animated(document: Document): boolean {
     root.listMeshes().some((mesh) => mesh.listPrimitives().some((primitive) => primitive.listTargets().length > 0));
 }
 
-/** One simplified level: the source with its textures dropped (the runtime keeps the source's maps). */
 async function buildLevel(file: string, level: LodLevelPlan): Promise<{ bytes: Uint8Array; triangles: number }> {
   const reader = await nodeIO();
   const document = (await reader.read(file)).setLogger(QUIET);
@@ -158,12 +145,7 @@ function writeAtomic(path: string, bytes: Uint8Array | string): void {
   renameSync(temp, path);
 }
 
-/**
- * Build the simplified levels (and, with a baker, the impostor atlas) for one model file into
- * `<file>.lods/`, the folder the runtime reads (`@jgengine/core/lod/builtLods`). Cached: a source
- * and plan that match the meta on disk rebuild nothing. Animated and skinned models are skipped.
- * @capability model-lod-build write simplified mesh levels and a baked impostor atlas beside a model file
- */
+/** @capability model-lod-build write simplified mesh levels and a baked impostor atlas beside a model file */
 export async function buildModelLods(
   file: string,
   plan: LodBuildPlan,
@@ -224,7 +206,7 @@ export async function buildModelLods(
   return { file, status: "built", meta };
 }
 
-/** A short line for one result: `name: 12,400 → 4,960 / 1,240 tris + impostor`. @internal */
+/** @internal */
 export function describeLodBuild(result: ModelLodBuildResult, name = basename(result.file)): string {
   if (result.meta === null) return `${name}: skipped (${result.reason ?? "nothing to build"})`;
   const levels = result.meta.levels.map((level) => level.triangles.toLocaleString("en-US")).join(" / ");

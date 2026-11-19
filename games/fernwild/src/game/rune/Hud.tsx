@@ -29,12 +29,10 @@ import { glyphArtwork, ItemIcon } from "./ItemIcon";
 import { BAD, CYAN, FULL, GOLD, GOOD, GREEN, INK, PURPLE, Panel, Row, Small, Tag, Text } from "./kit";
 import { imageUrl, liveCreatures, liveSurvivor, same } from "./live";
 
-/** The thermometer's span: empty at -10 °C, full at 45 °C. */
 const COLDEST = -10;
 const HOTTEST = 45;
 const WEATHER_WORD: Record<string, string> = { rain: "Rain", snow: "Snow", mixed: "Sleet", dust: "Dust" };
 
-/** Vital icon artwork, loaded once per page from the shipped game-icons.net files. */
 function useVitalArt(): Record<string, string | null> {
   const ctx = useGameContext();
   const art = useGameStore(() => vitalArt.value);
@@ -87,7 +85,6 @@ const VITALS: Record<VitalId, Vital> = {
   health: { id: "health", label: () => "Health", value: (ctx) => s(ctx).health.value, max: (ctx) => s(ctx).health.max, warn: (ctx) => s(ctx).health.value <= 30 },
 };
 
-/** One pool: a glyph over a tile that fills from the bottom, red while it needs you; H prints the numbers under it. */
 function VitalTile({ vital, art, size, detail }: { vital: Vital; art: string | null; size: number; detail: boolean }): ReactNode {
   const ctx = useGameContext();
   const share = () => Math.max(0, Math.min(1, vital.value(ctx) / Math.max(1e-6, vital.max(ctx))));
@@ -129,7 +126,6 @@ function Vitals(): ReactNode {
   );
 }
 
-/** The hotbar: ten slots with their number keys, the held one lit. */
 function Hotbar(): ReactNode {
   const ctx = useGameContext();
   const { width } = useRuneViewport();
@@ -151,7 +147,6 @@ function Hotbar(): ReactNode {
 
 const NO_MARKS: readonly MarkerView[] = [];
 
-/** A small map of the island round the survivor: the ground from above, the first-day goal starred, unread notes, obelisks, cave mouths and your tames. */
 function MapCorner(): ReactNode {
   const ctx = useGameContext();
   const { width } = useRuneViewport();
@@ -193,7 +188,6 @@ function MapCorner(): ReactNode {
   );
 }
 
-/** ARK's item lines under the top edge: "ADDED: 3x Thatch" in cyan, "CONSUMED" in yellow, fading out. */
 function PickupLines(): ReactNode {
   const ctx = useGameContext();
   const ticker = pickupFeed(ctx);
@@ -233,7 +227,6 @@ function PickupLines(): ReactNode {
   );
 }
 
-/** The step-done banner ("Gather stone" / "Next: Craft a Stone Pick"), advanced each frame while the HUD shows. */
 function Banner(): ReactNode {
   const ctx = useGameContext();
   const banner = onboardingOf(ctx)?.banner ?? null;
@@ -249,7 +242,6 @@ function Banner(): ReactNode {
   );
 }
 
-/** ARK's boss bar across the top: her name and health, the phase tell, and the portal and return clocks. */
 function BossBar(): ReactNode {
   const ctx = useGameContext();
   const phase = useGameStore((c) => { const v = broodView(c); return { phase: v.phase, inside: v.inside, tier: v.tier }; }, same);
@@ -287,7 +279,6 @@ export function playFocus(): void {
   queueMicrotask(() => document.querySelector<HTMLElement>("[data-jg-play-surface]")?.focus({ preventScroll: true }));
 }
 
-/** The survivor's path: the current step and the next, Next for a step the player acknowledges, and Skip. */
 function Onboarding(): ReactNode {
   const ctx = useGameContext();
   const runtime = onboardingOf(ctx);
@@ -323,7 +314,6 @@ function Onboarding(): ReactNode {
   );
 }
 
-/** Where your body lies after a death: how far, and how long before it falls apart with your things. */
 function BodyLine(): ReactNode {
   const ctx = useGameContext();
   const has = useGameStore((c) => bodyView(c) !== null);
@@ -331,7 +321,6 @@ function BodyLine(): ReactNode {
   return <Text size={13} weight={700} color="#cfe8ff" align="right" fill="#0b141899" radius={4} padding={[3, 8, 3, 8]} text={bind(() => { const v = bodyView(ctx); return v === null ? "" : `Your body: ${Math.round(v.distance)} m · ${Math.ceil(v.secondsLeft / 60)} min left`; })} />;
 }
 
-/** Riding: the mount's readout and how to get off. */
 function Mount(): ReactNode {
   const ctx = useGameContext();
   const riding = useGameStore((c) => { const r = liveCreatures(c).riding; return r === null ? null : cardShape(r); }, same);
@@ -344,7 +333,6 @@ function Mount(): ReactNode {
   );
 }
 
-/** Under the crosshair: what you would hit and what E does; a creature's readout; or the build ghost or piece in front. */
 function Prompt(): ReactNode {
   const ctx = useGameContext();
   const look = useGameStore((c) => {
@@ -392,7 +380,6 @@ function Prompt(): ReactNode {
   );
 }
 
-/** A note just read: ARK's explorer note open over the world for a while; the dossier (I) keeps it. */
 function NoteReader(): ReactNode {
   const reading = useGameStore((ctx) => dossierView(ctx).reading, same);
   const { width, height } = useRuneViewport();
@@ -408,7 +395,6 @@ function NoteReader(): ReactNode {
   );
 }
 
-/** ARK's layout: pools on the right, hotbar bottom-centre, item lines top-centre, the first-day steps top-left, the map top-right. */
 export function Hud({ notices }: { notices: RuneSource<{ id: string; expiresAt: number; text: string; tone?: string }> & { expire: () => void } }): ReactNode {
   const screen = useGameStore(openScreen);
   const { width } = useRuneViewport();

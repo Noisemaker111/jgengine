@@ -6,13 +6,11 @@ import { session } from "./session";
 import { sendWave, tickWaves } from "./waves/director";
 import { AUTHORED_WAVES, TOTAL_WAVES } from "./waves/manifest";
 
-/** What a staged defense should look like when the capture takes it. */
 export type StageMode = "midwave" | "boss" | "result" | "breached";
 
 /** One simulation step for a staged run - 30 Hz, the same cadence the frame loop asks for. */
 const STEP = 1 / 30;
 
-/** How much game time one staged run may simulate before it gives up (guards a hung state). */
 const MAX_STAGED_SECONDS = 900;
 
 /**
@@ -30,7 +28,6 @@ function advance(ctx: GameContext, seconds: number): void {
   }
 }
 
-/** Open the authored Warden wave and walk it until the boss is on the field. */
 function stageBossWave(ctx: GameContext): void {
   session.encounter.openWave(AUTHORED_WAVES.length - 1, session.pressure);
   keep.of(ctx).set("keep.wave_started", true);

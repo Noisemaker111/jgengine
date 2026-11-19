@@ -19,10 +19,6 @@ export const PICKUP_STATIONS = { engine: "pickup_engine", front: "pickup_front",
 export const JUMP_CUE = "jump_cue";
 export const EXIT_GATE_ARCH = "exit_gate_arch";
 
-/**
- * Props the five newer tracks are dressed with: realistic library models for the yard clutter, and
- * composed set-pieces (slag vents, ladles, belts, crossings) built from the same packs as the rest.
- */
 export const TRACK_OBJECT = {
   edgeBarrier: "edge_barrier",
   edgeBarrel: "edge_barrel",

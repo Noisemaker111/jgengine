@@ -24,20 +24,13 @@ import { playGateReasons } from "../game/controlGate";
 import { captureCommand } from "../game/captureCommand";
 import { onPage, publishOnPage } from "../runtime/pageHandle";
 
-/** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
 export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
 
-/** Result of an agent bridge call: `ok: true` with verb payload, or `ok: false` with a reason. */
 export type AgentBridgeResponse =
   | { ok: true; [key: string]: unknown }
   | { ok: false; error: string; [key: string]: unknown };
 
-/**
- * @internal
- * The local player's live pose for `player_pose` / `debug_snapshot`, so a drive can measure movement
- * (position deltas between two RPCs) instead of judging it from screenshots. `null` before the game
- * context exists or before the player entity spawns.
- */
+/** @internal The local player's live pose for `player_pose` / `debug_snapshot`, so a drive can measure movement (position deltas between two RPCs) instead of judging it from screenshots. `null` before the game context exists or before the player entity spawns. */
 export function playerPoseReport(ctx: GameContext | null): { userId: string; position: readonly [number, number, number]; rotationY: number } | null {
   if (ctx === null) return null;
   const entity = ctx.scene.entity.get(ctx.player.userId);
@@ -47,12 +40,7 @@ export function playerPoseReport(ctx: GameContext | null): { userId: string; pos
   return { userId: ctx.player.userId, position: [round(x), round(y), round(z)], rotationY: round(entity.rotationY ?? 0) };
 }
 
-/**
- * @internal
- * `time_scale` verb: sets the game clock's global timescale (`ctx.time.setTimescale`) so a headless
- * drive can fast-forward timers, economies and day cycles that never finish at capture frame rates.
- * Large scales take large steps — use it for clocks, not to judge movement. Omit `scale` to read.
- */
+/** @internal `time_scale` verb: sets the game clock's global timescale (`ctx.time.setTimescale`) so a headless drive can fast-forward timers, economies and day cycles that never finish at capture frame rates. Large scales take large steps — use it for clocks, not to judge movement. Omit `scale` to read. */
 /**
  * `setting_set { id, value }`: change one setting on the live page as the settings menu would (the
  * renderer backend remounts the canvas on the other GPU API with the game state kept, so a WebGL and a
@@ -96,11 +84,7 @@ export function simAdvanceReport(ctx: GameContext | null, result: SimAdvanceResu
 
 type EditorHost = { gameId: string; handle(request: AgentBridgeRequest): unknown };
 
-/**
- * @internal
- * Resolves true once `isLive()` reports a mounted editor host, polling every `intervalMs` up to
- * `timeoutMs`. `editor_summon` awaits this so the next RPC verb in a `drive` batch finds the editor.
- */
+/** @internal Resolves true once `isLive()` reports a mounted editor host, polling every `intervalMs` up to `timeoutMs`. `editor_summon` awaits this so the next RPC verb in a `drive` batch finds the editor. */
 export async function waitForEditorHost(
   isLive: () => boolean,
   timeoutMs = 15_000,
@@ -193,22 +177,13 @@ function panelLayoutSnapshot(
   };
 }
 
-/**
- * @internal
- * Headless control plane spanning the F2 chord family: debug mode (F2+D),
- * canvas mode (F2+C), and editor mode (F2+E). Installed on every
- * GamePlayerShell mount as `window.__jg.agent`; unknown verbs delegate
- * to the editor host when one is live, so a single RPC surface covers all
- * three modes for `bun run drive --rpc`.
- */
+/** @internal Headless control plane spanning the F2 chord family: debug mode (F2+D), canvas mode (F2+C), and editor mode (F2+E). Installed on every GamePlayerShell mount as `window.__jg.agent`; unknown verbs delegate to the editor host when one is live, so a single RPC surface covers all three modes for `bun run drive --rpc`. */
 export function installAgentBridge(options: {
   playable: PlayableGame;
   devtoolsEnabled: boolean;
   isDevtoolsOpen: () => boolean;
   setDevtoolsOpen: (open: boolean) => void;
-  /** Live game context, once mounted; feeds `player_pose`. */
   getContext?: () => GameContext | null;
-  /** The page's settings, for `setting_set` / `setting_get`. */
   getSettings?: () => SettingsStore;
 }): () => void {
   const { playable, devtoolsEnabled, isDevtoolsOpen, setDevtoolsOpen } = options;

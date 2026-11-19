@@ -1,4 +1,3 @@
-/** One Carmean 1989 (NC-128) site-index curve as FVS `htcalc.f` codes it: 6 coefficients and its label. */
 export interface CarmeanCurveRow {
   curve: number;
   label: string;
@@ -10,10 +9,6 @@ export interface CarmeanCurveRow {
   breastHeightFt: number;
 }
 
-/**
- * Every curve in the `LTBHEC` DATA blocks of an FVS `htcalc.f`: each `C n:LABEL` comment line is
- * followed by a continuation line of six numbers.
- */
 export function parseCarmeanCurves(source: string): CarmeanCurveRow[] {
   const lines = source.split(/\r?\n/);
   const curves: CarmeanCurveRow[] = [];

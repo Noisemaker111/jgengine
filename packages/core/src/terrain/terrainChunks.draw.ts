@@ -6,10 +6,8 @@ import { groundPatchJob, type GroundGrid } from "./terrainMath.draw";
 /** Above this many vertices a ground is meshed as LOD tiles instead of one mesh. */
 export const CHUNKED_GROUND_MIN_VERTICES = 129 * 129 * 4;
 
-/** Grid cells along one side of a ground tile. */
 const TILE_CELLS = 128;
 
-/** Vertex strides a tile is meshed at, finest first. */
 const TILE_STEPS = [1, 2, 4, 8, 16] as const;
 
 interface GroundTile {
@@ -58,19 +56,16 @@ export class GroundChunks {
     }
   }
 
-  /** Tiles the ground is split into. */
   get tileCount(): number {
     return this.tiles.length;
   }
 
-  /** Vertices built so far across every tile and level. */
   builtVertices(): number {
     let total = 0;
     for (const tile of this.tiles) for (const mesh of tile.built.values()) total += mesh.geometry.attributes["position"]!.count;
     return total;
   }
 
-  /** The stride a tile at `distance` from the camera draws with. */
   stepAt(distance: number): number {
     let step: number = TILE_STEPS[0];
     for (let level = 1; level < TILE_STEPS.length; level += 1) {
@@ -79,7 +74,6 @@ export class GroundChunks {
     return step;
   }
 
-  /** Build the coarsest level of every tile, then the level each tile near `camera` draws with. */
   *initialJob(camera: () => THREE.Vector3): SlicedJob<void> {
     const coarsest = TILE_STEPS[TILE_STEPS.length - 1]!;
     for (const tile of this.tiles) yield* this.buildLevel(tile, coarsest);
@@ -100,7 +94,6 @@ export class GroundChunks {
     return null;
   }
 
-  /** Swap the material and shadow flag on every built tile without re-meshing. */
   syncSurface(material: THREE.Material, receiveShadow: boolean): void {
     this.material = material;
     this.receiveShadow = receiveShadow;
@@ -136,7 +129,6 @@ export class GroundChunks {
     tile.lod.addLevel(mesh, this.levelDistance(TILE_STEPS.indexOf(step as (typeof TILE_STEPS)[number])));
   }
 
-  /** Camera distance (to the tile's centre) from which a level draws: 0 for full density. */
   private levelDistance(level: number): number {
     return level <= 0 ? 0 : this.tileSpan * 0.75 * 2 ** (level - 1);
   }
@@ -164,7 +156,6 @@ export class GroundChunks {
 
 const flatScratch = new THREE.Vector3();
 
-/** The eye dropped to the ground plane: tile LOD distance is horizontal, whatever the camera height. */
 function flat(eye: THREE.Vector3): THREE.Vector3 {
   return flatScratch.set(eye.x, 0, eye.z);
 }

@@ -1,32 +1,22 @@
-/** One caption line as the overlay renders it. */
 export interface Caption {
   id: number;
   text: string;
-  /** Free-string kind the game styles ("hit", "pickup", "wave"). */
   kind: string;
-  /** How many identical lines stacked into this one. */
   count: number;
   at: number;
   expiresAt: number;
 }
 
-/** Tunables for {@link createCaptionFeed}; all retunable at runtime. */
 export interface CaptionFeedConfig {
-  /** Maximum live lines. Default 3. */
   cap?: number;
   /** Line lifetime in ms. Default 2400. */
   ttlMs?: number;
-  /** Injected clock; default `Date.now`. */
   now?: () => number;
 }
 
-/** A capped, self-expiring list of caption lines that the accessibility captions setting turns on. */
 export interface CaptionFeed {
-  /** Show `text`; an identical line still live stacks into one with a count. */
   push(text: string, kind?: string): Caption;
-  /** Live lines, oldest first. Stable reference until the next change. */
   list(): readonly Caption[];
-  /** Drop expired lines as of the feed clock. */
   prune(nowMs?: number): void;
   clear(): void;
   subscribe(listener: () => void): () => void;

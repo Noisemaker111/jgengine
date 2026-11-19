@@ -29,17 +29,16 @@ import {
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/core/audio/busMix";
 
-/** Sentinel Controls value meaning "defer to the game's suggested touch skin". */
 export const TOUCH_STYLE_AUTO = "auto";
 
-/** Shell-internal: binds the SettingsStore touch-style choice to the touch renderer. @internal */
+/** @internal */
 export function useTouchStyle(store: SettingsStore, fallback: TouchStyle): TouchStyle {
   useSettingsRevision(store);
   const raw = store.get(SETTING_IDS.touchStyle, TOUCH_STYLE_AUTO);
   return TOUCH_STYLES.includes(raw as TouchStyle) ? (raw as TouchStyle) : fallback;
 }
 
-/** Shell-internal: binds the SettingsStore joystick-variant choice (fixed vs floating) to the touch renderer. @internal */
+/** @internal */
 export function useTouchJoystickVariant(store: SettingsStore): TouchJoystickVariant {
   useSettingsRevision(store);
   const raw = store.get(SETTING_IDS.touchJoystick, DEFAULT_TOUCH_JOYSTICK_VARIANT);
@@ -62,7 +61,6 @@ export function useSettingsRevision(store: SettingsStore): number {
   return useSyncExternalStore(subscribe, getVersion, getVersion);
 }
 
-/** The player's graphics choices as the shell applies them. */
 export interface AppliedGraphicsSettings {
   shadows: boolean;
   dpr: number;
@@ -72,7 +70,6 @@ export interface AppliedGraphicsSettings {
   /** Frames-per-second cap; 0 renders every display refresh. */
   frameRateLimit: number;
   showFps: boolean;
-  /** The GPU API that draws the game; changing it rebuilds the canvas. */
   renderer: RendererBackend;
 }
 

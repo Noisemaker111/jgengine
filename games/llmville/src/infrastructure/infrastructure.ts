@@ -66,7 +66,6 @@ export interface HardwareStats {
   totalVramGb: number;
   totalMemoryBandwidthGbps: number;
   totalTrainingPowerFp16: number;
-  /** FP16 TFLOPs of GPUs dedicated to the Training lane only. */
   trainingLaneTflops: number;
 }
 
@@ -105,7 +104,6 @@ export interface WorldSceneSummary {
   servingThroughputTps: number;
   heatLoadKw: number;
   coolingCapacityKw: number;
-  /** Worst per-card temperature across racks (display only; removed from HUD in Slice E). */
   temperatureC: number;
   thermalThrottle: number;
   powerDrawKw: number;

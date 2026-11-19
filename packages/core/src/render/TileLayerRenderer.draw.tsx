@@ -10,7 +10,6 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { resolveTileLayerInstances } from "./tileLayerInstances";
 
-/** Inputs for the instanced textured tile-layer renderer. */
 export interface TileLayerRendererProps {
   config: TilemapWorldConfig;
   parallax?: readonly [number, number];
@@ -31,7 +30,6 @@ function loadTileTexture(url: string): Promise<THREE.Texture> {
   return pending;
 }
 
-/** Renders a tilemap as one instanced quad mesh with atlas UV rectangles. */
 export function tileLayerRendererDraw({ config, parallax = [1, 1], pixelated = true }: TileLayerRendererProps): EngineDraw {
   const group = new THREE.Group();
   const tileSet = config.tileSet;
@@ -104,7 +102,6 @@ export function tileLayerRendererDraw({ config, parallax = [1, 1], pixelated = t
   };
 }
 
-/** Thin UI bridge: mounts {@link tileLayerRendererDraw} under the JSX parent. */
 export function TileLayerRenderer(props: TileLayerRendererProps) {
   const { config, parallax, pixelated } = props;
   return (

@@ -17,13 +17,11 @@ import { useGameStore } from "@jgengine/ui/hooks";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw";
 
-
 import { buildCost, keep, towerStats } from "../keep";
 import { session } from "../session";
 import { activeProjectiles, type PendingProjectile } from "../combat/pendingProjectiles";
 import { BUILD_PLOTS, FLANK_POINT_KEY, HAS_FLANK, ROUTES, SPAWN_POINT, groundHeightAt } from "./path";
 
-/** Where the east flank road opens. */
 const FLANK_GATE = ROUTES[FLANK_POINT_KEY]![0]!;
 import { plotShapes } from "./plotShapes";
 import { rangeRingBand } from "./rangeRing";
@@ -133,7 +131,6 @@ function RangeRing({ center, radius }: { center: readonly [number, number]; radi
   return <EngineDrawMount create={() => rangeRingDraw(center, radius)} deps={[center[0], center[1], radius]} />;
 }
 
-/** The selection ring's flat gold band under the inspected tower. */
 function inspectionRingDraw(): EngineDraw {
   const geometry = new RingGeometry(1.5, 1.75, 32);
   const material = new MeshStandardMaterial({ color: "#f4d35e", emissive: "#f4d35e", emissiveIntensity: 0.8, roughness: 0.5 });
@@ -152,7 +149,6 @@ function inspectionRingDraw(): EngineDraw {
   };
 }
 
-/** Selection ring plus the live firing radius of the tower whose sell/upgrade panel is open. */
 function InspectedTower() {
   const inspectedId = useGameStore(() => session.inspectedTowerId);
   const slot = useGameStore((c) => (inspectedId === null ? null : keep.of(c).instance(inspectedId)?.slot ?? null));
@@ -169,7 +165,6 @@ function InspectedTower() {
   );
 }
 
-/** Raider gate landmark at a spawn — two rough stone pillars and a dark banner mark where the horde emerges. */
 function spawnGateDraw(at: readonly [number, number, number], facing: number): EngineDraw {
   const [x, y, z] = at;
   const group = new Group();
@@ -236,7 +231,6 @@ function boltPosition(bolt: PendingProjectile, now: number): [number, number, nu
   ];
 }
 
-/** Bolts in flight: one draw owns a mesh per live bolt and moves them every frame without a render. */
 function projectileBoltsDraw(ctx: GameContext): EngineDraw {
   const group = new Group();
   const geometry = new SphereGeometry(0.14, 8, 8);
@@ -287,8 +281,6 @@ function ProjectileBolts() {
   return <EngineDrawMount create={() => projectileBoltsDraw(ctx)} deps={[ctx]} />;
 }
 
-/** VFX-only overlay — the authored scene (draped creep path + instanced foliage) is auto-mounted
- * by `defineGame({ editorLayers })`. */
 export function BeaconBastionWorldOverlay() {
   return (
     <>

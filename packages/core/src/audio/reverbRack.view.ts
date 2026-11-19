@@ -15,7 +15,6 @@ const PRESETS: Record<Exclude<ReverbPreset, "none">, { seconds: number; decay: n
 /** Seconds a change of space takes to blend in. */
 const BLEND_TC = 0.35;
 
-/** A stereo noise burst with an exponential tail: the cheapest impulse that still reads as a space. */
 function impulse(context: BaseAudioContext, seconds: number, decay: number): AudioBuffer {
   const length = Math.max(1, Math.floor(context.sampleRate * seconds));
   const buffer = context.createBuffer(2, length, context.sampleRate);
@@ -29,14 +28,11 @@ function impulse(context: BaseAudioContext, seconds: number, decay: number): Aud
   return buffer;
 }
 
-/** The send every positioned voice feeds, and which space it currently rings in. @internal */
+/** @internal */
 export interface ReverbRack {
   input: GainNode;
-  /** Blend to `preset` over the rack's time constant. */
   select(preset: ReverbPreset): void;
-  /** The space the rack is in (or blending to). */
   state(): ReverbPreset;
-  /** Jump straight to `preset` with no blend, as a resumed scene should open in its room. */
   restore(preset: ReverbPreset): void;
   dispose(): void;
 }
@@ -102,7 +98,6 @@ export function createReverbRack(context: BaseAudioContext, output: AudioNode): 
   };
 }
 
-/** The narrow slice of the scene an enclosure test needs. */
 export interface EnclosureRaycastSource {
   raycast(input: SceneRaycastInput): SceneRaycastHit | null;
 }

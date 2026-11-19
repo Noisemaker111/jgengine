@@ -28,21 +28,15 @@ import {
   type UiNode,
 } from "./element";
 
-/** What a renderer implements. `N` is its node type. */
 export interface Host<N> {
   createElement(tag: string, parent: N | null): N;
   createText(text: string, parent: N | null): N;
   setText(node: N, text: string): void;
-  /** `prev` is null on first application. */
   updateProps(node: N, tag: string, prev: Props | null, next: Props): void;
-  /** Put `node` under `parent` right before `before` (null: last). A node already there stays put. */
   place(parent: N, node: N, before: N | null): void;
   remove(parent: N, node: N): void;
-  /** `node`'s fiber is gone, whether or not `node` was the one taken off its parent: free what it holds. */
   released?(node: N): void;
-  /** Children of `parent` are final for this commit (runs after every place/remove under it). */
   childrenPlaced?(parent: N): void;
-  /** One commit's host work is done. */
   commitDone?(): void;
 }
 
@@ -84,12 +78,10 @@ interface StoreCell {
 interface DeferredCell {
   tag: "deferred";
   shown: unknown;
-  /** Set for the background pass that brings `shown` up to the wanted value. */
   advance: boolean;
 }
 type HookCell = StateCell | MemoCell | RefCell | EffectCell | StoreCell | DeferredCell;
 
-/** How long one slice of a background pass renders before it gives the page back. */
 const SLICE_MS = 5;
 const now = (): number => performance.now();
 
@@ -108,7 +100,6 @@ export class Fiber<N = unknown> {
   children: Fiber<N>[] = [];
   depth: number;
   node: N | null = null;
-  /** Host nodes currently placed under this fiber's node/container, in order. */
   placed: N[] = [];
   hooks: HookCell[] | null = null;
   instance: ClassInstance | null = null;
@@ -117,14 +108,10 @@ export class Fiber<N = unknown> {
   dead = false;
   readonly strict: boolean;
   effectsMounted = false;
-  /** Provider: fibers reading this context. */
   readers: Set<Fiber<N>> | null = null;
-  /** Consumer: providers this fiber reads. */
   reading: Set<Fiber<N>> | null = null;
   contextValue: unknown = undefined;
-  /** Suspense: thenables its subtree is waiting on. */
   waiting: Set<PromiseLike<unknown>> | null = null;
-  /** A boundary's caught error. */
   failed: { error: unknown } | null = null;
   ref: unknown = null;
   root: Root<N>;
@@ -140,7 +127,6 @@ export class Fiber<N = unknown> {
   }
 }
 
-/** A class component as the reconciler builds and reads it. */
 interface ClassType {
   new (props: Props): ClassInstance;
   getDerivedStateFromError?(error: unknown): object | null;
@@ -225,21 +211,18 @@ function slotsOf(children: unknown): Slot[] {
   return out;
 }
 
-/** The render counter (`devtools/renderCounter.ts`), when a test or a measured page installed one. */
 interface RenderSink {
   render(type: unknown): void;
   commit(): void;
 }
 const renderSink = (): RenderSink | undefined => (globalThis as { __jg?: { renderSink?: RenderSink } }).__jg?.renderSink;
 
-/** One mounted tree and its scheduler. */
 export class Root<N = unknown> {
   readonly host: Host<N>;
   readonly fiber: Fiber<N>;
   private readonly dirty = new Set<Fiber<N>>();
   private readonly resync = new Set<Fiber<N>>();
   private effects: { fiber: Fiber<N>; cell: EffectCell }[] = [];
-  /** Fibers whose ref is attached at commit, after every removed fiber has let go of the same ref. */
   private attaching: Fiber<N>[] = [];
   /**
    * The background pass (`useDeferredValue`): the components that follow a deferred value render a
@@ -333,7 +316,6 @@ export class Root<N = unknown> {
     });
   }
 
-  /** Render one slice of the background pass; `whole` (tests, `act`) runs it to the end. */
   backgroundSlice(whole = false): void {
     if (this.flushing) {
       this.queueBackground();
@@ -403,8 +385,6 @@ export class Root<N = unknown> {
       this.flushing = false;
     }
   }
-
-  // ---------------------------------------------------------------- render
 
   private create(parent: Fiber<N>, slot: Slot): Fiber<N> {
     const node = slot.node;
@@ -758,8 +738,6 @@ export class Root<N = unknown> {
     fiber.ref = null;
   }
 
-  // ---------------------------------------------------------------- commit
-
   private setRef(fiber: Fiber<N>, ref: unknown): void {
     if (ref === fiber.ref) return;
     if (fiber.ref !== null && fiber.ref !== undefined) this.assignRef(fiber.ref, null);
@@ -877,20 +855,12 @@ function reportError(error: unknown): void {
   else console.error(error);
 }
 
-// ------------------------------------------------------------------ batching
-
-/** What the player did once (a press, a key, a release), as opposed to a stream (moves, scrolls). */
 const DISCRETE_EVENTS = new Set([
   "click", "dblclick", "auxclick", "contextmenu", "pointerdown", "pointerup", "pointercancel", "mousedown", "mouseup",
   "touchstart", "touchend", "touchcancel", "keydown", "keyup", "keypress", "input", "beforeinput", "change", "submit", "reset",
   "focusin", "focusout", "dragstart", "dragend", "drop", "cut", "copy", "paste", "compositionstart", "compositionend",
 ]);
 
-/**
- * True while the browser is delivering one of those to a listener the page added itself (the
- * engine's own listeners apply state with `flushSync`): state set there applies as the handler
- * returns, so what the player did shows before anything else runs.
- */
 function inDiscreteEvent(): boolean {
   const event = (globalThis as { event?: { type?: unknown } }).event;
   return event !== undefined && event !== null && typeof event.type === "string" && DISCRETE_EVENTS.has(event.type);
@@ -928,7 +898,6 @@ function afterTask(task: () => void): void {
 let batchDepth = 0;
 const batchedRoots = new Set<Root<unknown>>();
 
-/** Run `fn`, then apply every state change it made before returning. */
 export function flushSync<T>(fn?: () => T): T | undefined {
   batchDepth += 1;
   let result: T | undefined;
@@ -947,7 +916,6 @@ export function flushSync<T>(fn?: () => T): T | undefined {
 
 const liveRoots = new Set<Root<unknown>>();
 
-/** Test helper: run `fn` (sync or async) and settle every mounted root before resolving. */
 export function act<T>(fn: () => T | Promise<T>): Promise<T> & { then: Promise<T>["then"] } {
   const settle = (): void => {
     for (let round = 0; round < 50; round += 1) {
@@ -977,8 +945,6 @@ export function act<T>(fn: () => T | Promise<T>): Promise<T> & { then: Promise<T
   }
   return Promise.resolve(result);
 }
-
-// --------------------------------------------------------------------- hooks
 
 function nextCell<C extends HookCell>(make: () => C): C {
   const fiber = currentFiber();
@@ -1033,7 +999,6 @@ export function useState<T>(initial?: T | (() => T)): [T, (next: T | ((prev: T) 
   return [cell.state as T, cell.dispatch as (next: T | ((prev: T) => T)) => void];
 }
 
-/** A reducer's action: none (`dispatch()`) or one (`dispatch(action)`). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyActionArg = [] | [any];
 export type ActionDispatch<A extends AnyActionArg> = (...args: A) => void;
@@ -1173,11 +1138,6 @@ export function useId(): string {
   return useMemo(() => fiber.root.nextId(), []);
 }
 
-/**
- * `value`, trailing while what depends on it renders in the background a slice at a time: the
- * component first renders again with the value it had, then the root builds the new tree between
- * frames and shows it whole.
- */
 export function useDeferredValue<T>(value: T): T {
   const fiber = currentFiber();
   const cell = nextCell<DeferredCell>(() => ({ tag: "deferred", shown: value, advance: false }));
@@ -1203,7 +1163,6 @@ export function startTransition(run: () => void): void {
 
 export function useDebugValue(): void {}
 
-/** Reads a context, or waits on a promise under the nearest `Suspense`. */
 export function use<T>(source: ContextType<T> | PromiseLike<T>): T {
   if (isThenable(source)) {
     const tracked = source as PromiseLike<T> & { status?: string; value?: T; reason?: unknown };
@@ -1227,7 +1186,6 @@ export function use<T>(source: ContextType<T> | PromiseLike<T>): T {
   return useContext(source);
 }
 
-/** Base class for the few class components (error boundaries). */
 export class Component<P = object, S = object> {
   static readonly isUiClass = true as const;
   readonly props: Readonly<P>;

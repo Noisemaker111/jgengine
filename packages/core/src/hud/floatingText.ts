@@ -12,13 +12,9 @@ export type FloatingTextPosition = readonly [number, number, number];
  * interprets it, so nothing here is combat- or genre-specific.
  */
 export interface FloatingTextDef {
-  /** World anchor the text rises from. */
   position: FloatingTextPosition;
-  /** The text to show. */
   text: string;
-  /** Free-form style tag the game colors/skins. Default `"default"`. */
   kind?: string;
-  /** Optional CSS color hint carried straight through to the view (presentation may override per `kind`). */
   color?: string;
   /** Relative scale multiplier (before the birth pop-in). Default 1. */
   size?: number;
@@ -30,7 +26,6 @@ export interface FloatingTextDef {
   lifetime?: number;
 }
 
-/** Construction options for {@link createFloatingTextField}. */
 export interface FloatingTextFieldConfig {
   /** Hard cap on live entries; the pool never grows past this. When full, the oldest entry is recycled. Default 64. */
   max?: number;
@@ -44,25 +39,17 @@ export interface FloatingTextFieldConfig {
   defaultRise?: number;
   /** Max magnitude of the seeded horizontal drift used when a def omits `drift`. Default 0.6. */
   driftJitter?: number;
-  /** Fraction of life spent on the birth scale pop-in (0.6→1). Default 0.16. */
   popIn?: number;
-  /** Fraction of life over which alpha fades to 0 at the end. Default 0.4. */
   fadeFraction?: number;
 }
 
-/** A live entry resolved for rendering: current world position and fade/scale over life. */
 export interface FloatingTextView {
-  /** Stable, monotonically increasing id assigned at emit — usable as a UI key. */
   id: number;
   /** Current world position with rise (Y) and drift (X) applied. */
   position: FloatingTextPosition;
-  /** The text to show. */
   text: string;
-  /** The style tag (resolved; `"default"` when the def omitted `kind`). */
   kind: string;
-  /** The def's color hint, if any. */
   color?: string | undefined;
-  /** Resolved scale: base `size` times the current birth pop-in factor. */
   size: number;
   /** Opacity `0..1`, full until the fade window then easing to 0. */
   alpha: number;
@@ -77,29 +64,19 @@ export interface FloatingTextSnapshot {
   seed: number;
   nextId: number;
   count: number;
-  /** Numeric per-entry columns, flattened `count * NUMERIC_STRIDE`. */
   data: number[];
-  /** Per-entry text. */
   text: string[];
-  /** Per-entry kind. */
   kind: string[];
-  /** Per-entry color (empty string = none). */
   color: string[];
 }
 
-/** A live, dt-driven field of world-anchored floating text. */
 export interface FloatingTextField {
-  /** Spawn one entry; returns its id. When the pool is full the oldest live entry is recycled. */
   emit(def: FloatingTextDef): number;
   /** Advance every entry by `dt` seconds: age, rise, drift, and reap the expired. */
   update(dt: number): void;
-  /** Snapshot of the live entries resolved for rendering (a fresh array each call). */
   active(): FloatingTextView[];
-  /** Live entry count. */
   count(): number;
-  /** Remove every entry (keeps the seed stream and id counter). */
   clear(): void;
-  /** Subscribe to changes (emit/update/clear/restore); returns an unsubscribe. */
   subscribe(listener: () => void): () => void;
   snapshot(): FloatingTextSnapshot;
   restore(snapshot: FloatingTextSnapshot): void;
@@ -165,7 +142,6 @@ export function createFloatingTextField(config: FloatingTextFieldConfig = {}): F
     return value;
   }
 
-  /** Index of the oldest live entry (highest age) — the one recycled when the pool is full. */
   function oldestIndex(): number {
     let best = 0;
     for (let i = 1; i < live; i++) if (age[i]! > age[best]!) best = i;
@@ -211,13 +187,11 @@ export function createFloatingTextField(config: FloatingTextFieldConfig = {}): F
     live--;
   }
 
-  /** Current scale (base times birth pop-in) for entry `i`. */
   function resolveScale(i: number): number {
     const t = clamp01(age[i]! / life[i]!);
     const pop = popIn > 0 && t < popIn ? 0.6 + 0.4 * (t / popIn) : 1;
     return size[i]! * pop;
   }
-  /** Current alpha (full until the fade window, then easing to 0) for entry `i`. */
   function resolveAlpha(i: number): number {
     const t = clamp01(age[i]! / life[i]!);
     if (fadeFraction <= 0) return 1;

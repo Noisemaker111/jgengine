@@ -29,7 +29,6 @@ import { isTabletUiBlockingGameplay } from "../../tablet/tablet";
 import { useTutorialState } from "../../tutorial/tutorialRuntime";
 import { localGameState } from "../../user/localGameState";
 
-/** The shell's `GameUI`: LLMville's world state, its HUD and tablet, and the scene props the canvas draws. */
 export function LlmvilleGameUI() {
   const ctx = useGameContext();
   const session = useLlmvilleSession();

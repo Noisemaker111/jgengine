@@ -7,7 +7,6 @@ import { useRef } from "@jgengine/core/ui/jsx";
 
 import { createProceduralGroundGeometry, type ProceduralTerrainConfig, type TerrainVertexColorOptions } from "./terrainMath.draw";
 
-/** Props for {@link ProceduralGround}: noise terrain settings, height colours and material settings. */
 export interface ProceduralGroundProps extends DrawAttachProps {
   terrain?: ProceduralTerrainConfig;
   colors?: TerrainVertexColorOptions;
@@ -17,7 +16,6 @@ export interface ProceduralGroundProps extends DrawAttachProps {
 
 const TRANSFORMS = new Set(["position", "rotation", "scale", "quaternion"]);
 
-/** Apply the engine-style mesh props a plain THREE.Mesh understands; event props have no three-side home. */
 function applyMeshProps(mesh: THREE.Mesh, props: object): void {
   for (const [key, value] of Object.entries(props)) {
     if (value === undefined || typeof value === "function") continue;
@@ -29,8 +27,7 @@ function applyMeshProps(mesh: THREE.Mesh, props: object): void {
   }
 }
 
-/** A seeded noise-height ground mesh coloured from low to high ground.
- * @capability procedural-ground seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes */
+/** @capability procedural-ground seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes */
 export function proceduralGroundDraw({
   terrain,
   colors,

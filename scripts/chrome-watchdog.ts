@@ -30,7 +30,6 @@ export function alive(pid: number): boolean {
   }
 }
 
-/** Kill `pid` and everything under it; waits up to `waitMs` for the tree to be gone. */
 export function killTree(pid: number, waitMs = 10_000): boolean {
   if (process.platform === "win32") {
     spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 15_000 });

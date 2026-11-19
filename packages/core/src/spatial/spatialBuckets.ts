@@ -8,7 +8,6 @@
 
 /** @internal */
 export interface SpatialBuckets {
-  /** Register `id` under every cell its rectangle overlaps. Ids are returned in insertion order. */
   insert(id: number, minX: number, minZ: number, maxX: number, maxZ: number): void;
   /**
    * Writes the ids whose rectangle overlaps the query box, ascending and deduped, to the front of

@@ -2,15 +2,12 @@ import type { WorkQueueConfig } from "@jgengine/core/gameplay";
 
 import { buildingDef } from "./catalog";
 
-/** A placed-but-not-yet-raised building: its type and where it goes. */
 export interface BuildSpec {
   type: string;
   x: number;
   z: number;
 }
 
-/** The construction queue config — duration is the building's build time; completion output is the
- * placement the systems tick raises into a real building entity. Several may raise at once. */
 export const BUILD_CONFIG: WorkQueueConfig<BuildSpec, undefined, BuildSpec> = {
   duration: (spec) => buildingDef(spec.type)?.buildSeconds ?? 0,
   concurrency: 6,

@@ -1,30 +1,17 @@
 // @skill jgengine-world
 
-/**
- * A hull as a table of offsets, the way lines plans publish it. Hull axes: `x` forward from the aft end of the table,
- * `y` to port, `z` up from the baseline (keel). The top waterline is the deck edge.
- */
 export interface HullOffsets {
-  /** Station positions along the hull, m, ascending. */
   stations: readonly number[];
-  /** Waterline heights above the baseline, m, ascending; the last is the deck. */
   waterlines: readonly number[];
-  /** Half-breadths, m: `halfBreadths[station][waterline]`. */
   halfBreadths: readonly (readonly number[])[];
 }
 
-/** A closed, outward-facing triangle mesh in hull axes: `positions` holds `x, y, z` triples, `triangles` index triples. */
 export interface HullMesh {
   positions: Float64Array;
   triangles: Uint32Array;
 }
 
-/**
- * Builds a closed, outward-facing triangle mesh from a table of offsets: the two hull sides, the deck, and flat end caps
- * where a station has breadth (a transom). Every section is a closed ring from the keel up the starboard side, across the
- * deck and down the port side.
- * @capability hull-form triangle mesh of a hull from a published table of offsets
- */
+/** @capability hull-form triangle mesh of a hull from a published table of offsets */
 export function hullMeshFromOffsets(offsets: HullOffsets): HullMesh {
   const { stations, waterlines, halfBreadths } = offsets;
   const ns = stations.length;
@@ -95,10 +82,7 @@ export function hullMeshFromOffsets(offsets: HullOffsets): HullMesh {
   return mesh;
 }
 
-/**
- * Signed volume enclosed by a mesh, m³ (positive when its triangles face outward).
- * @capability hull-form enclosed volume of a closed triangle mesh
- */
+/** @capability hull-form enclosed volume of a closed triangle mesh */
 export function meshVolume(mesh: HullMesh): number {
   const p = mesh.positions;
   const t = mesh.triangles;
@@ -123,16 +107,12 @@ function grid(count: number, from: number, to: number, cluster = false): number[
   });
 }
 
-/** Dimensions of a {@link wigleyHull}. */
 export interface WigleyHullOptions {
   length: number;
   beam: number;
   draft: number;
-  /** Height of the vertical topsides above the waterline, m (default `draft`). */
   freeboard?: number;
-  /** Stations along the length (default `61`). */
   stations?: number;
-  /** Waterlines from keel to waterline (default `24`); the topsides add two more. */
   waterlines?: number;
 }
 
@@ -159,36 +139,23 @@ export function wigleyHull(options: WigleyHullOptions): HullOffsets {
   return { stations, waterlines, halfBreadths };
 }
 
-/**
- * A rectangular box barge `length × beam × depth`: the textbook hull whose large-angle righting arm has a closed form.
- * @capability hull-form a rectangular box barge as a table of offsets
- */
+/** @capability hull-form a rectangular box barge as a table of offsets */
 export function boxBarge(length: number, beam: number, depth: number, stations = 3, waterlines = 3): HullOffsets {
   const xs = grid(stations, 0, length);
   const zs = grid(waterlines, 0, depth);
   return { stations: xs, waterlines: zs, halfBreadths: xs.map(() => zs.map(() => beam / 2)) };
 }
 
-/** Dimensions of a {@link prismaticPlaningHull}. */
 export interface PrismaticPlaningHullOptions {
-  /** Length of the prismatic run, m. */
   length: number;
-  /** Chine beam, m. */
   beam: number;
-  /** Deadrise angle, rad. */
   deadrise: number;
-  /** Side height above the chine, m. */
   sideHeight: number;
-  /** Length of the bow taper at the forward end, m (default `0.3 · length`). */
   bowLength?: number;
   stations?: number;
 }
 
-/**
- * A constant-deadrise planing hull: a V bottom of the given deadrise up to a hard chine, vertical topsides above it, a
- * flat transom aft and a bow that narrows to a point over `bowLength`. The prismatic hull Savitsky's equations describe.
- * @capability hull-form a constant-deadrise prismatic planing hull as a table of offsets
- */
+/** @capability hull-form a constant-deadrise prismatic planing hull as a table of offsets */
 export function prismaticPlaningHull(options: PrismaticPlaningHullOptions): HullOffsets {
   const { length, beam, deadrise, sideHeight } = options;
   const bow = options.bowLength ?? 0.3 * length;

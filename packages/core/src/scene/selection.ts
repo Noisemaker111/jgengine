@@ -11,7 +11,6 @@ export interface ScreenPoint {
   y: number;
 }
 
-/** Normalize two drag corners (in any order) into a rectangle. */
 export function screenRect(ax: number, ay: number, bx: number, by: number): ScreenRect {
   return {
     minX: Math.min(ax, bx),
@@ -25,7 +24,6 @@ export function rectContainsPoint(rect: ScreenRect, x: number, y: number): boole
   return x >= rect.minX && x <= rect.maxX && y >= rect.minY && y <= rect.maxY;
 }
 
-/** Ids of the projected candidates whose screen point falls inside the marquee. */
 export function selectWithinRect(candidates: readonly ScreenPoint[], rect: ScreenRect): string[] {
   return candidates.filter((candidate) => rectContainsPoint(rect, candidate.x, candidate.y)).map((c) => c.id);
 }
@@ -46,7 +44,6 @@ export interface SelectionSet {
   size(): number;
 }
 
-/** An ordered, deduplicated set of selected instance ids for RTS unit-command routing. */
 export function createSelectionSet(initial?: Iterable<string>): SelectionSet {
   const ids = new Set<string>(initial);
   return {

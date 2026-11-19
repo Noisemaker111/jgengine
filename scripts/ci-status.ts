@@ -62,7 +62,6 @@ export interface Run {
 
 export type Git = (args: string[]) => Run;
 
-/** One row of `statusCheckRollup`: a check run or a legacy commit status. */
 export interface RollupEntry {
   __typename?: string;
   name?: string;
@@ -73,7 +72,6 @@ export interface RollupEntry {
   startedAt?: string | null;
   detailsUrl?: string;
   targetUrl?: string;
-  /** Only the check-runs API names the commit; a PR rollup is already the head commit's. */
   headSha?: string | null;
   head_sha?: string | null;
 }
@@ -82,7 +80,6 @@ export type Bucket = "pass" | "fail" | "pending";
 
 export interface CheckStatus {
   name: string;
-  /** The conclusion, else the state, else the run status: whatever GitHub last said. */
   state: string;
   bucket: Bucket;
   url: string;
@@ -148,7 +145,6 @@ export function bucketOf(state: string): Bucket {
   return "pending";
 }
 
-/** The Action run a check belongs to, from `.../actions/runs/1234/job/5678`. */
 export function runIdFrom(url: string): number | null {
   const match = /\/runs\/(\d+)/.exec(url);
   if (match === null) return null;
@@ -181,13 +177,11 @@ export function verdictOf(checks: readonly CheckStatus[]): Bucket {
   return "pass";
 }
 
-/** One attempt GitHub reported for one check name: a name appears once per workflow run. */
 export interface CheckAttempt {
   name: string;
   state: string;
   startedAt?: string | null;
   url: string;
-  /** The commit this attempt ran on, when the payload names one. */
   headSha?: string | null;
 }
 
@@ -246,7 +240,6 @@ export function summarizeChecks(input: {
   url: string;
   branch: string;
   state: string;
-  /** The commit the rollup belongs to, when the caller read it. */
   headSha?: string | undefined;
   rollup: readonly RollupEntry[];
   wallMs: number;
@@ -269,13 +262,11 @@ export function summarizeChecks(input: {
   };
 }
 
-/** `1.2s`, `340ms`: the whole point is that this number stays small. */
 export function seconds(ms: number): string {
   if (ms < 1000) return `${Math.round(ms)}ms`;
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-/** The last line's verdict: one of pass, fail naming each failing check, or still running. */
 export function verdictLine(status: CiStatus): string {
   const { pass, fail, pending } = status.counts;
   const counts = `${status.checks.length} check(s): ${pass} pass, ${fail} fail, ${pending} pending`;
@@ -316,7 +307,6 @@ interface PrView {
 }
 
 export interface CiIo {
-  /** `gh` itself; every call goes through `gh api` (scripts/github.ts). */
   gh: GhRunner;
   git: Git;
 }
@@ -325,13 +315,11 @@ function firstLine(text: string): string {
   return text.split("\n")[0] ?? text;
 }
 
-/** `owner/name` from `--repo` or this checkout's origin. */
 export function repoName(args: CiStatusArgs, git: Git): string | null {
   if (args.repo !== undefined) return args.repo;
   return repoFromRemote(git(["remote", "get-url", "origin"]).stdout);
 }
 
-/** Resolve the one PR this question is about, with its head commit's checks, without watching anything. */
 export function resolvePr(args: CiStatusArgs, io: CiIo): { pr: PrView } | Refusal {
   const repo = repoName(args, io.git);
   if (repo === null) return { reason: "bad-args", message: "no GitHub repository in the origin remote; pass --repo <owner/name>" };
@@ -441,7 +429,6 @@ export function cli(argv: readonly string[], io: CiIo, now: () => number = () =>
   return { code: exitCodeFor(status), stdout: [args.json ? jsonText(status) : formatText(status)], stderr: [] };
 }
 
-/** `spawnSync` reports no status when the process died on a signal; that is a failure, not a pass. */
 function run(command: string, args: string[]): Run {
   const result = spawnSync(command, args, { encoding: "utf8" });
   return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };

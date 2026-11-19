@@ -26,13 +26,8 @@ function readPreferences(): OrbitPreferences {
 }
 
 type Drawer = "build" | "ledger" | null;
-/** Capture-only request: a shot declares which habitat drawer it wants open. */
 export const drawerFocus: { id: Drawer } = { id: null };
 
-/**
- * The habitat HUD as the household's own kitchen: the wall clock top-left, the fridge door
- * top-right, the beings as magnets down the left and a tray of three tools at the foot.
- */
 export function GameUI() {
   const ctx = useGameContext();
   const { commands } = useGame();

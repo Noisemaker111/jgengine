@@ -4,7 +4,6 @@ import type { GameEventMap, GameEvents } from "@jgengine/core/game/events";
 import type { HapticPulse } from "@jgengine/core/haptics/haptics";
 import type { WaveRunner } from "@jgengine/core/waves/waveRunner";
 
-/** One cue's reaction: what plays, what the hand feels, what the screen does, and what a caption says. */
 export interface FeedbackReaction {
   /** Catalog id played for the cue. Defaults to `feel.<cue>`; a game sound with that id replaces it. */
   sound: string;
@@ -12,17 +11,11 @@ export interface FeedbackReaction {
   haptics?: HapticPulse;
   /** Camera trauma `0..1`, scaled by the player's motion setting (`0` under reduced motion). */
   shake?: number;
-  /** Caption text when the accessibility captions setting is on. */
   caption?: string;
   /** Minimum ms between two plays of this cue, so a burst of hits reads as one impact. Default 40. */
   cooldownMs?: number;
 }
 
-/**
- * The default reactions. They are data: a game overrides one through `audio.feedbackCues` (sound) or
- * `createEventFeedback({ reactions })` (haptics, shake, caption), and replaces the mapping through
- * `bindings` without touching the shell.
- */
 export const DEFAULT_FEEDBACK_REACTIONS: Readonly<Record<FeedbackCue, FeedbackReaction>> = {
   hit: {
     sound: feedbackCueSoundId("hit"),
@@ -72,10 +65,8 @@ export const DEFAULT_FEEDBACK_REACTIONS: Readonly<Record<FeedbackCue, FeedbackRe
   },
 };
 
-/** Which side of an event a binding reacts to: the local player's, someone else's, or either. */
 export type FeedbackScope = "local" | "remote" | "any";
 
-/** Event names the default mapping listens to; a game may add its own through `bindings`. */
 export type FeedbackEventName =
   | "combat.damage"
   | "entity.died"
@@ -84,19 +75,14 @@ export type FeedbackEventName =
   | "stat.levelUp"
   | "command.refused";
 
-/** One row of the event mapping: `event` announces, `cue` reacts. */
 export type FeedbackBinding<Name extends FeedbackEventName = FeedbackEventName> = {
   event: Name;
   cue: FeedbackCue;
-  /** Default `"any"`. `"local"` only fires for the local player's own target/user/refusal. */
   scope?: FeedbackScope;
-  /** Overrides the cue's caption for this event, e.g. "You died". */
   caption?: string;
-  /** Reads extra caption detail out of the payload, e.g. the damage amount. */
   detail?: (payload: GameEventMap[Name]) => string | undefined;
 };
 
-/** Any row of the event mapping, whichever event it binds. */
 export type AnyFeedbackBinding = { [Name in FeedbackEventName]: FeedbackBinding<Name> }[FeedbackEventName];
 
 /**
@@ -142,22 +128,16 @@ export interface FeedbackDeps {
    * pulse when one is connected and a phone feels it through vibration otherwise.
    */
   haptics?(pulse: HapticPulse): void;
-  /** Show a caption line for `cue`; only called when captions are on. */
   caption?(text: string, cue: FeedbackCue): void;
-  /** The local player, for `scope: "local"`. */
   localUserId(): string | null;
-  /** The entity the local player currently controls, for damage/death scope. */
   localEntityId(): string | null;
-  /** Engine motion scale: `0` under reduced motion, `1` normally. Default `1`. */
   motionScale?(): number;
   now?(): number;
 }
 
-/** Options a game or host may override. */
 export interface EventFeedbackOptions {
   reactions?: Partial<Record<FeedbackCue, FeedbackReaction>>;
   bindings?: readonly AnyFeedbackBinding[];
-  /** Whether captions reach `deps.caption` at all. Default true. */
   captions?: boolean;
 }
 
@@ -167,21 +147,14 @@ export interface EventFeedbackState {
   suppressed: Record<FeedbackCue, number>;
 }
 
-/** The event-to-reaction seam. One instance per running world. */
 export interface EventFeedback {
   /** React to one announced event. Returns the cue fired, or null when nothing mapped or it was muted by cooldown. */
   handle<Name extends FeedbackEventName>(event: Name, payload: GameEventMap[Name]): FeedbackCue | null;
-  /** Fire a cue the game announces itself (a wave starting, a custom moment); `caption` overrides the cue's text. */
   notify(cue: FeedbackCue, caption?: string): boolean;
-  /** Map without firing - the pooled reaction for an event, for devtools and tests. */
   resolve<Name extends FeedbackEventName>(event: Name, payload: GameEventMap[Name]): ResolvedFeedback | null;
-  /** How many triggers a cue's cooldown folded away since the last reset. */
   suppressed(cue: FeedbackCue): number;
-  /** Replace reactions or bindings at runtime. */
   retune(options: Partial<EventFeedbackOptions>): void;
-  /** A copy of the cooldown clocks. */
   snapshot(): EventFeedbackState;
-  /** Clear cooldowns and suppressed counters, or put a {@link snapshot} back. */
   reset(next?: EventFeedbackState): void;
 }
 
@@ -349,13 +322,7 @@ export function createEventFeedback(deps: FeedbackDeps, options: EventFeedbackOp
   };
 }
 
-/**
- * Subscribe the feedback seam to a game's event bus, including `feedback.cue` for moments the game
- * announces itself. Returns the detach function; the mapping and reactions stay override-able
- * through the seam's `retune`.
- *
- * @capability attach-event-feedback one call wires every announced combat/loot/objective/refusal event to its reaction
- */
+/** @capability attach-event-feedback one call wires every announced combat/loot/objective/refusal event to its reaction */
 export function attachEventFeedback(
   events: Pick<GameEvents, "on">,
   feedback: EventFeedback,

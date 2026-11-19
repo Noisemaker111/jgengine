@@ -10,18 +10,13 @@ import { createRungeKutta4 } from "./rungeKutta";
  * body's own centre of mass. SI units.
  */
 export interface WhippleBicycleParameters {
-  /** Wheelbase w, m. */
   wheelbase: number;
-  /** Trail c, m. */
   trail: number;
-  /** Steer-axis tilt λ from vertical, rad (π/2 − head angle). */
   steerAxisTilt: number;
   /** Gravity g, m/s². */
   gravity: number;
   rearWheel: { radius: number; mass: number; ixx: number; iyy: number };
-  /** Rear frame and rider B: centre of mass `(x, z)` and inertia `Ixx, Iyy, Izz, Ixz`. */
   rearFrame: { x: number; z: number; mass: number; ixx: number; iyy: number; izz: number; ixz: number };
-  /** Front frame (fork and handlebar) H. */
   frontFrame: { x: number; z: number; mass: number; ixx: number; iyy: number; izz: number; ixz: number };
   frontWheel: { radius: number; mass: number; ixx: number; iyy: number };
 }
@@ -45,15 +40,11 @@ export const BENCHMARK_BICYCLE: Readonly<WhippleBicycleParameters> = {
  * fourteen decimals.
  */
 export const BENCHMARK_BICYCLE_EIGENVALUES = {
-  /** Real eigenvalues at v = 0, ±λs1 and ±λs2. */
   standstill: [3.13164324790656, 5.53094371765393],
-  /** Speed where the weave pair turns complex, and that double root. */
   doubleRootSpeed: 0.68428307889246,
   doubleRoot: 3.7829040512932,
-  /** Weave speed (weave turns stable) and its eigenvalue there, `±i·3.43503384866144`. */
   weaveSpeed: 4.29238253634111,
   weaveFrequency: 3.43503384866144,
-  /** Capsize speed (capsize turns unstable). */
   capsizeSpeed: 6.02426201538837,
   /** Weave pair `re ± i·im` at v = 1 … 10 m/s. */
   weave: [
@@ -79,7 +70,6 @@ export const BENCHMARK_BICYCLE_EIGENVALUES = {
   ],
 } as const;
 
-/** The constant matrices of the linearised lean and steer equations `M·q̈ + v·C1·q̇ + (g·K0 + v²·K2)·q = f`, `q = [φ, δ]`, row-major 2×2. */
 export interface WhippleLinearCoefficients {
   M: [number, number, number, number];
   C1: [number, number, number, number];
@@ -141,11 +131,7 @@ export function whippleLinearCoefficients(p: Readonly<WhippleBicycleParameters> 
   };
 }
 
-/**
- * The four eigenvalues of the linearised bicycle at forward speed `v`: roots of the characteristic quartic
- * `det(M·λ² + v·C1·λ + g·K0 + v²·K2) = 0`, polished to double precision. Sorted by real part, descending.
- * @capability whipple-eigenvalues stability eigenvalues of the Whipple bicycle at any speed — weave, capsize, castering
- */
+/** @capability whipple-eigenvalues stability eigenvalues of the Whipple bicycle at any speed — weave, capsize, castering */
 export function whippleEigenvalues(v: number, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE): Eigenvalue[] {
   const { M, C1, K0, K2 } = whippleLinearCoefficients(p);
   const g = p.gravity;
@@ -197,54 +183,37 @@ export function whippleCriticalSpeeds(
   return { doubleRoot, weave, capsize };
 }
 
-/** One {@link WhippleBicycle} sample. ISO world axes (x forward at spawn, y left, z up). */
 export interface WhippleBicycleState {
-  /** Lean φ, rad, positive leaning right (the benchmark's sign). */
   lean: number;
-  /** Steer δ, rad, positive steering right (the benchmark's sign). */
   steer: number;
   leanRate: number;
   steerRate: number;
-  /** Rear-frame heading, rad, positive turning left. */
   heading: number;
-  /** Rear-frame pitch, rad, nose down positive. */
   pitch: number;
-  /** Rear contact point, m. */
   position: [number, number];
   /** Rear-wheel rolling speed `ω_R·r_R`, m/s. */
   speed: number;
-  /** Kinetic plus gravitational potential energy, J. */
   energy: number;
 }
 
-/** Inputs to {@link WhippleBicycle.step}. */
 export interface WhippleBicycleInput {
-  /** Steer torque between rear frame and front frame, N·m, positive steering right. */
   steerTorque?: number;
-  /** Driving torque on the rear wheel against the rear frame, N·m. */
   driveTorque?: number;
 }
 
-/** Serializable state of a {@link WhippleBicycle}: tree positions and velocities. */
 export interface WhippleBicycleSnapshot {
   q: number[];
   u: number[];
 }
 
-/**
- * The nonlinear Whipple bicycle: four rigid bodies (rear wheel, rear frame with rider, front frame, front wheel)
- * with knife-edge wheels rolling without slip on flat ground.
- */
 export interface WhippleBicycle {
   step(dt: number, input?: WhippleBicycleInput): WhippleBicycleState;
   state(): WhippleBicycleState;
   snapshot(): WhippleBicycleSnapshot;
   restore(snapshot: Readonly<WhippleBicycleSnapshot>): void;
-  /** Back to the start pose and speed. */
   reset(): void;
 }
 
-/** Start conditions for {@link createWhippleBicycle}. */
 export interface WhippleBicycleStart {
   /** Forward speed, m/s. */
   speed: number;
@@ -253,7 +222,6 @@ export interface WhippleBicycleStart {
   steer?: number;
   leanRate?: number;
   steerRate?: number;
-  /** Integration step, s (default `1/2000`). */
   step?: number;
 }
 
@@ -333,7 +301,6 @@ function buildModel(p: Readonly<WhippleBicycleParameters>): WhippleModel {
   };
 }
 
-/** Contact point of a knife-edge wheel: from the centre, one radius along the in-plane direction pointing most downward. */
 function contactPoint(tree: RigidBodyTree, wheel: number, radius: number, out: Float64Array): Float64Array {
   const R = tree.rotation(wheel);
   const c = tree.origin(wheel);
@@ -354,7 +321,6 @@ function contactPoint(tree: RigidBodyTree, wheel: number, radius: number, out: F
   return out;
 }
 
-/** Quaternion `[w, x, y, z]` of `Rz(ψ)·Rx(φ)·Ry(θ)`. */
 function eulerQuaternion(yaw: number, roll: number, pitch: number): [number, number, number, number] {
   const cz = Math.cos(yaw / 2);
   const sz = Math.sin(yaw / 2);
@@ -370,7 +336,6 @@ function eulerQuaternion(yaw: number, roll: number, pitch: number): [number, num
   return [w1 * cy - y1 * sy, x1 * cy - z1 * sy, w1 * sy + y1 * cy, z1 * cy + x1 * sy];
 }
 
-/** Yaw, roll, pitch of a rotation `Rz(ψ)·Rx(φ)·Ry(θ)` (row-major). */
 function eulerOf(R: ArrayLike<number>): { yaw: number; roll: number; pitch: number } {
   // R = Rz Rx Ry: R[7] = sin φ, R[6] = −cos φ sin θ, R[8] = cos φ cos θ, R[1] = −sin ψ cos φ, R[4] = cos ψ cos φ.
   const roll = Math.asin(Math.max(-1, Math.min(1, R[7] ?? 0)));
@@ -379,11 +344,6 @@ function eulerOf(R: ArrayLike<number>): { yaw: number; roll: number; pitch: numb
   return { yaw, roll, pitch };
 }
 
-/**
- * Rolling-constraint rows of one wheel into `A` (3 × dofs at `row`) and their velocity-product term into `bias`.
- * The contact is a geometric point sliding round the rim, so `d/dt(A·u) = A·u̇ + a_mat + ω × (Ṗ − v_mat)`, where
- * `a_mat` is the material point's acceleration at `u̇ = 0` and `Ṗ` the contact point's own velocity.
- */
 function wheelConstraint(tree: RigidBodyTree, wheel: number, radius: number, A: Float64Array, bias: Float64Array, row: number): void {
   const n = tree.dofs;
   const point = new Float64Array(3);
@@ -411,13 +371,11 @@ function wheelConstraint(tree: RigidBodyTree, wheel: number, radius: number, A: 
   bias[row + 2] = (b[2] ?? 0) + (w[0] ?? 0) * (rel[1] ?? 0) - (w[1] ?? 0) * (rel[0] ?? 0);
 }
 
-/** Constraint rows (6 × dofs) and velocity-product terms (6) of the two rolling contacts. */
 function contactConstraints(model: WhippleModel, A: Float64Array, bias: Float64Array): void {
   wheelConstraint(model.tree, model.rearWheel, model.radiusR, A, bias, 0);
   wheelConstraint(model.tree, model.frontWheel, model.radiusF, A, bias, 3);
 }
 
-/** Generalized accelerations of the constrained bicycle: the KKT system `[H Aᵀ; A 0][u̇; −λ] = [τ − C; −Ȧu]`. */
 function constrainedAccelerations(model: WhippleModel, input: WhippleBicycleInput, out: Float64Array, stabilize: { position: Float64Array; velocity: Float64Array } | undefined): void {
   const { tree } = model;
   const n = tree.dofs;
@@ -462,7 +420,6 @@ interface ReducedState {
   speed: number;
 }
 
-/** Positions and velocities consistent with the rolling constraints for a lean, steer, their rates and a rear-wheel speed. */
 function consistentState(model: WhippleModel, s: ReducedState, yaw = 0): { q: Float64Array; u: Float64Array } {
   const { tree } = model;
   const q = new Float64Array(tree.positions);
@@ -556,7 +513,6 @@ function consistentState(model: WhippleModel, s: ReducedState, yaw = 0): { q: Fl
   return { q, u };
 }
 
-/** Lean and steer accelerations (benchmark signs) of the nonlinear model in a consistent state. */
 function leanSteerAccelerations(model: WhippleModel, q: Float64Array, u: Float64Array, input: WhippleBicycleInput): [number, number] {
   const { tree } = model;
   tree.update(q, u);
@@ -599,12 +555,7 @@ function leanSteerAccelerations(model: WhippleModel, q: Float64Array, u: Float64
   return [rhs[1] ?? 0, -(ud[tree.dofOf(model.fork)] ?? 0)];
 }
 
-/**
- * Numerically linearise the nonlinear Whipple bicycle about upright straight running at speed `v`: central
- * differences of the lean and steer accelerations over constraint-consistent states. Returns the 4×4 state matrix
- * for `[φ, δ, φ̇, δ̇]` (row-major); its eigenvalues should equal {@link whippleEigenvalues}.
- * @capability whipple-nonlinear-linearisation linearise the full nonlinear bicycle multibody model to check it against the benchmark
- */
+/** @capability whipple-nonlinear-linearisation linearise the full nonlinear bicycle multibody model to check it against the benchmark */
 export function linearizeWhippleBicycle(v: number, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE, h = 1e-6): Float64Array {
   const model = buildModel(p);
   const A = new Float64Array(16);
@@ -626,22 +577,12 @@ export function linearizeWhippleBicycle(v: number, p: Readonly<WhippleBicyclePar
   return A;
 }
 
-/**
- * Eigenvalues of {@link linearizeWhippleBicycle}: the nonlinear bicycle's own stability modes at speed `v`.
- * @capability whipple-nonlinear-linearisation weave, capsize and castering eigenvalues of the nonlinear multibody bicycle
- */
+/** @capability whipple-nonlinear-linearisation weave, capsize and castering eigenvalues of the nonlinear multibody bicycle */
 export function nonlinearWhippleEigenvalues(v: number, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE): Eigenvalue[] {
   return matrixEigenvalues(linearizeWhippleBicycle(v, p), 4);
 }
 
-/**
- * Creates the nonlinear Whipple–Carvallo bicycle (Meijaard et al. 2007 §2–4, without the linearisation): rear frame
- * with rider, front frame on the steer axis and two knife-edge wheels, each wheel rolling without slip at its
- * lowest point on flat ground. Exact rigid-body dynamics on a {@link createRigidBodyTree} with the six contact
- * constraints solved as a KKT system each evaluation (Baumgarte-stabilised, then projected back onto the
- * constraint manifold after every RK4 step), so lean, steer, gyroscopic and trail effects are all nonlinear.
- * @capability whipple-bicycle nonlinear Whipple bicycle simulation — self-stability, countersteer and capsize from rigid-body physics
- */
+/** @capability whipple-bicycle nonlinear Whipple bicycle simulation — self-stability, countersteer and capsize from rigid-body physics */
 export function createWhippleBicycle(start: WhippleBicycleStart, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE): WhippleBicycle {
   const model = buildModel(p);
   const { tree } = model;
@@ -694,7 +635,6 @@ export function createWhippleBicycle(start: WhippleBicycleStart, p: Readonly<Whi
     out.set(ud, nq);
   };
 
-  /** Pull positions back onto the contact heights and velocities onto the rolling constraints (mass-weighted). */
   const project = () => {
     const q = x.subarray(0, nq);
     const u = x.subarray(nq, size);

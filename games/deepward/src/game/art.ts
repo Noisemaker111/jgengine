@@ -4,7 +4,6 @@ import { EngineDrawMount, meshDraw } from "@jgengine/core/frame/useEngineDraw.dr
 import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
 import { PALETTE, surfaceMaterialParams, type IndustrialSurface } from "./industrialMaterials";
 export { PALETTE } from "./industrialMaterials";
-/** Original Deepward signs and surface artwork. No asset fetches or external art. */
 export function signTexture(title: string, subtitle: string, color = PALETTE.cyan): CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = 768; canvas.height = 256;
@@ -23,7 +22,6 @@ export function signTexture(title: string, subtitle: string, color = PALETTE.cya
 }
 
 export type Triple = [number, number, number];
-/** Tray-local geometry: a supported label below the standing interaction sightline. */
 export const SALVAGE_PLACARD: {
   face: { at: Triple; width: number };
   backing: { at: Triple; size: Triple };
@@ -37,7 +35,6 @@ export const SALVAGE_PLACARD: {
   ],
 };
 interface PartProps { at: Triple; turn?: Triple; surface?: IndustrialSurface; color?: string; emission?: number }
-/** Original clipped-corner casing profile. Extrusion supplies outward normals and bevels. */
 export function casingProfile(width: number, height: number): Shape {
   const x = width / 2, y = height / 2, cut = Math.min(width, height) * 0.16;
   const shape = new Shape();

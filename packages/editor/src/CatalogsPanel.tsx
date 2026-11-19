@@ -17,7 +17,6 @@ function slugifyEntryId(value: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
-/** The field types the document schema editor can author. */
 const FIELD_TYPES: readonly ParamField["type"][] = [
   "range",
   "number",
@@ -32,11 +31,6 @@ const FIELD_TYPES: readonly ParamField["type"][] = [
   "action",
 ];
 
-/**
- * Rebuilds a valid {@link ParamField} for a new `type`, preserving `key`/`label` and reusing prior
- * numeric bounds/default where the target type still carries them. Every type gets a schema-valid
- * default so `parseParams` (which drives the reclamp on `setCatalogSchema`) always has a value to read.
- */
 function coerceField(prev: ParamField, type: ParamField["type"]): ParamField {
   const key = prev.key;
   const label = prev.label;
@@ -73,13 +67,7 @@ function coerceField(prev: ParamField, type: ParamField["type"]): ParamField {
 const INPUT = `min-w-0 px-2 py-1 text-[11px] ${INPUT_CLS}`;
 const BTN = `${CONTROL} px-2 py-1 text-[11px] font-medium disabled:opacity-40`;
 
-/**
- * Gameplay data catalogs panel — lists merged (game-exported + document-authored) catalogs, lets an
- * author create a brand-new document catalog, author its schema fields, and edit rows via
- * SchemaInspector. Row values and (for document catalogs) the schema itself persist on
- * `document.catalogs` and undo with the same coalesce keys as meta patches.
- * @internal — mounted by `EditorChrome` as a left-aside tab.
- */
+/** @internal — mounted by `EditorChrome` as a left-aside tab. */
 export function CatalogsPanel({
   session,
   definitions,

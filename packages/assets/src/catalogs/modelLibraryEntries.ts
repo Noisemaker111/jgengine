@@ -1,9 +1,5 @@
 import type { ModelLibraryEntry } from "./modelLibrary";
 
-/**
- * Curated library entries. Poly Haven models are CC0-1.0; authors are as Poly Haven credits them.
- * Add an entry by name, title, genres, intents and origin; `assets pull model:<name>` fetches it.
- */
 export const MODEL_LIBRARY_ENTRIES: readonly ModelLibraryEntry[] = [
   {
     name: "city/street-lamp",

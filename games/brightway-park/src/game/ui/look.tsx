@@ -10,7 +10,6 @@ import { useGameContext } from "@jgengine/ui/provider";
 
 import { hintRingOf, useHintTarget } from "./hintRing";
 
-/** Brightway's fair-day palette, recut from the park sign: cream ticket stock, teal sign plates, gold rims, coral awnings. */
 export const INK = "#21424a", PAPER = "#fff4da", CREAM = "#fff1cf", SAND = "#f2dfb2", TEAL = "#24535b", DEEP = "#1c3940";
 export const GOLD = "#edbc5c", CORAL = "#ef7059", GOOD = "#2f8f68", BAD = "#c4462f", WARN = "#c98a22", PENCIL = "#587779", RING = "#ff5a3c";
 export const FULL = { fraction: 1 } as const;
@@ -36,7 +35,6 @@ export const parkTheme = {
   motion: { duration: 180, distance: 10, bounce: 0.1 },
 } satisfies RuneTheme;
 
-/** The same look with its motion stilled, for the Reduce motion setting. */
 export const stillTheme = { ...parkTheme, motion: { duration: 0, distance: 0, bounce: 0 } } satisfies RuneTheme;
 
 export function Text({ text, ...props }: Omit<RuneElementProps, "text"> & { text?: Live<string> }) { return <RuneLabel {...props} {...(text === undefined ? {} : { value: text })} />; }
@@ -46,10 +44,6 @@ export function Row(props: RuneViewProps) { return <RuneView layout="row" gap={8
 export function Card(props: RuneViewProps) { return <RuneView variant="card" {...props} />; }
 
 export type Tone = "ticket" | "primary" | "ghost" | "danger";
-/**
- * A fair ticket: the park's one button. `pressed` lights it gold; `hint` names it for the first
- * scenario's ring, which a bound border draws without re-rendering the HUD.
- */
 export function Button({ tone = "ticket", pressed, hint, onPress, glyph, tooltip, children, ...props }: Omit<RuneViewProps, "tooltip"> & { tone?: Tone; pressed?: boolean; hint?: string; onPress?: () => void; glyph?: ReactNode; tooltip?: string | undefined }) {
   useHintTarget(hint);
   const ring = hintRingOf(useGameContext());
@@ -61,12 +55,10 @@ export function Button({ tone = "ticket", pressed, hint, onPress, glyph, tooltip
   </RuneAction>;
 }
 
-/** Label/value lines, shared by the inspector, the guest window and the park books. */
 export function Rows({ rows }: { rows: readonly (readonly [string, string])[] }) {
   return <RuneView gap={3}>{rows.map(([label, value]) => <Row key={label} justify="between" gap={12}><Text size={13} color={PENCIL} shrink grow={1}>{label}</Text><Text size={13} weight={800} align="right">{value}</Text></Row>)}</RuneView>;
 }
 
-/** A labelled bar whose fill and readout follow `read` at the leaf. */
 export function Meter({ label, read, max, readout, color }: { label: Live<string>; read: () => number; max: () => number; readout: (value: number) => string; color: Live<string> }) {
   return <RuneView gap={3} grow={1}>
     <Row justify="between"><Tag text={label} /><RuneLabel value={bind(read)} format={readout} size={12} weight={800} color={INK} /></Row>
@@ -74,7 +66,6 @@ export function Meter({ label, read, max, readout, color }: { label: Live<string
   </RuneView>;
 }
 
-/** − value + on one line. */
 export function Stepper({ label, value, down, up, downLabel, upLabel, downDisabled, upDisabled }: { label: string; value: string; down: () => void; up: () => void; downLabel: string; upLabel: string; downDisabled?: boolean; upDisabled?: boolean }) {
   return <Row justify="between"><Text grow={1} shrink>{label}</Text><Row gap={4}>
     <Button tone="ticket" label={downLabel} minHeight={30} width={34} padding={2} disabled={downDisabled === true} onPress={down}>−</Button>
@@ -83,8 +74,6 @@ export function Stepper({ label, value, down, up, downLabel, upLabel, downDisabl
   </Row></Row>;
 }
 
-/** A card with an eyebrow, a title and a close mark: the inspector, the books, the lab. */
-/** The height the HUD leaves a side window: it shrinks above an open build palette. */
 export const WindowRoom = createContext<number>(480);
 export function Window({ eyebrow, title, close, closeLabel, children, footer }: { eyebrow: string; title: string; close: () => void; closeLabel: string; children?: ReactNode; footer?: ReactNode }) {
   const { width } = useRuneViewport(), phone = width < 600, room = useContext(WindowRoom);

@@ -1,9 +1,5 @@
 import type { NavPoint } from "../nav/navGrid";
 
-/**
- * Lifecycle status of one phase in an encounter sequence: waiting to run, currently
- * running, or finished. Groups and leaves share the same three states.
- */
 export type PhaseStatus = "pending" | "active" | "complete";
 
 /**
@@ -16,56 +12,32 @@ export interface PhaseCompletionRef {
   params?: Readonly<Record<string, unknown>>;
 }
 
-/**
- * Reference to a registered spawn provider invoked when a phase is entered: a `kind`
- * naming the provider plus opaque `params`. Spawning is one optional node adapter — a
- * phase without `spawn` simply emits no spawn requests.
- */
 export interface PhaseSpawnRef {
   kind: string;
   params?: Readonly<Record<string, unknown>>;
 }
 
-/**
- * One node in an encounter sequence tree. `data` is caller-owned and opaque to the core.
- * A node with `children` is a group whose children run in order; a node without is a leaf.
- * `completion` gates when the node finishes, `spawn` names an on-enter provider, and
- * `repeat` re-runs the node's subtree that many extra times before advancing.
- */
 export interface EncounterPhase<TData = unknown> {
   /** Stable, tree-unique id. Survives serialization and phase injection. */
   id: string;
   data?: TData;
   children?: readonly EncounterPhase<TData>[];
-  /**
-   * Completion predicate reference. A leaf without one completes immediately (a marker or
-   * spawn-only phase); a group without one completes once all its children complete.
-   */
   completion?: PhaseCompletionRef;
   spawn?: PhaseSpawnRef;
   /** Extra runs of this node's subtree before advancing. Default 0 (runs once). */
   repeat?: number;
 }
 
-/** Per-node runtime record. Serializable — holds no functions or tree references. */
 export interface PhaseRuntime {
   status: PhaseStatus;
   /** 0-based repeat iteration currently running. */
   iteration: number;
-  /** `elapsed` at which the node was most recently entered, for time-based predicates. */
   enteredAt: number;
 }
 
-/**
- * Full serializable encounter state: the working phase tree (including any injected
- * phases), a per-node runtime map, the active path from root to the deepest open node,
- * accumulated time, and whether the sequence has finished. Round-trips through JSON with
- * no behavioral change; the registries live in {@link EncounterSequenceConfig}, not here.
- */
 export interface EncounterSequenceState<TData = unknown> {
   roots: EncounterPhase<TData>[];
   nodes: Record<string, PhaseRuntime>;
-  /** Ids from a root down to the deepest open node; empty before start and once done. */
   activePath: string[];
   elapsed: number;
   started: boolean;
@@ -92,17 +64,13 @@ export interface EncounterSignals {
  */
 export interface EncounterContext {
   signals?: EncounterSignals;
-  /** Named lists of authored scene spawn points, referenced by spawn providers by key. */
   spawnPoints?: Readonly<Record<string, readonly NavPoint[]>>;
 }
 
-/** Evaluation context a completion predicate receives for the node under test. */
 export interface PredicateContext {
   phaseId: string;
   iteration: number;
-  /** Total accumulated encounter time. */
   elapsed: number;
-  /** Time since this node was entered (0 on the tick it is entered). */
   phaseElapsed: number;
   signals: EncounterSignals;
 }
@@ -116,14 +84,12 @@ export type CompletionPredicate = (
   ctx: PredicateContext,
 ) => boolean;
 
-/** A single spawn request a provider emits; `ref` is caller-defined, `point` optional. */
 export interface EncounterSpawnRequest {
   ref: string;
   point?: NavPoint;
   data?: unknown;
 }
 
-/** Evaluation context a spawn provider receives when its phase is entered. */
 export interface SpawnProviderContext {
   phaseId: string;
   iteration: number;
@@ -141,14 +107,12 @@ export type SpawnProvider = (
   ctx: SpawnProviderContext,
 ) => readonly EncounterSpawnRequest[];
 
-/** A lifecycle event emitted while stepping an encounter, carrying provenance. */
 export type EncounterEvent =
   | { type: "enter"; phaseId: string; iteration: number }
   | { type: "spawn"; phaseId: string; provider: string; requests: readonly EncounterSpawnRequest[] }
   | { type: "complete"; phaseId: string; iteration: number; reason: string }
   | { type: "done" };
 
-/** Result of a step: the (mutated, returned) state and the events emitted this step. */
 export interface EncounterStep<TData = unknown> {
   state: EncounterSequenceState<TData>;
   events: EncounterEvent[];
@@ -161,13 +125,10 @@ export interface EncounterStep<TData = unknown> {
  */
 export interface EncounterSequenceConfig<TData = unknown> {
   phases: readonly EncounterPhase<TData>[];
-  /** Extra predicates, merged over the built-ins (a same-named entry overrides). */
   predicates?: Readonly<Record<string, CompletionPredicate>>;
-  /** Extra spawn providers, merged over the built-ins. */
   spawnProviders?: Readonly<Record<string, SpawnProvider>>;
 }
 
-/** Where to insert an injected phase, relative to an existing node by id. */
 export type PhaseInjectAt =
   | { before: string }
   | { after: string }
@@ -390,13 +351,7 @@ function enterChain<TData>(
   }
 }
 
-/**
- * Start a created encounter: enter the first root phase, descending to its first leaf, and
- * return the initial enter/spawn events. A no-op (with no events) on an already-started or
- * empty encounter. Mutates and returns `state`.
- *
- * @capability encounter-start enter the first phase of a hierarchical encounter and emit its opening spawn events
- */
+/** @capability encounter-start enter the first phase of a hierarchical encounter and emit its opening spawn events */
 export function startEncounter<TData>(
   config: EncounterSequenceConfig<TData>,
   state: EncounterSequenceState<TData>,
@@ -496,14 +451,7 @@ export function updateEncounter<TData>(
   return { state, events };
 }
 
-/**
- * Force the deepest active phase (or a named active phase) to complete now, regardless of
- * its predicate — the escape hatch for external/scripted completion and failure/retry flows.
- * Advances into the next phase and emits the same lifecycle events as a natural completion.
- * Returns no events if the phase is not currently active. Mutates and returns `state`.
- *
- * @capability encounter-force-complete externally complete an active encounter phase to drive scripted or failure-retry transitions
- */
+/** @capability encounter-force-complete externally complete an active encounter phase to drive scripted or failure-retry transitions */
 export function forceCompletePhase<TData>(
   config: EncounterSequenceConfig<TData>,
   state: EncounterSequenceState<TData>,
@@ -581,32 +529,17 @@ export function injectPhase<TData>(
   return state;
 }
 
-/**
- * The deepest active phase id — the completion cursor a HUD reads to label the current
- * wave/phase — or null before start and once done.
- *
- * @capability encounter-active-phase read the id of the phase an encounter is currently waiting on
- */
+/** @capability encounter-active-phase read the id of the phase an encounter is currently waiting on */
 export function activePhaseId<TData>(state: EncounterSequenceState<TData>): string | null {
   return state.activePath.length > 0 ? state.activePath[state.activePath.length - 1]! : null;
 }
 
-/**
- * The runtime status of a phase by id (pending/active/complete), or null if the id is
- * unknown — for driving per-phase HUD ticks and objective checklists.
- *
- * @capability encounter-phase-status read whether a specific encounter phase is pending, active, or complete
- */
+/** @capability encounter-phase-status read whether a specific encounter phase is pending, active, or complete */
 export function phaseStatus<TData>(state: EncounterSequenceState<TData>, id: string): PhaseStatus | null {
   return state.nodes[id]?.status ?? null;
 }
 
-/**
- * Progress across the whole tree: how many phases have completed out of the total node
- * count, plus whether the encounter has finished. Counts injected phases.
- *
- * @capability encounter-progress read completed-vs-total progress across a hierarchical encounter for HUD or objective display
- */
+/** @capability encounter-progress read completed-vs-total progress across a hierarchical encounter for HUD or objective display */
 export function encounterProgress<TData>(state: EncounterSequenceState<TData>): {
   completed: number;
   total: number;

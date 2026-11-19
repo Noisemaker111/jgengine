@@ -25,13 +25,11 @@ export interface FindRequest {
   pick?: string;
 }
 
-/** What `--provision` did: packs and library models served to the game, files copied from other games. */
 export interface FindProvisionReport {
   linked: string[];
   pulled: string[];
   copied: string[];
   failed: string[];
-  /** Requests with no pick: no confident match and no `pick` named. */
   skipped: string[];
 }
 
@@ -40,10 +38,7 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-/**
- * Parse `--list` contents: a JSON array of names or `{ query, pick? }` objects.
- * @internal
- */
+/** @internal */
 export function parseFindList(text: string): FindRequest[] {
   const data: unknown = JSON.parse(text);
   if (!Array.isArray(data)) throw new Error("--list must hold a JSON array");
@@ -58,10 +53,7 @@ export function parseFindList(text: string): FindRequest[] {
   });
 }
 
-/**
- * The jgengine checkout `from` sits in (a folder with `games/` and `packages/assets/`), or null.
- * @internal
- */
+/** @internal */
 export function checkoutRoot(from: string): string | null {
   let dir = resolve(from);
   for (;;) {
@@ -85,7 +77,6 @@ function modelFilesUnder(dir: string, rel: string, out: string[]): void {
   }
 }
 
-/** Model files games ship under `public/models/imported/`: every game in the checkout, else just this one. */
 function shippedGameFiles(root: string | null, gameDir: string | null): GameModelFile[] {
   const games = root !== null
     ? readdirSync(join(root, "games")).map((name) => join(root, "games", name)).filter((dir) => existsSync(join(dir, "public")))
@@ -107,10 +98,7 @@ function present(path: string): boolean {
   }
 }
 
-/**
- * The match a request provisions: the one it names, else the top match when it is confident.
- * @internal
- */
+/** @internal */
 export function pickOf(request: FindRequest, result: AssetFindResult): FoundAsset | null {
   if (request.pick !== undefined) return result.matches.find((match) => match.id === request.pick) ?? null;
   const top = result.matches[0];
@@ -131,7 +119,6 @@ function jobOf(match: FoundAsset): PullJob | null {
 
 const pullScript = fileURLToPath(new URL(import.meta.url.endsWith(".ts") ? "./pull.ts" : "./pull.js", import.meta.url));
 
-/** `assets pull <target> --dir <outRoot>` in a child whose output goes to stderr, keeping stdout one JSON document. */
 function spawnPull(target: string, outRoot: string): Promise<boolean> {
   return new Promise((done) => {
     const child = spawn(process.execPath, [pullScript, "pull", target, "--dir", outRoot], { stdio: ["ignore", 2, 2], windowsHide: true });
@@ -187,10 +174,7 @@ async function provision(
   return report;
 }
 
-/**
- * `assets find`: many asset names in, one JSON document out.
- * @internal
- */
+/** @internal */
 export async function cmdFind(argv: readonly string[]): Promise<void> {
   const requests: FindRequest[] = [];
   let gameDir: string | null = null;

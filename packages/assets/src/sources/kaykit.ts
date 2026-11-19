@@ -7,11 +7,8 @@ import type { AssetSource } from "../manifest";
  */
 interface KayKitPack {
   id: string;
-  /** GitHub repo under KayKit-Game-Assets; packs without one download their free upload from itch.io. */
   repo?: string;
-  /** Title of the free itch.io upload, for packs with no GitHub repo. */
   itchUpload?: string;
-  /** itch.io homepage slug (docs / credit). */
   itch: string;
   title: string;
   categories: readonly string[];

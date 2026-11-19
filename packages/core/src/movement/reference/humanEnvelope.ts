@@ -1,9 +1,3 @@
-/**
- * Whole-body limits of a runner on flat ground: the linear horizontal force–velocity profile of sprint acceleration
- * (P. Samozino et al., "A simple method for measuring power, force, velocity properties, and mechanical effectiveness
- * in sprint running", *Scand. J. Med. Sci. Sports* 26, 2016), air drag on the frontal area of C. Arsac and
- * E. Locatelli's model (*J. Appl. Physiol.* 92, 2002), and the largest braking deceleration.
- */
 export interface SprintProfile {
   /** Theoretical horizontal force at zero speed per body mass, N/kg. */
   f0: number;
@@ -11,9 +5,7 @@ export interface SprintProfile {
   v0: number;
   /** Largest sustained braking deceleration, m/s². */
   braking: number;
-  /** Shoe–ground friction coefficient, which also caps braking. */
   friction: number;
-  /** Air-drag factor `½ρ·Cd·A/m`, 1/m. */
   drag: number;
 }
 
@@ -46,7 +38,6 @@ export function sprintTopSpeed(profile: SprintProfile): number {
   return a === 0 ? profile.v0 : (-b + Math.sqrt(b * b + 4 * a * profile.f0)) / (2 * a);
 }
 
-/** Speed and distance after a sprint. */
 export interface SprintState {
   time: number;
   speed: number;
@@ -100,10 +91,7 @@ export function stoppingDistance(profile: SprintProfile, speed: number): { dista
   return { distance: (speed * speed) / (2 * a), time: speed / a };
 }
 
-/**
- * Time to sprint from rest to `speed` (capped just under top speed), s.
- * @capability human-time-to-speed time a runner needs from a standing start to a speed
- */
+/** @capability human-time-to-speed time a runner needs from a standing start to a speed */
 export function timeToSpeed(profile: SprintProfile, speed: number): number {
   const target = Math.min(speed, sprintTopSpeed(profile) * 0.999);
   const grip = Math.min(profile.f0, profile.friction * 9.81);
@@ -116,19 +104,12 @@ export function timeToSpeed(profile: SprintProfile, speed: number): number {
   return t;
 }
 
-/**
- * Time to reverse from `speed` to the same speed the other way, s: brake to rest, then sprint back up.
- * @capability human-turnaround-time time a runner needs to reverse direction at a speed
- */
+/** @capability human-turnaround-time time a runner needs to reverse direction at a speed */
 export function turnaroundTime(profile: SprintProfile, speed: number): number {
   return speed / brakingDeceleration(profile) + timeToSpeed(profile, speed);
 }
 
-/**
- * Time of the 505 change-of-direction test (E. Draper and M. Lancaster, 1985): the 5 m into a 180° turn and the 5 m
- * back, entered at the speed of a 10 m flying start, s.
- * @capability change-of-direction-505 simulated 505 change-of-direction test time of a sprint profile
- */
+/** @capability change-of-direction-505 simulated 505 change-of-direction test time of a sprint profile */
 export function test505Time(profile: SprintProfile): number {
   const entry = sprint(profile, { distance: 10 });
   const a = brakingDeceleration(profile);

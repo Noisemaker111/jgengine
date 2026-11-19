@@ -8,33 +8,20 @@ import { GameIcon, iconForItemId, type GameIconName } from "@jgengine/core/ui/ic
 import { HudFrame } from "@jgengine/core/hud/hudFrame.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
-/**
- * Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add,
- * remove, restore). Returns the current entry list — a detached snapshot safe to map over.
- *
- * @capability use-shop-stock UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list
- */
+/** @capability use-shop-stock UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list */
 export function useShopStock(shop: ShopStock): ShopStockEntry[] {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => shop.subscribe(bump), [shop]);
   return shop.list();
 }
 
-/** Reskin tokens for {@link ShopGrid}. Falls back to shared `--jg-*` HudTheme tokens, then neutral defaults. */
 export interface ShopGridTheme {
-  /** Card background. Default reads `--jg-slot-bg`. */
   cardBg?: string;
-  /** Card border. Default reads `--jg-slot-border`. */
   cardBorder?: string;
-  /** Card corner radius. Default reads `--jg-slot-radius`. */
   cardRadius?: string;
-  /** Accent for icons/prices/Buy button. Default reads `--jg-accent`. */
   accent?: string;
-  /** Primary text color. */
   text?: string;
-  /** Muted/secondary text color. */
   muted?: string;
-  /** Font family. */
   fontFamily?: string;
 }
 
@@ -50,43 +37,32 @@ function resolveTheme(theme: ShopGridTheme | undefined): Required<ShopGridTheme>
   };
 }
 
-/** Default currency → icon mapping via {@link iconForItemId} (which knows "gold"/"gem"/… keywords). */
 function currencyIcon(currency: string, override: Record<string, GameIconName> | undefined): GameIconName {
   return override?.[currency] ?? iconForItemId(currency) ?? "coin";
 }
 
-/** Default entry → icon mapping from the free-string `kind`, falling back to a chest. */
 function entryIcon(entry: ShopStockEntry, iconFor: ((entry: ShopStockEntry) => GameIconName) | undefined): GameIconName {
   if (iconFor !== undefined) return iconFor(entry);
   return iconForItemId(entry.kind) ?? iconForItemId(entry.id) ?? "chest";
 }
 
-/** Props for {@link ShopGrid}. */
 export interface ShopGridProps {
-  /** The vendor stock model to render. */
   shop: ShopStock;
   /** The caller-owned wallet the grid buys/sells against. The shop never owns it. */
   wallet: WalletState;
-  /** Called with the new wallet after a successful buy or sell — the caller adopts it. */
   onWalletChange: (wallet: WalletState) => void;
-  /** Reskin tokens. */
   theme?: ShopGridTheme;
-  /** Optional per-currency icon overrides, keyed by the free-string currency. */
   currencyIcons?: Record<string, GameIconName>;
   /** Optional entry→icon picker. Defaults to keyword matching on `kind`/`id`. */
   iconFor?: (entry: ShopStockEntry) => GameIconName;
-  /** Show a Sell button on entries that carry a `sellPrice`. Default `false`. */
   showSell?: boolean;
   /**
    * Currencies to show in the wallet readout, in order. Default: every currency referenced by the
    * stock (prices + sell prices), in first-seen order.
    */
   walletCurrencies?: readonly string[];
-  /** Panel header label. Default `"Shop"`. */
   title?: ReactNode;
-  /** Human label for an entry — default is the capitalized `kind`. */
   labelFor?: (entry: ShopStockEntry) => ReactNode;
-  /** Minimum card width (CSS length) for the responsive grid. Default `"140px"`. */
   minCardWidth?: string;
   className?: string;
   style?: CSSProperties;

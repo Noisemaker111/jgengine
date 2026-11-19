@@ -1,52 +1,35 @@
 import type { PerceptionMemory, PerceptionPosition, PerceptionStimulusKind } from "../sensor/perception";
 
-/**
- * How a creature treats what it senses. `passive` keeps its distance, `territorial` defends an area
- * and ignores what stays outside it, `predator` hunts what it senses and closes to strike.
- */
 export type TemperamentKind = "passive" | "territorial" | "predator";
 
-/** What light does to a creature: draws it toward a lit target, drives it away, or nothing. */
 export type TemperamentLight = "attracted" | "averse" | "none";
 
-/** One species' temperament: its kind plus the ranges and thresholds that tune it. */
 export interface TemperamentConfig {
   kind: TemperamentKind;
-  /** A passive creature flees a sensed target closer than this; a light-averse one backs off this far from a lit one. Default 8. */
   fleeRange?: number;
-  /** The area a territorial creature defends, around `home`. Default 6. */
   territoryRadius?: number;
   /** How close it must be to strike. Default 1.8. */
   attackRange?: number;
-  /** How light changes its reaction. Default `"none"`. */
   light?: TemperamentLight;
   /** How lit a target must be to count as lit (see {@link TemperamentInput.lightOf}). Default 0.5. */
   litAt?: number;
   /** Below this health fraction anything flees what it senses. Default 0.25; 0 never breaks. */
   breakAt?: number;
-  /** A predator charges only on a fact at least this confident; below it, it investigates. Default 0.5. */
   commitConfidence?: number;
-  /** Senses whose facts a predator commits on. Default sight and damage: a smell or a noise is investigated. */
   commitCues?: readonly PerceptionStimulusKind[];
 }
 
-/** What a creature is doing about what it senses. */
 export type TemperamentMode = "idle" | "flee" | "investigate" | "stalk" | "attack" | "guard" | "return";
 
-/** One decision's inputs: where the creature is, its den, its health, and its perception memory. */
 export interface TemperamentInput {
   position: PerceptionPosition;
-  /** Den or territory centre; a territorial creature defends it and returns to it. */
   home: PerceptionPosition;
   /** Current health as a fraction of max, 0-1. Default 1. */
   health?: number;
-  /** Its perception memory (`perception.memory(id)`); the most confident fact leads. */
   memories: readonly PerceptionMemory[];
-  /** How lit a remembered target is now (a lamp on is 1, unlit dark is 0). Only light-reactive kinds read it. */
   lightOf?(targetId: string): number;
 }
 
-/** The decision: a mode, who it is about, and the point to move toward (null to hold position). */
 export interface TemperamentIntent {
   mode: TemperamentMode;
   targetId: string | null;
@@ -57,7 +40,6 @@ export interface TemperamentIntent {
 
 const flat = (a: PerceptionPosition, b: PerceptionPosition): number => Math.hypot(a[0] - b[0], a[2] - b[2]);
 
-/** A point `distance` from `from`, directly away from `threat`. */
 function awayFrom(from: PerceptionPosition, threat: PerceptionPosition, distance: number): PerceptionPosition {
   const dx = from[0] - threat[0];
   const dz = from[2] - threat[2];

@@ -15,9 +15,7 @@ import type { CdpSession } from "./browser-lib";
  * which name the element painted: a raster program link stalls on the first paint of some effect.
  */
 const CATEGORIES = ["gpu", "gpu.angle", "gpu.service", "viz", "blink.user_timing", "disabled-by-default-gpu.service", "devtools.timeline"];
-/** How far before a hitch an element's first paint can be the one its raster stalled on. */
 const FIRST_PAINT_LEAD_MS = 500;
-/** The page mark that ties the hitch log's clock to the trace's. */
 export const TRACE_ANCHOR = "jg-hitch-zero";
 
 export async function startTrace(session: CdpSession): Promise<void> {
@@ -32,7 +30,6 @@ export async function markTraceAnchor(session: CdpSession): Promise<void> {
   await session.evaluate(`performance.mark(${JSON.stringify(TRACE_ANCHOR)})`);
 }
 
-/** End the trace and stream it to `out`. */
 export async function endTrace(session: CdpSession, out: string): Promise<void> {
   const complete = new Promise<string>((resolve, reject) => {
     const off = session.on("Tracing.tracingComplete", (params) => {
@@ -71,12 +68,7 @@ export interface TraceEvent {
 export interface TracedHitch {
   atS: number;
   ms: number;
-  /** The longest slice chain on each thread busy for a good part of the frame, longest first. */
   busy: { thread: string; ms: number; chain: string }[];
-  /**
-   * Elements painted for the first time in the trace just before or through the hitch (DOM backend
-   * node ids): the browser links a raster program for an effect the first time it paints one.
-   */
   firstPaints: number[];
 }
 
@@ -128,7 +120,6 @@ function keepTraceLine(raw: string, kept: TraceEvent[]): void {
 
 const PAINT_NAME = "\"name\":\"Paint\"";
 
-/** The element a Blink Paint event painted, or null for any other event. */
 function paintedNode(event: TraceEvent): number | null {
   if (event.name !== "Paint") return null;
   const data = event.args?.["data"];

@@ -12,7 +12,6 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 
 import { demoGame } from "./demoGame";
 
-/** One cleared hectare seeded by sugar maple, paper birch and aspen, read at three ages. */
 const PLOT: StandOptions = { species: [ACER_SACCHARUM, BETULA_PAPYRIFERA, POPULUS_TREMULOIDES], sizeM: 100, seed: "demo", immigrationPerHa: 2000 };
 const AGES = [30, 100, 200] as const;
 const GAP_M = 130;
@@ -89,7 +88,6 @@ function ForestStand() {
   );
 }
 
-/** A cleared hectare growing back: pioneers first, then sugar maple, at 30, 100 and 200 years. */
 export const forestStandGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "forest-stand" },

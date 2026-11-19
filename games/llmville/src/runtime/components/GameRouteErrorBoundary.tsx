@@ -14,7 +14,6 @@ interface GameRouteErrorBoundaryState {
   report: GameErrorReportInput | null;
 }
 
-/** Catches lazy-route / dynamic-import failures and shows a recoverable screen. */
 export class GameRouteErrorBoundary extends Component<
   GameRouteErrorBoundaryProps,
   GameRouteErrorBoundaryState

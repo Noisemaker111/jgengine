@@ -6,13 +6,10 @@ export interface UsageFlag {
 }
 
 export interface Usage {
-  /** One line: what the command is for. */
   summary: string;
-  /** The command line, flags included. */
   usage: string;
   flags: readonly UsageFlag[];
   example: string;
-  /** Optional exit-code list, when a script exits for more than 0 and 1. */
   exits?: readonly string[];
 }
 
@@ -37,7 +34,6 @@ export function renderUsage(name: string, usage: Usage): string {
   return lines.join("\n");
 }
 
-/** Prints the usage block when `--help`/`-h` was asked for; the caller returns 0 when this is true. */
 export function printHelpIfAsked(name: string, usage: Usage, argv: readonly string[] = process.argv.slice(2)): boolean {
   if (!isHelpAsked(argv)) return false;
   console.log(renderUsage(name, usage));

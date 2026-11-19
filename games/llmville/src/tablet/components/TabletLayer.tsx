@@ -1,5 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/** The tablet and the rack menu, on the HUD's native surface (inside `LlmRoot`). */
 import type { BuildViewModel } from "../../build/buildSession";
 import { RackMenuOverlay } from "../../infrastructure/components/RackMenuOverlay";
 import { findPlacedRackById } from "../../infrastructure/infrastructure";

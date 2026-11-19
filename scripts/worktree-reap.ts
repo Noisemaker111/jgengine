@@ -50,7 +50,6 @@ function nameOf(path: string): string {
   return basename(path.replace(/[\\/]+$/, ""));
 }
 
-/** Removing a registered worktree prunes its admin directory on the next `worktree prune`. */
 export function livesUnderWorktrees(path: string, mainRoot: string): boolean {
   const root = resolve(mainRoot, ".claude", "worktrees") + sep;
   return resolve(path).startsWith(root);
@@ -100,7 +99,6 @@ function safeRealpath(path: string): string {
 }
 
 export interface ReapIo {
-  /** True when the directory is still there; a tree another run already removed is not an error. */
   exists: (path: string) => boolean;
   /**
    * True when the tree has no tracked changes. Untracked files count only when `untracked` is set (a
@@ -136,7 +134,6 @@ export function reap(selection: ReapSelection, io: ReapIo): { removed: ReapCandi
   return { removed, kept };
 }
 
-/** Where a tree goes while it is deleted; a leftover one is finished by the next reap. */
 export const REAPING_SUFFIX = ".reaping";
 
 export interface TreeRemoval {
@@ -167,7 +164,6 @@ export function removeTree(path: string, io: TreeRemoval = fsRemoval): boolean {
   return true;
 }
 
-/** One line per reap run: what went, what stayed, and the reason for each rerun. */
 export function summarise(result: { removed: ReapCandidate[]; kept: { name: string; reason: string }[] }): string {
   if (result.removed.length === 0) {
     const merged = result.kept.filter((row) => row.reason !== "not merged into origin/beta");
@@ -253,7 +249,6 @@ function main(argv: readonly string[]): void {
   console.log(summarise(result));
 }
 
-/** Delete trees an earlier reap renamed aside but could not finish deleting. */
 function finishStaged(root: string): void {
   if (!existsSync(root)) return;
   for (const entry of readdirSync(root)) {

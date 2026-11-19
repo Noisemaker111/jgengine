@@ -6,14 +6,13 @@
  */
 export interface CellHeap {
   push(cell: number, key: number): void;
-  /** The lowest cell, or -1 when empty. Its key is in {@link CellHeap.lastKey}. */
   pop(): number;
   readonly size: number;
   readonly lastKey: number;
   clear(): void;
 }
 
-/** A heap holding at most `capacity` entries at once. @internal */
+/** @internal */
 // stateless: a scratch heap each caller empties before use; it carries nothing between calls.
 export function createCellHeap(capacity: number): CellHeap {
   const keys = new Float64Array(capacity);

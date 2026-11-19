@@ -10,8 +10,6 @@ export const PARK_PANELS: readonly PanelDef[] = [
   { id: "books", title: "Park books", hotkey: "KeyL" },
 ];
 
-/** The panel id the research lab renders under. */
 export const RESEARCH_PANEL = "research";
 
-/** The panel id the build palette renders under. */
 export const BUILD_PANEL = "build";

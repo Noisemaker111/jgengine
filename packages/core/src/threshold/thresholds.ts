@@ -10,29 +10,18 @@
 
 export type ThresholdDirection = "up" | "down";
 
-/** A labelled cut point on the value axis. `Id` is caller-owned (string, enum, or a policy object). */
 export interface ThresholdBoundary<Id = string> {
-  /** Stable identifier reported when this boundary is crossed. */
   readonly id: Id;
-  /** Numeric position of the boundary on the value axis. */
   readonly at: number;
 }
 
-/** A single boundary transition between a `before` and `after` value. */
 export interface ThresholdCrossing<Id = string> {
   readonly id: Id;
   readonly at: number;
   readonly direction: ThresholdDirection;
 }
 
-/** Exact-boundary and dead-band policy for {@link crossThresholds}. */
 export interface CrossThresholdsOptions {
-  /**
-   * When true (default) a boundary is *occupied* at `value >= at`; when false it
-   * is occupied only at `value > at`. Controls exact-boundary semantics: with the
-   * default, landing exactly on `at` counts as an upward crossing and keeps you
-   * above on the way down.
-   */
   readonly inclusive?: boolean;
   /**
    * Symmetric dead-band (clamped to `>= 0`). An upward crossing of `at` requires
@@ -43,15 +32,7 @@ export interface CrossThresholdsOptions {
   readonly hysteresis?: number;
 }
 
-/**
- * Report every boundary crossed moving from `before` to `after`.
- *
- * Upward moves yield `up` crossings in ascending `at` order; downward moves yield
- * `down` crossings in descending order. Large jumps report every boundary passed;
- * a zero-width move reports nothing. Boundaries need not be pre-sorted.
- *
- * @capability detect fire-once threshold/milestone/tier crossings when a value moves
- */
+/** @capability detect fire-once threshold/milestone/tier crossings when a value moves */
 export function crossThresholds<Id>(
   boundaries: readonly ThresholdBoundary<Id>[],
   before: number,
@@ -81,18 +62,7 @@ export function crossThresholds<Id>(
   return crossings;
 }
 
-/**
- * The highest boundary at-or-below `value` — the band the value currently sits in.
- * Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
- *
- * With `descending`, the lookup runs the other way: the lowest boundary at-or-above
- * `value` (the smallest window that still holds it), `null` when `value` is past every boundary.
- *
- * Tier labels stay caller policy: pass an `Id` object carrying whatever label,
- * relation, or colour the game needs.
- *
- * @capability resolve the current tier/band label for a keyed or scalar value
- */
+/** @capability resolve the current tier/band label for a keyed or scalar value */
 export function tierAt<Id>(
   boundaries: readonly ThresholdBoundary<Id>[],
   value: number,

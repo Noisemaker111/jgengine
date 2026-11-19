@@ -1,10 +1,8 @@
 import type { InspectionCameraConfig, InspectionZoomAnchor } from "@jgengine/core/game/playableGame";
 import type { Xyz } from "@jgengine/core/math/xyz";
 
-
 export type { InspectionCameraConfig, InspectionZoomAnchor };
 
-/** Inspection camera config with every default filled in. */
 export interface ResolvedInspectionCameraConfig {
   anchor: InspectionZoomAnchor;
   target: Xyz;
@@ -49,9 +47,7 @@ export function resolveInspectionCameraConfig(config?: InspectionCameraConfig): 
   };
 }
 
-/** Seeds the camera/target world position before OrbitControls mounts. Falls back to `initialDistance` behind `target` on the -Z axis, raised by 40% of that distance, when `initialPosition` is unset.
- * @internal
- */
+/** @internal */
 export function seedInspectionCamera(config: ResolvedInspectionCameraConfig): { camera: Xyz; target: Xyz } {
   if (config.initialPosition !== null) {
     return { camera: config.initialPosition, target: config.target };
@@ -66,9 +62,7 @@ export function seedInspectionCamera(config: ResolvedInspectionCameraConfig): { 
   };
 }
 
-/** Maps the anchor mode onto three-stdlib OrbitControls' native `zoomToCursor` flag.
- * @internal
- */
+/** @internal */
 export function resolveInspectionZoomToCursor(anchor: InspectionZoomAnchor): boolean {
   return anchor === "cursor";
 }

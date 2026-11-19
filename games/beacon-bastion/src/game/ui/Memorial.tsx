@@ -11,10 +11,6 @@ import { boonDef, carriedRelic, legacy, relicBountyScale } from "../waves/legacy
 import { TOTAL_WAVES } from "../waves/manifest";
 import { Brazier, DIM, FIRE, Glyph, GOLD, Heading, INK, Plank, Row, Sheet, Tag, Text, usePhone } from "./look";
 
-/**
- * The defense's memorial stone: what it paid, what it banked, the war council between defenses and
- * the relics the next keep may open with. One stone for a hold and a fall alike.
- */
 export function Memorial() {
   const outcome = useGameStore((c) => (keep.of(c).fact("keep.held") === true ? "held" : keep.of(c).fact("keep.fallen") === true ? "fallen" : null));
   if (outcome === null) return null;
@@ -67,10 +63,6 @@ function MemorialStone({ victory }: { victory: boolean }) {
   </Sheet>;
 }
 
-/**
- * The war council: the best stars on each difficulty are its points, spent on seats that strengthen
- * a tower line, the purse or the beacon's rites. The next defense's difficulty is chosen here too.
- */
 function WarCouncil() {
   const view = useGameStore((c) => {
     const state = campaign.read(c), tree = councilTree(c);

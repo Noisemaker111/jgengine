@@ -13,22 +13,16 @@ import { HH, DISPLAY } from "./theme";
 export interface BoardRow {
   id: string;
   name: string;
-  /** One short line under the name: what it does, how much is in the box. */
   line?: string | undefined;
-  /** Cash price. */
   price: number;
-  /** Already yours: drawn with the OWNED stamp, and picking it does nothing. */
   owned?: boolean | undefined;
-  /** Owned as a stack: `×3` beside the name. Picking it still buys another. */
   count?: number | undefined;
-  /** Street cred level the row needs; above the player's cred it is taped off. */
   gate?: number | undefined;
   /** A small tag before the name: a rarity, a tier. */
   tag?: string | undefined;
   pick: () => void;
 }
 
-/** A run of rows under one painted header: the rack, the night market, under the counter. */
 export interface BoardSection {
   id: string;
   title: string;
@@ -36,7 +30,6 @@ export interface BoardSection {
   rows: readonly BoardRow[];
 }
 
-/** Which shop the board hangs in: the gun counter's felt letter board, or the car lot's enamel sign. */
 export type BoardLook = "pawn" | "lot" | "house";
 
 /** Why a row can't be bought right now, or null when it can. */
@@ -140,7 +133,6 @@ export function PriceBoard({ look, kicker, title, sub, sections, cash, cred, onL
   );
 }
 
-/** The clerk's line for the highlighted row. */
 export function whyLine(row: BoardRow | null, cash: number, cred: number): string {
   if (row === null) return "Pick a line, or walk out the door.";
   const block = rowBlock(row, cash, cred);

@@ -11,9 +11,7 @@ export interface GameSuiteConfig {
   notSimulatable: Readonly<Record<string, string>>;
 }
 
-/** One proof's result, as the suite test records it. */
 export interface SuiteProofResult {
-  /** The proof file, relative to the game. */
   file: string;
   proves: readonly string[];
   ok: boolean;
@@ -21,42 +19,33 @@ export interface SuiteProofResult {
   failure?: string;
 }
 
-/** One data entry's result from the content check. */
 export interface SuiteDataResult {
   id: string;
   ok: boolean;
   problems: readonly string[];
 }
 
-/** What a game's suite test writes to `proofs/suite-report.json`. */
 export interface SuiteReport {
   game: string;
   proofs: readonly SuiteProofResult[];
   data: readonly SuiteDataResult[];
 }
 
-/** Where an entry stands for one game. */
 export type SuiteStatus = "proven" | "failing" | "not-simulatable" | "missing" | "cut";
 
-/** One required entry's row in a game's score. */
 export interface SuiteScoreRow {
   entry: SuiteEntry;
   status: SuiteStatus;
-  /** The cut reason, the not-simulatable file, the failing proof's reason, or the proof that proved it. */
   detail?: string;
 }
 
-/** A game's whole score. */
 export interface GameSuiteScore {
   game: string;
   genres: readonly string[];
   rows: readonly SuiteScoreRow[];
-  /** Entries proven. */
   proven: number;
-  /** Entries required and not cut. */
   required: number;
   counts: Readonly<Record<SuiteStatus, number>>;
-  /** Mistakes in the game's own declarations: unknown genres or entry ids, empty reasons. */
   problems: readonly string[];
 }
 
@@ -75,10 +64,6 @@ function stringMap(value: unknown, field: string): Record<string, string> {
   return out;
 }
 
-/**
- * Read the `suite` section of a parsed `jgengine.json`; `null` when the game declares none.
- * Throws on a malformed section, naming the field.
- */
 export function readGameSuiteConfig(projectConfig: unknown): GameSuiteConfig | null {
   if (!isRecord(projectConfig)) return null;
   const suite = projectConfig["suite"];
@@ -95,7 +80,6 @@ export function readGameSuiteConfig(projectConfig: unknown): GameSuiteConfig | n
 
 const strings = (value: unknown): string[] | null => (Array.isArray(value) && value.every((item) => typeof item === "string") ? value.filter((item): item is string => typeof item === "string") : null);
 
-/** Read a suite report from parsed JSON (a game's `proofs/suite-report.json`); throws on anything else. */
 export function parseSuiteReport(raw: unknown): SuiteReport {
   if (!isRecord(raw) || typeof raw["game"] !== "string" || !Array.isArray(raw["proofs"]) || !Array.isArray(raw["data"])) throw new Error("not a suite report: { game, proofs, data }");
   const proofs = raw["proofs"].map((proof): SuiteProofResult => {
@@ -112,7 +96,6 @@ export function parseSuiteReport(raw: unknown): SuiteReport {
   return { game: raw["game"], proofs, data };
 }
 
-/** The genres a declaration reaches, its includes followed. */
 export function expandSuiteGenres(genres: readonly string[]): string[] {
   const reached = new Set<string>();
   const visit = (id: string): void => {
@@ -130,14 +113,7 @@ export function requiredSuiteEntries(genres: readonly string[], entries: readonl
   return entries.filter((entry) => entry.genres.some((genre) => reached.has(genre)));
 }
 
-/**
- * Score a game: each required entry is `cut` (with its reason), `proven` (a passing proof or content
- * check), `failing` (a proof or check that names it fails), `not-simulatable` (declared, with its file) or
- * `missing`. A passing proof wins over a failing one for the same entry. No report: everything not cut is
- * missing.
- *
- * @capability game-suite-score score a game against the engine's game suite: proven, failing, not simulatable, missing and cut, by area
- */
+/** @capability game-suite-score score a game against the engine's game suite: proven, failing, not simulatable, missing and cut, by area */
 export function scoreGameSuite(game: string, config: GameSuiteConfig, report: SuiteReport | null, entries: readonly SuiteEntry[] = SUITE_ENTRIES): GameSuiteScore {
   const problems: string[] = [];
   const known = new Set(entries.map((entry) => entry.id));
@@ -167,13 +143,11 @@ export function scoreGameSuite(game: string, config: GameSuiteConfig, report: Su
   return { game, genres: config.genres, rows, proven: counts.proven, required: rows.length - counts.cut, counts, problems };
 }
 
-/** The entry's area: its id up to the first dot. */
 export function suiteArea(id: string): string {
   const dot = id.indexOf(".");
   return dot < 0 ? id : id.slice(0, dot);
 }
 
-/** One line: `12/62 proven · 3 failing · 1 not simulatable · 2 cut · 46 missing`. */
 export function suiteScoreLine(score: GameSuiteScore): string {
   const parts = [`${score.proven}/${score.required} proven`];
   if (score.counts.failing > 0) parts.push(`${score.counts.failing} failing`);
@@ -194,7 +168,6 @@ function areas(score: GameSuiteScore): Map<string, SuiteScoreRow[]> {
 
 const STATUS_MARK: Record<SuiteStatus, string> = { proven: "proven", failing: "FAILING", "not-simulatable": "not simulatable", missing: "missing", cut: "cut" };
 
-/** The score as terminal lines, grouped by area. */
 export function renderSuiteText(score: GameSuiteScore): string[] {
   const lines = [`${score.game} game suite (${score.genres.join(", ") || "universal only"}): ${suiteScoreLine(score)}`];
   for (const problem of score.problems) lines.push(`  problem: ${problem}`);
@@ -211,7 +184,6 @@ function cell(text: string): string {
   return text.replaceAll("|", "\\|").replaceAll("\n", " ");
 }
 
-/** The score as a markdown table grouped by area, for a game's `PLAN.md`. */
 export function renderSuiteMarkdown(score: GameSuiteScore): string[] {
   const lines = [`Genres: ${score.genres.join(", ") || "none"}. ${suiteScoreLine(score)}.`, "", "| Entry | Status | What the player does | Detail |", "| --- | --- | --- | --- |"];
   for (const [, rows] of areas(score)) {
@@ -220,7 +192,6 @@ export function renderSuiteMarkdown(score: GameSuiteScore): string[] {
   return lines;
 }
 
-/** The score as one markdown row per area: proven of counted, then what is failing, not simulatable, missing and cut. */
 export function renderSuiteAreaTable(score: GameSuiteScore): string[] {
   const lines = ["| Area | Proven | Failing | Not simulatable | Missing | Cut |", "| --- | --- | --- | --- | --- | --- |"];
   const count = (rows: readonly SuiteScoreRow[], status: SuiteStatus) => rows.filter((row) => row.status === status).length;
@@ -232,7 +203,6 @@ export function renderSuiteAreaTable(score: GameSuiteScore): string[] {
   return lines;
 }
 
-/** Entry ids proven in `before` and not in `after`: regressions the suite test refuses. */
 export function suiteRegressions(before: GameSuiteScore, after: GameSuiteScore): string[] {
   const now = new Map(after.rows.map((row) => [row.entry.id, row.status]));
   return before.rows.filter((row) => row.status === "proven" && now.get(row.entry.id) !== "proven" && now.get(row.entry.id) !== "cut").map((row) => row.entry.id);

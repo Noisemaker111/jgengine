@@ -86,16 +86,13 @@ export const AUTHORED_WAVES: readonly EncounterWave[] = [
 
 export const DIRECTOR_SEED = 1337;
 
-/** One defense runs this many waves: six authored, the rest composed from the seed. */
 export const TOTAL_WAVES = 12;
 
-/** The authored act plus the composed one, as one definition the director already knows how to run. */
 export const ENCOUNTER: EncounterDefinition = {
   id: "beacon-bastion",
   waves: [...AUTHORED_WAVES, ...composeWaves(DIRECTOR_SEED, TOTAL_WAVES)],
 };
 
-/** The Warden's id in the creep catalog, and the entity it becomes. */
 export const WARDEN_ID = "raider_warden";
 
 /**
@@ -111,7 +108,6 @@ export const PRESSURE_RULE: PressureRule = {
   maxTier: 2,
 };
 
-/** One phase's stance: its pace and name, a ward it raises and an escort it calls when the phase opens. */
 export interface BossStance {
   speedScale: number;
   label: string;
@@ -120,11 +116,8 @@ export interface BossStance {
 }
 
 export interface BossProfile {
-  /** Cut points and tells, high to low. */
   phases: readonly PhaseLike[];
-  /** What each phase looks like on the approach: how fast it walks, what the HUD calls it, and what it calls up. */
   stance: Record<string, BossStance>;
-  /** The banner text for a tell. */
   tells: Record<string, string>;
 }
 
@@ -151,7 +144,6 @@ const WARDEN_TELL_TEXT: Record<string, string> = {
   "dig-in": "The Warden makes its last stand and calls its shield-bearers",
 };
 
-/** The composed boss: slower to anger, faster once it does, and it digs in earlier. */
 const WARLORD_PHASES: readonly PhaseLike[] = [
   { id: "opening", at: 1, tell: { id: "arrival", seconds: 3 } },
   { id: "enraged", at: 0.65, tell: { id: "roar", seconds: 2.5 } },
@@ -170,7 +162,6 @@ const WARLORD_TELL_TEXT: Record<string, string> = {
   "dig-in": "The Warlord is cornered — nothing left to lose",
 };
 
-/** Every raider that walks with a phase table. A boss is a catalog entry plus one of these. */
 export const BOSS_PROFILES: Record<string, BossProfile> = {
   raider_warden: { phases: WARDEN_PHASES, stance: WARDEN_STANCE, tells: WARDEN_TELL_TEXT },
   raider_warlord: { phases: WARLORD_PHASES, stance: WARLORD_STANCE, tells: WARLORD_TELL_TEXT },

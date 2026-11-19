@@ -10,20 +10,15 @@ import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
  * caller drives it from a bounded spatial query, never a full-world scan.
  */
 
-/** Whether an agent's gate is doing work (`active`) or culled (`dormant`). */
 export type InterestState = "active" | "dormant";
 
-/** A distance-keyed cadence tier: nearer agents tick faster, farther-but-awake agents tick slower. */
 export interface InterestTier {
-  /** Applies when proximity is at or below this distance. */
   readonly within: number;
   /** Seconds between active ticks in this tier (`0` = every tick). */
   readonly interval: number;
 }
 
-/** Static configuration shared by every gate of one behavior class. */
 export interface InterestSchedulerConfig {
-  /** Proximity at or below which a dormant agent wakes. */
   readonly wakeRadius: number;
   /**
    * Proximity above which an active agent sleeps. Must be >= `wakeRadius`; the gap between them is
@@ -32,43 +27,29 @@ export interface InterestSchedulerConfig {
   readonly sleepRadius?: number;
   /** Seconds between active ticks while awake (`0` = every tick). Overridden by a matching tier. */
   readonly activeInterval?: number;
-  /**
-   * Distance-keyed cadence tiers, checked in array order with the first `proximity <= within` match
-   * winning — so order them nearest-first (smallest `within` first). Overrides `activeInterval`.
-   */
   readonly tiers?: readonly InterestTier[];
-  /** After any wake signal, stay active at least this long regardless of proximity. Default `0`. */
   readonly stayAwakeSeconds?: number;
 }
 
 /** Per-agent serializable gate state. Round-trip the whole object; never read fields to drive logic. */
 export interface InterestGateState {
   state: InterestState;
-  /** Time accrued toward the next active tick. */
   clock: number;
-  /** Remaining forced-awake time from the last wake signal. */
   awakeHold: number;
   /** Deterministic `[0,1)` cadence offset so sibling agents fire on different frames. */
   phase: number;
 }
 
-/** Per-tick input the caller supplies to a gate. */
 export interface InterestGateInput {
-  /** Distance to the nearest interest source (player, threat, owner); `null` when none / unknown. */
   readonly proximity?: number | null;
   /** Explicit wake trigger — damage, event, ownership change, caller override. Forces active. */
   readonly wake?: boolean;
 }
 
-/** Per-tick output that tells the caller whether to run expensive work. */
 export interface InterestGateStep {
-  /** The gate's state after this tick. */
   readonly state: InterestState;
-  /** Run the expensive work (acquisition, pathing) this tick? */
   readonly active: boolean;
-  /** Transitioned dormant→active this tick — the single-frame wake edge. */
   readonly woke: boolean;
-  /** Transitioned active→dormant this tick — the single-frame sleep edge. */
   readonly slept: boolean;
 }
 
@@ -88,7 +69,6 @@ function nominalInterval(config: InterestSchedulerConfig): number {
   return config.activeInterval ?? config.tiers?.[0]?.interval ?? 0;
 }
 
-/** Cadence tiers as ascending cut points on the negated proximity, cached per tier list. */
 const intervalLadders = new WeakMap<readonly InterestTier[], readonly ThresholdBoundary<number>[]>();
 
 function intervalLadder(tiers: readonly InterestTier[]): readonly ThresholdBoundary<number>[] {
@@ -184,14 +164,12 @@ export function advanceInterestGate(
   return { state: want, active, woke, slept };
 }
 
-/** Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose. */
 export interface InterestCensus {
   active: number;
   dormant: number;
   total: number;
 }
 
-/** A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass). */
 export interface InterestCensusAccumulator {
   record(state: InterestState | InterestGateState): void;
   snapshot(): InterestCensus;

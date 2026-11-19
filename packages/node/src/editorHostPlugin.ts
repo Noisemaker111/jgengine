@@ -11,14 +11,12 @@ const MANIFEST_ROUTE = "/__jgengine/manifest";
 const IMPORT_ROUTE = "/__jgengine/import-asset";
 const MAX_ASSET_BYTES = 128 * 1024 * 1024;
 
-/** One placeable model the standalone editor lists — a stable id and a URL the dev server serves it from. */
 export interface EditorManifestAsset {
   id: string;
   url: string;
   label: string;
 }
 
-/** What the standalone editor loads on boot: the on-disk scene document (if any) and every model in the asset folder. */
 export interface EditorManifest {
   scene: unknown | null;
   assets: EditorManifestAsset[];
@@ -35,10 +33,7 @@ function walkModels(root: string, dir: string = root): string[] {
   return out.sort();
 }
 
-/**
- * Reads the scene document and scans the asset folder — the pure core the dev server serves at `/__jgengine/manifest`.
- * @internal
- */
+/** @internal */
 export function buildEditorManifest(sceneDir: string, assetsDir: string): EditorManifest {
   const scenePath = join(sceneDir, EDITOR_SCENE_FILENAME);
   // A damaged scene file throws rather than opening as an empty scene the next save would write over.
@@ -103,9 +98,7 @@ interface EditorHostPluginShape {
   configureServer(server: DevServerLike): void;
 }
 
-/** Where the standalone editor reads and writes: the scene folder and the model folder it scans. */
 export interface EditorHostOptions {
-  /** Directory the scene document lives in and Save writes back to. Default `process.cwd()`. */
   dir?: string;
   /** Directory scanned for placeable `.glb`/`.gltf` models. Default `<dir>/assets` if present, else `<dir>`. */
   assetsDir?: string;

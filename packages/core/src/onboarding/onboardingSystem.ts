@@ -8,29 +8,20 @@ import type { SnapshotModule } from "../runtime/worldSnapshot";
 import { createOnboarding, onboardingAreaFor, validateOnboarding, type Onboarding, type OnboardingConfig, type OnboardingPoint, type OnboardingSnapshot, type OnboardingStep } from "./onboarding";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
-/** The id of the waypoint and minimap marker the onboarding owns. */
 export const ONBOARDING_MARK = "onboarding";
 
-/** Options for {@link createOnboardingSystem} beyond the declared steps. */
 export interface OnboardingSystemOptions {
-  /** Grant a step's `grants.xp`. Required when a step grants xp. */
   grantXp?(ctx: GameContext, userId: string, amount: number): void;
   /** Seconds between target lookups for the pointer. Default 0.25. */
   lookEvery?: number;
 }
 
-/** What the HUD and the world overlay read from a running onboarding. */
 export interface OnboardingRuntime {
   readonly config: OnboardingConfig<GameContext>;
-  /** One player's run; the local player's when `userId` is omitted. */
   run(userId?: string): Onboarding<GameContext>;
-  /** The local player's pointer: one tracked waypoint at the current target. */
   readonly waypoints: WaypointStore;
-  /** The local player's minimap marker for the current target. */
   readonly markers: MarkerSet;
-  /** Step-done banners for the local player. */
   readonly banner: ObjectiveBannerController;
-  /** Where the pointer points now, or `null`. */
   pointing(): OnboardingPoint | null;
 }
 
@@ -42,16 +33,11 @@ interface InstalledOnboarding extends OnboardingRuntime {
 
 const runtimes = new ContextMap<InstalledOnboarding>();
 
-/** The onboarding running in `ctx`, or `null` when the game installed none. */
 export function onboardingOf(ctx: GameContext): OnboardingRuntime | null {
   return runtimes.get(ctx) ?? null;
 }
 
-/**
- * The step text that locks `id` for the local player, or `null` when `id` is free. HUDs hide or grey locked UI with it.
- *
- * @capability onboarding-lock which onboarding step still locks a command or UI id, so a HUD can grey it out
- */
+/** @capability onboarding-lock which onboarding step still locks a command or UI id, so a HUD can grey it out */
 export function onboardingLock(ctx: GameContext, id: string): string | null {
   return onboardingOf(ctx)?.run().lockedBy(id)?.text ?? null;
 }
@@ -66,16 +52,7 @@ function distanceSq(a: OnboardingPoint, b: OnboardingPoint): number {
   return (a[0] - b[0]) ** 2 + (a[2] - b[2]) ** 2;
 }
 
-/**
- * A game's onboarding as one system: declare the steps as data, and the engine completes them from
- * game events and conditions, refuses locked commands (`ctx.game.commands.gate`), hands out each
- * step's grants, announces finished steps on an objective banner, shows the steps as a quest in
- * `QuestTracker`, and keeps one waypoint and one minimap marker on the current step's target. It
- * saves per player, and `onboarding.skip` / `onboarding.next` commands skip it and press Next.
- * Render it with `OnboardingHud` and `OnboardingPointer`; read it with {@link onboardingOf}.
- *
- * @capability onboarding declared tutorial steps that point at world things (arrow, minimap marker, waypoint), complete from events or conditions, lock commands until done, grant on completion, skip and save — as a separate tutorial level, a teaching start area or hints blended into stage one
- */
+/** @capability onboarding declared tutorial steps that point at world things (arrow, minimap marker, waypoint), complete from events or conditions, lock commands until done, grant on completion, skip and save — as a separate tutorial level, a teaching start area or hints blended into stage one */
 export function createOnboardingSystem(config: OnboardingConfig<GameContext>, options: OnboardingSystemOptions = {}): SystemDefinition {
   validateOnboarding(config);
   if (options.grantXp === undefined && config.steps.some((step) => step.grants?.xp !== undefined)) {
@@ -246,7 +223,6 @@ export function createOnboardingSystem(config: OnboardingConfig<GameContext>, op
   });
 }
 
-/** Where a target is for a player standing at `from`, or `null` when nothing matches. */
 function locate(ctx: GameContext, config: OnboardingConfig<GameContext>, target: NonNullable<OnboardingStep<GameContext>["target"]>, from: OnboardingPoint): OnboardingPoint | null {
   if ("at" in target) return target.at;
   if ("entity" in target) return ctx.scene.entity.get(target.entity)?.position ?? null;

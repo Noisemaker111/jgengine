@@ -14,7 +14,6 @@ function computeBandwidthCapTps(totalMemoryBandwidthGbps: number): number {
   return totalMemoryBandwidthGbps * BANDWIDTH_TPS_FACTOR;
 }
 
-/** Raw model TPS before bandwidth cap, demand saturation, and serving-mode scaling. */
 function computeRawModelServingTps(
   modelTokensPerSecond: number,
   allocatedTflops: number,
@@ -68,11 +67,9 @@ export function computeModelServingContribution(
   };
 }
 
-/** One starter GPU (GTX 1060) — the yardstick for previewing income of a model with no cards on it. */
 export const REFERENCE_SERVING_TFLOPS = 11;
 export const REFERENCE_SERVING_BANDWIDTH_GBPS = 192;
 
-/** $/s a model would earn on the cards bound to it, falling back to one starter GPU when unassigned. */
 export function estimateModelIncomePerSecond(
   model: ModelServingContributionInput,
   assigned: { tflops: number; bandwidthGbps: number } | undefined,

@@ -40,9 +40,7 @@ export interface DownedState {
   phase(instanceId: string): DownedPhase;
   get(instanceId: string): DownedEntry | null;
   clear(instanceId: string): void;
-  /** Every tracked entity's phase, remaining bleed-out, revive progress and banner timer. */
   snapshot(): Record<string, DownedEntry>;
-  /** Replaces the tracked entities, resuming a saved bleed-out where it left off. */
   restore(next: Record<string, DownedEntry>): void;
 }
 

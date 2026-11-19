@@ -1,9 +1,6 @@
-/** Validated integer quantity or a stable input rejection. */
 export type QuantityResult = { ok: true; quantity: number } | { ok: false; reason: "invalid-quantity" };
 
-/** Read an untrusted whole-item quantity without coercion, truncation, or clamping.
- * @capability command-quantity validate bounded whole-item counts at command boundaries
- */
+/** @capability command-quantity validate bounded whole-item counts at command boundaries */
 export function readQuantity(value: unknown, options: { min?: number; max?: number } = {}): QuantityResult {
   const min = options.min ?? 1;
   const max = options.max ?? Number.MAX_SAFE_INTEGER;
@@ -15,12 +12,10 @@ export function readQuantity(value: unknown, options: { min?: number; max?: numb
     : { ok: false, reason: "invalid-quantity" };
 }
 
-/** Narrow an untrusted value to a plain object, rejecting arrays and null. */
 export function isInputRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Read a non-empty string of at most `maxLength` characters, or `null`. */
 export function readInputString(value: unknown, options: { maxLength?: number } = {}): string | null {
   return typeof value === "string" && value.length > 0 && value.length <= (options.maxLength ?? 256) ? value : null;
 }
@@ -40,12 +35,10 @@ export function readInputNumber(
   return value;
 }
 
-/** Read one of a fixed set of values, or `null`. */
 export function readInputOneOf<const T extends string | number>(value: unknown, allowed: readonly T[]): T | null {
   return allowed.includes(value as T) ? (value as T) : null;
 }
 
-/** Read an `{ x, y, z }` point whose axes are finite and within `maxAbs`, or `null`. */
 export function readInputPoint3(
   value: unknown,
   options: { maxAbs?: number } = {},
@@ -58,7 +51,6 @@ export function readInputPoint3(
   return x === null || y === null || z === null ? null : { x, y, z };
 }
 
-/** Read an `{ x, z }` ground point whose axes are finite and within `maxAbs`, or `null`. */
 export function readInputPoint2(value: unknown, options: { maxAbs?: number } = {}): { x: number; z: number } | null {
   if (!isInputRecord(value)) return null;
   const bound = { min: -(options.maxAbs ?? Number.MAX_VALUE), max: options.maxAbs ?? Number.MAX_VALUE };
@@ -67,7 +59,6 @@ export function readInputPoint2(value: unknown, options: { maxAbs?: number } = {
   return x === null || z === null ? null : { x, z };
 }
 
-/** Read an array of at most `maxItems` entries, each accepted by `readItem`; any rejected entry rejects the whole array. */
 export function readInputArray<T>(
   value: unknown,
   readItem: (item: unknown) => T | null,

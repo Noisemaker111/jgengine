@@ -11,7 +11,6 @@ export function shouldReclaimPlayFocus(lost: Element | null, active: Element | n
   return active === null || active === body;
 }
 
-/** Controls inside these keep focus after a click: keyboard navigation there depends on it. */
 const KEEPS_FOCUS = '[role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"], [role="tablist"], [role="grid"], form, [data-jg-keep-focus]';
 
 /**

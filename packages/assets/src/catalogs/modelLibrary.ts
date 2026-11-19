@@ -15,7 +15,6 @@ import { MODEL_LIBRARY_RIGGED_ENTRIES } from "./modelLibraryRiggedEntries";
  * turns a name into the `ModelConfig` that draws it with that LOD pair.
  */
 
-/** The game kinds the library is curated for; an entry lists every kind it fits. */
 export type ModelLibraryGenre =
   | "city"
   | "park"
@@ -27,7 +26,6 @@ export type ModelLibraryGenre =
   | "tower-defense"
   | "office";
 
-/** Every genre, in browse order. */
 export const MODEL_LIBRARY_GENRES: readonly ModelLibraryGenre[] = [
   "city",
   "park",
@@ -40,24 +38,16 @@ export const MODEL_LIBRARY_GENRES: readonly ModelLibraryGenre[] = [
   "office",
 ];
 
-/** A Poly Haven model (CC0), fetched from `api.polyhaven.com` at its 1k texture tier. */
 export interface PolyHavenModelOrigin {
   provider: "polyhaven";
-  /** Poly Haven asset id, e.g. `street_lamp_01`. */
   asset: string;
-  /** Triangle ratio kept for the near level (1 keeps the scan's full mesh). */
   near: number;
-  /** Triangle ratio kept for the far level. */
   far: number;
   /**
    * Regular expression a top-level node name must match to be kept. Several Poly Haven files ship
    * variants side by side (a clean and an aged hydrant); this keeps one.
    */
   keep?: string;
-  /**
-   * Simplifier error budget for the near and far levels (defaults 0.002 and 0.03). Foliage scans
-   * with hundreds of thousands of leaf triangles need a looser budget to reach their ratio.
-   */
   error?: readonly [near: number, far: number];
   /**
    * Leaf-card thinning for foliage: loose cards cannot be simplified (each is its own island), so
@@ -74,21 +64,16 @@ export interface PolyHavenModelOrigin {
  */
 export interface GeneratedModelOrigin {
   provider: "generated";
-  /** Generator service and model, e.g. `fal.ai tripo-h3.1`. */
   generator: string;
-  /** The prompt or reference the model was generated from. */
   prompt: string;
   /** Path of the committed GLB under the game's generated-model base path. */
   file: string;
 }
 
-/** One animation a Rocketbox entry carries, taken from the shared Rocketbox animation library. */
 export interface RocketboxClip {
   /** Clip name in the output GLB; `Idle`, `Walk` and `Run` drive the engine's locomotion states. */
   name: string;
-  /** File in Rocketbox's `Assets/Animations/all_animations_max_motextr_<folder>`. */
   file: string;
-  /** `static` clips are already in place; `xy` (ground) and `xyz` (3D) clips travel and take `inPlace`. */
   folder: "static" | "xy" | "xyz";
   /** Remove the clip's travel along the ground so the game's own movement carries the body. */
   inPlace?: boolean;
@@ -100,12 +85,9 @@ export interface RocketboxClip {
  */
 export interface RocketboxModelOrigin {
   provider: "rocketbox";
-  /** Folder under `Assets/`, e.g. `Avatars/Professions/Police_Male_01`. */
   path: string;
-  /** Root bone name the in-place pass edits. */
   rootBone: string;
   clips: readonly RocketboxClip[];
-  /** Names for the clips embedded in the model file itself, in order (Rocketbox animals). */
   embeddedClips?: readonly string[];
   roughness?: number;
 }
@@ -120,16 +102,10 @@ export interface KhronosModelOrigin {
   near: number;
   far: number;
   drop?: string;
-  /** Node names (regex, matched anywhere in the tree) the far level leaves out, such as an interior nobody sees past 40 m. */
   farDrop?: string;
-  /** `Material/slot` texture slots to clear (`slot` is `baseColor` or `emissive`), e.g. a logo on a tyre wall. */
   scrub?: readonly string[];
 }
 
-/**
- * A model the engine builds itself from code and CC0 materials (no download), for shapes no licensed
- * scan covers. `builder` names the function in `modelLibraryAuthored`.
- */
 export interface AuthoredModelOrigin {
   provider: "authored";
   builder: string;
@@ -143,20 +119,14 @@ export type ModelLibraryOrigin =
   | AuthoredModelOrigin
   | GeneratedModelOrigin;
 
-/** One named realistic model with its source, credit and license. */
 export interface ModelLibraryEntry {
-  /** Stable name `<group>/<model>`, e.g. `city/street-lamp`. Names are the data contract. */
   name: string;
   title: string;
   genres: readonly ModelLibraryGenre[];
-  /** What a game might call it; `findLibraryModel` matches against these first. */
   intents: readonly string[];
   origin: ModelLibraryOrigin;
-  /** Credited author(s), as the source lists them. */
   author: string;
-  /** SPDX id (`CC0-1.0`) or, for a generated model, the generator's output terms. */
   license: string;
-  /** The page the asset is published on. */
   homepage: string;
 }
 
@@ -170,7 +140,6 @@ export interface ModelLibraryGap {
   route: string;
 }
 
-/** Known gaps: requests with no licensed realistic model yet, and how each would be closed. */
 export const MODEL_LIBRARY_GAPS: readonly ModelLibraryGap[] = [
   {
     intents: ["truck", "bus", "van", "police car", "taxi", "pickup", "motorcycle"],
@@ -194,17 +163,14 @@ export const MODEL_LIBRARY_GAPS: readonly ModelLibraryGap[] = [
   },
 ];
 
-/** Every library entry. */
 export const MODEL_LIBRARY: readonly ModelLibraryEntry[] = [...MODEL_LIBRARY_ENTRIES, ...MODEL_LIBRARY_RIGGED_ENTRIES];
 
 const byName = new Map(MODEL_LIBRARY.map((entry) => [entry.name, entry]));
 
-/** The entry with this exact name, or `null`. */
 export function findLibraryModelByName(name: string): ModelLibraryEntry | null {
   return byName.get(name) ?? null;
 }
 
-/** Every entry name, in library order. */
 export function libraryModelNames(): readonly string[] {
   return MODEL_LIBRARY.map((entry) => entry.name);
 }
@@ -213,24 +179,17 @@ function words(text: string): string[] {
   return text.toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length > 0);
 }
 
-/** One ranked answer to "what do you have for X". */
 export interface ModelLibraryMatch {
   entry: ModelLibraryEntry;
   score: number;
 }
 
-/** Narrowing for {@link findLibraryModel}. */
 export interface FindLibraryModelOptions {
   genre?: ModelLibraryGenre;
   limit?: number;
 }
 
-/**
- * Rank library models for a plain-words request: an exact intent wins, then intent and title word
- * overlap; a genre filter narrows the set. An empty result with a matching `libraryModelGap` means
- * the library knows it has nothing realistic for that request.
- * @capability model-library ask for a realistic licensed model by what it is ("street lamp", "office desk")
- */
+/** @capability model-library ask for a realistic licensed model by what it is ("street lamp", "office desk") */
 export function findLibraryModel(query: string, options: FindLibraryModelOptions = {}): readonly ModelLibraryMatch[] {
   const wanted = query.trim().toLowerCase();
   const queryWords = words(wanted);
@@ -252,18 +211,15 @@ export function findLibraryModel(query: string, options: FindLibraryModelOptions
   return matches.slice(0, options.limit ?? 10);
 }
 
-/** The known gap a request falls in, when the library has no realistic answer for it. */
 export function libraryModelGap(query: string): ModelLibraryGap | null {
   const wanted = query.trim().toLowerCase();
   return MODEL_LIBRARY_GAPS.find((gap) => gap.intents.some((intent) => intent === wanted)) ?? null;
 }
 
-/** Folder an entry's pulled files live in, relative to the models root: `library/<name>`. */
 export function libraryModelDir(name: string): string {
   return `library/${name}`;
 }
 
-/** URL and LOD options for {@link libraryModel}. */
 export interface LibraryModelOptions {
   /** URL prefix pulled models are served under; defaults to `/models`. */
   basePath?: string;
@@ -319,7 +275,6 @@ export function libraryModel(name: string, options: LibraryModelOptions = {}): M
   };
 }
 
-/** Credit lines for the library models a game uses, one per entry: title, author, license, page. */
 export function libraryModelCredits(names: readonly string[]): readonly string[] {
   return names.map((name) => {
     const entry = byName.get(name);

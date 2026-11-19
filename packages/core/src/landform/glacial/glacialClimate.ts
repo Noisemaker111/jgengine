@@ -9,7 +9,6 @@
  * @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
  */
 
-/** A δ¹⁸O record: ages in ka before present, ascending, and δ¹⁸O in ‰ at each. */
 export interface Delta18ORecord {
   readonly ageKa: readonly number[];
   readonly delta18O: readonly number[];
@@ -69,17 +68,13 @@ export const LR04_STACK: Delta18ORecord = lr04();
 /** A snowline through time: [model year, ELA in metres] points, years ascending. */
 export type SnowlineHistory = readonly (readonly [number, number])[];
 
-/** Options for {@link snowlineHistory}. */
 export interface SnowlineHistoryOptions {
   /** Today's ELA in metres. */
   presentEla: number;
   /** The ELA at the Last Glacial Maximum, 18 ka, in metres. */
   glacialEla: number;
-  /** Age in ka that model year 0 stands for. Default 800, the oldest of the record. */
   startKa?: number;
-  /** Age in ka where the history ends. Default 0, today. */
   endKa?: number;
-  /** The δ¹⁸O record. Default {@link LR04_STACK}. */
   record?: Delta18ORecord;
 }
 
@@ -127,10 +122,7 @@ export function snowlineHistory(options: SnowlineHistoryOptions): [number, numbe
   return points;
 }
 
-/**
- * The ELA of a snowline history at a model year, linear between points and level past either end.
- * @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
- */
+/** @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines */
 export function snowlineAt(history: SnowlineHistory, year: number): number {
   const last = history.length - 1;
   const first = history[0];

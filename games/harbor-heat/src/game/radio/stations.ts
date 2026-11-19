@@ -1,7 +1,6 @@
 import type { RadioDef, RadioSegmentDef } from "@jgengine/core/audio/radio";
 import type { RadioVoice } from "@jgengine/core/audio/radioPlayback";
 
-/** Ads every station sells airtime for; each station reads them in its own voice. */
 const ADS: readonly RadioSegmentDef[] = [
   {
     id: "ad.sunset_motors",
@@ -264,14 +263,12 @@ const MNN: RadioDef["stations"][number] = {
   ],
 };
 
-/** Harbor Heat's dial: a synthwave music station, a call-in talk show and a news station. */
 export const HARBOR_RADIO: RadioDef = {
   seed: "mainsail-radio",
   initial: "neon_tide",
   stations: [NEON_TIDE, HARBOR_TALK, MNN],
 };
 
-/** How each voice id sounds: name hints pick a system voice when one matches, pitch and rate give each speaker a shape. */
 export const RADIO_VOICES: Readonly<Record<string, RadioVoice>> = {
   luna: { name: "Female", pitch: 1.12, rate: 1.02 },
   sully: { name: "David", pitch: 0.78, rate: 1.04 },

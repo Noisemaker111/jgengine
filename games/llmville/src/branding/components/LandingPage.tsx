@@ -11,7 +11,6 @@ import { MenuSettingsDialog } from "../../settings/components/MenuSettingsDialog
 import { Button, FULL, Logo, Muted, Panel, Text } from "../../ui/kit";
 import { DISPLAY } from "../../ui/theme";
 
-/** The title screen's menu: join or rejoin the world, delete the lab (confirmed), settings. */
 export function HomeMainMenu({ menu }: { menu: MainMenuState }) {
   const { phase, confirmDeleteWorld, setConfirmDeleteWorld, isDeleting, isEnteringGame, startGame, continueGame, warmCreateRoute, warmContinueRoute, deleteCurrentWorld } = menu;
   const continuing = phase.kind === MAIN_MENU_KIND.continue;

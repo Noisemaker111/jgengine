@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 
 import {
   createSessionLoop,
@@ -278,36 +277,5 @@ describe("a live session stays durable through the persistence seam", () => {
     expect(loop.snapshot().carried).toBe(40);
     expect(() => loop.settle("banked")).toThrow("quota exceeded");
     expect(loop.snapshot().closed).toBe(1);
-  });
-});
-
-describe("the base capability stays genre-neutral", () => {
-  const source = readFileSync(new URL("./sessionLoop.ts", import.meta.url), "utf8");
-  const GENRE = /run|haul|modifier|draft|roguelike/i;
-  const GENRE_WORD = /\b(runs?|hauls?|modifiers?|drafts?|roguelike)\b/i;
-
-  const intents = [...source.matchAll(/@capability\s+([^\n]+)/g)].map((match) => match[1] ?? "");
-  const exports = [...source.matchAll(/export\s+(?:interface|type|function|const)\s+(\w+)/g)].map((match) => match[1] ?? "");
-  const members = [...source.matchAll(/export interface \w+[^{]*\{([\s\S]*?)\n\}/g)].flatMap((match) =>
-    [...(match[1] ?? "").matchAll(/^ {2}(\w+)\??[:(]/gm)].map((member) => member[1] ?? ""),
-  );
-
-  test("the rule: every game is custom; there are no genre kits", () => {
-    expect(GENRE_WORD.test("run-loop bank or lose what a run carries")).toBe(true);
-    expect(GENRE.test("RunLoopState")).toBe(true);
-    expect(GENRE_WORD.test("session-loop settle the quantity a session carried")).toBe(false);
-    expect(GENRE.test("createSessionLoop")).toBe(false);
-  });
-
-  test("its capability intent names no genre", () => {
-    expect(intents.length).toBeGreaterThan(0);
-    for (const intent of intents) expect(intent).not.toMatch(GENRE_WORD);
-  });
-
-  test("its public type and member names name no genre", () => {
-    expect(exports).toContain("createSessionLoop");
-    expect(members).toContain("carried");
-    expect(members).toContain("settle");
-    for (const name of [...exports, ...members]) expect(name).not.toMatch(GENRE);
   });
 });

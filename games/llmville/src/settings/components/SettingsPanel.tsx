@@ -39,7 +39,6 @@ function SettingRowView({ row }: { row: SettingsRow }) {
   </RuneView>;
 }
 
-/** Every LLMville action, rebindable: press a row, then the key. Escape cancels; the saved keybinds update at once. */
 export function KeybindsPanel() {
   const { keybinds } = useAppSettings();
   const session = useMemo(() => keybindRebindSession(keybinds), [keybinds]);
@@ -77,10 +76,6 @@ function CreditsPanel() {
   </RuneView>;
 }
 
-/**
- * LLMville's settings on the native surface: the shell's categories (sound, graphics, gameplay,
- * accessibility), then the game's keybinds and credits, under one tab rail.
- */
 export function SettingsPanel({ categories, initialTab, onTabChange }: {
   categories: readonly SettingsCategoryView[]; initialTab?: string | undefined; onTabChange?: ((tab: string) => void) | undefined;
 }) {

@@ -40,7 +40,6 @@ async function write(name: string, mesh: Mesh): Promise<{ id: string; file: stri
   return { id: `deepward/architecture/${name}`, file, url: `/models/imported/deepward/architecture/${file}`, sha256: createHash("sha256").update(bytes).digest("hex"), bytes: bytes.length, bounds: { min, max }, dims: [max[0] - min[0], max[1] - min[1], max[2] - min[2]] };
 }
 
-/** One 3 m wall bay, interior face on z = 0, 0.22 m deep behind it: kick plate, brass stripe, recessed service panel, seam ribs and rivet rows. */
 function wallBay(height: number): Mesh {
   const m = new Mesh(), w = 3, d = 0.22;
   m.box("slate", [0, height / 2, -d / 2], [w, height, d]);
@@ -55,7 +54,6 @@ function wallBay(height: number): Mesh {
   for (const x of [-1.42, 1.42]) for (let y = 0.7; y < height - 0.3; y += 0.62) m.cylinder("brass", [x, y, 0.045], 0.022, 0.02, 2, 6);
   return m;
 }
-/** An I-section column on a base plate with a capital and a lit collar. */
 function column(height: number, glow: "cyan" | "red"): Mesh {
   const m = new Mesh();
   m.box("iron", [0, 0.07, 0], [0.7, 0.14, 0.7]);
@@ -68,7 +66,6 @@ function column(height: number, glow: "cyan" | "red"): Mesh {
   for (const x of [-0.28, 0.28]) for (const z of [-0.28, 0.28]) m.cylinder("brass", [x, 0.17, z], 0.03, 0.06, 1, 6);
   return m;
 }
-/** A slim I-section rib for the return spine: flange pair, web, brass collar. */
 function rib(height: number): Mesh {
   const m = new Mesh();
   m.box("iron", [0, 0.06, 0], [0.3, 0.12, 0.28]);
@@ -78,7 +75,6 @@ function rib(height: number): Mesh {
   m.box("iron", [0, height - 0.06, 0], [0.3, 0.12, 0.28]);
   return m;
 }
-/** A 5.5 m gantry span: top chord, lower chord, diagonals, and an amber hoist stop at each end. */
 function gantry(): Mesh {
   const m = new Mesh(), len = 5.5, h = 0.5;
   for (const y of [0.04, h - 0.04]) m.box("steel", [0, y, 0], [len, 0.08, 0.26]);
@@ -92,7 +88,6 @@ function gantry(): Mesh {
   for (const side of [-1, 1]) m.box("amber", [side * (len / 2 - 0.1), h / 2, 0], [0.2, h, 0.3]);
   return m;
 }
-/** A 4 m pipe run on the Z axis at radius 0.2 with flange rings, a brass collar and a hanger; scale uniformly with the instance. */
 function pipeRun(): Mesh {
   const m = new Mesh(), r = 0.2, len = 4;
   m.cylinder("steel", [0, 0, 0], r, len, 2, 14);
@@ -102,7 +97,6 @@ function pipeRun(): Mesh {
   m.box("iron", [0, r * 1.6, 0], [0.06, r * 1.2, 0.1]);
   return m;
 }
-/** A 4 m vertical pipe stand, the same pipe turned upright. */
 function pipeStand(): Mesh {
   const m = new Mesh(), r = 0.2, len = 4;
   m.cylinder("steel", [0, len / 2, 0], r, len, 1, 14);

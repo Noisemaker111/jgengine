@@ -1,6 +1,5 @@
 import { clamp01 } from "../math/scalar";
 
-/** Inputs to {@link pingOpacity}. */
 export interface PingOpacityInput {
   /** Performance-clock ms when the ping first appeared. */
   bornMs: number;
@@ -26,10 +25,7 @@ export function pingOpacity(input: PingOpacityInput): number {
   return Math.min(fadeIn, fadeOut);
 }
 
-/**
- * Vertical bob offset (world units) for a hovering ping arrow at `elapsedSeconds`.
- * @internal
- */
+/** @internal */
 export function pingBobOffset(elapsedSeconds: number, amplitude = 0.18, speedHz = 1.1): number {
   return Math.sin(elapsedSeconds * speedHz * Math.PI * 2) * amplitude;
 }

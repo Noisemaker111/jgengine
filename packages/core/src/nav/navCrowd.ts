@@ -6,7 +6,6 @@ import type { NavRebuildStats, NavRegion, NavRuntime } from "./navRuntime";
 import { createRvoCrowd, type RvoCrowd, type RvoTunables } from "../ai/rvo";
 import { spreadOffset } from "../ai/crowd";
 
-/** How one crowd agent was configured when it joined. */
 export interface NavCrowdAgentSpec {
   position: Vec3;
   goal: Vec3;
@@ -16,13 +15,11 @@ export interface NavCrowdAgentSpec {
   radius?: number;
 }
 
-/** One crowd agent's live state, as a game or the devtools overlay reads it. */
 export interface NavCrowdAgentView {
   id: string;
   position: Vec3;
   velocity: readonly [number, number];
   goal: Vec3;
-  /** Index of the waypoint it is steering toward; equals the waypoint count once the route is done. */
   waypoint: number;
   waypoints: number;
   arrived: boolean;
@@ -34,36 +31,27 @@ export interface NavCrowdAgentView {
 export interface NavCrowdLinkEvent {
   agent: string;
   phase: "enter" | "exit";
-  /** The link crossed; `id` and `kind` name the authored link it came from. */
   link: NavMeshLink;
-  /** Where the crossing leaves and lands. */
   from: Vec3;
   to: Vec3;
 }
 
-/** Result of telling the crowd the nav mesh changed. */
 export interface NavCrowdRevalidate {
-  /** Agents whose remaining route crossed replaced polygons and were queued for a new plan. */
   queued: number;
-  /** Agents whose route stayed entirely on kept polygons and was left alone. */
   untouched: number;
 }
 
-/** Counters a devtools probe or test reads. */
 export interface NavCrowdStats {
   agents: number;
   arrived: number;
   waitingForPlan: number;
-  /** Path searches run since creation — add, setGoal, queued plans and repaths. */
   plans: number;
-  /** Path searches that returned no route. */
   unroutable: number;
   ticks: number;
   /** Slowest single `tick` seen so far, in milliseconds. */
   slowestTickMs: number;
 }
 
-/** Serializable crowd state: agents, their routes, and the avoidance tuning they run under. */
 export interface NavCrowdSnapshot {
   tunables: {
     speed: number;
@@ -88,70 +76,46 @@ export interface NavCrowdSnapshot {
     arrived: boolean;
     polys: number[];
     waitingForPlan: boolean;
-    /** Links the remaining route crosses, the next one not yet finished, and whether it is underway. */
     links?: NavPathLink[];
     nextLink?: number;
     crossing?: boolean;
   }[];
 }
 
-/** Tunables for {@link createNavCrowd}, every one retunable in play. */
 export interface NavCrowdOptions {
   /** Default walking speed for agents that do not set their own. */
   speed?: number;
   radius?: number;
-  /** Distance to the goal that counts as arrived. Default 0.5. */
   goalRadius?: number;
-  /**
-   * Radius, in world units, over which agents targeting the same goal fan out onto distinct spots
-   * (`ai/crowd`'s stable per-id `spreadOffset`). `0` walks every agent to the exact goal. Default 0.
-   */
   spread?: number;
-  /** Distance to a waypoint that advances to the next one. Default 0.6. */
   waypointRadius?: number;
   /**
    * Most path searches one `tick` may run for queued agents. Default 8. A count, never a time: a crowd
    * that stopped planning when the machine was busy would walk differently on every replay.
    */
   replanBudget?: number;
-  /** Avoidance tuning for the internal {@link RvoCrowd}. */
   avoid?: Partial<RvoTunables>;
   /** Register a devtools probe under this name so the perf overlay shows crowd counters. */
   devtoolsName?: string;
-  /** Told when an agent starts and finishes crossing an off-mesh link (a door, ladder or jump). */
   onLink?: ((event: NavCrowdLinkEvent) => void) | undefined;
 }
 
-/**
- * Agents that cross an editor-baked nav mesh: each one plans a corridor with {@link NavRuntime},
- * walks the funnel-smoothed waypoints, and keeps its distance through reciprocal velocity obstacle
- * avoidance. Goals, arrivals and replans are serializable; a mesh edit only re-plans the agents
- * whose remaining route actually crossed the rebuilt region.
- */
 export interface NavCrowd {
-  /** Add an agent and plan its first route; false when the id is already present. */
   add(id: string, spec: NavCrowdAgentSpec): boolean;
   remove(id: string): boolean;
   has(id: string): boolean;
   count(): number;
   ids(): readonly string[];
-  /** Send an agent somewhere new; it re-plans on the next tick within the re-plan budget. */
   setGoal(id: string, goal: Vec3): boolean;
-  /** Plan one agent now, ignoring the budget. Returns false when no route exists. */
   plan(id: string): boolean;
   agent(id: string): NavCrowdAgentView | null;
   /** Advance every agent by `dt` seconds. */
   tick(dt: number): void;
-  /**
-   * Queue a re-plan for agents whose remaining route crossed polygons the last
-   * {@link NavRuntime.applyMesh} replaced or moved; routes on kept polygons are left intact.
-   */
   revalidate(stats: NavRebuildStats, region?: NavRegion): NavCrowdRevalidate;
   stats(): NavCrowdStats;
   retune(patch: NavCrowdOptions): void;
   snapshot(): NavCrowdSnapshot;
   restore(next: NavCrowdSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -222,7 +186,6 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
     onLink({ agent: agent.id, phase, link: crossing.link, from: [from[0], from[1], from[2]], to: [to[0], to[1], to[2]] });
   }
 
-  /** Report links the agent has stepped onto or off since the last waypoint change. */
   function syncLinks(agent: CrowdAgent): void {
     while (agent.nextLink < agent.links.length) {
       const crossing = agent.links[agent.nextLink]!;
@@ -239,7 +202,6 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
     }
   }
 
-  /** A route that is replaced or finished mid-crossing still closes the crossing it opened. */
   function dropLinks(agent: CrowdAgent): void {
     const open = agent.crossing ? agent.links[agent.nextLink] : undefined;
     if (open !== undefined) emitLink(agent, open, "exit");

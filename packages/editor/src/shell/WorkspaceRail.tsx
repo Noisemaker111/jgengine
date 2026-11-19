@@ -7,7 +7,6 @@ interface RailEntry {
   id: EditorWorkspace;
   label: string;
   icon: IconName;
-  /** False renders the mode as a visibly disabled, planned workspace. */
   supported: boolean;
 }
 

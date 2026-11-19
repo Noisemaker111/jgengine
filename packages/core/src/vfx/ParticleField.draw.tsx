@@ -7,7 +7,6 @@ import type { ParticleRenderHint } from "@jgengine/core/vfx/particleDirector";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** How particle fragments composite on screen. */
 export type ParticleBlending = "additive" | "normal";
 
 const VERTEX_SHADER = /* glsl */ `
@@ -113,9 +112,7 @@ const QUAD_FRAGMENT = /* glsl */ `
   }
 `;
 
-/** Floats per particle in a quad field's interleaved buffer: centre, end, velocity, colour, id, size, alpha. */
 const QUAD_STRIDE = 15;
-/** Floats per particle in a point field's interleaved buffer: position, colour, size, alpha. */
 const POINT_STRIDE = 8;
 
 const SHAPES: Record<ParticleRenderHint["shape"], number> ={ point: 0, streak: 1, flake: 2, flame: 3, smoke: 4, ribbon: 5, ripple: 6 };
@@ -131,10 +128,9 @@ export interface ParticleFieldMetrics {
   uploadSamples: number;
 }
 
-/** Props for the existing pooled particle renderer. @deprecated use {@link ParticleFieldDrawOptions} plus `system`. */
+/** @deprecated use {@link ParticleFieldDrawOptions} plus `system`. */
 export type ParticleFieldProps = ParticleFieldDrawOptions & { system: ParticleSystem };
 
-/** Materials of fields that left, by what they were made with, for the next field made the same way. */
 const spareFieldMaterials = new Map<string, THREE.ShaderMaterial[]>();
 const fieldMaterialKinds = new WeakMap<THREE.ShaderMaterial, string>();
 
@@ -155,7 +151,7 @@ export function takeFieldMaterial(quad: boolean, depthWrite: boolean, blending: 
   return made;
 }
 
-/** Hand a field's material back for the next field of its kind, keeping its program linked. @internal */
+/** @internal */
 export function returnFieldMaterial(material: THREE.ShaderMaterial): void {
   const kind = fieldMaterialKinds.get(material);
   if (kind === undefined) {
@@ -186,7 +182,7 @@ export function fieldPrograms(): { objects: THREE.Object3D[]; dispose(): void } 
   };
 }
 
-/** A field's geometry and the one interleaved buffer every per-particle value lives in. @internal */
+/** @internal */
 export interface FieldGeometry {
   geometry: THREE.BufferGeometry;
   packed: THREE.InterleavedBuffer;
@@ -229,7 +225,7 @@ export function createFieldGeometry(max: number, quad: boolean, ribbon: boolean)
   return { geometry, packed, quad, ribbon, indexById: new Map() };
 }
 
-/** Write a frame's live particles into the field's buffer, mark that range for upload, and draw that many. @internal */
+/** @internal */
 export function packFieldFrame(field: FieldGeometry, buffers: ParticleBuffers): void {
   const { geometry, packed, indexById } = field;
   const count = buffers.count;
@@ -275,13 +271,11 @@ export function packFieldFrame(field: FieldGeometry, buffers: ParticleBuffers): 
 }
 
 export interface ParticleFieldDrawOptions {
-  /** Disable when an external loop already advances this system. Default true; a function is read per frame. */
   advance?: boolean | (() => boolean);
   blending?: ParticleBlending;
   /** Pixel multiplier for point output. Quad outputs use particle sizes in world units. */
   scale?: number;
   depthWrite?: boolean;
-  /** Point, instanced sprite, velocity streak, connected ribbon, or ground ripple output. */
   render?: ParticleRenderHint | undefined;
   /** @internal Optional diagnostics; omitted in production. */
   metrics?: ParticleFieldMetrics | undefined;

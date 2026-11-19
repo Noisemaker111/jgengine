@@ -4,7 +4,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 type Inventories = Record<string, { hud?: string }>;
 
-/** Minimal playable slice — avoids coupling to shell vs core PlayableGame generics. @internal */
+/** @internal */
 export type HotbarPlayable = {
   game: { inventories?: Inventories; input?: ActionCodesMap };
 };

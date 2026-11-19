@@ -23,7 +23,6 @@ export const publishedPackages = [
 
 export type PublishedPackage = (typeof publishedPackages)[number];
 
-/** Published packages that release on their own cadence; every other one moves in lockstep with core. */
 export const separateCadencePackages: ReadonlySet<string> = new Set<PublishedPackage>(["jgengine"]);
 
 interface PackageJson {
@@ -83,7 +82,6 @@ export function exposedSubpathsForPackageDir(
   return [...subpaths].sort();
 }
 
-/** Whether a package has been built; only tarball/pack checks need dist. */
 export function distExists(pkg: PublishedPackage): boolean {
   try {
     return statSync(join(packageDir(pkg), "dist")).isDirectory();
@@ -198,7 +196,6 @@ function emittableSrcRelPaths(pkgDir: string, cfg: BuildTsconfig): string[] {
 
 const defaultBuildTsconfig: BuildTsconfig = { include: ["src"], exclude: [], rootDir: "src" };
 
-/** Package-relative `dist/<path>` (no extension) for every module the build emits. */
 export function emittedFilesForPackageDir(pkgDir: string, cfg = readBuildTsconfig(pkgDir) ?? defaultBuildTsconfig): string[] {
   const rootDir = cfg.rootDir.replace(/^\.\//, "").replace(/\/+$/, "");
   return emittableSrcRelPaths(pkgDir, cfg)

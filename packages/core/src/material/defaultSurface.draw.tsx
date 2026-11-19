@@ -97,10 +97,7 @@ export function detailMaps(): { normal: THREE.DataTexture; roughness: THREE.Data
   return cached;
 }
 
-/**
- * Props for {@link DefaultSurface}: a required base `color` plus optional PBR overrides.
- * @internal shell-internal default render surface; games never import it.
- */
+/** @internal shell-internal default render surface; games never import it. */
 export interface DefaultSurfaceProps
   extends Omit<MeshStandardMaterialParameters, "normalMap" | "roughnessMap"> {
   color: THREE.ColorRepresentation;

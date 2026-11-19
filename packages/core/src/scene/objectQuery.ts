@@ -17,7 +17,6 @@ export interface ObjectRaycastHit {
   normal: EntityPosition;
 }
 
-/** Optional broadphase for large object sets — typically `ObjectStore.inBox`. */
 export interface ObjectQueryBroadphase {
   inBox(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
 }

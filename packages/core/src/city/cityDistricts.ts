@@ -12,10 +12,8 @@
  */
 import type { CityLotClass, CityZoneBand, CityZoneProfile } from "./cityContent";
 
-/** A block's district character: what kind of place it reads as. */
 export type CityDistrictKind = "cbd" | "oldtown" | "residential" | "industrial" | "waterfront" | "suburb" | "rural";
 
-/** One development centre in district-local XZ. The first is always the primary (CBD) centre. */
 export interface CityCentre {
   x: number;
   z: number;
@@ -25,9 +23,7 @@ export interface CityCentre {
 /** The organic zoning field of one district (district-local XZ in metres). */
 export interface CityDistrictField {
   readonly centres: readonly CityCentre[];
-  /** Zone metric: ~0 at a centre, 1 at the rim — what the band extents threshold. */
   metric(x: number, z: number): number;
-  /** Index into {@link CityDistrictField.centres} of the centre whose pull dominates this spot. */
   centreAt(x: number, z: number): number;
   /** Development intensity 0..1: drives floor counts within a class's range. */
   intensity(x: number, z: number): number;
@@ -62,16 +58,11 @@ function waveField(rng: () => number, count: number, minFreq: number, maxFreq: n
   };
 }
 
-/** Superellipse norm (p = 2.6): rounder than the volume's Chebyshev square, squarer than a circle. */
 function roundedNorm(du: number, dv: number): number {
   const p = 2.6;
   return Math.pow(Math.pow(Math.abs(du), p) + Math.pow(Math.abs(dv), p), 1 / p);
 }
 
-/**
- * Grow a district's zoning field. Footprints a few blocks across get only the primary centre; larger
- * ones add secondary centres (one per ~40 block cells, up to three) spread around it.
- */
 export function cityDistrictField(options: {
   halfX: number;
   halfZ: number;
@@ -149,13 +140,8 @@ export function cityDistrictField(options: {
   };
 }
 
-/** Industry tendency above which a mid/edge block with sheds in its mix reads as an industrial estate. */
 const INDUSTRIAL_THRESHOLD = 0.64;
 
-/**
- * Name a block's character from its band, the centre that dominates it, the industry field, whether
- * it fronts water, and which classes its mix can grow at all.
- */
 export function districtCharacter(options: {
   band: CityZoneBand;
   primaryCentre: boolean;
@@ -173,7 +159,6 @@ export function districtCharacter(options: {
   return farm ? "rural" : "suburb";
 }
 
-/** How a character reweights its band's class mix (classes the mix lacks stay absent). */
 export const CHARACTER_CLASS_BIAS: Readonly<Record<CityDistrictKind, Partial<Record<CityLotClass, number>>>> = {
   cbd: { tower: 1.6, slab: 1, shop: 0.7, rowhouse: 0.4, house: 0.2, warehouse: 0.05 },
   oldtown: { shop: 1.8, rowhouse: 1.8, slab: 0.9, tower: 0.3, house: 0.6, warehouse: 0.05 },
@@ -184,10 +169,6 @@ export const CHARACTER_CLASS_BIAS: Readonly<Record<CityDistrictKind, Partial<Rec
   rural: {},
 };
 
-/**
- * How fully a character's blocks fill, as a multiplier on the district's `blockDensity`: a CBD
- * consumes its blocks wall to wall, a suburb keeps its yards.
- */
 export const CHARACTER_FILL: Readonly<Record<CityDistrictKind, number>> = {
   cbd: 1.2,
   oldtown: 1.1,

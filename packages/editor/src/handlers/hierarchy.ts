@@ -8,7 +8,6 @@ import {
 
 import type { HandlerTable } from "./context";
 
-/** Parent/child hierarchy and prefab library verbs. */
 export const hierarchyHandlers: Pick<
   HandlerTable,
   | "set_parent"

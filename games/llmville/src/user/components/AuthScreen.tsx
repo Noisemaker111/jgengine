@@ -31,7 +31,6 @@ const AUTH_COPY = {
   },
 } as const;
 
-/** What the auth form shows and does, from `useLoginForm` / `useSignupForm`. */
 export interface AuthFormVm {
   email: string;
   setEmail: (value: string) => void;
@@ -46,7 +45,6 @@ export interface AuthFormVm {
   guest: () => void;
 }
 
-/** The browser's form checks the page used to make: an address with an @, and a long enough new password. */
 export function authFormProblem(mode: AuthScreenMode, email: string, password: string): string | null {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Enter your email address.";
   if (password.length === 0) return "Enter your password.";
@@ -54,7 +52,6 @@ export function authFormProblem(mode: AuthScreenMode, email: string, password: s
   return null;
 }
 
-/** The form's own events go to the auth hooks, which only cancel the default; native has none. */
 const NATIVE_SUBMIT = { preventDefault: () => undefined } as unknown as FormEvent; // type-escape: the hooks read only preventDefault from the event
 
 export function AuthScreenView({ mode, playIntent, form }: { mode: AuthScreenMode; playIntent?: PlayEntryIntent | undefined; form: AuthFormVm }) {

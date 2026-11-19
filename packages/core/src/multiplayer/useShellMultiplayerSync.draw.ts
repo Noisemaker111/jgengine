@@ -9,7 +9,6 @@ import { attachWorldSync, type AuthoritativeFrameHandler } from "./authoritative
 import type { ShellMultiplayer } from "./multiplayer.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
-/** Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown. */
 export function useShellMultiplayerSync(
   ctx: GameContext | null,
   multiplayer: ShellMultiplayer | null,

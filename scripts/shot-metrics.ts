@@ -17,7 +17,6 @@ export type ShotMetrics = {
   structureShare: number;
   luminance: LuminanceStats;
   nonblank: boolean;
-  /** Fraction of the grid that survived masking; low means the HUD covers most of the region. */
   sampledShare?: number;
 };
 
@@ -27,9 +26,7 @@ export type ThresholdWarning = { metric: string; message: string };
 export type ShotRect = { x: number; y: number; width: number; height: number };
 
 export interface ShotRegion {
-  /** Restrict sampling to this rectangle — the 3D viewport, not the whole frame. */
   region?: ShotRect;
-  /** Rectangles to skip inside `region` — HUD panels drawn over the viewport. */
   masks?: readonly ShotRect[];
 }
 
@@ -39,7 +36,6 @@ export interface ShotRegion {
  */
 export const MIN_SAMPLED_SHARE = 0.15;
 
-/** Above this share of one color the region is a single flat fill — a dead 3D view. */
 export const DEAD_VIEW_DOMINANT_SHARE = 0.97;
 
 /**
@@ -67,11 +63,6 @@ export const DOMINANT_SHARE_SPARSE_THRESHOLD = 0.6;
 export const EDGE_DENSITY_PRIMITIVE_THRESHOLD = 0.04;
 export const CONTRAST_MURK_THRESHOLD = 60;
 
-/**
- * Luminance step that counts as a rendered edge. Deliberately smaller than
- * {@link EDGE_LUMINANCE_DELTA}: a night scene's silhouettes are steps of a few levels, while a
- * smooth sky or backdrop gradient moves by a fraction of a level between grid samples.
- */
 export const STRUCTURE_LUMINANCE_DELTA = 3;
 
 /**
@@ -197,12 +188,9 @@ export function computeShotMetrics(
   };
 }
 
-/** Signature grid size — small enough to store in a sidecar, dense enough to see a real change. */
 export const SIGNATURE_COLUMNS = 32;
 export const SIGNATURE_ROWS = 18;
-/** Per-cell luminance delta (0-255) below which a cell counts as unchanged. */
 export const SIGNATURE_CELL_DELTA = 3;
-/** Share of changed cells below which two shots are the same picture. */
 export const SIGNATURE_CHANGED_SHARE = 0.005;
 
 /**
@@ -231,7 +219,6 @@ export function shotSignature(
 export interface SignatureDiff {
   changedShare: number;
   maxDelta: number;
-  /** True when the two frames are the same picture within tolerance. */
   same: boolean;
 }
 
@@ -281,13 +268,10 @@ export function flatFrame(metrics: ShotMetrics): string | null {
 }
 
 export interface SceneFrameCheck {
-  /** Where the 3D canvas sits in the captured frame, absent when the page has no canvas at all. */
   region?: ShotRect;
-  /** Metrics over the whole frame. */
   frame: ShotMetrics;
   /** Canvas-region metrics, or null when the HUD covers too much of the canvas to judge it. */
   viewport: ShotMetrics | null;
-  /** Whether this capture promised a rendered game view (`--mode play|poster|preview`, `--view`, `--look`). */
   wantsScene: boolean;
   mode: string;
 }

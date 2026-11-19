@@ -148,7 +148,6 @@ export const claimCell = mutation({ args: { gameId: v.id("games"), cx: v.number(
   if (result.cost === 0) return { claimed: false, reason: "already_claimed" } as const;
   return { claimed: true, cost: result.cost } as const;
 } });
-/** One-shot upgrade: invoke until remaining is false, then remove the legacy table in a follow-up deployment. */
 export const migrateLegacyClaims = internalMutation({ args: {}, handler: async ctx => {
   const rows = await ctx.db.query("datacenterClaims").take(128);
   const migrated = await migrateLegacyRows(ctx, rows);

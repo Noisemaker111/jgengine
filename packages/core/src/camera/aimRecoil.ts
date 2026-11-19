@@ -14,15 +14,12 @@ export interface AimRecoil {
   kick(pitch: number, yaw?: number, recover?: number): void;
   /** Advance by `dt` seconds and return the look change to add this frame. */
   step(dt: number): { pitch: number; yaw: number };
-  /** Climb still owed back to the view, for tests and probes. */
   debt(): { pitch: number; yaw: number };
-  /** The recoil in flight, for a save, a replay or a host that moves the view between machines. */
   snapshot(): AimRecoilState;
-  /** Resume from a {@link AimRecoilState} taken by `snapshot()`. */
   restore(state: AimRecoilState): void;
 }
 
-/** Recoil still rising into the view, climb owed back, and the current settle rate. @internal */
+/** @internal */
 export interface AimRecoilState {
   risePitch: number;
   riseYaw: number;

@@ -1,4 +1,3 @@
-/** Options for {@link formatDuration}. */
 export interface DurationFormat {
   /** Fractional-second digits to show (0, 1, or 2). Defaults to 0. */
   decimals?: 0 | 1 | 2;
@@ -6,7 +5,6 @@ export interface DurationFormat {
   hours?: boolean;
 }
 
-/** Left-pad a non-negative integer to `width` digits with leading zeros. */
 export function padNumber(value: number, width: number): string {
   return Math.trunc(value).toString().padStart(width, "0");
 }
@@ -43,11 +41,7 @@ export function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string {
   return `${sign}${formatDuration(Math.abs(seconds), { decimals })}`;
 }
 
-/**
- * English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
- *
- * @capability ordinal-format format a placement number as 1st/2nd/3rd for HUD ranks
- */
+/** @capability ordinal-format format a placement number as 1st/2nd/3rd for HUD ranks */
 export function formatOrdinal(value: number): string {
   const n = Math.trunc(value);
   const abs = Math.abs(n) % 100;

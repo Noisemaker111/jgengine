@@ -341,7 +341,6 @@ export const tickServingIncomeBatch = internalMutation({
   },
 });
 
-/** Gross serving income per hour for a game — the yardstick cozy-event rewards scale against. */
 export async function scrapeLaneTflopsForGame(ctx: MutationCtx, game: Doc<"games">): Promise<number> {
   const racks = await gameRacks(ctx, game);
   const computeAssignments = assignmentsOf(racks, await gameModelIds(ctx, game._id));

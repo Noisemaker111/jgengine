@@ -148,13 +148,10 @@ function getWorkloadLight(workload: GpuSlotWorkload): { color: string; intensity
   return { color: WORKLOAD_COLORS[GPU_SPLOT_WORKLOAD.idle], intensity: 0 };
 }
 
-// ---------------------------------------------------------------------------
 // Draw-side builders (drei RoundedBox replicated as ExtrudeGeometry)
-// ---------------------------------------------------------------------------
 
 const BOX_BEVEL_EPSILON = 1e-5;
 
-/** drei `<RoundedBox radius smoothness={2}>` as raw geometry: epsilon-arc shape + bevelled extrude. */
 function roundedBoxGeometry(width: number, height: number, depth: number, radius: number): BufferGeometry {
   const inner = radius - BOX_BEVEL_EPSILON;
   const shape = new Shape();
@@ -296,9 +293,7 @@ function trackResources(root: Object3D): { geometries: Set<BufferGeometry>; mate
   return { geometries, materials };
 }
 
-// ---------------------------------------------------------------------------
 // Cabinet sub-builders
-// ---------------------------------------------------------------------------
 
 function buildCapabilityMarks(parent: Group, profile: RackCabinetProfile, slotCount: number, rackType: InfrastructureBuildItemId, isValid: boolean): void {
   const faceZ = profile.depth / 2 + 0.09;

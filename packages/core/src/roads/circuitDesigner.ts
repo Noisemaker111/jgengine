@@ -32,7 +32,6 @@ import type { StreetVec2 } from "./streetGenerator";
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
 
-/** The corner grammar. Inserts (`chicane`, `esses`, and paired `kink`s) have zero net turn. */
 export type CircuitCornerKind = "hairpin" | "slow" | "medium" | "sweeper" | "kink" | "carousel" | "double-apex" | "chicane" | "esses";
 
 /** The lap-length dial a closed circuit is designed to (and a street race searches for). */
@@ -48,61 +47,42 @@ export const CIRCUIT_LAP_LENGTH_FIELD = {
   explore: [400, 6000],
 } as const;
 
-/** What the designer reads. Dials are the street generator's, read the circuit way. */
 export interface CircuitDesignInput {
   /** Target lap length, m. Shortened only when the volume cannot hold it. */
   lapLength: number;
-  /** Volume half extents, m. */
   halfX: number;
   halfZ: number;
-  /** Nominal track width, m. */
   width: number;
-  /** 0 = few, fast corners (high-speed) … 1 = many, slow ones (technical). */
   winding: number;
-  /** 0 = free headings … 1 = headings pulled to the axes, 90° street corners. */
   gridness: number;
-  /** 0 = an open lap round its footprint … 1 = folded back into bays, packed tight. */
   compactness: number;
-  /** Tightest corner radius, m (the hairpins sit just above it). */
   minRadius: number;
-  /** Figure-8: the lap crosses itself once, grade-separated. */
   crossover: boolean;
-  /** Build a pit lane beside the start straight. */
   pitLane: boolean;
-  /** Steepest road grade (rise/run). */
   maxGrade: number;
-  /** Road-surface relief field, when the network has elevation. */
   elevationAt?: ((x: number, z: number) => number) | undefined;
-  /** Seeded random streams. */
   streams: (stream: string) => () => number;
 }
 
-/** One designed corner (one arc of a complex), positions as arc length from the start of the start straight. */
 export interface CircuitDesignCorner {
   kind: CircuitCornerKind;
   entry: number;
   apex: number;
   exit: number;
-  /** Arc radius, m. */
   radius: number;
   /** Signed turn, radians: positive turns left of travel. */
   turn: number;
-  /** Complex this arc belongs to (arcs of one chicane share it). */
   complex: number;
-  /** True for the heavy-braking corner at the end of a long straight. */
   heavy: boolean;
 }
 
-/** A run of zero curvature, positions as arc length. */
 export interface CircuitDesignStraight {
   from: number;
   to: number;
   length: number;
-  /** One of the long overtaking straights. */
   long: boolean;
 }
 
-/** A garage box beside the pit lane. */
 export interface CircuitGarage {
   x: number;
   z: number;
@@ -110,63 +90,50 @@ export interface CircuitGarage {
   heading: number;
 }
 
-/** The pit lane: splits off the start straight, runs parallel behind the pit wall, rejoins before turn 1. */
 export interface CircuitPitLane {
-  /** Centerline from the split (on the lap) to the merge (on the lap). */
   points: StreetVec2[];
   heights?: number[];
   width: number;
-  /** Arc length on the lap where it splits off and rejoins. */
   entry: number;
   exit: number;
-  /** Which side of travel it runs on: -1 left, 1 right. */
   side: -1 | 1;
   garages: CircuitGarage[];
   /** Pit speed limit, m/s. */
   speedLimit: number;
 }
 
-/** A run-off area on one side of the track: gravel trap or asphalt. */
 export interface CircuitRunoff {
   from: number;
   to: number;
   side: -1 | 1;
-  /** Strip width across, m (from the road edge out). */
   depth: number;
   surface: "gravel" | "asphalt";
-  /** Strip centerline (road edge + depth/2). */
   points: StreetVec2[];
 }
 
-/** A permanent wall run beside the track: tyre wall, armco or concrete (pit) wall. */
 export interface CircuitWall {
   kind: "tyres" | "armco" | "wall";
   side: -1 | 1;
   points: StreetVec2[];
 }
 
-/** A grandstand spot facing the track. */
 export interface CircuitGrandstand {
   x: number;
   z: number;
   /** Yaw (radians) the seats face. */
   heading: number;
-  /** Stand length along the track, m. */
   length: number;
 }
 
-/** A grade-separated crossing of a figure-8: one pass bridges over the other. */
 export interface CircuitCrossing {
   x: number;
   z: number;
-  /** Arc length of the upper and lower pass. */
   over: number;
   under: number;
   overHeight: number;
   underHeight: number;
 }
 
-/** One braking zone of the simulated lap, as arc lengths. */
 export interface CircuitDesignBrake {
   from: number;
   to: number;
@@ -174,32 +141,23 @@ export interface CircuitDesignBrake {
   exitSpeed: number;
 }
 
-/** A designed lap and its dressing. Index 0 is the start of the start straight; arrays are per centerline sample. */
 export interface CircuitDesign {
   centerline: StreetVec2[];
-  /** Arc spacing of the samples, m. */
   step: number;
   length: number;
-  /** Signed curvature per sample, 1/m (positive = left). */
   curvature: number[];
-  /** True on zero-curvature samples. */
   straight: boolean[];
   widths: number[];
-  /** Road-surface height per sample — present with elevation or a crossover. */
   heights?: number[];
   /** Road roll per sample, radians: positive raises the right edge (banked into a left-hander). */
   banking: number[];
-  /** Nominal track width. */
   width: number;
   corners: CircuitDesignCorner[];
   straights: CircuitDesignStraight[];
-  /** The start/finish straight, as arc lengths (from is 0). */
   startStraight: { from: number; to: number };
-  /** Simulated elapsed time per sample, s, and the lap time. */
   time: number[];
   lapTime: number;
   brakingZones: CircuitDesignBrake[];
-  /** Arc lengths just past significant corner exits — where timing sectors read best. */
   sectorBreaks: number[];
   pit?: CircuitPitLane;
   runoff: CircuitRunoff[];
@@ -208,7 +166,6 @@ export interface CircuitDesign {
   crossings: CircuitCrossing[];
 }
 
-// ---------------------------------------------------------------------------------------------------
 // Corner grammar → curvature pieces
 
 interface ArcSpec {
@@ -222,7 +179,6 @@ interface ComplexSpec {
   pieces: Piece[];
   heavy: boolean;
 }
-/** A curvature segment: linear curvature from k0 to k1 over len (constant = arc, ramp = clothoid). */
 interface Seg {
   len: number;
   k0: number;
@@ -271,9 +227,7 @@ const SPIRAL: Record<CircuitCornerKind, number> = {
   esses: 0.28,
 };
 
-/** Corner records count arcs of at least this much turn. */
 const CORNER_MIN_TURN = 10 * DEG;
-/** Radius at or below which a corner counts as tight, and at or above which as fast. */
 const TIGHT_R = 14.4;
 const FAST_R = 126;
 
@@ -281,7 +235,6 @@ function single(kind: CircuitCornerKind, r: number, turn: number, heavy = false)
   return { kind, heavy, pieces: [{ arc: { r, turn, spiral: SPIRAL[kind] } }] };
 }
 
-// ---------------------------------------------------------------------------------------------------
 // Integration
 
 interface Walker {
@@ -299,7 +252,6 @@ interface Dense {
   item: number[];
 }
 
-/** Advance along one segment (scaled), optionally recording sub-step end points. */
 function walkSeg(seg: Seg, scale: number, at: Walker, maxSub: number, out?: Dense, tag = -1, item = -1): void {
   const len = seg.len * scale;
   if (len <= 0) return;
@@ -333,7 +285,6 @@ function walkSeg(seg: Seg, scale: number, at: Walker, maxSub: number, out?: Dens
   at.s += len;
 }
 
-// ---------------------------------------------------------------------------------------------------
 // Linear closure solve
 
 interface Var {
@@ -416,13 +367,11 @@ function solveClosure(vars: Var[], length: number | null): number[] | null {
   return null;
 }
 
-// ---------------------------------------------------------------------------------------------------
 // Skeletons
 
 interface Skeleton {
   headings: number[];
   lengths: number[];
-  /** Edges that cross (figure-8). */
   crossing: number[];
 }
 
@@ -445,7 +394,6 @@ function segmentsCross(a: StreetVec2, b: StreetVec2, c: StreetVec2, d: StreetVec
   return t > 1e-6 && t < 1 - 1e-6 && u > 1e-6 && u < 1 - 1e-6;
 }
 
-/** Turn vertices into edge vectors, merging near-collinear neighbours; null if degenerate. */
 function skeletonFromVectors(vectors: [number, number][], crossingPolygon: boolean): Skeleton | null {
   let vecs = vectors.filter((v) => Math.hypot(v[0], v[1]) > 1e-6);
   for (let guard = 0; guard < 24; guard += 1) {
@@ -629,7 +577,6 @@ function figure8Skeleton(rng: () => number): Skeleton | null {
   return skeletonFromVectors(vecs, true);
 }
 
-// ---------------------------------------------------------------------------------------------------
 // Candidates
 
 interface Dials {
@@ -641,7 +588,6 @@ interface Dials {
   /** Radius scale for every corner above the hairpins: 1 on a full-size lap (≥ 2.4 km), smaller on a
    *  short lap so its sweepers still fit between the straights. */
   scale: number;
-  /** Radius from which a corner counts as fast (scaled with the lap). */
   fastR: number;
 }
 
@@ -687,7 +633,6 @@ function tightRadius(rng: () => number, minR: number): number {
   return minR <= TIGHT_R ? Math.min(TIGHT_R, minR * uni(rng, 1, 1.2)) : minR * uni(rng, 1, 1.15);
 }
 
-/** The corner complex a skeleton vertex gets, from its turn, its role and the dials. */
 function vertexComplex(rng: () => number, turn: number, heavy: boolean, d: Dials): ComplexSpec {
   const deg = Math.abs(turn) / DEG;
   const g = d.gridness;
@@ -778,7 +723,6 @@ function insertComplex(rng: () => number, kind: InsertKind, d: Dials): ComplexSp
   return { kind: "kink", heavy: false, pieces: [{ arc: { r, turn: phi, spiral: SPIRAL.kink } }, { gap: uni(rng, 25, 70) }, { arc: { r, turn: -phi, spiral: SPIRAL.kink } }] };
 }
 
-/** Displacement, length and end heading of a complex at unit scale, entry heading 0. */
 function unitShape(segs: readonly Seg[]): { dx: number; dy: number; len: number } {
   const at: Walker = { x: 0, y: 0, h: 0, s: 0 };
   for (const seg of segs) walkSeg(seg, 1, at, Infinity);
@@ -1038,7 +982,6 @@ function buildCandidate(rng: () => number, lap: number, dials: Dials, figure8: b
   return { items, corners, dense, length: total, rotation: 0, fitRatio: Infinity, score: -Infinity, longItems, crossing: figure8 };
 }
 
-// ---------------------------------------------------------------------------------------------------
 // Sampling helpers
 
 interface Sampled {
@@ -1050,7 +993,6 @@ interface Sampled {
   step: number;
 }
 
-/** Resample the dense lap to a uniform arc step (index 0 at arc 0). */
 function resampleDense(dense: Dense, length: number, step: number): Sampled {
   const n = Math.max(16, Math.floor(length / step + SAMPLE_ROUND));
   const spacing = length / n;
@@ -1078,7 +1020,6 @@ function resampleDense(dense: Dense, length: number, step: number): Sampled {
   return out;
 }
 
-/** Spatial hash over sample indices. */
 class PointGrid {
   private readonly cells = new Map<number, number[]>();
   constructor(
@@ -1096,7 +1037,6 @@ class PointGrid {
   private key(ix: number, iy: number): number {
     return (ix + 4096) * 8192 + (iy + 4096);
   }
-  /** Visit every indexed point within `radius` of (x, y). */
   near(x: number, y: number, radius: number, visit: (i: number, d: number) => void): void {
     const r = Math.ceil(radius / this.cell);
     const cx = Math.floor(x / this.cell);
@@ -1119,7 +1059,6 @@ const arcGap = (a: number, b: number, length: number): number => {
   return Math.min(d, length - d);
 };
 
-/** The one designed crossing of a figure-8 (segment pair), or every crossing found. */
 function findCrossings(xs: readonly number[], ys: readonly number[], step: number): { i: number; j: number; x: number; y: number; angle: number }[] {
   const n = xs.length;
   const grid = new PointGrid(xs, ys, 20);
@@ -1142,11 +1081,6 @@ function findCrossings(xs: readonly number[], ys: readonly number[], step: numbe
   return found;
 }
 
-/**
- * Hard geometry check: no two stretches of road far apart along the lap come within a safe gap (a
- * near-parallel pass or a fold), apart from the designed figure-8 crossing. Returns the worst margin
- * (negative = fail).
- */
 function clearanceMargin(sampled: Sampled, length: number, width: number, crossings: readonly { i: number; j: number }[]): number {
   const { x, y, step } = sampled;
   const n = x.length;
@@ -1178,7 +1112,6 @@ function clearanceMargin(sampled: Sampled, length: number, width: number, crossi
   return worst;
 }
 
-/** Best rotation to fit the volume: the smallest bbox/usable ratio over 48 headings. */
 function bestFit(xs: readonly number[], ys: readonly number[], ux: number, uy: number): { rotation: number; ratio: number; cx: number; cy: number } {
   let best = { rotation: 0, ratio: Infinity, cx: 0, cy: 0 };
   for (let r = 0; r < 48; r += 1) {
@@ -1213,8 +1146,6 @@ function quantile(values: readonly number[], q: number): number {
   return s[lo]! + (s[hi]! - s[lo]!) * (i - lo);
 }
 
-/** Score a candidate (higher is better); acceptance failures cost heavily but stay comparable. */
-/** Coarse check that a pit lane fits beside the start straight on at least one side. */
 function pitFits(cand: Candidate, sampled: Sampled, width: number): boolean {
   const start = cand.items[0]!;
   const length = start.type === "straight" ? start.value : 0;
@@ -1302,10 +1233,8 @@ function scoreCandidate(cand: Candidate, sampled: Sampled, d: Dials, lapTarget: 
   return score;
 }
 
-// ---------------------------------------------------------------------------------------------------
 // Dressing
 
-/** Unit right-of-travel normal at sample i: (dz, −dx) of the local tangent. */
 function rightNormal(xs: readonly number[], ys: readonly number[], i: number): [number, number] {
   const n = xs.length;
   const dx = xs[(i + 1) % n]! - xs[(i - 1 + n) % n]!;
@@ -1328,7 +1257,6 @@ function circularSmooth(values: number[], window: number): number[] {
   return out;
 }
 
-/** Raise-only grade cap on a closed profile: the smallest Lipschitz-`grade` profile above `h`. */
 function gradeEnvelope(h: number[], step: number, grade: number): number[] {
   const n = h.length;
   const out = h.slice();
@@ -1408,7 +1336,6 @@ export function designCircuit(input: CircuitDesignInput): CircuitDesign {
   return dressDesign(best, input, d, step);
 }
 
-/** A rounded rectangle that fits anything: shrinks until it fits the usable box. */
 function fallbackCandidate(lap: number, d: Dials, ux: number, uy: number): Candidate {
   let length = Math.min(lap, 2 * (ux + uy) * 1.6);
   for (let guard = 0; guard < 30; guard += 1) {

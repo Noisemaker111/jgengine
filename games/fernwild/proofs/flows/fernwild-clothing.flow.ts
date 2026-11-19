@@ -11,7 +11,6 @@ const PIECES = [
 const ITEMS = PIECES.map(([item]) => item);
 const SLOTS = PIECES.map(([, slot]) => slot);
 
-/** Cloth on the survivor's body: each piece put on in turn, in the inventory pane, taken off, then worn walking and in first person. */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

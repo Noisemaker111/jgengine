@@ -1,34 +1,23 @@
-/**
- * Where each frame goes: the record of one frame (CPU per system, GPU per render pass, draws, shader
- * compiles, uploads, heap) and the summary of a window of them (percentiles, the costliest systems,
- * passes, objects and materials, and every hitch with what caused it). This file is the arithmetic;
- * `frameBreakdown.draw.ts` fills the records from a live renderer.
- */
-
 /** A frame slower than this is a hitch: two frames missed at 60 Hz. */
 export const HITCH_MS = 33;
 
-/** Receives counts from instrumented work while deep frame diagnostics are active. @internal */
+/** @internal */
 export type FrameWorkObserver = (name: string, count: number) => void;
 let workObserver: FrameWorkObserver | null = null;
 
-/** Install or remove the active frame's work-count receiver. @internal */
+/** @internal */
 export function observeFrameWork(observer: FrameWorkObserver | null): void { workObserver = observer; }
 
 /** Current receiver, or null when detailed counts are disabled. @internal */
 export function frameWorkObserver(): FrameWorkObserver | null { return workObserver; }
 
-/** One frame, as the hooks saw it. GPU times arrive a few frames late; `gpu` is null until they do. */
 export interface FrameBreakdownRecord {
-  /** Time since the previous frame started (the frame interval the player sees). */
   intervalMs: number;
-  /** Main-thread work: from the first frame callback to the end of the last render call. */
   workMs: number;
   /** Simulation milliseconds inside this frame (input, fixed steps, actions); absent when no sim driver ran. */
   simMs?: number;
   /** CPU milliseconds by system: sim phases and stages, frame callbacks, render submission, passes. */
   cpu: Record<string, number>;
-  /** Calls observed in timed scopes, not the number of items processed. */
   calls?: Record<string, number>;
   /** GPU milliseconds by render pass (shadow, main, each post pass); null while unresolved or unsupported. */
   gpu: Record<string, number> | null;
@@ -40,7 +29,6 @@ export interface FrameBreakdownRecord {
    */
   compiles: number;
   compileMs: number;
-  /** The draws that waited on a shader program this frame, as "material on object". */
   shaders?: string[];
   /**
    * Draws that ran a program with a vertex layout or target it had not drawn with before, as
@@ -48,7 +36,6 @@ export interface FrameBreakdownRecord {
    * process, so the frame stalls with nothing on the page's own clock.
    */
   firstDraws?: string[];
-  /** Where each program linked this frame was asked for: the first game or engine function on its stack. */
   links?: string[];
   /** Texture and buffer uploads this frame: calls, bytes and main-thread milliseconds. */
   uploads: number;
@@ -59,7 +46,6 @@ export interface FrameBreakdownRecord {
   heapDropMb: number;
 }
 
-/** One object or material's share of the draws: totals while gathering, per-frame averages in a summary. */
 export interface DrawCost {
   label: string;
   draws: number;
@@ -68,7 +54,6 @@ export interface DrawCost {
   cpuMs: number;
   /** GPU milliseconds its draws took, each timed on its own; only in a window timed by draws. */
   gpuMs?: number;
-  /** The pass its draws were mostly in (shadow, main, a post pass). */
   pass: string;
 }
 
@@ -81,7 +66,6 @@ export interface DrawCost {
  */
 export type GpuTiming = "span" | "draws";
 
-/** A frame over {@link HITCH_MS}, with the cause read from what happened inside it. */
 export interface Hitch {
   /** Seconds since the window started. */
   atS: number;
@@ -93,37 +77,29 @@ export interface Hitch {
    * card or a full-screen cover. The stall froze that, not the game. Absent when the world showed.
    */
   covered?: "travel card" | "canvas cover";
-  /** The scripts the browser's long-animation-frame timing saw run during this frame, longest first. */
   scripts?: HitchScript[];
 }
 
-/** One script the browser ran inside a slow frame, as its long-animation-frame timing names it. */
 export interface HitchScript {
   ms: number;
-  /** What called it: `FrameRequestCallback`, `MessagePort.onmessage` (the UI scheduler), `DOMWindow.onkeydown`, a promise. */
   invoker: string;
-  /** `function url:char` in the generated bundle; a harness rewrites it to a source line. */
   source: string;
-  /** Style and layout the script forced synchronously. */
   layoutMs: number;
 }
 
-/** The fields of one `PerformanceLongAnimationFrameTiming` the hitch log reads. @internal */
+/** @internal */
 export interface LongFrameTiming {
   startTime: number;
   duration: number;
   scripts: readonly { startTime: number; duration: number; invoker: string; source: string; layoutMs: number }[];
 }
 
-/** Every hitch of a play session, not only the frames still in the breakdown's window. */
 export interface HitchSession {
   /** Seconds since install or the last reset. */
   seconds: number;
   frames: number;
-  /** Megabytes the heap dropped between frames over the session (collections). */
   gcMb: number;
   hitches: Hitch[];
-  /** Hitches past the log's limit, counted but not kept. */
   dropped: number;
 }
 
@@ -160,7 +136,6 @@ const PROGRAM_KEY_FLAGS: readonly (readonly string[])[] = [
 ];
 const PRECISIONS = new Set(["highp", "mediump", "lowp"]);
 
-/** The defines in a key's `name,value` pairs, as `NAME=value`. */
 function definesOf(parts: readonly string[], end: number): Map<string, string> {
   const defines = new Map<string, string>();
   for (let index = 1; index + 1 < end; index += 2) defines.set(parts[index] ?? "", parts[index + 1] ?? "");
@@ -261,7 +236,6 @@ export function linkCaller(stack: string): string | null {
   return null;
 }
 
-/** "; linked from …" for a compile hitch no draw named: each caller once, with how many it linked. */
 function linkedFrom(links: readonly string[] | undefined): string {
   if (links === undefined || links.length === 0) return "";
   const counts = new Map<string, number>();
@@ -270,7 +244,6 @@ function linkedFrom(links: readonly string[] | undefined): string {
   return `, linked from ${named.join(", ")}`;
 }
 
-/** A vertex attribute as three keeps it: plain, or interleaved (its array on `data`). */
 export interface LayoutAttribute {
   itemSize?: number;
   normalized?: boolean;
@@ -307,12 +280,7 @@ export function targetLayout(target: { textures?: readonly { type?: number }[]; 
   return `${types.length > 1 ? `${types.length}× ` : ""}${[...new Set(types)].join("+")}${(target.samples ?? 0) > 0 ? " msaa" : ""}`;
 }
 
-/**
- * The scripts that ran inside a frame that ended at `endMs` after `intervalMs`, longest first, and
- * the cause they make it when the frame's own record named nothing: a slow frame with no compile,
- * upload, collection, system or pass is the browser running something else, and this says what.
- * @internal
- */
+/** @internal */
 export function attributeHitch(
   base: Pick<Hitch, "cause" | "detail">,
   endMs: number,
@@ -339,7 +307,6 @@ export function attributeHitch(
   return top.length === 0 ? base : { ...base, scripts: top };
 }
 
-/** Percentiles of one series. */
 export interface Spread {
   p50: number;
   p95: number;
@@ -348,44 +315,28 @@ export interface Spread {
   avg: number;
 }
 
-/** A named cost over the window: its average per frame and its 95th percentile. */
 export interface NamedCost {
   name: string;
   avgMs: number;
   p95Ms: number;
 }
 
-/** A window of frames, summarized for a person or a diff. */
 export interface FrameBreakdownSummary {
   frames: number;
   seconds: number;
-  /** The frame interval: what the player sees. */
   frame: Spread;
-  /** Main-thread work per frame: what a frame costs the CPU, whatever the display's refresh. */
   work: Spread;
-  /**
-   * Simulation time inside each frame, 0 for a frame without the sim driver. Its p99 and max are the
-   * frames that carry a fixed step; `ahead:*` CPU rows are steps run between frames instead. Absent on
-   * older records.
-   */
   sim?: Spread;
   /** Share of frames, 0..1, whose interval is over twice the median: the stutters a player sees. Absent on older records. */
   longShare?: number;
-  /** GPU time per frame over the frames whose timers resolved; null where timer queries are unsupported. */
   gpu: Spread | null;
-  /** Frames with complete GPU timings, or absent in an older saved record. */
   gpuFrames?: number;
-  /** How the window's GPU times were taken; absent in an older record, which timed spans. */
   gpuTiming?: GpuTiming;
   cpu: NamedCost[];
   passes: NamedCost[];
-  /** Calls per frame for observed scopes. Missing on older records. */
   calls?: { name: string; avg: number; max: number }[];
-  /** Number of CPU and call rows omitted by the summary limit. */
   omitted?: { cpu: number; calls: number };
-  /** Detailed work counters cover only instrumented owners; absent on older records. */
   workCounts?: "enabled" | "disabled";
-  /** Callback source lookup coverage, when the performance harness attempted it. */
   sources?: { resolved: number; unresolved: number; error?: string };
   /** Observations omitted because the recorder's retention limits were reached. */
   retention?: { callbacks: number; draws: number; passes: number; subscribers: number; shaders: number };
@@ -407,16 +358,12 @@ export interface FrameBreakdownSummary {
   hitches: Hitch[];
 }
 
-/** A running breakdown, as `installFrameBreakdown` returns it and `window.__jg?.frames` holds it. */
 export interface FrameBreakdown {
-  /** The window so far, or its last `last` frames. */
   summary(options?: { top?: number; last?: number }): FrameBreakdownSummary;
   records(): FrameBreakdownRecord[];
   /** Each `frame#<n>` label with the frame callback it times, so a harness can name its source file. */
   callbacks(): Record<string, (...args: never[]) => void>;
-  /** Every hitch since install or the last reset, however long ago, each with the scripts that ran in it. */
   session(): HitchSession;
-  /** Switch how the GPU is timed (when given) and return the mode in force; reset after switching. */
   gpuTiming(mode?: GpuTiming): GpuTiming;
   reset(): void;
   dispose(): void;
@@ -434,7 +381,7 @@ const round = (value: number, digits = 2): number => {
   return Math.round(value * scale) / scale;
 };
 
-/** Share of `intervals` over twice their median, 0 for an empty list. @internal */
+/** @internal */
 export function longShareOf(intervals: readonly number[]): number {
   if (intervals.length === 0) return 0;
   const sorted = [...intervals].sort((a, b) => a - b);
@@ -444,7 +391,7 @@ export function longShareOf(intervals: readonly number[]): number {
   return round(long / intervals.length, 4);
 }
 
-/** p50/p95/p99/max/avg of a series; zeros for an empty one. @internal */
+/** @internal */
 export function spread(values: readonly number[]): Spread {
   if (values.length === 0) return { p50: 0, p95: 0, p99: 0, max: 0, avg: 0 };
   const sorted = [...values].sort((a, b) => a - b);
@@ -459,7 +406,6 @@ export function spread(values: readonly number[]): Spread {
   };
 }
 
-/** Average and p95 of each named cost across frames; a frame without the name counts as 0. */
 function namedCosts(frames: readonly Record<string, number>[], top: number): NamedCost[] {
   const names = new Set<string>();
   for (const frame of frames) for (const name of Object.keys(frame)) names.add(name);
@@ -471,12 +417,7 @@ function namedCosts(frames: readonly Record<string, number>[], top: number): Nam
   return costs.sort((a, b) => b.avgMs - a.avgMs).slice(0, top);
 }
 
-/**
- * What made a slow frame slow, read in order of how sure the signal is: a shader compile or a large
- * upload stalls the main thread outright, a heap drop is a collection, then the costliest system or
- * GPU pass; anything left is outside the game (the browser, the compositor, the OS).
- * @internal
- */
+/** @internal */
 export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | "detail"> {
   const which = record.shaders !== undefined && record.shaders.length > 0 ? ` for ${record.shaders.slice(0, 3).join(", ")}` : "";
   if (record.compileMs >= 2) {
@@ -502,7 +443,7 @@ export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | 
   return { cause: "other", detail: `${round(record.intervalMs - record.workMs, 1)} ms outside the game's frame work (browser, compositor, OS)${largest}${firsts}` };
 }
 
-/** Summarize a window of frames plus the draw costs gathered over it. @internal */
+/** @internal */
 export function summarizeBreakdown(
   records: readonly FrameBreakdownRecord[],
   draws: { objects: readonly DrawCost[]; materials: readonly DrawCost[] },

@@ -10,20 +10,13 @@ import {
 } from "./grid";
 import type { EditorVec3 } from "./types";
 
-/**
- * Options for importing an ASCII/glyph map into a grid layer. Provide `glyphMap` (char → value id)
- * or a `palette` whose entries carry `glyph`s (or both — `glyphMap` wins on conflict). Any glyph
- * not mapped, and any short-row padding, resolves to `empty`.
- * @capability editor-grid-import Configure an ASCII/glyph → grid-layer import.
- */
+/** @capability editor-grid-import Configure an ASCII/glyph → grid-layer import. */
 export interface AsciiGridImportOptions {
   id: string;
   kind: string;
   label?: string;
-  /** Explicit char → value id map. Merged over glyphs derived from `palette`. */
   glyphMap?: Record<string, string>;
   palette?: readonly EditorGridPaletteEntry[];
-  /** Value id for unmapped glyphs and ragged-row padding. Default `""`. */
   empty?: string;
   cellSize?: number;
   origin?: EditorVec3;
@@ -83,20 +76,13 @@ export function importAsciiGrid(text: string, options: AsciiGridImportOptions): 
   });
 }
 
-/** Options for rendering a grid layer back out as an ASCII/glyph map. */
 export interface AsciiGridExportOptions {
   /** value id → char. Defaults to the layer's palette glyphs. */
   glyphMap?: Record<string, string>;
-  /** Char emitted for empty cells. Default `"."`. */
   emptyGlyph?: string;
 }
 
-/**
- * Renders a grid layer back to an ASCII/glyph map (rows top to bottom). Value ids map to chars via
- * the layer palette (or an override map); empty cells become `emptyGlyph`. Round-trips with
- * {@link importAsciiGrid} when the glyph legend matches.
- * @capability editor-grid-import Export a grid layer as an ASCII/glyph map.
- */
+/** @capability editor-grid-import Export a grid layer as an ASCII/glyph map. */
 export function exportAsciiGrid(layer: EditorGridLayer, options: AsciiGridExportOptions = {}): string {
   const glyphMap = options.glyphMap ?? gridGlyphMap(layer);
   const emptyGlyph = options.emptyGlyph ?? ".";
@@ -113,14 +99,11 @@ export function exportAsciiGrid(layer: EditorGridLayer, options: AsciiGridExport
   return lines.join("\n");
 }
 
-/** Options for importing a CSV grid (one value id per cell). */
 export interface CsvGridImportOptions {
   id: string;
   kind: string;
   label?: string;
-  /** Field separator. Default `","`. */
   delimiter?: string;
-  /** Value id for blank fields and ragged-row padding. Default `""`. */
   empty?: string;
   cellSize?: number;
   origin?: EditorVec3;
@@ -168,19 +151,12 @@ export function importCsvGrid(text: string, options: CsvGridImportOptions): Edit
   });
 }
 
-/** Options for exporting a grid layer as CSV. */
 export interface CsvGridExportOptions {
-  /** Field separator. Default `","`. */
   delimiter?: string;
-  /** Text emitted for empty cells. Default `""`. */
   emptyField?: string;
 }
 
-/**
- * Renders a grid layer as CSV — one row per line, each cell's value id as a field, empty cells as
- * `emptyField`. Round-trips with {@link importCsvGrid}.
- * @capability editor-grid-import Export a grid layer as CSV.
- */
+/** @capability editor-grid-import Export a grid layer as CSV. */
 export function exportCsvGrid(layer: EditorGridLayer, options: CsvGridExportOptions = {}): string {
   const delimiter = options.delimiter ?? ",";
   const emptyField = options.emptyField ?? "";

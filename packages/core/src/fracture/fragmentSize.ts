@@ -14,26 +14,21 @@ export interface FragmentSizes {
   masses: readonly number[];
 }
 
-/** A least-squares fit and its coefficient of determination. */
 export interface SizeFit {
   r2: number;
-  /** Points the fit used. */
   points: number;
 }
 
-/** Rosin–Rammler: passing P(x) = 1 − exp(−(x/scale)^spread); `scale` is the 63.2% passing size. */
 export interface RosinRammlerFit extends SizeFit {
   scale: number;
   spread: number;
 }
 
-/** Gaudin–Schuhmann: passing P(x) = (x/maxSize)^exponent in the fines. */
 export interface GaudinSchuhmannFit extends SizeFit {
   maxSize: number;
   exponent: number;
 }
 
-/** JKMRC drop-weight law: t10 = A (1 − e^(−b E_cs)), t10 in percent, E_cs in kWh/t. */
 export interface T10Fit extends SizeFit {
   a: number;
   b: number;
@@ -42,10 +37,7 @@ export interface T10Fit extends SizeFit {
 /** 1 kWh/t in J/kg. */
 export const KWH_PER_TONNE = 3600;
 
-/**
- * Mass fraction of fragments smaller than `size`.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function passingFraction(fragments: FragmentSizes, size: number): number {
   let total = 0;
   let passing = 0;
@@ -56,34 +48,22 @@ export function passingFraction(fragments: FragmentSizes, size: number): number 
   return total > 0 ? passing / total : 0;
 }
 
-/**
- * t10, percent: the mass passing a tenth of the parent size, the JKMRC fineness index.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function t10(fragments: FragmentSizes, parentSize: number): number {
   return 100 * passingFraction(fragments, parentSize / 10);
 }
 
-/**
- * Rosin–Rammler passing fraction at `size`.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function rosinRammler(size: number, scale: number, spread: number): number {
   return size <= 0 ? 0 : 1 - Math.exp(-((size / scale) ** spread));
 }
 
-/**
- * Gaudin–Schuhmann passing fraction at `size`, capped at 1.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function gaudinSchuhmann(size: number, maxSize: number, exponent: number): number {
   return size <= 0 ? 0 : Math.min(1, (size / maxSize) ** exponent);
 }
 
-/**
- * The JKMRC t10, percent, at specific energy `energy` kWh/t.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function jkT10(energy: number, a: number, b: number): number {
   return a * (1 - Math.exp(-b * Math.max(0, energy)));
 }
@@ -98,7 +78,6 @@ export function breakageProbability(energy: number, size: number, fMat: number, 
   return excess <= 0 ? 0 : 1 - Math.exp(-fMat * size * impacts * excess);
 }
 
-/** Cumulative passing points (size, fraction below or at it), ascending, one per distinct size. */
 function passingCurve(fragments: FragmentSizes): { sizes: number[]; passing: number[] } {
   const order = fragments.sizes.map((_, i) => i).sort((a, b) => (fragments.sizes[a] ?? 0) - (fragments.sizes[b] ?? 0));
   let total = 0;
@@ -143,11 +122,7 @@ function lineFit(xs: readonly number[], ys: readonly number[]): { slope: number;
   return { slope, intercept: my - slope * mx, r2: sxx > 0 && syy > 0 ? (sxy * sxy) / (sxx * syy) : 0 };
 }
 
-/**
- * Fit Rosin–Rammler to fragments: a line through ln(−ln(1 − P)) against ln x, skipping the largest size (P = 1).
- * The share of mass in the largest fragment of a barely broken particle makes this fit poor; it is meant for a broken one.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function fitRosinRammler(fragments: FragmentSizes): RosinRammlerFit {
   const curve = passingCurve(fragments);
   const xs: number[] = [];
@@ -162,10 +137,7 @@ export function fitRosinRammler(fragments: FragmentSizes): RosinRammlerFit {
   return { scale: spread !== 0 ? Math.exp(-line.intercept / spread) : 0, spread, r2: line.r2, points: xs.length };
 }
 
-/**
- * Fit Gaudin–Schuhmann to the fines: a line through ln P against ln x for points passing at most `upTo` (default 0.5).
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function fitGaudinSchuhmann(fragments: FragmentSizes, upTo = 0.5): GaudinSchuhmannFit {
   const curve = passingCurve(fragments);
   const xs: number[] = [];
@@ -180,10 +152,7 @@ export function fitGaudinSchuhmann(fragments: FragmentSizes, upTo = 0.5): Gaudin
   return { maxSize: exponent !== 0 ? Math.exp(-line.intercept / exponent) : 0, exponent, r2: line.r2, points: xs.length };
 }
 
-/**
- * Least-squares fit of the JKMRC law to measured (E_cs kWh/t, t10 %) pairs: exact A for each b over a log grid, refined by golden section.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function fitT10(energies: readonly number[], t10s: readonly number[]): T10Fit {
   const fitA = (b: number): { a: number; error: number } => {
     let num = 0;

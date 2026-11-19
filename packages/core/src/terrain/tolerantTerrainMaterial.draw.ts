@@ -7,7 +7,6 @@ import { ImageTextureLoader } from "@jgengine/core/material/imageTexture.draw";
 import { terrainQuality } from "./terrainQuality.draw";
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 
-/** The map roles a detail material samples, in the order the loader starts them. */
 function scanRoles(maps: TerrainMaterialMaps): readonly (readonly [keyof TerrainDetailMaterialTextures, string])[] {
   return [
     ["color", maps.color],
@@ -18,7 +17,6 @@ function scanRoles(maps: TerrainMaterialMaps): readonly (readonly [keyof Terrain
 }
 
 export interface TolerantTerrainMaterialInput {
-  /** The resolved detail whose pulled scan may be missing; the caller filters `missing === "fail"`. */
   detail: ResolvedTerrainDetail | undefined;
   paint: TerrainPaintTextures | undefined;
   surfaces: TerrainSurfaceTextures | undefined;

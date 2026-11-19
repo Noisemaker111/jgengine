@@ -72,7 +72,6 @@ export function placeFormation(
   return slots;
 }
 
-/** Tuning for {@link assignFormationSlots}' stable, low-churn matching. */
 export interface SlotAssignmentOptions {
   /**
    * Last tick's result (`previous[member] = slot`). When supplied, a member is
@@ -80,11 +79,6 @@ export interface SlotAssignmentOptions {
    * every frame. Entries out of range for the current slot count are ignored.
    */
   previous?: readonly number[];
-  /**
-   * Squared-distance bonus (world units²) for keeping the previous slot; higher
-   * values reduce churn at the cost of tighter travel. Default `0` (pure
-   * nearest matching). Ignored without `previous`.
-   */
   stickiness?: number;
 }
 
@@ -152,20 +146,11 @@ export function assignFormationSlots(
 
 const ZERO: Vec2 = [0, 0];
 
-/** Options for {@link lineFormation}. */
 export interface LineFormationOptions {
-  /** Gap between adjacent members (world units). */
   spacing: number;
 }
 
-/**
- * A single rank abreast, centered on the destination and facing forward — a
- * skirmish line or a chorus row. Slots run left→right along the group's right
- * axis.
- *
- * @capability formation-line line (abreast) slot generator for group destinations
- * @consumer squad movement — line formation sample policy for {@link placeFormation}
- */
+/** @capability formation-line line (abreast) slot generator for group destinations */
 export function lineFormation(options: LineFormationOptions): FormationSlotGenerator {
   const spacing = options.spacing;
   return (count) => {
@@ -176,21 +161,13 @@ export function lineFormation(options: LineFormationOptions): FormationSlotGener
   };
 }
 
-/** Options for {@link boxFormation}. */
 export interface BoxFormationOptions {
-  /** Gap between adjacent members along both axes (world units). */
   spacing: number;
   /** Members per row; defaults to a near-square `ceil(sqrt(count))`. */
   columns?: number;
 }
 
-/**
- * A rectangular grid centered on the destination, front row toward `+forward` —
- * a marching block or a phalanx. Rows fill front-to-back, left-to-right.
- *
- * @capability formation-box box/grid slot generator for group destinations
- * @consumer squad movement — box formation sample policy for {@link placeFormation}
- */
+/** @capability formation-box box/grid slot generator for group destinations */
 export function boxFormation(options: BoxFormationOptions): FormationSlotGenerator {
   const spacing = options.spacing;
   const fixedColumns = options.columns;
@@ -209,20 +186,11 @@ export function boxFormation(options: BoxFormationOptions): FormationSlotGenerat
   };
 }
 
-/** Options for {@link wedgeFormation}. */
 export interface WedgeFormationOptions {
-  /** Gap between successive ranks along each arm (world units). */
   spacing: number;
 }
 
-/**
- * A "V"/arrowhead with the apex at the destination and arms trailing back — a
- * flying-wedge charge or a goose skein. Slot 0 is the tip; later slots alternate
- * right then left, each rank stepping one `spacing` outward and backward.
- *
- * @capability formation-wedge wedge/arrowhead slot generator for group destinations
- * @consumer squad movement — wedge formation sample policy for {@link placeFormation}
- */
+/** @capability formation-wedge wedge/arrowhead slot generator for group destinations */
 export function wedgeFormation(options: WedgeFormationOptions): FormationSlotGenerator {
   const spacing = options.spacing;
   return (count) => {
@@ -240,9 +208,7 @@ export function wedgeFormation(options: WedgeFormationOptions): FormationSlotGen
   };
 }
 
-/** Options for {@link circleFormation}. */
 export interface CircleFormationOptions {
-  /** Ring radius from the destination center (world units). */
   radius: number;
   /**
    * Start angle offset (radians) around the ring; default `0` places slot 0
@@ -251,14 +217,7 @@ export interface CircleFormationOptions {
   startAngle?: number;
 }
 
-/**
- * An evenly spaced ring around the destination — a guard cordon, a huddle, or a
- * surround. Slot 0 sits `startAngle` from forward; slots advance evenly around
- * the circle.
- *
- * @capability formation-circle ring/cordon slot generator for group destinations
- * @consumer squad/crowd movement — circle formation sample policy for {@link placeFormation}
- */
+/** @capability formation-circle ring/cordon slot generator for group destinations */
 export function circleFormation(options: CircleFormationOptions): FormationSlotGenerator {
   const radius = options.radius;
   const startAngle = options.startAngle ?? 0;

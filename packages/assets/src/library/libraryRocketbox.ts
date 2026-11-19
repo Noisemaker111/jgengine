@@ -2,7 +2,6 @@ import type { RocketboxClip } from "../catalogs/modelLibrary";
 import type { LibraryRecord } from "./assetLibrary";
 import { ROCKETBOX_REVISION } from "./librarySources";
 
-/** Rocketbox's three animation folders: in place (`static`), travelling on the ground (`xy`) and in 3D (`xyz`). */
 export const ROCKETBOX_CLIP_FOLDERS = {
   static: "all_animations_max_motextr_static",
   xy: "all_animations_max_motextr_xy",

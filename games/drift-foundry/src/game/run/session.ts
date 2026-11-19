@@ -37,12 +37,10 @@ import { DEFAULT_EVENT_ID, eventById, eventCompactor, eventRivals, formatMetric,
  * outcome the shared run loop closed it with, and an open run is playing once it has begun.
  */
 
-/** Where the kart's sliding tires leave skid marks and smoke; omitted in headless runs and tests. */
 export interface KartTireEffects {
   marks?: TireMarks;
   particles?: { play(name: string, request?: { position?: readonly [number, number, number]; burst?: number }): void };
 }
-/** A run's phases in order: the dash and the proofs read a phase by its place here. */
 export const RUN_PHASES = ["start", "running", "won", "crushed"] as const;
 export type RunPhase = (typeof RUN_PHASES)[number];
 
@@ -59,48 +57,33 @@ export interface RunOutcome {
   closestGap: number;
   armorSaves: number;
   zoneLabel: string;
-  /** Where the player's kart finished in the four-kart field. */
   place: number;
   fieldSize: number;
   /** Salvage the run carried home, before the line multiplier. */
   carried: number;
-  /** What the line paid: 0 on a wreck, 0.5-1.8 on an escape. */
   lineMultiplier: number;
   /** Why the line paid that, one line per term, for the results card. */
   lineNotes: readonly string[];
-  /** Credits that reached the bank, or 0 on a wreck. */
   banked: number;
-  /** Credits the compactor took, or 0 on an escape. */
   lost: number;
-  /** What the next run changes, drawn as this one was settled. */
   nextShift: { id: string; label: string; hint: string } | null;
-  /** The calendar event this run raced and what it did to that event's medals. */
   event: EventResult;
 }
 
-/** One calendar event's result on the results card. */
 export interface EventResult {
   id: string;
   label: string;
-  /** The run's number on the event's metric, as words, or `null` when a wreck set none. */
   result: string | null;
-  /** The medal this run earned on its own. */
   medal: MedalId | null;
-  /** Medals held on the event for the first time, with what each one paid. */
   firstTime: readonly { medal: MedalId; credits: number }[];
-  /** Credits the first-time medals paid on top of the line. */
   reward: number;
-  /** Calendar tiers this run opened. */
   openedTiers: readonly string[];
-  /** The next medal still on offer and what it asks for. */
   next: { medal: MedalId; text: string } | null;
   newBest: boolean;
 }
 
-/** One event on the calendar, as the pit's board reads it. */
 export interface CalendarEvent {
   event: YardEvent;
-  /** The track the event runs on. */
   trackLabel: string;
   open: boolean;
   selected: boolean;
@@ -128,14 +111,11 @@ export interface SessionSnapshot {
   phase: RunPhase;
   runTime: number;
   pose: VehicleTelemetry;
-  /** The track this run is on, and where the kart sits on it. */
   track: { id: string; label: string; exitAt: number; gates: number };
   /** Run metres from the start line, and metres left of the centreline. */
   run: number;
   lateral: number;
-  /** Route under the kart: the main line or a shortcut's id. */
   route: string;
-  /** Hazards under the kart this tick. */
   hazards: readonly ActiveHazard[];
   zone: TrackZone;
   progress: number;
@@ -146,9 +126,7 @@ export interface SessionSnapshot {
   gateAdvice: GateAdvice | null;
   installed: Readonly<Record<PartSlotId, DriftFoundryPartDef | null>>;
   tuning: KartTuning;
-  /** Ground under the kart: which yard, and how much grip it is giving. */
   surface: SurfaceSample;
-  /** Front-corner damage, one entry per authored zone - a bent nose reads here and in `tuning.feel`. */
   damage: readonly VehicleDamageZoneState[];
   ticker: readonly RadioCall[];
   nearMissCount: number;
@@ -157,24 +135,15 @@ export interface SessionSnapshot {
   armorSavesUsed: number;
   outcome: RunOutcome | null;
   collectedIds: ReadonlySet<string>;
-  /** Salvage this run is carrying and would bank on an escape. */
   salvageAtRisk: number;
-  /** What this run changes about the yard, or `null` on the honest first run. */
   shift: { id: string; label: string; hint: string } | null;
-  /** Runs settled in this career, and the loop's own lifetime totals. */
   runsPlayed: number;
   runSaved: boolean;
-  /** Live four-kart standings: the player's place, the lap, and the field order. */
   race: RaceSnapshot;
-  /** Where the three yard karts are this tick - the loop poses their entities from this. */
   rivals: readonly RivalBody[];
-  /** Career money, standing and the garage's next rung per slot, as the pit screen reads them. */
   career: { credits: number; standing: number; tier: string; garage: ReturnType<typeof garageRows>; saved: boolean };
-  /** The event this run races, and the medal it asks for next. */
   event: { id: string; label: string; blurb: string; garage: boolean; track: string; trackLabel: string; trackBlurb: string; trackLength: number; medal: MedalId | null; next: { medal: MedalId; text: string } | null };
-  /** Your best run on this timed event, replayed on the run clock; `null` on untimed events or before a first escape. */
   ghost: { pose: GhostPose | null; best: number; aheadMetres: number | null } | null;
-  /** The yard calendar: tiers, events, medals held and medal points. */
   calendar: { points: number; maxPoints: number; tiers: readonly CalendarTier[] };
 }
 
@@ -189,13 +158,9 @@ export interface RunSession {
   start(): void;
   restart(): void;
   returnToTitle(): void;
-  /** Pick the calendar event the next run races; refused while it is locked or a run is under way. */
   selectEvent(eventId: string): { ok: boolean; reason?: string };
-  /** Buy the next rung of a slot's ladder; the pit screen re-reads the career from the snapshot. */
   buyPart(slot: PartSlotId): { ok: boolean; reason?: string };
-  /** Park the stopped, grounded run where it stands; false when it is moving or airborne. */
   park(): boolean;
-  /** Set the kart down at rest at `position` facing `heading` (a teleport); the run, its parts and its clock carry on. */
   placeKart(position: readonly [number, number, number], heading: number): void;
   togglePause(): void;
   suspend(value: boolean): void;
@@ -205,17 +170,14 @@ export interface RunSession {
 export const runSessionStore = defineStore<RunSession>("runSession", () => createRunSession());
 
 const TICKER_LIMIT = 6;
-/** A train on a crossing throws a kart this far back up the road. */
 const TRAIN_KNOCKBACK = 4;
 /** A kart this close to a wall it cannot open is stopped at it. */
 const WALL_REACH = 3;
 
-/** The track an event runs on; an unknown id falls back to Row Six. */
 export function trackOfEvent(event: YardEvent): Track {
   return trackById(event.track) ?? ROW_SIX_TRACK;
 }
 
-/** Ghosts are kept per track and event; Row Six keeps the bare event id its ghosts were first saved under. */
 export function ghostKey(event: YardEvent): string {
   const track = trackOfEvent(event);
   return track.id === ROW_SIX_TRACK.id ? event.id : `${track.id}:${event.id}`;
@@ -224,18 +186,12 @@ export function ghostKey(event: YardEvent): string {
 const runOf = (pose: VehicleTelemetry): number => pose.run ?? pose.position[2];
 const lateralOf = (pose: VehicleTelemetry): number => pose.lateral ?? pose.position[0];
 
-/**
- * `save` is the yard's save document: the session starts from its profile and writes each change
- * back into it (a memory-only yard by default). `notices` is the game's shared feed
- * (`ctx.game.notices`); pickups, saves and armor saves surface there.
- */
 export function createRunSession(
   groundHeightAt: (x: number, z: number) => number = FLAT_YARD_GROUND,
   save: FoundrySave = createFoundrySave(null),
   notices?: Pick<NoticeFeed, "push">,
 ): RunSession {
   const profile = save.profile;
-  /** Write the yard's document as the profile stands; a write the browser refuses calls `refused`. */
   function persist(refused?: () => void): boolean {
     if (!save.persistent) return false;
     void save.write().then((kept) => { if (!kept) refused?.(); });
@@ -267,7 +223,6 @@ export function createRunSession(
   let outcome: RunOutcome | null = null;
   let career: CareerSave = structuredClone(profile.career);
   let careerSaved = true;
-  /** The event the open run races; a locked or unknown saved choice falls back to the salvage run. */
   function currentEvent(): YardEvent {
     const chosen = eventById(career.event);
     return chosen !== null && medalsOf(career).isOpen(chosen.id) ? chosen : eventById(DEFAULT_EVENT_ID)!;
@@ -428,7 +383,6 @@ export function createRunSession(
     }
   }
 
-  /** The next standing barricade on the kart's road. */
   function gateAhead(): RouteGate | null {
     const run = runOf(pose);
     const route = pose.route ?? "main";
@@ -440,10 +394,6 @@ export function createRunSession(
     return found;
   }
 
-  /**
-   * Keep `stuckAt` on the wall that stopped the kart until it is through: nosed up against it, backing
-   * off for the part or a run-up. Bolting on the missing part ends it; so does getting past.
-   */
   function trackStuck(): void {
     const gate = gateAhead();
     if (gate === null) { stuckAt = null; return; }
@@ -469,10 +419,6 @@ export function createRunSession(
     pushRadio(advice.call);
   }
 
-  /**
-   * The track's hazards, as the run meets them: the radio calls each one the first time the kart is in
-   * it, and a train on a crossing the kart is standing in throws it back up the road and bends the nose.
-   */
   function meetHazards(approachKmh: number): void {
     for (const hazard of pose.hazards ?? []) {
       if (!announcedHazards.has(hazard.id)) {
@@ -546,7 +492,6 @@ export function createRunSession(
 
   reset(parkedRun !== null);
 
-  /** The live run as the pit would restore it: parts, route, clocks, haul-side details. */
   function checkpointNow(): ParkedRun {
     return { version: 1, track: track.id, position: pose.position, heading: pose.heading, runTime, partIds: installed.map(entry => entry.id), collectedIds: [...collected], gateIds: [...gateAnnounced], armorSaveArmed, armorSavesUsed, nearMissCount, closestGap: Number.isFinite(closestGap) ? closestGap : 0, wasNear, announcedSurge };
   }
@@ -597,7 +542,6 @@ export function createRunSession(
     return Math.round((metresLeft / Math.max(6, body.speedKmh / 3.6)) * 100) / 100;
   }
 
-  /** Grade an escape on the event's board; the medals and payout settle with the run. */
   let pendingMedals: CareerSave["medals"] | undefined;
   function scoreEvent(escaped: boolean, place: number): EventResult {
     const board = medalsOf(career);

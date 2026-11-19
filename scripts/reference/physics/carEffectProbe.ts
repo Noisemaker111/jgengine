@@ -1,6 +1,5 @@
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 
-/** A car sim {@link measureCarEffects} can drive: `VehicleDynamics` and the reference car both fit. */
 export interface CarEffectSubject {
   tick(
     dt: number,
@@ -14,23 +13,12 @@ export interface CarEffectSubject {
   velocity(): readonly [number, number];
 }
 
-/**
- * One number per car effect, each from a test that isolates it as far as driving can: a steady circle for roll,
- * sideslip and lateral load transfer, steady braking for pitch and longitudinal transfer, coasting for drag and
- * rolling resistance, full throttle for the drivetrain, and corner transients for combined slip.
- */
 export interface CarEffectMetrics {
-  /** Body roll per g on a 40 m circle at 0.4 g, deg/g. */
   rollGradient: number;
-  /** Body sideslip per g on that circle, deg/g; positive is nose-in (the tail steps out). */
   sideslipGradient: number;
-  /** Lateral load moved outward across both axles per g, as a share of the car's weight. */
   lateralTransferPerG: number;
-  /** Front axle's share of the lateral load transfer (LLTD). */
   lateralTransferFront: number;
-  /** Nose-down pitch per g of steady braking at 0.5 g, deg/g. */
   pitchGradient: number;
-  /** Load moved onto the front axle per g of braking, as a share of weight. */
   longitudinalTransferPerG: number;
   /** Deceleration coasting off the throttle at 100 km/h, m/s². */
   coastDecel100: number;
@@ -44,21 +32,15 @@ export interface CarEffectMetrics {
   yawGain80: number;
   /** ISO 7401 lateral-acceleration response: seconds from 50% steer to 90% of steady lateral acceleration. */
   lateralResponseTime: number;
-  /** Path curvature after 1 s of full throttle from 0.5 g on a 40 m circle, over the curvature before: `>1` tightens. */
   powerOnCurvature: number;
-  /** Path curvature after 0.7 s of 0.3 brake from 0.5 g on a 40 m circle, over the curvature before. */
   brakeInTurnCurvature: number;
-  /** Path curvature 1 s after lifting from 0.5 g on a 100 m circle, over the curvature before. */
   liftOffCurvature: number;
 }
 
-/** Settings for {@link measureCarEffects}. */
 export interface CarEffectProbeOptions {
-  /** Fixed tick, s (default `1/60`). */
   dt?: number;
   /** Total mass, kg: sizes the load-transfer shares. */
   massKg: number;
-  /** Static front weight share, for the longitudinal transfer baseline. */
   frontWeight: number;
 }
 

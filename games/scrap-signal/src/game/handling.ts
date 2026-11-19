@@ -42,19 +42,15 @@ const FAMILY_HANDLING: Record<GunFamily, FamilyHandling> = {
   launcher: { hip: 1, ads: 0.8, bloom: 0.3, bloomMax: 1.6, kick: 0.035, zoom: 0.9 },
 };
 
-/** Spread multiplier while moving, and while crouched and braced. */
 export const MOVING_SPREAD = 1.6;
 export const BRACED_SPREAD = 0.7;
-/** Walk speed share while aimed: aiming trades movement for precision. */
 export const AIMED_WALK_SCALE = 0.55;
-/** Walk speed while downed in the Emergency Reserve window. */
 export const DOWNED_WALK_SPEED = 1.6;
 /** Seconds bloom takes to settle back to the resting cone. */
 const BLOOM_SETTLE_SECONDS = 0.45;
 
 const DEG = Math.PI / 180;
 
-/** The engine handling tuning for one rolled gun: its own spread, shaped by its family. */
 export function handlingTuning(gun: GunDef): WeaponHandlingTuning {
   const family = FAMILY_HANDLING[gun.family];
   const base = gun.weapon.spread * family.hip * DEG;
@@ -75,14 +71,12 @@ export function handlingTuning(gun: GunDef): WeaponHandlingTuning {
   };
 }
 
-/** How the first-person camera frames a family while aimed. */
 export function presentationFor(gun: GunDef): WeaponPresentationTuning {
   return { adsZoom: FAMILY_HANDLING[gun.family].zoom };
 }
 
 const MOVE_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight"] as const;
 
-/** The player's stance this tick, read from held actions: aim, crouch-brace, moving, sprinting. */
 export interface PlayerStance extends WeaponStance {
   ads: boolean;
   crouching: boolean;
@@ -102,7 +96,6 @@ export function playerStance(ctx: GameContext): PlayerStance {
   };
 }
 
-/** Whether the built-in sprint may run: not while aiming, not while downed. */
 export function canSprint(ctx: GameContext, downed: boolean): boolean {
   return !downed && !ctx.input.isDown("aim");
 }
@@ -134,7 +127,6 @@ function slotFor(ctx: GameContext, gun: GunDef | null): HandlingSlot {
   return slot;
 }
 
-/** Advance the held gun's bloom, recoil and aim blend by `dt`, in the player's current stance. */
 export function tickHandling(ctx: GameContext, gun: GunDef | null, dt: number): WeaponHandlingFrame | null {
   const slot = slotFor(ctx, gun);
   if (slot.handling === null || slot.view === null) return null;
@@ -143,14 +135,12 @@ export function tickHandling(ctx: GameContext, gun: GunDef | null, dt: number): 
   return frame;
 }
 
-/** Register one shot on the held gun and return its cone and kick, in the stance it was fired from. */
 export function fireHandling(ctx: GameContext, gun: GunDef): WeaponShot {
   const slot = slotFor(ctx, gun);
   if (slot.handling === null) return { spread: 0, kickPitch: 0, kickYaw: 0 };
   return slot.handling.fire(playerStance(ctx));
 }
 
-/** The held gun's last handling frame, for the camera rig, the reticle and the viewmodel. */
 export function handlingView(ctx: GameContext): CameraWeaponView | null {
   return handlingOf(ctx).view;
 }
@@ -182,7 +172,6 @@ export function playerWalkSpeed(ctx: GameContext, downed: boolean): number {
   return Math.round(deriveWalkSpeed(playerDef.walkSpeed, { multiplier: (1 + bonus("moveSpeed")) * aimed }) * 100) / 100;
 }
 
-/** Write {@link playerWalkSpeed} onto the chassis when it changed. */
 export function applyWalkSpeed(ctx: GameContext, downed: boolean): void {
   const userId = ctx.player.userId;
   const entity = ctx.scene.entity.get(userId);

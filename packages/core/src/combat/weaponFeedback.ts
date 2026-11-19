@@ -1,10 +1,5 @@
 import type { WeaponHandlingFrame, WeaponShot } from "./weaponHandling";
 
-/**
- * Signals {@link createWeaponFeedbackSignals} reports each tick, named for `createFeedbackMixer` routes.
- * `shot`, `kick` and `impact` are pulses that read non-zero only on the tick they happened; the rest follow
- * the handling frame.
- */
 export type WeaponFeedbackSignal = "shot" | "kick" | "impact" | "recoil" | "cameraKick" | "spread" | "ads";
 
 /** Serializable pending pulses, so a snapshot taken between a shot and the next read loses nothing. */
@@ -14,16 +9,10 @@ export interface WeaponFeedbackState {
   impact: number;
 }
 
-/** Collects weapon events between presentation ticks and hands them to a feedback mixer as one signal record. */
 export interface WeaponFeedbackSignals {
-  /** Record a shot from `WeaponHandling.fire()`. Several shots before one `read` sum. */
   shot(shot: WeaponShot): void;
   /** Record a hit landing, in the game's own units (damage, `0..1` strength). Several impacts keep the largest. */
   impact(strength: number): void;
-  /**
-   * Return this tick's signals and clear the pulses. `frame` (from `WeaponHandling.tick`) fills `recoil`,
-   * `cameraKick`, `spread` and `ads`; without it they read `0`. The record is reused between calls.
-   */
   read(frame?: WeaponHandlingFrame): Readonly<Record<WeaponFeedbackSignal, number>>;
   snapshot(): WeaponFeedbackState;
   restore(state: WeaponFeedbackState): void;

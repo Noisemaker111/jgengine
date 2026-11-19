@@ -11,9 +11,7 @@
  * and nothing here scans the world — feed it a target you already resolved.
  */
 
-/** The action a pursuit step resolves to; the caller performs the matching side effect. */
 export type PursuitAction =
-  /** Home distance exceeded the leash — abandon the target and return home. */
   | "leash"
   /** Out of range — advance toward the target. */
   | "pursue"
@@ -33,13 +31,11 @@ export type PursuitAction =
  */
 export type CooldownMode = "always" | "inRange";
 
-/** Per-entity cooldown state owned by the primitive. One serializable number; no methods. */
 export interface PursuitState {
   /** Seconds remaining until the next attack may fire. Advanced toward `0` by {@link advancePursuit}. */
   attackCooldown: number;
 }
 
-/** A fresh pursuit state, ready to attack immediately (`attackCooldown` at `0`). */
 export function createPursuitState(attackCooldown = 0): PursuitState {
   return { attackCooldown };
 }
@@ -56,20 +52,7 @@ function tickCooldown(state: PursuitState, dt: number): void {
   }
 }
 
-/**
- * Advance one pursuit step for a single entity, mutating `state.attackCooldown`, and return the
- * action the caller should perform. All spatial input is scalar and measured this frame:
- *
- * - `targetDistance` — self→target distance, or `null` when there is no engageable target (`"idle"`).
- * - `stopDistance`   — attack once within this distance; pursue while beyond it.
- * - `homeDistance` / `leashRange` — optional leash checked first: when `homeDistance > leashRange`
- *   the step is `"leash"`. Leave at their defaults (`-Infinity` / `+Infinity`) to disable leashing.
- * - `cooldownMode`   — see {@link CooldownMode}.
- *
- * On `"attack"` the caller applies the hit and calls {@link armPursuit} with the next interval.
- *
- * @capability pursuit enemy/mob aggro chase-to-reach with a cooldown-gated attack and optional leash-to-home; owns the attack cooldown
- */
+/** @capability pursuit enemy/mob aggro chase-to-reach with a cooldown-gated attack and optional leash-to-home; owns the attack cooldown */
 export function advancePursuit(
   state: PursuitState,
   dt: number,

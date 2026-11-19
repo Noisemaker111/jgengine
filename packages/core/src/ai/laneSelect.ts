@@ -9,7 +9,6 @@ export interface PickLaneOptions<TId extends string = string> {
   current?: TId | null;
   /** How much cheaper a rival must be to displace `current`: it wins only when `cost < currentCost / stickiness`. Default `1.2`. */
   stickiness?: number;
-  /** Candidates within this cost of the best tie for the win; the tie is broken by `rng`. Default `0`. */
   tieEpsilon?: number;
   rng?: () => number;
 }
@@ -49,9 +48,7 @@ export function pickLane<TId extends string>(
   return best.id;
 }
 
-/** Sum a live cost function over a corridor's sample points — the standard way to build `LaneCandidate.cost`.
- * @internal
- */
+/** @internal */
 export function corridorCost(
   points: readonly (readonly [number, number])[],
   costAt: (x: number, z: number) => number,

@@ -3,15 +3,12 @@ import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 
 /** The warning a phase change gives, and how long it stays up. */
 export interface PhaseTell {
-  /** Game-owned id: an animation, a sound, a HUD banner. */
   id: string;
   /** Seconds the tell stays visible after the phase changes. */
   seconds: number;
 }
 
-/** One authored phase: the fraction its band starts at, whatever data the caller hangs on it, and its tell. */
 export interface PhaseLike {
-  /** Caller-owned id, monotone down the list. */
   id: string;
   /** Fraction at or below which this phase holds, `0..1`. The opening phase is `1`. Phases run high to low. */
   at: number;
@@ -19,26 +16,21 @@ export interface PhaseLike {
   tell?: PhaseTell;
 }
 
-/** Serializable phase clock: which phase holds, how long it has held, and the tell still on screen. */
 export interface PhaseClockState {
   /** Index into the authored phase list. Monotone: it never goes back down. */
   phase: number;
-  /** Id of the current phase, for a HUD read without the definition at hand. */
   phaseId: string;
   /** Seconds the current phase has held. */
   ageSeconds: number;
-  /** Tell still showing, or null. */
   tellId: string | null;
   /** Seconds left on the showing tell. */
   tellRemaining: number;
 }
 
-/** One step of the phase clock. */
 export interface PhaseStep<P extends PhaseLike> {
   state: PhaseClockState;
   /** The phase in effect after the step. */
   phase: P;
-  /** True on the step the phase changed. */
   changed: boolean;
   /** The tell to fire now, or null. Only set on a change, so a caller never replays a tell. */
   tell: PhaseTell | null;
@@ -78,7 +70,6 @@ function spentLadder(phases: readonly PhaseLike[]): readonly ThresholdBoundary<s
   return ladder;
 }
 
-/** The index of the phase a fraction sits in, resolved through the threshold part's cut points. */
 function phaseIndexAt(phases: readonly PhaseLike[], fraction: number): number {
   const ladder = spentLadder(phases);
   const band = tierAt(ladder, 1 - clamp01(Number.isFinite(fraction) ? fraction : 1));
@@ -87,11 +78,7 @@ function phaseIndexAt(phases: readonly PhaseLike[], fraction: number): number {
   return index < 0 ? phases.length - 1 : index;
 }
 
-/**
- * Fresh phase clock for a phase list, opening in phase 0 with no tell showing.
- *
- * @capability phase-clock fresh serializable phase clock that opens in the first phase
- */
+/** @capability phase-clock fresh serializable phase clock that opens in the first phase */
 export function createPhaseClock(phases: readonly PhaseLike[]): PhaseClockState {
   validate(phases);
   const opening = phases[0];

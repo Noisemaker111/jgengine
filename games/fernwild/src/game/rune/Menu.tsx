@@ -41,17 +41,14 @@ type Route = keyof typeof ROUTES;
 /** Pages swap at once: a fade's bound opacity is only resampled while frames run, and a settled page must show fully. */
 const INSTANT = { duration: 0, distance: 0 };
 
-/** Back one page; the menu's own page stays (a press can arrive twice while the page leaves). */
 function back(flow: RuneFlow): void {
   if (flow.read().length > 1) flow.pop();
 }
 
-/** The route the title opens on before any choice; headless captures set it to show a page. */
 export const titleRoute: { first: Route | null } = { first: null };
 
 const paneOf = (route: string | undefined): MenuPane | null => (route === "controls" || route === "settings" || route === "credits" ? route : null);
 
-/** A flow for one menu, its pane mirrored both ways with the game's state, so probes and the `menu.pane` command agree. */
 function useMenuFlow(first: Route | null): RuneFlow {
   const ctx = useGameContext();
   const pane = useGameStore((c) => menuPane(c));
@@ -116,7 +113,6 @@ function Briefing(): ReactNode {
   );
 }
 
-/** One settings row: a slider dragged or nudged with arrow keys, or a choice that steps on each press. */
 function Setting({ row }: { row: SettingsRow }): ReactNode {
   const min = row.min ?? 0;
   const max = row.max ?? 1;
@@ -153,7 +149,6 @@ function Setting({ row }: { row: SettingsRow }): ReactNode {
   );
 }
 
-/** The engine's settings (graphics, sound, keys, accessibility) composed as Fernwild's own page. */
 export function SettingsPage(): ReactNode {
   const settings = useSettings();
   const [chosen, setChosen] = useState<string | null>(null);
@@ -177,7 +172,6 @@ export function SettingsPage(): ReactNode {
   );
 }
 
-/** The page under each route: its heading, what it shows, and Back. */
 function Page({ title, back, children }: { title: string; back: () => void; children: ReactNode }): ReactNode {
   const { width, height } = useRuneViewport();
   return (
@@ -190,7 +184,6 @@ function Page({ title, back, children }: { title: string; back: () => void; chil
   );
 }
 
-/** A verb on the title or pause list. */
 function Verb({ label, hint, disabled, run }: { label: string; hint?: string; disabled?: boolean; run: () => void }): ReactNode {
   return (
     <RuneAction label={label} disabled={disabled === true} run={run} padding={[8, 14, 8, 14]} radius={4} fill="#0c181dcc" border={{ width: 1, color: "#6fb7c944" }} hover="#3fd0c933" press="#00000030" gap={1}>
@@ -200,7 +193,6 @@ function Verb({ label, hint, disabled, run }: { label: string; hint?: string; di
   );
 }
 
-/** Title screen over the standing island: Continue opens the save, New game the creator, then Controls, Settings and Credits. */
 export function TitleMenu(): ReactNode {
   const ctx = useGameContext();
   const { width, height } = useRuneViewport();
@@ -260,7 +252,6 @@ export function TitleMenu(): ReactNode {
   );
 }
 
-/** Pause: resume, save, the controls, settings, or back to the title (the save keeps the run). */
 export function PauseMenu(): ReactNode {
   const ctx = useGameContext();
   const flow = useMenuFlow(null);

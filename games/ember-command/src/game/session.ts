@@ -18,7 +18,6 @@ import { ENEMY_WAVE_FIRST_DELAY, FOG_CELL, TOWN_HALL_FOOD, type Faction } from "
 import type { ResearchSpec } from "./upgrades";
 import type { HeroActsRuntime } from "./heroActs";
 
-/** A commanded intent for one unit. Serializable plain data — no closures, no entity refs. */
 export type UnitCommand =
   | { kind: "idle" }
   | { kind: "hold" }
@@ -33,7 +32,6 @@ export interface UnitRuntime {
   faction: Faction;
   kind: CombatantKind;
   command: UnitCommand;
-  /** Guards return here and drop chase when a target leads them past `leash` from it. */
   guardPoint?: { x: number; z: number };
   leash: number;
   /** Seconds remaining before the next swing lands. */
@@ -54,31 +52,18 @@ export interface SessionState {
   rallyArmed: boolean;
   rallyPoint: { x: number; z: number } | null;
   units: Map<string, UnitRuntime>;
-  /** World positions of the harvestable resource nodes, keyed by instance id. */
   nodes: Map<string, NodeInfo>;
-  /** Depletion/respawn bookkeeping for those nodes; built once the scene is read. */
   resourceField: ResourceNodeField | null;
-  /** The Town Hall's timed unit-training queue. */
   production: WorkQueueState<UnitTrainingSpec, UnitReservation>;
-  /** Buildings under construction. */
   buildQueue: WorkQueueState<BuildSpec, undefined>;
-  /** Player research: achieved upgrade ranks + the in-progress research queue. */
   research: { ranks: Record<string, number>; queue: WorkQueueState<ResearchSpec, undefined> };
-  /** A building catalog id armed for placement; the next right-click drops it. */
   buildArmed: string | null;
-  /** Supply cap the player's buildings provide (Town Hall + farms). */
   supplyCap: number;
-  /** Set by the Attack-Move verb; consumed by the next right-click order. */
   attackMoveArmed: boolean;
-  /** The marching shape and the anchor the army holds around it (see `formations.ts`). */
   formation: FormationState;
-  /** What the Vanguard has explored and what it can see right now (see `fog.ts`). */
   fog: FogState;
-  /** The Marauder plan, its attack waves and the scouting/role bookkeeping. */
   enemyWave: EnemyWaveState;
-  /** The Marauders' eyes and ears, shared by every enemy unit. Built on the first plan tick. */
   senses: PerceptionService | null;
-  /** Noise investigations: a fight pulls nearby Marauders to it. */
   hunt: SoundHunt | null;
   /** Where every living enemy unit stood on the last director tick, so a noise can find its neighbours. */
   enemyPositions: Record<string, { x: number; z: number }>;
@@ -153,7 +138,6 @@ export function reservedSupply(): number {
     .reduce((sum, job) => sum + (combatantDef(job.spec.unitId)?.food ?? 0), 0);
 }
 
-/** Build the depletion field from the resource nodes discovered in the scene. */
 export function initResourceField(rng?: () => number): void {
   session.resourceField = createResourceNodeField({
     ...(rng === undefined ? {} : { rng }),
@@ -165,7 +149,6 @@ export function initResourceField(rng?: () => number): void {
   });
 }
 
-/** True when the shell should let the pointer select this entity (own living units + keep). */
 export function isPlayerSelectable(id: string): boolean {
   const unit = session.units.get(id);
   return unit !== undefined && unit.faction === "player";
@@ -181,7 +164,6 @@ export function livingUnits(faction: Faction, kind?: CombatantKind): UnitRuntime
   return out;
 }
 
-/** Supply currently consumed by the player's living units. */
 export function usedSupply(): number {
   let used = 0;
   for (const unit of session.units.values()) {
@@ -191,7 +173,6 @@ export function usedSupply(): number {
   return used;
 }
 
-/** The nearest living player drop-off (the keep or a Barracks) an entity should haul resources to. */
 export function playerDepot(from: { x: number; z: number }): { id: string; x: number; z: number } | null {
   let best: { id: string; x: number; z: number } | null = null;
   let bestDist = Infinity;

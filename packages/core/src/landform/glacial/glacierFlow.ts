@@ -20,21 +20,17 @@ import type { LandformTopology } from "../grid/landformGrid";
 import { createFirstOrderIceFlow, type FirstOrderIceFlow } from "./firstOrderIceFlow";
 import { createIceFlow, ICE_WEIGHT, type IceAdvanceReport, type IceFlowSettings } from "./iceFlow";
 
-/** Which ice model moves a glacier. */
 export type GlacierModel = "first-order" | "shallow-ice";
 
-/** How a glacier flows. @internal */
+/** @internal */
 export interface GlacierFlowSettings extends IceFlowSettings {
   model: GlacierModel;
-  /** Glen's rate factor A in Pa⁻³ a⁻¹ (the same A as `deformation`). */
   rateFactor: number;
-  /** First-order layers per ice column. */
   layers: number;
-  /** Longest implicit ice step in years. */
   maxStep: number;
 }
 
-/** A glacier solver for one grid. @internal */
+/** @internal */
 export interface GlacierFlow {
   /** Sliding speed over the bed in m/yr per cell after the last {@link GlacierFlow.flow}. */
   readonly sliding: Float64Array;
@@ -45,7 +41,7 @@ export interface GlacierFlow {
   flow(bed: Float64Array, ice: Float64Array, eastScale: Float64Array, southScale: Float64Array, years: number, settings: GlacierFlowSettings): IceAdvanceReport;
 }
 
-/** A glacier solver for a topology. @internal */
+/** @internal */
 // stateless: scratch arrays; the ice and its face scales live in the caller's arrays.
 export function createGlacierFlow(topology: LandformTopology): GlacierFlow {
   const { cols, rows, cells, cellSize } = topology;

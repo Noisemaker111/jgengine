@@ -9,14 +9,12 @@ export const RESERVE_WINDOW_SECONDS = 12;
 export const POWER_SURGE_HEALTH_FRACTION = 0.4;
 export const RESPAWN_CASH_FRACTION = 0.07;
 
-/** What the shared state saves: one entry per downed instance. */
 export type ReserveSnapshot = Record<string, DownedEntry>;
 
 function reserveConfig(bleedoutSeconds: number) {
   return { bleedoutSeconds, reviveHealthFraction: POWER_SURGE_HEALTH_FRACTION };
 }
 
-/** The game's own economy: what a reconstruct costs, in cash, at the current balance. */
 export function respawnFee(cash: number): number {
   return Math.floor(cash * RESPAWN_CASH_FRACTION);
 }
@@ -50,7 +48,6 @@ export function enterDowned(ctx: GameContext): void {
   syncReserve(ctx);
 }
 
-/** Power Surge: a kill inside the window revives the chassis and pays the shared revive fraction. */
 export function powerSurge(ctx: GameContext): void {
   const event = reserve(ctx).revive(ctx.player.userId, 1);
   if (event?.kind !== "revived") return;
@@ -63,13 +60,11 @@ export function powerSurge(ctx: GameContext): void {
   syncReserve(ctx);
 }
 
-/** Bleed-out finished; the game pays its own reconstruct fee and puts the chassis back up. */
 export function markRespawned(ctx: GameContext): void {
   reserve(ctx).clear(ctx.player.userId);
   syncReserve(ctx);
 }
 
-/** The shared state as the save document stores it. */
 export function reserveSave(ctx: GameContext): ReserveSnapshot {
   return reserve(ctx).snapshot();
 }
@@ -90,12 +85,10 @@ export function restoreReserve(ctx: GameContext, snapshot: ReserveSnapshot): voi
   syncReserve(ctx);
 }
 
-/** Advance the shared window; the game pays its fee when the returned events report `died`. */
 export function tickDowned(ctx: GameContext, dt: number): DownedEvent[] {
   return reserve(ctx).tick(dt);
 }
 
-/** Probe line: the live window a capture or a flow reads, and the wallet the fee comes out of. */
 export function reserveProbe(ctx: GameContext) {
   const entry = reserve(ctx).get(ctx.player.userId);
   const phase = entry?.phase ?? "alive";
@@ -107,7 +100,6 @@ export function reserveProbe(ctx: GameContext) {
   };
 }
 
-/** Mirror the shared state's bleed-out countdown for the HUD. */
 export function syncReserve(ctx: GameContext): void {
   const entry = reserve(ctx).get(ctx.player.userId);
   const phase: DownedPhase = entry?.phase ?? "alive";

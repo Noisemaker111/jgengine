@@ -7,7 +7,6 @@ import { standardAtmosphere, STANDARD_GRAVITY } from "./standardAtmosphere";
 
 const DEG = Math.PI / 180;
 
-/** What one ascent reached, SI units except where the row says. */
 interface AscentEvents {
   idealDeltaV: number;
   mach1: number;
@@ -28,12 +27,7 @@ const CECO = SATURN_V_AS506_EVENTS.centerEngineCutoff.time;
 const LIFTOFF_THRUST = 34.0e6;
 const STAGE_FLOW = (5 * (F1_ENGINE.thrust[0]?.[1] ?? 0)) / (F1_ENGINE.specificImpulse * STANDARD_GRAVITY);
 
-/**
- * The AS-506 S-IC flight as a game author would build it on {@link createRigidAircraft}'s `motor`: the published 34 MN
- * liftoff thrust held to centre engine cutoff, then four fifths of it; the report's propellant and stage flow; the
- * stage and upper stack as dry mass; the subsonic axial-force coefficient times the reference area as drag area.
- * @capability rocket-comparison the Saturn V S-IC flight built as a game rigid-body rocket
- */
+/** @capability rocket-comparison the Saturn V S-IC flight built as a game rigid-body rocket */
 export function saturnVGameTuning(): RigidAircraftTuning {
   const dry = (S_IC?.dryMass ?? 0) + SATURN_V_AS506.payload.mass;
   const burn = CECO - (SATURN_V_AS506_LAUNCH.time ?? 0);
@@ -176,14 +170,7 @@ function referenceAscent(): AscentEvents {
   return events;
 }
 
-/**
- * Flies the Saturn V AS-506 S-IC ascent three ways and lines them up: the game's rigid-body `motor` model built from the
- * published numbers ({@link saturnVGameTuning}), the reference rocket ({@link createRocket}), and the flight evaluation
- * report. Both models fly the same gravity turn. The game model has a flat, non-rotating Earth, constant gravity, thrust
- * that ignores ambient pressure and a drag area that ignores Mach, so its velocities are Earth-relative and it falls
- * short of the real ascent; the rows show by how much.
- * @capability rocket-comparison compare a game rocket's ascent with a reference 6-DOF rocket and the Apollo 11 Saturn V
- */
+/** @capability rocket-comparison compare a game rocket's ascent with a reference 6-DOF rocket and the Apollo 11 Saturn V */
 export function compareRocketAscent(tuning: RigidAircraftTuning = saturnVGameTuning(), name = "Saturn V S-IC (game motor build)", tolerance?: number): ComparisonTable {
   const game = gameAscent(tuning, SATURN_V_AS506_ASCENT);
   const ref = referenceAscent();

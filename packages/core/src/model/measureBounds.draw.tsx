@@ -11,13 +11,8 @@ import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount, SceneObjectPortal, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos,
- * selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible
- * subtrees are always excluded. */
 export const MEASURE_EXCLUDE_KEY = "jgMeasureExclude";
 
-/** Entity-local AABB of the meshes under a measured root, plus how many meshes contributed — the
- * count lets callers detect async subtree fill-in without diffing bounds. */
 export interface MeasuredLocalBounds {
   min: [number, number, number];
   max: [number, number, number];
@@ -28,11 +23,6 @@ const IDENTITY = new THREE.Matrix4();
 const tmpBox = new THREE.Box3();
 const tmpVertex = new THREE.Vector3();
 
-/**
- * Measure the meshes under `root` in `root`'s own frame (root's transform is the measuring frame,
- * children compose their local matrices below it). Returns `null` when nothing measurable is
- * mounted. Skinned meshes measure at bind pose — the standard engine approximation.
- */
 export function measureLocalBounds(root: THREE.Object3D): MeasuredLocalBounds | null {
   root.updateMatrixWorld(true);
   const box = new THREE.Box3();

@@ -16,25 +16,18 @@ export interface CreatureBody {
   wander?: { radius?: number; linger?: readonly [number, number] };
 }
 
-/**
- * What drives a creature this tick: its own temperament (wild), its owner's standing order (tamed,
- * from `scene/companion`), or nothing at all (knocked out, ridden, dead).
- */
 export type CreatureMind =
   | { kind: "wild"; temperament: TemperamentConfig }
   | { kind: "tamed"; intent: CompanionIntent }
   | { kind: "still" };
 
-/** What the creature decided and did this tick, for a HUD line, an animation or a debug overlay. */
 export interface CreatureStep {
   mode: TemperamentMode | CompanionIntent["kind"] | "still" | "wander";
   targetId: string | null;
-  /** True on the tick its strike landed. */
   struck: boolean;
   reason: string;
 }
 
-/** Per-creature runtime: where home is, where it is grazing toward, strike cooldown. Plain data. */
 export interface CreatureDriverState {
   home: [number, number, number];
   wanderTo: [number, number, number] | null;
@@ -44,7 +37,6 @@ export interface CreatureDriverState {
   grudge: { id: string; until: number } | null;
 }
 
-/** Knobs for a creature driver: how far creatures see, how long they remember, and what blocks them. */
 export interface CreatureDriverConfig {
   /** How far wild creatures see what they react to, in metres. Default 24. */
   sight?: number;
@@ -58,25 +50,13 @@ export interface CreatureDriverConfig {
   rng?: () => number;
 }
 
-/**
- * The legs and teeth under a creature's mind. Wild creatures sense what is near with their own
- * perception, decide with `ai/temperament` (oblivious, skittish, territorial, docile, aggressive are
- * all tunings of it) and graze around home when nothing is happening; tamed ones take a
- * `scene/companion` intent and follow, hold, or fight their owner's fight. The driver then walks,
- * runs, faces and strikes on the scene entity, ground-snapped and slid against solids.
- *
- * @capability creature-driver wild creatures that graze, flee, defend and hunt by temperament, and tamed ones that follow, stay and fight on order
- */
+/** @capability creature-driver wild creatures that graze, flee, defend and hunt by temperament, and tamed ones that follow, stay and fight on order */
 export interface CreatureDriver {
-  /** Start driving `id` with `home` as its den (a no-op when already driven). */
   add(id: string, home: PerceptionPosition): void;
   forget(id: string): void;
-  /** It was hurt by `attackerId`: remembered as a damage fact, so even an oblivious grazer reacts. */
   hurt(ctx: GameContext, id: string, attackerId: string): void;
-  /** Advance one creature. */
   step(ctx: GameContext, id: string, mind: CreatureMind, body: CreatureBody, dt: number): CreatureStep;
   state(id: string): Readonly<CreatureDriverState> | null;
-  /** Move its den (a tame left to stay somewhere new). */
   setHome(id: string, home: PerceptionPosition): void;
   snapshot(): Record<string, CreatureDriverState>;
   restore(data: Record<string, CreatureDriverState>): void;
@@ -84,7 +64,6 @@ export interface CreatureDriver {
 }
 
 const FOLLOW_GAP = 3;
-/** A fleeing creature always runs at least this far from where it stands, whatever its flee range. */
 const FLEE_RUN = 10;
 const RUN_TO_CATCH_UP = 9;
 
@@ -92,7 +71,6 @@ function flat(a: PerceptionPosition, b: PerceptionPosition): number {
   return Math.hypot(a[0] - b[0], a[2] - b[2]);
 }
 
-/** A point well away from the threat: straight away from it, or toward the temperament's goal. */
 function fleeGoal(ctx: GameContext, from: PerceptionPosition, threatId: string | null, goal: PerceptionPosition | null): PerceptionPosition {
   const threat = threatId === null ? null : ctx.scene.entity.get(threatId);
   const away = threat !== null ? [from[0] - threat.position[0], from[2] - threat.position[2]] : goal !== null ? [goal[0] - from[0], goal[2] - from[2]] : [1, 0];
@@ -100,10 +78,8 @@ function fleeGoal(ctx: GameContext, from: PerceptionPosition, threatId: string |
   return [from[0] + (away[0]! / length) * FLEE_RUN, from[1], from[2] + (away[1]! / length) * FLEE_RUN];
 }
 
-/** Headings tried, in order, when the straight step is blocked: ahead, then ever wider either side. */
 const VEERS = [0, Math.PI / 4, -Math.PI / 4, Math.PI / 2, -Math.PI / 2];
 
-/** Drive wild and tamed creatures each tick: temperament for wild ones, follow and stay for tames, bites within body reach, veering around obstacles. */
 export function createCreatureDriver(config: CreatureDriverConfig = {}): CreatureDriver {
   const sight = config.sight ?? 24;
   const memorySeconds = config.memorySeconds ?? 8;
@@ -176,7 +152,6 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
     return { mode: "wander", targetId: null, struck: false, reason: "wandering" };
   };
 
-  /** Close on `targetId` and bite when in reach. */
   const fight = (ctx: GameContext, id: string, entry: CreatureDriverState, body: CreatureBody, targetId: string, dt: number): boolean => {
     const target = ctx.scene.entity.get(targetId);
     if (target === null || body.attack === null) return false;

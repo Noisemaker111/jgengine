@@ -10,9 +10,7 @@ import { GRID } from "../catalog";
 export type TrackPoint = readonly [number, number, number];
 
 export interface CoasterCircuit {
-  /** A lap only exists when the last piece touches the first: an open run is not a ride. */
   readonly closed: boolean;
-  /** The loop in travel order, starting at the piece nearest the station. */
   readonly waypoints: readonly TrackPoint[];
   readonly pieces: number;
   /** Rail distance for one lap, metres. */
@@ -38,9 +36,7 @@ const STEPS: readonly (readonly [number, number])[] = [
   [0, -GRID],
 ];
 
-/** The lift hauls the train at this speed; a drop buys speed above it. */
 const CHAIN_SPEED = 6;
-/** Every corner scrubs this much off the pace the train can hold. */
 const CORNER_SCRUB = 0.35;
 const GRAVITY = 9.8;
 
@@ -130,10 +126,6 @@ export function scoreCircuit(
   };
 }
 
-/**
- * One lap's arithmetic: the chain sets the pace, a drop adds the speed its fall buys, and every
- * corner takes a little back. The lap time is the rail distance over that pace.
- */
 export function lapArithmetic(length: number, corners: number, drop: number): { averageSpeed: number; lapSeconds: number } {
   if (length <= 0) return { averageSpeed: 0, lapSeconds: 0 };
   const fall = Math.sqrt(2 * GRAVITY * Math.max(0, drop));
@@ -156,7 +148,6 @@ const OPEN: CoasterCircuit = {
   nausea: 0,
 };
 
-/** Order the pieces into the park's longest run, measure it and score it. `station` ties the run to the ride. */
 export function buildCoasterCircuit(pieces: readonly TrackPoint[], station: readonly [number, number] | null): CoasterCircuit {
   if (pieces.length === 0) return OPEN;
   const byKey = new Map<string, number>();

@@ -10,13 +10,8 @@ import { useRef } from "@jgengine/core/ui/jsx";
 
 import { supplyDrops } from "../supplyDrops";
 
-/** Tall enough to see over the redwoods from across the island, the way ARK's beams are. */
 const BEAM_HEIGHT = 220;
 
-/**
- * Supply crates: a banded metal crate under a canopy while it falls, set down on the ground once landed, and a beam of
- * its tier's colour rising from it to find it by.
- */
 export function supplyDropsDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
   const group = new THREE.Group();
   const crateGeometry = new THREE.BoxGeometry(1.4, 1.2, 1.4);

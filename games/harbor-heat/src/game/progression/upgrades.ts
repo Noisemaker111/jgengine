@@ -4,23 +4,16 @@ import { createUpgradeTree, type UpgradeBuy, type UpgradeNodeDef, type UpgradeSt
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
-/** Where an upgrade is sold: Rita's bay, the Ammu-Isle counter, or the bungalow itself. */
 export type UpgradeShop = "garage" | "guns" | "house";
 
 export interface HarborUpgrade extends UpgradeNodeDef {
   shop: UpgradeShop;
   label: string;
-  /** What each rank does, one line per rank, in the board's words. */
   lines: readonly string[];
 }
 
-/** Rank `n` costs `prices[n - 1]`. */
 const priced = (...prices: number[]): Curve => ({ kind: "steps", values: [0, ...prices] });
 
-/**
- * Everything the safe can buy beyond another front. Car mods apply to every car you own (bought or
- * boosted), gun work to every gun you fire, and the bungalow's rooms to what resting there does.
- */
 export const UPGRADES: readonly HarborUpgrade[] = [
   { id: "car_engine", shop: "garage", label: "Engine tune", maxRank: 3, cost: priced(900, 1800, 3600), lines: ["+12% pull", "+24% pull", "+36% pull"] },
   { id: "car_brakes", shop: "garage", label: "Race brakes", maxRank: 2, cost: priced(600, 1400), lines: ["+20% stopping", "+40% stopping"] },
@@ -50,13 +43,11 @@ export function buyUpgrade(ctx: GameContext, id: string, pay: (cost: number) => 
   return result;
 }
 
-/** Price of the next rank, or null once maxed. */
 export function nextUpgradeCost(ctx: GameContext, id: string): number | null {
   const tree = createUpgradeTree({ nodes: UPGRADES, state: upgradesStore.read(ctx) ?? { ranks: {} } });
   return tree.costOf(id);
 }
 
-/** An owned car's handling with the bay's mods on it. A stranger's car drives stock. */
 export function moddedTuning(ctx: GameContext, base: VehicleSpec): VehicleSpec {
   const engine = 1 + 0.12 * upgradeRank(ctx, "car_engine");
   const brakes = 1 + 0.2 * upgradeRank(ctx, "car_brakes");
@@ -80,12 +71,10 @@ export function crashShare(ctx: GameContext): number {
   return 1 - 0.2 * upgradeRank(ctx, "car_armor");
 }
 
-/** The player's per-shot damage multiplier. */
 export function gunDamageScale(ctx: GameContext): number {
   return 1 + 0.15 * upgradeRank(ctx, "gun_damage");
 }
 
-/** The player's time-between-shots multiplier. */
 export function gunIntervalScale(ctx: GameContext): number {
   return 1 - 0.1 * upgradeRank(ctx, "gun_rate");
 }

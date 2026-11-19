@@ -1,12 +1,10 @@
 // The one scheduler for a set of commands with prerequisites: `verify:fast`, `bun run gen` and
 // `bun run check` all hand it their steps.
 
-/** What the scheduler reads of a step; callers add their own fields. */
 export interface ScheduledStep {
   name: string;
   /** Steps by name that must finish first; a step whose prerequisite failed is reported failed, never green. */
   needs?: string[] | undefined;
-  /** Runs with the machine to itself: nothing else is in flight while it runs. */
   exclusive?: boolean | undefined;
   /** Rough seconds, used only for start order: the heaviest runnable step starts first. */
   cost?: number | undefined;
@@ -17,7 +15,6 @@ export interface ScheduledStep {
   first?: boolean | undefined;
 }
 
-/** Exit code of a timing tool that could not decide on this machine right now (other work kept it busy). */
 export const EXIT_UNJUDGED = 3;
 
 export interface StepResult {
@@ -39,10 +36,6 @@ export interface RunStepsOptions {
    * instead of paying for them again.
    */
   failFast?: boolean;
-  /**
-   * With `failFast`: a step that failed outside this run (another machine running the same
-   * verification), or null. Once it names one, this run starts nothing new, as if it failed here.
-   */
   stopWhen?: () => string | null;
 }
 
@@ -82,7 +75,6 @@ export async function runSteps<S extends ScheduledStep>(
   let stoppedBy: string | null = null;
   const isDone = (name: string): boolean => results.has(name);
   const rank = (step: S): number => (step.first === true ? 1_000_000 : 0) + (step.cost ?? 1);
-  /** The first-tier step, else the heaviest, whose prerequisites are done. */
   const runnable = (): number => {
     let best = -1;
     let bestRank = -1;

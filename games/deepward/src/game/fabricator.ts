@@ -20,7 +20,6 @@ const log = (id: string, name: string, text: string): CodexEntryDef<CodexMeta> =
 const fauna = (id: string, name: string, text: string): CodexEntryDef<CodexMeta> =>
   ({ id, name, category: "Fauna", description: text, secret: true, meta: { kind: "fauna", text } });
 
-/** Everything the scanner can learn, in the order the sheet lists it. */
 export const CODEX_ENTRIES: readonly CodexEntryDef<CodexMeta>[] = [
   blueprint("cutter", "Plasma cutter", 2, "Opens sealed cable runs for wire and cells."),
   blueprint("seal2", "Seal Mk II", 3, "Rates the suit to pressure 3: the Ink Wells."),
@@ -63,7 +62,6 @@ export const GEAR_RECIPES = createRecipeGraph(GEAR_ORDER.map(id => GEAR[id].reci
 
 const inventory = (stash: readonly Item[]) => ({ slots: stash.map(item => ({ itemId: kindOf(item), count: 1 })) });
 export function gearMissing(stash: readonly Item[], id: Gear): RecipeItem[] { return missingInputs(inventory(stash), GEAR[id].recipe); }
-/** Spend the exact stash instances a recipe takes; throws with the shortfall in words. */
 export function spendRecipe(stash: readonly Item[], inputs: RecipeDef): Item[] {
   const result = craft(inventory(stash), { slots: stash.length }, { stackLimit: () => 1 }, inputs);
   if (result.status !== "ok") {

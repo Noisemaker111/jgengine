@@ -5,9 +5,7 @@ import { Backdrop, C, Mascot, Muted, ProgressBar, Text } from "../ui/kit";
 
 interface RouteLoadingScreenProps {
   label?: string;
-  /** Secondary line shown under the primary label (boot step detail). */
   detail?: string;
-  /** When true, covers the screen above the page it opens over (a modal layer). */
   overlay?: boolean;
   /**
    * 0..1 boot progress. When provided the bar fills with it; when omitted it sweeps. Honest by
@@ -16,7 +14,6 @@ interface RouteLoadingScreenProps {
   progress?: number;
 }
 
-/** The mascot over a boot bar, with what is loading. */
 export function RouteLoadingScreen({ label = "Loading", detail, overlay = false, progress }: RouteLoadingScreenProps) {
   return <RuneView anchor="fill" {...(overlay ? { modal: true } : {})} label={label}>
     <Backdrop />

@@ -8,7 +8,6 @@ import type {
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { EditorBridgeRequest, EditorBridgeResponse, EditorHostApi } from "../session";
 
-/** Outcome of a guarded dispatch: whether it mutated the session, plus the resulting state. */
 export interface DispatchOutcome {
   applied: boolean;
   state: EditorSessionState;
@@ -33,14 +32,9 @@ export interface HandlerContext {
   getTerrainSampler: () => TerrainField | null;
 }
 
-/** One method's handler, with `request` narrowed to that method's union member. */
 export type HandlerFor<M extends EditorBridgeRequest["method"]> = (
   ctx: HandlerContext,
   request: Extract<EditorBridgeRequest, { method: M }>,
 ) => EditorBridgeResponse;
 
-/**
- * The full method → handler map. Spreading the per-domain tables into a value of this type is the
- * lockstep guarantee that every union method has exactly one handler: a missing verb fails to compile.
- */
 export type HandlerTable = { [M in EditorBridgeRequest["method"]]: HandlerFor<M> };

@@ -11,37 +11,26 @@ export interface CrowdMember {
   rotationY: number;
   /** Ground speed in metres per second, which picks the crowd's idle/walk/run clip. */
   speed: number;
-  /** The entity's own size on top of the kind's placement scale; 1 when absent. */
   size?: number;
-  /** The model's tint (`material.color`), drawn per instance so kinds that differ only in colour share a batch. */
   tint?: string | undefined;
 }
 
-/** Where a batch's merged geometry sits, so picking hits what the batch draws. @internal */
+/** @internal */
 export interface CrowdBatchGeometry {
   geometry: THREE.BufferGeometry;
-  /** Placement the batch draws its members with, relative to each member's world pose. */
   position: readonly [number, number, number];
   scale: number;
 }
 
-/** Speed at or above which a crowd member walks, and one at which it runs. @internal */
+/** @internal */
 export interface CrowdSpeedBands {
   walk: number;
   run: number;
 }
 
-/** Below this ground speed a crowd character idles when its model declares no walk speed. */
 const WALK_CLIP_SPEED = 0.25;
 const RUN_CLIP_SPEED = 2.6;
 
-/**
- * The identity a character model shares with every other model the GPU crowd can draw: rig url,
- * height normalization, material override and per-slot material assignments. The override's colour
- * is left out: the batch draws it per instance ({@link crowdTintOf}), so traffic resprayed four ways
- * is one draw per material, not four. Whether there is a colour stays in the key, since a tinted batch
- * draws its paint white. Assignments stay whole: two looks painted onto one rig are two batches.
- */
 export function crowdKindOf(model: ModelConfig): string {
   const { color, ...shared } = model.material ?? {};
   const material = model.material === undefined ? null : { ...shared, tinted: color !== undefined };
@@ -55,13 +44,7 @@ export function crowdKindOf(model: ModelConfig): string {
   return `${model.url}\u0000${model.targetHeight ?? 0}\u0000${model.scale ?? 1}\u0000${JSON.stringify(material)}\u0000${slots}`;
 }
 
-/**
- * One model per crowd kind, holding the one a kind already drew with while the kind stays. Every
- * model of a kind draws the same batch, but the world hands over whichever entity's model it met
- * last, and a batch builds its materials from the model it is given: a new one each time cars came
- * and went rebuilt the batch and relinked all its shaders mid-play. `held` is updated in place.
- * @internal
- */
+/** @internal */
 export function stableCrowdKinds(models: readonly ModelConfig[], held: Map<string, ModelConfig>): [string, ModelConfig][] {
   const unique = new Map<string, ModelConfig>();
   for (const model of models) {
@@ -73,7 +56,7 @@ export function stableCrowdKinds(models: readonly ModelConfig[], held: Map<strin
   return [...unique.entries()];
 }
 
-/** The colour a crowd batch tints one member's overridden materials with, or undefined for none. @internal */
+/** @internal */
 export function crowdTintOf(model: ModelConfig): string | undefined {
   return model.material?.color;
 }
@@ -98,7 +81,6 @@ export function crowdEligible(model: ModelConfig | undefined): model is ModelCon
   return true;
 }
 
-/** The animation an entity's own rig plays for this model: its own, or `"auto"` when it names none. */
 function crowdAnimationOf(model: ModelConfig): ModelConfig["animation"] {
   return model.animation ?? "auto";
 }
@@ -135,11 +117,7 @@ export function crowdSpeedBandsOf(model: ModelConfig, clipNames: readonly string
   return { walk, run: Math.max(band(states?.runSpeed, RUN_CLIP_SPEED), walk) };
 }
 
-/**
- * The baked clip a crowd member at `speed` plays; clips are `[idle, walk, run]` as {@link crowdClipsOf}
- * orders them. `bands` is the model's own walk/run speed.
- * @internal
- */
+/** @internal */
 export function crowdClipForSpeed(clips: readonly string[], speed: number, bands?: CrowdSpeedBands): string | undefined {
   if (clips.length === 0) return undefined;
   const walk = bands?.walk ?? WALK_CLIP_SPEED;
@@ -149,16 +127,16 @@ export function crowdClipForSpeed(clips: readonly string[], speed: number, bands
   return clips[0];
 }
 
-/** Kind keys whose crowd batch has a baked rig and can draw; a character stays on its own rig until then. @internal */
+/** @internal */
 const readyKinds = new Set<string>();
 
-/** Mark a crowd batch drawable, so markers may hand it characters. @internal */
+/** @internal */
 export function setCrowdKindReady(kind: string, ready: boolean): void {
   if (ready) readyKinds.add(kind);
   else readyKinds.delete(kind);
 }
 
-/** Whether a character kind has a crowd batch that can draw it. @internal */
+/** @internal */
 export function crowdKindReady(kind: string): boolean {
   return readyKinds.has(kind);
 }
@@ -178,32 +156,24 @@ export class CharacterCrowdRegistry {
   private readonly capacities = new Map<string, number>();
   private readonly geometries = new Map<string, CrowdBatchGeometry>();
 
-  /** Declare how many characters one kind's batch can draw; `undefined` clears the batch. */
   setCapacity(kind: string, capacity: number | undefined): void {
     if (capacity === undefined) this.capacities.delete(kind);
     else this.capacities.set(kind, Math.max(0, Math.floor(capacity)));
   }
 
-  /** How many characters one kind's batch can draw; zero until its batch mounts. */
   capacity(kind: string): number {
     return this.capacities.get(kind) ?? 0;
   }
 
-  /** Record the geometry and placement a batch draws its kind with, for picking. */
   setGeometry(kind: string, geometry: CrowdBatchGeometry | undefined): void {
     if (geometry === undefined) this.geometries.delete(kind);
     else this.geometries.set(kind, geometry);
   }
 
-  /** The drawn geometry of one kind, once its batch is ready. */
   geometry(kind: string): CrowdBatchGeometry | undefined {
     return this.geometries.get(kind);
   }
 
-  /**
-   * Hand a character to the batch. Returns false when the batch is full, and the caller then keeps
-   * that character on its own rig. An existing member always updates.
-   */
   claim(id: string, kind: string, member: CrowdMember): boolean {
     const existing = this.members.get(id);
     if (existing !== undefined && existing.kind === kind) {
@@ -216,7 +186,6 @@ export class CharacterCrowdRegistry {
     return true;
   }
 
-  /** Record the pose an entity is showing as a crowd instance this frame. */
   set(id: string, kind: string, member: CrowdMember): void {
     const existing = this.members.get(id);
     if (existing !== undefined && existing.kind === kind) {
@@ -226,29 +195,24 @@ export class CharacterCrowdRegistry {
     this.members.set(id, { kind, member: { ...member } });
   }
 
-  /** The entity went back to its own rig, or unmounted. */
   delete(id: string): void {
     this.members.delete(id);
   }
 
-  /** The kind this character is batched as, or `undefined` when it draws its own rig. */
   kindOf(id: string): string | undefined {
     return this.members.get(id)?.kind;
   }
 
-  /** How many characters this kind is drawing; zero means the batch can skip its work. */
   count(kind: string): number {
     let count = 0;
     for (const entry of this.members.values()) if (entry.kind === kind) count += 1;
     return count;
   }
 
-  /** Visit every character of one kind, in insertion order. */
   forEach(kind: string, visit: (id: string, member: CrowdMember) => void): void {
     for (const [id, entry] of this.members) if (entry.kind === kind) visit(id, entry.member);
   }
 
-  /** Drop every entry; called when the crowd layer unmounts. */
   clear(): void {
     this.members.clear();
     this.geometries.clear();

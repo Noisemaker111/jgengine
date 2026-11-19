@@ -17,20 +17,13 @@ import { clamp01 } from "../math/scalar";
  */
 export interface DataObjectsProps<T> {
   data: readonly T[];
-  /** World `[x, z]` for an item (placed on the ground plane). */
   position: (item: T, index: number) => readonly [number, number];
-  /** Box height (Y-scale) for an item. */
   height: (item: T, index: number) => number;
-  /** Box color for an item (any CSS/hex/THREE color). */
   color: (item: T, index: number) => THREE.ColorRepresentation;
-  /** Footprint on X and Z. Default 0.28. */
   cellSize?: number;
-  /** Index of the highlighted item, painted with `hoverColor`. */
   hovered?: number | null;
   hoverColor?: THREE.ColorRepresentation;
-  /** Called with the item index under the pointer, or null on exit. */
   onHover?: (index: number | null) => void;
-  /** Staggered grow-in; restarts whenever `data` identity changes. */
   grow?: { duration?: number; delay?: (item: T, index: number) => number };
   castShadow?: boolean;
   receiveShadow?: boolean;
@@ -67,7 +60,6 @@ function boxLayout<T>(data: readonly T[], props: DataObjectsProps<T>): BoxLayout
   return { positions, targets, delays, colors };
 }
 
-/** The instanced-box path as an {@link EngineDraw}; `renderItem` stays on the UI wrapper. */
 export function dataObjectsDraw<T>(getProps: () => DataObjectsProps<T>, data: readonly T[]): EngineDraw {
   const group = new THREE.Group();
   const layout = boxLayout(data, getProps());
@@ -167,7 +159,6 @@ export function dataObjectsDraw<T>(getProps: () => DataObjectsProps<T>, data: re
   };
 }
 
-/** Places one 3D object per data item: instanced boxes sized and colored from the item, or custom content per item. */
 export function DataObjects<T>(props: DataObjectsProps<T>) {
   const { data, renderItem } = props;
   const latest = useRef<DataObjectsProps<T>>(props);

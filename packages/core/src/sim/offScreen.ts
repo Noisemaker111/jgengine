@@ -4,7 +4,6 @@ import { decayMeters, initDecayMeters, type DecayMeterValues } from "../survival
 import type { NeedDefinition } from "./needs";
 import type { RoutinePhase, RoutineTimeline } from "./routine";
 
-/** Which side of the distance policy a resident is on: simulated near the viewer, or cheap state. */
 export type OffScreenMode = "near" | "far";
 
 /**
@@ -12,78 +11,53 @@ export type OffScreenMode = "near" | "far";
  * the game's call — a city block and a haunted-house hallway do not share a number.
  */
 export interface OffScreenPolicy {
-  /** Distance at or below which a resident is simulated near the viewer. */
   readonly nearRadius: number;
   /** Distance past which a near resident becomes cheap state. Defaults to `nearRadius` (no band). */
   readonly farRadius?: number;
-  /**
-   * Estimated per-tick cost of keeping one resident near, in the caller's own units. Only read when
-   * `nearBudget` is set.
-   */
   readonly costModel?: (id: string, distance: number) => number;
-  /** Ceiling on the summed near cost; over-budget residents nearest the boundary go cheap first. */
   readonly nearBudget?: number;
   /** Most spawn/despawn switches one tick may perform, so a teleporting viewer cannot hitch a frame. Default 32. */
   readonly switchBudget?: number;
 }
 
-/** Everything a near-side simulator is told when a resident crosses into range. */
 export interface NearSpawn {
   readonly id: string;
   /** Cheap-state position, so the agent appears where it already was — never at the origin. */
   readonly position: Vec3;
-  /** Place the resident occupies, `null` for a resident with no authored routine. */
   readonly place: string | null;
   readonly activity: string | null;
-  /** Current need values from the cheap state; the near side resumes from these. */
   readonly needs: Readonly<Record<string, number>>;
-  /** Where it should walk in the current phase (its place, or the place it is walking to). */
   readonly goal: Vec3;
   readonly stop: number;
   readonly travelling: boolean;
 }
 
-/** What a near-side simulator hands back when a resident leaves range. */
 export interface NearHandoff {
   readonly position: Vec3;
   readonly needs: Readonly<Record<string, number>>;
 }
 
-/**
- * The near half of the world: the game's real simulation. Only residents inside the radius are ever
- * spawned here, which is what keeps far agents free of navigation and utility scoring.
- */
 export interface NearAgents {
   spawn(next: NearSpawn): void;
-  /** Remove a near resident and hand back its live position and needs for the cheap state. */
   despawn(id: string): NearHandoff | null;
-  /** Live position, or `null` when the resident is not spawned. */
   position(id: string): Vec3 | null;
-  /** Live need values, when the near side keeps them; the cheap state takes these on handoff. */
   needs?(id: string): Readonly<Record<string, number>> | null;
-  /** Retarget a near resident when its routine moves on to another place. */
   setGoal(id: string, goal: Vec3): void;
   /** Advance every near resident by `dt` seconds. */
   tick(dt: number, now: number): void;
-  /** Utility decisions taken since creation, when the near side keeps brains. */
   decisions?(): number;
   dispose?(): void;
 }
 
-/** One resident of the world: an identity, where it belongs, and the day it follows. */
 export interface OffScreenResidentSpec {
   readonly id: string;
   /** Where the resident stands when its routine says nothing; also the fallback for a missing place. */
   readonly home: Vec3;
-  /** Authored day; omitted means it stays home. */
   readonly routine?: RoutineTimeline;
-  /** Saved need values; omitted needs start at their definition's `start ?? max`. */
   readonly needs?: Readonly<Record<string, number>>;
-  /** Force this resident near regardless of distance (a cutscene, a quest NPC). */
   readonly pinned?: boolean;
 }
 
-/** A resident as a game or the devtools overlay reads it. Allocates a need copy — debug and tests. */
 export interface OffScreenAgentView {
   readonly id: string;
   readonly mode: OffScreenMode;
@@ -94,24 +68,19 @@ export interface OffScreenAgentView {
   readonly travelling: boolean;
   readonly needs: Readonly<Record<string, number>>;
   readonly pinned: boolean;
-  /** Distance from the viewer at the last tick. */
   readonly distance: number;
 }
 
-/** Counters a devtools probe or a test reads to prove far agents cost nothing. */
 export interface OffScreenStats {
   agents: number;
   near: number;
   far: number;
   promotions: number;
   demotions: number;
-  /** Cheap-state boundary updates — the only per-tick work a far resident can cause. */
   farRefreshes: number;
-  /** Near-side utility decisions, summed across the near residents' brains. */
   decisions: number;
 }
 
-/** Serializable world state: the policy and every resident, near ones included. */
 export interface OffScreenSnapshot {
   policy: {
     nearRadius: number;
@@ -136,7 +105,6 @@ export interface OffScreenSnapshot {
   }[];
 }
 
-/** A policy change that stays reachable in play. */
 export interface OffScreenPolicyPatch {
   readonly nearRadius?: number;
   readonly farRadius?: number;
@@ -145,11 +113,9 @@ export interface OffScreenPolicyPatch {
   readonly switchBudget?: number;
 }
 
-/** Options for {@link createOffScreenWorld}. */
 export interface OffScreenOptions {
   /** Routine place id → world anchor. Every place a resident's routine names must exist here. */
   readonly places: Readonly<Record<string, Vec3>>;
-  /** Need definitions every resident shares; the far model decays these closed-form. */
   readonly needs: readonly NeedDefinition[];
   readonly policy: OffScreenPolicy;
   /** The game's near simulation. Far residents never touch it. */
@@ -159,14 +125,6 @@ export interface OffScreenOptions {
   readonly devtoolsName?: string;
 }
 
-/**
- * The off-screen world: every resident exists, but only the ones within the policy radius are
- * simulated. The rest are a position, a routine phase and a needs record that only move when the
- * clock crosses a routine boundary — no navigation, no utility scoring, no per-frame need decay.
- *
- * Crossing the boundary is a handoff, not a respawn: a resident arrives where the cheap state says
- * it is, with its schedule progress and needs intact, and leaves with the same identity.
- */
 export interface OffScreenWorld {
   add(spec: OffScreenResidentSpec): boolean;
   remove(id: string): boolean;
@@ -174,11 +132,8 @@ export interface OffScreenWorld {
   count(): number;
   ids(): readonly string[];
   agent(id: string): OffScreenAgentView | null;
-  /** Keep a resident near regardless of distance; `false` clears the pin. */
   pin(id: string, pinned?: boolean): boolean;
-  /** Cheap-state needs as of `now`, resolved through any routine boundary since the last tick. */
   needsAt(id: string, now: number): Readonly<Record<string, number>> | null;
-  /** Split the world by distance, run the near simulation, and advance cheap routine phase. */
   tick(dt: number, now: number, viewer: Vec3): void;
   stats(): OffScreenStats;
   retune(patch: OffScreenPolicyPatch): void;
@@ -262,7 +217,6 @@ export function createOffScreenWorld(options: OffScreenOptions): OffScreenWorld 
     return lerp(from, placeAt(phase.nextPlace, resident.id), phase.progress);
   }
 
-  /** Advance a far resident's cheap state through every routine boundary up to `now`. */
   function refreshCheap(resident: Resident, now: number): void {
     if (now <= resident.updatedAt) return;
     farRefreshes += 1;
@@ -310,7 +264,6 @@ export function createOffScreenWorld(options: OffScreenOptions): OffScreenWorld 
     }
   }
 
-  /** Keep a near resident's routine phase current and walk it to the next place when the clock moves it. */
   function refreshNear(resident: Resident, now: number): void {
     if (resident.routine === null || now < resident.staleAt) return;
     const phase = resident.routine.phaseAt(now);

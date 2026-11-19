@@ -6,7 +6,6 @@ interface WalkList {
   finish(): void;
 }
 
-/** The renderer parts the flat walk wraps: three's render lists and shadow pass, and its render counter. */
 export interface FlatWalkRenderer {
   renderLists: { get(scene: THREE.Object3D, renderCallDepth: number): WalkList };
   shadowMap: { enabled: boolean; autoUpdate: boolean; needsUpdate: boolean; type: THREE.ShadowMapType; render(lights: THREE.Light[], scene: THREE.Object3D, camera: THREE.Camera): void };
@@ -15,7 +14,6 @@ export interface FlatWalkRenderer {
 
 const NO_CHILDREN: THREE.Object3D[] = [];
 
-/** Scenes a {@link reuseSceneWalk} render is drawing now, with how deep the calls nest. */
 const reusing = new Map<THREE.Object3D, number>();
 
 /**

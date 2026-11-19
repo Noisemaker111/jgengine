@@ -14,7 +14,6 @@ import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import type { GrassExclusion } from "@jgengine/core/grass/grassBake.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
-/** Resolves one grass or ground-cover volume, drawn in the scene's world grass style. */
 type GrassResolver = (object: SceneKindObject, worldStyle: GrassStyleSettings | undefined) => ResolvedGrass | null;
 
 /** Volume kinds turf yields to — blades never grow through cracked soil or out of open water. */
@@ -115,7 +114,7 @@ function OneGrass({ object, context, resolve }: { object: SceneKindObject; conte
   );
 }
 
-/** Registers the `grass_field` and `ground_cover` volume renderers. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerGrassFieldRenderer(): void {
   registerSceneKindRenderer("grass_field", ({ objects, context }) => (
     <>

@@ -11,17 +11,14 @@ import { hexToRgb, mixHex } from "@jgengine/core/render/color";
 
 /** SH coefficients per channel for the second band — 3 bands, real basis. */
 export const SH_COEFFICIENTS = 9;
-/** Floats stored per probe: {@link SH_COEFFICIENTS} × RGB. */
 export const PROBE_STRIDE = SH_COEFFICIENTS * 3;
 
-/** One irradiance volume authored on a scene document. */
 export interface IrradianceVolume {
   id: string;
   /** World-space centre of the grid. */
   center: readonly [number, number, number];
   /** World-space extent of the grid. */
   size: readonly [number, number, number];
-  /** Probe count per axis; at least 1. */
   resolution: readonly [number, number, number];
   /**
    * `PROBE_STRIDE` floats per probe, row-major (x fastest, then y, then z). Absent until baked, so a
@@ -32,19 +29,12 @@ export interface IrradianceVolume {
 
 /** Authored bake inputs stored beside the samples so a volume can be re-baked without the editor. */
 export interface IrradianceBakeSettings {
-  /** How much sky reaches the region: 0 fully enclosed, 1 fully open. */
   skyVisibility: number;
-  /** Radiance above the horizon for an open region. Default the sky's own horizon colour. */
   skyColor?: string;
-  /** Radiance below the horizon (ground bounce). */
   groundColor?: string;
-  /** Fill colour of an enclosed region's ceiling; keeps a room from baking to black. */
   ceilingColor?: string;
-  /** Fill colour of an enclosed region's floor. */
   floorColor?: string;
-  /** Multiplier on the enclosed fill. Default 1. */
   fillIntensity?: number;
-  /** Authored lamps folded into the bake. */
   lights?: readonly { position: readonly [number, number, number]; color?: string; intensity?: number; distance?: number }[];
 }
 
@@ -54,11 +44,7 @@ const SH_BAND_2_0 = 1.092548;
 const SH_BAND_2_1 = 0.315392;
 const SH_BAND_2_2 = 0.546274;
 
-/**
- * Real-basis SH values for a unit direction, into `out` (length 9):
- * `[Y00, Y1-1, Y10, Y11, Y2-2, Y2-1, Y20, Y21, Y22]`.
- * @internal
- */
+/** @internal */
 export function shDirection(x: number, y: number, z: number, out: Float64Array | number[]): void {
   out[0] = SH_BAND_0;
   out[1] = SH_BAND_1 * y;
@@ -102,15 +88,12 @@ export function probePosition(
   ];
 }
 
-/** Everything a bake needs for one volume: where the grid sits, how much sky reaches it, and what fills the dark. */
 export interface IrradianceBakeInput {
-  /** Stable volume id, copied onto the baked volume. */
   id: string;
   center: readonly [number, number, number];
   size: readonly [number, number, number];
   resolution: readonly [number, number, number];
   settings: IrradianceBakeSettings;
-  /** Direction samples per probe. Default 64. */
   samples?: number;
 }
 
@@ -214,11 +197,7 @@ function radianceIn(
   return radiance;
 }
 
-/**
- * The volume that governs a world position: the one whose box contains it, else the nearest by
- * centre. A scene usually authors one volume per interior plus one for the exterior shell.
- * @internal
- */
+/** @internal */
 export function selectIrradianceVolume(
   volumes: readonly IrradianceVolume[],
   position: readonly [number, number, number],

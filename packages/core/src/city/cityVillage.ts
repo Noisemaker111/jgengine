@@ -14,12 +14,10 @@ import type { Vec2 } from "../world/geometry";
 /** Footprints with fewer block cells than this grow as a village (1–2 lanes) instead of a street net. */
 export const VILLAGE_MAX_CELLS = 8;
 
-/** A village's lanes plus where its green belongs. */
 export interface VillagePlan {
   network: StreetNetwork;
   /** The junction (or the main street's midpoint when it has no side lane), district-local. */
   hub: Vec2;
-  /** Unit directions at the hub: along the main street, and toward the side the green takes. */
   along: Vec2;
   side: Vec2;
 }

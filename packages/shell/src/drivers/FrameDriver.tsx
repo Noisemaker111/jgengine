@@ -248,7 +248,6 @@ export function FrameDriver({
 
   // One frame of simulation — input, movement, onTick, behaviors, bound actions — shared by the
   // render loop and the agent bridge's render-free `sim_advance`.
-  /** Returns false when play is gated (menu, pause) and nothing advanced. */
   const simulate = (rawDt: number): boolean => {
     const sendInput = () => {
       if (!serverAuthoritative) return;

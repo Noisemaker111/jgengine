@@ -5,7 +5,7 @@ import {
 import type { SelectionSet } from "@jgengine/core/scene/selection";
 import type { SelectionBookmarks } from "@jgengine/core/scene/selectionBookmarks";
 
-/** The key-event fields control groups read. @internal */
+/** @internal */
 export interface ControlGroupKeyEvent {
   code: string;
   ctrlKey?: boolean;
@@ -15,7 +15,7 @@ export interface ControlGroupKeyEvent {
   repeat?: boolean;
 }
 
-/** The control-group digit for a top-row or numpad digit key code, else null. @internal */
+/** @internal */
 export function controlGroupDigit(code: string): number | null {
   const match = /^(?:Digit|Numpad)([0-9])$/.exec(code);
   return match === null ? null : Number(match[1]);
@@ -27,7 +27,6 @@ export interface ControlGroupKeysDeps {
   selection: SelectionSet;
   /** A stored id survives recall only while this passes (entity exists and is selectable). */
   isValid: (id: string) => boolean;
-  /** Double-tap focus: called with the recalled ids. */
   focus: (ids: readonly string[]) => void;
   now: () => number;
   options?: ControlGroupOptions;

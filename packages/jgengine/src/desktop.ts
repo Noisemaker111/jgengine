@@ -44,11 +44,8 @@ export interface DesktopArgs {
   skipFrontendBuild: boolean;
   allowRemote: boolean;
   diagnostics: boolean;
-  /** Lay out a SteamPipe depot and build scripts beside the app (`--steam`). */
   steam: boolean;
-  /** Link the Steamworks API and the overlay surface (`--steamworks`, implies `--steam`). */
   steamworks: boolean;
-  /** Build the NSIS installer; `--no-installer` and `--steam` build only the game executable. */
   installer: boolean;
   steamApp: string | undefined;
   steamDepot: string | undefined;
@@ -66,7 +63,6 @@ export interface DesktopPlan {
   iconWarning: string | null;
   frontendDist: string;
   diagnostics: boolean;
-  /** The game's Steam identity when `--steam` was asked for. */
   steam: SteamConfig | null;
   installer: boolean;
 }
@@ -86,7 +82,7 @@ export interface StageResult {
 
 interface BuildSource { commit: string | null; dirty: boolean | null }
 
-/** Source identity from the project checkout; unavailable git state stays unknown. @internal */
+/** @internal */
 export function desktopBuildSource(projectDir: string): BuildSource {
   const run = (args: string[]) => spawnSync("git", args, { cwd: projectDir, encoding: "utf8", windowsHide: true, timeout: 5_000 });
   const head = run(["rev-parse", "HEAD"]);
@@ -94,7 +90,7 @@ export function desktopBuildSource(projectDir: string): BuildSource {
   return { commit: head.status === 0 ? head.stdout.trim() || null : null, dirty: status.status === 0 ? status.stdout.trim().length > 0 : null };
 }
 
-/** Fingerprint the staged HTML, JS and CSS, not game assets or private source maps. @internal */
+/** @internal */
 export function desktopCodeHash(dist: string): string {
   const hash = createHash("sha256");
   const visit = (dir: string, prefix: string) => {
@@ -628,7 +624,6 @@ function tauriConf(plan: DesktopPlan): string {
   )}\n`;
 }
 
-/** Exact versions: a Steam build links Valve's binaries and a third-party overlay surface. */
 const STEAMWORKS_CRATE = "=0.13.1";
 const STEAM_OVERLAY_SURFACE_CRATE = "=0.1.3";
 
@@ -1085,11 +1080,10 @@ export function findNsisArtifact(targetDir: string, metadata: DesktopMetadata): 
 /** @internal */
 export interface DesktopArtifacts {
   app: string;
-  /** The NSIS installer, or null for an executable-only build (`--no-installer`, `--steam`). */
   installer: string | null;
 }
 
-/** Build the game executable, and its NSIS installer when `installer` is set. @internal */
+/** @internal */
 export function runTauriBuild(
   stagingDir: string,
   metadata: DesktopMetadata,

@@ -23,10 +23,6 @@ const staticPrompts: readonly PositionedPrompt[] = [
   },
 ];
 
-/**
- * One talk prompt per person the city knows a place for, and one start prompt per open job that has
- * no giver: a person or job added to `city.ts` is reachable here without a line of prompt code.
- */
 function cityPrompts(ctx: GameContext): PositionedPrompt[] {
   const world = cityOf(ctx);
   const out: PositionedPrompt[] = [];
@@ -126,7 +122,6 @@ export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   ];
 }
 
-/** Label for a prompt this module's systems own, or null for the HUD's own table. */
 export function systemPromptLabel(ctx: GameContext, id: string): string | null {
   if (id === "shop:ammunation") {
     const hour = ctx.time.calendar().hour;

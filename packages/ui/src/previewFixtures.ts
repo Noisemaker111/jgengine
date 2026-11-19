@@ -23,7 +23,6 @@ export interface PreviewFixture {
   readonly name: string;
   /** One-line description of what the deterministic fixture renders. */
   readonly description: string;
-  /** The real exported preview component, rendered from static values (screenshots identically). */
   readonly component: GamePreviewComponent;
 }
 
@@ -102,12 +101,10 @@ function kitFixtures(): Record<string, PreviewFixture> {
   return fixtures;
 }
 
-/** Sorted list of registered fixture names, for discovery/listing. */
 export function previewFixtureNames(): string[] {
   return Object.keys(PREVIEW_FIXTURES).sort();
 }
 
-/** Resolve a fixture by name, or `undefined` when it is not registered. */
 export function resolvePreviewFixture(name: string): PreviewFixture | undefined {
   return PREVIEW_FIXTURES[name];
 }

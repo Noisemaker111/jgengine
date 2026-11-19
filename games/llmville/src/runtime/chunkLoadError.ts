@@ -1,4 +1,3 @@
-/** User-facing copy when a lazy-loaded route chunk fails to download or execute. */
 export function formatChunkLoadError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (

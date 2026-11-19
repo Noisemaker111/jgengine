@@ -6,11 +6,7 @@ import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import type { PointerService } from "./pointerService.draw";
 
-/**
- * Binds the pointer service to the live camera, scene and canvas, and feeds it DOM pointer
- * position (with pointer-lock awareness). `groundHeightAt` lets clicks land on terrain.
- * @internal
- */
+/** @internal */
 export function pointerProbeDraw(service: PointerService, getGroundHeightAt: () => ((x: number, z: number) => number) | undefined): EngineDraw {
   let boundCamera: unknown = null;
   let boundScene: unknown = null;
@@ -84,7 +80,6 @@ export function pointerProbeDraw(service: PointerService, getGroundHeightAt: () 
   };
 }
 
-/** Binds the pointer service to the live camera and scene; `groundHeightAt` lets clicks land on terrain. */
 export function PointerProbe({ service, groundHeightAt }: { service: PointerService; groundHeightAt?: (x: number, z: number) => number }) {
   const latest = useRef(groundHeightAt);
   latest.current = groundHeightAt;

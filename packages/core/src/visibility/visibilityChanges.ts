@@ -7,11 +7,8 @@
  * @internal
  */
 export interface VisibilityChanges {
-  /** Call `mark` whenever one of `ids` enters or leaves the visible set; returns the unwatch. */
   watch(ids: readonly string[], mark: () => void): () => void;
-  /** Tell the watchers of each changed id. */
   notify(changed: readonly string[]): void;
-  /** Tell every watcher: the whole predicate was replaced. */
   notifyAll(): void;
 }
 

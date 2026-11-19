@@ -14,7 +14,6 @@ import {
 import { createNeedSet, type NeedDefinition, type NeedSnapshot } from "./needs";
 import type { NearAgents, NearHandoff, NearSpawn } from "./offScreen";
 
-/** Serializable state of one near agent: where it walks, what it needs, what it last chose. */
 export interface NearAgentSnapshot {
   id: string;
   position: Vec3;
@@ -26,7 +25,6 @@ export interface NearAgentSnapshot {
   brain: UtilityBrainSnapshot;
 }
 
-/** Everything a near agent is doing, for a HUD, a probe or a test. Allocates. */
 export interface NearAgentView {
   id: string;
   position: Vec3;
@@ -39,15 +37,12 @@ export interface NearAgentView {
   needs: NeedSnapshot;
 }
 
-/** What the near side needs from the game: a nav mesh, the shared need definitions, and what agents can do. */
 export interface NearAgentsOptions {
   nav: NavRuntime;
   /** Need definitions shared with the off-screen world, so a far decay and a near tick agree. */
   needs: readonly NeedDefinition[];
-  /** Utility options each brain scores; omit for agents that only carry needs and walk. */
   options?: readonly UtilityOption[];
   interrupts?: readonly UtilityInterrupt[];
-  /** Candidates the agent may pick this tick (where it stands, or anything the game offers). */
   candidates?: (agent: NearAgentView) => readonly UtilityCandidate[];
   crowd?: NavCrowdOptions;
   /** Register a devtools probe under this name so the overlay shows near-agent decisions. */

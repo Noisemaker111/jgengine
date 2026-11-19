@@ -30,13 +30,10 @@ function pick<T>(values: readonly T[], index: number): T {
   return value;
 }
 
-/** The generator output family every nature generator returns: a {@link NatureMesh}. */
 export const NATURE_OUTPUT = "nature-mesh";
 
-/** Detail levels each nature variant bakes: full near the camera, half for a mid level. */
 const NATURE_LODS = [1, 0.5] as const;
 
-/** A value in `[1 - amount, 1 + amount]`. */
 function spread(random: () => number, amount: number): number {
   return 1 + (random() * 2 - 1) * amount;
 }
@@ -74,9 +71,6 @@ function limbPath(start: NatureVec, azimuth: number, elevation: number, length: 
   return points;
 }
 
-// --- Rock ----------------------------------------------------------------------------------------
-
-/** Rock params: size, shape, shading, cuts, erosion, crags, moss and clustering. */
 export const ROCK_SCHEMA = defineParamSchema({
   groups: [
     { id: "shape", label: "Shape" },
@@ -110,7 +104,6 @@ export const ROCK_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Rocks: rock, boulder, pebbles, slab. */
 export const ROCK_GENERATOR = defineGenerator({
   id: "nature.rock",
   label: "Rock",
@@ -153,9 +146,6 @@ export const ROCK_GENERATOR = defineGenerator({
   },
 });
 
-// --- Driftwood -----------------------------------------------------------------------------------
-
-/** Driftwood params: a weathered log lying on the ground. */
 export const DRIFTWOOD_SCHEMA = defineParamSchema({
   groups: [{ id: "shape", label: "Shape" }, { id: "colour", label: "Colour" }],
   fields: [
@@ -173,7 +163,6 @@ export const DRIFTWOOD_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Driftwood and fallen logs. */
 export const DRIFTWOOD_GENERATOR = defineGenerator({
   id: "nature.driftwood",
   label: "Driftwood",
@@ -203,7 +192,6 @@ export const DRIFTWOOD_GENERATOR = defineGenerator({
   },
 });
 
-/** Every nature generator, in editor order, as the untyped registry view. */
 export const NATURE_GENERATORS: readonly GeneratorDefinition[] = [
   untypedGenerator(ROCK_GENERATOR),
   untypedGenerator(DRIFTWOOD_GENERATOR),

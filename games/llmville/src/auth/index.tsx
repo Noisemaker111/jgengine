@@ -5,7 +5,6 @@ import type { FunctionReturnType } from "convex/server";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 
-
 import { authClient } from "./authClient";
 import { deriveUsernameFromEmail } from "./authCredentials";
 import { destinationAfterAuth, type PlayEntryIntent } from "../runtime/playEntry";
@@ -44,17 +43,13 @@ interface AuthContextType {
    * prefer the Convex-auth signals below for anything on the load critical path;
    * use this for email/display fallbacks and the login/signup/create-world flow. */
   user: AuthUser | null;
-  /** True while the better-auth session is still resolving. */
   isLoading: boolean;
-  /** Session-derived: a better-auth user exists. */
   isAuthenticated: boolean;
   /** Convex auth from the optimistic token — true on the first render of a
    * remembered session, with no session round-trip. The honest signal for the
    * menu and any gameplay query. */
   isConvexAuthenticated: boolean;
-  /** True only on a genuine cold first-auth (no remembered token yet). */
   isConvexAuthLoading: boolean;
-  /** Session-derived: the current session is an anonymous guest. */
   isAnonymous: boolean;
   login: (email: string, password: string) => Promise<{ error?: { message: string } }>;
   register: (email: string, password: string) => Promise<{ error?: { message: string } }>;
@@ -85,7 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Keep a recent Convex JWT in storage so the next cold load can authenticate
   // optimistically (ConvexBetterAuthProvider `initialToken`) instead of waiting
-  // for the session round-trip before any query runs. Only mint a new token when
   // the stored one is missing or close to expiring, so steady-state reloads add
   // no extra request.
   // Refresh a stale JWT as soon as Convex auth is ready — do not wait on the

@@ -8,7 +8,6 @@ import { isHudAnchor } from "./hudLayout";
  */
 export type HudResizeAxes = "none" | "x" | "y" | "both";
 
-/** Authored layout for one HUD panel inside `editor.scene.json` → `ui.panels`. */
 export interface EditorUiPanelLayout {
   anchor: HudAnchor;
   dx: number;
@@ -16,11 +15,9 @@ export interface EditorUiPanelLayout {
   width?: number;
   height?: number;
   visible?: boolean;
-  /** Panel type id registered via {@link registerHudPanelType}; drives resize + schema. */
   type?: string;
 }
 
-/** Scene-document HUD section: panel id → layout. Single source of truth for placement. */
 export interface EditorUiDocument {
   panels: Record<string, EditorUiPanelLayout>;
 }
@@ -46,7 +43,6 @@ export interface ResolvedHudPanelLayout {
   fromDocument: boolean;
 }
 
-/** Declared panel type: growable axes, size limits, optional ParamSchema for the editor. */
 export interface HudPanelTypeDef {
   id: string;
   label: string;
@@ -72,7 +68,6 @@ export function getHudPanelType(id: string): HudPanelTypeDef | undefined {
   return panelTypes.get(id);
 }
 
-/** Every registered panel type, sorted by id — editor palette / agent listing. */
 export function listHudPanelTypes(): HudPanelTypeDef[] {
   return [...panelTypes.values()].sort((a, b) => a.id.localeCompare(b.id));
 }

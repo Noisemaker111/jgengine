@@ -45,10 +45,6 @@ function dormantPose(resident: Resident, receivedAt: number): LiveRemotePose {
   };
 }
 
-/**
- * `scene.RemotePlayers`: the shell's presence rows plus the labs whose owners are offline, standing
- * where they last were. Draws the nearest few, and other players block the local player's step.
- */
 export function LlmvilleRemotePlayers({ ctx, rows }: RemotePlayersProps) {
   const scene = useWorldSceneProps();
   return scene === null ? null : <RemoteAgents ctx={ctx} rows={rows} engine={scene.engine} />;

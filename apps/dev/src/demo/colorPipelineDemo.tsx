@@ -13,12 +13,10 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 import source from "./colorPipeline.scene.json";
 
-/** The authored document is the only place a grade, sky and light rig come from. */
 const document = importEditorDocumentJson(JSON.stringify(source));
 const params = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
 /** `?grading=off` drops the document grade so the same view can be judged ungraded. */
 const gradingOff = params.get("grading") === "off";
-/** `?exposure=fixed` pins exposure at 1, showing what the clamp is correcting. */
 const exposureFixed = params.get("exposure") === "fixed";
 
 /**
@@ -82,7 +80,6 @@ function Room() {
   return <SceneObjectAttach object={rig} />;
 }
 
-/** Props that give the eye a white and a saturated reference to judge exposure against. */
 function Props() {
   const rig = useMemo(() => {
     const root = new Group();

@@ -20,7 +20,6 @@ const smoke = SMOKE.map(([x, z], index) => ({
   effect: "smoke/plume",
 }));
 
-/** The compactor drags steel across the ground: sparks off its teeth and a warm shimmer above its cap. */
 const compactor = [
   {
     id: "compactor-sparks",

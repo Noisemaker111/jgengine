@@ -33,7 +33,6 @@ interface StoragePanelProps {
   onTrashAction: () => void;
 }
 
-/** Storage: build tabs, the stored items, and Place/Trash on the selected one. */
 export function StoragePanel({
   tabs,
   activeTab,

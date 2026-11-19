@@ -1,22 +1,12 @@
 // @skill jgengine-world
 import type { ModelVariantLodConfig } from "./modelLod";
 
-/**
- * Mesh levels and impostor atlases the asset build writes next to a model file, and the rules the
- * runtime uses to switch between them. The build (`@jgengine/assets` `buildModelLods`) and the
- * runtime read the same names and the same {@link BuiltLodMeta}, so neither guesses the other's files.
- */
-
 /** Bumped whenever the files the build writes change shape, so a stale build is never read. */
 export const BUILT_LOD_VERSION = 1;
 
-/** One simplified level the build wrote: its file inside the model's lod folder and its cost. */
 export interface BuiltLodLevel {
-  /** File name inside {@link builtLodDir}. */
   readonly file: string;
-  /** Share of the source's triangles the simplifier aimed for. */
   readonly ratio: number;
-  /** Triangles the level really has. */
   readonly triangles: number;
 }
 
@@ -26,31 +16,22 @@ export interface BuiltImpostor {
   readonly normal: string;
   readonly frames: number;
   readonly cell: number;
-  /** Bounding sphere of the baked views, in the model file's own space. */
   readonly center: readonly [number, number, number];
   readonly radius: number;
 }
 
-/** What the build wrote for one model file: read from `<url>.lods/meta.json`. */
 export interface BuiltLodMeta {
   readonly version: number;
-  /** Content hash of the source file the levels were built from. */
   readonly source: string;
   /** Hash of the build plan, so a changed plan rebuilds. */
   readonly plan: string;
   /** World-space bounds of the source scene in the file's own units. */
   readonly bounds: { readonly min: readonly [number, number, number]; readonly max: readonly [number, number, number] };
-  /** Source triangles. */
   readonly triangles: number;
-  /** Levels ordered from the most to the least detailed, excluding the source itself. */
   readonly levels: readonly BuiltLodLevel[];
   readonly impostor?: BuiltImpostor;
 }
 
-/**
- * How a game switches a model between its source mesh, its built levels and its impostor. Every field
- * is data the game sets in `visibility.meshLods` (and a model can override in `ModelConfig.meshLods`).
- */
 export interface MeshLodConfig {
   /**
    * One entry per built level, largest first: the share of the viewport height the model's bounding
@@ -65,7 +46,6 @@ export interface MeshLodConfig {
   readonly impostorDistance?: number;
 }
 
-/** Hysteresis ratio used when a {@link MeshLodConfig} sets none. */
 export const DEFAULT_MESH_LOD_HYSTERESIS = 0.1;
 
 /**
@@ -77,18 +57,15 @@ export function hasBuiltLodPath(url: string): boolean {
   return url.startsWith("/") && !url.startsWith("//");
 }
 
-/** The folder holding everything built for a model file. */
 export function builtLodDir(url: string): string {
   const query = url.search(/[?#]/);
   return `${query < 0 ? url : url.slice(0, query)}.lods`;
 }
 
-/** The metadata file the build writes for a model file. */
 export function builtLodMetaUrl(url: string): string {
   return `${builtLodDir(url)}/meta.json`;
 }
 
-/** The url of one file inside a model's lod folder. */
 export function builtLodFileUrl(url: string, file: string): string {
   return `${builtLodDir(url)}/${file}`;
 }
@@ -157,13 +134,10 @@ export function projectedScreenSize(radius: number, distance: number, fovY: numb
   return radius / (Math.max(distance, 1e-6) * half);
 }
 
-/** The url the impostor level carries in a resolved variant config; it names no file. */
 export const IMPOSTOR_LEVEL_URL = "jg:impostor";
 
-/** A model's built levels resolved for one camera: its variant config, and whether its last level is the impostor. */
 export interface ResolvedBuiltLods {
   readonly variants: ModelVariantLodConfig;
-  /** True when the last level of `variants` is {@link IMPOSTOR_LEVEL_URL}. */
   readonly impostor: boolean;
 }
 
@@ -210,7 +184,6 @@ export function resolveBuiltLods(
   return { variants: { levels, hysteresis: 0, hysteresisRatio: hysteresis, scaleWithInstance: true }, impostor };
 }
 
-/** Merge a game's mesh-lod settings with one model's override; false or no settings turns it off. */
 export function meshLodSettings(game: MeshLodConfig | false | undefined, model: Partial<MeshLodConfig> | false | undefined): MeshLodConfig | null {
   if (model === false || game === false) return null;
   if (game === undefined && model === undefined) return null;

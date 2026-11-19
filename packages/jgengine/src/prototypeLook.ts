@@ -4,36 +4,24 @@
  */
 
 export interface PrototypeLookSignals {
-  /** Explicit `look: "flat"`. */
   flatLook: boolean;
-  /** Has entityModels / objectModels / scatterModels wiring. */
   hasModelSeams: boolean;
   /** Custom renderEntity / renderObject (not primitive fallback). */
   hasCustomRender: boolean;
-  /** presentation: "hud" or no world — not a 3D scene game. */
   hudOnly: boolean;
-  /** `defineGame({ editorLayers })` — the shell auto-mounts the authored scene's placed content. */
   hasAuthoredScene: boolean;
-  /** Explicit lighting or postProcessing config present. */
   hasAuthoredGraphics: boolean;
-  /** No `look` preset named; the engine then renders the default "cinematic" look. */
   lookUnset: boolean;
-  /** Explicit `postProcessing` config present. */
   hasPostProcessing: boolean;
 }
 
 export interface PrototypeLookVerdict {
-  /** True when the game still reads as boxes-and-flat-light. */
   isPrototype: boolean;
   signals: PrototypeLookSignals;
   reasons: string[];
   fix?: string | undefined;
 }
 
-/**
- * Scan game source text for prototype-look signals. Pass game.config.ts plus
- * any models/assets modules the config imports.
- */
 function stripComments(source: string): string {
   return source
     .replace(/\/\*[\s\S]*?\*\//g, " ")

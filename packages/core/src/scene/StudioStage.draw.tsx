@@ -6,7 +6,6 @@ import { DEFAULT_FORWARD, yawToFace } from "@jgengine/core/scene/facing";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { SceneObjectPortal, useEngineDraw, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette. */
 export type StudioMood = "studio" | "daylight" | "dusk" | "night";
 
 interface MoodRig {
@@ -29,26 +28,14 @@ const MOODS: Record<StudioMood, MoodRig> = {
   night: { key: 1.6, keyColor: "#bcd0ff", fill: 0.4, fillColor: "#38507e", rim: 2.4, rimColor: "#9fd0ff", ambient: 0.22, ambientColor: "#1e2740", backdrop: "#0a0c12", floor: "#0e1119" },
 };
 
-/** Props for {@link StudioStage}. */
 export interface StudioStageProps {
   mood?: StudioMood;
   /** Override the scene background color (hex). Default: the mood's backdrop. */
   backdrop?: string;
   /** Turntable spin speed in radians/second (spins the children). 0 disables. Default 0. */
   turntable?: number;
-  /** Draw the seamless floor + set the scene background. Off for open-world scenes. Default true. */
   environment?: boolean;
-  /**
-   * Yaw the children every frame so `forward` points at the active camera — frame the declared front
-   * with zero `rotationY` tuning. Overrides `turntable` (the two are mutually exclusive: one spins the
-   * content, the other holds it facing whoever's looking). Default false.
-   */
   faceCamera?: boolean;
-  /**
-   * The staged content's declared forward axis (`GeneratedAsset.forward`, or a scene kind's own
-   * convention) — the direction `faceCamera` turns to point at the camera. Default `[0, 0, 1]`, the
-   * engine-wide convention (`DEFAULT_FORWARD` in `@jgengine/core/scene/facing`).
-   */
   forward?: readonly [number, number, number] | undefined;
   children: ReactNode;
 }

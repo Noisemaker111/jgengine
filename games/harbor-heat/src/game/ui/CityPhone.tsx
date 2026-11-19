@@ -43,12 +43,6 @@ function Line({ left, right, bad = false }: { left: string; right: string; bad?:
   return <Row justify="between" gap={8}><LcdText size={12} grow={1} shrink text={left} /><LcdText size={12} weight={800} color={bad ? "#9a1d0c" : HH.lcdInk} text={right} /></Row>;
 }
 
-/**
- * The burner's City app: a read of the town on the same handset as pause and settings. A message from
- * Dee sits on top while she can lose a report for you; then contacts and their jobs, how each crew
- * feels, who holds which block, what your fronts earn, and the news wire. It scrolls; the right
- * softkey (or T) puts it away.
- */
 export function CityPhone() {
   const open = useStore(phoneStore, (v) => v === true);
   const { commands } = useGame();

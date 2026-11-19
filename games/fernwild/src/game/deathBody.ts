@@ -6,22 +6,15 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { BAG, HOTBAR, stow } from "./bags";
 import { itemLabel } from "./data/items";
 
-/**
- * How long a survivor's body lies with their things before it falls apart. ARK's own body time depends on the
- * server; an hour is the usual single-player feel (approximate).
- */
 export const BODY_LASTS = 3600;
-/** How close you stand to your body to take your things back. */
 const RECOVER_REACH = 3;
 
 const bodiesOf = perContext((): RemainsField => createRemainsField({ lastsSeconds: BODY_LASTS }));
 
-/** Every body lying in the world. */
 export function bodies(ctx: GameContext) {
   return bodiesOf(ctx).list();
 }
 
-/** Everything in a bag or the hotbar, taken out of them. */
 function emptyPockets(ctx: GameContext): RemainsStack[] {
   const taken: RemainsStack[] = [];
   for (const inventoryId of [BAG, HOTBAR]) {
@@ -36,7 +29,6 @@ function emptyPockets(ctx: GameContext): RemainsStack[] {
   return taken;
 }
 
-/** On death, everything the survivor carried or wore stays with their body where they fell. Returns how many stacks were left. */
 export function leaveBody(ctx: GameContext, at: readonly [number, number, number], wornItems: readonly string[] = []): number {
   const contents = [...emptyPockets(ctx), ...wornItems.map((item) => ({ item, count: 1 }))];
   const left = bodiesOf(ctx).leave({ owner: ctx.player.userId, at, contents, now: ctx.time.now() });
@@ -48,7 +40,6 @@ function bodyNear(ctx: GameContext) {
   return me === null ? null : bodiesOf(ctx).nearest(me.position, RECOVER_REACH, ctx.player.userId);
 }
 
-/** E at your body: take back all that fits; the rest stays with it. */
 export function recoverBody(ctx: GameContext): void {
   const body = bodyNear(ctx);
   if (body === null) return;
@@ -68,14 +59,12 @@ export function bodyPrompts(ctx: GameContext): PositionedPrompt[] {
   return [{ id: `body:${body.id}`, position: { x: body.at[0], z: body.at[2] }, priority: 4, prompt: proximityPrompt({ radius: RECOVER_REACH + 1, display: keybind("interact", "Take back your things"), invoke: command("recoverBody") }) }];
 }
 
-/** Bodies that have lain too long fall apart, with what is still in them. */
 export function tickBodies(ctx: GameContext): void {
   for (const gone of bodiesOf(ctx).expire(ctx.time.now())) {
     if (gone.owner === ctx.player.userId) ctx.game.notices.push({ text: "Your body has decayed, and what it held is lost", tone: "deny" });
   }
 }
 
-/** The survivor's nearest own body for the HUD: how far, and how long it lasts. */
 export function bodyView(ctx: GameContext): { distance: number; secondsLeft: number; stacks: number } | null {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return null;

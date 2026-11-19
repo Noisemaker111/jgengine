@@ -1,28 +1,23 @@
 import type { CaveGround, CaveLayout } from "./caveLayout";
 
-/** One triangle mesh: xyz per vertex and three vertex indices per triangle. */
 export interface CaveMeshPart {
   positions: Float32Array;
   indices: Uint32Array;
 }
 
-/** A cave's rock: the inside surface you walk through, the outside hill it sits in, and the floor laid over the ground. */
 export interface CaveMesh {
   inner: CaveMeshPart;
   outer: CaveMeshPart;
   floor: CaveMeshPart;
 }
 
-/** Points across the tunnel's arch, from the right wall's foot over the roof to the left wall's foot. */
 const ARCH = 12;
-/** Rings up the chamber's dome and slices round it. */
 const DOME_RINGS = 7;
 const DOME_SLICES = 36;
 /** How far the walls reach below the floor line, so a sloping floor never shows a gap under them. */
 const SKIRT = 2;
 /** The floor lies this far above the ground it follows, so the terrain's grass never shows through. */
 const FLOOR_LIFT = 0.04;
-/** Points across the tunnel floor, and rings and slices of the chamber floor. */
 const FLOOR_ACROSS = 5;
 const FLOOR_RINGS = 5;
 const FLOOR_SLICES = 28;
@@ -57,11 +52,7 @@ class Builder {
   }
 }
 
-/**
- * The rock of a cave laid out by `caveLayout`: an arched tunnel swept down its centreline into a domed chamber,
- * inside and out, with a rock face round the mouth, and a floor that follows the ground under both. Lumpy by the layout's seed.
- * @capability cave-mesh triangle meshes for a cave's inside and the hill around it, from its layout
- */
+/** @capability cave-mesh triangle meshes for a cave's inside and the hill around it, from its layout */
 export function caveMesh(layout: CaveLayout, ground: CaveGround): CaveMesh {
   const inner = new Builder();
   const outer = new Builder();

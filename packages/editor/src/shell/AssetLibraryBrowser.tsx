@@ -25,21 +25,13 @@ const KIND_LABEL: Record<LibraryKind, string> = {
   icon: "Icons",
 };
 
-/** How many cards the grid renders at once; the footer counts the rest. */
 const PAGE = 240;
 
 function formatSize(size: readonly [number, number, number]): string {
   return size.map((value) => (value >= 10 ? value.toFixed(0) : value.toFixed(2))).join(" × ");
 }
 
-/**
- * The shared asset library inside the Content Browser: search thousands of licensed models,
- * characters, materials, decals, HDRIs and icons by words, kind and tag, with provider thumbnails,
- * licence and credit on every card. `onAdd` serves the picked asset in the running game (the dev
- * server pulls it through the shared asset store); without it the panel offers the key to copy.
- * Model and character cards drag onto the viewport, which pulls and places them.
- * @internal — mounted by `ContentBrowser` as its Library folder.
- */
+/** @internal — mounted by `ContentBrowser` as its Library folder. */
 export function AssetLibraryBrowser({
   loadLibrary = defaultLoader,
   onAdd,

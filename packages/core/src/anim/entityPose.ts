@@ -7,7 +7,6 @@ export interface PoseWritable {
   rotation: { y: number };
 }
 
-/** An entity's position and yaw to copy onto a drawn object. */
 export interface PoseSource {
   position: readonly [number, number, number];
   rotationY: number;
@@ -19,7 +18,7 @@ export function writeEntityPose(target: PoseWritable, source: PoseSource): void 
   target.rotation.y = source.rotationY;
 }
 
-/** The pose last written to one marker group, reused across frames. @internal */
+/** @internal */
 export type PoseMemo = [number, number, number, number];
 
 /** A marker group that owns its own matrix instead of three recomposing it every frame. @internal */
@@ -51,7 +50,7 @@ export function writePoseIfChanged(target: MatrixPoseTarget, source: PoseSource,
   return true;
 }
 
-/** {@link writePoseIfChanged} for the interpolated pose in `ctx.sim`, falling back to `live`. @internal */
+/** @internal */
 export function writeRenderPoseIfChanged(
   target: MatrixPoseTarget,
   ctx: Pick<GameContext, "sim">,
@@ -77,7 +76,7 @@ export function writeRenderPoseIfChanged(
   return true;
 }
 
-/** Write the interpolated render pose from `ctx.sim` (falls back to `live` when no history exists). @internal */
+/** @internal */
 export function writeRenderPose(
   target: PoseWritable,
   ctx: Pick<GameContext, "sim">,

@@ -5,7 +5,6 @@ import { distanceBiasStrength, type DistanceBias } from "../world/spatialSample"
 import { selectSpawnPoint } from "./spawnPoint";
 import { clamp01 } from "../math/scalar";
 
-/** One kind a wave can spend budget on: its cost, pick weight and the first wave it may appear in. */
 export interface SpawnEntry {
   id: string;
   cost: number;
@@ -13,7 +12,6 @@ export interface SpawnEntry {
   minWave?: number;
 }
 
-/** One wave: the budget it opens with, the kinds it may buy, and how long it runs or how fast it refills. */
 export interface WaveManifest {
   budget: number;
   entries: readonly SpawnEntry[];
@@ -21,7 +19,6 @@ export interface WaveManifest {
   budgetPerSecond?: number;
 }
 
-/** The whole wave plan plus the pacing knobs: alive cap, escalation, alert and per-player budget, looping and spawn points. */
 export interface SpawnDirectorConfig {
   waves: readonly WaveManifest[];
   maxAlive?: number;
@@ -36,7 +33,6 @@ export interface SpawnDirectorConfig {
   spawnPointBias?: number;
 }
 
-/** Where the director is: current wave, clocks, spare budget, alert level and spawn counts. Serializable. */
 export interface SpawnDirectorState {
   wave: number;
   elapsed: number;
@@ -50,14 +46,12 @@ export interface SpawnDirectorState {
   done: boolean;
 }
 
-/** What the director reads from the world each step: how many are alive and where the players are. */
 export interface DirectorContext {
   alive: number;
   players?: number;
   playerPositions?: readonly NavPoint[];
 }
 
-/** One spawn the caller should perform: which entry, what it cost, which wave, and where. */
 export interface SpawnRequest {
   entryId: string;
   cost: number;
@@ -66,7 +60,6 @@ export interface SpawnRequest {
   laneId?: number;
 }
 
-/** One director step: the next state and the spawns to perform. */
 export interface DirectorStep {
   state: SpawnDirectorState;
   spawns: SpawnRequest[];
@@ -74,12 +67,10 @@ export interface DirectorStep {
 
 const DEFAULT_MAX_SPAWNS_PER_TICK = 64;
 
-/** The semantic distance preference a signed `spawnPointBias` names. */
 function distanceBiasOf(bias: number): DistanceBias {
   return bias < 0 ? "far" : bias > 0 ? "near" : "none";
 }
 
-/** A fresh director at the first wave with that wave's budget. */
 export function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState {
   const first = config.waves[0];
   return {
@@ -100,7 +91,6 @@ export function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDire
   return { ...state, alert: clamp01(state.alert + amount) };
 }
 
-/** Move to the next wave (or loop, or finish), resetting the wave clock and budget. */
 export function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState {
   const loop = config.loop ?? false;
   const lastIndex = config.waves.length - 1;

@@ -1,12 +1,6 @@
 import { TRACK_OBJECT as O } from "../objects/catalog";
 import type { TrackTheme } from "./course";
 
-/**
- * The Flooded Quarry: down a 12 m ramp into a rain-filled pit, along the wet pit floor and out up
- * the far wall. The ledge road skirts the deep pool and carries a scrap frame; the pit wade goes
- * straight through the water, shorter and slower, and leaves the frame behind. The course itself is
- * the `flooded-quarry` course in editor.scene.json.
- */
 export const FLOODED_QUARRY: TrackTheme = {
   id: "flooded-quarry",
   label: "Flooded Quarry",

@@ -70,10 +70,7 @@ export const WALSH_FLETCHER_GAS: GasModel = {
   },
 };
 
-/**
- * A calorically perfect gas, fuel ignored: the textbook ideal-cycle check.
- * @capability gas-turbine constant-cp gas for ideal-cycle analysis
- */
+/** @capability gas-turbine constant-cp gas for ideal-cycle analysis */
 export function perfectGas(cp: number, gamma: number): GasModel {
   return {
     gasConstant: (cp * (gamma - 1)) / gamma,
@@ -83,109 +80,62 @@ export function perfectGas(cp: number, gamma: number): GasModel {
   };
 }
 
-/** How the inlet loses total pressure with flight Mach number. */
 export type InletKind = "mil-e-5007d" | "normal-shock";
 
-/** Component losses and efficiencies. Polytropic efficiencies hold across the operating range. */
 export interface GasTurbineComponents {
-  /** Fan polytropic efficiency. */
   fan: number;
-  /** High-pressure compressor polytropic efficiency. */
   compressor: number;
-  /** High-pressure turbine polytropic efficiency (a cooled turbine's cooling losses folded in). */
   highTurbine: number;
-  /** Low-pressure turbine polytropic efficiency. */
   lowTurbine: number;
-  /** Burner combustion efficiency. */
   burnerEfficiency: number;
-  /** Burner total pressure ratio. */
   burnerPressure: number;
-  /** Shaft mechanical efficiency, each spool. */
   mechanical: number;
-  /** Subsonic duct total pressure recovery, on top of the inlet's shock losses. */
   inletRecovery: number;
-  /** Core (or mixed) nozzle total pressure ratio. */
   nozzlePressure: number;
-  /** Fan nozzle total pressure ratio (separate exhausts). */
   fanNozzlePressure: number;
-  /** Bypass duct total pressure ratio (mixed exhaust). */
   bypassDuctPressure: number;
-  /** Mixer total pressure ratio on top of the mixing loss itself. */
   mixerPressure: number;
-  /** Afterburner duct total pressure ratio when unlit. */
   afterburnerDryPressure: number;
-  /** Afterburner total pressure ratio when lit. */
   afterburnerPressure: number;
-  /** Afterburner combustion efficiency. */
   afterburnerEfficiency: number;
 }
 
-/**
- * A two-spool gas turbine at its design point: a turbojet (`bypassRatio: 0`, `fanPressureRatio: 1`), a separate-flow
- * turbofan or a mixed-flow turbofan, with or without an afterburner. SI units.
- */
 export interface GasTurbineDesign {
   name: string;
-  /** Design flight condition (default sea-level static, standard day). */
   designMach?: number;
   designTemperature?: number;
   designPressure?: number;
   /** Total air mass flow at the design point, kg/s. */
   massFlow: number;
   bypassRatio: number;
-  /**
-   * Fan pressure ratio (`1` for a turbojet). Omit on a mixed-flow turbofan to size it by the mixed-flow design rule:
-   * bypass and core total pressures equal at the mixer.
-   */
   fanPressureRatio?: number;
-  /** Overall pressure ratio, fan times high-pressure compressor. */
   overallPressureRatio: number;
   /** Burner exit total temperature at the design point, K. Uncooled cycle, so this is the cooling-mixed rotor inlet value. */
   turbineInletTemperature: number;
   exhaust: "separate" | "mixed";
-  /** `"convergent"` chokes at the throat; `"ideal"` expands to ambient (a variable convergent-divergent nozzle). */
   nozzle: "convergent" | "ideal";
-  /** Core Mach number entering the mixer at the design point (mixed exhaust, default `0.4`). */
   mixerMach?: number;
   inlet: InletKind;
   components: GasTurbineComponents;
-  /**
-   * Air drawn off the compressor exit, as shares of core air: `nozzle` cools the HPT nozzle and joins the gas ahead of
-   * the rotor (it does work there), `rotor` cools the rotor and joins behind it, `bleed` leaves for the airframe.
-   */
   cooling?: { nozzle?: number; rotor?: number; bleed?: number };
-  /** Default {@link WALSH_FLETCHER_GAS}. */
   gas?: GasModel;
   /** Lower heating value of the fuel at 298 K, J/kg (default 43.1 MJ/kg, kerosene). */
   fuelHeatingValue?: number;
-  /** Afterburner exit total temperature at full afterburner, K; omit for no afterburner. */
   afterburnerTemperature?: number;
-  /** Control limits for maximum dry power: the lowest-reaching one sets the turbine inlet temperature. */
   limits: {
-    /** Highest burner exit temperature, K. */
     turbineInletTemperature: number;
-    /** Highest overall pressure ratio. */
     overallPressureRatio?: number;
-    /** Highest physical low- and high-spool speed, share of the design speed. */
     lowSpeed?: number;
     highSpeed?: number;
-    /** Highest corrected low- and high-spool speed (speed over the root of inlet total temperature), share of design. */
     correctedLowSpeed?: number;
     correctedHighSpeed?: number;
-    /**
-     * Rise of both corrected-speed limits per unit fall of the fan inlet temperature ratio below design
-     * (`Tt2 / Tt2,design`), as fuel controls schedule more corrected speed in cold air (default `0`).
-     */
     coldSpeedGain?: number;
   };
 }
 
-/** Free-stream flight condition. */
 export interface GasTurbineFlight {
   mach: number;
-  /** Static temperature, K. */
   temperature: number;
-  /** Static pressure, Pa. */
   pressure: number;
 }
 
@@ -201,88 +151,56 @@ export interface GasStream {
 export interface GasTurbinePoint {
   flight: GasTurbineFlight;
   converged: boolean;
-  /** Uninstalled net thrust. */
   thrust: number;
-  /** Burner plus afterburner fuel flow. */
   fuelFlow: number;
   afterburnerFuelFlow: number;
   /** Thrust-specific fuel consumption, kg/(N·s). */
   tsfc: number;
-  /** Total air flow, core air flow and bypass ratio. */
   massFlow: number;
   coreFlow: number;
   bypassRatio: number;
   fanPressureRatio: number;
   overallPressureRatio: number;
   inletRecovery: number;
-  /** Fan inlet total temperature. */
   fanInletTemperature: number;
-  /** Compressor exit total temperature and pressure. */
   compressorTemperature: number;
   compressorPressure: number;
   turbineInletTemperature: number;
-  /** Burner fuel-air ratio. */
   fuelAirRatio: number;
-  /** Afterburner exit total temperature (the mixed temperature when unlit). */
   afterburnerTemperature: number;
-  /** Physical spool speeds, share of design. */
   lowSpeed: number;
   highSpeed: number;
-  /** Corrected spool speeds, `N/√(Tt,in/Tt,in design)`, share of design. */
   correctedLowSpeed: number;
   correctedHighSpeed: number;
-  /** Power absorbed by the fan and by the high-pressure compressor. */
   fanPower: number;
   compressorPower: number;
-  /** High- and low-pressure turbine expansion ratios, inlet over exit total pressure. */
   highTurbineExpansion: number;
   lowTurbineExpansion: number;
-  /** Ram drag, `ṁ₀·V₀`. */
   ramDrag: number;
-  /** Gas entering the afterburner duct (the core stream for separate exhausts). */
   exhaust: GasStream;
-  /** Gross thrust of the bypass stream through its own nozzle (separate exhausts). */
   fanGross: number;
-  /** Nozzle throat area the point needs, m² (the scheduled area of a variable nozzle). */
   nozzleThroat: number;
 }
 
-/** A sized gas turbine cycle that solves steady off-design points. */
 export interface GasTurbineCycle {
   readonly design: Readonly<GasTurbineDesign>;
   readonly gas: GasModel;
-  /** The design point as sized. */
   readonly reference: GasTurbinePoint;
-  /** Steady point at a burner exit temperature and, if lit, an afterburner exit temperature, K. */
   solve(flight: GasTurbineFlight, turbineInletTemperature: number, afterburnerTemperature?: number): GasTurbinePoint;
-  /** Maximum dry power: the highest turbine inlet temperature no control limit forbids. */
   maxDry(flight: GasTurbineFlight): GasTurbinePoint;
-  /** Full afterburner on top of maximum dry power; equals {@link maxDry} without an afterburner. */
   maxAfterburner(flight: GasTurbineFlight): GasTurbinePoint;
-  /** Gross thrust and afterburner fuel flow of burning an exhaust stream to a temperature, K, through the nozzle. */
   afterburn(exhaust: GasStream, flight: GasTurbineFlight, temperature: number): { gross: number; fuelFlow: number };
-  /**
-   * Turbine shaft powers, W, at a steady point's compressor delivery with a different burner fuel flow: what drives a
-   * spool off its steady speed in a transient.
-   */
   turbinePowers(point: GasTurbinePoint, fuelFlow: number): { high: number; low: number };
 }
 
-/** Gas-dynamic helpers on a {@link GasModel}. */
 interface Thermo {
   temperatureAtEnthalpy(enthalpy: number, far: number, guess: number): number;
   temperatureAtEntropy(entropy: number, far: number, guess: number): number;
-  /** Exit total temperature of a polytropic compression by a pressure ratio. */
   compress(temperature: number, ratio: number, efficiency: number): number;
-  /** Exit total temperature of a polytropic expansion by an expansion ratio. */
   expand(temperature: number, far: number, ratio: number, efficiency: number): number;
-  /** Expansion ratio of a polytropic turbine between two total temperatures. */
   expansionRatio(inlet: number, exit: number, far: number, efficiency: number): number;
-  /** Static temperature and velocity after isentropic expansion from total conditions by a total-to-static pressure ratio. */
   staticAt(temperature: number, far: number, ratio: number): { temperature: number; velocity: number };
-  /** Total-to-static pressure ratio at the sonic throat. */
   criticalRatio(temperature: number, far: number): number;
-  /** `ṁ / (A·Pt)` at a total-to-static ratio, s/m. */
   flowDensity(temperature: number, far: number, ratio: number): number;
 }
 
@@ -377,11 +295,7 @@ function farOf(stream: GasStream): number {
   return stream.air > 0 ? stream.fuel / stream.air : 0;
 }
 
-/**
- * Inlet total pressure recovery from shock losses alone: MIL-E-5007D's `1 − 0.075·(M − 1)^1.35` above Mach 1, or the
- * total pressure ratio across a normal shock for a fixed pitot inlet such as the F-16's.
- * @capability gas-turbine inlet shock recovery by flight Mach number
- */
+/** @capability gas-turbine inlet shock recovery by flight Mach number */
 export function inletShockRecovery(kind: InletKind, mach: number): number {
   if (mach <= 1) return 1;
   if (kind === "mil-e-5007d") return 1 - 0.075 * (mach - 1) ** 1.35;
@@ -396,7 +310,6 @@ interface Sizing {
   fanPressureRatio: number;
   highTurbineExpansion: number;
   lowTurbineExpansion: number;
-  /** Throat areas of the turbine nozzles, core and fan nozzles (separate), and mixer inlets (mixed), m². */
   highTurbineArea: number;
   lowTurbineArea: number;
   coreNozzleArea: number;
@@ -406,7 +319,6 @@ interface Sizing {
   /** Fan and high-pressure compressor specific work at design, J/kg, for the speed relation. */
   lowWork: number;
   highWork: number;
-  /** Fan and compressor inlet total temperatures at design, K. */
   fanInlet: number;
   compressorInlet: number;
 }
@@ -440,7 +352,6 @@ export function createGasTurbineCycle(design: GasTurbineDesign): GasTurbineCycle
     pressure: design.designPressure ?? SEA_LEVEL_PRESSURE,
   };
 
-  /** `ṁ / (A·Pt)` of a choked throat at a total temperature and fuel-air ratio. */
   function chokedFlow(temperature: number, far: number): number {
     return thermo.flowDensity(temperature, far, thermo.criticalRatio(temperature, far));
   }
@@ -465,7 +376,6 @@ export function createGasTurbineCycle(design: GasTurbineDesign): GasTurbineCycle
     return Math.max(0, (ha4 - gas.enthalpy(tt3, 0)) / (c.burnerEfficiency * heating - ha4 - productsIncrement(tt4)));
   }
 
-  /** Gross thrust of a stream through a nozzle, N, and its throat area, m². */
   function nozzle(stream: GasStream, ambient: number, kind: "convergent" | "ideal"): { gross: number; throat: number } {
     const flow = stream.air + stream.fuel;
     if (flow <= 0) return { gross: 0, throat: 0 };
@@ -480,7 +390,6 @@ export function createGasTurbineCycle(design: GasTurbineDesign): GasTurbineCycle
     return { gross: flow * exit.velocity + throat * (stream.pressure / critical - ambient), throat };
   }
 
-  /** Total-to-static ratio of a subsonic stream passing `flowPerArea = ṁ / (A·Pt)`. */
   function subsonicRatio(temperature: number, far: number, flowPerArea: number): number {
     let low = 1 + 1e-12;
     let high = thermo.criticalRatio(temperature, far);
@@ -591,7 +500,6 @@ export function createGasTurbineCycle(design: GasTurbineDesign): GasTurbineCycle
 
   const sizing = size(designFanPressureRatio()).sizing;
 
-  /** The hot section at a compressor delivery and burner exit temperature: HPT expansion from the two choked nozzles. */
   function hotSection(tt3: number, tt4: number) {
     const hot = burner(tt3, tt4);
     const inletFlow = sizing.highTurbineArea * chokedFlow(hot.tt41, hot.far41);
@@ -609,7 +517,6 @@ export function createGasTurbineCycle(design: GasTurbineDesign): GasTurbineCycle
     return { ...hot, ...mixed, expansion, tt44, inletFlow };
   }
 
-  /** LPT expansion ratio that passes the turbine flow through the fixed core nozzle (separate exhausts). */
   function lowTurbineExpansionAt(tt45: number, pt45: number, f: number, flow: number, ambient: number): number {
     const passes = (expansion: number): number => {
       const tt5 = thermo.expand(tt45, f, expansion, c.lowTurbine);
@@ -642,7 +549,6 @@ export function createGasTurbineCycle(design: GasTurbineDesign): GasTurbineCycle
     return { gross: nozzle(burned, flight.pressure, design.nozzle).gross, fuelFlow: fuel };
   }
 
-  /** Constant-area mixing to fully mixed flow: mass, energy and impulse conserved; equal statics at the inlet planes. */
   function mix(core: GasStream, bypass: GasStream): GasStream {
     const r = gas.gasConstant;
     const fc = farOf(core);
@@ -674,10 +580,6 @@ export function createGasTurbineCycle(design: GasTurbineDesign): GasTurbineCycle
     return { air, fuel: core.fuel, temperature: tt, pressure: p * Math.exp((gas.entropy(tt, far) - gas.entropy(t, far)) / r) * c.mixerPressure };
   }
 
-  /**
-   * A mixed-exhaust point: the variable nozzle holds the design LPT ratio until it is fully open (its full-afterburner
-   * throat at design), then the open throat sets a smaller LPT expansion, as at idle.
-   */
   function solve(flight: GasTurbineFlight, tt4: number, afterburnerTemperature?: number): GasTurbinePoint {
     const held = solveAt(flight, tt4, afterburnerTemperature, sizing.lowTurbineExpansion);
     if (separate || held.nozzleThroat <= maxThroat) return held;

@@ -38,7 +38,6 @@ export interface SizeSpec {
 }
 
 export interface DiffNumbers {
-  /** Mean absolute per-channel difference, 0-255. */
   meanAbs: number;
   /** Share of pixels with any channel differing by more than 8, 0-1. */
   over8Share: number;
@@ -58,9 +57,7 @@ export interface Artefact {
   controlPng: string;
   sha: string;
   controlSha: string;
-  /** What the capture reported as the applied camera, when it reported one. */
   camera: string | null;
-  /** Same-code pair: this machine's noise floor for this view and size. */
   control: DiffNumbers;
   state: StateDiff;
   reused: boolean;
@@ -85,13 +82,11 @@ export interface Manifest {
   game: string;
   capturedAt: string;
   code: {
-    /** Hash of the game's working tree: committed tree plus uncommitted diff and untracked files. */
     gameTree: string;
     head: string;
     dirty: boolean;
     engineCommit: string;
     tools: string;
-    /** The directory the dev runner was told to serve - the tree this bundle describes. */
     servedDir: string;
     /**
      * The same hash read again after the captures. It equals `gameTree` or the bundle failed:
@@ -196,18 +191,11 @@ function git(cwd: string, args: string[]): { ok: boolean; out: string } {
   return { ok: result.status === 0, out: (result.stdout ?? "").trim() };
 }
 
-/** Tracked tree at HEAD for one game, or "" before its first commit. */
 function headTree(repo: string, game: string): string {
   const result = git(repo, ["rev-parse", `HEAD:${game}`]);
   return result.ok ? result.out : "";
 }
 
-/**
- * A hash of one game's working tree: its HEAD tree, the binary diff HEAD..worktree and the
- * content of untracked source files. A lane's uncommitted edit changes the key; an unrelated
- * file elsewhere in the repo does not, and neither does captured evidence another lane left
- * in docs/ or shots/.
- */
 export function gameTreeHash(repo: string, game: string): { hash: string; head: string; dirty: boolean } {
   const head = git(repo, ["rev-parse", "HEAD"]).out || "no-head";
   const tree = headTree(repo, game);
@@ -318,7 +306,6 @@ interface CaptureResult {
 }
 
 export interface ProveDeps {
-  /** Run one capture; a thrown error is the reason the cell is unprovable. */
   shoot: (args: { view: string; size: SizeSpec; tier: string; out: string; params: string[] }) => CaptureResult;
   drive: (args: { flow: string; state?: string; size: SizeSpec; tier: string; log: string; params: string[] }) => { ok: boolean; wallMs: number; output: string };
   diff: (a: string, b: string) => DiffNumbers;
@@ -364,7 +351,6 @@ export function cacheLookup(bundleRoot: string, key: string): CacheLookup {
   return { hit, dir };
 }
 
-/** Copy a cached cell into this run's bundle and return what the cache says it held. */
 function reuseCached(cache: string, artefactDir: string): { png: string; controlPng: string; numbers: DiffNumbers; sha: string; controlSha: string; camera: string | null } {
   mkdirSync(artefactDir, { recursive: true });
   const png = join(artefactDir, "after.png");
@@ -387,7 +373,6 @@ export interface ProveResult {
   manifestPath: string;
 }
 
-/** Find the newest earlier bundle for this game with the same view/size/tier and another code state. */
 export function findBaseline(bundleRoot: string, input: { view: string; size: string; tier: string; key: string }): { path: string; png: string; key: string } | null {
   const runs = join(bundleRoot, "runs");
   if (!existsSync(runs)) return null;
@@ -416,7 +401,6 @@ export interface CodeState {
   dirty: boolean;
   engineCommit: string;
   tools: string;
-  /** The directory the dev runner serves for this run. */
   servedDir: string;
 }
 
@@ -592,7 +576,6 @@ function baselineFrom(path: string, artefact: Artefact): { path: string; png: st
   return { path: manifestPath, png: match.png, key: match.key };
 }
 
-/** The manifest numbers a lane pastes into its PR body, in the order it reads them. */
 export function summarise(manifest: Manifest): string {
   const lines: string[] = [];
   const head = `${manifest.game}: ${manifest.views.length} view(s) x ${manifest.sizes.length} size(s), tier ${manifest.tier}, game tree ${manifest.code.gameTree.slice(0, 12)}${manifest.code.dirty ? " (dirty)" : ""}, engine ${manifest.code.engineCommit}`;

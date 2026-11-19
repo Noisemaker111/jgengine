@@ -14,7 +14,7 @@ export function buildingKitMaterialKey(part: BuildingKitPart, assets: readonly M
   return JSON.stringify([part.tint ?? "", surfaceKey(part.material), part.materialAssignments ?? [], assets.filter(asset => ids.has(asset.id))]);
 }
 
-/** One material style shared by every fitted instance using it. @internal */
+/** @internal */
 export interface BuildingKitStyleGroup {
   key: string;
   part: BuildingKitPart;
@@ -36,7 +36,7 @@ export function groupBuildingKitInstances(instances: readonly BuildingKitInstanc
   return [...byKey.values()];
 }
 
-/** Validate named kit materials and native targets before any owned model or texture allocation. @internal */
+/** @internal */
 export function validateBuildingKitSource(scene: THREE.Object3D, part: BuildingKitPart, assets: readonly MaterialAsset[] = []): void {
   const assignments = part.materialAssignments ?? [];
   const errors = validateMaterialAssignments(assignments, assets, { disallowedTextureRoles: ["height"] }).filter(item => item.severity === "error");

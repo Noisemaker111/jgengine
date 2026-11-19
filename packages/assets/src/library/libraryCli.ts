@@ -30,7 +30,6 @@ import { makehumanRecords } from "./libraryMakehuman";
 import { ingestSmithsonian } from "./librarySmithsonian";
 import { LIBRARY_KINDS } from "./librarySources";
 
-/** The sources `assets library ingest` can refresh, each writing `library/generated/<source>.json`. */
 const INGESTERS: Record<string, (options: IngestOptions) => Promise<LibraryRecord[]>> = {
   ambientcg: ingestAmbientcg,
   polyhaven: ingestPolyhaven,
@@ -42,7 +41,6 @@ const INGESTERS: Record<string, (options: IngestOptions) => Promise<LibraryRecor
   kaykit: (options) => ingestKaykitTrees(kaykitTreePacks(), options),
 };
 
-/** KayKit packs the pack index has not measured yet, listed from their repository trees. */
 function kaykitTreePacks(): KayKitTreePack[] {
   return kaykitSources.flatMap((source) => {
     if (source.unpulled === undefined || !("url" in source.download)) return [];
@@ -69,11 +67,7 @@ function positional(argv: readonly string[]): string[] {
   return out;
 }
 
-/**
- * Writes one ingest file and rewrites the barrel that imports every committed file.
- *
- * @internal
- */
+/** @internal */
 export function writeLibraryFile(generatedDir: string, file: LibraryRecordFile): void {
   writeFileSync(join(generatedDir, `${file.source}.json`), `${JSON.stringify(file)}\n`);
   const ids = readdirSync(generatedDir)
@@ -88,12 +82,7 @@ export function writeLibraryFile(generatedDir: string, file: LibraryRecordFile):
   );
 }
 
-/**
- * `assets library <search|ingest|credits|stats>`: search the shared asset library, refresh a source's
- * committed index from its upstream API, print credits for keys, or count entries.
- *
- * @internal
- */
+/** @internal */
 export async function cmdLibrary(argv: readonly string[], generatedDir: string, fail: (message: string) => never): Promise<void> {
   const [verb, ...rest] = argv;
   if (verb === "ingest") {

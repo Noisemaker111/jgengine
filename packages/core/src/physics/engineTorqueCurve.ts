@@ -19,7 +19,6 @@ export interface VehicleTorqueCurveEffect {
   friction?: number;
   /** Seconds the clutch is open per shift, no drive at all (default the powertrain's `shiftSeconds`). */
   shiftSeconds?: number;
-  /** Multiplier on the whole full-throttle curve: an engine tune or a detuned fleet car (default `1`). */
   scale?: number;
 }
 
@@ -36,7 +35,6 @@ function tableAt(curve: readonly (readonly [number, number])[], rpm: number): nu
   return curve[curve.length - 1]?.[1] ?? 0;
 }
 
-/** Peak of the effect's full-throttle curve, N·m. */
 function torqueCurvePeak(effect: VehicleTorqueCurveEffect, powertrain: VehicleGearboxTuning): number {
   const curve = effect.curve;
   if (curve === undefined) return powertrain.peakTorque;

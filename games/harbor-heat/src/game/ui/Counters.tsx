@@ -20,10 +20,6 @@ const GUNS = WEAPONS.filter((item) => item.trade?.buy !== undefined && item.trad
 const KIT = GEAR.filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes("shop_ammunation"));
 const CARS = VEHICLES.filter((car) => car.price > 0);
 
-/**
- * A conversation is the city talking: the person's current line, then each job they can offer right
- * now. A new person or job in `city.ts` shows up here with no dialogue file.
- */
 export function conversation(ctx: GameContext, dialogueId: string): DialogueDef | null {
   if (!dialogueId.startsWith("person:")) return null;
   const id = dialogueId.slice("person:".length);
@@ -42,14 +38,12 @@ export function conversation(ctx: GameContext, dialogueId: string): DialogueDef 
   };
 }
 
-/** Whose face a contact's portrait is shot from: their own cast body, else their crew's. */
 const PORTRAITS: Record<string, string> = { marco: "contact_marco", sal: "kingpin_sal", rita: "ped_city", dee: "cop_patrol", inez: "contact_inez" };
 const CREW_PORTRAITS: Record<string, string> = { carmine: "ganger_dock", riptide: "riptide_soldier", hhpd: "cop_patrol", locals: "ped_city" };
 
 const NO_RANKS: Readonly<Record<string, number>> = {};
 const ROMAN = ["", "I", "II", "III", "IV"];
 
-/** One shop's upgrades as board rows: the next rank's price and what it does, stamped owned once maxed. */
 function useUpgradeRows(shop: UpgradeShop): BoardRow[] {
   const { commands } = useGame();
   const ranks = useStore(upgradesStore, (state) => state?.ranks ?? NO_RANKS);
@@ -84,7 +78,6 @@ function speakerOf(ctx: GameContext, dialogueId: string): Speaker | null {
   };
 }
 
-/** What a gun or a box does, in a line short enough for the board. */
 function weaponLine(item: WeaponDef): string {
   if (item.weapon.explosion !== undefined) return `Thrown · ${item.weapon.damage} blast · ${item.weapon.explosion.radius} m`;
   const perSecond = Math.round((item.weapon.damage * 1000) / item.fireIntervalMs);
@@ -112,7 +105,6 @@ function countIn(slots: readonly ({ itemId: string; count?: number } | null | un
   return total;
 }
 
-/** The Ammu-Isle gun counter: tonight's night-market pieces, the rack, the shelf, and the bribe. */
 function GunCounter() {
   const { commands } = useGame();
   const cash = useCurrency("cash");
@@ -155,7 +147,6 @@ function GunCounter() {
   return <PriceBoard look="pawn" kicker="Mainsail · guns · ammo · armor" title="Ammu-Isle" sub="Cash only. No names, no questions." sections={sections} cash={cash} cred={cred} onLeave={() => commands.run("shop.close", {})} />;
 }
 
-/** Sunset Motors: Rita's lot, each car with its price on the windscreen. */
 function CarLot() {
   const { commands } = useGame();
   const cash = useCurrency("cash");
@@ -176,7 +167,6 @@ function CarLot() {
   return <PriceBoard look="lot" kicker="Rita Salgado · used & fast" title="Sunset Motors" sub="Every car runs. Most of them are clean." sections={sections} cash={cash} cred={cred} onLeave={() => commands.run("garage.close", {})} aside={bestLap === undefined ? null : `Ocean Loop record on the wall: ${bestLap.toFixed(1)} s`} />;
 }
 
-/** Palmview Bungalow: the bed, the rooms you have fitted, and the wire room's line to the safe. */
 function House() {
   const { commands } = useGame();
   const cash = useCurrency("cash");
@@ -209,7 +199,6 @@ function Talk({ dialogue, dialogueId }: { dialogue: DialogueDef; dialogueId: str
   return <FaceToFace key={dialogue.id} speaker={speaker} lines={lines} replies={replies} onLeave={() => commands.run("dialogue.close", {})} />;
 }
 
-/** A reply runs its command, or closes the talk when it has none. */
 function runChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice): void {
   if (choice.invoke == null) commands.run("dialogue.close", {});
   else commands.run(choice.invoke.command, choice.invoke.args ?? {});

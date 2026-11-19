@@ -1,6 +1,5 @@
 export type Vec2 = readonly [number, number];
 
-/** A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive. */
 export type Vec3 = readonly [number, number, number];
 
 export interface Footprint {
@@ -32,18 +31,12 @@ export interface AvoidZone {
   feather?: number;
 }
 
-/**
- * A clearance *corridor* along a polyline (a path/road): scatter is repelled within `halfWidth` of
- * the centerline, feathered over the outer band. Clean straight edges — unlike approximating a
- * corridor with a scalloped chain of discs.
- */
 export interface AvoidCorridor {
   points: readonly Vec2[];
   halfWidth: number;
   feather?: number;
 }
 
-/** A clearance region: point discs (spawns/plots) plus centerline corridors (paths). */
 export interface AvoidMasks {
   discs: readonly AvoidZone[];
   corridors: readonly AvoidCorridor[];
@@ -58,7 +51,6 @@ function bandInfluence(dist: number, radius: number, feather: number): number {
 // Grass and scatter test these per vertex against every mask, so they take square roots of their own
 // sums: Math.hypot allocates on every call in V8.
 
-/** Perpendicular distance from a point to a polyline segment [a,b] on the XZ plane. */
 function distanceToSegment(px: number, pz: number, a: Vec2, b: Vec2): number {
   const dx = b[0] - a[0];
   const dz = b[1] - a[1];
@@ -70,11 +62,7 @@ function distanceToSegment(px: number, pz: number, a: Vec2, b: Vec2): number {
   return Math.sqrt(ox * ox + oz * oz);
 }
 
-/**
- * How strongly a point falls inside a clearance zone: 1 at/inside the solid core, ramping to 0 at
- * the zone's outer `radius` across its `feather` band, 0 outside. The max over all zones.
- * @internal — the falloff math behind scatter avoid and terrain flatten.
- */
+/** @internal — the falloff math behind scatter avoid and terrain flatten. */
 export function zoneInfluence(x: number, z: number, zones: readonly AvoidZone[]): number {
   let best = 0;
   for (const zone of zones) {
@@ -88,7 +76,7 @@ export function zoneInfluence(x: number, z: number, zones: readonly AvoidZone[])
   return best;
 }
 
-/** Clearance influence of a corridor: nearest-segment distance vs `halfWidth`, feathered. @internal */
+/** @internal */
 export function corridorInfluence(x: number, z: number, corridor: AvoidCorridor): number {
   const { points, halfWidth } = corridor;
   const feather = corridor.feather ?? 0;
@@ -100,7 +88,7 @@ export function corridorInfluence(x: number, z: number, corridor: AvoidCorridor)
   return best;
 }
 
-/** Combined clearance influence of discs + corridors — the max over every mask. @internal */
+/** @internal */
 export function masksInfluence(x: number, z: number, masks: AvoidMasks): number {
   let best = zoneInfluence(x, z, masks.discs);
   for (const corridor of masks.corridors) {
@@ -234,7 +222,6 @@ export function resolveMove(from: Vec2, delta: Vec2, blockers: readonly Aabb[], 
   return [x, z];
 }
 
-/** An axis-aligned ellipse: `center` with semi-axes `radiusX` and `radiusY`. */
 export interface Ellipse {
   center: Vec2;
   radiusX: number;
@@ -247,16 +234,12 @@ function normalizedRadius2(point: Vec2, ellipse: Ellipse): number {
   return nx * nx + ny * ny;
 }
 
-/** True when `point` sits inside (or on) the ellipse — the oval-arena containment test.
- * @internal
- */
+/** @internal */
 export function pointInEllipse(point: Vec2, ellipse: Ellipse): boolean {
   return normalizedRadius2(point, ellipse) <= 1;
 }
 
-/** Clamp `point` to the ellipse boundary when it strays outside, else return it unchanged.
- * @internal
- */
+/** @internal */
 export function clampToEllipse(point: Vec2, ellipse: Ellipse): Vec2 {
   const r2 = normalizedRadius2(point, ellipse);
   if (r2 <= 1) return point;
@@ -267,9 +250,7 @@ export function clampToEllipse(point: Vec2, ellipse: Ellipse): Vec2 {
   ];
 }
 
-/** Outward unit normal of the ellipse at the point nearest `point` — the boundary bounce direction.
- * @internal
- */
+/** @internal */
 export function ellipseNormal(point: Vec2, ellipse: Ellipse): Vec2 {
   const nx = ellipse.radiusX > 0 ? (point[0] - ellipse.center[0]) / (ellipse.radiusX * ellipse.radiusX) : 0;
   const ny = ellipse.radiusY > 0 ? (point[1] - ellipse.center[1]) / (ellipse.radiusY * ellipse.radiusY) : 0;

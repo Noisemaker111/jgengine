@@ -22,10 +22,6 @@ export interface BallisticSweepOptions {
 
 const DEFAULT_SWEEP_STEP = 1 / 60;
 
-/**
- * Sweeps each short chord of the closed-form arc through live body AABBs, including sleeping bodies.
- * Thin cover between samples blocks; `step` controls the approximation of the curved path.
- */
 export function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep {
   const step = options.step ?? DEFAULT_SWEEP_STEP;
   const radius = options.radius ?? 0;
@@ -56,9 +52,7 @@ export function createBallisticSweep(world: PhysicsWorld, options: BallisticSwee
   };
 }
 
-/** Contact fraction for a point segment against a translating axis-aligned box; inflate extents for a projectile radius.
- * @capability moving-box-sweep detect contact with boxes crossing a projectile segment between simulation poses
- */
+/** @capability moving-box-sweep detect contact with boxes crossing a projectile segment between simulation poses */
 export function sweepMovingBounds(
   from: readonly [number, number, number], to: readonly [number, number, number],
   targetFrom: readonly [number, number, number], targetTo: readonly [number, number, number],
@@ -69,9 +63,7 @@ export function sweepMovingBounds(
   return intersectAabb(origin, motion, [-halfExtents[0], -halfExtents[1], -halfExtents[2]], halfExtents, 1)?.distance ?? null;
 }
 
-/** Contact fraction for a point segment against a translating sphere; add the projectile radius to `radius`.
- * @capability moving-sphere-sweep detect contact with spheres crossing a projectile segment between simulation poses
- */
+/** @capability moving-sphere-sweep detect contact with spheres crossing a projectile segment between simulation poses */
 export function sweepMovingSphere(
   from: readonly [number, number, number], to: readonly [number, number, number],
   targetFrom: readonly [number, number, number], targetTo: readonly [number, number, number], radius: number,

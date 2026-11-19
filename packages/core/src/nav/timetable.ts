@@ -10,11 +10,8 @@ export interface RouteTimetableConfig {
   waypoints: readonly (Waypoint | TimetableStop)[];
   /** World units per second between stops. */
   speed: number;
-  /** Wrap from the last waypoint back to the first (a circular line). Default `false` — the mover holds at the terminus. */
   loop?: boolean;
-  /** Default dwell applied at every waypoint without its own `dwellSeconds`; default `0`. */
   dwellSeconds?: number;
-  /** Shifts the whole timetable so `t = 0` lands mid-route — staggers several movers on one route. */
   offsetSeconds?: number;
 }
 
@@ -22,9 +19,7 @@ export interface TimetablePose {
   position: Waypoint;
   /** Yaw (radians) of the travel direction, matching engine `rotationY`; holds through dwells. */
   heading: number;
-  /** Index of the segment being travelled (or the stop being dwelt at). */
   segment: number;
-  /** True while holding at a stop. */
   dwelling: boolean;
 }
 

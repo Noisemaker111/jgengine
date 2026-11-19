@@ -4,15 +4,11 @@ import { GAMEICONS_ARTISTS, GAMEICONS_CC0_ARTISTS, GAMEICONS_PACK } from "./libr
 import { rocketboxAnimationRecords } from "./libraryRocketbox";
 import { GAMEICONS_REVISION, ROCKETBOX_REVISION, type LibraryKind, type LibrarySourceId } from "./librarySources";
 
-/** The fetch seam ingest uses; tests pass a stub. */
 export type IngestFetch = (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }>;
 
-/** What every ingester takes. */
 export interface IngestOptions {
   fetchImpl?: IngestFetch;
-  /** GitHub token for tree listings (raises the API rate limit; optional). */
   githubToken?: string;
-  /** Cap on records, for a quick sample. */
   limit?: number;
   log?: (line: string) => void;
 }
@@ -43,11 +39,7 @@ function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-/**
- * Lowercase, trimmed, de-duplicated tags with ids, numbers and noise dropped.
- *
- * @internal
- */
+/** @internal */
 export function cleanTags(raw: readonly string[], drop: readonly string[] = []): string[] {
   const dropped = new Set(drop.map((value) => value.toLowerCase()));
   const out: string[] = [];
@@ -79,11 +71,7 @@ function limited<T>(items: T[], options: IngestOptions): T[] {
 
 const AMBIENTCG_KINDS: Record<string, LibraryKind> = { Material: "material", Decal: "decal", Atlas: "decal", HDRI: "hdri" };
 
-/**
- * ambientCG: every material, decal, atlas and HDRI from its public API (CC0).
- *
- * @internal
- */
+/** @internal */
 export async function ingestAmbientcg(options: IngestOptions = {}): Promise<LibraryRecord[]> {
   const records: LibraryRecord[] = [];
   for (let offset = 0; ; offset += 250) {
@@ -109,11 +97,7 @@ export async function ingestAmbientcg(options: IngestOptions = {}): Promise<Libr
 
 const POLYHAVEN_KINDS: Record<number, LibraryKind> = { 0: "hdri", 1: "material", 2: "model" };
 
-/**
- * Poly Haven: every model, texture and HDRI from its public API (CC0), with polycount, size and authors.
- *
- * @internal
- */
+/** @internal */
 export async function ingestPolyhaven(options: IngestOptions = {}): Promise<LibraryRecord[]> {
   const all = await getJson(options, "https://api.polyhaven.com/assets");
   if (!isRecord(all)) throw new Error("Poly Haven /assets returned no object");
@@ -152,11 +136,7 @@ async function gitTree(options: IngestOptions, repo: string, ref: string): Promi
   return tree["tree"].flatMap((node: unknown) => (isRecord(node) && typeof node["path"] === "string" ? [node["path"]] : []));
 }
 
-/**
- * game-icons.net: every SVG in the pinned repo, credited per artist (CC BY 3.0, two artists CC0).
- *
- * @internal
- */
+/** @internal */
 export async function ingestGameicons(options: IngestOptions = {}): Promise<LibraryRecord[]> {
   const paths = await gitTree(options, "game-icons/icons", GAMEICONS_REVISION);
   const records: LibraryRecord[] = [];
@@ -183,7 +163,6 @@ export async function ingestGameicons(options: IngestOptions = {}): Promise<Libr
 /** Sketchfab licence filters the library indexes; everything else (NC, SA, ND, editorial, store) is never requested. */
 const SKETCHFAB_LICENSES = ["cc0", "by"] as const;
 
-/** Sketchfab categories whose models the browser files under characters. */
 const SKETCHFAB_CHARACTER_CATEGORIES = new Set(["characters-creatures", "animals-pets"]);
 
 /**
@@ -253,12 +232,7 @@ export function sketchfabRecord(result: unknown): LibraryRecord | null {
   return record;
 }
 
-/**
- * Microsoft Rocketbox: every avatar and animal folder at the pinned commit (MIT), all rigged, and
- * every animation clip in its shared skeleton's library.
- *
- * @internal
- */
+/** @internal */
 export async function ingestRocketbox(options: IngestOptions = {}): Promise<LibraryRecord[]> {
   const paths = await gitTree(options, "microsoft/Microsoft-Rocketbox", ROCKETBOX_REVISION);
   const folders = paths.filter((path) => /^Assets\/Avatars\/[^/]+\/[^/]+$/.test(path) || /^Assets\/Animals\/[^/]+$/.test(path));
@@ -277,18 +251,13 @@ export async function ingestRocketbox(options: IngestOptions = {}): Promise<Libr
   return limited(records, options);
 }
 
-/** One KayKit pack the library lists from its repository tree before any pull has indexed it. */
 export interface KayKitTreePack {
   pack: string;
   repo: string;
   tags: readonly string[];
 }
 
-/**
- * KayKit packs without a generated pack index: listed from their GitHub trees (CC0).
- *
- * @internal
- */
+/** @internal */
 export async function ingestKaykitTrees(packs: readonly KayKitTreePack[], options: IngestOptions = {}): Promise<LibraryRecord[]> {
   const records: LibraryRecord[] = [];
   for (const pack of packs) {
@@ -308,11 +277,7 @@ export async function ingestKaykitTrees(packs: readonly KayKitTreePack[], option
   return limited(records, options);
 }
 
-/**
- * Wraps records in the committed file shape.
- *
- * @internal
- */
+/** @internal */
 export function recordFile(source: LibrarySourceId, records: readonly LibraryRecord[], ingested = new Date().toISOString().slice(0, 10)): LibraryRecordFile {
   return { source, ingested, records };
 }

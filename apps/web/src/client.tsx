@@ -1,8 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/**
- * The site's browser entry: finds the page for this URL and draws it into `<body>` over the
- * prerendered HTML, which brings the page's buttons, live demos and menus to life.
- */
 import { hydrateRoot } from "@jgengine/core/ui/jsx/client.view";
 
 import { NotFound } from "./components/NotFound";

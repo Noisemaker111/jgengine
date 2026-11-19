@@ -25,15 +25,10 @@ function focusInitial(root: HTMLElement, options: DialogBehaviorOptions): void {
     ? preferred : controls[0] ?? root).focus();
 }
 
-/** Options for controlled dialog focus behavior; callers own markup, state, and close policy. */
 export interface DialogBehaviorOptions {
-  /** Whether the dialog is mounted and open. */
   open: boolean;
-  /** Escape requests a close; leaving `open` true keeps the dialog active. Omit to disable Escape. */
   onClose?: (() => void) | undefined;
-  /** Preferred initial focus, falling back to the first available control or the dialog root. */
   initialFocus?: "root" | (() => HTMLElement | null);
-  /** Refocus when the content identity changes, without replacing the original return target. */
   focusKey?: unknown | undefined;
 }
 

@@ -12,12 +12,9 @@ import type { ReadyWorldViewModel } from "../../runtime/worldViewModel";
 import { useTabletNavContext } from "../../tablet/components/tabletNav";
 import { Button, C, ErrorText, FULL, Icon, Muted, Row, Text, useCompact } from "../../ui/kit";
 
-/** Quick replies. No emoji: the native surface has no colour emoji font. */
 const REACTIONS = ["Hello, neighbors!", "Nice lab!"] as const;
-/** The longest message a neighbor can send. */
 export const CHAT_MAX_LENGTH = 500;
 
-/** What the chat panel shows and does; the container wires it to the world chat transport. */
 export interface WorldChatVm {
   messages: readonly ChatMessage[] | undefined;
   playerId: string;

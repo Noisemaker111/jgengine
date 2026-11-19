@@ -56,7 +56,6 @@ function cloneLightProbes(probes: readonly EditorLightProbe[]): EditorLightProbe
   }));
 }
 
-
 /** Copies a baked minimap so a document's PNG + bounds are never shared by reference across rebuilds. */
 function cloneMinimapBake(minimap: EditorMinimapBake): EditorMinimapBake {
   return { background: minimap.background, bounds: { ...minimap.bounds } };
@@ -141,7 +140,7 @@ function upsertGrids(
   return [...byId.values()];
 }
 
-/** Spread-ready non-placeable fields preserved across document rebuilds. @internal */
+/** @internal */
 export function editorDocumentExtras(doc: EditorDocument): {
   materialAssets?: MaterialAsset[];
   prefabs: EditorPrefab[];
@@ -172,9 +171,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
   };
 }
 
-/** Builds a fresh, empty editor document to start authoring a scene from scratch.
- * @internal
- */
+/** @internal */
 export function createEmptyEditorDocument(): EditorDocument {
   return {
     version: 1,
@@ -297,9 +294,7 @@ function upsertCatalogs(
   return [...byId.values()];
 }
 
-/** Resolves a game's `editorLayers` export — document, partial data, or factory — into a full document.
- * @internal
- */
+/** @internal */
 export function normalizeEditorLayers(input: EditorLayersInput | undefined | null): EditorDocument {
   if (input === undefined || input === null) return createEmptyEditorDocument();
   const resolved = typeof input === "function" ? input() : input;
@@ -350,12 +345,7 @@ export function ensureUniqueEditorId(id: string, taken: Set<string>): string {
   return candidate;
 }
 
-/** Combines multiple editor documents' markers, volumes, paths, notes, prefabs, and collections
- * into one, re-idding any placeable object whose id collides with one already merged in — across
- * all four collections, since selection/parenting/removal treat those ids as one document-global
- * namespace.
- * @internal
- */
+/** @internal */
 export function mergeEditorDocuments(...docs: readonly EditorDocument[]): EditorDocument {
   const out = createEmptyEditorDocument();
   const taken = new Set<string>();
@@ -393,9 +383,7 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
   return out;
 }
 
-/** Extracts the subset of a document matching the given ids — the clipboard fragment for copy/paste.
- * @internal
- */
+/** @internal */
 export function extractEditorFragment(doc: EditorDocument, ids: readonly string[]): EditorDocument {
   const wanted = new Set(ids);
   return cloneEditorDocument({
@@ -411,39 +399,27 @@ export function extractEditorFragment(doc: EditorDocument, ids: readonly string[
   });
 }
 
-/** Counts every object in a document across markers, volumes, paths, and notes.
- * @internal
- */
+/** @internal */
 export function editorDocumentSize(doc: EditorDocument): number {
   return doc.markers.length + doc.volumes.length + doc.paths.length + doc.annotations.length;
 }
 
-/** Looks up a prefab by id in an editor document.
- * @internal
- */
+/** @internal */
 export function findEditorPrefab(doc: EditorDocument, id: string): EditorPrefab | undefined {
   return doc.prefabs.find((prefab) => prefab.id === id);
 }
 
-/** Looks up a named collection / selection set by id in an editor document.
- * @internal
- */
+/** @internal */
 export function findEditorCollection(doc: EditorDocument, id: string): EditorCollection | undefined {
   return doc.collections.find((collection) => collection.id === id);
 }
 
-/**
- * Looks up a gameplay data catalog by id on the scene document.
- * @capability editor-catalogs Find a persisted catalog bag by id.
- */
+/** @capability editor-catalogs Find a persisted catalog bag by id. */
 export function findEditorCatalog(doc: EditorDocument, id: string): EditorCatalogData | undefined {
   return doc.catalogs.find((catalog) => catalog.id === id);
 }
 
-/**
- * Looks up one entry inside a gameplay data catalog.
- * @capability editor-catalogs Find a catalog entry's meta bag by catalog + entry id.
- */
+/** @capability editor-catalogs Find a catalog entry's meta bag by catalog + entry id. */
 export function findEditorCatalogEntry(
   doc: EditorDocument,
   catalogId: string,
@@ -452,11 +428,7 @@ export function findEditorCatalogEntry(
   return findEditorCatalog(doc, catalogId)?.entries.find((entry) => entry.id === entryId);
 }
 
-/**
- * Seeds default catalog rows from game-exported definitions into a document: missing catalogs and
- * missing entries are filled from the definition; existing document values win (overlay already applied).
- * @capability editor-catalogs Seed scene-document catalogs from game-exported schemas.
- */
+/** @capability editor-catalogs Seed scene-document catalogs from game-exported schemas. */
 export function seedEditorCatalogs(
   doc: EditorDocument,
   definitions: readonly EditorCatalogDefinition[],
@@ -482,11 +454,7 @@ export function seedEditorCatalogs(
   return { ...doc, catalogs: next };
 }
 
-/**
- * True when an object carries a per-object `locked` flag (hierarchy lock toggle).
- * Collection membership is checked separately by {@link isEditorObjectLocked}.
- * @internal
- */
+/** @internal */
 export function isEditorObjectSelfLocked(doc: EditorDocument, id: string): boolean {
   const marker = doc.markers.find((entry) => entry.id === id);
   if (marker !== undefined) return marker.locked === true;
@@ -498,28 +466,17 @@ export function isEditorObjectSelfLocked(doc: EditorDocument, id: string): boole
   return note?.locked === true;
 }
 
-/**
- * True when an object is a member of any locked collection (production group lock).
- * @internal
- */
+/** @internal */
 export function isEditorObjectCollectionLocked(doc: EditorDocument, id: string): boolean {
   return doc.collections.some((collection) => collection.locked === true && collection.memberIds.includes(id));
 }
 
-/**
- * True when an object id is locked for edit — either its own `locked` flag or membership in a
- * locked collection. Blocks move/delete via session mutations.
- * @internal
- */
+/** @internal */
 export function isEditorObjectLocked(doc: EditorDocument, id: string): boolean {
   return isEditorObjectSelfLocked(doc, id) || isEditorObjectCollectionLocked(doc, id);
 }
 
-/**
- * True when an object carries `hidden: true` — omitted from editor viewport overlays and picking
- * while remaining in the hierarchy and document.
- * @internal
- */
+/** @internal */
 export function isEditorObjectHidden(doc: EditorDocument, id: string): boolean {
   const marker = doc.markers.find((entry) => entry.id === id);
   if (marker !== undefined) return marker.hidden === true;
@@ -560,17 +517,12 @@ export function createPrefabFragment(doc: EditorDocument, ids: readonly string[]
   };
 }
 
-/** Looks up a marker by id in an editor document.
- * @internal
- */
+/** @internal */
 export function findEditorMarker(doc: EditorDocument, id: string): EditorMarker | undefined {
   return doc.markers.find((marker) => marker.id === id);
 }
 
-/** Looks up a marker by id and throws when it is absent — for scene contracts where a
- * missing marker is an authoring error to surface loudly, not a runtime branch to handle.
- * @internal
- */
+/** @internal */
 export function requireEditorMarker(doc: EditorDocument, id: string): EditorMarker {
   const marker = findEditorMarker(doc, id);
   if (marker === undefined) {
@@ -579,44 +531,32 @@ export function requireEditorMarker(doc: EditorDocument, id: string): EditorMark
   return marker;
 }
 
-/** A marker's world position as an `[x, y, z]` tuple — the shared shape gameplay tables read.
- * @internal
- */
+/** @internal */
 export function editorMarkerPosition(marker: EditorMarker): readonly [x: number, y: number, z: number] {
   return [marker.position.x, marker.position.y, marker.position.z];
 }
 
-/** A marker's ground position as an `[x, z]` tuple, dropping the vertical axis.
- * @internal
- */
+/** @internal */
 export function editorMarkerXZ(marker: EditorMarker): readonly [x: number, z: number] {
   return [marker.position.x, marker.position.z];
 }
 
-/** Looks up a volume by id in an editor document.
- * @internal
- */
+/** @internal */
 export function findEditorVolume(doc: EditorDocument, id: string): EditorVolume | undefined {
   return doc.volumes.find((volume) => volume.id === id);
 }
 
-/** Looks up a path by id in an editor document.
- * @internal
- */
+/** @internal */
 export function findEditorPath(doc: EditorDocument, id: string): EditorPath | undefined {
   return doc.paths.find((path) => path.id === id);
 }
 
-/** Looks up an annotation note by id in an editor document.
- * @internal
- */
+/** @internal */
 export function findEditorNote(doc: EditorDocument, id: string): EditorNote | undefined {
   return doc.annotations.find((note) => note.id === id);
 }
 
-/** Lists the distinct marker, volume, and path kinds authored in a document.
- * @internal
- */
+/** @internal */
 export function listEditorKinds(doc: EditorDocument): {
   markers: string[];
   volumes: string[];
@@ -635,7 +575,6 @@ export function listEditorKinds(doc: EditorDocument): {
   };
 }
 
-/** Every object in a document that carries an id and optional parent, across all four collections. */
 interface EditorNode {
   id: string;
   parentId?: string;
@@ -652,18 +591,14 @@ export function editorParentOf(doc: EditorDocument, id: string): string | undefi
   return editorNodes(doc).find((node) => node.id === id)?.parentId;
 }
 
-/** The direct child ids of an object (empty when it has none).
- * @internal
- */
+/** @internal */
 export function editorChildren(doc: EditorDocument, parentId: string): string[] {
   return editorNodes(doc)
     .filter((node) => node.parentId === parentId)
     .map((node) => node.id);
 }
 
-/** Object ids with no parent (or whose parent no longer exists) — the roots of the hierarchy.
- * @internal
- */
+/** @internal */
 export function editorRoots(doc: EditorDocument): string[] {
   const ids = new Set(editorNodes(doc).map((node) => node.id));
   return editorNodes(doc)
@@ -671,9 +606,7 @@ export function editorRoots(doc: EditorDocument): string[] {
     .map((node) => node.id);
 }
 
-/** Every descendant id of the given ids (children, grandchildren, …), excluding the inputs.
- * @internal
- */
+/** @internal */
 export function collectDescendants(doc: EditorDocument, ids: Iterable<string>): Set<string> {
   const childrenByParent = new Map<string, string[]>();
   for (const node of editorNodes(doc)) {
@@ -695,18 +628,14 @@ export function collectDescendants(doc: EditorDocument, ids: Iterable<string>): 
   return out;
 }
 
-/** True when parenting `id` under `parentId` would form a cycle (or parent itself to itself).
- * @internal
- */
+/** @internal */
 export function wouldCreateCycle(doc: EditorDocument, id: string, parentId: string | null): boolean {
   if (parentId === null) return false;
   if (parentId === id) return true;
   return collectDescendants(doc, [id]).has(parentId);
 }
 
-/** Serializes an editor document to JSON text for saving or export.
- * @internal
- */
+/** @internal */
 export function exportEditorDocumentJson(doc: EditorDocument, pretty = true): string {
   return JSON.stringify(doc, null, pretty ? 2 : undefined);
 }
@@ -715,19 +644,13 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** One field-level failure surfaced while decoding an untrusted editor document, `path` pointing
- * at the exact field that failed (e.g. `$.markers[2].position`).
- * @internal
- */
+/** @internal */
 export interface EditorDocumentDiagnostic {
   path: string;
   message: string;
 }
 
-/** Result of {@link decodeEditorDocument}: a typed document, or every diagnostic collected while
- * decoding it.
- * @internal
- */
+/** @internal */
 export type DecodeEditorDocumentResult =
   | { ok: true; document: EditorDocument }
   | { ok: false; errors: EditorDocumentDiagnostic[] };
@@ -1297,7 +1220,6 @@ function decodeEnvironment(
   return env;
 }
 
-/** Validates the world grass style against its schema: known keys only, sliders in range, a known preset. */
 function decodeGrassStyle(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): GrassStyleSettings | undefined {
   if (!isPlainObject(value)) {
     errors.push({ path, message: "expected an object" });
@@ -1313,7 +1235,6 @@ function decodeGrassStyle(value: unknown, path: string, errors: EditorDocumentDi
   return { ...value } as GrassStyleSettings;
 }
 
-/** Validates the authored cloud layer against its schema: known keys only, values in range. */
 function decodeVolumetricClouds(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): VolumetricCloudsConfig | undefined {
   if (!isPlainObject(value)) {
     errors.push({ path, message: "expected an object" });
@@ -1648,7 +1569,6 @@ export function importEditorDocumentJson(raw: string): EditorDocument {
   return decoded.document;
 }
 
-/** Layers a game builds from code (AI volumes from a spawn table, markers from a catalog) to show in the editor. */
 export interface DerivedEditorLayers {
   markers?: readonly EditorMarker[];
   volumes?: readonly EditorVolume[];
@@ -1700,12 +1620,7 @@ function upsertById<T extends { id: string }>(base: readonly T[], overlay: reado
   return [...base.filter((item) => !overlayIds.has(item.id)), ...overlay];
 }
 
-/**
- * Applies a saved editor document on top of a game's derived layers: overlay objects replace
- * same-id base objects and new overlay objects are appended, so editor saves win over source
- * data until they are folded back in.
-  * @internal
-  */
+/** @internal */
 export function applyEditorDocumentOverlay(
   base: EditorDocument,
   overlay: EditorDocument,

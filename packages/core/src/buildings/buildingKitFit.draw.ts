@@ -21,13 +21,13 @@ export interface BuildingKitInstance {
   fit: BuildingKitFit;
 }
 
-/** A kit model's native extents, measured once per URL from the harvested root. @internal */
+/** @internal */
 export interface BuildingKitModelBounds {
   size: readonly [number, number, number];
   center: readonly [number, number, number];
 }
 
-/** Box-path matrices per part kind plus kit-bound instances per resolved model URL. @internal */
+/** @internal */
 export interface BuildingPartBuckets {
   boxes: Map<BuildingPartKind, THREE.Matrix4[]>;
   models: Map<string, BuildingKitInstance[]>;
@@ -35,7 +35,7 @@ export interface BuildingPartBuckets {
 
 const CLOTHESLINE_ROW_OFFSETS = [-0.09, 0.09] as const;
 
-/** Outward XZ normal of a facade; `roof` has none. @internal */
+/** @internal */
 export function normalFor(facade: BuildingFacade): readonly [number, number] {
   if (facade === "front") return [0, 1];
   if (facade === "back") return [0, -1];
@@ -134,12 +134,7 @@ function ratio(slot: number, native: number): number {
   return slot / native;
 }
 
-/**
- * Whether a model needs a quarter-turn about Y to run along its slot. Modular kits disagree on which
- * horizontal axis a panel is authored along — within one pack a wall may run along Z while a door
- * runs along X — so compare which horizontal axis is longer on each and turn when they disagree.
- * @internal
- */
+/** @internal */
 export function buildingKitQuarterTurn(
   fit: BuildingKitFit,
   slotScale: readonly [number, number, number],

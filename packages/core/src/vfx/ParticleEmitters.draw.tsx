@@ -77,10 +77,7 @@ function fieldKeyOf(blending: "additive" | "normal", render: ParticleRenderHint 
   return `${blending}|${render?.shape ?? "point"}|${render?.stretch ?? 0.08}`;
 }
 
-/**
- * Renders the existing director and pooled simulator; named bursts reuse the standing pool.
- * @internal
- */
+/** @internal */
 export function particleEmittersDraw(
   ctx: GameContext,
   { quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number | undefined; particleBudget?: number | undefined; diagnostics?: boolean | undefined },
@@ -375,7 +372,7 @@ export function particleEmittersDraw(
   };
 }
 
-/** Renders the director's emitters and bursts. @internal */
+/** @internal */
 export function ParticleEmitters({ quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number; particleBudget?: number; diagnostics?: boolean }): ReactElement {
   const ctx = useGameContext();
   useEngineDraw(() => particleEmittersDraw(ctx, { quality, particleCap, particleBudget, diagnostics }), [ctx, quality, particleCap, particleBudget, diagnostics]);

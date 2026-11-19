@@ -9,12 +9,10 @@
 import { clamp } from "../math/scalar";
 import type { ActionCooldown, ActionCost, ResolvedAction } from "./actionModel";
 
-/** Structured tooltip content — a renderer lays these fields out; the model owns what is shown. */
 export interface TooltipContent {
   title: string;
   subtitle?: string;
   body?: string;
-  /** Hotkey label to echo (e.g. `"Q"`). */
   hotkey?: string;
   costs?: readonly ActionCost[];
   cooldown?: ActionCooldown | null;
@@ -38,7 +36,6 @@ export function actionTooltip(action: ResolvedAction): TooltipContent {
   return content;
 }
 
-/** Which side of its anchor a popover opens toward. */
 export type PopoverSide = "top" | "bottom" | "left" | "right";
 
 /** A positioned rectangle (viewport/anchor space, top-left origin, pixels). */
@@ -62,9 +59,7 @@ export interface PopoverPlacement {
   top: number;
 }
 
-/** Options for {@link placePopover}. */
 export interface PopoverOptions {
-  /** Side to try first (default `"top"`). Flips to the opposite when it would overflow. */
   preferred?: PopoverSide;
   /** Gap between the anchor and the popover, in pixels (default 8). */
   gap?: number;
@@ -78,7 +73,6 @@ const OPPOSITE: Record<PopoverSide, PopoverSide> = {
   left: "right",
   right: "left",
 };
-
 
 /** @internal Room in pixels between the anchor and the viewport edge on a given side. */
 function roomOn(side: PopoverSide, anchor: UiRect, viewport: UiSize): number {

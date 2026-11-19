@@ -5,17 +5,14 @@ import { useGameStore } from "@jgengine/ui/hooks";
 import { Button, clockText, Heading, KeyLegend, Label, Row, Scrim, Text, useRoom, useScreenTouch } from "./kit";
 import { HH, DISPLAY } from "./theme";
 
-/** A choice printed under the slip: next parcel, free roam, back to the title. */
 export interface SlipAction {
   id: string;
   label: string;
   primary?: boolean;
 }
 
-/** What a slip says. `receipt` is dispatch's till roll; `tabloid` is the morning paper's front page. */
 export interface Slip {
   kind: "receipt" | "tabloid";
-  /** The rubber stamp across a receipt (`PAID`, `LATE`) or the paper's kicker. */
   stamp: string;
   tone: "good" | "bad" | "warn";
   title: string;
@@ -34,11 +31,6 @@ function Lines({ lines, ink }: { lines: readonly { label: string; value: string 
   );
 }
 
-/**
- * The end of a run, as a thing the courier is handed: a delivery closes on Mainsail Express's thermal
- * till roll with a rubber stamp, and a bust or a hospital stay makes the Harbor Tribune's front page.
- * Escape takes the first non-primary choice.
- */
 export function ReceiptScreen({ slip, onAction }: { slip: Slip; onAction: (id: string) => void }) {
   useScreenTouch();
   const { width } = useRuneViewport();

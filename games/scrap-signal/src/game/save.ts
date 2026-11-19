@@ -22,13 +22,6 @@ import { session } from "./session";
 import { characterIdStore, talentRanksStore } from "./stores";
 import { scrapProfileSystem } from "./scrapProfile";
 
-/**
- * What the live game holds outside the world snapshot: the chosen character and its talent build,
- * the selected hotbar slot, the Emergency Reserve timer, each gun's loaded rounds, and the carried
- * statuses the damage model owns. These used to be re-derived by hand on boot (`resumeBuild`,
- * `session.selectSlot`, per-session maps reset to full); the save document now snapshots each one
- * through the pair its module already exposes.
- */
 export interface CharacterSave {
   id: string;
   ranks: Record<string, number>;
@@ -198,11 +191,6 @@ function gunsSystem(): GameSaveSystem {
   };
 }
 
-/**
- * The relay's own document. Separate from the whole-world snapshot, one section per live system.
- * The write cadence is the engine's autosave policy: {@link followWorldSave} marks it dirty whenever
- * the world saves, and the debounce below turns those marks into one write.
- */
 export function createScrapSave(ctx: GameContext, options: { backend?: SaveBackend; slot?: string } = {}): GameSave {
   return createGameSave({
     backend: options.backend ?? localSaveBackend(),
@@ -240,13 +228,11 @@ export async function loadScrapSave(ctx: GameContext): Promise<boolean> {
   return (await save.load()).kind === "loaded";
 }
 
-/** Write both halves of a checkpoint: the world snapshot stays the engine's, this one adds its systems. */
 export async function saveScrapState(ctx: GameContext): Promise<void> {
   await ctx.game.save?.save();
   await scrapSave(ctx).save();
 }
 
-/** A digest over the systems this document owns, for a test or a diff between builds. */
 export function scrapSaveDigest(ctx: GameContext, backend?: SaveBackend): string {
   return (backend === undefined ? scrapSave(ctx) : createScrapSave(ctx, { backend })).digest();
 }
@@ -269,9 +255,7 @@ export function followWorldSave(ctx: GameContext): () => void {
   );
 }
 
-/** Start following the world's saves once the boot load has applied. */
 export function armWorldSave(ctx: GameContext): void {
   worldMirror(ctx).armed = true;
 }
-
 

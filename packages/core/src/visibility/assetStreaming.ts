@@ -8,7 +8,6 @@ export type AssetLoadState = "queued" | "loading" | "loaded" | "unloaded" | "err
 export interface AssetLoadResult {
   /** Approximate resident size, used for the memory budget and small-asset resident policy. */
   readonly bytes?: number;
-  /** Opaque handle to the loaded resource (texture, mesh, buffer). */
   readonly value?: unknown;
 }
 
@@ -17,9 +16,7 @@ export interface CancelSignal {
 }
 
 export interface AssetStreamingOptions {
-  /** Async loader. Honor `signal.cancelled` and always settle; cancelled successful loads are released through `unload`. */
   readonly load: (assetId: string, signal: CancelSignal) => Promise<AssetLoadResult>;
-  /** Release GPU/CPU resources for an asset. */
   readonly unload?: (assetId: string) => void;
   readonly settings?: Partial<StreamingSettings>;
   readonly now?: () => number;
@@ -36,7 +33,6 @@ export interface AssetRecord {
   value: unknown;
 }
 
-/** Current demand/residency gauges and cumulative unload/cancellation counters; clear resets totals. */
 export interface StreamingStats {
   queued: number;
   loading: number;
@@ -47,11 +43,9 @@ export interface StreamingStats {
   cancelled: number;
   /** Known resident bytes; missing or invalid loader sizes count as zero. */
   bytes: number;
-  /** Current tracked records, including inactive history until forget or clear. */
   records: number;
   /** Known bytes protected by pins or active references. */
   protectedBytes: number;
-  /** Loaded assets whose resident size is unknown. */
   unknownSizeLoaded: number;
   /** Known resident bytes above the configured target, including protected bytes. */
   overBudgetBytes: number;
@@ -65,28 +59,23 @@ export interface AssetStreamingSystem {
   /** Shared ownership by an active object. A retained asset (refCount > 0) is never auto-unloaded. */
   retain(assetId: string): void;
   release(assetId: string): void;
-  /** Pin resident regardless of distance/refcount/scene. */
   pin(assetId: string): void;
   unpin(assetId: string): void;
   /** Refresh the "last needed" timestamp used by the grace-period unload. */
   markActive(assetId: string): void;
   /** Advance one frame: bounded load starts and unloads; resident-byte pressure precedes idle unloading. */
   tick(dt: number): void;
-  /** Cancel demand. Unresolved loads still occupy concurrency slots and block same-id retries until settlement. */
   cancel(assetId: string): void;
   /** Merge policy. Zero concurrency pauses starts; resident-byte target/order changes apply on the next tick. */
   retune(settings: Partial<StreamingSettings>): void;
   stateOf(assetId: string): AssetLoadState | undefined;
   isLoaded(assetId: string): boolean;
   record(assetId: string): AssetRecord | undefined;
-  /** Drop inactive unloaded/error history. Returns false for missing, pinned, retained, queued, loaded or unresolved assets. Old record handles remain detached; future demand creates a new record. */
   forget(assetId: string): boolean;
   stats(): StreamingStats;
-  /** Merge asset counters into a per-frame VisibilityStats. */
   applyTo(stats: VisibilityStats): void;
   /** Resolve once every in-flight load settles — for deterministic tests. */
   settle(): Promise<void>;
-  /** Release loaded resources and cancel demand; outstanding loads remain tracked until settlement. */
   clear(): void;
 }
 

@@ -36,27 +36,19 @@ export type PlacementRejection =
 
 export type PlacementResult = { status: "ok"; center: Vec2; aabb: Aabb } | PlacementRejection;
 
-/** The rules {@link validatePlacementBounds} checks: everything in {@link PlacementRules} but the snap. */
 export type PlacementBoundsRules = Omit<PlacementRules, "snap">;
 
 /** {@link validatePlacementBounds}'s verdict: the checked bounds, or why they were refused. */
 export type PlacementBoundsResult = { status: "ok"; aabb: Aabb } | PlacementRejection;
 
-/**
- * Footprint validity: bounds + obstacle overlap after optional grid snap.
- * @capability placement-math grid/surface footprint validity for build mode
- */
+/** @capability placement-math grid/surface footprint validity for build mode */
 export function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult {
   const center = rules.snap === undefined ? request.center : snapToGrid(request.center, rules.snap);
   const result = validatePlacementBounds(footprintAabb(center, request.footprint, request.quarterTurns ?? 0), rules);
   return result.status === "ok" ? { status: "ok", center, aabb: result.aabb } : result;
 }
 
-/**
- * The same bounds, overlap and territory checks as {@link validatePlacement}, for a footprint the game
- * has already resolved to world bounds, such as one measured from a model's mesh or off its pivot.
- * @capability placement-bounds validate already-resolved footprint bounds against bounds, obstacles and territory
- */
+/** @capability placement-bounds validate already-resolved footprint bounds against bounds, obstacles and territory */
 export function validatePlacementBounds(aabb: Aabb, rules: PlacementBoundsRules = {}): PlacementBoundsResult {
   if (rules.bounds !== undefined && !aabbContains(rules.bounds, aabb)) {
     return { status: "rejected", reason: "out-of-bounds" };

@@ -26,14 +26,12 @@ import { useWorldSceneFeed, useWorldSceneProps } from "../../runtime/llmvilleSes
 import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import { useLocalPlayerBridge } from "../../runtime/localPlayerEntity";
 
-/** What the scene draws, published by the HUD each time the world view model changes. */
 export interface WorldSceneProps {
   gameId: string;
   engine: GameEngine;
   racks: readonly PlacedRack[];
   rackSlotWorkloadMap: ReadonlyMap<string, GpuSlotWorkload>;
   placedBuildItems: readonly PlacedBuildItem[];
-  /** Every player's racks in world coordinates (includes the local player's). */
   worldRacks: readonly PlacedRack[];
   worldPlacedBuildItems: readonly PlacedBuildItem[];
   claims: readonly DatacenterClaim[];
@@ -54,13 +52,11 @@ export interface WorldSceneProps {
   onPlacementPreviewChange: (preview: BuildPlacementPreview | null) => void;
 }
 
-/** The shell's world environment: the endless datacenter floor, columns and ceiling around the player. */
 export function LlmvilleDatacenter() {
   const props = useWorldSceneProps();
   return props === null ? null : <EndlessDatacenter engine={props.engine} />;
 }
 
-/** Hands the live camera projection to the HUD, whose prompt markers anchor to world points. */
 function ShareWorldProjection() {
   const feed = useWorldSceneFeed();
   const project = useWorldProjection();
@@ -74,7 +70,6 @@ function ShareWorldProjection() {
   return null;
 }
 
-/** The shell's world overlay: LLMville's datacenter, racks, avatars and build preview inside the shell canvas. */
 export function LlmvilleWorld() {
   const props = useWorldSceneProps();
   useLocalPlayerBridge(props?.engine ?? null);
@@ -155,7 +150,6 @@ function GameWorldContent({
   return (
     <>
       {showAxes && <SceneAxesHelper position={[0, 0.5, 0]} size={2} />}
-
 
       <ClaimedCellOverlay claims={claims} localGameId={gameId} playerPosition={playerPosition} />
 

@@ -4,27 +4,17 @@ import { MPS_PER_MPH } from "./surfaceFire";
 
 const FT_PER_MILE = 5280;
 
-/** The ground downwind of a fire, where embers fall. */
 export interface SpotTerrain {
-  /** Height of the downwind tree cover, m (0 for open ground). */
   coverHeightM: number;
-  /** True when the cover is open (scattered trees): Albini uses half its height. */
   openCover?: boolean;
-  /** Ridge-to-valley horizontal distance, m, for Chase's mountain correction; omit on flat ground. */
   ridgeToValleyDistanceM?: number;
-  /** Ridge-to-valley elevation difference, m. */
   ridgeToValleyElevationM?: number;
-  /** Where the source sits: 0 midslope windward, 1 valley bottom, 2 midslope leeward, 3 ridge top. */
   location?: 0 | 1 | 2 | 3;
 }
 
-/** How far embers from a source travel, and how high they were lofted. */
 export interface SpotDistance {
-  /** Maximum spotting distance on flat ground, m. */
   flat: number;
-  /** Maximum spotting distance over the ridge-valley terrain, m (equals `flat` without terrain). */
   mountain: number;
-  /** Initial firebrand height, m. */
   firebrandHeight: number;
 }
 
@@ -40,7 +30,6 @@ function flatMiles(z: number, h: number, u: number): number {
   return 0.000718 * u * Math.sqrt(h) * (0.362 + (Math.sqrt(z / h) / 2) * Math.log(z / h));
 }
 
-/** Chase 1981 correction of a flat spotting distance for ridge-valley terrain. */
 function mountainMiles(flat: number, terrain: SpotTerrain): number {
   const dist = (terrain.ridgeToValleyDistanceM ?? 0) / M_PER_FT / FT_PER_MILE;
   const elev = (terrain.ridgeToValleyElevationM ?? 0) / M_PER_FT;
@@ -61,12 +50,7 @@ function distances(zFt: number, uMph: number, terrain: SpotTerrain, driftMiles: 
   return { flat: flat * toM, mountain: mountainMiles(flat, terrain) * toM, firebrandHeight: zFt * M_PER_FT };
 }
 
-/**
- * Maximum spotting distance from a wind-driven surface fire (Albini 1983 as in BehavePlus): the
- * firebrand is lofted by the flame's plume, then carried by the 20-ft wind over the downwind cover.
- *
- * @capability fire-spotting-surface maximum ember spotting distance from a surface fire's flame length and wind
- */
+/** @capability fire-spotting-surface maximum ember spotting distance from a surface fire's flame length and wind */
 export function surfaceFireSpotDistance(flameLengthM: number, twentyFootWind: number, terrain: SpotTerrain): SpotDistance {
   const u = twentyFootWind / MPS_PER_MPH;
   const l = flameLengthM / M_PER_FT;
@@ -77,7 +61,6 @@ export function surfaceFireSpotDistance(flameLengthM: number, twentyFootWind: nu
   return distances(z, u, terrain, (zz) => 0.000278 * u * Math.pow(zz, 0.643));
 }
 
-/** Albini 1979 torching-tree flame height and duration coefficients by species group. */
 export type TorchingSpecies =
   | "engelmannSpruce"
   | "douglasFir"
@@ -94,7 +77,6 @@ export type TorchingSpecies =
   | "shortleafPine"
   | "loblollyPine";
 
-/** [flame height a, b] and [flame duration a, b]: h = a·DBH^b·n^0.4, t = a·DBH^b·n^-0.2 (ft, in, min). */
 const TORCHING: Record<TorchingSpecies, readonly [number, number, number, number]> = {
   engelmannSpruce: [15.7, 0.451, 12.6, -0.256],
   douglasFir: [15.7, 0.451, 10.7, -0.278],
@@ -112,7 +94,6 @@ const TORCHING: Record<TorchingSpecies, readonly [number, number, number, number
   loblollyPine: [2.71, 1.0, 13.5, -0.544],
 };
 
-/** Albini 1979 firebrand lofting factors by flame shape. */
 const LOFT: readonly (readonly [number, number])[] = [
   [4.24, 0.332],
   [3.64, 0.391],

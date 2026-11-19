@@ -18,7 +18,6 @@ export interface OrbitSession {
   saveStatus: "ready" | "saved" | "unavailable" | "damaged";
   initialClock: ClockSnapshot | null;
   lastSavedAt: number;
-  /** The household this screen checkpoints into: the slot Continue or the records pane opened. */
   slot: string;
 }
 
@@ -26,7 +25,6 @@ export const orbitSession = defineStore<OrbitSession>("odd-orbit.session", () =>
   screen: "menu", canContinue: false, saveStatus: "ready", initialClock: null, lastSavedAt: 0, slot: ORBIT_SLOTS[0],
 }));
 
-/** The household Continue resumes: the newest written slot, not a remembered flag. */
 export async function newestOrbitSave(ctx: GameContext): Promise<{ slot: string | null; damaged: boolean; unavailable: boolean }> {
   let newest: { slot: string; at: number } | null = null;
   let damaged = false;
@@ -41,10 +39,6 @@ export async function newestOrbitSave(ctx: GameContext): Promise<{ slot: string 
   return { slot: newest?.slot ?? null, damaged, unavailable };
 }
 
-/**
- * Write the live household into its slot. The household is captured when this is called; the
- * session's status follows once the write settles.
- */
 export async function checkpointOrbit(ctx: GameContext): Promise<void> {
   const session = orbitSession.read(ctx);
   if (!session.canContinue || ctx.player.userId === "ui-preview") return;
@@ -57,15 +51,10 @@ export async function checkpointOrbit(ctx: GameContext): Promise<void> {
 
 const boot = perContext(() => ({ ready: Promise.resolve() }));
 
-/** Settles once the boot read of the newest household has finished (or stood down for a started one). */
 export function orbitReady(ctx: GameContext): Promise<void> {
   return boot(ctx).ready;
 }
 
-/**
- * Open at the menu, then read the newest household into the world behind it. A household started
- * or resumed before that read settles keeps the world it made.
- */
 export function prepareOrbit(ctx: GameContext): Promise<void> {
   const initialClock = ctx.time.snapshot();
   ctx.time.pause();
@@ -89,7 +78,6 @@ export function prepareOrbit(ctx: GameContext): Promise<void> {
   return ready;
 }
 
-/** A new household: clear the world, name it, and write it to the slot the menu chose. */
 export function startOrbit(ctx: GameContext, slot: string = ORBIT_SLOTS[0], name = ""): Promise<void> {
   const session = orbitSession.read(ctx);
   ctx.hydrate({ objects: [], entities: [] });
@@ -109,7 +97,6 @@ export function startOrbit(ctx: GameContext, slot: string = ORBIT_SLOTS[0], name
   return checkpointOrbit(ctx);
 }
 
-/** Resume the household in `slot`: read it first when it is not the one already in the world. */
 export async function resumeOrbit(ctx: GameContext, slot?: string): Promise<void> {
   if (slot !== undefined && slot !== orbitSession.read(ctx).slot && !(await orbitRecords(ctx).open(slot))) return;
   const session = orbitSession.read(ctx);
@@ -129,7 +116,6 @@ export function pauseOrbit(ctx: GameContext): void {
   setGamePhase(ctx, "paused");
 }
 
-/** Leave the household at the menu, keeping it written where it stands. */
 export function withdrawOrbit(ctx: GameContext): void {
   void checkpointOrbit(ctx);
   ctx.time.pause();

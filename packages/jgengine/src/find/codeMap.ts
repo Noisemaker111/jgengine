@@ -10,10 +10,6 @@ import { rowWords, tokenHits } from "./words";
  * itself (folder and file names, exported names, their doc comments), so the answer cannot go stale.
  */
 
-/**
- * What each engine package holds for a concept; other packages, apps and scripts are listed by name.
- * Core holds the feature folders, so its role is read from the files in the home: see {@link coreRole}.
- */
 export const LAYER_ROLES: Readonly<Record<string, string>> = {
   core: "model",
   shell: "draw",
@@ -23,51 +19,38 @@ export const LAYER_ROLES: Readonly<Record<string, string>> = {
 
 const LAYER_ORDER = ["core", "shell", "ui", "editor"];
 
-/** One source file, placed in its layer. */
 export interface CodeFile {
-  /** `core`, `shell`, `apps/dev`, `scripts`, ... */
   layer: string;
-  /** Path to print, from the search root, posix. */
   path: string;
-  /** Path inside the layer's source root, posix: `camera/shake/cameraShake.ts`. */
   rel: string;
 }
 
-/** One exported declaration and the first line of its doc comment. */
 export interface CodeExport {
   name: string;
   line: number;
   doc?: string;
 }
 
-/** A file that matched, best first. */
 export interface FileHit {
   path: string;
   score: number;
-  /** Exports whose names (with the file's path) carry the query; else the file's first few. */
   exports: CodeExport[];
 }
 
-/** The answer for one layer: its home folder for the concept and what lives there. */
 export interface LayerHome {
   layer: string;
   role?: string;
-  /** Folder that holds the concept in this layer, posix, ending in `/`. */
   home: string;
-  /** Matching files under the home folder. */
   files: FileHit[];
-  /** Strong matches outside the home folder: scattered pieces a restructure should move in. */
   elsewhere: FileHit[];
 }
 
 const DECLARATION = /^export\s+(?:declare\s+)?(?:default\s+)?(?:async\s+)?(?:abstract\s+)?(?:function\*?|const|let|var|class|interface|type|enum|namespace)\s+([A-Za-z_$][\w$]*)/;
 
-/** The name an `export function|const|class|interface|type|enum ...` line declares, or null. */
 export function declaredExport(line: string): string | null {
   return DECLARATION.exec(line)?.[1] ?? null;
 }
 
-/** Exported declarations of one source file with the first line of each JSDoc. */
 export function readExports(text: string): CodeExport[] {
   const lines = text.split("\n");
   const found: CodeExport[] = [];
@@ -110,12 +93,10 @@ export function layerOf(path: string): CodeFile | null {
   return null;
 }
 
-/** The engine checkout above `from`, if this is one. */
 export function engineRoot(from: string): string | null {
   return findUp(from, (dir) => existsSync(join(dir, "packages", "core", "src")) && existsSync(join(dir, "packages", "jgengine", "src")));
 }
 
-/** Every engine source file in a checkout, from git's index (no tree walk). */
 export function listRepoFiles(root: string): CodeFile[] {
   const result = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", "packages/*/src/*", "apps/*", "scripts/*"], {
     cwd: root,
@@ -130,10 +111,6 @@ export function listRepoFiles(root: string): CodeFile[] {
     .filter((file): file is CodeFile => file !== null);
 }
 
-/**
- * The published `@jgengine/*` packages of a consumer project, read from their `.d.ts` files, so
- * `jgengine find` answers in a game that has no engine source checked out.
- */
 export function listInstalledFiles(from: string): { root: string; files: CodeFile[] } | null {
   const modules = findUp(from, (dir) => existsSync(join(dir, "node_modules", "@jgengine")));
   if (modules === null) return null;
@@ -194,7 +171,6 @@ function wordSet(text: string): { words: Set<string>; raw: string } {
 
 type Words = { words: Set<string>; raw: string };
 
-/** One file's words, split once: a query only matches against them, so many queries share one index. */
 export interface IndexedFile {
   file: CodeFile;
   exports: CodeExport[];
@@ -203,7 +179,6 @@ export interface IndexedFile {
   nameWords: Words;
   exportWords: { entry: CodeExport; name: Words; doc: Words }[];
   everything: Words[];
-  /** Every doc comment in the file, one per entry: what the file says about itself beyond its exports' first lines. */
   docs: Words[];
 }
 
@@ -229,10 +204,6 @@ export function indexCode(files: readonly CodeFile[], read: (file: CodeFile) => 
   return index;
 }
 
-/**
- * Score one file against the query tokens. Folder and file names weigh most, exported names next,
- * doc comments least; a file only counts when every token lands somewhere in it.
- */
 export function scoreFile(indexed: IndexedFile, tokens: readonly string[]): Scored | null {
   const { file, exports, dir, dirWords, nameWords, exportWords, everything } = indexed;
   if (!covers(tokens, everything)) return null;
@@ -257,7 +228,6 @@ function layerRank(layer: string): number {
   return 10;
 }
 
-/** The layers a core feature folder holds, from its file names: `model + view + draw`. */
 export function coreRole(paths: readonly string[]): string {
   const layers = new Set<string>();
   for (const path of paths) {
@@ -272,12 +242,10 @@ function isUnder(dir: string, home: string): boolean {
   return home === "" || dir === home || dir.startsWith(`${home}/`);
 }
 
-/** The home folder per layer for a query, best layers first in core → shell → ui → editor order. */
 export function locate(files: readonly CodeFile[], read: (file: CodeFile) => string, tokens: readonly string[]): LayerHome[] {
   return tokens.length === 0 ? [] : locateIn(indexCode(files, read), tokens);
 }
 
-/** {@link locate} against an index built once, for asking many queries of one checkout. */
 export function locateIn(index: readonly IndexedFile[], tokens: readonly string[]): LayerHome[] {
   if (tokens.length === 0) return [];
   const byLayer = new Map<string, Scored[]>();
@@ -347,7 +315,6 @@ function fileLine(hit: FileHit, home: string, width: number): string {
   return `  ${name.padEnd(width)}  ${names.join(", ")}${more}${summary}`;
 }
 
-/** Text answer: one block per layer naming its home folder, the files in it and stray pieces elsewhere. */
 export function renderLocations(homes: readonly LayerHome[], perLayer = 6): string[] {
   const lines: string[] = [];
   for (const home of homes) {

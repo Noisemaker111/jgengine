@@ -3,7 +3,6 @@ import type { ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { GeneratorDefinition, GeneratorVariant } from "@jgengine/core/generator/generator";
 
-/** What a preview draws: the generator and one of its variants. */
 export interface GeneratorPreviewProps {
   definition: GeneratorDefinition;
   variant: GeneratorVariant;
@@ -15,10 +14,6 @@ export interface GeneratorPreviewFrame {
   distance: number;
 }
 
-/**
- * How one generator output family draws in a variant tile: an EngineDraw for the
- * variant and the camera frame that fits it. One preview serves every generator of that output.
- */
 export interface GeneratorPreview {
   Component: ComponentType<GeneratorPreviewProps>;
   frame(props: GeneratorPreviewProps): GeneratorPreviewFrame;
@@ -26,7 +21,6 @@ export interface GeneratorPreview {
 
 const previews = new Map<string, GeneratorPreview>();
 
-/** Register the preview for a generator output family (`"parts"`, `"grass-field"`, …). Replaces an earlier one. */
 export function registerGeneratorPreview(output: string, preview: GeneratorPreview): void {
   previews.set(output, preview);
 }

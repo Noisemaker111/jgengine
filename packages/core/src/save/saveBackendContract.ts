@@ -6,18 +6,12 @@ import { createSaveStore, type SaveBackend, type SaveStorage } from "./saveStore
  * `localStorage` throwing a quota error, a Convex mutation rejecting, a disk write failing.
  */
 export interface SaveBackendHarness {
-  /** A backend over fresh, empty storage. */
   open(): SaveBackend;
   /** Another backend over the storage the last {@link open} created, the way a second tab sees it. */
   reopen(): SaveBackend;
-  /** Make the storage refuse the next operation of this kind, as the real storage would. */
   failNext(operation: "read" | "write"): void;
 }
 
-/**
- * A {@link SaveBackendHarness} for a backend built over a `localStorage`-shaped {@link SaveStorage}:
- * the storage is a map that throws the way a full or locked browser storage does when told to.
- */
 export function storageHarness(backendOver: (storage: SaveStorage) => SaveBackend): SaveBackendHarness {
   const faults = { read: 0, write: 0 };
   let map = new Map<string, string>();

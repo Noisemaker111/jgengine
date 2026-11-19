@@ -63,7 +63,6 @@ function profile(editing: boolean): ProfileVm {
   } as unknown as ProfileVm; // type-escape: a stand-in for the Convex profile query's result
 }
 
-/** The play HUD over the tablet fixtures' world, with a tweet, a diagnostic and a prompt in view. */
 function Hud({ chatOpen, placing }: { chatOpen: boolean; placing: boolean }) {
   const nav = usePreviewTabletNav({ initialOpen: false });
   const base = createTabletPreviewWorld();
@@ -103,7 +102,6 @@ function screen(state: NativeFixture): ReactNode {
   }
 }
 
-/** The native spec of one state at one size, sampled once (no live slots). */
 export async function runeUiFixture(state: NativeFixture, width = 1280, height = 720) {
   const memory = new Map<string, string>();
   const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");

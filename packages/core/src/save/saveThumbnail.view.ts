@@ -3,10 +3,8 @@
  * URL (a couple of KB), not a full-resolution PNG, so a slot index still fits in local storage.
  */
 
-/** How long a capture may take to decode before it counts as undecodable. */
 const DECODE_TIMEOUT_MS = 5000;
 
-/** How {@link shrinkCapture} sizes and encodes a capture. */
 export interface SaveThumbnailOptions {
   /** Output width in pixels. Default 320. */
   width?: number;
@@ -14,16 +12,10 @@ export interface SaveThumbnailOptions {
   height?: number;
   /** Encoding quality, 0–1. Default 0.6. */
   quality?: number;
-  /** Output format. Default `"image/jpeg"` — smallest for a photo-like frame. */
   type?: "image/jpeg" | "image/webp";
 }
 
-/**
- * Downscale a captured frame (a data URL from `captureCanvas`) to a save-card thumbnail. Resolves to
- * the thumbnail data URL, or `null` when the capture could not be decoded (a blank or tainted frame).
- *
- * @capability shrink-capture downscale a captured frame to a save-card thumbnail data URL
- */
+/** @capability shrink-capture downscale a captured frame to a save-card thumbnail data URL */
 export async function shrinkCapture(
   capture: string | null,
   options: SaveThumbnailOptions = {},

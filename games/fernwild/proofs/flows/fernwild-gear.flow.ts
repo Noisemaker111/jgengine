@@ -1,7 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** ARK's inventory centre pane: a cloth set in the bag, then worn in its five slots around the survivor. */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

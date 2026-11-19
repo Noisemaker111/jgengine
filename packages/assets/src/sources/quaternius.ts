@@ -17,7 +17,6 @@ interface QuaterniusPack {
   slug: string;
   title: string;
   categories: readonly string[];
-  /** OpenGameArt direct zip when known (Standard free pack). */
   ogaZip?: string;
   /**
    * Quaternius's own Poly Pizza bundle (`poly.pizza/bundle/<slug>`), one GLB per model. The pack
@@ -25,7 +24,6 @@ interface QuaterniusPack {
    * released before the Quaternius Asset License (2026-08-28), which bars re-hosting, go here.
    */
   polyPizza?: string;
-  /** Licence when it is not CC0: the strictest one Poly Pizza lists on the bundle's models. */
   license?: string;
   /** Why this pack contributes nothing to the index yet; see `AssetSource.unpulled`. */
   unpulled?: string;
@@ -120,11 +118,9 @@ const QUATERNIUS_PACKS: readonly QuaterniusPack[] = [
  * (`packModelConvert.ts`). Re-uploads by other users and the CC-BY-SA 2016 packs are left out.
  */
 interface QuaterniusOgaPack {
-  /** OpenGameArt page slug: `opengameart.org/content/<slug>`. */
   slug: string;
   title: string;
   categories: readonly string[];
-  /** The page's zip, as `sites/default/files/<zip>`. */
   zip: string;
 }
 

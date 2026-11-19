@@ -1,5 +1,3 @@
-/** Better Auth trusted-origin resolution — SITE_URL + TRUSTED_ORIGINS, no hardcoded ports. */
-
 export function parseTrustedOriginsEnv(raw = process.env["TRUSTED_ORIGINS"]): string[] {
   return (raw ?? "")
     .split(",")
@@ -30,16 +28,11 @@ export function isLocalDevBrowserOrigin(origin: string): boolean {
 
 const PRODUCTION_SITE_ORIGINS = ["https://llmville.com", "https://www.llmville.com"] as const;
 
-/** Static list: SITE_URL, production defaults, and TRUSTED_ORIGINS env. */
 export function staticTrustedOrigins(site: string, fromEnv = parseTrustedOriginsEnv()): string[] {
   const productionDefaults = isLocalDevSite(site) ? [] : PRODUCTION_SITE_ORIGINS;
   return Array.from(new Set([site, ...productionDefaults, ...fromEnv]));
 }
 
-/**
- * Better Auth trustedOrigins callback.
- * Local dev: any http(s) localhost / 127.0.0.1 origin is accepted alongside SITE_URL.
- */
 export function createTrustedOriginsResolver(site: string) {
   const localDev = isLocalDevSite(site);
   const baseOrigins = staticTrustedOrigins(site);

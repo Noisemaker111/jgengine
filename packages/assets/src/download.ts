@@ -17,9 +17,7 @@ export type FetchLike = typeof fetch;
 export const MAX_ARCHIVE_DOWNLOAD_BYTES = 256 * 1024 * 1024;
 /** Max total uncompressed size this module will inflate out of one archive, in bytes. */
 export const MAX_ARCHIVE_UNCOMPRESSED_BYTES = 512 * 1024 * 1024;
-/** Max number of entries this module will extract out of one archive. */
 export const MAX_ARCHIVE_ENTRY_COUNT = 20_000;
-/** Max allowed originalSize/size ratio for a single archive entry — past this it's treated as a zip bomb. */
 export const MAX_ARCHIVE_COMPRESSION_RATIO = 100;
 
 /** @internal */
@@ -54,7 +52,6 @@ export interface ExtractedGlb {
 
 /** An image a pack's models reference, shipped flat beside the `.glb` files. */
 export interface ExtractedPackImage {
-  /** Flat basename, e.g. "citybits_texture.png" — models reference it relative to their own URL. */
   file: string;
   bytes: Uint8Array;
 }
@@ -135,7 +132,6 @@ async function resolveArchiveUrl(download: PinnedDownload | ScrapeDownload | Itc
   return url;
 }
 
-/** The chip Poly Pizza shows for a source licence. */
 function polyPizzaLicense(license: string): string {
   if (license === "CC0-1.0") return "CC0";
   if (license.startsWith("CC-BY")) return "CC-BY";
@@ -161,11 +157,7 @@ export async function fetchSourceArchive(
 
 const SANDBOX_DENIAL = /GitHub access to this repository is not enabled/i;
 
-/**
- * The error for a failed HTTP response. A 403 whose body says the session's GitHub access is not
- * enabled is a sandbox policy denial, named as such so nobody retries it as a transient error.
- * @internal
- */
+/** @internal */
 export async function httpFailure(url: string, response: Response): Promise<Error> {
   if (response.status === 403) {
     const body = await response.text().catch(() => "");
@@ -205,16 +197,6 @@ export function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string 
   return `${base}/${source.provider}/${source.id}.zip`;
 }
 
-/**
- * Default asset mirror: this repo's own GitHub Releases, reachable from every
- * cloud sandbox without network-policy changes (github.com is on the default
- * allowlist). Assets live on the rolling `packs` release, one flat zip per
- * pack named `<provider>-<packId>.zip`, kept in sync with the source catalog
- * by `.github/workflows/mirror-assets.yml` — adding a catalog entry is the
- * whole publishing step. Override the chain with `--mirror` /
- * `JGENGINE_ASSETS_MIRROR`, or disable this hop with
- * `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`.
- */
 export const DEFAULT_RELEASE_BASE =
   "https://github.com/Noisemaker111/jgengine/releases/download/packs";
 
@@ -224,9 +206,7 @@ export function mirrorOverrideBase(env: Readonly<Record<string, string | undefin
   return base === undefined || base === "" ? undefined : base.replace(/\/+$/, "");
 }
 
-/** URL of `source`'s archive on the default GitHub-release mirror.
- * @internal
- */
+/** @internal */
 export function defaultReleaseUrl(source: AssetSource): string {
   return `${DEFAULT_RELEASE_BASE}/${source.provider}-${source.id}.zip`;
 }
@@ -249,7 +229,6 @@ export interface DownloadPackOptions {
 export interface DownloadPackResult {
   archive: Uint8Array;
   url: string;
-  /** Every URL attempted, in order, ending with the one that succeeded. */
   attempted: readonly string[];
 }
 
@@ -441,10 +420,8 @@ export function packGltfToGlb(gltfBytes: Uint8Array, binBytes?: Uint8Array): Uin
   return buildGlb(JSON.stringify(json), binBytes);
 }
 
-/** What `extractGlbs` pulls out of a pack archive: the models plus the textures they reference. */
 export interface ExtractedPack {
   models: ExtractedGlb[];
-  /** Every archive image some extracted model references, flattened to basenames. */
   images: ExtractedPackImage[];
 }
 
@@ -517,15 +494,12 @@ export function extractGlbs(archive: Uint8Array): ExtractedPack {
   return { models, images };
 }
 
-/** One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`. */
 export interface ExtractedSpriteFile {
   file: string;
   bytes: Uint8Array;
 }
 
-/** Pulls every SVG/PNG out of a sprite/icon-pack archive: deduped by basename (`flat`), or keeping each path below the archive's root folder (`folders`).
- * @internal
- */
+/** @internal */
 export function extractSpriteFiles(archive: Uint8Array, layout: "flat" | "folders" = "flat"): ExtractedSpriteFile[] {
   if (layout === "flat") return dedupeByBasename(archive, /\.(svg|png)$/i);
   const entries = unzipSync(archive, { filter: boundedExtractFilter((file) => /\.(svg|png)$/i.test(file.name)) });

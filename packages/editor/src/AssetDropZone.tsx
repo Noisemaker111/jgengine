@@ -9,12 +9,7 @@ import type { EditorHostApi } from "./session";
 
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-/**
- * Viewport drop target for content-browser assets. Drops call `place_asset` at the ground hit
- * (or the host focus target when the ray misses); a shared-library card goes to `library`'s handler,
- * which pulls the asset first. No-op when the payload is not an asset drag.
- * @internal — mounted by `EditorApp`'s world overlay.
- */
+/** @internal — mounted by `EditorApp`'s world overlay. */
 export const AssetDropZone = memo(function AssetDropZone({ api, library }: { api: EditorHostApi; library?: LibraryDropTarget | undefined }) {
   const { gl, camera, scene } = useEngineHost().frame;
 

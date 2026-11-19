@@ -3,7 +3,6 @@ import { momentArm, muscleLengthChange, muscleMetabolicPower, restingMuscle, ste
 
 const deg = Math.PI / 180;
 
-/** The seven leg muscles of the Geyer & Herr model. */
 export type LegMuscle = "SOL" | "TA" | "GAS" | "VAS" | "HAM" | "GLU" | "HFL";
 
 /**
@@ -115,7 +114,6 @@ class Delay {
   constructor(delay: number, dt: number, initial = 0) {
     this.buffer = new Float64Array(Math.max(1, Math.round(delay / dt))).fill(initial);
   }
-  /** Push the current value and return the one from `delay` ago. */
   push(value: number): number {
     const old = this.buffer[this.index] ?? 0;
     this.buffer[this.index] = value;
@@ -177,41 +175,32 @@ interface LegState {
   muscles: Record<LegMuscle, MuscleState>;
   stance: boolean;
   stanceSince: number;
-  /** Trunk lean error captured at the last take-off. */
   leanAtTakeoff: number;
   delayed: Record<DelayKey, Delay>;
 }
 
-/** Live state of a {@link ReflexWalker}. */
 export interface ReflexWalkerState {
   legs: { side: HumanSide; muscles: Record<LegMuscle, MuscleState>; stance: boolean; stanceSince: number; leanAtTakeoff: number; delayed: Record<string, number[]> }[];
   metabolicEnergy: number;
 }
 
-/** A muscle-reflex controller on a {@link HumanBody}. */
 export interface ReflexWalker {
   params: ReflexParameters;
-  /** Advance the muscles and the body by one body step. */
   step(): void;
-  /** Muscle metabolic energy spent so far, J (resting excluded). */
   metabolicEnergy(): number;
-  /** Activation of a muscle. */
   activation(side: HumanSide, muscle: LegMuscle): number;
-  /** Called when a foot touches down. */
   onStrike?: (side: HumanSide, time: number) => void;
   snapshot(): ReflexWalkerState;
   restore(state: ReflexWalkerState): void;
 }
 
-/** Extension angles (rad) of a leg's joints in the Geyer convention, from the body's joint angles. */
 function extensionAngles(body: HumanBody, side: HumanSide): Record<"hip" | "knee" | "ankle", number> {
   return { hip: Math.PI - body.joint(side, "hip").angle, knee: Math.PI + body.joint(side, "knee").angle, ankle: Math.PI / 2 - body.joint(side, "ankle").angle };
 }
 
-/** Stimulation per leg muscle, 0.01–1. */
 export type LegStimulation = Record<LegMuscle, number>;
 
-/** Fresh muscle states for one leg at the body's current pose. @internal */
+/** @internal */
 export function createLegMuscles(body: HumanBody, side: HumanSide): Record<LegMuscle, MuscleState> {
   const phi = extensionAngles(body, side);
   return perMuscle((name) => {
@@ -220,11 +209,7 @@ export function createLegMuscles(body: HumanBody, side: HumanSide): Record<LegMu
   });
 }
 
-/**
- * Step one leg's seven muscles under `stimulation` and write the joint torques they make into `out` (body
- * conventions). Returns their metabolic power, W.
- * @capability leg-muscles drive the reference human's leg with the seven Geyer–Herr muscles from stimulations
- */
+/** @capability leg-muscles drive the reference human's leg with the seven Geyer–Herr muscles from stimulations */
 export function actuateLegMuscles(body: HumanBody, side: HumanSide, muscles: Record<LegMuscle, MuscleState>, stimulation: LegStimulation, dt: number, out: HumanJointTorques): number {
   const phi = extensionAngles(body, side);
   let hip = 0;

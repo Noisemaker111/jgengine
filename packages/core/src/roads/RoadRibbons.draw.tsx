@@ -52,7 +52,7 @@ const CURB_LIFT = 0.02;
  */
 const DEFAULT_KERB = 0.14;
 
-/** Sidewalk top above the carriageway: the gutter lift plus the road's kerb. @internal */
+/** @internal */
 export function sidewalkLiftOf(road: Pick<RoadEnvironmentDescriptor, "sidewalk">): number {
   const kerb = road.sidewalk === false ? DEFAULT_KERB : road.sidewalk.kerb ?? DEFAULT_KERB;
   return CURB_LIFT + Math.max(0, kerb);
@@ -77,7 +77,6 @@ export function gutterColor(roadColor: string, sidewalkColor: string | null): st
     : mixColor(mixColor(sidewalkColor, roadColor, 0.35), "#000000", 0.08);
 }
 
-/** One road's share of a merged draw: its trimmed centreline sub-paths and the base height they drape at. */
 export interface RoadPiece {
   elevation: number;
   paths: readonly (readonly RoadPoint[])[];
@@ -171,24 +170,19 @@ export function mergeRibbonGeometry(ribbons: readonly RoadRibbon[]): BufferGeome
   return toGeometry(positions, indices);
 }
 
-/** {@link mergeRibbonGeometry} plus each ribbon's along/across frame for the surface shader. */
 function mergeRibbons(ribbons: readonly RoadRibbon[]): BufferGeometry | null {
   const geometry = mergeRibbonGeometry(ribbons);
   geometry?.setAttribute(RIBBON_FRAME_ATTRIBUTE, new BufferAttribute(ribbonSurfaceFrame(ribbons.map((r) => r.positions)), 3));
   return geometry;
 }
 
-/**
- * Everything about a road that shapes its materials, as one string: roads with equal keys share
- * every material, so their layers merge into one draw each. The path, its corners and the base
- * elevation only shape geometry and stay out. @internal
- */
+/** @internal */
 export function roadLookKey(road: RoadEnvironmentDescriptor): string {
   const { width, color, markings, markingColor, sidewalk, surface, materials, wear, edgeSoftness } = road;
   return JSON.stringify([width, color, markings, markingColor, sidewalk, surface ?? null, materials ?? null, wear ?? null, edgeSoftness ?? null]);
 }
 
-/** Convert a detected {@link RoadJunction} into the structural {@link RoadJunctionInput} the trimmer wants. @internal */
+/** @internal */
 export function roadJunctionInput(junction: RoadJunction): RoadJunctionInput {
   return {
     x: junction.center[0],
@@ -208,9 +202,7 @@ export interface JunctionSurface {
   ribbon: RoadRibbon;
 }
 
-/** Trimmed ribbons for every road plus the welded surfaces that fill the crossings between them. */
 export interface AuthoredRoadNetwork {
-  /** Trimmed centerline sub-paths per input road (parallel to the `roads` array; empty for degenerate roads). */
   roadPaths: RoadPoint[][][];
   /** One welded surface per junction that at least one trimmed ribbon actually ends at. */
   junctionSurfaces: JunctionSurface[];
@@ -257,9 +249,7 @@ export function buildAuthoredRoadNetwork(
   return { roadPaths, junctionSurfaces, junctionPaint };
 }
 
-/** Props for {@link RoadRibbons}. */
 export interface RoadRibbonsProps {
-  /** The shared look; its path and elevation are ignored in favour of `pieces`. */
   road: RoadEnvironmentDescriptor;
   field: TerrainField;
   pieces: readonly RoadPiece[];
@@ -498,10 +488,6 @@ export function roadRibbonsDraw(getProps: () => RoadRibbonsProps): EngineDraw {
   };
 }
 
-/**
- * Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline
- * sub-paths â€” the UI wrapper over {@link roadRibbonsDraw}.
- */
 export function RoadRibbons(props: RoadRibbonsProps) {
   const latest = useRef<RoadRibbonsProps>(props);
   latest.current = props;
@@ -509,7 +495,7 @@ export function RoadRibbons(props: RoadRibbonsProps) {
   return null;
 }
 
-/** A road's centreline as drawn: a closed loop rejoined at a straight seam, sharp bends filleted. @internal */
+/** @internal */
 export function drawnRoadPath(road: Pick<RoadEnvironmentDescriptor, "path" | "width" | "closed" | "cornerRadius">): RoadPoint[] {
   const points = road.path.map((point) => [point[0], point[1]] as RoadPoint);
   let line = points;
@@ -533,13 +519,11 @@ export function drawnRoadPath(road: Pick<RoadEnvironmentDescriptor, "path" | "wi
   return out;
 }
 
-/** Roads that weld into each other at crossings: the paved network, or one unpaved surface. */
 function surfaceGroup(road: RoadEnvironmentDescriptor): string {
   if (road.surface === false) return "flat";
   return isAsphaltSurface(road.surface) ? "paved" : road.surface ?? "paved";
 }
 
-/** One surface group of roads: junctions welded across them plus a ribbon draw per shared look. */
 function roadGroupDraw(getProps: () => { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField; group: string }): EngineDraw {
   const root = new Group();
   let children: { draw: EngineDraw; state: EngineFrameState }[] = [];

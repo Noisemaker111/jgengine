@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { FullScreenQuad, Pass } from "three-stdlib";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 
-/** How long post effects take to fade in once their programs are linked. @internal */
+/** @internal */
 export const REVEAL_FADE_SECONDS = 0.3;
 
 /**
@@ -41,11 +41,7 @@ function createTarget(width: number, height: number): THREE.WebGLRenderTarget {
   return new THREE.WebGLRenderTarget(width, height, { type: THREE.HalfFloatType, depthBuffer: false });
 }
 
-/**
- * Keeps a copy of the beauty pass, before any effect touches it, for {@link RevealFadePass} to fade
- * from. Draws nothing into the chain itself.
- * @internal
- */
+/** @internal */
 export class RevealSnapshotPass extends Pass {
   private readonly quad: FullScreenQuad;
   private readonly material: THREE.ShaderMaterial;

@@ -18,15 +18,13 @@ export const DECLARATION_FILE = "jgengine.json";
 
 export interface CapabilityProbe {
   kind: "devtools" | "window";
-  /** The `window.__jg` field to read for a `window` probe, such as `audio`. */
   global?: string;
 }
 
 export interface CapabilityEntry {
-  /** The `@capability` slug, such as `mission-runtime` or `agents`. */
+  /** @capability` slug, such as `mission-runtime` or `agents`. */
   id: string;
   packages: string[];
-  /** `@jgengine/<pkg>/<module>` that publishes this capability. */
   module: string;
   /** True when the owning package ships a live probe, so a game can prove it live at boot. */
   gameFacing: boolean;
@@ -42,7 +40,6 @@ export interface Ledger {
 
 /** The `capabilities` section of a game's `jgengine.json`: only what source cannot say. */
 export interface Declaration {
-  /** Boot probe names keyed by the module that can prove the system live. */
   probes?: Record<string, string[]>;
 }
 
@@ -65,7 +62,6 @@ const DECLARED_EXPORT =
 const WINDOW_GLOBAL = /publishReadout\("([A-Za-z0-9_]+)"/g;
 const DEVTOOLS = /\bdevtoolsName\b/;
 
-/** Engine source files, without tests. */
 function engineSourceFiles(dir: string): string[] {
   const out: string[] = [];
   const walk = (current: string): void => {
@@ -85,12 +81,11 @@ function engineSourceFiles(dir: string): string[] {
 
 let installedCache: { root: string; installed: Installed } | null = null;
 
-/** The engine packages beside the games: `<repo>/packages`. */
 export function enginePackagesRoot(root: string): string {
   return join(root, "..", "packages");
 }
 
-/** Read every engine source module that carries a `@capability` tag. */
+/** @capability` tag. */
 export function readInstalled(root: string): Installed {
   if (installedCache !== null && installedCache.root === root) return installedCache.installed;
   const packagesRoot = enginePackagesRoot(root);
@@ -142,7 +137,6 @@ export function readInstalled(root: string): Installed {
   return installedCache.installed;
 }
 
-/** Derive the checked-in inventory from the engine source, not from memory. */
 export function deriveLedger(root: string): Ledger {
   const installed = readInstalled(root);
   const bySlug = new Map<
@@ -193,7 +187,6 @@ export function deriveLedger(root: string): Ledger {
   };
 }
 
-/** Game directories: a package named `@games/*` with a config module. */
 export function gameDirs(root: string): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(root, { withFileTypes: true })) {
@@ -217,7 +210,6 @@ export function readDeclaration(root: string, game: string): Declaration | null 
   return config.capabilities ?? null;
 }
 
-/** Source files a declaration is seeded from. */
 export function sourceFiles(root: string, game: string): string[] {
   const out: string[] = [];
   const walk = (dir: string): void => {
@@ -238,16 +230,13 @@ export function sourceFiles(root: string, game: string): string[] {
 export interface ImportEvidence {
   specifiers: Set<string>;
   names: Set<string>;
-  /** `devtoolsName` values keyed by the module whose API call owns them. */
   probeNames: Map<string, Set<string>>;
 }
 
-/** Module specifier -> API names, cached for one checkout. */
 export function moduleIndex(root: string): Map<string, ModuleInfo> {
   return new Map(readInstalled(root).modules.map((module) => [module.specifier, module]));
 }
 
-/** Read imports and `devtoolsName` probes from one game's source. */
 export function collectEvidence(root: string, game: string, ledger: Ledger): ImportEvidence {
   const modules = moduleIndex(root);
   const evidence: ImportEvidence = { specifiers: new Set(), names: new Set(), probeNames: new Map() };
@@ -305,7 +294,6 @@ export function collectEvidence(root: string, game: string, ledger: Ledger): Imp
   return evidence;
 }
 
-/** API names of the module that owns a capability, for barrel imports. */
 export function moduleApiNames(root: string, entry: CapabilityEntry): string[] {
   return [...(moduleIndex(root).get(entry.module)?.api ?? [])];
 }
@@ -331,13 +319,8 @@ export function adoptedFromEvidence(
   return adopts.sort();
 }
 
-/**
- * A game config that mounts the engine's audio: `audio: { ... }`, `audio: sounds`, or the shorthand
- * `audio,` inside `defineGame({ ... })`. Any of them runs the mixer that publishes the audio probe.
- */
 const AUDIO_CONFIG = /\baudio\s*:\s*(?:\{|(?!(?:false|null|undefined)\b)[A-Za-z_$])|[{,]\s*audio\s*[,}]/;
 
-/** What one game adopts, read from its source. */
 export function gameAdoption(root: string, game: string, ledger: Ledger): string[] {
   const evidence = collectEvidence(root, game, ledger);
   let hasAudioConfig = false;
@@ -351,7 +334,6 @@ export function renderLedger(ledger: Ledger): string {
   return `${JSON.stringify(ledger, null, 2)}\n`;
 }
 
-/** Is the checked-in ledger behind the engine source? */
 export function ledgerDrift(committed: Ledger, installed: Ledger): string[] {
   const problems: string[] = [];
   const old = new Map(committed.capabilities.map((entry) => [entry.id, entry]));
@@ -384,7 +366,6 @@ function describeProbe(probe: CapabilityProbe | null): string {
   return probe === null ? "none" : probe.kind === "window" ? `window:${probe.global}` : "devtools";
 }
 
-/** A probe name with `*` wildcards, matched against the live devtools probe keys. */
 export function probeMatches(pattern: string, keys: string[]): boolean {
   const escaped = pattern.replace(/[.+^${}()|[\]\\?]/g, "\\$&").replace(/\*/g, ".*");
   const regex = new RegExp(`^${escaped}$`);

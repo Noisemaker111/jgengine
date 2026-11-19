@@ -2,22 +2,16 @@ import { createWorldStreamer, gridCellId, gridShards, type StreamFocus, type Wor
 import type { NavMeshData } from "./navMesh";
 import { createNavRuntime, type NavRegion, type NavRuntime, type NavRuntimeOptions } from "./navRuntime";
 
-/** The XZ square one nav tile covers. */
 export interface NavTileBounds {
   min: readonly [number, number];
   max: readonly [number, number];
 }
 
-/** The tile a builder is asked for: its grid id and footprint. */
 export interface NavTileRequest {
   id: string;
   bounds: NavTileBounds;
 }
 
-/**
- * Builds one tile's polygons from the world as it is now. Its vertices are world coordinates and stay
- * inside the tile's bounds; polygons meeting a tile border are stitched to the neighbouring tile's.
- */
 export type NavTileBuilder = (tile: NavTileRequest) => NavMeshData;
 
 /** Where built tiles are kept, so a tile that streams back in is not rebuilt. Inject one to persist tiles. */
@@ -27,26 +21,19 @@ export interface NavTileStore {
   delete(id: string): void;
 }
 
-/** Which tiles stream in around focus points, for {@link NavTiles.follow}. */
 export interface NavTileStreaming extends WorldStreamerTuning {
-  /** The world area tiles may cover. */
   area: NavTileBounds;
 }
 
-/** Options for {@link createNavTiles}. */
 export interface NavTilesOptions extends NavRuntimeOptions {
   /** Tile edge in metres; tiles align to world origin. */
   tileSize: number;
   build: NavTileBuilder;
-  /** Built-tile storage. Default an in-memory map. */
   store?: NavTileStore;
-  /** Stream tiles in and out around focus points with {@link NavTiles.follow}. */
   streaming?: NavTileStreaming;
-  /** Vertices of neighbouring tiles closer than this weld into one. Default 0.001 m. */
   weld?: number;
 }
 
-/** What the tiled mesh holds and what its last changes cost. */
 export interface NavTileStats {
   tiles: number;
   polys: number;
@@ -55,26 +42,18 @@ export interface NavTileStats {
   lastComposeMs: number;
 }
 
-/** Plain JSON state of a {@link NavTiles}: the routed tiles, the runtime's tuning and the streamer's residency. */
 export interface NavTilesSnapshot {
   tiles: string[];
   runtime: ReturnType<NavRuntime["snapshot"]>;
   streaming: WorldStreamerState | null;
 }
 
-/** A nav mesh kept as tiles: built, stored, rebuilt and streamed one tile at a time, routed as one mesh. */
 export interface NavTiles {
-  /** The routing seam over every loaded tile: `plan`, `findPolygon`, `raycast` and the rest work across tile borders. */
   readonly runtime: NavRuntime;
-  /** The id of the tile holding a world point. */
   tileAt(x: number, z: number): string;
-  /** Route the given tiles in, building any the store does not hold. Returns the ids newly loaded. */
   load(ids: readonly string[]): string[];
-  /** Take the given tiles out of routing; their built data stays stored. Returns the ids removed. */
   unload(ids: readonly string[]): string[];
-  /** Rebuild only the tiles a changed region touches; stored tiles there that are not loaded are dropped. Returns the rebuilt ids. */
   invalidate(region: NavRegion): string[];
-  /** Load and unload tiles around focus points within the streaming budget. Throws without `streaming`. */
   follow(focus: StreamFocus | readonly StreamFocus[]): { load: string[]; unload: string[] };
   loaded(): string[];
   stats(): NavTileStats;
@@ -267,14 +246,11 @@ export function createNavTiles(options: NavTilesOptions): NavTiles {
   };
 }
 
-/** Options for {@link navTileFromGrid}. */
 export interface NavGridTileOptions {
   bounds: NavTileBounds;
   /** Sample spacing in metres; the tile edge should be a whole number of cells. */
   cellSize: number;
-  /** The area id walkers use at a point (priced by the runtime's `areaCosts`), or null where nothing walks. */
   areaAt(x: number, z: number): number | null;
-  /** Ground height at a point. Default 0. */
   heightAt?(x: number, z: number): number;
 }
 

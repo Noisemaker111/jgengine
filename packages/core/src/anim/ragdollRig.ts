@@ -9,20 +9,14 @@ import { SKELETON_PARENT, SKELETON_SLOTS, type SkeletonMap, type SkeletonSlot } 
 export interface RagdollPose {
   slot: SkeletonSlot;
   position: readonly [number, number, number];
-  /** World orientation of the bone, as `[x, y, z, w]`. */
   orientation: readonly [number, number, number, number];
 }
 
-/** Half-extents and mass of one standard slot's physics body, in the rig's own world units. */
 export interface RagdollBodyShape {
   halfExtents: readonly [number, number, number];
   mass: number;
 }
 
-/**
- * Humanoid body shapes for the standard slots, sized for a roughly 1.8 m character standing on the
- * ground. A rig of another scale multiplies them (see {@link RagdollRigOptions.scale}).
- */
 export const HUMANOID_RAGDOLL_BODIES: Readonly<Partial<Record<SkeletonSlot, RagdollBodyShape>>> = {
   root: { halfExtents: [0.1, 0.1, 0.08], mass: 4 },
   hips: { halfExtents: [0.1, 0.09, 0.08], mass: 8 },
@@ -45,13 +39,9 @@ export const HUMANOID_RAGDOLL_BODIES: Readonly<Partial<Record<SkeletonSlot, Ragd
   "toes.r": { halfExtents: [0.06, 0.03, 0.06], mass: 0.3 },
 };
 
-/** Tuning for {@link ragdollConfigFromPoses}. */
 export interface RagdollRigOptions {
-  /** Overrides {@link HUMANOID_RAGDOLL_BODIES} per slot. A slot absent from both is skipped. */
   bodies?: Readonly<Partial<Record<SkeletonSlot, RagdollBodyShape>>>;
-  /** Multiplies every half-extent; a rig taller than 1.8 m passes its height over 1.8. Default 1. */
   scale?: number;
-  /** Also build a body for slots with no shape of their own. Default false. */
   includeUnshaped?: boolean;
 }
 

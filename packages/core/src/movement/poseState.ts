@@ -56,15 +56,13 @@ export interface PoseState {
   getAim(instanceId: string): AimMode;
   setAim(instanceId: string, mode: AimMode): PoseRejection | null;
   clear(instanceId: string): void;
-  /** Snapshot every entity's pose and aim for a whole-world save. */
   snapshotAll(): PoseSnapshot;
-  /** Restore every entity's pose and aim from a {@link snapshotAll} payload. */
   hydrateAll(state: PoseSnapshot): void;
 }
 
 const ownedPoses = new WeakMap<PoseState["getPose"], Map<string, MovementPose>>();
 
-/** Restore one owned pose on synchronous failure; external implementations retain their semantic setter policy. @internal */
+/** @internal */
 export function withPoseRollback<T>(state: PoseState, instanceId: string, operation: () => T): T {
   const poses = ownedPoses.get(state.getPose);
   const previous = poses === undefined ? state.getPose(instanceId) : poses.get(instanceId);
@@ -82,11 +80,7 @@ export function withPoseRollback<T>(state: PoseState, instanceId: string, operat
   }
 }
 
-/**
- * Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
- *
- * @capability crouch-prone stance/pose transitions that change the hitbox
- */
+/** @capability crouch-prone stance/pose transitions that change the hitbox */
 export function createPoseState(
   resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined,
 ): PoseState {

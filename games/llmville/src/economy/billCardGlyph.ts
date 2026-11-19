@@ -1,9 +1,5 @@
 import type { BillType } from "./events";
 
-/**
- * Line-art watermarks for invoice bill cards (electricity, water, rent) as `RuneGlyph` artwork.
- * Drawn on a 140×72 sheet, scaled and centred into the glyph's 24-unit box.
- */
 const S = 'stroke="#b8a898" fill="none" stroke-linecap="round" stroke-linejoin="round"';
 
 const DRAWINGS: Record<BillType, string> = {

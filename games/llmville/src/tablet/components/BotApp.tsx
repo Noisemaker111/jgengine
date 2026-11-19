@@ -21,7 +21,6 @@ function Section({ title, children }: { title?: string; children: ReactNode }) {
   </Panel>;
 }
 
-/** The new bot token, shown once with copy and done. */
 function TokenReveal({ token, onDismiss }: { token: string; onDismiss: () => void }) {
   const [copied, setCopied] = useState(false);
   const copy = useCallback(() => {
@@ -40,7 +39,6 @@ function TokenReveal({ token, onDismiss }: { token: string; onDismiss: () => voi
   </Section>;
 }
 
-/** Players banned from walking into this lab, and a username box to ban one more. */
 export function VisitorBansView({ bans, ban, unban }: {
   bans: readonly { externalId: string; username?: string | null | undefined; displayName?: string | null | undefined }[] | undefined;
   ban: (username: string) => Promise<{ banned: boolean; reason?: string | null | undefined }>;

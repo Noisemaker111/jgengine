@@ -28,7 +28,6 @@ float jgFbm(vec2 p){
 
 /** Texels per side of {@link surfaceNoiseTexture}; the noise repeats every this many lattice cells. */
 const NOISE_SIZE = 256;
-/** The lattice step between a 3D noise's z slices, which the texture's green channel bakes in. */
 const NOISE_SLICE: readonly [number, number] = [37, 17];
 
 let noiseTexture: THREE.DataTexture | null = null;
@@ -72,7 +71,7 @@ export function surfaceNoiseTexture(): THREE.DataTexture {
   return texture;
 }
 
-/** The uniform {@link NOISE_GLSL} reads; spread into a surface material's shader uniforms. @internal */
+/** @internal */
 export function surfaceNoiseUniforms(): { jgNoiseTex: { value: THREE.DataTexture } } {
   return { jgNoiseTex: { value: surfaceNoiseTexture() } };
 }
@@ -265,7 +264,6 @@ JgSurf jgSurface(int cls, vec3 color, float rough, float scale, vec3 wp){
 }
 `;
 
-/** Paint-coverage uniforms and the warped, smoothed cell lookup. */
 export const PAINT_PARS_GLSL = /* glsl */ `
 uniform sampler2D uPaintA;
 uniform sampler2D uPaintB;

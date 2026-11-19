@@ -8,9 +8,8 @@ import * as THREE from "three";
  */
 export const MIN_SHADOW_CASTER_RADIUS = 0.5;
 
-/** A live caster cull: what it is keeping, and how to put the authored flags back. @internal */
+/** @internal */
 export interface ShadowCasterCull {
-  /** Meshes still casting in the tree, and how many were cleared for being under the radius. */
   stats(): { casters: number; skipped: number; minRadius: number };
   restore(): void;
 }
@@ -24,7 +23,7 @@ function maxAxisScale(node: THREE.Object3D): number {
   );
 }
 
-/** Bounding-sphere radius of what a mesh draws, in world units; an instance batch counts as its whole spread. @internal */
+/** @internal */
 export function shadowCasterRadius(mesh: THREE.Mesh): number | null {
   if ((mesh as THREE.InstancedMesh).isInstancedMesh === true) {
     const batch = mesh as THREE.InstancedMesh;
@@ -56,7 +55,6 @@ export function isStableShadowDepth(material: THREE.Material): boolean {
   return stableDepths.has(material);
 }
 
-/** What about a mesh picks a different depth shader: instancing, batching, skinning, morphing. */
 function depthKind(mesh: THREE.Mesh): string {
   const instanced = (mesh as THREE.InstancedMesh).isInstancedMesh === true;
   const batched = (mesh as THREE.BatchedMesh).isBatchedMesh === true;

@@ -1,22 +1,16 @@
 import { ROW_SIX_TRACK, type ActiveHazard, type Track } from "../tracks/catalog";
 import { zoneAt, type ZoneSurface } from "../zones/catalog";
 
-/** Grip on the dirt shoulders either side of the paved haul strip. */
 const SHOULDER_GRIP = 0.84;
 /** Metres over which the paved edge fades into the shoulder, so grip does not step in one tick. */
 const EDGE_BLEND = 1.2;
 
-/** What each hazard does to the tires while the kart is in it. */
 const HAZARD_GRIP: Readonly<Record<string, number>> = { slick: 0.78, flood: 0.86, slag: 0.9, belt: 1, train: 1 };
 
 export interface SurfaceSample {
-  /** The yard surface the kart is over (zone-owned authored data). */
   zone: ZoneSurface;
-  /** False once the kart is out on the dirt shoulders. */
   paved: boolean;
-  /** Combined grip multiplier handed to the sim. */
   grip: number;
-  /** What the HUD/evidence calls this patch of ground. */
   label: string;
 }
 
@@ -25,7 +19,6 @@ function smoothstep(t: number): number {
   return clamped * clamped * (3 - 2 * clamped);
 }
 
-/** Grip multiplier at a Row Six position - the legacy corridor's `surfaceFriction` hook. */
 export function surfaceFrictionAt(x: number, z: number): number {
   return surfaceAt(x, z).grip;
 }

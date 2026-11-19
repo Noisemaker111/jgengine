@@ -34,7 +34,6 @@ import { useMountPresence } from "./presence.view";
  * token-driven: games reskin via `HudTheme` tokens and by swapping the `HudFrame` variation.
  */
 
-/** Intent a key press resolves to over a panel set: toggle a panel, close the top window, or ignore. */
 export interface PanelKeyResult {
   handled: boolean;
   type?: "toggle" | "closeTop";
@@ -68,17 +67,12 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable === true;
 }
 
-/** Options for {@link usePanels}. */
 export interface UsePanelsOptions {
-  /** Fired when a panel transitions from closed to open (not on refocus of an already-open panel). */
   onOpen?: (id: string) => void;
-  /** Fired when an open panel is closed. */
   onClose?: (id: string) => void;
-  /** Set false to skip installing the window keybind/ESC listener (default true). */
   hotkeys?: boolean;
 }
 
-/** The live panel manager returned by {@link usePanels} and consumed by {@link PanelHost}. */
 export interface PanelsManager {
   state: PanelState;
   defs: readonly PanelDef[];
@@ -185,8 +179,6 @@ function topClosableOpen(state: PanelState): string | null {
   }
   return null;
 }
-
-// ---- Window chrome ---------------------------------------------------------
 
 /** @internal Own a title-bar pointer until release or interruption, streaming positions to `onMove`. */
 function beginWindowDrag(
@@ -435,15 +427,12 @@ export function PanelHost({
   manager: PanelsManager;
   /** Called as windows open and close (`cue` is `panel:<id>`) — the seam a UI sound system hooks. */
   onInteract?: HudInteractListener;
-  /** Content for a panel by id. Takes precedence over `panels`. */
   render?: (id: string) => ReactNode;
-  /** Static content map by panel id, used when `render` is omitted. */
   panels?: Record<string, ReactNode>;
   variation?: HudFrameVariation;
   shape?: HudFrameShape;
   /** Default window width (per-panel unless overridden by the panel content). */
   width?: number | string;
-  /** z-index of the host's stacking context — the floor every window paints above. Default 40 (above the HUD). */
   zIndexBase?: number;
   className?: string;
   windowClassName?: string;
@@ -519,14 +508,10 @@ export function Window({
   title: ReactNode;
   ariaLabel?: string;
   closable?: boolean;
-  /** Feedback cue name, rendered as `data-jg-cue` and passed to `onInteract`. */
   cue?: string;
-  /** Called with `open` when the window mounts — the seam a UI sound system hooks. */
   onInteract?: HudInteractListener;
   onClose?: () => void;
-  /** Initial (uncontrolled) or current (controlled, with `onMove`) x position. Default 56. */
   x?: number;
-  /** Initial (uncontrolled) or current (controlled, with `onMove`) y position. Default 56. */
   y?: number;
   onMove?: (pos: PanelPosition) => void;
   z?: number;

@@ -292,12 +292,7 @@ button.${P}-prompt { cursor: pointer; }
 @keyframes ${P}-out { to { opacity: 0; scale: 0.7; rotate: 8deg; } }
 `;
 
-/**
- * Inkline: a comic-book caper. Heavy wobbly ink outlines, hard offset shadows, halftone dots,
- * skewed caption tabs, speech-balloon toasts and jagged shout bursts; panels pop in with overshoot.
- *
- * @capability ui-kit-ink comic ink UI kit — outlines, halftone, caption tabs, speech balloons, pop motion, marker sounds
- */
+/** @capability ui-kit-ink comic ink UI kit — outlines, halftone, caption tabs, speech balloons, pop motion, marker sounds */
 export const inkKit: UiKit = {
   id: "ink",
   name: "Inkline",

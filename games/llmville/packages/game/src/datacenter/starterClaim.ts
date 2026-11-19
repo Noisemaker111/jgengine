@@ -9,7 +9,6 @@ import { isStructuralColumnCell } from "@llmville/game/datacenter/layout";
 import { SPAWN_SEARCH_RADIUS_CELLS } from "@llmville/game/datacenter/spawn";
 import { mulberry32 } from "@llmville/game/world/cityHash";
 
-/** A 3×3 block: every new world starts owning the ground under its spawn point. */
 export const STARTER_CLAIM_RADIUS_CELLS = 1;
 
 const SAMPLES_PER_RING = 128;

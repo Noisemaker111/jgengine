@@ -14,19 +14,13 @@ export type RuntimeEntityRow = {
   userId?: string;
 };
 
-/**
- * The persisted form of a placed `SceneObject`: identity, placement, per-instance state, and slot
- * contents. Convert with `toRuntimeObjectRow`/`fromRuntimeObjectRow` (`runtime/objectRows`).
- */
 export type RuntimeObjectRow = {
   instanceId: string;
   catalogId: string;
   position: [number, number, number];
   rotationY?: number;
   parentSpace?: string;
-  /** Opaque per-instance state; the persisted name for `SceneObject.state`. */
   flags?: Record<string, unknown>;
-  /** Container contents for a catalog `slotInventory` object. */
   slots?: InventoryState;
 };
 
@@ -50,7 +44,6 @@ export type RuntimePlayerRow = {
 };
 
 export type RuntimeChunkRow = {
-  /** Cell key to owner id, persisted with its spatial chunk. */
   territory?: Record<string, string>;
   territoryReceipts?: Record<string, { claimedAt: number; costPaid: number }>;
   chunkKey: string;

@@ -14,7 +14,6 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-/** Mark a place change in progress until the returned function runs. */
 function holdSceneSwap(): () => void {
   swaps += 1;
   if (swaps === 1) notify();
@@ -27,12 +26,7 @@ function holdSceneSwap(): () => void {
   };
 }
 
-/**
- * The place to draw, trailing `wanted` while the UI builds the new place in the background; the
- * swap stays marked (see {@link useSceneSwapping}) from the change until the build is in and
- * `prepare()` has settled. Use `useSceneSwap` (`@jgengine/core/render/sceneSwap.draw`), which
- * prepares by compiling the new place's shaders. @internal
- */
+/** @internal */
 export function useDeferredSwap<T>(wanted: T, prepare: () => Promise<unknown>): T {
   const shown = useDeferredValue(wanted);
   const pending = !Object.is(shown, wanted);
@@ -64,16 +58,11 @@ export function useDeferredSwap<T>(wanted: T, prepare: () => Promise<unknown>): 
   return shown;
 }
 
-/**
- * True while a `useSceneSwap` is still building or compiling its new place: paint the travel card,
- * opaque, over the canvas.
- * @capability scene-swap-card know when to show a travel card while the next place builds behind it
- */
+/** @capability scene-swap-card know when to show a travel card while the next place builds behind it */
 export function useSceneSwapping(): boolean {
   return useSyncExternalStore(subscribe, sceneSwapping, () => false);
 }
 
-/** True while a scene swap's card is up, outside the UI runtime (the frame breakdown marks stalls drawn behind it). */
 export function sceneSwapping(): boolean {
   return swaps > 0;
 }

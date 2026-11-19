@@ -6,13 +6,8 @@ import {
 } from "@jgengine/core/runtime/adapter";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
-/** Transport kind declared by the game, or `"unknown"` when the config is unreadable. */
 export type EditorNetworkAdapterKind = MultiplayerAdapterConfig["kind"] | "unknown";
 
-/**
- * One online actor from a host-supplied presence feed. Fields mirror
- * {@link PresencePoseRow} so hosts can forward backend rows without inventing shape.
- */
 export interface EditorNetworkPresenceActor {
   userId: string;
   position: { x: number; y: number; z: number };
@@ -21,13 +16,8 @@ export interface EditorNetworkPresenceActor {
   lastSeenAt?: number;
 }
 
-/**
- * Optional live session identity when a multiplayer backend is attached.
- * Omit entirely when the host has no session — the panel reports offline honestly.
- */
 export interface EditorNetworkSession {
   userId: string;
-  /** Joined room/server id when known; `null` means joined but id not reported. */
   serverId?: string | null;
   feedActions?: readonly string[];
 }
@@ -43,24 +33,15 @@ export interface EditorNetworkSession {
 export interface EditorNetworkSnapshot {
   gameId: string;
   adapterKind: EditorNetworkAdapterKind;
-  /** `null` for offline / single-player games. */
   authority: MultiplayerAuthority | null;
-  /** Optional topology string from the adapter when declared. */
   topology?: string;
-  /** Optional endpoint hint from the adapter (ws/socketio url, lan port, p2p room). */
   endpoint?: string;
   session?: EditorNetworkSession;
-  /**
-   * Online presence roster from the host.
-   * - `undefined` — no feed supplied (honest empty / waiting).
-   * - array — real rows only (may be empty).
-   */
   online?: readonly EditorNetworkPresenceActor[];
   /** Wall-clock ms of the last presence update when the host tracks it. */
   updatedAt?: number;
 }
 
-/** Optional live presence/session injection from the editor host. */
 export interface EditorNetworkPresenceInput {
   userId?: string;
   serverId?: string | null;
@@ -86,13 +67,7 @@ function topologyOf(adapter: MultiplayerAdapterConfig | null): string | undefine
   return "topology" in adapter ? adapter.topology : undefined;
 }
 
-/**
- * Builds a Network workspace snapshot from the game's multiplayer config plus optional live
- * presence rows. Adapter fields always reflect declared config; presence is only included when
- * the host passes it.
- *
- * @internal
- */
+/** @internal */
 export function buildEditorNetworkSnapshot(args: {
   gameId: string;
   multiplayer: unknown;
@@ -135,11 +110,7 @@ export function buildEditorNetworkSnapshot(args: {
   return snapshot;
 }
 
-/**
- * True when the snapshot represents a multiplayer-capable game (not offline/unknown-null).
- *
- * @internal
- */
+/** @internal */
 export function isNetworkMultiplayerConfigured(snapshot: EditorNetworkSnapshot): boolean {
   return snapshot.adapterKind !== "offline" && snapshot.adapterKind !== "unknown" && snapshot.authority !== null;
 }

@@ -1,16 +1,10 @@
 import { seededRng } from "../random/rng";
 
-/** Drop budget a rain field allocates before `density` scales it down. */
 export const DEFAULT_RAIN_COUNT = 2000;
-/** Flake budget a snow field allocates before `density` scales it down. */
 export const DEFAULT_SNOW_COUNT = 1500;
-/** Share of {@link DEFAULT_RAIN_COUNT} drawn at intensity 1. */
 export const DEFAULT_RAIN_DENSITY = 0.45;
-/** Share of {@link DEFAULT_SNOW_COUNT} drawn at intensity 1. */
 export const DEFAULT_SNOW_DENSITY = 0.5;
-/** Mote budget a {@link DustField} allocates before `density` scales it down. */
 export const DEFAULT_DUST_COUNT = 1800;
-/** Share of {@link DEFAULT_DUST_COUNT} drawn at intensity 1 — dust reads thinner than rain or snow. */
 export const DEFAULT_DUST_DENSITY = 0.4;
 
 /** @internal */

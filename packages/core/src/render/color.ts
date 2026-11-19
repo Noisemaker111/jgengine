@@ -1,14 +1,10 @@
-/** Split a `#rrggbb` (or bare `rrggbb`) hex color into its `[r, g, b]` channels (0–255).
- * @internal
- */
+/** @internal */
 export function hexToRgb(hex: string): readonly [number, number, number] {
   const value = Number.parseInt(hex.startsWith("#") ? hex.slice(1) : hex, 16);
   return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
 }
 
-/** Combine `[r, g, b]` channels (0–255, rounded) into a `#rrggbb` hex string.
- * @internal
- */
+/** @internal */
 export function rgbToHex(r: number, g: number, b: number): string {
   const value = ((Math.round(r) & 0xff) << 16) | ((Math.round(g) & 0xff) << 8) | (Math.round(b) & 0xff);
   return `#${value.toString(16).padStart(6, "0")}`;

@@ -4,7 +4,6 @@ import { RuneAction, RuneGlyph } from "@jgengine/core/ui/rune/primitives.view";
 import { FULL, Icon, Text } from "../../ui/kit";
 import { GOOGLE_ARTWORK } from "../../ui/icons";
 
-/** Google sign-in, on Google's own white button. */
 export function AuthOAuthSection({ actionLabel, loadingLabel = "Connecting…", loading, onClick }: {
   actionLabel: string; loadingLabel?: string; loading: boolean; onClick: () => void;
 }) {

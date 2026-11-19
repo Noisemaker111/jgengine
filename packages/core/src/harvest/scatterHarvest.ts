@@ -10,13 +10,11 @@ import {
   type ToolProfile,
 } from "../world/resourceNode";
 
-/** What one scatter species yields when struck: a resource node definition without its id, plus its trunk radius. */
 export interface HarvestableDef extends Omit<ResourceNodeDef, "id"> {
   /** Trunk/boulder radius in metres added to the striker's reach. Default 0.5. */
   radius?: number;
 }
 
-/** A placement the harvest can strike: a resolved scatter instance or anything with an id, a species and a spot. */
 export interface HarvestPlacement {
   id: string;
   item: string;
@@ -25,7 +23,6 @@ export interface HarvestPlacement {
   scale?: number;
 }
 
-/** One swing: where from, which way, how far and with what. */
 export interface HarvestStrike {
   x: number;
   z: number;
@@ -36,52 +33,38 @@ export interface HarvestStrike {
   /** Half-angle of the swing cone in radians. Default 0.9. */
   cone?: number;
   tool: ToolProfile;
-  /** Scales every grant (a harvesting stat, a creature's gather bonus). Default 1. */
   multiplier?: number;
-  /** Only these species can be hit by this swing (a fist strikes trees, a hand picks bushes). Default every harvestable. */
   accepts?: (item: string) => boolean;
 }
 
-/** What a swing took. */
 export interface HarvestHit {
   id: string;
   item: string;
   granted: readonly ResourceGrant[];
-  /** The node emptied on this swing and left the world. */
   depleted: boolean;
   /** 0..1 left after the swing. */
   fraction: number;
 }
 
-/** Construction options for {@link createScatterHarvest}. */
 export interface ScatterHarvestConfig {
-  /** Harvestable species by scatter item id; items not listed are scenery. */
   kinds: Readonly<Record<string, HarvestableDef>>;
-  /** Hides depleted placements in the renderer and shows them again on respawn. */
   clearing?: ScatterClearing;
-  /** Injected [0,1) generator for yield variance. */
   rng?: () => number;
   /** Spatial index cell in metres. Default 16. */
   cellSize?: number;
 }
 
-/** Plain save data: the touched nodes only. */
 export interface ScatterHarvestState {
   nodes: Record<string, ResourceNodeState>;
 }
 
-/** Strikeable scatter: trees, rocks and bushes the player hits for resources, which vanish when spent and regrow. */
 export interface ScatterHarvest {
-  /** Index the placements a strike can reach (call when the scatter resolves, before `restore`). Non-harvestable items are skipped. */
   setPlacements(placements: readonly HarvestPlacement[]): void;
-  /** The standing harvestable placement a swing would hit, nearest first. */
   target(strike: Omit<HarvestStrike, "tool" | "multiplier">): HarvestPlacement | null;
   /** Swing: hit the target, grant its resources, clear it from the world when spent. Null when nothing is in reach. */
   strike(strike: HarvestStrike): HarvestHit | null;
-  /** Count down regrowth; returns the ids that grew back this tick. */
   tick(dt: number): readonly string[];
   isDepleted(id: string): boolean;
-  /** Swap the species table in play (yields, budgets, regrowth); touched nodes keep their state. */
   retune(kinds: Readonly<Record<string, HarvestableDef>>): void;
   snapshot(): ScatterHarvestState;
   restore(state: ScatterHarvestState): void;
@@ -96,22 +79,13 @@ function angleBetween(a: number, b: number): number {
 /** Metres of slack around a strike's reach the query covers before the trunk radii are added. */
 const REACH_SLACK = 4;
 
-/**
- * Turn scatter into resources: every placed tree, rock or bush of a listed species is a depletable,
- * respawning node (backed by {@link createResourceNodeField} resolved on first hit, so ten thousand trees
- * cost nothing until someone swings). A strike picks the nearest standing placement inside reach and a
- * facing cone, applies the tool's biases (a hatchet favours wood, a pick favours stone, a fist gets
- * thatch), and a spent node is hidden through {@link ScatterClearing} until it regrows.
- *
- * @capability scatter-harvest strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow
- */
+/** @capability scatter-harvest strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow */
 export function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarvest {
   let kinds = config.kinds;
   const cellSize = config.cellSize ?? 16;
   const byId = new Map<string, HarvestPlacement>();
   const index = createSpatialIndex({ cellSize });
   const candidates: string[] = [];
-  /** Widest trunk radius any standing placement adds to a strike's reach. */
   let widestRadius = 0.5;
 
   const measure = (): void => {

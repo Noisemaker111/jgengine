@@ -1,6 +1,5 @@
 import { decodePng, encodePng, type RgbaImage } from "@jgengine/assets/imageCodec";
 
-/** Every file Tauri reads from `src-tauri/icons/`, keyed by file name. */
 export type DesktopIconFiles = Record<string, Uint8Array>;
 
 const ICO_SIZES = [16, 24, 32, 48, 64, 256] as const;
@@ -11,7 +10,6 @@ const PNG_SIZES: ReadonlyArray<readonly [string, number]> = [
   ["icon.png", 512],
 ];
 
-/** Centre-crops to a square and resamples to `size`×`size` with an alpha-weighted area filter. */
 export function resizeSquare(image: RgbaImage, size: number): RgbaImage {
   const side = Math.min(image.width, image.height);
   const left = (image.width - side) / 2;
@@ -106,7 +104,6 @@ function hex(color: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** The jgengine mark from jgengine.com's favicon, drawn at `size` with 4×4 supersampling. */
 export function defaultDesktopIcon(size: number): RgbaImage {
   const shapes: Array<{ x: number; y: number; w: number; r: number; color: [number, number, number]; alpha: number }> = [
     { x: 0, y: 0, w: 64, r: 8, color: hex("#0a0c0f"), alpha: 1 },
@@ -161,10 +158,6 @@ export function defaultDesktopIcon(size: number): RgbaImage {
   return { width: size, height: size, data };
 }
 
-/**
- * Builds the full Tauri icon set (`icon.ico` plus the PNG sizes) from a PNG source, or from the
- * jgengine mark when `source` is null.
- */
 export function buildDesktopIcons(source: Uint8Array | null): DesktopIconFiles {
   const decoded = source === null ? null : decodePng(source);
   const at = (size: number): RgbaImage => (decoded === null ? defaultDesktopIcon(size) : resizeSquare(decoded, size));
@@ -174,5 +167,4 @@ export function buildDesktopIcons(source: Uint8Array | null): DesktopIconFiles {
   return files;
 }
 
-/** File names `buildDesktopIcons` writes, in the order tauri.conf.json lists them. */
 export const DESKTOP_ICON_FILES: readonly string[] = [...PNG_SIZES.map(([name]) => name), "icon.ico"];

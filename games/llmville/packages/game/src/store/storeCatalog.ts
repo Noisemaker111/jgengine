@@ -1,8 +1,3 @@
-/**
- * Store-facing catalog for labels, descriptions, and display tags.
- * Simulation stats live in catalogs/racks / rackCoolingCatalog / catalogs/hardware.
- */
-
 import { HARDWARE_CATALOG } from "@llmville/game/infrastructure/catalog";
 import { RACK_CATALOG } from "@llmville/game/infrastructure/catalog";
 import { RACK_COOLING_CATALOG } from "@llmville/game/infrastructure/catalog";

@@ -25,7 +25,6 @@ export function isPromotedProject(dir: string): boolean {
   return existsSync(join(dir, "src", "game", "assets.ts"));
 }
 
-/** Scans forward from `open` (index of `{` or `[`) to its matching close, respecting string literals. */
 function matchBracketSpan(source: string, open: number): number {
   const openCh = source[open];
   const closeCh = openCh === "{" ? "}" : "]";
@@ -54,7 +53,6 @@ function matchBracketSpan(source: string, open: number): number {
   throw new Error("promotedAssetCatalog: unbalanced brackets in assets.ts");
 }
 
-/** Serializes one extras entry as a `{ id, url, label }` object literal with stable key order. */
 function serializeEntry(extra: PromotedExtra): string {
   return `{ id: ${JSON.stringify(extra.id)}, url: ${JSON.stringify(extra.url)}, label: ${JSON.stringify(extra.label)} }`;
 }
@@ -114,7 +112,6 @@ export function upsertCatalogExtra(source: string, extra: PromotedExtra): string
     const arrOpenAbs = objOpen + arrOpenInObj;
     const arrCloseAbs = objOpen + arrCloseInObj;
     // Collapse an emptied array back to no `extras` for clean reversibility. Unreachable via a plain
-    // import (we just added an entry), but keeps the transform's remove-symmetry intact.
     if (entries.size === 0) {
       return spliceOutExtras(source, objOpen + extrasMatch.index, arrCloseAbs);
     }
@@ -142,14 +139,12 @@ function spliceOutExtras(source: string, declStartAbs: number, arrCloseAbs: numb
   return source.slice(0, start) + source.slice(declEndAbs);
 }
 
-/** Serializes an extras array literal with one entry per indented line. */
 function serializeArray(entries: readonly PromotedExtra[], indent: string): string {
   if (entries.length === 0) return "[]";
   const inner = entries.map((e) => `${indent}  ${serializeEntry(e)},`).join("\n");
   return `[\n${inner}\n${indent}]`;
 }
 
-/** Parses a `{ id, url, label }` object literal (unquoted keys) into a PromotedExtra via JSON. */
 function parseEntryLiteral(literal: string): PromotedExtra {
   // Quote bare identifier keys so JSON.parse accepts the source-literal form.
   const jsonish = literal.replace(/([{,]\s*)([A-Za-z_$][\w$]*)(\s*:)/g, '$1"$2"$3');
@@ -164,7 +159,6 @@ function parseEntryLiteral(literal: string): PromotedExtra {
   };
 }
 
-/** Reads the `basePath` string literal from a promoted `assets.ts`, defaulting to `/models`. */
 function readBasePath(source: string): string {
   const m = /\bbasePath\s*:\s*["'`]([^"'`]+)["'`]/.exec(source);
   return m?.[1] ?? "/models";

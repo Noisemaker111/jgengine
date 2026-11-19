@@ -11,19 +11,15 @@ export interface HairCardGuide {
   tipWidth?: number;
   /** Desired front-facing normal; must not be parallel to the strand direction. */
   facing: readonly [number, number, number];
-  /** Atlas rectangle [uMin,vMin,uMax,vMax]; U is width and V is root to tip. */
   uvRect?: readonly [number, number, number, number];
 }
 
-/** Serializable geometry authoring, independent of materials, grooming physics and collisions. */
 export interface HairCardAuthoring {
   guides: readonly HairCardGuide[];
   subdivisionsPerSegment?: number;
-  /** Allocation ceiling for offline/editor generation; default 65,536 vertices. */
   maxVertices?: number;
 }
 
-/** Renderer-neutral indexed ribbons with an explicit tangent frame and guide ranges. */
 export interface HairCardMesh {
   positions: number[];
   normals: number[];
@@ -39,7 +35,6 @@ function vec(value: unknown): value is Vec { return Array.isArray(value) && valu
 function subtract(a: Vec, b: Vec): [number, number, number] { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
 function cross(a: Vec, b: Vec): [number, number, number] { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
 function length(v: Vec): number { return Math.hypot(...v); }
-/** The guide's points with `subdivisions` evenly spaced samples per segment (the first point once). */
 function sampleGuide(points: readonly Vec[], subdivisions: number): [number, number, number][] {
   const samples: [number, number, number][] = [];
   for (const [index, to] of points.entries()) {

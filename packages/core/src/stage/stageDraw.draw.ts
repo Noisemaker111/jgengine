@@ -6,7 +6,6 @@ import { OrbitControls } from "three-stdlib";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** One authored light for {@link stageDraw}: the engine light intrinsics as data. */
 export type StageLight =
   | { kind: "ambient"; intensity?: number; color?: string }
   | { kind: "hemisphere"; skyColor?: string; groundColor?: string; intensity?: number }
@@ -33,12 +32,10 @@ export type StageLight =
     }
   | { kind: "point"; position?: readonly [number, number, number]; intensity?: number; color?: string; distance?: number };
 
-/** Declarative stage dressing for preview and demo canvases — the engine `<color>`/`<fog>`/light/ground/grid intrinsics as one draw. */
 export interface StageSpec {
   background?: string | undefined;
   fog?: { color: string; near: number; far: number } | { color: string; density: number } | undefined;
   lights?: readonly StageLight[] | undefined;
-  /** Receives shadows: a square ground plane, or a flat circle when `shape` is "circle". */
   ground?: { size?: number; width?: number; depth?: number; radius?: number; shape?: "plane" | "circle"; color?: string; roughness?: number; metalness?: number; emissive?: string; emissiveIntensity?: number; y?: number } | undefined;
   grid?: { size?: number; divisions?: number; color?: string; y?: number } | undefined;
 }
@@ -87,11 +84,6 @@ function lightFrom(spec: StageLight): THREE.Light {
   }
 }
 
-/**
- * One draw that applies a {@link StageSpec}: scene background/fog on the root scene, lights, an
- * optional shadow-receiving ground plane and an optional grid helper under the mount parent.
- * Reactive through {@link StageDraw}'s spec getter — prop changes rebuild the dressing.
- */
 export function stageDraw(getSpec: () => StageSpec): EngineDraw {
   const owned: THREE.Object3D[] = [];
   const borrowed: { dispose(): void }[] = [];
@@ -189,7 +181,6 @@ export function stageDraw(getSpec: () => StageSpec): EngineDraw {
   };
 }
 
-/** Mount a reactive {@link StageSpec} as one draw. */
 export function StageDraw({ spec }: { spec: StageSpec }) {
   const ref = useRef(spec);
   ref.current = spec;
@@ -205,11 +196,9 @@ export interface OrbitControlsSpec {
   maxPolarAngle?: number;
   minAzimuthAngle?: number;
   maxAzimuthAngle?: number;
-  /** Re-read each frame; return null to leave the controls' target alone. */
   targetOf?: (() => readonly [number, number, number] | null) | undefined;
 }
 
-/** drei `<OrbitControls>` as a draw: owns three-stdlib OrbitControls on the host camera + canvas. */
 export function orbitControlsDraw(getSpec: () => OrbitControlsSpec): EngineDraw {
   let controls: OrbitControls | null = null;
   return {
@@ -244,7 +233,6 @@ export function orbitControlsDraw(getSpec: () => OrbitControlsSpec): EngineDraw 
   };
 }
 
-/** Mount reactive {@link OrbitControlsSpec} as one draw. */
 export function OrbitControlsDraw({ spec }: { spec: OrbitControlsSpec }) {
   const ref = useRef(spec);
   ref.current = spec;
@@ -256,7 +244,6 @@ export interface CameraPoseSpec {
   target?: readonly [number, number, number] | undefined;
 }
 
-/** One-shot camera placement — the editor CameraRig / preview `<CameraRig>` pattern as a draw. */
 export function cameraPoseDraw(getSpec: () => CameraPoseSpec): EngineDraw {
   let applied = false;
   return {
@@ -272,7 +259,6 @@ export function cameraPoseDraw(getSpec: () => CameraPoseSpec): EngineDraw {
   };
 }
 
-/** Mount a {@link CameraPoseSpec} as one draw. */
 export function CameraPoseDraw({ spec }: { spec: CameraPoseSpec }) {
   const ref = useRef(spec);
   ref.current = spec;

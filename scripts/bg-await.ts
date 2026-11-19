@@ -23,7 +23,6 @@ export const EXIT_NO_TASK = 4;
 export const EXIT_LOST = 5;
 export const EXIT_TIMEOUT = 6;
 
-/** How often a waiting `background await` asks whether the runner is still alive; the exit itself is an event. */
 export const BEAT_MS = 2_000;
 
 /**
@@ -32,7 +31,6 @@ export const BEAT_MS = 2_000;
  */
 export const EXIT_CHECK_MS = 250;
 
-/** The part of a folder watch the wait uses. */
 export interface FolderWatch {
   close(): void;
 }
@@ -52,23 +50,18 @@ export interface AwaitOptions {
   write: (text: string) => void;
   err: (text: string) => void;
   alive?: (pid: number) => boolean;
-  /** Replaces the folder watch; the test drives the wait without a real child. */
   untilExit?: (dir: string, id: string) => Promise<WaitResult>;
   timeoutMs?: number;
-  /** How often the wait asks whether the runner lives; {@link BEAT_MS} by default. */
   beatMs?: number;
-  /** How often the wait reads the exit file behind the watch; {@link EXIT_CHECK_MS} by default. */
   exitCheckMs?: number;
   /** Replaces fs.watch on the task folder; the test passes one that fails or never speaks. */
   watchFolder?: WatchFolder;
-  /** The pid written as the task's awaiter; this process by default. */
   pid?: number;
 }
 
 /** The task's exit code, or why there is none: its runner died, or the wait ran out first. */
 type WaitResult = number | "lost" | "timeout";
 
-/** Print the task's output and return its exit code, once it has one. */
 export function awaitTask(options: AwaitOptions): Promise<number> {
   const { id, err } = options;
   const checkout = options.checkout ?? root;
@@ -98,7 +91,6 @@ export function awaitTask(options: AwaitOptions): Promise<number> {
       const command = readCommand(dir);
       err(`background await: waiting for ${id}${command.length > 0 ? ` (${command})` : ""}`);
       // While this waits, the task has an awaiter: a turn that ends with the harness running this
-      // await in its background is waiting correctly, and the Stop hooks let it end.
       const awaiter = join(dir, AWAITER);
       const pid = String(options.pid ?? process.pid);
       try {

@@ -3,9 +3,7 @@ import { applyNavAreas, mergeNavGeometry, navAreaGeometry, type AuthoredNavArea 
 import { freeCompactHeightfield, freeContourSet, freeHeightfield, freePolyMesh, freePolyMeshDetail, init } from "recast-navigation";
 import { generateSoloNavMesh, type SoloNavMeshGeneratorIntermediates } from "recast-navigation/generators";
 
-/** Walkable geometry and agent dimensions for {@link bakeNavMesh}. */
 export interface BakeNavMeshOptions {
-  /** Flat xyz triples. */
   positions: readonly number[];
   /** Triangle vertex indices, counter-clockwise seen from above for walkable faces (three.js front faces up). */
   indices: readonly number[];
@@ -13,7 +11,6 @@ export interface BakeNavMeshOptions {
   agentHeight: number;
   /** Steepest walkable slope in degrees. */
   maxSlope: number;
-  /** Tallest ledge the agent steps up. */
   maxClimb: number;
   /** Voxel size on XZ; defaults to half the agent radius. Smaller is more exact and slower. */
   cellSize?: number;
@@ -38,7 +35,6 @@ export function initNavBake(): Promise<void> {
   return loading;
 }
 
-/** Whether {@link initNavBake} has finished and {@link bakeNavMesh} can run synchronously. */
 export function navBakeReady(): boolean {
   return ready;
 }
@@ -115,11 +111,8 @@ export function bakeNavMesh(options: BakeNavMeshOptions): NavMeshData {
   }
 }
 
-/** Agent dimensions, authored areas and optional scene triangles for {@link bakeAuthoredNavMesh}. */
 export interface BakeAuthoredNavMeshOptions extends Omit<BakeNavMeshOptions, "positions" | "indices"> {
-  /** The scene's `nav_area` volumes, read with `navAuthoringFromDocument`. */
   areas: readonly AuthoredNavArea[];
-  /** Scene triangles baked alongside the areas (flat xyz triples); omit to bake the authored areas alone. */
   positions?: readonly number[];
   indices?: readonly number[];
 }

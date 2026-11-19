@@ -2,10 +2,8 @@ import { effectNames, resolveEffect, type EffectOverride } from "./effectLibrary
 import { validateEmitterConfig, type EmitterConfig, type ParticleEvent } from "./particles";
 import type { Vec3 } from "../world/geometry";
 
-/** How a particle effect composites on screen: `additive` for sparks/fire/glow, `normal` for smoke/dust. */
 export type ParticleBlendHint = "additive" | "normal";
 
-/** Render output selected independently of particle spawn and simulation. */
 export interface ParticleRenderHint {
   shape: "point" | "streak" | "flake" | "flame" | "smoke" | "ribbon" | "ripple";
   /** Velocity streak length in seconds. Default 0.08. */
@@ -17,7 +15,6 @@ export interface ParticleBurst {
   /** Monotonic sequence id so a renderer can consume each burst exactly once. */
   seq: number;
   config: EmitterConfig;
-  /** Particles to emit immediately. */
   count: number;
   blending?: ParticleBlendHint;
   emitterId?: string;
@@ -34,14 +31,10 @@ export interface ParticleCollisionEffect {
   blending?: ParticleBlendHint;
 }
 
-/** Options for {@link ParticleDirector.attach}. */
 export interface ParticleAttachOptions {
-  /** Scene entity id the emitter origin tracks each frame (plus `offset`). */
   follow?: string;
-  /** World offset from the followed entity (or from the config position when unfollowed). */
   offset?: Vec3;
   blending?: ParticleBlendHint;
-  /** Local particles move with the followed pose; world particles retain their emitted positions. */
   space?: "world" | "local";
   active?: boolean;
   render?: ParticleRenderHint | undefined;
@@ -52,7 +45,6 @@ export interface ParticleAttachOptions {
   priority?: number;
 }
 
-/** A keyed continuous emitter owned by the director until detached. */
 export interface ParticleEmitterSpec extends ParticleAttachOptions {
   id: string;
   config: EmitterConfig;
@@ -61,13 +53,10 @@ export interface ParticleEmitterSpec extends ParticleAttachOptions {
   blending?: ParticleBlendHint;
 }
 
-/** A library effect played by name: where it plays, plus per-call overrides. */
 export interface EffectRequest extends EffectOverride {
-  /** Entity id a standing emitter tracks each frame (plus `offset`). */
   follow?: string;
 }
 
-/** A cosmetic simulation event, labelled with its emitting effect. */
 export interface ParticleDirectorEvent extends ParticleEvent {
   emitterId: string;
 }
@@ -79,50 +68,28 @@ export interface ParticleDirectorOptions {
   maxEvents?: number;
 }
 
-/** Serializable director state: the standing emitters (bursts are transient by nature). */
 export interface ParticleDirectorState {
   nextSeq: number;
   emitters: ParticleEmitterSpec[];
 }
 
-/**
- * The game-side seam for particle effects. Game logic requests one-shot bursts and
- * standing emitters as plain data; the shell renders them through
- * `createParticleSystem`/`ParticleField`, applies the graphics-quality particle cap,
- * and tracks `follow` entities. Nothing here touches a renderer, so commands and
- * `onTick` systems can drive VFX headlessly and tests can assert the requested effects.
- */
 export interface ParticleDirector {
-  /** Queue a one-shot burst (impact puff, debris, muzzle smoke). */
   burst(config: EmitterConfig, count: number, blending?: ParticleBlendHint, options?: ParticleAttachOptions): void;
-  /** Create or replace a standing emitter under `id` (exhaust, dust plume, torch smoke). */
   attach(id: string, config: EmitterConfig, options?: ParticleAttachOptions): void;
-  /** Patch a standing emitter's config in place (e.g. scale exhaust rate with speed). */
   retune(id: string, patch: Partial<EmitterConfig>, options?: Partial<ParticleAttachOptions>): void;
-  /** Resume a named emitter while preserving its live particles. */
   start(id: string): void;
-  /** Stop spawning; the renderer lets existing particles finish. */
   stop(id: string): void;
-  /** Emit once through a named emitter's existing pool, including when stopped. */
   burstNamed(id: string, count: number): void;
-  /** Play a library effect by name once, as a one-shot burst at the request's position. */
   play(name: string, request?: EffectRequest): void;
-  /** Create or replace a standing emitter from a library effect name under `id`. */
   attachEffect(id: string, name: string, request?: EffectRequest): void;
-  /** The named effects a caller can play, from the shared library. */
   effectNames(): readonly string[];
   /** Renderer-to-game cosmetic event exchange, bounded by the director's event limit. */
   reportEvents(id: string, events: readonly ParticleEvent[]): void;
   drainEvents(): ParticleDirectorEvent[];
-  /** Remove a standing emitter. Unknown ids are ignored. */
   detach(id: string): void;
-  /** Drop every standing emitter and any unconsumed bursts. */
   clear(): void;
-  /** The standing emitters, for renderers and assertions. */
   emitters(): readonly ParticleEmitterSpec[];
-  /** Fixed registry and transient queue capacities for transactional preflight. */
   limits(): Required<ParticleDirectorOptions>;
-  /** Return and forget the queued bursts — the renderer's consume-once read. */
   drainBursts(): ParticleBurst[];
   subscribe(listener: () => void): () => void;
   snapshot(): ParticleDirectorState;

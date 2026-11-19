@@ -18,24 +18,19 @@ export interface MinimapBakeBounds {
   maxZ: number;
 }
 
-/** One biome/region tint painted over the terrain shade where the ground falls inside its polygon. */
 export interface MinimapBakeZone {
-  /** Closed XZ polygon in world space. */
   polygon: readonly Vec2[];
-  /** `#rgb` / `#rrggbb` tint. */
   color: string;
   /** Blend strength 0..1. Default 0.5. */
   alpha?: number;
 }
 
-/** The authored world a bake reads — a height sampler, its bounds, and optional zones/water. */
 export interface MinimapBakeSource {
   bounds: MinimapBakeBounds;
   sampleHeight(x: number, z: number): number;
   /** Optional surface normal for slope shading; flat shading when omitted. */
   sampleNormal?(x: number, z: number): readonly [number, number, number];
   zones?: readonly MinimapBakeZone[];
-  /** Ground at or below this height renders as water. */
   waterLevel?: number;
 }
 
@@ -46,14 +41,12 @@ export interface MinimapBakePalette {
   water: string;
 }
 
-/** The built-in height→color ramp and water color a bake uses when no palette override is given. */
 export const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette = {
   low: "#3f5d34",
   high: "#cdbb93",
   water: "#2f5d78",
 };
 
-/** Options for {@link bakeMinimapImage}. */
 export interface MinimapBakeOptions {
   /** Pixel resolution of the longer axis; the shorter axis keeps world aspect. Default 128. */
   resolution?: number;
@@ -64,7 +57,6 @@ export interface MinimapBakeOptions {
 export interface MinimapBake {
   width: number;
   height: number;
-  /** Row-major RGBA, length `width * height * 4`. */
   pixels: Uint8ClampedArray;
   bounds: MinimapBakeBounds;
 }
@@ -163,8 +155,6 @@ export function bakeMinimapImage(source: MinimapBakeSource, options: MinimapBake
 
   return { width, height, pixels, bounds: { minX, minZ, maxX, maxZ } };
 }
-
-// --- Minimal pure PNG encoder (RGBA, stored/uncompressed DEFLATE) ------------------------------
 
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
@@ -285,10 +275,7 @@ export function minimapBakeToPngDataUri(bake: MinimapBake): string {
   return `data:image/png;base64,${base64(encodeBakePng(bake))}`;
 }
 
-/**
- * One-call convenience: rasterize a source and return `{ background, mapBounds }` for a minimap.
- * @capability minimap-bake rasterize terrain and zones straight into a minimap background and bounds
- */
+/** @capability minimap-bake rasterize terrain and zones straight into a minimap background and bounds */
 export function bakeMinimapBackground(
   source: MinimapBakeSource,
   options: MinimapBakeOptions = {},

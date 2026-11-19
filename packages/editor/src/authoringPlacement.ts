@@ -3,12 +3,12 @@ import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
 import type { GizmoMode, EditorSnapMode } from "./uiStore";
 
-/** Compose authored sculpt offsets over the same base field as the terrain preview. @internal */
+/** @internal */
 export function placementGround(terrain: TerraformSnapshot | undefined, base: TerrainField | null): TerrainField | null {
   return terrain === undefined ? base : editableTerrainFromSnapshot(terrain, base ?? undefined);
 }
 
-/** Snap XZ and resample the shared ground field; reject a nonfinite surface height. @internal */
+/** @internal */
 export function snapPlacement(
   point: EditorVec3,
   mode: EditorSnapMode,
@@ -23,7 +23,7 @@ export function snapPlacement(
   return Number.isFinite(y) ? { x, y, z } : null;
 }
 
-/** Distance from a pointer to a projected path segment, including either endpoint. @internal */
+/** @internal */
 export function pathSegmentDistance(pointer: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -32,7 +32,7 @@ export function pathSegmentDistance(pointer: { x: number; y: number }, a: { x: n
   return Math.hypot(pointer.x - a.x - t * dx, pointer.y - a.y - t * dy);
 }
 
-/** Group transforms use the translation command for every selected object. @internal */
+/** @internal */
 export function selectionGizmoMode(mode: GizmoMode, kind: string, count: number): GizmoMode {
   if (count > 1) return "translate";
   if (kind === "marker") return mode === "scale" ? "translate" : mode;

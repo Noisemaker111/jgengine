@@ -286,7 +286,6 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
   };
 }
 
-/** Derived collision scratch data is rebuilt from the scene each authoritative step. */
 function createProjectileTravelQueries(d: CombatSubsystemDeps) {
   const { entities, time, sceneRaycast, entityCollidersOf } = d;
   const projectileObstacles = d.physics?.projectileObstacles === true;

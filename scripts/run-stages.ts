@@ -19,7 +19,6 @@ import { runSteps } from "./stepScheduler";
  * passing — an unrun check must not read as green.
  */
 export interface Stage {
-  /** Stage id: the check or gen target name. */
   readonly name: string;
   readonly command: string;
   readonly args: readonly string[];
@@ -29,7 +28,6 @@ export interface Stage {
    * derivative noise (type errors from a dist that never got built).
    */
   readonly needs?: readonly string[] | undefined;
-  /** The command that re-runs this stage alone. */
   readonly rerun?: string;
   /**
    * The command that *resolves* this failure, when re-running the check is not the fix. A drifted
@@ -57,11 +55,6 @@ export interface CheckDef {
   readonly games?: boolean;
   /** Needs arguments only CI has (a PR body), so it runs only when named. */
   readonly named?: boolean;
-  /**
-   * The repository paths whose change can move this check's verdict, as prefixes. A diff that
-   * touches none of them (nor a tooling path, which reaches every row) skips the check, and its
-   * cached pass is keyed on these files alone. Omitted: it reads the whole tree.
-   */
   readonly reads?: readonly string[];
   /** Never reads a test file (`*.test.ts(x)`): a change to tests alone neither reaches it nor stales its cached pass. */
   readonly skipsTests?: boolean;
@@ -124,12 +117,10 @@ export const TOOLING_PATHS: readonly string[] = [
   ".github/",
 ];
 
-/** True when `path` is `prefix` itself or sits under it. */
 function under(path: string, prefix: string): boolean {
   return prefix.endsWith("/") ? path.startsWith(prefix) : path === prefix;
 }
 
-/** What a check or generator row says about the files it reads. */
 export interface ReadsRow {
   readonly reads?: readonly string[] | undefined;
   readonly skipsTests?: boolean | undefined;
@@ -137,14 +128,12 @@ export interface ReadsRow {
 
 const TEST_FILE = /\.test\.tsx?$/;
 
-/** True when a change to `path` can move `row` (no `reads`: the whole tree). */
 export function readsPath(row: ReadsRow, path: string): boolean {
   if (row.skipsTests === true && TEST_FILE.test(path)) return false;
   if (row.reads === undefined) return true;
   return TOOLING_PATHS.some((prefix) => under(path, prefix)) || row.reads.some((prefix) => under(path, prefix));
 }
 
-/** True when any changed path can move this row. */
 export function reachedBy(row: ReadsRow, changed: readonly string[]): boolean {
   return changed.some((path) => readsPath(row, path));
 }
@@ -153,7 +142,6 @@ export function findCheck(name: string): CheckDef | undefined {
   return CHECKS.find((check) => check.name === name);
 }
 
-/** The command line a check runs, as an argv. */
 export function checkCommand(check: CheckDef): string[] {
   return ["bun", check.script, ...(check.args ?? [])];
 }
@@ -180,13 +168,11 @@ export function checkStage(check: CheckDef, withBuild: boolean): Stage {
   };
 }
 
-/** The stages for a set of checks; `withBuild` puts a build in front of the ones that read `dist`. */
 export function checkPlan(checks: readonly CheckDef[], withBuild: boolean): Stage[] {
   const build = withBuild && checks.some((check) => check.needsBuild === true);
   return [ENSURE_READY, ...(build ? [BUILD] : []), ...checks.map((check) => checkStage(check, build))];
 }
 
-/** The checks one CI job runs, in table order. */
 export function jobChecks(job: CheckJob): CheckDef[] {
   return CHECKS.filter((check) => check.jobs.includes(job) && check.named !== true);
 }
@@ -199,7 +185,6 @@ export const SDK_CHECKS: readonly CheckDef[] = jobChecks("types").filter((check)
 export interface GenTarget {
   readonly name: string;
   readonly script: string;
-  /** Runs after these targets: barrels first, since every later generator reads the export surface. */
   readonly after?: readonly string[];
   /**
    * The committed files this generator owns outright. A rebase conflict in one is no conflict: land
@@ -212,9 +197,7 @@ export interface GenTarget {
    * that lies wholly inside such a block takes the base's block and is regenerated, as for `outputs`.
    */
   readonly blocks?: readonly GeneratedBlock[];
-  /** The repository paths it reads, as `CheckDef.reads`: a diff that reaches none leaves its files as they are. */
   readonly reads?: readonly string[];
-  /** As `CheckDef.skipsTests`. */
   readonly skipsTests?: boolean;
 }
 
@@ -222,7 +205,6 @@ export interface GenTarget {
  * Every committed derived artifact, regenerated in dependency order by one command. Every
  * generator reads package source, so no build runs first.
  */
-/** A generator's marked block inside the files `paths` matches: the text from `start` to `end`, both included. */
 export interface GeneratedBlock {
   readonly paths: RegExp;
   readonly start: string;
@@ -282,7 +264,6 @@ export type StageState = "passed" | "failed" | "skipped";
 export interface StageOutcome {
   readonly name: string;
   readonly state: StageState;
-  /** For a skipped stage, the already-failed prerequisites that caused the skip. */
   readonly blockedBy?: readonly string[];
 }
 
@@ -313,7 +294,6 @@ export function rerunHint(stages: readonly Stage[], name: string): string {
   return stage?.rerun ?? `bun run check ${name}`;
 }
 
-/** The command that resolves a failure, when re-running the check is not it. */
 export function fixHint(stages: readonly Stage[], name: string): string | undefined {
   return stages.find((candidate) => candidate.name === name)?.fix;
 }
@@ -394,10 +374,6 @@ export function parseCheckArgs(argv: readonly string[]): CheckRequest {
   return { kind: "error", message: `check: no check named ${argv[0]} (bun run check --list)` };
 }
 
-/**
- * Generators write separate files, so independent targets run side by side (after `barrels`, which
- * they all read); checks run one at a time in table order, as they always have.
- */
 export const GEN_JOBS = Math.max(2, Math.min(4, Math.floor(availableParallelism() / 2)));
 
 async function runStages(label: string, stages: readonly Stage[], root: string, jobs: number): Promise<number> {

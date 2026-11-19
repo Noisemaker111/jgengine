@@ -47,10 +47,6 @@ export interface HudLayoutState {
 export interface HudLayoutOptions {
   snap?: number | undefined;
   locked?: boolean | undefined;
-  /**
-   * Called after a panel placement/size is authored (move, resize, hydrate from document).
-   * Canvas mode + agent RPCs use this to write undoable scene-document patches.
-   */
   onDocumentPatch?: ((id: string, panel: import("./hudDocument").EditorUiPanelLayout) => void) | undefined;
 }
 
@@ -76,9 +72,7 @@ export interface HudLayoutStore {
   reset(id?: string): void;
   serialize(): string;
   hydrate(raw: string | null | undefined): void;
-  /** Apply scene-document `ui` section as the source of truth for registered/pending panels. */
   applyDocumentUi(ui: import("./hudDocument").EditorUiDocument | undefined): void;
-  /** Snapshot moved/resized panels as a document ui section. */
   toDocumentUi(): import("./hudDocument").EditorUiDocument;
 }
 
@@ -241,10 +235,7 @@ export function listActiveHudLayouts(): HudLayoutStore[] {
   return [...activeHudLayouts];
 }
 
-/**
- * @internal Notified whenever a `HudCanvas` mounts or unmounts (the active-layout set changes).
- * Lets the editor's HUD-layout surface enable editing on layouts that mount after it opens.
- */
+/** @internal Notified whenever a `HudCanvas` mounts or unmounts (the active-layout set changes). Lets the editor's HUD-layout surface enable editing on layouts that mount after it opens. */
 export function subscribeActiveHudLayouts(listener: () => void): () => void {
   activeHudLayoutListeners.add(listener);
   return () => {

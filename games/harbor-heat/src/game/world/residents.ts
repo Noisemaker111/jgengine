@@ -40,15 +40,12 @@ import { onCityRelaid, type BuildingFootprintXZ } from "./setup";
 export const CYCLE_SECONDS = 720;
 /** Walking pace in metres per game-second. */
 const WALK_SPEED = 1.35;
-/** Distance at which a resident is simulated for real, and the band past which it goes cheap again. */
 const NEAR_RADIUS = 62;
 const FAR_RADIUS = 88;
-/** Most residents that may switch sides of the boundary in one tick. */
 const SWITCH_BUDGET = 4;
 /** How close a walker must be to a waypoint before it turns for the next one. */
 const WAYPOINT_REACH = 0.6;
 
-/** An authored `resident_place` marker: where a routine stop actually happens. */
 export interface ResidentPlace {
   id: string;
   label: string;
@@ -67,10 +64,6 @@ const PLACES: Readonly<Record<string, readonly [number, number, number]>> = Obje
   RESIDENT_PLACES.map((place) => [place.id, place.position]),
 );
 
-/**
- * One resident: a name, the model it wears, and the three authored places its day runs between. The
- * times are content (one shared coastal work day); the places are the scene document's.
- */
 export interface ResidentSpec {
   id: string;
   name: string;
@@ -154,19 +147,14 @@ interface Walker {
   path: readonly NavPoint[];
   index: number;
   position: [number, number, number];
-  /** Where the walk is headed, kept apart from the path: a route into tiles not yet loaded ends short of it. */
   goal: readonly [number, number];
-  /** The route stopped short of the goal at the edge of the loaded tiles. */
   partial: boolean;
 }
 
-/** A point on a walker's route, world XZ. */
 type NavPoint = readonly [number, number];
 
-/** The near half: nav-mesh routes stepped along by hand, one entity per resident in range. */
 interface CityWalkers extends NearAgents {
   count(): number;
-  /** Where a walker's route currently ends, in world XZ, for a caller deciding whether to re-aim it. */
   goal(id: string): readonly [number, number] | null;
 }
 
@@ -175,7 +163,6 @@ const WALK_BOUNDS = { min: [-320, -320] as const, max: [320, 320] as const };
 /** A walk tile's edge and its sampling cell, metres. */
 const WALK_TILE = 64;
 const WALK_CELL = 2;
-/** Walk tiles load this far from the player and stay until past the keep band: a near walker's whole block, plus where it is headed. */
 const WALK_LOAD_RADIUS = NEAR_RADIUS + WALK_TILE;
 const WALK_KEEP_RADIUS = WALK_LOAD_RADIUS + WALK_TILE;
 /** Room a walker keeps from a wall, metres: half a body plus a step. */
@@ -184,7 +171,6 @@ const WALL_CLEARANCE = 1.8;
 const ROAD_AREA = 1;
 const ROAD_STEP_COST = 6;
 
-/** Whether a point is on a street's carriageway (kerb to kerb) as the layout draws it now. */
 function onCarriageway(layout: CityLayout, x: number, z: number): boolean {
   for (const road of LOT_ROADS) {
     const near = nearestOnPath(road.path, x, z);
@@ -200,7 +186,6 @@ interface LotBox {
   maxZ: number;
 }
 
-/** Every lot's rotated footprint as the box a walker keeps out of, wall clearance included. */
 function lotBoxes(buildings: readonly BuildingFootprintXZ[]): LotBox[] {
   return buildings.map((lot) => {
     const c = Math.abs(Math.cos(lot.rotationY));
@@ -211,10 +196,6 @@ function lotBoxes(buildings: readonly BuildingFootprintXZ[]): LotBox[] {
   });
 }
 
-/**
- * One walk tile of the city as a walker sees it: the lots blocked and the carriageway costly, both
- * from the layout as it is now. Only the lots and roads reaching this tile are read.
- */
 function walkTile(tile: NavTileRequest, boxes: readonly LotBox[], layout: CityLayout, ground: (x: number, z: number) => number): NavMeshData {
   const [x0, z0] = tile.bounds.min;
   const [x1, z1] = tile.bounds.max;
@@ -230,11 +211,6 @@ function walkTile(tile: NavTileRequest, boxes: readonly LotBox[], layout: CityLa
   });
 }
 
-/**
- * Build the near half: residents that walk the city's sidewalks on nav tiles of the blocks as the
- * layout lays them. Tiles stream in around the player, a slider re-lay rebuilds the loaded ones, and
- * a route that ended at the edge of the loaded tiles is planned again once more of the city loads.
- */
 function createCityWalkers(ctx: GameContext, buildings: readonly BuildingFootprintXZ[]): CityWalkers {
   let boxes = lotBoxes(buildings);
   const ground = (x: number, z: number) => ctx.world.groundHeightAt(x, z);
@@ -368,7 +344,6 @@ function createCityWalkers(ctx: GameContext, buildings: readonly BuildingFootpri
   };
 }
 
-/** One resident as the HUD reads them: who, how they feel, and what they decided to do. */
 export interface ResidentCard {
   id: string;
   name: string;
@@ -408,10 +383,6 @@ function placeOf(id: string): Vec3 | null {
   return PLACES[id] ?? null;
 }
 
-/**
- * Build Mainsail's population: one off-screen world over the authored places, one resident per
- * authored day, the near half that walks the ones in range, and one agent system over the whole cast.
- */
 export function setupResidents(ctx: GameContext, buildings: readonly BuildingFootprintXZ[]): void {
   const near = createCityWalkers(ctx, buildings);
   const world = createOffScreenWorld({
@@ -446,7 +417,6 @@ export function setupResidents(ctx: GameContext, buildings: readonly BuildingFoo
   };
 }
 
-/** Split the population by distance, advance the ones in range, then let every resident decide. */
 export function tickResidents(ctx: GameContext, dt: number): void {
   const residents = city(ctx);
   if (residents === null) return;
@@ -529,12 +499,10 @@ function publishBoard(ctx: GameContext, residents: CityResidents, dt: number): v
   residentBoardStore.write(ctx, cards);
 }
 
-/** Where a resident is and what it is doing, for a HUD, a probe or a test. */
 export function residentAt(ctx: GameContext, id: string) {
   return city(ctx)?.world.agent(id) ?? null;
 }
 
-/** A resident's live mind: mood and the action its own needs chose, for a probe or a test. */
 export function residentMind(ctx: GameContext, id: string) {
   const residents = city(ctx);
   if (residents === null) return null;
@@ -547,12 +515,10 @@ export function residentMind(ctx: GameContext, id: string) {
   };
 }
 
-/** Population counters: how many residents exist, how many are simulated, how many are cheap. */
 export function residentStats(ctx: GameContext) {
   return city(ctx)?.world.stats() ?? null;
 }
 
-/** Tear the population down with the world. */
 export function disposeResidents(ctx: GameContext): void {
   const residents = city(ctx);
   if (residents === null) return;

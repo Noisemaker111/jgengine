@@ -62,31 +62,16 @@ export function projectWorldToScreen(
   };
 }
 
-/** Props for {@link WorldEntityFrames}. */
 export interface WorldEntityFramesProps<E extends EntityFrameEntry> extends EntityFrameLayoutOptions {
-  /** Caller-owned entities to anchor; `worldPosition` is the overhead point. */
   entries: readonly E[];
-  /** Renders one entity's frame — compose a `KitMeter` (`value`/`max`) + a name, drawn by the active UI kit. */
   renderFrame: (entry: E, placement: EntityFramePlacement<E>) => ReactNode;
   /** Min ms between projection refreshes — trades smoothness for fewer re-renders at scale. Default 0 (every frame). */
   tickMs?: number;
-  /** Class on the overlay layer. */
   className?: string;
-  /** Per-frame wrapper transform. Default `translate(-50%, -100%)`. */
   anchorTransform?: string;
 }
 
-
-/**
- * Mounts inside the scene, samples the live camera each
- * frame (throttled by `tickMs`), and renders `@jgengine/ui`'s {@link EntityFrames}
- * through a fullscreen UI overlay. This is the one-line way a game
- * gets overhead enemy nameplates/health bars from its own entity array without a
- * store: pass `entries` + a `renderFrame` that composes the shipped bars. The
- * projection, viewport culling, and stacking come for free.
- *
- * @capability entity-frames Overhead entity frames from a caller-owned entity array
- */
+/** @capability entity-frames Overhead entity frames from a caller-owned entity array */
 export function WorldEntityFrames<E extends EntityFrameEntry>({
   entries,
   renderFrame,
@@ -116,7 +101,6 @@ export function WorldEntityFrames<E extends EntityFrameEntry>({
   );
 }
 
-/** Bumps a state setter on a throttled frame cadence to drive re-projection. */
 function useThreeFrameTick(setTick: (updater: (n: number) => number) => void, tickMs: number): void {
   const last = useRef(0);
   useFrameTask((state) => {

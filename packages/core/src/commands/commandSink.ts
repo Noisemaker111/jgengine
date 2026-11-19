@@ -1,14 +1,11 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { LiveGameBackend } from "@jgengine/core/runtime/transport";
 
-/** Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host. */
 export interface CommandSink {
   run(name: string, input: unknown): void;
 }
 
-/** Runs commands on the local `ctx` — the default, client-authoritative path.
- * @internal
- */
+/** @internal */
 export function localCommandSink(ctx: GameContext): CommandSink {
   return {
     run(name, input) {
@@ -17,9 +14,7 @@ export function localCommandSink(ctx: GameContext): CommandSink {
   };
 }
 
-/** Sends commands to the authoritative host over the transport; the result replicates back through world sync.
- * @internal
- */
+/** @internal */
 export function remoteCommandSink(
   backend: Pick<LiveGameBackend, "transport">,
   serverId: string,

@@ -23,7 +23,7 @@ import { registerScatterPreview } from "@jgengine/core/scatter/scatterPreview.dr
 
 let registered = false;
 
-/** Registers the engine's light built-in environment scene-kind renderers and generator variant previews. Called by `AuthoredScene`. @internal */
+/** @internal */
 export function registerBuiltinSceneKindRenderers(): void {
   if (registered) return;
   registered = true;
@@ -40,7 +40,6 @@ export function registerBuiltinSceneKindRenderers(): void {
   registerScatterPreview();
 }
 
-/** The draw half of each on-demand system: its renderers and mesh builders. */
 const ON_DEMAND_DRAW: Readonly<Record<OnDemandSceneKindId, () => Promise<void>>> = {
   city: async () => {
     const { registerCityRenderer } = await import("@jgengine/core/city/CityRenderer.draw");
@@ -63,7 +62,7 @@ const ON_DEMAND_DRAW: Readonly<Record<OnDemandSceneKindId, () => Promise<void>>>
 const loading = new Map<OnDemandSceneKindId, Promise<void>>();
 const drawn = new Set<OnDemandSceneKindId>();
 
-/** True once a system's kinds, generators and draw half are all registered. @internal */
+/** @internal */
 export function onDemandSceneKindReady(entry: OnDemandSceneKind): boolean {
   return drawn.has(entry.id);
 }

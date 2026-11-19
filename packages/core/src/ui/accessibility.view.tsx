@@ -25,20 +25,13 @@ const FILTER_MODES: readonly Exclude<ColorblindMode, "none">[] = [
   "grayscale",
 ];
 
-/** Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above. */
 export function useAccessibility(): AccessibilityContextValue {
   const value = useContext(AccessibilityContext);
   if (value === null) throw new Error("useAccessibility must be used within an <AccessibilityProvider>");
   return value;
 }
 
-/**
- * Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that
- * `filter: url(#jg-cb-<mode>)` references. Mounted by {@link ColorblindFrame};
- * export it standalone for a root that applies the filter itself.
- *
- * @capability colorblind-filters SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
- */
+/** @capability colorblind-filters SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter */
 export function ColorblindFilters(): ReactNode {
   return (
     <svg aria-hidden width={0} height={0} style={{ position: "absolute" }} data-colorblind-filters>
@@ -53,9 +46,7 @@ export function ColorblindFilters(): ReactNode {
   );
 }
 
-/** Props for {@link ColorblindFrame}. */
 export interface ColorblindFrameProps {
-  /** The player's colour-vision mode. `none` (default) renders the frame untouched. */
   mode?: ColorblindMode;
   children?: ReactNode;
   className?: string;
@@ -105,19 +96,7 @@ export function useColorblindMode(store: SettingsStore): ColorblindMode {
   );
 }
 
-/**
- * Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for
- * text to scale off, and sets `data-reduced-motion` / `data-high-contrast` /
- * `data-colorblind` / `data-captions` for CSS to respond to. Reads a
- * `createAccessibilityStore` and re-renders on change; provides the state to
- * `useAccessibility`.
- *
- * It deliberately does not filter its own subtree: this is the HUD and menu root, and a colour matrix
- * over text costs the contrast the rest of the UI was designed around. Wrap the 3D canvas in
- * {@link ColorblindFrame} instead.
- *
- * @capability accessibility-provider apply accessibility preferences to a subtree — text-scale CSS var and reduced-motion/high-contrast/colorblind/captions data attrs
- */
+/** @capability accessibility-provider apply accessibility preferences to a subtree — text-scale CSS var and reduced-motion/high-contrast/colorblind/captions data attrs */
 export function AccessibilityProvider({
   store,
   children,
@@ -171,10 +150,6 @@ export function usePrefersReducedMotion(): boolean {
   );
 }
 
-/**
- * True when motion should be skipped: the OS `prefers-reduced-motion` preference, or the nearest
- * {@link AccessibilityProvider}'s `reducedMotion` setting. Works without a provider.
- */
 export function useReducedMotion(): boolean {
   const prefers = usePrefersReducedMotion();
   const value = useContext(AccessibilityContext);

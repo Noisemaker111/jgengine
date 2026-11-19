@@ -18,7 +18,6 @@ const DIFFICULTY_COLOR = { Easy: "#7fd67f", Medium: "#e7c84a", Hard: "#ef6b5b" }
  */
 export const SURVIVOR_NAMES = [DEFAULT_LOOK.name, "Ada", "Bram", "Cass", "Dane", "Ezra", "Fern", "Juno", "Kito", "Mara", "Nell", "Rook", "Sable", "Tane", "Wren"] as const;
 
-/** The height slider: drag or arrow keys, snapped to whole percent. */
 function HeightSlider({ value, set }: { value: number; set: (height: number) => void }): ReactNode {
   const share = useRef((value - HEIGHT.min) / (HEIGHT.max - HEIGHT.min));
   share.current = (value - HEIGHT.min) / (HEIGHT.max - HEIGHT.min);
@@ -36,11 +35,6 @@ function HeightSlider({ value, set }: { value: number; set: (height: number) => 
   );
 }
 
-/**
- * ARK's survivor creation, then its spawn screen, on one page over the island: name, body and height on the left,
- * the spawn regions on the island map and in a list on the right. Body and height show on the survivor at once;
- * Wake up applies the choices and starts the run.
- */
 export function Creator({ begin, back }: { begin: () => void; back: () => void }): ReactNode {
   const ctx = useGameContext();
   const { width, height } = useRuneViewport();

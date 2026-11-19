@@ -1,6 +1,5 @@
 import { hashString } from "../random/rng";
 
-/** A terrain seed: a number, or a string hashed to one. */
 export type TerrainSeed = number | string;
 
 /** @internal */

@@ -36,7 +36,6 @@ interface RackMenuProps {
 
 type DragData = { type: "inventory" | "slot"; hardwareModelId: HardwareModelId; slotIndex?: number };
 
-/** Drag payloads travel as strings: `slot:<index>:<id>` or `inventory:<id>`. */
 function encodeDrag(data: DragData): string {
   return data.type === "slot" ? `slot:${data.slotIndex ?? 0}:${data.hardwareModelId}` : `inventory:${data.hardwareModelId}`;
 }

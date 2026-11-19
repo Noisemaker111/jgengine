@@ -17,23 +17,16 @@ import { toDebrisBodies, type SupportPiece } from "../world/support";
 import { PhysicsWorld } from "../physics/physicsWorld";
 import { StructureGraph } from "../physics/structure";
 
-/** One subject at one energy. */
 export interface FractureComparisonRow {
   subject: string;
-  /** Specific impact energy, kWh/t. */
   energy: number;
   pieces: number;
-  /** Largest piece over the block's mass. */
   largest: number;
-  /** t10 of the pieces, percent. */
   t10: number;
-  /** t10 the JKMRC law gives, percent. */
   lawT10: number;
-  /** Fragment kinetic energy over impact energy. */
   kineticShare: number;
 }
 
-/** Edge of the compared block, m: a 0.5 m granite block. */
 const EDGE = 0.5;
 
 /**
@@ -89,10 +82,7 @@ export function compareFracture(energies: readonly number[] = [0.01, 0.1, 1]): F
   return rows;
 }
 
-/**
- * The comparison as a markdown table.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function formatFractureComparison(rows: readonly FractureComparisonRow[]): string {
   const lines = ["| Subject | Energy, kWh/t | Pieces | Largest | t10 | Law t10 | Energy into motion (law 0.5–5%) |", "|---|---|---|---|---|---|---|"];
   for (const row of rows) {

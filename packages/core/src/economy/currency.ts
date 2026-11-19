@@ -3,9 +3,7 @@ export interface CurrencyDefinition<TCurrencyId extends string = string> {
   name: string;
   /** Fractional digits in major-unit amounts; defaults to 0. */
   decimals?: number;
-  /** Prepended when formatting amounts (e.g. "$"). */
   symbol?: string;
-  /** Appended when formatting amounts (e.g. "tokens"). */
   unit?: string;
 }
 
@@ -29,9 +27,7 @@ function currencyScale(currency?: Pick<CurrencyDefinition, "decimals">): number 
   return 10 ** decimals;
 }
 
-/** Convert major units to integer minor units, rounding once at the write boundary.
- * @capability currency-minor-units round decimal currency into safe integer minor units
- */
+/** @capability currency-minor-units round decimal currency into safe integer minor units */
 export function toMinorUnits(currency: Pick<CurrencyDefinition, "decimals"> | undefined, value: number): number {
   if (!Number.isFinite(value)) throw new RangeError("Currency amount must be finite");
   const scaled = value * currencyScale(currency);
@@ -40,17 +36,13 @@ export function toMinorUnits(currency: Pick<CurrencyDefinition, "decimals"> | un
   return result;
 }
 
-/** Convert stored integer minor units to major units for display or existing balance records.
- * @capability currency-major-units convert safe minor-unit integers into currency amounts
- */
+/** @capability currency-major-units convert safe minor-unit integers into currency amounts */
 export function fromMinorUnits(currency: Pick<CurrencyDefinition, "decimals"> | undefined, value: number): number {
   if (!Number.isSafeInteger(value)) throw new RangeError("Minor units must be a safe integer");
   return value / currencyScale(currency);
 }
 
-/** Format a major-unit value using the currency's declared precision.
- * @capability currency-precision-format display a currency using its declared decimal precision
- */
+/** @capability currency-precision-format display a currency using its declared decimal precision */
 export function formatCurrency(currency: CurrencyDefinition, value: number): string {
   const decimals = currency.decimals ?? 0;
   const rounded = fromMinorUnits(currency, toMinorUnits(currency, value));
@@ -58,11 +50,9 @@ export function formatCurrency(currency: CurrencyDefinition, value: number): str
 }
 
 /**
- * Format a currency amount with its symbol and grouping for HUD display.
- *
  * @capability currency-format format a currency amount with its symbol for display
-  * @internal
-  */
+ * @internal
+ */
 export function formatCurrencyAmount(currency: CurrencyDefinition, amount: number): string {
   return formatCurrency(currency, amount);
 }

@@ -55,9 +55,7 @@ export function AbilitySlotButton({
   className,
 }: {
   icon?: ReactNode | undefined;
-  /** Human-readable name of the ability/build/spell this slot triggers. Used as the button's accessible name. */
   label?: string | undefined;
-  /** Optional cost shown alongside the label in the accessible name, already formatted (e.g. `"50g"`). */
   cost?: string | undefined;
   keybind?: string | undefined;
   size?: number;

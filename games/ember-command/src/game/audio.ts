@@ -1,10 +1,5 @@
 import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
 
-/**
- * Procedural cues for the skirmish: stone set down, copper bells, war drums, and a low hall drone.
- * Every id here is played from a real accepted action or outcome in the game source; the audio test
- * fails if a `play`/`loop` id has no entry. No asset files: the patches are synthesised on Web Audio.
- */
 export const EMBER_SOUNDS: Record<string, SoundDef> = {
   // Stone block set on the ground: a dull knock with a short copper ring over it.
   place: {

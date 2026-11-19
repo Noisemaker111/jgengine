@@ -12,9 +12,7 @@ export interface PointerHit {
   point: PointerVec3;
   /** World-space surface normal at the hit; `[0, 1, 0]` for the ground plane. */
   normal: PointerVec3;
-  /** Topmost scene-entity instance id under the cursor, or null over open ground. */
   entity: string | null;
-  /** Topmost scene-object instance id under the cursor, or null. */
   object: string | null;
   /** Texture-space UV at the hit, when the intersected mesh carries UVs; absent for the ground-plane fallback. */
   uv?: { u: number; v: number };
@@ -26,7 +24,6 @@ export interface PointerHit {
 
 export type PointerButton = "primary" | "secondary" | "middle";
 
-/** Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor. */
 export function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim {
   const dx = point[0] - origin[0];
   const dy = point[1] - origin[1];
@@ -36,12 +33,10 @@ export function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim {
   return { origin, direction };
 }
 
-/** The move-to target of a pointer hit — sugar over `hit.point`. */
 export function moveTargetFromHit(hit: PointerHit): PointerVec3 {
   return hit.point;
 }
 
-/** Project a pointer hit onto the XZ plane for navmesh routing (`findPath` takes `[x, z]`). */
 export function groundOf(hit: PointerHit): readonly [number, number] {
   return [hit.point[0], hit.point[2]];
 }
@@ -52,7 +47,6 @@ export interface DragState {
   current: PointerVec3;
   /** `current - origin`, clamped to `maxPull` in length. */
   pull: PointerVec3;
-  /** Length of `pull`, at most `maxPull`. */
   magnitude: number;
   /** `magnitude / maxPull`, in `[0, 1]`. `0` when `maxPull` is unset. */
   fraction: number;
@@ -61,25 +55,16 @@ export interface DragState {
 export type DragResult = DragState;
 
 export interface DragCaptureConfig {
-  /** Clamp on pull-vector length. Unset (default) means unclamped. */
   maxPull?: number;
-  /** Max distance from `origin` a `begin()` point may be to start a drag. Unset (default) means unrestricted. */
   grabRadius?: number;
 }
 
-/** Renderer-agnostic drag-capture / pull-vector state machine for slingshot-style aiming, drawback abilities, and similar gestures. */
 export interface DragCapture {
-  /** Start a drag at `origin` if `at` is within `grabRadius` of it. Returns whether the drag started. */
   begin(origin: PointerVec3, at: PointerVec3): boolean;
-  /** Move the drag's current point. No-op when no drag is active. */
   update(at: PointerVec3): void;
-  /** End the drag, returning its final state, or `null` if no drag was active. */
   release(): DragResult | null;
-  /** Abort the drag without producing a result. */
   cancel(): void;
-  /** The current drag state, or `null` when idle. */
   state(): DragState | null;
-  /** Resumes the drag a {@link DragCapture.state} described (its `origin` and `current`), or goes idle on `null`. */
   restore(next: DragState | null): void;
 }
 

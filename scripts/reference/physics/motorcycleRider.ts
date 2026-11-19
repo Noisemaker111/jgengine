@@ -9,9 +9,7 @@ import {
   type ReferenceMotorcycleStep,
 } from "./referenceMotorcycle";
 
-/** Settings for {@link createRiddenMotorcycle}. */
 export interface MotorcycleRiderOptions extends ReferenceMotorcycleOptions {
-  /** Lean the rider asks for at full steer, rad (default `0.785`: 45°, the steady-turn lean Sharp et al. trim to). */
   maxLean?: number;
   /** How fast the rider moves the lean they ask for, rad/s (default `1.5`). */
   leanRate?: number;
@@ -19,13 +17,10 @@ export interface MotorcycleRiderOptions extends ReferenceMotorcycleOptions {
   leanGain?: number;
   /** Bar torque per rad/s of lean rate, `damping / speed` N·m·s/rad, between 15 and 60 (default `480`). */
   leanDamping?: number;
-  /** Bar torque per rad·s of integrated lean error, N·m/(rad·s) (default `100`). */
   leanIntegral?: number;
-  /** Largest bar torque the rider applies, N·m (default `120`). */
   maxTorque?: number;
 }
 
-/** Serializable state of a {@link RiddenMotorcycle}. */
 export interface RiddenMotorcycleState {
   bike: ReferenceMotorcycleState;
   integral: number;
@@ -33,7 +28,6 @@ export interface RiddenMotorcycleState {
   target: number;
 }
 
-/** One ridden-bike tick in the grouped shape the handling probes read, plus the full reference sample. */
 export interface RiddenMotorcycleStep {
   motion: Pick<VehicleStepMotion, "position" | "heading" | "forwardSpeed" | "lateralSpeed" | "yawRate" | "lateralAccel" | "longitudinalAccel">;
   steering: Pick<VehicleStepSteering, "steerAngle">;
@@ -41,10 +35,6 @@ export interface RiddenMotorcycleStep {
   sample: ReferenceMotorcycleStep;
 }
 
-/**
- * A reference motorcycle with a rider on it, driven like a game bike: `steer` asks for a lean (`steer · maxLean`,
- * positive right), throttle and brake go to the bike's own launch, shift, wheelie and brake-limit logic.
- */
 export interface RiddenMotorcycle {
   tick(dt: number, input: AxisInput): RiddenMotorcycleStep;
   velocity(): readonly [number, number];

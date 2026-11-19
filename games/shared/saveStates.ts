@@ -16,27 +16,21 @@
  * and fails naming the game, the field and the value when the decode refuses it or changes it.
  */
 
-/** One persisted enum, or one persisted number, with the values its type allows. */
 export interface SaveStateAxis {
-  /** The persisted field, as a save reader names it: `guests[].state.phase`. */
   field: string;
   /**
    * Every value the field's own type allows - imported from the game's list or type companion.
    * Never retyped here: a copy is the drift this gate exists to catch.
    */
   values: readonly (string | number)[];
-  /** Encode a save holding `value` in `field`, starting from the game's valid base save. */
   encode: (value: string | number, base: string) => string;
   /** The game's decoder: the save it read, or `null` when it refused the bytes. */
   decode: (raw: string) => unknown;
-  /** What the decoder produced for `field`; a substituted value fails too. A refusal returns `null`. */
   read: (decoded: unknown) => unknown;
 }
 
-/** Everything the gate needs for one game: a save it just wrote, and the enums that save persists. */
 export interface SaveStateGate {
   game: string;
-  /** A save this build just wrote in a legal state. Every case is this save with one field changed. */
   base: () => string;
   axes: SaveStateAxis[];
 }
@@ -45,11 +39,9 @@ export interface SaveStateFailure {
   game: string;
   field: string;
   value: string | number;
-  /** What went wrong, in the decoder's own terms. */
   why: string;
 }
 
-/** The sentence every failure carries: the correction, not just the symptom. */
 export const RULE =
   "A decoder's accepted set comes from the type, never from a second hand-written list; " +
   "export the list beside the type and test membership in it.";
@@ -88,7 +80,6 @@ function rejectedOrValue(gate: SaveStateGate, axis: SaveStateAxis, value: string
   return null;
 }
 
-/** Every legal value of every registered enum, encoded and decoded. */
 export function checkSaveStates(gate: SaveStateGate): SaveStateFailure[] {
   const base = gate.base();
   const failures: SaveStateFailure[] = [];
@@ -110,7 +101,6 @@ export function checkSaveStates(gate: SaveStateGate): SaveStateFailure[] {
   return failures;
 }
 
-/** One line per failure, ready for a test message or a gate's output. */
 export function describeSaveStateFailures(failures: readonly SaveStateFailure[], limit = 40): string {
   const lines = failures.slice(0, limit).map(
     (failure) =>
@@ -131,7 +121,6 @@ export interface SaveStateGap {
   instead: string;
 }
 
-/** What the whole set proves: how many games, fields and values, and what is still uncovered. */
 export interface SaveStateReport {
   games: { game: string; fields: number; values: number }[];
   failures: SaveStateFailure[];

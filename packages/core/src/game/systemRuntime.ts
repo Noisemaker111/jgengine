@@ -24,11 +24,8 @@ export interface InstalledSystems {
   readonly schedule: CompiledSystemSchedule;
   /** Advance fixed/frame/interval systems for one game-time step of `dt` seconds. */
   tick(ctx: GameContext, dt: number): void;
-  /** Invoke every system's `reset` (scenario/run wipe). */
   reset(ctx: GameContext): void;
-  /** Retire once in reverse order; finish cleanup before rethrowing the first error. */
   dispose(ctx: GameContext): void;
-  /** Run one manual system by id (no-op if missing or not manual). */
   runManual(ctx: GameContext, id: string, dt?: number): void;
 }
 
@@ -40,11 +37,7 @@ function resolveModule(
   return typeof spec === "function" ? spec(ctx) : spec;
 }
 
-/**
- * Install systems on a live context: `create` → bind events → register save/replicate → `start`.
- * Call once per world boot. Failed installation retires entered systems and listeners, then rethrows the startup error.
- * @internal
- */
+/** @internal */
 export function installSystems(
   ctx: GameContext,
   systems: readonly SystemDefinition[],
@@ -182,12 +175,7 @@ export interface ComposeGameLoopOptions extends CompileSystemScheduleOptions {
   loopBeforeSystems?: boolean;
 }
 
-/**
- * Merge a system list with an optional classic `GameLoop` into one loop the shell/runners drive.
- * Systems install on first `onInit`; classic hooks still run for incremental migration.
- *
- * @capability compose-game-loop fold composable systems into the game loop without a manual tick fan-out
- */
+/** @capability compose-game-loop fold composable systems into the game loop without a manual tick fan-out */
 export function composeGameLoop(
   systems: readonly SystemDefinition[] | undefined,
   loop: GameLoop<GameContext> | undefined,

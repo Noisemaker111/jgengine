@@ -1,6 +1,5 @@
 import { useCallback, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
-/** The minimal external-store shape both the editor session and UI store satisfy. */
 export interface SubscribableStore<S> {
   getState(): S;
   subscribe(listener: () => void): () => void;
@@ -34,7 +33,6 @@ export function useStoreSelector<S, T>(
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-/** A notification-only source — `subscribe` is all a coarse invalidation needs. */
 export interface SubscribableSource {
   subscribe(listener: () => void): () => void;
 }
@@ -64,7 +62,6 @@ export function useStoreVersion(...sources: readonly SubscribableSource[]): numb
   return useSyncExternalStore(subscribe, getVersion, getVersion);
 }
 
-/** Shallow array equality — for selectors that return id lists (`selection`) or small tuples. */
 export function shallowArrayEqual<T>(a: readonly T[], b: readonly T[]): boolean {
   if (a === b) return true;
   if (a.length !== b.length) return false;
@@ -72,23 +69,14 @@ export function shallowArrayEqual<T>(a: readonly T[], b: readonly T[]): boolean 
   return true;
 }
 
-/** The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry. */
 export interface VirtualWindow {
-  /** First row index to render (inclusive). */
   start: number;
-  /** Last row index to render (exclusive). */
   end: number;
   /** Pixel height of the spacer above the first rendered row. */
   offsetTop: number;
-  /** Total scroll height of the full list. */
   totalHeight: number;
 }
 
-/**
- * Pure windowing math for a fixed-row-height virtual list: given the scroll offset and viewport,
- * returns the `[start, end)` row range to mount (padded by `overscan`) plus the spacer heights, so
- * a 10,000-row outliner only ever mounts the visible handful. No DOM, unit-testable.
- */
 export function virtualWindow(
   scrollTop: number,
   viewportHeight: number,

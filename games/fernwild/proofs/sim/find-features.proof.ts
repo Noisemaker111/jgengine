@@ -44,7 +44,6 @@ async function followPointer(p: Play, near: number, maxMs = 120_000): Promise<vo
   throw new Error(`the path's pointer never came within ${near} m`);
 }
 
-/** Run down the creature the path points at, hitting it, until it lies unconscious. */
 async function knockOutPointed(p: Play, maxMs = 150_000): Promise<void> {
   for (let spent = 0; spent < maxMs; ) {
     const r = await p.probe();

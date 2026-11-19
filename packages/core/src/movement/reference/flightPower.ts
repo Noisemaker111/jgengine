@@ -1,18 +1,12 @@
 import type { HumanValidationRow } from "./humanReferenceValidation";
 
-/** A flapping flier's size and drag for the power curve. */
 export interface FlierBody {
   /** All-up mass, kg. */
   mass: number;
-  /** Wing span, m. */
   span: number;
-  /** Wing area, m². */
   wingArea: number;
-  /** Body drag coefficient on the frontal area (default 0.10). */
   bodyDragCoefficient?: number;
-  /** Induced power factor (default {@link INDUCED_POWER_FACTOR}). */
   inducedPowerFactor?: number;
-  /** Passerines have a higher basal metabolism (default false). */
   passerine?: boolean;
 }
 
@@ -31,22 +25,15 @@ const PROFILE_CONSTANT = 8.4;
 const MUSCLE_EFFICIENCY = 0.23;
 const RESPIRATION_FACTOR = 1.1;
 
-/**
- * Body frontal area of a bird, m²: `0.00813·m^0.666` (C. J. Pennycuick, M. R. Fuller and H. H. Obrecht, *J. Exp.
- * Biol.* 135, 1988).
- */
 function bodyFrontalArea(mass: number): number {
   return 0.00813 * mass ** 0.666;
 }
 
-/** The parts of a flier's power at one airspeed, W. */
 export interface FlightPower {
   induced: number;
   parasite: number;
   profile: number;
-  /** Induced + parasite + profile. */
   mechanical: number;
-  /** Fuel burned: `1.1·(mechanical/0.23 + basal)`. */
   chemical: number;
 }
 
@@ -138,7 +125,6 @@ export function universalWingbeatFrequency(mass: number, wingArea: number): numb
  */
 export const FLAPPING_MASS_LIMIT = 41;
 
-/** Published sizes of extinct and living fliers, for scoring game creatures. */
 export const PUBLISHED_FLIERS: Record<"argentavis" | "pteranodon" | "quetzalcoatlus" | "wanderingAlbatross", { animal: string; body: FlierBody; source: string }> = {
   argentavis: { animal: "Argentavis magnificens", body: { mass: 70, span: 7, wingArea: 8.11 }, source: "S. Chatterjee, R. J. Templin and K. E. Campbell, PNAS 104, 2007" },
   pteranodon: { animal: "Pteranodon", body: { mass: 16.6, span: 6.95, wingArea: 2.65 }, source: "Chatterjee & Templin 2004, as tabulated by M. P. Witton and M. B. Habib, PLoS ONE 5, e13982, 2010" },
@@ -146,24 +132,17 @@ export const PUBLISHED_FLIERS: Record<"argentavis" | "pteranodon" | "quetzalcoat
   wanderingAlbatross: { animal: "Wandering albatross", body: { mass: 8.73, span: 3.03, wingArea: 0.61 }, source: "Witton & Habib 2010, table 1" },
 };
 
-/** One game flier against a real flier of published size. */
 export interface FlierComparison {
   minimumPowerSpeed: number;
   maximumRangeSpeed: number;
   wingbeatFrequency: number;
   /** Power to fly at the minimum-power speed, W per kg. */
   minimumPower: number;
-  /** False above {@link FLAPPING_MASS_LIMIT}: it would have to soar. */
   canSustainFlapping: boolean;
-  /** Game speed over the minimum-power speed. */
   speedRatio: number;
 }
 
-/**
- * Compare a game flier's speed with a real flier of `body`'s size: its minimum-power and maximum-range speeds, cruise
- * wingbeat frequency, power and whether it could keep flapping.
- * @capability flier-compare score a game flier's speed against real flight mechanics for its mass and wings
- */
+/** @capability flier-compare score a game flier's speed against real flight mechanics for its mass and wings */
 export function compareFlier(body: FlierBody, gameSpeed: number): FlierComparison {
   const vmp = minimumPowerSpeed(body);
   return {
@@ -237,13 +216,7 @@ const row = (metric: string, label: string, unit: string, reference: number, low
   pass: reference >= low && reference <= high,
 });
 
-/**
- * Validate the flight reference: the mute swan's minimum-power speed against Pennycuick et al. 2013; every
- * ornithodolite airspeed between the model's minimum-power and maximum-range speeds, as flight theory has migrating
- * birds fly; cruising wingbeat frequency against Sato et al. 2009's seabird scaling and the wandering albatross; and
- * the universal wingbeat law against insects.
- * @capability flight-reference-validation check the flight reference against measured bird airspeeds and wingbeat frequencies
- */
+/** @capability flight-reference-validation check the flight reference against measured bird airspeeds and wingbeat frequencies */
 export function validateFlightReference(): HumanValidationRow[] {
   const rows: HumanValidationRow[] = [];
   const swan = { mass: 8.94, span: 2.3, wingArea: 0.683 };

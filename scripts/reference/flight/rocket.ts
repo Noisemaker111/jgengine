@@ -3,9 +3,7 @@ import { standardAtmosphere, STANDARD_GRAVITY, type AtmosphereModel } from "./st
 
 type Vec3 = [number, number, number];
 
-/** An Earth: gravity with the J2 oblateness term, an ellipsoid surface for altitude, and a rotation rate. */
 export interface EarthModel {
-  /** Gravitational parameter, m³/s². */
   mu: number;
   equatorialRadius: number;
   flattening: number;
@@ -15,55 +13,41 @@ export interface EarthModel {
   rotationRate: number;
 }
 
-/** WGS 84 Earth (NIMA TR8350.2): μ, equatorial radius, flattening, J2 and rotation rate. */
 export const WGS84_EARTH: EarthModel = { mu: 3.986004418e14, equatorialRadius: 6378137, flattening: 1 / 298.257223563, j2: 1.08262668e-3, rotationRate: 7.292115e-5 };
 
-/** One engine. Thrust is given in vacuum; at altitude it loses ambient pressure times its nozzle exit area. */
 export interface RocketEngine {
   /** Vacuum thrust over the stage's burn time, `[seconds since stage ignition, N]`, linear between, zero past the last point. */
   thrust: readonly (readonly [number, number])[];
-  /** Vacuum specific impulse, s: mass flow is vacuum thrust over `Isp·g0`. */
   specificImpulse: number;
-  /** Nozzle exit area, m². */
   exitArea: number;
   /** Shutdown, seconds since stage ignition (default: when the curve ends or the stage's propellant runs out). */
   cutoff?: number;
 }
 
-/** Axial-force coefficient by Mach number and the normal-force slope, for one stack configuration. */
 export interface RocketAero {
-  /** Reference area, m². */
   area: number;
-  /** `[Mach, C_A]` points, linear between, held flat past the ends: the drag rise through Mach 1 lives here. */
   axialForce: readonly (readonly [number, number])[];
-  /** Normal-force slope, per rad of total angle of attack. */
   normalForceSlope: number;
-  /** Centre of pressure, m from the vehicle base. */
   centerOfPressure: number;
 }
 
-/** A stage: a uniform cylinder of structure and propellant, its engines, and the aerodynamics of the stack it is the bottom of. */
 export interface RocketStage {
   name: string;
   /** Mass at burnout, kg: structure, residuals and anything else that leaves with the stage. */
   dryMass: number;
   /** Usable propellant, kg. */
   propellant: number;
-  /** Station of the stage's base and its length, m from the vehicle base; radius, m. */
   station: number;
   length: number;
   radius: number;
   engines: readonly RocketEngine[];
-  /** Station of the engines' gimbal point, m from the vehicle base (default the stage's base). */
   gimbalStation?: number;
-  /** Largest gimbal angle, rad (default `0`). */
   gimbal?: number;
   /** Seconds from the previous stage's separation to this stage's ignition (default `0`). */
   ignitionDelay?: number;
   aero: RocketAero;
 }
 
-/** A vehicle: its stages from the first to burn upward, and a payload riding on top of the last one. */
 export interface RocketDesign {
   name: string;
   stages: readonly RocketStage[];
@@ -72,16 +56,11 @@ export interface RocketDesign {
   actuator?: { bandwidth?: number; rate?: number };
 }
 
-/** Where and how the vehicle stands at its first step. */
 export interface RocketLaunch {
-  /** Geodetic latitude and longitude, rad. */
   latitude: number;
   longitude: number;
-  /** Height above the ellipsoid, m (default `0`). */
   altitude?: number;
-  /** Direction the pitch plane faces, rad from north (east positive). */
   azimuth: number;
-  /** Mission clock at the first step, s (default `0`); the first stage ignited at `0`. */
   time?: number;
 }
 
@@ -91,7 +70,6 @@ export interface RocketControl {
   yaw: number;
 }
 
-/** Serializable integrator state: position and velocity in Earth-centred inertial axes (z north, x through the launch meridian at `t = 0`). */
 export interface RocketState {
   time: number;
   stage: number;
@@ -99,29 +77,24 @@ export interface RocketState {
   ignitions: number[];
   position: Vec3;
   velocity: Vec3;
-  /** Body-to-inertial attitude `[w, x, y, z]`; body x is the vehicle axis toward the nose. */
   attitude: [number, number, number, number];
   /** Body rates, rad/s. */
   rates: Vec3;
-  /** Gimbal angles `[pitch, yaw]`, rad. */
   gimbal: [number, number];
   /** Usable propellant per stage, kg. */
   propellant: number[];
 }
 
-/** One readout. Angles in rad, SI units; directions are inertial unit vectors. */
 export interface RocketSample {
   time: number;
   stage: number;
   mass: number;
-  /** Height above the ellipsoid, m; geodetic latitude and longitude, rad. */
   altitude: number;
   latitude: number;
   longitude: number;
   inertialSpeed: number;
   /** Speed relative to the rotating atmosphere, m/s. */
   earthSpeed: number;
-  /** Climb angle of the inertial and the Earth-relative velocity above the local horizontal. */
   inertialFlightPathAngle: number;
   earthFlightPathAngle: number;
   mach: number;
@@ -130,14 +103,11 @@ export interface RocketSample {
   thrust: number;
   /** Non-gravitational acceleration, m/s²: what an accelerometer on the vehicle reads. */
   sensedAcceleration: number;
-  /** Great-circle distance over the ground from the launch site, m. */
   surfaceRange: number;
   position: Vec3;
   velocity: Vec3;
-  /** Earth-relative velocity, inertial axes. */
   airVelocity: Vec3;
   axis: Vec3;
-  /** Body +y and +z axes. */
   side: Vec3;
   normal: Vec3;
   up: Vec3;
@@ -146,16 +116,12 @@ export interface RocketSample {
   rates: Vec3;
 }
 
-/** Options: Earth and atmosphere models and the integration step. */
 export interface RocketOptions {
   earth?: EarthModel;
-  /** Atmosphere by height above the ellipsoid (default the U.S. Standard Atmosphere 1976; return zero density and pressure for vacuum). */
   atmosphere?: AtmosphereModel;
-  /** RK4 step, s (default `0.02`). */
   substep?: number;
 }
 
-/** A rocket in flight. */
 export interface Rocket {
   readonly design: RocketDesign;
   /** Advances `dt` seconds in RK4 substeps; staging happens between substeps. */
@@ -163,7 +129,6 @@ export interface Rocket {
   sample(): RocketSample;
   snapshot(): RocketState;
   restore(state: RocketState): void;
-  /** Back to the launch pad. */
   reset(): void;
 }
 
@@ -201,20 +166,14 @@ function rotateInverse(q: readonly number[], v: readonly number[], out: Vec3): V
   return rotate([q[0] ?? 1, -(q[1] ?? 0), -(q[2] ?? 0), -(q[3] ?? 0)], v, out);
 }
 
-/**
- * Earth-centred Earth-fixed position of a geodetic point, m.
- * @capability rocket-6dof geodetic latitude, longitude and height to Earth-fixed coordinates
- */
+/** @capability rocket-6dof geodetic latitude, longitude and height to Earth-fixed coordinates */
 export function geodeticToEarthFixed(earth: EarthModel, latitude: number, longitude: number, altitude: number): Vec3 {
   const e2 = earth.flattening * (2 - earth.flattening);
   const n = earth.equatorialRadius / Math.sqrt(1 - e2 * Math.sin(latitude) ** 2);
   return [(n + altitude) * Math.cos(latitude) * Math.cos(longitude), (n + altitude) * Math.cos(latitude) * Math.sin(longitude), (n * (1 - e2) + altitude) * Math.sin(latitude)];
 }
 
-/**
- * Geodetic latitude, longitude and height of an Earth-fixed point by Bowring's method (millimetre accurate near the surface).
- * @capability rocket-6dof Earth-fixed coordinates to geodetic latitude, longitude and height
- */
+/** @capability rocket-6dof Earth-fixed coordinates to geodetic latitude, longitude and height */
 export function earthFixedToGeodetic(earth: EarthModel, point: readonly number[]): { latitude: number; longitude: number; altitude: number } {
   const x = point[0] ?? 0;
   const y = point[1] ?? 0;
@@ -327,7 +286,6 @@ export function createRocket(design: RocketDesign, launch: RocketLaunch, options
     return { up, north, east };
   }
 
-  /** Mass, centre of mass station and inertia `[axial, transverse]` of the stack from stage `from` up. */
   function massProperties(state: readonly number[], from: number): { mass: number; center: number; axial: number; transverse: number } {
     const pieces: { mass: number; station: number; length: number; radius: number }[] = [];
     for (let i = from; i < stages.length; i += 1) {
@@ -620,7 +578,6 @@ export function createRocket(design: RocketDesign, launch: RocketLaunch, options
   };
 }
 
-/** Steering gains for {@link steerRocket}: attitude error and rate to gimbal command. */
 export interface RocketSteeringGains {
   attitude: number;
   rate: number;
@@ -645,22 +602,14 @@ export function steerRocket(sample: RocketSample, target: readonly number[], gai
   };
 }
 
-/** A gravity-turn ascent: vertical rise, a pitch-over kick along the launch azimuth, then the axis follows the Earth-relative velocity. */
 export interface GravityTurnProgram {
-  /** Mission time the pitch-over starts, s. */
   verticalRise: number;
-  /** Tilt from vertical reached at the end of the kick, rad, and how long the kick takes, s. */
   kick: number;
   kickDuration: number;
-  /** Launch azimuth, rad from north. */
   azimuth: number;
 }
 
-/**
- * Where a gravity-turn ascent points the vehicle axis at a sample: the local vertical, then tilted toward the azimuth
- * through the kick, then along the Earth-relative velocity (zero angle of attack, the low-load path through max-Q).
- * @capability rocket-6dof gravity-turn ascent steering target
- */
+/** @capability rocket-6dof gravity-turn ascent steering target */
 export function gravityTurnTarget(sample: RocketSample, program: GravityTurnProgram): Vec3 {
   if (sample.time >= program.verticalRise + program.kickDuration) {
     const v = sample.airVelocity;

@@ -6,7 +6,6 @@
  * @capability defined-fields pass maybe-missing values on as optional fields, leaving out the ones that are undefined
  */
 
-/** The fields of `T` with `undefined` taken out of each value: the ones that were set stay, the rest are left out. */
 export type DefinedFields<T> = { [K in keyof T]?: T[K] & ({} | null) };
 
 /**

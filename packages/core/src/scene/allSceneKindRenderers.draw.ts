@@ -5,11 +5,7 @@ import { registerAllSceneKinds } from "@jgengine/core/scene/allSceneKinds";
 
 import { registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers.draw";
 
-/**
- * Registers every engine scene kind, renderer and generator preview now, the on-demand systems
- * (city, grown plants, landform) included. For the editor, which lists and previews them all; a game's scene
- * loads only what it uses. @internal
- */
+/** @internal */
 export function registerAllSceneKindRenderers(): void {
   registerAllSceneKinds();
   registerBuiltinSceneKindRenderers();

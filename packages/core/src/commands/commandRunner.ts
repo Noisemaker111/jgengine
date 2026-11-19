@@ -1,4 +1,3 @@
-/** `reason` is a stable machine code; `message`, when set, is player-facing text the client shows on refusal. */
 export type CommandValidationError = { reason: string; message?: string };
 
 /**
@@ -7,22 +6,16 @@ export type CommandValidationError = { reason: string; message?: string };
  * world unaffordable per mutation. Narrow them when the caller knows what it will touch.
  */
 export type CommandScope = {
-  /** Member ids to hydrate; omit for the whole roster. */
   players?: readonly string[];
-  /** Chunk keys to hydrate; omit for every chunk of the server, `[]` for none. */
   chunkKeys?: readonly string[];
 };
 
-/** Declarative read scope; actor is resolved before host hydration. */
 export type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?: readonly string[] | "actor" };
 
-/** Who may send a command: any client through the public transport, or only trusted host code. */
 export type CommandAccess = "client" | "server";
 
-/** Reason every host returns when a command's `parse` rejects its input. */
 export const MALFORMED_COMMAND_INPUT_REASON = "Malformed command input";
 
-/** Reason a public transport returns for a {@link CommandDef} marked `access: "server"`. */
 export const SERVER_ONLY_COMMAND_REASON = "Command is server-only";
 
 export type CommandDef<TInput = unknown> = {
@@ -61,11 +54,7 @@ export type CommandDef<TInput = unknown> = {
   ) => import("../runtime/snapshot").GameRuntimeSnapshot;
 };
 
-/**
- * The resolved scope, defaulting to the actor and no chunks.
- * Evaluate it before hydration: the actor and the command's own input are both known by then.
- * @internal
- */
+/** @internal */
 export function resolveCommandScope<TInput>(
   commands: Record<string, CommandDef<TInput>>,
   commandName: string,
@@ -170,11 +159,7 @@ export function runCommand<TInput>(
   };
 }
 
-/**
- * Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and
- * `apply` receive the parsed type. Returns the untyped {@link CommandDef} a runtime's command table holds.
- * @capability command-parse parse untrusted command input once so every command stage sees typed, bounded values
- */
+/** @capability command-parse parse untrusted command input once so every command stage sees typed, bounded values */
 export function defineCommand<TInput>(
   definition: CommandDef<TInput> & { parse: (input: unknown) => TInput | null },
 ): CommandDef {

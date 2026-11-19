@@ -9,13 +9,11 @@ export interface SkillRequirement {
   rank?: number;
 }
 
-/** An action a node or synergy unlocks, shaped to bind straight into `createAbilityKit`'s slot config. */
 export interface SkillActiveDef {
   id: string;
   cooldownMs?: number;
   resourceCost?: number;
   castType?: AbilityCastType;
-  /** Slot ids whose shared cooldown this action joins. */
   groups?: readonly string[];
 }
 
@@ -25,11 +23,8 @@ export interface SkillActiveDef {
  */
 export interface SkillNodeDef<TStat extends string = string> {
   id: string;
-  /** Grouping for balance and UI; nodes with no branch share `""`. */
   branch?: string;
-  /** Points one rank of this node costs (default `1`). */
   cost?: number;
-  /** Ranks this node holds (default `1`). */
   maxRank?: number;
   /** Nodes and minimum ranks that must be spent before this node opens at all. */
   requires?: readonly SkillRequirement[];
@@ -37,11 +32,8 @@ export interface SkillNodeDef<TStat extends string = string> {
   requiresPointsInBranch?: number;
   /** Nodes that cannot be ranked alongside this one — the exclusivity that makes builds differ. */
   excludes?: readonly string[];
-  /** Passive stats one rank adds; multiplicative entries compound per rank. */
   passives?: StatModifierSet<TStat>;
-  /** Actions unlocked by one or more ranks. */
   actives?: readonly SkillActiveDef[];
-  /** Free-form tags for caller filters and UI. */
   tags?: readonly string[];
 }
 
@@ -51,20 +43,15 @@ export interface SkillNodeDef<TStat extends string = string> {
  */
 export interface SkillSynergyDef<TStat extends string = string> {
   id: string;
-  /** At least two distinct nodes, each at or above its required rank. */
   requires: readonly SkillRequirement[];
-  /** Passive stats added once while the synergy is live. */
   passives?: StatModifierSet<TStat>;
-  /** Actions unlocked while the synergy is live. */
   actives?: readonly SkillActiveDef[];
   tags?: readonly string[];
 }
 
-/** Everything {@link createSkillTree} reads: nodes, optional synergies, and starting points. */
 export interface SkillTreeConfig<TStat extends string = string> {
   nodes: readonly SkillNodeDef<TStat>[];
   synergies?: readonly SkillSynergyDef<TStat>[];
-  /** Points the character starts with (default `0`). */
   points?: number;
 }
 
@@ -77,50 +64,37 @@ export type SkillSpendReason =
   | "branch-points"
   | "excluded";
 
-/** The outcome of one spend or legality check: what it costs and the balance after it, or the rule that stopped it. */
 export type SkillSpendResult =
   | { ok: true; spent: number; pointsAvailable: number }
   | { ok: false; reason: SkillSpendReason; detail: string };
 
-/** The whole outcome of a build: merged passives, unlocked actions, live synergies and point accounting. */
 export interface SkillResolution<TStat extends string = string> {
-  /** Merged passives: node passives per rank, then synergy passives, in config order. */
   stats: StatModifierSet<TStat>;
-  /** Every unlocked action in config order, deduplicated by id. */
   actives: readonly SkillActiveDef[];
   activeIds: readonly string[];
-  /** Ids of the synergies currently satisfied, in config order. */
   synergies: readonly string[];
-  /** Rank held per node, keyed by node id and sorted for a stable readout. */
   ranks: Readonly<Record<string, number>>;
   pointsSpent: number;
   pointsAvailable: number;
 }
 
-/** Saved tree state: unspent points and the rank of every ranked node. */
 export interface SkillTreeState {
   points: number;
   ranks: Record<string, number>;
 }
 
-/** A live skill tree over one authored config, with respec, snapshot/restore and an optional devtools probe. */
 export interface SkillTree<TStat extends string = string> {
   rank(nodeId: string): number;
   pointsAvailable(): number;
-  /** Points currently committed, counting each node's `cost` per rank. */
   pointsSpent(): number;
   pointsInBranch(branch: string): number;
   grantPoints(amount: number): void;
   canSpend(nodeId: string): SkillSpendResult;
-  /** Spend one rank of `nodeId`, charging its `cost`; refused without mutation when a rule blocks it. */
   spend(nodeId: string): SkillSpendResult;
-  /** Refund every spent point and clear every rank. Returns the exact number refunded. */
   respec(): { refunded: number; pointsAvailable: number };
   resolved(): SkillResolution<TStat>;
   snapshot(): SkillTreeState;
-  /** Replace state from a save; refuses without mutation when it names unknown nodes or malformed counts. */
   restore(next: SkillTreeState): boolean;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -134,12 +108,10 @@ function requirementRank(requirement: SkillRequirement): number {
   return requirement.rank ?? 1;
 }
 
-/** A requirement is met once that node's rank reaches the required rank. */
 function rankReached(requirement: SkillRequirement): Predicate {
   return { gte: ["rank", requirementRank(requirement)] };
 }
 
-/** Facts one requirement reads: the rank held in the node it names. */
 function requirementMet(requirement: SkillRequirement, rank: number): boolean {
   return evaluatePredicate(rankReached(requirement), { rank });
 }
@@ -160,7 +132,6 @@ function mergePassives<TStat extends string>(
   }
 }
 
-/** Check tree data before play; throws `RangeError` naming the offending node, requirement or synergy. */
 export function assertSkillTreeConfig<TStat extends string>(config: SkillTreeConfig<TStat>): void {
   check(config.nodes.length > 0, "Skill tree needs at least one node");
   const nodes = new Map<string, SkillNodeDef<TStat>>();
@@ -207,14 +178,7 @@ function requireNode<TStat extends string>(
   check(rank <= maxRank, `"${owner}" requires rank ${rank} of "${requirement.nodeId}", which holds ${maxRank}`);
 }
 
-/**
- * A data-authored skill tree: nodes carry a point cost, prerequisites, passives and unlocked actions,
- * synergies pay off two or more nodes together, and `respec` refunds exactly the points spent. Spend
- * against `canSpend` for a reason a UI can show; read `resolved()` for the stat modifiers and action
- * list to feed `createStats` / `createAbilityKit`.
- *
- * @capability skill-tree spend, refuse and refund points over an authored tree with passives, actives and synergies
- */
+/** @capability skill-tree spend, refuse and refund points over an authored tree with passives, actives and synergies */
 export function createSkillTree<TStat extends string = string>(
   config: SkillTreeConfig<TStat>,
   options: { devtoolsName?: string } = {},

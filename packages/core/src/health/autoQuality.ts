@@ -1,31 +1,24 @@
 // @skill jgengine-ui
 import { createFrameTimeWindow, type FrameTimePercentiles } from "./frameTimeWindow";
 
-/** Game-owned thresholds for {@link createAutoQuality}; only `targetFrameMs` is required. */
 export interface AutoQualityConfig {
   /** Frame time the game wants to hold, in ms (16.7 for 60 fps). */
   targetFrameMs: number;
-  /** Step down when the window's p95 is above this. Default `targetFrameMs * 1.15`. */
   downFrameMs?: number;
   /** Step up only when the window's p95 is below `targetFrameMs * upMargin`. Default 0.6, so a tier that just failed is not retried at once. */
   upMargin?: number;
-  /** Frames per decision window; a change needs a full window of frames measured at the current tier. Default 120. */
   windowFrames?: number;
   /** Ms after a change before the next step down. Default 4000. */
   downCooldownMs?: number;
   /** Ms after a change before a step up. Default 20000. */
   upCooldownMs?: number;
-  /** A step down this soon after a step up multiplies the next up cooldown by 2, up to `maxBackoff`. Default 8. */
   maxBackoff?: number;
   /** Ms after start or reset to ignore, while shaders and assets settle. Default 3000. */
   warmupMs?: number;
-  /** Lowest tier index auto may pick (into the tier list, low to high). Default 0. */
   minTier?: number;
-  /** Highest tier index auto may pick. Default the last tier. */
   maxTier?: number;
 }
 
-/** What {@link AutoQuality.observe} returns when it moves the tier. */
 export interface AutoQualityChange<TTier extends string> {
   from: TTier;
   to: TTier;
@@ -33,7 +26,6 @@ export interface AutoQualityChange<TTier extends string> {
   window: FrameTimePercentiles;
 }
 
-/** Serializable controller state. */
 export interface AutoQualityState<TTier extends string> {
   tier: TTier;
   changedAt: number;
@@ -42,19 +34,15 @@ export interface AutoQualityState<TTier extends string> {
   lastDirection: "down" | "up" | null;
 }
 
-/** Picks a graphics tier from measured frame time. */
 export interface AutoQuality<TTier extends string> {
-  /** Feed one frame's duration; returns the change when the tier moved, else `null`. */
   observe(frameMs: number): AutoQualityChange<TTier> | null;
   tier(): TTier;
-  /** The player picked a tier: adopt it, forget the window and restart the cooldowns. */
   setTier(tier: TTier): void;
   snapshot(): AutoQualityState<TTier>;
   restore(state: AutoQualityState<TTier>): void;
   reset(tier?: TTier): void;
 }
 
-/** Longest frame still counted; a longer one is a hidden tab or a debugger pause, not a load signal. */
 export const AUTO_QUALITY_MAX_FRAME_MS = 1_000;
 
 /**

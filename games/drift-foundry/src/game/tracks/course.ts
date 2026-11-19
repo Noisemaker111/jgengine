@@ -20,7 +20,6 @@ import type { HazardKind, TrackDef, TrackDressing, TrackGateDef, TrackHazardDef,
  * and the theme's {@link TrackFill} says what each role becomes on this track.
  */
 
-/** A track's theme: everything about it that is not a place on its course. */
 export interface TrackTheme {
   id: string;
   label: string;
@@ -35,13 +34,10 @@ export interface TrackTheme {
   liquid?: NonNullable<TrackDef["liquid"]>;
   rivalTake: TrackDef["rivalTake"];
   par: number;
-  /** The dressing palette; landmark placements come from the course's dressing slots. */
   dressing: Omit<TrackDressing, "landmarks">;
-  /** What a generated course's slots become here. */
   fill?: TrackFill;
 }
 
-/** The content a generated course's slots are filled with, by slot role. */
 export interface TrackFill {
   hazards: Readonly<Record<"timed" | "lane" | "surface", { kind: HazardKind; label: string; push?: number }>>;
   gates: { jump: readonly { label: string; radioLine: string }[]; block: readonly { label: string; radioLine: string }[] };
@@ -59,14 +55,12 @@ interface SceneMarker {
 
 const COURSE_MARKERS: readonly SceneMarker[] = (sceneJson.markers as readonly SceneMarker[]).filter((marker) => marker.kind === COURSE_KIND);
 
-/** The scene's course marker for a track id. */
 export function sceneCourse(id: string): SceneMarker {
   const marker = COURSE_MARKERS.find((entry) => entry.id === id);
   if (marker === undefined) throw new Error(`tracks: editor.scene.json has no course "${id}"`);
   return marker;
 }
 
-/** A course marker's layout; `seed` replaces the meta's seed (a daily course). */
 export function courseLayout(marker: SceneMarker, seed?: string): CourseLayout {
   const pose = coursePoseOf(marker)!;
   return courseLayoutFromMeta(seed === undefined ? marker.meta : { ...marker.meta, seed }, pose, marker.id);
@@ -83,7 +77,6 @@ const number = (slot: CourseSlot, key: string): number | undefined => {
 /** Run metres are read back to the millimetre, so an authored mark stays the number it was written as. */
 const mm = (value: number): number => Math.round(value * 1000) / 1000;
 
-/** Join a course layout and a theme into the track the run reads. */
 export function trackDefFromCourse(theme: TrackTheme, layout: CourseLayout): TrackDef {
   const origin = layout.startLine;
   const spec = layout.spec;

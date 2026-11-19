@@ -2,173 +2,30 @@
 
 # jgengine-editor — capability index
 
-Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
+Discover with `bun run find <intent>` or `npx jgengine find <intent>`.
 
-## authored-material-slots — read validated material assignments from editor marker metadata
-
-- `authoredMaterialAssignments` (function) · `import { authoredMaterialAssignments } from "@jgengine/core/editor/materialAuthoring"`
-
-## color-grading — read the scene document's authored grade at runtime
-
-- `colorGradeFromDocument` (function) · `import { colorGradeFromDocument } from "@jgengine/core/editor"`
-- `lutCubeFromGrading` (function) · `import { lutCubeFromGrading } from "@jgengine/core/editor"`
-
-## creator-export — export validated player scenes with approved catalogs and finite budgets
-
-- `exportCreatorDocument` (function) · `import { exportCreatorDocument } from "@jgengine/core/editor/creatorStorage"`
-
-## creator-storage — save and reopen named versioned player creations through injected durable storage
-
-- `createCreatorDocumentStorage` (function) · `import { createCreatorDocumentStorage } from "@jgengine/core/editor/creatorStorage"`
-
-## editor-catalogs — Persist gameplay tuning rows on the scene document.
-
-- `EditorCatalogData` (interface) · `import { EditorCatalogData } from "@jgengine/core/editor"`
-- `EditorCatalogDefinition` (interface) · `import { EditorCatalogDefinition } from "@jgengine/core/editor"`
-- `EditorCatalogEntry` (interface) · `import { EditorCatalogEntry } from "@jgengine/core/editor"`
-- `findEditorCatalog` (function) · `import { findEditorCatalog } from "@jgengine/core/editor"`
-- `findEditorCatalogEntry` (function) · `import { findEditorCatalogEntry } from "@jgengine/core/editor"`
-- `resolveCatalogDefinitions` (function) · `import { resolveCatalogDefinitions } from "@jgengine/core/editor"`
-- `seedEditorCatalogs` (function) · `import { seedEditorCatalogs } from "@jgengine/core/editor"`
-
-## editor-derived-layers — show runtime-built markers, volumes and paths in the editor without saving them into the scene
-
-- `withDerivedEditorLayers` (function) · `import { withDerivedEditorLayers } from "@jgengine/core/editor"`
-
-## editor-entities — Author entity stats/movement per catalog row instead of hardcoding TS.
-
-- `entityDefinitionSchema` (const) · `import { entityDefinitionSchema } from "@jgengine/core/editor"`
-- `entityEntryFromCatalog` (function) · `import { entityEntryFromCatalog } from "@jgengine/core/editor"`
-
-## editor-environment — persist sky/fog/lighting knobs on the scene document
-
-- `EditorEnvironment` (interface) · `import { EditorEnvironment } from "@jgengine/core/editor"`
-- `skyFromDocument` (function) · `import { skyFromDocument } from "@jgengine/core/editor"`
-
-## editor-grid-import — Configure an ASCII/glyph → grid-layer import.
-
-- `AsciiGridImportOptions` (interface) · `import { AsciiGridImportOptions } from "@jgengine/core/editor"`
-- `exportAsciiGrid` (function) · `import { exportAsciiGrid } from "@jgengine/core/editor"`
-- `exportCsvGrid` (function) · `import { exportCsvGrid } from "@jgengine/core/editor"`
-- `importAsciiGrid` (function) · `import { importAsciiGrid } from "@jgengine/core/editor"`
-- `importCsvGrid` (function) · `import { importCsvGrid } from "@jgengine/core/editor"`
-
-## editor-grids — Choose how grid columns/rows project onto world axes.
-
-- `EditorGridAxes` (type) · `import { EditorGridAxes } from "@jgengine/core/editor"`
-- `EditorGridLayer` (interface) · `import { EditorGridLayer } from "@jgengine/core/editor"`
-- `EditorGridPaletteEntry` (interface) · `import { EditorGridPaletteEntry } from "@jgengine/core/editor"`
-- `cloneGridLayer` (function) · `import { cloneGridLayer } from "@jgengine/core/editor"`
-- `createGridLayer` (function) · `import { createGridLayer } from "@jgengine/core/editor"`
-- `eraseGridCell` (function) · `import { eraseGridCell } from "@jgengine/core/editor"`
-- `eyedropGridCell` (function) · `import { eyedropGridCell } from "@jgengine/core/editor"`
-- `fillGridRect` (function) · `import { fillGridRect } from "@jgengine/core/editor"`
-- `findGridPaletteEntry` (function) · `import { findGridPaletteEntry } from "@jgengine/core/editor"`
-- `floodFillGrid` (function) · `import { floodFillGrid } from "@jgengine/core/editor"`
-- `forEachGridCell` (function) · `import { forEachGridCell } from "@jgengine/core/editor"`
-- `getGridCell` (function) · `import { getGridCell } from "@jgengine/core/editor"`
-- `getGridCellAtWorld` (function) · `import { getGridCellAtWorld } from "@jgengine/core/editor"`
-- `gridCellCount` (function) · `import { gridCellCount } from "@jgengine/core/editor"`
-- `gridCellEntries` (function) · `import { gridCellEntries } from "@jgengine/core/editor"`
-- `gridCellToWorld` (function) · `import { gridCellToWorld } from "@jgengine/core/editor"`
-- `gridCellsOfValue` (function) · `import { gridCellsOfValue } from "@jgengine/core/editor"`
-- `gridEmptyValue` (function) · `import { gridEmptyValue } from "@jgengine/core/editor"`
-- `gridGlyphMap` (function) · `import { gridGlyphMap } from "@jgengine/core/editor"`
-- `inLayerBounds` (function) · `import { inLayerBounds } from "@jgengine/core/editor"`
-- `migrateGridLayer` (function) · `import { migrateGridLayer } from "@jgengine/core/editor"`
-- `paintGridCells` (function) · `import { paintGridCells } from "@jgengine/core/editor"`
-- `parseGridCellKey` (function) · `import { parseGridCellKey } from "@jgengine/core/editor"`
-- `resizeGridLayer` (function) · `import { resizeGridLayer } from "@jgengine/core/editor"`
-- `setGridCell` (function) · `import { setGridCell } from "@jgengine/core/editor"`
-- `worldToGridCell` (function) · `import { worldToGridCell } from "@jgengine/core/editor"`
-
-## editor-live-sync — apply a versioned document patch onto a live scene document
-
-- `applyDocumentPatch` (function) · `import { applyDocumentPatch } from "@jgengine/core/editor"`
-- `applyRuntimeStateDelta` (function) · `import { applyRuntimeStateDelta } from "@jgengine/core/editor"`
-- `createDocumentLiveSync` (function) · `import { createDocumentLiveSync } from "@jgengine/core/editor"`
-- `runtimeEntityWriteBackCommand` (function) · `import { runtimeEntityWriteBackCommand } from "@jgengine/core/editor"`
-
-## editor-material-controls — Explain geometry prerequisites and approximations for a material asset.
-
-- `materialAuthoringNotes` (function) · `import { materialAuthoringNotes } from "@jgengine/editor/materialControls"`
-- `materialControlGroups` (function) · `import { materialControlGroups } from "@jgengine/editor/materialControls"`
-
-## editor-meta — read a placed object's authored meta as a typed number or text, failing on a wrong value
-
-- `metaNumber` (function) · `import { metaNumber } from "@jgengine/core/editor/markerMeta"`
-
-## editor-movement — bind live character tuning while preserving distinctive game policy
-
-- `bindAuthoredMovement` (function) · `import { bindAuthoredMovement } from "@jgengine/core/editor/movementCatalog"`
-- `createAuthoredMovementReader` (function) · `import { createAuthoredMovementReader } from "@jgengine/core/editor/movementCatalog"`
-- `createMovementSchema` (function) · `import { createMovementSchema } from "@jgengine/core/editor/movementCatalog"`
-- `readAuthoredMovement` (function) · `import { readAuthoredMovement } from "@jgengine/core/editor/movementCatalog"`
-
-## editor-runtime-inspector — read one live runtime entity field or tunable
-
-- `getRuntimeInspectorValue` (function) · `import { getRuntimeInspectorValue } from "@jgengine/core/editor"`
-- `planRuntimeInspectorSet` (function) · `import { planRuntimeInspectorSet } from "@jgengine/core/editor"`
-- `runtimeEntityMetaWriteBackCommand` (function) · `import { runtimeEntityMetaWriteBackCommand } from "@jgengine/core/editor"`
-- `summarizeRuntimeInspector` (function) · `import { summarizeRuntimeInspector } from "@jgengine/core/editor"`
-
-## light-probes — author a baked irradiance volume on the scene document
-
-- `EditorLightProbe` (interface) · `import { EditorLightProbe } from "@jgengine/core/editor"`
-- `authoredLightsFromDocument` (function) · `import { authoredLightsFromDocument } from "@jgengine/core/editor"`
-- `bakeLightProbe` (function) · `import { bakeLightProbe } from "@jgengine/core/editor"`
-- `lightProbesFromDocument` (function) · `import { lightProbesFromDocument } from "@jgengine/core/editor"`
-
-## minimap-bake — persist a baked minimap PNG + bounds on the scene document
-
-- `EditorMinimapBake` (interface) · `import { EditorMinimapBake } from "@jgengine/core/editor"`
-- `bakeMinimapFromDocument` (function) · `import { bakeMinimapFromDocument } from "@jgengine/core/editor"`
-- `documentBakeZones` (function) · `import { documentBakeZones } from "@jgengine/core/editor"`
-
-## model-node-visibility — read authored per-placement model subtree selections
-
-- `authoredHiddenNodes` (function) · `import { authoredHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility"`
-
-## player-creator — create, edit, save, playtest and reopen bounded player scenes through the production editor
-
-- `CreatorApp` (function) · `import { CreatorApp } from "@jgengine/editor"`
-
-## scene-ownership — audit a whole ownership manifest for boundary violations
-
-- `auditManifest` (function) · `import { auditManifest } from "@jgengine/core/scene/sceneOwnership"`
-- `classifyOwnership` (function) · `import { classifyOwnership } from "@jgengine/core/scene/sceneOwnership"`
-- `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/scene/sceneOwnership"`
-- `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership"`
-- `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/scene/sceneOwnership"`
-
-## simulation-inspector — author weather schedules, effects, fire, wind zones, forces and habitats with validated undoable controls
-
-- `SimulationInspector` (function) · `import { SimulationInspector } from "@jgengine/editor/SimulationInspector"`
-
-## validate-simulation — diagnose authored weather, effect, fire, force and habitat documents before publication
-
-- `decodeEditorSimulation` (function) · `import { decodeEditorSimulation } from "@jgengine/core/editor/simulation"`
-
-## world-convergence — derive environment coordinate content from the scene document
-
-- `environmentContentFromDocument` (function) · `import { environmentContentFromDocument } from "@jgengine/core/editor"`
-- `lakebedFromWaterVolumes` (function) · `import { lakebedFromWaterVolumes } from "@jgengine/core/editor/environment"`
-- `terrainBoundsFromDocument` (function) · `import { terrainBoundsFromDocument } from "@jgengine/core/editor"`
-
-## world-directives — apply a sparse overlay over materialized directive instances
-
-- `applyDirectiveOverlay` (function) · `import { applyDirectiveOverlay } from "@jgengine/core/editor"`
-- `materializeDirective` (function) · `import { materializeDirective } from "@jgengine/core/editor"`
-- `materializeDirectives` (function) · `import { materializeDirectives } from "@jgengine/core/editor"`
-- `materializePopulationDirective` (function) · `import { materializePopulationDirective } from "@jgengine/core/editor"`
-- `materializeScatterDirective` (function) · `import { materializeScatterDirective } from "@jgengine/core/editor"`
-- `resolveDirectiveFootprint` (function) · `import { resolveDirectiveFootprint } from "@jgengine/core/editor"`
-
-## world-shards — decode an untrusted world manifest with per-field diagnostics
-
-- `decodeWorldManifest` (function) · `import { decodeWorldManifest } from "@jgengine/core/editor"`
-- `loadWorldDocument` (function) · `import { loadWorldDocument } from "@jgengine/core/editor"`
-- `selectWorldShards` (function) · `import { selectWorldShards } from "@jgengine/core/editor"`
-- `shardMatchesQuery` (function) · `import { shardMatchesQuery } from "@jgengine/core/editor"`
-- `singleShardWorldManifest` (function) · `import { singleShardWorldManifest } from "@jgengine/core/editor"`
-- `splitEditorDocumentIntoShards` (function) · `import { splitEditorDocumentIntoShards } from "@jgengine/core/editor"`
+- **authored-material-slots** — read validated material assignments from editor marker metadata · `import { authoredMaterialAssignments } from "@jgengine/core/editor/materialAuthoring"`
+- **color-grading** — read the scene document's authored grade at runtime · `import { colorGradeFromDocument, lutCubeFromGrading } from "@jgengine/core/editor"`
+- **creator-export** — export validated player scenes with approved catalogs and finite budgets · `import { exportCreatorDocument } from "@jgengine/core/editor/creatorStorage"`
+- **creator-storage** — save and reopen named versioned player creations through injected durable storage · `import { createCreatorDocumentStorage } from "@jgengine/core/editor/creatorStorage"`
+- **editor-catalogs** — Persist gameplay tuning rows on the scene document. · `import { EditorCatalogData, EditorCatalogDefinition, EditorCatalogEntry, findEditorCatalog, findEditorCatalogEntry, resolveCatalogDefinitions, seedEditorCatalogs } from "@jgengine/core/editor"`
+- **editor-derived-layers** — show runtime-built markers, volumes and paths in the editor without saving them into the scene · `import { withDerivedEditorLayers } from "@jgengine/core/editor"`
+- **editor-entities** — Author entity stats/movement per catalog row instead of hardcoding TS. · `import { entityDefinitionSchema, entityEntryFromCatalog } from "@jgengine/core/editor"`
+- **editor-environment** — persist sky/fog/lighting knobs on the scene document · `import { EditorEnvironment, skyFromDocument } from "@jgengine/core/editor"`
+- **editor-grid-import** — Configure an ASCII/glyph → grid-layer import. · `import { AsciiGridImportOptions, exportAsciiGrid, exportCsvGrid, importAsciiGrid, importCsvGrid } from "@jgengine/core/editor"`
+- **editor-grids** — Choose how grid columns/rows project onto world axes. · `import { EditorGridAxes, EditorGridLayer, EditorGridPaletteEntry, cloneGridLayer, createGridLayer, eraseGridCell, eyedropGridCell, fillGridRect, findGridPaletteEntry, floodFillGrid, forEachGridCell, getGridCell, getGridCellAtWorld, gridCellCount, gridCellEntries, gridCellToWorld, gridCellsOfValue, gridEmptyValue, gridGlyphMap, inLayerBounds, migrateGridLayer, paintGridCells, parseGridCellKey, resizeGridLayer, setGridCell, worldToGridCell } from "@jgengine/core/editor"`
+- **editor-live-sync** — apply a versioned document patch onto a live scene document · `import { applyDocumentPatch, applyRuntimeStateDelta, createDocumentLiveSync, runtimeEntityWriteBackCommand } from "@jgengine/core/editor"`
+- **editor-material-controls** — Explain geometry prerequisites and approximations for a material asset. · `import { materialAuthoringNotes, materialControlGroups } from "@jgengine/editor/materialControls"`
+- **editor-meta** — read a placed object's authored meta as a typed number or text, failing on a wrong value · `import { metaNumber } from "@jgengine/core/editor/markerMeta"`
+- **editor-movement** — bind live character tuning while preserving distinctive game policy · `import { bindAuthoredMovement, createAuthoredMovementReader, createMovementSchema, readAuthoredMovement } from "@jgengine/core/editor/movementCatalog"`
+- **editor-runtime-inspector** — read one live runtime entity field or tunable · `import { getRuntimeInspectorValue, planRuntimeInspectorSet, runtimeEntityMetaWriteBackCommand, summarizeRuntimeInspector } from "@jgengine/core/editor"`
+- **light-probes** — author a baked irradiance volume on the scene document · `import { EditorLightProbe, authoredLightsFromDocument, bakeLightProbe, lightProbesFromDocument } from "@jgengine/core/editor"`
+- **minimap-bake** — persist a baked minimap PNG + bounds on the scene document · `import { EditorMinimapBake, bakeMinimapFromDocument, documentBakeZones } from "@jgengine/core/editor"`
+- **model-node-visibility** — read authored per-placement model subtree selections · `import { authoredHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility"`
+- **player-creator** — create, edit, save, playtest and reopen bounded player scenes through the production editor · `import { CreatorApp } from "@jgengine/editor"`
+- **scene-ownership** — audit a whole ownership manifest for boundary violations · `import { auditManifest, classifyOwnership, collectOwnershipDiagnostics, isSceneOwnershipManifest, ownershipKey } from "@jgengine/core/scene/sceneOwnership"`
+- **simulation-inspector** — author weather schedules, effects, fire, wind zones, forces and habitats with validated undoable controls · `import { SimulationInspector } from "@jgengine/editor/SimulationInspector"`
+- **validate-simulation** — diagnose authored weather, effect, fire, force and habitat documents before publication · `import { decodeEditorSimulation } from "@jgengine/core/editor/simulation"`
+- **world-convergence** — derive environment coordinate content from the scene document · `import { environmentContentFromDocument, terrainBoundsFromDocument } from "@jgengine/core/editor"` · `import { lakebedFromWaterVolumes } from "@jgengine/core/editor/environment"`
+- **world-directives** — apply a sparse overlay over materialized directive instances · `import { applyDirectiveOverlay, materializeDirective, materializeDirectives, materializePopulationDirective, materializeScatterDirective, resolveDirectiveFootprint } from "@jgengine/core/editor"`
+- **world-shards** — decode an untrusted world manifest with per-field diagnostics · `import { decodeWorldManifest, loadWorldDocument, selectWorldShards, shardMatchesQuery, singleShardWorldManifest, splitEditorDocumentIntoShards } from "@jgengine/core/editor"`

@@ -15,11 +15,6 @@ function defaultToast(entry: FeedEntry): ReactNode {
   return typeof entry.data === "string" ? entry.data : JSON.stringify(entry.data);
 }
 
-/**
- * Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the
- * message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot
- * log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
- */
 export const ToastStack = memoView("ToastStack", function ToastStack({
   action,
   limit = 4,

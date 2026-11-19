@@ -2,24 +2,18 @@ import { createSoundHunt, type Investigation, type NoiseEvent, type SoundHunter 
 import { createPerception } from "@jgengine/core/sensor/perception";
 
 export interface ShotHuntOptions {
-  /** The same radius every hearing consumer uses, in world units. */
   hearingRange: number;
   /** Seconds a noise stays in memory before it has fully faded. */
   memorySeconds: number;
-  /** Most enemies one shot may pull. Default `3`. */
   maxInvestigators?: number;
-  /** Confidence at or below which a hunter gives up and goes back to its post. Default `0.15`. */
   giveUpConfidence?: number;
   /** Longest one hunt survives, seconds. Default `20`. */
   maxSeconds?: number;
 }
 
 export interface ShotHunt {
-  /** Raise one noise; returns the enemies admitted to it. */
   noise(event: NoiseEvent): readonly string[];
-  /** Judge every pending noise against the roster at `nowMs`, then read what is still being worked. */
   heard(nowMs: number): Investigation[];
-  /** What is still being worked, without observing. */
   investigations(nowMs: number): Investigation[];
 }
 

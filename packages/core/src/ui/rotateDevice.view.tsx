@@ -1,11 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/**
- * Engine-owned rotate-device screen. A polished, non-dismissible full-viewport
- * gate shown when a game requires an orientation the device isn't in. It owns
- * the visible viewport (visualViewport-sized), respects safe areas, blocks all
- * pointer/touch input to the game beneath, and is themeable through `--jg-*`
- * tokens. Reduced-motion respected. This is game UI, not a website toast.
- */
 
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 import type { LayoutOrientation } from "@jgengine/core/ui/orientation";
@@ -99,7 +92,6 @@ function PhoneGlyph({ accent }: { accent: string }) {
   );
 }
 
-/** Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in. */
 export function RotateDeviceScreen({
   title = "Turn your device",
   description,
@@ -109,13 +101,9 @@ export function RotateDeviceScreen({
   className,
   style,
 }: {
-  /** Short headline. */
   title?: string;
-  /** One concise explanatory line. Defaults from `requiredOrientation`. */
   description?: string;
-  /** Orientation the game needs. Drives the rotation animation direction. */
   requiredOrientation?: LayoutOrientation;
-  /** Illustration/token color. */
   accent?: string;
   /** Custom illustration; defaults to an animated phone glyph. */
   icon?: ReactNode;

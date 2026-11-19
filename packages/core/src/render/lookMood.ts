@@ -12,7 +12,6 @@ import type { GradeConfig, PostProcessingConfig } from "./postProcessing";
  */
 export type MoodPreset = "day" | "bright" | "golden" | "dusk" | "overcast" | "night";
 
-/** Every mood preset name, for pickers and validating a mood read from a URL or file. */
 export const MOOD_PRESETS: readonly MoodPreset[] = ["day", "bright", "golden", "dusk", "overcast", "night"];
 
 /** Where the key light stands and how strong it is. Angles in degrees: azimuth 0 = -Z, 90 = +X; elevation 90 = overhead. */
@@ -23,31 +22,19 @@ export interface MoodSun {
   intensity?: number;
 }
 
-/** A mood preset plus the few tokens a game's art direction usually moves. Unset fields keep the preset's value. */
 export interface MoodConfig {
-  /** Base mood. Default `"day"`. */
   preset?: MoodPreset;
-  /** Key light placement, colour and strength (the moon under `"night"`). */
   sun?: MoodSun;
-  /** Overhead sky colour: the dome's zenith and the cool fill in shadow. */
   skyColor?: string;
-  /** Horizon colour: the dome's horizon and the haze that fades distant ground into it. */
   horizonColor?: string;
-  /** Light bounced up from the ground into shadowed undersides. */
   groundColor?: string;
-  /** Haze distance in world units; `false` keeps the air clear. */
   fog?: { near?: number; far?: number } | false;
-  /** Exposure baseline before tone mapping (auto-exposure corrects around it). */
   exposure?: number;
-  /** Colour saturation of the final grade; 1 is unchanged. */
   saturation?: number;
-  /** Display contrast around mid-grey; 1 is unchanged. The AgX curve is flat by design, so moods add some. */
   contrast?: number;
-  /** Whether the key light casts shadows. Default true. */
   shadows?: boolean;
 }
 
-/** A mood: a preset name, or a preset with token overrides. */
 export type LookMood = MoodPreset | MoodConfig;
 
 type Rgb = readonly [number, number, number];
@@ -175,19 +162,13 @@ const MOODS: Record<MoodPreset, MoodTokens> = {
   },
 };
 
-/** How far the key light sits from its target; only the direction reaches the shading. */
 const LIGHT_DISTANCE = 120;
 const DEG = Math.PI / 180;
 
-/** Concrete lighting, sky and grade a mood expands to. */
 export interface ResolvedMood {
-  /** Shadow-casting cascaded key, a shadowless bounce opposite it, hemisphere fill and ambient. */
   lighting: LightingConfig;
-  /** Dome colours, sun placement and haze; a world's sky shape (radius, clouds, day cycle) layers under it. */
   sky: SkyEnvironmentConfig;
-  /** Haze colour and range for scenes with no sky dome to drive it. */
   fog: BackdropFogConfig | undefined;
-  /** Exposure baseline and the grade's shadow/highlight tint and saturation. */
   postProcessing: PostProcessingConfig;
 }
 
@@ -203,12 +184,7 @@ function moodTokens(mood: LookMood): { tokens: MoodTokens; config: MoodConfig } 
   return { tokens: MOODS[config.preset ?? "day"], config };
 }
 
-/**
- * Expand a mood into the lighting rig, sky and grade it stands for. The key light is the sun (the
- * moon under `"night"`), casts cascaded shadows that follow the camera, and agrees with the dome's
- * sun; a cool bounce opposite it keeps shadowed sides readable; the haze matches the horizon.
- * @capability lighting-mood expand a mood preset and its token overrides into lighting, sky, haze and grade
- */
+/** @capability lighting-mood expand a mood preset and its token overrides into lighting, sky, haze and grade */
 export function resolveMood(mood: LookMood): ResolvedMood {
   const { tokens, config } = moodTokens(mood);
   const sun: Required<MoodSun> = { ...tokens.sun, ...definedOnly(config.sun ?? {}) };
@@ -275,11 +251,6 @@ export function moodForSkyPreset(preset: SkyEnvironmentConfig["preset"]): MoodPr
   return preset === "dusk" ? "dusk" : preset === "night" ? "night" : "day";
 }
 
-/**
- * Fold a contrast around mid-grey into the grade's lift and gain. The grade computes
- * `(c + lift) * gain`, so `((c + lift) * gain - 0.5) * k + 0.5` is the same shape with the lift
- * moved by `0.5 * (1 - k) / (gain * k)` and the gain scaled by `k`.
- */
 function contrastedTint(lift: Rgb, gain: Rgb, contrast: number): { lift: Rgb; gain: Rgb } {
   if (contrast === 1) return { lift, gain };
   const shift = (index: number) => lift[index]! + (0.5 * (1 - contrast)) / (gain[index]! * contrast);

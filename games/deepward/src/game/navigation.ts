@@ -12,7 +12,6 @@ const BODY = 0.28;
 /** How high a print arcs over a gap it leaps, at the middle of the leap, metres. */
 const LEAP_HEIGHT = 1.1;
 
-/** Routes use the same authored footprints and actor clearance as locomotion. */
 export function traversable(from: Point, to: Point, place: Place): boolean {
   const steps = Math.max(1, Math.ceil(groundDistance(from, to) / 0.12));
   for (let i = 0; i <= steps; i++) {
@@ -22,11 +21,6 @@ export function traversable(from: Point, to: Point, place: Place): boolean {
   return true;
 }
 
-/**
- * Each floor's route mesh: the engine's grid tile builder over the authored room and machinery
- * footprints, with the scene's `nav_area` volumes applied and its `nav_link` paths (the leaps across
- * the Wells' open water) resolved onto it. Nav objects belong to the floor their `meta.place` names.
- */
 const navs = new Map<Place, NavRuntime>();
 function nav(place: Place): NavRuntime {
   const cached = navs.get(place);
@@ -47,10 +41,8 @@ function nav(place: Place): NavRuntime {
 /** Build a floor's route mesh now (tens of milliseconds), at the arrival rather than on a creature's first step. */
 export function warmRoutes(place: Place): void { nav(place); }
 
-/** One leg of a route: walk to `to`, or cross `link` to it. */
 export interface Leg { to: Point; link: NavMeshLink | null }
 
-/** A body can stand here and step onto the route mesh without crossing a wall. */
 function onFloor(point: Point, place: Place): boolean {
   const snap = nav(place).closestPoint([point[0], 0, point[2]]);
   return snap !== null && traversable(point, [snap[0], 0, snap[2]], place);
@@ -79,17 +71,14 @@ function planLegs(from: Point, to: Point, place: Place): Leg[] {
   return legs;
 }
 
-/** The points a body walks through to reach `to`; empty means unreachable. */
 export function findRoute(from: Point, to: Point, place: Place): Point[] {
   return planLegs(from, to, place).map((leg) => leg.to);
 }
 
 export interface Navigator { goal: Point | null; path: Leg[]; leapFrom: Point | null }
-/** True while the walker is in the air over an authored link: it lands before it does anything else. */
 export function midLeap(route: Navigator): boolean { return route.leapFrom !== null && route.path[0]?.link != null; }
 export function createNavigator(): Navigator { return { goal: null, path: [], leapFrom: null }; }
 
-/** Told when a walker starts (`enter`) and lands (`exit`) an authored link, so its body can play the leap. */
 export type LinkCrossing = (link: NavMeshLink, phase: "enter" | "exit") => void;
 
 /**

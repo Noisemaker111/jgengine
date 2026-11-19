@@ -1,33 +1,23 @@
 import { resolveRng } from "../random/resolveRng";
 import { clamp01 } from "../math/scalar";
 
-/** One hit zone: what a hit there multiplies, and how much likelier it is to crit. */
 export interface HitZoneDef {
   id: string;
-  /** Multiplier for a hit in this zone that does not crit. Default `1`. */
   multiplier?: number;
-  /** Added to the table's base crit chance for hits in this zone. Default `0`. */
   critChance?: number;
   /** Crit multiplier in this zone; defaults to the table's `critMultiplier`. */
   critMultiplier?: number;
 }
 
-/**
- * A serializable hit-zone table: where a hit landed, what that multiplies, and the table's base crit
- * chance and multiplier. A generated gun or a weapon runtime passes its own zones in; the engine has
- * no built-in headshot.
- */
 export interface HitZoneTable {
   zones: readonly HitZoneDef[];
   /** Zone used when a caller names one the table does not list. Must appear in `zones`. */
   defaultZone: string;
   /** Base crit chance in `[0,1]`. Default `0`. */
   critChance?: number;
-  /** Base crit multiplier. Default `2`. */
   critMultiplier?: number;
 }
 
-/** One resolved zone: where the hit landed, whether it crit, and the single multiplier to apply. */
 export interface HitZoneResolution {
   zone: string;
   crit: boolean;
@@ -36,15 +26,11 @@ export interface HitZoneResolution {
    * compounding with it, so a headshot crit can never silently become zone × crit.
    */
   multiplier: number;
-  /** The crit draw, or `null` when the chance was zero and no draw was taken. */
   roll: number | null;
-  /** True when the named zone was absent from the table and `defaultZone` was used. */
   fallback: boolean;
 }
 
-/** Raised when neither the named zone nor the table's `defaultZone` exists — a data error, not a 1× hit.
- * @capability hit-zone-unknown reject a hit zone table whose named default does not exist
- */
+/** @capability hit-zone-unknown reject a hit zone table whose named default does not exist */
 export class UnknownHitZoneError extends Error {
   readonly zone: string;
 
@@ -55,7 +41,6 @@ export class UnknownHitZoneError extends Error {
   }
 }
 
-/** Default crit multiplier for a zone that does not name one. */
 export const DEFAULT_CRIT_MULTIPLIER = 2;
 
 function findZone(table: HitZoneTable, zone: string): HitZoneDef | undefined {
@@ -63,9 +48,7 @@ function findZone(table: HitZoneTable, zone: string): HitZoneDef | undefined {
   return undefined;
 }
 
-/** Validate a zone table once at construction: duplicate ids and a missing default fail loudly.
- * @capability hit-zone-validate reject a hit-zone table with duplicate zones or a missing default
- */
+/** @capability hit-zone-validate reject a hit-zone table with duplicate zones or a missing default */
 export function assertHitZoneTable(table: HitZoneTable): void {
   const seen = new Set<string>();
   for (const zone of table.zones) {

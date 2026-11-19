@@ -19,11 +19,6 @@ export type HarnessKind = "shoot" | "drive";
 
 const HARNESS_SOURCE: Record<HarnessKind, string> = { shoot: shootMjs, drive: driveMjs };
 
-/**
- * Nearest ancestor directory (including `startDir`) whose `package.json` declares
- * an `@jgengine/*` dependency — i.e. a JGengine game project. This is the same
- * "is this a game project" signal `jgengine versions` uses.
- */
 export function findProjectRoot(startDir: string): string | null {
   return findUp(startDir, (dir) => {
     const pkg = readPackageJson(join(dir, "package.json"));
@@ -33,7 +28,6 @@ export function findProjectRoot(startDir: string): string | null {
   });
 }
 
-/** Write the dependency-free harness (shared `browser.mjs` + the `shoot`/`drive` CLI) into a fresh temp dir and return that dir. */
 export function materializeHarness(kind: HarnessKind): string {
   const dir = mkdtempSync(join(tmpdir(), `jgengine-${kind}-`));
   writeFileSync(join(dir, "browser.mjs"), browserLibMjs);
@@ -48,10 +42,6 @@ export function harnessRevision(kind: HarnessKind): string {
 
 export type HarnessPlan = { ok: true; script: string; cwd: string } | { ok: false; error: string };
 
-/**
- * Decide how to run the `kind` harness from `cwd`: the bundled harness, run in the
- * nearest game project. `allowNoProject` lets `--help` render without one on disk.
- */
 export function planHarness(
   kind: HarnessKind,
   cwd: string,

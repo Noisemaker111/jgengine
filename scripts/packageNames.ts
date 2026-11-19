@@ -23,14 +23,12 @@ function names(): Map<string, string> {
   return byFolder;
 }
 
-/** The npm name `packages/<folder>` publishes as, e.g. `ui` → `@jgengine/ui`. */
 export function npmNameOfFolder(folder: string): string {
   const name = names().get(folder);
   if (name === undefined) throw new Error(`packages/${folder} has no package.json`);
   return name;
 }
 
-/** The repo folder under packages/ that publishes `npmName`, e.g. `@jgengine/ui` → `ui`. */
 export function folderOfNpmName(npmName: string): string {
   for (const [folder, name] of names()) if (name === npmName) return folder;
   throw new Error(`no folder under packages/ publishes ${npmName}`);

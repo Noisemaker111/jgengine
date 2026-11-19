@@ -20,7 +20,6 @@ export function shellPointerInput(tracker: Pick<ActionStateTracker<string>, "han
       tracker.handleUp(`mouse${event.button}`);
       return held.bound;
     },
-    /** Native mouse chords change buttons through pointermove, including releases outside the canvas. */
     move(event: Pointer & { buttons: number }, worldTarget: boolean) {
       for (const [button, held] of buttons) {
         if (held.pointerId === event.pointerId && (event.buttons & buttonMask(button)) === 0) {

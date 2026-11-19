@@ -6,47 +6,34 @@ import { ROUTE_GATES } from "../route/gates";
  * was carried; a scrappy escape still pays `LINE_MIN`, so a wreck is the only way to lose the lot.
  */
 
-/** A wrecked run keeps nothing; any escape pays at least this share of what it carried. */
 export const LINE_MIN = 0.5;
 /** A perfect escape cannot pay more than this, so the parts ladder stays the long goal. */
 export const LINE_MAX = 1.8;
-/** A clean run down the corridor takes this long; quicker than this pays the full time bonus. */
 export const PAR_SECONDS = 36;
-/** The clock a full time bonus means. */
 export const FLYING_SECONDS = 24;
 
 export const LINE_RULES = {
-  /** Per barricade cleared. */
   barrier: 0.05,
-  /** Finish place in the four-kart field, 1st to 4th. */
   place: [0.3, 0.15, 0.05, 0] as readonly number[],
-  /** Best possible time bonus, at {@link FLYING_SECONDS}. */
   time: 0.2,
-  /** Per stage of folded nose. */
   damageStage: -0.1,
   /** Per crusher hit an armor plate took instead of ending the run. */
   armorSave: -0.1,
 } as const;
 
-/** The run's own numbers, as the line reads them. */
 export interface LineInput {
-  /** Barricades cleared, 0 to the full route. */
   barriers: number;
   /** Finish place in the field, 1-based. */
   place: number;
   /** Run time in seconds. */
   time: number;
-  /** Folded nose stages, 0 to 2. */
   damageStage: number;
-  /** Crusher hits an armor plate absorbed. */
   armorSaves: number;
-  /** Barricades on the track's main line; Row Six's eight by default. */
   gates?: number;
   /** The track's par, seconds; Row Six's {@link PAR_SECONDS} by default. */
   par?: number;
 }
 
-/** The payout multiplier and the lines a results screen shows to explain it. */
 export interface LineReading {
   multiplier: number;
   notes: readonly string[];

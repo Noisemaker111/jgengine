@@ -9,7 +9,6 @@ export const REFITS = {
 export type RefitId = keyof typeof REFITS;
 const inventory = (home: Home) => ({ slots: home.stash.map(item => ({ itemId: kindOf(item), count: 1 })) });
 export function refitMissing(home: Home, id: RefitId) { return missingInputs(inventory(home), REFITS[id].recipe); }
-/** Published crafting owns cost validation/consumption; Marrow owns persistent instance identity and benefits. */
 export function installRefit(home: Home, id: RefitId): Home {
   if (!Object.hasOwn(REFITS, id)) throw new Error("Unknown Marrow refit");
   if (home.activeDive !== null || home.reprintPending) throw new Error("Return to Marrow before refitting");

@@ -41,7 +41,6 @@ function lineTerms(): LoanTerms {
 }
 
 interface Bank {
-  /** The session generation the bank belongs to: `resetSession` makes a new guest map. */
   generation: object;
   ledger: TransactionLedger;
   book: LoanBook;
@@ -49,16 +48,10 @@ interface Bank {
 
 const bankSlot = perContext((): { bank: Bank | null } => ({ bank: null }));
 
-/** Months the park has closed by the start of `day`. */
 export function monthsClosed(day: number): number {
   return Math.floor((day - 1) / MONTH_DAYS);
 }
 
-/**
- * The live loan book, rebuilt from the world's published balance when a session starts. `closed` is
- * how many months have been charged at this moment, which the month's own close passes before it
- * charges.
- */
 function bankOf(ctx: GameContext, closed: number): Bank {
   const slot = bankSlot(ctx);
   if (slot.bank !== null && slot.bank.generation === sessionOf(ctx).guests) return slot.bank;
@@ -87,12 +80,10 @@ function publish(w: WorldModel, book: LoanBook): void {
   w.set("park.loan_owed", book.outstanding(LINE));
 }
 
-/** The park's loan book, for a probe or a test. */
 export function parkLoanBook(ctx: GameContext): LoanBook {
   return bankOf(ctx, monthsClosed(park.of(ctx).num("park.day"))).book;
 }
 
-/** `take_loan` landed: draw a step on the line. The world's action already paid it into the till. */
 export function drawLoan(ctx: GameContext, w: WorldModel): void {
   const closed = monthsClosed(w.num("park.day"));
   const { book } = bankOf(ctx, closed);
@@ -100,7 +91,6 @@ export function drawLoan(ctx: GameContext, w: WorldModel): void {
   publish(w, book);
 }
 
-/** `repay_loan` landed: a step of principal back to the bank. The world's action took it from the till. */
 export function repayLoan(ctx: GameContext, w: WorldModel): void {
   const closed = monthsClosed(w.num("park.day"));
   const { book } = bankOf(ctx, closed);

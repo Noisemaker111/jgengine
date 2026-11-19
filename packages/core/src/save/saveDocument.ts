@@ -12,7 +12,6 @@ import {
   type SaveTimers,
 } from "./saveStore";
 
-/** Current save-format version of {@link GameSaveDocument}. Bump it with {@link GameSaveConfig.migrate} when the shape changes. */
 export const GAME_SAVE_VERSION = 1;
 
 /**
@@ -29,11 +28,9 @@ export interface GameSaveSystem<T = unknown> {
   reset?(): void;
 }
 
-/** The persisted cursor of the world's shared injected RNG, plus the seed that produced it. */
 export interface GameSaveRngState {
   /** Seed the stream was created from, so a reload can rebuild the same sequence. */
   seed: string | number;
-  /** The stream's cursor, or `null` for a generator that carries no state. */
   cursor: number | null;
 }
 
@@ -43,7 +40,6 @@ export interface GameSaveRngState {
  * second per-system format — every system's state lives under `systems[<name>]`.
  */
 export interface GameSaveDocument {
-  /** {@link GAME_SAVE_VERSION} this document was written at. */
   version: number;
   /** Stable game id, so a document names the game it belongs to. */
   game: string;
@@ -53,13 +49,10 @@ export interface GameSaveDocument {
   time: number;
   /** Seconds played at capture. */
   playtime: number;
-  /** The shared RNG's seed and cursor, or `null` when the game injects no shared stream. */
   rng: GameSaveRngState | null;
-  /** One entry per registered system, keyed by its name. */
   systems: Record<string, unknown>;
 }
 
-/** The world's shared injected RNG: its `seed` and the live `stream` whose cursor is persisted. */
 export interface GameSaveRng {
   readonly seed: string | number;
   readonly stream: () => number;
@@ -67,13 +60,9 @@ export interface GameSaveRng {
 
 /** How a {@link createGameSave} is wired. Storage is the narrow injected {@link SaveBackend}, never `localStorage` welded in. */
 export interface GameSaveConfig {
-  /** Where the document is written — {@link localSaveBackend}, {@link memorySaveBackend}, or a remote/cloud backend. */
   readonly backend: SaveBackend;
-  /** Stable game id, stored in every document. */
   readonly game: string;
-  /** Systems whose sections make up the document. More can be added later with `register`. */
   readonly systems?: readonly GameSaveSystem[];
-  /** Save-format version. Default {@link GAME_SAVE_VERSION}. */
   readonly version?: number;
   /** The world's shared injected RNG. Its seed and cursor are stored so the same sequence resumes. */
   readonly rng?: GameSaveRng;
@@ -81,23 +70,12 @@ export interface GameSaveConfig {
   readonly clock?: () => number;
   /** Playtime reader, in seconds. Default `() => 0`. */
   readonly playtime?: () => number;
-  /** Active slot. Default `"default"`. */
   readonly slot?: string;
-  /** Storage namespace. Default `game-save:<game>`. */
   readonly key?: string;
-  /**
-   * Autosave cadence, as caller policy: `false` (default) writes only on an explicit `save()`;
-   * `true` debounces on the default window; an object sets its own debounce and ceiling.
-   */
   readonly autosave?: boolean | SaveAutoConfig;
   /** Injectable clock (ms) for `savedAt`. Default `Date.now`. */
   readonly now?: () => number;
-  /** Injectable timers for autosave. Default the ambient `setTimeout`/`clearTimeout`. */
   readonly timers?: SaveTimers;
-  /**
-   * Upgrade an older document to the current shape. Receives the stored document and the version it
-   * was written at (`0` for a pre-versioned payload) and returns a document at {@link GameSaveConfig.version}.
-   */
   readonly migrate?: (document: unknown, fromVersion: number) => GameSaveDocument;
   /**
    * Where a slot was kept before the game adopted this document. A slot with no document reads
@@ -107,7 +85,6 @@ export interface GameSaveConfig {
    * not come back from them.
    */
   readonly legacy?: GameSaveLegacy;
-  /** Notified on any backend read/write failure or a restored document written by another world. */
   readonly onError?: (error: unknown) => void;
   /** Register a devtools probe under this name so the overlay shows the slot, status and system count. */
   readonly devtoolsName?: string;
@@ -140,13 +117,9 @@ export interface GameSaveLegacy {
  * cursor rides along, so the seed survives the save and a reloaded run continues the same sequence.
  */
 export interface GameSave {
-  /** Register a system after construction; returns an unregister fn. Throws on a duplicate name. */
   register(system: GameSaveSystem): () => void;
-  /** Build the current document from every registered system. Does not write. */
   capture(): GameSaveDocument;
-  /** Write the live state to the active slot now. */
   save(): Promise<SaveResult>;
-  /** Read the active slot and apply every section to its system. An empty, damaged or unreadable slot says so; the first two reset the systems, the last leaves them as they were. */
   load(): Promise<LoadResult<GameSaveDocument>>;
   /**
    * Switch the active slot and load it. By default the live state is flushed into the slot being
@@ -159,21 +132,13 @@ export interface GameSave {
    * source. A damaged or unreadable slot is reported, never shown as empty.
    */
   peek(slot: string): Promise<PeekResult<GameSaveDocument>>;
-  /** Slots this save has written. */
   slots(): Promise<string[]>;
-  /**
-   * Delete one slot's document and drop it from the slot index, so `slots()` and `peek()` stop
-   * seeing it. Resolves `true` when a document was removed and `false` when the slot held nothing.
-   * Deleting the active slot resets the registered systems to a fresh document.
-   */
   deleteSlot(slot: string): Promise<boolean>;
   slot(): string;
   status(): SaveStatus;
   /** Monotonic change counter — bumps on any value or status change. */
   revision(): number;
-  /** Capture the live state and mark it dirty; a caller-policy autosave schedules the write. */
   touch(): GameSaveDocument;
-  /** One hash over every section, the clock and the RNG cursor — what a determinism test compares. */
   digest(): string;
   /** Per-system section hashes, so a caller can see which systems the digest covers. */
   digests(): Record<string, string>;
@@ -199,12 +164,7 @@ function digestOf(value: unknown): string {
   return hashString(stableStringify(value)).toString(36);
 }
 
-/**
- * A stable hash over the state-bearing part of a document — every system section, the world clock
- * and the shared RNG cursor — excluding the wall-clock `savedAt`, which is not state.
- *
- * @capability game-save-digest hash a save document's state for a determinism test or a diff
- */
+/** @capability game-save-digest hash a save document's state for a determinism test or a diff */
 export function gameSaveDigest(document: GameSaveDocument): string {
   return digestOf({
     version: document.version,
@@ -228,14 +188,7 @@ function rngStateOr(value: unknown): GameSaveRngState | null {
   return { seed, cursor: typeof cursor === "number" ? cursor : null };
 }
 
-/**
- * Lift a stored payload into the current {@link GameSaveDocument} envelope: keep its sections, clock
- * and RNG fields where they have the right type, fill the rest, and stamp `game` and `version`. It is
- * what `createGameSave` does to an older document when the game passes no `migrate`, and a game's own
- * `migrate` can call it first and then reshape only the sections that changed.
- *
- * @capability save-envelope-upgrade lift an older or pre-versioned save payload into the current document envelope
- */
+/** @capability save-envelope-upgrade lift an older or pre-versioned save payload into the current document envelope */
 export function upgradeSaveEnvelope(document: unknown, options: { readonly game: string; readonly version: number }): GameSaveDocument {
   const base = isRecord(document) ? document : {};
   const systems = base["systems"];
@@ -269,14 +222,7 @@ function emptyDocument(config: GameSaveConfig, version: number): GameSaveDocumen
   };
 }
 
-/**
- * Create a {@link GameSave}. Register every stateful system once; `capture()` writes one versioned
- * document with a section per system, `save()`/`touch()` persist it through the injected backend
- * (autosave cadence is the caller's), `load()` restores every section and the shared RNG cursor, and
- * `digest()`/`digests()` give a determinism test a hash over the whole state.
- *
- * @capability game-save one versioned save document with per-system sections, named slots, caller-policy autosave, migration and a state digest
- */
+/** @capability game-save one versioned save document with per-system sections, named slots, caller-policy autosave, migration and a state digest */
 export function createGameSave(config: GameSaveConfig): GameSave {
   const version = config.version ?? GAME_SAVE_VERSION;
   const systems = new Map<string, GameSaveSystem>();
@@ -381,7 +327,6 @@ export function createGameSave(config: GameSaveConfig): GameSave {
     }
   }
 
-  /** Apply what a read found: a document or a fresh one; an unreadable slot leaves the systems alone. */
   function applyResult(result: LoadResult<GameSaveDocument>): LoadResult<GameSaveDocument> {
     if (result.kind !== "failed") apply(result.value);
     return result;

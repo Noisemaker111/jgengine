@@ -28,18 +28,15 @@ export type AssetByteSignature = "glb" | "gltf-json" | "html" | "png" | "jpeg" |
  */
 export interface AssetResponseProbe {
   url: string;
-  /** Logical catalog id / alias behind the URL, surfaced in the diagnostic message when known. */
   logicalId?: string;
   /** HTTP status code; `0` or `>= 400` is treated as missing. Omit when the fetch never completed. */
   status?: number;
   statusText?: string;
-  /** `Content-Type` response header, lower-cased or not — matched case-insensitively. */
   contentType?: string | undefined;
   /** The leading bytes of the body (a few hundred is plenty); their signature decides GLB vs HTML vs corrupt. */
   bytes?: Uint8Array;
 }
 
-/** The verdict for one model-asset fetch: its {@link AssetLoadKind} plus a ready-to-log message. */
 export interface AssetLoadDiagnosis {
   kind: AssetLoadKind;
   /** True only for `kind: "ok"` — safe to hand the bytes to a GLTF parser. */
@@ -47,7 +44,6 @@ export interface AssetLoadDiagnosis {
   url: string;
   logicalId?: string;
   byteSignature: AssetByteSignature;
-  /** Human-readable, actionable one-liner naming the asset, the URL, and the likely fix. */
   message: string;
 }
 
@@ -102,11 +98,7 @@ export function readByteSignature(bytes: Uint8Array): AssetByteSignature {
   return "unknown";
 }
 
-/**
- * The `assets pull` target that provides a served URL: `/models/<pack>/…` is `<pack>`,
- * `/models/library/<category>/<name>/…` is `model:<category>/<name>`. Null for a URL outside those trees.
- * @internal
- */
+/** @internal */
 export function pullTargetForUrl(url: string): string | null {
   const parts = (url.split(/[?#]/)[0] ?? url).split("/").filter((part) => part !== "");
   const at = parts.findIndex((part) => part === "models" || part === "materials" || part === "sprites");
@@ -117,7 +109,6 @@ export function pullTargetForUrl(url: string): string | null {
   return parts[at + 1] === "imported" ? null : parts[at + 1]!;
 }
 
-/** The one fix line a missing file gets: the command that serves it. */
 function missingFix(url: string): string {
   const target = pullTargetForUrl(url);
   if (target === null) return "Check the path: nothing under models/, materials/ or sprites/ provides it.";

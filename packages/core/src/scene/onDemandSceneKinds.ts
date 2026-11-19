@@ -1,7 +1,7 @@
 /** A heavy built-in system a scene loads only when it uses one of its kinds or generators. */
 export type OnDemandSceneKindId = "city" | "plants" | "landform" | "course";
 
-/** One on-demand system: the kinds and generator ids that need it, and the import that registers them. @internal */
+/** @internal */
 export interface OnDemandSceneKind {
   readonly id: OnDemandSceneKindId;
   readonly kinds: readonly string[];
@@ -57,7 +57,6 @@ export const ON_DEMAND_SCENE_KINDS: readonly OnDemandSceneKind[] = [
   },
 ];
 
-/** What a scene asks of the registries: the kinds its objects use and the generator ids they name. */
 export interface SceneKindNeeds {
   kinds: ReadonlySet<string>;
   generators: ReadonlySet<string>;
@@ -69,7 +68,7 @@ interface NeedsDocument {
   paths: readonly { kind: string }[];
 }
 
-/** The kinds a document's objects use, and the generator ids its markers and the given extras name. @internal */
+/** @internal */
 export function sceneKindNeeds(document: NeedsDocument, generatorIds: Iterable<string> = []): SceneKindNeeds {
   const kinds = new Set<string>();
   const generators = new Set<string>(generatorIds);
@@ -83,7 +82,7 @@ export function sceneKindNeeds(document: NeedsDocument, generatorIds: Iterable<s
   return { kinds, generators };
 }
 
-/** The on-demand systems a scene needs. @internal */
+/** @internal */
 export function onDemandSceneKindsFor(needs: SceneKindNeeds): OnDemandSceneKind[] {
   return ON_DEMAND_SCENE_KINDS.filter(
     (entry) => entry.kinds.some((kind) => needs.kinds.has(kind)) || entry.generators.some((id) => needs.generators.has(id)),

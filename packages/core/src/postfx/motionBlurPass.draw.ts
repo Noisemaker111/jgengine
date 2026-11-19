@@ -6,7 +6,6 @@ import type { MotionBlurConfig } from "@jgengine/core/render/postProcessing";
 import { proxyGeometry } from "./proxyGeometry.draw";
 
 const bodies = new Set<THREE.Object3D>();
-/** What the velocity shader reads: every body shares one plain and one skinned program. */
 const VELOCITY_ATTRIBUTES = ["position"] as const;
 const SKINNED_VELOCITY_ATTRIBUTES = ["position", "skinIndex", "skinWeight"] as const;
 
@@ -22,7 +21,7 @@ export function registerMotionBlurBody(root: THREE.Object3D): () => void {
   };
 }
 
-/** The registered bodies, for tests and the velocity prepass. @internal */
+/** @internal */
 export function motionBlurBodies(): ReadonlySet<THREE.Object3D> {
   return bodies;
 }
@@ -64,7 +63,7 @@ const velocityFragment = /* glsl */ `
   }
 `;
 
-/** The blur itself: camera reprojection everywhere, a body's own motion where the prepass drew one. @internal */
+/** @internal */
 export function motionBlurFragment(samples: number): string {
   return /* glsl */ `
   uniform sampler2D tDiffuse;
@@ -135,11 +134,7 @@ interface VelocityProxy {
   seen: number;
 }
 
-/**
- * Camera and per-object motion blur. A small prepass draws only the registered bodies that moved,
- * into a velocity target; the blur then reprojects the rest of the frame through last frame's camera.
- * @internal
- */
+/** @internal */
 export class MotionBlurPass extends Pass {
   readonly material: THREE.ShaderMaterial;
   readonly velocity: THREE.WebGLRenderTarget;
@@ -275,7 +270,6 @@ export class MotionBlurPass extends Pass {
     }
   }
 
-  /** Put every visible mesh of a registered body into the velocity scene, with last frame's matrix. */
   private gatherBodies(): void {
     this.velocityScene.clear();
     this.active.length = 0;

@@ -4,9 +4,7 @@
  * slip are left out: they are a few percent of a road tyre's force and cancel across an axle.
  */
 export interface MagicFormulaTireCoefficients {
-  /** Nominal load `Fz0`, N. */
   fnomin: number;
-  /** Unloaded radius, m: scales the pneumatic trail. */
   unloadedRadius: number;
   pcx1: number;
   pdx1: number;
@@ -21,7 +19,6 @@ export interface MagicFormulaTireCoefficients {
   pky2: number;
   pky3: number;
   pky4: number;
-  /** Camber stiffness per load at nominal load, 1/rad (negative in the TNO sign). */
   pky6: number;
   pky7: number;
   qbz1: number;
@@ -34,16 +31,10 @@ export interface MagicFormulaTireCoefficients {
   qez2: number;
   qez3: number;
   qez4: number;
-  /** Friction scales `λμx`, `λμy`: a road surface or a test track against the rig the file was fitted on. */
   lmux: number;
   lmuy: number;
 }
 
-/**
- * The TNO 205/60 R15 passenger-car tyre (`TNO_car205_60R15.tir`, the set in Pacejka, *Tire and Vehicle Dynamics*,
- * 3rd ed., 2012, Appendix 3), dry asphalt, 4000 N nominal load: μx ≈ 1.04, μy ≈ 0.88, about 53 kN/rad of
- * cornering stiffness at nominal load. The reference cars run it scaled by `λμ = 1.04` for a dry test track.
- */
 export const TNO_205_60R15_TIRE: Readonly<MagicFormulaTireCoefficients> = {
   fnomin: 4000,
   unloadedRadius: 0.3135,
@@ -89,30 +80,19 @@ export interface VehicleMagicFormulaEffect {
   strength?: number;
   /** Friction scale on both directions, multiplied onto the coefficients' `λμ` (default `1`; a drift game's slippery compound ~`0.4`). */
   grip?: number;
-  /** Coefficients (default {@link TNO_205_60R15_TIRE}); give a whole set or change a few. */
   coefficients?: Partial<MagicFormulaTireCoefficients>;
-  /** Rear-axle coefficients when the rear tyre differs (default the front's). */
   rear?: Partial<MagicFormulaTireCoefficients>;
 }
 
-/** One wheel's Magic Formula lateral curve at its load: `Fy = mu·Fz·sin(c·atan(Bα − e(Bα − atan Bα)))`, `B = stiffness/(c·mu·Fz)`. */
 export interface MagicFormulaWheelCurve {
-  /** Peak lateral friction coefficient. */
   muY: number;
-  /** Peak longitudinal friction coefficient. */
   muX: number;
-  /** Cornering stiffness, N/rad (positive). */
   stiffness: number;
-  /** Shape factor `C`. */
   c: number;
-  /** Curvature factor `E` (`< 1`). */
   e: number;
 }
 
-/**
- * The coefficients a {@link VehicleMagicFormulaEffect} runs on one axle.
- * @internal
- */
+/** @internal */
 export function magicFormulaCoefficients(effect: VehicleMagicFormulaEffect, axle: "front" | "rear"): MagicFormulaTireCoefficients {
   const p = { ...TNO_205_60R15_TIRE, ...effect.coefficients, ...(axle === "rear" ? effect.rear : undefined) };
   const grip = Math.max(0, effect.grip ?? 1);
@@ -142,10 +122,7 @@ export function magicFormulaWheel(p: Readonly<MagicFormulaTireCoefficients>, fz:
   return { muY, muX, stiffness, c: Math.max(0.5, p.pcy1), e };
 }
 
-/**
- * Pneumatic trail at load `fz` and slip `alpha`, m: how far behind the contact centre the lateral force acts (Magic Formula 6.1 `t`).
- * @capability tyre-pneumatic-trail the Magic Formula pneumatic trail at a load and slip, the lever of a tyre's self-aligning torque
- */
+/** @capability tyre-pneumatic-trail the Magic Formula pneumatic trail at a load and slip, the lever of a tyre's self-aligning torque */
 export function magicFormulaTrail(p: Readonly<MagicFormulaTireCoefficients>, fz: number, alpha: number): number {
   const fz0 = Math.max(1, p.fnomin);
   const load = Math.max(0, fz);

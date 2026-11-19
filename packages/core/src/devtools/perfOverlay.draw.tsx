@@ -11,27 +11,22 @@ import { countSceneNodes } from "./frameSampler.view";
 
 /** Frames the FPS graph keeps. */
 export const PERF_OVERLAY_FRAMES = 120;
-/** Scene nodes are counted at most this often: a traversal walks the whole scene. */
 const NODE_COUNT_MS = 1000;
-/** Costliest subsystems shown. */
 const TOP_SYSTEMS = 4;
 
-/** What the overlay draws, filled in place by {@link PerfOverlayProbe} and read by {@link PerfOverlay}. */
 export interface PerfOverlaySample {
   /** Frame intervals in milliseconds, a ring of {@link PERF_OVERLAY_FRAMES}. */
   intervals: Float32Array;
-  /** Next write index into `intervals`. */
   head: number;
   frames: number;
   draws: number;
   triangles: number;
   nodes: number | null;
   programs: number | null;
-  /** The costliest CPU systems over the last frames, from the frame breakdown. */
   systems: NamedCost[];
 }
 
-/** A fresh sample for one overlay. @internal */
+/** @internal */
 export function createPerfOverlaySample(): PerfOverlaySample {
   return { intervals: new Float32Array(PERF_OVERLAY_FRAMES), head: 0, frames: 0, draws: 0, triangles: 0, nodes: null, programs: null, systems: [] };
 }
@@ -44,12 +39,7 @@ export function overlayFps(sample: PerfOverlaySample): number {
   return total <= 0 ? 0 : (count * 1000) / total;
 }
 
-/**
- * Draw-side form of {@link PerfOverlayProbe}: samples frame times, draws, triangles, nodes, linked
- * programs and the costliest subsystems into `sample`, and installs the frame breakdown on this
- * renderer while no breakdown is already live.
- * @internal
- */
+/** @internal */
 export function perfOverlayProbeDraw(sample: PerfOverlaySample): EngineDraw {
   let last: number | null = null;
   let counted = 0;
@@ -90,11 +80,7 @@ export function perfOverlayProbeDraw(sample: PerfOverlaySample): EngineDraw {
   };
 }
 
-/**
- * Samples the live scene for the F3 overlay: frame times, draws, triangles, nodes, linked programs and
- * the costliest subsystems. It installs the frame breakdown while open when the dev telemetry has not,
- * and removes what it installed on close. Mount inside the Canvas. @internal
- */
+/** @internal */
 export function PerfOverlayProbe({ sample }: { sample: PerfOverlaySample }): ReactElement | null {
   useEngineDraw(() => perfOverlayProbeDraw(sample), [sample]);
   return null;

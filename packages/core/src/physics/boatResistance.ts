@@ -1,7 +1,5 @@
-/** Kinematic viscosity of sea water at 15 °C (ITTC 7.5-02-01-03), m²/s. */
 export const SEA_WATER_KINEMATIC_VISCOSITY = 1.18831e-6;
 
-/** A flat-plate friction line for the viscous term. */
 export type FrictionLine = "ittc1957" | "schoenherr";
 
 /**
@@ -24,46 +22,27 @@ export function frictionLineCoefficient(line: FrictionLine, reynolds: number): n
   return cf;
 }
 
-/**
- * Calm-water resistance of a displacement hull, the `resistance` effect of `boatDynamics`. Either a measured total
- * coefficient (`coefficient`, `R = C·½ρ·L·T·U²`, a captive-test or MMG `R'0`), or the terms of Holtrop and Mennen's
- * method: friction from a friction line on the wetted area times the form factor `1 + k`, wave-making and wave-breaking,
- * a bulb near the surface, an immersed transom, appendages and the model–ship correlation allowance. Length and beam
- * come from the boat's tuning; any coefficient left out is estimated from the hull.
- */
 export interface HullResistance {
   /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Measured total resistance coefficient `R/(½ρ·L·T·U²)`; when set, every other term is skipped. */
   coefficient?: number;
-  /** Mean draught, m; `draftForward`/`draftAft` refine it for the bulb and stern terms. */
   draft: number;
   draftForward?: number;
   draftAft?: number;
-  /** Displaced volume, m³ (default `massKg / density`). */
   volume?: number;
-  /** Longitudinal centre of buoyancy forward of 0.5L, percent of L (default `0`). */
   lcb?: number;
-  /** Midship section coefficient (default `0.98`). */
   midshipCoefficient?: number;
-  /** Waterplane area coefficient (default `0.75`). */
   waterplaneCoefficient?: number;
-  /** Friction line (default `"ittc1957"`). */
   frictionLine?: FrictionLine;
   /** Wetted hull area, m²; estimated from the hull when omitted. */
   wettedArea?: number;
   /** Hull form factor `1 + k`; Holtrop's regression when omitted. */
   formFactor?: number;
-  /** Wave-making and wave-breaking resistance by Holtrop–Mennen (default `true`); `false` leaves friction times form factor. */
   waveMaking?: boolean;
-  /** Bulbous bow transverse area at the stem, m², and its centre above the keel, m. */
   bulbArea?: number;
   bulbCentre?: number;
-  /** Immersed transom area at rest, m². */
   transomArea?: number;
-  /** Afterbody shape: −25 pram with gondola, −10 V sections, 0 normal, +10 U sections with Hogner stern (default `0`). */
   sternShape?: number;
-  /** Appendages: wetted area, m², and form factor `1 + k₂`. */
   appendages?: readonly { area: number; formFactor: number }[];
   /** Half angle of entrance, deg; estimated when omitted. */
   entranceAngle?: number;
@@ -71,11 +50,9 @@ export interface HullResistance {
   correlationAllowance?: number;
 }
 
-/** Water for the hydrodynamic terms. */
 export interface BoatWater {
   /** kg/m³ (default `1025`). */
   density?: number;
-  /** Kinematic viscosity, m²/s (default sea water at 15 °C). */
   viscosity?: number;
   /** m/s² (default `9.81`). */
   gravity?: number;

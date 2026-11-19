@@ -42,7 +42,6 @@ export function captureCanvas(gl: CaptureRenderer): string | null {
   }
 }
 
-/** Trigger a browser download of an image data URL (the photo-mode "save" action). */
 export function downloadImage(dataUrl: string, filename = "screenshot.png"): void {
   if (typeof document === "undefined") return;
   const anchor = document.createElement("a");
@@ -51,7 +50,6 @@ export function downloadImage(dataUrl: string, filename = "screenshot.png"): voi
   anchor.click();
 }
 
-/** How long a capture waits for the next frame before reporting none (a covered canvas draws none). */
 const FRAME_WAIT_MS = 1000;
 
 /**
@@ -74,13 +72,7 @@ export function captureNextFrame(gl: CaptureRenderer): Promise<string | null> {
   });
 }
 
-/**
- * In-canvas binder that registers the live renderer for `requestSceneCapture` and
- * `requestSceneThumbnail` (a photo-mode Capture button, a save slot's thumbnail), which wait for this
- * mount and the first painted frame. Mounted inside the game's `WorldOverlay`. Renders nothing.
- *
- * @capability scene-capture-binding expose the live renderer to outside-canvas HUD (photo mode, save thumbnails)
- */
+/** @capability scene-capture-binding expose the live renderer to outside-canvas HUD (photo mode, save thumbnails) */
 export function sceneCaptureBindingDraw(): EngineDraw {
   let unregister: (() => void) | null = null;
   return {
@@ -95,13 +87,7 @@ export function sceneCaptureBindingDraw(): EngineDraw {
   };
 }
 
-/**
- * In-`<Canvas>` binder that registers the live scene for `requestSceneCapture` and
- * `requestSceneThumbnail` (a photo-mode Capture button, a save slot's thumbnail), which wait for this
- * mount and the first painted frame. Mount it inside the game's `WorldOverlay`. Renders nothing.
- *
- * @capability scene-capture-binding expose the live scene to outside-Canvas HUD (photo mode, save thumbnails)
- */
+/** @capability scene-capture-binding expose the live scene to outside-Canvas HUD (photo mode, save thumbnails) */
 export function SceneCaptureBinding(): null {
   const created = useRef<EngineDraw | null>(null);
   if (created.current === null) created.current = sceneCaptureBindingDraw();

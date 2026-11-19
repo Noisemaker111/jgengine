@@ -67,7 +67,7 @@ Sign up with any test email on the local backend, or play as a guest. `bun run t
 covers the web client and `@llmville/game`; `bun --cwd=games/llmville run check-types` and
 `bun --cwd=games/llmville/packages/backend run check-types` check the client and the Convex functions.
 
-All UI draws on Rune-native primitives (`src/ui/`, see `docs/rune-port.md`). The headless play
+All UI draws on Rune-native primitives (`src/ui/`). The headless play
 test `src/ui/play.test.tsx` mounts the real screens and tablet with a stubbed backend and walks
 the game by pressing actions; `proofs/runeUiFixture.tsx` samples any screen's native spec.
 

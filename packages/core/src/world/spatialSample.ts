@@ -14,26 +14,15 @@ import { pointInPolygon, ringBounds } from "./polygon";
  * fallback policy). Nothing silently accepts an invalid point — exhaustion is reported, not hidden.
  */
 
-/** A 3D point `[x, y, z]` — the volume/surface counterpart to {@link Vec2}. */
 export type Point3 = readonly [number, number, number];
 
-/** A sampled point: 2D `[x, z]` or 3D `[x, y, z]`. Every point in one run shares its dimensionality. */
 export type SamplePoint = readonly number[];
 
-/**
- * A geometric region a sampler can draw from. Built-ins cover point sets, rect/box, circle/sphere,
- * annulus/shell, polygon, and weighted composites; {@link customRegion} wraps a caller-defined
- * sampler + bounds. `sample` draws one raw candidate under the region's own distribution policy;
- * `contains` is the membership test reused for include/exclude constraints and rejection.
- */
 export interface SampleRegion<P extends SamplePoint = SamplePoint> {
-  /** 2 for planar regions (`[x, z]`), 3 for volumetric/surface regions (`[x, y, z]`). */
   readonly dimensions: 2 | 3;
   /** True when the region can never yield a point (degenerate size, empty set) — reported, not sampled. */
   readonly isEmpty: boolean;
-  /** Draw one raw candidate using `rng` (may still fail constraints). Consumes a fixed number of draws. */
   sample(rng: () => number): P;
-  /** Membership test on the XZ (or XYZ) footprint — powers include gates and exclude keep-outs. */
   contains(point: P): boolean;
 }
 
@@ -48,11 +37,8 @@ export interface SampleConstraints<P extends SamplePoint = SamplePoint> {
   include?: readonly SampleRegion<P>[];
   /** Candidate must lie outside *every* listed region — the keep-out/exclusion set. */
   exclude?: readonly SampleRegion<P>[];
-  /** Extra caller acceptance test applied last; `false` rejects the candidate. */
   accept?: (point: P) => boolean;
-  /** Optional surface/navmesh projection applied before validation; `null` rejects the candidate. */
   project?: (point: P) => P | null;
-  /** Reject a candidate within this Euclidean distance of an already-accepted point in the same run. */
   minSeparation?: number;
 }
 
@@ -75,23 +61,18 @@ export interface SampleResult<P extends SamplePoint = SamplePoint> {
   readonly ok: boolean;
   /** The accepted point, or the fallback point, or `null` when no fallback applied. */
   readonly point: P | null;
-  /** How many candidates were drawn (0 for an empty region). */
   readonly attempts: number;
-  /** Outcome classification. */
   readonly reason: SampleReason;
   /** True when `point` came from the fallback policy rather than a passing draw. */
   readonly usedFallback: boolean;
 }
 
-/** Inputs for a single {@link samplePoint} draw. */
 export interface SamplePointOptions<P extends SamplePoint = SamplePoint> {
   region: SampleRegion<P>;
   /** Injected deterministic RNG in `[0, 1)`; same stream → same result. */
   rng: () => number;
   constraints?: SampleConstraints<P>;
-  /** Maximum candidates to draw before giving up. Default 30. Bounds the work. */
   maxAttempts?: number;
-  /** What to return on exhaustion. Default `"none"`. */
   fallback?: FallbackPolicy<P>;
   /** Already-placed points the new point must respect `minSeparation` against (batch threads this). */
   placed?: readonly P[];
@@ -132,7 +113,6 @@ class SeparationIndex<P extends SamplePoint> {
     for (let i = 0; i < this.dimensions; i += 1) cell.push(Math.floor(point[i]! / this.cellSize));
     return cell;
   }
-  /** True when `point` sits within `cellSize` of any inserted point. */
   tooClose(point: P): boolean {
     const base = this.cellOf(point);
     const dims = this.dimensions;
@@ -224,28 +204,20 @@ export function samplePoint<P extends SamplePoint>(options: SamplePointOptions<P
   return resolveFallback(options.fallback, last, attempts, "exhausted");
 }
 
-/** Inputs for a {@link sampleBatch} draw of many spaced points. */
 export interface SampleBatchOptions<P extends SamplePoint = SamplePoint> {
   region: SampleRegion<P>;
   rng: () => number;
-  /** How many points to place. */
   count: number;
   constraints?: SampleConstraints<P>;
-  /** Attempt budget **per point**. Default 30. */
   maxAttempts?: number;
 }
 
-/** Structured batch outcome: the placed points plus whether the full count was met. */
 export interface SampleBatchResult<P extends SamplePoint = SamplePoint> {
   /** Accepted points in deterministic draw order. */
   readonly points: readonly P[];
-  /** The requested count. */
   readonly requested: number;
-  /** How many were actually placed (`<= requested`). */
   readonly placed: number;
-  /** True when `placed === requested`. */
   readonly complete: boolean;
-  /** Total candidates drawn across all points. */
   readonly attempts: number;
 }
 
@@ -290,32 +262,22 @@ export function sampleBatch<P extends SamplePoint>(options: SampleBatchOptions<P
   return { points, requested, placed: points.length, complete: points.length === requested, attempts };
 }
 
-// ---------------------------------------------------------------------------
 // Distribution policies
-// ---------------------------------------------------------------------------
 
-/** Fill policy for a circle/ring: `"area"` = area-uniform (even density); `"radial"` = radius-uniform (clumps toward center). */
 export type RadialDistribution = "area" | "radial";
-/** Fill policy for a sphere/shell: `"volume"` = volume-uniform (even density); `"radial"` = radius-uniform. */
 export type VolumeDistribution = "volume" | "radial";
-/** Fill policy for a rect/box: `"uniform"` = even coverage; `"edge"` = biased to a boundary band. */
 export type AreaDistribution = "uniform" | "edge";
 
-// ---------------------------------------------------------------------------
 // 2D region builders
-// ---------------------------------------------------------------------------
 
-/** A weighted member of a {@link weightedRegion} composite. */
 export interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> {
   region: SampleRegion<P>;
   /** Relative selection weight; non-positive entries are never chosen. */
   weight: number;
 }
 
-/** Which way a candidate's chance leans, relative to the avoided positions. */
 export type DistanceBias = "near" | "far" | "none";
 
-/** How sharply distance skews the choice: a shallower or steeper power of the distance. */
 export type DistanceBiasStrength = "subtle" | "moderate" | "strong";
 
 const DISTANCE_EXPONENT: Record<DistanceBiasStrength, number> = { subtle: 0.5, moderate: 1, strong: 2 };
@@ -338,9 +300,7 @@ export function distanceBiasRegion(
   points: readonly Vec2[],
   options: {
     avoid?: readonly Vec2[];
-    /** Default `"none"` — a flat candidate table. */
     bias?: DistanceBias;
-    /** Default `"moderate"`. */
     strength?: DistanceBiasStrength;
     /** Weight floor so no candidate is impossible; default `1e-6`. */
     floor?: number;
@@ -362,12 +322,7 @@ export function distanceBiasRegion(
   return pointSetRegion(points, { weights });
 }
 
-/**
- * A fixed set of candidate points sampled by (optionally weighted) selection — the "spawn point
- * table" region. `contains` is exact membership. Empty when the set is empty.
- *
- * @capability spatial-region-point-set sample from a fixed, optionally weighted candidate point table
- */
+/** @capability spatial-region-point-set sample from a fixed, optionally weighted candidate point table */
 export function pointSetRegion(points: readonly Vec2[], options: { weights?: readonly number[] } = {}): SampleRegion<Vec2> {
   const pool = points.map((p) => [p[0], p[1]] as Vec2);
   const weights = options.weights;
@@ -429,11 +384,6 @@ function radialRadius(rng: () => number, inner: number, outer: number, distribut
   return inner + u * (outer - inner);
 }
 
-/**
- * A filled circle. `"area"` is area-uniform (√-corrected radius, even density); `"radial"` is
- * radius-uniform (clumps toward the center). Angle is drawn first, then radius — matching the common
- * `angle = rng()·2π; r = rng()·R` idiom so migrations keep their stream.
- */
 export function discRegion(center: Vec2, radius: number, options: { distribution?: RadialDistribution } = {}): SampleRegion<Vec2> {
   const distribution = options.distribution ?? "area";
   const r = Math.max(0, radius);
@@ -451,10 +401,6 @@ export function discRegion(center: Vec2, radius: number, options: { distribution
   };
 }
 
-/**
- * A ring (annulus) between `innerRadius` and `outerRadius`. `"area"` fills the band with even
- * density; `"radial"` spreads uniformly in radius. Angle first, then radius.
- */
 export function annulusRegion(
   center: Vec2,
   innerRadius: number,
@@ -503,12 +449,7 @@ export function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> {
   };
 }
 
-/**
- * A composite that first picks one member by weight, then delegates to its sampler — the
- * "weighted subregions" distribution policy. `contains` is true when any member contains the point.
- *
- * @capability spatial-region-weighted compose sub-regions behind a weighted selection policy
- */
+/** @capability spatial-region-weighted compose sub-regions behind a weighted selection policy */
 export function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> {
   const usable = entries.filter((e) => e.weight > 0 && !e.region.isEmpty);
   const dimensions = entries[0]?.region.dimensions ?? 2;
@@ -544,15 +485,9 @@ export function customRegion<P extends SamplePoint>(spec: {
   };
 }
 
-// ---------------------------------------------------------------------------
 // 3D region builders
-// ---------------------------------------------------------------------------
 
-/**
- * An axis-aligned box `[min..max]` in 3D. Uniform density; draws x, y, z in order.
- *
- * @capability spatial-region-box sample uniformly within an axis-aligned 3D box
- */
+/** @capability spatial-region-box sample uniformly within an axis-aligned 3D box */
 export function boxRegion(min: Point3, max: Point3): SampleRegion<Point3> {
   const size: Point3 = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
   return {
@@ -584,12 +519,7 @@ function volumeRadius(rng: () => number, inner: number, outer: number, distribut
   return inner + u * (outer - inner);
 }
 
-/**
- * A filled ball. `"volume"` is volume-uniform (∛-corrected radius); `"radial"` is radius-uniform.
- * Direction is drawn first (two draws), then radius.
- *
- * @capability spatial-region-sphere sample within a filled 3D ball, volume- or radius-uniform
- */
+/** @capability spatial-region-sphere sample within a filled 3D ball, volume- or radius-uniform */
 export function sphereRegion(center: Point3, radius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> {
   const distribution = options.distribution ?? "volume";
   const r = Math.max(0, radius);
@@ -607,12 +537,7 @@ export function sphereRegion(center: Point3, radius: number, options: { distribu
   };
 }
 
-/**
- * A spherical shell between `innerRadius` and `outerRadius`. `"volume"` fills the shell with even
- * density; `"radial"` spreads uniformly in radius. Direction first, then radius.
- *
- * @capability spatial-region-shell sample within a 3D spherical shell, volume- or radius-uniform
- */
+/** @capability spatial-region-shell sample within a 3D spherical shell, volume- or radius-uniform */
 export function shellRegion(
   center: Point3,
   innerRadius: number,
@@ -637,15 +562,11 @@ export function shellRegion(
   };
 }
 
-// ---------------------------------------------------------------------------
 // Stratified sampling
-// ---------------------------------------------------------------------------
 
-/** Inputs for {@link sampleStratified}: a grid over `area` with one jittered point per cell. */
 export interface StratifiedOptions {
   area: Aabb;
   rng: () => number;
-  /** Grid columns (X) and rows (Z). */
   cols: number;
   rows: number;
   /** Cell jitter 0..1 — 0 is a rigid lattice, 1 fills the whole cell. Default 1. */

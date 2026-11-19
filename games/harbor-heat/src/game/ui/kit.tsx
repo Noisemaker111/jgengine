@@ -30,7 +30,6 @@ export type Tone = "amber" | "ink" | "coral";
 const TONE_VARIANT: Record<Tone, string> = { amber: "action", ink: "quiet", coral: "danger" };
 const TONE_TEXT: Record<Tone, string> = { amber: HH.night, ink: HH.cream, coral: HH.night };
 
-/** An enamel stamp button; its text colour follows the enamel. */
 export function Button({ tone = "amber", onPress, children, ...props }: RuneActionProps & { tone?: Tone; onPress?: () => void }) {
   const sound = useMenuSound();
   return (
@@ -39,12 +38,10 @@ export function Button({ tone = "amber", onPress, children, ...props }: RuneActi
   );
 }
 
-/** A printed key on a keyboard or keypad. */
 export function KeyCap({ children }: { children: string }) {
   return <RuneView variant="key"><Text mono size={12} weight={700} color={HH.night} text={children} /></RuneView>;
 }
 
-/** A row of keycaps with a caption, for the control legends under a menu. */
 export function KeyLegend({ items }: { items: readonly { keys: readonly string[]; label: string }[] }) {
   return (
     <Row gap={14}>
@@ -53,13 +50,11 @@ export function KeyLegend({ items }: { items: readonly { keys: readonly string[]
   );
 }
 
-/** The amber-backlit LCD of a phone or pager; the backlight turns coral on an alarm. */
 export function Lcd({ alarm, children, ...props }: RuneViewProps & { alarm?: Live<boolean> }) {
   const fill = alarm === undefined ? HH.lcd : bind(() => (readLive(alarm) ? HH.lcdAlarm : HH.lcd));
   return <RuneView variant="lcd" fill={fill} color={HH.lcdInk} {...props}>{children}</RuneView>;
 }
 
-/** A green enamel street-name sign. */
 export function StreetSign({ text }: { text: Live<string> }) {
   return (
     <RuneView fill={HH.sign} border={{ width: 2, color: HH.cream }} radius={4} padding={[3, 10, 2, 10]} items="center">
@@ -68,24 +63,20 @@ export function StreetSign({ text }: { text: Live<string> }) {
   );
 }
 
-/** A full-screen dim over the city that takes the input; Escape or B runs `back`. */
 export function Scrim({ back, children, ...props }: RuneViewProps & { back?: (() => void) | undefined }) {
   return <RuneView anchor="fill" fill={HH.scrim} modal {...(back === undefined ? {} : { onBack: back })} justify="center" items="center" {...props}>{children}</RuneView>;
 }
 
-/** Desk, phone held sideways, or phone held upright. */
 export function useRoom(): "wide" | "short" | "stacked" {
   const { width, height } = useRuneViewport();
   if (width >= 900 && height >= 560) return "wide";
   return height > width ? "stacked" : "short";
 }
 
-/** Two-digit game clock from the world calendar. */
 export function clockText(hour: number, minute: number): string {
   return `${String(Math.floor(hour)).padStart(2, "0")}:${String(Math.floor(minute)).padStart(2, "0")}`;
 }
 
-/** Whole dollars with thousands: 1420 → "$1,420". */
 export const money = (amount: number): string => `$${Math.round(amount).toLocaleString("en-US")}`;
 
 /** `m:ss` for a countdown in seconds. */
@@ -101,7 +92,6 @@ export function deadlineStage(deadline: { remaining: number; total: number }): "
   return "calm";
 }
 
-/** One read per store version, shared by every bound leaf that reads it in a frame. */
 export function useVersioned<T>(read: (ctx: GameContext) => T): () => T {
   const ctx = useGameContext();
   return useMemo(() => {
@@ -115,7 +105,6 @@ export function useVersioned<T>(read: (ctx: GameContext) => T): () => T {
   }, [ctx]);
 }
 
-/** A bound opacity that dims to `dimTo` once `watch` has not changed for `idleMs`, and stays lit while `hold`. */
 export function useIdleFade(watch: () => string, idleMs: number, dimTo: number, hold: () => boolean = () => false): LiveValue<number> {
   return useMemo(() => {
     let last = "";
@@ -129,7 +118,6 @@ export function useIdleFade(watch: () => string, idleMs: number, dimTo: number, 
   }, []);
 }
 
-/** The click generator for one mounted Harbor menu; its audio closes with the menu. */
 export function useMenuSound(): Pick<GameMenuSound, "play"> {
   const player = useRef<GameMenuSound | null>(null);
   useEffect(() => () => { player.current?.dispose(); player.current = null; }, []);
@@ -138,7 +126,6 @@ export function useMenuSound(): Pick<GameMenuSound, "play"> {
   return api.current;
 }
 
-/** While a counter, a talk or a receipt owns the screen, the touch stick and verbs step aside. */
 export function useScreenTouch(active = true): void {
   const ctx = useGameContext();
   useEffect(() => {
@@ -149,7 +136,6 @@ export function useScreenTouch(active = true): void {
   }, [ctx, active]);
 }
 
-/** A labelled pair on a card: small caption over a bold value. */
 export function Field({ label, value, ink = HH.night }: { label: string; value: Live<string>; ink?: string }) {
   return <RuneView gap={1}><Label text={label} color={ink} /><Text weight={700} color={ink} text={value} /></RuneView>;
 }

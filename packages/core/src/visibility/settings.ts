@@ -10,13 +10,10 @@ export interface CullingSettings {
   readonly enabled: boolean;
   readonly frustumCulling: boolean;
   readonly distanceCulling: boolean;
-  /** Occlusion culling is opt-in and off until proven reliable for the renderer. */
   readonly occlusionCulling: boolean;
   readonly defaultMinRenderDistance: number;
   readonly defaultMaxRenderDistance: number;
-  /** World units the preload region extends beyond the visible frustum, hiding pop-in. */
   readonly preloadMargin: number;
-  /** World-unit band added when re-testing a previously visible object, preventing boundary flicker. */
   readonly hysteresis: number;
 }
 
@@ -33,12 +30,10 @@ export const DEFAULT_CULLING_SETTINGS: CullingSettings = {
 
 export interface StreamingSettings {
   readonly enabled: boolean;
-  /** Extra world units around the camera whose assets are preloaded ahead of visibility. */
   readonly preloadMargin: number;
   /** Idle unload delay; resident-byte pressure can evict unprotected assets sooner. */
   readonly unloadGraceSeconds: number;
   readonly maxLoadsPerFrame: number;
-  /** Maximum unresolved loads, including cancelled work until its loader settles. Zero pauses new loads. */
   readonly maxConcurrentLoads: number;
   readonly maxUnloadsPerFrame: number;
   /** Resident-byte target, enforced on ticks within maxUnloadsPerFrame; protected assets may exceed it. */
@@ -67,7 +62,6 @@ export const DEFAULT_STREAMING_SETTINGS: StreamingSettings = {
  * game can, say, mark a whole "hud" layer alwaysVisible without touching each object.
  */
 export interface ObjectVisibilityOverrides {
-  /** Bypass all render culling — always submitted (UI, skybox, camera-attached, marked always-visible). */
   readonly alwaysVisible?: boolean;
   /** Never auto-unload this object's assets. */
   readonly neverUnload?: boolean;
@@ -78,12 +72,7 @@ export interface ObjectVisibilityOverrides {
   readonly streamingDisabled?: boolean;
   readonly classification?: "static" | "dynamic";
   readonly bounds?: BoundsSpec;
-  /**
-   * Final say on render visibility. Return true/false to force, or undefined to defer to the
-   * standard frustum+distance+occlusion pipeline. Evaluated per relevant camera.
-   */
   readonly customVisibility?: (camera: CameraVisibilityContext) => boolean | undefined;
-  /** Pin the object's assets resident regardless of distance. */
   readonly pinned?: boolean;
 }
 
@@ -103,7 +92,6 @@ export interface ResolvedOverrides {
 
 const EMPTY: ObjectVisibilityOverrides = {};
 
-/** Merge override layers by precedence: earlier arguments win. Pass object, then layer, then scene, then global. */
 export function resolveOverrides(...layers: readonly (ObjectVisibilityOverrides | undefined)[]): ResolvedOverrides {
   const pick = <K extends keyof ObjectVisibilityOverrides>(key: K): ObjectVisibilityOverrides[K] | undefined => {
     for (const layer of layers) {

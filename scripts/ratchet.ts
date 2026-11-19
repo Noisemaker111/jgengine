@@ -13,16 +13,13 @@ import { join } from "node:path";
  */
 
 export interface RatchetFinding {
-  /** Stable identity across runs — what the baseline stores. */
   key: string;
   /** How the finding is shown to a human, e.g. `path/to/file.ts:12`. Defaults to `key`. */
   where?: string;
-  /** Debt group this finding belongs to; a group can carry a ceiling in the baseline. */
   group?: string | undefined;
 }
 
 export interface RatchetBaseline {
-  /** Known offenders, shrink-only. */
   keys: string[];
   /** Most findings a debt group may hold. Lowered as the debt is paid; never raised. */
   ceilings?: Record<string, number> | undefined;
@@ -32,7 +29,6 @@ export interface RatchetSpec {
   name: string;
   baselineRel: string;
   scan: (root: string) => readonly RatchetFinding[];
-  /** Printed under the list of new offenders — what to do instead. */
   guidance: string;
 }
 
@@ -44,11 +40,9 @@ function readBaseline(path: string): RatchetBaseline | null {
 
 /** What a run would report, so a test can judge it without exiting a process. */
 export interface RatchetVerdict {
-  /** Offenders the baseline does not excuse. */
   added: RatchetFinding[];
   /** Baselined keys that no longer appear live and must be committed away. */
   fixed: string[];
-  /** Groups holding more findings than their ceiling allows. */
   overCeilings: Array<{ group: string; limit: number; live: number; findings: readonly RatchetFinding[] }>;
   /** Groups paid below their ceiling, which must be lowered. */
   slackCeilings: Array<{ group: string; limit: number; live: number }>;
@@ -79,7 +73,6 @@ export function evaluateRatchet(
   };
 }
 
-/** Runs a ratchet, writing the baseline instead when `--write` is passed. Exits the process. */
 export function runRatchet(spec: RatchetSpec, root: string, argv: readonly string[]): never {
   const baselinePath = join(root, spec.baselineRel);
   const live = spec.scan(root);

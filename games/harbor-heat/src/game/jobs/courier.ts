@@ -20,7 +20,6 @@ import { grantCred } from "../progression/cred";
 import { earn, spend } from "../cash";
 import { sessionStore, syncSession } from "../session";
 
-/** Authored site positions; the dispatch booth and parcel towers live in `editor.scene.json`. */
 function site(id: string): readonly [number, number] {
   const marker = findEditorMarker(editorLayers, id);
   if (marker === undefined) throw new Error(`harbor-heat scene is missing marker "${id}"`);
@@ -34,12 +33,9 @@ export const DELIVERY_ROUTES = [
   { label: "Sunset spare parts", recipient: "Sunset pit crew", position: site("courier_drop_2"), seconds: 110, payout: 500, hint: "Follow Mainsail south, then take the cross street east to the gold parcel tower." },
 ] as const;
 
-/** The pursuer and the runner the mission tracks by id, whichever body the player is in. */
 const PLAYER_ACTOR = "harbor_player";
 export const THIEF = "parcel_thief";
-/** HHPD tier at which a live courier run is swept: officers working the block, 2 pips. */
 export const COURIER_HEAT_TIER = 2;
-/** The world fact the mission machine reads for that sweep; the heat slice owns the number. */
 const POLICE_TIER_FACT = "police_tier";
 
 function heatSweep() {
@@ -56,28 +52,22 @@ export interface CourierState {
   lastHealth?: number;
   /** Delivery seconds left when the parcel changed hands: what the on-time bonus pays on. */
   handoff?: number;
-  /** What the last contract's boundary settled: the receipt the results card shows. */
   receipt?: CourierReceipt | null;
   /** Published from the session loop, never decided here: `open` while a parcel is carried. */
   phase: "idle" | "running" | "won" | "lost";
-  /** Deliveries that paid — the career tally the route rotation and the rush gate read. */
   delivered: number;
 }
-/** One line of a receipt: what it was for and the cash it moved (negative is a charge). */
 export interface ReceiptLine {
   label: string;
   amount: number;
 }
-/** One contract's settlement, as the mission session's `settle` returned it. */
 export interface CourierReceipt {
   won: boolean;
-  /** Net cash the contract moved: the payout and every extra, less the damage claim and any lost bond. */
   reward: number;
   reason: string | null;
   /** Each line in the order it landed, so the slip shows why the total is what it is. */
   lines: readonly ReceiptLine[];
 }
-/** What the mission session's boundary hands its `settle`: the route it ran, how it closed and its itemized lines. */
 export interface CourierSettlementInput {
   won: boolean;
   route: (typeof DELIVERY_ROUTES)[number];
@@ -85,11 +75,9 @@ export interface CourierSettlementInput {
   settlement: CourierSettlement;
 }
 export const RUSH_BOND = 60;
-/** How hard each service is on its parcel: rush cargo is fragile, a standard box takes half the knocks. */
 const FRAGILITY = { standard: 0.5, rush: 1 } as const;
 /** Condition a parcel loses each second the runner has it. */
 const RUNNER_WEAR = 1.5;
-/** Share of the payout a standard client claims back for a parcel at 0% condition. */
 const DAMAGE_CLAIM = 0.5;
 export function courierDeadline(seconds: number, rush: boolean): number { return rush ? Math.ceil(seconds * 0.35) : seconds; }
 /** Wear on a parcel this step: speed above 35 km/h and every hit the courier takes, scaled by how fragile it is. */
@@ -98,11 +86,6 @@ export function cargoCondition(condition: number, dt: number, speedKmh: number, 
   return Math.max(0, condition - wear * Math.max(0, fragility));
 }
 
-/**
- * What a contract settles to. `lines` is the whole story the receipt shows, the bond paid at the booth
- * included; `carried` is what the boundary still has to pay (the mission pays the contract line itself)
- * and `claim` what it still has to charge.
- */
 export interface CourierSettlement {
   lines: ReceiptLine[];
   carried: number;
@@ -127,11 +110,6 @@ export function courierSettlement(input: { payout: number; rush: boolean; won: b
 }
 export const courierStore = defineStore<CourierState>("harbor.courier", () => ({ phase: "idle", route: 0, remaining: 0, delivered: 0, receipt: null, distance: 0, heading: 0 }));
 
-/**
- * The mission session: a contract opens when a parcel is taken, carries the bonus the run earns on
- * top of the contract's payout, and its boundary banks or loses that bonus. The loop owns which
- * mission is live and how many have closed; the courier store republishes both for the HUD.
- */
 const courierSessions = perContext((ctx: GameContext) => {
   const loop: SessionLoop<never, CourierSettlementInput, CourierReceipt> = createSessionLoop<never, CourierSettlementInput, CourierReceipt>({
     kind: "mission",
@@ -145,7 +123,6 @@ export function courierLoop(ctx: GameContext): SessionLoop<never, CourierSettlem
   return courierSessions(ctx).loop;
 }
 
-/** The loop's state, for the run save section; `restoreCourierLoop` puts a reload back on the same mission. */
 export function courierLoopState(ctx: GameContext): SessionLoopState {
   return courierLoop(ctx).snapshot();
 }
@@ -154,12 +131,6 @@ export function restoreCourierLoop(ctx: GameContext, state: SessionLoopState): v
   courierLoop(ctx).restore(state);
 }
 
-/**
- * The boundary's rule, and the only place a contract pays: a clean delivery banks what the run
- * carried (the time and cargo extras on top of the mission's own payout) and charges the damage
- * claim; a failed one loses it all and the parcel's contraband with it. The contract payout itself
- * is still the mission machine's reward.
- */
 function settleCourier(ctx: GameContext, carried: number, input: CourierSettlementInput): CourierReceipt {
   const { lines, claim } = input.settlement;
   const reward = lines.reduce((sum, line) => sum + line.amount, 0);
@@ -177,14 +148,11 @@ function settleCourier(ctx: GameContext, carried: number, input: CourierSettleme
   return { won: true, reward, reason: null, lines };
 }
 
-/** Republish the loop's own phase into the HUD store; nothing else decides whether a mission is live. */
 function publishCourier(ctx: GameContext, current: CourierState): void {
   const phase = courierLoop(ctx).phase() === "open" ? "running" : current.receipt == null ? "idle" : current.receipt.won ? "won" : "lost";
   courierStore.write(ctx, { ...current, phase });
 }
 
-
-/** Plain read-model for the HUD — the objective, its timer and its counter, copied off the runtime view. */
 export interface CourierObjective {
   title: string;
   label: string;
@@ -365,7 +333,6 @@ function spawnThief(ctx: GameContext): void {
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "PARCEL SNATCHED — CATCH THE RUNNER", kind: "warn" });
 }
 
-/** The runner flees from the player on foot; the pursuit itself is the mission's `pursue` objective. */
 function moveThief(ctx: GameContext, dt: number): void {
   if (courierRuntime(ctx).view()?.objectiveId !== "recover") return;
   const thief = ctx.scene.entity.get(THIEF);
@@ -541,7 +508,6 @@ export function courierPrompts(ctx: GameContext): PositionedPrompt[] {
   } }];
 }
 
-/** Restore the mission machine over a loaded save, then mirror its state into the courier stores. */
 export function restoreCourier(ctx: GameContext): void {
   const snapshot = courierMissionStore.read(ctx);
   if (snapshot !== null) courierRuntime(ctx).restore(snapshot);
@@ -562,7 +528,6 @@ export function restoreCourier(ctx: GameContext): void {
   publishCourier(ctx, courierStore.read(ctx));
 }
 
-/** Old saves gain the authored landmarks once; newer saves keep their placements. */
 export function setupCourierLandmarks(ctx: GameContext): void {
   const points = [DISPATCH, ...DELIVERY_ROUTES.map((route) => route.position)];
   points.forEach(([x, z], i) => {

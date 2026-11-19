@@ -16,7 +16,6 @@ import { createPoseSyncGate, type PoseSyncTuning } from "@jgengine/core/multipla
 import { chunkKeyAt } from "@jgengine/core/runtime/worldChunks";
 import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
 
-/** Structural client seam avoids requiring the engine and game to share a class instance type. */
 export type ConvexGameClient = Pick<ConvexReactClient, "mutation" | "watchQuery">;
 
 export type ConvexGameTransportConfig = {
@@ -284,7 +283,6 @@ const DEFAULT_CONVEX_POSE_TUNING: PoseSyncTuning = {
   rotationEpsilon: 0.01,
 };
 
-/** How long a suppressed pose stream may go quiet before a position-less keep-alive is sent. */
 const KEEP_ALIVE_MS = 10_000;
 
 export function createConvexPresenceSync(

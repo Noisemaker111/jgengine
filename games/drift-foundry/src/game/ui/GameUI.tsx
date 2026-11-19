@@ -29,7 +29,6 @@ function publishSession(ctx: GameContext, session: RunSession) {
   setGamePhase(ctx, snapshot.phase === "running" ? snapshot.paused ? "paused" : "playing" : snapshot.phase === "start" ? "menu" : "ended");
 }
 
-/** Touch pads show on a coarse pointer or a phone-width screen. */
 const coarsePointer = () => typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
 
 export function GameUI() {

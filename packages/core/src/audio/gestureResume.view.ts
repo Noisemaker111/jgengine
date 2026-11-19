@@ -1,13 +1,6 @@
 import type { AudioEngine } from "./audioEngine.view";
 
-/**
- * Resume the audio context on the first real user gesture. Chrome keeps a freshly created
- * `AudioContext` suspended until the page sees a trusted input, so pressing a key, tapping or clicking
- * is the only moment sound may start; the engine then flushes any cue it held. One listener set per
- * game, removed on unmount.
- *
- * @capability gesture-resume unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing
- */
+/** @capability gesture-resume unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing */
 export function installGestureResume(
   engine: Pick<AudioEngine, "resume">,
   target: Pick<Document, "addEventListener" | "removeEventListener"> | null = typeof document === "undefined" ? null : document,

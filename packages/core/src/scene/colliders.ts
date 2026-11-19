@@ -5,9 +5,6 @@ import type { EntityPosition } from "./entityStore";
 export type ColliderPurpose = "physical" | "damage";
 
 /**
- * Collision geometry in entity-local space. `sphere` and `aabb` are analytic; `mesh` carries a
- * prepared triangle mesh so opted-in concave models raycast their real surface while bounds and
- * broadphase keep reading the conservative `halfExtents`.
  * @capability mesh-hitboxes shots pass through holes in concave models — opted-in catalog assets raycast their actual triangles instead of the fitted box.
  * @capability mesh-movement the walking player slides against a mesh collider's compound `boxes` — a capsule walks THROUGH an opted-in archway opening and is stopped by its pillars/lintel instead of one outer box.
  */
@@ -18,11 +15,8 @@ export type ColliderShape =
       kind: "mesh";
       /** Prepared triangle mesh in model space — engine-derived from an opted-in catalog asset, never hand-authored. */
       mesh: PreparedCollisionMesh;
-      /** Uniform model→entity-local scale (same composition as the fitted box). */
       meshScale: number;
-      /** Entity-local translation applied after `meshScale`. */
       meshTranslate: EntityPosition;
-      /** Conservative entity-local AABB of the placed mesh — bounds/broadphase read this exactly like an `aabb`. */
       halfExtents: EntityPosition;
       /**
        * Optional compact entity-local solid decomposition (from the model's `collisionMesh.boxes`, scaled
@@ -38,16 +32,12 @@ export interface ColliderDef {
   name: string;
   purpose: ColliderPurpose;
   shape: ColliderShape;
-  /** Defaults true for `purpose: "damage"`, false for `purpose: "physical"`. */
   damageEligible?: boolean;
-  /** Defaults true — a blocking collider stops a ray at first impact. */
   blocks?: boolean;
 }
 
 export interface EntityColliderSet {
-  /** Single physical collision body (push / obstruction). */
   body?: ColliderDef;
-  /** Named damage hitboxes (zero or more). */
   hitboxes?: readonly ColliderDef[];
 }
 
@@ -63,7 +53,6 @@ export const DEFAULT_ENTITY_HIT_RADIUS = 0.5;
 export const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition = [0.5, 0.5, 0.5];
 /** Matches the shell's fallback actor capsule (~0.7m wide, feet at y=0 to head at ~1.8m). */
 export const DEFAULT_ENTITY_BODY_HALF_EXTENTS: EntityPosition = [0.35, 0.9, 0.35];
-/** Entity-local center of the default body hitbox (half its height above the feet). */
 export const DEFAULT_ENTITY_BODY_OFFSET: EntityPosition = [0, 0.9, 0];
 
 /** @internal */
@@ -151,15 +140,10 @@ export function scaledObjectColliders(scale: readonly [number, number, number]):
  * so the shell can hand its render config straight to the fitting math without a conversion step.
  */
 export interface ModelBodySource {
-  /** Measured model-space bounds from the asset index; fitting requires `dims` with `maxY`. */
   dims?: ModelDims | undefined;
-  /** Uniform render scale. Default `1`. */
   scale?: number;
-  /** Normalize-to-height in world units — fitting composes it exactly like the renderer (`targetHeight / measured height`, multiplied by `scale`). */
   targetHeight?: number;
-  /** Vertical render offset added to the placement Y. Default `0`. */
   y?: number;
-  /** Placement registration. `"center"` (default) centers the footprint and grounds `minY` on the placement point; `"origin"` renders at the raw model origin. */
   anchor?: "center" | "origin";
   /** Opt-in triangle collision mesh extracted at asset reindex; when present, fitting emits a mesh-accurate shape (rays pass through holes in concave models) instead of the fitted box. */
   collisionMesh?: CollisionMeshData;
@@ -168,17 +152,10 @@ export interface ModelBodySource {
 interface FittedBox {
   halfExtents: EntityPosition;
   offset: EntityPosition;
-  /** Composed model→entity-local scale (render scale × normalize) — the mesh shape's `meshScale`. */
   scale: number;
-  /** Entity-local translation mapping model space onto the fitted placement — the mesh shape's `meshTranslate`. */
   meshTranslate: EntityPosition;
 }
 
-/**
- * The entity-local AABB the rendered model actually occupies, from measured dims + render config — the
- * same scale/normalize/anchor math the shell uses to place the mesh, so box equals visual by
- * construction. `null` when the model is unmeasured (`dims`/`maxY` absent) or degenerate.
- */
 function fittedModelBox(model: ModelBodySource): FittedBox | null {
   const dims = model.dims;
   if (dims === undefined || dims.maxY === undefined) return null;
@@ -266,10 +243,7 @@ export function fittedEntityColliders(model: ModelBodySource): EntityColliderSet
   };
 }
 
-/** Blocking physical body fitted to the rendered model's measured bounds — the model-aware replacement
- * for the unit-cube-times-scale guess. `null` when the model is unmeasured.
- * @internal
- */
+/** @internal */
 export function fittedObjectColliders(model: ModelBodySource): EntityColliderSet | null {
   const shape = fittedBodyShape(model);
   if (shape === null) return null;
@@ -299,7 +273,6 @@ export interface MeasuredBounds {
 /** Thin measured axes (decals, blades, flat panels) keep at least this half-extent so the box stays hittable. */
 const MIN_MEASURED_HALF_EXTENT = 0.01;
 
-/** Tight AABB from measured bounds — `null` when inverted, non-finite, or a degenerate point. */
 function measuredBox(bounds: MeasuredBounds): { halfExtents: EntityPosition; offset: EntityPosition } | null {
   const { min, max } = bounds;
   let volume = 0;
@@ -340,10 +313,7 @@ export function measuredEntityColliders(bounds: MeasuredBounds): EntityColliderS
   };
 }
 
-/** Blocking physical body exactly wrapping runtime-measured render bounds — what `reportBounds`
- * stores for an object catalog id. `null` when the bounds are degenerate.
- * @internal
- */
+/** @internal */
 export function measuredObjectColliders(bounds: MeasuredBounds): EntityColliderSet | null {
   const box = measuredBox(bounds);
   if (box === null) return null;
@@ -400,12 +370,7 @@ export function meshEntityColliders(mesh: PreparedCollisionMesh): EntityCollider
   };
 }
 
-/** Blocking physical body raycasting the actual triangles the renderer mounted for an object catalog
- * id — the mesh-accurate counterpart to `measuredObjectColliders`. Movement obstruction stays on the
- * conservative AABB (no `boxes` decomposition at runtime); rays hit the real surface. `null` when
- * degenerate.
- * @internal
- */
+/** @internal */
 export function meshObjectColliders(mesh: PreparedCollisionMesh): EntityColliderSet | null {
   const shape = preparedMeshShape(mesh);
   if (shape === null) return null;
@@ -420,10 +385,7 @@ export function meshObjectColliders(mesh: PreparedCollisionMesh): EntityCollider
   };
 }
 
-/** True when any collider in the set already raycasts real triangles (index-derived mesh shapes win
- * over runtime-measured ones — they are identical on a headless host).
- * @internal
- */
+/** @internal */
 export function hasMeshColliderShape(set: EntityColliderSet | null | undefined): boolean {
   if (set === null || set === undefined) return false;
   if (set.body?.shape.kind === "mesh") return true;

@@ -1,9 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/**
- * Inference app — give each installed GPU card one job (Training, Scraping, or a specific serving
- * model) from its job buttons, or drag its card onto that lane. Replaces the old ratio-based Dashboard: each physical card is a draggable chip, and
- * a card's full stats belong to exactly one job (see `computeAssignments.ts`).
- */
 import { useMemo, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
@@ -64,17 +59,14 @@ interface InstalledCard {
   targetModelId?: string | undefined;
 }
 
-/** A lane's drop target id, carried by `acceptDrop`. */
 type LaneTarget = "undedicated" | "lane:training" | "lane:scraping" | `serving:${string}`;
 
-/** A card on a lane; drag it to another lane to move it. */
 function ComputeChip({ card }: { card: InstalledCard }) {
   return <RuneAction dragValue={card.key} width={180} label={`GPU card ${getHardwareDefinition(card.hardwareModelId).name}, slot ${card.slotIndex + 1}`} tooltip="Drag onto a lane">
     <RackSlot hardwareModelId={card.hardwareModelId} width={180} />
   </RuneAction>;
 }
 
-/** A dashed lane that takes a dropped card. */
 function DropLane({ target, cards, emptyLabel, onDrop }: { target: LaneTarget; cards: InstalledCard[]; emptyLabel: string; onDrop: (cardKey: string, target: LaneTarget) => void }) {
   return <RuneAction acceptDrop={(cardKey) => onDrop(cardKey, target)} label={`Lane ${target}`} gap={8} padding={8} minHeight={76} width={FULL} radius={12}
     border={{ width: 2, color: C.line }} items="start" justify="center" hover="#5fc2a80d">
@@ -82,7 +74,6 @@ function DropLane({ target, cards, emptyLabel, onDrop }: { target: LaneTarget; c
   </RuneAction>;
 }
 
-/** An inset section with its eyebrow label and a figure on the right. */
 function Section({ title, aside, highlight, children }: { title: string; aside?: ReactNode; highlight?: string | undefined; children: ReactNode }) {
   return <Panel shell="inset" width={FULL} {...(highlight === undefined ? {} : { border: { width: 2, color: highlight } })}>
     <Row justify="between" width={FULL}><Label>{title.toUpperCase()}</Label>{aside}</Row>
@@ -94,7 +85,6 @@ function Token({ text, color }: { text: string; color: string }) {
   return <RuneView padding={[3, 8, 3, 8]} radius={999} fill={`${color}1f`}><Text size={10} weight={800} color={color}>{text}</Text></RuneView>;
 }
 
-/** One-of-many control: a row of segments, the active one lit. */
 function Segments<T extends string>({ items, active, label, detail, runnable = () => true, onSelect }: {
   items: readonly T[]; active: T; label: (id: T) => string; detail: (id: T) => string; runnable?: (id: T) => string | null | true; onSelect: (id: T) => void;
 }) {

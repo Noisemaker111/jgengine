@@ -33,7 +33,6 @@ const TERRAIN_BRUSHES: readonly { kind: TerrainBrushKind; label: string; hint: s
   { kind: "ramp", label: "Ramp", hint: "Drag a straight grade A→B" },
 ];
 
-/** Sensible sculpt area when none is authored yet: the document footprint padded, or a 200m square. */
 function defaultTerrainBounds(document: Parameters<typeof editorDocumentBounds>[0]): Aabb {
   const bounds = editorDocumentBounds(document);
   if (bounds === null) return { minX: -100, minZ: -100, maxX: 100, maxZ: 100 };
@@ -170,7 +169,6 @@ function PaintControls({ session, ui, api }: { session: EditorSession; ui: Edito
   );
 }
 
-/** The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls. */
 export function TerrainPanel({ session, ui, api }: { session: EditorSession; ui: EditorUiStore; api: EditorHostApi }) {
   const [bakeStatus, setBakeStatus] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   useStoreVersion(ui, session);

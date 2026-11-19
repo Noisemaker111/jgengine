@@ -4,7 +4,7 @@ import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
 
 type Ref<T> = { current: T };
 
-/** Clears held input synchronously on play-gate transitions; ordinary context swaps retain it. @internal */
+/** @internal */
 export function attachShellControlSuspension({
   ctx, tracker, pointerAxisRef, analogRef, primaryClickRef, cameraDraggingRef, f2HeldRef,
 }: {

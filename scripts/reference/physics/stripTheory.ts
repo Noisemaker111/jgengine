@@ -2,37 +2,26 @@ import type { HullOffsets } from "./hullForm";
 import { MARINE_GRAVITY, SEA_WATER_DENSITY } from "./hullHydrostatics";
 import { sectionHeave, type HalfSection } from "./sectionHydrodynamics";
 
-/** A hull for strip theory: its offsets, the draft it floats at (level trim) and its mass distribution. */
 export interface StripHull {
   offsets: HullOffsets;
-  /** Draft above the baseline, m. */
   draft: number;
-  /** Centre of gravity: along the stations, m, and above the baseline, m. */
   centreOfGravity: readonly [number, number];
-  /** Pitch radius of gyration about G, m. */
   pitchRadius: number;
   density?: number;
   gravity?: number;
-  /** Panels per half-section (default `20`). */
   panels?: number;
 }
 
-/** Heave and pitch in regular head waves at zero speed, per unit wave amplitude, phases relative to the crest at G. */
 export interface HeavePitchResponse {
   frequency: number;
   wavenumber: number;
-  /** Heave amplitude over wave amplitude. */
   heave: number;
-  /** Pitch amplitude over wave slope `k·A`. */
   pitch: number;
-  /** Phase of heave and pitch, rad, behind the wave crest at G. */
   heavePhase: number;
   pitchPhase: number;
-  /** Added mass, damping and restoring of the coupled heave–pitch system at this frequency (SI, about G). */
   coefficients: HeavePitchCoefficients;
 }
 
-/** Heave–pitch hydrodynamic coefficients about G: `[33, 35, 53, 55]` for added mass, damping and restoring, and the rigid-body mass. */
 export interface HeavePitchCoefficients {
   mass: number;
   pitchInertia: number;
@@ -41,12 +30,10 @@ export interface HeavePitchCoefficients {
   restoring: readonly [number, number, number, number];
 }
 
-/** Station positions, half-sections and waterline half-breadths below the draft. */
 export interface StripSections {
   x: readonly number[];
   sections: readonly (HalfSection | undefined)[];
   halfBreadth: readonly number[];
-  /** Displaced volume and its centroid height above the baseline, by sections. */
   volume: number;
   centreOfBuoyancyHeight: number;
 }
@@ -60,10 +47,7 @@ function interpolate(xs: readonly number[], ys: readonly number[], x: number): n
   return ys[ys.length - 1] ?? 0;
 }
 
-/**
- * Cuts a hull's offsets into half-sections below `draft`, waterline at depth 0, keel point on the centreline.
- * @capability strip-theory ship sections below the waterline from a table of offsets
- */
+/** @capability strip-theory ship sections below the waterline from a table of offsets */
 export function stripSections(offsets: HullOffsets, draft: number): StripSections {
   const sections: (HalfSection | undefined)[] = [];
   const halfBreadth: number[] = [];
@@ -112,12 +96,7 @@ function trapezoid(x: readonly number[], f: (i: number) => number): number {
   return sum;
 }
 
-/**
- * Heave and pitch of a hull in regular head waves at zero speed by strip theory (Salvesen–Tuck–Faltinsen, `U = 0`):
- * each section's added mass, damping and diffraction from {@link sectionHeave}, Froude–Krylov force from the incident
- * pressure on the section contour, waterplane restoring, and the coupled heave–pitch equations solved about G.
- * @capability strip-theory heave and pitch response amplitude operators in head waves
- */
+/** @capability strip-theory heave and pitch response amplitude operators in head waves */
 export function heavePitchResponse(hull: StripHull, frequency: number, prepared: StripSections = stripSections(hull.offsets, hull.draft)): HeavePitchResponse {
   const rho = hull.density ?? SEA_WATER_DENSITY;
   const g = hull.gravity ?? MARINE_GRAVITY;

@@ -705,7 +705,6 @@ const ITEM_ID_RULES: readonly [readonly string[], GameIconName][] = [
 
 type KeywordRule = readonly [readonly string[], GameIconName];
 
-/** First rule whose any keyword is a substring of the lowercased value, or null. */
 function matchKeywordRules(rules: readonly KeywordRule[], value: string): GameIconName | null {
   const id = value.toLowerCase();
   for (const [keywords, icon] of rules) {

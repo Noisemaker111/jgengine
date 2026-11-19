@@ -4,12 +4,10 @@ import { join } from "node:path";
 import type { AssetSource, IndexEntry } from "./manifest";
 import { sourceById } from "./sources";
 
-/** Strips the `.svg`/`.png` extension off a pulled sprite/icon filename to get its id suffix. */
 export function keyFromSpriteFile(file: string): string {
   return file.replace(/\.(svg|png)$/i, "");
 }
 
-/** Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`. */
 export function entryForSpriteFile(source: AssetSource, file: string): IndexEntry {
   return {
     id: `${source.id}/${keyFromSpriteFile(file)}`,
@@ -32,7 +30,6 @@ function collectSpriteFiles(dir: string, prefix: string, keepFolders: boolean): 
   return found;
 }
 
-/** Walks a pulled sprite-pack directory and returns one `IndexEntry` per SVG/PNG, deduped by filename. */
 export function indexSpriteSourceDir(source: AssetSource, dir: string): IndexEntry[] {
   const seen = new Set<string>();
   const entries: IndexEntry[] = [];
@@ -87,13 +84,11 @@ export const generatedSpriteIndex = Object.values(generatedSpriteBySource).flat(
 `;
 }
 
-/** Per-source and total counts returned by `reindexSprites`. */
 export interface ReindexSpritesResult {
   perSource: { source: string; count: number }[];
   total: number;
 }
 
-/** Same shape as `reindex` (models) but walks SVG/PNG files and skips dims measurement — sprites have no footprint. */
 export function reindexSprites(spritesDir: string, outDir: string): ReindexSpritesResult {
   mkdirSync(outDir, { recursive: true });
   const perSource: { source: string; count: number }[] = [];

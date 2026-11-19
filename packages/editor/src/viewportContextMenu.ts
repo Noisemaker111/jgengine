@@ -42,14 +42,10 @@ export interface BuildEditorContextMenuInput {
   hitId: string | null;
   selection: readonly string[];
   canPaste: boolean;
-  /** True when at least one selected/hit object has a parent (offers Unparent). */
   canUnparent?: boolean;
 }
 
-/**
- * @internal Selection-aware editor context verbs (#866). Hit/selection → frame/duplicate/delete/copy/prefab;
- * empty ground → place tools + paste when clipboard has content. Shared by viewport and hierarchy rows.
- */
+/** @internal Selection-aware editor context verbs (#866). Hit/selection → frame/duplicate/delete/copy/prefab; empty ground → place tools + paste when clipboard has content. Shared by viewport and hierarchy rows. */
 export function buildEditorContextMenu(input: BuildEditorContextMenuInput): readonly EditorContextAction[] {
   const hasSelection = input.selection.length > 0 || input.hitId !== null;
   if (hasSelection) {

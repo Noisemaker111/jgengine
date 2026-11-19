@@ -6,7 +6,6 @@ import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";
 
 import { MICRO_LABEL } from "./theme";
 
-/** A patch to a single meta key, coalesced under a stable undo key (matches `SchemaInspector`). */
 type MetaPatch = (patch: Record<string, unknown>, coalesce: string) => void;
 
 const fmt = (n: number): string => Math.round(n).toLocaleString();
@@ -53,7 +52,6 @@ function CoverageDensitySlider({
   );
 }
 
-/** One-line summary of a weighted "what fills it" palette: count + the leading item ids. */
 function assetsSummary(entries: readonly WeightedParamEntry[] | undefined): string | null {
   if (entries === undefined || entries.length === 0) return null;
   const ids = entries.map((entry) => entry.item).filter((item) => item.length > 0);

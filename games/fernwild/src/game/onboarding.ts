@@ -28,7 +28,6 @@ const ARTIFACTS = ["artifact_clever", "artifact_hunter", "artifact_massive"] as 
 export const PREY = ["dodo", "lystrosaurus", "phiomia"] as const;
 const TROPHIES = ["broodmother_trophy_gamma", "broodmother_trophy_beta", "broodmother_trophy_alpha"] as const;
 
-/** The nearest shallows from `from`: rings outward until the ground dips under the sea. */
 function nearestWater(ctx: GameContext, from: OnboardingPoint, within: number): OnboardingPoint | null {
   if (inWater(ctx, from)) return from;
   for (let radius = 3; radius <= within; radius += 3) {
@@ -43,7 +42,6 @@ function nearestWater(ctx: GameContext, from: OnboardingPoint, within: number): 
   return null;
 }
 
-/** The mouth of the nearest cave whose artifact the survivor does not carry yet. */
 function nearestCave(ctx: GameContext, from: OnboardingPoint, within: number): OnboardingPoint | null {
   let best: OnboardingPoint | null = null;
   let bestDistance = within;
@@ -60,14 +58,6 @@ function nearestCave(ctx: GameContext, from: OnboardingPoint, within: number): O
   return best;
 }
 
-/**
- * The survivor's path, ARK's first hours as steps. On the beach (the teaching area): punch a tree, gather
- * stone, craft the pick, learn and craft the hatchet, pick berries, drink, tame a dodo. Then out across the
- * island, each step opening the next tier the way ARK's levels do: a stat point, a campfire and cooked
- * meat, a spear, a thatch hut, the Phiomia saddle and a ridden Phiomia, an explorer note, narcotics, a
- * club and a raptor, a cave's artifact, then the three artifacts and the Broodmother. Each step points at
- * the nearest thing to do it with (arrow and minimap star).
- */
 export const FIRST_DAY: OnboardingConfig<GameContext> = {
   id: "first-day",
   title: "Survivor's path",
@@ -280,5 +270,4 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
   },
 };
 
-/** The survivor's path, installed with the game's systems. */
 export const firstDay = createOnboardingSystem(FIRST_DAY, { grantXp: (ctx, _userId, amount) => grantXp(ctx, amount) });

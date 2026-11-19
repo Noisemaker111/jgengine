@@ -33,7 +33,6 @@ export const keybinds: ActionCodesMap = {
   deepwardInteract: ["KeyE"], deepwardFire: ["mouse0"], deepwardReload: ["KeyR"], deepwardCache: ["Tab"],
   deepwardLamp: ["KeyF"], deepwardEat: ["KeyQ"], deepwardLure: ["KeyG"], deepwardScan: ["KeyC"],
 };
-/** What a HUD ammo line reads from the held weapon: the shared runtime's own ammo record. */
 export interface AmmoReadout {
   loaded: number; capacity: number; reserve: number;
   reloading: boolean; reloadProgress: number;
@@ -41,9 +40,7 @@ export interface AmmoReadout {
 export interface View {
   home: Home; dive: Dive | null; mode: "home" | "dive" | "saving" | "blocked" | "reprinting" | "loading";
   panel: "stash" | "cache" | "fabricator" | null; paused: boolean; hint: string; error: string;
-  /** Everything the record keeps about going deeper: body, gear, scans, charted strata, the base. */
   deep: Deep;
-  /** Where the next departure lands; only the rail crawler takes you past receiving. */
   departTo: Stratum;
   rifleUid: string | null;
   ammo: AmmoReadout | null;
@@ -76,11 +73,9 @@ function damageOf(ctx: GameContext): DamageRuntime {
   state.damage ??= createDeepwardDamage(ctx.rng);
   return state.damage;
 }
-/** How far the Fitter sees, how wide its cone is, and how far a search carries. */
 export const FITTER_SIGHT = 12;
 export const FITTER_CONE_DEG = 200;
 export const FITTER_HEARING = 15;
-/** The Fitter's senses: the shared perception service, wired to the station's own sight test. */
 export function createFitterSenses(): PerceptionService {
   return createPerception({
     sightRange: FITTER_SIGHT,
@@ -98,7 +93,6 @@ function sensesOf(ctx: GameContext): PerceptionService {
   state.senses ??= createFitterSenses();
   return state.senses;
 }
-/** The held weapon, retuned to the hand in force so ammo, cadence and reload carry across a swap. */
 function arm(ctx: GameContext, dive: Dive): WeaponSystem {
   const state = runtime(ctx), definition = weaponDefinition(dive);
   if (state.weapon === null) {
@@ -121,18 +115,15 @@ export function ammoOf(weapon: WeaponSystem): AmmoReadout {
     reloading: ammo.reload === "reloading", reloadProgress: ammo.reloadFraction,
   };
 }
-/** A hand swap costs one cycle: the new hand's rate gate restarts, the same wait the L1 had. */
 function restartCadence(weapon: WeaponSystem): void {
   const state = weapon.snapshot();
   weapon.restore({ ...state, cadenceElapsedMs: 0, pendingPull: false });
 }
-/** Forget the dive's weapon: a new Life starts with a fresh magazine in the issued hand. */
 function disarm(ctx: GameContext): void {
   const state = runtime(ctx);
   state.weapon?.dispose();
   state.weapon = null; state.armed = null;
 }
-/** The scanner's codex as the record holds it; rebuilt from the snapshot at each scan. */
 function knows(deep: Deep, id: string): boolean { return Object.hasOwn(deep.codex.discovered, id); }
 /** Tell Marrow's world what it cannot read for itself: a learned growbed, and whether you are home. */
 function liveMarrow(ctx: GameContext): void {
@@ -145,7 +136,6 @@ function feed(deep: Deep, id: "food" | "water", amount: number): Deep {
 function drain(deep: Deep, dt: number, modifier: Record<string, number>): Deep {
   return { ...deep, body: { ...deep.body, values: decayMeters(deep.body.values, BODY, dt, modifier) } };
 }
-/** Marrow's galley tops the body up from its tins and flasks whenever you stand at home. */
 function galley(ctx: GameContext, deep: Deep): { deep: Deep; fed: string | null } {
   const world = marrowOf(ctx);
   let next = deep, fed: string | null = null;
@@ -153,13 +143,11 @@ function galley(ctx: GameContext, deep: Deep): { deep: Deep; fed: string | null 
   if (next.body.values["water"]! < GALLEY_FEEDS_BELOW && world.spend({ "marrow.water": -1 })) { next = feed(next, "water", MEAL.water); fed = "Halloway: drank from the galley."; }
   return { deep: next, fed };
 }
-/** The creatures' senses for this dive, one perception service per species. */
 function creaturesOf(ctx: GameContext): Senses {
   const state = runtime(ctx);
   state.creatures ??= createSenses(species => createSpeciesSenses(species, () => viewStore.read(ctx).dive?.stratum ?? "vault"));
   return state.creatures;
 }
-/** Where the diver steps off a lift: beside the lift in `to` that leads back to `from`. */
 export function arrivalAt(from: Stratum, to: Stratum): Point {
   const spawn = to === "vault" ? STRATUM_SPAWNS.vault ?? VAULT_SPAWN : STRATUM_SPAWNS[to] ?? VAULT_SPAWN;
   const back = LIFTS.find(lift => lift.place === to && lift.to === from);
@@ -170,7 +158,6 @@ export function arrivalAt(from: Stratum, to: Stratum): Point {
   return walkable(at[0], at[2], to) ? at : spawn;
 }
 function rollItemFor(kind: ItemKind, id: string) { return rollItem(kind, 1, `deepward:seed:${id}`, id); }
-/** The stash instances a recipe takes, spent, and the record that results. */
 function payFromStash(home: Home, recipe: Parameters<typeof spendRecipe>[1]): Home {
   return { ...home, stash: spendRecipe(home.stash, recipe), revision: home.revision + 1 };
 }
@@ -194,7 +181,6 @@ function persist(ctx: GameContext, next: Home, run?: RunSnapshot | null, after?:
   state.writes = write.catch(() => undefined);
   return write;
 }
-/** A record write that does not change the persistent section - a checkpoint inside a dive. */
 function checkpoint(ctx: GameContext): Promise<void> {
   return persist(ctx, viewStore.read(ctx).home);
 }
@@ -202,11 +188,9 @@ function checkpoint(ctx: GameContext): Promise<void> {
 export function whenWritten(ctx: GameContext): Promise<void> {
   return runtime(ctx).writes;
 }
-/** The boot read (a shared game-save document is read asynchronously); tests await this. */
 export function whenReady(ctx: GameContext): Promise<void> {
   return runtime(ctx).boot;
 }
-/** The live run as the save's `run` section: what the HUD shows and where the diver stands. */
 function snapshotRun(ctx: GameContext): RunSnapshot {
   const v = viewStore.read(ctx), state = runtime(ctx);
   return {
@@ -221,7 +205,6 @@ function snapshotRun(ctx: GameContext): RunSnapshot {
 function runOf(ctx: GameContext, patch: Partial<RunSnapshot>): RunSnapshot {
   return { ...snapshotRun(ctx), ...patch };
 }
-/** Whether a run section is a dive this build can resume; a corrupt one starts at home instead. */
 function validRun(next: unknown): next is RunSnapshot {
   if (typeof next !== "object" || next === null) return false;
   const run = next as RunSnapshot;
@@ -270,13 +253,11 @@ function syncPlayer(ctx: GameContext, dive: Dive | null): void {
   const weapon = runtime(ctx).weapon;
   ctx.scene.entity.stats.set(ctx.player.userId, "ammo", { current: dive === null || weapon === null ? MAGAZINE : ammoOf(weapon).loaded });
 }
-/** The authored depth behind a carried source: a salvage locker keeps its room, a stopped Fitter its own floor. */
 function sourceDepth(ctx: GameContext, dive: Dive, source: string, kind: ItemKind): number {
   if (source === "fitter") return depthAt(dive.print.drop ?? dive.print.at, "vault");
   const locker = SALVAGE.find(entry => entry.id === source);
   return locker === undefined ? 1 : depthAt(locker.at, "vault");
 }
-/** What E does at a spot: the verb behind the prompt the HUD draws. */
 export type Act =
   | { type: "garage" } | { type: "stash" } | { type: "fabricator" } | { type: "exit" } | { type: "loot" }
   | { type: "lift"; to: Stratum; locked: string | null; crawler: boolean }
@@ -524,9 +505,7 @@ function interact(ctx: GameContext): void {
 }
 /** A node's next yield is its own source (`wire~cold-cable-wire-0`), so each cut rolls its own instance and is taken once. */
 function harvestSource(dive: Dive, node: (typeof NODES)[number]): string { return `${node.yields}~${node.id}-${dive.harvested[node.id] ?? 0}`; }
-/** Salvage from deeper floors rolls at a higher item level. */
 function harvestLevel(stratum: Stratum): number { return STRATA[stratum].pressure + 1; }
-/** Ride a lift: the diver steps off on the next floor, and that floor is charted on the record. */
 function ride(ctx: GameContext, dive: Dive, to: Stratum): void {
   const v = viewStore.read(ctx);
   const arrival = arrivalAt(dive.stratum, to);
@@ -543,11 +522,6 @@ function ride(ctx: GameContext, dive: Dive, to: Stratum): void {
   ctx.game.notices.push({ text: `${STRATA[to].numeral} · ${STRATA[to].name} · ${STRATA[to].metres} m`, tone: crush > 0 ? "deny" : "info" });
   void checkpoint(ctx).catch(() => { /* the next checkpoint retries */ });
 }
-/**
- * Advance the held weapon by `dt` and fold what it fired back into the dive. The shared runtime
- * owns cadence, reload, ammo and the damage call; the game owns the trigger, the world query and
- * what a hit means for the Fitter.
- */
 function shoot(ctx: GameContext, dive: Dive, dt: number, hint: string): { dive: Dive; hint: string; trace: View["trace"] } {
   const weapon = arm(ctx, dive);
   const result = weapon.tick(dt);
@@ -613,7 +587,6 @@ function toggleCache(ctx: GameContext): void {
   viewStore.write(ctx, { ...v, panel, dive: v.dive === null ? null : { ...v.dive, channel: null } });
   if (panel !== null) ungrab();
 }
-/** F: the headlamp. It shows the dark strata and shows you to anything that hunts by sight. */
 function toggleLamp(ctx: GameContext): void {
   const v = viewStore.read(ctx), dive = v.dive;
   if (!playable(ctx) || v.mode !== "dive" || dive === null) return;
@@ -621,7 +594,6 @@ function toggleLamp(ctx: GameContext): void {
   viewStore.write(ctx, { ...v, dive: { ...dive, lamp }, hint: lamp ? "Lamp on / you can see, and you can be seen." : "Lamp off / dark, and harder to find." });
   ctx.game.audio.play("terminal");
 }
-/** Q: eat a ration or drink a flask from the belt, whichever the body wants more. */
 function eat(ctx: GameContext): void {
   const v = viewStore.read(ctx), dive = v.dive;
   if (!playable(ctx) || v.mode !== "dive" || dive === null) return;
@@ -635,7 +607,6 @@ function eat(ctx: GameContext): void {
   viewStore.write(ctx, { ...v, deep: feed(v.deep, meter, MEAL[meter]), dive: { ...dive, belt: { ...dive.belt, [wants]: dive.belt[wants] - 1 } },
     hint: wants === "ration" ? "Ate a ration." : "Drank a flask." });
 }
-/** G: throw a blood lure. Predators go where it lands until it is eaten or dries. */
 function throwLure(ctx: GameContext): void {
   const v = viewStore.read(ctx), dive = v.dive, at = playerAt(ctx);
   if (!playable(ctx) || v.mode !== "dive" || dive === null || at === null) return;
@@ -644,7 +615,6 @@ function throwLure(ctx: GameContext): void {
   const lure = { id: `lure-${dive.id}-${Math.round(dive.elapsed * 10)}`, at: landed, remaining: 25 };
   viewStore.write(ctx, { ...v, dive: { ...dive, belt: { ...dive.belt, lure: dive.belt.lure - 1 }, thrown: [...dive.thrown, lure] }, hint: "Lure thrown / blood in the water. Anything hunting will go to it." });
 }
-/** Scan a codex entry once; a blueprint needs several fragments, a log or a species one. */
 function scanEntry(deep: Deep, entry: string): { deep: Deep; text: string; learned: boolean } {
   const codex = createDeepCodex(deep.codex);
   const known = codex.isDiscovered(entry);
@@ -658,7 +628,6 @@ function scanEntry(deep: Deep, entry: string): { deep: Deep; text: string; learn
   else { text = `${name} / ${def?.meta?.text ?? ""}`; learned = true; }
   return { deep: { ...deep, codex: codex.snapshot() }, text, learned };
 }
-/** C: scan the creature in front of you. A hand's blood teaches the lure. */
 function scanCreature(ctx: GameContext): void {
   const v = viewStore.read(ctx), dive = v.dive, at = playerAt(ctx);
   if (!playable(ctx) || v.mode !== "dive" || dive === null || at === null) return;
@@ -676,7 +645,6 @@ function scanCreature(ctx: GameContext): void {
   ctx.game.notices.push({ text, tone: "success" });
   viewStore.write(ctx, { ...v, deep: scan.deep, hint: text });
 }
-/** Print a learned blueprint at the fabricator from banked salvage. */
 function printGear(ctx: GameContext, gear: Gear): void {
   const v = viewStore.read(ctx);
   if (v.mode !== "home" || v.panel !== "fabricator" || runtime(ctx).save === null) return;
@@ -690,7 +658,6 @@ function printGear(ctx: GameContext, gear: Gear): void {
     void persist(ctx, home, runOf(ctx, { hint: viewStore.read(ctx).hint })).catch((error: unknown) => viewStore.update(ctx, s => ({ ...s, home: v.home, deep: v.deep, error: message(error) })));
   } catch (error) { viewStore.update(ctx, s => ({ ...s, error: message(error) })); }
 }
-/** Build a module in the first free Marrow bay; the world model builds it over time and runs it after. */
 function buildModule(ctx: GameContext, module: Module): void {
   const v = viewStore.read(ctx);
   if (v.mode !== "home" || v.panel !== "fabricator" || runtime(ctx).save === null) return;
@@ -878,10 +845,6 @@ export function initialize(ctx: GameContext): void {
   state.boot = boot(ctx);
 }
 
-/**
- * Read the shared save document into the live systems. Boot, and the title's Continue, both go
- * through the one record: the persistent Marrow section and the run section (a dive in progress).
- */
 async function boot(ctx: GameContext): Promise<void> {
   try {
     if (typeof localStorage === "undefined") throw new Error("Marrow needs browser local storage before a dive can start.");
@@ -924,7 +887,6 @@ function holdAtHome(ctx: GameContext, save: RecordSession, record: RunSnapshot |
   if (recovered.reprintPending) freeze(ctx); else openMarrowTitle(ctx);
 }
 
-/** Continue: put the record's dive (or its home) back on screen and run it. */
 export async function resumeRecord(ctx: GameContext): Promise<void> {
   const save = runtime(ctx).save;
   if (save === null) return;
@@ -934,7 +896,6 @@ export async function resumeRecord(ctx: GameContext): Promise<void> {
   if (mode === "home" || mode === "dive") enterFromTitle(ctx);
 }
 
-/** Put the loaded record on screen: resume the dive it holds, or stand at Marrow again. */
 async function applyRecord(ctx: GameContext, save: RecordSession, record: RunSnapshot | null): Promise<void> {
   const state = runtime(ctx);
   const home = save.home;
@@ -970,7 +931,6 @@ export function openMarrowTitle(ctx: GameContext): void {
   ungrab();
 }
 
-/** Leave the title for the loaded record: the rail is live again. */
 export function enterFromTitle(ctx: GameContext): void {
   const v = viewStore.read(ctx);
   // A press that lands while the record is still being read waits for it rather than being lost.
@@ -979,7 +939,6 @@ export function enterFromTitle(ctx: GameContext): void {
   run(ctx);
 }
 
-/** Re-read the saved record from disk - the title's Continue reads the document, not a flag. */
 export function continueSaved(ctx: GameContext): void {
   const state = runtime(ctx);
   state.boot = state.boot.then(() => boot(ctx)).catch((error: unknown) => {
@@ -988,7 +947,6 @@ export function continueSaved(ctx: GameContext): void {
   });
 }
 
-/** The record session the menu reads and switches. */
 export function recordOf(ctx: GameContext): RecordSession | null {
   return runtime(ctx).save;
 }
@@ -1001,7 +959,6 @@ export async function persistRecord(ctx: GameContext): Promise<void> {
   await persist(ctx, viewStore.read(ctx).home, snapshotRun(ctx));
 }
 
-/** Open a record by slot: switch the document, then put the run it holds on screen. */
 export async function loadRecordSlot(ctx: GameContext, slot: string): Promise<void> {
   const state = runtime(ctx);
   if (state.save === null) return;
@@ -1022,7 +979,6 @@ export async function beginRecordSlot(ctx: GameContext, slot: string, replace = 
   enterFromTitle(ctx);
 }
 
-/** Save the record and stand back at Marrow's title, the way a shift is left. */
 export async function withdrawToTitle(ctx: GameContext): Promise<void> {
   await persistRecord(ctx);
   openMarrowTitle(ctx);
@@ -1178,13 +1134,11 @@ export function tickControls(ctx: GameContext, dt: number): void {
     void checkpoint(ctx).catch(() => { /* the next checkpoint retries; play never stops for a save */ });
   }
 }
-/** Time at Marrow: the body drains slowly, the galley feeds it, and the base's world keeps running. */
 function tickHome(ctx: GameContext, v: View, dt: number): void {
   const fed = galley(ctx, drain(v.deep, dt, { food: HOME_DRAIN, water: HOME_DRAIN }));
   viewStore.write(ctx, { ...v, deep: fed.deep, hint: fed.fed ?? v.hint });
 }
 type ChannelOf = NonNullable<NonNullable<Dive["channel"]>["kind"]>;
-/** Where a channel's target stands, or null once it is gone. */
 function channelSpot(dive: Dive, id: string, kind: ChannelOf): Point | null {
   if (kind === "search") return id === "fitter" ? dive.print.drop : SALVAGE.find(entry => entry.id === id)?.at ?? null;
   if (kind === "harvest") return NODES.find(node => `node:${node.id}` === id)?.at ?? null;
@@ -1193,7 +1147,6 @@ function channelSpot(dive: Dive, id: string, kind: ChannelOf): Point | null {
   if (kind === "zero") return PRINTER_ZERO;
   return null;
 }
-/** A held E that ran its full time: the salvage, supply, scan or pattern it was for. */
 function completeChannel(ctx: GameContext, dive: Dive, deep: Deep, id: string, kind: ChannelOf): { dive: Dive; deep: Deep; hint: string } {
   const deny = (text: string) => { ctx.game.notices.push({ text, tone: "deny" }); return { dive, deep, hint: text }; };
   if (kind === "search") {
@@ -1256,7 +1209,6 @@ export function captureProbe(ctx: GameContext) {
     tankRefit: v.home.refits.includes("tank") ? 1 : 0, reserveRefit: v.home.refits.includes("reserve") ? 1 : 0,
     deaths: v.home.deaths, returns: v.home.extractions, ...depthProbe(ctx, v) };
 }
-/** The descent's numbers for the capture bridge: where, how fed, what is known and built. */
 function depthProbe(ctx: GameContext, v: View) {
   const world = marrowOf(ctx), dive = v.dive, at = playerAt(ctx);
   const alive = dive === null ? [] : Object.values(dive.fauna).filter(creature => creature.place === dive.stratum && creature.health > 0);

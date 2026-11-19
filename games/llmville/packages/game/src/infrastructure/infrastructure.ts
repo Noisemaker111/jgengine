@@ -242,8 +242,6 @@ export function tutorialBenchPosition(
   return anchor === null ? null : { x: anchor.x, z: anchor.z };
 }
 
-// --- Rack menu drag-drop -----------------------------------------------------
-
 export function hardwareModelIdsWithPositiveStock(
   hardwareInventory: Record<string, number>,
 ): HardwareModelId[] {
@@ -258,7 +256,6 @@ export interface RackHardwareDragEndpoints {
   to: RackHardwareTarget;
 }
 
-/** Map a rack-menu drag (`inventory`/`slot` source, `uninstall`/`slot-N` target) to move endpoints. */
 export function rackHardwareDropEndpoints(params: {
   overId: string;
   dragType: "inventory" | "slot";
@@ -284,8 +281,6 @@ export function rackHardwareDropEndpoints(params: {
   return { from, to: { kind: "slot", slot } };
 }
 
-
-/** Fraction of TDP emitted as heat when idle (no active training/serving). */
 export const THERMAL_IDLE_ACTIVITY = 0.25;
 export const THERMAL_AMBIENT_TEMP_C = 22;
 export const THERMAL_MAX_TEMP_C = 100;
@@ -293,10 +288,8 @@ export const THERMAL_TEMP_CURVE_K = 1.35;
 
 const THERMAL_THROTTLE_GRACE = 1.08;
 
-/** How hot a card reads on its slot badge. */
 export type RackHeatBand = "cool" | "warm" | "hot";
 
-/** Heat bands over card temperature (°C): each band starts at its `at`. */
 export const RACK_HEAT_BANDS: readonly ThresholdBoundary<RackHeatBand>[] = [
   { id: "cool", at: Number.NEGATIVE_INFINITY },
   { id: "warm", at: 65 },
@@ -310,9 +303,7 @@ export function rackHeatBand(temperatureC: number): RackHeatBand {
 export interface ThermalState {
   heatLoadKw: number;
   coolingCapacityKw: number;
-  /** heatLoad / capacity; > 1 means under-cooled. */
   utilization: number;
-  /** Multiplier applied to usable compute when under-cooled (<= 1; 1 = no throttle). */
   throttleFactor: number;
   temperatureC: number;
 }
@@ -348,11 +339,9 @@ export function computeThermalState(heatLoadKw: number, coolingCapacityKw: numbe
   };
 }
 
-/** Electrical service capacity (kW) the lab can draw, indexed by purchased grid-hookup level. */
 export const GRID_HOOKUP_CAPACITY_KW = [1.5, 5, 20, 100, 600] as const;
 export const BASE_POWER_CAPACITY_KW = GRID_HOOKUP_CAPACITY_KW[0];
 
-/** Grid hookup as a Ladder: each purchased level is a step whose id is the service capacity it grants. */
 const GRID_HOOKUP_LADDER: readonly ThresholdBoundary<number>[] = GRID_HOOKUP_CAPACITY_KW.map((capacityKw, level) => ({
   id: capacityKw,
   at: level,
@@ -362,7 +351,6 @@ export function gridHookupCapacityKw(level: number): number {
   return tierAt(GRID_HOOKUP_LADDER, Math.round(level))?.id ?? BASE_POWER_CAPACITY_KW;
 }
 
-/** Breaker throttle: 1 within the service limit, else capacity/draw. */
 export function computePowerThrottle(drawKw: number, capacityKw: number): number {
   if (capacityKw <= 0) return drawKw > 0 ? 0 : 1;
   return drawKw <= capacityKw ? 1 : capacityKw / drawKw;
@@ -371,7 +359,6 @@ export function computePowerThrottle(drawKw: number, capacityKw: number): number
 export function isOverCapacity(loadKw: number, capacityKw: number): boolean {
   return loadKw > capacityKw;
 }
-
 
 export type HardwareInventory = Record<HardwareModelId, number>;
 
@@ -406,9 +393,7 @@ export function setHardwareInventoryCount(
   return { ...inv, [id]: Math.max(0, Math.floor(count)) };
 }
 
-/** Rack runtime state values stored on rack documents. */
 export const RACK_STATE_VALUES = ["idle", "training"] as const;
-
 
 export interface RackHardwareDoc {
   rackType: string;
@@ -482,13 +467,11 @@ export type ComputeLane = (typeof COMPUTE_LANE_VALUES)[number];
 
 export interface ComputeAssignment {
   lane: ComputeLane;
-  /** For serving: which model this card serves. Ignored for training/scraping. */
   targetModelId?: string | undefined;
 }
 
 export type ComputeAssignmentMap = Record<string, ComputeAssignment>;
 
-/** Stable empty map for "no game loaded yet" / "no assignments" fallbacks — avoids a fresh literal each render. */
 export const EMPTY_COMPUTE_ASSIGNMENTS: ComputeAssignmentMap = {};
 
 export interface AssignmentRackInput {
@@ -498,7 +481,6 @@ export interface AssignmentRackInput {
 }
 
 export interface LaneComputeStats {
-  /** FP16/BF16 tensor TFLOPS summed across the lane's cards. */
   tflops: number;
   vramGb: number;
   gpuCount: number;
@@ -508,17 +490,12 @@ export interface LaneComputeStats {
 export interface ComputeAssignmentStats {
   training: LaneComputeStats;
   scraping: LaneComputeStats;
-  /** Aggregate of every serving-dedicated card (across all served models). */
   serving: LaneComputeStats;
-  /** Per-model serving stats, keyed by targetModelId. */
   servingByModel: Map<string, LaneComputeStats>;
-  /** Installed cards not assigned to any lane. */
   undedicated: LaneComputeStats;
-  /** Every installed card, regardless of assignment. */
   total: LaneComputeStats;
 }
 
-/** Stable key for a physical slot; assignments are stored under this. */
 export function assignmentKey(rackId: string, slotIndex: number): string {
   return `${rackId}:${slotIndex}`;
 }
@@ -591,12 +568,6 @@ export function computeAssignmentStats(
 
   return stats;
 }
-
-/**
- * Per-rack, per-card thermal model (v3). Heat and cooling are rack-local;
- * no neighbor bleed, no site-wide temperature.
- */
-
 
 export interface RackThermalInput {
   id: string;
@@ -711,7 +682,6 @@ export function computeAllRackThermalStatesV3(
   return racks.map((rack) => computeRackThermalStateV3(rack, options));
 }
 
-/** Weighted site throttle: sum of per-rack TFLOPs × rack throttle / total TFLOPs. */
 export function computeWeightedSiteRackThrottle(
   rackStates: readonly RackThermalStateV3[],
   rackTflops: Record<string, number>,
@@ -756,7 +726,6 @@ export interface RackSiteThermalSummary {
   powerThrottle: number;
 }
 
-/** Site-level thermal + power from per-rack v3 model (shared by serving + scene summary). */
 export function summarizeRackSiteThermal(
   racks: readonly RackThermalInput[],
   options: {
@@ -802,7 +771,6 @@ export function summarizeRackSiteThermal(
   };
 }
 
-
 export interface RackSnapshot {
   rackId: string;
   rackType: string;
@@ -826,11 +794,6 @@ export function rackThermalInputs(racks: readonly RackSnapshot[]): RackThermalIn
     installedCoolerId: rack.installedCoolerId,
   }));
 }
-
-/**
- * Install / uninstall rack-mounted coolers (mirrors rack hardware spare-pool pattern).
- */
-
 
 export type InstallCoolerOutcome =
   | { ok: true; nextInventory: RackCoolingInventory; coolerId: RackCoolingUnitId }

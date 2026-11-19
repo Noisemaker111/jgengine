@@ -1,53 +1,40 @@
-/** Piecewise-linear map from a signal value to an output value; points in ascending input order, ends clamp. */
 export type FeedbackCurve = readonly (readonly [number, number])[];
 
-/** One wire from a sim signal to a named output. */
 export interface FeedbackRoute<TSignal extends string, TTarget extends string> {
   signal: TSignal;
   target: TTarget;
-  /** Signal → output mapping (default identity). */
   curve?: FeedbackCurve;
-  /** Units/s the routed value may rise (default `Infinity`: follows instantly). */
   attack?: number;
-  /** Units/s the routed value may fall (default `attack`). */
   release?: number;
 }
 
-/** A one-shot fired when a signal crosses a threshold (landing thud, gear-change clunk, impact rumble). */
 export interface FeedbackEvent<TSignal extends string> {
   id: string;
   signal: TSignal;
-  /** Fires when the signal rises to or above this value from below it. */
   threshold: number;
   /** Seconds before the same event may fire again (default `0`). */
   cooldown?: number;
 }
 
-/** Config for {@link createFeedbackMixer}. */
 export interface FeedbackMixerConfig<TSignal extends string, TTarget extends string> {
   routes: readonly FeedbackRoute<TSignal, TTarget>[];
-  /** How routes landing on the same target combine (default `"sum"`). */
   combine?: Partial<Record<TTarget, "sum" | "max">>;
-  /** Value a target starts from before routes add to it (default `0`). */
   base?: Partial<Record<TTarget, number>>;
   events?: readonly FeedbackEvent<TSignal>[];
 }
 
-/** Serializable mixer state: smoothed route values, last signal per event, and event cooldowns. */
 export interface FeedbackMixerState {
   routes: number[];
   eventSignals: number[];
   cooldowns: number[];
 }
 
-/** Maps sim telemetry to presentation parameters through declared routes, curves and smoothing. */
 export interface FeedbackMixer<TSignal extends string, TTarget extends string> {
   /**
    * Advance by `dt` with this tick's signals and return every target's value. The returned record is reused
    * between calls, so read it before the next update. Missing signals read as `0`.
    */
   update(dt: number, signals: Readonly<Partial<Record<TSignal, number>>>): Readonly<Record<TTarget, number>>;
-  /** True when event `id` fired on the last update. */
   fired(id: string): boolean;
   value(): Readonly<Record<TTarget, number>>;
   retune(next: FeedbackMixerConfig<TSignal, TTarget>): void;
@@ -56,7 +43,6 @@ export interface FeedbackMixer<TSignal extends string, TTarget extends string> {
   reset(): void;
 }
 
-/** Sample a {@link FeedbackCurve}; an empty curve is the identity. */
 export function sampleFeedbackCurve(curve: FeedbackCurve | undefined, x: number): number {
   if (curve === undefined || curve.length === 0) return x;
   const first = curve[0]!;

@@ -13,7 +13,6 @@
 import type { WeightedParamEntry } from "../generator/paramSchema";
 import { pickWeighted } from "../random/pick";
 
-/** A building class a zone mix can weight — drives lot size, floors, setback, and massing. */
 export type CityLotClass =
   | "tower"
   | "slab"
@@ -26,7 +25,6 @@ export type CityLotClass =
   | "silo"
   | "warehouse";
 
-/** All classes, for schema hints and validation. */
 export const CITY_LOT_CLASSES: readonly CityLotClass[] = [
   "tower",
   "slab",
@@ -40,49 +38,31 @@ export const CITY_LOT_CLASSES: readonly CityLotClass[] = [
   "warehouse",
 ];
 
-/** Zone band a lot falls in: dense core, middle ring, or the district edge. */
 export type CityZoneBand = "core" | "mid" | "edge";
 
-/** How the zone metric maps to bands. */
 export type CityZoneProfile = "core-out" | "inverted" | "uniform";
 
-/**
- * Primitive shapes massing pieces instance — the renderer keeps one InstancedMesh per shape. A
- * `gable` and a `hip` both keep their ridge along the piece's local x; the hip's ridge is half the
- * piece length, its ends sloping down to the eaves.
- */
 export type CityPieceShape = "box" | "gable" | "hip" | "cylinder" | "dome";
 
-/** Palette role a piece colors from (wall/roof/trim/accent map onto the district's style palette). */
 export type CityPieceRole = "wall" | "roof" | "trim" | "accent";
 
-/** One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade. */
 export interface CityLotPiece {
   shape: CityPieceShape;
-  /** Piece-center offset from the lot center; y is the piece BASE height above grade. */
   offset: readonly [number, number, number];
-  /** Full extents: width (x), height (y), depth (z). */
   size: readonly [number, number, number];
-  /** Extra local yaw (crossing gables); 0 keeps the ridge along the lot width. */
   rotationY: number;
   role: CityPieceRole;
-  /** Grounded pieces grow a foundation down to the lowest terrain corner under the lot. */
   grounded: boolean;
-  /** Banded walls receive the window-strip treatment in the renderer. */
   banded: boolean;
 }
 
-/** Per-class placement/massing profile. */
 interface ClassProfile {
   /** Frontage width range in meters (before `lotScale`). */
   width: readonly [number, number];
   /** Depth range in meters (before `lotScale`). */
   depth: readonly [number, number];
-  /** Multiplier on the district's `buildingRoadSetback` — estates and farms sit further back. */
   setbackFactor: number;
-  /** Multiplier on the district's `buildingSpacing` — rowhouses nearly touch, farms spread out. */
   spacingFactor: number;
-  /** Floor-count range: development intensity 0 rolls near the low end, 1 near the high end. */
   floors: readonly [number, number];
 }
 
@@ -99,10 +79,10 @@ const CLASS_PROFILES: Record<CityLotClass, ClassProfile> = {
   warehouse: { width: [18, 36], depth: [16, 30], setbackFactor: 0.8, spacingFactor: 1.4, floors: [1, 2] },
 };
 
-/** Classes that form a street wall: dense districts let them claim their whole parcel. @internal */
+/** @internal */
 export const STREETWALL_CLASSES: ReadonlySet<CityLotClass> = new Set(["tower", "slab", "shop", "rowhouse", "warehouse"]);
 
-/** Placement numbers a resolved lot carries out of the class profile. @internal */
+/** @internal */
 export interface ClassPlacement {
   width: number;
   depth: number;
@@ -151,7 +131,7 @@ export function rollClassPlacement(
   };
 }
 
-/** Map a zone metric to a band under a profile; `uniform` rolls a band from the extents instead. @internal */
+/** @internal */
 export function zoneBand(
   metric: number,
   profile: CityZoneProfile,
@@ -174,11 +154,7 @@ export function zoneBand(
 
 const CLASS_SET = new Set<string>(CITY_LOT_CLASSES);
 
-/**
- * Pick a class from a weighted mix; unknown items are ignored, an empty mix falls back to `house`.
- * `bias` multiplies each class's weight (a district's character); when it zeroes every entry the
- * plain mix decides. @internal
- */
+/** @internal */
 export function pickClass(mix: readonly WeightedParamEntry[], roll: number, bias?: Partial<Record<CityLotClass, number>>): CityLotClass {
   const known = mix.filter((e) => CLASS_SET.has(e.item));
   const weightOf = (e: WeightedParamEntry): number => e.weight * (bias?.[e.item as CityLotClass] ?? 1);
@@ -267,7 +243,6 @@ function flatRoofTop(
   }
 }
 
-/** A plain flat cap — deck plus a cornice line — for small masses that need no rooftop plant. */
 function flatCap(pieces: CityLotPiece[], width: number, depth: number, top: number, x = 0, z = 0): void {
   pieces.push(box([x, top, z], [width * 0.96, 0.16, depth * 0.96], "roof"));
   pieces.push(box([x, top, z + depth / 2 - 0.15], [width, 0.5, 0.3], "trim"));
@@ -287,24 +262,20 @@ function streetLevel(pieces: CityLotPiece[], width: number, depth: number, bandH
   pieces.push(box([doorX, bandHeight * 0.8, face + 0.6], [doorW * 1.5, 0.22, 1.3], "accent"));
 }
 
-/** Everything one massing template reads: the lot box, its floors, and the lot's own stream. */
 interface MassingContext {
   w: number;
   d: number;
   floors: number;
   fh: number;
-  /** Total height, floors × floor height. */
   H: number;
   rng: () => number;
   out: CityLotPiece[];
 }
 
-/** One named massing recipe for a class: its pick weight, the lots it suits, and its pieces. */
 interface LotTemplate {
   id: string;
   weight: number;
   fits?: (w: number, d: number, floors: number) => boolean;
-  /** Leaves part of the lot open at grade (a light court, an L's empty corner): rare where blocks fill solid. */
   open?: boolean;
   build: (m: MassingContext) => void;
 }
@@ -680,7 +651,6 @@ const ROWHOUSE_TEMPLATES: readonly LotTemplate[] = [
   },
 ];
 
-/** A detached main body with eaves set back from the lot edges (yards on every side). */
 const body = (m: MassingContext, wf: number, df: number, h = m.H, x = 0, z = 0, role: CityPieceRole = "wall"): readonly [number, number] => {
   const bw = m.w * wf;
   const bd = m.d * df;
@@ -1173,7 +1143,6 @@ const CLASS_TEMPLATES: Record<CityLotClass, readonly LotTemplate[]> = {
   warehouse: WAREHOUSE_TEMPLATES,
 };
 
-/** The named massing templates each class composes from, in pick order. */
 export const CITY_LOT_TEMPLATES: Readonly<Record<CityLotClass, readonly string[]>> = {
   tower: TOWER_TEMPLATES.map((template) => template.id),
   slab: SLAB_TEMPLATES.map((template) => template.id),
@@ -1222,11 +1191,9 @@ export function buildLotPieces(
   return out;
 }
 
-// ---------------------------------------------------------------------------
 // Landmarks — block-scale buildings placed by the landmark pass, NOT rolled per lot.
 // Each takes a whole block, so a city gets a handful of stadium/mall/campus/civic-hall/skyscraper/
 // church footprints several times larger than their neighbours.
-// ---------------------------------------------------------------------------
 
 /**
  * A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone
@@ -1235,10 +1202,8 @@ export function buildLotPieces(
  */
 export type CityLandmarkClass = "hall" | "arena" | "market" | "campus" | "skyscraper" | "church";
 
-/** All landmark classes, for schema hints, validation, and default allow-lists. */
 export const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] = ["hall", "arena", "market", "campus", "skyscraper", "church"];
 
-/** Floor-count range per landmark (height = floors × floorHeight). */
 const LANDMARK_FLOORS: Record<CityLandmarkClass, readonly [number, number]> = {
   hall: [2, 3],
   arena: [3, 5],
@@ -1248,7 +1213,6 @@ const LANDMARK_FLOORS: Record<CityLandmarkClass, readonly [number, number]> = {
   church: [3, 4],
 };
 
-/** Which landmark classes each zone band favours (weighted), like the zone mixes. */
 const LANDMARK_ZONE_MIX: Record<CityZoneBand, readonly { cls: CityLandmarkClass; weight: number }[]> = {
   core: [
     { cls: "hall", weight: 3 },
@@ -1269,7 +1233,7 @@ const LANDMARK_ZONE_MIX: Record<CityZoneBand, readonly { cls: CityLandmarkClass;
   ],
 };
 
-/** Weighted pick of the landmark class a block in `zone` gets, from a roll in [0, 1). @internal */
+/** @internal */
 export function pickLandmarkClass(zone: CityZoneBand, roll: number): CityLandmarkClass {
   const entries = LANDMARK_ZONE_MIX[zone];
   const entry = pickWeighted(() => roll, entries, (e) => e.weight);
@@ -1400,15 +1364,13 @@ export function buildLandmarkPieces(
   }
 }
 
-/** Tree species a district's tree mix can weight — the renderer keeps one canopy mesh per species. */
 export type CityTreeSpecies = "broadleaf" | "conifer" | "palm" | "cypress";
 
-/** All species, for schema hints and validation. */
 export const CITY_TREE_SPECIES: readonly CityTreeSpecies[] = ["broadleaf", "conifer", "palm", "cypress"];
 
 const SPECIES_SET = new Set<string>(CITY_TREE_SPECIES);
 
-/** Pick a species from a weighted mix; unknown items are ignored, an empty mix falls back to broadleaf. @internal */
+/** @internal */
 export function pickSpecies(mix: readonly WeightedParamEntry[], roll: number): CityTreeSpecies {
   const entry = pickWeighted(
     () => roll,

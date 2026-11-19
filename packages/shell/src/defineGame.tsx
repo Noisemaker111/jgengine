@@ -33,20 +33,16 @@ type EngineFields<TAssetRef extends ModelAssetRef> = Omit<
 > & { multiplayer?: GameDefinitionConfig<TAssetRef>["multiplayer"] };
 
 type PresentationFields<TProbe extends ProbeReadings> = Omit<PlayableGame<TProbe>, "game" | "content" | "loop" | "GameUI" | "capture"> & {
-  /** How capture hosts reach play and named screens, and the numbers `capture.probe` reports to proof flows. */
   capture?: GameCaptureConfig<TProbe>;
   content?: GameContextContent;
   loop?: Partial<GameLoop<GameContext>>;
   GameUI?: ComponentType;
-  /** Tunes how the auto-mounted `AuthoredScene` places catalog-id markers into the object store. Default `true`; `excludeKinds` replaces the resolver's mob/boss exclusions, so include those when adding game-owned spawn kinds. Pass `false` when the game places all content itself. */
   scenePlacement?: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions);
   /** What the auto-mounted scene's scatter palette items draw, keyed by palette item id: a GLB (`ModelConfig`, or a string id resolved through the game's asset catalog) or a generator (`{ generator: "plant.grown", params, variants }`, see `ScatterGeneratorItem`). Unmatched items keep the built-in proxy meshes. */
   sceneScatterModels?: Record<string, string | ModelConfig | ScatterGeneratorItem>;
-  /** Most scatter instances the auto-mounted scene draws; past it the foliage thins evenly. Default 20000 — raise it for a whole-island world. */
   sceneScatterBudget?: number;
   /** Palette items whose placements block movement, keyed by palette item id: `{ radius, height }` in metres at scale 1 (see `ScatterSolidSpec`). Unlisted items stay walk-through. */
   sceneScatterSolids?: Readonly<Record<string, ScatterSolidSpec>>;
-  /** Animated species models for cosmetic authored habitats; gameplay actors remain game-owned. */
   sceneFlockModels?: Record<string, string | ModelConfig>;
   /** Visible ground path kinds; omit to draw every non-scatter path, or restrict to keep flight/patrol guides out of world roads. */
   scenePathKinds?: readonly string[];
@@ -69,7 +65,6 @@ function documentSkyOf(doc: EditorDocument | undefined): SkyEnvironmentConfig | 
   return sky === undefined || Object.keys(sky).length === 0 ? undefined : sky;
 }
 
-/** The lamps a scene document places (light markers, environment point lights). */
 function documentLamps(doc: EditorDocument | undefined): LightingConfig | undefined {
   if (doc === undefined) return undefined;
   return lightingFromDocument(doc) ?? (doc.environment?.pointLights === undefined ? undefined : { point: doc.environment.pointLights });

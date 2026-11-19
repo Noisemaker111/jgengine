@@ -9,7 +9,7 @@ import { ErrorReportActions, errorReportContext } from "@jgengine/core/devtools/
 const handledPresentationErrors = new WeakSet<object>();
 const codeLoadFailures = new WeakSet<object>();
 
-/** Marks only a rejected presentation import for page reload; browser module failures are cached. @internal */
+/** @internal */
 export function markPresentationCodeLoadFailure(error: unknown): Error {
   const failure = error instanceof Error ? error : new Error(String(error));
   codeLoadFailures.add(failure);
@@ -71,7 +71,7 @@ type RetryRegistry = ReturnType<typeof createPresentationRetryRegistry>;
 type PresentationRetryScope = { registry: RetryRegistry; fail: (error: unknown, stack?: string) => void; recoveredDraw: () => void };
 const PresentationRetryContext = createContext<PresentationRetryScope | null>(null);
 
-/** Renderer-only loader adapters share the DOM owner without importing their libraries here. @internal */
+/** @internal */
 export function usePresentationRetryScope() {
   return useContext(PresentationRetryContext);
 }
@@ -105,7 +105,7 @@ export function createPresentationDiagnosticOwnership() {
   };
 }
 
-/** Restores an owned recovered surface only after Suspense has attached and revealed it. @internal */
+/** @internal */
 export function createPlaySurfaceFocusOwnership<Owner>() {
   let pending: Owner | null = null;
   return {
@@ -147,7 +147,7 @@ function RecoveryFailure({ ctx, error, retry }: { ctx: GameContext; error: unkno
   );
 }
 
-/** Reports the owning presentation attempt and recovery lifecycle. @internal */
+/** @internal */
 export type PresentationRecoveryEvent = { phase: string; attempt: number; scope: number; sameOwner: boolean; pending: boolean; failed: boolean };
 
 type RecoveryProps = {

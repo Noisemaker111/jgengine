@@ -23,19 +23,12 @@ import { guestFlowState, restoreGuestFlow } from "./sim/guests";
 import { parkProfile } from "./parkProfile";
 import { readScenariosWon } from "./scenarios";
 
-/** The park's save document namespace. Brightway keeps one park, the `park` slot. */
 export const SAVE_KEY = "brightway-park.save";
 export const PARK_SLOT = "park";
-/** The backend key the park's document is written to. */
 export const PARK_ENTRY = `${SAVE_KEY}:${PARK_SLOT}`;
 /** Where the park was written before the shared document; read once and rewritten as a document. */
 export const LEGACY_SAVE_KEY = "brightway-park.save.v1";
 
-/**
- * Where each store the park writes is kept. The engine's own save is off (`save: "none"`): the park
- * writes one shared save document to browser storage, and the world store goes into its `park`
- * section whole.
- */
 export const STORE_POLICY: Readonly<Record<string, { kept: "park-save" | "session"; reason: string }>> = {
   // `park.store.key`; spelled out because this module loads inside park.ts's own import graph.
   "brightway.world": { kept: "park-save", reason: "the whole park - money, rating, structures, loan, scenario, crew orders - saved as `world`" },
@@ -57,12 +50,9 @@ export interface ParkSave {
   staff: StaffState[];
   clock: ClockSnapshot;
   rng?: number | null;
-  /** Every ride's cycle, wear and line. */
   rides: RideSystemSnapshot | null;
   sim: { guestSeq: number; spawnAcc: number };
-  /** The park name the menu card shows. */
   parkName?: string;
-  /** A captured frame of the park, for the menu card. */
   thumbnail?: string;
   /** Seconds of play when the park was saved. */
   playtime?: number;
@@ -84,7 +74,6 @@ function validAgent(value: unknown): value is AgentSnapshot {
   return true;
 }
 
-/** Every instance is a known kind on the lot, inside it, and on cells nothing else covers. */
 function validWorld(world: unknown): world is WorldModelState {
   if (!record(world) || !finite(world["time"]) || !Array.isArray(world["log"])) return false;
   const facts = world["facts"];
@@ -132,7 +121,6 @@ function isGuestPhase(value: unknown): value is GuestPhase {
   return GUEST_PHASES.some((phase) => phase === value);
 }
 
-/** A saved guest whose target, if any, is a structure the saved park still has. */
 function validGuest(value: unknown, structures: ReadonlySet<string>): value is GuestState {
   if (!record(value)) return false;
   const { id, kind, money, visits, busy, phase, targetId, target, agent } = value;
@@ -143,7 +131,6 @@ function validGuest(value: unknown, structures: ReadonlySet<string>): value is G
   return validAgent(agent);
 }
 
-/** A saved janitor posted at a structure the saved park still has. */
 function validStaff(value: unknown, structures: ReadonlySet<string>): value is StaffState {
   if (!record(value)) return false;
   const { id, postId, agent } = value;
@@ -160,7 +147,6 @@ function readSeed(value: unknown): number | null | undefined {
   return typeof value === "number" && Number.isInteger(value) && value >= -0x80000000 && value <= 0x7fffffff ? value : undefined;
 }
 
-/** Validate before touching the live scene. Unreadable saves stay intact; a pre-v4 park is unreadable. */
 export function decodeSave(raw: string): ParkSave | null {
   let parsed: unknown;
   try {
@@ -250,7 +236,6 @@ function savedLine(ctx: GameContext, prefix: string): string {
 
 const UNAVAILABLE = "Save unavailable - browser storage is full or disabled";
 
-/** The park's one slot, as a section of the shared save document. Restoring empties the live park first. */
 function parkSystem(ctx: GameContext): GameSaveSystem<ParkSave> {
   return {
     name: "park",
@@ -271,7 +256,6 @@ interface ParkRecord {
   unreadable: boolean;
 }
 
-/** A park save over a backend: one document, slot `park`, lifting a park an older build wrote at its own key. */
 function createParkSave(ctx: GameContext, backend: SaveBackend): GameSave {
   return createGameSave({
     backend,
@@ -303,7 +287,6 @@ const records = perContext((ctx: GameContext): ParkRecord => {
  * `park` slot, so what the player has unlocked lives in a slot of its own and survives it.
  */
 export const PROFILE_SLOT = "profile";
-/** Where an older build kept the won scenarios; read once and rewritten as the profile's section. */
 export const LEGACY_WON_KEY = "brightway-park.scenarios-won";
 
 interface ParkProfileRecord {
@@ -331,7 +314,6 @@ const profiles = perContext((): ParkProfileRecord => {
   return Object.assign(state, { save });
 });
 
-/** Read the player's profile (the scenarios they have won). Storage that is blocked leaves none won. */
 export async function loadParkProfile(ctx: GameContext): Promise<void> {
   const profile = profiles(ctx);
   const opening = profile.save.load();
@@ -339,12 +321,10 @@ export async function loadParkProfile(ctx: GameContext): Promise<void> {
   await profile.opened;
 }
 
-/** The scenarios this player has won, kept apart from any one park's save. */
 export function scenariosWon(ctx: GameContext): readonly string[] {
   return profiles(ctx).won;
 }
 
-/** Record a won scenario and write the profile; without storage the unlock lasts this session only. */
 export async function recordScenarioWin(ctx: GameContext, id: string): Promise<void> {
   const profile = profiles(ctx);
   if (profile.won.includes(id)) return;
@@ -353,17 +333,14 @@ export async function recordScenarioWin(ctx: GameContext, id: string): Promise<v
   await profile.save.save();
 }
 
-/** The profile document's state digest, for a restore test. */
 export function parkProfileDigest(ctx: GameContext): string {
   return profiles(ctx).save.digest();
 }
 
-/** This context's park document, for the menu card and a digest. */
 export function parkSave(ctx: GameContext): GameSave {
   return records(ctx).save;
 }
 
-/** Browser storage is where the park lives; a host without it (headless, private mode) plays unsaved. */
 const storageReady = (): boolean => defaultKeyValueStorage() !== null;
 
 /**
@@ -391,7 +368,6 @@ export async function savePark(ctx: GameContext): Promise<void> {
   sessionOf(ctx).saveStatus = savedLine(ctx, "Saved");
 }
 
-/** Put a decoded save into a park that `resetPark(ctx, { layout: "blank" })` just emptied. */
 export function applySave(ctx: GameContext, s: ParkSave): void {
   parkProfile.name = s.parkName ?? null;
   parkProfile.thumbnail = s.thumbnail ?? null;

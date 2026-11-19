@@ -1,52 +1,34 @@
 // @skill jgengine-gameplay
-/** A codex/bestiary/lorebook entry the game defines. Discovery state is tracked separately. */
 export interface CodexEntryDef<TMeta = unknown> {
   id: string;
   name: string;
   category?: string;
   description?: string;
-  /** Longer lore for a detail pane. */
   lore?: string;
   /** Icon/image id or glyph the game renders; the engine never picks art. */
   icon?: string;
-  /** Hide name/description/lore until discovered (a spoiler-guarded entry). */
   secret?: boolean;
-  /** Scans needed to learn it: each {@link Codex.scan} adds one, and the last one discovers it. Default 1. */
   fragments?: number;
   meta?: TMeta;
 }
 
-/** A definition plus its discovery state — what UI renders. */
 export interface CodexEntryView<TMeta = unknown> extends CodexEntryDef<TMeta> {
   discovered: boolean;
-  /** Discovery time from the injected clock, or null. */
   discoveredAt: number | null;
-  /** Fragments scanned so far, `fragments` once discovered. */
   scanned: number;
-  /** Fragments needed (the def's `fragments`, default 1). */
   fragments: number;
 }
 
-/** Serializable discovery state — a save blob. */
 export interface CodexSnapshot {
-  /** Entry id → discovery timestamp. */
   discovered: Record<string, number>;
-  /** Entry id → fragments scanned for entries not yet discovered. Absent in saves from before fragments. */
   progress?: Record<string, number>;
 }
 
-/** A codex/bestiary of defined entries with per-player discovery tracking. */
 export interface Codex<TMeta = unknown> {
-  /** Mark an entry discovered; returns the newly-discovered view, or null if unknown or already discovered. */
   discover(id: string): CodexEntryView<TMeta> | null;
-  /**
-   * Scan `count` fragments of an entry (a wreck piece, a creature sighting). Returns the updated view,
-   * whose `discovered` is true once the last fragment lands, or null if the entry is unknown or already learned.
-   */
   scan(id: string, count?: number): CodexEntryView<TMeta> | null;
   isDiscovered(id: string): boolean;
   get(id: string): CodexEntryView<TMeta> | null;
-  /** All entries (optionally filtered to a category) with discovery state, in definition order. Stable identity between changes. */
   list(category?: string): readonly CodexEntryView<TMeta>[];
   categories(): readonly string[];
   discoveredCount(): number;
@@ -58,12 +40,10 @@ export interface Codex<TMeta = unknown> {
   restore(snapshot: CodexSnapshot): void;
 }
 
-/** Options for {@link createCodex}. */
 export interface CodexOptions<TMeta = unknown> {
   entries: readonly CodexEntryDef<TMeta>[];
   /** Injected clock (ms). Default `Date.now`. */
   now?: () => number;
-  /** Fires when an entry is discovered for the first time — wire to a toast/notification. */
   onDiscover?: (entry: CodexEntryView<TMeta>) => void;
 }
 

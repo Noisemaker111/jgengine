@@ -1,18 +1,11 @@
 import type { AudioBusDef, SoundDef } from "./audioFalloff";
 
-/**
- * A gameplay moment the engine reacts to: taking or dealing a hit, a kill, a pickup, an objective,
- * a wave starting, or a refused action. The game names the moment; the engine owns the reaction.
- */
 export type FeedbackCue = "hit" | "hurt" | "kill" | "pickup" | "objective" | "wave" | "deny";
 
-/** Every {@link FeedbackCue}, in a stable order. */
 export const FEEDBACK_CUES: readonly FeedbackCue[] = ["hit", "hurt", "kill", "pickup", "objective", "wave", "deny"];
 
-/** Bus the default feedback cues mix through; the settings menu shows its volume and mute. */
 export const FEEDBACK_CUE_BUS = "sfx";
 
-/** Catalog id a cue plays under: `feel.hit`, `feel.kill`, ... A game sound with that id replaces the default. */
 export function feedbackCueSoundId(cue: FeedbackCue): string {
   return `feel.${cue}`;
 }
@@ -101,7 +94,6 @@ export const DEFAULT_FEEDBACK_CUE_SOUNDS: Readonly<Record<FeedbackCue, SoundDef>
   }),
 };
 
-/** Per-cue override: a replacement sound, or `false` to silence that cue. `false` for the whole map silences all. */
 export type FeedbackCueOverrides = false | Partial<Record<FeedbackCue, SoundDef | false>>;
 
 /**

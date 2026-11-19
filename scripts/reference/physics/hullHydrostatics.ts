@@ -7,20 +7,12 @@ export const SEA_WATER_DENSITY = 1025.9;
 /** Standard gravity, m/s². */
 export const MARINE_GRAVITY = 9.80665;
 
-/**
- * The water a hull sits in, sampled at earth points (`x`, `y` horizontal, `z` up). `submergence` is how far below the
- * free surface a point is (negative above it); `pressure` is the gauge pressure there, Pa. Still water:
- * `submergence = −z`, `pressure = ρ·g·max(0, −z)`.
- */
 export interface HullWater {
   submergence(x: number, y: number, z: number): number;
   pressure(x: number, y: number, z: number): number;
 }
 
-/**
- * Still water with its surface at `level`.
- * @capability hull-hydrostatics still-water pressure field for hull integration
- */
+/** @capability hull-hydrostatics still-water pressure field for hull integration */
 export function stillWater(density = SEA_WATER_DENSITY, gravity = MARINE_GRAVITY, level = 0): HullWater {
   return {
     submergence: (_x, _y, z) => level - z,
@@ -28,17 +20,11 @@ export function stillWater(density = SEA_WATER_DENSITY, gravity = MARINE_GRAVITY
   };
 }
 
-/** Pressure loads and submerged geometry of a posed hull, earth axes. */
 export interface HullLoads {
-  /** Pressure force on the hull, N. */
   force: Float64Array;
-  /** Pressure moment about the earth origin, N·m. */
   moment: Float64Array;
-  /** Submerged volume, m³ (exact for still water). */
   volume: number;
-  /** Centre of the submerged volume, earth axes. */
   centroid: Float64Array;
-  /** Wetted hull area, m². */
   wettedArea: number;
   /** Waterplane area, m², and its centroid and second moments about that centroid (`ixx = ∫y²`, `iyy = ∫x²`). */
   waterplaneArea: number;
@@ -46,15 +32,11 @@ export interface HullLoads {
   waterplaneIxx: number;
   waterplaneIyy: number;
   waterplaneIxy: number;
-  /** Fore-and-aft and athwartships extent of the waterline, m (earth axes). */
   waterlineLength: number;
   waterlineBreadth: number;
 }
 
-/**
- * Creates an empty {@link HullLoads} to pass to {@link HullIntegrator.integrate}.
- * @capability hull-hydrostatics reusable output buffer for hull pressure integration
- */
+/** @capability hull-hydrostatics reusable output buffer for hull pressure integration */
 export function createHullLoads(): HullLoads {
   return {
     force: new Float64Array(3),
@@ -72,22 +54,11 @@ export function createHullLoads(): HullLoads {
   };
 }
 
-/** Integrates water pressure over a hull mesh in any pose. */
 export interface HullIntegrator {
-  /**
-   * Poses the mesh (`earth = rotation · hull + translation`, `rotation` a row-major 3×3) and integrates the water's
-   * pressure over every wetted triangle, cutting triangles exactly where they cross the surface. Writes into `out`.
-   */
   integrate(rotation: ArrayLike<number>, translation: ArrayLike<number>, water: HullWater, out: HullLoads): HullLoads;
 }
 
-/**
- * Creates a {@link HullIntegrator} for a closed, outward-facing mesh. Pressure is taken linear over each (cut) triangle,
- * which is exact for still water, so buoyancy, its centre and the waterplane come straight out of the geometry; the
- * submerged volume and its centroid use the divergence theorem over the wetted surface alone (the waterplane carries
- * none of it). Scratch buffers are allocated once.
- * @capability hull-hydrostatics pressure integration over a hull mesh cut at the free surface
- */
+/** @capability hull-hydrostatics pressure integration over a hull mesh cut at the free surface */
 export function createHullIntegrator(mesh: HullMesh): HullIntegrator {
   const count = mesh.positions.length / 3;
   const earth = new Float64Array(count * 3);
@@ -257,10 +228,7 @@ export function createHullIntegrator(mesh: HullMesh): HullIntegrator {
   };
 }
 
-/**
- * Row-major rotation for heel `phi` (about +x, positive heels to starboard) then trim `theta` (about +y, positive bow down).
- * @capability hull-hydrostatics heel-then-trim rotation matrix in hull axes
- */
+/** @capability hull-hydrostatics heel-then-trim rotation matrix in hull axes */
 export function heelTrimRotation(phi: number, theta: number, out: Float64Array = new Float64Array(9)): Float64Array {
   const cp = Math.cos(phi), sp = Math.sin(phi), ct = Math.cos(theta), st = Math.sin(theta);
   // R = Ry(theta) · Rx(phi)
@@ -276,29 +244,22 @@ export function heelTrimRotation(phi: number, theta: number, out: Float64Array =
   return out;
 }
 
-/** Mass properties of a floating hull, hull axes. */
 export interface FloatingCondition {
   /** Displacement mass, kg. */
   massKg: number;
-  /** Centre of gravity, hull axes (`x` from the table's aft end, `z` above the keel). */
   centreOfGravity: readonly [number, number, number];
   density?: number;
   gravity?: number;
 }
 
-/** A hull's floating attitude. */
 export interface FloatingAttitude {
-  /** Height of the centre of gravity above the still water surface, m. */
   heightOfG: number;
-  /** Heel, rad (positive to starboard). */
   heel: number;
-  /** Trim, rad (positive bow down). */
   trim: number;
 }
 
 interface PosedLoads {
   loads: HullLoads;
-  /** Moment of the pressure about G, earth axes. */
   momentAboutG: Float64Array;
 }
 
@@ -363,11 +324,7 @@ function newton(x: Float64Array, n: number, residual: (x: Float64Array, out: Flo
   return norm(r) < tolerance;
 }
 
-/**
- * Finds where a hull floats freely in still water: the height, heel and trim at which buoyancy carries the weight and
- * passes through the centre of gravity.
- * @capability hull-hydrostatics free-floating equilibrium (sinkage, heel, trim) of a hull mesh
- */
+/** @capability hull-hydrostatics free-floating equilibrium (sinkage, heel, trim) of a hull mesh */
 export function floatingEquilibrium(mesh: HullMesh, condition: FloatingCondition, guess?: FloatingAttitude): FloatingAttitude {
   const pose = createPoser(mesh, condition);
   const weight = condition.massKg * (condition.gravity ?? MARINE_GRAVITY);
@@ -402,27 +359,18 @@ function bracketHeight(pose: (attitude: FloatingAttitude) => PosedLoads, weight:
   return 0.5 * (low + high);
 }
 
-/** Upright hydrostatic particulars at the free-floating attitude, hull axes. */
 export interface HydrostaticParticulars {
   attitude: FloatingAttitude;
-  /** Displaced volume, m³. */
   volume: number;
-  /** Mean draught at the keel, m (height of the waterline above `z = 0` at the centre of gravity's station). */
   draft: number;
-  /** Centre of buoyancy, hull axes. */
   centreOfBuoyancy: [number, number, number];
   wettedArea: number;
   waterplaneArea: number;
-  /** Waterline length and breadth, m. */
   waterlineLength: number;
   waterlineBreadth: number;
-  /** Longitudinal centre of flotation, hull axes `x`. */
   centreOfFlotation: number;
-  /** Transverse metacentric radius `I_T / ∇`, m. */
   transverseMetacentricRadius: number;
-  /** Longitudinal metacentric radius `I_L / ∇`, m. */
   longitudinalMetacentricRadius: number;
-  /** Height of the transverse metacentre above the keel, m. */
   transverseMetacentre: number;
   /** Transverse metacentric height `KM_T − KG`, m. */
   transverseMetacentricHeight: number;
@@ -430,11 +378,7 @@ export interface HydrostaticParticulars {
   longitudinalMetacentricHeight: number;
 }
 
-/**
- * Floats a hull and reads its hydrostatics off the integrated geometry: volume, centre of buoyancy, waterplane, metacentric
- * radii (`I/∇` of the cut waterplane) and metacentric heights.
- * @capability hull-hydrostatics displacement, KB, LCB, waterplane, BM and GM of a hull mesh
- */
+/** @capability hull-hydrostatics displacement, KB, LCB, waterplane, BM and GM of a hull mesh */
 export function hydrostaticParticulars(mesh: HullMesh, condition: FloatingCondition): HydrostaticParticulars {
   const attitude = floatingEquilibrium(mesh, condition);
   const pose = createPoser(mesh, condition);
@@ -476,23 +420,14 @@ export function hydrostaticParticulars(mesh: HullMesh, condition: FloatingCondit
   };
 }
 
-/** One point of a righting-arm curve. */
 export interface RightingArmPoint {
-  /** Heel, rad. */
   heel: number;
-  /** Righting arm GZ, m (positive rights the hull). */
   arm: number;
-  /** Free trim at this heel, rad. */
   trim: number;
-  /** Height of G above the water, m. */
   heightOfG: number;
 }
 
-/**
- * The statical stability (GZ) curve with free trim: at each heel the hull sinks and trims until buoyancy carries the
- * weight with no trimming moment, and the remaining heeling moment over the weight is the righting arm. Heels in rad.
- * @capability hull-hydrostatics large-angle righting-arm (GZ) curve with free trim from hull geometry
- */
+/** @capability hull-hydrostatics large-angle righting-arm (GZ) curve with free trim from hull geometry */
 export function rightingArmCurve(mesh: HullMesh, condition: FloatingCondition, heels: readonly number[]): RightingArmPoint[] {
   const pose = createPoser(mesh, condition);
   const weight = condition.massKg * (condition.gravity ?? MARINE_GRAVITY);
@@ -516,22 +451,16 @@ export function rightingArmCurve(mesh: HullMesh, condition: FloatingCondition, h
   });
 }
 
-/** Stability figures read off a GZ curve, the ones intact-stability criteria (IMO IS Code 2008, 2.2) ask for. */
 export interface StabilitySummary {
-  /** Largest righting arm, m, and the heel where it occurs, rad. */
   maxArm: number;
   maxArmHeel: number;
   /** Heel where the arm returns to zero, rad (`NaN` past the curve's end). */
   vanishingHeel: number;
-  /** Area under the curve to 30° and 40°, m·rad. */
   areaTo30: number;
   areaTo40: number;
 }
 
-/**
- * Reads the {@link StabilitySummary} off a GZ curve (trapezoidal areas).
- * @capability hull-hydrostatics IMO intact-stability figures (max GZ, vanishing angle, areas) from a GZ curve
- */
+/** @capability hull-hydrostatics IMO intact-stability figures (max GZ, vanishing angle, areas) from a GZ curve */
 export function summarizeStability(curve: readonly RightingArmPoint[]): StabilitySummary {
   let maxArm = -Infinity;
   let maxArmHeel = 0;

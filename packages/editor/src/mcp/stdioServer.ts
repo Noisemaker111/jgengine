@@ -1,8 +1,4 @@
 import type { EditorSimulation } from "@jgengine/core/editor/simulation";
-/**
- * Minimal MCP-compatible stdio server for the editor control plane.
- * Speaks JSON-RPC 2.0 over newline-delimited stdin/stdout (MCP transport).
- */
 
 import { createEditorHost, type EditorBridgeRequest, type EditorHostApi, type EditorRunMode } from "../session";
 import { loadGameCatalogs } from "./loadGameCatalogs.ts";

@@ -4,7 +4,6 @@ import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { KeyLegend, Label, Scrim, Text, useMenuSound, useRoom, useScreenTouch } from "./kit";
 import { HH, DISPLAY } from "./theme";
 
-/** One reply the courier can give. */
 export interface Reply {
   label: string;
   /** The job a reply takes, drawn as a work order instead of a plain answer. */
@@ -12,12 +11,9 @@ export interface Reply {
   run: () => void;
 }
 
-/** Who is talking: their name, who they run with, and the cast body their portrait is shot from. */
 export interface Speaker {
   name: string;
-  /** Faction label for the plate: "Mainsail locals", "HHPD". */
   crew?: string | undefined;
-  /** A tone for the plate: `locals` mint, `carmine` coral, `hhpd` blue. */
   faction?: string | undefined;
   /** An entity model id; kept so the talk re-keys when the face changes. */
   portrait?: string | undefined;
@@ -25,16 +21,10 @@ export interface Speaker {
 
 const PLATE: Record<string, string> = { locals: HH.teal, carmine: "#8c2a22", hhpd: "#1f3f86" };
 
-/** Initials of the capitalised words in a name: "Marco 'Two-Tone' Ruiz" → "MR". */
 export function initials(name: string): string {
   return name.split(/\s+/).filter((part) => /^[A-Z]/.test(part) && !part.endsWith(".")).map((part) => part[0]).slice(0, 2).join("");
 }
 
-/**
- * Face to face with a contact: a snapshot frame with their initials over their crew colour, their
- * name on an enamel plate, what they say in a speech balloon, and the courier's numbered answers.
- * Arrows or the pad pick a reply, Enter or A says it, Escape or B walks away.
- */
 export function FaceToFace({ speaker, lines, replies, onLeave }: { speaker: Speaker; lines: readonly string[]; replies: readonly Reply[]; onLeave: () => void }) {
   useScreenTouch();
   const sound = useMenuSound();

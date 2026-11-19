@@ -12,7 +12,6 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 /** Lifecycle of one GLB thumbnail render: idle → loading → ready, or error. */
 export type ThumbnailStatus = "idle" | "loading" | "ready" | "error";
 
-/** Cache entry for one asset's thumbnail: status plus the data URL when ready. */
 export interface ThumbnailState {
   status: ThumbnailStatus;
   /** `data:image/png;base64,…` when ready; otherwise null. */
@@ -20,7 +19,6 @@ export interface ThumbnailState {
 }
 
 const THUMB_SIZE = 128;
-/** Soft cap: oldest ready entries are dropped when exceeded (GPU/canvas cost). */
 const MAX_CACHE = 64;
 /** One render at a time — shared WebGL context is not free-threaded. */
 const MAX_CONCURRENT = 1;
@@ -34,15 +32,7 @@ const cache = new Map<string, CacheEntry>();
 const queue: string[] = [];
 let active = 0;
 
-/** Shared idle snapshot — one stable identity for every "no thumbnail yet" case. */
 const IDLE_STATE: ThumbnailState = { status: "idle", dataUrl: null };
-/**
- * Last snapshot handed out per URL. `getGlbThumbnailState` is the `getSnapshot`
- * for `useSyncExternalStore`, which requires a referentially stable result while
- * the underlying state is unchanged: returning a fresh object literal every call
- * makes the UI runtime's post-commit consistency check ("Maximum update depth exceeded")
- * fire forever. We reuse the prior object until status/dataUrl actually changes.
- */
 const snapshots = new Map<string, ThumbnailState>();
 
 let renderer: THREE.WebGLRenderer | null = null;
@@ -242,11 +232,7 @@ function pump(): void {
   }
 }
 
-/**
- * Snapshot of cache state for a model URL. Does not start a render — call
- * {@link requestGlbThumbnail} first (the UI hook does both).
- * @internal
- */
+/** @internal */
 export function getGlbThumbnailState(url: string | undefined): ThumbnailState {
   if (url === undefined || url.length === 0) return IDLE_STATE;
   const entry = cache.get(url);
@@ -275,11 +261,7 @@ export function getGlbThumbnailState(url: string | undefined): ThumbnailState {
   return next;
 }
 
-/**
- * Ensures a thumbnail render is in flight (or already cached) for `url`.
- * Safe to call repeatedly; concurrent callers share one load.
- * @internal
- */
+/** @internal */
 export function requestGlbThumbnail(url: string): void {
   if (url.length === 0) return;
   const existing = cache.get(url);
@@ -294,10 +276,7 @@ export function requestGlbThumbnail(url: string): void {
   pump();
 }
 
-/**
- * Subscribe to thumbnail state changes for a URL. Returns an unsubscribe.
- * @internal
- */
+/** @internal */
 export function subscribeGlbThumbnail(url: string | undefined, listener: () => void): () => void {
   if (url === undefined || url.length === 0) return () => {};
   requestGlbThumbnail(url);

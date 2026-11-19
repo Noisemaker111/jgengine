@@ -33,20 +33,16 @@ export interface SceneRaycastFilter {
   entities?: boolean;
   objects?: boolean;
   terrain?: boolean;
-  /** Wall segments and indexed world solids. */
   walls?: boolean;
 }
 
 export interface SceneRaycastInput {
-  /** Finite world coordinates. */
   origin: EntityPosition;
   /** Finite direction and magnitude, normalized by the query. Zero direction returns no hits. */
   direction: EntityPosition;
-  /** Finite, nonnegative segment length in world units. */
   maxDistance: number;
   excludeInstanceIds?: ReadonlySet<string> | readonly string[] | undefined;
   filter?: SceneRaycastFilter | undefined;
-  /** When set, only hits satisfying the predicate are kept (applied after geometry). */
   accept?: (hit: SceneRaycastHit) => boolean;
 }
 
@@ -68,10 +64,8 @@ export interface TerrainRaycastSource {
   sampleHeight(x: number, z: number): number;
 }
 
-/** A wall segment the scene raycast tests against, extruded vertically around its centre. */
 export interface RaycastWall {
   id: string;
-  /** Segment endpoints on the XZ plane; extruded by halfHeight along Y around yCenter. */
   a: readonly [number, number];
   b: readonly [number, number];
   yCenter?: number;
@@ -84,7 +78,6 @@ export interface SceneRaycastDeps {
   objects?: SceneObjectQuerySource | undefined;
   terrain?: TerrainRaycastSource | undefined;
   walls?: readonly RaycastWall[] | undefined;
-  /** Indexed geometry returns physical, non-damage wall hits with instance id `world-solid`. */
   solids?: Pick<WorldSolids, "inBox" | "inRay"> | undefined;
 }
 
@@ -489,7 +482,6 @@ function gatherHits(deps: SceneRaycastDeps, input: SceneRaycastInput): SceneRayc
   return hits;
 }
 
-/** First impact: nearest hit that blocks, or nearest hit if none block. */
 export function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit | null {
   for (const hit of hits) {
     if (hit.blocks) return hit;
@@ -497,7 +489,6 @@ export function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit |
   return hits[0] ?? null;
 }
 
-/** Hits up to and including the first blocking collider (damage hitboxes before a wall stay). */
 export function hitsUntilBlocked(hits: readonly SceneRaycastHit[]): SceneRaycastHit[] {
   const out: SceneRaycastHit[] = [];
   for (const hit of hits) {

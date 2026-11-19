@@ -16,11 +16,8 @@ export type CatchUpPolicy = "each" | "sum" | "skip";
  * {@link ResourcePolicy} pipeline, never in this data.
  */
 export interface ScheduledRule {
-  /** Stable id, unique within a ledger. */
   id: string;
-  /** Resource/currency key that moves. */
   currency: string;
-  /** Positive nominal amount moved per cycle before policies run. */
   amount: number;
   /** Cadence in game-seconds; must be `> 0`. */
   everySeconds: number;
@@ -28,33 +25,25 @@ export interface ScheduledRule {
   startSeconds?: number;
   /** Inclusive end time; omitted means the rule never expires. */
   endSeconds?: number;
-  /** Account debited each cycle; omitted mints the amount from an external source (production). */
   source?: string;
-  /** Account credited each cycle; omitted burns the amount into an external sink (upkeep/tax). */
   recipient?: string;
-  /** Finite reserve consumed by the nominal amount each cycle; the rule depletes when it empties. */
   reserve?: number;
   /** Catch-up settlement policy; defaults to `"each"`. */
   catchUp?: CatchUpPolicy;
-  /** Per-rule offline limit: due cycles beyond this in one advance are dropped, not banked. */
   maxCatchUpCycles?: number;
 }
 
 /** Mutable per-rule progress, kept separate from the immutable {@link ScheduledRule} definition. */
 export interface RuleCursor {
-  /** Absolute time of the next cycle that has not yet been settled. */
   nextDueSeconds: number;
-  /** Remaining finite reserve, when the rule declared one. */
   reserveRemaining?: number | undefined;
   /** Total cycles fired so far — a stable, monotonic cycle index. */
   fired: number;
-  /** Paused rules keep their cursor but fire nothing until resumed. */
   paused: boolean;
   /** Set once the rule expired or fully depleted; it never fires again. */
   done: boolean;
 }
 
-/** Fully serializable scheduled-transaction state: clock, balances, rule definitions, and cursors. */
 export interface ResourceLedger {
   nowSeconds: number;
   accounts: Record<string, Record<string, number>>;
@@ -62,27 +51,21 @@ export interface ResourceLedger {
   cursors: Record<string, RuleCursor>;
 }
 
-/** One resource movement produced by a due cycle, before it is applied to balances. */
 export interface ResourceTransaction {
   ruleId: string;
   currency: string;
   amount: number;
   source?: string | undefined;
   recipient?: string | undefined;
-  /** Which cycle of the rule produced this (from {@link RuleCursor.fired}). */
   cycleIndex: number;
   atSeconds: number;
-  /** Ordered provenance tags appended by the policy pipeline. */
   provenance: readonly string[];
 }
 
 /** Read-only context handed to every {@link ResourcePolicy} for a transaction. */
 export interface PolicyContext {
-  /** The rule that scheduled this flow. */
   rule: ScheduledRule;
-  /** Current balance snapshot (reflects transactions already applied this advance). */
   balanceOf(account: string, currency: string): number;
-  /** Caller-supplied numeric context bag read by threshold/curve modifiers. */
   vars: Readonly<Record<string, number>>;
   nowSeconds: number;
 }
@@ -98,13 +81,11 @@ export type ResourcePolicy = (
 
 /** Deterministic rounding applied to every transaction amount before it touches balances. */
 export interface Precision {
-  /** Quantisation step, e.g. `1` for whole units or `0.01` for cents. */
   quantum: number;
   /** Rounding mode; defaults to `"round"`. */
   mode?: "floor" | "round" | "ceil";
 }
 
-/** A `{ min, factor }` step of the Ladder for {@link thresholdScale}; the highest `min` met wins. */
 export interface ThresholdBand {
   min: number;
   factor: number;
@@ -112,32 +93,24 @@ export interface ThresholdBand {
 
 /** Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds. */
 export interface AdvanceOptions {
-  /** Policy pipeline applied to every transaction, in order. */
   policies?: readonly ResourcePolicy[];
-  /** Numeric context exposed to policies via {@link PolicyContext.vars}. */
   vars?: Readonly<Record<string, number>>;
-  /** Rounding applied to each transaction amount before it hits balances. */
   precision?: Precision;
   /** Global safety bound on individual cycles settled per rule per advance; defaults to `10000`. */
   maxCyclesPerRule?: number;
 }
 
-/** The kinds of lifecycle signal {@link advanceLedger} can emit for a rule. */
 export type LedgerEventKind = "started" | "fired" | "skipped" | "depleted" | "ended";
 
-/** Lifecycle signal emitted by {@link advanceLedger}. */
 export interface LedgerEvent {
   kind: LedgerEventKind;
   ruleId: string;
   atSeconds: number;
-  /** Cycle count for `fired`/`skipped`, or the consumed reserve for `depleted`. */
   detail: number;
 }
 
-/** A {@link ResourceTransaction} after policies and rounding, as actually applied to balances. */
 export type AppliedTransaction = ResourceTransaction;
 
-/** The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events. */
 export interface AdvanceResult {
   ledger: ResourceLedger;
   applied: AppliedTransaction[];
@@ -146,13 +119,7 @@ export interface AdvanceResult {
 
 const EPSILON = 1e-9;
 
-/**
- * Create an empty scheduled-transaction ledger, or hydrate one from a saved snapshot.
- * State is plain data: production, depletion, tax, and upkeep are all expressed as
- * {@link ScheduledRule}s settled deterministically by {@link advanceLedger}.
- *
- * @capability resource-ledger schedule recurring resource transactions with policy transforms
- */
+/** @capability resource-ledger schedule recurring resource transactions with policy transforms */
 export function createResourceLedger(init?: Partial<ResourceLedger>): ResourceLedger {
   return {
     nowSeconds: init?.nowSeconds ?? 0,
@@ -162,15 +129,10 @@ export function createResourceLedger(init?: Partial<ResourceLedger>): ResourceLe
   };
 }
 
-/** Read a single balance; unknown account/currency pairs read as `0`. */
 export function balanceOf(ledger: ResourceLedger, account: string, currency: string): number {
   return ledger.accounts[account]?.[currency] ?? 0;
 }
 
-/**
- * Register a recurring rule and seed its cursor. Returns a new ledger; the rule's first cycle
- * is due at `rule.startSeconds` (defaulting to the current clock).
- */
 export function addScheduledRule(ledger: ResourceLedger, rule: ScheduledRule): ResourceLedger {
   if (!(rule.everySeconds > 0)) {
     throw new RangeError(`rule ${rule.id} everySeconds must be positive, got ${rule.everySeconds}`);
@@ -192,11 +154,7 @@ export function addScheduledRule(ledger: ResourceLedger, rule: ScheduledRule): R
   };
 }
 
-/**
- * Remove a rule and its cursor entirely (hard cancellation).
- *
- * @capability cancel-scheduled-rule remove a scheduled rule and its cursor entirely
- */
+/** @capability cancel-scheduled-rule remove a scheduled rule and its cursor entirely */
 export function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedger {
   if (ledger.rules[ruleId] === undefined) return ledger;
   const rules = { ...ledger.rules };
@@ -206,11 +164,7 @@ export function cancelRule(ledger: ResourceLedger, ruleId: string): ResourceLedg
   return { ...ledger, rules, cursors };
 }
 
-/**
- * Pause a rule: its cursor is retained but it fires nothing until {@link resumeRule}.
- *
- * @capability pause-scheduled-rule stop a scheduled rule from firing while retaining its cursor
- */
+/** @capability pause-scheduled-rule stop a scheduled rule from firing while retaining its cursor */
 export function pauseRule(ledger: ResourceLedger, ruleId: string): ResourceLedger {
   return setPaused(ledger, ruleId, true);
 }
@@ -440,12 +394,9 @@ function cloneAccounts(
   return out;
 }
 
-// ---------------------------------------------------------------------------
 // Composable policy builders — the transform/cap/reject/split/redirect/annotate
 // surface for the pipeline. Each returns a {@link ResourcePolicy}.
-// ---------------------------------------------------------------------------
 
-/** Reader over policy context: a `vars` key or a function of the context. */
 export type PolicyRead = string | ((ctx: PolicyContext) => number);
 
 function readValue(read: PolicyRead, ctx: PolicyContext): number {
@@ -456,11 +407,7 @@ function tagged(txn: ResourceTransaction, tag: string): readonly string[] {
   return [...txn.provenance, tag];
 }
 
-/**
- * Clamp a transaction's amount to at most `max` (a fixed number or a function of context).
- *
- * @capability policy-cap cap a scheduled transaction amount by context
- */
+/** @capability policy-cap cap a scheduled transaction amount by context */
 export function capAmount(max: number | ((ctx: PolicyContext) => number)): ResourcePolicy {
   return (txn, ctx) => {
     const limit = typeof max === "function" ? max(ctx) : max;
@@ -489,11 +436,7 @@ export function taxFraction(fraction: number, to?: string): ResourcePolicy {
   };
 }
 
-/**
- * Override the source and/or recipient accounts of a transaction.
- *
- * @capability policy-redirect redirect a scheduled transaction's source or recipient
- */
+/** @capability policy-redirect redirect a scheduled transaction's source or recipient */
 export function redirect(endpoints: { source?: string; recipient?: string }): ResourcePolicy {
   return (txn) => [
     {
@@ -505,31 +448,17 @@ export function redirect(endpoints: { source?: string; recipient?: string }): Re
   ];
 }
 
-/**
- * Drop a transaction when `predicate` holds — the reject arm of the pipeline.
- *
- * @capability policy-reject reject scheduled transactions by predicate
- */
+/** @capability policy-reject reject scheduled transactions by predicate */
 export function rejectWhen(predicate: (txn: ResourceTransaction, ctx: PolicyContext) => boolean): ResourcePolicy {
   return (txn, ctx) => (predicate(txn, ctx) ? [] : [txn]);
 }
 
-/**
- * Append a provenance tag to a transaction without changing its value.
- *
- * @capability policy-annotate tag a scheduled transaction's provenance without changing its value
- */
+/** @capability policy-annotate tag a scheduled transaction's provenance without changing its value */
 export function annotate(tag: string): ResourcePolicy {
   return (txn) => [{ ...txn, provenance: tagged(txn, tag) }];
 }
 
-/**
- * Scale the amount by the highest {@link ThresholdBand} whose `min` the read value meets — a
- * generic bracket modifier (progressive tax, tiered upkeep) over caller data, with no built-in
- * currencies or brackets.
- *
- * @capability policy-threshold scale a transaction by a context threshold band
- */
+/** @capability policy-threshold scale a transaction by a context threshold band */
 export function thresholdScale(read: PolicyRead, bands: readonly ThresholdBand[]): ResourcePolicy {
   const steps: ThresholdBoundary<ThresholdBand>[] = bands.map((band) => ({ id: band, at: band.min }));
   return (txn, ctx) => {
@@ -538,12 +467,7 @@ export function thresholdScale(read: PolicyRead, bands: readonly ThresholdBand[]
   };
 }
 
-/**
- * Scale the amount by a {@link Curve} evaluated at the read value — a generic curve modifier
- * (population upkeep, depletion falloff, difficulty income) over caller-provided context.
- *
- * @capability policy-curve scale a transaction by a curve over context
- */
+/** @capability policy-curve scale a transaction by a curve over context */
 export function curveScale(read: PolicyRead, shape: Curve): ResourcePolicy {
   return (txn, ctx) => {
     const factor = evalCurve(shape, readValue(read, ctx));

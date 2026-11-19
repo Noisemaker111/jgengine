@@ -19,7 +19,6 @@
  */
 import type { Vec3 } from "@jgengine/core/world/geometry";
 
-/** A grain material. Simulation stiffness may be far below the solid's (see {@link DemMaterial.youngsModulus}). */
 export interface DemMaterial {
   id: string;
   /** Solid density, kg/m³. */
@@ -32,23 +31,17 @@ export interface DemMaterial {
   poissonRatio: number;
   /** Normal coefficient of restitution, 0..1. */
   restitution: number;
-  /** Coulomb sliding friction coefficient. */
   friction: number;
   /** Rolling resistance coefficient of the Ai et al. (2011) model, dimensionless. */
   rollingFriction: number;
 }
 
-/** Pendular liquid bridges between damp grains. */
 export interface DemLiquid {
-  /** Liquid–air surface tension, N/m (water 0.072). */
   surfaceTension: number;
-  /** Solid–liquid contact angle, rad. */
   contactAngle: number;
-  /** Volume of one bridge, m³ (see {@link bridgeVolumeFromMoisture}). */
   bridgeVolume: number;
 }
 
-/** How a wall moves: steady velocity plus a sinusoidal shake, both from the moment the motion is set. */
 export interface DemWallMotion {
   velocity?: Vec3;
   amplitude?: Vec3;
@@ -56,22 +49,18 @@ export interface DemWallMotion {
   frequency?: number;
 }
 
-/** A frictional boundary. Walls take the material at index `material`. */
 export type DemWallShape =
-  /** Infinite plane; grains stay on the side `normal` points to. */
   | { kind: "plane"; point: Vec3; normal: Vec3; material: number }
   /** Thin annulus in the plane through `center` normal to `normal`: a floor with a round orifice (`innerRadius` > 0). Two-sided. */
   | { kind: "disc"; center: Vec3; normal: Vec3; innerRadius: number; outerRadius: number; material: number }
   /** Inside of a cylinder of `radius` from `center` along unit `axis` for `length`. */
   | { kind: "cylinder"; center: Vec3; axis: Vec3; radius: number; length: number; material: number };
 
-/** One sphere of a body, in the body's frame. */
 export interface DemSphereSpec {
   offset: Vec3;
   radius: number;
 }
 
-/** A body to add: one sphere (`radius`) or a rigid clump (`spheres`). */
 export interface DemBodySpec {
   position: Vec3;
   velocity?: Vec3;
@@ -79,16 +68,10 @@ export interface DemBodySpec {
   material: number;
   radius?: number;
   spheres?: readonly DemSphereSpec[];
-  /** Overrides density × Σ sphere volume (a clump's spheres may overlap). */
   mass?: number;
-  /** Held in place: a grain glued to a rough floor or wall. It still touches others, with infinite mass. */
   fixed?: boolean;
 }
 
-/**
- * Contact coefficients for one pair of materials (a grain on a wall, say). Unset pairs take the lower friction
- * and rolling coefficients of the two and the mean restitution.
- */
 export interface DemInteraction {
   a: number;
   b: number;
@@ -97,21 +80,17 @@ export interface DemInteraction {
   restitution?: number;
 }
 
-/** Configuration of {@link createDiscreteElements}. */
 export interface DiscreteElementConfig {
   materials: readonly DemMaterial[];
   interactions?: readonly DemInteraction[];
   walls?: readonly DemWallShape[];
-  /** Grains leaving this box are deactivated and reported by {@link DiscreteElements.step}. */
   domain: { min: Vec3; max: Vec3 };
   gravity?: Vec3;
   liquid?: DemLiquid;
   /** Time step, s; default 0.2 × the Rayleigh time of the smallest grain, or 0.2 √(m / (k̄n A)) of the stiffest bond, added before the first step. */
   dt?: number;
   maxBodies: number;
-  /** Default `maxBodies` (one sphere each). */
   maxSpheres?: number;
-  /** Parallel bonds the system can hold. Default 0. */
   maxBonds?: number;
 }
 
@@ -121,32 +100,22 @@ export interface DiscreteElementConfig {
  * the shear stress τ = |F_s|/A + |M_n| R̄/J reaches its strength.
  */
 export interface DemBondSpec {
-  /** Bond radius over the smaller grain radius, λ̄. Default 1. */
   radiusMultiplier?: number;
-  /** Bond Young's modulus Ē, Pa: normal stiffness per area k̄_n = Ē / (r_a + r_b). */
   modulus: number;
-  /** k̄_n / k̄_s. Default 2.5. */
   stiffnessRatio?: number;
-  /** Tensile strength σ̄_c, Pa. */
   tensileStrength: number;
-  /** Shear strength τ̄_c, Pa. */
   shearStrength: number;
-  /** Fraction of critical damping on the bond's relative motion. Default 0.05. */
   damping?: number;
 }
 
-/** What one step did. */
 export interface DemStepReport {
   /** Body indices deactivated this step because they left the domain. */
   exited: readonly number[];
   contacts: number;
-  /** Largest overlap this step as a fraction of the smaller radius. */
   maxOverlap: number;
-  /** Bonds that broke this step. */
   bondsBroken: number;
 }
 
-/** What a parallel bond carries now. Tension and tensile stress are positive pulling apart. */
 export interface DemBondLoad {
   tension: number;
   shear: number;
@@ -156,7 +125,6 @@ export interface DemBondLoad {
   shearStress: number;
 }
 
-/** A serializable state of a {@link DiscreteElements} system. */
 export interface DemSnapshot {
   time: number;
   dt: number;
@@ -164,22 +132,15 @@ export interface DemSnapshot {
   sphereCount: number;
   /** Per body: px py pz vx vy vz qw qx qy qz Lx Ly Lz mass active material fixed. */
   bodies: number[];
-  /** Per body: inverse inertia xx yy zz xy xz yz in the body frame. */
   inertia: number[];
-  /** Per sphere: body ox oy oz radius. */
   spheres: number[];
-  /** Per pair with history: i j ξx ξy ξz Mx My Mz wet. */
   contacts: number[];
-  /** Per sphere–wall contact: sphere wall ξx ξy ξz Mx My Mz. */
   wallContacts: number[];
   walls: DemWallShape[];
-  /** Per wall: offset xyz, velocity xyz, amplitude xyz, frequency, motion start; then per wall the base offset xyz. */
   wallState: number[];
-  /** Per bond: a b intact radius k̄n k̄s σ̄c τ̄c damping Fn Fsx Fsy Fsz Mn Msx Msy Msz. */
   bonds: number[];
 }
 
-/** A running DEM system. Arrays are live views for measurement; mutate state only through methods. */
 export interface DiscreteElements {
   readonly materials: readonly DemMaterial[];
   readonly bodyCount: number;
@@ -193,41 +154,28 @@ export interface DiscreteElements {
   readonly vy: Float64Array;
   readonly vz: Float64Array;
   readonly mass: Float64Array;
-  /** 1 while a body is simulated. */
   readonly active: Uint8Array;
-  /** 1 for a body held in place. */
   readonly fixed: Uint8Array;
-  /** Body owning each sphere. */
   readonly sphereBody: Int32Array;
   readonly sphereRadius: Float64Array;
-  /** Sphere world centres, refreshed every step. */
   readonly sx: Float64Array;
   readonly sy: Float64Array;
   readonly sz: Float64Array;
-  /** Force the grains pressed on each wall during the last step, N (xyz per wall). */
   readonly wallForce: Float64Array;
-  /** Sum of contact normal force magnitudes on each wall during the last step, N; with {@link wallForce} it gives the mobilized wall friction. */
   readonly wallNormalForce: Float64Array;
   readonly bondCount: number;
-  /** The two bodies of each bond. */
   readonly bondEnds: Int32Array;
-  /** 1 while a bond holds. */
   readonly bondIntact: Uint8Array;
   addBody(spec: DemBodySpec): number;
-  /** Cement two single-sphere bodies with a parallel bond, unloaded in their current pose. */
   bond(a: number, b: number, spec: DemBondSpec): number;
-  /** Bond every pair of single-sphere bodies whose gap is at most `tolerance` of the smaller radius (default 0.05); returns the count. */
   bondTouching(spec: DemBondSpec | ((a: number, b: number) => DemBondSpec), tolerance?: number): number;
   bondLoad(bond: number): DemBondLoad;
-  /** Move a body (reactivating it), zeroing its spin. */
   placeBody(body: number, position: Vec3, velocity?: Vec3): void;
   deactivate(body: number): void;
   /** Angular velocity of a body, rad/s. */
   angularVelocity(body: number): Vec3;
-  /** Orientation of a body as a unit quaternion [w, x, y, z]. */
   orientation(body: number): readonly [number, number, number, number];
   setWallMotion(wall: number, motion: DemWallMotion): void;
-  /** Current displacement of a wall from its authored position. */
   wallOffset(wall: number): Vec3;
   step(): DemStepReport;
   /** Advance `seconds`, collecting every exit. */
@@ -243,33 +191,22 @@ const BODY_STRIDE = 17;
 const WALL_STRIDE = 11;
 const BOND_PROPS = 6;
 const BOND_LOAD = 8;
-/** Verlet skin as a fraction of the largest radius. */
 const SKIN = 0.4;
 
-/**
- * Damping ratio β of the restitution-matched Hertzian dashpot, ln e / √(ln² e + π²) (negative).
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function restitutionDamping(restitution: number): number {
   const e = Math.min(Math.max(restitution, 1e-6), 1);
   const ln = Math.log(e);
   return ln / Math.sqrt(ln * ln + Math.PI * Math.PI);
 }
 
-/**
- * Rayleigh-wave time step of a grain, π R √(ρ/G) / (0.1631 ν + 0.8766); a DEM step is a fraction of it.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function rayleighTime(material: DemMaterial, radius: number): number {
   const shear = material.youngsModulus / (2 * (1 + material.poissonRatio));
   return (Math.PI * radius * Math.sqrt(material.density / shear)) / (0.1631 * material.poissonRatio + 0.8766);
 }
 
-/**
- * Volume of one liquid bridge when a grain of `radius` holds `moisture` (liquid mass per solid mass) shared among
- * `coordination` bridges, each fed by both grains: 2 w (ρ_s/ρ_l) V_p / z.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function bridgeVolumeFromMoisture(moisture: number, radius: number, solidDensity: number, liquidDensity = 1000, coordination = 6): number {
   const grain = (4 / 3) * Math.PI * radius ** 3;
   return (2 * moisture * (solidDensity / liquidDensity) * grain) / coordination;
@@ -324,7 +261,6 @@ function normalizeWall(wall: DemWallShape): DemWallShape {
   return { ...wall, axis: unit(wall.axis) };
 }
 
-/** Pair list in compressed rows: sphere i's partners j > i, ascending, each with its spring history. */
 interface PairList {
   start: Int32Array;
   partner: Int32Array;
@@ -343,10 +279,7 @@ function ensurePairCapacity(list: PairList, needed: number): PairList {
   return { start: list.start, partner: new Int32Array(capacity), xi: new Float64Array(capacity * 3), moment: new Float64Array(capacity * 3), wet: new Uint8Array(capacity) };
 }
 
-/**
- * Create a DEM system. Add grains with `addBody`, then `step` or `run`.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function createDiscreteElements(config: DiscreteElementConfig): DiscreteElements {
   const materials = config.materials;
   const materialCount = materials.length;
@@ -682,7 +615,6 @@ export function createDiscreteElements(config: DiscreteElementConfig): DiscreteE
     }
   }
 
-  /** Fit the grid to the grains' bounding box inside the domain, so building lists costs O(grains). */
   function fitGrid(): number {
     let x0 = Infinity;
     let y0 = Infinity;
@@ -720,7 +652,6 @@ export function createDiscreteElements(config: DiscreteElementConfig): DiscreteE
     return cells;
   }
 
-  /** Rebuild the pair lists from the grid, carrying each surviving pair's history across. */
   function buildPairs(): void {
     const skin = SKIN * maxRadius;
     cell = 2 * maxRadius + rupture + skin;
@@ -791,7 +722,6 @@ export function createDiscreteElements(config: DiscreteElementConfig): DiscreteE
     stale = false;
   }
 
-  /** Partners of sphere s within reach, ascending. */
   function gather(s: number, c: number, skin: number): void {
     candidates.length = 0;
     const ix = c % nx;
@@ -843,11 +773,6 @@ export function createDiscreteElements(config: DiscreteElementConfig): DiscreteE
   let outMz = 0;
   let outLoad = 0;
 
-  /**
-   * Hertz–Mindlin force on grain i from a contact with unit normal n (from i into the other side), overlap δ,
-   * contact velocity v = v_i − v_j and relative spin ω_i − ω_j. Updates the spring history at `at` and leaves the
-   * force on i in outF* and its rolling moment in outM*.
-   */
   function contactLaw(
     xiStore: Float64Array,
     momentStore: Float64Array,

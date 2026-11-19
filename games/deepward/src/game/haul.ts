@@ -3,11 +3,8 @@ import { createRunHaul } from "@jgengine/core/loot/haul";
 import { itemMass } from "@jgengine/core/loot/drop";
 import type { Item } from "./items";
 
-/** Cache weight in the same unit the rolled items carry. Twelve squares is the grid; this is the load. */
 export const CACHE_WEIGHT = 12;
-/** Deepward's carrying bands: encumbered from 85% of the cache, slowing toward half speed at the limit. */
 const ENCUMBRANCE = { soft: 0.85, floor: 0.5 } as const;
-/** Slot counts only bound the shared inventory model; Deepward's grid decides what actually fits. */
 const RUN_SLOTS = 16;
 const STASH_SLOTS = 2048;
 
@@ -64,7 +61,6 @@ export function canCache(cache: readonly Item[], item: Item): CacheCheck {
   return { ok: false, reason: "no-space", message: `The cache carries no more than ${RUN_SLOTS} instances.` };
 }
 
-/** Move what the stash holds out of the carried haul; what it refuses stays carried, i.e. lost with the Life. */
 export function bankHaul(cache: readonly Item[], stash: readonly Item[]): { banked: Item[]; refused: Item[] } {
   const haul = haulOf(cache, stash);
   const moved = haul.bank();
@@ -73,7 +69,6 @@ export function bankHaul(cache: readonly Item[], stash: readonly Item[]): { bank
   return { banked: keep(moved.stacks), refused: keep(moved.refused) };
 }
 
-/** A failed Life gives up the carried haul; the stash is untouched. */
 export function loseHaul(cache: readonly Item[]): Item[] {
   return haulOf(cache, []).fail().stacks.map(stack => cache.find(item => item.id === stack.itemId)).filter((item): item is Item => item !== undefined);
 }

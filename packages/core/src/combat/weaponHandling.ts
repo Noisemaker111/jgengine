@@ -1,13 +1,7 @@
 /** Recoil per shot, in radians of aim. `pitch > 0` climbs the muzzle, `yaw > 0` pulls right. */
 export interface WeaponRecoilTuning {
-  /**
-   * Fixed kick per shot index as `[pitch, yaw]` rad — the learnable part of a spray pattern. Past its end the
-   * last entry repeats. Omit for a flat `pitch` kick every shot.
-   */
   pattern?: readonly (readonly [number, number])[];
-  /** Kick per shot when there is no `pattern`, rad (default `0`). */
   pitch?: number;
-  /** Random extra kick, rad, drawn per shot from the injected `random` within ±this cone (default `0`). */
   randomCone?: number;
   /** Share of each kick that moves the camera rather than the aim, `0..1` (default `0`: all aim). */
   cameraShare?: number;
@@ -15,17 +9,13 @@ export interface WeaponRecoilTuning {
   recoverRate?: number;
   /** Seconds after a shot before recovery starts (default `0.1`). */
   recoverDelay?: number;
-  /** Aim kick multiplier while aiming down sights (default `1`). */
   adsScale?: number;
 }
 
 /** Cone of fire, as a half-angle in radians. */
 export interface WeaponSpreadTuning {
-  /** Resting spread, rad. */
   base: number;
-  /** Spread added per shot (bloom), rad (default `0`). */
   perShot?: number;
-  /** Largest bloom, rad (default `base + 10 · perShot`). */
   max?: number;
   /** Rate bloom recovers toward `base`, rad/s (default `0`). */
   recoverRate?: number;
@@ -50,7 +40,6 @@ export interface WeaponHandlingTuning {
   adsTime?: number;
 }
 
-/** Stance and aim for one tick. */
 export interface WeaponStance {
   ads?: boolean;
   crouching?: boolean;
@@ -58,7 +47,6 @@ export interface WeaponStance {
   airborne?: boolean;
 }
 
-/** Serializable handling state. */
 export interface WeaponHandlingState {
   aimPitch: number;
   aimYaw: number;
@@ -70,39 +58,23 @@ export interface WeaponHandlingState {
   adsProgress: number;
 }
 
-/** What one shot did: the cone to sample and the kick it applied. */
 export interface WeaponShot {
-  /** Half-angle of the cone this shot fires into, rad, with stance multipliers applied. */
   spread: number;
-  /** Aim kick applied by this shot, rad. */
   kickPitch: number;
   kickYaw: number;
 }
 
-/** Live handling readout: the offsets to add to aim and camera, current spread and ADS blend. */
 export interface WeaponHandlingFrame {
-  /** Recoil offset to add to the aim direction, rad. */
   aimPitch: number;
   aimYaw: number;
-  /** Recoil offset to add to the camera only (view punch), rad. */
   cameraPitch: number;
   cameraYaw: number;
-  /** Current half-angle spread with stance multipliers, rad. */
   spread: number;
-  /** `0` hip … `1` fully aimed. */
   adsProgress: number;
 }
 
-/**
- * The player-to-weapon relationship as state: recoil that climbs and recovers, spread that blooms and
- * settles, and an aim-down-sights blend. Cadence, ammo and hits stay in `weaponFire`/`magazine`; this owns
- * how the weapon feels between them. First-person, third-person and over-the-shoulder presentations read
- * the same frame.
- */
 export interface WeaponHandling {
-  /** Register one shot (call when the cadence fires) and return its spread and kick. */
   fire(stance?: WeaponStance): WeaponShot;
-  /** Advance recovery, bloom decay and ADS by `dt`. */
   tick(dt: number, stance?: WeaponStance): WeaponHandlingFrame;
   frame(): WeaponHandlingFrame;
   retune(next: WeaponHandlingTuning): void;
@@ -233,13 +205,9 @@ export function createWeaponHandling(
 
 /** Deterministic weapon-feel metrics from {@link measureWeapon}. */
 export interface WeaponReport {
-  /** Spread of the first shot from rest, rad. */
   firstShotSpread: number;
-  /** Spread of the tenth shot of a held burst, rad. */
   tenthShotSpread: number;
-  /** Spread of every shot in the burst, rad; `spreadByShot[n - 1]` is the spread after `n - 1` shots of bloom. */
   spreadByShot: number[];
-  /** Aim climb after a full burst, rad; set `burst` to the magazine size for climb over a magazine. */
   burstClimb: number;
   /** Seconds after the burst until aim recoil is back within 5% of its peak and bloom within 5% of base. */
   resetSeconds: number;
@@ -251,20 +219,14 @@ export interface WeaponReport {
   timeToKill: number;
 }
 
-/** Options for {@link measureWeapon}. */
 export interface WeaponProbeOptions {
   /** Seconds between shots (`60 / rpm`). */
   interval: number;
-  /** Shots in the held burst (default `30`). */
   burst?: number;
-  /** Damage per projectile at the muzzle. */
   damage?: number;
-  /** Projectiles per shot, e.g. shotgun pellets (default `1`). */
   pellets?: number;
   targetHealth?: number;
-  /** Distance to the target, m. Without it every projectile hits. */
   range?: number;
-  /** Radius of the target's hittable area, m (default `0.4`). */
   targetRadius?: number;
   /** Damage multiplier at a range, the game's falloff policy (default: none). */
   damageAt?: (range: number) => number;

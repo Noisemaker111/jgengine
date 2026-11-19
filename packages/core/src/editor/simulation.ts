@@ -11,12 +11,9 @@ import type { EditorDocument, EditorVec3 } from "./types";
 /** A named emitter authored in metres: either a library effect name or a full config. */
 export interface AuthoredEmitter {
   id: string;
-  /** Spawn only while this authored fire area burns; live particles finish their lifetime. */
   fireAreaId?: string;
   position: EditorVec3;
-  /** Named effect from the shared library (`fire/flame`, `explosion/core`, …). */
   effect?: string;
-  /** Full emitter config; used when `effect` is absent. */
   config?: EmitterConfig;
   options?: ParticleAttachOptions;
 }
@@ -24,20 +21,16 @@ export interface AuthoredEmitter {
 /** A bounded landscape fire (`@jgengine/core/fire`); damage policy remains game content. */
 export interface AuthoredFireArea {
   id: string;
-  /** World position of the grid's (0,0) corner; `y` is the ground the fire burns on. */
   position: EditorVec3;
   /** Grid size: at most 256 × 256 and 16384 cells, cell edge in metres. */
   config: { cols: number; rows: number; cellSize: number };
-  /** Standard fuel model code (`GR2`, `TU5`, `NB9`, ...) for every cell, or one per cell row-major. Default `GR2`. */
   fuel?: string | readonly string[];
-  /** Starting dead and live fuel moisture as a Scott & Burgan scenario (`D1L1`..`D4L4`). Default `D2L2`. */
   moisture?: string;
   /** Air temperature (°C) and relative humidity (0..1) under clear authored weather. Default 25 °C, 0.35. */
   climate?: { airTemperatureC: number; relativeHumidity: number };
   ignitions?: readonly { col: number; row: number }[];
 }
 
-/** An authored habitat selects a game species and optionally follows a document path. */
 export interface AuthoredFlockHabitat {
   id: string;
   species: string;
@@ -48,7 +41,6 @@ export interface AuthoredFlockHabitat {
   role: "cosmetic" | "gameplay";
   routeId?: string;
   steering: FlockConfig;
-  /** Opt into authored wind/force acceleration; maxAcceleration is the game policy cap. */
   /** Coupling in 1/second, bounded to 0..1e12. */
   windResponse?: number;
   /** Maximum acceleration in metres/second², bounded to 0..1e12. */
@@ -56,10 +48,8 @@ export interface AuthoredFlockHabitat {
   forceMask?: number;
 }
 
-/** Authored simulation inputs. Runtime particles, heat, accumulation and actors save separately. */
 export interface EditorSimulation {
   weather?: AuthoredWeatherConfig;
-  /** Authoritative acceleration volumes; games select target masks and caps. */
   forces?: readonly ForceFieldConfig[];
   emitters?: readonly AuthoredEmitter[];
   fires?: readonly AuthoredFireArea[];

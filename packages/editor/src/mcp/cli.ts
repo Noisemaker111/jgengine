@@ -40,7 +40,6 @@ function printHelp(): void {
 `);
 }
 
-/** Parsed CLI flags for the headless editor control plane. */
 export type EditorCliOptions = {
   gameId: string;
   port: number;
@@ -95,12 +94,7 @@ export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
 /** Result of a `--save` write-back: the path written and how many derived entries it left out, or why nothing was written. */
 export type SaveSceneResult = { ok: true; saved: string; derivedSkipped: number } | { ok: false; error: string };
 
-/**
- * Writes a session document to `<gamesRoot>/<gameId>/src/editor.scene.json` in the exact format
- * the dev-server save endpoint uses (2-space JSON + trailing newline), so headless `--save` and
- * the GUI's Ctrl+S round-trip identically. Refuses invalid documents before writing or inventing a game directory.
- * @internal
- */
+/** @internal */
 export function saveSceneDocument(gameId: string, document: EditorDocument, gamesRoot?: string): SaveSceneResult {
   const root = gamesRoot ?? fileURLToPath(new URL("../../../../games/", import.meta.url));
   const srcDir = join(root, gameId, "src");

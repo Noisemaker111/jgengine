@@ -5,7 +5,6 @@ import { easeOutCubic } from "../../anim/easing";
 import { suspendPlayControls } from "../../game/controlGate";
 import type { GameContext } from "../../runtime/gameContext";
 
-/** Game-owned tokens and variants. No widget or game vocabulary lives here. */
 export interface RuneTheme {
   colors: Readonly<Record<string, RuneColor>>;
   text: Readonly<Record<string, RuneFont>>;
@@ -19,10 +18,8 @@ export interface RuneSource<T> {
   subscribe(change: () => void): () => void;
 }
 
-/** Bind any native visual property without scheduling a component render. */
 export function bind<T>(read: () => T): LiveValue<T> { return live(read); }
 
-/** Format a bound value at its leaf, including locale-aware game formatters. */
 export function runeFormat<T>(value: Live<T>, format: (value: T) => string): LiveValue<string> {
   return live(() => format(readLive(value)));
 }
@@ -39,7 +36,6 @@ export function runeTween(read: () => number, duration: number, now: () => numbe
   });
 }
 
-/** A value-change pulse that returns to zero; compose it into scale, opacity or offset. */
 export function runePulse(read: () => unknown, duration: number, now: () => number = () => performance.now()): LiveValue<number> {
   let previous = read(), changed = -Infinity;
   return live(() => {
@@ -49,14 +45,12 @@ export function runePulse(read: () => unknown, duration: number, now: () => numb
   });
 }
 
-/** What a route owns while present; appearance is always the game's composition. */
 export interface RuneRoute {
   layer: "screen" | "modal" | "overlay";
   pause: boolean;
   capture: boolean;
 }
 
-/** Observable flow over the shared modal-stack model, including save/restore. */
 export interface RuneFlow {
   routes: Readonly<Record<string, RuneRoute>>;
   read(): readonly { id: string; kind: string; payload?: unknown }[];
@@ -69,7 +63,6 @@ export interface RuneFlow {
   restore: ModalStack["restore"];
 }
 
-/** Compose screen/modal/overlay policy on the existing serializable stack primitive. */
 export function createRuneFlow(routes: RuneFlow["routes"]): RuneFlow {
   const model = createModalStack();
   let records = model.stack();
@@ -94,7 +87,6 @@ export function createRuneFlow(routes: RuneFlow["routes"]): RuneFlow {
 }
 
 const pauseOwners = new WeakMap<GameContext, { count: number; wasPaused: boolean }>();
-/** Lease pause and control capture from a flow. Nested owners release only their own claims. */
 export function ownRuneFlow(flow: RuneFlow, ctx: GameContext): () => void {
   let releaseCapture: (() => void) | undefined;
   let ownsPause = false;
@@ -129,7 +121,6 @@ export function ownRuneFlow(flow: RuneFlow, ctx: GameContext): () => void {
   };
 }
 
-/** Named viewport classes for responsive native layout. */
 export type RuneViewportClass = "phone" | "tablet" | "desktop";
 
 /** Deterministic viewport classification; callers can retune both breakpoints. */

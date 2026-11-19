@@ -10,49 +10,36 @@
 
 import type { Job, JobValidation, WorkQueueConfig, WorkQueueState } from "./jobQueue";
 
-/** Resource costs keyed by currency/resource id. */
 export type ResourceCost = Readonly<Record<string, number>>;
 
-/** A unit the producer can train. */
 export interface TrainableUnitDef {
-  /** Catalog id of the produced unit. */
   readonly id: string;
   /** Seconds to train. */
   readonly trainSeconds: number;
-  /** Resources reserved at enqueue. */
   readonly cost?: ResourceCost;
-  /** Population/supply reserved at enqueue. */
   readonly population?: number;
 }
 
-/** What the caller asks the queue to build. */
 export interface UnitTrainingSpec {
   readonly unitId: string;
 }
 
-/** Reservation stored on a training job — the inputs to charge and refund. */
 export interface UnitReservation {
   readonly cost: ResourceCost;
   readonly population: number;
 }
 
-/** Completion payload: everything a spawn/rally adapter needs, and nothing it doesn't. */
 export interface UnitSpawnOrder {
   readonly unitId: string;
   readonly reservation: UnitReservation;
 }
 
-/** Config knobs for {@link unitTrainingConfig}. */
 export interface UnitTrainingOptions {
-  /** Trainable units by id. */
   readonly units: Record<string, TrainableUnitDef>;
-  /** Producers building at once (default 1 — a classic single build queue). */
   readonly concurrency?: number;
-  /** Max queued+building units. */
   readonly capacity?: number;
   /** Refund fraction of cost on cancel (0 = none, 1 = full). Defaults to 1. */
   readonly refundFraction?: number;
-  /** Extra pre-enqueue gate (affordability, tech, population cap). */
   readonly canEnqueue?: (spec: UnitTrainingSpec, state: WorkQueueState<UnitTrainingSpec, UnitReservation>) => JobValidation;
 }
 
@@ -64,13 +51,7 @@ function scaleCost(cost: ResourceCost, fraction: number): ResourceCost {
   return out;
 }
 
-/**
- * Build a {@link WorkQueueConfig} for training units from a catalog. Reservation is
- * the unit's cost + population; duration is its train time; completion output is a
- * {@link UnitSpawnOrder} for the caller to route to its spawn primitive.
- *
- * @capability unit-training compose a timed work queue that trains catalog units into spawn orders
- */
+/** @capability unit-training compose a timed work queue that trains catalog units into spawn orders */
 export function unitTrainingConfig(
   options: UnitTrainingOptions,
 ): WorkQueueConfig<UnitTrainingSpec, UnitReservation, UnitSpawnOrder> {

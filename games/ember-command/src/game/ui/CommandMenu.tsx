@@ -20,7 +20,6 @@ import { CAMPAIGN_SLOTS, campaignLabel, campaignSlots, commandProfile, loadCampa
 import { Eyebrow, Glyph, InkButton, PlankButton, Row, SealButton, Sheet, Small, Text, Title, WaxSeal, useHudSlice } from "./kit";
 import { GILT, INK, OCHRE, WAX } from "./theme";
 
-/** Capture-only focus request: a shot declares which order it wants highlighted. */
 export const menuFocus: { id: string | null } = { id: null };
 
 export const credits = mergeCredits({ title: "The makers of the vale", sections: [
@@ -40,7 +39,6 @@ export function battleTime(seconds: number): string {
 
 interface Verb { id: string; label: string; hint?: string; disabled?: boolean; quiet?: boolean }
 
-/** Orders written in ink down the sheet. Native focus and hover choose the order in hand; the wax chevron marks it. */
 function OrderList({ verbs, active, onActive, onPick }: { verbs: readonly Verb[]; active: string | null; onActive: (id: string) => void; onPick: (id: string) => void }) {
   return <RuneView gap={2} label="Orders">
     {verbs.map((verb) => <RuneAction key={verb.id} variant="verb" layout="row" label={verb.label} disabled={verb.disabled === true}
@@ -55,7 +53,6 @@ function OrderList({ verbs, active, onActive, onPick }: { verbs: readonly Verb[]
   </RuneView>;
 }
 
-/** The order the track offers next, in the field desk's words. */
 function orderLine(campaign: CampaignReadout | null): { eyebrow: string; title: string; brief: string } {
   if (campaign === null) return { eyebrow: "Free skirmish", title: "Raze the Marauder Warcamp", brief: "No orders, no carried stores: the vale as it stands." };
   const ordinal = campaignOrdinal(campaign.index - 1);
@@ -65,7 +62,6 @@ function orderLine(campaign: CampaignReadout | null): { eyebrow: string; title: 
   return { eyebrow: `Order ${ordinal} of ${campaignOrdinal(campaign.total - 1)}`, title: campaign.title, brief: campaign.brief };
 }
 
-/** One kept record's line: mission, stores and playtime. */
 function RecordFacts({ slot }: { slot: SaveSlotMeta }) {
   const facts = ([["flag", slotText(slot, "mission")], ["gold", slotText(slot, "stores")], ["stopwatch", slotText(slot, "playtime")]] as const).filter(([, v]) => v !== null);
   return <Row gap={12} items="center">{facts.map(([icon, value]) => <Row key={icon} gap={4}>{icon === "flag" ? null : <Glyph name={icon} size={13} color={OCHRE} />}<Small text={String(value)} /></Row>)}</Row>;
@@ -85,7 +81,6 @@ function TakeCommandSheet({ recent, campaign, onTake, width }: { recent: SaveSlo
 
 const PRESET_NAMES = ["Mara Vell", "Bram Hollin", "Edda Thorne", "Osric Vane", "Ilse Marrow", "Tobin Reed"];
 const KEY_TEXT: Record<string, string> = { Space: " ", Minus: "-", Quote: "'", Period: "." };
-/** One key code as the letter it signs: words start with a capital, the native field takes codes, not characters. */
 export function signKey(name: string, code: string): string {
   if (code === "Backspace") return name.slice(0, -1);
   const letter = /^Key([A-Z])$/.exec(code)?.[1] ?? /^Digit(\d)$/.exec(code)?.[1] ?? KEY_TEXT[code];
@@ -94,7 +89,6 @@ export function signKey(name: string, code: string): string {
   return name + (startsWord ? letter.toUpperCase() : letter.toLowerCase());
 }
 
-/** New campaign: a commission to sign. The record it opens is named, and replacing one is said aloud. */
 function CommissionSheet({ slot, name, onName, onBegin, width }: { slot: string | null; name: string; onName: (next: string) => void; onBegin: () => void; width: number }) {
   const [signing, setSigning] = useState(false);
   const nameRef = useRef(name);
@@ -121,7 +115,6 @@ function CommissionSheet({ slot, name, onName, onBegin, width }: { slot: string 
   </Sheet>;
 }
 
-/** The kept records as three folios, each with its last look at the field. */
 function RecordsSheet({ slots, recentId, onOpen, onNew, width }: { slots: readonly SaveSlotMeta[]; recentId: string | null; onOpen: (slot: string) => void; onNew: (slot: string) => void; width: number }) {
   return <Sheet width={width} label="Campaign records">
     <Eyebrow text="The field desk" />
@@ -154,7 +147,6 @@ function SkirmishSheet({ onMarch, width }: { onMarch: () => void; width: number 
   </Sheet>;
 }
 
-/** The field report after a battle: the outcome, the time it took and what still stands. */
 function ReportSheet({ width }: { width: number }) {
   const r = useHudSlice((h) => ({ won: h.phase === "won", elapsed: h.elapsed, waves: h.wavesSent, troops: h.playerUnits }));
   return <Sheet width={width} label="Field report">
@@ -166,7 +158,6 @@ function ReportSheet({ width }: { width: number }) {
   </Sheet>;
 }
 
-/** An ink tick-box: a switch for the keys and pad, a mark for the eye. */
 function InkSwitch({ label, hint, on, onToggle }: { label: string; hint: string; on: boolean; onToggle: () => void }) {
   return <RuneAction label={label} role="switch" run={onToggle} layout="row" gap={10} padding={[4, 4, 4, 4]} hover="#2b1d1010" radius={2} items="center">
     <RuneView gap={0} grow={1} shrink><Text textStyle="verb" text={label} /><Small text={hint} /></RuneView>
@@ -194,7 +185,6 @@ function SettingRowView({ row }: { row: SettingsRow }) {
   </RuneView>;
 }
 
-/** Field preferences and the shell's own settings, on one sheet. */
 export function FieldSettings({ ctx, width }: { ctx: GameContext; width: number }) {
   const settings = useSettings();
   const store = preferences(ctx);
@@ -241,11 +231,6 @@ function CreditsSheet({ width }: { width: number }) {
   </Sheet>;
 }
 
-/**
- * Ember Command's front end is the war table: the title is a weathered survey of the vale under the
- * campaign's wax seal with the orders written down it; the pause is a leather dispatch case holding the
- * orders on hold. Every detail pane is a loose sheet pinned beside them.
- */
 export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: number; height: number }): ReactNode {
   const commands = ctx.game.commands;
   const phase = useHudSlice((h) => h.phase);

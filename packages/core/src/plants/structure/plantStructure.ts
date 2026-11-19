@@ -7,27 +7,19 @@ import { PLANT_PI, plantCos, plantSin } from "../growth/plantMath";
 import type { BarkKind, LeafShapeParams, PlantSpecies, SeasonalColor } from "../species/plantSpecies";
 import { FROND_STATS_SEGMENTS, frondCount, frondLengthShare, frondPose, frondSpine, isFrondShape, type FrondPose } from "./frondPose";
 
-/** Region code per skeleton segment; a style picks material and detail by it. */
 export const PLANT_REGION = { trunk: 0, branch: 1, twig: 2, deadwood: 3, scar: 4, rootFlare: 5 } as const;
-/** Region code of a skeleton segment (a value of {@link PLANT_REGION}). */
 export type PlantRegion = (typeof PLANT_REGION)[keyof typeof PLANT_REGION];
 
-/** Reproductive organ kind per row of {@link PlantStructure.reproductive}. */
 export const PLANT_ORGAN = { flower: 0, fruit: 1 } as const;
 
-/** Cluster levels per leaf: own shoot axis, its order-2 limb, its order-1 limb. */
 export const PLANT_CLUSTER_LEVELS = 3;
-/** Share of a shoot, from its tip back, its leaves hang along; the rest is bare. */
 export const PLANT_SHOOT_LEAF_SPAN = 0.7;
-/** Height bins and azimuth sectors of {@link PlantStructure.crownHull}. */
 export const CROWN_HULL_BINS = 16;
-/** Compass sectors per height bin of the crown envelope. */
 export const CROWN_HULL_SECTORS = 8;
 
 const TWIG_RADIUS_M = 0.01;
 const ROOT_FLARE_HEIGHT_M = 0.5;
 
-/** One cluster level: centre (3 per row), radius, parent row in the next level, leaf rows inside. */
 export interface PlantClusterLevel {
   center: Float32Array;
   radius: Float32Array;
@@ -59,7 +51,6 @@ export interface PlantStructure {
     radiusStart: Float32Array;
     radiusEnd: Float32Array;
     parent: Int32Array;
-    /** Branch order, 0 for the trunk. */
     order: Uint8Array;
     bornYear: Uint16Array;
     /** Metres along the skeleton from the stem base to the segment start: continuous bark V. */
@@ -69,7 +60,6 @@ export interface PlantStructure {
     region: Uint8Array;
     health: Float32Array;
     light: Float32Array;
-    /** Base of the segment's axis, 3 per segment: where wind bends this limb from. */
     windPivot: Float32Array;
     windLevel: Uint8Array;
   };
@@ -78,12 +68,9 @@ export interface PlantStructure {
     normal: Float32Array;
     up: Float32Array;
     size: Float32Array;
-    /** Leaves in the cohort (one row stands for a node's leaves). */
     count: Uint16Array;
     segment: Int32Array;
-    /** PLANT_CLUSTER_LEVELS cluster rows per leaf, finest first. */
     cluster: Int32Array;
-    /** 0 outer shell .. 1 deep inside, from intercepted light. */
     crownDepth: Float32Array;
     /** Chlorophyll, carotenoid, anthocyanin, senescence per leaf, 0..1 each. */
     colorState: Float32Array;
@@ -92,14 +79,11 @@ export interface PlantStructure {
   clusters: { levels: readonly PlantClusterLevel[] };
   reproductive: { kind: Uint8Array; position: Float32Array; size: Float32Array; stage: Float32Array; count: Uint16Array };
   leafShape: LeafShapeParams;
-  /** The species' leaf colours across the season; {@link PlantStructure.leaves} `colorState` mixes them. */
   leafColor: SeasonalColor;
-  /** Colours of the species' flowers and ripe fruit, hex. */
   organColor: { flower: string; fruit: string };
   bark: { kind: BarkKind; furrow: number; color: string };
 }
 
-/** What the structure builder reads from a growth run. */
 export interface PlantStructureSource {
   species: PlantSpecies;
   seed: string;
@@ -112,7 +96,6 @@ function radiusOf(state: GrowthState, i: number): number {
   return Math.sqrt(((state.nodes.sapArea[i] ?? 0) + (state.nodes.heartArea[i] ?? 0)) / PLANT_PI);
 }
 
-/** A number in [0, 1) from two integers, the same for the same pair. */
 function unitHash(a: number, b: number): number {
   let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35);
   h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d);
@@ -147,10 +130,7 @@ function leafColor(day: number, season: GrowingSeason, out: Float32Array, at: nu
   out[at + 3] = senescence;
 }
 
-/**
- * Build the style-facing structure from a growth state.
- * @capability plant-structure a grown plant as a skeleton with regions, leaves, clusters and a crown envelope
- */
+/** @capability plant-structure a grown plant as a skeleton with regions, leaves, clusters and a crown envelope */
 export function buildPlantStructure(source: PlantStructureSource): PlantStructure {
   const { species, state, season, dayOfYear } = source;
   const n = state.slots.nodeCount;
@@ -464,10 +444,7 @@ function sectorOf(x: number, z: number): number {
   return az >= ax ? 6 : 7;
 }
 
-/**
- * Crown ratio: live crown length over total height.
- * @capability plant-structure a grown plant as a skeleton with regions, leaves, clusters and a crown envelope
- */
+/** @capability plant-structure a grown plant as a skeleton with regions, leaves, clusters and a crown envelope */
 export function crownRatio(structure: PlantStructure): number {
   const { heightM, crownBaseM } = structure.stats;
   return heightM > 0 ? (heightM - crownBaseM) / heightM : 0;

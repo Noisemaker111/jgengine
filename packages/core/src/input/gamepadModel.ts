@@ -1,7 +1,6 @@
 import { clamp } from "../math/scalar";
 import { allActionCodes, type ActionCodesMap } from "./actionBindings";
 
-/** A serializable gamepad state sampled from the platform input API. */
 export interface GamepadSnapshot {
   id: string;
   axes: number[];
@@ -9,7 +8,6 @@ export interface GamepadSnapshot {
   connected: boolean;
 }
 
-/** Names of the built-in controller glyph sets. */
 export type GamepadGlyphName = "xbox" | "playstation" | "nintendo" | "generic";
 
 /** Button labels used by one controller family. */
@@ -17,7 +15,6 @@ export interface GamepadGlyphSet {
   buttons: readonly string[];
 }
 
-/** Built-in short labels for the common controller families. */
 export const GAMEPAD_GLYPH_SETS: Record<GamepadGlyphName, GamepadGlyphSet> = {
   xbox: { buttons: ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "View", "Menu", "L3", "R3", "↑", "↓", "←", "→"] },
   playstation: { buttons: ["Cross", "Circle", "Square", "Triangle", "L1", "R1", "L2", "R2", "Share", "Options", "L3", "R3", "↑", "↓", "←", "→"] },
@@ -25,16 +22,12 @@ export const GAMEPAD_GLYPH_SETS: Record<GamepadGlyphName, GamepadGlyphSet> = {
   generic: { buttons: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "↑", "↓", "←", "→"] },
 };
 
-/** Lowercase alias for consumers that prefer data-oriented naming. */
 export const gamepadGlyphSets = GAMEPAD_GLYPH_SETS;
 
-/** Action bindings whose codes identify gamepad buttons or axes. */
 export type GamepadBindings<TAction extends string = string> = ActionCodesMap<TAction, GamepadCode>;
 
-/** A gamepad button or signed axis binding code. */
 export type GamepadCode = `pad:${number}` | `padaxis:${number}${"+" | "-"}`;
 
-/** Deadzone policy applied to gamepad axes. */
 export interface GamepadDeadzone {
   kind: "radial" | "axial";
   inner: number;
@@ -51,32 +44,22 @@ export interface GamepadSample {
   readonly connected: boolean;
 }
 
-/** Options for resolving one gamepad snapshot into action state. */
 export interface ResolveGamepadFrameOptions {
   deadzone: GamepadDeadzone;
-  /** Response exponent for sticks and analog buttons: `1` linear, `>1` finer near rest (default `1`). */
   curve?: number;
   /** Inner deadzone `0..1` for analog button values (triggers); below it the button reads 0 and is not held (default `0`). */
   triggerDeadzone?: number;
 }
 
-/**
- * Game-level pad feel read by the shell's gamepad poll. A number `deadzone` is the axial inner
- * deadzone with a `0.95` outer edge.
- */
 export interface GamepadFeelConfig {
-  /** Stick deadzone (default axial `0.12` inner, `0.95` outer). */
   deadzone?: number | GamepadDeadzone;
-  /** Response exponent shared by sticks and triggers (default `1`). */
   curve?: number;
   /** Trigger inner deadzone `0..1` (default `0`). */
   triggerDeadzone?: number;
 }
 
-/** Shell default stick deadzone. */
 export const DEFAULT_GAMEPAD_DEADZONE: GamepadDeadzone = { kind: "axial", inner: 0.12, outer: 0.95 };
 
-/** Resolve a {@link GamepadFeelConfig} into the options {@link resolveGamepadFrame} takes. */
 export function gamepadFeelOptions(config: GamepadFeelConfig | undefined): ResolveGamepadFrameOptions {
   const deadzone = config?.deadzone;
   return {
@@ -91,12 +74,10 @@ export function gamepadFeelOptions(config: GamepadFeelConfig | undefined): Resol
   };
 }
 
-/** The digital and analog action state produced by a gamepad frame. */
 export interface GamepadFrame {
   held: string[];
   analog: Record<string, number>;
 }
-
 
 function rescale(magnitude: number, inner: number, outer: number, curve: number): number {
   if (magnitude <= inner) return 0;

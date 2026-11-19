@@ -244,17 +244,12 @@ function flag(argv: readonly string[], name: string, fallback: string): string {
   return at >= 0 ? (argv[at + 1] ?? fallback) : fallback;
 }
 
-/** How one species' trials are grown: the seeds, whether a shaded sapling runs too, and the habit trial for shrubs, palms and ferns. */
 interface TrialSetup {
   seeds: readonly string[];
   shade: boolean;
   habit: boolean;
 }
 
-/**
- * `size` workers that grow trials, shared by every species of one fit run: each worker loads the
- * growth model once, not once per species.
- */
 export function workerPool(size: number): { evaluator: (setup: TrialSetup) => Evaluate; close: () => void } {
   const workers = Array.from({ length: size }, () => new Worker(new URL("./fitWorker.ts", import.meta.url).href));
   const idle = [...workers];
@@ -300,22 +295,18 @@ interface FitFile {
   against: string;
   species: PlantSpecies;
   search?: CmaEsState;
-  /** Generations the saved search has run, over every run of this fit. */
   generation?: number;
-  /** Whether the last run with `--until-pass` ended inside the pass limits. */
   passed?: boolean;
 }
 
 const AGAINST = "fia, carmean-1989, tallo-2022, ek-1974";
 
-/** The score parts `--until-pass` holds at zero: a species inside every one passes the library's size and crown checks. */
 const PASS_PARTS = ["limits", "tallo", "shape", "architecture", "dead"] as const;
 
 function insidePassLimits(parts: Record<string, number>): boolean {
   return PASS_PARTS.every((part) => (parts[part] ?? (part === "architecture" || part === "dead" ? 0 : 1)) === 0);
 }
 
-/** `limits 3.8, tallo 59.8`: the pass parts a best is still outside, for the log. */
 function missedParts(parts: Record<string, number>): string {
   return PASS_PARTS.filter((part) => (parts[part] ?? 0) !== 0)
     .map((part) => `${part} ${(parts[part] ?? 0).toFixed(1)}`)
@@ -331,7 +322,6 @@ function readFitFile(path: string): FitFile | undefined {
   return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as FitFile) : undefined;
 }
 
-/** One species' starting record, the parameters its fit searches, how its trials are grown and scored. */
 interface FitSetup {
   start: PlantSpecies;
   parameters: readonly FitParameter[];
@@ -361,17 +351,6 @@ async function fitSetup(id: string, resumed: FitFile | undefined, seeds: readonl
   return { start, parameters: FIT_PARAMETERS, trial: { seeds, shade: target.shadeTolerant, habit: false }, score: (trial) => scoreTrial(target, trial), against: AGAINST };
 }
 
-/**
- * Where a new tree search starts: its own start, or the fitted parameters of a shipped tree of the
- * same crown form, whichever misses least of what the tree checks hold it to on this species (the
- * crown-kind, stand-envelope and survival parts, each miss at its full cost), the total score breaking
- * ties. CMA-ES searches near its start, and a start in the wrong basin stays there: black cherry
- * fitted from its own record carried its crown at 29-34% of its height through 120 generations, and
- * from paper birch's parameters, chosen while the fit-only crown-shape part still ranked the starts,
- * kept two seeds' crowns 41-53% sky through 280 more; black oak's parameters on cherry's traits held
- * its crown kind on two of three seeds and missed one stand limit on the first trial (2026-11-05).
- * `donor` is the species whose parameters won, absent when the own start did.
- */
 async function bestBasin(id: string, setup: FitSetup, evaluate: Evaluate, from?: string): Promise<{ start: PlantSpecies; donor?: string; line: string }> {
   const { PLANT_LIBRARY } = await import("../../packages/core/src/plants/species/data/plantLibrary");
   const form = setup.start.architecture.crownForm;
@@ -401,10 +380,8 @@ async function bestBasin(id: string, setup: FitSetup, evaluate: Evaluate, from?:
   return { start: winner.start, ...(winner.donor === undefined ? {} : { donor: winner.donor }), line };
 }
 
-/** The score parts the tree checks stand behind: crown kind on the checked seeds, the stand envelope, survival. */
 const BASIN_PARTS = ["architecture", "testMisses", "dead"] as const;
 
-/** What one species' fit ended as, for the run's summary and exit code. */
 interface FitOutcome {
   id: string;
   score: number;

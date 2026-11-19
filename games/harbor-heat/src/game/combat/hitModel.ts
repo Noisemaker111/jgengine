@@ -34,14 +34,12 @@ export const DAMAGE_TABLE: DamageTableDef = {
   armor: { halfValue: 100, maxMitigation: 0.9 },
 };
 
-/** One body zone at 1x: Harbor aims at a silhouette, it does not read limbs off a hit direction. */
 export const HIT_ZONES: HitZoneTable = {
   zones: [{ id: "body", multiplier: 1 }],
   defaultZone: "body",
   critChance: 0,
 };
 
-/** What a target presents to the chart. `null` for a catalog that takes no damage at all. */
 export interface TargetProfileDef {
   resistance: string;
   armor: number;
@@ -66,14 +64,12 @@ export function damageTypeFor(ammo: AmmoKind): string {
   return "ballistic";
 }
 
-/** One weapon's row in the chart: what a single pellet of it is worth before zones and armor. */
 export function weaponHit(weaponId: string): { type: string; base: number } | null {
   const def: WeaponDef | undefined = weaponById(weaponId);
   if (def === undefined) return null;
   return { type: damageTypeFor(def.ammo), base: def.weapon.damage };
 }
 
-/** The ammo stat a weapon spends, for a HUD line or a reserve check. */
 export function ammoStatFor(ammo: AmmoKind): string | null {
   return ammo === "none" ? null : AMMO_STAT_IDS[ammo];
 }
@@ -95,7 +91,6 @@ function createHarborDamage(): DamageRuntime {
 
 const damageOf = perContext((): { runtime: DamageRuntime } => ({ runtime: createHarborDamage() }));
 
-/** The one damage model for this world. */
 export function harborDamage(ctx: GameContext): DamageRuntime {
   return damageOf(ctx).runtime;
 }
@@ -131,7 +126,6 @@ export function landHit(
   }).resolution;
 }
 
-/** Land one weapon pellet on one target. */
 export function landWeaponHit(
   ctx: GameContext,
   input: { from: string; to: string; weaponId: string; position?: readonly [number, number, number] },
@@ -158,7 +152,6 @@ export function landBlast(
   ).map((landed) => landed.resolution);
 }
 
-/** Land a thrown weapon's explosion, with the payload read from the weapon's own chart row. */
 export function landExplosion(
   ctx: GameContext,
   input: { from: string; at: readonly [number, number, number]; radius: number; weaponId: string },

@@ -1,12 +1,5 @@
 import type { InstalledPart, PartDef } from "./modularItem";
 
-/**
- * The declarative identity of a built modular item: a caller-named family, its
- * provenance tags, and the parts occupying its slots. This is the "what an item
- * is" layer above the raw stat rollup in ./modularItem — a plain, serializable
- * value with no game noun baked in ("gun", "manufacturer", "potion" are all
- * caller data in `family`/`tags`).
- */
 export interface ItemIdentity {
   family: string;
   tags: readonly string[];
@@ -58,10 +51,6 @@ export interface ForbidRule {
   message?: string;
 }
 
-/**
- * A cross-slot compatibility rule constraining which part/tag/family
- * combinations a modular item may hold.
- */
 export type CompatibilityRule = RequireRule | ForbidRule;
 
 /**
@@ -71,22 +60,13 @@ export type CompatibilityRule = RequireRule | ForbidRule;
  */
 export interface SetBonus {
   id: string;
-  /** Dimension counted for membership: a part category, a part id, or an identity tag. */
   countBy: "category" | "partId" | "tag";
-  /** The value counted; membership is the number of matching parts (or 0/1 for a tag). */
   value: string;
-  /** Minimum matching count for the bonus to activate. */
   min: number;
-  /** Additive stat deltas applied when the bonus is active. */
   stats: Record<string, number>;
-  /** Optional name fragment recorded in provenance/UI when active. */
   namePart?: string;
 }
 
-/**
- * One failed {@link CompatibilityRule}, carrying the rule id, its kind, and a
- * human-readable message for UI or generator diagnostics.
- */
 export interface ConstraintViolation {
   ruleId: string;
   kind: "require" | "forbid";
@@ -110,19 +90,12 @@ export interface CandidatePlacement {
 export interface ItemProvenance {
   family: string;
   tags: readonly string[];
-  /** slotId -> partId of the selected parts. */
   parts: Readonly<Record<string, string>>;
-  /** Ids of the set bonuses that were active, for display and re-derivation. */
   bonuses: readonly string[];
-  /** Seed of the roll that produced this item; omit for hand-authored items. */
   seed?: number;
 }
 
-/**
- * Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
- *
- * @capability item-identity assemble a serializable modular-item identity from family, tags, and installed parts
- */
+/** @capability item-identity assemble a serializable modular-item identity from family, tags, and installed parts */
 export function identityOf(
   family: string,
   tags: readonly string[],
@@ -139,11 +112,7 @@ function hasPart(identity: ItemIdentity, partId: string): boolean {
   return identity.parts.some((installed) => installed.part.id === partId);
 }
 
-/**
- * Test whether an identity satisfies a declarative {@link IdentityQuery}.
- *
- * @capability item-identity evaluate a data-defined compatibility query against a modular-item identity
- */
+/** @capability item-identity evaluate a data-defined compatibility query against a modular-item identity */
 export function matchesQuery(identity: ItemIdentity, query: IdentityQuery): boolean {
   if (query.family !== undefined && query.family !== identity.family) return false;
   if (query.allTags !== undefined && !query.allTags.every((tag) => identity.tags.includes(tag))) return false;
@@ -162,12 +131,7 @@ function defaultMessage(rule: CompatibilityRule): string {
   return rule.message ?? (rule.kind === "require" ? `${rule.id}: required combination missing` : `${rule.id}: forbidden combination`);
 }
 
-/**
- * Collect every compatibility rule a completed identity violates. An empty
- * result means the identity is legal.
- *
- * @capability item-identity validate a completed modular item against its compatibility rule set
- */
+/** @capability item-identity validate a completed modular item against its compatibility rule set */
 export function validateIdentity(
   identity: ItemIdentity,
   rules: readonly CompatibilityRule[],
@@ -179,11 +143,7 @@ export function validateIdentity(
   return violations;
 }
 
-/**
- * Convenience predicate: true when {@link validateIdentity} finds no violations.
- *
- * @capability item-identity check whether a completed modular item is compatibility-valid
- */
+/** @capability item-identity check whether a completed modular item is compatibility-valid */
 export function isIdentityValid(identity: ItemIdentity, rules: readonly CompatibilityRule[]): boolean {
   return validateIdentity(identity, rules).length === 0;
 }
@@ -212,11 +172,7 @@ export function candidateViolatesForbid(
   return null;
 }
 
-/**
- * Count how many parts (or tags) contribute to a set bonus on an identity.
- *
- * @capability item-identity count set-bonus membership across an item's parts and tags
- */
+/** @capability item-identity count set-bonus membership across an item's parts and tags */
 export function countSetMembers(identity: ItemIdentity, bonus: SetBonus): number {
   switch (bonus.countBy) {
     case "category":
@@ -228,22 +184,12 @@ export function countSetMembers(identity: ItemIdentity, bonus: SetBonus): number
   }
 }
 
-/**
- * Select the set bonuses whose membership count meets their threshold, in the
- * order they were declared.
- *
- * @capability item-identity resolve which match/set bonuses an item qualifies for
- */
+/** @capability item-identity resolve which match/set bonuses an item qualifies for */
 export function activeSetBonuses(identity: ItemIdentity, bonuses: readonly SetBonus[]): SetBonus[] {
   return bonuses.filter((bonus) => countSetMembers(identity, bonus) >= bonus.min);
 }
 
-/**
- * Fold a set of active bonuses' additive stats onto a stat map, returning a new
- * map (the input is not mutated).
- *
- * @capability item-identity apply active set-bonus stats onto an item's resolved stats
- */
+/** @capability item-identity apply active set-bonus stats onto an item's resolved stats */
 export function applySetBonuses(
   stats: Record<string, number>,
   bonuses: readonly SetBonus[],
@@ -255,12 +201,7 @@ export function applySetBonuses(
   return out;
 }
 
-/**
- * Capture the provenance of a generated item — family, tags, per-slot parts,
- * active bonus ids, and optional seed — as a JSON-safe record.
- *
- * @capability item-identity capture serializable provenance for UI display and deterministic regeneration
- */
+/** @capability item-identity capture serializable provenance for UI display and deterministic regeneration */
 export function captureProvenance(
   identity: ItemIdentity,
   activeBonuses: readonly SetBonus[],

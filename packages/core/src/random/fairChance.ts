@@ -1,7 +1,6 @@
 import { shuffleWithRng } from "./pick";
 import { hashUnit, seededRng } from "./rng";
 
-/** How a run of chance rolls is dealt. */
 export interface FairChanceOptions {
   /**
    * Rolls dealt together (default 4). Each bag holds the successes the odds owe it, in shuffled order, so a

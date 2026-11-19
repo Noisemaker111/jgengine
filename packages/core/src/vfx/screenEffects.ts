@@ -1,13 +1,7 @@
 import { clamp01 } from "../math/scalar";
 
-/** How a transient effect's intensity curves from peak to zero over its life. */
 export type ScreenEffectEasing = "linear" | "easeIn" | "easeOut" | "easeInOut";
 
-/**
- * The screen region an effect tints. `"full"` grades the whole frame (a flash);
- * `"vignette"` grades only the edges, leaving the center clear (a directional or
- * ambient border tint). Purely a shape hint for the renderer — no genre meaning.
- */
 export type ScreenEffectShape = "full" | "vignette";
 
 /**
@@ -18,25 +12,17 @@ export type ScreenEffectShape = "full" | "vignette";
  * a sustained (optionally oscillating) hold.
  */
 export interface ScreenEffectSpec {
-  /** Free-string label the game owns; the model treats it as opaque. */
   kind: string;
-  /** CSS color the region is tinted with (e.g. `"#ff2b2b"`, `"rgb(80,200,120)"`). */
   color: string;
   /** Peak opacity `0..1` at full strength. Default `1`. */
   intensity?: number;
-  /** Which region is tinted. Default `"full"`. */
   shape?: ScreenEffectShape;
-  /** Intensity curve for a transient effect. Default `"easeOut"`. */
   easing?: ScreenEffectEasing;
   /**
    * Lifetime in ms for a transient effect (ignored when `sustained`). The effect
    * peaks immediately and eases to zero over this window. Default `400`.
    */
   durationMs?: number;
-  /**
-   * When true the effect holds until {@link ScreenEffectsController.clear} instead
-   * of expiring — a low-health tint, a status aura. Default `false`.
-   */
   sustained?: boolean;
   /**
    * Oscillation frequency in Hz for a sustained effect (a pulse). `0` holds steady
@@ -54,19 +40,14 @@ export interface ScreenEffectSpec {
  * across {@link ScreenEffectsController.composite} calls — read them, don't retain.
  */
 export interface ScreenEffect {
-  /** Stable id assigned at trigger time (use it to {@link ScreenEffectsController.clear}). */
   id: number;
-  /** The game-owned label from the spec. */
   kind: string;
-  /** CSS color to tint with. */
   color: string;
-  /** Region to tint. */
   shape: ScreenEffectShape;
   /** Current eased opacity `0..1`. */
   intensity: number;
 }
 
-/** A persisted effect record (all spec fields resolved plus its start time and id). */
 export interface StoredScreenEffect {
   id: number;
   kind: string;
@@ -82,61 +63,32 @@ export interface StoredScreenEffect {
   startAt: number;
 }
 
-/** Serializable state of every active effect, for save/restore and replay. */
 export interface ScreenEffectsSnapshot {
   /** Wall-clock (ms) the snapshot was taken, so restore re-anchors elapsed time. */
   now: number;
-  /** Next id to hand out. */
   nextId: number;
-  /** Every active effect, transient and sustained. */
   effects: readonly StoredScreenEffect[];
 }
 
-/** A live, clock-driven screen-feedback controller. */
 export interface ScreenEffectsController {
-  /**
-   * Trigger a transient full-screen flash. Convenience for {@link trigger} with
-   * `shape: "full"`. Returns the new effect id.
-   */
   flash(kind: string, spec: Omit<ScreenEffectSpec, "kind" | "shape" | "sustained">): number;
-  /**
-   * Trigger a transient edge vignette. Convenience for {@link trigger} with
-   * `shape: "vignette"`. Returns the new effect id.
-   */
   vignette(kind: string, spec: Omit<ScreenEffectSpec, "kind" | "shape" | "sustained">): number;
-  /**
-   * Start a sustained pulse that holds until {@link clear}. Convenience for a
-   * sustained effect; pass `pulseHz > 0` to breathe. Returns the new effect id.
-   */
   pulse(kind: string, spec: Omit<ScreenEffectSpec, "kind" | "sustained">): number;
-  /** Trigger any effect from a full spec. Returns the new effect id. */
   trigger(spec: ScreenEffectSpec): number;
-  /** Remove one effect by id (typically a sustained one). No-op if unknown. */
   clear(id: number): void;
-  /** Remove every active effect. */
   clearAll(): void;
-  /**
-   * Re-evaluate every effect against the clock: recompute eased intensities, reap
-   * expired transients, and notify subscribers. Allocation-free on the hot path.
-   * Pass an explicit `nowMs` to drive deterministically, else the injected clock.
-   */
   advance(nowMs?: number): void;
   /**
    * The current composite: active effects with their eased `intensity`. The array
    * and its entries are pooled and overwritten on the next call — do not retain.
    */
   composite(): readonly ScreenEffect[];
-  /** Number of active effects. */
   active(): number;
-  /** Observe changes (trigger, clear, advance). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): ScreenEffectsSnapshot;
-  /** Restore from a {@link ScreenEffectsSnapshot}. */
   restore(snapshot: ScreenEffectsSnapshot): void;
 }
 
-/** Options for {@link createScreenEffects}. */
 export interface ScreenEffectsOptions {
   /** Injected clock (ms). Default `Date.now`. */
   now?: () => number;
@@ -158,9 +110,7 @@ function easeProgress(t: number, easing: ScreenEffectEasing): number {
   }
 }
 
-/** Mutable live effect record (internal; pooled per controller, not per tick). */
 interface LiveEffect extends StoredScreenEffect {
-  /** Cached current eased opacity, refreshed by {@link ScreenEffectsController.advance}. */
   current: number;
 }
 

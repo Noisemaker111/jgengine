@@ -12,23 +12,15 @@ import {
 } from "./movementModel";
 import { resolvePlayerMovementTuning } from "./playerMovement";
 
-/** The walk character {@link measureMovement} drives: the same fields a game passes to `defineGame`. */
 export interface MovementProbeSubject {
-  /** `defineGame({ movement })`; `feel` and `backpedalMult` shape the walk. */
   movement?: PlayerMovementConfig;
-  /** `defineGame({ physics })`; `gravity` and `jumpVelocity` shape the jump. */
   physics?: PhysicsConfig;
-  /** The player entity's `movement.walkSpeed` (default `2`, the controller default). */
   walkSpeed?: number;
 }
 
-/** Scenario settings for {@link measureMovement}; every field has a default. */
 export interface MovementProbeOptions {
-  /** Fixed tick, s (default `1/60`). */
   dt?: number;
-  /** Measure with sprint held (default `false`). */
   sprint?: boolean;
-  /** How long jump is held for `tapJumpHeight`, s (default `0.1`). */
   tapSeconds?: number;
 }
 
@@ -36,7 +28,6 @@ export interface MovementProbeOptions {
 export interface MovementReport {
   /** Steady ground speed holding forward, m/s. */
   topSpeed: number;
-  /** Standing start until speed reaches 90% of `topSpeed`, s. */
   timeToTopSpeed: number;
   /** Distance slid after releasing input at `topSpeed`, until speed is under 0.05 m/s, m. */
   stopDistance: number;
@@ -44,15 +35,12 @@ export interface MovementReport {
   stopTime: number;
   /** Seconds from reversing direction at `topSpeed` until speed along the new heading reaches 90% of `topSpeed`. */
   turnAroundTime: number;
-  /** Peak height of a held standing jump, m. */
   jumpHeight: number;
-  /** Peak height of a standing jump released after `tapSeconds`, m. Lower than `jumpHeight` when `jumpCutFactor` is set. */
   tapJumpHeight: number;
   /** Seconds from takeoff to the jump's peak. */
   apexTime: number;
   /** Seconds from takeoff to landing. */
   airTime: number;
-  /** Sideways distance covered by strafing from the first airborne tick of a standing jump until landing, m. */
   airControlReach: number;
 }
 

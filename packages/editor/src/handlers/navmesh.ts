@@ -10,11 +10,6 @@ export function warmNavBake(): void {
   });
 }
 
-/**
- * Bake the document's authored nav areas, plus any caller-provided indexed geometry, into a named
- * document navigation mesh. Authored `nav_link` paths are not baked in: the runtime resolves them
- * onto whichever bake it routes on, so moving a link needs no re-bake.
- */
 export const navMeshHandlers: Pick<HandlerTable, "bakeNavMesh"> = {
   bakeNavMesh: (ctx, request) => {
     if (!navBakeReady()) {

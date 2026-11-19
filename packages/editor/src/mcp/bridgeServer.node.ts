@@ -23,7 +23,6 @@ function readBody(request: import("node:http").IncomingMessage): Promise<string>
   });
 }
 
-/** Starts a Node HTTP server exposing the editor host over POST /rpc and GET /health. */
 export function startEditorBridgeServerNode(options: EditorBridgeServerOptions): EditorBridgeServer {
   const hostname = options.hostname ?? "127.0.0.1";
   const port = options.port ?? 17373;

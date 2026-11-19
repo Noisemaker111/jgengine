@@ -172,7 +172,6 @@ function FeelAudioUI(): ReactNode {
   );
 }
 
-/** Probe for the engine feel layer: default reactions to announced events, captions, buses and mute. */
 export const feelAudioDemoGame: PlayableGame = {
   game,
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },

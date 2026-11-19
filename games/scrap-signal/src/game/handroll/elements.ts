@@ -27,16 +27,13 @@ interface DotRuntime {
   seq: number;
 }
 
-/** Per-session damage-over-time instances, reclaimed with the context. */
 const dotsOf = perContext((): DotRuntime => ({ field: createDotField(), records: new Map(), seq: 0 }));
 
-/** Per-tick damage a proc deals: half the gun's element DPS, scaled by the DoT talent. */
 export function dotTickDamage(gun: GunDef): number {
   const dps = Math.round(gun.elementDps * (1 + bonus("dotDamage")));
   return Math.max(1, Math.round(dps / 2));
 }
 
-/** Queue one independent DoT instance for a proc. Each proc keeps its own timer, as the old array did. */
 export function applyDot(ctx: GameContext, gun: GunDef, fromId: string, targetId: string): void {
   const dots = dotsOf(ctx);
   dots.seq += 1;
@@ -70,7 +67,6 @@ export function applyElementalProc(
   applyDot(ctx, gun, fromId, targetId);
 }
 
-/** Advance every live DoT and route each due tick through the shared effect pipeline. */
 export function tickDots(ctx: GameContext, dtSeconds: number): void {
   const dots = dotsOf(ctx);
   for (const tick of dots.field.tick(dtSeconds)) {

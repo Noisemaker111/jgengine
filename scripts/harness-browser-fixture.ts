@@ -27,7 +27,6 @@ export function cleanupHarness(): void {
   removeDirSync(harnessDir);
 }
 
-/** A scratch project that declares the dependency the harness CLI resolves against. */
 export function harnessProject(prefix: string): { dir: string; dispose: () => void } {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   writeFileSync(join(dir, "package.json"), JSON.stringify({ dependencies: { "@jgengine/shell": "*" } }));
@@ -68,7 +67,6 @@ async function drain(stream: ReadableStream<Uint8Array>): Promise<string> {
   return text;
 }
 
-/** Run a harness CLI child under CLI_DEADLINE_MS, failing the test with its own output if it is killed. */
 export async function runHarnessCli(command: string[], options: { cwd: string; env?: Record<string, string | undefined>; timeoutMs?: number }) {
   const timeoutMs = options.timeoutMs ?? CLI_DEADLINE_MS;
   const child = Bun.spawn([process.execPath, ...command], { cwd: options.cwd, ...(options.env === undefined ? {} : { env: options.env }), stdout: "pipe", stderr: "pipe", timeout: timeoutMs, killSignal: "SIGTERM" });
@@ -113,7 +111,6 @@ const TARGET_STYLES: Record<TargetScenario, string> = {
 /** Scenarios where the harness must refuse the click; the rest must land it. */
 export const BLOCKED_SCENARIOS: readonly TargetScenario[] = ["occluded", "disabled", "aria-disabled", "inert", "hidden"];
 
-/** A target the page draws but another layer covers or disables. */
 export const POINTER_BLOCKED: readonly TargetScenario[] = ["occluded", "disabled", "aria-disabled"];
 
 /** A target the page never renders at all. */
@@ -123,7 +120,6 @@ export function isBlocked(scenario: TargetScenario): boolean {
   return BLOCKED_SCENARIOS.includes(scenario);
 }
 
-/** The page a canonical drive scenario serves: one uppercase "Back" target, blocked or not. */
 export function targetPage(scenario: TargetScenario): string {
   return `<!doctype html><html data-jg-capture="ready"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:20px;background:#134;color:white}button{padding:20px;text-transform:uppercase}${TARGET_STYLES[scenario]}</style><div class="region" ${scenario === "inert" ? "inert" : ""}><div class="spacer"></div><button ${scenario === "aria-label" ? 'aria-label="Back"' : ""} ${scenario === "disabled" ? "disabled" : ""} ${scenario === "aria-disabled" ? 'aria-disabled="true"' : ""}>${scenario === "aria-label" ? '<span aria-hidden="true">←</span>' : "<span>Back</span>"}</button></div><div class="overlay"></div><script>
         const post = (path, body) => { const x = new XMLHttpRequest(); x.open('POST', path, false); x.send(body); };

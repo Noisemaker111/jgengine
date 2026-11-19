@@ -3,17 +3,13 @@ import { SECONDS_PER_GAME_DAY } from "./gameClock";
 export interface TimeConfig {
   /** Game-seconds that elapse per real second at 1× speed. Default 1 (real time). Sims-style compression sets this high (e.g. 60 → one real second is one in-game minute). */
   scale?: number;
-  /** Selectable play/fast-forward multipliers for the speed control. Default [1, 2, 3, 4]. Pause (0×) is always available and separate. */
   speeds?: readonly number[];
   /** Game-seconds in one in-world day; drives the 24-hour calendar breakdown. Default 86400 (1 game-second = 1 clock-second). */
   dayLength?: number;
   /** Game-seconds already elapsed at boot — start the world at 08:00 with `8 * 3600`. Default 0. */
   start?: number;
-  /** Boot with the clock paused. Default false. */
   startPaused?: boolean;
-  /** In-world days per year, driving `calendar().year`/`dayOfYear`/`yearFraction`. Default 365. */
   daysPerYear?: number;
-  /** Named season segments spanning the year in equal shares; when set, `calendar().season` names the current one. */
   seasons?: readonly string[];
 }
 
@@ -40,9 +36,7 @@ export interface CalendarTime {
 export interface ClockSnapshot {
   now: number;
   paused: boolean;
-  /** Speed-control multiplier — 0 while paused. The full game-time rate is `speed × timescale × scale`. */
   speed: number;
-  /** The non-zero multiplier `play()` resumes to. */
   playSpeed: number;
   /** Global slow-motion/fast-forward multiplier; 1 unless `setTimescale` was called. */
   timescale: number;
@@ -58,21 +52,16 @@ export interface SimClock {
   /** Local accepted advance seconds × play speed × timescale, excluding calendar scale and saved offsets. Never hydrated or serialized; optional for external clocks. */
   advancedSeconds?(): number;
   snapshot(): ClockSnapshot;
-  /** Restore clock position — game-time, pause state, and speed multipliers — from a {@link ClockSnapshot} for whole-world save/load. Live timers registered via `after`/`every`/`at` are unaffected. */
   hydrate(snapshot: ClockSnapshot): void;
   calendar(): CalendarTime;
   isPaused(): boolean;
   speed(): number;
   pause(): void;
   play(): void;
-  /** While paused, let the next `count` calls to `advance` run as if playing, then stay paused: one call is one simulation step, however long the render frame is. */
   step(count?: number): void;
   toggle(): void;
-  /** Set the play multiplier; `0` (or negative) pauses, any positive value unpauses and becomes the resume speed. */
   setSpeed(multiplier: number): void;
-  /** Step to the next configured speed (wraps); always unpauses. */
   cycleSpeed(): void;
-  /** Current global timescale multiplier; 1 by default. */
   timescale(): number;
   /**
    * Global slow-motion/fast-forward multiplier composed with the speed control —

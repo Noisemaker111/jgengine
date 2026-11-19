@@ -7,51 +7,30 @@ import { pickWeighted } from "../random/pick";
 /** Cap on affixes one item may roll, so a bad catalog cannot make a drop cost unbounded work. */
 export const MAX_LOOT_AFFIXES = 8;
 
-/** A part a base can mount: its stats, a pick weight, and an optional word for the item name. */
 export interface LootPartDef extends PartDef {
-  /** Relative pick weight among parts eligible for the same slot (default `1`). */
   weight?: number;
-  /** Word this part adds to the generated name, e.g. `"Riveted"`. */
   namePart?: string;
 }
 
-/** A base family (frame, housing, chassis — caller nouns) with its slots, stats and affix pools. */
 export interface LootBaseDef extends ItemBaseDef {
-  /** Relative pick weight among bases a manufacturer can produce (default `1`). */
   weight?: number;
-  /** Lowest item level a roll may pick this base at; omitted means every level. */
   minLevel?: number;
-  /** Mass at item level 1 in the caller's weight unit (default `1`); grows 10% per level. */
   mass?: number;
-  /** Free-form tags for caller filters and UI. */
   tags?: readonly string[];
-  /** Mount slots a roll fills; every declared slot receives one part. */
   slots?: readonly MountSlotDef[];
 }
 
-/**
- * A maker with a stat personality: its mark goes in the name, `bias` shifts stats additively,
- * `scale` multiplies them, and favored affix pools weigh more when this maker rolls the item.
- */
 export interface LootManufacturerDef {
   id: string;
-  /** The maker's mark as it reads in the item name. */
   name: string;
-  /** Relative pick weight among manufacturers (default `1`). */
   weight?: number;
-  /** Base ids this maker produces; omitted means every base. */
   bases?: readonly string[];
-  /** Flat stat shifts applied after level scaling and rarity scaling. */
   bias?: Readonly<Record<string, number>>;
-  /** Per-stat multipliers applied after `bias`. */
   scale?: Readonly<Record<string, number>>;
-  /** Affix pool ids this maker favors. */
   favoredPools?: readonly string[];
-  /** Weight multiplier for an affix from a favored pool (default `3`). */
   favoredWeight?: number;
 }
 
-/** Everything a roll reads: bases, parts, affixes, rarity odds, makers and the level curve. */
 export interface LootCatalog {
   bases: readonly LootBaseDef[];
   parts: readonly LootPartDef[];
@@ -62,7 +41,6 @@ export interface LootCatalog {
   levelScale?: readonly (readonly [number, number])[];
 }
 
-/** One part occupying one slot of a rolled item. */
 export interface LootInstalledPart {
   slotId: string;
   partId: string;
@@ -74,7 +52,6 @@ export interface LootInstalledPart {
  * resolved stats. Plain JSON, so a save stores it and the instance registry can key it.
  */
 export interface LootItem {
-  /** Base definition id; also the registry `baseId` a generated drop is stored under. */
   baseId: string;
   manufacturer: string;
   rarity: string;
@@ -83,20 +60,16 @@ export interface LootItem {
   parts: readonly LootInstalledPart[];
   affixes: readonly RolledAffix[];
   stats: Readonly<Record<string, number>>;
-  /** Carried mass from the base def at this level; absent on saves made before mass existed. */
   mass?: number;
 }
 
-/** Pin any part of a roll; omitted fields are drawn from the catalog. */
 export interface LootRollOptions {
-  /** Item level, integer `>= 1` (default `1`). */
   level?: number;
   baseId?: string;
   manufacturer?: string;
   rarity?: string;
 }
 
-/** A defect found by {@link validateLootItem}. */
 export type LootIssueCode =
   | "invalid-level"
   | "unknown-base"
@@ -116,7 +89,6 @@ export type LootIssueCode =
   | "invalid-mass"
   | "empty-name";
 
-/** One reason a rolled item is not legal against its catalog, with the offending value named. */
 export interface LootValidationIssue {
   code: LootIssueCode;
   detail: string;
@@ -130,51 +102,35 @@ export interface LootStatDelta {
   delta: number;
 }
 
-/** How two items compare: every stat delta plus one weighted score for each. */
 export interface LootComparison {
-  /** Union of both items' stats, sorted by stat id. Missing stats count as `0`. */
   deltas: readonly LootStatDelta[];
   scoreA: number;
   scoreB: number;
-  /** `scoreB - scoreA`. */
   scoreDelta: number;
   better: "a" | "b" | "equal";
 }
 
-/** Caller policy for the comparison score. */
 export interface LootComparisonOptions {
-  /** Weight per stat in the score (default `1` each). */
   weights?: Readonly<Record<string, number>>;
-  /** Stats where a smaller number is better, e.g. reload time; flips their score sign. */
   lowerIsBetter?: readonly string[];
-  /** Score difference under which the items count as equal (default `1e-9`). */
   tolerance?: number;
 }
 
-/** Saved counters of a {@link LootRoller}. */
 export interface LootRollerState {
   rolls: number;
   byRarity: Readonly<Record<string, number>>;
 }
 
-/** Options for {@link createLootRoller}. */
 export interface LootRollerOptions {
-  /** Register a devtools probe under this name reporting roll counts per rarity. */
   devtoolsName?: string;
 }
 
-/**
- * A roll counter over one catalog: every roll goes through {@link rollLoot}, and the handle keeps
- * counters (a distribution readout in the debug overlay) that snapshot and restore as plain data.
- */
 export interface LootRoller {
   roll(rng: () => number, options?: LootRollOptions): LootItem;
   stats(): LootRollerState;
   snapshot(): LootRollerState;
-  /** Replace counters; returns false without mutation when the state is malformed. */
   restore(next: LootRollerState): boolean;
   reset(): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -182,7 +138,6 @@ function check(condition: boolean, message: string): void {
   if (!condition) throw new RangeError(message);
 }
 
-/** Check a catalog before rolling; throws `RangeError` naming the offending entry. */
 export function assertLootCatalog(catalog: LootCatalog): void {
   check(catalog.bases.length > 0, 'Loot catalog field "bases" must not be empty');
   check(catalog.rarities.length > 0, 'Loot catalog field "rarities" must not be empty');
@@ -278,7 +233,6 @@ export function assertLootCatalog(catalog: LootCatalog): void {
   }
 }
 
-/** Stat multiplier at `level` from the catalog's level curve; `1` when the catalog declares none. */
 export function lootLevelScale(catalog: LootCatalog, level: number): number {
   const points = catalog.levelScale ?? [];
   if (points.length === 0) return 1;
@@ -475,12 +429,7 @@ export function rollLoot(catalog: LootCatalog, rng: () => number, options: LootR
   };
 }
 
-/**
- * Check one rolled item against its catalog: base, maker and rarity exist, every slot holds an
- * eligible part, affixes belong to the base's pools, stats are finite and the item is named.
- *
- * @capability loot-validation check a rolled item against its catalog and report each defect with its code
- */
+/** @capability loot-validation check a rolled item against its catalog and report each defect with its code */
 export function validateLootItem(item: LootItem, catalog: LootCatalog): LootValidationIssue[] {
   const issues: LootValidationIssue[] = [];
   if (!Number.isInteger(item.level) || item.level < 1) {
@@ -575,12 +524,7 @@ export function lootStatContributions(
   return out;
 }
 
-/**
- * One stat block's weighted score: the sum of `value × weight`, negated for stats listed in
- * `lowerIsBetter`. Pair it with {@link lootStatContributions} when a caller also needs the split.
- *
- * @capability loot-score score one stat block with caller weights and lower-is-better stats
- */
+/** @capability loot-score score one stat block with caller weights and lower-is-better stats */
 export function scoreLootStats(
   stats: Readonly<Record<string, number>>,
   options: Pick<LootComparisonOptions, "weights" | "lowerIsBetter"> = {},
@@ -590,12 +534,7 @@ export function scoreLootStats(
   return score;
 }
 
-/**
- * Compare two rolled items: every stat delta plus one weighted score for each, with caller-named
- * weights and which stats read better when small.
- *
- * @capability loot-comparison compare two rolled items with per-stat deltas and a weighted score
- */
+/** @capability loot-comparison compare two rolled items with per-stat deltas and a weighted score */
 export function compareLootItems(a: LootItem, b: LootItem, options: LootComparisonOptions = {}): LootComparison {
   const stats = [...new Set([...Object.keys(a.stats), ...Object.keys(b.stats)])].sort();
   const deltas: LootStatDelta[] = [];
@@ -612,12 +551,7 @@ export function compareLootItems(a: LootItem, b: LootItem, options: LootComparis
   return { deltas, scoreA, scoreB, scoreDelta, better };
 }
 
-/**
- * Wrap a catalog in a roll counter: same results as {@link rollLoot}, plus counts by rarity for a
- * debug overlay, snapshot/restore of those counts, and an optional devtools probe.
- *
- * @capability loot-roller roll items from one validated catalog while counting drops per rarity for a debug probe
- */
+/** @capability loot-roller roll items from one validated catalog while counting drops per rarity for a debug probe */
 export function createLootRoller(catalog: LootCatalog, options: LootRollerOptions = {}): LootRoller {
   assertLootCatalog(catalog);
   let rolls = 0;

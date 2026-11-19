@@ -1,8 +1,6 @@
-/** How a scenario did across many seeds. */
 export interface SeedSweep {
   /** Share of seeds the scenario held for, 0-1. */
   rate: number;
-  /** Seeds it failed on, to replay one by hand. */
   failed: readonly string[];
 }
 

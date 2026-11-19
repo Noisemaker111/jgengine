@@ -1,26 +1,20 @@
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import type { CourseSubject } from "@jgengine/core/physics/handlingProbe";
 
-/** Settings for {@link measureStandardManeuvers}; every field but `wheelbase` has a default. */
 export interface StandardManeuverOptions {
-  /** Wheelbase, m: separates the geometric (Ackermann) steer from understeer and sizes the path follower. */
   wheelbase: number;
-  /** Fixed tick, s (default `1/60`). */
   dt?: number;
-  /** ISO 4138 circle radius, m (default `40`). */
   circleRadius?: number;
   /** ISO 7401 test speed, m/s (default 80 km/h). */
   stepSpeed?: number;
   /** ISO 7401 steady-state lateral acceleration the step is sized for, m/s² (default `4`). */
   stepLateralAccel?: number;
-  /** Vehicle width and length for the ISO 3888-1 cone lanes, m (default `1.75` × `4.2`). */
   vehicleWidth?: number;
   vehicleLength?: number;
   /** Tests to run (default all); a skipped test reports `NaN`. */
   tests?: readonly StandardManeuver[];
 }
 
-/** One of the standard tests {@link measureStandardManeuvers} can run. */
 export type StandardManeuver = "circle" | "stepSteer" | "laneChange";
 
 /** Results of the standard handling tests, as the standards define them. `NaN` means the test could not be run. */
@@ -30,15 +24,12 @@ export interface StandardManeuverReport {
    * least-squares slope between 0.1 g and 0.4 g, degrees/g. Positive understeers.
    */
   steadyStateUndersteer: number;
-  /** ISO 4138: highest lateral acceleration held on the circle, g. */
   steadyStateMaxG: number;
-  /** ISO 7401: steer input (`AxisInput.steer`) that holds `stepLateralAccel` at `stepSpeed`. */
   stepSteer: number;
   /** ISO 7401: seconds from 50% steer to 90% of steady yaw rate. */
   stepResponseTime: number;
   /** ISO 7401: seconds from 50% steer to peak yaw rate. */
   stepPeakResponseTime: number;
-  /** ISO 7401: peak yaw rate over steady yaw rate (`1` is no overshoot). */
   stepOvershoot: number;
   /** ISO 3888-1 double lane change, speed held: highest entry speed that clears every cone lane, m/s (`0` if none from 40 km/h). */
   laneChangeSpeed: number;
@@ -84,7 +75,6 @@ function clamp(value: number, low: number, high: number): number {
   return value < low ? low : value > high ? high : value;
 }
 
-/** Steady-state circle (ISO 4138 constant-radius method): a yaw-rate driver holds the circle while speed creeps up. */
 function steadyStateCircle(create: () => CourseSubject, wheelbase: number, radius: number, dt: number): { understeer: number; maxG: number } {
   const car = create();
   let speed = launchTo(car, 5, dt);
@@ -135,7 +125,6 @@ function steadyStateCircle(create: () => CourseSubject, wheelbase: number, radiu
   return { understeer, maxG };
 }
 
-/** Step steer (ISO 7401): size the input for `accel` at `speed`, then step it in 0.15 s with throttle held. */
 function stepSteer(create: () => CourseSubject, speed: number, accel: number, dt: number): { input: number; response: number; peak: number; overshoot: number } {
   const failed = { input: Number.NaN, response: Number.NaN, peak: Number.NaN, overshoot: Number.NaN };
   let input = 0;
@@ -277,13 +266,7 @@ function laneChangeClears(create: () => CourseSubject, entry: number, wheelbase:
   return false;
 }
 
-/**
- * Runs the standard handling tests on fresh vehicles from `create`: ISO 4138 steady-state circular driving
- * (constant radius), ISO 7401 step steer, and the ISO 3888-1 double lane change. Drivers steer through
- * `AxisInput` and read the reported road-wheel angle, so any vehicle sim that fits `CourseSubject` — a game's
- * `VehicleDynamics` or the reference car — runs the same tests and gives comparable numbers.
- * @capability standard-maneuvers measure a vehicle with ISO 4138 steady-state circle, ISO 7401 step steer and ISO 3888-1 lane change
- */
+/** @capability standard-maneuvers measure a vehicle with ISO 4138 steady-state circle, ISO 7401 step steer and ISO 3888-1 lane change */
 export function measureStandardManeuvers(create: () => CourseSubject, options: StandardManeuverOptions): StandardManeuverReport {
   const dt = options.dt ?? 1 / 60;
   const wheelbase = options.wheelbase;

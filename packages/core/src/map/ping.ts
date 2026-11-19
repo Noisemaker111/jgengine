@@ -1,10 +1,8 @@
 import type { PointerHit } from "@jgengine/core/input/pointer";
 import type { MapMarker, MarkerPosition, MarkerSet } from "@jgengine/core/map/markers";
 
-/** A ping category id, such as `enemy`, `loot`, `location` or `danger`. */
 export type PingCategory = string;
 
-/** A ping category: the marker kind it drops, its label and its spoken callout. */
 export interface PingCategoryDef {
   id: PingCategory;
   markerKind: string;
@@ -12,7 +10,6 @@ export interface PingCategoryDef {
   callout: string;
 }
 
-/** Content-agnostic default ping wheel: enemy / loot / location / danger. */
 export const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> = {
   enemy: { id: "enemy", markerKind: "enemy", label: "Enemy", callout: "Enemy spotted" },
   loot: { id: "loot", markerKind: "loot", label: "Loot", callout: "Loot here" },
@@ -20,16 +17,13 @@ export const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> = {
   danger: { id: "danger", markerKind: "danger", label: "Danger", callout: "Watch out" },
 };
 
-/** Feed action pings ride to the rest of the party. */
 export const PING_FEED_ACTION = "party.ping";
 
-/** Lookups `classifyPing` uses: an entity's role and an object's ping category. */
 export interface PingClassifyDeps {
   roleOf?(entityId: string): string | null | undefined;
   categoryOf?(objectId: string): PingCategory | null | undefined;
 }
 
-/** Which roles count as hostile and which category each kind of hit maps to. */
 export interface PingClassifyOptions {
   hostileRoles?: readonly string[];
   enemyCategory?: PingCategory;
@@ -40,12 +34,7 @@ export interface PingClassifyOptions {
 
 const DEFAULT_HOSTILE_ROLES: readonly string[] = ["enemy", "hostile"];
 
-/**
- * Classify what a pointer/aim ray hit into a ping category. Entity hits resolve
- * by catalog role (hostile → enemy, else location); object hits by an
- * optional catalog category tag; open ground is a location ping.
- * @capability ping-classify sort a pointer hit into a ping category (enemy, loot, location, danger) from roles and object categories
- */
+/** @capability ping-classify sort a pointer hit into a ping category (enemy, loot, location, danger) from roles and object categories */
 export function classifyPing(
   hit: PointerHit,
   deps: PingClassifyDeps = {},
@@ -67,7 +56,6 @@ export function classifyPing(
   return locationCategory;
 }
 
-/** A ping as broadcast: id, sender, category, position, the pinged entity and recipients. */
 export interface PingPayload {
   id: string;
   from: string;
@@ -77,21 +65,17 @@ export interface PingPayload {
   objectId: string | null;
   at: number;
   callout: string;
-  /** Party members the broadcast targets; empty when solo or party unconfigured. */
   recipients: readonly string[];
 }
 
-/** Where pings are pushed for other players, such as the party feed. */
 export interface PingFeedSink {
   push(action: string, entry: unknown): void;
 }
 
-/** Who shares a player's pings: their party members. */
 export interface PingParty {
   membersOf(userId: string): string[];
 }
 
-/** What a {@link PingSystem} needs: the marker set, a feed, the party, categories, clock and classify options. */
 export interface PingSystemDeps {
   markers: MarkerSet;
   feed: PingFeedSink;
@@ -105,12 +89,10 @@ export interface PingSystemDeps {
   classifyOptions?: PingClassifyOptions;
 }
 
-/** Classify, build and broadcast pings as map markers shared with the party. */
 export interface PingSystem {
   classify(hit: PointerHit): PingCategory;
   buildPayload(from: string, hit: PointerHit, category?: PingCategory): PingPayload;
   broadcast(payload: PingPayload): MapMarker;
-  /** Classify → build → broadcast in one call; the ping verb. */
   ping(from: string, hit: PointerHit, category?: PingCategory): PingPayload;
 }
 
@@ -121,11 +103,7 @@ function categoryDef(
   return categories[category] ?? { id: category, markerKind: category, label: category, callout: category };
 }
 
-/**
- * Contextual ping/marker communication between teammates, classified by what was pinged.
- *
- * @capability ping-wheel contextual ping/marker communication between teammates
- */
+/** @capability ping-wheel contextual ping/marker communication between teammates */
 export function createPingSystem(deps: PingSystemDeps): PingSystem {
   const now = deps.now ?? Date.now;
   const categories = deps.categories ?? DEFAULT_PING_CATEGORIES;

@@ -1,4 +1,3 @@
-/** Loopback fixture listeners; isolated development hosts use distinct declared ports. */
 export function fixturePorts(env: Record<string, string | undefined>): { frontend: number; realm: number } {
   function port(name: string, fallback: number): number {
     const value = env[name];

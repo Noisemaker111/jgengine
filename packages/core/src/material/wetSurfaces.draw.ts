@@ -59,10 +59,7 @@ if (uJgWetness > 0.001) {
 const FRAGMENT_NORMAL = /* glsl */ `#include <normal_fragment_maps>
 if (jgPuddle > 0.0) normal = normalize(mix(normal, normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz), jgPuddle));`;
 
-/**
- * Whether a material takes the wet-surface layer: lit standard surfaces, including feathered road
- * ribbons. Water, see-through glass and custom shaders keep their own look. @internal
- */
+/** @internal */
 export function takesWetness(material: THREE.Material): boolean {
   const standard = material as THREE.MeshStandardMaterial;
   if (standard.isMeshStandardMaterial !== true || material.userData[WET_KEY] !== undefined) return false;
@@ -96,7 +93,7 @@ export function applyWetness(material: THREE.MeshStandardMaterial): void {
   material.needsUpdate = true;
 }
 
-/** Adds the wet layer to every eligible material in `root`; returns how many it patched. @internal */
+/** @internal */
 export function applyWetnessToScene(root: THREE.Object3D): number {
   let patched = 0;
   root.traverse((node) => {

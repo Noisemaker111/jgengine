@@ -1,11 +1,10 @@
 import { materialCapabilitiesForAsset, type MaterialAsset, type MaterialFamily, type MaterialSurfaceParameters } from "@jgengine/core/material/materialAsset";
 
-/** Prepare an explicit artist edit by retaining declarations and adding its shader requirements. @internal */
+/** @internal */
 export function prepareMaterialAuthoringEdit(asset: MaterialAsset): MaterialAsset {
   return { ...asset, capabilities: [...new Set([...asset.capabilities, ...materialCapabilitiesForAsset(asset)])] };
 }
 
-/** One physical surface field in the material workspace. */
 export interface MaterialControl {
   key: keyof MaterialSurfaceParameters;
   label: string;
@@ -17,7 +16,6 @@ export interface MaterialControl {
   hint?: string;
 }
 
-/** A family-specific group of primary controls; maps and full physical fields remain available. */
 export interface MaterialControlGroup {
   label: string;
   hint: string;
@@ -44,10 +42,7 @@ const highlights: MaterialControlGroup = { label: "Highlights", hint: "Microsurf
 const detail: MaterialControlGroup = { label: "Detail", hint: "Assign normal and roughness maps below; their UVs and scale belong to each texture.", controls: [] };
 const coverage: MaterialControlGroup = { label: "Coverage", hint: "Alpha masking cuts holes; blending changes coverage. Neither is physical transmission.", controls: [opacity, cutoff] };
 
-/**
- * Returns six primary groups suited to the material family without hiding the physical model.
- * @capability editor-material-controls Group physical controls by surface family while retaining advanced fields.
- */
+/** @capability editor-material-controls Group physical controls by surface family while retaining advanced fields. */
 export function materialControlGroups(family: MaterialFamily): readonly MaterialControlGroup[] {
   switch (family) {
     case "fabric": return [base, highlights,
@@ -69,7 +64,6 @@ export function materialControlGroups(family: MaterialFamily): readonly Material
   }
 }
 
-/** Complete supported physical scalar/color fields, independent of the six primary groups. */
 export const advancedMaterialControls: readonly MaterialControl[] = [
   color, roughness, metalness, specular, ior,
   { key: "specularColor", label: "Specular color", kind: "color", fallback: "#ffffff" },
@@ -83,10 +77,7 @@ export const advancedMaterialControls: readonly MaterialControl[] = [
   { key: "emissiveIntensity", label: "Emissive intensity", kind: "number", fallback: 1, min: 0, step: 0.1 }, opacity, cutoff,
 ];
 
-/**
- * Reports geometry prerequisites and renderer approximations to authors.
- * @capability editor-material-controls Explain geometry prerequisites and approximations for a material asset.
- */
+/** @capability editor-material-controls Explain geometry prerequisites and approximations for a material asset. */
 export function materialAuthoringNotes(asset: MaterialAsset): readonly string[] {
   const notes: string[] = [];
   if (asset.family === "fabric") notes.push("Material controls do not bend cloth, add collision, or create fibre geometry.");

@@ -7,14 +7,12 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { editorLayers, type Place } from "../world";
 
-/** Stencilled floor and wall markings the editor scene places on this floor: line numbers, bay marks, hazard chevrons. */
 export function stencilMarkers(place: Place) {
   return editorLayers.markers.filter(marker => marker.kind === "deepward-decal" && marker.meta?.["place"] === place);
 }
 
 type StencilMarker = ReturnType<typeof stencilMarkers>[number];
 
-/** One marker's decal plane: position/rotation on a group, tilt on the mesh, texture leased draw-side. */
 function stencilDraw(marker: StencilMarker): EngineDraw {
   const rules = readDecalRules(marker.meta);
   const group = new THREE.Group();
@@ -70,7 +68,6 @@ function Stencil({ marker }: { marker: StencilMarker }) {
   return <EngineDrawMount create={() => stencilDraw(marker)} deps={[marker]} />;
 }
 
-/** Decals for one floor, one small plane each; the editor owns every placement. */
 export function StencilDecals({ place }: { place: Place }) {
   const markers = useMemo(() => stencilMarkers(place), [place]);
   return <>{markers.map(marker => <Stencil key={marker.id} marker={marker} />)}</>;

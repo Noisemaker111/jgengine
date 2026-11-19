@@ -1,16 +1,13 @@
 // @skill jgengine-world
 export type ContextTargetKind = "entity" | "object";
 
-/** One right-click verb: a label plus the command it dispatches (walk-then-act supported by args). */
 export interface ContextVerb {
   label: string;
   command: string;
   args?: Record<string, unknown>;
-  /** Greyed-out and non-dispatchable when true (e.g. requirement unmet). */
   disabled?: boolean;
 }
 
-/** Builds a {@link ContextVerb} for a right-click menu entry. */
 export function contextVerb(
   label: string,
   command: string,
@@ -22,7 +19,6 @@ export function contextVerb(
 export interface ContextMenu {
   kind: ContextTargetKind;
   targetId: string;
-  /** World point the click landed on, forwarded to dispatched commands for walk-then-act. */
   point?: readonly [number, number, number];
   verbs: readonly ContextVerb[];
 }

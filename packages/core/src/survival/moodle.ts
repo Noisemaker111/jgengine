@@ -2,7 +2,6 @@ export type MoodleSeverity = "good" | "neutral" | "warning" | "critical";
 
 export type MoodleSource = "meter" | "ailment" | "buff";
 
-/** One survival moodle (status icon) — severity, source, and label for HUD chips. */
 export interface Moodle {
   id: string;
   label: string;
@@ -12,7 +11,6 @@ export interface Moodle {
   icon?: string;
   /** 0..1 progress ring — remaining buff time, wound treatment, meter fill. Absent = no ring. */
   fraction?: number;
-  /** Free-form note surfaced under the label (e.g. "-3°C", "needs bandage"). */
   note?: string;
 }
 
@@ -75,13 +73,10 @@ interface TimedMoodleState {
 
 /** Ordered stack of active moodles derived from meters/ailments/buffs. */
 export interface MoodleStack {
-  /** Add or refresh a timed moodle (Valheim food buff, a temporary shelter status). */
   add(input: TimedMoodleInput): void;
   remove(id: string): void;
   has(id: string): boolean;
-  /** Advance timers by a game-time delta; drops expired moodles. */
   tick(dt: number): void;
-  /** The live timed moodles (buffs, temporary statuses). */
   list(): Moodle[];
   clear(): void;
 }

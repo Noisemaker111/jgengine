@@ -9,16 +9,12 @@ export interface FrameTimePercentiles {
   maxMs: number;
 }
 
-/** A fixed-size ring of recent frame times. */
 export interface FrameTimeWindow {
-  /** Record one frame; non-finite and non-positive values are ignored. */
   push(frameMs: number): void;
   count(): number;
   full(): boolean;
   percentiles(): FrameTimePercentiles;
-  /** The kept frames, oldest first. */
   snapshot(): number[];
-  /** Replace the window with `frames` (oldest first); extra leading frames beyond the size are dropped. */
   restore(frames: readonly number[]): void;
   reset(): void;
 }

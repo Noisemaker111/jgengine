@@ -2,7 +2,6 @@ import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sc
 
 import type { Xyz } from "@jgengine/core/math/xyz";
 
-/** The narrow slice of the scene a line-of-hearing test needs. */
 export interface BlockingRaycastSource {
   raycast(input: SceneRaycastInput): SceneRaycastHit | null;
 }

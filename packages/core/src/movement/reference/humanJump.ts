@@ -1,30 +1,18 @@
 import { createHumanBody, type HumanBodyOptions, type HumanJointTorques } from "./humanBody";
 import { maxJointTorque, type LegJoint } from "./jointStrength";
 
-/**
- * A vertical jump by torque generators, as in the jump simulations of D. Selbie and G. Caldwell (*J. Biomech.* 29,
- * 1996) and M. A. King and M. R. Yeadon (*J. Appl. Biomech.* 18, 2002). The joints first servo, within their strength,
- * from quiet stance down toward a squat (the countermovement); then each joint's drive ramps to full extension at its
- * own onset. Torque at every instant is limited by the joint's torque–angle–velocity strength, so jump height comes
- * from strength, not a set takeoff speed.
- */
 export interface JumpParameters {
-  /** Squat the countermovement aims for: hip flexion, knee angle (negative flexed), ankle dorsiflexion, rad. */
   squat: { hip: number; knee: number; ankle: number };
   /** Stiffness and damping of the countermovement servo, per body mass × stature (N·m/rad, N·m·s/rad per kg·m). */
   sinkStiffness: number;
   sinkDamping: number;
-  /** Start of the push, s after leaving quiet stance. */
   sink: number;
   /** Onset of each joint's ramp to full extension, s after the push starts. */
   onset: Record<LegJoint, number>;
-  /** Time the drive takes to rise to full, s. */
   rise: number;
-  /** Flight pose the joints servo to after takeoff, legs reaching for the ground: hip, knee and ankle, rad. */
   reach: Record<LegJoint, number>;
 }
 
-/** Fitted by CMA-ES maximising the reference human's jump height with the trunk within 0.25 rad of upright at takeoff and the push force under 3 body weights. */
 export const COUNTERMOVEMENT_JUMP: JumpParameters = {
   squat: { hip: 1.966, knee: -1.365, ankle: 0.45 },
   sinkStiffness: 1.366,
@@ -35,19 +23,14 @@ export const COUNTERMOVEMENT_JUMP: JumpParameters = {
   reach: { hip: 0.3, knee: -0.3, ankle: 0 },
 };
 
-/** Result of {@link simulateJump}. */
 export interface JumpReport {
-  /** Rise of the centre of mass above standing at the apex, m. */
   height: number;
-  /** Takeoff to touchdown, s. */
   airTime: number;
   /** Vertical centre-of-mass speed at takeoff, m/s. */
   takeoffSpeed: number;
-  /** Depth of the countermovement below standing, m. */
   countermovement: number;
   /** Highest vertical ground force during the push (10 ms average), body weights. */
   pushPeak: number;
-  /** Trunk world angle at takeoff, rad (positive leans back). */
   takeoffTrunk: number;
   /** Vertical centre-of-mass speed at touchdown, downward positive, m/s: what a landing has to absorb. */
   landingSpeed: number;
@@ -67,14 +50,9 @@ function forcePlateFilter(dt: number): (value: number) => number {
     return sum / window.length;
   };
 }
-/** Direction of extension in each joint's own convention. */
 const EXTEND: Record<LegJoint, number> = { hip: -1, knee: 1, ankle: -1 };
 
-/**
- * Jump the reference human (both legs together) from quiet stance with a countermovement, to touchdown. A long `sink`
- * with no motion at its end is a squat jump.
- * @capability human-jump torque-driven countermovement jump of the reference human: height, airtime, push force, touchdown speed
- */
+/** @capability human-jump torque-driven countermovement jump of the reference human: height, airtime, push force, touchdown speed */
 export function simulateJump(params: JumpParameters = COUNTERMOVEMENT_JUMP, options: HumanBodyOptions = {}): JumpReport {
   const body = createHumanBody({ mass: 80, stature: 1.8, ...options });
   body.reset(0);

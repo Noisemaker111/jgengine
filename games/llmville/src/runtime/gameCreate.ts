@@ -15,7 +15,6 @@ import { useUserWorld } from "../world/world";
 
 export type GameCreatePhase = "auth" | "loading" | "bootstrapping" | "redirecting" | "error";
 
-/** Warm the create route and game-session chunk ahead of a click. */
 export function preloadGameCreateRoute() {
   void loadGameSessionModule();
   preloadScreen("/game/create");

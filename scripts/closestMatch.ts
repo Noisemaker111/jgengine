@@ -20,7 +20,6 @@ function words(text: string): string[] {
   return text.split(/[^a-z0-9]+/).filter((word) => word.length > 0);
 }
 
-/** 0 for the same name, rising towards 1 (and past it) as the names share less. */
 function distance(wanted: string, name: string): number {
   // One name inside the other is close only when the inner one is a real part of it, not a hotkey letter.
   const [shorter, longer] = name.length < wanted.length ? [name, wanted] : [wanted, name];
@@ -32,10 +31,6 @@ function distance(wanted: string, name: string): number {
   return edit - (wantedWords.length === 0 ? 0 : 0.5 * (shared / wantedWords.length));
 }
 
-/**
- * Up to `limit` of `names` closest to `wanted`, best first, ignoring case and dropping names too
- * far away to be a likely meaning. Duplicates and empty names are skipped.
- */
 export function closestMatches(wanted: string, names: Iterable<string>, limit = 3): string[] {
   const needle = wanted.trim().toLowerCase();
   const seen = new Set<string>();
@@ -52,7 +47,6 @@ export function closestMatches(wanted: string, names: Iterable<string>, limit = 
   return ranked.slice(0, limit).map((entry) => entry.name);
 }
 
-/** `; closest: "a", "b"` for an error message, or "" when nothing is close. */
 export function closestHint(wanted: string, names: Iterable<string>, what: string): string {
   const close = closestMatches(wanted, names);
   return close.length === 0 ? "" : `; closest ${what}: ${close.map((name) => JSON.stringify(name)).join(", ")}`;

@@ -6,21 +6,13 @@ import {
   type AnimParamValue,
 } from "@jgengine/core/anim/animGraph";
 
-/**
- * Editor animation-graph preview: pure logic, no JSX. Replays a graph from its entry states to a
- * scrub time with fixed steps, arming each recorded trigger at its time, so scrubbing back and forth
- * always shows the same pose the runtime would reach.
- *
- * @internal
- */
+/** @internal */
 
-/** A trigger pressed during preview, at a time on the scrub timeline. */
 export interface GraphPreviewTrigger {
   at: number;
   name: string;
 }
 
-/** Inputs for {@link simulateGraphPreview}. */
 export interface GraphPreviewInput {
   graph: AnimGraph;
   /** Clip durations in seconds from the loaded rig; unknown clips count as one second. */
@@ -32,22 +24,17 @@ export interface GraphPreviewInput {
   step?: number;
 }
 
-/** What the rig shows at the scrub time. */
 export interface GraphPreviewFrame {
   time: number;
-  /** Current state per layer id. */
   states: Record<string, string>;
   clips: AnimClipOutput[];
-  /** Clip events fired from zero to `time`, with when they fired. */
   events: { at: number; name: string; clip: string }[];
-  /** Active root-motion playback stays in place in the editor, matching the collision-authoritative shell. */
   rootMotion?: true;
 }
 
 /** Longest preview timeline the scrubber offers, in seconds. */
 export const MAX_PREVIEW_SECONDS = 20;
 
-/** Replays `graph` from its entry states to `time` and reports the pose there. */
 export function simulateGraphPreview(input: GraphPreviewInput): GraphPreviewFrame {
   const step = input.step ?? 1 / 30;
   const time = Math.max(0, Math.min(MAX_PREVIEW_SECONDS, input.time));
@@ -75,7 +62,6 @@ export function simulateGraphPreview(input: GraphPreviewInput): GraphPreviewFram
   return { time, states, clips: out.clips, events, ...(out.rootMotion === true ? { rootMotion: true as const } : {}) };
 }
 
-/** Every clip name a graph plays. */
 export function graphClipNames(graph: AnimGraph): string[] {
   const names = new Set<string>();
   for (const layer of graph.layers) {
@@ -90,14 +76,12 @@ export function graphClipNames(graph: AnimGraph): string[] {
   return [...names];
 }
 
-/** Every trigger name a graph's transitions listen for, in first-seen order. */
 export function graphTriggers(graph: AnimGraph): string[] {
   const names = new Set<string>();
   for (const layer of graph.layers) for (const transition of layer.transitions) if (transition.trigger !== undefined) names.add(transition.trigger);
   return [...names];
 }
 
-/** A parameter the preview needs a control for: blend inputs and condition operands. */
 export interface GraphParamControl {
   name: string;
   kind: "number" | "boolean";
@@ -105,7 +89,6 @@ export interface GraphParamControl {
   max: number;
 }
 
-/** Parameters a graph reads, with a range covering its blend points and condition values. */
 export function graphParamControls(graph: AnimGraph): GraphParamControl[] {
   const controls = new Map<string, GraphParamControl>();
   const widen = (name: string, value: AnimParamValue) => {
@@ -132,7 +115,6 @@ export function graphParamControls(graph: AnimGraph): GraphParamControl[] {
   return [...controls.values()];
 }
 
-/** Adds a trigger press at `at`, keeping the log in time order. */
 export function recordTrigger(triggers: readonly GraphPreviewTrigger[], name: string, at: number): GraphPreviewTrigger[] {
   return [...triggers, { at, name }].sort((a, b) => a.at - b.at);
 }

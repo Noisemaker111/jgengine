@@ -7,19 +7,14 @@ import { pathToFileURL } from "node:url";
  * same file name in git instead of both merging into one list. The folder's `index.ts` is generated.
  */
 export interface LibraryList {
-  /** Folder of entry files, relative to the repository root. */
   dir: string;
   /** The field that names an entry; it must equal the file's path inside `dir`, without `.ts`. */
   key: string;
-  /** The array the generated index exports. */
   exportName: string;
-  /** JSDoc for that array. */
   doc: string;
-  /** Element type of the exported array; omitted keeps each entry's literal type (`as const`). */
   type?: { name: string; from: string };
 }
 
-/** Every shared library list kept as one file per entry. */
 export const LIBRARY_LISTS: readonly LibraryList[] = [
   { dir: "packages/assets/src/catalogs/fonts", key: "id", exportName: "FONT_LIBRARY", doc: "The shipped font families, each a display or a body face." },
   { dir: "packages/assets/src/catalogs/hdris", key: "id", exportName: "HDRI_LIBRARY", doc: "The shipped HDRIs, each one Poly Haven asset under a plain id." },
@@ -40,12 +35,12 @@ export const LIBRARY_LISTS: readonly LibraryList[] = [
   },
 ];
 
-/** Path of a list's generated index. @internal */
+/** @internal */
 export function libraryIndexPath(list: LibraryList): string {
   return `${list.dir}/index.ts`;
 }
 
-/** Entry names under `dir`, from file paths: `asphalt/wet` for `asphalt/wet.ts`. @internal */
+/** @internal */
 export function libraryEntryNames(root: string, list: LibraryList): string[] {
   const base = join(root, list.dir);
   const names: string[] = [];
@@ -66,11 +61,7 @@ function identifier(name: string): string {
   return /^[0-9]/.test(camel) ? `entry${camel}` : camel;
 }
 
-/**
- * The generated index for a list. Loads every entry and throws when an entry's key is not its file
- * name, or two files map to one identifier.
- * @internal
- */
+/** @internal */
 export async function renderLibraryIndex(root: string, list: LibraryList): Promise<string> {
   const names = libraryEntryNames(root, list);
   const ids = new Map<string, string>();

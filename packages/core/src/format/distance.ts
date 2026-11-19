@@ -2,7 +2,6 @@
 /** Target unit for {@link formatDistance}: meters, kilometers, or `"auto"` (km past 1000m). */
 export type DistanceUnit = "m" | "km" | "auto";
 
-/** Options for {@link formatDistance}. */
 export interface DistanceFormat {
   /** Target unit. `"auto"` switches to km at 1000m and above. Defaults to `"m"`. */
   unit?: DistanceUnit;

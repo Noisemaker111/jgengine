@@ -29,7 +29,6 @@ export interface VehicleTelemetry {
   speedKmh: number;
   /** How hard the tires slide this tick, `0..1` - drives drift reads and evidence. */
   slip: number;
-  /** Surface grip multiplier the sim sampled under the kart this tick. */
   surface: number;
   airborne: boolean;
   blockedByGate: boolean;
@@ -37,13 +36,10 @@ export interface VehicleTelemetry {
   run?: number;
   /** Metres left of the track's centreline (world x when no track is laid). */
   lateral?: number;
-  /** Route the kart is on: the main line or a shortcut. */
   route?: string;
   /** Height of the road under the kart, metres. */
   roadY?: number;
-  /** A train on a crossing stopped this move. */
   blockedByTrain?: string | null;
-  /** Hazards under the kart this tick. */
   hazards?: readonly ActiveHazard[];
 }
 
@@ -56,13 +52,10 @@ export interface VehicleController {
     groundHeightAt: (x: number, z: number) => number,
   ): VehicleTelemetry;
   resetTo(position: readonly [number, number, number], heading: number): void;
-  /** Displace the kart without costing it its momentum - a shove from another bumper. */
   shove(dx: number, dz: number): void;
-  /** Where the kart sits on the track, or `null` off a track. */
   fix(): CourseFix | null;
 }
 
-/** A braced plow stiffens the whole drivetrain: more push and stopping power, less turn-in. */
 const BRACED: VehicleDynamicsModifiers = {
   driveScale: 1 + BRACE_ACCEL_BONUS,
   speedLimitScale: 1 + BRACE_ACCEL_BONUS,
@@ -70,11 +63,6 @@ const BRACED: VehicleDynamicsModifiers = {
   steerScale: 1 - BRACE_TURN_PENALTY,
 };
 
-/**
- * `track` lays the kart on a route course: the course's walls clamp every move, its barricades and
- * crossings veto the moves that would pass them, and its hazards set the grip, drag and belt push.
- * Without one the kart drives Row Six's legacy straight corridor (the feel-parity tests use that).
- */
 export function createVehicleController(
   spawn: {
     position: readonly [number, number, number];
@@ -154,7 +142,6 @@ export function createVehicleController(
     const z = frameTuning === null ? candidateZ : Math.min(candidateZ, blockedZ(x, state.motion.z, candidateZ, frameTuning, airHeight));
     vehicle.restore({ ...state, motion: { ...state.motion, x, z } });
   };
-
 
   return {
     tick(dt, axis, tuning, input, groundHeightAt) {

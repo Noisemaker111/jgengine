@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { createTransportSessionId, type GameRuntimeTransport } from "@jgengine/core/runtime/transport";
 
-/**
- * Joins a host and exposes a retryable blocking state until membership is confirmed.
- * @capability server-session join a multiplayer host with status, retry, and teardown
- */
+/** @capability server-session join a multiplayer host with status, retry, and teardown */
 export function useServerSession(transport: GameRuntimeTransport, gameId: string, preferredServerId?: string) {
   const [attempt, setAttempt] = useState(0);
   const [session, setSession] = useState<{ serverId: string | null; status: "joining" | "joined" | "failed"; failureReason: string | null }>({ serverId: null, status: "joining", failureReason: null });

@@ -5,11 +5,7 @@ import type { AddStructureInput, StructureVec3 } from "./placedStructureStore";
 /** World-space point shared by structure stores and editor markers. */
 export type PlaceAssetVec3 = { x: number; y: number; z: number };
 
-/**
- * Shared place-asset verb: one resolved payload for editor `place_asset` and in-game
- * build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
- * @capability place-asset resolve a placement commit into a shared asset placement payload
- */
+/** @capability place-asset resolve a placement commit into a shared asset placement payload */
 export interface PlaceAssetResult {
   id: string;
   assetId: string;
@@ -21,7 +17,6 @@ export interface PlaceAssetResult {
   meta: Readonly<Record<string, unknown>>;
 }
 
-/** Inputs to {@link resolvePlaceAsset}: asset id, pose, and optional catalog/known fields. */
 export interface ResolvePlaceAssetInput {
   assetId: string;
   position: PlaceAssetVec3 | StructureVec3;
@@ -34,7 +29,6 @@ export interface ResolvePlaceAssetInput {
    * and `space.forwardDegrees` (canonical facing), so the catalog owns the correction instead of games.
    */
   headingDegrees?: number;
-  /** Asset-space metadata driving the heading resolution when `headingDegrees` is set. */
   space?: AssetSpace;
   id?: string;
   color?: string;
@@ -45,7 +39,6 @@ export interface ResolvePlaceAssetInput {
   knownUrl?: string | undefined;
 }
 
-/** Optional catalog/label overrides for {@link placeAssetFromCommit}. */
 export interface PlaceAssetFromCommitOptions {
   kind?: string;
   label?: string;
@@ -75,10 +68,7 @@ function placementId(assetId: string, explicit?: string): string {
   return `placed_${assetId}_${Date.now().toString(36)}_${placementSequence.toString(36)}`;
 }
 
-/**
- * Resolve a place-asset intent into a shared payload (editor + games, one verb).
- * @capability place-asset resolve a placement commit into a shared asset placement payload
- */
+/** @capability place-asset resolve a placement commit into a shared asset placement payload */
 export function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResult {
   const position = normalizePosition(input.position);
   const assetId = input.assetId;
@@ -106,10 +96,7 @@ export function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResu
   };
 }
 
-/**
- * Bridge a {@link PlacementCommit} into the shared place-asset verb.
- * @capability place-asset resolve a placement commit into a shared asset placement payload
- */
+/** @capability place-asset resolve a placement commit into a shared asset placement payload */
 export function placeAssetFromCommit(
   commit: PlacementCommit,
   assetId: string,
@@ -123,7 +110,6 @@ export function placeAssetFromCommit(
   });
 }
 
-/** Game-state form: feed {@link createPlacedStructureStore}.add. */
 export function toStructureInput(result: PlaceAssetResult): AddStructureInput {
   return {
     id: result.id,
@@ -134,7 +120,6 @@ export function toStructureInput(result: PlaceAssetResult): AddStructureInput {
   };
 }
 
-/** Scene-document form: feed editor `addMarker` / `place_asset` path. */
 export function toEditorMarker(result: PlaceAssetResult): {
   id: string;
   kind: string;

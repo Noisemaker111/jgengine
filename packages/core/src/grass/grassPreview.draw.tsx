@@ -35,7 +35,7 @@ function derivePreview(variant: GeneratorVariant): PreviewDerived {
   return { look, side, area: [side, side], ground: previewGround(look), seed: variant.seed };
 }
 
-/** Soil/sand plinth plus the grass patch, as one draw under the preview tile's camera. @internal */
+/** @internal */
 export function grassPreviewDraw(getVariant: () => GeneratorVariant): EngineDraw {
   const group = new THREE.Group();
   let plane: { mesh: THREE.Mesh; geometry: THREE.PlaneGeometry; material: THREE.MeshStandardMaterial } | null = null;
@@ -119,7 +119,7 @@ function GrassPreview({ variant }: GeneratorPreviewProps) {
   return <EngineDrawMount create={() => grassPreviewDraw(() => latest.current)} deps={[variant]} />;
 }
 
-/** Registers the variant-tile preview for grass looks. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerGrassPreview(): void {
   registerGeneratorPreview(GRASS_FIELD_OUTPUT, {
     Component: GrassPreview,

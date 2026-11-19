@@ -14,9 +14,7 @@ import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness,
 /** Vertex attribute {@link ribbonSurfaceFrame} fills: metres along the ribbon, signed metres across it, metres to its far end. */
 export const RIBBON_FRAME_ATTRIBUTE = "jgRibbon";
 
-/** How a ground ribbon (path, road, sidewalk) shades: procedural surface, edge blend and wear. */
 export interface RibbonSurfaceStyle {
-  /** Surface id classified like terrain paint (`"dirt"`, `"gravel"`, `"asphalt"`, …). */
   surface: string;
   /** Width of the edge fade in metres, centred on the authored edge. 0 keeps a hard opaque edge. */
   feather: number;
@@ -26,28 +24,21 @@ export interface RibbonSurfaceStyle {
   wear: number;
 }
 
-/** Options for {@link createSurfaceRibbonMaterial}. */
 export interface SurfaceRibbonMaterialOptions extends Partial<RibbonSurfaceStyle> {
-  /** Authored hue; the procedural surface varies around it. */
   color: string;
   /** Authored half width in metres; the edge fade is centred on it. */
   halfWidth: number;
-  /** Override the surface class's default roughness. */
   roughness?: number;
-  /** Pattern frequency multiplier. Default 1. */
   scale?: number;
-  /** Graphics tier, from `useTerrainQuality()`. `low` drops micro-normals and fine octaves. Default `high`. */
   quality?: GraphicsQuality;
   /** Pull the ribbon toward the camera in depth so it wins over a coplanar layer beneath. */
   polygonOffset?: boolean;
-  /** Multiply by the geometry's `color` attribute, as city ground meshes carry per-vertex tints. */
   vertexColors?: boolean;
   /**
    * Paving slabs `[along, across]` in metres, laid on the ribbon frame so joints run square to the
    * kerb: each slab takes its own tone and the joints darken and dip. Omit for none.
    */
   slabs?: readonly [number, number];
-  /** A loaded scanned surface layered under the procedural wear; see {@link RibbonSurfaceScan}. */
   scan?: RibbonSurfaceScan;
   /**
    * Road paint (lane dashes, stop lines): blends over the surface below and wears through in
@@ -56,7 +47,6 @@ export interface SurfaceRibbonMaterialOptions extends Partial<RibbonSurfaceStyle
   paint?: boolean;
 }
 
-/** A scanned surface on a ribbon: maps, blend, and whether it tiles in world XZ or along the ribbon. */
 export interface RibbonSurfaceScan extends SurfaceScanBlend {
   textures: SurfaceScanTextures;
   /**
@@ -69,11 +59,10 @@ export interface RibbonSurfaceScan extends SurfaceScanBlend {
 
 const SOFT_GROUND: ReadonlySet<TerrainSurfaceClass> = new Set(["dirt", "mud", "sand", "gravel", "grass", "ground", "snow"]);
 
-/** Whether a ribbon surface id is unpaved ground (dirt, gravel, sand, …) that fades into the terrain. @internal */
+/** @internal */
 export function isSoftRibbonSurface(surface: string): boolean {
   return SOFT_GROUND.has(terrainSurfaceClass(surface));
 }
-
 
 /**
  * Default ribbon look for an authored path: the surface comes from `meta.surface`, else the path
@@ -106,12 +95,7 @@ export function ribbonEdgeMargin(style: Pick<RibbonSurfaceStyle, "feather" | "wa
   return style.feather + style.warp * 2;
 }
 
-/**
- * Per-vertex `(along, across, toEnd)` for a ribbon in `buildRoadRibbon`'s layout (left/right vertex
- * pairs down the centreline). Pass several ribbons' position arrays to get one concatenated frame
- * for a merged mesh; each ribbon's distances restart at its own start.
- * @capability ribbon-surface-frame per-vertex along/across/to-end frame a custom ribbon mesh feeds the surface ribbon material
- */
+/** @capability ribbon-surface-frame per-vertex along/across/to-end frame a custom ribbon mesh feeds the surface ribbon material */
 export function ribbonSurfaceFrame(ribbons: readonly Float32Array[]): Float32Array {
   const total = ribbons.reduce((sum, positions) => sum + positions.length, 0);
   const out = new Float32Array(total);
@@ -420,15 +404,11 @@ export function useSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions |
   return material;
 }
 
-/** What {@link scannedRibbonDraw} reads each frame: the spec a scanned ribbon mesh is built from. */
 export interface ScannedRibbonSpec {
   /** The merged ribbon geometry; the draw does not own or dispose it. */
   geometry: THREE.BufferGeometry;
-  /** Scan map URLs to acquire; undefined asks for none. */
   scanMaps?: TerrainMaterialMaps | undefined;
-  /** Whether the scan is wanted this frame (`surfaceDetail && quality !== "low"` at the call site). */
   scanEnabled: boolean;
-  /** The graphics tier the material options were built with; a change rebuilds them. */
   quality: GraphicsQuality;
   /** Ribbon material options for the current scan textures (`null` → the flat fallback). */
   materialOptions: (textures: SurfaceScanTextures | null) => SurfaceRibbonMaterialOptions | null;
@@ -436,7 +416,6 @@ export interface ScannedRibbonSpec {
   fallback: () => THREE.Material;
   receiveShadow?: boolean;
   renderOrder?: number;
-  /** Extra visibility condition ANDed with "scan settled". */
   visible?: boolean;
 }
 

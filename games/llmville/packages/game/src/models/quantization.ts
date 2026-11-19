@@ -8,11 +8,8 @@ export interface QuantizationProfile {
   label: string;
   /** Bytes per parameter at this precision (fp16=2, fp8=1, fp4=0.5). */
   bytesPerParam: number;
-  /** Inference throughput multiplier vs FP16 on precision-capable hardware. */
   throughputMult: number;
-  /** Output-quality multiplier — lower precision trades a little accuracy (and $/token). */
   qualityMult: number;
-  /** Representative method name for UI/flavor. */
   method: string;
 }
 
@@ -22,7 +19,6 @@ const QUANTIZATION_PROFILES: Record<ComputePrecision, QuantizationProfile> = {
   fp4: { precision: "fp4", label: "FP4 / INT4", bytesPerParam: 0.5, throughputMult: 3, qualityMult: 0.9, method: "NVFP4 / GPTQ" },
 };
 
-/** KV-cache + runtime overhead on top of raw weights. */
 export const MODEL_VRAM_OVERHEAD = 1.2;
 
 export function getQuantizationProfile(precision: ComputePrecision | undefined | null): QuantizationProfile {

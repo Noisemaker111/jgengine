@@ -7,13 +7,11 @@ import {
 } from "@jgengine/core/editor/index";
 import sceneJson from "../../editor.scene.json";
 
-/** Shared scene document — spatial placement for zones, clusters, chests, bosses, travel. */
 const sceneDoc: EditorDocument = normalizeEditorLayers(sceneJson as unknown as EditorLayersInput);
 
 export interface ZoneCluster {
   catalogId: string;
   count: number;
-  /** Absolute cluster center resolved from the authored scene volume. */
   center: { x: number; z: number };
   radius: number;
 }
@@ -51,7 +49,6 @@ export interface ZoneDef {
   travelStation: { x: number; z: number };
 }
 
-/** Non-spatial zone catalog: names, levels, settlement recipes, spawn composition. */
 interface ZoneMeta {
   id: string;
   name: string;
@@ -196,7 +193,6 @@ function requireMarker(id: string) {
   return marker;
 }
 
-/** Zones — metadata in code, spatial placement read from `editor.scene.json`. */
 export const ZONES: readonly ZoneDef[] = ZONE_META.map((meta) => {
   const zoneVol = requireVolume(`zone_${meta.id}`);
   const flattenVol = requireVolume(`flatten_${meta.id}`);

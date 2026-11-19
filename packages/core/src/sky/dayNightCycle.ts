@@ -19,67 +19,49 @@ export interface DayNightKeyframe {
   at: number;
   /** Free-form phase label (e.g. `"dawn"`, `"day"`, `"dusk"`, `"night"`, or anything). The model never interprets it. */
   phase: string;
-  /** Primary tint/grade color at this keyframe as `"#rrggbb"`. */
   color: string;
-  /** Optional secondary color (e.g. sky zenith or key-light color). Falls back to `color` when sampled. */
   lightColor?: string;
   /** Optional light level in [0,1] a presenter maps to intensity. Falls back to `1` when sampled. */
   intensity?: number;
 }
 
-/** The interpolated day-night look at a moment: day fraction, active phase, and blended colors. */
 export interface DayNightSample {
   /** Current normalized day fraction in [0,1). */
   dayFraction: number;
-  /** Phase label of the keyframe segment currently active (the free string the game styles). */
   phase: string;
-  /** Blended primary tint/grade color as `"#rrggbb"`. */
   color: string;
-  /** Blended secondary color as `"#rrggbb"` (equals `color` when no keyframe set `lightColor`). */
   lightColor: string;
   /** Blended light level in [0,1]. */
   intensity: number;
 }
 
-/** Serializable day-night position — accumulated clock offset, pause state, and speed — for save/load. */
 export interface DayNightSnapshot {
   /** Accumulated game-time in ms since the cycle's zero, before wrapping into a day. */
   elapsedMs: number;
-  /** Whether the clock is paused. */
   paused: boolean;
-  /** Clock rate multiplier in effect. */
   speed: number;
 }
 
-/** Options for {@link createDayNightCycle}. */
 export interface DayNightCycleOptions {
-  /** At least one keyframe; sorted and wrapped into [0,1) internally. Colors and phases are free-form. */
   keyframes: readonly DayNightKeyframe[];
   /** Real milliseconds for one full day at speed 1. Default `120000` (two minutes). */
   dayLengthMs?: number;
   /** Normalized day fraction to start at, in [0,1). Default `0`. */
   start?: number;
-  /** Clock rate multiplier (`2` runs twice as fast). Default `1`. */
   speed?: number;
-  /** Start with the clock paused. Default `false`. */
   startPaused?: boolean;
   /** Injected clock in ms so advancement stays deterministic under test. Default `Date.now`. */
   now?: () => number;
 }
 
-/** A running, observable, serializable day-night cycle. A presenter renders `sample()`. */
 export interface DayNightCycle {
-  /** The configured keyframes, sorted by `at` and wrapped into [0,1). */
   readonly keyframes: readonly DayNightKeyframe[];
   /** Real milliseconds for one full day at speed 1. */
   readonly dayLengthMs: number;
   /** Current normalized day fraction in [0,1), advanced from the injected clock. */
   dayFraction(): number;
-  /** The free-form phase label active at the current day fraction. */
   phase(): string;
-  /** The interpolated look at the current day fraction. */
   sample(): DayNightSample;
-  /** The interpolated look at an explicit day fraction, without touching the clock. */
   sampleAt(fraction: number): DayNightSample;
   /**
    * Calendar adapter (`{ dayFraction }`) so the cycle drops straight into any
@@ -89,27 +71,17 @@ export interface DayNightCycle {
   calendar(): { dayFraction: number };
   /** Jump the clock to a normalized day fraction (wrapped into [0,1)). */
   setDayFraction(fraction: number): void;
-  /** Whether the clock is paused. */
   isPaused(): boolean;
-  /** Pause advancement. */
   pause(): void;
-  /** Resume advancement. */
   play(): void;
-  /** Toggle pause/resume. */
   toggle(): void;
-  /** Current clock rate multiplier. */
   speed(): number;
-  /** Set the clock rate multiplier; `0` or negative pauses. */
   setSpeed(multiplier: number): void;
-  /** Observe control changes (pause/play/speed/setDayFraction/restore). Returns an unsubscribe fn. Continuous advance is read via `sample()`, not events. */
   subscribe(listener: () => void): () => void;
-  /** Serializable position for a save. */
   snapshot(): DayNightSnapshot;
-  /** Restore position from a {@link DayNightSnapshot}. */
   restore(snapshot: DayNightSnapshot): void;
 }
 
-/** Wrap a number into [0,1), so `-0.1` → `0.9` and `1.2` → `0.2`. */
 function wrap01(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return ((value % 1) + 1) % 1;
@@ -198,7 +170,6 @@ export function createDayNightCycle(options: DayNightCycleOptions): DayNightCycl
     for (const listener of listeners) listener();
   }
 
-  /** Accrue elapsed game-time from the injected clock since the last sync, then re-anchor. */
   function sync(): void {
     const t = now();
     if (!paused) elapsedMs += Math.max(0, t - anchor) * speed;

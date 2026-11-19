@@ -10,11 +10,9 @@ export interface CreatureModelSource {
   title: string;
   author: string;
   license: "CC0 1.0" | "CC-BY 3.0";
-  /** The model's page. */
   page: string;
   /** poly.pizza resource id the bake downloads (`https://static.poly.pizza/<id>.glb`). */
   resource: string;
-  /** How a static model is rigged; omitted for a model that ships animated. */
   rig?: AutoRigOptions;
 }
 
@@ -22,7 +20,6 @@ const polyPizza = (id: string) => `https://poly.pizza/m/${id}`;
 const quaternius = (title: string, id: string, resource: string): CreatureModelSource => ({ title, author: "Quaternius", license: "CC0 1.0", page: polyPizza(id), resource });
 const polyGoogle = (title: string, id: string, resource: string, rig: AutoRigOptions): CreatureModelSource => ({ title, author: "Poly by Google", license: "CC-BY 3.0", page: polyPizza(id), resource, rig });
 
-/** Model files under `/models/imported/creatures/`, by file name. */
 export const CREATURE_MODEL_SOURCES = {
   velociraptor: quaternius("Velociraptor", "cnlGH2UcDd", "c1f0c4cb-c84f-415c-8323-d8cb871a2126"),
   trex: quaternius("T-Rex", "UYtneO5FpF", "34eed102-48f0-43dd-bc6f-ef7a6dfddfbb"),
@@ -73,14 +70,9 @@ export interface SpeciesModel {
   file: CreatureModelFile;
   height: number;
   tint?: string;
-  /** The model materials the tint paints (its hide), leaving eyes, teeth and belly; omit for all. */
   tintMaterials?: readonly string[];
 }
 
-/**
- * Every species' model. Where no free model of the animal exists, its nearest relative stands in at
- * the species' size and colour (README "Gap to target" lists which).
- */
 export const SPECIES_MODELS: Readonly<Record<string, SpeciesModel>> = {
   dodo: { file: "dove", height: 0.8, tint: "#8a8478" },
   phiomia: { file: "elephant", height: 1.9, tint: "#9a8670" },

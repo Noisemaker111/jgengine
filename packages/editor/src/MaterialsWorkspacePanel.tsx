@@ -34,7 +34,7 @@ function materialLabel(materialId: string): string {
   return TERRAIN_PAINT_PRESETS.find((material) => material.id === materialId)?.label ?? materialId;
 }
 
-/** Read the selected model's first usable assignment for workspace initialization. @internal */
+/** @internal */
 export function initialMaterialAssignment(document: Pick<EditorDocument, "markers" | "materialAssets">, selection: readonly string[]): MaterialAssignment | null {
   const marker = document.markers.find((item) => selection.includes(item.id));
   const value = marker?.meta?.["materialAssignments"];
@@ -50,12 +50,7 @@ export function initialMaterialAssignment(document: Pick<EditorDocument, "marker
   return null;
 }
 
-/**
- * Materials workspace home panel: browse every placeable's real `meta.materialId` from the live
- * document, filter by assignment/palette id/text, select into the hierarchy, and assign/clear via
- * the existing `assign_material` / `batch_set_properties` RPC seams. No fake thumbnails.
- * @internal — mounted by `EditorChrome` when the materials workspace is active.
- */
+/** @internal — mounted by `EditorChrome` when the materials workspace is active. */
 export function MaterialsWorkspacePanel({
   session,
   api,

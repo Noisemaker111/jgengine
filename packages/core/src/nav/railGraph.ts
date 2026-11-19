@@ -9,7 +9,6 @@ export interface RailEdge {
   id: string;
   from: string;
   to: string;
-  /** Intermediate shape points between the two node positions (curves, sidings). */
   via?: readonly Waypoint[];
 }
 
@@ -36,9 +35,7 @@ export interface RailGraph {
   node(id: string): RailNode | null;
   edge(id: string): ResolvedRailEdge | null;
   edges(): readonly string[];
-  /** Out-edge ids leaving a node, in declaration order. */
   outEdges(nodeId: string): readonly string[];
-  /** The edge a rider leaves this node on — the thrown switch, defaulting to the first declared out-edge; `null` at a dead end. */
   thrownEdge(nodeId: string): string | null;
   /** Throw the switch at `nodeId` to `edgeId`; `false` unless `edgeId` leaves that node. */
   throwSwitch(nodeId: string, edgeId: string): boolean;
@@ -46,7 +43,6 @@ export interface RailGraph {
 
 export interface RailRiderConfig {
   edgeId: string;
-  /** Arc-length position along the starting edge; default `0`. */
   s?: number;
   /** World units per second; mutate via `setSpeed`. */
   speed: number;
@@ -57,9 +53,7 @@ export interface RailRiderPose {
   /** Yaw (radians) of the travel direction, matching engine `rotationY`. */
   heading: number;
   edgeId: string;
-  /** Arc-length along the current edge. */
   s: number;
-  /** True once the rider stops at a node with no thrown out-edge. */
   atDeadEnd: boolean;
 }
 
@@ -67,7 +61,6 @@ export interface RailRider {
   advance(dt: number): RailRiderPose;
   pose(): RailRiderPose;
   setSpeed(speed: number): void;
-  /** Teleport onto an edge (a respawn or re-rail); throws on an unknown edge. */
   place(edgeId: string, s?: number): void;
 }
 

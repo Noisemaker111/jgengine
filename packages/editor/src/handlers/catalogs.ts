@@ -3,7 +3,6 @@ import { parseParams, validateParams } from "@jgengine/core/generator/paramSchem
 
 import type { HandlerTable } from "./context";
 
-/** Gameplay data catalog verbs (list / get / merge-patch / add / remove rows). */
 export const catalogHandlers: Pick<
   HandlerTable,
   | "list_catalogs"

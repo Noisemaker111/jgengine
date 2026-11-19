@@ -25,14 +25,14 @@ export interface StaticObjectBatch {
   objects: SceneObject[];
 }
 
-/** The same compatibility gate is used when live placements change after grouping. @internal */
+/** @internal */
 export function canBatchStaticObject(candidate: StaticObjectCandidate): boolean {
   const { object, model, catalog } = candidate;
   return (candidate.authored || catalog?.scenery === true) && !candidate.custom && candidate.style === undefined &&
     isCompatibleStaticObject(object, model, catalog);
 }
 
-/** Checks a live placement without constructing a grouping candidate. @internal */
+/** @internal */
 export function isCompatibleStaticObject(object: SceneObject, model: ModelConfig | undefined, catalog: GameContextObjectEntry | null): boolean {
   return model !== undefined &&
     scaleOnlyVisual(object.visual) && object.state === undefined && object.slots === undefined &&
@@ -53,11 +53,6 @@ function isStaticModelCached(model: ModelConfig): boolean {
   return known;
 }
 
-/**
- * A model a batch can draw: nothing that moves or retextures one placement on its own, and parts that
- * are fixed kit pieces (no motion `role`) of models that pass the same test. A composed model with
- * detail levels stays on the individual renderer, which switches its parts with it.
- */
 function isStaticModel(model: ModelConfig, animation: SceneObject["animation"] | ModelConfig["animation"]): boolean {
   const parts = model.parts ?? [];
   return (animation === undefined || animation === "auto" || animation === "none") && (model.ik === undefined || model.ik === "none") &&
@@ -68,19 +63,13 @@ function isStaticModel(model: ModelConfig, animation: SceneObject["animation"] |
       (typeof part.model === "string" || (part.model.variants === undefined && isStaticModel(part.model, part.model.animation))))));
 }
 
-/** One model of a composed placement, and where its part offsets put it under the placement. @internal */
+/** @internal */
 export interface StaticModelPiece {
   model: ModelConfig;
   matrix: THREE.Matrix4;
 }
 
-/**
- * Flatten a model and its kit parts into the pieces a batch draws, each with the offset the
- * individual renderer gives it: a part sits at its position, rotation and uniform scale under its
- * parent part, and a parent's own `scale` sizes only its mesh. A part still named by catalog id
- * draws nothing on either path.
- * @internal
- */
+/** @internal */
 export function staticModelPieces(model: ModelConfig): StaticModelPiece[] {
   const pieces: StaticModelPiece[] = [];
   const visit = (piece: ModelConfig, matrix: THREE.Matrix4) => {
@@ -101,13 +90,12 @@ export function staticModelPieces(model: ModelConfig): StaticModelPiece[] {
   return pieces;
 }
 
-/** A placement visual a batch can draw: none, or only a per-instance scale folded into its matrix. */
 function scaleOnlyVisual(visual: SceneObject["visual"]): boolean {
   if (visual === undefined) return true;
   return visual.color === undefined && visual.opacity === undefined && objectVisualScale(visual).every((axis) => axis > 0);
 }
 
-/** Stable exclusion snapshot; only compatibility transitions allocate. @internal */
+/** @internal */
 export function incompatibleStaticObjectIds(
   batch: StaticObjectBatch,
   get: (id: string) => SceneObject | null,
@@ -156,23 +144,19 @@ export const STATIC_BATCH_CELL = 128;
  */
 export const STATIC_POOL_CELL = 512;
 
-/** The cell a batch's placements draw in, from its first placement. @internal */
+/** @internal */
 export function staticBatchCell(objects: readonly SceneObject[], cell = STATIC_POOL_CELL): string {
   const first = objects[0];
   return first === undefined ? "" : staticPoolCellAt(first.position[0], first.position[2], cell);
 }
 
-/** The shared-batch cell a world point falls in. @internal */
+/** @internal */
 export function staticPoolCellAt(x: number, z: number, cell = STATIC_POOL_CELL): string {
   return `${Math.floor(x / cell)},${Math.floor(z / cell)}`;
 }
 
 const modelJsons = new WeakMap<ModelConfig, string>();
 
-/**
- * A model's JSON, written once per model object: regrouping runs on every placement or removal, and
- * serialising each prop's model again made it cost the whole world each time.
- */
 function modelJson(model: ModelConfig): string {
   let json = modelJsons.get(model);
   if (json === undefined) {
@@ -182,7 +166,7 @@ function modelJson(model: ModelConfig): string {
   return json;
 }
 
-/** Smallest same-model group a cell batches on its own. @internal */
+/** @internal */
 export const STATIC_BATCH_MIN = 2;
 
 /**
@@ -282,9 +266,8 @@ function keepsCachedBatch(cached: StaticObjectBatch, batch: StaticObjectBatch, p
 /** Marks the instanced draws a static object batch owns so the batching probe can count them. @internal */
 export const STATIC_BATCH_MESH_KEY = "jgStaticObjectBatch";
 
-/** What one frame's static object batching produced. @internal */
+/** @internal */
 export interface StaticBatchCounts {
-  /** Instanced draws the loaded models actually submitted. */
   draws: number;
   /** Distinct instances inside those draws after the visibility predicate compacted them. */
   drawn: number;
@@ -391,11 +374,7 @@ export function gatherStaticMembers(
   return into;
 }
 
-/**
- * Order placements farthest from `eye` first, into a reused array. A see-through source blends each
- * instance over what is already drawn, so its instances draw back to front as separate meshes would.
- * @internal
- */
+/** @internal */
 export function sortFarToNear(members: readonly SceneObject[], eye: THREE.Vector3, into: SceneObject[]): SceneObject[] {
   into.length = 0;
   for (const member of members) into.push(member);
@@ -409,12 +388,12 @@ export function sortFarToNear(members: readonly SceneObject[], eye: THREE.Vector
   return into;
 }
 
-/** Whether any of a source's materials blends over what is behind it. @internal */
+/** @internal */
 export function blendsSource(source: ScatterModelSource): boolean {
   return Array.isArray(source.material) ? source.material.some((material) => material.transparent) : source.material.transparent;
 }
 
-/** Write the gathered placements into one source's instances and picking identities without allocating per instance. @internal */
+/** @internal */
 export function syncStaticObjectSource(
   mesh: THREE.InstancedMesh,
   source: ScatterModelSource,

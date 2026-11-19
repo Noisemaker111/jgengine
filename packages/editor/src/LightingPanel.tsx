@@ -17,7 +17,6 @@ const PRESETS: readonly { id: EditorSkyPreset; label: string; hint: string }[] =
   { id: "night", label: "Night", hint: "Low sun, dark dome" },
 ];
 
-/** Engine-aligned defaults shown when the document has no environment bag yet. */
 const DISPLAY_DEFAULTS = {
   preset: "day" as EditorSkyPreset,
   timeOfDay: false,
@@ -66,14 +65,7 @@ function newProbe(doc: EditorDocument, index: number): EditorLightProbe {
   };
 }
 
-/**
- * Lighting workspace panel — edits `document.environment` (sky preset, time-of-day, intensities,
- * fog, optional horizon/zenith colors, the volumetric cloud layer, local lights and baked light-probe volumes) through the
- * session undo stack. No fabricated runtime data: empty document shows defaults as display
- * placeholders; the first edit writes a real bag.
- *
- * @internal
- */
+/** @internal */
 export function LightingPanel({ session }: { session: EditorSession }) {
   const state = useSyncExternalStore(session.subscribe, session.getState, session.getState);
   const env = state.document.environment;

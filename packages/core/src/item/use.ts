@@ -30,11 +30,7 @@ export interface ItemUse<TState> {
   use(state: TState, input: ItemUseInput): ItemUseResult<TState>;
 }
 
-/**
- * Use or consume items, applying their effects and per-item cooldowns.
- *
- * @capability consumables use/consume items with cooldowns and effects
- */
+/** @capability consumables use/consume items with cooldowns and effects */
 export function createItemUse<TState>(
   resolveUse: (itemId: string) => string | null | undefined,
 ): ItemUse<TState> {

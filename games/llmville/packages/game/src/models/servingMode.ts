@@ -9,17 +9,10 @@ export interface ServingModeProfile {
   label: string;
   latencyLabel: string;
   description: string;
-  /** Effective throughput multiplier (bigger batches pack the GPUs better). */
   throughputMult: number;
-  /** $/token multiplier (realtime is a premium; batch is discounted, like a real batch API). */
   revenueMult: number;
 }
 
-/**
- * Bigger batches use the accelerators more efficiently (more tokens/s) but add latency, so batch tokens
- * sell at a discount while realtime commands a premium. Throughput also drives data-token income, so
- * batch trades a little money for a lot more data — a genuine money-vs-data lever, not a free win.
- */
 export const SERVING_MODE_PROFILES: Record<ServingModeId, ServingModeProfile> = {
   realtime: { mode: "realtime", label: "Realtime API", latencyLabel: "Low latency", description: "Premium low-latency serving. Small batches, top $/token, less throughput.", throughputMult: 0.7, revenueMult: 1.5 },
   balanced: { mode: "balanced", label: "Balanced", latencyLabel: "Medium latency", description: "A sensible default mix of latency, price, and throughput.", throughputMult: 1, revenueMult: 1 },

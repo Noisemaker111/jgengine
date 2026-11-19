@@ -1,20 +1,9 @@
-/**
- * The parametric-studio seam: a registry that maps an editor object `kind` to a typed parameter
- * schema (drives the inspector + `meta` parse/validation), an optional pure-data `resolve` (turns a
- * document object into renderable data), and `+ Add` menu metadata. Registering a kind lets a third
- * party ship a new authorable "studio" (pole line, water, bookcase) — schema + resolver here, a
- * matching renderer in `shell` — without editing editor or engine files. Scatter is the proof adopter.
- * The schema itself is `@jgengine/core/generator/paramSchema`.
- */
-
 import { parseParams, type ParamField, type ParamSchema, type ParsedParams } from "../generator/paramSchema";
 import type { WorldSolid } from "../world/worldSolids";
 import type { EditorEnvironment } from "../editor/types";
 
-/** Which document collection a scene kind lives in. Drives placement + which `meta` bag holds params. */
 export type SceneKindTarget = "path" | "marker" | "volume";
 
-/** A closed-polygon area vs an open polyline, for path-target kinds. Ignored for marker/volume kinds. */
 export type ScenePathShape = "area" | "line";
 
 /**
@@ -31,28 +20,14 @@ export interface SceneKindCoverage {
   assetsKey?: string;
 }
 
-/**
- * A registered scene kind — everything the editor/engine need to author and render a studio without
- * bespoke code. `schema` drives the inspector + parse; `resolve` (optional) turns one document object
- * into pure renderable data a matching `shell` renderer consumes; `add*` fields build the `+ Add` menu.
- * @typeParam TResolved — the kind's renderable payload (scatter instances, pole+cable set, …).
- */
 export interface SceneKindDefinition<TResolved = unknown> {
   kind: string;
   target: SceneKindTarget;
-  /** Human label for the inspector header and `+ Add` entry. */
   label: string;
   schema: ParamSchema;
-  /** For path kinds: closed area (default) or open line. Ignored for markers/volumes. */
   pathShape?: ScenePathShape;
-  /** `+ Add` menu section this kind lists under (e.g. "Studios"). Omit to hide from the menu. */
   addCategory?: string;
-  /** Accent color for the inspector panel + `+ Add` entry, as a hex string. */
   accent?: string;
-  /**
-   * `meta` a freshly placed object starts with, for a kind whose objects mean nothing until a few
-   * keys are set (a mission marker's `on`/`action`). Omitted, a placed object starts with no `meta`.
-   */
   placeMeta?: Readonly<Record<string, unknown>>;
   /**
    * Turn one document object (its geometry + parsed params) into pure renderable data. Pure — no
@@ -66,20 +41,9 @@ export interface SceneKindDefinition<TResolved = unknown> {
    * backends and nav grids all collide with what the studio draws.
    */
   solids?: (resolved: TResolved, object: SceneKindObject, params: ParsedParams, context: SceneKindResolveContext) => readonly WorldSolid[];
-  /** Optional one-line readout under the inspector fields (estimate, dimensions) — owned by the studio. */
   note?: (object: SceneKindObject, params: ParsedParams) => string;
-  /**
-   * Optional scatterable-coverage descriptor. When set, the editor leads this kind's inspector with
-   * the shared Area / Assets / Density `CoverageSection` and surfaces the budget clamp-and-warn note,
-   * giving every scatterable kind (grass/scatter/city) one authoring pattern.
-   */
   coverage?: SceneKindCoverage;
-  /**
-   * The registered generator (`@jgengine/core/generator/generator`) whose params this kind's `meta`
-   * holds. When set, the editor adds the seeded variant grid (pick, keep, place) under the inspector.
-   */
   generator?: string;
-  /** Settings bags this kind keeps nested under one `meta` key each (a grass patch's `style`), each shown as its own inspector section. */
   nested?: readonly SceneKindNestedSettings[];
 }
 
@@ -92,33 +56,24 @@ export interface SceneKindNestedSettings {
   key: string;
   label: string;
   schema: ParamSchema;
-  /** Every field's value in effect for this object, given the scene document's environment. */
   effective: (object: SceneKindObject, environment: EditorEnvironment | undefined) => Readonly<Record<string, unknown>>;
 }
 
-/** The raw document object a resolver receives — shape shared by markers, volumes, and paths. */
 export interface SceneKindObject {
   id: string;
   kind: string;
   meta?: Record<string, unknown>;
-  /** Present for path targets: the polyline/polygon points (XZ used). */
   points?: readonly { x: number; y: number; z: number }[];
-  /** Present for marker targets: the placed position. */
   position?: { x: number; y: number; z: number };
-  /** Present for volume targets: the region center. */
   center?: { x: number; y: number; z: number };
-  /** Present for volume targets: box half-extents. */
   halfExtents?: { x: number; y: number; z: number };
-  /** Present for volume targets: sphere/cylinder radius. */
   radius?: number;
   rotationY?: number;
 }
 
-/** Ground sampler + options a resolver may read (terrain height/normal snap). */
 export interface SceneKindResolveContext {
   sampleHeight?: (x: number, z: number) => number;
   sampleNormal?: (x: number, z: number) => readonly [number, number, number];
-  /** Every studio object in the same document, for kinds that read siblings (a `city` reads its `cityzone` volumes). */
   objects?: readonly SceneKindObject[];
 }
 
@@ -133,22 +88,12 @@ export function registerSceneKind<TResolved>(definition: SceneKindDefinition<TRe
   registry.set(definition.kind, definition as SceneKindDefinition);
 }
 
-/**
- * Declare a game's own **click-to-place** marker kind in one call — the light path for logical
- * markers a game reads off the document by `kind` (a stash, checkpoint, spawn point, bounty…), with
- * none of a full studio's schema/resolver boilerplate. Registering it makes the kind a click-to-place
- * tool in the editor's `+ Add` menu (grouped under `category`) and gives its markers an inspector for
- * any `fields` you pass. Call at module load from a module the editor loads (a game's `editorLayers`
- * import graph). Rendering is unaffected — the game still reads `kind` off `editorLayers.markers`.
- */
 export function definePlaceableMarkerKind(options: {
   kind: string;
   label: string;
   /** `+ Add` menu section header this kind groups under. Defaults to `"Custom"`. */
   category?: string;
-  /** Accent hex for the menu entry + inspector header. */
   accent?: string;
-  /** Optional inspector fields written into each marker's `meta` (e.g. a payout value). */
   fields?: readonly ParamField[];
 }): string {
   registerSceneKind({
@@ -162,33 +107,29 @@ export function definePlaceableMarkerKind(options: {
   return options.kind;
 }
 
-/** The registered definition for a kind, or undefined if the kind is a plain (non-studio) kind. @internal */
+/** @internal */
 export function getSceneKind(kind: string): SceneKindDefinition | undefined {
   return registry.get(kind);
 }
 
-/**
- * The `{ meta }` a freshly placed object of `kind` starts with (a copy of its kind's `placeMeta`), or
- * `{}` when the kind declares none — spread into an `addMarker`/`addVolume` object.
- * @internal
- */
+/** @internal */
 export function placeMetaFor(kind: string): { meta?: Record<string, unknown> } {
   const meta = registry.get(kind)?.placeMeta;
   return meta === undefined ? {} : { meta: structuredClone(meta) as Record<string, unknown> };
 }
 
-/** True when a kind has a registered studio definition (schema/inspector/renderer). @internal */
+/** @internal */
 export function isSceneKind(kind: string): boolean {
   return registry.has(kind);
 }
 
-/** Every registered kind, optionally filtered by target, in registration order. @internal */
+/** @internal */
 export function listSceneKinds(target?: SceneKindTarget): SceneKindDefinition[] {
   const all = [...registry.values()];
   return target === undefined ? all : all.filter((definition) => definition.target === target);
 }
 
-/** Parse a document object's `meta` against its registered kind schema, or `null` if unregistered. @internal */
+/** @internal */
 export function parseSceneKindParams(object: SceneKindObject): ParsedParams | null {
   const definition = registry.get(object.kind);
   return definition === undefined ? null : parseParams(definition.schema, object.meta);

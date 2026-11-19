@@ -16,10 +16,8 @@ import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import { demoGame } from "./demoGame";
 import { MATERIAL_SHEET_FLAT as FLAT } from "./materialLibraryFlat";
 
-/** Where `assets pull library --dir apps/dev/public/library-materials` writes the maps. */
 const BASE_PATH = "/library-materials/materials";
 const params = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
-/** `?sheet=flat` keeps the same layout but paints each surface with one flat colour. */
 const flat = params.get("sheet") === "flat";
 /** `?projection=uv` renders through the existing UV material path instead of triplanar projection. */
 const uvProjection = params.get("projection") === "uv";
@@ -27,7 +25,6 @@ const uvProjection = params.get("projection") === "uv";
 const compare = params.get("compare") === "1";
 const group = params.get("group") as LibraryGroup | null;
 
-/** `?hdri=golden-hour` lights the sheet with a shipped HDRI; `?lut=cold-teal` grades it with a shipped colour grade. */
 const hdriId = HDRI_LIBRARY.find((entry) => entry.id === params.get("hdri"))?.id as HdriId | undefined; // type-escape: the query value was just matched against the id list
 const lutId = LUT_GRADES.find((entry) => entry.id === params.get("lut"))?.id as LutGradeId | undefined; // type-escape: the query value was just matched against the id list
 
@@ -35,7 +32,6 @@ const COLUMNS = 8;
 const SPACING = 1.2;
 /** One texture tile across the whole sphere, so the sheet shows the scan rather than a smeared average. */
 const INSPECTION_TILE_METRES = Number(params.get("tile") ?? "0.9");
-/** Blend sharpness override, for judging the three projections independently. */
 const SHARPNESS = Number(params.get("sharp") ?? "8");
 
 /** Geometry without a `uv` attribute: the triplanar path must still show a textured surface. */
@@ -214,7 +210,6 @@ function Legend({ entries }: { entries: readonly LibraryMaterial[] }) {
 }
 
 const entries = group === null ? filterLibraryMaterials("") : filterLibraryMaterials("", group);
-/** `?world=1` swaps the inspection spheres for world surfaces at their authored tile sizes. */
 const worldMode = params.get("world") === "1";
 export const materialLibraryGame: PlayableGame = {
   ...demoGame,
@@ -249,4 +244,3 @@ export const materialLibraryGame: PlayableGame = {
   },
 };
 
-/** Contact sheet for the shared material library; `?sheet=flat`, `?projection=uv`, `?group=metal`. */

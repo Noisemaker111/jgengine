@@ -24,7 +24,6 @@ export function isFrameBoundElement(element: Element): boolean {
 }
 let sharedRaf = 0;
 
-/** The frame the shared loop is running now, or -1 outside it. */
 let runningFrame = -1;
 let frameCount = 0;
 
@@ -56,7 +55,6 @@ export function perFrame<T>(read: () => T): () => T {
   };
 }
 
-/** Run `subscriber` once per animation frame, on the one loop every live binding shares. */
 export function subscribeFrameBind(subscriber: FrameSubscriber): () => void {
   subscribers.add(subscriber);
   if (sharedRaf === 0 && typeof requestAnimationFrame !== "undefined") sharedRaf = requestAnimationFrame(sharedTick);
@@ -96,12 +94,12 @@ export function useLiveSelect<T, S>(value: Live<T>, select: (value: T) => S, isE
   return useSyncExternalStore(isLive(value) ? subscribeFrameBind : noFrames, getSnapshot, getSnapshot);
 }
 
-/** Live bindings currently on the loop. @internal */
+/** @internal */
 export function frameBindSubscriberCount(): number {
   return subscribers.size;
 }
 
-/** Run every live binding now, as one frame would: a test steps the HUD with it. @internal */
+/** @internal */
 export function flushFrameBinds(): void {
   for (const subscriber of subscribers) subscriber();
 }
@@ -171,14 +169,10 @@ export function useFrameBind<T, E extends Element = Element>(
   }, []);
 }
 
-/** Inline and block elements a live text can be. */
 export type LiveTextTag = "span" | "b" | "strong" | "small" | "em" | "i" | "div" | "p" | "dd" | "dt" | "td" | "output" | "text" | "tspan";
 
-/** Props for {@link LiveText}. */
 export interface LiveTextProps<T> extends Omit<HTMLAttributes<HTMLElement>, "children"> {
-  /** Read once per frame. */
   get: () => T;
-  /** The text for a value. Default `String(value)`. */
   format?(value: T): string;
   as?: LiveTextTag;
 }

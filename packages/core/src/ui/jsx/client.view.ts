@@ -1,7 +1,3 @@
-/**
- * Mounts an engine UI tree on a page: `createRoot(container).render(<App />)`.
- */
-
 import { createPortal } from "./element";
 import type { UiNode } from "./element";
 import { pageHost } from "./pageHost.view";
@@ -14,7 +10,6 @@ export interface Root {
 
 let rootCount = 0;
 
-/** A root drawing `container`'s children as DOM elements. */
 export function createRoot(container: Element | DocumentFragment): Root {
   rootCount += 1;
   const tree = new TreeRoot(pageHost, container, rootCount === 1 ? "r" : `r${rootCount}`);

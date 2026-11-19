@@ -1,12 +1,8 @@
 // @skill jgengine-world
-/** A road centerline vertex in world XZ. */
 export type RoadPoint = readonly [number, number];
 
-/** Renderer-ready triangle ribbon: flat position triples plus triangle indices. */
 export interface RoadRibbon {
-  /** Interleaved xyz vertex positions. */
   positions: Float32Array;
-  /** Triangle indices into `positions`. */
   indices: Uint32Array;
 }
 
@@ -73,17 +69,13 @@ export function roundPathCorners(
  * Values are chosen with real separation so a small terrain slope can't invert the order.
  */
 export const GROUND_DECAL_LAYERS = {
-  /** Road ribbons. */
   road: 0.06,
   /** Junction surfaces — SAME layer as `road` because they are seam-welded, never stacked. */
   junction: 0.06,
-  /** Lane markings / crosswalks — the only coplanar overlay; also set polygonOffset/renderOrder. */
   marking: 0.11,
-  /** Emissive decals above markings (glow, halos). */
   glow: 0.14,
 } as const;
 
-/** Options for {@link buildRoadRibbon}. */
 export interface RoadRibbonOptions {
   /** Lift above the sampled ground so the ribbon never z-fights the terrain. Default {@link GROUND_DECAL_LAYERS}.road. */
   elevation?: number;
@@ -117,12 +109,6 @@ function normalAt(points: readonly RoadPoint[], index: number): readonly [number
   return [-dz / length, dx / length];
 }
 
-/**
- * Triangulate a road centerline into a ground-draped ribbon mesh: the polyline is subdivided,
- * each vertex is offset half a `width` along the local perpendicular, and every vertex sits at
- * `sampleHeight(x, z) + elevation`. Pure geometry — the shell (or any renderer) turns the result
- * into a mesh, and tests can assert on it directly.
- */
 export function buildRoadRibbon(
   path: readonly RoadPoint[],
   width: number,
@@ -271,12 +257,6 @@ export function buildRoadRibbon(
   return { positions, indices };
 }
 
-/**
- * Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line,
- * `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back
- * through {@link buildRoadRibbon} with a thin width to mesh the dashes. Trim the centerline at
- * junctions first ({@link buildTrimmedIntersections}) so dashes stop at the crossing.
- */
 export function dashSegments(
   path: readonly RoadPoint[],
   dashLength = 3,
@@ -316,13 +296,9 @@ export function dashSegments(
   return dashes;
 }
 
-/** Result of {@link nearestOnPath}: closest point on the centerline plus distance and tangent. */
 export interface RoadSample {
-  /** Closest point on the centerline. */
   point: RoadPoint;
-  /** World distance from the query to `point`. */
   distance: number;
-  /** Unit tangent of the centerline at `point`. */
   tangent: readonly [number, number];
 }
 
@@ -351,13 +327,12 @@ export function nearestOnPath(path: readonly RoadPoint[], x: number, z: number):
   return best;
 }
 
-/** True when the query point lies within half the road `width` of the centerline. */
 export function isOnRoad(path: readonly RoadPoint[], width: number, x: number, z: number): boolean {
   const sample = nearestOnPath(path, x, z);
   return sample !== null && sample.distance <= width / 2;
 }
 
-/** Total arc length of a centerline in world units. @internal */
+/** @internal */
 export function polylineLength(path: readonly RoadPoint[]): number {
   let total = 0;
   for (let i = 0; i < path.length - 1; i += 1) {
@@ -368,7 +343,6 @@ export function polylineLength(path: readonly RoadPoint[]): number {
   return total;
 }
 
-// ---------------------------------------------------------------------------------------------
 // Junction trimming + welded surfaces
 //
 // The old model extruded each street into a full-length ribbon and hid the mess where they cross
@@ -376,7 +350,6 @@ export function polylineLength(path: readonly RoadPoint[]): number {
 // inside the node and the disc z-fighting them from 0.02 above. The functions below build the real
 // thing as pure geometry: ribbons are TRIMMED back to the junction boundary, and one surface is
 // WELDED onto the exact corner vertices where they stop — a shared seam, no overlap, no disc.
-// ---------------------------------------------------------------------------------------------
 
 /**
  * The minimal junction shape this geometry needs — a node position plus its outgoing arms. Matches
@@ -392,7 +365,6 @@ export interface RoadJunctionInput {
   elevation?: number;
 }
 
-/** Tunables shared by {@link trimPathAtJunctions}, {@link buildJunctionSurface}, and {@link buildTrimmedIntersections}. */
 export interface JunctionGeometryOptions {
   /**
    * Requested curb-return radius at exterior corners between adjacent approaches. Default 2.
@@ -400,17 +372,10 @@ export interface JunctionGeometryOptions {
    * never inflates the paved conflict area the way an apron pull-back would.
    */
   curbReturnRadius?: number;
-  /**
-   * Extra clearance beyond the projected crossing half-width so ribbons stop just outside the
-   * carriageway union. Default 0.25. Does **not** include the curb-return radius (returns live only
-   * on the exterior corner arcs).
-   */
   apronMargin?: number;
-  /** Samples per curb-return fillet arc between two adjacent approach corners. Default 4. */
   filletSegments?: number;
   /** Lift above sampled ground. Defaults to {@link GROUND_DECAL_LAYERS}.junction (== road: seam-shared). */
   elevation?: number;
-  /** Longest step before draping subdivision, matching {@link buildRoadRibbon}. Default 4. */
   maxSegmentLength?: number;
   /** World-space tolerance for matching a path vertex onto a junction node. Default 1e-6. */
   nodeEpsilon?: number;
@@ -420,25 +385,19 @@ export interface JunctionGeometryOptions {
 export interface RoadCut {
   /** Index (into the `junctions` array passed to the trimmer) of the junction this cut welds to. */
   junctionIndex: number;
-  /** Whether the cut is at the start or the end of the returned sub-path. */
   at: "start" | "end";
   /** Trimmed centerline endpoint — the point on the junction boundary the ribbon now ends at. */
   center: RoadPoint;
   /** Unit direction pointing from the junction center outward into the road. */
   direction: readonly [number, number];
-  /** Left edge corner at the cut (`center` + width/2 along the local perpendicular). */
   left: RoadPoint;
-  /** Right edge corner at the cut (`center` − width/2 along the local perpendicular). */
   right: RoadPoint;
   /** Arc-length the ribbon was pulled back from the junction center. */
   apron: number;
 }
 
-/** A street sub-path after trimming, plus the cuts (0–2) that shortened it. Feed `path` to {@link buildRoadRibbon}. */
 export interface TrimmedRoad {
-  /** Trimmed centerline (≥2 points) ready for meshing. */
   path: RoadPoint[];
-  /** Cuts applied to this sub-path — at most one `start` and one `end`. */
   cuts: RoadCut[];
 }
 
@@ -464,7 +423,6 @@ function apronDistance(
   junction: RoadJunctionInput,
   outward: readonly [number, number],
   margin: number,
-  /** Half-width of the approach being trimmed (for acute-angle mouth clearance). */
   selfHalf = 0,
 ): number {
   const arms = junction.arms;
@@ -501,7 +459,6 @@ function apronDistance(
   return crossMax + margin;
 }
 
-/** Clamp a requested curb-return radius by the two adjacent road widths and the corner chord. */
 function clampCurbReturnRadius(
   requested: number,
   widthA: number,
@@ -516,7 +473,6 @@ function clampCurbReturnRadius(
   return Math.max(0, Math.min(requested, byWidth, byChord));
 }
 
-/** Point + forward tangent at arc-length `dist` from the start of `sub`; used to place a cut. */
 function pointAtArcLength(sub: readonly RoadPoint[], dist: number): { point: RoadPoint; segment: number; tangent: readonly [number, number] } {
   let acc = 0;
   for (let i = 0; i < sub.length - 1; i += 1) {
@@ -536,7 +492,6 @@ function pointAtArcLength(sub: readonly RoadPoint[], dist: number): { point: Roa
   return { point: [last[0], last[1]], segment: sub.length - 2, tangent: [1, 0] };
 }
 
-/** Left/right corners exactly as {@link buildRoadRibbon} would emit them at a cut (center ± half along ⟂tangent). */
 function cornerPair(center: RoadPoint, tangent: readonly [number, number], half: number): { left: RoadPoint; right: RoadPoint } {
   // Matches buildRoadRibbon's normalAt: normal = [-tangent.z, tangent.x]; left = +normal, right = −normal.
   const nx = -tangent[1];
@@ -656,29 +611,20 @@ export function trimPathAtJunctions(
   return result;
 }
 
-/** One approach feeding {@link buildJunctionSurface}: the exact draped corner vertices a ribbon ends at. */
 export interface JunctionApproach {
   /** Junction-boundary centerline point where the ribbon ends. */
   center: RoadPoint;
-  /** Left edge corner (draped `[x, y, z]`) — the ribbon's terminal left vertex. */
   left: readonly [number, number, number];
-  /** Right edge corner (draped `[x, y, z]`) — the ribbon's terminal right vertex. */
   right: readonly [number, number, number];
-  /** Unit direction from the node into this approach. Present on approaches emitted by {@link buildTrimmedIntersections}. */
   direction?: readonly [number, number];
-  /** Unit tangent in the source street's authored path order. */
   sourceTangent?: readonly [number, number];
   /** Source street index, so consumers never have to infer identity from rendered vertices. */
   streetIndex?: number;
-  /** Source trimmed-ribbon index, parallel to {@link TrimmedIntersections.trimmed}. */
   trimmedIndex?: number;
   /** Which end of the source trimmed path meets this junction. */
   cutAt?: "start" | "end";
-  /** Full pavement width at this mouth. */
   width?: number;
-  /** Sidewalk widths attached to the source path's left and right pavement edges. */
   sidewalkWidths?: IntersectionSidewalkWidths | undefined;
-  /** Lane-paint declaration inherited from the source street. */
   markings?: IntersectionMarkingIntent | undefined;
 }
 
@@ -977,41 +923,27 @@ export function buildJunctionSurface(
   return { positions, indices: Uint32Array.from(idx) };
 }
 
-/** Widths of renderer-neutral sidewalk bands on each authored side of a street. */
 export interface IntersectionSidewalkWidths {
-  /** Width beyond the left pavement edge. Omit or use zero for no band. */
   left?: number;
-  /** Width beyond the right pavement edge. Omit or use zero for no band. */
   right?: number;
 }
 
-/** One longitudinal lane-marking ribbon, offset left (+) or right (-) from the authored centerline. */
 export interface IntersectionMarkingLine {
-  /** Signed centerline offset in world units. Default 0. */
   offset?: number;
-  /** Paint width. Default 0.15. */
   width?: number;
 }
 
-/** Paint intent carried through trimming without renderer inference. */
 export interface IntersectionMarkingIntent {
-  /** Longitudinal marking ribbons. */
   lines?: readonly IntersectionMarkingLine[];
-  /** Emit a transverse stop line at this street's multi-arm approaches. Default false. */
   stopLine?: boolean;
-  /** Emit a zebra crosswalk just outside the stop line at this street's multi-arm approaches. Default false. */
   crosswalk?: boolean;
 }
 
-/** One street to trim + mesh through {@link buildTrimmedIntersections}. */
 export interface IntersectionStreet {
   /** Street centerline; endpoints/vertices coincide with junction nodes. */
   path: readonly RoadPoint[];
-  /** Full road width. */
   width: number;
-  /** Optional, independently-sized bands beyond the authored left/right pavement edges. */
   sidewalks?: IntersectionSidewalkWidths;
-  /** Optional lane-paint declaration. Omission preserves the previous pavement-only output. */
   markings?: IntersectionMarkingIntent;
   /** Lift of this street's ribbon above the ground. Default: `options.elevation`, else {@link GROUND_DECAL_LAYERS}.road. */
   elevation?: number;
@@ -1019,21 +951,14 @@ export interface IntersectionStreet {
 
 /** Renderer-ready output of {@link buildTrimmedIntersections}: trimmed ribbons + welded junction surfaces. */
 export interface TrimmedIntersections {
-  /** One trimmed ribbon per surviving sub-path (a through-street contributes two). */
   ribbons: RoadRibbon[];
-  /** The trimmed sub-paths, parallel to `ribbons`, for lane markings / analysis. */
   trimmed: TrimmedRoad[];
   /** One welded surface per junction that had ≥1 incident approach. */
   junctions: RoadRibbon[];
-  /** Index into the input `junctions` for each surface, parallel to `junctions` above. */
   junctionIndices: number[];
-  /** Exact ribbon-mouth approaches for each surface, parallel to `junctions`; useful for dressing. */
   junctionApproaches: JunctionApproach[][];
-  /** Source street index for each entry in `trimmed`/`ribbons`. */
   trimmedStreetIndices: number[];
-  /** Source pavement width for each entry in `trimmed`/`ribbons`. */
   trimmedWidths: number[];
-  /** Source paint intent for each entry in `trimmed`/`ribbons`. */
   trimmedMarkings: (IntersectionMarkingIntent | undefined)[];
   /** Road-side sidewalk bands, excluding junction interiors. */
   sidewalks: RoadRibbon[];
@@ -1043,10 +968,6 @@ export interface TrimmedIntersections {
   sidewalkApronJunctionIndices: number[];
 }
 
-/**
- * Offset a centerline sideways by a signed distance along its local perpendicular: the building block
- * for lanes, curb lines and sidewalk paths. Positive offsets fall on the left of travel.
- */
 export function offsetPath(path: readonly RoadPoint[], offset: number): RoadPoint[] {
   const out = new Array<RoadPoint>(path.length);
   for (let i = 0; i < path.length; i += 1) {
@@ -1408,33 +1329,20 @@ export function buildTrimmedIntersections(
   };
 }
 
-/** Tunables for {@link buildIntersectionMarkings}. */
 export interface IntersectionMarkingOptions {
-  /** Clearance between a multi-arm road mouth and longitudinal paint / stop lines. Default 1. */
   mouthClearance?: number;
-  /** Default longitudinal paint width. Default 0.15. */
   lineWidth?: number;
-  /** Transverse stop-line width along the approach. Default 0.35. */
   stopLineWidth?: number;
-  /** Gap left between a stop line and each pavement edge. Default 0.5. */
   stopLineEdgeClearance?: number;
-  /** Zebra bars per crosswalk. Default 5. */
   crosswalkBars?: number;
-  /** Width of one zebra bar. Default 0.55. */
   crosswalkBarWidth?: number;
-  /** Depth of a crosswalk along travel. Default 2.4. */
   crosswalkDepth?: number;
-  /** Gap between the stop line and the crosswalk. Default 0.4. */
   crosswalkGap?: number;
   /** Samples in a degree-2 marking connector. Default 8. */
   connectorSegments?: number;
-  /** Painted dash length. Omit or use zero for a solid line. */
   dashLength?: number;
-  /** Gap between painted dashes. Default 3 when `dashLength` is positive. */
   dashGap?: number;
-  /** Marking lift above terrain. Default {@link GROUND_DECAL_LAYERS}.marking. */
   elevation?: number;
-  /** Longest draping step. Default 4. */
   maxSegmentLength?: number;
 }
 

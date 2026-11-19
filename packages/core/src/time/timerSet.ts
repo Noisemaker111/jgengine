@@ -14,29 +14,18 @@ import { clamp01 } from "../math/scalar";
  * re-anchoring on restore, so pause/resume survives serialization.
  */
 
-/** Direction a timer counts. `"down"` leads with `remainingMs` (countdown); `"up"` leads with `elapsedMs` (charge). */
 export type TimerDirection = "down" | "up";
 
-/** Options for {@link TimerSet.start}. */
 export interface TimerStartOptions {
   /** Full span of the timer in milliseconds. Non-positive spans read as instantly expired. */
   durationMs: number;
-  /** Count direction. Default `"down"`. Purely a read convenience — expiry is the same either way. */
   direction?: TimerDirection;
   /** When true the timer wraps at its duration and emits an expiry edge each cycle instead of stopping. Default `false`. */
   loop?: boolean;
 }
 
-/**
- * A single timer's resolved state for one read. All fields are plain numbers so
- * a HUD can render without touching the model. For a looping timer the values
- * describe the current cycle; `expired` is only ever `true` for a finished
- * non-looping timer (loops signal completion through {@link TimerSet.poll}).
- */
 export interface TimerRead {
-  /** The timer's id (free string). */
   id: string;
-  /** The configured count direction — lets a readout auto-pick remaining (`"down"`) vs elapsed (`"up"`). */
   direction: TimerDirection;
   /** Milliseconds left in this cycle, clamped to `0`. */
   remainingMs: number;
@@ -46,13 +35,10 @@ export interface TimerRead {
   durationMs: number;
   /** Fill fraction `0..1` = `elapsedMs / durationMs` — a ring or bar fills as time passes. */
   progress01: number;
-  /** Whether the timer is counting (not paused/stopped). */
   running: boolean;
-  /** True once a non-looping timer has reached its duration. Always `false` for a looping timer. */
   expired: boolean;
 }
 
-/** One timer's serializable state — elapsed resolved at snapshot time, ready to re-anchor on restore. */
 export interface TimerSnapshot {
   id: string;
   durationMs: number;
@@ -61,72 +47,37 @@ export interface TimerSnapshot {
   /** Elapsed milliseconds at the moment of the snapshot. */
   elapsedMs: number;
   running: boolean;
-  /** Whether this non-looping timer had already emitted its expiry edge. */
   fired: boolean;
 }
 
-/** Serializable state of a whole {@link TimerSet}. */
 export interface TimerSetSnapshot {
   timers: TimerSnapshot[];
 }
 
-/** Options for {@link createTimerSet}. */
 export interface TimerSetOptions {
   /** Injected clock (ms). Default `Date.now`. Inject a sim clock for determinism. */
   now?: () => number;
 }
 
-/** Listener notified when a timer newly expires. Receives the timer id. */
 export type TimerExpiryListener = (id: string) => void;
 
-/**
- * A named set of countdown / countup timers on an injected clock. Start, pause,
- * resume, stop, reset, and read timers by free-string id; observe structural
- * changes with {@link TimerSet.subscribe} and expiry edges with
- * {@link TimerSet.poll} / {@link TimerSet.onExpire}.
- */
 export interface TimerSet {
-  /** Start (or replace) a timer by id, running from zero. */
   start(id: string, options: TimerStartOptions): void;
-  /** Pause a running timer, freezing its elapsed time. No-op if unknown or already paused. */
   pause(id: string): void;
-  /** Resume a paused timer from where it stopped. No-op if unknown or already running. */
   resume(id: string): void;
-  /** Halt a timer and reset its elapsed time to zero, keeping it in the set (not running). */
   stop(id: string): void;
-  /** Restart a timer's elapsed time from zero, preserving its running state. */
   reset(id: string): void;
-  /** Remove a timer from the set entirely. */
   remove(id: string): void;
-  /** Pause every running timer (e.g. a global game pause). */
   pauseAll(): void;
-  /** Resume every paused timer. */
   resumeAll(): void;
-  /** Whether a timer with this id exists. */
   has(id: string): boolean;
-  /** Every timer id currently in the set. */
   ids(): readonly string[];
-  /**
-   * Resolve a timer's current state. Pass `out` to reuse an object and avoid
-   * per-read allocation in a hot HUD loop. Returns `null` for an unknown id.
-   */
   read(id: string, out?: TimerRead): TimerRead | null;
-  /** Resolve every timer, newest reads. Allocates an array — for per-frame reads prefer {@link TimerSet.read} with `out`. */
   list(): TimerRead[];
-  /**
-   * Advance expiry detection to the current clock time and return the ids that
-   * newly expired since the last poll (firing {@link TimerSet.onExpire}
-   * listeners for each). Looping timers report once per completed cycle. Call
-   * once per frame/tick to react to finished timers.
-   */
   poll(): readonly string[];
-  /** Observe structural changes (start/pause/resume/stop/reset/remove/restore). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Observe expiry edges surfaced by {@link TimerSet.poll}. Returns an unsubscribe fn. */
   onExpire(listener: TimerExpiryListener): () => void;
-  /** Serializable state for a save. */
   snapshot(): TimerSetSnapshot;
-  /** Restore from a {@link TimerSetSnapshot}, re-anchoring running timers to the current clock. */
   restore(snapshot: TimerSetSnapshot): void;
 }
 
@@ -138,9 +89,7 @@ interface TimerRecord {
   /** Accumulated elapsed ms banked at the last pause/anchor. */
   base: number;
   running: boolean;
-  /** Clock time the timer last (re)started running; only meaningful while `running`. */
   anchor: number;
-  /** Completed expiry cycles already reported (0 or 1 for non-loop; grows for loop). */
   reported: number;
 }
 

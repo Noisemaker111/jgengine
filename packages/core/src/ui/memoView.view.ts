@@ -46,7 +46,6 @@ interface Budget {
   left: number;
 }
 
-/** Plain data (numbers, strings, arrays and plain objects of them) compared by value. */
 function sameData(previous: unknown, next: unknown, budget: Budget, trusted: boolean): boolean {
   if (Object.is(previous, next)) return true;
   budget.left -= 1;
@@ -80,7 +79,6 @@ function sameValue(previous: unknown, next: unknown, budget: Budget, trusted: bo
   return sameData(previous, next, budget, trusted);
 }
 
-/** Two UI nodes that draw the same: the same text, or elements of the same type, key and props. */
 export function sameNode(previous: ReactNode, next: ReactNode, budget: Budget = { left: NODE_BUDGET }): boolean {
   if (Object.is(previous, next)) return true;
   budget.left -= 1;
@@ -187,12 +185,7 @@ function useNewestProps<P extends object>(props: P, readLater: ReadonlySet<strin
   return out;
 }
 
-/** Options for {@link memoView}. */
 export interface MemoViewOptions<P> {
-  /**
-   * Function props the part only calls later (in a frame binding or an effect), like `HudFade`'s
-   * `watch`: a new function for one of these is no reason to redraw, and the part calls the newest.
-   */
   readLater?: readonly Extract<keyof P, string>[];
 }
 

@@ -71,18 +71,11 @@ export const BO105_DESIGN: HelicopterDesign = {
   gear: [skid("left front", 1.0, -1.0), skid("right front", 1.0, 1.0), skid("left rear", -1.2, -1.0), skid("right rear", -1.2, 1.0)],
 };
 
-/**
- * Creates the Bo-105 reference helicopter.
- * @capability bo105-reference MBB Bo-105 reference helicopter validated against NASA TM-110356 rotor data
- */
+/** @capability bo105-reference MBB Bo-105 reference helicopter validated against NASA TM-110356 rotor data */
 export function createBo105Model(options: HelicopterModelOptions = {}): HelicopterModel {
   return createHelicopterModel(BO105_DESIGN, options);
 }
 
-/**
- * Bo-105 full-scale rotor hover data, NASA Ames 40×80 ft tunnel with the doors open, shaft at −10° (TM-110356
- * appendix B, run 12): advance ratio, `CT/σ` along the shaft and `CP/σ`.
- */
 export const BO105_HOVER_DATA: readonly { advanceRatio: number; thrust: number; power: number }[] = [
   { advanceRatio: 0.004, thrust: 0.00891, power: 0.001216 },
   { advanceRatio: 0.007, thrust: 0.020515, power: 0.001638 },
@@ -96,10 +89,6 @@ export const BO105_HOVER_DATA: readonly { advanceRatio: number; thrust: number; 
   { advanceRatio: 0.0209, thrust: 0.101143, power: 0.008746 },
 ];
 
-/**
- * Bo-105 full-scale rotor in the flight-matched wind-tunnel runs (TM-110356 appendix D, runs 43 and 46): advance ratio,
- * shaft angle (rad, aft positive), `CT/σ`, and `CP/σ` and longitudinal cyclic (rad) averaged over the repeat points.
- */
 export const BO105_FORWARD_FLIGHT_DATA: readonly { advanceRatio: number; shaftAngle: number; thrust: number; power: number; longitudinalCyclic: number }[] = [
   { advanceRatio: 0.0975, shaftAngle: -2.5 * DEG, thrust: 0.07, power: 0.003167, longitudinalCyclic: -0.98 * DEG },
   { advanceRatio: 0.147, shaftAngle: -3.3 * DEG, thrust: 0.07, power: 0.002943, longitudinalCyclic: -1.53 * DEG },
@@ -111,5 +100,4 @@ export const BO105_FORWARD_FLIGHT_DATA: readonly { advanceRatio: number; shaftAn
   { advanceRatio: 0.1944, shaftAngle: -3.9 * DEG, thrust: 0.09, power: 0.004117, longitudinalCyclic: -2.93 * DEG },
 ];
 
-/** Air density and tip Mach number of the TM-110356 runs. */
 export const BO105_TUNNEL_AIR = { hoverDensity: 0.002404 * 515.379, forwardDensity: 0.00233 * 515.379, speedOfSound: (717 / 0.64) * FT };

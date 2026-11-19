@@ -22,41 +22,26 @@ const BASELINE_RELATIVE = join("scripts", "perf-budget.json");
 /** The p95 frame time every game must hold on the reference GPU: one 60 Hz frame. */
 export const FRAME_BUDGET_MS = 16.7;
 
-/**
- * The machine the frame budget is judged on: the GPU and viewport the baselines name. A frame time
- * from any other GPU (a runner's software GL, a laptop) is printed and not judged, since the same
- * build can run at three times the cost there.
- */
 export const REFERENCE = { gpu: /RTX 3070/i, viewport: "1600x900", label: "GeForce RTX 3070 at 1600x900" } as const;
 
-/** The list of games over the frame budget when it landed. */
 export const KNOWN_SLOW_PATH = "scripts/perf-known-failing.json";
 
-/** One game's budget, from its `perf-budget.json`. */
 export interface PerfBudget {
   /**
    * Programs a game may still link after warmup. Zero unless a measured baseline shows materials
    * that first appear during play; tightening it back to 0 is the fix.
    */
   programsLinked?: number;
-  /**
-   * KiB of JS and CSS this game downloads beyond the shared engine: its entry chunk and every chunk it preloads
-   * that not every game loads. The engine is budgeted once, as `engineKb` in `apps/dev/bundle-budget.json`.
-   * `check-site-assets --bundles` fails a build over it; CI's web-build job runs it before merge.
-   */
   bundleKb?: number;
   /** Why `bundleKb` is what it is: the measurement it came from, and the feature behind each raise. */
   bundleBaseline?: string;
-  /** Whole-frame draws at the last baseline, printed beside the measured count. Not a gate. */
   drawsFrame?: number;
-  /** How the numbers above were produced (date, command, GPU). */
   baseline?: string;
 }
 
 /** One game's budget and the file it came from, so a run can name what it compared against. */
 export interface LoadedBudget {
   budget: PerfBudget;
-  /** Repo-relative path of the file the numbers came from, with forward slashes. */
   source: string;
 }
 
@@ -66,7 +51,6 @@ export interface BudgetViolation {
   metric: string;
   budget: number;
   measured: number;
-  /** Readable one-liner naming the game, metric, measured value and budget. */
   message: string;
 }
 
@@ -130,7 +114,6 @@ export function loadBudget(game: string, root = repoRoot): LoadedBudget {
   return { budget: parseBudgetEntry((budgets as Record<string, unknown>)[game], game, BASELINE_RELATIVE), source: BASELINE_RELATIVE.replaceAll("\\", "/") };
 }
 
-/** What a budget compares and prints. `quality` is the graphics tier, which `PerfReport` types as the capture preset. */
 export type BudgetRecord = Omit<PerfReport, "quality"> & { quality: string; frameClock?: string };
 
 /**
@@ -185,7 +168,6 @@ export function checkBudget(record: BudgetRecord, budget: PerfBudget): BudgetVio
   return found;
 }
 
-/** One line naming the frame time against the budget and the counts beside it, for a passing run. */
 export function summarizeRecord(record: BudgetRecord, budget: PerfBudget): string {
   const overrides = (record as PerfReport & { overrides?: readonly string[] }).overrides ?? [];
   const unjudged = unjudgedFrameTime(record);
@@ -203,7 +185,6 @@ export function summarizeRecord(record: BudgetRecord, budget: PerfBudget): strin
 /** game -> why it misses the frame budget today. */
 export type KnownSlow = ReadonlyMap<string, string>;
 
-/** Parse the list; `$`-prefixed keys are comments. */
 export function parseKnownSlow(text: string): KnownSlow {
   const raw: unknown = JSON.parse(text);
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) throw new Error(`${KNOWN_SLOW_PATH} must be an object of game -> reason`);

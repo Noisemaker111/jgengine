@@ -87,7 +87,6 @@ export interface TrainedModelRow {
 
 export const TRAINED_MODEL_RNG_UNIT_COUNT = 7;
 
-/** Maps a uint32 (e.g. from `crypto.getRandomValues`) to a uniform draw in [0, 1). */
 export function unitFromUint32(x: number): number {
   return (x >>> 0) * 2 ** -32;
 }
@@ -104,7 +103,6 @@ export interface TrainedModelRollInputs {
   overtrainBracket: number;
   founder: FounderMultipliers;
   frontierBenchmark: number;
-  /** Uniform draws in [0, 1); the first {@link TRAINED_MODEL_RNG_UNIT_COUNT} are consumed. */
   rngUnits: readonly number[];
   now: number;
 }
@@ -287,7 +285,6 @@ export function decideTrainingStart(inputs: TrainingStartInputs): TrainingStartD
     1,
     Math.floor(trainingLaneFp16 * energyThrottle),
   );
-  /** Effective drain rate = (TPS per 1 TFLOP) × (allocated FP16 TFLOPs). */
   const drainTokensPerSecond = baseModel.tokensPerSecond * availableTrainingPower;
   const { now } = inputs;
 
@@ -342,9 +339,7 @@ export interface PostTrainingDurationEstimateInput {
     BaseModelDefinition,
     "tokensPerSecond" | "trainingMethod" | "sourceType" | "requiredDataTokens" | "distillPoolTokens"
   >;
-  /** Allocated FP16 TFLOPs for the training cohort (after founder, ratio, and site throttle). */
   availableTrainingPowerFp16: number;
-  /** Open fine-tune: 1×–4× committed tokens (default 1 for base-model card). */
   overtrainBracket?: number;
   durationMultiplier?: number;
 }
@@ -366,9 +361,7 @@ export function estimatePostTrainingDurationSeconds(input: PostTrainingDurationE
   );
 }
 
-/** Client preview: same allocation shape as {@link decideTrainingStart} (training-lane cards only). */
 export function previewAvailableTrainingPowerFp16(options: {
-  /** FP16 TFLOPs of GPUs dedicated to the Training lane (before founder buff). */
   trainingLaneTflops: number;
   founderTrainingPowerFp16Multiplier: number;
   thermalThrottle: number;
@@ -390,7 +383,6 @@ export const MODEL_SALE_FLOOR = 500;
 
 const HOURS_PER_SALE_VALUATION = 24;
 
-/** A model is worth about a day of the income it realizes on a reference card, scaled by its tier. */
 export function computeModelSalePrice(model: {
   moneyPerToken: number;
   tokensPerSecond: number;

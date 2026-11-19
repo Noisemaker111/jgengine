@@ -16,15 +16,10 @@ export function closestPointOnSegment(p: Vec2, a: Vec2, b: Vec2): ClosestOnSegme
   return { point: [a[0] + t * abx, a[1] + t * aby], t };
 }
 
-/** A resolved circle-vs-segment contact. */
 export interface CircleSegmentHit {
-  /** Unit surface normal pointing from the segment toward the circle center — the axis to bounce off. */
   normal: Vec2;
-  /** Penetration depth; push the center out by `normal · depth` to separate. */
   depth: number;
-  /** Closest point on the segment (the contact point). */
   contact: Vec2;
-  /** Circle center pushed just outside the segment — a tunnel-proof resolved position. */
   resolved: Vec2;
 }
 

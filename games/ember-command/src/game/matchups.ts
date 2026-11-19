@@ -6,12 +6,6 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { combatantDef } from "./catalog";
 
-/**
- * The roster's matchups as a damage table: each unit's blows (`damageType` in the catalog) against
- * the class its target presents (`resistance`). These are game rules, not research: a Reaver tears
- * down walls, a footman's blade finds a Reaver's joints, and a rifle glances off Reaver plate but
- * punches through a keep's gate. Every other pairing lands at face value.
- */
 export const MATCHUPS: DamageTableDef = {
   types: [
     { id: "strike" },
@@ -31,29 +25,21 @@ export const RANGE_BANDS: HitZoneTable = {
   defaultZone: "clear",
 };
 
-/** A fresh damage runtime over the roster's matchups. */
 export function createMatchups(): DamageRuntime {
   return createDamageRuntime({ table: MATCHUPS, zones: RANGE_BANDS, rng: () => 0 });
 }
 
 const matchupsOf = perContext((_ctx: GameContext): DamageRuntime => createMatchups());
 
-/** The one matchup runtime of a game context. */
 export function matchups(ctx: GameContext): DamageRuntime {
   return matchupsOf(ctx);
 }
 
-/** Who struck or was struck: a runtime id and the roster entry it is. */
 export interface Combatant {
   id: string;
   catalogId: string;
 }
 
-/**
- * Resolve one blow's matchup through the shared damage runtime: the attacker's damage type against
- * the class the target presents, in the range band the distance puts it in. Research and line buffs
- * scale the result afterwards; the world's `damage` effect lands it.
- */
 export function matchupDamage(runtime: DamageRuntime, base: number, attacker: Combatant, target: Combatant, distance: number): number {
   const from = combatantDef(attacker.catalogId);
   // A body's class follows its roster entry; ids are reused across battles, so the profile is set per blow.
@@ -68,7 +54,6 @@ export function matchupDamage(runtime: DamageRuntime, base: number, attacker: Co
   }).damage;
 }
 
-/** Drop a fallen body's profile from the runtime. */
 export function forgetCombatant(ctx: GameContext, id: string): void {
   matchupsOf(ctx).removeTarget(id);
 }

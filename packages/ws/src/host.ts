@@ -51,13 +51,11 @@ import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
 import type { WorldViewState } from "@jgengine/core/runtime/worldReplication";
 import { unwrapOpEnvelope } from "@jgengine/core/runtime/hostedWorldSession";
 
-/** A change notification emitted by a `GameServerHost` for a server, player, or feed mutation. */
 export type HostChangeEvent =
   | { type: "server"; serverId: string }
   | { type: "player"; serverId: string; userId: string }
   | { type: "feed"; serverId: string; action: string };
 
-/** Configuration for {@link createGameServerHost}, including persistence, tick rate, and game runtimes. */
 export type GameServerHostOptions = {
   runtimes?: GameRuntime[] | undefined;
   persistence: HostPersistence;
@@ -68,7 +66,6 @@ export type GameServerHostOptions = {
   allowedFeedActions?: readonly string[];
 };
 
-/** A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence. */
 export type GameServerHost = {
   joinServer: (args: {
     userId: string;
@@ -102,7 +99,6 @@ export type GameServerHost = {
     userId: string;
     serverId: string;
     role?: SnapshotViewer["role"];
-    /** Set `false` when the caller supplies the world state itself (a pulled frame); the host then skips building it. Default true. */
     withState?: boolean | undefined;
   }) => Promise<GameRuntimeServerView | null>;
   pullWorld?: (args: {
@@ -110,7 +106,6 @@ export type GameServerHost = {
     serverId: string;
     sinceRevision: number | null;
     role?: SnapshotViewer["role"];
-    /** This connection's view cursor; a host that narrows frames to the viewer's interest updates it in place. */
     view?: WorldViewState | undefined;
   }) => Promise<WorldSyncFrame | null>;
   getPlayerView: (args: { userId: string; serverId: string }) => Promise<GameRuntimePlayerView | null>;
@@ -141,7 +136,6 @@ const builtinCommands = {
   },
 };
 
-/** Max recently-applied `runCommand` op IDs retained per (serverId, userId), oldest evicted first. */
 export const OP_LEDGER_LIMIT = 64;
 
 type OpLedgerEntry = { opId: string; result: TransportRunCommandResult };
@@ -150,11 +144,7 @@ function opLedgerKey(serverId: string, userId: string): string {
   return `${serverId}|${userId}`;
 }
 
-/**
- * Creates a `GameServerHost` that runs game servers over the given persistence and runtimes.
- *
- * @capability authoritative-host run authoritative game servers with sessions, ticking and persistence behind any transport
- */
+/** @capability authoritative-host run authoritative game servers with sessions, ticking and persistence behind any transport */
 export function createGameServerHost(options: GameServerHostOptions): GameServerHost {
   const now = options.now ?? Date.now;
   const tickMs = resolveHostTickMs(options.tickMs);
@@ -629,7 +619,6 @@ export function createGameServerHost(options: GameServerHostOptions): GameServer
   return host;
 }
 
-/** Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts. */
 export function memoryPersistence(now: () => number = Date.now): HostPersistence {
   const servers = new Map<string, GameServerRecord>();
   const profiles = new Map<string, PlayerProfileRecord>();

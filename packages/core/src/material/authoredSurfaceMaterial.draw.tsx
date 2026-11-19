@@ -8,7 +8,6 @@ import { applyMaterialOverrideToMaterial, requiresPhysicalMaterial, type Materia
 import { ImageTextureLoader } from "./imageTexture.draw";
 import { modelMapEntries } from "@jgengine/core/model/modelAssets";
 
-/** Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract. */
 export interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> {
   /** Physical metres per texture tile on unit boxes/cylinders, including instance and parent scale. Omit to retain authored UVs. */
   repeatMetres?: number | undefined;
@@ -26,15 +25,14 @@ export interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anis
   depthWrite?: boolean;
 }
 
-/** Primitive UV layout whose physical dimensions drive `repeatMetres`. */
 export type SurfaceShape = "box" | "cylinder";
 
-/** Stable material identity, independent of object/map property insertion order. @internal */
+/** @internal */
 export function authoredSurfaceKey(config: AuthoredSurfaceConfig): string {
   return JSON.stringify(Object.entries({ ...config, maps: modelMapEntries(config.maps ?? {}) }).sort(([a], [b]) => a.localeCompare(b)));
 }
 
-/** Configure owned map clones without changing textures retained in a loader cache. @internal */
+/** @internal */
 export function authoredSurfaceTextures(entries: Record<string, string>, sources: readonly THREE.Texture[], config: AuthoredSurfaceConfig = {}): MaterialOverrideTextures {
   const wrapping = config.wrapping === "clamp" ? THREE.ClampToEdgeWrapping : config.wrapping === "mirror" ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
   return Object.fromEntries(Object.keys(entries).map((role, index) => {
@@ -89,7 +87,7 @@ ${Object.entries({ MAP: "vMapUv", NORMALMAP: "vNormalMapUv", ROUGHNESSMAP: "vRou
 const surfaceTextureLoader = new ImageTextureLoader();
 const surfaceTextureLoads = new Map<string, Promise<THREE.Texture>>();
 
-/** One shared decode per map URL, matching the `useLoader` cache the hook path used. @internal */
+/** @internal */
 function loadAuthoredSurfaceTexture(url: string): Promise<THREE.Texture> {
   let pending = surfaceTextureLoads.get(url);
   if (pending === undefined) {
@@ -102,7 +100,7 @@ function loadAuthoredSurfaceTexture(url: string): Promise<THREE.Texture> {
   return pending;
 }
 
-/** Build the owned material and its cloned map textures from decoded sources. @internal */
+/** @internal */
 function buildAuthoredSurfaceMaterial(entries: Record<string, string>, sources: readonly THREE.Texture[], config: AuthoredSurfaceConfig, shape: SurfaceShape): readonly [THREE.MeshStandardMaterial, ...THREE.Texture[]] {
   const textures = authoredSurfaceTextures(entries, sources, config);
   const { anisotropy: _samplerAnisotropy, surfaceAnisotropy, ...surface } = config;
@@ -117,7 +115,7 @@ function buildAuthoredSurfaceMaterial(entries: Record<string, string>, sources: 
   return [material, ...Object.values(textures)];
 }
 
-/** An owned authored-surface material plus the cloned map textures it references. @internal */
+/** @internal */
 export interface AuthoredSurfaceMaterialLease {
   readonly material: THREE.MeshStandardMaterial;
   /** Dispose the material and every cloned map texture. Cached source textures are untouched. */

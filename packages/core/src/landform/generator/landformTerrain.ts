@@ -21,15 +21,11 @@ export interface LandformRecipe {
   side: number;
   /** Cell side in metres. */
   cellSize: number;
-  /** Years of erosion. */
   years: number;
   /** Rock uplift in mm/yr. */
   uplift: number;
-  /** Stream-power erodibility K. */
   erodibility: number;
-  /** Hillslope diffusivity in m²/yr. */
   diffusivity: number;
-  /** River deposition coefficient G. */
   deposition: number;
   /** Angle of repose of debris in degrees. */
   reposeAngle: number;
@@ -39,9 +35,7 @@ export interface LandformRecipe {
   caprock: number;
   /** Mean dune sand thickness in metres; 0 grows no dunes. */
   sand: number;
-  /** The winds that drive the dunes. */
   wind: readonly WindMode[];
-  /** Dune sweeps to run. */
   duneSweeps: number;
   /**
    * World metres per simulated metre. Landforms are close to self-similar, so a range grown with
@@ -62,9 +56,7 @@ export interface LandformTerrain {
   cellSize: number;
   /** Ground height per cell in metres, dunes included. */
   heights: Float32Array;
-  /** Surface kinds, in {@link LandformTerrain.weights} order. */
   kinds: readonly LandformSurfaceKind[];
-  /** Blend weights per cell and kind, cell-major; each cell sums to 1. */
   weights: Float32Array;
   /** Standing water depth per cell in metres (lakes and sea). */
   waterDepth: Float32Array;
@@ -72,7 +64,6 @@ export interface LandformTerrain {
   dunes: Float32Array;
 }
 
-/** Years glaciers work a range when a recipe has a `glacierEla`. */
 export const GLACIAL_PHASE_YEARS = 20000;
 const GLACIAL_STEP_YEARS = 2000;
 
@@ -89,10 +80,7 @@ function caprockStrata(caprock: number): readonly RockLayer[] | undefined {
   ];
 }
 
-/**
- * Grow a landform from a recipe and seed: erosion first, then dunes over it.
- * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
- */
+/** @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime */
 export function growLandform(recipe: LandformRecipe, seed: string): LandformTerrain {
   const side = Math.round(recipe.side);
   if (!(side >= 16 && side <= LANDFORM_TERRAIN_MAX_SIDE)) throw new Error(`landform side must be 16..${LANDFORM_TERRAIN_MAX_SIDE}, got ${recipe.side}`);
@@ -146,23 +134,15 @@ export function growLandform(recipe: LandformRecipe, seed: string): LandformTerr
   return { cols: side, rows: side, cellSize: recipe.cellSize * scale, heights, kinds: [...LANDFORM_SURFACE_KINDS], weights, waterDepth, dunes };
 }
 
-/** Options for {@link landformTerrainSnapshot}. */
 export interface LandformSnapshotOptions {
-  /** World x, z of the terrain centre. Default the origin. */
   center?: readonly [number, number];
   /** Metres subtracted from every height, e.g. to put sea level at 0. Default 0. */
   datum?: number;
-  /** Terrain paint id per surface kind. Default {@link LANDFORM_TERRAIN_SURFACES}. */
   surfaces?: Readonly<Record<LandformSurfaceKind, string>>;
 }
 
-/** The terrain paint palette id each landform surface kind paints by default. */
 export const LANDFORM_TERRAIN_SURFACES: Readonly<Record<LandformSurfaceKind, string>> = { rock: "rock", gravel: "gravel", sand: "sand", mud: "mud", soil: "dirt" };
 
-/**
- * The editor terrain document for a grown landform: cell centres become the sculpt grid's vertices,
- * and each surface kind becomes a material layer with per-cell blend weights.
- */
 export function landformTerrainSnapshot(terrain: LandformTerrain, options: LandformSnapshotOptions = {}): TerraformSnapshot {
   const { cols, rows, cellSize, heights, kinds, weights } = terrain;
   const [cx, cz] = options.center ?? [0, 0];

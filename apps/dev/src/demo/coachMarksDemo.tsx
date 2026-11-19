@@ -18,7 +18,6 @@ const SCOUT = "scout";
 
 const arena = perContext(() => ({ entered: false }));
 
-/** A UI tour as onboarding steps: two anchored Next cards, then one that waits for the arena. */
 const tour = createOnboardingSystem({
   id: "hud-tour",
   title: "HUD tour",

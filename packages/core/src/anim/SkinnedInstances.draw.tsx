@@ -13,15 +13,12 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** A rig to bake: a loaded scene with skinned meshes and its clips. */
 export interface SkinnedCrowdSource {
   scene: THREE.Object3D;
   animations: readonly THREE.AnimationClip[];
 }
 
-/** Options for {@link bakeSkinnedCrowd}. */
 export interface BakeSkinnedCrowdOptions {
-  /** Clip names to bake, in order; default every clip on the rig. */
   clips?: readonly string[] | undefined;
   /** Baked samples per second. Default 30. */
   fps?: number | undefined;
@@ -30,20 +27,15 @@ export interface BakeSkinnedCrowdOptions {
   maxTextureSize?: number;
 }
 
-/** A rig baked for instancing: one merged geometry, the bone-matrix texture and its layout. */
 export interface BakedSkinnedCrowd {
   geometry: THREE.BufferGeometry;
-  /** One material per merged mesh, in geometry-group order, not yet patched. */
   materials: THREE.Material[];
-  /** The bone-matrix texture, or `null` for a rig with no clips: a static character needs no sampling. */
   texture: THREE.DataTexture | null;
   layout: BoneTextureLayout | null;
-  /** Per clip: whether it loops. Same order as `layout.clips`. */
   loops: boolean[];
   clipIndex: ReadonlyMap<string, number>;
   /** Whether members play the baked clips; false for a static character, whose geometry never moves. */
   animated: boolean;
-  /** Bind-pose bounds of every merged part, for placement that matches the per-entity path. */
   bounds: THREE.Box3;
   dispose(): void;
 }
@@ -78,7 +70,6 @@ function animatedNodeNames(clips: readonly THREE.AnimationClip[]): Set<string> {
   return names;
 }
 
-/** The nearest node (self included) a clip moves, or the root when nothing above this mesh is animated. */
 function rigidSlotNode(mesh: THREE.Object3D, root: THREE.Object3D, animated: ReadonlySet<string>): THREE.Object3D {
   let node: THREE.Object3D | null = mesh;
   while (node !== null) {
@@ -91,11 +82,6 @@ function rigidSlotNode(mesh: THREE.Object3D, root: THREE.Object3D, animated: Rea
 
 const skinVertex = new THREE.Vector3();
 
-/**
- * A static batch has no bone texture to place a skin, so bake each vertex where the model shows it:
- * skinned at its bind pose, then carried by the mesh's own transform into the root's frame. Normals
- * follow the mesh transform.
- */
 function placeStaticSkin(geometry: THREE.BufferGeometry, skinned: THREE.SkinnedMesh, relative: THREE.Matrix4): void {
   const positions = geometry.getAttribute("position");
   for (let vertex = 0; vertex < positions.count; vertex += 1) {
@@ -136,7 +122,6 @@ function indexed(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
   return geometry;
 }
 
-/** Copies the attributes a batch can draw: the vertex, its normal and its texture coordinate. */
 function bakePart(mesh: THREE.Mesh, relative: THREE.Matrix4): { geometry: THREE.BufferGeometry; layout: string; material: THREE.Material } {
   const source = mesh.geometry;
   const geometry = new THREE.BufferGeometry();
@@ -346,7 +331,6 @@ export function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinne
   };
 }
 
-/** Uniforms shared by every material of one crowd; `crowdTime` advances once per frame. */
 export interface CrowdUniforms {
   crowdBones: { value: THREE.DataTexture };
   crowdTime: { value: number };
@@ -426,33 +410,26 @@ export function patchCrowdMaterial<T extends THREE.Material>(material: T, unifor
   return material;
 }
 
-/** One crowd member: where it stands and what it plays. */
 export interface CrowdInstance {
   position: readonly [number, number, number];
   rotationY?: number;
   scale?: number;
-  /** A baked clip name; a static rig draws bind pose whatever the member names. */
   clip?: string;
   /** Seconds into the clip at crowd time zero, so members do not move in lockstep. */
   timeOffset?: number;
-  /** Playback rate. Default 1. */
   speed?: number;
 }
 
-/** Props for {@link SkinnedInstances}. */
 export interface SkinnedInstancesProps {
   url: string;
   instances: readonly CrowdInstance[];
-  /** Clip names to bake; default every clip on the rig. */
   clips?: readonly string[];
   /** Clips that hold their last pose instead of looping. */
   once?: readonly string[];
   fps?: number;
-  /** Uniform scale applied to every member, e.g. to normalize a rig to a height. */
   modelScale?: number;
   castShadow?: boolean;
   receiveShadow?: boolean;
-  /** Multiplies crowd time; `0` freezes every member. Default 1. */
   timeScale?: number;
 }
 
@@ -601,12 +578,6 @@ export function skinnedInstancesDraw(getProps: () => SkinnedInstancesProps): Eng
   };
 }
 
-/**
- * Renders many animated copies of one rigged model in a single instanced draw per material: the
- * rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time
- * offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs
- * blending, IK or attachments stays an entity model.
- */
 export function SkinnedInstances(props: SkinnedInstancesProps) {
   const latest = useRef<SkinnedInstancesProps>(props);
   latest.current = props;

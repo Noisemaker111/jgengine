@@ -8,10 +8,6 @@ import type { EditableTerrain } from "@jgengine/core/terrain/terraform";
  */
 export type TerrainPaintSource = Pick<EditableTerrain, "layers" | "weightsAt" | "surfaceAt"> &
   Partial<Pick<EditableTerrain, "gridBounds" | "cols" | "rows">>;
-/**
- * Blends authored paint over the base ground color already in `out`; returns false (leaving `out`
- * untouched) where no painted cell contributes.
- */
 export type TerrainPaintColorSampler = (x: number, z: number, out: THREE.Color) => boolean;
 
 const smooth = (t: number): number => t * t * (3 - 2 * t);

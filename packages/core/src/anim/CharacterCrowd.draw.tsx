@@ -74,11 +74,6 @@ export function crowdSlotSource(
   return { scene: copy, materials: applyMaterialAssignments(copy, used, assignments, textures, { unmatched: "throw" }) };
 }
 
-/**
- * One character kind's crowd batch as a draw: loads the model, bakes the crowd rig, builds the
- * instanced draws and materials, registers the kind's readiness and capacity, then writes every
- * visible member's clip sample into the instance buffers each frame — the draw-side `CrowdBatch`.
- */
 function crowdBatchDraw(kind: string, model: ModelConfig, getEnv: () => CrowdBatchEnv): EngineDraw {
   let cancelled = false;
   let stateRef: EngineFrameState | null = null;
@@ -321,29 +316,18 @@ function crowdBatchDraw(kind: string, model: ModelConfig, getEnv: () => CrowdBat
   };
 }
 
-/** Instance slot → entity id, so picking a batched character resolves like its own rig. @internal */
+/** @internal */
 export const ENTITY_INSTANCES_KEY = POINTER_ENTITY_INSTANCES_KEY;
 
-/** Props for {@link CharacterCrowd}. */
 export interface CharacterCrowdProps {
-  /** Character models the world can draw; only models with a `lod` policy join the crowd path. */
   models: readonly ModelConfig[];
-  /** Where entity markers record the characters the crowd is drawing. */
   registry: CharacterCrowdRegistry;
   /** Baked samples per second for the crowd clips. Default 24. */
   fps?: number;
-  /** Called when a batched character is clicked, with the entity a click on its own rig would select. */
   onPick?: (entityId: string) => void;
 }
 
-/**
- * Draws characters through the GPU batch path: one baked rig per character kind, one instanced draw
- * per material, every member's clip, time offset and speed sampled in the vertex shader. The entity
- * markers decide who is batched (their `lod` tiers and the batch capacity) and write poses into
- * `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same
- * canvas as the entity markers; unmount it to fall back to per-entity rigs.
- * @capability character-crowd draw animated or static characters as batched instanced draws instead of posing each skeleton
- */
+/** @capability character-crowd draw animated or static characters as batched instanced draws instead of posing each skeleton */
 export const CharacterCrowd = memoView("CharacterCrowd", function CharacterCrowd({ models, registry, fps = 24, onPick }: CharacterCrowdProps) {
   const held = useRef(new Map<string, ModelConfig>());
   const kinds = useMemo(() => stableCrowdKinds(models, held.current), [models]);

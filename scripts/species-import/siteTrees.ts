@@ -4,7 +4,6 @@ import { csvNumber } from "./csv";
 const INCH_CM = 2.54;
 const FOOT_M = 0.3048;
 
-/** One measured FIA site tree: breast-height age, DBH, height and the site index it gave. */
 export interface SiteTree {
   breastHeightAge: number;
   dbhCm: number;
@@ -12,7 +11,6 @@ export interface SiteTree {
   siteIndexFt: number;
 }
 
-/** Site trees of one FIA species code from rows of a `<ST>_SITETREE.csv`. */
 export function siteTreesOf(rows: readonly Record<string, string>[], spcd: number): SiteTree[] {
   const trees: SiteTree[] = [];
   for (const row of rows) {
@@ -33,7 +31,6 @@ function median(values: readonly number[]): number {
   if (sorted.length === 0) return Number.NaN;
   return sorted.length % 2 === 1 ? (sorted[mid] ?? Number.NaN) : 0.5 * ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0));
 }
-
 
 /**
  * Least log-squares Chapman–Richards fit by Nelder–Mead from a start that suits tree size by age.
@@ -56,7 +53,6 @@ export function fitGrowthCurve(points: readonly { age: number; value: number; we
   return { a: Math.exp(best[0] ?? 0), k: Math.exp(best[1] ?? 0), p: shape(best[2] ?? 0) };
 }
 
-/** Breast height, m: every site tree stood this tall at its years to breast height. */
 const BREAST_HEIGHT_M = 1.37;
 
 function nelderMead(f: (v: readonly number[]) => number, start: readonly number[], step: number, iterations: number): number[] {
@@ -93,18 +89,13 @@ function nelderMead(f: (v: readonly number[]) => number, start: readonly number[
   return simplex[at] ?? start.slice();
 }
 
-/** What the site trees of one species say about a stand-grown tree on its median site. */
 export interface StandReference {
-  /** Median site index of the trees used, feet at 50 years. */
   siteIndexFt: number;
-  /** Trees within ±10 ft of that site index. */
   trees: number;
-  /** Total ages they cover: the 5th percentile and the oldest. */
   youngestYears: number;
   oldestYears: number;
   height: GrowthCurve;
   dbh: GrowthCurve;
-  /** DBH = a·(H − 1.3)^b over the same trees, least squares in log space. */
   dbhByHeight: { a: number; b: number };
 }
 
@@ -118,10 +109,6 @@ function heightDiameter(trees: readonly SiteTree[]): { a: number; b: number } {
   return { a: Math.exp(my - b * mx), b };
 }
 
-/**
- * Height and DBH curves by total age from site trees on the species' median site: breast-height age
- * plus `yearsToBreastHeight`, fitted with Chapman–Richards. Centred on `siteIndex` when given.
- */
 export function standReference(trees: readonly SiteTree[], yearsToBreastHeight: number, siteIndex?: number): StandReference {
   const siteIndexFt = siteIndex ?? median(trees.map((tree) => tree.siteIndexFt));
   const band = trees.filter((tree) => Math.abs(tree.siteIndexFt - siteIndexFt) <= 10);

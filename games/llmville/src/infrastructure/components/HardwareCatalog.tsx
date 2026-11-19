@@ -32,7 +32,6 @@ interface RecentPurchase { amount: number; quantity: number; token: number }
 
 type HardwareShopItem = ShopCatalogItem & { hardwareModelId: HardwareModelId };
 
-/** One GPU listing: shot, name, price, speed/memory/power, then quantity and buy (or research). */
 function HardwareShopCard({ item, quantity, interactive, researched, dataTokens, pending, researchPending, recentPurchase, onQtyChange, onBuy, onUnlockResearch }: {
   item: HardwareShopItem; quantity: number; interactive: boolean; researched: boolean; dataTokens: number; pending: boolean; researchPending: boolean;
   recentPurchase: RecentPurchase | undefined; onQtyChange: (next: number) => void; onBuy: () => void; onUnlockResearch: () => void;

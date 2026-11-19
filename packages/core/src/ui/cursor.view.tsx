@@ -1,22 +1,10 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useInsertionEffect, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
-/**
- * How the cursor marks the selected item.
- *
- * - `brackets`: four corner brackets that snap around it, like a console menu.
- * - `chevron`: a pointer at its left edge that slides between items.
- * - `bar`: a thick bar under it, like a tab or a racing menu.
- * - `diamond`: a spinning diamond at its left, for fantasy and arcade menus.
- * - `frame`: a glowing outline the size of the item.
- */
 export type GameCursorStyle = "brackets" | "chevron" | "bar" | "diamond" | "frame";
 
-/** Props for {@link GameCursor}. */
 export interface GameCursorProps {
-  /** Look. Default `brackets`. */
   variant?: GameCursorStyle;
-  /** Colour. Default the theme accent. */
   color?: string;
   /** Gap between the item and the cursor in px. Default 6. */
   gap?: number;
@@ -28,7 +16,6 @@ export interface GameCursorProps {
   style?: CSSProperties;
 }
 
-/** What the cursor follows, in priority order: the menu's current item, then focus, then the hovered control. */
 const TARGETS = '[data-jg-menu-item], button, [role="button"], [role="tab"], [role="slider"], a[href], [data-jg-frame][data-interactive]';
 
 const CURSOR_CSS = `@layer components.jgengine {
@@ -72,7 +59,6 @@ interface Box {
   h: number;
 }
 
-/** The item the cursor should sit on inside `scope`, or null. */
 export function gameCursorTarget(scope: ParentNode, hovered: Element | null): Element | null {
   const current = scope.querySelector('[data-jg-menu-item][aria-current="true"]');
   if (current !== null) return current;

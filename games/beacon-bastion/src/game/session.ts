@@ -18,17 +18,14 @@ import { DIRECTOR_SEED, ENCOUNTER } from "./waves/manifest";
 export interface CreepRuntime {
   instanceId: string;
   catalogId: string;
-  /** The approach this raider walks (`approach` or `flank`). */
   route: string;
   path: PathFollowState;
   speedStats: Stats<"speed">;
-  /** A Bulwark's ward, backed by the entity's `shield` stat. */
   shield: RegenShield | null;
   /** Seconds until a Shaman's next mending. */
   healIn: number;
 }
 
-/** The boss on the field, if it is out: its instance, what it is, phase state, and the stance that phase sets. */
 export interface BossRuntime {
   instanceId: string;
   unitId: string;
@@ -47,37 +44,23 @@ export const RAIDER_STATUSES: readonly StatusDef[] = [
   { id: "brittle", stack: { kind: "refresh" }, durationMs: 1600, magnitude: 1, effect: { kind: "stat", stat: "brittle" } },
 ];
 
-/**
- * The real-time half of a defense: the wave director, raiders mid-route and tower aim. Gold, lives,
- * plots, towers, builds and the run's flags live in the keep's world (`keep.ts`).
- */
 export interface SessionState {
-  /** The authored raider host and how far through it the run is. */
   encounter: Encounter;
   /** What the director read when the current wave opened, so the HUD can say how hard it is leaning. */
   pressure: PressurePlan;
-  /** The clock to the next wave once one has arrived in full; calling early pays for what it skips. */
   countdown: WaveCountdown;
-  /** The boss, once it walks. */
   boss: BossRuntime | null;
-  /** Unit ids the open wave sent, pressure additions included, in entry order. */
   openingComposition: string[];
   creeps: Map<string, CreepRuntime>;
-  /** Burns, cracked armor, freezes and brittleness on the raiders. */
   statuses: StatusRuntime;
-  /** Beacon Fire and the Frost Bell. */
   abilities: AbilityKit;
-  /** The ability waiting for a click on the field, if one is armed. */
   armedAbility: string | null;
   /** Beacon fires on their way down: they land after the telegraph, not when the click lands. */
   falling: { at: [number, number, number]; landsInMs: number }[];
   /** Seconds until each standing tower may fire again: aim state, not keep state. */
   towerCooldowns: Map<string, number>;
-  /** Shots each tower has landed, for "every Nth shot" effects. */
   towerShots: Map<string, number>;
-  /** The tower card picked in the build bar; local to this player's screen. */
   selectedTowerId: string | null;
-  /** The placed tower whose sell/upgrade panel is open; set by clicking its plot. */
   inspectedTowerId: string | null;
   creepSeq: number;
 }
@@ -118,7 +101,6 @@ export function newSpeedStats(baseSpeed: number): Stats<"speed"> {
   return createStats<"speed">({ speed: baseSpeed });
 }
 
-/** A ward kept in the raider's own `shield` stat, so damage through the effect pipeline hits it first. */
 export function newShield(ctx: GameContext, instanceId: string, spec: { max: number; regenPerSecond: number; regenDelayMs: number }): RegenShield {
   return createRegenShield({
     max: spec.max,

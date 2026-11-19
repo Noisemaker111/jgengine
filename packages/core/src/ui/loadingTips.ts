@@ -8,31 +8,22 @@ import { seededRng } from "../random/rng";
  * look and the timer.
  */
 
-/** How a tip rotation is wired. */
 export interface TipRotationConfig {
-  /** The tips to rotate, in authored order. Empty means no tip is shown. */
   tips: readonly string[];
   /** Seed for the shuffle. Default `"tips"`, so the order is stable across runs. */
   seed?: string | number;
 }
 
-/** Serializable rotation state. */
 export interface TipRotationSnapshot {
-  /** Shuffled indices into the authored tip list. */
   order: number[];
-  /** Position in {@link order} of the tip being shown. */
   cursor: number;
 }
 
 /** A deterministic, cycle-through tip list. */
 export interface TipRotation {
-  /** The tip being shown, or `null` when the game authored none. */
   current(): string | null;
-  /** Advance to the next tip (wrapping) and return it. */
   next(): string | null;
-  /** Index into {@link TipRotationConfig.tips} of the current tip, or `-1`. */
   index(): number;
-  /** Restart at the first tip of the same shuffled order. */
   reset(): void;
   subscribe(listener: () => void): () => void;
   snapshot(): TipRotationSnapshot;

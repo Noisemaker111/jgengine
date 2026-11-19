@@ -11,7 +11,6 @@ import { FERN_FONTS } from "../../art/look";
 
 for (const face of [FERN_FONTS.display, FERN_FONTS.body]) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
 
-/** The shallows-teal holo look: Oswald headings over Source Sans 3. */
 export const CYAN = "#5cc8dc", TEAL = "#3fd0c9", INK = "#e8f1f2", DIM = "#9fb9bd", HEAD = "#8fd3e2";
 export const GOOD = "#9ef08a", BAD = "#ff8a7a", GOLD = "#e7c84a", PURPLE = "#b07ee0", GREEN = "#34ff6a";
 export const DISPLAY = FERN_FONTS.display.family, BODY = FERN_FONTS.body.family;
@@ -35,7 +34,6 @@ export const fernTheme = {
   motion: { duration: 140, distance: 10, bounce: 0 },
 } satisfies RuneTheme;
 
-/** Text bound or plain: `text` takes a string or a `bind(() => …)`. */
 export function Text({ text, ...props }: RuneElementProps) {
   return <RuneLabel {...props} {...(text === undefined ? {} : { value: text })} />;
 }
@@ -54,12 +52,10 @@ export function Row(props: RuneViewProps) {
 export function Panel(props: RuneViewProps) {
   return <RuneView variant="panel" {...props} />;
 }
-/** A button: `picked` lights it as the current choice, `primary` is the screen's main verb. */
 export function Button({ picked, primary, ...props }: RuneActionProps & { picked?: boolean; primary?: boolean }) {
   return <RuneAction variant={primary ? "primary" : picked ? "picked" : "action"} color={primary ? "#062a2a" : INK} weight={600} {...props} />;
 }
 
-/** A label above a filled track, the value bound at its leaves. */
 export function Meter({ label, value, max, color, width }: { label: string | (() => string); value: () => number; max: () => number; color: string; width?: number }): ReactNode {
   return (
     <RuneView gap={2} {...(width === undefined ? {} : { width })}>
@@ -74,7 +70,6 @@ export function Meter({ label, value, max, color, width }: { label: string | (()
   );
 }
 
-/** A full-screen dim with a centred column that scrolls when the viewport is short. */
 export function Overlay({ children, onBack, fill = "#000000aa" }: { children: ReactNode; onBack?: () => void; fill?: string }): ReactNode {
   const { height } = useRuneViewport();
   return (

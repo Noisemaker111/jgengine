@@ -23,7 +23,6 @@ export interface WorldPresenceRecord extends PresenceResidentRow {
   lastWorldSnapshotAt?: number | undefined;
 }
 
-/** World chunk size and host-owned pose, checkpoint and retention policies. */
 export interface WorldPresenceOptions {
   chunkSize?: number;
   rules?: PoseSyncRules;
@@ -32,7 +31,6 @@ export interface WorldPresenceOptions {
   snapshotIntervalMs?: number;
 }
 
-/** Persist game-owned last-position state when the host store requests a checkpoint. */
 export type PresenceSnapshotWriter = (presence: WorldPresenceRecord, nowMs: number) => Promise<void>;
 
 function record(row: PoseRow): WorldPresenceRecord {

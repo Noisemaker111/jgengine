@@ -69,7 +69,6 @@ export function hasScrapingModelAvailable(
   return collectScrapingModelSources(gameCatalog, playerModels).length > 0;
 }
 
-/** Licensed cheap bases meant for scraping, not fine-tuning your own weights. */
 export function isScrapeFocusedBaseModel(
   model: Pick<BaseModelDefinition, "licenseCost" | "requiredDataTokens" | "trainingMethod">,
 ): boolean {
@@ -87,7 +86,6 @@ export function pickBestScrapingSource(sources: readonly ScrapingModelStats[]): 
   return sources.reduce((best, current) => (current.tokensPerToken > best.tokensPerToken ? current : best));
 }
 
-/** Data-per-token of the best source the player can point at the scrape lane. */
 export function bestScrapingTokensPerToken(
   gameCatalog: ModelCatalogLike | null | undefined,
   playerModels: readonly PlayerModelLike[] = [],

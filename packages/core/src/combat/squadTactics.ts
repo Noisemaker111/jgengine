@@ -1,33 +1,19 @@
 import type { PerceptionService } from "../sensor/perception";
 import type { CoverThreat, CoverWeights } from "./cover";
 
-/**
- * Fire discipline: how long a member stays down between shots, how long it leans out, and how fast
- * it fires while it has a target. A role that peeks for longer holds an angle better and spends more
- * time in the open — the trade is the caller's to tune.
- */
 export interface FireDiscipline {
   /** Seconds held in cover between peeks. Default `1.6`. */
   holdSeconds?: number;
   /** Seconds exposed while shooting. Default `0.8`. */
   peekSeconds?: number;
-  /** How far toward the threat a peek steps out of cover. Default `0.9`. */
   peekDistance?: number;
   /** Seconds between shots while a target is visible. Default `0.7`. */
   fireInterval?: number;
 }
 
-/**
- * One caller-defined squad role. The engine ships the machinery and no role list: a game names its
- * own roles and dials them, so `"assault"`, `"breacher"` and `"sniper"` are content, not engine
- * concepts.
- */
 export interface SquadRole {
-  /** Id the game names and its HUD, logs and tests read. */
   id: string;
-  /** Members this role takes when a squad is assigned. Default `1`. */
   count?: number;
-  /** Distance from the threat this role wants to fight at, world units. Default `6`. */
   preferredRange?: number;
   /** Angle around the threat this role attacks from, radians off the squad's line. Default `0`. */
   flankAngle?: number;
@@ -36,11 +22,9 @@ export interface SquadRole {
   /** True when the role holds its point instead of closing to `preferredRange`. Default `false`. */
   holdCover?: boolean;
   discipline?: FireDiscipline;
-  /** Cover weights this role scores with; omitted fields take the shared defaults. */
   cover?: CoverWeights;
 }
 
-/** A squad's roles in assignment order. */
 export interface SquadComposition {
   readonly roles: readonly SquadRole[];
 }
@@ -67,17 +51,12 @@ export function assignSquadRoles(members: readonly string[], composition: SquadC
 /** One remembered enemy with its age, so a role can treat a stale sighting differently. */
 export interface ThreatReading extends CoverThreat {
   readonly ageSeconds: number;
-  /** Whose senses produced the fact: this member's own id, or the squadmate that shared it. */
   readonly sourceId: string;
 }
 
-/** Bounds for {@link threatsFromMemory}. */
 export interface ThreatReadOptions {
-  /** Most threats to return, strongest first. Default `6`. */
   max?: number;
-  /** Memories weaker than this are ignored. Default `0.05`. */
   minConfidence?: number;
-  /** Only these ids count as hostile; omit to treat every remembered id as a threat. */
   hostile?: (targetId: string) => boolean;
 }
 

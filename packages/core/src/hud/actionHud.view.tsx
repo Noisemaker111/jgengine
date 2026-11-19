@@ -21,15 +21,6 @@ import { HUD_FOCUS_RING, hudElevation, hudFont, hudType } from "./hudTokens";
 import { Keycap } from "@jgengine/core/input/keyHint.view";
 
 /**
- * Composable UI renderers over the headless action view model (`@jgengine/core/ui/actionModel`) —
- * the data/renderer/chrome split for an RTS command card, an ability action bar, a build menu, or a
- * radial. `useActionBar` is the DATA/HOOK layer (resolution + focus/hover/keyboard/hotkey), `ActionBarChrome`
- * is the composable RENDERER (swap `renderItem` for custom chrome, or ignore it and consume the model
- * directly for a radial), and `ActionBar` is the batteries-included default. A game swaps renderer or
- * chrome without forking the logic. Layout, dimensions, hotkeys, and catalog-id mapping stay caller-owned.
- */
-
-/**
  * Adapt a combat {@link AbilitySlotSnapshot} into an {@link ActionDef} — the glue that binds an
  * `AbilityKit` (via `useAbilitySlots`) to the action renderers without the game re-deriving cooldown
  * and cost shapes. `extra` supplies the caller-owned bits the snapshot cannot know (label, icon,
@@ -69,7 +60,6 @@ const ARROW_DIRECTIONS: Record<string, FocusDirection> = {
   End: "last",
 };
 
-/** The intent a key press resolves to over an action bar: move focus, activate, or ignore. */
 export interface ActionBarKeyResult {
   handled: boolean;
   focusId?: string;
@@ -103,25 +93,19 @@ export function actionBarKeyAction(
   return hotkeyId === null ? { handled: false } : { handled: true, focusId: hotkeyId, activateId: hotkeyId };
 }
 
-/** A minimal keyboard-event shape — a real `KeyboardEvent`/UI synthetic event satisfies it. */
 export interface ActionKeyEvent {
   key: string;
   preventDefault(): void;
 }
 
-/** Options for {@link useActionBar}. */
 export interface UseActionBarOptions {
   /** Grid width for keyboard focus math and the default grid renderer (default: number of actions). */
   columns?: number | undefined;
-  /** Wrap focus at the grid edges (default false). */
   wrap?: boolean | undefined;
-  /** Fired when an action is activated by click, Enter/Space, or its hotkey. */
   onActivate?: ((id: string) => void) | undefined;
-  /** Set false to ignore single-key hotkeys (default true). */
   hotkeys?: boolean | undefined;
 }
 
-/** The live action-bar model returned by {@link useActionBar}. */
 export interface ActionBarModel {
   actions: readonly ResolvedAction[];
   columns: number;
@@ -133,13 +117,7 @@ export interface ActionBarModel {
   onKeyDown: (event: ActionKeyEvent) => void;
 }
 
-/**
- * The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid
- * navigation, and hotkey activation. Rendering-agnostic — feed the returned model to
- * {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
- *
- * @capability action-bar-model headless action-collection model with focus, hover, keyboard, and hotkey routing
- */
+/** @capability action-bar-model headless action-collection model with focus, hover, keyboard, and hotkey routing */
 export function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -195,7 +173,6 @@ const ITEM_BASE: CSSProperties = {
   overflow: "hidden",
 };
 
-/** Render context passed to a custom {@link ActionBarChrome} item renderer. */
 export interface ActionItemContext {
   focused: boolean;
   hovered: boolean;
@@ -229,9 +206,7 @@ export function ActionButton({
   style,
 }: {
   action: ResolvedAction;
-  /** Feedback cue name (default the action id), rendered as `data-jg-cue`. */
   cue?: string;
-  /** Called on hover, press, and activate — the seam a UI sound system hooks. */
   onInteract?: HudInteractListener;
   focused?: boolean;
   hovered?: boolean;
@@ -375,7 +350,6 @@ export function ActionBarChrome({
   gap?: number;
   ariaLabel?: string;
   renderItem?: ((action: ResolvedAction, ctx: ActionItemContext) => ReactNode) | undefined;
-  /** Draws each slot's icon (a `SpriteIcon`) in place of the action's text icon. */
   renderIcon?: ((action: ResolvedAction) => ReactNode) | undefined;
   className?: string;
   style?: CSSProperties;
@@ -451,26 +425,17 @@ export interface ActionProgress {
   value: number;
 }
 
-/** Props for {@link ActionBar}. */
 export interface ActionBarProps {
   defs: readonly ActionDef[];
-  /**
-   * `slots` (default): square cooldown slots with hotkey caps, cost lines and a radial wipe — an
-   * ability bar. `kit`: one row of the active UI kit's buttons with the label, the `detail` text and
-   * the key — a build or tool strip. Both read the same `ActionDef`s and route activation the same way.
-   */
   look?: "slots" | "kit";
   columns?: number;
-  /** `slots` only: a grid or a vertical list. */
   layout?: "grid" | "list";
   wrap?: boolean;
-  /** Set false when the game's own key bindings already fire these actions. Default true. */
   hotkeys?: boolean;
   /** `slots` only: slot size in px. */
   itemSize?: number;
   ariaLabel?: string;
   onActivate?: (id: string) => void;
-  /** `slots` only: swap the per-slot chrome. */
   renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => ReactNode;
   /** Each action's icon (a `SpriteIcon` item icon): the slot face in `slots`, drawn before the label in `kit`. */
   renderIcon?: (action: ResolvedAction) => ReactNode;
@@ -478,7 +443,6 @@ export interface ActionBarProps {
   progress?: readonly ActionProgress[];
   /** After the buttons and meters: a count, a note. */
   trailing?: ReactNode;
-  /** Above the bar: the interact prompt in reach. */
   prompt?: ReactNode;
   /** `kit` only: wrap the buttons onto centred rows past this width, in px. Unset keeps one row. */
   wrapAt?: number;
@@ -490,7 +454,6 @@ function ProgressMeters({ progress }: { progress: readonly ActionProgress[] }): 
   return progress.map((order) => <KitMeter key={order.id} label={order.label} value={order.value} max={1} size="sm" style={{ width: 96 }} />);
 }
 
-/** The `kit` look: one strip of kit buttons over the shared action model. */
 function KitActionRow({
   model,
   ariaLabel,

@@ -5,9 +5,7 @@ import type { EditorDocument } from "@jgengine/core/editor/types";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { EditorApp, type EditorSaveFn } from "./EditorApp";
 
-/** Production creator catalog and embedded editor, reached through the game's menu.
- * @capability player-creator create, edit, save, playtest and reopen bounded player scenes through the production editor
- */
+/** @capability player-creator create, edit, save, playtest and reopen bounded player scenes through the production editor */
 export function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }) {
   const [documents, setDocuments] = useState<readonly Omit<CreatorDocument, "document">[]>([]);
   const [selected, setSelected] = useState<CreatorDocument | null>(null);

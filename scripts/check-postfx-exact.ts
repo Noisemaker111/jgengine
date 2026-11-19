@@ -19,7 +19,6 @@ interface CaseResult {
   name: string;
   channels: number;
   differing: number;
-  /** Largest difference of one channel, in the target's own units (half bits or 8-bit levels). */
   largest: number;
   sample: string | null;
 }

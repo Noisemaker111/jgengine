@@ -13,7 +13,6 @@ import { grantXp } from "./survivor";
 
 /** How close a creature comes before the dossier has it, as ARK's dossier fills when you meet one. */
 const SIGHT = 30;
-/** How close E reads a note. */
 const READ_REACH = 3;
 /** Metres south of an obelisk's foot its note lies, clear of the spire's shadow. */
 const OBELISK_STEP = 12;
@@ -24,10 +23,8 @@ const LOOK_EVERY = 0.5;
 /** Seconds a read note stays open on the HUD. */
 const NOTE_SECONDS = 20;
 
-/** A species met, an item held, a note read, or a species tamed (every one but the bosses can be). */
 type Kind = "species" | "item" | "note" | "tame";
 
-/** Where each note lies: at its landmark (a cave's mouth, an obelisk's foot, a summit), all from editor.scene.json. */
 export const NOTE_SPOTS: ReadonlyMap<string, readonly [number, number]> = new Map(
   NOTES.flatMap((note): [string, readonly [number, number]][] => {
     const cave = editorLayers.paths.find((path) => path.kind === "cave" && path.id === note.at)?.points;
@@ -70,7 +67,6 @@ const dossierOf = perContext(
   }),
 );
 
-/** The note lying within reach, unread or not, or null. */
 function noteInReach(ctx: GameContext): string | null {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return null;
@@ -78,7 +74,6 @@ function noteInReach(ctx: GameContext): string | null {
   return null;
 }
 
-/** Look round: creatures in sight and items in the bags join the dossier. */
 export function tickDossier(ctx: GameContext, dt: number): void {
   const dossier = dossierOf(ctx);
   dossier.since += dt;
@@ -94,7 +89,6 @@ export function tickDossier(ctx: GameContext, dt: number): void {
   if (dossier.reading !== null && ctx.time.now() - dossier.reading.at > NOTE_SECONDS) dossier.reading = null;
 }
 
-/** E at a note: read it; the first time it gives experience. */
 export function readNote(ctx: GameContext): void {
   const id = noteInReach(ctx);
   if (id === null) return;
@@ -133,7 +127,6 @@ export function nearestUnreadNote(ctx: GameContext, from: readonly [number, numb
   return best;
 }
 
-/** How much of each kind the survivor has met, of how many the island holds. */
 export function dossierView(ctx: GameContext) {
   const dossier = dossierOf(ctx);
   const count = (kind: Kind) => dossier.codex.list(kind).filter((entry) => entry.discovered).length;
@@ -149,7 +142,6 @@ export function dossierView(ctx: GameContext) {
   };
 }
 
-/** The dossier's pages, as ARK's Explorer Notes tab lists them: every species (met or not, tamed or not) and every note (read or not). */
 export function dossierPages(ctx: GameContext) {
   const codex = dossierOf(ctx).codex;
   return {
@@ -164,7 +156,6 @@ export function dossierPages(ctx: GameContext) {
   };
 }
 
-/** Whether the dossier has met this species, item, note or tame (`species:dodo`, `item:thatch`, `note:<landmark>`, `tame:dodo`). */
 export function inDossier(ctx: GameContext, id: string): boolean {
   return dossierOf(ctx).codex.isDiscovered(id);
 }
@@ -183,7 +174,6 @@ export function resetDossier(ctx: GameContext): void {
   dossier.reading = null;
 }
 
-/** Every landmark's note for the world overlay: where it lies and whether it has been read. */
 export function noteMarks(ctx: GameContext): { id: string; at: readonly [number, number]; read: boolean }[] {
   const codex = dossierOf(ctx).codex;
   return [...NOTE_SPOTS].map(([id, at]) => ({ id, at, read: codex.isDiscovered(`note:${id}`) }));

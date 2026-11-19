@@ -13,18 +13,14 @@ export interface TelemetrySink {
   send(batch: readonly TelemetryEvent[]): void | Promise<void>;
 }
 
-/** Tunables and injected dependencies for {@link createTelemetry}. */
 export interface TelemetryOptions {
-  /** Off when absent: every call is a no-op and nothing is queued. */
   sink?: TelemetrySink | undefined;
   /** Events per `send`; one async `send` is in flight at a time, so a slow sink backs events up to `maxQueued`. Default 20. */
   batchSize?: number;
-  /** Most events held while unsent; the oldest are dropped past it. Default 200. */
   maxQueued?: number;
   now?: () => number;
 }
 
-/** Queue state for tests and devtools. */
 export interface TelemetryState {
   enabled: boolean;
   queued: number;
@@ -40,7 +36,6 @@ export interface Telemetry {
   tierChange(from: string, to: string, reason: "auto" | "player"): void;
   framePercentiles(tier: string, percentiles: FrameTimePercentiles): void;
   crash(id: string, phase: string): void;
-  /** Send everything queued now, in batches. */
   flush(): void;
   snapshot(): TelemetryState;
   reset(): void;

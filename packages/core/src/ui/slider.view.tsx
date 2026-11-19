@@ -3,26 +3,20 @@ import { useCallback, useInsertionEffect, useRef, type CSSProperties, type React
 import type { KeyboardEvent, PointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 import { memoView } from "./memoView.view";
 
-/** Props for {@link GameSlider}. */
 export interface GameSliderProps {
   value: number;
   min?: number;
   max?: number;
   step?: number;
-  /** Called on every move (drag, key, wheel). */
   onChange: (value: number) => void;
-  /** Called once a drag or key press ends, to persist the value. */
   onCommit?: () => void;
-  /** Accessible name. */
   label: string;
-  /** Spoken value, e.g. `"80%"`. */
   valueText?: string;
   /**
    * Look. `groove` is a cut channel with a lit fill and a knurled knob. `pips` is a row of lit
    * segments, like a volume or power meter. Default `groove`.
    */
   variant?: "groove" | "pips";
-  /** Segment count for `pips`. Default 10. */
   pips?: number;
   disabled?: boolean;
   className?: string;
@@ -53,7 +47,6 @@ function ensureSliderStyles(): void {
   document.head.appendChild(style);
 }
 
-/** Snaps `raw` to `step` from `min` and clamps it to the range, without float noise. */
 export function snapSliderValue(raw: number, min: number, max: number, step: number): number {
   const stepped = step > 0 ? min + Math.round((raw - min) / step) * step : raw;
   return Math.round(Math.min(max, Math.max(min, stepped)) * 1e6) / 1e6;

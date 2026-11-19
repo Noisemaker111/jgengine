@@ -3,7 +3,6 @@ import { FURNITURE, FURNITURE_BY_ID, type FurnitureRole } from "../objects/catal
 import type { HouseholdState } from "../session/types";
 import { nextBill, RATION_BUNDLE } from "./economy";
 
-/** Rations at or below this count make the pantry the household's most urgent need. */
 const LOW_RATIONS = 4;
 
 /**
@@ -18,10 +17,6 @@ export function stationShortfall(role: FurnitureRole, planter: boolean, furnishe
     : `No ${word} — furnish a ${name} (Furnish menu)`;
 }
 
-/**
- * The single next thing the household needs, in plain words. Ordered by what stops the
- * habitat first: no earning station, then the midnight bill, then food.
- */
 export function dayGoal(state: HouseholdState, objects: readonly SceneObject[]): string {
   const hasWorkStation = objects.some(object => FURNITURE_BY_ID[object.catalogId]?.role === "work");
   const bill = Math.round(nextBill(state, objects));

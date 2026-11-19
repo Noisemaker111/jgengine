@@ -13,7 +13,6 @@ export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-/** The jgengine mark: four blocks, one of them lit. */
 export function LogoMark({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden>
@@ -34,7 +33,6 @@ function Wordmark() {
   );
 }
 
-/** Viewport floor grid behind page heroes. */
 export function Backdrop() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>

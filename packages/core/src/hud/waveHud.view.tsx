@@ -7,30 +7,18 @@ import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudFrame, type HudFrameVariation } from "./hudFrame.view";
 import { hudType } from "./hudTokens";
 
-/**
- * Subscribe to a {@link WaveRunner} and re-render whenever it notifies (wave,
- * budget, spawns, alert change). Returns the runner's pooled {@link WaveView}. The
- * runner is driven by the game/demo (call `runner.update(dt)`), not by this hook.
- *
- * @capability use-wave-runner UI hook that subscribes to a wave runner and returns its pooled current-wave view
- */
+/** @capability use-wave-runner UI hook that subscribes to a wave runner and returns its pooled current-wave view */
 export function useWaveRunner(runner: WaveRunner): WaveView {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => runner.subscribe(bump), [runner]);
   return runner.view();
 }
 
-/** Reskin tokens for {@link WaveHud}. All optional; each falls back to a sensible default. */
 export interface WaveHudTheme {
-  /** Accent for the "WAVE N" label glow and the progress fill. Default reads `--jg-accent`. */
   accent?: string;
-  /** "WAVE N" label color. Default near-white. */
   label?: string;
-  /** Muted color for the small stat captions. */
   muted?: string;
-  /** Font family. */
   fontFamily?: string;
-  /** "WAVE N" font size (CSS length). Default `"clamp(1.6rem, 4vw, 2.6rem)"`. */
   labelSize?: string;
 }
 
@@ -44,15 +32,10 @@ function resolveTheme(theme: WaveHudTheme | undefined): Required<WaveHudTheme> {
   };
 }
 
-/** Props for {@link WaveHud}. */
 export interface WaveHudProps {
-  /** The runner to render. */
   runner: WaveRunner;
-  /** Reskin tokens. */
   theme?: WaveHudTheme;
-  /** Frame skin passed to {@link HudFrame}. Default `plate`. */
   variation?: HudFrameVariation;
-  /** Fixed panel width. Default `260`. */
   width?: number | string;
   className?: string;
   style?: CSSProperties;

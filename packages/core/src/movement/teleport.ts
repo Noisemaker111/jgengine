@@ -1,11 +1,9 @@
 import type { GameContext } from "../runtime/gameContext";
 import { forgetPlayerMovement } from "./playerMovement";
 
-/** Where {@link teleportPlayer} puts a player: a ground point, an optional height (default the ground there) and an optional facing. */
 export interface TeleportTarget {
   x: number;
   z: number;
-  /** Feet height; default `ctx.world.groundHeightAt(x, z)`. */
   y?: number;
   /** Facing in `rotationY` terms; the camera turns to it too. Default: keep the current facing. */
   yaw?: number;

@@ -6,7 +6,7 @@ import { sky as resolveSkyDescriptor, type SkyEnvironmentDescriptor } from "@jge
 
 import { withAuthoredGrade } from "./authoredGrade";
 
-/** The look the shell renders, resolved once per authored value. @internal */
+/** @internal */
 export interface PresentationLook {
   look: ResolvedGameLook;
   backdropSky: SkyEnvironmentDescriptor | undefined;

@@ -14,7 +14,6 @@ import { PORTAL_RANGE } from "../data/bosses";
 const GREEN = "#34ff6a";
 const ACID = "#9dff3a";
 
-/** The lair's wall as mossy rock, and webs hung across its top — one draw for every slab. */
 function lairWallDraw(slabs: ReturnType<typeof lairWall>): EngineDraw {
   const group = new THREE.Group();
   const unitBox = new THREE.BoxGeometry(1, 1, 1);
@@ -53,7 +52,6 @@ function LairWall({ ctx }: WorldOverlayProps): ReactNode {
   return <EngineDrawMount create={() => lairWallDraw(slabs)} deps={[slabs]} />;
 }
 
-/** The acid in flight: a glowing green glob arcing from her to where you stood. */
 function spitDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
   const group = new THREE.Group();
   const geometry = new THREE.SphereGeometry(0.7, 12, 8);
@@ -83,7 +81,6 @@ function Spit({ ctx }: WorldOverlayProps): ReactNode {
   return <EngineDrawMount create={() => spitDraw(ctx)} deps={[ctx]} />;
 }
 
-/** The portal's reach ring on the obelisk's foot. */
 function portalRingDraw(): EngineDraw {
   const geometry = new THREE.RingGeometry(PORTAL_RANGE - 0.8, PORTAL_RANGE, 64);
   const material = new THREE.MeshBasicMaterial({ color: GREEN, transparent: true, opacity: 0.7, toneMapped: false });
@@ -102,7 +99,6 @@ function portalRingDraw(): EngineDraw {
   };
 }
 
-/** While the portal counts down, the obelisk's foot glows: a green beam and a ring as wide as it reaches. */
 function Portal({ ctx }: WorldOverlayProps): ReactNode {
   const phase = useGameStore((state) => broodView(state).phase);
   const at = useMemo(() => greenObelisk(ctx), [ctx]);
@@ -115,7 +111,6 @@ function Portal({ ctx }: WorldOverlayProps): ReactNode {
   );
 }
 
-/** What the Broodmother adds to the world: her walled lair, the portal at the obelisk, and her acid in the air. */
 export function BroodLair({ ctx }: WorldOverlayProps): ReactNode {
   return (
     <>

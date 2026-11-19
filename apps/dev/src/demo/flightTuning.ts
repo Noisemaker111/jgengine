@@ -18,13 +18,10 @@ export const flightDemoPlane: RigidAircraftTuning = {
   gear: { height: 1.2 },
 };
 
-/** Spawn state: in the air, level, at cruise. */
 export const flightDemoSpawn = { position: [0, 250, 0] as const, velocity: [0, 0, 80] as const };
 
-/** The real-aircraft swap G makes: a Cessna 172N with every effect at full strength, one line from the reference. */
 export const flightDemoTrainer: RigidAircraftTuning = aircraftFromReference("trainer");
 
-/** The trainer's spawn: in the air at about its 105 kt cruise. */
 export const flightDemoTrainerSpawn = { position: [0, 250, 0] as const, velocity: [0, 0, 54] as const };
 
 // A light single-rotor helicopter. The main rotor turns counter-clockwise seen from above, so its torque yaws the nose
@@ -43,7 +40,6 @@ export const flightDemoHelicopter: RigidAircraftTuning = {
   gear: { height: 1 },
 };
 
-/** Collective that carries the helicopter's weight out of ground effect, and the pedal that cancels its torque there. */
 export const flightDemoHover = { collective: 0.57, pedal: (10000 * 0.57) / (2500 * 7.5) };
 
 // A two-stage sounding rocket. The booster's dry mass includes the whole upper stage; staging retunes to the upper
@@ -77,8 +73,6 @@ export const flightDemoBooster: RigidAircraftTuning = {
   gear: { height: 4, maxPitch: Math.PI / 2 },
 };
 
-/** What T switches on in the demo: light SAS, auto-level and a 6 g limit for the plane. */
 export const flightDemoPlaneAssists: AircraftAssistTuning = { sas: { pitch: 0.5, roll: 0.5, yaw: 0.5 }, autoLevel: 0.6, maxG: 6 };
 
-/** Full SAS with heading hold and hover hold for the helicopter. */
 export const flightDemoHelicopterAssists: AircraftAssistTuning = { sas: { pitch: 1, roll: 1, yaw: 1 }, hoverHold: 1 };

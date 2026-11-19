@@ -1,19 +1,10 @@
-/**
- * The only licences the shared asset library accepts: each allows commercial use and re-hosting, and
- * the CC BY ones only ask for a credit, which the library generates from each entry's data.
- */
 export const LIBRARY_LICENSES = ["CC0-1.0", "public-domain", "MIT", "CC-BY-3.0", "CC-BY-4.0"] as const;
 
-/** One accepted library licence (an SPDX id, or `public-domain`). */
 export type LibraryLicense = (typeof LIBRARY_LICENSES)[number];
 
 const ACCEPTED: ReadonlySet<string> = new Set(LIBRARY_LICENSES);
 
-/**
- * Whether a value is one of the accepted {@link LIBRARY_LICENSES}.
- *
- * @internal
- */
+/** @internal */
 export function isLibraryLicense(value: unknown): value is LibraryLicense {
   return typeof value === "string" && ACCEPTED.has(value);
 }
@@ -47,16 +38,11 @@ export function normalizeLibraryLicense(label: string): LibraryLicense | null {
  */
 export const EXCLUDED_PROVIDERS = /\b(kenney|mixamo|textures\.com|blenderkit)\b|(^|[^a-z])fab\.com/i;
 
-/** Whether shipping an asset under this licence obliges a visible credit. */
 export function licenseRequiresCredit(license: LibraryLicense): boolean {
   return license === "CC-BY-3.0" || license === "CC-BY-4.0" || license === "MIT";
 }
 
-/**
- * The licence's canonical deed or text, for credits that link it.
- *
- * @internal
- */
+/** @internal */
 export function licenseUrl(license: LibraryLicense): string {
   switch (license) {
     case "CC0-1.0":

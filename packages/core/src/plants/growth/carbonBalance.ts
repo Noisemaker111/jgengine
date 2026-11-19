@@ -1,39 +1,21 @@
-/**
- * Growth candidates for one year: every bud that could extend, with its Borchert–Honda share of the
- * tree's vigour and its carbon cost per metamer. `copies` counts identical lateral buds on one node.
- */
 export interface ShootCandidates {
   count: number;
   share: Float64Array;
   costKg: Float64Array;
   copies: Uint8Array;
-  /**
-   * What the candidate grows: 0 extends an axis (one new node), 1 starts a new axis (a node and a bud
-   * slot), 2 a leafy short shoot on its node (no new node or bud).
-   */
   opensAxis: Uint8Array;
-  /** Node the candidate's new shoot hangs from. */
   node: Int32Array;
-  /** Most metamers this candidate's shoot may make this year. */
   maxMetamers: Uint8Array;
-  /** Scratch: candidates still in play during the search. */
   live: Int32Array;
 }
 
-/**
- * The extra cost a trial scale puts on the existing structure: `add` the leaf area each candidate
- * would hang on its node, then `total` returns the carbon of the wood that leaf area needs.
- */
 export interface StructureCost {
   begin(): void;
   add(node: number, leafAreaM2: number): void;
   total(): number;
 }
 
-/**
- * Allocate candidate buffers for `capacity` buds.
- * @internal
- */
+/** @internal */
 export function createShootCandidates(capacity: number): ShootCandidates {
   return {
     count: 0,
@@ -47,20 +29,14 @@ export function createShootCandidates(capacity: number): ShootCandidates {
   };
 }
 
-/**
- * What one year can spend on new shoots: carbon and free node and bud slots.
- * @internal
- */
+/** @internal */
 export interface ShootBudget {
   carbonKg: number;
   freeNodes: number;
   freeBuds: number;
-  /** Leaf area one metamer carries, m². */
   leafAreaPerMetamer: number;
 }
 
-
-/** Stop the carbon search once α is bracketed to this share of itself. */
 const SOLVE_TOLERANCE = 1 / 256;
 const SOLVE_MAX_STEPS = 24;
 
@@ -95,7 +71,6 @@ function carbonAt(candidates: ShootCandidates, liveCount: number, scale: number,
   return carbon + structure.total();
 }
 
-/** Keep only candidates that reach one metamer below `scale`; returns how many. */
 function keepReachable(candidates: ShootCandidates, liveCount: number, scale: number): number {
   let kept = 0;
   const floorShare = 1 / scale;
@@ -108,13 +83,7 @@ function keepReachable(candidates: ShootCandidates, liveCount: number, scale: nu
   return kept;
 }
 
-/**
- * LIGNUM's growth-allocation step: the largest vigour scale α for which the shoots it buys
- * (floor(α · share) metamers per bud) plus the wood the structure needs to carry their leaves cost no
- * more carbon than the year's budget, and fit the node and bud caps. Cost and counts are monotone in
- * α: the caps are bisected with a cheap count, then carbon is found by Illinois false position.
- * @internal
- */
+/** @internal */
 export function solveShootScale(candidates: ShootCandidates, budget: ShootBudget, structure: StructureCost): number {
   if (candidates.count === 0 || budget.carbonKg <= 0 || budget.freeNodes <= 0) return 0;
   let continuous = 0;

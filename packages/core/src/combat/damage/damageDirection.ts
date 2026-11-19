@@ -15,15 +15,9 @@ export interface HitInput {
   kind?: string;
 }
 
-/**
- * A live directional indicator with its eased, time-decayed strength, produced by
- * {@link DamageDirectionTracker.active}. The `intensity` here is the *current*
- * eased value (peak faded over the elapsed lifetime), ready to drive opacity/scale.
- */
 export interface DamageIndicator {
   /** Direction the damage came from, in radians (`0` = front/up, clockwise). */
   angle: number;
-  /** Style tag carried from the originating {@link HitInput}. */
   kind: string;
   /** Current eased strength `0..1` — peak intensity decayed over its lifetime. */
   intensity: number;
@@ -31,11 +25,9 @@ export interface DamageIndicator {
   age: number;
 }
 
-/** Serializable state for save/restore — the clock reading plus every live indicator. */
 export interface DamageDirectionSnapshot {
   /** Clock reading (ms) when the snapshot was taken, so ages restore correctly. */
   now: number;
-  /** Live indicators, each with its peak intensity, birth time, and fade duration. */
   indicators: readonly {
     angle: number;
     kind: string;
@@ -45,7 +37,6 @@ export interface DamageDirectionSnapshot {
   }[];
 }
 
-/** Options for {@link createDamageDirectionTracker}. */
 export interface DamageDirectionOptions {
   /** Injected clock (ms). Default `Date.now`. */
   now?: () => number;
@@ -67,14 +58,7 @@ export interface DamageDirectionOptions {
   easing?: (remaining: number) => number;
 }
 
-/**
- * A serializable, allocation-aware brain that tracks where recent damage came
- * from. Each registered hit becomes a directional indicator that fades over a
- * fixed duration on the injected clock; {@link DamageDirectionTracker.active}
- * reports the live ones with their eased current strength.
- */
 export interface DamageDirectionTracker {
-  /** Register an incoming hit and return the indicator's current view. */
   registerHit(hit: HitInput): DamageIndicator;
   /**
    * The live indicators with eased current strength, sorted strongest-first.
@@ -82,21 +66,15 @@ export interface DamageDirectionTracker {
    * allocation) — read or copy them before the next `active`/`registerHit`.
    */
   active(): readonly DamageIndicator[];
-  /** Number of live (not-yet-faded) indicators. */
   count(): number;
-  /** Drop every indicator immediately. */
   clear(): void;
-  /** Observe changes (hit registered, cleared, restored). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): DamageDirectionSnapshot;
-  /** Restore from a {@link DamageDirectionSnapshot}. */
   restore(snapshot: DamageDirectionSnapshot): void;
 }
 
 const TAU = Math.PI * 2;
 
-/** Shortest angular distance (magnitude) between two angles, in `0..π`. */
 function angularDistance(a: number, b: number): number {
   let d = (a - b) % TAU;
   if (d < -Math.PI) d += TAU;
@@ -157,7 +135,6 @@ export function createDamageDirectionTracker(
     return slot.intensity * easing(1 - elapsed / slot.duration);
   }
 
-  /** Find a reusable slot: a dead one, else the weakest live one to evict. */
   function acquireSlot(t: number): Slot {
     let weakest: Slot | null = null;
     let weakestStrength = Infinity;

@@ -3,10 +3,8 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { editorLayers } from "../../editorLayers";
 
-/** Level of the bay's surface the hulls float on: the ocean's `level`, plus the draught the models carry. */
 const WATER_LEVEL = -0.4;
 
-/** One straight leg of a circuit and the distance run when it begins. */
 interface Leg {
   from: readonly [number, number];
   to: readonly [number, number];
@@ -14,7 +12,6 @@ interface Leg {
   length: number;
 }
 
-/** One authored `boat_route` or `air_route` path as a closed circuit a vessel runs at its own speed. */
 interface Circuit {
   id: string;
   vessel: string;
@@ -43,7 +40,6 @@ function circuitOf(path: { id: string; points: readonly { x: number; z: number }
   return { id: path.id, vessel, speed, altitude, legs, total };
 }
 
-/** Every ambient circuit the scene document authors: boats in the bay, a helicopter over the city. */
 export const CIRCUITS: readonly Circuit[] = editorLayers.paths
   .filter((path) => path.kind === "boat_route" || path.kind === "air_route")
   .map(circuitOf)
@@ -78,7 +74,6 @@ export function setupHarbourLife(ctx: GameContext): void {
   });
 }
 
-/** Run the boats and the helicopter along their circuits. */
 export function tickHarbourLife(ctx: GameContext, dt: number): void {
   const life = lifeStore(ctx);
   for (const circuit of CIRCUITS) {

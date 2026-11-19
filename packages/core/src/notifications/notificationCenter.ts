@@ -1,17 +1,14 @@
-/** One persistent notification — unlike a transient toast, it stays in the log until dismissed. */
 export interface NotificationEntry<TMeta = unknown> {
   id: string;
   /** Severity/category (`"info"`, `"success"`, `"warning"`, `"danger"`, or a game kind). */
   kind: string;
   title: string;
   body?: string;
-  /** Creation time from the injected clock. */
   at: number;
   read: boolean;
   meta?: TMeta;
 }
 
-/** Fields accepted by {@link NotificationStore.push}. */
 export interface NotificationInput<TMeta = unknown> {
   id?: string;
   kind?: string;
@@ -21,16 +18,13 @@ export interface NotificationInput<TMeta = unknown> {
   meta?: TMeta;
 }
 
-/** Filter for {@link NotificationStore.list}. */
 export interface NotificationFilter {
   kind?: string;
   unreadOnly?: boolean;
 }
 
-/** Serializable, observable log of persistent notifications with read tracking. */
 export interface NotificationStore<TMeta = unknown> {
   push(input: NotificationInput<TMeta>): NotificationEntry<TMeta>;
-  /** Newest-first; filter by kind and/or unread. Stable identity between changes for the unfiltered read. */
   list(filter?: NotificationFilter): readonly NotificationEntry<TMeta>[];
   unreadCount(): number;
   markRead(id: string): void;
@@ -42,11 +36,9 @@ export interface NotificationStore<TMeta = unknown> {
   restore(snapshot: readonly NotificationEntry<TMeta>[]): void;
 }
 
-/** Options for {@link createNotificationCenter}. */
 export interface NotificationCenterOptions {
   /** Injected clock (ms). Default `Date.now`. */
   now?: () => number;
-  /** Keep only the newest `cap` notifications. Default 100; 0 = unbounded. */
   cap?: number;
 }
 

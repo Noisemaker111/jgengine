@@ -37,7 +37,6 @@ export interface BaselineDeps {
 
 /** @internal What an always-on baseline descriptor contributes: a replication module, a save-only module, or both. */
 export interface BaselineBuild {
-  /** Registered into the host→client replication set (`ctx.snapshot`/`ctx.hydrate`), and therefore also into the save set. */
   replicate?: SnapshotModule;
   /** Registered into the whole-world save-only set (`ctx.game.save`) — persisted but never sent to clients. */
   save?: SnapshotModule;

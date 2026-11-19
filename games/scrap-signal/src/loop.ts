@@ -215,10 +215,8 @@ function tickReserve(ctx: GameContext, dt: number): void {
   syncReserve(ctx);
 }
 
-/** The last spot the player stood outside every closed zone: where a closed road turns them back to. */
 const openGround = perContext((): { at: readonly [number, number, number] | null; warnedAtMs: number } => ({ at: null, warnedAtMs: -Infinity }));
 
-/** Turn the player back at the edge of a zone the story has not opened. Returns whether they were turned. */
 function holdAtClosedZone(ctx: GameContext, nowMs: number): boolean {
   const userId = ctx.player.userId;
   const playerEntity = ctx.scene.entity.get(userId);
@@ -272,7 +270,6 @@ function tickZoneAndStations(ctx: GameContext, nowMs: number): void {
   }
 }
 
-/** A conversation ends when the player walks away from the one talking. */
 function closeDistantDialog(ctx: GameContext): void {
   const open = npcDialogStore.read(ctx);
   if (open === null) return;
@@ -410,11 +407,4 @@ function onTick(ctx: GameContext, dt: number): void {
 }
 
 export const loop = { onInit, onNewPlayer, onTick };
-
-
-
-
-
-
-
 

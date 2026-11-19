@@ -23,7 +23,6 @@ function useEnvironment() {
   return env;
 }
 
-/** One native game surface, with injected game state, look, projection and translation. */
 export function RuneRoot(props: RuneRootProps) {
   return <Environment value={props}><RuneSurface><RuneBox pin={[0,0,0,0]} {...props.theme.text["body"]}>{props.children}</RuneBox></RuneSurface></Environment>;
 }
@@ -37,7 +36,6 @@ export interface RuneViewProps extends RuneElementProps {
   responsive?: Partial<Record<RuneViewportClass, RuneBoundStyle & RuneBoundFont & { layout?: "stack" | "row" | "grid" }>>;
 }
 
-/** Native layout, paint and responsive overrides. Anchors refer to the nearest positioned parent. */
 export function RuneView({ layout, anchor, safe, inset = 0, variant, responsive, ...props }: RuneViewProps) {
   const env = useEnvironment(), viewport = useRuneViewport();
   const adjusted = responsive?.[runeViewportClass(viewport.width)];
@@ -66,7 +64,6 @@ export interface RuneLabelProps<T> extends Omit<RuneElementProps, "text" | "valu
   rich?: Live<readonly RuneSpan[]>;
 }
 
-/** Text, formatting, rich spans and translated messages bound directly to a native leaf. */
 export function RuneLabel<T = string>({ value, format, textStyle, message, params, rich, children, ...props }: RuneLabelProps<T>) {
   const env = useEnvironment();
   if (textStyle !== undefined && env.theme.text[textStyle] === undefined) throw new Error(`Unknown Rune text style: ${textStyle}`);
@@ -82,7 +79,6 @@ export interface RuneActionProps extends RuneViewProps {
   acceptDrop?: (value: string) => void;
 }
 
-/** Command interaction with native focus, pointer/touch, keyboard, pad, hold and drag/drop. */
 export function RuneAction({ command, run, acceptDrop, children, ...props }: RuneActionProps) {
   const env = useEnvironment();
   const parts = Children.toArray(children);
@@ -99,19 +95,14 @@ export function RuneAction({ command, run, acceptDrop, children, ...props }: Run
   </RuneView>;
 }
 
-/** Props for {@link RuneField}: the controlled text, its callbacks and native field options. */
 export interface RuneFieldProps extends Omit<RuneElementProps, "text" | "value" | "rev" | "onEdit" | "onSubmit" | "onReplace" | "children"> {
-  /** The game's text. Typing reports through `onChange`; a different `value` replaces the field's text. */
   value: string;
   onChange: (text: string) => void;
-  /** Enter in a single-line field (the phone keyboard's send key too). */
   onSubmit?: (text: string) => void;
   placeholder?: string;
   multiline?: boolean;
   secret?: boolean;
-  /** Longest text in characters; longer input is cut and the field shows the cut text. */
   maxLength?: number;
-  /** Take the keyboard the first time the field appears. */
   autoFocus?: boolean;
   variant?: string;
   textStyle?: string;
@@ -148,14 +139,12 @@ export function RuneField({ value, onChange, onSubmit, maxLength, variant, textS
     {...(onSubmit === undefined ? {} : { onSubmit: (text: string) => onSubmit(cut(text)) })} />;
 }
 
-/** Subscribed keyed composition. Per-frame fields belong in the item's bound leaves. */
 export function RuneFor<T>({ source, keyBy, children }: { source: RuneSource<T>; keyBy: (item: T) => string | number; children: (item: T) => ReactNode }) {
   const items = useSyncExternalStore(source.subscribe, source.read, source.read);
   return <>{items.map(item => <RuneItem key={keyBy(item)} item={item} render={children} />)}</>;
 }
 function RuneItem<T>({ item, render }: { item: T; render: (item: T) => ReactNode }) { return render(item); }
 
-/** Expiring collection presentation, with one deadline timer and game-authored message/popup contents. */
 export function RuneTransient<T extends { id: string; expiresAt: number }>({ source, expire, now = Date.now, children }: {
   source: RuneSource<T>; expire: () => void; now?: () => number; children: (item: T) => ReactNode;
 }) {
@@ -169,7 +158,6 @@ export function RuneTransient<T extends { id: string; expiresAt: number }>({ sou
   return <>{items.map(item => <RuneItem key={item.id} item={item} render={children} />)}</>;
 }
 
-/** A projected entity or point. Only the requested target is read; no world-wide scan. */
 export function RuneWorldAnchor({ entity, position, offset, children, ...props }: Parameters<RuneProjection>[0] & RuneViewProps) {
   const env = useEnvironment();
   if (env.project === undefined) throw new Error("Rune world anchors need RuneRoot.project");
@@ -181,7 +169,6 @@ export function RuneWorldAnchor({ entity, position, offset, children, ...props }
 type FlowEntry = ReturnType<RuneFlow["read"]>[number];
 interface Presented { entry: FlowEntry; entered: number; exited?: number; }
 
-/** Present a flow stack; route policy owns input/pause until the route leaves, including nested layers. */
 export function RuneLayers({ flow, children, transition }: { flow: RuneFlow; children: (entry: FlowEntry) => ReactNode; transition?: { duration: number; distance: number } }) {
   const env = useEnvironment();
   const entries = useSyncExternalStore(flow.subscribe, flow.read, flow.read);
@@ -217,5 +204,4 @@ export function RuneLayers({ flow, children, transition }: { flow: RuneFlow; chi
   })}</>;
 }
 
-/** SVG artwork as a native icon. Tokens remain game-owned. */
 export function RuneGlyph({ artwork, ...props }: Omit<RuneElementProps, "svg"> & { artwork: string }) { return <RuneIcon {...props} svg={artwork} />; }

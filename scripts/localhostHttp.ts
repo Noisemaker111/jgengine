@@ -54,7 +54,6 @@ export function localRequest(
   });
 }
 
-/** The body of a 2xx local response; any other status rejects with the status attached. */
 export async function localGet(url: string | URL, timeoutMs: number, method = "GET"): Promise<string> {
   const response = await localRequest(url, { method, timeoutMs });
   if (response.status < 200 || response.status >= 300) {
@@ -65,12 +64,10 @@ export async function localGet(url: string | URL, timeoutMs: number, method = "G
   return response.body;
 }
 
-/** Parse a 2xx local JSON response. */
 export async function localGetJson<T = unknown>(url: string | URL, timeoutMs: number, method = "GET"): Promise<T> {
   return JSON.parse(await localGet(url, timeoutMs, method)) as T;
 }
 
-/** True when a local address answers 2xx within the timeout. */
 export async function localOk(url: string | URL, timeoutMs: number): Promise<boolean> {
   try {
     const response = await localRequest(url, { timeoutMs });
@@ -80,7 +77,6 @@ export async function localOk(url: string | URL, timeoutMs: number): Promise<boo
   }
 }
 
-/** POST a JSON body to a local address and parse the JSON answer, whatever its status. */
 export async function localPostJson<T = unknown>(
   url: string | URL,
   body: unknown,

@@ -26,12 +26,10 @@ import type { LayoutOrientation } from "@jgengine/core/ui/orientation";
 import type { HudPlatform } from "@jgengine/core/hud/hudScale";
 import { useDisplayProfile } from "./display.view";
 
-/** A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side. */
 export interface RegionRecord extends LayoutRegion {
   element?: HTMLElement | null;
 }
 
-/** A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`. */
 export type LayoutRegionSpec = Omit<LayoutRegion, "rect">;
 
 interface RegionRegistry {
@@ -39,7 +37,6 @@ interface RegionRegistry {
   remove(id: string): void;
   list(): RegionRecord[];
   subscribe(listener: () => void): () => void;
-  /** Re-read every registered element's rectangle, for siblings that moved without resizing. */
   remeasure(): void;
 }
 
@@ -116,7 +113,6 @@ const GameLayoutContext = createContext<GameViewportLayout | null>(null);
 /** The viewport without its region list: a HUD panel moving never changes it, so the many readers of the mode stay still. */
 const GameShapeContext = createContext<GameViewportShape | null>(null);
 
-/** {@link GameViewportLayout} without the live region list. */
 export type GameViewportShape = Omit<GameViewportLayout, "regions">;
 
 function sameRects(a: readonly LayoutRect[], b: readonly LayoutRect[]): boolean {
@@ -129,7 +125,6 @@ function sameRects(a: readonly LayoutRect[], b: readonly LayoutRect[]): boolean 
 const INPUT_HINT_STYLE_ID = "jg-input-hints";
 const INPUT_HINT_CSS = "@media (pointer: coarse){[data-jg-kbd-hint]{display:none!important}}";
 
-/** Install the backstop rule that hides keyboard/mouse hints on touch, once per document. */
 function ensureInputHintStylesheet(): void {
   if (typeof document === "undefined") return;
   if (document.getElementById(INPUT_HINT_STYLE_ID) !== null) return;
@@ -139,7 +134,6 @@ function ensureInputHintStylesheet(): void {
   document.head.appendChild(style);
 }
 
-/** Live viewport rectangles: the layout viewport and the visible `visualViewport`. */
 export interface ViewportMetrics {
   layout: LayoutRect;
   visual: LayoutRect;
@@ -225,13 +219,6 @@ const SAFE_AREA_PROBE_STYLE: CSSProperties = {
   paddingLeft: "env(safe-area-inset-left, 0px)",
 };
 
-/**
- * Provides the shared game viewport layout to everything it wraps. Mount it
- * once around the whole game presentation (world, HUD, controls, system UI) so
- * every subsystem reads one coordinated geometry and registers its rect for
- * collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*`
- * / `--jg-safe-*` CSS variables on its root.
- */
 export function GameViewportProvider({
   platforms,
   className,
@@ -439,22 +426,18 @@ export function useGameViewportShape(): GameViewportShape {
   );
 }
 
-/** The resolved explicit composition mode (`desktop-wide` … `mobile-portrait`). */
 export function useGameLayoutMode(): GameLayoutMode {
   return useGameViewportShape().mode;
 }
 
-/** The live device orientation. */
 export function useGameOrientation(): LayoutOrientation {
   return useGameViewportShape().orientation;
 }
 
-/** Rectangles reserved by touch controls and system UI — HUD placement should avoid these. */
 export function useReservedControlZones(): readonly LayoutRect[] {
   return useGameViewportShape().controlZones;
 }
 
-/** Live forbidden/warned region collisions (empty outside a provider). */
 export function useLayoutCollisions(): readonly LayoutCollision[] {
   const layout = useContext(GameLayoutContext);
   return useMemo(() => (layout === null ? [] : detectLayoutCollisions(layout.regions)), [layout]);

@@ -11,18 +11,14 @@ import { cloudNoiseVolume, CLOUD_NOISE_SIZE } from "@jgengine/core/sky/volumetri
 import { hashString } from "@jgengine/core/random/rng";
 import { createSkyLight, readSkyLight } from "./skyLight.draw";
 
-/** Props for {@link VolumetricClouds}: fully resolved cloud rules. Light and cover come from the scene's {@link readSkyLight}. */
 export interface VolumetricCloudsProps {
   rules: VolumetricCloudsRules;
 }
 
-/** The proxy sphere sits at this fraction of the camera far plane, so nearer geometry hides the clouds before their shader runs. */
 const FAR_FRACTION = 0.9;
-
 
 let sharedNoise: THREE.Data3DTexture | null = null;
 
-/** One tileable noise volume per page, shared by every cloud layer. */
 function cloudNoiseTexture(): THREE.Data3DTexture {
   if (sharedNoise !== null) return sharedNoise;
   const texture = new THREE.Data3DTexture(cloudNoiseVolume(), CLOUD_NOISE_SIZE, CLOUD_NOISE_SIZE, CLOUD_NOISE_SIZE);
@@ -162,19 +158,11 @@ void main() {
 }
 `;
 
-/** The camera's far plane, or infinity for a camera without one. */
 function cameraFar(camera: THREE.Camera): number {
   return camera instanceof THREE.PerspectiveCamera || camera instanceof THREE.OrthographicCamera ? camera.far : Number.POSITIVE_INFINITY;
 }
 
-/**
- * A raymarched cloud slab between `height` and `height + thickness`, drawn on a camera-centred sphere
- * just inside the far plane. Each frame it reads the scene's {@link readSkyLight}: the sun (or the moon
- * at night) lights and shadows it, the sky colours its shade, and the weather's cloud cover thickens
- * and darkens it. Mounted by `Sky` when a sky descriptor carries `volumetricClouds`; a game with its own
- * sky can mount it beside that sky as long as the sky publishes its light.
- * @internal
- */
+/** @internal */
 export function volumetricCloudsDraw(getProps: () => VolumetricCloudsProps): EngineDraw {
   const fallback = createSkyLight();
   let rules = getProps().rules;
@@ -285,14 +273,7 @@ export function volumetricCloudsDraw(getProps: () => VolumetricCloudsProps): Eng
   };
 }
 
-/**
- * A raymarched cloud slab between `height` and `height + thickness`, drawn on a camera-centred sphere
- * just inside the far plane. Each frame it reads the scene's {@link readSkyLight}: the sun (or the moon
- * at night) lights and shadows it, the sky colours its shade, and the weather's cloud cover thickens
- * and darkens it. Mounted by `Sky` when a sky descriptor carries `volumetricClouds`; a game with its own
- * sky can mount it beside that sky as long as the sky publishes its light.
- * @internal
- */
+/** @internal */
 export function VolumetricClouds(props: VolumetricCloudsProps) {
   const latest = useRef(props);
   latest.current = props;

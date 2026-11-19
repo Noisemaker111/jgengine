@@ -6,38 +6,30 @@ export interface SelectClickRecord {
   y: number;
 }
 
-/** Max gap and travel between two clicks on the same entity that count as a double-click. @internal */
+/** @internal */
 export const SELECT_DOUBLE_CLICK_MS = 400;
 /** @internal */
 export const SELECT_DOUBLE_CLICK_SLOP_PX = 6;
 
-/** True when `next` lands on the same entity as `prev` within the double-click window and slop. @internal */
+/** @internal */
 export function isSelectDoubleClick(prev: SelectClickRecord | null, next: SelectClickRecord): boolean {
   if (prev === null || next.entity === null || prev.entity !== next.entity) return false;
   if (next.at - prev.at > SELECT_DOUBLE_CLICK_MS) return false;
   return Math.hypot(next.x - prev.x, next.y - prev.y) <= SELECT_DOUBLE_CLICK_SLOP_PX;
 }
 
-/** A resolved click-select gesture: the clicked selectable entity (or null for ground) plus its modifiers. @internal */
+/** @internal */
 export interface ClickSelectInput {
-  /** Selectable entity under the cursor, or null. */
   hit: string | null;
   current: readonly string[];
   /** Shift held: toggle the hit in/out (or add the same-kind set) instead of replacing. */
   additive: boolean;
-  /** Double-click or Ctrl+click: select every on-screen selectable entity of the hit's kind. */
   sameKind: boolean;
   kindOf?: ((entityId: string) => string | null) | undefined;
-  /** Selectable entities currently on screen, in a stable order; only read for a same-kind select. */
   onScreen: () => readonly string[];
 }
 
-/**
- * The selection after a click: plain click replaces with the hit (ground clears), Shift toggles the hit
- * (ground keeps the selection), double-click/Ctrl selects the hit's on-screen kind (Shift adds it).
- * Without `kindOf`, or when the hit has no kind, a same-kind click acts as a plain or Shift click.
- * @internal
- */
+/** @internal */
 export function resolveClickSelection(input: ClickSelectInput): string[] {
   const { hit, current, additive } = input;
   if (hit === null) return additive ? [...current] : [];
@@ -51,7 +43,7 @@ export function resolveClickSelection(input: ClickSelectInput): string[] {
   return current.includes(hit) ? current.filter((id) => id !== hit) : [...current, hit];
 }
 
-/** The selection after a marquee: replaces, or with Shift adds the boxed ids to the current selection. @internal */
+/** @internal */
 export function resolveMarqueeSelection(boxed: readonly string[], current: readonly string[], additive: boolean): string[] {
   return additive ? union(current, boxed) : [...boxed];
 }

@@ -137,9 +137,7 @@ export function makeDb() {
   return { db, reads, seed, rows };
 }
 
-/** A `jgGameServers` row with sane defaults for handler tests.
- * @internal
- */
+/** @internal */
 export function serverDoc(overrides: Partial<Doc> & { _id: string }): Doc {
   const now = Date.now();
   return {
@@ -165,9 +163,7 @@ export function serverDoc(overrides: Partial<Doc> & { _id: string }): Doc {
   };
 }
 
-/** A `jgPlayerProfiles` row for a member of a player-persisting server.
- * @internal
- */
+/** @internal */
 export function profileDoc(args: {
   userId: string;
   gameId: string;

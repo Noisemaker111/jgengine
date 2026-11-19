@@ -9,7 +9,6 @@ export interface GerstnerWave {
   amplitude: number;
   steepness: number;
   speed: number;
-  /** Phase offset, rad, added to the wave's travelling phase (default `0`). */
   phase?: number;
 }
 
@@ -35,7 +34,6 @@ export interface WaterSurfaceConfig {
 }
 
 export interface WaterSurface {
-  /** The current base level — the initial config value until `setLevel` replaces it. With a `levelAt` schedule, use `levelAtTime` instead. */
   readonly level: number;
   readonly waves: readonly GerstnerWave[];
   height(x: number, z: number, time: number): number;
@@ -43,7 +41,6 @@ export interface WaterSurface {
   displace(x: number, z: number, time: number): readonly [number, number, number];
   /** Raise or drain the water at runtime (#284.1) — every `height`/`displace` consumer (buoyancy included) sees it immediately. Ignored while a `levelAt` schedule is set. */
   setLevel(level: number): void;
-  /** The effective base level at `time`: the `levelAt` schedule when set, else the current `level`. */
   levelAtTime(time: number): number;
 }
 
@@ -66,7 +63,6 @@ function resolveConfig(config: WaterSurfaceConfig): Required<Omit<WaterSurfaceCo
   };
 }
 
-/** The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list. */
 export function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[] {
   const field = config.field;
   if (field !== undefined) {
@@ -204,7 +200,6 @@ export function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface {
   };
 }
 
-/** The wave config an `ocean()` descriptor describes, for the CPU surface and the drawn water alike. */
 export function waterSurfaceConfigFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurfaceConfig {
   return {
     level: descriptor.level,

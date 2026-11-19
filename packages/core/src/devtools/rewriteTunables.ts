@@ -1,4 +1,3 @@
-/** One changed tunable to write back into game source: which table, key path, and new value. */
 export interface TunableDelta {
   table: string;
   key: string;

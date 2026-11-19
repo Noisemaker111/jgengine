@@ -15,7 +15,6 @@ export function gitBlobSha(bytes: Uint8Array): string {
   return createHash("sha1").update(`blob ${bytes.byteLength}\0`).update(bytes).digest("hex");
 }
 
-/** A decoded image as top-row-first RGBA. */
 export interface RgbaImage {
   width: number;
   height: number;
@@ -82,9 +81,7 @@ export function decodeTgaForGltf(bytes: Uint8Array): RgbaImage {
   return { width, height, data };
 }
 
-/** Halve an RGBA image (2x2 box filter) until its longest edge fits `max`.
- * @internal
- */
+/** @internal */
 export function fitRgba(image: RgbaImage, max: number): RgbaImage {
   let { width, height, data } = image;
   while (Math.max(width, height) > max && width > 1 && height > 1) {
@@ -160,13 +157,10 @@ export function encodePng(image: RgbaImage): Uint8Array {
   return out;
 }
 
-/** Encode RGBA as a baseline JPEG (alpha dropped).
- * @internal
- */
+/** @internal */
 export function encodeJpeg(image: RgbaImage, quality = 86): Uint8Array {
   return new Uint8Array(jpeg.encode({ data: image.data, width: image.width, height: image.height }, quality).data);
 }
-
 
 const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10] as const;
 

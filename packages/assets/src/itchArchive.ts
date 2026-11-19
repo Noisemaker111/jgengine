@@ -11,12 +11,12 @@ function itchReply(body: unknown): { url?: string; errors?: string[] } {
   return { ...(url === undefined ? {} : { url }), ...(errors === undefined ? {} : { errors }) };
 }
 
-/** The `csrf_token` an itch.io page carries in its meta tag or form. @internal */
+/** @internal */
 export function itchCsrfToken(html: string): string | undefined {
   return /name="csrf_token" content="([^"]+)"/.exec(html)?.[1] ?? /name="csrf_token" value="([^"]+)"/.exec(html)?.[1];
 }
 
-/** Each upload on an itch.io download page: its id and its title. @internal */
+/** @internal */
 export function itchUploads(html: string): { id: string; title: string }[] {
   const uploads: { id: string; title: string }[] = [];
   for (const match of html.matchAll(/data-upload_id="(\d+)"/g)) {
@@ -29,11 +29,7 @@ export function itchUploads(html: string): { id: string; title: string }[] {
   return uploads;
 }
 
-/**
- * The signed file URL for a free itch.io upload. It walks the page's own flow: the game page sets
- * a session cookie and token, `download_url` returns the download page that lists the uploads,
- * and the file endpoint returns a short-lived CDN link for the chosen one. @internal
- */
+/** @internal */
 export async function resolveItchUrl(download: ItchDownload, fetchImpl: FetchLike = fetch): Promise<string> {
   const page = download.itch.replace(/\/+$/, "");
   const cookies = new Map<string, string>();

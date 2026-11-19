@@ -14,10 +14,8 @@ import { MATERIAL_MAP_FILES } from "../materialMapFiles";
 import { sourceById } from "../sources";
 import { MATERIAL_LIBRARY } from "./materials/index";
 
-/** How a library surface renders: an ordinary PBR surface, cut-out foliage, glass or water. */
 export type LibrarySurface = "opaque" | "foliage" | "glass" | "water";
 
-/** Browse groups the library browser and `assets list` share. */
 export type LibraryGroup =
   | "asphalt"
   | "concrete"
@@ -40,17 +38,13 @@ export type LibraryGroup =
  * ambientCG publishes no scanned glass or water material and both are shader surfaces.
  */
 export interface LibraryMaterial {
-  /** Stable name, e.g. `asphalt/wet`. Names are the data contract; source ids and URLs are not. */
   name: string;
-  /** Human label for pickers and contact sheets. */
   title: string;
   group: LibraryGroup;
-  /** ambientCG source id in the material catalog, whose maps `assets pull <id>` writes. */
   source?: string;
   surface: LibrarySurface;
   /** Metres one texture tile covers on world geometry. */
   tileMetres: number;
-  /** Sparse physical response merged over the imported or authored slot. */
   response: MaterialSurfaceParameters;
   /**
    * How this scan blends onto terrain when the defaults are wrong for its scale. A macro ground
@@ -60,7 +54,6 @@ export interface LibraryMaterial {
   terrain?: LibraryTerrainDetail;
 }
 
-/** Blend policy for putting a library scan on terrain; only entries whose scale needs it declare one. */
 export interface LibraryTerrainDetail {
   /** Blend strength over the procedural/vertex-colour ground, 0..1. Default 1. */
   strength?: number;
@@ -72,13 +65,10 @@ export { MATERIAL_LIBRARY };
 
 const byName = new Map(MATERIAL_LIBRARY.map((entry) => [entry.name, entry]));
 
-/** Map roles a library scan can carry: the PBR set plus cut-out coverage and a height map. */
 export type LibraryMapRole = "color" | "normal" | "roughness" | "ao" | "opacity" | "displacement";
 
-/** Every readable map role a library material can carry, in load order. */
 const LIBRARY_ROLES: readonly LibraryMapRole[] = ["color", "normal", "roughness", "ao", "opacity", "displacement"];
 
-/** Authoring role a library map feeds: `opacity` is an alpha map, `displacement` is a height map. */
 function textureRoleFor(role: LibraryMapRole): MaterialTextureRole {
   return role === "opacity" ? "alpha" : role === "displacement" ? "height" : role;
 }
@@ -88,12 +78,10 @@ export function findLibraryMaterial(name: string): LibraryMaterial | null {
   return byName.get(name) ?? null;
 }
 
-/** Every library name, in authored order. */
 export function libraryMaterialNames(): readonly string[] {
   return MATERIAL_LIBRARY.map((entry) => entry.name);
 }
 
-/** Map roles the pinned archive of `entry` actually ships, from its catalog source declaration. */
 export function libraryMaterialRoles(entry: LibraryMaterial): readonly LibraryMapRole[] {
   if (entry.source === undefined) return [];
   const source = sourceById.get(entry.source);
@@ -101,7 +89,6 @@ export function libraryMaterialRoles(entry: LibraryMaterial): readonly LibraryMa
   return LIBRARY_ROLES.filter((role) => source.materialMaps?.includes(role) === true);
 }
 
-/** Options for {@link libraryMaterialMaps} and {@link libraryMaterialAsset}. */
 export interface LibraryMaterialOptions {
   /** URL prefix `assets pull` writes under; defaults to `/materials`. */
   basePath?: string;
@@ -195,7 +182,6 @@ function mapUrl(entry: LibraryMaterial, role: LibraryMapRole, basePath: string):
   return `${basePath.replace(/\/+$/, "")}/${entry.source}/${MATERIAL_MAP_FILES[role]}`;
 }
 
-/** Options for {@link libraryTerrainMaterial}. */
 export interface LibraryTerrainOptions {
   /** URL prefix `assets pull` writes under; defaults to `/materials`. */
   basePath?: string;
@@ -253,7 +239,6 @@ export function librarySurfaceScan(name: string, options: LibraryTerrainOptions 
   };
 }
 
-/** Options for {@link libraryTerrainSurface}. */
 export interface LibraryTerrainSurfaceOptions {
   /** URL prefix `assets pull` writes under; defaults to `/materials`. */
   basePath?: string;
@@ -276,13 +261,11 @@ export function libraryTerrainSurface(name: string, options: LibraryTerrainSurfa
   return { scan: scan.maps, tile: options.tile ?? entry.tileMetres, ...(options.tint === undefined ? {} : { tint: options.tint }) };
 }
 
-/** Options for {@link libraryBuildingSurface}. */
 export interface LibraryBuildingSurfaceOptions {
   /** URL prefix `assets pull` writes under; defaults to `/materials`. */
   basePath?: string;
   /** Metres one building part slot covers, `[width, height]`; tiles per slot follow from the entry's `tileMetres`. */
   slotMetres?: readonly [number, number];
-  /** Tiles per slot, along [x, y]; wins over `slotMetres`. */
   repeat?: number | readonly [number, number];
   /** Albedo multiplier over the map; defaults to the entry's authored response colour. */
   color?: string;

@@ -1,6 +1,5 @@
 import type { Object3D } from "three";
 
-/** A missing or nonunique node reference that a rig author can repair. */
 export interface RigNodeDiagnostic {
   code: "missing-node" | "ambiguous-node";
   message: string;

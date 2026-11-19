@@ -100,7 +100,6 @@ function FeedbackUI() {
   );
 }
 
-/** Probe for engine UI feedback: refusal messages, the shared notice feed, and UI cues. */
 export const uiFeedbackDemoGame: PlayableGame = {
   game,
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },

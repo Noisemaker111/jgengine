@@ -7,7 +7,7 @@ export function modelHiddenNodesKey(names: readonly string[] = []): string {
   return JSON.stringify([...new Set(names)].sort());
 }
 
-/** Apply visibility only to uniquely resolved nodes on an owned clone, retaining imported hidden state and rig hierarchy. @internal */
+/** @internal */
 export function applyModelNodeVisibility(root: Object3D, names: readonly string[] = []): RigNodeDiagnostic[] {
   const diagnostics: RigNodeDiagnostic[] = [];
   for (const name of new Set(parseModelHiddenNodes(names))) {

@@ -2,17 +2,12 @@ import * as THREE from "three";
 
 import { submitInstanceCount } from "@jgengine/core/render/submittedDraws.draw";
 
-/** Instance transforms: a ready list of matrices, or a count plus a writer that fills each one. */
 export type InstanceSource = readonly THREE.Matrix4[] | { count: number; at(index: number, out: THREE.Matrix4): void };
 
-/** Per-instance tint: a ready list of colors, or a writer that fills each one. */
 export type InstanceColors = readonly THREE.Color[] | ((index: number, out: THREE.Color) => void);
 
-/** Knobs for {@link uploadInstances}. */
 export interface InstanceUploadOptions {
-  /** Applied after each instance matrix: a model part's own transform inside its source scene. */
   localMatrix?: THREE.Matrix4;
-  /** Per-instance tint. The mesh gets an `instanceColor` buffer on first use. */
   colors?: InstanceColors;
   /**
    * How culling bounds follow the instances. Default `"sphere"`.
@@ -26,7 +21,6 @@ export interface InstanceUploadOptions {
   bounds?: "sphere" | "boxes" | "none" | THREE.Box3;
   /** Extra meters added around each instance's geometry box in `"boxes"` mode. Default 0. */
   boundsPad?: number;
-  /** Mark the buffers for per-frame rewrites (`DynamicDrawUsage`). Default false. */
   dynamic?: boolean;
 }
 
@@ -48,14 +42,7 @@ function growInstanceBuffers(mesh: THREE.InstancedMesh, count: number): void {
   }
 }
 
-/**
- * Write a batch of instances into an `InstancedMesh`: transforms (with an optional model-local
- * matrix), optional colors, the draw count, the upload flags and the culling bounds. The buffers grow
- * when the batch outgrows them. Every instanced renderer in the engine draws through this, so counts
- * reach the draw probes and bounds stay right the same way everywhere.
- *
- * @capability instance-upload write transforms, colors, count and culling bounds into one instanced draw
- */
+/** @capability instance-upload write transforms, colors, count and culling bounds into one instanced draw */
 export function uploadInstances(mesh: THREE.InstancedMesh, source: InstanceSource, options: InstanceUploadOptions = {}): void {
   const list = Array.isArray(source) ? (source as readonly THREE.Matrix4[]) : null;
   const count = list === null ? (source as { count: number }).count : list.length;

@@ -55,12 +55,9 @@ export function ensureUiKitStyles(kit: UiKit, doc: Document | undefined = typeof
   doc.head.appendChild(style);
 }
 
-/** Props for {@link UiKitRoot}. */
 export interface UiKitRootProps {
   kit: UiKit;
-  /** The game's input bindings, so prompts can show the bound key or pad button. */
   bindings?: ActionCodesMap;
-  /** Controller family for pad glyphs. Default `xbox`. */
   glyphSet?: GamepadGlyphName;
   children?: ReactNode;
   className?: string | undefined;
@@ -135,18 +132,11 @@ export function useActionGlyph(action: string, fallback?: string): string | unde
   return glyph ?? fallback;
 }
 
-/** True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then. */
 export function useHasUiKit(): boolean {
   return useContext(UiKitContext) !== null;
 }
 
-/**
- * `--jg-*` overrides that point the engine's own screens (settings, saves, credits) at the kit's
- * tokens, so screens drawn for a dark HUD read on light kits (ink, paper, parchment) as well as dark
- * ones, in the kit's type. Spread it on the element that hosts such a screen inside a kit: `"pane"`
- * when the screen sits on a kit panel, `"dialog"` when it brings its own ground (the settings dialog).
- * @internal
- */
+/** @internal */
 export function kitHudBridge(ground: "pane" | "dialog"): CSSProperties {
   return {
     "--jg-text": "var(--kit-ink)",
@@ -169,17 +159,12 @@ export function kitHudBridge(ground: "pane" | "dialog"): CSSProperties {
   } as CSSProperties;
 }
 
-/** Inserts the kit's stylesheet for a part drawn outside a {@link UiKitRoot} (previews, portals). */
 function useKitStyles(kit: UiKit): void {
   useInsertionEffect(() => {
     ensureUiKitStyles(kit);
   }, [kit]);
 }
 
-/**
- * Keeps something mounted through its exit motion: `leaving` turns true when `open` goes false, and
- * `mounted` turns false `exitMs` later.
- */
 export function useKitPresence(open: boolean, exitMs: number): { mounted: boolean; leaving: boolean } {
   const [mounted, setMounted] = useState(open);
   useEffect(() => {
@@ -196,12 +181,10 @@ export function useKitPresence(open: boolean, exitMs: number): { mounted: boolea
 /** A {@link KitButton} made of a material instead of drawn by the kit: every native button attribute passes through. */
 export interface KitMaterialButtonProps extends KitFrameLook, Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "color"> {
   type?: "button" | "submit" | "reset";
-  /** UI cue name for hover and activate sounds. Default `"confirm"`. */
   cue?: string | undefined;
   ref?: Ref<HTMLButtonElement>;
 }
 
-/** Props for {@link KitButton}: the kit's button, or a material one when `material` is set. */
 export type KitButtonHostProps = (KitButtonProps & { cue?: string | undefined; material?: undefined }) | KitMaterialButtonProps;
 
 /**
@@ -247,15 +230,12 @@ export const KitButton = memoView("KitButton", (props: KitButtonHostProps): Reac
 
 /** A {@link KitPanel} made of a material instead of drawn by the kit; it holds its children as given. */
 export interface KitMaterialPanelProps extends KitFrameLook, Omit<HTMLAttributes<HTMLElement>, "color"> {
-  /** Omit for always-shown panels. `false` unmounts it. */
   open?: boolean;
-  /** Landmark element. Default `div`. */
   as?: "div" | "section" | "aside" | "nav" | "header" | "span";
   ref?: Ref<HTMLElement>;
   children?: ReactNode;
 }
 
-/** Props for {@link KitPanel}: the kit panel's props plus an `open` flag that plays enter and exit motion, or a material panel. */
 export type KitPanelHostProps = (KitPanelProps & { open?: boolean; material?: undefined }) | KitMaterialPanelProps;
 
 /**
@@ -294,9 +274,7 @@ export const KitPanel = memoView("KitPanel", (props: KitPanelHostProps): ReactNo
 
 /** Props for {@link KitMeter}: the kit meter's, with a value that may be {@link live} and a readout that may be worked out from it. */
 export interface KitMeterHostProps extends Omit<KitMeterProps, "value" | "readout"> {
-  /** The value now, or `live(() => value)` for one that moves every frame or tick. */
   value: Live<number>;
-  /** `true` prints `value / max`; a node prints itself; a function prints its text for the value drawn. */
   readout?: KitMeterProps["readout"] | ((value: number, max: number) => string);
 }
 
@@ -328,7 +306,6 @@ export const KitMeter = memoView("KitMeter", ({ value, readout, ...props }: KitM
   return <Meter {...props} value={drawn} {...(text === undefined ? {} : { readout: text })} />;
 });
 
-/** The active kit's prompt with an explicit glyph. Prefer {@link KitActionPrompt}, which picks the glyph per device. */
 export const KitPrompt = memoView("KitPrompt", (props: Omit<KitPromptProps, "device"> & { device?: KitPromptProps["device"] }): ReactNode => {
   const kit = useUiKit();
   useKitStyles(kit);
@@ -337,28 +314,18 @@ export const KitPrompt = memoView("KitPrompt", (props: Omit<KitPromptProps, "dev
   return <Prompt {...props} device={props.device ?? live} />;
 });
 
-/** Props for {@link KitActionPrompt}. */
 export interface KitActionPromptProps {
-  /** Bound action name from the game's `input` map (`"interact"`). */
   action: string;
   label: ReactNode;
   progress?: number;
   tone?: KitTone;
-  /** Touch: the prompt becomes the button. Without it, touch shows nothing (the game's touch button covers it). */
   onActivate?: () => void;
-  /** Glyph when the action is not bound on the device in use. */
   fallbackGlyph?: string;
   className?: string;
   style?: CSSProperties;
 }
 
-/**
- * "Press E to take the parcel", drawn by the active kit with the right glyph for the device the player
- * is using: the bound key, the bound pad button, or a tap target on touch. Renders nothing when the action
- * is not bound on that device and no `fallbackGlyph` is given.
- *
- * @capability kit-action-prompt a device-correct "press X to do Y" prompt (keyboard key, pad button, tap) in the active UI kit
- */
+/** @capability kit-action-prompt a device-correct "press X to do Y" prompt (keyboard key, pad button, tap) in the active UI kit */
 export const KitActionPrompt = memoView("KitActionPrompt", ({ action, label, progress, tone, onActivate, fallbackGlyph, className, style }: KitActionPromptProps): ReactNode => {
   const context = useContext(UiKitContext);
   const kit = context?.kit ?? plainKit;
@@ -371,7 +338,7 @@ export const KitActionPrompt = memoView("KitActionPrompt", ({ action, label, pro
   return <Prompt glyph={glyph} label={label} device={device} progress={progress} tone={tone} onActivate={onActivate} className={className} style={style} />;
 });
 
-/** The active kit's toast. @capability kit-toast a short message drawn by the active UI kit, with its enter/exit motion */
+/** @capability kit-toast a short message drawn by the active UI kit, with its enter/exit motion */
 export const KitToast = memoView("KitToast", (props: KitToastProps): ReactNode => {
   const kit = useUiKit();
   useKitStyles(kit);
@@ -379,7 +346,7 @@ export const KitToast = memoView("KitToast", (props: KitToastProps): ReactNode =
   return <Toast {...props} />;
 });
 
-/** The active kit's menu list. Navigation comes from `useMenuNav`. @capability kit-menu a verb list drawn by the active UI kit over shared menu navigation */
+/** @capability kit-menu a verb list drawn by the active UI kit over shared menu navigation */
 export const KitMenu = memoView("KitMenu", (props: KitMenuProps): ReactNode => {
   const kit = useUiKit();
   useKitStyles(kit);
@@ -387,7 +354,7 @@ export const KitMenu = memoView("KitMenu", (props: KitMenuProps): ReactNode => {
   return <Menu {...props} />;
 });
 
-/** The active kit's minimap frame. @capability kit-minimap-frame a minimap or radar frame drawn by the active UI kit */
+/** @capability kit-minimap-frame a minimap or radar frame drawn by the active UI kit */
 export const KitMinimapFrame = memoView("KitMinimapFrame", (props: KitMinimapFrameProps): ReactNode => {
   const kit = useUiKit();
   useKitStyles(kit);

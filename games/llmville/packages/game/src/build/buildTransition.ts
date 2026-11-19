@@ -133,7 +133,6 @@ export type PickupBuildItemDecision =
   | { pickedUp: false; reason: string }
   | { pickedUp: true; target: { kind: "rack" | "buildItem"; id: string }; inventory: BuildInventory };
 
-/** Picks the nearest matching placement; the runtime returns installed equipment to stock atomically. */
 export function decidePickupBuildItem(args: {
   itemId: string;
   player: { x: number; z: number };

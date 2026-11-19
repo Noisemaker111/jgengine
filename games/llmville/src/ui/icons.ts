@@ -32,12 +32,10 @@ const LINES = {
 
 export type IconName = keyof typeof LINES;
 
-/** The artwork string for one icon, stroked at `strokeWidth` in the glyph's colour. */
 export function iconArtwork(name: IconName, strokeWidth = 2): string {
   return `<g fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">${LINES[name]}</g>`;
 }
 
-/** LLMville's mascot mark (a 48-unit drawing scaled into the 24-unit glyph box). */
 export const MASCOT_ARTWORK =
   '<g transform="scale(.5)">'
   + '<circle cx="16" cy="7" r="3" fill="currentColor"/><circle cx="32" cy="7" r="3" fill="currentColor"/>'
@@ -48,7 +46,6 @@ export const MASCOT_ARTWORK =
   + '<path d="M20.5 28.5c1.4 1.3 5.6 1.3 7 0" stroke="#5fc2a8" stroke-width="1.6" stroke-linecap="round" fill="none"/>'
   + "</g>";
 
-/** Google's four-colour mark for the OAuth button. */
 export const GOOGLE_ARTWORK =
   '<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>'
   + '<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>'

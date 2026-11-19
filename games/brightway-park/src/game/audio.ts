@@ -138,16 +138,10 @@ export const BRIGHTWAY_SOUNDS = {
   },
 } satisfies Record<string, SoundDef>;
 
-/** Loudness of the sea bed while the park is open and running. */
 const SEA_GAIN = 0.3;
 // Last gain sent to the sea loop, per runtime context (absent until the loop has started).
 const seaGains = new ContextMap<number>();
 
-/**
- * Keep the sea bed in step with the park: it starts with the first run, and is muted while the
- * game is paused, bankrupt, or showing the blue-ribbon screen. Cheap to call every tick; it only
- * touches the audio loop when the wanted level changes.
- */
 export function syncAmbience(ctx: GameContext): void {
   if (!sessionOf(ctx).started) return;
   const previous = seaGains.get(ctx);

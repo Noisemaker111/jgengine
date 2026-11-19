@@ -8,7 +8,6 @@ import { getBaseModelDefinition } from "../models/baseModels";
 export const REQUIRED_TUTORIAL_GPU_COUNT = 2;
 export const TUTORIAL_TRAIN_BASE_MODEL_ID = "llamma_3";
 export const MIN_SCRAPED_DATA_TOKENS = getBaseModelDefinition(TUTORIAL_TRAIN_BASE_MODEL_ID)!.requiredDataTokens;
-/** Cheapest paid scraper license — the tutorial requires owning one before scraping. */
 export const TUTORIAL_SCRAPE_MODEL_ID = "alpaca_1";
 
 export interface TutorialModelSignal extends PlayerModelLike {
@@ -46,7 +45,6 @@ export function deriveTutorialWorldSignals({
   installedGpuCount: number;
   modelCatalog?: ModelCatalogLike | null | undefined;
   dataTokens: number;
-  /** GPUs dedicated to the scraping lane (per-card model). */
   scrapingGpuCount?: number | null;
   servingIncomeRate?: number;
   models: readonly TutorialModelSignal[];

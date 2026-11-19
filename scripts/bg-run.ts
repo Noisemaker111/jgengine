@@ -30,15 +30,12 @@ const self = fileURLToPath(import.meta.url);
 
 export interface StartOptions {
   command: string;
-  /** The checkout whose `.scratch/bg/` holds the task. */
   checkout?: string;
   id?: string;
-  /** How the detached supervisor is started; the test passes a fake to read its argv. */
   spawnDetached?: (file: string, args: string[], cwd: string) => void;
   log?: (line: string) => void;
 }
 
-/** Start `command` in the background and return its id without waiting for it. */
 export function startTask(options: StartOptions): string {
   const checkout = options.checkout ?? root;
   const id = options.id ?? newTaskId();
@@ -53,7 +50,6 @@ export function startTask(options: StartOptions): string {
   return id;
 }
 
-/** The detached side: run the command, keep its output and its exit code, and outlive the caller. */
 export function supervise(dir: string): void {
   // Opened for writing, not append-only: MSYS programs (Git Bash, its grep and echo) write nothing,
   // not even their errors, to a handle opened with append access alone, so a bash job's log came

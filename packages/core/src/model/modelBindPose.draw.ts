@@ -3,7 +3,7 @@ import * as THREE from "three";
 const positionsByMesh = new WeakMap<THREE.SkinnedMesh, Float32Array>();
 const vertex = new THREE.Vector3();
 
-/** Skin-applied vertices captured before animation, shared by a loaded model's clones. @internal */
+/** @internal */
 export function modelBindPosePositions(mesh: THREE.SkinnedMesh): Float32Array {
   let positions = positionsByMesh.get(mesh);
   if (positions !== undefined) return positions;
@@ -19,7 +19,7 @@ export function modelBindPosePositions(mesh: THREE.SkinnedMesh): Float32Array {
   return positions;
 }
 
-/** Retain the imported pose for normalization and colliders without sampling a live animation. @internal */
+/** @internal */
 export function copyModelBindPose(source: THREE.Object3D, clone: THREE.Object3D): void {
   source.updateMatrixWorld(true);
   const positions: Float32Array[] = [];

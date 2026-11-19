@@ -10,7 +10,7 @@ interface PmremInternals {
   _ggxMaterial?: THREE.Material | null;
 }
 
-/** The camera bake sources are linked with; a cube face's, which is what a bake draws them through. @internal */
+/** @internal */
 export const PMREM_BAKE_CAMERA = new THREE.PerspectiveCamera(90, 1, 0.1, 100);
 
 /**

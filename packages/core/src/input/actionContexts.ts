@@ -2,43 +2,32 @@ import type { ActionCodesMap } from "./actionBindings";
 import type { AxisBinding } from "./axisInput";
 import type { AxisShapeConfig } from "./axisShaper";
 
-/** Serializable axis shaping a context may carry: {@link AxisShapeConfig} without the `scale` callback. */
 export type ActionContextAxisShape = Omit<AxisShapeConfig, "scale">;
 
-/** Named action-binding layer that may optionally expose lower layers. */
 export interface ActionContext {
   id: string;
   codes: ActionCodesMap;
   passthrough: boolean;
-  /** Axis bindings (by action name) this context brings, e.g. `steer` while driving; read with `activeAxes()`. */
   axes?: Record<string, AxisBinding>;
-  /** Per-axis shaping this context brings; feed it to `createAxisShaper(...).retune` when the stack changes. */
   shaping?: Record<string, ActionContextAxisShape>;
 }
 
-/** Serializable state for an action-context stack. */
 export interface ActionContextStackSnapshot {
   contexts: ActionContext[];
 }
 
-/** Axis bindings and shaping merged across the active contexts. */
 export interface ActiveContextAxes {
   bindings: Record<string, AxisBinding>;
   shaping: Record<string, ActionContextAxisShape>;
 }
 
-/** Mutable layered action-map stack with snapshot and restore support. */
 export interface ActionContextStack {
   push(context: ActionContext): void;
   pop(id: string): boolean;
   active(): ActionCodesMap;
-  /** Axis bindings and shaping of the active contexts, merged top-down like {@link active}. */
   activeAxes(): ActiveContextAxes;
-  /** Ids of the stacked contexts, bottom first. */
   ids(): readonly string[];
-  /** Bumps on every push, pop and restore; cheap change detection for per-frame readers. */
   version(): number;
-  /** Called after every push, pop and restore; returns an unsubscribe. The shell rebinds live input here. */
   subscribe(listener: () => void): () => void;
   snapshot(): ActionContextStackSnapshot;
   restore(snapshot: ActionContextStackSnapshot): void;
@@ -108,10 +97,7 @@ function mergeTopDown<T>(contexts: readonly ActionContext[], pick: (context: Act
   return merged;
 }
 
-/**
- * Creates a serializable stack of layered action maps for menus and gameplay modes.
- * @capability action-contexts Swap bindings live for on-foot, driving, menu or build modes by pushing and popping layered action maps.
- */
+/** @capability action-contexts Swap bindings live for on-foot, driving, menu or build modes by pushing and popping layered action maps. */
 export function createActionContextStack(): ActionContextStack {
   let contexts: ActionContext[] = [];
   let version = 0;

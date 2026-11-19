@@ -15,7 +15,6 @@ import { decodePng, encodePng, type RgbaImage } from "../packages/assets/src/ima
 export interface ShotDiff {
   /** Mean absolute difference per RGB channel, 0..255. */
   meanAbs: number;
-  /** Largest channel difference anywhere. */
   maxAbs: number;
   /** Share of compared pixels whose largest RGB difference is over 2 and over 8 levels. */
   over2: number;

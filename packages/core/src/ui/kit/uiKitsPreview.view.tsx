@@ -100,7 +100,6 @@ function KitCell({ name }: { name: UiKitName }): ReactNode {
   );
 }
 
-/** Contact sheet: all eight built-in UI kits side by side, every part each. */
 export function UiKitsPreview({ className }: { className?: string }): ReactNode {
   const names = Object.keys(UI_KITS) as UiKitName[];
   return (
@@ -135,7 +134,6 @@ function KitDialogs({ kit }: { kit: UiKit }): ReactNode {
   );
 }
 
-/** One kit, large: the specimen plus its dialog and strip, for working on a single kit. */
 export function UiKitPreview({ kit, className }: { kit: UiKit; className?: string | undefined }): ReactNode {
   return (
     <div className={className} style={{ display: "grid", gridTemplateColumns: "3fr 2fr", width: "100vw", height: "100vh", background: "#0b0d12", gap: 6 }}>
@@ -171,7 +169,6 @@ const SAVES: SaveSlotMeta[] = [
 ];
 const saveSlots = createSaveSlots({ slots: SAVES, now: () => SAVED_AT });
 
-/** The engine panes a kit's menu can host, for {@link UiKitMenuPreview}. */
 export type UiKitMenuPreviewPane = "settings" | "credits" | "continue" | "saves";
 
 /**

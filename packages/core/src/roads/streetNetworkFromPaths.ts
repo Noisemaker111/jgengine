@@ -17,30 +17,21 @@
  */
 import type { Street, StreetDeadEnd, StreetEdge, StreetJunction, StreetLevel, StreetNetwork, StreetNode, StreetVec2 } from "./streetGenerator";
 
-/** One authored road: a centerline polyline with its carriageway width and hierarchy level. */
 export interface StreetPath {
-  /** Optional authored id (for the caller's bookkeeping; {@link StreetNetworkFromPaths.pathStreets} maps by index). */
   id?: string;
   points: readonly StreetVec2[];
-  /** Carriageway width (m). Default 9. */
   width?: number;
-  /** Hierarchy level. Default `street`. */
   level?: StreetLevel;
-  /** The path closes back on its first point (a ring road). */
   closed?: boolean;
 }
 
-/** Options for {@link streetNetworkFromPaths}. */
 export interface StreetNetworkFromPathsOptions {
   /** Distance (m) within which a path end snaps onto another road, and junction points merge. Default 1.5. */
   snap?: number;
-  /** Longest span (m) left between consecutive edge points. Default 12. */
   sampleStep?: number;
 }
 
-/** The adapted network, plus which street each input path became. */
 export interface StreetNetworkFromPaths extends StreetNetwork {
-  /** `streets[pathStreets[i]]` is input path `i`; -1 for a path with fewer than two points. */
   pathStreets: number[];
 }
 
@@ -48,7 +39,6 @@ const LEVEL_RANK: Record<StreetLevel, number> = { lane: 0, street: 1, avenue: 2,
 
 interface Segment {
   path: number;
-  /** Index of the segment within its path. */
   index: number;
   a: StreetVec2;
   b: StreetVec2;
@@ -73,7 +63,6 @@ function lerp(a: StreetVec2, b: StreetVec2, t: number): StreetVec2 {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }
 
-/** Proper crossing of two segments: parameters on each, or null. */
 function cross(s: Segment, o: Segment): [number, number] | null {
   const rx = s.b[0] - s.a[0];
   const rz = s.b[1] - s.a[1];
@@ -87,11 +76,6 @@ function cross(s: Segment, o: Segment): [number, number] | null {
   return [Math.max(0, Math.min(1, t)), Math.max(0, Math.min(1, u))];
 }
 
-/**
- * Build a street network from authored road polylines. Roads join wherever they cross, wherever one
- * ends within `snap` of another, and wherever two ends meet; every other path vertex stays a shape
- * point inside an edge.
- */
 export function streetNetworkFromPaths(paths: readonly StreetPath[], options: StreetNetworkFromPathsOptions = {}): StreetNetworkFromPaths {
   const snap = options.snap ?? 1.5;
   const sampleStep = Math.max(1, options.sampleStep ?? 12);

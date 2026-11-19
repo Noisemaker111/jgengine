@@ -1,10 +1,8 @@
-/** A probe game's display title and one-line description from the games/README.md table. */
 export interface GameReadmeEntry {
   readonly title: string;
   readonly blurb: string;
 }
 
-/** Reads the `| Game | Id | Description |` table in games/README.md. */
 export function parseGameReadme(markdown: string): Record<string, GameReadmeEntry> {
   const entries: Record<string, GameReadmeEntry> = {};
   for (const line of markdown.split("\n")) {
@@ -19,7 +17,6 @@ export function parseGameReadme(markdown: string): Record<string, GameReadmeEntr
   return entries;
 }
 
-/** The one-line idea a game was first generated from (`First generated from the idea: "…"` in its README), or null. */
 export function parseGameSeed(markdown: string): string | null {
   return /First generated from the idea:\s*"([^"]+)"/.exec(markdown)?.[1]?.trim() ?? null;
 }

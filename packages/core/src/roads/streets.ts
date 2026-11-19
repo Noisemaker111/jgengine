@@ -1,7 +1,6 @@
 import type { RoadEnvironmentDescriptor } from "../world/features";
 import { offsetPath, polylineLength, type RoadPoint } from "./roads";
 
-/** Resolved sidewalk band widths for a road; zero when the road declares no sidewalk. */
 export function sidewalkWidthOf(road: RoadEnvironmentDescriptor): number {
   return road.sidewalk === false ? 0 : road.sidewalk.width;
 }
@@ -17,25 +16,19 @@ export function sidewalkPaths(road: RoadEnvironmentDescriptor): readonly (readon
   return [offsetPath(road.path, offset), offsetPath(road.path, -offset)];
 }
 
-/** A placement anchor on the curb line: position, outward-facing heading, and which side it sits on. */
 export interface FurnitureSpot {
   position: RoadPoint;
   /** Yaw (radians, engine `rotationY` convention) facing away from the road. */
   heading: number;
   side: "left" | "right";
-  /** Arc-length distance along the road at this spot. */
   along: number;
 }
 
-/** Options for {@link furnitureSpots}. */
 export interface FurnitureSpotOptions {
-  /** Distance between consecutive spots along the road. Default 24. */
   spacing?: number;
-  /** Which curb lines to populate. Default "both". */
   sides?: "both" | "left" | "right";
   /** Alternate sides spot-by-spot instead of mirroring every spot. Default true. */
   stagger?: boolean;
-  /** Extra outward shift past the curb line (e.g. to center furniture in the sidewalk). Default 0. */
   outset?: number;
 }
 
@@ -98,15 +91,11 @@ export function furnitureSpots(
   return spots;
 }
 
-/** Options for {@link parkingSpots}. */
 export interface ParkingSpotOptions {
-  /** Distance between consecutive parked-car anchors. Default 18. */
   spacing?: number;
-  /** Which side(s) of the street to line with parking. Default "both". */
   sides?: "both" | "left" | "right";
 }
 
-/** A curbside parking anchor: position at the road edge and a heading parallel to the street. */
 export interface ParkingSpot {
   position: RoadPoint;
   /** Yaw (radians) aligned with the direction of travel on that side (right-hand traffic). */
@@ -184,13 +173,9 @@ export function distanceToRoadEdge(
   return best;
 }
 
-/** Grip levels and blend width for {@link roadSurfaceSampler}; each field is optional and defaulted. */
 export interface RoadSurfaceOptions {
-  /** Grip multiplier on the asphalt. Default 1. */
   onRoad?: number;
-  /** Grip multiplier once fully off the road past the shoulder. Default 0.72. */
   offRoad?: number;
-  /** Width (world units) of the blend band outside the curb from full to off-road grip. Default 3. */
   shoulder?: number;
 }
 
@@ -232,34 +217,25 @@ export function sidewalkPoint(
   return pointAlong(path, along).point;
 }
 
-// ---------------------------------------------------------------------------
 // Road junctions: where authored roads cross. The welded surfaces and their paint are
 // built from these by `buildTrimmedIntersections` / `buildIntersectionMarkings` in `roads.ts`.
-// ---------------------------------------------------------------------------
 
 /** A single arm of a junction: the road width plus the outward direction the road leaves the center. */
 export interface RoadApproach {
   /** Unit vector pointing from the junction center outward along the road arm. */
   direction: readonly [number, number];
-  /** Drivable width of the road on this arm. */
   width: number;
 }
 
-/** A welded road intersection: a patch center/radius plus the arms that feed it. */
 export interface RoadJunction {
-  /** World XZ center of the intersection. */
   center: RoadPoint;
-  /** Radius of the covering patch (covers the crossing ribbons). */
   radius: number;
-  /** Representative surface elevation (max of the participating roads). */
   elevation: number;
-  /** Representative asphalt color (the widest participating road's color). */
   color: string;
   /** Outward arms leaving the junction — one per road direction that continues past the center. */
   approaches: readonly RoadApproach[];
 }
 
-/** Options for {@link findRoadJunctions}. */
 export interface RoadJunctionOptions {
   /** Roads weld only when their elevations differ by at most this much. Default 0.12. */
   elevationBand?: number;
@@ -267,7 +243,6 @@ export interface RoadJunctionOptions {
   mergeDistance?: number;
   /** Hard cap on junctions returned so detection stays bounded. Default 256. */
   maxJunctions?: number;
-  /** Extra scale on the patch radius past the widest arm's half-width. Default 1.15. */
   radiusScale?: number;
 }
 

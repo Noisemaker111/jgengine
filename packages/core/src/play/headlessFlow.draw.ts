@@ -6,17 +6,13 @@ import { createFlowStepper, runFlowReport, type FlowRunReport } from "./flowStep
 import { createHeadlessKeys } from "./headlessKeys.draw";
 import { createPlaySession, type PlaySession } from "./playSession.draw";
 
-/** Options for {@link runFlowHeadless}. */
 export interface HeadlessFlowOptions {
-  /** Seed for `ctx.rng`. Default the runner's. */
   seed?: string | number;
-  /** A `capture.states` entry to boot into, overriding the flow's own `state`. */
   state?: string;
 }
 
 const DEFAULT_COMMAND_INPUT = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } };
 
-/** The text a check prints in a failure: its source, trimmed to one line. */
 function describeCheck(check: { toString(): string }): string {
   const source = check.toString().replace(/\s+/g, " ").trim();
   return source.length > 120 ? `${source.slice(0, 117)}...` : source;
@@ -26,9 +22,7 @@ function keysLabel(keys: FlowKeys): string {
   return flowKeyList(keys).join("+");
 }
 
-/** Run the game's `capture.states[state]` (strict) or `capture.play` commands, the way the browser's capture boot does.
- * @internal shared with the game suite's proof runner
- */
+/** @internal shared with the game suite's proof runner */
 export function bootCaptureState(session: PlaySession, capture: GameCaptureConfig<ProbeReadings> | undefined, state: string | undefined): void {
   const entries = state === undefined ? (capture?.play ?? []) : capture?.states?.[state];
   if (entries === undefined) {
@@ -50,10 +44,6 @@ export function bootCaptureState(session: PlaySession, capture: GameCaptureConfi
  * Screenshots are skipped. A failing step stops the run and the report names it with the probe readings.
  *
  * @capability headless-flow play a game's TypeScript proof flow headless in seconds, with typed keys and probe checks
- */
-/**
- * An empty `localStorage` for a headless run that has none, as a fresh browser profile has: a game that
- * keeps its record in the page's storage boots the way a new player's does. Returns the undo.
  */
 function freshPageStorage(): () => void {
   if ("localStorage" in globalThis) return () => undefined;

@@ -3,7 +3,6 @@ import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import type { AnchorHTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 import { menuStackReducer } from "@jgengine/core/menu/menuRouter.view";
 
-/** Where a screen change goes: a path pattern (`/game/$gameId`), its params and its search values. */
 export interface ScreenTarget {
   to: string;
   params?: Record<string, string> | undefined;
@@ -12,14 +11,12 @@ export interface ScreenTarget {
   replace?: boolean | undefined;
 }
 
-/** The screen on top: its address, its path and its parsed search values (`true`/`false` become booleans). */
 export interface ScreenLocation {
   href: string;
   pathname: string;
   search: Record<string, unknown>;
 }
 
-/** The address a target resolves to: the path with its params filled in, then the defined search values. */
 export function screenHref({ to, params, search }: ScreenTarget): string {
   const pathname = to.replace(/\$(\w+)/g, (_match, name: string) => encodeURIComponent(params?.[name] ?? ""));
   const query = new URLSearchParams();
@@ -59,11 +56,9 @@ export function matchScreenPath(pattern: string, pathname: string): Record<strin
   return params;
 }
 
-/** Where the top screen's address is kept outside the stack: the page URL, one query value, or nowhere. */
 export interface ScreenAddress {
   read(): string;
   write(href: string, mode: "push" | "replace"): void;
-  /** The link a browser would open for this screen. */
   linkFor(href: string): string;
   listen(onChange: () => void): () => void;
 }
@@ -73,7 +68,6 @@ function listenPopState(onChange: () => void): () => void {
   return () => window.removeEventListener("popstate", onChange);
 }
 
-/** The page's own path and query: LLMville's site, where every screen has its URL. */
 export function pathAddress(): ScreenAddress {
   return {
     read: () => `${window.location.pathname}${window.location.search}`,
@@ -86,7 +80,6 @@ export function pathAddress(): ScreenAddress {
   };
 }
 
-/** One query value on a page whose path belongs to its host: the dev runner, where `?game=` picks the game. */
 export function queryAddress(param = "screen"): ScreenAddress {
   const linkFor = (href: string) => {
     const query = new URLSearchParams(window.location.search);
@@ -106,22 +99,16 @@ export function queryAddress(param = "screen"): ScreenAddress {
   };
 }
 
-/** Screens with no address outside the stack: tests, and a screen mounted on its own. */
 export function memoryAddress(start = "/"): ScreenAddress {
   return { read: () => start, write: () => undefined, linkFor: (href) => href, listen: () => () => undefined };
 }
 
-/**
- * LLMville's screens as a stack over the engine's menu stack: navigating opens or replaces the top
- * screen, the browser's back and forward buttons walk it, and the address mirrors the top.
- */
 export interface ScreenRouter {
   location(): ScreenLocation;
   stack(): readonly string[];
   navigate(target: ScreenTarget): Promise<void>;
   linkFor(target: ScreenTarget): string;
   subscribe(listener: () => void): () => void;
-  /** Swap where the address lives, restart the stack from it, and return the undo. */
   install(address: ScreenAddress): () => void;
 }
 
@@ -182,7 +169,6 @@ export function createScreenRouter(initial: ScreenAddress = memoryAddress()): Sc
   };
 }
 
-/** The one stack LLMville's screens share. */
 export const screenRouter = createScreenRouter();
 
 /** Go to a screen. Resolves once the stack has changed, so callers can await it before their next step. */

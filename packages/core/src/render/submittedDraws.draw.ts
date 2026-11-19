@@ -14,13 +14,13 @@ export function submitInstanceCount(mesh: THREE.InstancedMesh, count: number): v
   showCulled(mesh, count > 0);
 }
 
-/** Whether three issues a draw for this node this frame: instanced, visible, and holding an instance. @internal */
+/** @internal */
 export function submitsDraw(node: THREE.Object3D): boolean {
   const mesh = node as THREE.InstancedMesh;
   return mesh.isInstancedMesh === true && node.visible && mesh.count > 0;
 }
 
-/** Instanced draws a subtree submits this frame, optionally only the nodes an owner tagged. @internal */
+/** @internal */
 export function countSubmittedDraws(root: THREE.Object3D, tag?: string): number {
   let draws = 0;
   root.traverse((node) => {

@@ -5,7 +5,6 @@
  * {@link translateGlsl} translates on the calling thread.
  */
 
-/** One vertex input of a translated program: a three attribute name, or one column of a matrix attribute. */
 export interface WgslVertexInput {
   name: string;
   column: number;
@@ -19,7 +18,6 @@ export interface WgslVertexInput {
  * Absent on layouts translated before the split: treat as `shared`. */
 export type WgslUniformBlock = "shared" | "object";
 
-/** Where one of three's uniform names lives in its block. */
 export interface WgslUniformSlot {
   name: string;
   offset: number;
@@ -29,12 +27,10 @@ export interface WgslUniformSlot {
   column_stride: number;
   count: number;
   stride: number;
-  /** Declared as an array (GL names it `name[0]`), even with one element. */
   array: boolean;
   block?: WgslUniformBlock;
 }
 
-/** A sampler uniform split into a texture and a sampler binding in group 1. */
 export interface WgslSamplerSlot {
   name: string;
   element: number;
@@ -42,11 +38,9 @@ export interface WgslSamplerSlot {
   sampler_binding: number;
   kind: "Float" | "Depth" | "Sint" | "Uint";
   dim: "D2" | "Cube" | "D3" | "D2Array";
-  /** Declared as an array, even of one: GL names it `name[0]`. */
   array?: boolean;
 }
 
-/** The translated program and what feeding it takes. */
 export interface WgslProgram {
   vertex_wgsl: string;
   fragment_wgsl: string;
@@ -76,7 +70,6 @@ let module: WebAssembly.Module | null = null;
 let instance: TranslatorExports | null = null;
 let loading: Promise<void> | null = null;
 
-/** Fetch and compile the translator once. Resolves when {@link translateGlsl} can run. */
 export function loadGlslTranslator(url: URL | string = new URL("./glslToWgsl.wasm", import.meta.url)): Promise<void> {
   if (module !== null) return Promise.resolve();
   loading ??= (async () => {
@@ -126,9 +119,7 @@ export function translateGlsl(vertex: string, fragment: string): TranslateResult
   }
 }
 
-/** A translation running on a worker. */
 export interface PendingTranslation {
-  /** Whether the worker's result has arrived. */
   done(): boolean;
   /** The result: the worker's when it has arrived, otherwise translated now on this thread. */
   finish(): TranslateResult;
@@ -208,10 +199,6 @@ function startWorkers(compiled: WebAssembly.Module): void {
   }
 }
 
-/**
- * Start translating one program on the least busy worker. Without workers the translation runs
- * when {@link PendingTranslation.finish} is called.
- */
 export function translateGlslAsync(vertex: string, fragment: string): PendingTranslation {
   const job: Job = { vertex, fragment, result: null, onDone: null };
   let least = workers[0];

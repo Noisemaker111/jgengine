@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer } from "@jgengine/core/ui/jsx";
 
-/** A screen-stack transition. `reset` without an id collapses to the router's original root. */
 export type MenuStackAction<Id extends string> =
   | { type: "open"; id: Id }
   | { type: "back" }
@@ -30,21 +29,13 @@ export function menuStackReducer<Id extends string>(
   }
 }
 
-/** A menu screen stack: where you are, how you got there, and how to go back. */
 export interface MenuRouter<Id extends string> {
-  /** The screen on top of the stack. */
   current: Id;
-  /** The whole stack, root first — render breadcrumbs from it, or check depth. */
   path: readonly Id[];
-  /** True when `current` is the root screen, so Escape has nowhere to go. */
   atRoot: boolean;
-  /** Push a screen. Pushing the current screen again is a no-op. */
   open(id: Id): void;
-  /** Pop one screen. A no-op at the root. */
   back(): void;
-  /** Replace the top of the stack without deepening it. */
   replace(id: Id): void;
-  /** Collapse to a root — the one passed, or the original. Use it when a run starts or ends. */
   reset(id?: Id): void;
 }
 

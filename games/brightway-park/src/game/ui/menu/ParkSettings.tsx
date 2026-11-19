@@ -9,10 +9,6 @@ import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";
 import { sessionOf } from "../../session";
 import { Button, GOLD, INK, PENCIL, Row, Tag, Text } from "../look";
 
-/**
- * The park's settings: Reduce motion, then the engine's sound, graphics and control rows composed as
- * fair tickets. A slider drags or steps with left/right; a keybind arms and takes the next key.
- */
 export function ParkSettings({ reducedMotion, onReducedMotion }: { reducedMotion: boolean; onReducedMotion: (next: boolean) => void }) {
   const saveStatus = useGameStore((c) => sessionOf(c).saveStatus);
   const settings = useSettings(), [chosen, setChosen] = useState<string | null>(null), [armed, setArmed] = useState<string | null>(null);

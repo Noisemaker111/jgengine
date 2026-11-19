@@ -27,7 +27,6 @@ interface TsconfigJson {
   compilerOptions?: { paths?: Paths };
 }
 
-/** Workspace package dirs under packages/ that have a src tree, keyed by package name. */
 export function sourcePackages(root = repoRoot): Map<string, string> {
   const out = new Map<string, string>();
   const base = join(root, "packages");
@@ -46,7 +45,6 @@ function posixRel(from: string, to: string): string {
   return rel.startsWith(".") ? rel : `./${rel}`;
 }
 
-/** The `@jgengine/*` → source entries for a tsconfig living in `configDir`. */
 export function sourcePathEntries(configDir: string, root = repoRoot): Paths {
   const entries: Paths = {};
   for (const [name, dir] of sourcePackages(root)) {
@@ -61,7 +59,6 @@ function readTsconfig(path: string): TsconfigJson {
   return Bun.JSONC.parse(readFileSync(path, "utf8")) as TsconfigJson;
 }
 
-/** `paths` in effect for a config, with the directory they resolve against. */
 export function effectivePaths(path: string): { paths: Paths; dir: string } | undefined {
   const config = readTsconfig(path);
   if (config.compilerOptions?.paths) return { paths: config.compilerOptions.paths, dir: dirname(path) };
@@ -73,7 +70,6 @@ function isJgengineKey(key: string): boolean {
   return key.startsWith("@jgengine/");
 }
 
-/** Every workspace tsconfig the source map governs (relative to root). */
 export function workspaceTsconfigs(root = repoRoot): string[] {
   const out = ["tsconfig.base.json", ...(existsSync(join(root, "tsconfig.json")) ? ["tsconfig.json"] : [])];
   for (const group of ["packages", "apps", "examples", "games", "games/llmville/packages"]) {
@@ -104,7 +100,6 @@ export interface Drift {
   reason: string;
 }
 
-/** Configs whose `@jgengine/*` resolution would fall back to dist (or, for builds, pull in sibling source). */
 export function findDrift(root = repoRoot): Drift[] {
   const drift: Drift[] = [];
   const packages = sourcePackages(root);
@@ -139,7 +134,6 @@ function renderPaths(paths: Paths, indent: string): string {
   return `{\n${lines.join(",\n")}\n${indent}}`;
 }
 
-/** Replace the `paths` object in a tsconfig's text, keeping non-`@jgengine` aliases first. */
 export function rewritePaths(text: string, configDir: string, root = repoRoot): string {
   const match = /^([ \t]*)"paths"\s*:\s*\{/m.exec(text);
   if (!match) return text;
@@ -156,7 +150,6 @@ export function rewritePaths(text: string, configDir: string, root = repoRoot): 
   return `${text.slice(0, match.index)}${indent}"paths": ${renderPaths(next, indent)}${text.slice(i)}`;
 }
 
-/** Rewrite every non-build config that declares its own `paths`. Returns the files changed. */
 export function syncSourcePaths(root = repoRoot): string[] {
   const changed: string[] = [];
   for (const rel of workspaceTsconfigs(root)) {

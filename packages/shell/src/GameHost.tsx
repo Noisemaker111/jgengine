@@ -23,28 +23,23 @@ function warnUndrivenAdapter(kind: string): void {
   );
 }
 
-/** Structural shape of the module `GameHost`'s `editor` loader resolves — `import("@jgengine/editor")` satisfies it. */
 export interface EditorSummonModule {
   CreatorApp?: ComponentType<{ gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }>;
   EditorApp: ComponentType<{
     gameId: string;
     playable: PlayableGame;
     catalogs?: readonly EditorCatalogDefinition[] | undefined;
-    /** Passed by the host when the editor was summoned over a game — powers the "Exit to game" control. */
     onExitEditor?: () => void;
   }>;
 }
 
-/** The query param that mirrors editor mode into the URL — strip it (and reload) to drop back to the game. */
 const EDITOR_MODE_PARAM = "mode";
 const EDITOR_MODE_VALUE = "editor";
 
-/** Props for {@link GameHost}: the playable, optional multiplayer overrides, and the optional editor loader that enables the engine-owned F2+E summon. */
 export interface GameHostProps {
   playable: PlayableGame;
   gameId?: string;
   wsUrl?: string;
-  /** Prebuilt multiplayer session. When present (including `null`), it is used as-is and no resolution is attempted. */
   multiplayer?: ShellMultiplayer | null;
   /** Tried before the built-in {@link resolveShellMultiplayer}; falls back to it when this returns `null`. */
   resolveMultiplayer?: (args: ResolveShellMultiplayerArgs) => ShellMultiplayer | null;
@@ -57,7 +52,6 @@ export interface GameHostProps {
   editor?: () => Promise<EditorSummonModule>;
   /** Player creator: injected durable storage, bounded catalog and a fresh runtime factory. */
   creator?: CreatorConfig<PlayableGame>;
-  /** Controlled by the game's production menu. */
   creatorOpen?: boolean;
   onCreatorOpenChange?: (open: boolean) => void;
 }
@@ -67,12 +61,7 @@ function initialEditorMode(enabled: boolean): boolean {
   return readUrlParam(EDITOR_MODE_PARAM) === EDITOR_MODE_VALUE;
 }
 
-/**
- * The one documented mount: resolves multiplayer for the playable and renders the shell. With the
- * `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
- *
- * @capability mount-game mount a defined game in the browser — `<GameHost playable={game} editor={() => import("@jgengine/editor")} />`
- */
+/** @capability mount-game mount a defined game in the browser — `<GameHost playable={game} editor={() => import("@jgengine/editor")} />` */
 export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor, creator, creatorOpen = false, onCreatorOpenChange }: GameHostProps) {
   const resolvedGameId = gameId ?? playable.game.name;
   const [editorOpen, setEditorOpen] = useState(() => initialEditorMode(editor !== undefined));

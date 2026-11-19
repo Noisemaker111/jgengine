@@ -6,19 +6,13 @@ import { createMenuTransition, menuTransitionDurations } from "@jgengine/core/me
 import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
 import { useCanvasCover } from "@jgengine/core/ui/canvasCover.view";
 
-/** Which motion a {@link MenuScreen} uses when it enters and leaves. */
 export type MenuScreenTransition = "fade" | "slide" | "scale" | "none";
 
-/** How much a {@link MenuScreen} dims the scene behind it. `none` keeps a live 3D scene fully visible. */
 export type MenuScreenScrim = "none" | "dim" | "blur";
 
-/** Props for {@link MenuScreen}. */
 export interface MenuScreenProps {
-  /** Open state the game owns. Closing runs the exit animation, then unmounts. Default true. */
   open?: boolean;
-  /** Enter/exit motion. Default `"fade"`. */
   transition?: MenuScreenTransition;
-  /** Dim/blur treatment over the scene behind. Default `"dim"`. */
   scrim?: MenuScreenScrim;
   /**
    * The screen paints over the whole canvas, so the engine can stop drawing the world behind it.
@@ -30,20 +24,15 @@ export interface MenuScreenProps {
   enterMs?: number;
   /** Exit duration in ms. Default 160. */
   exitMs?: number;
-  /** Force motion off (reduced motion is also read from the accessibility preference and the OS). */
   reducedMotion?: boolean;
-  /** Accessible name of the screen. */
   label?: string;
-  /** `role` for the screen element. Default `"dialog"`. */
   role?: string;
-  /** Full-bleed layer painted behind the menu content — a live canvas, a poster, or a preview. */
   backdrop?: ReactNode;
   className?: string | undefined;
   style?: CSSProperties | undefined;
   contentClassName?: string | undefined;
   contentStyle?: CSSProperties | undefined;
   children?: ReactNode;
-  /** Called once the exit animation finished and the screen unmounted. */
   onClosed?: () => void;
 }
 

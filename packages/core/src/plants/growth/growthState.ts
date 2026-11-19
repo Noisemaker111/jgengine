@@ -1,13 +1,8 @@
-/** Node flag: the branch is dead wood still attached. */
 export const NODE_DEAD = 1;
-/** Node flag: first internode of a lateral axis (a branch base). */
 export const NODE_AXIS_START = 2;
-/** Node flag: a shed branch left a scar at this node's tip. */
 export const NODE_SCAR = 4;
-/** Node flag: the short shoots on this node died in shade and bear no more leaves. */
 export const NODE_NO_SPUR = 8;
 
-/** Slot capacities, fill counts and id counters of a {@link GrowthState}. */
 export interface GrowthSlots {
   nodeCap: number;
   budCap: number;
@@ -17,12 +12,10 @@ export interface GrowthSlots {
   nextBudId: number;
 }
 
-/** Whole-tree condition: age, carbohydrate economy and life. */
 export interface GrowthVitals {
   year: number;
   /** Carbohydrate reserve carried between years, kg dry mass. */
   reserveKg: number;
-  /** Consecutive years the tree could not pay its upkeep. */
   stressYears: number;
   alive: number;
   health: number;
@@ -30,47 +23,35 @@ export interface GrowthVitals {
   shedKg: number;
 }
 
-/** Per-node struct-of-arrays: structure, geometry, tissue, light and flowering. */
 export interface GrowthNodeArrays {
   nodeId: Uint32Array;
   parent: Int32Array;
   born: Uint16Array;
-  /**
-   * Year the node's leaf cohort flushed. Equal to `born` for a fresh shoot; when merging or folding
-   * pools two cohorts it becomes their leaf-weighted mean, so leaves keep their own age.
-   */
   leafBorn: Uint16Array;
   order: Uint8Array;
   flags: Uint8Array;
   length: Float32Array;
-  /** Unit growth direction, 3 per node. */
   dir: Float32Array;
-  /** Tip position, 3 per node; the start is the parent's tip (the origin for the root). */
   end: Float32Array;
   /** Azimuth of this node's first lateral bud around its axis, radians. */
   phase: Float32Array;
   sapArea: Float32Array;
   heartArea: Float32Array;
-  /** Leaf area on the node this year, m². */
   foliage: Float32Array;
-  /** Metamers (leaf-bearing nodes) the annual shoot was born with. */
   metamers: Uint8Array;
   latent: Uint8Array;
   latentAge: Uint8Array;
   light: Float32Array;
   vigour: Float32Array;
-  /** Bending moment at the node base last year, N·m. */
   moment: Float32Array;
   deficit: Uint8Array;
   deadAge: Uint8Array;
   flowers: Uint16Array;
 }
 
-/** Per-bud struct-of-arrays. */
 export interface GrowthBudArrays {
   budId: Uint32Array;
   budNode: Int32Array;
-  /** Years the bud has idled: shaded, or a lateral losing the contest for scarce bud slots. */
   budIdle: Uint8Array;
 }
 
@@ -86,36 +67,23 @@ export interface GrowthState {
   buds: GrowthBudArrays;
 }
 
-/** Typed-array fields of {@link GrowthState}, in snapshot order. */
 export const NODE_FIELDS = [
   "nodeId", "parent", "born", "leafBorn", "order", "flags", "length", "dir", "end", "phase", "sapArea", "heartArea", "foliage", "metamers",
   "latent", "latentAge", "light", "vigour", "moment", "deficit", "deadAge", "flowers",
 ] as const;
-/**
- * Typed-array bud fields of {@link GrowthState}, in snapshot order.
- * @internal
- */
+/** @internal */
 export const BUD_FIELDS = ["budId", "budNode", "budIdle"] as const;
 const VECTOR_FIELDS: ReadonlySet<string> = new Set(["dir", "end"]);
 
-/**
- * Name of one typed-array field of {@link GrowthState}.
- * @internal
- */
+/** @internal */
 export type GrowthArrayField = (typeof NODE_FIELDS)[number] | (typeof BUD_FIELDS)[number];
 
-/**
- * Values per row of an array field (3 for vectors).
- * @internal
- */
+/** @internal */
 export function fieldWidth(field: GrowthArrayField): number {
   return VECTOR_FIELDS.has(field) ? 3 : 1;
 }
 
-/**
- * Empty state with room for `nodeCap` nodes and `budCap` buds.
- * @internal
- */
+/** @internal */
 export function createGrowthState(nodeCap: number, budCap: number): GrowthState {
   return {
     slots: { nodeCap, budCap, nodeCount: 0, budCount: 0, nextNodeId: 0, nextBudId: 0 },
@@ -148,9 +116,7 @@ export function createGrowthState(nodeCap: number, budCap: number): GrowthState 
   };
 }
 
-/** Scalar fields of {@link GrowthState} carried in a snapshot. */
 export const SLOT_FIELDS = ["nodeCount", "budCount", "nextNodeId", "nextBudId"] as const;
-/** Vitals fields of {@link GrowthState} carried in a snapshot. */
 export const VITAL_FIELDS = ["year", "reserveKg", "stressYears", "alive", "health", "shedKg"] as const;
 
 const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -177,10 +143,7 @@ export function bytesToBase64(bytes: Uint8Array): string {
   return out;
 }
 
-/**
- * Inverse of {@link bytesToBase64}.
- * @internal
- */
+/** @internal */
 export function base64ToBytes(text: string): Uint8Array {
   const clean = text.replace(/=+$/, "");
   const bytes = new Uint8Array(Math.floor((clean.length * 3) / 4));

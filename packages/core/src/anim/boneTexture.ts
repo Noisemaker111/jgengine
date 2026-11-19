@@ -4,12 +4,9 @@ export interface BoneTextureClipInput {
   duration: number;
 }
 
-/** One baked clip's rows in a {@link BoneTextureLayout}. */
 export interface BoneTextureClip {
   name: string;
-  /** First texture row of the clip. */
   startFrame: number;
-  /** Rows baked for the clip, first and last pose included. */
   frameCount: number;
   duration: number;
 }
@@ -27,13 +24,11 @@ export interface BoneTextureLayout {
   clips: BoneTextureClip[];
 }
 
-/** Inputs for {@link planBoneTexture}. */
 export interface BoneTextureInput {
   boneCount: number;
   clips: readonly BoneTextureClipInput[];
   /** Baked samples per second. Default 30. */
   fps?: number | undefined;
-  /** Largest texture side the target GPU accepts. Default 4096. */
   maxTextureSize?: number | undefined;
 }
 
@@ -61,7 +56,6 @@ export function planBoneTexture(input: BoneTextureInput): BoneTextureLayout {
   return { boneCount: input.boneCount, fps, width, height: Math.max(1, row), clips };
 }
 
-/** Two texture rows around a playback time and the blend between them. */
 export interface BoneTextureSample {
   rowA: number;
   rowB: number;

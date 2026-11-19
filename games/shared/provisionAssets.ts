@@ -13,23 +13,18 @@ const assetsDir = fileURLToPath(new URL("../../packages/assets", import.meta.url
 const provisionScript = fileURLToPath(new URL("../scripts/provision-assets.ts", import.meta.url));
 const compressScript = fileURLToPath(new URL("../scripts/compress-textures.ts", import.meta.url));
 
-/** The asset catalogs a game's source is matched against. */
 export interface AssetCatalogs {
   sources: readonly { id: string; kind?: string }[];
   library: readonly { name: string; origin: { provider: string } }[];
-  /** Semantic keys (`asset:prop_crate`, `nature/tree_pine`) and the `pack/model` ids they stand for. */
   aliases?: readonly { key: string; target: string }[];
-  /** Shared-library keys (`gameicons:lorc/wheat`, `polyhaven:ArmChair_01`): what to pull and where it is served. */
   libraryPull?: (key: string) => LibraryPullJob | undefined;
   /** Library surfaces (`foliage/grass-dry`) and the material pack each is scanned from, so naming one serves its maps. Loaded lazily: the library imports `@jgengine/core`, which the vite config must not pull in. */
   materials?: readonly { name: string; source?: string | undefined }[];
-  /** Curated HDRIs, colour grades and fonts a game's source names by id (`hdriEnvironment("golden-hour")`). */
   lookJobs?: (text: string) => readonly { target: string; dir: string }[];
   /** The files a model pack's index lists, so a pack that grew after it was pulled is pulled again. */
   packFiles?: (sourceId: string) => readonly string[] | undefined;
 }
 
-/** A pull for one shared-library key, with the URL the game loads once it is served. */
 export interface LibraryPullJob extends PullJob {
   url: string;
 }
@@ -83,7 +78,6 @@ export function missingPulls(text: string, publicDir: string, catalogs: AssetCat
   return jobs;
 }
 
-/** The scan behind `DEFAULT_ROAD_SCAN` (`@jgengine/core/world/features`), the library's `asphalt/dry`. */
 export const DEFAULT_ROAD_SCAN_SOURCE = "ambientcg-asphalt003";
 const PAVED_PATH = /"kind":\s*"(road|street|track|avenue|highway)"/;
 
@@ -95,12 +89,6 @@ export function drawsPavedRoad(sourceText: string, sceneText: string): boolean {
   return /\broad\(/.test(sourceText) || PAVED_PATH.test(sceneText);
 }
 
-/**
- * Everything a game names assets in: its source, its editor scene (where authored ground and props
- * name their surfaces), and the default road scan's pack id when it draws a paved road, since no
- * line names that pack. Provisioning and the site check read the same text, so what one wants the
- * other pulls.
- */
 export function gameAssetText(gameDir: string): string {
   const text = sourceText(join(gameDir, "src"));
   const scene = join(gameDir, "src", "editor.scene.json");
@@ -109,7 +97,6 @@ export function gameAssetText(gameDir: string): string {
   return `${text}${road}\n${sceneText}`;
 }
 
-/** The pack and model-library catalogs games are matched against. */
 export async function loadCatalogs(): Promise<AssetCatalogs> {
   const module = (await import(join(assetsDir, "src/index.ts"))) as {
     sources: AssetCatalogs["sources"];
@@ -158,10 +145,6 @@ export async function provisionGame(
   return provisionJobs(gameDir, jobs, { pull: (target, outRoot) => runPull(gameDir, target, outRoot), log: options.log, download: options.download, env: options.env });
 }
 
-/**
- * Serve one shared-library key in a game: link it from the shared asset store, or pull it into the
- * store first. Returns the URL the game loads, or null for an unknown key or a failed pull.
- */
 export async function provisionLibraryKey(gameDir: string, key: string, options: { log?: (line: string) => void } = {}): Promise<{ url: string; files: string[] } | null> {
   const job = (await loadCatalogs()).libraryPull?.(key);
   if (job === undefined) return null;
@@ -171,7 +154,6 @@ export async function provisionLibraryKey(gameDir: string, key: string, options:
   return { url: job.url, files: servedFiles(join(gameDir, "public", job.dir)).map((path) => `/${servedDir}/${path}`) };
 }
 
-/** Every file under a served asset folder, links followed, as paths relative to it. */
 function servedFiles(dir: string, prefix = ""): string[] {
   if (!existsSync(dir)) return [];
   const out: string[] = [];
@@ -184,14 +166,8 @@ function servedFiles(dir: string, prefix = ""): string[] {
   return out;
 }
 
-/** The dev-server route the editor's asset library posts `{ key }` to, answering `{ url }` once the asset is served. */
 export const LIBRARY_PULL_ROUTE = "/__jgengine/library-pull";
 
-/**
- * The handler for {@link LIBRARY_PULL_ROUTE}. `gameDirOf` names the game folder a request serves
- * into: a game's own server ignores the posted `game`, a host serving many games (the dev runner)
- * reads it. Answers `{ url, files }`, `files` being every root-absolute path the pull served.
- */
 export function libraryPullMiddleware(gameDirOf: (game: string | undefined) => string | undefined) {
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     if (req.method !== "POST") return next();
@@ -238,7 +214,6 @@ export function libraryPullMiddleware(gameDirOf: (game: string | undefined) => s
   };
 }
 
-/** Whether a dev server should pull missing assets: on by default, off in CI, `JG_DEV_PROVISION` overrides both. */
 export function shouldProvision(env: Readonly<Record<string, string | undefined>>): boolean {
   if (env["JG_DEV_PROVISION"] === "0") return false;
   if (env["JG_DEV_PROVISION"] === "1") return true;

@@ -8,7 +8,6 @@ export const GUARD_ID = "guard";
 export const GUARD_ACTIONS = "guard-probe";
 export const PLAYER_SPAWN: readonly [number, number, number] = [0, 0, -4];
 export const GUARD_POSTS: readonly (readonly [number, number])[] = [[-9, 8], [9, 8]];
-/** The one wall in the yard, XZ extents; the nav mesh, sight occlusion and the rendered block all read it. */
 export const WALL = { minX: -6, maxX: 6, minZ: 2, maxZ: 3, height: 2.4 } as const;
 const YARD = 20;
 const PATROL_SPEED = 1.6;
@@ -21,10 +20,6 @@ export const GUARD_SENSES = { sightRange: 10, sightConeDeg: 100, hearingRange: 1
 /** Footstep noise is judged on speed averaged over this window, so frame-time jitter never reads as a sprint. */
 const NOISE_INTERVAL_MS = 250;
 
-/**
- * Patrol posts; on a fresh noise or sighting, walk to the last known position, search, give up, and go back to patrolling.
- * The perception system writes `alerted` and `lastKnownX/Z` into the guard's blackboard; the graph only reads them.
- */
 export const guardGraph: DecisionGraph = {
   kind: "selector",
   children: [
@@ -44,7 +39,6 @@ function insideWall(x: number, z: number, pad: number): boolean {
   return x > WALL.minX - pad && x < WALL.maxX + pad && z > WALL.minZ - pad && z < WALL.maxZ + pad;
 }
 
-/** A 1 m quad grid over the yard with the wall's footprint, padded by the guard's radius, left out. */
 export function yardNavMesh(): NavMeshData {
   const cells = YARD * 2;
   const verts: number[] = [];
@@ -58,7 +52,6 @@ export function yardNavMesh(): NavMeshData {
   return { verts, polys, links: [] };
 }
 
-/** True when the wall blocks the straight line between two points on the XZ plane. */
 export function wallBlocks(from: PerceptionPosition, to: PerceptionPosition): boolean {
   let t0 = 0, t1 = 1;
   const dx = to[0] - from[0], dz = to[2] - from[2];
@@ -123,7 +116,6 @@ function createWalker(query: NavMeshQuery) {
   };
 }
 
-/** Register the guard's actions against a nav mesh; returns the unregister. */
 export function registerGuardActions(mesh: NavMeshData = yardNavMesh()): () => void {
   const walker = createWalker(createNavMeshQuery(mesh));
   return registerBehaviorActions(GUARD_ACTIONS, {
@@ -143,7 +135,6 @@ export function registerGuardActions(mesh: NavMeshData = yardNavMesh()): () => v
   }, { onAbort: (_action, { entityId }) => walker.clear(entityId) });
 }
 
-/** The guard's senses: movement noise from the player, sight through the wall check, and the facts they leave on the blackboard. */
 export interface GuardSenses {
   readonly perception: PerceptionService;
   tick(ctx: GameContext, playerId: string, dt: number): void;

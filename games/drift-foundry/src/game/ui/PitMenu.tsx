@@ -18,7 +18,6 @@ import type { GarageRow } from "../career";
 import { partArtwork } from "./artwork";
 import { Button, DIM, FULL, GateSign, INK, Label, MedalRow, ORANGE, PEN, Row, SheetHead, Stamp, Stat, STENCIL, Stencil, Text, YELLOW } from "./pit";
 
-/** Capture-only focus request: a shot declares which verb it wants open. */
 export const menuFocus: { id: string | null } = { id: null };
 
 const metres = (z: number) => `${Math.max(0, Math.floor(z))} m`;
@@ -133,7 +132,6 @@ export function PitMenu({ snapshot, session, publish }: { snapshot: SessionSnaps
   </RuneView>;
 }
 
-/** A stencilled steel menu plate; the one you are on is painted hazard yellow with a striped edge. */
 function Plate({ item, index, active, phone, onFocus, run, focusRef }: { item: Item; index: number; active: boolean; phone: boolean; onFocus: () => void; run: () => void; focusRef?: { current: RuneElement | null } | undefined }) {
   const ink = item.disabled === true ? "#ece3cc6b" : active ? "#141414" : INK;
   return <RuneAction variant="plate" label={item.label} width={FULL} run={run} onFocus={onFocus} disabled={item.disabled === true} {...(focusRef === undefined ? {} : { ref: focusRef })}
@@ -179,7 +177,6 @@ function NewRunPane({ snapshot }: { snapshot: SessionSnapshot }) {
   </>;
 }
 
-/** The garage: one ladder rung per slot, priced in the credits the last escapes banked. */
 function GaragePane({ rows, credits, onBuy }: { rows: readonly GarageRow[]; credits: number; onBuy: (slot: GarageRow["slot"]) => void }) {
   return <>
     <SheetHead title="Pit garage" tag={`${credits} cr banked`} />
@@ -195,7 +192,6 @@ function GaragePane({ rows, credits, onBuy }: { rows: readonly GarageRow[]; cred
   </>;
 }
 
-/** The yard calendar: every event is the corridor under other rules, graded bronze to gold. */
 function CalendarPane({ calendar, onPick }: { calendar: SessionSnapshot["calendar"]; onPick: (id: string) => void }) {
   return <>
     <SheetHead title="Yard calendar" tag={`${calendar.points}/${calendar.maxPoints} medal points`} />
@@ -213,7 +209,6 @@ function CalendarPane({ calendar, onPick }: { calendar: SessionSnapshot["calenda
   </>;
 }
 
-/** The corridor's records, in the pit's words. */
 function RecordsPane({ snapshot }: { snapshot: SessionSnapshot }) {
   const records = snapshot.records;
   return <>
@@ -226,7 +221,6 @@ function RecordsPane({ snapshot }: { snapshot: SessionSnapshot }) {
   </>;
 }
 
-/** The pit board while the run is held: where the buggy stands and what it carries. */
 function PitBoard({ snapshot, hint }: { snapshot: SessionSnapshot; hint: string }) {
   return <>
     <SheetHead title="Run held" tag={snapshot.zone.label} />
@@ -254,7 +248,6 @@ function CreditsPane() {
   </>;
 }
 
-/** Picture, sound and controls written on the pit sheet: divider tabs, ruled rows, ink stamps. */
 export function PitSettings() {
   const settings = useSettings(), [chosen, setChosen] = useState<string | null>(null), [armed, setArmed] = useState<string | null>(null);
   const active = settings.categories.find(c => c.id === chosen) ?? settings.categories[0];

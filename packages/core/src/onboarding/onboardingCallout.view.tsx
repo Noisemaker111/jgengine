@@ -5,15 +5,10 @@ import { hudType } from "@jgengine/core/hud/hudTokens";
 import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
 import { useGame, useGameStore } from "@jgengine/ui/hooks";
 
-/** Reskin tokens for {@link OnboardingCallout}. */
 export interface OnboardingCalloutTheme {
-  /** Accent for the counter, Next button and spotlight. Default reads `--jg-accent`. */
   accent?: string;
-  /** Callout background. */
   background?: string;
-  /** Callout text color. */
   text?: string;
-  /** Dim color for the backdrop / spotlight. */
   backdrop?: string;
   /** Callout corner radius (px). */
   radius?: number;
@@ -21,7 +16,7 @@ export interface OnboardingCalloutTheme {
 
 type Placement = "top" | "bottom" | "left" | "right" | "center";
 
-/** The current step as a callout shows it. @internal */
+/** @internal */
 export interface OnboardingCalloutView {
   id: string;
   text: string;
@@ -64,10 +59,8 @@ function calloutStyle(rect: DOMRect | null, placement: Placement): CSSProperties
   }
 }
 
-/** Props for {@link OnboardingCalloutCard}. */
 export interface OnboardingCalloutCardProps {
   view: OnboardingCalloutView;
-  /** Absolute-position style for the card (see {@link OnboardingCallout}). */
   positionStyle?: CSSProperties;
   onNext: () => void;
   onSkip: () => void;
@@ -79,13 +72,7 @@ export interface OnboardingCalloutCardProps {
   style?: CSSProperties;
 }
 
-/**
- * One onboarding step as a card: "N of M", the step's text and detail, Next (Got it on the last
- * step) when the step finishes on Next, and Skip when the onboarding is skippable. Presentation
- * only; {@link OnboardingCallout} positions it and wires it to the running onboarding.
- *
- * @capability onboarding-callout-card one onboarding step as a card with N of M, Next and Skip, theme-reskinnable
- */
+/** @capability onboarding-callout-card one onboarding step as a card with N of M, Next and Skip, theme-reskinnable */
 export function OnboardingCalloutCard({
   view,
   positionStyle,
@@ -160,11 +147,9 @@ export function OnboardingCalloutCard({
   );
 }
 
-/** Props for {@link OnboardingCallout}. */
 export interface OnboardingCalloutProps {
   /** Resolve a step's `anchor` to a DOM element. Default: `document.querySelector`. */
   resolveAnchor?: (anchor: string) => Element | null;
-  /** Dim the rest of the screen and spotlight the anchor. Default `true`. */
   showBackdrop?: boolean;
   nextLabel?: string;
   doneLabel?: string;

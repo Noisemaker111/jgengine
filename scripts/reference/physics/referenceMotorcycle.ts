@@ -3,7 +3,6 @@ import { motorcycleMagicFormula, type MotorcycleTireCoefficients } from "./motor
 import { createRigidBodyTree, type RigidBodyDefinition, type RigidBodyTree } from "./rigidBodyTree";
 import { createRungeKutta4 } from "./rungeKutta";
 
-/** A side-view point `[x, z]` as tabulated by Sharp et al.: x forward from the rear contact, z down (negative above ground), m. */
 export type SidePoint = readonly [number, number];
 
 /** A rigid body of the motorcycle: mass, centre and inertia tensor about the centre (SAE axes, z down, tensor elements), kg·m². */
@@ -18,10 +17,8 @@ export interface MotorcycleBody {
   axes?: "ground" | "steer";
 }
 
-/** A wheel and its tyre. */
 export interface MotorcycleWheel {
   mass: number;
-  /** Wheel centre in the reference pose (static, nominal load). */
   center: SidePoint;
   /** Diametral and spin inertia, kg·m². */
   ixx: number;
@@ -29,33 +26,25 @@ export interface MotorcycleWheel {
   tire: Readonly<MotorcycleTireCoefficients>;
   /** Radius of the tread's circular cross-section used for the contact geometry, m. */
   crownRadius: number;
-  /** Radial tyre stiffness, N/m. */
   radialStiffness: number;
-  /** Longitudinal relaxation length, m (not published for these tyres; default `0.1`). */
   longitudinalRelaxation?: number;
 }
 
-/** Monoshock rear suspension: a rocker on the frame, a pull rod to the swing arm and the spring-damper unit. */
 export interface MotorcycleRearLinkage {
-  /** Shock top on the frame (p13), rocker pivot on the frame (p19), rocker to pull rod (p20), rocker to shock (p21), pull rod to swing arm (p22). */
   shockTop: SidePoint;
   rockerPivot: SidePoint;
   rockerToRod: SidePoint;
   rockerToShock: SidePoint;
   rodToSwingArm: SidePoint;
-  /** Spring free length, m. */
   freeLength: number;
-  /** Spring plus gas rate, N/m, and damping, N·s/m, at the unit. */
   stiffness: number;
   damping: number;
-  /** Unit length at the bump and rebound stops, m, and their fifth-power stop coefficients, N/m⁵. */
   minLength: number;
   maxLength: number;
   bumpStop: number;
   reboundStop: number;
 }
 
-/** Engine, primary drive, gearbox and chain. */
 export interface MotorcyclePowertrain {
   /** Wide-open-throttle crank torque `[rpm, N·m]`, rising rpm. */
   torqueCurve: readonly (readonly [number, number])[];
@@ -66,7 +55,6 @@ export interface MotorcyclePowertrain {
   primary: number;
   ratios: readonly number[];
   finalDrive: number;
-  /** Primary, gearbox and chain efficiency (default `0.9`). */
   efficiency?: number;
   /** Clutch-in, throttle-off seconds per upshift (default `0.15`). */
   shiftSeconds?: number;
@@ -74,7 +62,6 @@ export interface MotorcyclePowertrain {
   /** Rpm the rider holds while slipping the clutch (default 70% of redline), until the wheel side reaches half of it; the clutch's own engagement takes `clutchSeconds` (default `0.5`). */
   launchRpm?: number;
   clutchSeconds?: number;
-  /** Clutch capacity, N·m at the crank (default 1.6 × peak torque). */
   clutchTorque?: number;
 }
 
@@ -85,18 +72,12 @@ export interface MotorcyclePowertrain {
  * two wheels with thick (toroidal) tyres. Points and inertias are as tabulated (SAE side view, z down).
  */
 export interface ReferenceMotorcycleSpec {
-  /** Steer-axis rake from vertical, rad (ε). */
   rake: number;
-  /** Point on the steer axis (the steering-head joint, p3). */
   steerAxisPoint: SidePoint;
-  /** Frame twist axis point (elastic centre, p2); the axis is normal to the steer axis in the plane of symmetry. */
   twistAxisPoint: SidePoint;
-  /** Point on the line of the front fork's travel (p4). */
   forkSlidePoint: SidePoint;
   swingArmPivot: SidePoint;
-  /** The rider's upper-body roll joint (p9), an axis along x. */
   riderLeanPivot: SidePoint;
-  /** Where aerodynamic forces act (p1). */
   aeroPoint: SidePoint;
   mainFrame: MotorcycleBody;
   riderUpperBody: MotorcycleBody;
@@ -107,42 +88,29 @@ export interface ReferenceMotorcycleSpec {
   rear: MotorcycleWheel;
   frontSuspension: { stiffness: number; damping: number; extension: number; compression: number; stopStiffness: number };
   rearSuspension: MotorcycleRearLinkage;
-  /** Steering damper, N·m·s/rad; steering stiffness, N·m/rad; lock, rad; fifth-power lock-stop coefficient. */
   steeringSystem: { damping: number; stiffness: number; lock: number; stopStiffness: number };
-  /** Frame torsion at the steering head, N·m/rad and N·m·s/rad. */
   frameTwist: { stiffness: number; damping: number };
-  /** Rider upper-body roll restraint, N·m/rad and N·m·s/rad. */
   riderLean: { stiffness: number; damping: number };
-  /** Drag, lift and pitching-moment coefficients on `area`; the moment's reference length is the wheelbase. */
   aero: { drag: number; lift: number; pitch: number; area: number; density: number };
   powertrain: MotorcyclePowertrain;
-  /** Brake torque capacity, N·m. */
   brakes: { front: number; rear: number };
-  /** Extra mass carried by the main frame (fuel, fluids) at a point, for a test configuration. */
   payload?: { mass: number; position: SidePoint };
-  /** Integration step, s (default `1/2000`). */
   step?: number;
 }
 
-/** Controls for one {@link ReferenceMotorcycle.step}. */
 export interface MotorcycleControls {
-  /** Steering torque from the rider's hands, N·m, positive steering right. */
   steerTorque?: number;
-  /** Rider upper-body lean torque, N·m, positive leaning the body right. */
   riderLeanTorque?: number;
   /** Throttle `0..1`; the rider launches on the clutch, shifts up and keeps the front wheel down and the rear from spinning. */
   throttle?: number;
   /** Brake `0..1`; the rider brakes at the tyre's slip limit and keeps the rear wheel down. */
   brake?: number;
-  /** A torque applied straight to the rear wheel, N·m, in place of the engine (Sharp et al.'s speed controller). */
   driveTorque?: number;
   /** Below 4 m/s the rider's feet hold the bike up (fades out by 5 m/s). Default `true`. */
   feet?: boolean;
 }
 
-/** One {@link ReferenceMotorcycle} sample; the first fields match the vehicle steps the handling probes read. */
 export interface ReferenceMotorcycleStep {
-  /** Engine world axes (x, y up, z), m; the rear contact point. */
   position: readonly [number, number, number];
   heading: number;
   forwardSpeed: number;
@@ -150,20 +118,14 @@ export interface ReferenceMotorcycleStep {
   lateralSpeed: number;
   /** Heading rate, rad/s, positive turning left. */
   yawRate: number;
-  /** Steer angle about the steer axis, rad, positive steering right. */
   steerAngle: number;
-  /** Main-frame lean, rad, positive leaning right. */
   lean: number;
-  /** Rider upper-body lean relative to the frame, rad, positive right. */
   riderLean: number;
-  /** Frame twist at the steering head, rad. */
   twist: number;
-  /** Nose-down pitch, rad. */
   pitch: number;
   /** Lateral acceleration, m/s², positive toward the right; longitudinal positive forward. */
   lateralAccel: number;
   longitudinalAccel: number;
-  /** Steering torque the rider applied, N·m, positive right. */
   steerTorque: number;
   frontLoad: number;
   rearLoad: number;
@@ -171,7 +133,6 @@ export interface ReferenceMotorcycleStep {
   rearSlip: number;
   frontSlipAngle: number;
   rearSlipAngle: number;
-  /** Fork compression and swing-arm angle (rear wheel up positive), m and rad. */
   forkTravel: number;
   swingArm: number;
   rpm: number;
@@ -180,7 +141,6 @@ export interface ReferenceMotorcycleStep {
   stoppie: boolean;
 }
 
-/** Serializable state of a {@link ReferenceMotorcycle}. */
 export interface ReferenceMotorcycleState {
   plant: number[];
   gear: number;
@@ -194,10 +154,8 @@ export interface ReferenceMotorcycleState {
   carry: number;
 }
 
-/** The reference motorcycle: a ruler for game bikes, not a game runtime. */
 export interface ReferenceMotorcycle {
   step(dt: number, controls: MotorcycleControls): ReferenceMotorcycleStep;
-  /** The last sample without advancing. */
   sample(): ReferenceMotorcycleStep;
   /** World velocity on the ground plane, `[vx, vz]`, m/s (engine axes). */
   velocity(): readonly [number, number];
@@ -205,11 +163,9 @@ export interface ReferenceMotorcycle {
   spec(): ReferenceMotorcycleSpec;
   snapshot(): ReferenceMotorcycleState;
   restore(state: Readonly<ReferenceMotorcycleState>): void;
-  /** Back to the settled spawn at rest (or at the spawn speed). */
   reset(): void;
 }
 
-/** Spawn options for {@link createReferenceMotorcycle}. */
 export interface ReferenceMotorcycleOptions {
   /** Start rolling straight at this speed, m/s (default `0`). */
   speed?: number;
@@ -255,7 +211,6 @@ function torqueAt(curve: readonly (readonly [number, number])[], rpm: number): n
   return previous?.[1] ?? 0;
 }
 
-/** Inertia tensor about the centre in ISO world axes `[Ixx, Iyy, Izz, Ixy, Ixz, Iyz]` from a published SAE tensor. */
 function isoInertia(body: { ixx?: number; iyy?: number; izz?: number; ixz?: number; axes?: "ground" | "steer" }, rake: number): [number, number, number, number, number, number] {
   const ixx = body.ixx ?? 0;
   const iyy = body.iyy ?? 0;
@@ -343,7 +298,6 @@ function linkageTable(l: MotorcycleRearLinkage, pivot: SidePoint): (theta: numbe
 interface Model {
   tree: RigidBodyTree;
   steerAxis: V3;
-  /** Distance from the wheel centre to the crown centre, m. */
   frontOc: number;
   rearOc: number;
   frontNominal: number;
@@ -481,7 +435,6 @@ function buildModel(spec: Readonly<ReferenceMotorcycleSpec>): Model {
   };
 }
 
-/** Tyre contact of one wheel for the current tree state. */
 interface Contact {
   fz: number;
   kappa: number;
@@ -496,12 +449,9 @@ interface Contact {
 
 const internals = new WeakMap<ReferenceMotorcycle, { tangentJacobian(): { matrix: Float64Array; size: number; outOfPlane: number[] } }>();
 
-/** Out-of-plane and in-plane straight-running eigenvalues of a reference motorcycle, 1/s. */
 export interface MotorcycleModes {
   speed: number;
-  /** Lean, steer, twist, rider and tyre side-slip states (weave, wobble, capsize). */
   outOfPlane: Eigenvalue[];
-  /** Pitch, bounce, suspension, wheel hop and tyre longitudinal states. */
   inPlane: Eigenvalue[];
   /** The steering oscillation: the least damped out-of-plane pair between 35 and 90 rad/s. */
   wobble: Eigenvalue | undefined;
@@ -509,13 +459,7 @@ export interface MotorcycleModes {
   weave: Eigenvalue | undefined;
 }
 
-/**
- * Straight-running stability of a {@link ReferenceMotorcycleSpec} at `speed` (Sharp, Evangelou & Limebeer 2004,
- * section 6): settle the bike at speed under their speed controller, take the Jacobian of the full nonlinear plant
- * by central differences, and split it into its out-of-plane and in-plane blocks. Rigid-body zero roots (position,
- * heading, wheel angles) are dropped.
- * @capability motorcycle-modes weave and wobble eigenvalues of a multibody motorcycle at any speed
- */
+/** @capability motorcycle-modes weave and wobble eigenvalues of a multibody motorcycle at any speed */
 export function motorcycleStraightRunningModes(spec: ReferenceMotorcycleSpec, speed: number): MotorcycleModes {
   const bike = createReferenceMotorcycle(spec, { speed });
   const internal = internals.get(bike);
@@ -691,7 +635,6 @@ export function createReferenceMotorcycle(spec: ReferenceMotorcycleSpec, options
     return excess > 0 ? k * excess ** 5 : 0;
   }
 
-  /** Plant right-hand side with the controls held. */
   function derivative(x: Float64Array, out: Float64Array): void {
     const q = x.subarray(0, nq);
     const u = x.subarray(nq, TIRE);
@@ -847,7 +790,6 @@ export function createReferenceMotorcycle(spec: ReferenceMotorcycleSpec, options
   const frontPeakSlip = peakSlip(spec.front.tire, frontStatic * 1.8);
   const rearPeakSlip = peakSlip(spec.rear.tire, rearStatic * 1.3);
 
-  /** The 1 kHz rider and powertrain sample. */
   function controlStep(c: MotorcycleControls): void {
     plantDerivative(plant, scratch);
     const throttle = clamp(c.throttle ?? 0, 0, 1);
@@ -1102,10 +1044,6 @@ export function createReferenceMotorcycle(spec: ReferenceMotorcycleSpec, options
   const settledPlant = Float64Array.from(plant);
   const settledControl = { ...control };
 
-  /**
-   * Jacobian of the plant at the settled spawn in tangent coordinates: root translation (world), root rotation
-   * (small body-axis angles), joint coordinates, velocities, tyre deflections. Controls held at the settled drive.
-   */
   function tangentJacobian(): { matrix: Float64Array; size: number; outOfPlane: number[] } {
     const joints = nq - 7;
     const n = 6 + joints + nu + 4;

@@ -2,15 +2,10 @@ import { devtools } from "../devtools/devtools";
 import { changeMeter, createMeter, createStatPool, patchStatPool, tickMeter, type MeterState } from "../stats/statPool";
 import { crossThresholds, tierAt, type ThresholdBoundary, type ThresholdCrossing } from "../threshold/thresholds";
 
-/**
- * One remembered sighting of the target, as a perception service reports it — `PerceptionMemory`
- * from `sensor/perception` satisfies this shape.
- */
 export interface AlertSighting {
   lastKnownPos: readonly [number, number, number];
   lastSeenAt: number;
   confidence: number;
-  /** Whose senses produced the fact, and the observe pass it arrived on. */
   sourceId: string;
   sourceTick: number;
 }
@@ -24,18 +19,14 @@ export interface AlertWitness {
   memoryOf(observerId: string, targetId: string): AlertSighting | null;
 }
 
-/** Where the alert last had the target, kept from the freshest sighting any observer remembers. */
 export interface AlertAnchor {
-  /** World XZ of the sighting. */
   at: readonly [number, number];
   lastSeenAt: number;
   sourceId: string;
   sourceTick: number;
 }
 
-/** Everything an alert level runs on; the game supplies it all. */
 export interface AlertTuning<Tier> {
-  /** Labelled cut points, ascending by `at`. Below the lowest there is no tier at all. */
   tiers: readonly ThresholdBoundary<Tier>[];
   /** Value bled per second once the target has been out of sight past `escapeSeconds`. */
   decayPerSecond: number;
@@ -47,20 +38,15 @@ export interface AlertTuning<Tier> {
   sightGraceSeconds: number;
   /** Seconds with no tier and units still active before `standDown` fires. */
   standDownSeconds: number;
-  /** How much faster the sight clock and the bleeding run while the target is hidden. */
   hiddenRate: number;
-  /** Value ceiling; omit for unbounded. */
   maxValue?: number;
 }
 
-/** Everything {@link createAlertLevel} needs: the sight seam, the observer roster and the caller's numbers. */
 export interface AlertLevelConfig<Tier> {
   tuning: AlertTuning<Tier>;
   /** Bounded roster of observer ids to ask each tick. The caller owns and bounds it. */
   observers: () => readonly string[];
-  /** The id the sight seam remembers the target by. */
   targetId: string;
-  /** Remembered sightings, one per observer. */
   witness: AlertWitness;
   /** Register a devtools probe under this name so the overlay shows value, tier and the sight clock. */
   devtoolsName?: string;
@@ -70,42 +56,29 @@ export interface AlertLevelConfig<Tier> {
 export interface AlertTickContext {
   /** The clock the sightings are stamped on, milliseconds — the same one the observe pass got. */
   nowMs: number;
-  /** Units the caller still has in play, for the stand-down countdown. */
   activeUnits: number;
-  /**
-   * The target is under cover no observer can see into: sightings stop counting, reports made now go
-   * unseen, and the trail goes cold `hiddenRate` times faster.
-   */
   hidden?: boolean;
 }
 
-/** One tick's answer: the value, the tier, the anchor and the escape. */
 export interface AlertStep<Tier> {
   value: number;
-  /** The game's tier at or below `value`; `null` below the lowest cut point. */
   tier: Tier | null;
   tierChanged: boolean;
-  /** Cut points crossed this tick: up in ascending order, down in descending order. */
   crossings: readonly ThresholdCrossing<Tier>[];
-  /** The freshest sighting the alert has kept so far, or `null`. */
   anchor: AlertAnchor | null;
   /** Seconds since any observer last had the target in view. */
   outOfSightSeconds: number;
-  /** True once out of sight for `escapeSeconds`; the bleeding runs while it holds. */
   escaped: boolean;
-  /** True exactly the tick a caller should call its units off — none are wanted and the beat has passed. */
   standDown: boolean;
 }
 
 /** Where a search works: around the last sighting, out to `radius` metres. */
 export interface AlertSearchArea {
-  /** World XZ of the last sighting. */
   center: readonly [number, number];
   radius: number;
   lastSeenAt: number;
 }
 
-/** How wide a search starts at each tier and how it widens while the trail is cold. */
 export interface AlertSearchTuning<Tier> {
   /** Starting radius, metres, while the sighting is fresh. */
   radius: (tier: Tier) => number;
@@ -133,19 +106,13 @@ export function alertSearchArea<Tier>(
   };
 }
 
-/** Counters a devtools probe, a HUD or a test reads. */
 export interface AlertStats {
   value: number;
   ticks: number;
-  /** Reports made through `report`. */
   reported: number;
-  /** Of those, the ones an observer held the target in view for. */
   seen: number;
-  /** Sightings that moved the anchor. */
   sightings: number;
-  /** Times the target broke sight for `escapeSeconds`. */
   escapes: number;
-  /** Observer queries made in the last tick — one per observer on the roster. */
   observersChecked: number;
   /** Slowest single `tick` seen so far, milliseconds. */
   slowestTickMs: number;
@@ -160,7 +127,6 @@ export interface AlertLevelState<Tier> {
   outOfSightSeconds: number;
   standDownElapsed: number;
   anchor: AlertAnchor | null;
-  /** Reports that arrived since the last tick, judged for a sighting on the next one. */
   pending: readonly number[];
   counts: {
     ticks: number;
@@ -171,21 +137,16 @@ export interface AlertLevelState<Tier> {
   };
 }
 
-/** Stateful alert/pursuit API with retuning and save/restore support. */
 export interface AlertLevel<Tier> {
-  /** Report something that should raise the alert. Whether it counts is decided on the next tick, from what observers remember. */
   report(amount: number): void;
-  /** Take value off at once (a bribe, a favour, a paid fine); returns what is left. The tier follows at once. */
   forgive(amount: number): number;
   tick(dt: number, ctx: AlertTickContext): AlertStep<Tier>;
-  /** The value right now and the tier it resolves to. */
   current(): { value: number; tier: Tier | null };
   stats(): AlertStats;
   /** Change the numbers while running; the meter keeps its value and clocks. */
   retune(patch: Partial<AlertTuning<Tier>>): void;
   state(): AlertLevelState<Tier>;
   restore(next: AlertLevelState<Tier>): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -289,7 +250,6 @@ export function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLev
     return from.maxValue ?? Number.POSITIVE_INFINITY;
   }
 
-  /** The freshest sighting on the roster, which is also what "in view" and the anchor read. */
   function freshest(): AlertSighting | null {
     let best: AlertSighting | null = null;
     observersChecked = 0;

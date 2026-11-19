@@ -17,14 +17,11 @@ export const shopStore = defineStore<string | undefined>("harbor.shop", undefine
 export const garageStore = defineStore<boolean | undefined>("harbor.garage", undefined);
 export const startedStore = defineStore<boolean | undefined>("harbor.started", undefined);
 export const slotStore = defineStore<number | undefined>("harbor.slot", undefined);
-/** True once a whole-world save was restored this boot — title shows Continue and start skips the intro. */
 export const continueStore = defineStore<boolean | undefined>("harbor.continue", undefined);
 /** Palmview Bungalow ownership — persisted with the world save. */
-/** Ammu-Isle's hours, sim clock. */
 export const SHOP_OPENS = 8;
 export const SHOP_CLOSES = 22;
 export const safehouseStore = defineStore<boolean | undefined>("harbor.safehouse", undefined);
-/** Whether the bungalow's board is open. */
 export const houseStore = defineStore<boolean | undefined>("harbor.house", undefined);
 /** Best Ocean Loop time in seconds — persisted; beating it pays a bonus. */
 export const bestRaceStore = defineStore<number | undefined>("harbor.bestRace", undefined);
@@ -355,7 +352,6 @@ export function registerCommands(ctx: GameContext): void {
   }
 }
 
-/** A night in the bungalow: full health, and whatever its rooms stock. */
 function restUp(ctx: GameContext): void {
   const me = ctx.player.userId;
   const health = ctx.scene.entity.stats.get(me, "health");

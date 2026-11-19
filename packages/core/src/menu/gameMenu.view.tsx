@@ -19,8 +19,6 @@ import { kitHudBridge, KitMenu, KitPanel, useHasUiKit } from "@jgengine/core/ui/
  * genuinely scrolls (credits) scrolls inside its own pane.
  */
 
-
-/** Inside a kit's pane, the engine panes a menu hosts (settings, saves, credits) take the kit's colours and type. */
 const KIT_PANE_BRIDGE = kitHudBridge("pane");
 
 /**
@@ -37,21 +35,14 @@ const KIT_PANE_SCROLL_CSS = `
 [data-jg-kit-pane-content] > * { flex-shrink: 0; }
 `;
 
-/** One primary verb in a {@link GameMenu}. */
 export interface GameMenuItem {
-  /** Stable id the game routes on. */
   id: string;
-  /** Player-facing label. */
   label: string;
-  /** One short line under the label — a save summary, a state note. Omit for a clean row. */
   hint?: string;
-  /** Show the row but skip it in navigation and clicks. */
   disabled?: boolean;
-  /** Small marker at the end of the row (a badge, a count, a key glyph). */
   badge?: ReactNode;
 }
 
-/** The logo slot. Give it `image` for art, or `text` for a styled wordmark. */
 export interface GameMenuLogo {
   /** Image URL for the game's logo. Sized by the `--jg-menu-logo` token, never by a heading tag. */
   image?: string;
@@ -63,7 +54,6 @@ export interface GameMenuLogo {
   title?: string;
 }
 
-/** How a {@link GameMenu} is used. `pause` is the same system at a smaller scale. */
 export type GameMenuVariant = "title" | "pause";
 
 /**
@@ -75,52 +65,25 @@ export type GameMenuVariant = "title" | "pause";
  */
 export type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number>;
 
-/** Props for {@link GameMenu}. */
 export interface GameMenuProps {
-  /** Primary verbs, in focus order. */
   items: readonly GameMenuItem[];
-  /** The verb focused on mount. Default the first enabled one. */
   initialId?: string;
-  /** A verb was confirmed (Enter, Space, A, or a click). */
   onSelect: (id: string) => void;
-  /** Back (Escape, Backspace, B, Start). On a pause menu this is the resume action. */
   onBack?: (() => void) | undefined;
-  /** The highlighted verb changed — use it to load the detail for `id`. */
   onHighlight?: (id: string | null) => void;
-  /** The right-hand pane's content for the highlighted verb. */
   detail?: ReactNode | ((id: string | null) => ReactNode);
-  /** Logo slot: an image or styled type, sized by the logo token. */
   logo?: GameMenuLogo | ReactNode;
-  /** Small line above the logo (studio, chapter, mode). */
   eyebrow?: ReactNode;
-  /** One line under the logo. */
   tagline?: ReactNode;
-  /**
-   * Layer painted across the whole viewport behind the menu: a live scene component, key art, a
-   * video. Leave it out when the engine's own 3D canvas sits behind the menu — the menu stays
-   * transparent and only tints and vignettes it, so play keeps rendering underneath.
-   */
   background?: ReactNode;
-  /**
-   * Key-art URL for the drifting background layer. Omit when the live scene behind the menu is the
-   * background. With neither, the menu still tints and vignettes whatever is behind it.
-   */
   art?: string;
-  /** Secondary verbs at the bottom-left (quit, back). Same navigation, quieter styling. */
   secondary?: readonly GameMenuItem[];
-  /** Footer left slot: build version, studio. */
   footer?: ReactNode;
-  /** Footer right slot: replaces the default control hint. */
   controlHint?: ReactNode;
-  /** Selection sound. Default on. Pass `false` for silence, or a player from `createGameMenuSound`. */
   sound?: boolean | GameMenuSound;
-  /** Title menu or the smaller pause menu. Default `"title"`. */
   variant?: GameMenuVariant;
-  /** Open state the game owns. A closed menu renders nothing and releases the document scroll. */
   open?: boolean;
-  /** Force motion off. Reduced motion is also read from the accessibility preference and the OS. */
   reducedMotion?: boolean;
-  /** Accessible name of the surface. Default `"Main menu"` (`"Paused"` for the pause variant). */
   label?: string;
   className?: string;
   style?: CSSProperties | GameMenuStyle;

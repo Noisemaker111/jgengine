@@ -3,41 +3,27 @@ import type { CrownForm, PlantSpecies } from "../../packages/core/src/plants/spe
 /** Silvics of North America shade tolerance classes (Burns & Honkala 1990). */
 export type ShadeClass = "very tolerant" | "tolerant" | "intermediate" | "intolerant" | "very intolerant";
 
-/**
- * What the importer needs to know about one species beyond the downloaded tables: its ids in each
- * source and the traits read from Silvics of North America, the Wood Handbook and USDA PLANTS. Growth
- * and carbon parameters are not here; the fit finds them.
- */
 export interface SpeciesTraits {
   id: string;
   exportName: string;
   scientific: string;
   common: { en: string; fr: string };
   usda: string;
-  /** FIA species code: site trees, wood specific gravity and the FVS crown-width equations. */
   fiaCode: number;
-  /** Carmean 1989 (NC-128) curve number on total age, from FVS Lake States `htcalc.f`; absent for western species. */
   carmeanCurve?: number;
-  /** Years to breast height (Silvics) for a species without a Carmean curve. */
   yearsToBreastHeight?: number;
-  /** Site index (feet at 50 years) the site trees are centred on; their median when absent. */
   siteIndexFt?: number;
-  /** FIA state abbreviations whose site trees describe the species' range. */
   states: readonly string[];
-  /** Crown form the fit holds the species to, written to the record's `architecture.crownForm`. */
   form: CrownForm;
-  /** Stems a seedling sets at its base (Silvics: sprouts into clumps); 1 when absent. */
   basalStems?: number;
   /** Largest shoot set point, degrees from vertical; above 90 for hanging shoots, 90 when absent. */
   setpointMax?: number;
-  /** Fitted species the fit starts from. */
   prior: string;
   architecture: PlantSpecies["architecture"];
   lateralBudsPerNode: number;
   shade: ShadeClass;
   tolerance: { drought: number; frost: number; waterlogging: number };
   limits: { maxAgeYears: number; maxHeightM: number; maxDbhCm: number };
-  /** Green modulus of elasticity, GPa (Wood Handbook table 5-3a). */
   modulusGPa: number;
   leaf: PlantSpecies["leaf"];
   bark: PlantSpecies["bark"];
@@ -70,7 +56,6 @@ export function broadleaf(kind: "lobed" | "ovate" | "lanceolate", sizeCm: number
   };
 }
 
-/** Needle or scale foliage; scale leaves are sized by their spray segment, as the model grows them. */
 function needles(sizeCm: number, lifespanYears: number, leavesPerNode: number, summer: string, sla = 10, kind: "needle" | "scale" = "needle"): Leaf {
   return {
     shape: { kind, lobes: 0, lobeDepth: 0, aspect: kind === "scale" ? 0.3 : 0.03, petioleFraction: 0.05 },

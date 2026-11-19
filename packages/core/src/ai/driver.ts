@@ -15,30 +15,21 @@ import { tickCooldown } from "../time/cooldown";
  * queries — this module never scans the world.
  */
 
-/** The driver's own vehicle this step: world position, yaw heading, signed forward speed. */
 export interface DriverPose {
   x: number;
   z: number;
-  /** Yaw with the same convention as the vehicle sim: `atan2(dx, dz)`. */
   heading: number;
   /** Signed forward speed in world units/second (negative while reversing). */
   speed: number;
 }
 
-/** Where the driver is trying to go this step. */
 export interface DriverGoal {
   x: number;
   z: number;
   /** Brake to a halt inside `arriveRadius` instead of driving through; default `false`. */
   stopAtGoal?: boolean;
-  /** Cap on desired speed for this goal (a speed limit, a formation speed); default unlimited. */
   speedLimit?: number;
-  /**
-   * This car's catch-up pacing band, applied to the goal's pace. The caller measures {@link paceGap}
-   * (it owns the spatial query) and tunes the band; {@link paceBandFactor} is the rule.
-   */
   paceBand?: PaceBand;
-  /** Signed gap to the band's reference: positive when this car is ahead of it; default `0`. */
   paceGap?: number;
 }
 
@@ -50,17 +41,11 @@ export interface DriverGoal {
  * so a band changes how hard a car tries, never what it is built to do.
  */
 export interface PaceBand {
-  /** Gap to the reference this car aims to hold, world units; default `0` (level with it). */
   margin?: number;
-  /** Gap error either side of `margin` the car leaves alone; default `0`. */
   tolerance?: number;
-  /** Gap error past `tolerance` where the ease reaches full strength; default `0` (at once). */
   easeAt?: number;
-  /** Fraction of the goal's pace shed at full ease; default `0`. */
   ease?: number;
-  /** Gap error past `tolerance` where the push reaches full strength; default `0` (at once). */
   pushAt?: number;
-  /** Fraction of the goal's pace added at full push; default `0`. */
   push?: number;
   /** Share of the band this car accepts, `0..1`; default `1`. */
   scale?: number;
@@ -90,11 +75,9 @@ export function paceBandFactor(band: PaceBand, gap: number): number {
   return 1;
 }
 
-/** How a chaser tails a moving target: the cruise it holds and the band it keeps off the target. */
 export interface TailTuning {
   /** Cruise cap, m/s; held below the car's top speed so the band's push has somewhere to go. */
   speedLimit: number;
-  /** The gap to hold behind the target, eased when close and pushed when far. */
   band: PaceBand;
 }
 
@@ -114,7 +97,6 @@ export function tailGoal(
   return { x: target.x, z: target.z, speedLimit: tuning.speedLimit, paceGap: -ahead, paceBand: tuning.band };
 }
 
-/** Vehicle-feel numbers the game supplies; everything has a sensible default except `maxSpeed`. */
 export interface DriverTuning {
   /** Top desired speed on a straight, world units/second. */
   maxSpeed: number;
@@ -122,7 +104,6 @@ export interface DriverTuning {
   steerGain?: number;
   /** Fraction of speed shed at a right-angle heading error (`0` never slows for corners); default `0.75`. */
   cornerSlowdown?: number;
-  /** Distance at which the goal counts as reached; default `4`. */
   arriveRadius?: number;
   /** Meters of clearance the driver tries to keep to an obstacle ahead; default `6`. */
   brakeMargin?: number;
@@ -130,17 +111,13 @@ export interface DriverTuning {
   jitterIntervalSeconds?: number;
   /** Heading-error radians one full unit of `executionJitter` adds; default `0.35`. */
   jitterScaleRadians?: number;
-  /** Below this |speed| while throttling the car counts as stuck; default `0.8`. */
   stuckSpeed?: number;
   /** Seconds of grinding (plus the profile's `reactionSeconds`) before reversing out; default `1.5`. */
   stuckSeconds?: number;
-  /** How long a reverse-out lasts; default `1.1`. */
   reverseSeconds?: number;
 }
 
-/** Serializable per-driver state advanced in place by {@link driveStep}. */
 export interface DriverState {
-  /** The reaction-committed target actually steered toward (the goal as of up to `reactionSeconds` ago). */
   targetX: number;
   targetZ: number;
   /** Seconds until the next target resample. */
@@ -154,12 +131,7 @@ export interface DriverState {
   reverseRemaining: number;
 }
 
-/**
- * Fresh driver state committed to an initial target (usually the spawn-time goal or the spawn
- * position itself).
- *
- * @capability ai-driver-state fresh serializable state for one difficulty-aware AI driver
- */
+/** @capability ai-driver-state fresh serializable state for one difficulty-aware AI driver */
 export function createDriverState(targetX = 0, targetZ = 0): DriverState {
   return {
     targetX,
@@ -178,7 +150,6 @@ export function createDriverState(targetX = 0, targetZ = 0): DriverState {
  * yaw), so it passes straight into the sim without a sign flip.
  */
 export interface DriverStep extends AxisInput {
-  /** The vehicle is inside `arriveRadius` of the *actual* goal this step. */
   arrived: boolean;
 }
 
@@ -304,7 +275,6 @@ export function driveStep(
   return { throttle, brake, steer, handbrake: 0, arrived };
 }
 
-/** A 2D polyline point (`[x, z]`), structurally compatible with authored road path centerlines. */
 export type DrivePathPoint = readonly [number, number];
 
 /**

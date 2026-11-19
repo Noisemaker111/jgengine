@@ -1,10 +1,4 @@
-/**
- * Generic sag/catenary curve → point string, ready to loft into a tube. Genre-agnostic — power lines,
- * suspension-bridge cables, ziplines, ropes, hanging chains, festoon lights all hang the same way.
- * `sagCurve` is a cheap quadratic-Bézier droop; `catenaryCurve` is the true cosh hyperbolic cable.
- *
- * @capability catenary sagging cable curve between two anchors
- */
+/** @capability catenary sagging cable curve between two anchors */
 
 export type { Vec3 } from "./geometry";
 import type { Vec3 } from "./geometry";
@@ -31,12 +25,6 @@ export function sagCurve(a: Vec3, b: Vec3, sag: number, segments: number): Vec3[
   return points;
 }
 
-/**
- * True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under
- * gravity. `slack` is the extra length beyond the straight-line distance, as a fraction (0.1 = 10%
- * longer than taut); larger slack droops deeper. Falls back to {@link sagCurve} for a near-taut cable.
- * Returns `segments + 1` points. Anchors may differ in height; the curve interpolates the chord.
- */
 export function catenaryCurve(a: Vec3, b: Vec3, slack: number, segments: number): Vec3[] {
   const steps = Math.max(2, Math.round(segments));
   const dx = b[0] - a[0];

@@ -26,39 +26,26 @@ import { sources } from "../packages/assets/src/sources";
 /** The editor's asset-import sink — always allow-listed, never a pack dependency. */
 export const SENTINEL_PACKS: ReadonlySet<string> = new Set(["imported"]);
 
-/** A single model-pack reference discovered in a game's source. */
 export interface PackReference {
-  /** The game id that references the pack. */
   game: string;
-  /** The pack folder id (the `<pack>` in `/models/<pack>/`, and the `id` of a pack imported from `generated/packs`). */
   pack: string;
-  /** How the reference was found — for the failure diagnostic. */
   via: "pack-import" | "path-literal";
 }
 
-/** Inputs to the pure availability check: what is referenced vs. what a clean checkout can provide. */
 export interface AvailabilityInput {
   references: readonly PackReference[];
   /** Packs with git-tracked bytes — present immediately on a clean clone. */
   committed: ReadonlySet<string>;
   /** Packs with git-tracked bytes in one game's own `public/models/`, by game id: present for that game only. */
   committedByGame?: ReadonlyMap<string, ReadonlySet<string>>;
-  /** Packs a bootstrap / cloud-setup `assets pull <pack>` step provisions on a fresh session. */
   provisioned: ReadonlySet<string>;
 }
 
-/** Result of the availability check: `ok` plus one diagnostic per dangling reference. */
 export interface AvailabilityResult {
   ok: boolean;
   errors: string[];
 }
 
-/**
- * Fail for every referenced pack that is neither committed nor provisioned (nor a
- * sentinel). Genre-agnostic and data-driven: it judges the packs the games
- * actually reference against the packs a clean checkout can actually provide,
- * with no hard-coded pack list.
- */
 export function checkAssetAvailability(input: AvailabilityInput): AvailabilityResult {
   const errors: string[] = [];
   for (const ref of input.references) {
@@ -75,7 +62,6 @@ export function checkAssetAvailability(input: AvailabilityInput): AvailabilityRe
   return { ok: errors.length === 0, errors };
 }
 
-/** Recursively collect `.ts`/`.tsx` files under a directory. */
 function sourceFilesUnder(dir: string): string[] {
   const out: string[] = [];
   if (!existsSync(dir)) return out;
@@ -87,18 +73,10 @@ function sourceFilesUnder(dir: string): string[] {
   return out;
 }
 
-/** A served path at the start of a string. A relative import through a `models` folder (`"../models/components/Card"`) is not one. */
 const MODELS_LITERAL = /(?<=["'`])\/models\/([a-zA-Z0-9_-]+)\//g;
 
-/** Every declared model source by the name its pack is exported under. */
 const sourceByPackName = new Map(sources.map((source) => [packExportName(source.id), source.id]));
 
-/**
- * Extract every model-pack reference from a single game's source: every pack imported from
- * `@jgengine/assets/generated/packs` (what `buildCatalog({ packs })` registers), plus every
- * `/models/<pack>/` served-path literal (how packs like `claudecraft` that skip
- * `buildCatalog` still declare their folder dependency).
- */
 export function packReferencesForGame(game: string, srcDir: string): PackReference[] {
   const refs = new Map<string, PackReference>();
   const add = (pack: string, via: PackReference["via"]): void => {
@@ -115,8 +93,6 @@ export function packReferencesForGame(game: string, srcDir: string): PackReferen
   return [...refs.values()];
 }
 
-/** Every game's pack references, scanning each `games/<id>/src` tree.
- * Only real games (src/index.tsx) are scanned — helper packages like `studios` are ignored. */
 export function referencedPacks(gamesDir: string): PackReference[] {
   if (!existsSync(gamesDir)) return [];
   const refs: PackReference[] = [];

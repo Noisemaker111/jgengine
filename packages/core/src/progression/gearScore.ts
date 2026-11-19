@@ -3,39 +3,24 @@ import { lootStatContributions, type LootComparisonOptions } from "../loot/lootG
 /** The least a worn item must expose to be scored: its stat block, plus optional level and rarity for the gear-score terms. */
 export interface GearSlotItem {
   stats: Readonly<Record<string, number>>;
-  /** Item level, added as `levelWeight × level` when the option is set. */
   level?: number;
-  /** Rarity id, looked up in `rarityScore` when the option names one. */
   rarity?: string;
 }
 
-/** Caller policy for a loadout score: stat weights, which stats read better small, and what level, rarity and an empty slot are worth. */
 export interface GearScoreOptions extends Pick<LootComparisonOptions, "weights" | "lowerIsBetter"> {
-  /** Points added per item level (default `0`, so level is ignored). */
   levelWeight?: number;
-  /** Points added per rarity id (default none). */
   rarityScore?: Readonly<Record<string, number>>;
-  /** Slot ids a complete loadout fills; named slots that are empty are reported and penalized. */
   expectedSlots?: readonly string[];
-  /** Points removed per empty slot (default `0`). */
   emptySlotPenalty?: number;
 }
 
-/** A scored loadout: the total, each slot's share, each stat's signed contribution, and how complete it is. */
 export interface GearScore {
-  /** `Σ slotScore - emptySlotPenalty × emptySlots`. */
   score: number;
-  /** Score per filled slot id. */
   bySlot: Readonly<Record<string, number>>;
-  /** Signed weighted contribution per stat, summed across items. */
   byStat: Readonly<Record<string, number>>;
-  /** Number of filled slots. */
   items: number;
-  /** `score / items`, or `0` for an empty loadout. */
   average: number;
-  /** Filled slots over expected slots, `1` when no slots are expected. */
   coverage: number;
-  /** Expected slot ids with no item. */
   emptySlots: readonly string[];
 }
 
@@ -93,7 +78,6 @@ export function gearScore(
   };
 }
 
-/** Compare two loadouts; negative means `a` scores lower. */
 export function compareGearSets(
   a: Readonly<Record<string, GearSlotItem | null | undefined>>,
   b: Readonly<Record<string, GearSlotItem | null | undefined>>,

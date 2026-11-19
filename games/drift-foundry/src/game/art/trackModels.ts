@@ -36,7 +36,6 @@ const LIBRARY_OBJECTS: Partial<Record<(typeof TRACK_OBJECT)[keyof typeof TRACK_O
 
 export const TRACK_LIBRARY_NAMES: readonly string[] = [...new Set(Object.values(LIBRARY_OBJECTS).map((entry) => entry!.name))];
 
-/** One credit line per library model the tracks use: title, author, license and source page. */
 export const TRACK_LIBRARY_CREDITS: readonly string[] = libraryModelCredits(TRACK_LIBRARY_NAMES);
 
 const OIL_BLACK = "#232019";
@@ -54,7 +53,6 @@ function kit(id: string, overrides: Partial<ModelConfig> = {}): ModelConfig {
 
 // Part offsets are metres under the entity's transform; a parent's own `scale` sizes only its mesh.
 
-/** A crusted vent the slag spurts from: a black drill housing with a molten throat. */
 function slagVent(): ModelConfig {
   return kit("kaykit-space-base/drill_structure", {
     targetHeight: 2.8,
@@ -66,7 +64,6 @@ function slagVent(): ModelConfig {
   });
 }
 
-/** The ladle on its stand: a tipped steel bucket glowing at the lip, the slag river's landmark. */
 function ladle(): ModelConfig {
   return kit("kaykit-space-base/structure_tall", {
     targetHeight: 8,
@@ -78,7 +75,6 @@ function ladle(): ModelConfig {
   });
 }
 
-/** The smelter: a rust stack with a molten mouth at its base. */
 function furnace(): ModelConfig {
   return kit("kaykit-city-builder/watertower", {
     scale: 25,
@@ -89,7 +85,6 @@ function furnace(): ModelConfig {
   });
 }
 
-/** Level-crossing post: a signal head that reads red from down the road, and its striped arm. */
 function crossing(): ModelConfig {
   return kit("kaykit-city-builder/trafficlight_A", {
     scale: 6,
@@ -106,7 +101,6 @@ function gantryLeg(): ModelConfig {
   });
 }
 
-/** A belt section: an 8 m square of black rubber, laid flat in the road (the slab's top face is the surface). */
 function belt(): ModelConfig {
   return kit("kaykit-space-base/terrain_low", { scale: 4, material: { color: "#15171b", roughness: 0.85, metalness: 0.3 } });
 }
@@ -115,7 +109,6 @@ function signalBox(): ModelConfig {
   return kit("kaykit-city-builder/trafficlight_C", { scale: 4.5, material: { color: "#2b3a46", emissive: "#3cff7a", emissiveIntensity: 0.5 } });
 }
 
-/** The quarry's pump rig: a compressor beside its riser pipes and a steel post. */
 function pumpRig(): ModelConfig {
   return {
     ...libraryModel(LIBRARY_OBJECTS[TRACK_OBJECT.compressor]!.name, { targetHeight: 3 }),
@@ -126,12 +119,10 @@ function pumpRig(): ModelConfig {
   };
 }
 
-/** A steel guard rail section for the rail yard's edges: a low tunnel arch lying along the verge. */
 function edgeRail(): ModelConfig {
   return kit("kaykit-space-base/tunnel_straight_A", { targetHeight: 1.1, material: { color: STEEL, roughness: 0.45, metalness: 0.7 } });
 }
 
-/** The freight: five rusted cargo-depot sections, a 17 m wagon that fills a crossing, with a red tail lamp. */
 const WAGON_BOX = 3.45;
 const WAGON_COLORS = ["#5b2a1a", "#6b3420"] as const;
 const wagonSection = (z: number, index: number) => ({

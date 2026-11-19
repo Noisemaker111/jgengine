@@ -8,39 +8,25 @@ export interface FuelLoads {
   tenHour: number;
   /** Dead fuel 2.5–7.6 cm across. */
   hundredHour: number;
-  /** Live grasses and forbs. */
   liveHerb: number;
-  /** Live shrub foliage and fine twigs. */
   liveWoody: number;
 }
 
-/**
- * A surface fuel bed in the form Rothermel's model reads: loads, particle sizes, depth, heat content
- * and the dead moisture of extinction. Metric units; the standard models below are converted from
- * their published English values.
- */
 export interface FuelModel {
-  /** Published code, `GR2`, `TL3`, `FM4`. */
   code: string;
-  /** Published number (Scott & Burgan 101–204, Anderson 1–13, non-burnable 91–99). */
   number: number;
   name: string;
   /** Dynamic models move live herb load to dead as it cures (Scott & Burgan 2005). */
   dynamic: boolean;
-  /** Fuel bed depth, m. */
   depthM: number;
-  /** Dead fuel moisture of extinction, fraction of dry mass. */
   deadExtinctionMoisture: number;
   /** Low heat content of dead fuel, kJ/kg. */
   deadHeatKJPerKg: number;
   /** Low heat content of live fuel, kJ/kg. */
   liveHeatKJPerKg: number;
   load: FuelLoads;
-  /** Surface-area-to-volume ratio of 1-h dead fuel, 1/m. */
   oneHourSavr: number;
-  /** Surface-area-to-volume ratio of live herbs (and cured herbs), 1/m. */
   liveHerbSavr: number;
-  /** Surface-area-to-volume ratio of live woody fuel, 1/m. */
   liveWoodySavr: number;
 }
 
@@ -58,15 +44,10 @@ interface PublishedFuelModel {
   code: string;
   name: string;
   dynamic: boolean;
-  /** ft */
   depth: number;
-  /** percent */
   mx: number;
-  /** Btu/lb */
   heat: number;
-  /** tons/acre (lb/ft² for Anderson): 1-h, 10-h, 100-h, live herb, live woody */
   loads: readonly [number, number, number, number, number];
-  /** 1/ft: 1-h, live herb, live woody */
   savr: readonly [number, number, number];
 }
 
@@ -98,7 +79,6 @@ function fromPublished(p: PublishedFuelModel, loadUnit: number): FuelModel {
 const D = true;
 const S = false;
 
-/** Scott & Burgan 2005, RMRS-GTR-153, table 7: loads in tons/acre, SAV in 1/ft, depth in ft. */
 const SCOTT_BURGAN: readonly PublishedFuelModel[] = [
   { number: 101, code: "GR1", name: "Short, sparse dry climate grass", dynamic: D, depth: 0.4, mx: 15, heat: 8000, loads: [0.1, 0, 0, 0.3, 0], savr: [2200, 2000, 1500] },
   { number: 102, code: "GR2", name: "Low load, dry climate grass", dynamic: D, depth: 1.0, mx: 15, heat: 8000, loads: [0.1, 0, 0, 1.0, 0], savr: [2000, 1800, 1500] },
@@ -142,7 +122,6 @@ const SCOTT_BURGAN: readonly PublishedFuelModel[] = [
   { number: 204, code: "SB4", name: "High load blowdown", dynamic: S, depth: 2.7, mx: 25, heat: 8000, loads: [5.25, 3.5, 5.25, 0, 0], savr: [2000, 1800, 1600] },
 ];
 
-/** Anderson 1982, GTR-INT-122, as tabulated by Albini 1976 and BehavePlus: loads in lb/ft². */
 const ANDERSON: readonly PublishedFuelModel[] = [
   { number: 1, code: "FM1", name: "Short grass", dynamic: S, depth: 1.0, mx: 12, heat: 8000, loads: [0.034, 0, 0, 0, 0], savr: [3500, 1500, 1500] },
   { number: 2, code: "FM2", name: "Timber grass and understory", dynamic: S, depth: 1.0, mx: 15, heat: 8000, loads: [0.092, 0.046, 0.023, 0.023, 0], savr: [3000, 1500, 1500] },
@@ -159,7 +138,6 @@ const ANDERSON: readonly PublishedFuelModel[] = [
   { number: 13, code: "FM13", name: "Heavy logging slash", dynamic: S, depth: 3.0, mx: 25, heat: 8000, loads: [0.322, 1.058, 1.288, 0, 0], savr: [1500, 1500, 1500] },
 ];
 
-/** Non-burnable land cover codes (Scott & Burgan 2005, table 6). */
 const NON_BURNABLE: readonly PublishedFuelModel[] = [
   { number: 91, code: "NB1", name: "Urban or developed", dynamic: S, depth: 1, mx: 10, heat: 8000, loads: [0, 0, 0, 0, 0], savr: [1500, 1500, 1500] },
   { number: 92, code: "NB2", name: "Snow or ice", dynamic: S, depth: 1, mx: 10, heat: 8000, loads: [0, 0, 0, 0, 0], savr: [1500, 1500, 1500] },
@@ -168,25 +146,15 @@ const NON_BURNABLE: readonly PublishedFuelModel[] = [
   { number: 99, code: "NB9", name: "Bare ground", dynamic: S, depth: 1, mx: 10, heat: 8000, loads: [0, 0, 0, 0, 0], savr: [1500, 1500, 1500] },
 ];
 
-/**
- * The 40 standard fire behavior fuel models of Scott & Burgan 2005 (grass GR, grass-shrub GS, shrub SH,
- * timber-understory TU, timber litter TL, slash-blowdown SB), keyed by code.
- *
- * @capability fire-fuel-models the 40 Scott & Burgan 2005 surface fuel models, the 13 Anderson 1982 models and the non-burnable codes, in metric units
- */
+/** @capability fire-fuel-models the 40 Scott & Burgan 2005 surface fuel models, the 13 Anderson 1982 models and the non-burnable codes, in metric units */
 export const SCOTT_BURGAN_FUEL_MODELS: Readonly<Record<string, FuelModel>> = Object.fromEntries(SCOTT_BURGAN.map((p) => [p.code, fromPublished(p, KG_M2_PER_TON_ACRE)]));
 
 /** The original 13 fuel models (Anderson 1982; Albini 1976), keyed by code `FM1`..`FM13`. */
 export const ANDERSON_FUEL_MODELS: Readonly<Record<string, FuelModel>> = Object.fromEntries(ANDERSON.map((p) => [p.code, fromPublished(p, KG_M2_PER_LB_FT2)]));
 
-/** Non-burnable cover (urban, snow, agriculture, water, bare ground), keyed by code `NB1`..`NB9`. */
 export const NON_BURNABLE_FUEL_MODELS: Readonly<Record<string, FuelModel>> = Object.fromEntries(NON_BURNABLE.map((p) => [p.code, fromPublished(p, KG_M2_PER_TON_ACRE)]));
 
-/**
- * Every standard fuel model by code.
- *
- * @capability fire-fuel-model-lookup look up any standard surface fuel model by its published code
- */
+/** @capability fire-fuel-model-lookup look up any standard surface fuel model by its published code */
 export function standardFuelModel(code: string): FuelModel | undefined {
   return SCOTT_BURGAN_FUEL_MODELS[code] ?? ANDERSON_FUEL_MODELS[code] ?? NON_BURNABLE_FUEL_MODELS[code];
 }
@@ -201,7 +169,6 @@ export function totalFuelLoad(fuel: FuelModel): number {
   return l.oneHour + l.tenHour + l.hundredHour + l.liveHerb + l.liveWoody;
 }
 
-/** Fuel moisture by size class, as a fraction of dry mass (0.06 = 6 %). */
 export interface FuelMoisture {
   oneHour: number;
   tenHour: number;
@@ -210,10 +177,6 @@ export interface FuelMoisture {
   liveWoody: number;
 }
 
-/**
- * Scott & Burgan 2005 fuel moisture scenarios: dead D1 (very low) to D4 (high) and live L1 (fully
- * cured herbs) to L4 (fully green), keyed `D1L1`..`D4L4`.
- */
 export const MOISTURE_SCENARIOS: Readonly<Record<string, FuelMoisture>> = (() => {
   const dead = [
     [0.03, 0.04, 0.05],

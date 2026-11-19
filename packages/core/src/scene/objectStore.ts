@@ -43,9 +43,7 @@ export interface PlaceOptions {
   parentSpace?: string;
   rotation?: number;
   visual?: ObjectVisual;
-  /** Initial {@link SceneObject.state} for this placement. */
   state?: Record<string, unknown>;
-  /** Initial {@link SceneObject.slots} contents; omit to start from the catalog `slotInventory` layout's empty slots. */
   slots?: InventoryState;
   /** Per-placement rig animation override stored on the placed {@link SceneObject}; same shape as `ModelConfig.animation`. Omit to keep the catalog-resolved default. */
   animation?: ModelAnimationConfig | "auto" | "none";
@@ -63,11 +61,8 @@ export interface ObjectStore {
   move(instanceId: string, x: number, y: number, z: number): boolean;
   rotate(instanceId: string, rotationY: number): boolean;
   setVisual(instanceId: string, visual: ObjectVisual | undefined): boolean;
-  /** Replace {@link SceneObject.state} wholesale; `undefined` drops the field. Returns `false` when the instance is not placed. */
   setState(instanceId: string, state: Record<string, unknown> | undefined): boolean;
-  /** Shallow-merge `patch` into {@link SceneObject.state}; a key set to `undefined` is removed. Returns `false` when the instance is not placed. */
   patchState(instanceId: string, patch: Record<string, unknown>): boolean;
-  /** Replace {@link SceneObject.slots} wholesale; prefer `ctx.scene.object.slots` which validates against the catalog layout. */
   setSlots(instanceId: string, slots: InventoryState | undefined): boolean;
   get(instanceId: string): SceneObject | null;
   list(filter?: ObjectListFilter): readonly SceneObject[];
@@ -80,7 +75,6 @@ export interface ObjectStore {
   placements(): number;
   at(x: number, y: number, z: number, tolerance?: number): SceneObject[];
   inBox(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
-  /** Bumps whenever membership, a position or a rotation changes — cheap cache key for consumers. */
   version(): number;
   /** Bump {@link version} for a change the store cannot see, such as a consumer-owned collider set. */
   markSpatialChange(): void;
@@ -88,15 +82,8 @@ export interface ObjectStore {
   subscribe(listener: () => void): () => void;
   /** Notified only when the object set changes (place/remove), never on move/rotate/setVisual — markers read live poses imperatively. */
   subscribeMembership(listener: () => void): () => void;
-  /** The placed set, plus every object a {@link retain} source holds out of the scene. */
   snapshot(): readonly SceneObject[];
-  /**
-   * Keep objects that left the scene for a while (a streamed-out cell's props) in {@link snapshot}, so
-   * a save written while they are away still holds them; a placed object with the same id wins.
-   * Returns the release.
-   */
   retain(source: () => readonly SceneObject[]): () => void;
-  /** Replace the placed set with `objects` — the client half of `objects` replication; instances absent from the payload are removed. */
   hydrate(objects: readonly SceneObject[]): void;
 }
 
@@ -143,7 +130,6 @@ function cellKey(cx: number, cy: number, cz: number): string {
 function cellKeyOf(position: EntityPosition): string {
   return cellKey(cellIndexOf(position[0]), cellIndexOf(position[1]), cellIndexOf(position[2]));
 }
-
 
 function objectInAabb(object: SceneObject, min: EntityPosition, max: EntityPosition): boolean {
   const [x, y, z] = object.position;

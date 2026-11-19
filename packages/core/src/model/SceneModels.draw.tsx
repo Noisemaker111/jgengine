@@ -15,7 +15,6 @@ import {
   type MeasureTarget,
 } from "./entityModelDraw.draw";
 
-/** Draws an entity as a camera-facing sprite, playing its atlas clip when it has one. */
 export function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   return <EngineDrawMount create={() => entitySpriteDraw(sprite)} deps={[sprite]} />;
 }
@@ -93,7 +92,6 @@ interface IsolatedEntityModelProps {
   model: ModelConfig;
   instanceId?: string | undefined;
   measure?: MeasureTarget;
-  /** Sprite drawn in place of the model when its load or build fails. */
   sprite?: EntitySpriteConfig | undefined;
 }
 
@@ -120,7 +118,6 @@ export function IsolatedEntityModel(props: IsolatedEntityModelProps) {
   );
 }
 
-/** Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement. */
 export function EntityModel({
   model,
   instanceId,
@@ -130,7 +127,6 @@ export function EntityModel({
   model: ModelConfig;
   instanceId?: string | undefined;
   measure?: MeasureTarget | undefined;
-  /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */
   lodLevel?: number;
 }) {
   const ctx = useOptionalGameContext();

@@ -1,19 +1,12 @@
 // @skill jgengine-world
 
-/**
- * The wing ground effect: near the ground the wingtip vortices are squashed and induced drag falls, which shortens the
- * take-off roll and lets an aircraft float in the flare. McCormick's factor `φ = (16h/b)² / (1 + (16h/b)²)` scales the
- * induced drag at wing height `h` over span `b`.
- */
 export interface AircraftWingGroundEffect {
   /**
    * Multiplier on the effect: `0` off, `1` McCormick's factor (default), past `1` more of the induced drag relieved
    * (never below none); sane over `0..4`.
    */
   strength?: number;
-  /** Wing height above the centre of gravity, m (default `0`; a high wing is about `0.9` on a light aircraft). */
   wingHeight?: number;
-  /** Wing span, m. */
   span: number;
 }
 

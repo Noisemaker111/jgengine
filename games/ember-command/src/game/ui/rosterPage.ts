@@ -11,9 +11,7 @@ export interface RosterMetrics {
 }
 
 export interface RosterFit {
-  /** Crests shown per page. Equals the whole roster when it fits without paging. */
   pageSize: number;
-  /** True when the roster does not fit and the row needs paging arrows. */
   paged: boolean;
 }
 
@@ -35,14 +33,12 @@ export interface RosterPage {
   /** Zero-based page actually shown (requested page clamped into range). */
   page: number;
   pageCount: number;
-  /** Slice bounds into the roster: `units.slice(start, end)`. */
   start: number;
   end: number;
   hasPrev: boolean;
   hasNext: boolean;
 }
 
-/** Which slice of a roster of `count` units is shown on `requested` page at `pageSize` per page. */
 export function rosterPage(count: number, pageSize: number, requested: number): RosterPage {
   const size = Math.max(1, Math.floor(pageSize));
   const total = Math.max(0, Math.floor(count));

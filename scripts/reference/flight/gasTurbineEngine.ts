@@ -3,31 +3,22 @@ import type { GasStream, GasTurbineCycle, GasTurbineFlight } from "./gasTurbine"
 import type { ReferenceAirData, ReferencePropulsion } from "./referenceAircraft";
 import { SEA_LEVEL_PRESSURE } from "./standardAtmosphere";
 
-/** Rotor dynamics and fuel control of a {@link GasTurbineEngine}. */
 export interface GasTurbineEngineOptions {
   /** Polar moment of inertia of each spool, kg·m². */
   lowInertia: number;
   highInertia: number;
-  /** Design (100%) speed of each spool, rev/min. */
   lowRpm: number;
   highRpm: number;
-  /** Ground idle: physical high-spool speed, share of design. */
   idleSpeed: number;
-  /** Fuel control acceleration limit: burner fuel flow over the steady flow at the current speed (default `1.5`). */
   accelerationLimit?: number;
-  /** Fuel control deceleration limit (default `0.5`). */
   decelerationLimit?: number;
-  /** Speed governor: fuel flow change, as a share of steady flow, per unit high-spool speed error (default `12`). */
   governorGain?: number;
   /** Afterburner light-up and modulation rate, share of full afterburner per second (default `1`). */
   afterburnerRate?: number;
-  /** Installed over uninstalled thrust, for inlet, nozzle and bleed losses the cycle leaves out (default `1`). */
   installation?: number;
-  /** Highest flight Mach number the operating-line tables cover (default `2`). */
   maxMach?: number;
 }
 
-/** Power lever split: `dry` runs idle to maximum dry thrust, `afterburner` adds afterburning on top. */
 export interface GasTurbineCommand {
   /** `0..1`, linear in steady thrust between idle and maximum dry. */
   dry: number;
@@ -35,9 +26,7 @@ export interface GasTurbineCommand {
   afterburner: number;
 }
 
-/** What {@link GasTurbineEngine.evaluate} writes. */
 export interface GasTurbineEngineOutput {
-  /** Installed net thrust, N. */
   thrust: number;
   /** Burner plus afterburner fuel flow, kg/s. */
   fuelFlow: number;
@@ -45,17 +34,14 @@ export interface GasTurbineEngineOutput {
   rates: [number, number, number];
   /** Spool angular momentum about the engine axis, kg·m²/s. */
   angularMomentum: number;
-  /** Burner exit temperature, K. */
   turbineInletTemperature: number;
 }
 
-/** A gas turbine with spool dynamics, flying a {@link GasTurbineCycle}'s operating line. */
 export interface GasTurbineEngine {
   readonly cycle: GasTurbineCycle;
   readonly options: Readonly<GasTurbineEngineOptions>;
   /** `[low rpm, high rpm, afterburner share]`. */
   readonly stateNames: readonly ["lowSpool", "highSpool", "afterburner"];
-  /** The steady state for a command in a flight condition. */
   steady(flight: GasTurbineFlight, command: GasTurbineCommand): [number, number, number];
   evaluate(state: readonly number[], command: GasTurbineCommand, flight: GasTurbineFlight, out: GasTurbineEngineOutput): void;
 }
@@ -66,7 +52,6 @@ const TEMPERATURE_LOW = 180;
 const TEMPERATURE_STEP = 25;
 const TEMPERATURES = 7;
 
-/** One operating line at one flight condition, idle to maximum dry, at sea-level static pressure. */
 interface Column {
   highSpeed: Float64Array;
   lowSpeed: Float64Array;
@@ -80,7 +65,6 @@ interface Column {
   exhaustAir: Float64Array;
   exhaustFuel: Float64Array;
   exhaustTemperature: Float64Array;
-  /** Exhaust total pressure over free-stream static. */
   exhaustPressure: Float64Array;
 }
 
@@ -293,11 +277,7 @@ export function createGasTurbineEngine(cycle: GasTurbineCycle, options: GasTurbi
   };
 }
 
-/**
- * A {@link ReferencePropulsion} driving a {@link GasTurbineEngine} along body x: thrust, fuel-burning spool states and
- * the spools' gyroscopic momentum. `command` maps the pilot's throttle to the engine's power lever.
- * @capability gas-turbine plug a cycle-based jet engine into a reference aircraft
- */
+/** @capability gas-turbine plug a cycle-based jet engine into a reference aircraft */
 export function gasTurbinePropulsion(engine: GasTurbineEngine, command: (throttle: number) => GasTurbineCommand): ReferencePropulsion {
   const out: GasTurbineEngineOutput = { thrust: 0, fuelFlow: 0, rates: [0, 0, 0], angularMomentum: 0, turbineInletTemperature: 0 };
   const flight: GasTurbineFlight = { mach: 0, temperature: 288.15, pressure: SEA_LEVEL_PRESSURE };

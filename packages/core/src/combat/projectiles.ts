@@ -23,7 +23,6 @@ import {
 export interface ProjectileShotInput {
   from: string;
   via: EffectVia;
-  /** How this shot travels and what it does on contact. Omitted means the shot's numeric stats are adapted once. */
   spec?: ShotSpec;
   aim: Aim;
   effect: string;
@@ -31,37 +30,27 @@ export interface ProjectileShotInput {
   originPolicy?: ShotOriginPolicy;
   /** Opt into simulation-owned travel. Values are captured at launch; time is in game-seconds. */
   travel?: ProjectileTravelConfig;
-  /**
-   * How the landing reads on screen (sparks, scorch, blast, camera kick), for presentation only; it changes
-   * nothing about travel or damage. Omitted, the impact layer guesses from `via.item` and `effect`.
-   */
   impact?: ImpactClass;
 }
 
-/** Captured launch settings for authoritative live travel. */
 export interface ProjectileTravelConfig {
   speed: number;
   lifetime: number;
-  /** Forwarded to the injected sweep; the default scene query sweeps a centerline. */
   radius?: number;
   gravity?: EntityPosition;
   /** Game-owned wind coupling in 1/seconds, from 0 to 1e12; omission leaves wind response off. */
   windResponse?: number;
-  /** Target bits read by the injected environmental force sampler. */
   forceMask?: number;
   /** Cap injected acceleration in m/s², from 0 to 1e12, independently of gravity. */
   maxAcceleration?: number;
 }
 
-/** Nearest contact returned by a live segment sweep. */
 export interface ProjectileTravelImpact {
-  /** Earliest contact fraction along this step, including moving targets. */
   fraction: number;
   at: EntityPosition;
   target?: ProjectileHit;
 }
 
-/** Authoritative clock, collision and environmental acceleration providers. */
 export interface ProjectileTravelDeps {
   /** Authoritative game-seconds; no wall-clock fallback is used for live travel. */
   now(): number;
@@ -73,7 +62,6 @@ export interface ProjectileTravelDeps {
   maxRetained?: number;
 }
 
-/** Detached pose of one active projectile pellet for presentation. */
 export interface LiveProjectile {
   shotId: string;
   pellet: number;
@@ -86,7 +74,6 @@ export interface LiveProjectile {
   radius: number;
 }
 
-/** Serializable motion state of one projectile pellet. */
 export interface ProjectileFlightState {
   position: EntityPosition;
   velocity: EntityPosition;
@@ -95,7 +82,6 @@ export interface ProjectileFlightState {
   active: boolean;
 }
 
-/** Serializable captured launch and settlement state. */
 export interface ProjectileShotState {
   shotId: string;
   input: ProjectileShotInput;
@@ -109,7 +95,6 @@ export interface ProjectileShotState {
   at?: EntityPosition;
 }
 
-/** Detached projectile owner state for replay and restore. */
 export interface ProjectileSystemState {
   shotCounter: number;
   shots: ProjectileShotState[];
@@ -141,10 +126,8 @@ export type RaycastHit = EntityRaycastHit | ProjectileObjectHit;
 
 export type Raycast = (from: string, aim: Aim, range: number, originPolicy?: ShotOriginPolicy) => RaycastHit[];
 
-/** Exactly-once settlement with launch identity and actual applied effects. */
 export interface ProjectileSettleReport {
   shotId: string;
-  /** Actual applied effects; empty for misses and cover impacts. */
   hits: readonly EffectResult[];
   from: string;
   origin: EntityPosition;
@@ -158,9 +141,7 @@ export interface ProjectileSettleReport {
    * Presentation uses it to keep straight-line tracers off arced projectiles.
    */
   ballistic: boolean;
-  /** The catalog item the shot was fired with (`via.item`), so presentation can tell a grenade from a bullet. */
   item?: string;
-  /** The shot's `impact` tag, when it set one. */
   impact?: ImpactClass;
 }
 
@@ -240,12 +221,9 @@ export type SettleResult =
   | { status: "rejected"; shotId: string; reason: string };
 
 export interface ProjectileSystem {
-  /** Predict the center ray without consuming random samples or applying effects. */
   willHitProjectile(input: ProjectileShotInput): ProjectilePrediction;
-  /** Capture aim, origin-policy vectors and cone samples independently of subsequent caller mutation. */
   fireProjectile(input: ProjectileShotInput): string;
   settleProjectile(shotId: string): SettleResult;
-  /** Advance live shots once per authoritative simulation step; settled shots emit no further effects. */
   advanceProjectiles(dt: number, time: number): SettleResult[];
   activeProjectiles(): LiveProjectile[];
   snapshot(): ProjectileSystemState;
@@ -350,7 +328,6 @@ function asSceneHits(hits: readonly RaycastHit[]): SceneRaycastHit[] {
   }));
 }
 
-/** Validate captured travel settings before a launch or restore can mutate the owner. */
 function validateProjectileTravel(travel: ProjectileTravelConfig): void {
   if (!(travel.speed > 0) || !Number.isFinite(travel.speed) || !(travel.lifetime > 0) || !Number.isFinite(travel.lifetime) ||
     !(travel.radius === undefined || (Number.isFinite(travel.radius) && travel.radius >= 0)) ||
@@ -391,11 +368,7 @@ function sampleCone(
   ];
 }
 
-/**
- * Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
- *
- * @capability projectiles spawn and advance projectiles with travel and hit resolution
- */
+/** @capability projectiles spawn and advance projectiles with travel and hit resolution */
 export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem {
   const shots = new Map<string, ProjectileShotState>();
   let shotCounter = 0;

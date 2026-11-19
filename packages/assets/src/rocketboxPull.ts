@@ -37,7 +37,6 @@ interface GitHubFile {
   type: "file" | "dir";
 }
 
-/** Fetch and settings for {@link pullRocketboxModel}. */
 export interface PullRocketboxOptions {
   modelsRoot: string;
   fetchImpl?: typeof fetch;
@@ -47,7 +46,6 @@ export interface PullRocketboxOptions {
   githubToken?: string;
 }
 
-/** What one Rocketbox pull wrote. */
 export interface PulledRocketboxModel {
   name: string;
   file: string;
@@ -230,12 +228,10 @@ async function attachTextures(
   }
 }
 
-/** The upstream folder a clip's FBX lives in: in-place (static) or travelling (xy, xyz) takes. */
 function clipFolder(clip: RocketboxClip): string {
   return `Assets/Animations/${ROCKETBOX_CLIP_FOLDERS[clip.folder]}`;
 }
 
-/** Settings for {@link pullRocketboxClip}. */
 export interface PullRocketboxClipOptions {
   /** The folder `clip.glb` is written into. */
   outDir: string;
@@ -243,7 +239,6 @@ export interface PullRocketboxClipOptions {
   githubToken?: string;
 }
 
-/** What one Rocketbox clip pull wrote. */
 export interface PulledRocketboxClip {
   name: string;
   file: string;
@@ -286,11 +281,7 @@ export interface LoadedRocketboxClip {
   bones: readonly string[];
 }
 
-/**
- * Load one Rocketbox animation clip without writing it: the FBX's Bip01 skeleton under a 0.01 root
- * (meshes, lights and helpers dropped) and its animation named `clip.name`, ready to retarget.
- * @internal
- */
+/** @internal */
 export async function loadRocketboxClip(clip: RocketboxClip, options: { fetchImpl?: typeof fetch; githubToken?: string | undefined }): Promise<LoadedRocketboxClip> {
   const source = new RocketboxSource(options.fetchImpl ?? fetch, options.githubToken);
   const loader = fbxLoader();

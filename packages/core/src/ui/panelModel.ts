@@ -13,21 +13,12 @@ export interface PanelPosition {
   y: number;
 }
 
-/**
- * A caller-authored panel/window declaration — the DATA input to the model. Only `id` is required so
- * a bag, a character sheet, and a one-off dialog all share the shape.
- */
 export interface PanelDef {
   id: string;
-  /** Human title shown in the window's title bar; falls back to `id`. */
   title?: string;
-  /** Keybind that opens/toggles the panel — a `KeyboardEvent.code` (`"KeyB"`) or key (`"b"`), matched case-insensitively by {@link panelByHotkey}. */
   hotkey?: string;
-  /** Open on {@link createPanelState} (default false). */
   initial?: boolean;
-  /** Exclusive group: opening one panel in a group closes the others in it (e.g. only one center window). */
   group?: string;
-  /** Whether the player can close it (title-bar button / ESC). Default true; `false` pins it open. */
   closable?: boolean;
 }
 
@@ -43,13 +34,9 @@ export interface PanelMeta {
  * the defs so the reducers below need no defs argument. Plain JSON — persist and rehydrate it freely.
  */
 export interface PanelState {
-  /** Open panels, keyed by id (`true` for open). Closed panels are absent. */
   open: Record<string, true>;
-  /** z / focus order per open panel — the panel with the highest value is focused/on top. */
   z: Record<string, number>;
-  /** Per-panel position overrides; remembered across close/reopen. */
   pos: Record<string, PanelPosition>;
-  /** Group/closable metadata captured from the defs at construction. */
   meta: Record<string, PanelMeta>;
   /** Next z value to assign on open/focus — monotonic so focus order is deterministic. */
   nextZ: number;
@@ -77,7 +64,6 @@ export function createPanelState(defs: readonly PanelDef[]): PanelState {
   return state;
 }
 
-/** Whether panel `id` is currently open. */
 export function isOpen(state: PanelState, id: string): boolean {
   return state.open[id] === true;
 }
@@ -112,12 +98,7 @@ export function openPanel(state: PanelState, id: string): PanelState {
   return { ...state, open, z, nextZ };
 }
 
-/**
- * Close panel `id`. No-op if it is already closed. Its position override is kept so reopening restores
- * the last placement.
- *
- * @capability panel-close close a window while remembering its last position
- */
+/** @capability panel-close close a window while remembering its last position */
 export function closePanel(state: PanelState, id: string): PanelState {
   if (state.open[id] !== true) return state;
   const open: Record<string, true> = { ...state.open };
@@ -127,12 +108,7 @@ export function closePanel(state: PanelState, id: string): PanelState {
   return { ...state, open, z };
 }
 
-/**
- * Toggle panel `id` — open it (with group exclusivity) if closed, close it if open. The one-key
- * behavior behind a keybind like `B` for the bag.
- *
- * @capability panel-toggle toggle a window open/closed from a single keybind
- */
+/** @capability panel-toggle toggle a window open/closed from a single keybind */
 export function togglePanel(state: PanelState, id: string): PanelState {
   return isOpen(state, id) ? closePanel(state, id) : openPanel(state, id);
 }
@@ -163,12 +139,7 @@ function topPanel(state: PanelState): string | null {
   return top;
 }
 
-/**
- * Close the topmost closable open panel — the ESC handler. Skips panels pinned with `closable: false`
- * and returns the same state when nothing closable is open.
- *
- * @capability panel-close-top close the focused (topmost) closable window — the ESC behavior
- */
+/** @capability panel-close-top close the focused (topmost) closable window — the ESC behavior */
 export function closeTopPanel(state: PanelState): PanelState {
   const ordered = orderedOpenIds(state);
   for (let i = ordered.length - 1; i >= 0; i--) {
@@ -183,13 +154,7 @@ function orderedOpenIds(state: PanelState): string[] {
   return Object.keys(state.open).sort((a, b) => (state.z[a] ?? 0) - (state.z[b] ?? 0));
 }
 
-/**
- * Find the panel whose `hotkey` matches `code`, case-insensitively — the keybind router. `code` may be
- * a `KeyboardEvent.code` (`"KeyB"`) or key (`"b"`); it is compared verbatim to each def's `hotkey`, so
- * author the hotkey in whichever form the caller feeds in. Returns the first match's id, or null.
- *
- * @capability panel-hotkey resolve a keybind (code or key) to the panel id it toggles
- */
+/** @capability panel-hotkey resolve a keybind (code or key) to the panel id it toggles */
 export function panelByHotkey(defs: readonly PanelDef[], code: string): string | null {
   const needle = code.toLowerCase();
   for (const def of defs) {

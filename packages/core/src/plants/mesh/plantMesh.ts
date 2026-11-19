@@ -7,52 +7,30 @@ import { frondPose, frondSpine, isFrondShape, type FrondPose } from "../structur
 import { hashPlantStructure, PLANT_CLUSTER_LEVELS, PLANT_ORGAN, PLANT_REGION, PLANT_SHOOT_LEAF_SPAN, type PlantStructure } from "../structure/plantStructure";
 import { PLANT_LEAF_ATLAS_CELL_COUNT, PLANT_LEAF_ATLAS_CELLS } from "./plantLeafAtlas";
 
-/** Detail of each mesh level, highest first: leaves, shoot cards, then leaf clusters at two sizes. */
 export const PLANT_MESH_LODS = [1, 0.5, 0.25, 0.1] as const;
 
-/** Most triangles a plant mesh may have at each level of {@link PLANT_MESH_LODS}, at any age. */
 export const PLANT_MESH_TRIANGLE_BUDGETS = [120_000, 30_000, 8_000, 1_500] as const;
 
-/** Share of each level's budget the wood may take; the foliage gets the rest. */
 const BARK_SHARE = [0.33, 0.27, 0.25, 0.2] as const;
 
-/**
- * How a grown plant looks: everything a style changes without regrowing it. A game builds its own
- * looks from these parts; the engine names none.
- * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
- */
+/** @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets */
 export interface PlantStyle {
-  /**
-   * `leaves`: textured from the species' leaf shape at every level: each leaf near, leafy shoot cards
-   * further out, crossed leaf-cluster cards far away. `clumps`: untextured rounded clumps per shoot
-   * and limb (toon, clay).
-   */
   foliage: "leaves" | "clumps";
   /** Drawn leaf size over the species' leaf size, 0.5..5. */
   leafScale: number;
-  /** Multiplies the leaf colours; `#ffffff` keeps the species' own. */
   leafTint: string;
-  /** Multiplies the bark colours; `#ffffff` keeps the species' own. */
   barkTint: string;
-  /** 0 grey .. 1 as grown .. 2 vivid. */
   saturation: number;
-  /** Overall brightness, 1 as grown. */
   brightness: number;
   /** Per-leaf and per-ring colour variation, 0..0.5. */
   colorJitter: number;
-  /** 0 tints the grown colours .. 1 paints every surface its tint colour flat (clay, chalk, a silhouette). */
   paint: number;
-  /** `lit`: physically lit. `ramp`: cel-shaded through {@link PlantStyle.ramp}. */
   shading: "lit" | "ramp";
   ramp: ToonRamp;
-  /** Generated bark grain on the wood (lit shading only). */
   barkGrain: boolean;
 }
 
-/**
- * The style a plant gets when none is given: the species' own colours, lit, with real leaves.
- * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
- */
+/** @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets */
 export const DEFAULT_PLANT_STYLE: PlantStyle = {
   foliage: "leaves",
   leafScale: 1,
@@ -67,12 +45,10 @@ export const DEFAULT_PLANT_STYLE: PlantStyle = {
   barkGrain: true,
 };
 
-/** What the draw side needs to pick materials for a plant mesh. */
 export interface PlantMeshLook {
   shading: "lit" | "ramp";
   ramp: ToonRamp;
   barkGrain: boolean;
-  /** The leaf shape the foliage's atlas is baked from ({@link bakePlantLeafAtlas}); null draws untextured foliage. */
   leafAtlas: LeafShapeParams | null;
 }
 
@@ -82,34 +58,25 @@ export interface PlantMeshLook {
  * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
  */
 export interface PlantMesh {
-  /** {@link hashPlantStructure} of the structure it was built from. */
   structureHash: string;
   speciesId: string;
   ageYears: number;
-  /** Index into {@link PLANT_MESH_LODS}. */
   lod: number;
   stats: PlantStructure["stats"];
   bark: NatureMesh;
   leaves: NatureMesh;
-  /** Two atlas coordinates per foliage vertex when {@link PlantMeshLook.leafAtlas} is set, else empty. */
   leafUvs: Float32Array;
   look: PlantMeshLook;
   triangles: number;
   bounds: { min: [number, number, number]; max: [number, number, number] };
 }
 
-/**
- * True when a generator output is a {@link PlantMesh}.
- * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
- */
+/** @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets */
 export function isPlantMesh(value: unknown): value is PlantMesh {
   return typeof value === "object" && value !== null && "structureHash" in value && "bark" in value && "leaves" in value && "look" in value;
 }
 
-/**
- * The level of {@link PLANT_MESH_LODS} a generator detail value draws.
- * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
- */
+/** @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets */
 export function plantMeshLod(detail: number): number {
   if (detail >= 0.75) return 0;
   if (detail >= 0.375) return 1;
@@ -117,7 +84,6 @@ export function plantMeshLod(detail: number): number {
   return 3;
 }
 
-/** Growable vertex and index buffers with explicit normals, emitted as a {@link NatureMesh}. */
 class PartWriter {
   positions: Float32Array = new Float32Array(3 * 1024);
   normals: Float32Array = new Float32Array(3 * 1024);
@@ -148,7 +114,6 @@ class PartWriter {
     return this.vertexCount - 1;
   }
 
-  /** Atlas coordinates of the vertex just written. */
   uv(u: number, v: number): void {
     const at = (this.vertexCount - 1) * 2;
     this.uvs[at] = u;
@@ -236,8 +201,6 @@ function hash01(a: number, b: number): number {
   return ((h ^ (h >>> 15)) >>> 0) / 4294967296;
 }
 
-
-/** Colour post-process a style applies to every vertex colour. */
 interface ColorGrade {
   tint: NatureRgb;
   paint: number;
@@ -276,7 +239,6 @@ const DRY_LEAF: NatureRgb = [0.55, 0.47, 0.25];
 const DEADWOOD: NatureRgb = [0.55, 0.53, 0.5];
 const YOUNG_SHOOT: NatureRgb = [0.45, 0.38, 0.22];
 
-/** Each leaf row's colour before grading: season, depth in the crown and health. */
 function leafRowColors(structure: PlantStructure): Float32Array {
   const rows = structure.leaves.size.length;
   const out = new Float32Array(rows * 3);
@@ -324,7 +286,6 @@ function normalizeInto(out: Float64Array, x: number, y: number, z: number): void
   out[2] = z / length;
 }
 
-/** Two unit vectors perpendicular to (ux, uy, uz) and to each other, into scratchA and scratchB. */
 function basisAround(ux: number, uy: number, uz: number): void {
   const helperX = Math.abs(uy) < 0.9 ? 0 : 1;
   const helperY = Math.abs(uy) < 0.9 ? 1 : 0;
@@ -357,10 +318,6 @@ function sidesFor(radius: number, lod: number): number {
   return table[3] ?? 3;
 }
 
-/**
- * The thinnest wood radius drawn within a triangle budget: segments are drawn thickest first, each
- * costing two triangles per side of the axis it belongs to, until the budget runs out.
- */
 function radiusCutoff(radiusStart: Float32Array, axisRadius: Float32Array, lod: number, budget: number): number {
   const n = radiusStart.length;
   const byRadius = Array.from({ length: n }, (_, i) => i);
@@ -467,7 +424,6 @@ function addBark(build: BarkBuild): void {
   }
 }
 
-/** One axis as a tube with rotation-minimising rings and radial normals. */
 function addAxisTube(build: BarkBuild, xs: number[], ys: number[], zs: number[], rs: number[], segs: number[], color: Float64Array): void {
   const count = xs.length;
   if (count < 2) return;
@@ -535,7 +491,6 @@ interface FoliageBuild {
   budget: number;
 }
 
-/** Outward direction of a leaf row from its limb clump's centre, for soft volumetric leaf lighting. */
 function outwardInto(structure: PlantStructure, row: number, out: Float64Array): void {
   const level = structure.clusters.levels[Math.min(1, PLANT_CLUSTER_LEVELS - 1)];
   const id = structure.leaves.cluster[row * PLANT_CLUSTER_LEVELS + 1] ?? 0;
@@ -546,7 +501,6 @@ function outwardInto(structure: PlantStructure, row: number, out: Float64Array):
   normalizeInto(out, (p[row * 3] ?? 0) - cx, (p[row * 3 + 1] ?? 0) - cy + 0.3, (p[row * 3 + 2] ?? 0) - cz);
 }
 
-/** Left edge of an atlas cell in texture u. */
 function cellU(cell: number): number {
   return cell / PLANT_LEAF_ATLAS_CELL_COUNT;
 }
@@ -695,7 +649,6 @@ interface LeafGroups {
   slots: number;
   /** Final grid cell size, metres. */
   cell: number;
-  /** Per slot: summed position (3) then summed colour (3). */
   sums: Float64Array;
   members: Uint32Array;
   meanMembers: number;
@@ -707,10 +660,6 @@ interface LeafGroups {
   reach: Float64Array;
 }
 
-/**
- * Radius of a ball holding points spread evenly through it, per unit of their RMS distance from its
- * centre: points evenly through a ball of radius R lie √(3/5)·R from its centre, root-mean-square.
- */
 const BALL_RADIUS_PER_RMS = 1 / Math.sqrt(3 / 5);
 
 /**
@@ -834,9 +783,6 @@ function addClusterCards(build: FoliageBuild, baseCell: number, level: boolean):
 /** Atlas texel inside the leaf blade, for organs drawn in the textured foliage pass. */
 const ORGAN_UV = [0.5 / PLANT_LEAF_ATLAS_CELL_COUNT, 0.5] as const;
 
-/**
- * Clusters each flower or fruit organ draws at a level: none past level 2, up to three up close.
- */
 function organClusters(count: number, lod: number): number {
   if (lod > 2) return 0;
   return Math.min(lod === 0 ? 3 : 1, Math.max(1, Math.ceil(count / 6)));
@@ -891,9 +837,7 @@ function addOrgans(build: FoliageBuild, lod: number, textured: boolean, reserve:
   }
 }
 
-/** Spine steps of one frond at each level. */
 const FROND_SEGMENTS = [8, 6, 4, 2] as const;
-/** Width of the stalk below a frond's blade, as a share of the blade's width. */
 const FROND_STALK_WIDTH = 0.08;
 
 /**
@@ -1018,21 +962,15 @@ function addFoliage(build: FoliageBuild, lod: number): void {
   }
 }
 
-/** What {@link buildPlantMesh} draws. */
 export interface PlantMeshInput {
   structure: PlantStructure;
   style?: PlantStyle;
   /** Generator detail, 0..1; picks the level of {@link PLANT_MESH_LODS}. Default 1. */
   detail?: number;
-  /** The structure's hash when the caller already has it. */
   structureHash?: string;
 }
 
-/**
- * Draw a grown plant in one style at one detail level, within that level's triangle budget at any
- * age: leaf blades near, shoot cards, then limb and crown clumps; wood thinnest-first culled to fit.
- * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
- */
+/** @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets */
 export function buildPlantMesh(input: PlantMeshInput): PlantMesh {
   const { structure } = input;
   const style = input.style ?? DEFAULT_PLANT_STYLE;

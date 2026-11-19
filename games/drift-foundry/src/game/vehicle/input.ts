@@ -2,7 +2,6 @@ import type { InputSnapshot } from "@jgengine/core/runtime/inputSnapshot";
 import type { DriveAxis } from "./controller";
 import { createActionStateTracker, toActionStateBindingMap, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 
-/** Host semantic actions keep native controls and keyboard rebinds in agreement. */
 export interface DriveInput {
   sample(dt: number, input: InputSnapshot, active: boolean): DriveAxis;
   reset(): void;
@@ -12,7 +11,6 @@ export interface DriveInput {
   keyDown(code: string): string | null;
   keyUp(code: string): void;
   isDown(action: string): boolean;
-  /** Rebuild the keyboard tracker from the game's live bindings (its `input` map with rebinds applied). */
   refreshBindings(bindings: ActionCodesMap): void;
 }
 

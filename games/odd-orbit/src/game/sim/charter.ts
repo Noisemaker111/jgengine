@@ -8,19 +8,11 @@ import { FURNITURE_BY_ID } from "../objects/catalog";
 import { TERM_RENT } from "./economy";
 import { createCharter, noteEvent, type CharterState, type HouseholdState } from "../session/types";
 
-/**
- * The Habitat Authority's charter: four terms of five days. Each term raises the base rent and sets
- * three goals; a review at the term's last midnight pays a grant per goal met and gives a strike
- * when fewer than two were met. Two strikes, or debt past the bailiff line, end the charter in
- * eviction; four terms with at most one strike keep it.
- */
 export const TERM_DAYS = 5;
 export const GOALS_TO_PASS = 2;
 export const STRIKES_TO_EVICT = 2;
 export const GRANT_PER_GOAL = 60;
-/** Debt at or past this at any midnight evicts the household. */
 export const BAILIFF_DEBT = 300;
-/** Debt at or past this draws the Authority's final notice. */
 export const FINAL_NOTICE_DEBT = 150;
 
 export type CharterMetric =
@@ -31,13 +23,11 @@ export interface CharterGoal extends ThresholdObjective {
   id: string;
   metric: CharterMetric;
   label: string;
-  /** What the player does about it, in the household's words. */
   hint: string;
 }
 
 export interface CharterTerm {
   name: string;
-  /** Base habitat rent per night, before each furnishing's running cost. */
   rent: number;
   goals: readonly CharterGoal[];
 }
@@ -98,7 +88,6 @@ export function metricValue(state: HouseholdState, objects: readonly SceneObject
   }
 }
 
-/** The live goal sheet for the current term, as the charter panel reads it. */
 export function termGoals(state: HouseholdState, objects: readonly SceneObject[]): ObjectiveSummary & { goals: readonly CharterGoal[] } {
   const goals = termOf(state).goals;
   const byId = new Map(goals.map((goal) => [goal.id, goal]));
@@ -110,10 +99,6 @@ export function termEndDay(state: HouseholdState): number {
   return (charterOf(state).term + 1) * TERM_DAYS;
 }
 
-/**
- * Run after a midnight settles. Applies the bailiff line, then closes the term when its last day
- * has passed: grant, stars, strike, and the charter's outcome.
- */
 export function reviewCharter(state: HouseholdState, objects: readonly SceneObject[], closedDayIncome: number, notices: Pick<NoticeFeed, "push">): void {
   const charter = { ...charterOf(state) };
   state.charter = charter;
@@ -159,7 +144,6 @@ export function reviewCharter(state: HouseholdState, objects: readonly SceneObje
   else noteEvent(state, notices, `${head}${strike ? " — a strike" : ""}. Rent rises to ${TERMS[charter.term]!.rent}.`, strike ? "warn" : "success");
 }
 
-/** Total goals met across closed terms, out of twelve, and the Authority's word for it. */
 export function charterGrade(charter: CharterState): { stars: number; of: number; word: string } {
   const stars = charter.stars.reduce((sum, n) => sum + n, 0);
   const of = TERMS.length * 3;

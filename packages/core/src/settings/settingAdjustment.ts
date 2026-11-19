@@ -1,9 +1,6 @@
 import type { SettingKind, SettingOption, SettingValue } from "./settingsModel";
 
-/**
- * Step a slider within its bounds, flip a toggle or cycle a selection.
- * @capability adjust-setting-row step a settings row value once, for keyboard and gamepad alike
- */
+/** @capability adjust-setting-row step a settings row value once, for keyboard and gamepad alike */
 export function adjustSettingRow(row: { kind: SettingKind; value: SettingValue; min?: number | undefined; max?: number | undefined; step?: number | undefined; options?: readonly SettingOption[] | undefined }, delta: -1 | 1): SettingValue | undefined {
   if (row.kind === "toggle") return !Boolean(row.value);
   if (row.kind === "select") {

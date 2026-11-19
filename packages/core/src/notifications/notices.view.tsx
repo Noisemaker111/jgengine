@@ -11,7 +11,6 @@ import { KitToast, useHasUiKit, useUiKit } from "@jgengine/core/ui/kit/uiKitRoot
 
 export type { Notice, NoticeTone } from "@jgengine/core/notifications/notices";
 
-/** Where {@link NoticeStack} sits: below top-edge HUD bars, over the play area, or above bottom action bars. */
 export type NoticePlacement = "top" | "center" | "bottom";
 
 const EXIT_MS = 200;
@@ -27,7 +26,7 @@ const TONE_COLOR: Record<NoticeTone, string> = {
 
 const KIT_TONE: Record<NoticeTone, KitTone> = { info: "accent", success: "good", warn: "warn", deny: "bad" };
 
-/** The entries a capped stack shows: every leaving one plus the newest `max` live ones. @internal */
+/** @internal */
 export function cappedShown<T extends { leaving: boolean }>(shown: readonly T[], max: number): T[] {
   const live = shown.filter((entry) => !entry.leaving).length;
   let skip = Math.max(0, live - Math.max(1, Math.floor(max)));
@@ -128,7 +127,7 @@ function ToneGlyph({ tone }: { tone: NoticeTone }) {
 
 type Shown = { notice: Notice; leaving: boolean };
 
-/** Keeps removed notices on screen, in place, for the exit animation; new ones join the end. @internal */
+/** @internal */
 export function reconcileShown(previous: readonly Shown[], live: readonly Notice[]): Shown[] {
   const byId = new Map(live.map((notice) => [notice.id, notice]));
   const next: Shown[] = previous.map((entry) => {
@@ -140,11 +139,7 @@ export function reconcileShown(previous: readonly Shown[], live: readonly Notice
   return next;
 }
 
-/**
- * Live notices of `feed`, re-rendering on change and pruning each one when it expires.
- *
- * @capability use-notice-list read the live notice feed in a game's own notice view
- */
+/** @capability use-notice-list read the live notice feed in a game's own notice view */
 export function useNoticeList(feed: NoticeFeed | null): readonly Notice[] {
   const list = useSyncExternalStore(
     feed?.subscribe ?? NO_FEED_SUBSCRIBE,
@@ -188,13 +183,9 @@ export function NoticeStack({
   placement?: NoticePlacement;
   /** Distance from the band's screen edge (px or CSS length), added to the safe-area inset. */
   offset?: number | string | undefined;
-  /** Move a top/bottom stack clear of registered HUD panels and touch controls in its column. Default true. */
   avoidHud?: boolean;
-  /** Default 85: above `ModalHost` (80) and `PanelHost` (40). */
   zIndex?: number;
-  /** Multiplies text and spacing (the shell passes the player's UI scale). */
   scale?: number;
-  /** Most notices on screen at once; older ones wait their turn off screen. Default 3. */
   maxVisible?: number;
   renderNotice?: (notice: Notice) => ReactNode;
 }) {

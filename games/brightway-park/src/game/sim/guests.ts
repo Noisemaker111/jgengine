@@ -28,14 +28,6 @@ import { accessOf } from "../build/links";
 import { groundAt } from "../build/terrain";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
-/**
- * The walking crowd. Guests are agents with bodies (game code), but everything they do to the park
- * goes through the world: a guest through the gate is the `admit` ripple, any money handed over is
- * `pay`, a stall's sale is that stall's `sold` fact, leaving is `leave`, and a ride breaking is the
- * `breakdown` ripple. They read the world back the same way: the ticket, whether the park is open,
- * its litter and what the crowd is saying (`park.buzz`).
- */
-
 const ARRIVE_DISTANCE = 2.2;
 const MAX_VISITS = 14;
 const MIN_SPEND = 2;
@@ -46,15 +38,12 @@ const LEAVE_PATIENCE = 30;
 const QUEUE_CHECK_SECONDS = 8;
 /** Seconds between a guest's checks on how it feels (plus up to as much again). */
 const THINK_SECONDS = 6;
-/** An entertainer in reach lifts a guest's mood by this much. */
 const ENTERTAINER_MOOD = 8;
-/** Below this mood a guest with no guard in reach kicks over bins... */
 const VANDAL_MOOD = 30;
 /** ...adding this much litter a second. */
 const VANDAL_LITTER = 0.05;
 const NO_COVER: ReadonlySet<StaffRole> = new Set();
 
-/** The needs a guest says out loud when they run low, and what it says. */
 const NEED_THOUGHTS: readonly { need: string; below: number; id: ThoughtId; text: string }[] = [
   { need: "toilet", below: 0.22, id: "toilet", text: "I really need the toilet" },
   { need: "nausea", below: 0.4, id: "sick", text: "I feel sick" },
@@ -64,7 +53,6 @@ const NEED_THOUGHTS: readonly { need: string; below: number; id: ThoughtId; text
   { need: "energy", below: 0.2, id: "tired", text: "I'm tired" },
 ];
 
-/** A guest checks how it feels and says the most pressing thing. */
 function feel(guest: GuestState, agent: ReturnType<typeof agentOf>, litter: number, cover: ReadonlySet<StaffRole>, now: number): void {
   for (const entry of NEED_THOUGHTS) {
     if (agent.needs.fraction(entry.need) < entry.below) {
@@ -76,7 +64,6 @@ function feel(guest: GuestState, agent: ReturnType<typeof agentOf>, litter: numb
   else if (cover.has("entertainer")) think(guest, "entertained", "That entertainer is funny!", now);
 }
 
-/** How much of the crowd's buzz each guest feels: a breakdown's -15 is about -9 mood each. */
 const BUZZ_WEIGHT = 0.6;
 
 /** How close a guest must get to a structure: a ride's own footprint keeps it out of the middle. */
@@ -84,14 +71,12 @@ function arriveRadius(def: BuildableDef): number {
   return Math.max(ARRIVE_DISTANCE, def.footprint / 2 + 1.4);
 }
 
-/** Where a guest walks to for a structure: a ride's entrance, or the shop itself. */
 function doorOf(ctx: GameContext, obj: ParkObject): { at: [number, number, number]; radius: number } {
   const door = obj.def.ride === undefined ? null : accessOf(ctx, obj.id)?.door ?? null;
   if (door === null) return { at: [obj.x, 0, obj.z], radius: arriveRadius(obj.def) };
   return { at: [door[0], 0, door[1]], radius: ARRIVE_DISTANCE };
 }
 
-/** A queue line makes a long wait easier to bear. */
 const LINE_TOLERANCE = 1.6;
 
 function distance2(ax: number, az: number, bx: number, bz: number): number {
@@ -121,7 +106,6 @@ function makeGuest(ctx: GameContext, id: string, start: readonly [number, number
 /** Most guests one tick lets through the turnstiles, so a long frame cannot flood the park. */
 const ARRIVAL_BUDGET = 4;
 
-/** The crowd behind one park session: its shared population and the appeal the gate reads this tick. */
 interface Crowd {
   ctx: GameContext;
   guests: Map<string, GuestState>;
@@ -170,7 +154,6 @@ function crowdOf(ctx: GameContext): Crowd {
   return next;
 }
 
-/** The park's visitor population: on-site and daily counts are the guests whose bodies it made. */
 export function guestPopulation(ctx: GameContext): VisitorPopulation {
   return crowdOf(ctx).population;
 }
@@ -194,10 +177,6 @@ export function spawnGuests(ctx: GameContext, dt: number, totalAppeal: number): 
   live.population.tick(dt, ctx.time.now());
 }
 
-/**
- * Put the saved crowd back on the population once its guests are in the scene: the gate's carried
- * arrival credit, the next id, and today's arrivals from the world's own count.
- */
 export function restoreGuestFlow(ctx: GameContext, flow: { guestSeq: number; spawnAcc: number }): void {
   guestPopulation(ctx).restore({
     visitors: [...sessionOf(ctx).guests.keys()].map((id) => ({ id, admittedAt: 0 })),
@@ -209,7 +188,6 @@ export function restoreGuestFlow(ctx: GameContext, flow: { guestSeq: number; spa
   });
 }
 
-/** The gate's carried arrival credit and the last id it issued, as the park save stores them. */
 export function guestFlowState(ctx: GameContext): { guestSeq: number; spawnAcc: number } {
   const snapshot = guestPopulation(ctx).snapshot();
   return { guestSeq: snapshot.sequence - 1, spawnAcc: snapshot.pending };
@@ -222,7 +200,6 @@ function dropTarget(guest: GuestState): void {
   guest.phase = "seeking";
 }
 
-/** A guest finishing at a stall: pay, take the stock, fill the need. Rides settle through the sim. */
 function finishInteraction(ctx: GameContext, guest: GuestState): void {
   const obj = parkObject(ctx, guest.targetId);
   const agent = agentOf(ctx, guest, ctx.rng);
@@ -263,7 +240,6 @@ function moveGuest(ctx: GameContext, guest: GuestState, target: readonly [number
   return distance2(next[0], next[2], target[0], target[2]) <= radius;
 }
 
-/** A guest walking out: the population lets it go, and its release removes the body. */
 function despawnGuest(ctx: GameContext, guest: GuestState): void {
   guestPopulation(ctx).leave(guest.id);
 }
@@ -278,10 +254,6 @@ function removeGuest(ctx: GameContext, guest: GuestState): void {
   park.emit(ctx, { kind: "leave" });
 }
 
-/**
- * Where the next guest in line stands: along the ride's queue line when it has one (two to a tile),
- * else bunched outside its entrance, else out from its own footprint.
- */
 function queueSpot(ctx: GameContext, obj: ParkObject, index: number): [number, number, number] {
   const access = accessOf(ctx, obj.id);
   const i = Math.max(0, index);
@@ -298,7 +270,6 @@ function queueSpot(ctx: GameContext, obj: ParkObject, index: number): [number, n
   return [obj.x, 0, obj.z - arriveRadius(obj.def) - i * 1.15];
 }
 
-/** The line a guest is standing in: its own measured wait, or a sold-out stall's crowd. */
 function queuePenalty(ctx: GameContext, guest: GuestState): number {
   const obj = parkObject(ctx, guest.targetId);
   if (obj === undefined) return 0;
@@ -313,11 +284,6 @@ function queuePenalty(ctx: GameContext, guest: GuestState): number {
   return obj.def.stall !== undefined && stockOf(park.of(ctx), obj) <= 0 ? -12 : 0;
 }
 
-/**
- * The ride sim's own events: a boarding pays the ride's ticket into the world, an alighting fills the
- * guest's fun from the ride's ratings, and a breakdown is the world's `breakdown` ripple - the crowd
- * groans and the crew is sent. The repair itself is the world's crew order, not the sim's.
- */
 function makeRideSink(ctx: GameContext): RideTickSink {
   return {
     onBoard(rideId, guestId) {
@@ -361,7 +327,6 @@ function makeRideSink(ctx: GameContext): RideTickSink {
 
 const sinks = new ContextMap<RideTickSink>();
 
-/** Advance the park's rides one tick; their events land on the guests and the world. */
 export function tickRidePark(ctx: GameContext, dt: number): void {
   let sink = sinks.get(ctx);
   if (sink === undefined) {
@@ -371,7 +336,6 @@ export function tickRidePark(ctx: GameContext, dt: number): void {
   tickRides(ctx, dt, sink);
 }
 
-/** Walk where the agent chose; a guest gives up on a line it has no hope of reaching the front of. */
 function holdPlaceInLine(ctx: GameContext, guest: GuestState, obj: ParkObject, dt: number): void {
   const view = rideView(ctx, obj.id);
   if (view === null) {
@@ -415,7 +379,6 @@ function arriveAtRide(ctx: GameContext, guest: GuestState, obj: ParkObject): voi
   guest.targetUntil = ctx.time.now() + QUEUE_CHECK_SECONDS;
 }
 
-/** Who is heading for or standing at each structure this tick: the crowd the next guest prices in. */
 function countOccupants(ctx: GameContext): void {
   sessionOf(ctx).occupants.clear();
   for (const guest of sessionOf(ctx).guests.values()) {
@@ -530,10 +493,8 @@ export function tickGuests(ctx: GameContext, dt: number, tracks: number): void {
   if (sessionOf(ctx).guests.size > 0) w.set("park.mood", parkMood(ctx));
 }
 
-/** Refresh the plain guest state from the live agents before a save is written. */
 export { syncAgentStates };
 
-/** Drop every live agent - a new park or a restore replaces them from their own snapshots. */
 export function resetGuestAgents(ctx: GameContext): void {
   clearAgents(ctx);
 }

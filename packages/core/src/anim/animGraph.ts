@@ -1,11 +1,8 @@
 import { resolveOneShotClip } from "../game/modelAnimation";
 
-/** Parameter value a graph reads: floats for blends and comparisons, booleans for gates. */
 export type AnimParamValue = number | boolean;
-/** The parameter set a graph evaluates against each advance. */
 export type AnimParams = Readonly<Record<string, AnimParamValue>>;
 
-/** A state plays one clip, or blends clips by one or two parameters. */
 export type AnimState =
   | { kind: "clip"; clip: string; variants?: readonly string[]; speed?: number; loop?: boolean; rootMotion?: boolean }
   | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean; rootMotion?: boolean }
@@ -18,7 +15,6 @@ export type AnimState =
       rootMotion?: boolean;
     };
 
-/** Comparison operators an {@link AnimCondition} supports. */
 export type AnimCompare = ">" | "<" | ">=" | "<=" | "==" | "!=";
 
 /** A parameter comparison; every condition on a transition must hold. */
@@ -28,13 +24,11 @@ export interface AnimCondition {
   value: AnimParamValue;
 }
 
-/** Edge between states. `from: "*"` matches any state except `to`. */
 export interface AnimTransition {
   from: string | "*";
   to: string;
   /** All must hold. */
   when?: readonly AnimCondition[];
-  /** Fires once when this trigger was set since the last advance; consumed on use. */
   trigger?: string;
   /** Crossfade seconds. Default 0.2. */
   duration?: number;
@@ -42,27 +36,23 @@ export interface AnimTransition {
   exitTime?: number;
 }
 
-/** A blend layer with its own state machine. Masked layers apply only to bones whose track names start with a prefix. */
 export interface AnimLayer {
   id: string;
   entry: string;
   states: Readonly<Record<string, AnimState>>;
   transitions: readonly AnimTransition[];
-  /** Bone name prefixes this layer drives; absent means the whole rig. */
   mask?: readonly string[];
   additive?: boolean;
   /** Layer influence 0..1. Default 1. */
   weight?: number;
 }
 
-/** A named moment inside a clip (foot plant, hit frame, reload point). */
 export interface AnimEvent {
   clip: string;
   atSec: number;
   name: string;
 }
 
-/** Serializable animation graph. Clip durations come from the rig at runtime (see {@link AnimGraphClipInfo}). */
 export interface AnimGraph {
   layers: readonly AnimLayer[];
   events?: readonly AnimEvent[];
@@ -87,7 +77,6 @@ interface LayerState {
   selectedClip?: string;
 }
 
-/** Serializable evaluator state. */
 export interface AnimGraphState {
   layers: Record<string, LayerState>;
   triggers: string[];
@@ -101,26 +90,20 @@ export interface AnimClipOutput {
   layer: string;
 }
 
-/** What one advance asks the rig to show. */
 export interface AnimGraphOutput {
   clips: AnimClipOutput[];
   events: { name: string; clip: string }[];
-  /** Root-bone travel over this advance from `rootMotion` states, in the rig's local units. */
   rootDelta?: [number, number, number];
-  /** `true` while an influencing current or fading-out state has `rootMotion`, even with no travel. */
   rootMotion?: true;
 }
 
-/** The evaluator handle: arm triggers, advance, inspect, snapshot and restore. */
 export interface AnimGraphRuntime {
   graph(): AnimGraph;
   retune(graph: AnimGraph): void;
   state(): AnimGraphState;
   snapshot(): AnimGraphState;
   restore(state: AnimGraphState): void;
-  /** Arm a trigger for the next advance. */
   trigger(name: string): void;
-  /** Current state id of a layer. */
   stateOf(layerId: string): string | null;
   advance(dt: number, params: AnimParams, clips: AnimGraphClipInfo): AnimGraphOutput;
 }
@@ -132,7 +115,6 @@ export interface AnimGraphRuntimeOptions {
 
 const DEFAULT_FADE = 0.2;
 
-/** Entity blackboard key the shell reads extra graph parameters from: `ctx.scene.entity.blackboard.set(id, ANIM_PARAMS_KEY, { aiming: true })`. */
 export const ANIM_PARAMS_KEY = "anim.params";
 
 function compare(actual: AnimParamValue | undefined, op: AnimCompare, value: AnimParamValue): boolean {
@@ -154,7 +136,6 @@ function compare(actual: AnimParamValue | undefined, op: AnimCompare, value: Ani
   }
 }
 
-/** Static clip weights of a state at `params`, before any crossfade. */
 export function stateClipWeights(state: AnimState, params: AnimParams): Record<string, number> {
   const out: Record<string, number> = {};
   if (state.kind === "clip") {
@@ -214,7 +195,6 @@ function stateLoops(state: AnimState): boolean {
   return state.loop !== false;
 }
 
-/** Longest clip in a state at these weights; the state's timeline length for exit times and events. */
 function stateDuration(weights: Record<string, number>, clips: AnimGraphClipInfo): number {
   let duration = 0;
   for (const clip of Object.keys(weights)) duration = Math.max(duration, clipDuration(clips[clip]));
@@ -574,8 +554,6 @@ export function parseAnimGraph(value: unknown): AnimGraph | undefined {
   return { layers, ...(events.length === 0 ? {} : { events }) };
 }
 
-
-/** A located, repairable error in an authored animation graph; paths are relative to the graph value. */
 export interface AnimGraphDiagnostic {
   path: string;
   message: string;

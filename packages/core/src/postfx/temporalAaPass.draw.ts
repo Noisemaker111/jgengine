@@ -110,7 +110,6 @@ const resolveShader = /* glsl */ `
   }
 `;
 
-/** Light sharpening on the way out, giving back the detail the history blend softens. */
 const sharpenShader = /* glsl */ `
   uniform sampler2D tDiffuse;
   uniform vec2 uTexel;
@@ -132,7 +131,7 @@ const sharpenShader = /* glsl */ `
 /** Halton(2,3) offsets in pixels, centred on zero. Eight samples settle an edge in about eight frames. */
 const JITTER: readonly (readonly [number, number])[] = Array.from({ length: 8 }, (_, index) => [halton(index + 1, 2) - 0.5, halton(index + 1, 3) - 0.5]);
 
-/** Radical inverse of `index` in `base`. @internal */
+/** @internal */
 export function halton(index: number, base: number): number {
   let result = 0;
   let fraction = 1 / base;
@@ -150,7 +149,7 @@ export function taaJitter(frame: number): readonly [number, number] {
   return JITTER[((frame % JITTER.length) + JITTER.length) % JITTER.length]!;
 }
 
-/** A camera step this large between frames is a cut, not motion: the history is dropped. @internal */
+/** @internal */
 export const TAA_CUT_DISTANCE = 12;
 const TAA_CUT_ANGLE = 0.6;
 
@@ -220,14 +219,12 @@ export class TemporalAaPass extends Pass {
     this.sharpenQuad = new FullScreenQuad(this.sharpenMaterial);
   }
 
-  /** Advance to the next jitter offset; the beauty pass calls this before it draws. */
   nextJitter(): THREE.Vector2 {
     this.frame += 1;
     const [x, y] = taaJitter(this.frame);
     return this.jitter.set(x, y);
   }
 
-  /** Forget the history, e.g. after a camera cut or a resize. */
   reset(): void {
     this.historyValid = false;
   }

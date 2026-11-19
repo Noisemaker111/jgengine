@@ -32,10 +32,6 @@ import { takeRenderSlot } from "./renderSlots";
 
 export { checkoutIdentity, devServerIdentity, isUp };
 
-/**
- * Default port when no worktree key is needed — kept for docs/bench that still
- * want a predictable single-session port. Prefer {@link resolveDevPort}.
- */
 export const DEV_PORT = 4517;
 /** @deprecated Prefer {@link resolveDevBase} — fixed URL collides across worktrees. */
 export const DEV_BASE = `http://127.0.0.1:${DEV_PORT}`;
@@ -77,7 +73,6 @@ export interface ViewportOverride {
   height?: number | undefined;
 }
 
-/** The device profile a capture actually uses: device defaults, explicit overrides, then size. */
 export function captureProfile(device: Device, size: SizeMode = "full", override: ViewportOverride = {}): DeviceProfile {
   const base = DEVICES[device];
   return scaleProfile({ ...base, width: override.width ?? base.width, height: override.height ?? base.height }, size);
@@ -133,7 +128,6 @@ export function findChromeExecutable(): string {
   throw new Error("No Chrome/Chromium found. Set CHROME_PATH or install Chrome.");
 }
 
-/** Build browser fixtures outside the test runner's module mocks and resolver cache. */
 export function buildBrowserFixture(entry: string): string {
   const build = spawnSync(process.execPath, [join(import.meta.dir, "build-browser-fixture.ts"), entry], {
     encoding: "utf8", timeout: 25_000, maxBuffer: 16 * 1024 * 1024,
@@ -168,7 +162,6 @@ export function chromeGraphicsArgs(
     : [...HARDWARE_GPU_ARGS];
 }
 
-/** Frame clock a capture browser runs requestAnimationFrame on. */
 export type FrameClock = "capped" | "uncapped";
 
 /**
@@ -213,10 +206,6 @@ export function softwareGlBackend(
  */
 export const HEADED_WINDOW_POSITION = "-32000,-32000";
 
-/**
- * Chrome flags for a rasterizer choice: llvmpipe runs headful on the Xvfb display, the rest headless.
- * `headed` asks for a real window, which lands off-screen — the default for every capture is headless.
- */
 export function chromeRenderArgs(backend: SoftwareGl | null, headed = false): string[] {
   if (headed) {
     return ["--window-size=1280,720", `--window-position=${HEADED_WINDOW_POSITION}`, ...chromeGraphicsArgs()];
@@ -313,7 +302,6 @@ export function resolveDevPort(cwd = process.cwd()): number {
   return 4517 + hashPortOffset(devServerIdentity(cwd), 483);
 }
 
-
 export function resolveDevBase(cwd = process.cwd()): string {
   return `http://127.0.0.1:${resolveDevPort(cwd)}`;
 }
@@ -333,10 +321,6 @@ export function resolveWebBase(cwd = process.cwd()): string {
   return `http://127.0.0.1:${resolveWebPort(cwd)}`;
 }
 
-/**
- * Per-checkout warm Chrome debug port (`--keep` / `--connect` loop).
- * Override with `JG_CHROME_PORT`. Range 9223–9322.
- */
 export function resolveWarmChromePort(cwd = process.cwd()): number {
   const override = process.env["JG_CHROME_PORT"];
   if (override !== undefined && override.length > 0) {
@@ -356,13 +340,6 @@ export async function isOurDevServer(port: number, identity: string): Promise<bo
   return (await checkMarkedServer(marker, identity)).status === "ours";
 }
 
-/**
- * Retire a warm server whose commit no longer matches the tree. Reusing it would
- * serve the previous commit's module graph — the "start menu still on screen"
- * / readiness-timeout failure that made every checkout-then-shoot loop flaky.
- * Killing it here means the caller's normal boot path starts a clean one. Only a
- * server that reports this checkout's identity is killed, by the pid it reports.
- */
 export async function retireDriftedDevServer(port: number, cwd = process.cwd()): Promise<boolean> {
   const marker = readMarker(port);
   if (marker === null) return false;
@@ -640,7 +617,6 @@ export function killProcessTree(child: ChildProcess | null): void {
   killPid(child?.pid, true);
 }
 
-/** Default wait for a launched browser to answer on its debugger endpoint. */
 export const DEFAULT_CHROME_READY_MS = 30_000;
 
 /**
@@ -653,7 +629,6 @@ export function resolveChromeReadyMs(env: NodeJS.ProcessEnv = process.env): numb
   return Number.isFinite(configured) && configured > 0 ? Math.floor(configured) : DEFAULT_CHROME_READY_MS;
 }
 
-/** Where a launch stopped: spawning, the debugger endpoint, or the first page target. */
 export type BrowserLaunchStep = "launch" | "endpoint" | "page";
 
 export interface BrowserLaunchFailure {
@@ -661,18 +636,15 @@ export interface BrowserLaunchFailure {
   elapsedMs: number;
   profilePath: string | null;
   attempts: number;
-  /** Wait the failing attempt was given, when the step waited at all. */
   waitedMs?: number | undefined;
   reason: string;
 }
 
-/** A launch that failed, saying which step it reached, how long it took and which profile it was using. */
 export class BrowserLaunchError extends Error {
   readonly step: BrowserLaunchStep;
   readonly elapsedMs: number;
   readonly profilePath: string | null;
   readonly attempts: number;
-  /** The underlying failure, without this error's own step/elapsed/profile prefix. */
   readonly reason: string;
 
   constructor(failure: BrowserLaunchFailure) {
@@ -689,7 +661,6 @@ export class BrowserLaunchError extends Error {
   }
 }
 
-/** Profile of the browser this process launched on each debug port, for failure messages. */
 const launchedProfiles = new Map<number, string>();
 
 /** Profile path behind a debug port this process launched, or null when attached. */
@@ -703,7 +674,6 @@ export interface DebuggerWaitContext {
   profilePath?: string;
 }
 
-/** Chrome answers `/json/version` with a JSON body; anything slower than this is still not a debugger. */
 const DEBUGGER_PROBE_TIMEOUT_MS = 2_000;
 
 async function debuggerVersionUrl(port: number): Promise<string | null> {
@@ -767,12 +737,10 @@ type CdpMessage = {
   error?: { message: string };
 };
 
-/** One field of a CDP answer, read without trusting its shape: `undefined` when it is not there. */
 export function cdpField(value: unknown, key: string): unknown {
   return typeof value === "object" && value !== null && key in value ? Reflect.get(value, key) : undefined;
 }
 
-/** The `objectId` of a remote object in a CDP answer (`result` of `Runtime.evaluate`, `objects` of `Runtime.queryObjects`). */
 export function remoteObjectId(remote: unknown): string | undefined {
   const id = cdpField(remote, "objectId");
   return typeof id === "string" ? id : undefined;
@@ -838,7 +806,6 @@ export class CdpSession {
     });
   }
 
-  /** Subscribe to a CDP event and return an unsubscribe callback. */
   on(method: string, handler: (params: Record<string, unknown>) => void): () => void {
     const handlers = this.eventHandlers.get(method) ?? [];
     handlers.push(handler);
@@ -860,11 +827,6 @@ export class CdpSession {
     });
   }
 
-  /**
-   * Runtime.evaluate an expression with `returnByValue`, unwrapping
-   * `result.result.value` to the caller's `T`. Returns `undefined` when the
-   * page yields no value. Pass `awaitPromise` for async expressions.
-   */
   async evaluate<T>(expression: string, opts: { awaitPromise?: boolean } = {}): Promise<T | undefined> {
     const result = await this.send("Runtime.evaluate", {
       expression,
@@ -890,7 +852,6 @@ export class CdpSession {
   }
 }
 
-/** Close one Chrome page target through the debugger HTTP endpoint. */
 export async function closePageTarget(debugPort: number, targetId: string): Promise<boolean> {
   try {
     await localGet(`http://127.0.0.1:${debugPort}/json/close/${encodeURIComponent(targetId)}`, 2_000);
@@ -966,7 +927,6 @@ async function connectPageTarget(debugPort: number): Promise<CdpSession> {
   );
 }
 
-/** Every capture profile dir is `jg-*` under the temp dir. */
 const PROFILE_PREFIX = "jg-";
 /**
  * A profile is swept once its directory has gone untouched this long. A live browser writes its
@@ -975,18 +935,11 @@ const PROFILE_PREFIX = "jg-";
  * filled the drive, so the ordinary floor stays under a session's length.
  */
 const STALE_PROFILE_MS = 45 * 60 * 1000;
-/** Age that counts as leaked while the temp drive is short of space. */
 const PRESSURE_PROFILE_MS = 5 * 60 * 1000;
-/** Free space on the temp drive below which every profile older than {@link PRESSURE_PROFILE_MS} goes. */
 export const PRESSURE_FREE_BYTES = 15 * 1024 * 1024 * 1024;
 /** Holds the browser pid, so a sweep never deletes the profile of a live browser. */
 export const PROFILE_OWNER_FILE = "jg-owner-pid";
-/**
- * Holds the pid of the run that launched the browser. Unlike {@link PROFILE_OWNER_FILE} this is not
- * the browser: a browser outliving its run is exactly the stray window the sweep reaps.
- */
 export const PROFILE_RUN_FILE = "jg-owner-run";
-/** Age past which a visible browser with no recorded run counts as leaked. */
 export const STRAY_BROWSER_MS = 20 * 60 * 1000;
 /** Free space a capture needs on the temp drive before it starts; one Chrome profile is ~150 MB. */
 export const MIN_CAPTURE_FREE_BYTES = 2 * 1024 * 1024 * 1024;
@@ -1004,7 +957,6 @@ export function pidAlive(pid: number | undefined): boolean {
 }
 
 type OwnedProfile = { dir: string; pid?: number | undefined };
-/** Profiles this process created and still owes cleanup for. */
 const ownedProfiles = new Map<string, OwnedProfile>();
 let profileCleanupHooks = false;
 
@@ -1060,7 +1012,6 @@ export async function waitForPidExit(pid: number | undefined, timeoutMs = 5_000)
   }
 }
 
-/** Block until `pid` has exited or `timeoutMs` has passed. */
 function waitForExitSync(pid: number, timeoutMs: number): void {
   const deadline = Date.now() + timeoutMs;
   const pause = new Int32Array(new SharedArrayBuffer(4));
@@ -1111,7 +1062,6 @@ function readRunPid(dir: string): number | undefined {
   }
 }
 
-/** One running process as the stray-browser sweep sees it. */
 export interface BrowserProcess {
   pid: number;
   parentPid?: number;
@@ -1120,7 +1070,6 @@ export interface BrowserProcess {
   commandLine: string;
 }
 
-/** The `--user-data-dir` a command line carries, as written. */
 export function profileDirFromCommandLine(commandLine: string): string | undefined {
   const match = /--user-data-dir=(?:"([^"]+)"|(\S+))/.exec(commandLine);
   return match?.[1] ?? match?.[2];
@@ -1132,7 +1081,6 @@ function samePath(a: string, b: string): boolean {
   return process.platform === "win32" ? left.toLowerCase() === right.toLowerCase() : left === right;
 }
 
-/** The `jg-*` profile directory a process owns under `root`, if any. */
 export function profileDirUnderRoot(commandLine: string, root: string): string | undefined {
   const dir = profileDirFromCommandLine(commandLine);
   if (dir === undefined) return undefined;
@@ -1226,11 +1174,9 @@ export function listBrowserProcesses(): BrowserProcess[] {
   return processes;
 }
 
-/** What one stray-browser sweep did. */
 export interface StrayBrowserSweepResult {
   /** Browsers killed because the run that owned them was gone. */
   killed: number;
-  /** Profile directories those browsers left behind and the sweep removed. */
   profilesRemoved: number;
 }
 
@@ -1242,7 +1188,6 @@ function profileMtimeMs(dir: string): number | undefined {
   }
 }
 
-/** Profile directories some warm shoot daemon's state file still records. */
 export function daemonProfiles(root = tmpdir()): Set<string> {
   const profiles = new Set<string>();
   let names: string[] = [];
@@ -1285,9 +1230,7 @@ export interface StrayBrowserSweepOptions {
   now?: number;
   /** Age past which an unowned visible browser is leaked; defaults to {@link STRAY_BROWSER_MS}. */
   maxAgeMs?: number;
-  /** Replace the live process list (tests). */
   processes?: readonly BrowserProcess[];
-  /** False when the kill was refused (see {@link killPid}); the profile is then left alone. */
   kill?: (pid: number) => unknown;
   remove?: (dir: string) => void;
   isAlive?: (pid: number | undefined) => boolean;
@@ -1435,21 +1378,12 @@ export function ensureCaptureFreeSpace(root: string = tmpdir(), env: NodeJS.Proc
   );
 }
 
-/**
- * Sweep leaked capture profiles, tightening the age limit while the temp drive is short of space,
- * and say in one line what it removed. Free space is read here and injectable
- * (`freeBytes: null` means unreadable, which is treated as no pressure).
- */
 export interface SweepOptions {
   /** Free bytes on the temp drive; defaults to the live reading. Null when it cannot be read. */
   freeBytes?: number | null;
-  /** Where the line goes; stderr by default. */
   log?: (line: string) => void;
-  /** Clock, for tests. */
   now?: number;
-  /** Replace the live process list the stray-browser sweep reads (tests). */
   processes?: readonly BrowserProcess[];
-  /** Replace the kill and the liveness check the stray-browser sweep uses (tests: a listed pid may be a real process on the host). */
   kill?: (pid: number) => unknown;
   isAlive?: (pid: number | undefined) => boolean;
 }
@@ -1458,11 +1392,6 @@ function minutes(ms: number): string {
   return `${Math.round(ms / 60_000)} minutes`;
 }
 
-/**
- * One sweep at a capture tool's startup: {@link STALE_PROFILE_MS} normally, and
- * {@link PRESSURE_PROFILE_MS} under {@link PRESSURE_FREE_BYTES} of free space. Returns how many
- * profiles it removed, and logs one line whenever it ran under pressure or removed anything.
- */
 export function sweepCaptureProfiles(root = tmpdir(), options: SweepOptions = {}): number {
   const now = options.now ?? Date.now();
   const free = options.freeBytes === undefined ? freeBytesAt(root) : options.freeBytes;
@@ -1563,13 +1492,11 @@ export function launchChrome(
   return Object.assign(child, { userDataDir });
 }
 
-/** Who a render slot is for, as a waiting run reads it: the script, its profile prefix and checkout. */
 function renderLabel(prefix: string): string {
   const script = process.argv[1]?.replace(/^.*[\\/]/, "") ?? "bun";
   return `${script} ${prefix.replace(/-$/, "")} in ${process.cwd()}`;
 }
 
-/** The priority a Chrome this process launched runs at, by browser pid. */
 const launchedPriorities = new Map<number, PriorityLabel>();
 
 /**
@@ -1655,7 +1582,6 @@ export interface LaunchableBrowser {
   userDataDir: string;
 }
 
-/** What one launch hands Chrome beyond its port and profile: daemon lifetime, and the frame clock. */
 export interface ChromeLaunchOptions {
   /** Leave the browser running after the process that started it exits. */
   persistent?: boolean;
@@ -1675,20 +1601,15 @@ export interface ChromeLaunchOptions {
 }
 
 export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess> {
-  /** The debugger port to bind, or 0 for a free one the browser picks and publishes in its profile. */
   debugPort: number;
-  /** user-data-dir prefix; every attempt gets a fresh profile under it. */
   prefix?: string;
   /** Wait per attempt; defaults to {@link resolveChromeReadyMs}. The retry doubles it. */
   readyMs?: number;
   env?: NodeJS.ProcessEnv;
-  /** Replace the real launch (tests and the daemon own what they hand back). */
   launch?: (debugPort: number, prefix?: string, options?: ChromeLaunchOptions) => L;
-  /** rAF clock the launched Chrome runs on; test launchers receive it too. */
   frameClock?: FrameClock;
   /** Launch a real (off-screen) window instead of headless Chrome. */
   headed?: boolean;
-  /** `normal` for a Chrome whose frame times are the product; see {@link ChromeLaunchOptions.priority}. */
   priority?: "normal" | "inherit";
   /** Prove the page layer answers; defaults to opening and closing a page target. */
   pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
@@ -1698,11 +1619,9 @@ export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess
 }
 
 export interface StartedBrowser<L extends LaunchableBrowser = ChromeProcess> {
-  /** The port the browser answers on: the one asked for, or the one it picked for `debugPort: 0`. */
   debugPort: number;
   browser: L;
   profilePath: string;
-  /** 1 when the first handshake worked, 2 when the retry recovered it. */
   attempts: number;
 }
 
@@ -1819,7 +1738,6 @@ export async function startBrowser<L extends LaunchableBrowser = ChromeProcess>(
   throw last ?? new Error("browser: launch failed without a reason");
 }
 
-/** Which handshake failures are worth one fresh browser, and which are real configuration errors. */
 export function isRetryableLaunchFailure(step: BrowserLaunchStep, message: string): boolean {
   if (/no chrome\/chromium found/i.test(message)) return false;
   if (step === "launch" || step === "endpoint") return true;
@@ -1833,7 +1751,6 @@ export interface ViewportPng {
   via: CaptureVia;
 }
 
-/** Screencast wait before falling back; below the ~20s a software-GL captureScreenshot costs. */
 export const SCREENCAST_CAPTURE_TIMEOUT_MS = 15_000;
 
 /**
@@ -1854,7 +1771,6 @@ export function screencastCapturesFully(profile: DeviceProfile): boolean {
  */
 export const MAX_FLAT_SCREENCAST_FRAMES = 4;
 
-/** Distinct sampled colours at or below which a region carries no picture. */
 const FLAT_REGION_COLOURS = 2;
 
 /**
@@ -1892,7 +1808,6 @@ export function regionCarriesPicture(
   return false;
 }
 
-/** IHDR width/height without inflating the image data. */
 function pngSize(bytes: Uint8Array): { width: number; height: number } | null {
   if (bytes.length < 24 || bytes[0] !== 137 || bytes[1] !== 80) return null;
   const read = (offset: number): number =>
@@ -2007,11 +1922,6 @@ export async function captureViewportPng(
   return { bytes: Buffer.from(data, "base64"), via: "screenshot" };
 }
 
-/**
- * Poll `data-jg-capture` until the page reports an honest frame (`ready`) or
- * surfaces an error, shared by shoot and drive. Throws with the page-reported
- * detail on error, or on timeout.
- */
 export async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
   const wait = readinessWait(timeoutMs);
   let last: { status: string | null; error: string | null; href: string | null; stage: string | null } | undefined;
@@ -2041,14 +1951,8 @@ function cpuSample(): CpuSample {
   return { idle, total };
 }
 
-/**
- * The deadline of one readiness wait. A PC busy past {@link BUSY_PC_PERCENT} for the whole window
- * gets one more window, said in a line: a fixed 60 s failed shots that only needed a quieter
- * moment. The failure line names what the page was doing and how busy the PC was.
- */
 function readinessWait(timeoutMs: number): {
   goOn(status: string | null): boolean;
-  /** `stage` is what the page's gate was still waiting on (`data-jg-capture-stage`), when it said. */
   failure(status: string | null, href: string | null, url: string, stage?: string | null): string;
 } {
   const startedAt = Date.now();
@@ -2138,24 +2042,18 @@ export function watchPageExceptions(session: CdpSession): { exceptions: string[]
 export interface CaptureRegions {
   /** The WebGL canvas in device pixels — the 3D viewport, not the whole frame. */
   region?: { x: number; y: number; width: number; height: number };
-  /** HUD rectangles drawn over it, in the same space. */
   masks: { x: number; y: number; width: number; height: number }[];
 }
 
 /** Cap on returned mask rects; the largest are kept, so the tail costs nothing to drop. */
 const MAX_CAPTURE_MASKS = 200;
 
-/** One model the page replaced with a placeholder box, as the shell's loader publishes it. */
 export interface MissingModel {
   name: string;
   url: string;
   message: string;
 }
 
-/**
- * Every model the page could not load and drew as a placeholder box (`window.__jg.missingModels`,
- * published by the shell's model loader). A capture that rendered one is not evidence of the game.
- */
 export async function readMissingModels(session: CdpSession): Promise<MissingModel[]> {
   const raw = await session.evaluate<MissingModel[] | null>(`(() => {
     const list = globalThis.__jg?.missingModels;
@@ -2172,7 +2070,6 @@ export function missingModelsProblem(missing: readonly MissingModel[]): string |
   return `MISSING MODELS: ${missing.length} drawn as placeholder boxes - ${names}${more}. Run: bun run games:provision (links them from the shared asset store), or fix the path.`;
 }
 
-/** Layout status the shot is judged against, read in the same pass as the regions. */
 export interface CapturePageState extends CaptureRegions {
   overflow: string | null;
   collision: string | null;
@@ -2295,7 +2192,6 @@ export function isShaderCompilerChatter(text: string): boolean {
 }
 
 const CAPTURE_SIGNAL_BINDING = "__jgCaptureSignal";
-/** Sessions whose readiness binding is already installed — re-registering duplicates it per navigation. */
 const readinessInstalled = new WeakSet<CdpSession>();
 
 /**
@@ -2313,7 +2209,6 @@ export const CAPTURE_HOLD_SOURCE = "(globalThis.__jg ??= {}).captureHold = true;
 
 const playHeld = new WeakSet<CdpSession>();
 
-/** Keep a capture page focused and unpausable by window switches; best-effort on older Chrome. */
 async function holdCapturePlay(session: CdpSession): Promise<void> {
   if (playHeld.has(session)) return;
   playHeld.add(session);
@@ -2523,12 +2418,10 @@ export function writePngAtomic(outPath: string, bytes: Buffer): void {
   renameSync(tmpPath, outPath);
 }
 
-/** Filename suffix marking a half-res judge shot. */
 export function sizeSuffix(size: SizeMode): string {
   return size === "half" ? "-half" : "";
 }
 
-/** Validate a raw `--size` argument, throwing the shared usage error. */
 export function parseSizeArg(value: string | undefined): SizeMode {
   if (value !== "full" && value !== "half") {
     throw new Error(`--size must be full or half (got ${value ?? "nothing"})`);
@@ -2543,7 +2436,6 @@ export function parseSizeArg(value: string | undefined): SizeMode {
  */
 export type CaptureQuality = GraphicsTier;
 
-/** Add the shell's graphics-tier pin to a capture URL; no tier leaves the URL untouched. */
 export function applyCaptureQuality(url: URL, tier: GraphicsTier | undefined): URL {
   if (tier !== undefined) url.searchParams.set("quality", tier);
   return url;
@@ -2564,11 +2456,6 @@ export function draftSuffix(draft: boolean): string {
   return draft ? "-draft" : "";
 }
 
-/**
- * Throw when the page's reported tier is not the one `--quality` asked for. A tier flag that
- * changes nothing is worse than no flag: the comparison would be two runs at the game's default
- * and nobody would know until the numbers came out identical.
- */
 export function assertQualityApplied(requested: GraphicsTier, reported: string | null): void {
   if (reported === null || reported.length === 0) {
     throw new Error(`--quality ${requested} never reached the page — no graphics tier was reported (data-jg-quality). The run would prove the game's default tier.`);
@@ -2585,7 +2472,6 @@ export async function readReportedQuality(session: CdpSession): Promise<string |
 }
 
 export interface BrowserSession {
-  /** CDP debug port the page target lives on. */
   debugPort: number;
   /** The Chrome we launched, or null when attached to an existing/daemon one. */
   chrome: ChromeProcess | null;
@@ -2594,31 +2480,20 @@ export interface BrowserSession {
 export interface WithBrowserSessionOptions {
   /** Leave the derived warm debug port instead of a random one. */
   keep: boolean;
-  /** Attach to an already-running Chrome on this port (skips launch/kill). */
   connect?: number | undefined;
   /** Base per-shot timeout; the hard watchdog defaults to this + 120s. */
   timeoutMs: number;
-  /** Dev server to tear down alongside Chrome when not left warm. */
   server?: ChildProcess | null;
   /** Native persistent server pid when no ChildProcess handle is retained on Windows. */
   serverPid?: number | undefined;
-  /** Pre-resolved debug port (daemon attach) — overrides keep/connect derivation. */
   debugPort?: number | undefined;
-  /** Attach without launching even without `--connect` (daemon). */
   attach?: boolean;
-  /** Leave Chrome + server running after `fn` resolves (warm loop / daemon). */
   leaveWarm?: boolean;
-  /** user-data-dir prefix passed to {@link launchChrome}. */
   chromePrefix?: string;
-  /** Override the hard watchdog budget (default `timeoutMs + 120_000`). */
   hardDeadlineMs?: number;
-  /** Override the derived warm debug port. */
   warmPort?: number;
-  /** Replace the real Chrome launch (tests own the profile dir they hand back). */
   launch?: (debugPort: number, prefix?: string, options?: ChromeLaunchOptions) => ChromeProcess;
-  /** Replace the page-target probe {@link startBrowser} uses (tests own the fake browser). */
   pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
-  /** rAF clock the launched Chrome runs on. Default is the display's commit clock. */
   frameClock?: FrameClock;
   /** Launch a real (off-screen) window instead of headless Chrome; only `--headed` sets it. */
   headed?: boolean | undefined;
@@ -2627,11 +2502,9 @@ export interface WithBrowserSessionOptions {
    * The wait sits outside the hard deadline, which covers only this run's own work.
    */
   turn?: (() => Promise<() => Promise<void>>) | undefined;
-  /** `normal` for a session whose product is a frame time; see {@link ChromeLaunchOptions.priority}. */
   chromePriority?: "normal" | "inherit" | undefined;
 }
 
-/** What the current session's Chrome runs at, for the record a measurement writes. */
 export type SessionChromePriority = PriorityLabel | "daemon";
 
 let sessionPriority: SessionChromePriority | null = null;

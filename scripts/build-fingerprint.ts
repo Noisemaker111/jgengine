@@ -30,7 +30,6 @@ export const BUILD_INPUTS = [
   "scripts/build-fingerprint.ts",
 ] as const;
 
-/** Where the last finished build's fingerprint is kept. */
 export const FINGERPRINT_PATH = join(".scratch", "build", "fingerprint.txt");
 
 function git(args: readonly string[], cwd: string, input?: string): string {
@@ -39,10 +38,6 @@ function git(args: readonly string[], cwd: string, input?: string): string {
   return result.stdout;
 }
 
-/**
- * One line per input file, `<blob id> <path>`, sorted: the index's id for a clean file and the
- * working tree's for a changed or untracked one, `deleted` for one removed from the working tree.
- */
 export function buildFingerprint(cwd = root): string {
   const entries = new Map<string, string>();
   for (const line of git(["ls-files", "-s", "--", ...BUILD_INPUTS], cwd).split("\n")) {

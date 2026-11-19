@@ -21,61 +21,43 @@ import { quantile } from "../math/stats";
 import { simulateLap, type BrakingZone, type LapSimOptions, type LapSimResult } from "./lapSim";
 import { polylineLength, type PlanPoint } from "./streetMetrics";
 
-/** The lap a circuit metric reads. Only `centerline` is required. */
 export interface CircuitMetricsInput {
-  /** Closed lap centerline; the last point joins the first. */
   readonly centerline: readonly PlanPoint[];
-  /** Road width per centerline point. */
   readonly widths?: readonly number[];
-  /** Road-surface height per centerline point. */
   readonly heights?: readonly number[];
   readonly grid?: readonly { readonly x: number; readonly z: number }[];
   readonly seals?: readonly { readonly x: number; readonly z: number }[];
   /** Sector start fractions of the lap (0..1) measured from `start.distance`. */
   readonly sectors?: readonly number[];
   readonly start?: { readonly distance: number };
-  /** Pit lane centerlines, entry first. */
   readonly pits?: readonly (readonly PlanPoint[])[];
 }
 
 export interface CircuitMetricsOptions {
-  /** Resample step (m). Default 2. */
   readonly sampleStep?: number;
-  /** Half-span (m) of the three-point curvature estimate. Default 8. */
   readonly curvatureWindow?: number;
-  /** Radius (m) above which the lap is not cornering. Default 250. */
   readonly straightRadius?: number;
-  /** How far (m) the centerline may stray from a straight's chord; default half the road width less 1 m (at least 1 m), 1.5 m without widths. */
   readonly straightTolerance?: number;
-  /** Shortest straight (m) reported. Default 40. */
   readonly minStraight?: number;
   /** Corners turning less than this (degrees) are ignored. Default 20. */
   readonly cornerMinAngleDeg?: number;
-  /** Same-hand curvature runs closer than this (m) merge into one corner. Default 15. */
   readonly mergeGap?: number;
-  /** Two opposite-hand corners this close (m) form a chicane. Default 40. */
   readonly chicaneGap?: number;
-  /** Shortest straight (m) that sets up an overtake. Default 250. */
   readonly overtakeStraight?: number;
   /** Speed lost (km/h) in a braking zone that counts as heavy braking. Default 50. */
   readonly overtakeDeltaKph?: number;
-  /** A grid slot whose nearest lap point is tighter than this radius (m) stands in a corner. Default 150. */
   readonly gridCornerRadius?: number;
-  /** Baseline (m) the steepest grade is measured over. Default 10. */
   readonly gradeBaseline?: number;
-  /** The lap length that was asked for, to report the error. */
   readonly requestedLength?: number;
   readonly lapSim?: LapSimOptions;
 }
 
 export type CircuitCornerKind = "hairpin" | "right-angle" | "tight" | "medium" | "sweeper" | "kink";
 
-/** One corner found on the resampled lap. Indices are into {@link CircuitAnalysis.samples}. */
 export interface DetectedCorner {
   entry: number;
   apex: number;
   exit: number;
-  /** Apex radius (m). */
   radius: number;
   /** Total turn (degrees, positive). */
   angleDeg: number;
@@ -84,18 +66,14 @@ export interface DetectedCorner {
   kind: CircuitCornerKind;
 }
 
-/** One straight: a stretch a straight line can be driven inside the road. */
 export interface DetectedStraight {
   start: number;
   end: number;
   length: number;
 }
 
-/** One overtaking spot: a heavy braking zone at the end of a long straight. */
 export interface OvertakingSpot {
-  /** Sample index where braking starts. */
   brakeAt: number;
-  /** Length (m) of the straight it ends. */
   straight: number;
   /** Speed lost (km/h). */
   deltaKph: number;
@@ -139,20 +117,14 @@ export interface CircuitMetrics {
   sectors: number;
   sectorBoundariesInCorners: number;
   pits: number;
-  /** Pit lanes whose both ends meet the lap's road edge. */
   pitsConnected: number;
-  /** Seals standing on a pit lane. */
   sealsBlockingPit: number;
 }
 
-/** Everything a metric or a drawing needs about one lap. */
 export interface CircuitAnalysis {
-  /** The evenly resampled lap. */
   samples: PlanPoint[];
-  /** Arc length at each sample (m). */
   distances: number[];
   step: number;
-  /** Radius of curvature at each sample (m; Infinity when straight). */
   radii: number[];
   widths: number[];
   heights?: number[];
@@ -168,7 +140,6 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
-/** Resample a closed polyline at an even step, carrying per-point attributes along. */
 function resampleClosed(points: readonly PlanPoint[], step: number, attrs: readonly (readonly number[] | undefined)[]): { pts: PlanPoint[]; step: number; attrs: (number[] | undefined)[] } {
   const n = points.length;
   const total = polylineLength(points, true);
@@ -216,10 +187,7 @@ function classify(angleDeg: number, radius: number): CircuitCornerKind {
   return "medium";
 }
 
-/**
- * Analyze one closed lap: curvature, corners, straights, a lap simulation and the metrics.
- * @capability generator-metrics measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them
- */
+/** @capability generator-metrics measure generated street nets, city districts and race laps against cited reference bands; `bun run gen-audit` renders and tables them */
 export function analyzeCircuit(input: CircuitMetricsInput, options: CircuitMetricsOptions = {}): CircuitAnalysis {
   const straightR = options.straightRadius ?? 250;
   const re = resampleClosed(input.centerline, options.sampleStep ?? 2, [input.widths, input.heights]);
@@ -484,7 +452,6 @@ export function analyzeCircuit(input: CircuitMetricsInput, options: CircuitMetri
   return { samples, distances, step, radii, widths, ...(heights === undefined ? {} : { heights }), corners, straights, sim, heavyBraking, overtakingSpots, metrics };
 }
 
-/** The {@link CircuitMetrics} of one closed lap (see {@link analyzeCircuit} for the full breakdown). */
 export function circuitMetrics(input: CircuitMetricsInput, options: CircuitMetricsOptions = {}): CircuitMetrics {
   return analyzeCircuit(input, options).metrics;
 }

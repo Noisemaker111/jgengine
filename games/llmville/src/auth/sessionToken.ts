@@ -16,7 +16,6 @@
  */
 const STORAGE_KEY = "llmville.convex-token";
 
-/** Match the refresh threshold in `AuthProvider` — tokens inside this window are not optimistic. */
 export const CONVEX_TOKEN_REFRESH_LEEWAY_SECONDS = 120;
 
 export function readPersistedConvexToken(): string | undefined {

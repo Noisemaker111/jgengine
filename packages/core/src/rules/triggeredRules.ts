@@ -13,7 +13,6 @@
 
 import { evaluatePredicate, readPath, type Predicate, type PredicateFacts, type PredicateValue } from "./predicate";
 
-/** Role slots an event exposes; a target selector resolves one of these to a concrete id. */
 export type TargetRole = "subject" | "object" | "source" | "owner";
 
 /**
@@ -25,18 +24,11 @@ export type TargetSelector =
   | { readonly path: string }
   | { readonly literal: string };
 
-/** A reference to an effect the game knows how to apply — id plus JSON-safe params, no closures. */
 export interface EffectRef {
   readonly id: string;
   readonly params?: Readonly<Record<string, PredicateValue>>;
 }
 
-/**
- * How a repeated application of the same rule's effect on the same target combines with a live one:
- * `refresh` re-arms the timer at one stack, `stack` adds a stack up to `maxStacks` and re-arms,
- * `independent` keeps each application as its own instance with its own expiry, `ignore` drops the
- * new application while one is already active.
- */
 export type StackPolicy = "refresh" | "stack" | "independent" | "ignore";
 
 /** Bounded firing budget over a sliding time window. */
@@ -51,21 +43,15 @@ export interface RateLimit {
  * only routes and gates.
  */
 export interface TriggeredRule {
-  /** Stable id, unique within an engine. */
   readonly id: string;
-  /** Event type this rule subscribes to. */
   readonly event: string;
-  /** Owner/source identity (item instance, talent node, quest id) for provenance and bulk cleanup. */
   readonly owner?: string;
-  /** Declarative gate over the event facts; omitted fires unconditionally. */
   readonly when?: Predicate;
   /** How the affected target id is resolved; defaults to the `subject` role. */
   readonly target?: TargetSelector;
-  /** The effect to apply when the rule fires. */
   readonly effect: EffectRef;
   /** Minimum ms between fires of this rule against the same resolved target. */
   readonly cooldownMs?: number;
-  /** Sliding-window firing cap across all targets. */
   readonly rateLimit?: RateLimit;
   /** Total fires before the rule is spent; omitted is unlimited. */
   readonly charges?: number;
@@ -77,17 +63,14 @@ export interface TriggeredRule {
   readonly maxStacks?: number;
 }
 
-/** A typed event handed to the engine; roles feed target resolution, facts feed the predicate. */
 export interface RuleEvent {
   readonly type: string;
   readonly subject?: string;
   readonly object?: string;
   readonly source?: string;
-  /** Fact bag the predicate and `{ path }` target selectors read. */
   readonly facts?: PredicateFacts;
 }
 
-/** A live timed effect an engine is tracking until it expires or is cleaned up. */
 export interface ActiveEffect {
   readonly instanceId: string;
   readonly ruleId: string;
@@ -115,15 +98,11 @@ export interface RuleFiring {
   readonly target: string;
   readonly effect: EffectRef;
   readonly at: number;
-  /** Set when the firing produced/updated a timed instance. */
   readonly instanceId?: string;
-  /** Stack count on the target after this firing (>= 1 for timed effects). */
   readonly stacks?: number;
-  /** Absent when the effect was applied; set when the firing was gated out. */
   readonly blocked?: FiringBlock;
 }
 
-/** Serializable runtime state — everything that changes future triggers. Rules travel with it. */
 export interface TriggeredRuleState {
   seq: number;
   rules: TriggeredRule[];
@@ -133,31 +112,18 @@ export interface TriggeredRuleState {
   active: ActiveEffect[];
 }
 
-/** A running set of triggered rules with gating, timed lifetimes, stacking, cleanup, and save/load. */
 export interface TriggeredRuleEngine {
-  /** Register or replace a rule by id. */
   add(rule: TriggeredRule): void;
-  /** Drop a rule and any active effects it produced. */
   remove(ruleId: string): void;
-  /** Drop every rule and active effect belonging to an owner (unequip, respec, entity removal). */
   removeByOwner(owner: string): void;
-  /** Snapshot of registered rules in insertion order. */
   rules(): readonly TriggeredRule[];
-  /** Match an event against all rules, gate, spawn/refresh timed effects, and return firings. */
   dispatch(event: RuleEvent, now: number): readonly RuleFiring[];
-  /** Advance time and return the active effects that expired (and were removed) this tick. */
   tick(now: number): readonly ActiveEffect[];
-  /** All live timed effects. */
   active(): readonly ActiveEffect[];
-  /** Live timed effects landed on a given target. */
   activeFor(target: string): readonly ActiveEffect[];
-  /** Drop all active timed effects but keep rules and gate state. */
   clearActive(): void;
-  /** Reset gate state and active effects (respec/encounter reset) while keeping rules. */
   reset(): void;
-  /** Serialize all future-affecting state. */
   snapshot(): TriggeredRuleState;
-  /** Replace all state from a snapshot. */
   hydrate(state: TriggeredRuleState): void;
 }
 

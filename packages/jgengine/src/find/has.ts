@@ -10,38 +10,28 @@ import { queryTokens, rowWords, stem } from "./words";
  * index and code map `find` reads, so planning a game is one lookup instead of a search per feature.
  */
 
-/** How much of a feature the engine already ships. */
 export type HasVerdict = "covered" | "partial" | "gap";
 
-/** One feature's answer. */
 export interface HasAnswer {
   feature: string;
-  /** `covered`: a part or a capability carries every word; `partial`: only a folder is named for it; `gap`: no match. */
   verdict: HasVerdict;
-  /** Engine folders named for the feature, core first. */
   folders: string[];
-  /** Best shipped capabilities, at most {@link HAS_PER_FEATURE}. */
   capabilities: { skill: string; slug: string; description: string; import: string | null }[];
 }
 
-/** Capability rows kept per feature. */
 export const HAS_PER_FEATURE = 3;
 
-/** One engine part: its doc line (name and what it covers) and the home it re-exports. */
 export interface PartRow {
   line: string;
   home: string;
 }
 
-/** What `has` searches: the capability rows, the engine's code and the parts barrel, indexed once. */
 export interface HasSources {
   capabilities: readonly CapabilityEntry[];
   code: readonly IndexedFile[];
-  /** The doc line and home of each part, read from `parts.ts`. */
   parts?: readonly PartRow[];
 }
 
-/** The parts a `parts.ts` barrel names: each doc comment followed by the `export * from` it describes. */
 export function parsePartRows(text: string): PartRow[] {
   const rows: PartRow[] = [];
   for (const match of text.matchAll(/\/\*\*\s*([^*]+?)\s*\*\/\s*export\s+\*\s+from\s+"\.\/([^"]+)"/g)) {
@@ -51,21 +41,12 @@ export function parsePartRows(text: string): PartRow[] {
   return rows;
 }
 
-/** A capability with the words its code says about it, at two strengths. */
 export interface CodeWords {
-  /** The capability as indexed. */
   entry: CapabilityEntry;
-  /** The capability plus the folder and file name each of its exported symbols is declared in. */
   named: CapabilityEntry;
-  /** Every doc comment in the files that declare its symbols, one per entry. */
   docs: IndexedFile["docs"];
 }
 
-/**
- * Each capability with the words its code says about it. Names are strong evidence on their own
- * ("state schedule" finds `stateSchedule/`). Doc comments are weak evidence ("bow" of a boat, a terrain
- * "saddle"), used only by {@link matchFeature} to finish a match the names started.
- */
 export function withCodeWords(capabilities: readonly CapabilityEntry[], code: readonly IndexedFile[]): CodeWords[] {
   const declared = new Map<string, { file: IndexedFile; words: string }[]>();
   for (const indexed of code) {
@@ -83,10 +64,6 @@ export function withCodeWords(capabilities: readonly CapabilityEntry[], code: re
   });
 }
 
-/**
- * Folder and file names plus the tails of their compound words, so "schedule" reaches `stateSchedule` and
- * "building" reaches `basebuilding`. Only names get tails: in prose, "rate" would reach "generate".
- */
 function compoundTails(names: string): string {
   const tails = [...rowWords(names)].filter((word) => word.length >= 7).flatMap((word) => {
     const cuts: string[] = [];
@@ -103,7 +80,6 @@ function carries(words: ReadonlySet<string>, token: string): boolean {
   return false;
 }
 
-/** Below this a capability is a stray word, not an answer. */
 const BAR = 10;
 const NAME_HIT = 10;
 const DESCRIPTION_HIT = 2;
@@ -132,7 +108,6 @@ function scoreCapability(words: CodeWords, tokens: readonly string[]): { score: 
   return tokens.some((token) => carries(own, token)) ? { score, complete: false, named } : none;
 }
 
-/** Part rows whose doc line carries every word. */
 function matchParts(parts: readonly PartRow[], tokens: readonly string[]): PartRow[] {
   return parts.filter((part) => {
     const words = rowWords(part.line);
@@ -140,7 +115,6 @@ function matchParts(parts: readonly PartRow[], tokens: readonly string[]): PartR
   });
 }
 
-/** Answer each feature against one set of sources. */
 export function answerHas(features: readonly string[], sources: HasSources): HasAnswer[] {
   const searched = withCodeWords(sources.capabilities, sources.code);
   return features.map((feature) => {
@@ -174,7 +148,6 @@ export function answerHas(features: readonly string[], sources: HasSources): Has
   });
 }
 
-/** The capability index and code map of this checkout, or of the installed packages outside one. */
 export function loadHasSources(cwd: string = process.cwd()): HasSources {
   const root = engineRoot(cwd);
   const capabilities = loadAllCapabilities(root);
@@ -205,7 +178,6 @@ const HELP = [
   "named for it and the best shipped capabilities with their import. Same index as `jgengine find`.",
 ].join("\n");
 
-/** `jgengine has` command entry. */
 export function runHas(argv: readonly string[]): number {
   const features = argv.filter((arg) => !arg.startsWith("-")).map((arg) => arg.trim()).filter((arg) => arg !== "");
   if (features.length === 0 || argv.includes("--help") || argv.includes("-h")) {

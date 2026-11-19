@@ -4,15 +4,12 @@ import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 import type { TrackedQuestView } from "@jgengine/core/mission/quest";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
-/** Props for {@link QuestTracker}. */
 export interface QuestTrackerProps {
-  /** Quests to show, e.g. `journal.list(userId).map((q) => describeTrackedQuest(defs[q.questId], q))`. */
   quests: readonly TrackedQuestView[];
   title?: string;
   emptyLabel?: string;
   /** Max objectives shown per quest before a "+N more" line. Default: all. */
   maxObjectives?: number;
-  /** Accent color for the completion tick / progress fill. Reads a HudTheme token by default. */
   accent?: string;
   className?: string;
   style?: CSSProperties;

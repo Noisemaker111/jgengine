@@ -4,7 +4,6 @@ import { cloneEditorDocument, decodeEditorDocument, editorDocumentSize } from ".
 import type { EditorDocument } from "./types";
 import { isScatterPath } from "../scatter/scatterRegion";
 
-/** Bounds and catalog permissions for player-authored documents. */
 export interface CreatorPolicy {
   maxDocuments: number;
   maxBytes: number;
@@ -15,16 +14,13 @@ export interface CreatorPolicy {
   allowedKinds: readonly string[];
   allowedAssets: readonly string[];
   allowedCatalogIds?: readonly string[];
-  /** Total standing/weather pools plus capacity for 32 concurrent collision child bursts. */
   maxSimulationParticles?: number;
   maxFireCells?: number;
   maxPopulation?: number;
   maxForceFields?: number;
-  /** Additional game-specific constraints; throw to reject the candidate atomically. */
   validate?: (document: EditorDocument) => void;
 }
 
-/** A named scene save with a storage-format version and optimistic revision. */
 export interface CreatorDocument {
   version: 1;
   id: string;
@@ -40,7 +36,6 @@ export interface CreatorDocumentStorage {
   save(value: CreatorDocument, expectedRevision: number | null): Promise<CreatorDocument>;
 }
 
-/** Creator configuration shared by a host and its lazily loaded editor. */
 export interface CreatorConfig<TPlayable> {
   storage: CreatorDocumentStorage;
   policy: CreatorPolicy;
@@ -53,7 +48,6 @@ function byteSize(value: string): number {
   return new TextEncoder().encode(value).length;
 }
 
-/** Validates schema, finite work budgets, and approved catalog references before cloning. */
 export function validateCreatorDocument(value: unknown, policy: CreatorPolicy): EditorDocument {
   if (value === null || typeof value !== "object" || (value as { version?: unknown }).version !== 1) throw new Error("Unsupported creator scene version");
   for (const key of ["maxDocuments", "maxBytes", "maxObjects", "maxPathPoints", "maxGridCells", "maxTerrainVertices"] as const) {
@@ -122,9 +116,7 @@ export function importCreatorDocument(json: string, policy: CreatorPolicy): Edit
   return validateCreatorDocument(JSON.parse(json), policy);
 }
 
-/** Exports validated, schema-versioned scene JSON.
- * @capability creator-export export validated player scenes with approved catalogs and finite budgets
- */
+/** @capability creator-export export validated player scenes with approved catalogs and finite budgets */
 export function exportCreatorDocument(document: EditorDocument, policy: CreatorPolicy): string {
   return JSON.stringify(validateCreatorDocument(document, policy), null, 2);
 }

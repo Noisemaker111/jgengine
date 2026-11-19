@@ -5,7 +5,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-/** The tar executable to spawn on this platform. */
 export function tarExecutable(platform: NodeJS.Platform = process.platform, env: NodeJS.ProcessEnv = process.env): string {
   if (platform !== "win32") return "tar";
   const system = join(env["SystemRoot"] ?? env["windir"] ?? "C:\\Windows", "System32", "tar.exe");

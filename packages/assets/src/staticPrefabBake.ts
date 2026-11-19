@@ -39,7 +39,6 @@ export interface StaticPrefabBakeReport {
   byteLength: number;
   triangles: number;
   submissions: number;
-  /** Optimization merges source mesh primitives; original mesh/primitive selectors are not portable. */
   materialLayout: "merged-by-source-material";
   bounds: StaticPrefabBox;
   sourcePrefabSha256: string;

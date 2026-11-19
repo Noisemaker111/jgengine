@@ -22,7 +22,7 @@ export function floatAttribute(attribute: THREE.BufferAttribute | THREE.Interlea
   return new THREE.BufferAttribute(array, itemSize);
 }
 
-/** A copy of a geometry whose every attribute is plain float, ready to transform and merge. @internal */
+/** @internal */
 export function floatGeometry(source: THREE.BufferGeometry): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   for (const [name, attribute] of Object.entries(source.attributes)) geometry.setAttribute(name, floatAttribute(attribute));
@@ -44,7 +44,7 @@ export function setModelSubMeshMerge(enabled: boolean): void {
   mergeEnabled = enabled;
 }
 
-/** The node names a merged mesh absorbed, in the order they were merged. Empty for an unmerged mesh. @internal */
+/** @internal */
 export function mergedMeshNames(mesh: THREE.Object3D): readonly string[] {
   const names = mesh.userData[MERGED_NAMES_KEY];
   return Array.isArray(names) ? (names as string[]) : [];
@@ -60,11 +60,10 @@ export function meshMatchesName(mesh: THREE.Object3D, name: string): boolean {
   return mesh.name === name || mergedMeshNames(mesh).includes(name);
 }
 
-/** What {@link mergeModelSubMeshes} did to one loaded model. @internal */
+/** @internal */
 export interface ModelMeshMergeReport {
   /** Meshes removed from the graph because their geometry joined a same-material sibling. */
   merged: number;
-  /** Meshes left in place. */
   kept: number;
 }
 

@@ -15,7 +15,6 @@ export interface BuildPlaceInput {
   point: EntityPosition;
 }
 
-/** Sell/upgrade act on `instanceId` when given, else on the inspected tower (the keybind path passes no id). */
 export interface TowerTargetInput {
   instanceId?: string;
 }
@@ -24,10 +23,6 @@ type Refusal = { reason: string; message?: string };
 const refusal = (result: { reason: string; message: string } | null): Refusal | null =>
   result === null ? null : { reason: result.reason, message: result.message };
 
-/**
- * A click on the field: an occupied plot opens its tower, open ground closes the panel, and an empty
- * plot builds the picked tower through `beacon.place`, which pays, reserves the plot and starts the build.
- */
 function rejectBuild(ctx: GameContext, input: BuildPlaceInput): Refusal | null {
   if (session.armedAbility !== null) return null;
   const plot = nearestPlot(input.point, PLOT_CLICK_RADIUS);
@@ -74,12 +69,10 @@ function upgradeActionFor(ctx: GameContext, id: string, kind: string): string | 
   return options[0]!.action;
 }
 
-/** The aim the tower would switch to next: first, last, strongest, nearest, then round again. */
 function nextAimFor(ctx: GameContext, id: string): string {
   return aimAction(nextAutoTargetPolicy(towerStats(keep.of(ctx), id).aim, AIM_POLICIES));
 }
 
-/** The keybind path (U / X / T): the declared upgrade, sale or aim change of the inspected tower. */
 function towerAction(actionOf: (ctx: GameContext, id: string, kind: string) => string | Refusal) {
   return {
     validate(ctx: GameContext, input: TowerTargetInput | undefined): Refusal | null {

@@ -8,17 +8,12 @@ import type { GameContextContent } from "../gameContext";
 
 /** @internal Inputs for routing a resolved lethal kill into bag grants and/or ground-item spawns. */
 export interface LethalLootInput {
-  /** Drops produced by the death system's resolution (already rolled). */
   drops: readonly Drop[];
-  /** Resolved killer identity; environmental kills have no player recipient. */
   recipientUserId: string | undefined;
-  /** Explicit any-death world rules may spawn items without a player recipient. */
   allowUnownedWorldDrops?: boolean;
-  /** Catalog `onDeath` for the dying entity (drop mode + scatter). */
   onDeath: OnDeathSpec | undefined;
   /** World position of the dying entity — required for `dropMode: "world"`. */
   position: readonly [number, number, number] | undefined;
-  /** Catalog id of the dying entity — used as loot source tag when present. */
   catalogId: string | undefined;
   content: GameContextContent;
   spawnWorldItem: (input: WorldItemSpawnInput) => void;
@@ -33,7 +28,6 @@ export function allowsUnownedWorldDrops(onDeath: OnDeathSpec | undefined): boole
   return normalized.dropMode === "world" && normalized.drops.some((rule) => rule.when?.reason === "any");
 }
 
-/** The game's rarity for one dropped item: its catalog entry, else the game's declared baseline. */
 function worldDropRarity(content: GameContextContent, itemId: string): string {
   const rarity = content.itemById?.(itemId)?.rarity ?? content.defaultRarity;
   if (rarity === undefined) {

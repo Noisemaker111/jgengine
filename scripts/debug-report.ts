@@ -60,7 +60,6 @@ export function parseDebugArgs(argv: readonly string[]): DebugArgs | "help" {
   return { game, waitMs, budget };
 }
 
-/** Fetch the newest in-page report for `game` from a running dev server. */
 export async function fetchReport(base: string, game: string, waitMs: number): Promise<PerfReport | { error: string }> {
   const url = new URL(REPORT_ENDPOINT_PATH, base);
   url.searchParams.set("game", game);
@@ -83,7 +82,6 @@ export async function fetchReport(base: string, game: string, waitMs: number): P
   return body as PerfReport;
 }
 
-/** The URL a person opens to play `game` on a given dev server. */
 export function gameUrl(server: { base: string; kind: "website" | "runner" }, game: string): string {
   return server.kind === "website" ? `${server.base}/games/${game}` : `${server.base}/?game=${game}`;
 }

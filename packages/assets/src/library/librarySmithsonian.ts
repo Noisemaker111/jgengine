@@ -1,7 +1,6 @@
 import type { LibraryRecord } from "./assetLibrary";
 import { cleanTags, type IngestOptions } from "./libraryIngest";
 
-/** The Smithsonian Open Access search for every item with a 3D model. */
 const SEARCH = "https://api.si.edu/openaccess/api/v1.0/search";
 const PAGE_ROWS = 1000;
 /** Pulls stay game-sized: a model whose smallest GLB is larger is left out. */
@@ -25,7 +24,6 @@ function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-/** A resource's flattened attribute list (`[{ UNITS }, { FILE_SIZE }]`). */
 function attributes(resource: unknown): Record<string, unknown> {
   return Object.assign({}, ...list(at(resource, "attributes")).filter(isRecord));
 }

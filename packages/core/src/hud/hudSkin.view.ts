@@ -1,6 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "@jgengine/core/ui/jsx";
 
-/** Optional raster-backed materials for shared HUD chrome. */
 export interface HudSkinMaterial {
   image: string;
   slice: [number, number, number, number];
@@ -8,7 +7,6 @@ export interface HudSkinMaterial {
   fill?: boolean;
 }
 
-/** A game-authored visual skin layered over a {@link HudTheme}. */
 export interface HudSkin {
   frame?: HudSkinMaterial;
   slot?: HudSkinMaterial;
@@ -16,7 +14,6 @@ export interface HudSkin {
   cursor?: string;
 }
 
-/** Converts a skin into the CSS variables consumed by shared HUD components. */
 export function hudSkinVars(skin?: HudSkin): CSSProperties {
   if (!skin) return {};
   const vars: Record<string, string> = {};
@@ -37,7 +34,6 @@ export function hudSkinVars(skin?: HudSkin): CSSProperties {
   return vars as CSSProperties;
 }
 
-/** Loads a skin font in browsers and reports when it is available. */
 export function useHudFont(skin?: HudSkin): boolean {
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {

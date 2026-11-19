@@ -17,7 +17,6 @@ const MODEL_QUALITY_TIER_GACHA_WEIGHTS = [
   ["sota", 0.025],
 ] as const satisfies ReadonlyArray<readonly [ModelQualityTierId, number]>;
 
-/** Max deviation (percent of baseline) for each economy stat roll at that tier; sign/magnitude use {@link rollStatMultiplierFromTierInputs}. */
 const MODEL_QUALITY_TIER_MAX_JITTER_PERCENT: Readonly<Record<ModelQualityTierId, number>> = {
   common: 5,
   uncommon: 10,
@@ -25,7 +24,6 @@ const MODEL_QUALITY_TIER_MAX_JITTER_PERCENT: Readonly<Record<ModelQualityTierId,
   sota: 30,
 };
 
-/** Share of rolls that move each stat in the “better than baseline” direction (vs worse). */
 const TIER_STAT_JITTER_POSITIVE_BIAS = 0.75;
 
 /**
@@ -46,7 +44,6 @@ export function rollStatMultiplierFromTierInputs(tier: ModelQualityTierId, uSign
   return 1 + (sign * deviationPercent) / 100;
 }
 
-/** Linear +20% to rolled base stats when committing 4× the minimum data (1× → 1.0, 4× → 1.2). */
 export function overtrainStatMultiplier(overtrainBracket: number): number {
   const b = Math.max(1, Math.min(4, Math.round(overtrainBracket)));
   return 1 + ((b - 1) / 3) * 0.2;
@@ -106,7 +103,6 @@ export function generatePostTrainingModelStats(params: {
   };
 }
 
-/** Map a uniform draw u ∈ [0, 1) to a tier using {@link MODEL_QUALITY_TIER_GACHA_WEIGHTS}. */
 export function modelQualityTierFromUnit(u: number): ModelQualityTierId {
   if (!Number.isFinite(u) || u < 0 || u >= 1) {
     throw new Error(`modelQualityTierFromUnit expected u in [0, 1), got ${u}`);

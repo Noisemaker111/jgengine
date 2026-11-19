@@ -8,10 +8,6 @@ import { onboardingOf, type OnboardingRuntime } from "@jgengine/core/onboarding/
 import { useGame, useGameStore } from "@jgengine/ui/hooks";
 import { useGameContext } from "@jgengine/ui/provider";
 
-/**
- * The running onboarding, or `null` when the game installed none. Compose its `markers` into the
- * game's `Minimap` and its `waypoints` into a compass.
- */
 export function useOnboarding(): OnboardingRuntime | null {
   return onboardingOf(useGameContext());
 }
@@ -25,9 +21,7 @@ interface OnboardingHudView {
 
 const sameView = (a: OnboardingHudView | null, b: OnboardingHudView | null): boolean => JSON.stringify(a) === JSON.stringify(b);
 
-/** Props for {@link OnboardingHud}. */
 export interface OnboardingHudProps {
-  /** Accent for ticks, progress and buttons. */
   accent?: string;
   skipLabel?: string;
   nextLabel?: string;
@@ -36,12 +30,7 @@ export interface OnboardingHudProps {
   style?: CSSProperties;
 }
 
-/**
- * The tracker's view of `quest` cut to the step at `current` and `ahead` steps after it, its title
- * counting the step ("Survivor's path · 3 of 22"). `ahead` undefined keeps every step.
- *
- * @internal
- */
+/** @internal */
 export function onboardingWindow(quest: TrackedQuestView, current: string | undefined, ahead: number | undefined): TrackedQuestView {
   if (ahead === undefined || current === undefined) return quest;
   const at = quest.objectives.findIndex((objective) => objective.id === current);
@@ -49,13 +38,7 @@ export function onboardingWindow(quest: TrackedQuestView, current: string | unde
   return { ...quest, title: `${quest.title} · ${at + 1} of ${quest.objectives.length}`, objectives: quest.objectives.slice(at, at + 1 + Math.max(0, ahead)) };
 }
 
-/**
- * The onboarding's HUD: its steps as a quest in the existing `QuestTracker` (current step's detail
- * under it), Next for a step the player acknowledges, and Skip when skippable. Put it in a
- * `HudSlots` slot; it hides itself once finished.
- *
- * @capability onboarding-hud onboarding steps in the quest tracker with Next and Skip
- */
+/** @capability onboarding-hud onboarding steps in the quest tracker with Next and Skip */
 export function OnboardingHud({ accent, skipLabel = "Skip tutorial", nextLabel = "Next", ahead, style }: OnboardingHudProps): ReactNode {
   const runtime = useOnboarding();
   const { commands } = useGame();

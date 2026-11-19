@@ -2,10 +2,7 @@
 // @skill jgengine-multiplayer
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
-/**
- * Blocking join feedback; callers may supply their own copy and classes.
- * @capability join-gate block gameplay until joined and show failures with retry
- */
+/** @capability join-gate block gameplay until joined and show failures with retry */
 export function JoinGate({ status, failureReason, retry, joiningLabel = "Joining world…", failedLabel = "Unable to join", retryLabel = "Retry", className, children, renderJoining, renderFailure }: {
   status: "joining" | "joined" | "failed";
   failureReason?: string | null;

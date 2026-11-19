@@ -1,19 +1,7 @@
-/**
- * Assemble PNG frames (CDP screencast/screenshot output) into an animated GIF —
- * the clip format that actually animates everywhere: GitHub PR bodies (via the
- * camo proxy), chat panels, editors, and image viewers that show an animated
- * PNG as a still. Decoding uses the engine's `@jgengine/assets` imageCodec; quantization,
- * palette mapping, and LZW come from `gifenc` (pure JS, no native deps).
- *
- * GIF is 256 colors per frame; the flat-shaded game art here quantizes cleanly
- * and compresses far smaller than APNG's lossless frames, so clips fit many
- * more frames under the ~5MB GitHub camo ceiling.
- */
 import { GIFEncoder, quantize, applyPalette } from "gifenc";
 import { decodePng } from "../packages/assets/src/imageCodec";
 import type { ApngFrame } from "./apng";
 
-/** Expand grayscale/GA/RGB decode output to the RGBA gifenc expects. */
 export function toRgba(data: Uint8Array, width: number, height: number): Uint8Array {
   const pixels = width * height;
   const channels = data.length / pixels;

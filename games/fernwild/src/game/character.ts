@@ -4,7 +4,6 @@ import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 
 import { editorLayers } from "../editorLayers";
 
-/** ARK's creator bodies: two men and two women from Quaternius' modular people, each a look on the survivor model. */
 export const BODIES = [
   { id: "man-1", label: "Man 1", sex: "male", model: "quaternius-modular-men/Adventurer" },
   { id: "man-2", label: "Man 2", sex: "male", model: "quaternius-modular-men/Farmer" },
@@ -14,12 +13,10 @@ export const BODIES = [
 
 export type BodyId = (typeof BODIES)[number]["id"];
 
-/** ARK's height slider, as a share of the body's own height. */
 export const HEIGHT = { min: 0.9, max: 1.1 } as const;
 
 export const NAME_LIMIT = 24;
 
-/** How hard a start region is, as ARK's spawn screen says it: danger rises with distance from the south beach. */
 export type RegionDifficulty = "Easy" | "Medium" | "Hard";
 
 /** Metres from the south beach where Medium and then Hard begin. */
@@ -34,10 +31,6 @@ export interface StartRegion {
   difficulty: RegionDifficulty;
 }
 
-/**
- * The spawn regions on ARK's spawn screen: every player_spawn marker in editor.scene.json, the first
- * being the south beach the island's danger is measured from (the herds' level cap uses the same distance).
- */
 export const START_REGIONS: readonly StartRegion[] = (() => {
   const markers = markersOfKind(editorLayers, "player_spawn");
   const home = markers[0];
@@ -53,7 +46,6 @@ export const START_REGIONS: readonly StartRegion[] = (() => {
   });
 })();
 
-/** What the creator made: shown as the survivor's body, kept in the save. */
 export interface SurvivorLook {
   name: string;
   body: BodyId;
@@ -73,10 +65,8 @@ export function startRegion(id: string): StartRegion | undefined {
   return START_REGIONS.find((region) => region.id === id);
 }
 
-/** What a creator command or an old save may carry: any field, of any type. */
 export type LookInput = Partial<Record<keyof SurvivorLook, unknown>>;
 
-/** A creator choice made safe: a known body and region, a height on the slider, a name trimmed to fit. */
 export function cleanLook(input: LookInput): SurvivorLook {
   const name = typeof input.name === "string" ? input.name.trim().slice(0, NAME_LIMIT) : "";
   const height = typeof input.height === "number" && Number.isFinite(input.height) ? Math.min(HEIGHT.max, Math.max(HEIGHT.min, input.height)) : 1;
@@ -88,7 +78,6 @@ export function cleanLook(input: LookInput): SurvivorLook {
   };
 }
 
-/** Draw the survivor as made: the body as its look, the height as its size, and respawn in the chosen region. */
 function showLook(ctx: GameContext, look: SurvivorLook): void {
   const id = ctx.player.userId;
   ctx.scene.entity.update(id, { look: look.body, size: look.height });
@@ -98,7 +87,6 @@ function showLook(ctx: GameContext, look: SurvivorLook): void {
   ctx.scene.entity.setSpawnPose(id, { position: [x, ctx.world.groundHeightAt(x, z), z], rotationY: region.rotationY });
 }
 
-/** Make the survivor and wake them in the chosen region, facing inland as the marker does. */
 export function createSurvivor(ctx: GameContext, input: LookInput): SurvivorLook {
   const look = cleanLook(input);
   made(ctx).look = look;
@@ -110,7 +98,6 @@ export function createSurvivor(ctx: GameContext, input: LookInput): SurvivorLook
   return look;
 }
 
-/** The teaching area of the survivor's path: the beach of the region they woke in. */
 export function startArea(ctx: GameContext): { center: readonly [number, number]; radius: number; label: string } {
   const region = startRegion(survivorLook(ctx).region) ?? START_REGIONS[0];
   const [x, , z] = region?.position ?? [0, 0, 0];

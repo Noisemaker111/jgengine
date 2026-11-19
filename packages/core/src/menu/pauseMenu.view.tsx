@@ -3,7 +3,6 @@ import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { GameMenu, type GameMenuProps } from "./gameMenu.view";
 
-/** Props for {@link PauseMenu}: every {@link GameMenu} knob except `variant`, plus `onResume`. */
 export type PauseMenuProps = Omit<GameMenuProps, "variant"> & {
   /** Resume play. Escape, B and Start call it too unless `onBack` is given. */
   onResume?: () => void;

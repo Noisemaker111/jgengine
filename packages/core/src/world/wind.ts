@@ -10,7 +10,6 @@ export interface WindFieldConfig {
   gustFrequency?: number;
   turbulence?: number;
   seed?: string | number;
-  /** Physical terms (log-law height profile, spectral gusts), each with its own strength; omit for the plain field. */
   effects?: WindEffects;
 }
 
@@ -20,7 +19,6 @@ export interface WindField {
   at(time: number): WindVector;
   atPoint(x: number, z: number, time: number): WindVector;
   strengthAt(x: number, z: number, time: number): number;
-  /** Wind at a point `heightM` above the ground; equals {@link WindField.atPoint} without a `profile` or `gusts` effect. */
   atHeight(x: number, z: number, heightM: number, time: number): WindVector;
 }
 

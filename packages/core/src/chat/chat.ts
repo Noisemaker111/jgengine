@@ -277,10 +277,8 @@ export function createChat(deps: ChatDeps): Chat {
   };
 }
 
-/** Sanitized chat text or a displayable validation failure. */
 export type ChatValidation = { ok: true; text: string } | { ok: false; reason: string };
 
-/** Strip control characters and enforce the shared chat message policy before storage or broadcast. */
 export function validateChatMessage(value: unknown, options: { maxLength?: number } = {}): ChatValidation {
   const maxLength = options.maxLength ?? DEFAULT_CHAT_BODY_LENGTH;
   if (!Number.isSafeInteger(maxLength) || maxLength < 1) throw new RangeError("Invalid chat length limit");

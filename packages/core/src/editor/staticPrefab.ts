@@ -1,19 +1,14 @@
-/** A solid or clearance volume in the prefab's unnormalized local asset space. */
 export interface StaticPrefabBox {
   min: readonly [number, number, number];
   max: readonly [number, number, number];
 }
 
-/** Persisted static export settings; source parts remain editable in the prefab fragment. */
 export interface StaticPrefabBake {
   assetId: string;
-  /** Omit for a conservative closed exterior. Explicit boxes preserve authored openings. */
   collisionBoxes?: readonly StaticPrefabBox[];
-  /** Required empty spaces, checked against movement solids before export. */
   clearances?: readonly (StaticPrefabBox & { id: string })[];
 }
 
-/** Validate and copy static prefab export settings from document or RPC input. */
 export function parseStaticPrefabBake(value: unknown): StaticPrefabBake {
   const record = (input: unknown): Record<string, unknown> => {
     if (input === null || typeof input !== "object" || Array.isArray(input)) throw new Error("expected an object");

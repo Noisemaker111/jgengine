@@ -7,7 +7,6 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useRef } from "@jgengine/core/ui/jsx";
 
-/** Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint. */
 export interface PlacementGhostProps {
   preview: PlacementPreview | null;
   height?: number;
@@ -15,10 +14,7 @@ export interface PlacementGhostProps {
   invalidColor?: string;
 }
 
-/**
- * Cursor-following build ghost: valid/invalid tint from a placement controller preview.
- * @capability placement-ghost render valid/invalid placement preview mesh
- */
+/** @capability placement-ghost render valid/invalid placement preview mesh */
 export function placementGhostDraw(getProps: () => PlacementGhostProps): EngineDraw {
   const group = new THREE.Group();
   const boxGeometry = new THREE.BoxGeometry(1, 1, 1);

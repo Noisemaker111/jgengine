@@ -3,7 +3,6 @@ import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import { bindingLabel, primaryActionCodes, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import type { GamepadGlyphName } from "@jgengine/core/input/gamepadModel";
 
-/** The device the player last used: drives which glyph a prompt shows. */
 export type InputDevice = "keyboard" | "gamepad" | "touch";
 
 let current: InputDevice | null = null;
@@ -17,14 +16,12 @@ function initialDevice(): InputDevice {
   return coarse && !fine ? "touch" : "keyboard";
 }
 
-/** Report the device the player just used. The shell's own input calls it; a game rarely needs to. */
 export function setInputDevice(device: InputDevice): void {
   if (current === device) return;
   current = device;
   for (const listener of listeners) listener();
 }
 
-/** The device the player last used, without subscribing. */
 export function getInputDevice(): InputDevice {
   if (current === null) current = initialDevice();
   return current;
@@ -88,12 +85,7 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-/**
- * The device the player is using right now — keyboard/mouse, gamepad or touch — switching the moment
- * they touch another one. Prompts use it to show `E`, `A` or a tap target.
- *
- * @capability input-device which device the player last used (keyboard, gamepad, touch), live, for device-correct prompts
- */
+/** @capability input-device which device the player last used (keyboard, gamepad, touch), live, for device-correct prompts */
 export function useInputDevice(): InputDevice {
   return useSyncExternalStore(subscribe, getInputDevice, () => "keyboard");
 }

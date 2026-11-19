@@ -1,19 +1,13 @@
 export type GlideVec3 = readonly [number, number, number];
 
 export interface GlideModelConfig {
-  /** Fraction of gravity felt while gliding; default `0.25`. */
   gravityScale?: number;
-  /** Gravity used before scaling; default `20`. */
   gravity?: number;
-  /** Forward cruise acceleration toward `forwardSpeed`; default `10`. */
   thrustAccel?: number;
-  /** Cruise speed the glider settles toward along its heading; default `12`. */
   forwardSpeed?: number;
   /** Yaw radians/s at full steer input; default `1.6`. */
   yawRate?: number;
-  /** Vertical thrust (units/s²) at full throttle — powered climb; default `0` (unpowered glide). */
   climbAccel?: number;
-  /** Terminal fall speed; default `8`. */
   maxFallSpeed?: number;
   /** Control softness in `[0, 1]` — `1` full authority, lower values (turbulence) blunt steering and thrust; default `1`. */
   control?: number;
@@ -44,16 +38,11 @@ export interface GlideModel {
   step(dt: number, input?: GlideInput, externalVelocity?: GlideVec3): GlideStep;
   pose(): GlideStep;
   launch(position: GlideVec3, heading: number, initialSpeed?: number): void;
-  /** Plain JSON copy of the glider's position, velocity and heading. */
   snapshot(): GlideStep;
   restore(next: GlideStep): void;
 }
 
-/**
- * Gliding/wingsuit descent control — lift, drag, and steering from a launch.
- *
- * @capability glide gliding/wingsuit descent control from a launch
- */
+/** @capability glide gliding/wingsuit descent control from a launch */
 export function createGlideModel(config: GlideModelConfig = {}): GlideModel {
   const gravity = (config.gravity ?? 20) * (config.gravityScale ?? 0.25);
   const thrustAccel = config.thrustAccel ?? 10;

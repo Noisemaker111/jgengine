@@ -32,7 +32,6 @@ const SCOUT_SQUAD = 2;
 const ROLE_INTERVAL = 2;
 const CONTACT_RADIUS = 16;
 
-/** Sizing rule for a Marauder wave: the healthier and further ahead the player is, the larger it is. */
 const MARCH_PRESSURE: PressureRule = {
   healthWeight: 0.5,
   progressWeight: 1,
@@ -46,33 +45,24 @@ type PlanState = ReturnType<typeof startEncounter>["state"];
 
 export interface EnemyWaveState {
   plan: PlanState;
-  /** Attack waves authored for this run. */
   encounter: Encounter;
-  /** Waves mustered so far. */
   sent: number;
   /** Seconds of opening grace remaining before the plan starts. */
   grace: number;
-  /** The forward camp the Marauders raised, if it still stands. */
   campId: string | null;
-  /** Units of the wave currently on the field, for role assignment. */
   waveUnits: string[];
   /** Seconds until the next role pass. */
   roleTimer: number;
-  /** Pressure tier the last wave was sized at. */
   tier: number;
   /** The full plan the last wave was sized with, so a test or the HUD can name the rule. */
   lastPressure: PressurePlan;
-  /** Units currently walking to a noise, with where they were sent. */
   hunting: Record<string, { x: number; z: number }>;
-  /** The scouting party sent during the plan's scout phase. */
   scouts: string[];
   /** Game second the scouts first saw something of the player's. */
   contactAt: number;
-  /** True once a scout has seen anything of the player's; the plan's contact flag reads it. */
   contacted: boolean;
 }
 
-/** The enemy's eyes and ears, built once per session: one service for the whole camp. */
 function sensesOf(): PerceptionService {
   session.senses ??= createPerception({
     sightRange: 20,
@@ -104,14 +94,12 @@ export function lastContactSeconds(): number {
   return session.enemyWave.contactAt;
 }
 
-/** Where waves march: the live player keep if it still stands, else the authored keep point. */
 function assaultTarget(): { x: number; z: number } {
   const keep = livingUnits("player", "building").find((u) => u.catalogId === "keep_player");
   if (keep?.guardPoint !== undefined) return keep.guardPoint;
   return playerKeepPoint();
 }
 
-/** The camp a wave can muster from: the forward camp if it stands, else the home warcamp. */
 function musterCamp(ctx: GameContext): { id: string; point: { x: number; z: number } } | null {
   const forward = session.enemyWave.campId;
   const wanted = forward !== null ? [forward, "warcamp"] : ["warcamp"];
@@ -142,7 +130,6 @@ function spawnEnemyUnit(ctx: GameContext, catalogId: string, x: number, z: numbe
   return id;
 }
 
-/** Fan one group of a mustered wave in front of the camp, then hand it its orders. */
 function musterWave(ctx: GameContext, camp: { x: number; z: number }, units: readonly string[], target: { x: number; z: number }): void {
   const dx = target.x - camp.x;
   const dz = target.z - camp.z;
@@ -170,7 +157,6 @@ function flankPoint(target: { x: number; z: number }, from: { x: number; z: numb
   return { x: target.x - (dz / length) * offset * side, z: target.z + (dx / length) * offset * side };
 }
 
-/** Apply one duty to a Marauder as the game's own command. */
 function commandFor(
   intent: FightIntent,
   unitId: string,
@@ -226,7 +212,6 @@ function assignWaveRoles(ctx: GameContext): void {
   }
 }
 
-/** One beat of the attack phase: size the wave from the player's state, then muster it. */
 function musterNextWave(ctx: GameContext): void {
   const wave = session.enemyWave;
   const camp = musterCamp(ctx);
@@ -257,7 +242,6 @@ function keepHealthFraction(ctx: GameContext): number {
   return Math.max(0, stats.current) / stats.max;
 }
 
-/** The forward camp: a Marauder hold halfway to the player, so waves arrive sooner. */
 function raiseForwardCamp(ctx: GameContext): void {
   const home = ctx.scene.entity.get("warcamp");
   const target = assaultTarget();
@@ -286,7 +270,6 @@ function raiseForwardCamp(ctx: GameContext): void {
   ctx.game.notices.push({ text: "The Marauders raise a forward camp", ttlMs: 6000 });
 }
 
-/** Send the scouting party: two grunts walk the road toward the player's hold. */
 function sendScouts(ctx: GameContext): void {
   const camp = musterCamp(ctx);
   if (camp === null) return;
@@ -301,7 +284,6 @@ function sendScouts(ctx: GameContext): void {
   }
 }
 
-/** Look with the shared perception service: enemy eyes against the player's roster. */
 function observeEnemySenses(ctx: GameContext): void {
   const enemies = livingUnits("enemy", "unit");
   session.enemyPositions = {};
@@ -332,7 +314,6 @@ function observeEnemySenses(ctx: GameContext): void {
   }
 }
 
-/** A noise the Marauders can hear: a fight, an ability, a building coming down. */
 export function raiseCombatNoise(ctx: GameContext, position: { x: number; z: number }, sourceId: string): void {
   huntOf().noise({ sourceId, position: [position.x, 0, position.z], at: session.elapsed * 1000, loudness: 1.4 });
   for (const enemy of livingUnits("enemy", "unit")) {
@@ -344,10 +325,6 @@ export function raiseCombatNoise(ctx: GameContext, position: { x: number; z: num
   }
 }
 
-/**
- * Advance the Marauder plan and everything that hangs off it: plan phases, scouting, the forward
- * camp, attack waves, role assignment and noise investigations.
- */
 export function tickEnemyWaves(ctx: GameContext, dt: number): void {
   if (session.over) return;
   const wave = session.enemyWave;
@@ -422,7 +399,6 @@ export function nextWaveEta(): number {
   return Math.max(0, ENEMY_WAVE_INTERVAL - (wave.plan.elapsed - entered));
 }
 
-/** What the plan is doing right now, for the HUD. */
 export function planPhase(): string {
   const plan = session.enemyWave.plan;
   if (phaseStatus(plan, "scout") === "active") return "scouting";
@@ -436,12 +412,10 @@ export function marchTarget(): { x: number; z: number } {
   return assaultTarget();
 }
 
-/** The squad of the wave currently on the field, for tests and the HUD. */
 export function waveSquad(): string[] {
   return [...session.enemyWave.waveUnits];
 }
 
-/** A camp entity the Marauders hold, for the HUD arrow. */
 export function forwardCamp(ctx: GameContext): SceneEntity | null {
   const id = session.enemyWave.campId;
   return id === null ? null : ctx.scene.entity.get(id);

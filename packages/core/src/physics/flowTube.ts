@@ -3,13 +3,9 @@ export type FlowVec3 = readonly [number, number, number];
 export interface FlowTubeConfig {
   from: FlowVec3;
   to: FlowVec3;
-  /** Tube radius; flow strength fades from the axis to zero here. */
   radius: number;
-  /** Axial flow speed on the core at full spool. */
   strength: number;
-  /** Radial falloff exponent — `1` linear, `2` (default) keeps a fat core with soft edges. */
   falloff?: number;
-  /** Extra reach past each end where the axial envelope fades to zero; default `0` (hard caps). */
   capFalloff?: number;
 }
 
@@ -75,7 +71,6 @@ export function createFlowTube(config: FlowTubeConfig): FlowTube {
   };
 }
 
-/** Sum several tubes' flow at one point — each entry carries its own spool. */
 export function combineFlowVelocity(
   tubes: readonly (FlowTube | { tube: FlowTube; spool: number })[],
   point: FlowVec3,

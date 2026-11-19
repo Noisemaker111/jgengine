@@ -6,18 +6,14 @@
  * @capability instance-cells bucket instanced placements into cullable XZ grid cells
  */
 
-/** One grid cell of placements: one cullable draw unit. */
 export interface InstanceCell<T> {
-  /** `gx:gz` grid key of the cell. */
   key: string;
-  /** Cell minimum XZ corner in world space. */
   min: readonly [number, number];
   /** Cell edge length in meters. */
   size: number;
   items: T[];
 }
 
-/** Cell edge used when a caller passes a non-positive or non-finite size. */
 export const DEFAULT_INSTANCE_CELL_SIZE = 32;
 
 /**

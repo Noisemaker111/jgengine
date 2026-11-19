@@ -9,16 +9,13 @@ import { standardAtmosphere } from "./standardAtmosphere";
 
 const FOOT = 0.3048;
 
-/** A game jet to measure: its tuning and the thrust multiplier its afterburner applies, if it has one. */
 export interface JetComparisonAircraft {
   name: string;
   tuning: RigidAircraftTuning;
   afterburner?: number;
-  /** Largest allowed gap to the reference cycle on every row, share of it; rows then report `pass`. */
   tolerance?: number;
 }
 
-/** One metric: the game jet, the F100 cycle engine and the published or NASA-table figure; `real` is absent where none exists. */
 export interface JetComparisonRow {
   label: string;
   unit: string;
@@ -29,7 +26,6 @@ export interface JetComparisonRow {
   pass?: boolean;
 }
 
-/** A game jet's engine metrics beside the F100-PW-220 cycle engine's and the real engine's. */
 export interface JetComparison {
   aircraft: string;
   reference: string;
@@ -47,12 +43,10 @@ function flightAt(altitude: number, mach: number): GasTurbineFlight {
   return { mach, temperature: air.temperature, pressure: air.pressure };
 }
 
-/** Throttle position of full dry power: the afterburner effect's dry stop, else full throttle. */
 function dryThrottle(tuning: RigidAircraftTuning): number {
   return tuning.effects?.afterburner === undefined ? 1 : (tuning.effects.afterburner.dryThrottle ?? 0.77);
 }
 
-/** Thrust of the game model at a flight condition and throttle, its spool (and any reheat) already settled. */
 function gameThrust(tuning: RigidAircraftTuning, altitude: number, mach: number, throttle = dryThrottle(tuning)): number {
   const aircraft = createRigidAircraft(tuning, {
     position: [0, altitude, 0],

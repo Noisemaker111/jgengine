@@ -1,6 +1,5 @@
 import type { Vec3 } from "../world/geometry";
 
-/** Explicit traversable connection between two navigation polygons. */
 export interface NavMeshLink {
   from: number;
   to: number;
@@ -18,64 +17,46 @@ export interface NavMeshLink {
 
 /** Serializable polygon navigation mesh data. Treat it as immutable once queried; queries cache derived geometry per object. */
 export interface NavMeshData {
-  /** Flat xyz vertex coordinates. Polygon indices refer to triples in this array. */
   verts: number[];
   /** Convex polygons as vertex index lists. */
   polys: number[][];
   links: NavMeshLink[];
-  /** Area id per polygon, priced by {@link NavMeshQueryOptions.areaCosts}. */
   areas?: number[];
 }
 
-/** Neighbor relationship for one navigation polygon. */
 export interface NavMeshAdjacency {
   neighbors: number[];
   cost: number;
 }
 
-/** One off-mesh link a route crosses: the agent leaves `points[start]` and lands on `points[end]`. */
 export interface NavPathLink {
   link: NavMeshLink;
-  /** Index into {@link NavMeshPath.points} where the crossing begins. */
   start: number;
-  /** Index into {@link NavMeshPath.points} where the crossing lands. */
   end: number;
 }
 
-/** Route points and polygons selected through a navigation mesh. */
 export interface NavMeshPath {
   points: Vec3[];
   polys: number[];
-  /** Off-mesh links the route crosses, in walking order; absent when it crosses none. */
   links?: NavPathLink[];
-  /** True when the search budget ran out and the route ends at the polygon nearest the goal. */
   partial?: boolean;
 }
 
-/** Tunable pricing and bounds for a {@link NavMeshQuery}. */
 export interface NavMeshQueryOptions {
-  /** Cost multiplier per area id; unlisted areas cost 1, and a negative or non-finite cost blocks the area. */
   areaCosts?: Readonly<Record<number, number>>;
-  /** Most polygons one path search may expand before returning a partial path. Default 2048. */
   maxNodes?: number;
 }
 
-/** Serializable tuning of a {@link NavMeshQuery}. */
 export interface NavMeshQuerySnapshot {
   areaCosts: Record<number, number>;
   maxNodes: number;
 }
 
-/** Cached, allocation-light queries over one {@link NavMeshData}. */
 export interface NavMeshQuery {
   readonly mesh: NavMeshData;
-  /** Polygon nearest the point in 3D, so stacked floors resolve by height; null for an empty mesh. */
   findPolygon(point: Vec3): number | null;
-  /** Closest point on the mesh surface, or null for an empty mesh. */
   closestPoint(point: Vec3): Vec3 | null;
-  /** Cheapest polygon corridor by A*, straightened with a portal funnel. */
   findPath(from: Vec3, to: Vec3): NavMeshPath | null;
-  /** True when the straight segment stays on walkable, unblocked polygons. */
   raycast(from: Vec3, to: Vec3): boolean;
   retune(patch: NavMeshQueryOptions): void;
   snapshot(): NavMeshQuerySnapshot;
@@ -279,7 +260,6 @@ function areaCost(mesh: NavMeshData, costs: Readonly<Record<number, number>>, p:
   return Number.isFinite(cost) && cost >= 0 ? cost : -1;
 }
 
-/** Min-heap on `f`, breaking ties toward larger `g` so equal-cost plateaus expand depth-first. */
 class MinHeap {
   f: number[] = [];
   g: number[] = [];
@@ -459,7 +439,6 @@ function sharesVertex(mesh: NavMeshData, a: number, b: number): boolean {
   return false;
 }
 
-/** The polygon holding (x, z) among `current` and the polygons touching it, nearest in height; -1 when none. */
 function stepInto(prep: Prepared, current: number, x: number, z: number, costs: Readonly<Record<number, number>>): number {
   if (insideXZ(prep, current, x, z)) return current;
   const c = clampInt(Math.floor((x - prep.gridMinX) / prep.cellSize), prep.cols);
@@ -507,7 +486,6 @@ function raycastPrepared(prep: Prepared, from: Vec3, to: Vec3, costs: Readonly<R
   return false;
 }
 
-/** Build polygon adjacency from shared edges and explicit off-mesh links. */
 export function buildNavAdjacency(mesh: NavMeshData): NavMeshAdjacency[] {
   const prep = prepare(mesh);
   const result: NavMeshAdjacency[] = mesh.polys.map(() => ({ neighbors: [], cost: 1 }));
@@ -565,7 +543,6 @@ export function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptio
   };
 }
 
-/** True when the segment remains over walkable polygons. */
 export function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean {
   return raycastPrepared(prepare(mesh), from, to, {});
 }

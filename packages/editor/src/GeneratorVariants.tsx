@@ -13,13 +13,7 @@ registerAllSceneKindRenderers();
 
 const VARIANT_COUNT = 20;
 
-/**
- * The variant grid under a generator's params: twenty seeded variants around the object's current
- * look. Pick writes a variant onto the object, keep pins it at the front of the grid, place copies
- * the object beside itself with that variant, and reroll lays out a new set. Every action goes
- * through the same RPC verbs agents use (`apply_variant`, `place_variant`).
- * @internal
- */
+/** @internal */
 export function GeneratorVariants({
   api,
   id,

@@ -21,7 +21,6 @@ import { resetAgents, resetBook } from "../agents";
 import { alignLegacyPosts, CAREER_NODE_IDS, STANDING_TRACKS } from "../careers";
 import { pairKey, BLOOM_CROPS, LIFESTYLES, type HouseholdState } from "./types";
 
-/** The shared save document's namespace: one document per household slot, at `<key>:<slot>`. */
 export const ORBIT_SAVE_KEY = "odd-orbit.households";
 /** Where a household was written before the shared document; read once and rewritten as a document. */
 export const ORBIT_LEGACY_KEY = "odd-orbit.household-save.v1";
@@ -29,7 +28,6 @@ const SAVE_LIMIT = 256 * 1024;
 const MAX_TIME = DAY_LENGTH * 1_000_000;
 /** A wall-clock stamp (ms) is far larger than simulated time; JavaScript dates top out here. */
 const MAX_WALL_CLOCK = 8.64e15;
-/** The households the save-select pane offers: the original key plus two more on the same path. */
 export const ORBIT_SLOTS = ["household", "household-2", "household-3"] as const;
 /** A household's own name for its slot ("Household I"), never a raw storage key. */
 export const ORBIT_SLOT_LABEL: Record<string, string> = {
@@ -37,15 +35,12 @@ export const ORBIT_SLOT_LABEL: Record<string, string> = {
   "household-2": "Household II",
   "household-3": "Household III",
 };
-/** The backend key a household slot's document is written to. */
 export function orbitSlotKey(slot: string): string {
   return `${ORBIT_SAVE_KEY}:${slot}`;
 }
-/** The key an older build wrote the slot to: slot one at the bare key, the others beside it. */
 export function orbitLegacyKey(slot: string): string {
   return slot === ORBIT_SLOTS[0] ? ORBIT_LEGACY_KEY : `${ORBIT_LEGACY_KEY}:${slot}`;
 }
-/** What the screen leaves behind for the save card: the household's name and a captured frame. */
 export const orbitProfile: OrbitSaveProfile = { name: "", thumbnail: null, savedAt: 0 };
 export interface OrbitSaveProfile {
   name: string;
@@ -87,7 +82,6 @@ type SavedField =
   | "speed" | "speeds" | "standing" | "stars" | "startSeconds" | "stats" | "story" | "stress" | "strike" | "strikes"
   | "term" | "termIncome" | "thumbnail" | "timescale" | "traits" | "upkeep" | "velocity" | "version" | "walkSpeed"
   | "warned" | "withId" | "workToday" | "x" | "z";
-/** A stored JSON object: any key by brackets, the checker's own field names by dot. */
 type Saved = Record<string, any> & { [K in SavedField]?: any };
 const object = (value: unknown): value is Saved => !!value && typeof value === "object" && !Array.isArray(value);
 const number = (value: unknown, min = 0, max = 1_000_000): value is number => typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
@@ -157,7 +151,6 @@ function validHousehold(h: unknown, clock: ClockSnapshot): h is HouseholdState {
   return integer(h.eventSeq);
 }
 
-/** The charter: a term inside the four, strikes and stars inside their bounds, an outcome word. */
 function validCharter(c: unknown): boolean {
   if (!object(c) || !integer(c.term, 0, TERMS.length) || !integer(c.strikes, 0, TERMS.length) || !Array.isArray(c.stars) || c.stars.length > TERMS.length || !c.stars.every((n: unknown) => integer(n, 0, 3))) return false;
   if (!number(c.termIncome) || !integer(c.answered, 0, 1000) || !["active", "evicted", "kept"].includes(c.outcome) || typeof c.warned !== "boolean") return false;
@@ -168,7 +161,6 @@ function validCharter(c: unknown): boolean {
 
 const INCIDENT_IDS = new Set(INCIDENTS.map((def) => def.id));
 
-/** The storyteller's clock, points and history, naming only incidents the book has. */
 function validStory(s: unknown, now: number): boolean {
   if (!object(s) || !number(s.elapsed, 0, MAX_TIME) || s.elapsed > now + 1 || !number(s.points, 0, 1000) || !number(s.nextAt, 0, MAX_TIME) || !integer(s.fired, 0, 1_000_000)) return false;
   if (!object(s.lastFiredAt) || !Object.entries(s.lastFiredAt).every(([id, at]) => INCIDENT_IDS.has(id) && number(at, 0, MAX_TIME))) return false;
@@ -187,7 +179,6 @@ function validHazards(z: unknown, now: number): boolean {
   return object(z) && number(z.consolesOfflineUntil, 0, now + DAY_LENGTH) && number(z.dustUntil, 0, now + DAY_LENGTH * 2) && typeof z.hullLeak === "boolean" && Array.isArray(z.broken) && z.broken.length <= 64 && z.broken.every((id: unknown) => text(id));
 }
 
-/** Standing records: known beings on the three authored tracks, inside the ledger's bounds. */
 function validStanding(h: Saved): boolean {
   if (!object(h.standing) || !keys(h.standing, ["records"]) || !object(h.standing.records)) return false;
   for (const [actor, row] of Object.entries(h.standing.records)) {
@@ -199,7 +190,6 @@ function validStanding(h: Saved): boolean {
   return true;
 }
 
-/** Post rungs: authored node ids only, each owned at most once. */
 function validCareers(value: unknown): boolean {
   if (!object(value) || !keys(value, ["ranks"]) || !object(value.ranks)) return false;
   return Object.entries(value.ranks).every(([node, rank]) => CAREER_NODE_IDS.has(node) && integer(rank, 0, 2));
@@ -213,7 +203,6 @@ export function validOrbitProfile(value: unknown): value is OrbitSaveProfile {
     && number(value.savedAt, 0, MAX_WALL_CLOCK);
 }
 
-/** Reject the entire save before any subsystem can hydrate a partial damaged world. */
 export function validOrbitSave(value: unknown): value is OrbitSave {
   if (!object(value) || value.version !== 1 || !validClock(value.clock) || !validHousehold(value.household, value.clock) || !json(value.household)) return false;
   if (value.profile !== undefined && !validOrbitProfile(value.profile)) return false;
@@ -276,26 +265,20 @@ export interface OrbitRead {
   save: OrbitSave | null;
   /** Bytes are there but are not a household this build can open; they are left in place. */
   damaged: boolean;
-  /** Browser storage refused the read. */
   unavailable: boolean;
 }
 
-/** The household slots, each one shared save document whose `household` section is the whole household. */
 export interface OrbitRecords {
   read(slot: string): Promise<OrbitRead>;
-  /** Write the live household into a slot; false when it could not be written whole. */
   write(slot: string): Promise<boolean>;
-  /** Restore a slot's household into the world; false when the slot holds none it can open. */
   open(slot: string): Promise<boolean>;
   /** Delete a slot's household, including bytes an older build left at its old key. */
   clear(slot: string): Promise<boolean>;
-  /** The document's state digest for a slot, as the live world would write it. */
   digest(slot: string): string;
 }
 
 class DamagedHousehold extends Error {}
 
-/** A household an older build wrote at its own key is the household section, unchanged. */
 function liftHousehold(stored: Readonly<Record<string, string>>, slot: string): Record<string, unknown> {
   const raw = stored[orbitLegacyKey(slot)];
   if (raw === undefined || raw.length > SAVE_LIMIT) throw new DamagedHousehold(`${slot}: the old household is unreadable`);
@@ -305,10 +288,6 @@ function liftHousehold(stored: Readonly<Record<string, string>>, slot: string): 
   return { household: value };
 }
 
-/**
- * The backend households write through: the browser's storage, refusing a household larger than it
- * keeps or a stored one too large to be one. `onUnavailable` hears every operation the storage refused.
- */
 export function orbitSaveBackend(storage: SaveStorage | null | undefined, onUnavailable: () => void): SaveBackend {
   const local = localSaveBackend(storage);
   const unavailable = <T>(operation: Promise<T>): Promise<T> => operation.catch((error: unknown) => {
@@ -383,6 +362,5 @@ export function createOrbitRecords(ctx: GameContext, storage?: SaveStorage | nul
   };
 }
 
-/** This context's household slots, over the browser's storage. */
 export const orbitRecords = perContext((ctx: GameContext) => createOrbitRecords(ctx));
 

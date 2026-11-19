@@ -2,8 +2,6 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-/** Writes `files` (repo-relative paths) into a fresh temp root. Every `games/<id>/` it touches also gets the
- * `src/index.tsx` barrel that `eachGameSource` requires before it treats a folder as a game. */
 export function writeGameTree(prefix: string, files: Record<string, string>): string {
   const root = mkdtempSync(join(tmpdir(), prefix));
   for (const [rel, source] of Object.entries(files)) {

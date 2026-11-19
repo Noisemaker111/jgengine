@@ -25,7 +25,6 @@ const KEYFRAMES: readonly DayNightKeyframe[] = [
 // slowly onward so any settle frame lands on a clearly tinted, non-noon sky.
 const cycle = createDayNightCycle({ keyframes: KEYFRAMES, dayLengthMs: 600_000, start: 0.75 });
 
-/** The engine's one sky, run on the cycle's clock: the cycle's keyframes tint the HUD swatch. */
 const daySky = sky({ preset: "day", timeOfDay: true });
 const cycleClock = { calendar: () => ({ dayFraction: cycle.sample().dayFraction }) };
 

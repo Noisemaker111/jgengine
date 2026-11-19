@@ -6,17 +6,13 @@ import { publishReadout } from "../runtime/pageHandle";
 export interface AudioProbe {
   /** Master RMS and peak since the last read, `0..1`. Non-zero RMS means audio reached the output. */
   measure(): AudioLevel;
-  /** Master gain after volume and mute. */
   masterLevel(): number;
-  /** One bus's effective gain after its volume, mute and any active duck. */
   busLevel(busId: string): number;
   /** Current zone mix, so a capture can state which zone bed is audible and at what level. */
   ambience(): AudioAmbienceState;
   /** Cumulative geometry-occlusion cost, so a capture can state the measured per-test price. */
   occlusion(): AudioOcclusionStats;
-  /** Panned and reverb-sent voices, muffled one-shots, and the space positioned sounds ring in now. */
   spatial(): AudioSpatialStats;
-  /** Spoken lines said and dropped, whether a system voice exists, and the last line asked for. */
   speech(): SpeechStats;
 }
 

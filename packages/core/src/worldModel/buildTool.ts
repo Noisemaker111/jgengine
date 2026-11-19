@@ -1,15 +1,12 @@
 import type { GameContext } from "../runtime/gameContext";
 import type { WorldModel, WorldPlacement } from "./worldModel";
 
-/** One piece a build key can place: its world-model kind and the name a notice says. */
 export interface BuildPiece {
   id: string;
   label: string;
 }
 
-/** How {@link placePiece} reports. */
 export interface PlacePieceOptions {
-  /** Say `<label> going up` when the piece lands. Default `true`. */
   announce?: boolean;
 }
 

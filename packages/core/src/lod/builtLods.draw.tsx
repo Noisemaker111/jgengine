@@ -24,12 +24,12 @@ import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 // the world canvas is the only tree that sets it, and nested preview canvases never do.
 const meshLodStack: (MeshLodConfig | undefined)[] = [];
 
-/** The `visibility.meshLods` config of the nearest enclosing MeshLodSettings, for draw code. @internal */
+/** @internal */
 export function currentMeshLodGame(): MeshLodConfig | undefined {
   return meshLodStack.at(-1);
 }
 
-/** Push a meshLods config for draws below; returns the pop. @internal */
+/** @internal */
 export function pushMeshLodSettings(config: MeshLodConfig | undefined): () => void {
   meshLodStack.push(config);
   return () => {
@@ -38,7 +38,7 @@ export function pushMeshLodSettings(config: MeshLodConfig | undefined): () => vo
   };
 }
 
-/** Hands the game's `visibility.meshLods` to every model draw below it. @internal */
+/** @internal */
 export function MeshLodSettings({ config, children }: { config: MeshLodConfig | undefined; children: ReactNode }) {
   useEffect(() => pushMeshLodSettings(config), [config]);
   return <>{children}</>;
@@ -81,7 +81,6 @@ export class BuiltLodMetaLoader extends THREE.Loader<BuiltLodMeta | null> {
   }
 }
 
-/** What the runtime knows about one built level url: the source it was simplified from and its bounds. */
 interface BuiltLevelSource {
   readonly source: string;
   readonly bounds: THREE.Box3;
@@ -104,7 +103,7 @@ function remember(url: string, meta: BuiltLodMeta): void {
   for (const level of meta.levels) builtLevels.set(builtLodFileUrl(url, level.file), { source: url, bounds });
 }
 
-/** The source model and bounds a built level url stands in for, or null for any other url. @internal */
+/** @internal */
 export function builtLevelSource(url: string): BuiltLevelSource | null {
   return builtLevels.get(url) ?? null;
 }
@@ -149,7 +148,6 @@ export function cameraFov(camera: THREE.Camera): number {
   return THREE.MathUtils.degToRad(degrees);
 }
 
-/** The scale a model's own normalization applies to its file, read from the source bounds. */
 function normalizationScale(model: ModelConfig, bounds: THREE.Box3): number {
   let scale = model.scale ?? 1;
   if (model.targetHeight !== undefined) {
@@ -159,7 +157,6 @@ function normalizationScale(model: ModelConfig, bounds: THREE.Box3): number {
   return scale;
 }
 
-/** A model whose draw switches through built levels: the resolved model and its built metadata. */
 export interface BuiltLodModel {
   readonly model: ModelConfig;
   readonly meta: BuiltLodMeta | null;
@@ -167,10 +164,7 @@ export interface BuiltLodModel {
 
 const metaLoads = new Map<string, Promise<BuiltLodMeta | null>>();
 
-/**
- * Draw-side form of {@link BuiltLodMetaLoader.load}: the same meta.json fetch, shared per url.
- * @internal
- */
+/** @internal */
 export function loadBuiltLodMeta(url: string): Promise<BuiltLodMeta | null> {
   let promise = metaLoads.get(url);
   if (promise === undefined) {
@@ -198,11 +192,7 @@ export function loadBuiltLodMeta(url: string): Promise<BuiltLodMeta | null> {
   return promise;
 }
 
-/**
- * Draw-side form of the old WithBuiltLods resolution: the model with the levels the asset build
- * wrote for its file, or the model unchanged when nothing was built or meshLods are off.
- * @internal
- */
+/** @internal */
 export async function resolveBuiltLodModel(model: ModelConfig, impostors: boolean, fov: number, game: MeshLodConfig | undefined): Promise<BuiltLodModel> {
   const settings = meshLodSettings(game, model.meshLods);
   if (settings === null || !hasBuiltLodPath(model.url)) return { model, meta: null };

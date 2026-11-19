@@ -2,7 +2,6 @@ import type { GameContext } from "../runtime/gameContext";
 
 /** One stack the player holds at second 0. */
 export interface NewGameKit {
-  /** A declared inventory id (`defineGame({ inventories })`). */
   inventory: string;
   item: string;
   count: number;
@@ -10,7 +9,6 @@ export interface NewGameKit {
 
 /** One piece already standing in the world at second 0 (a prebuilt ride, a starter hut). */
 export interface NewGamePiece {
-  /** Game-owned kind the `build` hook places. */
   kind: string;
   at: readonly [number, number, number];
   rotationY?: number;
@@ -21,31 +19,18 @@ export interface NewGamePiece {
  * nothing unlocked, nothing built and nothing working for the player yet.
  */
 export interface NewGameState {
-  /** Currency id → starting balance. */
   cash?: Readonly<Record<string, number>>;
-  /** Stacks put into the player's inventories. */
   kit?: readonly NewGameKit[];
-  /** Unlock ids known from the start (recipes, engrams, buildable pieces). */
   unlocked?: readonly string[];
-  /** Pieces already built in the world. */
   pieces?: readonly NewGamePiece[];
   /** Ids of installed systems that work for the player before the player does anything (guests, income, workers). */
   running?: readonly string[];
 }
 
-/**
- * A game's new-game declaration, passed as `defineGame({ newGame })`: the {@link NewGameState} plus
- * the hooks that apply its game-owned parts. The engine builds every new game from it and nothing
- * else (a game's `onNewPlayer` that hands out items or money throws), and checks read it from
- * `definition.newGame`.
- *
- * @capability new-game-state declare what the player has at second 0 (cash, kit, unlocks, prebuilt pieces, systems that start on their own) as data the engine builds from and checks read
- */
+/** @capability new-game-state declare what the player has at second 0 (cash, kit, unlocks, prebuilt pieces, systems that start on their own) as data the engine builds from and checks read */
 export interface NewGameConfig {
   state: NewGameState;
-  /** Make one unlock known to `userId`. Default `ctx.game.unlocks.grant` (needs `features.unlocks`). */
   unlock?(ctx: GameContext, unlockId: string, userId: string): void;
-  /** Place one prebuilt piece. Required when `state.pieces` is not empty. */
   build?(ctx: GameContext, piece: NewGamePiece): void;
 }
 
@@ -73,8 +58,7 @@ export function validateNewGame(
   }
 }
 
-/** Build the declared pieces once per world. `defineGameDefinition` runs it after `onInit`.
- * @internal */
+/** @internal */
 export function buildNewGameWorld(ctx: GameContext, config: NewGameConfig): void {
   for (const piece of config.state.pieces ?? []) config.build?.(ctx, piece);
 }

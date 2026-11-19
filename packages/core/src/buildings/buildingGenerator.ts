@@ -1,10 +1,4 @@
-/**
- * The building as a parts generator (`@jgengine/core/generator/generator`): the seeded config→parts
- * building ({@link generateBuilding}) drops into the parametric-asset catalog with a slider schema
- * and nothing bespoke. Domain generators (bookcase, …) register the same way from example or game code.
- *
- * @capability building-generator seeded building as a placeable parametric asset
- */
+/** @capability building-generator seeded building as a placeable parametric asset */
 import { defineGenerator, registerGenerator } from "../generator/generator";
 import { defineParamSchema } from "../generator/paramSchema";
 import { PARTS_OUTPUT, partsBounds, type GeneratedAsset, type GeneratedPart } from "../scene/assetGenerator";
@@ -16,7 +10,6 @@ function isBuildingStyle(value: string): value is BuildingStyle {
   return Object.hasOwn(BUILDING_STYLE_PALETTES, value);
 }
 
-/** The generator id a catalog entry / placed marker references. */
 export const BUILDING_GENERATOR_ID = "building";
 
 /** The building generator's slider schema — drives the inspector via #809. */
@@ -38,7 +31,6 @@ export const BUILDING_GENERATOR_SCHEMA = defineParamSchema({
   ],
 });
 
-/** The building parts generator. */
 export const BUILDING_GENERATOR = defineGenerator({
   id: BUILDING_GENERATOR_ID,
   label: "Building",
@@ -67,7 +59,7 @@ export const BUILDING_GENERATOR = defineGenerator({
   },
 });
 
-/** Register the building generator. Called by {@link registerBuiltinSceneKinds}. @internal */
+/** @internal */
 export function registerBuildingGenerator(): void {
   registerGenerator(BUILDING_GENERATOR);
 }

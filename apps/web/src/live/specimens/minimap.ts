@@ -1,8 +1,3 @@
-/**
- * Live demo: the engine's `Minimap` over a plain array the page owns. Units wander a field drawn on a
- * canvas; every frame they are mapped to markers and handed to the real minimap component in the corner.
- * The hero walks on its own until the visitor clicks somewhere to send it there.
- */
 // Engine components draw through the engine's own UI runtime, mounted into an element the page owns.
 import { createElement } from "@jgengine/core/ui/jsx";
 import { createRoot } from "@jgengine/core/ui/jsx/client.view";

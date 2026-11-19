@@ -6,7 +6,6 @@ import { PART_SLOTS } from "../parts/catalog";
 import { medalArtwork, partArtwork } from "./artwork";
 import { Button, FULL, Label, MedalRow, ORANGE, PEN, Row, STENCIL, Sheet, Stencil, Text } from "./pit";
 
-/** The pit radio's result card: what the run did, what it paid, and what the yard draws next. */
 export function Results({ snapshot, onRestart, onTitle }: { snapshot: SessionSnapshot; onRestart: () => void; onTitle: () => void }) {
   const { width } = useRuneViewport(), phone = width < 600;
   const outcome = snapshot.outcome;

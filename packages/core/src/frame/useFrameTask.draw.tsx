@@ -4,12 +4,7 @@ import { useLayoutEffect, useRef } from "@jgengine/core/ui/jsx";
 import { useFrameJoin } from "./engineHost.draw";
 import type { EngineFrameState } from "./engineLoop.draw";
 
-/**
- * A per-frame callback on the shared frame board, for a UI component: the
- * callback always sees the latest render's closure (a ref swaps it in place),
- * and the board is joined once per priority.
- * @internal
- */
+/** @internal */
 export function useFrameTask(
   callback: (state: EngineFrameState, delta: number) => void,
   priority = 0,

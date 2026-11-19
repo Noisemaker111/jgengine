@@ -9,7 +9,6 @@ import { createTransactionLedger, type LedgerEntry, type LedgerState, type Trans
 import { BREAKDOWN, itemValue, rollItem, type Item, type ItemKind } from "./items";
 import type { Home } from "./state";
 
-/** Marrow pays in extraction scrip; nothing else in Halloway is worth carrying home. */
 export const SCRIP = { id: "scrip", name: "Extraction scrip", unit: "scrip" };
 
 /** One operator, so the save's standing belongs to the profile rather than an account list. */
@@ -18,7 +17,6 @@ export const OPERATOR = "operator";
 /** Why scrip moved, as the books record it. The ledger never interprets a reason. */
 export const REASON = { haul: "haul", purchase: "purchase", salvage: "salvage", reconcile: "reconcile" } as const;
 
-/** A ledger opened at whatever the counter holds; an empty book is a fresh operator. */
 export function openScripBooks(banked = 0): LedgerState {
   const books = createTransactionLedger();
   books.openAccount(OPERATOR, SCRIP.id, banked);
@@ -44,7 +42,6 @@ export function scripBooks(home: Pick<Home, "bank" | "books" | "revision">): Tra
   return books;
 }
 
-/** The journal the counter sheet prints: newest last, capped. */
 export function scripJournal(home: Pick<Home, "bank" | "books" | "revision">, limit = 4): LedgerEntry[] {
   return scripBooks(home).entries({ account: OPERATOR, limit });
 }
@@ -55,7 +52,6 @@ export const HAUL_CAP = 400;
 /** Counter stock is pulled from Marrow's own shelf, so a purchase rolls at the shelf's level, not the room's. */
 export const PURCHASE_LEVEL = 2;
 
-/** Marrow's regard, in the numbers the counter reads. */
 export const STANDING_CONFIG = {
   tracks: [
     {
@@ -78,14 +74,12 @@ export const STANDING_CONFIG = {
   ],
 };
 
-/** A standing ledger holding whatever the save carries; empty means a fresh operator. */
 export function marrowStanding(state?: StandingState) {
   const standing = createStanding(STANDING_CONFIG);
   if (state !== undefined) standing.restore(state);
   return standing;
 }
 
-/** One good on the fitter's counter, priced from a curve evaluated at live standing. */
 export interface SupplyDef {
   kind: ItemKind;
   label: string;
@@ -101,7 +95,6 @@ export const SUPPLIES: readonly SupplyDef[] = [
   { kind: "service-rifle", label: "Kessler service rifle", blurb: "Issue stock, stamped on the counter's own press. Rolls its own numbers.", price: { kind: "linear", base: 72, per: -0.5, min: 52, round: "round" } },
 ];
 
-/** Which standing opens each supply; an id here that no supply carries fails at load. */
 const SUPPLY_GATES: readonly GateDef[] = [
   { id: "supply_wire", unlock: "wire", label: "Copper spool", requires: { gte: ["standing.marrow", 0] } },
   { id: "supply_polymer", unlock: "polymer", label: "Suit seals", requires: { gte: ["standing.marrow", 15] } },
@@ -119,19 +112,16 @@ export const COUNTER = createGateSet({
   standing: marrowStanding(),
 });
 
-/** Scrip the counter charges for one unit, at this operator's standing. */
 export function priceOf(kind: ItemKind, standing: number): number {
   const supply = SUPPLIES.find((entry) => entry.kind === kind);
   if (supply === undefined) throw new Error(`deepward: no counter price for "${kind}"`);
   return evalCurve(supply.price, standing);
 }
 
-/** What one gate needs before it opens, for the shelf's "still needed" line. */
 function gateFor(kind: ItemKind) {
   return COUNTER.gates().find((gate) => gate.unlock === kind) ?? null;
 }
 
-/** The counter's rows: price at live standing, whether the shelf is open, and what opens it. */
 export interface CounterRow {
   supply: SupplyDef;
   price: number;
@@ -158,7 +148,6 @@ export function counterRows(home: Home): CounterRow[] {
   });
 }
 
-/** Buy one unit at the counter; throws with a readable reason when the shelf is shut or scrip is short. */
 export function buySupply(home: Home, kind: ItemKind): Home {
   if (home.activeDive !== null || home.reprintPending) throw new Error("Return to Marrow before buying");
   const row = counterRows(home).find((entry) => entry.supply.kind === kind);
@@ -195,12 +184,10 @@ export function dismantle(home: Home, id: string): { home: Home; scrip: number }
   };
 }
 
-/** Scrip value of a carried haul — what the rail pays if it comes home, and what death takes. */
 export function haulScrip(cache: readonly Item[]): number {
   return cache.reduce((total, item) => total + itemValue(item), 0);
 }
 
-/** Bank a shift's scrip and move standing: the rail pays and Marrow remembers, a lost Life pays nothing. */
 export function settleEconomy(
   home: Home,
   cache: readonly Item[],

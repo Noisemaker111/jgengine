@@ -42,14 +42,10 @@ function groupByRegion<TMeta>(
   return groups;
 }
 
-/** Props for {@link FastTravelMenu}. */
 export interface FastTravelMenuProps<TMeta = unknown> {
   network: FastTravelNetwork<TMeta>;
-  /** Origin for distance sorting/labels — usually the player's world-XZ. */
   from?: WorldXZ;
-  /** Fires with the chosen destination id; the game applies the teleport. */
   onTravel?: (id: string, point: TravelPointView<TMeta>) => void;
-  /** The id the player is standing on — shown as "You are here", not travelable. */
   currentId?: string;
   title?: string;
   emptyLabel?: string;
@@ -58,15 +54,7 @@ export interface FastTravelMenuProps<TMeta = unknown> {
   style?: CSSProperties;
 }
 
-/**
- * Fast-travel menu — the discovered-destinations list players pick from: points
- * grouped by region, distance-sorted from `from`, each showing icon, name, and
- * distance, with a header counting discovered vs. total. Selecting a row calls
- * `onTravel`; the current location is flagged and not travelable. Bind it to a
- * `createFastTravelNetwork`.
- *
- * @capability fast-travel-menu discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback
- */
+/** @capability fast-travel-menu discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback */
 export function FastTravelMenu<TMeta = unknown>({
   network,
   from,

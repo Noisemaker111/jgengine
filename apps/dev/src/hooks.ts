@@ -10,7 +10,6 @@ import { publishOnPage } from "@jgengine/core/runtime/pageHandle";
 const EDITOR_MODE_PARAM = "mode";
 const EDITOR_MODE_VALUE = "editor";
 
-/** Live editor-open state plus the callback that closes it back to the game. */
 export interface EditorSummon {
   editorOpen: boolean;
   exitEditor: () => void;

@@ -12,7 +12,6 @@ for (const [id, synth] of Object.entries(SFX_PATCHES)) {
   sounds[id] = { id, synth, bus: "sfx", positional: false, loop: LOOP_IDS.has(id) };
 }
 
-/** The `defineGame({ audio })` catalog for Harbor Heat — driving loops, impact one-shots, and the car radio's songs and voices. */
 export const audio: {
   sounds: Record<string, SoundDef>;
   buses: Record<string, AudioBusDef>;

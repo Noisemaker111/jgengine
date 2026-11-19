@@ -1,6 +1,5 @@
 import * as THREE from "three";
 
-/** XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`. */
 export interface HeightfieldRect {
   minX: number;
   minZ: number;
@@ -8,10 +7,8 @@ export interface HeightfieldRect {
   maxZ: number;
 }
 
-/** Per-vertex color hook for {@link displaceHeightfieldGeometry}; write the tone into `out`. */
 export type HeightfieldColorFn = (x: number, z: number, height: number, out: THREE.Color) => void;
 
-/** Options for {@link displaceHeightfieldGeometry}. */
 export interface HeightfieldDisplaceOptions {
   /** World-space rect the plane spans (the plane is centered on it, XZ, +Y up). */
   bounds: HeightfieldRect;
@@ -20,7 +17,6 @@ export interface HeightfieldDisplaceOptions {
    * normal ring) updates. Omit or pass null for a full rebuild.
    */
   region?: HeightfieldRect | null;
-  /** When given, writes a `color` attribute (creating it on demand) via this per-vertex hook. */
   color?: HeightfieldColorFn;
 }
 

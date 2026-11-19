@@ -39,7 +39,6 @@ interface WorldPingProps {
   height: number;
 }
 
-/** Ring + bobbing arrowhead as one draw: per-frame bob and lifetime fade without the UI runtime. */
 function pingDraw(marker: MarkerView, style: MarkerKindStyle, height: number): EngineDraw {
   const [x, , z] = marker.position;
   const baseY = marker.position[1];
@@ -114,7 +113,6 @@ function calloutContent(marker: MarkerView, style: MarkerKindStyle, renderCallou
   );
 }
 
-/** Engine-loop callout layer: projects each ping's anchor to the screen every frame. */
 function EnginePingCallouts({ pings, showCallout, renderCallout }: {
   pings: readonly { marker: MarkerView; style: MarkerKindStyle; height: number }[];
   showCallout: boolean;
@@ -170,18 +168,12 @@ function WorldPing({ marker, style, height }: WorldPingProps): ReactNode {
   return <EngineDrawMount create={() => pingDraw(marker, style, height)} deps={[marker.id, style.color, height]} />;
 }
 
-/** Props for {@link WorldPings}. */
 export interface WorldPingsProps {
-  /** Static views, an external marker source, or a native `MarkerSet` (e.g. the one a `createPingSystem` writes to). */
   markers: MarkerCollection;
   kindStyles?: Record<string, MarkerKindStyle>;
-  /** Only render markers whose `meta.ping === true`. Default true; false renders every marker as a ping. */
   pingsOnly?: boolean;
-  /** Height above the ground the arrowhead floats. Default 2.4. */
   height?: number;
-  /** Draw a billboarded callout chip (glyph + `meta.callout`/`label`). Default true. */
   showCallout?: boolean;
-  /** Full override for a ping's callout markup. */
   renderCallout?: (marker: MarkerView, style: MarkerKindStyle) => ReactNode;
 }
 

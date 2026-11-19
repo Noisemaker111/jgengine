@@ -28,7 +28,6 @@ export interface GeneratedBuildingData {
   parts: readonly BuildingPartPlacement[];
 }
 
-/** Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`). */
 export type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>>;
 
 export interface InstancedBuildingPlacement {
@@ -97,23 +96,16 @@ export function boxKindCastsShadow(kind: BuildingPartKind, boxKinds: { has(kind:
   return !(GLASS_KINDS.has(kind) && boxKinds.has("wall"));
 }
 
-/**
- * Box kinds that draw with one material, merged into one instanced draw that tints each instance
- * with its kind's colour. A kind with its own texture maps stays alone.
- * @internal
- */
+/** @internal */
 export interface BuildingBoxFamily {
   key: string;
-  /** The kind whose material the family draws with. */
   kind: BuildingPartKind;
   surface: BuildingSurfaceMaterial;
   matrices: THREE.Matrix4[];
-  /** One tint per matrix; null for a single kind, whose material carries its colour. */
   colors: THREE.Color[] | null;
   castShadow: boolean;
 }
 
-/** The material a box kind draws with, apart from its colour: kinds with the same one share a draw. */
 function familyOf(kind: BuildingPartKind, surface: BuildingSurfaceMaterial): string {
   // A sign glows in its own colour, which a per-instance tint cannot carry.
   if (kind === "storeSign") return `kind:${kind}`;
@@ -154,10 +146,6 @@ export function buildingBoxFamilies(boxes: ReadonlyMap<BuildingPartKind, readonl
   });
 }
 
-/**
- * One box family's draw: an owned material (flat first, rebuilt with the surface's maps when they
- * land, like the `useDisposable` swap did) plus one budget-gated InstancedMesh per chunk.
- */
 function buildingFamilyBatchDraw(family: BuildingBoxFamily, geometry: THREE.BoxGeometry): EngineDraw {
   const chunks = partitionInstances(geometry, family.matrices);
   const entries: { mesh: THREE.InstancedMesh; bounds: THREE.Box3; scratch: ReturnType<typeof buildingChunkBudgetScratch> }[] = [];

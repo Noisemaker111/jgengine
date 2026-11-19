@@ -28,48 +28,26 @@ import { GOLD, LUMBER } from "./tuning";
 import { earn } from "./treasury";
 import { saveCampaign } from "./campaignSave";
 
-/**
- * The vale campaign: five missions that teach the skirmish in order, run by the engine's mission
- * machine (`@jgengine/core/mission`). This module is adoption, not a runtime —
- *
- * - the objective graphs, fail states and rewards are {@link MissionDef} data;
- * - `createMissionRuntime` walks them, times them and pays them;
- * - `missionMarkers` reads the authored waypoints out of `editor.scene.json`;
- * - `defendMission` / `escortMission` build the copies of hold-and-escort the engine already ships.
- *
- * What Ember owns is the campaign track (which mission is next, and the stores carried between
- * battles), the world reports the machine judges (build completions, unit losses, the Warcamp
- * falling) and the field-desk voice. See `harbor-heat/src/game/jobs/courier.ts` and
- * `scrap-signal/src/game/mast.ts` for the two earlier adopters.
- */
-
-/** The authored waypoints the campaign reads out of the scene document. */
 export const MUSTER_MARKER = "campaign_muster";
 export const CROSSROADS_MARKER = "campaign_crossroads";
-/** The mid-vale seam marker the escort runs to (an authored landmark, not campaign furniture). */
 export const ENTREPOT_MARKER = "goldmine_mid";
 
-/** Tracked actors the objectives name. */
 const PLAYER_KEEP = "keep_player";
 
-/** Mission ids, in campaign order. */
 export const FIRST_MUSTER_ID = "m1_first_muster";
 export const LONG_WATCH_ID = "m2_long_watch";
 export const MID_VALE_ROAD_ID = "m3_mid_vale_road";
 export const THIN_LINE_ID = "m4_thin_line";
 export const EMBER_VERDICT_ID = "m5_ember_verdict";
 
-/** The named fail states every mission that can lose the vale shares. */
 const BRAM_FELL = { id: "bram_fell", message: "Bram the Bold fell, and the Vanguard broke with him." } as const;
 const KEEP_FELL = { id: "keep_fallen", message: "The Ember Keep fell and the vale went dark." } as const;
 export const KEEP_FAIL_ID = KEEP_FELL.id;
 
-/** The keep falling ends every mission. */
 function keepFails(): readonly MissionFailCondition[] {
   return [{ kind: "actor-died", actor: PLAYER_KEEP, to: KEEP_FELL.id, message: KEEP_FELL.message }];
 }
 
-/** Bram and the keep: used where the hero is the point of the objective (a march, a line). */
 function valeFails(): readonly MissionFailCondition[] {
   return [
     { kind: "actor-died", actor: HERO_ID, to: BRAM_FELL.id, message: BRAM_FELL.message },
@@ -77,12 +55,10 @@ function valeFails(): readonly MissionFailCondition[] {
   ];
 }
 
-/** Declare the keep's fail state on a mission the engine composed, so its reason is authored here. */
 function withKeepFail(def: MissionDef): MissionDef {
   return { ...def, fail: [...(def.fail ?? []), KEEP_FELL] };
 }
 
-/** Replace a composed mission's fail wording with Ember's own voice ("the position was overrun"). */
 function withFailMessages(def: MissionDef, messages: Readonly<Record<string, string>>): MissionDef {
   return {
     ...def,
@@ -93,7 +69,6 @@ function withFailMessages(def: MissionDef, messages: Readonly<Record<string, str
   };
 }
 
-/** Authored labels replace the composition's derived placeholders ("Escort hero to goldmine_mid"). */
 function relabel(def: MissionDef, labels: Readonly<Record<string, string>>): MissionDef {
   return { ...def, objectives: def.objectives.map((objective) => labels[objective.id] === undefined ? objective : { ...objective, label: labels[objective.id] }) };
 }
@@ -178,10 +153,6 @@ export const LONG_WATCH: MissionDef = withFailMessages(withKeepFail(defendMissio
   watch_overrun: "The last Vanguard soldier at the keep went down, and the drums rolled through the gate.",
 });
 
-/**
- * Mission III — the escort, composed by the engine's `escortMission`: Bram has to reach the mid-vale
- * seam alive, with a deadline and a named fail state for being waylaid.
- */
 export const MID_VALE_ROAD: MissionDef = relabel(
   withFailMessages(withKeepFail(escortMission({
     id: MID_VALE_ROAD_ID,
@@ -242,10 +213,6 @@ export const THIN_LINE: MissionDef = {
   rewards: LINE_REWARD,
 };
 
-/**
- * Mission V — the finale, two chained objectives: weather the last push, then raze the Warcamp. The
- * mission machine chains them with `next`; the Warcamp's death is reported as a `kill` world event.
- */
 export const EMBER_VERDICT: MissionDef = {
   id: EMBER_VERDICT_ID,
   title: "The Ember Verdict",
@@ -281,20 +248,15 @@ export const EMBER_VERDICT: MissionDef = {
   rewards: VERDICT_REWARD,
 };
 
-/** One campaign step: the mission plus the field-desk brief and the world it is fought in. */
 export interface CampaignStep {
   mission: MissionDef;
   /** The field desk's brief, in Ember's voice, shown before the mission. */
   brief: string;
-  /** Authored hostile markers standing when the mission opens; the rest are stood down. */
   hostiles: readonly string[];
-  /** Whether the Marauder wave director musters during this mission. */
   waves: boolean;
 }
 
-/** The opening assault group authored in the scene (stance: assault). */
 const STANDING_RAID = ["grunt_raid_1", "grunt_raid_2", "reaver_raid_1"] as const;
-/** The Warcamp's guard detail authored in the scene (stance: guard). */
 const WARCAMP_GUARD = ["grunt_guard_1", "grunt_guard_2", "grunt_guard_3", "reaver_guard_1"] as const;
 
 export const CAMPAIGN: readonly CampaignStep[] = [
@@ -332,31 +294,23 @@ export const CAMPAIGN: readonly CampaignStep[] = [
 
 export const CAMPAIGN_MISSIONS: readonly MissionDef[] = CAMPAIGN.map((step) => step.mission);
 
-/* -------------------------------------------------------------------------------------------- */
 /* Campaign track — what is won, what is offered next, and the stores carried between battles.  */
-/* -------------------------------------------------------------------------------------------- */
 
 export type CampaignMode = "campaign" | "skirmish";
 
 export interface CampaignProgress {
-  /** Mission ids won, in the order they were won. */
   won: readonly string[];
-  /** What the field desk runs: the campaign, or a free skirmish on the same vale. */
   mode: CampaignMode;
-  /** The vale's stores: mission pay banked by the campaign and spent opening the next battle. */
   stores: { gold: number; lumber: number };
 }
 
 export const campaignStore = defineStore<CampaignProgress>("ember.campaign", () => ({ won: [], mode: "campaign", stores: { gold: 0, lumber: 0 } }));
-/** The mission machine's serializable position, written to the campaign document on a checkpoint. */
 export const campaignMissionStore = defineStore<MissionRuntimeSnapshot | null>("ember.campaign.mission", null);
 
-/** Gold and lumber the won missions carry into the next battle. */
 export function campaignStores(progress: CampaignProgress): { gold: number; lumber: number } {
   return progress.stores;
 }
 
-/** The next mission in campaign order: the first one not yet won, or null once the vale is held. */
 export function nextCampaignStep(progress: CampaignProgress): CampaignStep | null {
   if (progress.mode !== "campaign") return null;
   return CAMPAIGN.find((step) => !progress.won.includes(step.mission.id)) ?? null;
@@ -366,7 +320,6 @@ export function campaignFinished(progress: CampaignProgress): boolean {
   return progress.won.length >= CAMPAIGN.length;
 }
 
-/** The field desk's readout: the live objective and its clock, or what is offered next. */
 export type CampaignPhase = "ready" | "live" | "cleared" | "failed" | "finished";
 
 export interface CampaignReadout {
@@ -392,11 +345,8 @@ export interface CampaignReadout {
   stores: { gold: number; lumber: number };
 }
 
-/* -------------------------------------------------------------------------------------------- */
 /* Runtime wiring                                                                                */
-/* -------------------------------------------------------------------------------------------- */
 
-/** Markers are authored at y = 0; positional objectives use the machine's default 8 m tolerance. */
 function authoredMarkers(): Record<string, { x: number; y: number; z: number }> {
   return missionMarkers(editorLayers);
 }
@@ -417,17 +367,12 @@ export function campaignRuntime(ctx: GameContext) {
   return runtimes(ctx);
 }
 
-/** What the mission session's boundary hands its `settle`. */
 export interface CampaignSettlementInput {
   won: boolean;
   missionId: string;
   rewards: MissionRewards | null;
 }
 
-/**
- * A campaign mission is a session on the shared loop: it opens when the field desk starts it, carries
- * the pay the vale's stores will receive, and its boundary banks that pay or loses it with the order.
- */
 const sessions = perContext((ctx: GameContext) => {
   const loop = createSessionLoop<never, CampaignSettlementInput, { banked: boolean }>({
     kind: "mission",
@@ -445,7 +390,6 @@ export function campaignSession(ctx: GameContext) {
   return sessions(ctx);
 }
 
-/** World events reported by the game this frame, handed to the machine on the next tick. */
 const pendingEvents = perContext(() => [] as MissionWorldEvent[]);
 
 /**
@@ -458,11 +402,6 @@ export function markStoresRestored(ctx: GameContext): void {
   storesRestoredStore.write(ctx, true);
 }
 
-/**
- * Report a death the mission machine may judge: a Vanguard soldier falling (the `vanguard` tag the
- * thin-line fail reads) and anything the Vanguard kills, including the Warcamp. Tagged so `match`
- * filters can tell whose blood it is.
- */
 export function noteCampaignDeath(ctx: GameContext, catalogId: string): void {
   const def = combatantDef(catalogId);
   if (def === null) return;
@@ -473,12 +412,10 @@ export function noteCampaignDeath(ctx: GameContext, catalogId: string): void {
   pendingEvents(ctx).push({ kind: "kill", target: catalogId, tags: ["marauder"] });
 }
 
-/** A finished building, counted by the build-order objective. */
 export function noteCampaignBuild(ctx: GameContext, building: string): void {
   pendingEvents(ctx).push({ kind: "collect", target: building, by: "vanguard", tags: ["built"] });
 }
 
-/** A trained recruit, counted by the muster objective. */
 export function noteCampaignTrain(ctx: GameContext, unit: string): void {
   pendingEvents(ctx).push({ kind: "collect", target: unit, by: "vanguard", tags: ["trained"] });
 }
@@ -489,7 +426,6 @@ function actorFact(ctx: GameContext, id: string): MissionActorFact {
   return { alive: true, position: { x: entity.position[0], y: entity.position[1], z: entity.position[2] } };
 }
 
-/** Everything the active objective can read: the keeps, the hero and every living Vanguard body. */
 function tickInput(ctx: GameContext, events: readonly MissionWorldEvent[]): MissionTickInput {
   const actors: Record<string, MissionActorFact> = {
     [HERO_ID]: actorFact(ctx, HERO_ID),
@@ -505,14 +441,12 @@ function tickInput(ctx: GameContext, events: readonly MissionWorldEvent[]): Miss
   return { actors, survivors, events };
 }
 
-/** The campaign step whose mission is running, or null for a free skirmish / an ended mission. */
 export function activeCampaignStep(ctx: GameContext): CampaignStep | null {
   const state = campaignRuntime(ctx).state();
   if (state === null || state.status !== "active") return null;
   return CAMPAIGN.find((step) => step.mission.id === state.missionId) ?? null;
 }
 
-/** Whether the Marauder wave director runs now. A campaign step says so; a free skirmish always does. */
 export function campaignWavesRunning(ctx: GameContext): boolean {
   const step = activeCampaignStep(ctx);
   return step === null ? true : step.waves;
@@ -532,7 +466,6 @@ function stageHostiles(ctx: GameContext, hostiles: readonly string[]): void {
   }
 }
 
-/** Pay the stores the won missions carry, on top of the opening purse. */
 function grantCarriedStores(ctx: GameContext): void {
   const stores = campaignStores(campaignStore.read(ctx));
   earn(ctx, GOLD, stores.gold, "campaign-stores");
@@ -545,7 +478,6 @@ export function campaignOrdinal(index: number): string {
   return ROMAN[index] ?? String(index + 1);
 }
 
-/** Build the field desk's readout from the live machine plus the campaign track. */
 export function campaignReadout(ctx: GameContext): CampaignReadout | null {
   const progress = campaignStore.read(ctx);
   if (progress.mode !== "campaign") return null;
@@ -602,12 +534,10 @@ export function campaignReadout(ctx: GameContext): CampaignReadout | null {
   };
 }
 
-/** Mirror the campaign readout into the HUD store (the objective card and the field desk read it). */
 export function syncCampaignHud(ctx: GameContext): void {
   hudStore.set({ campaign: campaignReadout(ctx) });
 }
 
-/** Start the offered mission on the field the caller has just restaged. */
 export function startCampaignMission(ctx: GameContext): boolean {
   const progress = campaignStore.read(ctx);
   if (progress.mode !== "campaign") return false;
@@ -635,18 +565,11 @@ export function startCampaignMission(ctx: GameContext): boolean {
   return true;
 }
 
-/** Write the campaign track, the mission machine and the kit to the live slot's campaign document. */
 export function checkpointCampaign(ctx: GameContext): void {
   campaignMissionStore.write(ctx, campaignRuntime(ctx).snapshot());
   void saveCampaign(ctx);
 }
 
-/**
- * Bank a mission's pay into the vale's stores through the engine's reward appliers. The field is
- * restaged after a win, so gold left in the battle economy would be discarded; the campaign purse is
- * what the next battle opens with, and a mission only pays once.
- */
-/** What a mission's authored reward table pays in the vale's two currencies. */
 function missionPayTotal(rewards: MissionRewards | null | undefined): number {
   if (rewards === null || rewards === undefined) return 0;
   let total = 0;
@@ -760,7 +683,6 @@ export function failCampaignOnKeepLost(ctx: GameContext): void {
   syncCampaignHud(ctx);
 }
 
-/** Restore the campaign track over a loaded save (the world itself is restaged fresh). */
 export function restoreCampaign(ctx: GameContext): void {
   const snapshot = campaignMissionStore.read(ctx);
   if (snapshot !== null) campaignRuntime(ctx).restore(snapshot);
@@ -770,14 +692,12 @@ export function restoreCampaign(ctx: GameContext): void {
   syncCampaignHud(ctx);
 }
 
-/** Switch to a free skirmish (same vale, no mission track) or back to the campaign. */
 export function setCampaignMode(ctx: GameContext, mode: CampaignMode): void {
   campaignStore.write(ctx, { ...campaignStore.read(ctx), mode });
   campaignRuntime(ctx).abandon();
   syncCampaignHud(ctx);
 }
 
-/** Wipe the track and offer mission I again. A new campaign starts with a hero who has picked nothing. */
 export function resetCampaignProgress(ctx: GameContext): void {
   campaignStore.write(ctx, { won: [], mode: "campaign", stores: { gold: 0, lumber: 0 } });
   campaignRuntime(ctx).abandon();
@@ -787,7 +707,6 @@ export function resetCampaignProgress(ctx: GameContext): void {
   syncCampaignHud(ctx);
 }
 
-/** Exposed for the mission catalog test: the campaign's authored marker ids. */
 export function campaignMarkerIds(): readonly string[] {
   const ids = new Set<string>();
   for (const step of CAMPAIGN) {

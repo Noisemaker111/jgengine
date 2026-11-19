@@ -4,10 +4,6 @@ import { KIBBLE_RECIPES } from "./kibble";
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
 
-/**
- * One engram as ARK's Island has it: the level it opens at, its engram-point cost, and the recipe it
- * teaches. Levels and costs are ARK's; recipes are ARK's where known (see README "Gap to target").
- */
 export interface EngramDef {
   id: string;
   level: number;
@@ -71,14 +67,12 @@ const ITEM_ENGRAMS: readonly EngramDef[] = [
   engram("brood_treads", 105, 50, { broodmother_trophy_alpha: 1, artifact_devourer: 1, element: 100, hide: 30 }, 10),
 ];
 
-/** Every engram in ARK's level order: items above, building pieces from their own table. Level 1 engrams cost nothing and are known from the start. */
 export const ENGRAMS: readonly EngramDef[] = [
   ...ITEM_ENGRAMS,
   ...Object.values(SPECIES).flatMap((def) => (def.saddle === null || def.saddleEngram === null ? [] : [engram(def.saddle, def.saddleEngram.level, def.saddleEngram.points, def.saddleEngram.cost, 10)])),
   ...STRUCTURES.map((entry) => engram(entry.id, entry.level, entry.points, entry.cost, entry.shape === "foundation" || entry.tier === "station" ? 5 : 2)),
 ].sort((a, b) => a.level - b.level);
 
-/** Station recipes that need no engram: cooking on a campfire, kibble in a cooking pot, and smelting in a forge. */
 export const COOKING: readonly RecipeDef[] = [
   ...KIBBLE_RECIPES,
   // ARK's forge: two ore make one ingot (seconds approx).
@@ -92,7 +86,6 @@ export function engramDef(id: string): EngramDef | null {
   return BY_ID.get(id) ?? null;
 }
 
-/** Every recipe the survivor can ever craft: engram recipes plus cooking. */
 export const CRAFTING_RECIPES: readonly RecipeDef[] = [...ENGRAMS.map((entry) => entry.recipe), ...COOKING];
 
 export function recipeDef(id: string): RecipeDef | null {

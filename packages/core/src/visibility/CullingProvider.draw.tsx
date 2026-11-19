@@ -12,7 +12,7 @@ import { buildCullingDriver } from "./cullingDriver";
 import { createVisibilityChanges, type VisibilityChanges } from "./visibilityChanges";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 
-/** Whether an id is inside the visible set this frame. @internal */
+/** @internal */
 export type VisiblePredicate = (id: string) => boolean;
 
 const ALWAYS_VISIBLE: VisiblePredicate = () => true;
@@ -34,11 +34,7 @@ export function useRenderVisibility(): MutableRefObject<VisiblePredicate> {
 const unchanging = createVisibilityChanges();
 const ChangesContext = createContext<VisibilityChanges>(unchanging);
 
-/**
- * Call `mark` whenever one of `ids` enters or leaves the render-visible set (or the whole predicate is
- * replaced), so work that reads the predicate for those ids alone redoes it only then. `ids` should keep
- * its identity while its contents do. @internal
- */
+/** @internal */
 export function useVisibilityChanges(ids: readonly string[], mark: () => void): void {
   const changes = useContext(ChangesContext);
   useEffect(() => changes.watch(ids, mark), [changes, ids, mark]);
@@ -59,7 +55,6 @@ type Mutable<T> = { -readonly [Key in keyof T]: T[Key] };
 type PerspectiveView = Mutable<Extract<CameraView, { kind: "perspective" }>>;
 type OrthographicView = Mutable<Extract<CameraView, { kind: "orthographic" }>>;
 
-/** One provider's camera views, rewritten in place each frame: the culling core copies what it keeps. */
 function createViewScratch(): { perspective: PerspectiveView; orthographic: OrthographicView } {
   return {
     perspective: { kind: "perspective", position: [0, 0, 0], target: [0, 0, 0], up: [0, 1, 0], fovDeg: 0, aspect: 1, near: 0, far: 0 },
@@ -108,11 +103,7 @@ export interface CullingProviderDrawProps {
   drawDistance?: number | undefined;
 }
 
-/**
- * The per-frame half of {@link CullingProvider}: reads the live render camera, updates the
- * engine VisibilitySystem and publishes the predicate/changes the contexts expose.
- * @internal
- */
+/** @internal */
 export function cullingProviderDraw(
   ctx: GameContext,
   getProps: () => CullingProviderDrawProps,

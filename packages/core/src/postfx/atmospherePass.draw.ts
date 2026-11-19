@@ -16,11 +16,7 @@ const vertexShader = /* glsl */ `
   }
 `;
 
-/**
- * Height haze plus light shafts in one full-screen pass. Writes premultiplied haze-and-shaft light in
- * rgb and the haze cover in alpha, blended straight over the frame.
- * @internal
- */
+/** @internal */
 export function atmosphereFragment(steps: number, variationTaps = 0, truncated = true): string {
   return /* glsl */ `
   ${truncated ? HALF_ROUNDING_GLSL : ""}
@@ -175,15 +171,14 @@ export function atmosphereFragment(steps: number, variationTaps = 0, truncated =
 }
 
 const LIGHT_RESCAN_FRAMES = 90;
-/** Point and spot lights the haze glows around at once, nearest the camera first. */
 export const MAX_HAZE_LAMPS = 8;
 const lampWorld = new THREE.Vector3();
 const lampTarget = new THREE.Vector3();
 
-/** A local light the haze can glow around. @internal */
+/** @internal */
 export type HazeLamp = THREE.PointLight | THREE.SpotLight;
 
-/** Every visible point or spot light in `scene` that may glow in the haze. @internal */
+/** @internal */
 export function findHazeLamps(scene: THREE.Object3D): HazeLamp[] {
   const lamps: HazeLamp[] = [];
   visitVisible(scene, (object) => {
@@ -195,10 +190,7 @@ export function findHazeLamps(scene: THREE.Object3D): HazeLamp[] {
   return lamps;
 }
 
-/**
- * The lit lamps nearest `eye`, nearest first and at most {@link MAX_HAZE_LAMPS}; a dark lamp or one
- * further away than three times its own range is skipped. @internal
- */
+/** @internal */
 export function nearestHazeLamps(lamps: readonly HazeLamp[], eye: THREE.Vector3): HazeLamp[] {
   const lit: { lamp: HazeLamp; distance: number }[] = [];
   for (const lamp of lamps) {
@@ -216,11 +208,7 @@ const sunPoint = new THREE.Vector3();
 const projected = new THREE.Vector4();
 const viewProjection = new THREE.Matrix4();
 
-/**
- * How strongly shafts show for a sun at `uv` on screen, given whether it is in front of the camera
- * and its height: full on screen, fading out beyond the edges, off behind the camera or below the
- * horizon. @internal
- */
+/** @internal */
 export function sunShaftVisibility(uv: { x: number; y: number }, inFront: boolean, sunHeight: number): number {
   if (!inFront) return 0;
   const outside = Math.max(0, -uv.x, uv.x - 1, -uv.y, uv.y - 1);
@@ -373,7 +361,6 @@ export class AtmospherePass extends Pass {
     renderer.autoClear = autoClear;
   }
 
-  /** Move the haze banks downwind by the time the shared wind clock moved, scaled by the gust. */
   private advanceDrift(offset: THREE.Vector2): void {
     const now = windClock.value;
     const step = Number.isNaN(this.driftClock) ? 0 : Math.min(0.25, Math.max(0, now - this.driftClock));

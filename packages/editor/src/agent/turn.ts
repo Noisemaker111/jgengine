@@ -4,7 +4,6 @@ import { formatAgentContext, packAgentContext, type AgentEditorContext } from ".
 import type { AgentChatMessage, AgentEndpoint } from "./endpoint";
 import { routeToolCall, type AgentToolCall, type AgentToolResult } from "./toolBridge";
 
-/** One agent edit shown in the panel transcript — human can undo when it is the top of the stack. */
 export interface AgentPatchEntry {
   id: string;
   toolCallId: string;
@@ -14,7 +13,6 @@ export interface AgentPatchEntry {
   undone: boolean;
 }
 
-/** One rendered line in the agent panel transcript (user, assistant, tool, error, or patch). */
 export type AgentTranscriptEntry =
   | { kind: "user"; id: string; content: string; at: number }
   | { kind: "assistant"; id: string; content: string; at: number }
@@ -22,7 +20,6 @@ export type AgentTranscriptEntry =
   | { kind: "error"; id: string; content: string; at: number }
   | { kind: "patch"; id: string; patch: AgentPatchEntry; at: number };
 
-/** Result of {@link runAgentTurn}: chat history, UI transcript, undoable patches, and packed context. */
 export interface AgentTurnResult {
   messages: AgentChatMessage[];
   transcript: AgentTranscriptEntry[];
@@ -36,11 +33,6 @@ function nextId(prefix: string): string {
 
 const DEFAULT_MAX_ROUNDS = 6;
 
-/**
- * Runs one user message against an agent endpoint: injects live editor context via
- * `packAgentContext`, executes tool calls through `routeToolCall` (shared undo), and returns
- * transcript + patch entries the human can reverse with `undoAgentPatch`.
- */
 export async function runAgentTurn(options: {
   api: EditorHostApi;
   endpoint: AgentEndpoint;

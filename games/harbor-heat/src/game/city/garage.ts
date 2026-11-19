@@ -8,13 +8,8 @@ import { vehicleById } from "../entities/vehicles/catalog";
 import { streetPlayOf } from "../streetPlay";
 import { quietOnYourBlock } from "./street";
 
-/**
- * Cars the player keeps: a car is theirs once bought or boosted, so getting back in costs no heat;
- * Sunset Motors' bay stores up to {@link GARAGE_SLOTS} of them between sessions.
- */
 export const GARAGE_SLOTS = 3;
 
-/** Catalog ids of the cars parked in the bay, oldest first. */
 export const storedCarsStore = defineStore<string[] | undefined>("harbor.stored", undefined);
 
 interface CarMeta {
@@ -85,7 +80,6 @@ export function registerGarage(ctx: GameContext): void {
   });
 }
 
-/** Park the car you're driving, or take one out on foot. */
 export function garagePrompts(ctx: GameContext): PositionedPrompt[] {
   if (bay === null) return [];
   const streetPlay = streetPlayOf(ctx);

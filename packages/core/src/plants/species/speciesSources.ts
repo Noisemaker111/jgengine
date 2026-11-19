@@ -1,4 +1,3 @@
-/** Every source a plant species value or growth rule comes from; each one is credited in CREDITS.md. */
 export const PLANT_SOURCES = {
   "carmean-1989": "Carmean, Hahn & Jacobs 1989, Site index curves for forest tree species in the eastern United States, USDA Forest Service GTR NC-128 (US public domain)",
   "fvs": "USDA Forest Service, Forest Vegetation Simulator, Lake States variant htcalc.f (US public domain)",
@@ -56,5 +55,4 @@ export const PLANT_SOURCES = {
   "marschall-2004": "Marschall & Proctor 2004, Are bryophytes shade plants? Photosynthetic light responses and proportions of chlorophyll a, chlorophyll b and total carotenoids, Ann. Bot. 94: mosses saturate at low light",
 } as const;
 
-/** Id of a credited plant data or model source. */
 export type PlantSourceId = keyof typeof PLANT_SOURCES;

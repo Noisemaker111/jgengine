@@ -7,7 +7,6 @@ import { REFERENCE_STAND } from "../../packages/core/src/plants/species/speciesR
 import { crownProfile } from "../../packages/core/src/plants/validation/crownAllometry";
 import { CROWN_ARCHITECTURE_AGE, CROWN_ARCHITECTURE_SEEDS, crownArchitecture, type CrownArchitecture } from "../../packages/core/src/plants/validation/crownArchitecture";
 
-/** One reading of a grown plant at an age. */
 export interface TrialReading {
   age: number;
   heightM: number;
@@ -17,20 +16,16 @@ export interface TrialReading {
   centroid: number;
   shoulder: number;
   leafAreaM2: number;
-  /** Live stems rising from the collar. */
   stems: number;
   alive: boolean;
 }
 
-/** Open-grown and stand-grown runs of one species per seed, and a shaded sapling run. */
 export interface Trial {
   open: TrialReading[][];
-  /** Crown architecture of each seeded individual in {@link CROWN_ARCHITECTURE_SEEDS}, open-grown to the architecture age. */
   architecture: CrownArchitecture[];
   stand: TrialReading[][];
   shadeLeafAreaM2: number[];
   shadeAlive: boolean[];
-  /** Whether the sapling lives 15 years under 0.05 light, as a suppressed tree under a closed canopy does. */
   deepShadeAlive: boolean[];
   ms: number;
 }
@@ -60,14 +55,12 @@ function grow(species: PlantSpecies, env: PlantEnvironment, seed: string, ages: 
   return readings;
 }
 
-/** Grow a shrub, palm, fern or herb open-grown to each habit check age, once per seed. */
 export function runHabitTrial(species: PlantSpecies, seeds: readonly string[]): Trial {
   const started = performance.now();
   const open = seeds.map((seed) => grow(species, OPEN_TEMPERATE_SITE, seed, HABIT_CHECK_AGES));
   return { open, architecture: [], stand: [], shadeLeafAreaM2: [], shadeAlive: [], deepShadeAlive: [], ms: performance.now() - started };
 }
 
-/** Each seeded individual's crown architecture at the architecture age, as the fit scores it. */
 function seededArchitecture(species: PlantSpecies): CrownArchitecture[] {
   return CROWN_ARCHITECTURE_SEEDS.map((seed) => {
     const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, seed);
@@ -76,7 +69,6 @@ function seededArchitecture(species: PlantSpecies): CrownArchitecture[] {
   });
 }
 
-/** Grow `species` open, in a stand and (when `shade`) under 0.2 light, once per seed. */
 export function runTrial(species: PlantSpecies, seeds: readonly string[], shade: boolean): Trial {
   const started = performance.now();
   const open = seeds.map((seed) => grow(species, OPEN_TEMPERATE_SITE, seed));

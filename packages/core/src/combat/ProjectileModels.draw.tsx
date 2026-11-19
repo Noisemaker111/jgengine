@@ -11,7 +11,6 @@ import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { isolatedEntityModelDraw } from "@jgengine/core/model/entityModelDraw.draw";
 
-/** Explicit opt-in shaft/head geometry when a game has no projectile model. */
 export interface ProjectileShaft {
   length?: number;
   radius?: number;
@@ -19,7 +18,6 @@ export interface ProjectileShaft {
   headColor?: THREE.ColorRepresentation;
 }
 
-/** Render simulated flights without owning their travel or settlement. */
 export interface ProjectileModelsProps {
   model?: ModelConfig | ((projectile: LiveProjectile) => ModelConfig | undefined);
   /** Defaults to no fallback geometry. */
@@ -77,9 +75,6 @@ interface ProjectileEntry {
 const EMPTY_CONTENT: EntryContent = { kind: "none" };
 
 /**
- * Mount caller-owned models at authoritative projectile positions. Flight ids
- * determine lifetime; each frame only updates transforms, and settlement removes
- * the model. Optional shaft/head geometry is enabled only by the caller.
  * @capability projectile-models render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup
  * @internal
  */
@@ -189,12 +184,7 @@ export function projectileModelsDraw(getProps: () => ProjectileModelsProps, ctx:
   };
 }
 
-/**
- * Mount caller-owned models at authoritative projectile positions. Flight ids
- * determine lifetime; each frame only updates transforms, and settlement removes
- * the model. Optional shaft/head geometry is enabled only by the caller.
- * @capability projectile-models render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup
- */
+/** @capability projectile-models render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup */
 export function ProjectileModels(props: ProjectileModelsProps) {
   const ctx = useGameContext();
   const latest = useRef(props);

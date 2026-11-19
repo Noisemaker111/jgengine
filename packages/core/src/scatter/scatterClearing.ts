@@ -9,22 +9,14 @@ import { perContext } from "../runtime/perContext";
 export interface ScatterClearing {
   /** The hidden placement ids; a new set object after every change, so it works as a UI snapshot. */
   hidden(): ReadonlySet<string>;
-  /** Hide (`true`) or show (`false`) one placement. */
   set(id: string, hidden: boolean): void;
-  /** The hidden ids as a plain list, for a save. */
   snapshot(): string[];
-  /** Replace the whole hidden set (a load). */
   restore(ids: Iterable<string>): void;
-  /** Show every placement again. */
   reset(): void;
   subscribe(listener: () => void): () => void;
 }
 
-/**
- * A set of hidden scatter placements with change notification.
- *
- * @capability scatter-clearing hide and restore individual scatter placements at runtime — felled trees, mined rocks
- */
+/** @capability scatter-clearing hide and restore individual scatter placements at runtime — felled trees, mined rocks */
 export function createScatterClearing(): ScatterClearing {
   let hidden: ReadonlySet<string> = new Set();
   const listeners = new Set<() => void>();
@@ -58,5 +50,4 @@ export function createScatterClearing(): ScatterClearing {
   };
 }
 
-/** The game's one scatter clearing; the authored scene renderer reads it. */
 export const scatterClearingOf: (ctx: GameContext) => ScatterClearing = perContext(() => createScatterClearing());

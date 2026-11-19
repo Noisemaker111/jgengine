@@ -3,11 +3,6 @@ import { captureRecordThumb, refreshRecordSlots } from "./menuRecord";
 import { openMarrowTitle, persistRecord, stageMidDive } from "./controls";
 import { menuFocus } from "./ui/menu/DeepwardMenu";
 
-/**
- * Dev-only staging for the menu's evidence shots. The departure itself is the real one
- * (`stageMidDive` walks through `begin` and the 1.4 s search channel); this only decides that the
- * record is written afterwards and the title is holding it.
- */
 export function registerCaptureCommands(ctx: GameContext): void {
   if (!import.meta.env.DEV) return;
   ctx.game.commands.define("menu.record", {

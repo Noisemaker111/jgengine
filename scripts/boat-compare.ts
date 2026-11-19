@@ -35,7 +35,6 @@ function sourceFiles(games: readonly string[]): string[] {
   return found.stdout.split("\n").filter((line) => line.endsWith(".ts"));
 }
 
-/** Every boat tuning a module exports, named by the nearest `label`, `name` or `id`. */
 function boatsIn(module: Record<string, unknown>, file: string): { name: string; tuning: BoatTuning }[] {
   const found: { name: string; tuning: BoatTuning }[] = [];
   const seen = new Set<unknown>();

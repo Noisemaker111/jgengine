@@ -11,9 +11,7 @@ export interface RouteGate {
   id: string;
   zoneId: string;
   requirement: GateNeed;
-  /** Route the barricade stands on; a shortcut's gate only stops karts that took the shortcut. */
   route: string;
-  /** The band of lateral offset this barricade spans. Every barricade seals its whole road. */
   laneX: readonly [number, number];
   /** Run metres: main-line metres from the start line (on Row Six, world z). */
   atZ: number;
@@ -43,7 +41,6 @@ export function inLane(x: number, laneX: readonly [number, number]): boolean {
   return x >= laneX[0] && x <= laneX[1];
 }
 
-/** A dropped barricade is only there once its drop time has passed. */
 export function gateStanding(gate: RouteGate, time: number): boolean {
   return gate.dropsAt === undefined || time >= gate.dropsAt;
 }
@@ -55,7 +52,6 @@ function opens(gate: RouteGate, tuning: KartTuning, airHeight: number): boolean 
   return gateSatisfied(gate, tuning) && (gate.requirement === "plow" || airHeight >= JUMP_CLEARANCE);
 }
 
-/** Row Six's barricades along one straight line: how far a move from `currentZ` toward `candidateZ` may go. */
 export function blockedZ(x: number, currentZ: number, candidateZ: number, tuning: KartTuning, airHeight = 0, gates: readonly RouteGate[] = ROUTE_GATES): number {
   let maxZ = candidateZ;
   for (const gate of gates) {
@@ -68,7 +64,6 @@ export function blockedZ(x: number, currentZ: number, candidateZ: number, tuning
   return maxZ;
 }
 
-/** What stopped a move along a track: a barricade, or a train on a crossing. */
 export interface CourseBlock {
   /** Run metres the move may reach. */
   run: number;
@@ -76,11 +71,6 @@ export interface CourseBlock {
   train: string | null;
 }
 
-/**
- * The same veto on a laid track: a move from `from` to `to` (both course fixes) crosses an unopened
- * barricade or a crossing with a train on it. Gates on another route than the one the kart is on do
- * not apply - that is what a shortcut is.
- */
 export function courseBlock(track: Track, from: CourseFix, to: CourseFix, tuning: KartTuning, airHeight: number, time: number): CourseBlock | null {
   const fromRun = track.run(from);
   const toRun = track.run(to);
@@ -109,15 +99,12 @@ export function gatesInZone(zoneId: string, gates: readonly RouteGate[] = ROUTE_
   return gates.filter((gate) => gate.zoneId === zoneId);
 }
 
-/** Whether a part, bolted on, is what this barricade asks for. */
 export function partOpens(part: DriftFoundryPartDef, need: GateNeed): boolean {
   return need === "plow" ? (part.grants?.plow ?? 0) > 0 : (part.grants?.jumpPower ?? 0) > 0;
 }
 
-/** What the sign and the radio tell a driver stopped at a barricade: the call, and how to get through. */
 export interface GateAdvice {
   gateId: string;
-  /** `run-up`: springs on, not enough air. `go-back`: the part lies behind. `crushed` and `gone`: no part to reach. */
   kind: "run-up" | "go-back" | "crushed" | "gone";
   call: string;
   sub: string;
@@ -125,7 +112,6 @@ export interface GateAdvice {
   partAt: number | null;
 }
 
-/** Where the kart stands when a barricade stops it. */
 export interface StoppedKart {
   run: number;
   tuning: KartTuning;

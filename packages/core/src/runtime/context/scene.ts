@@ -70,7 +70,6 @@ export interface SceneSubsystemDeps {
   ground: TerrainField;
   solids?: Pick<WorldSolids, "count" | "inBox">;
   events: GameEvents;
-  /** Full sim clock — forms need `after` for timed shapeshift reversion. */
   time: SimClock;
   occluder?: (from: EntityPosition, to: EntityPosition) => boolean;
   models?: GameContextModels;
@@ -86,9 +85,7 @@ export interface SceneStores {
 
 /** @internal The player's entity selection and saved sets. */
 export interface SceneSelection {
-  /** The player's selected entities, exposed as `ctx.scene.entity.selection`. */
   entitySelection: SelectionSet;
-  /** Saved entity sets (RTS control groups), exposed as `ctx.scene.entity.controlGroups`. */
   entityControlGroups: SelectionBookmarks;
 }
 
@@ -134,9 +131,7 @@ export interface SceneLifecycle {
     options: MoveTowardCommitOptions,
   ) => EntityPosition | null;
   resetAllToSpawn: (filter?: (entity: SceneEntity) => boolean) => number;
-  /** Install post-spawn side effects (death.revive) after combat is constructed. */
   setOnAfterSpawn: (fn: (instanceId: string) => void) => void;
-  /** Install post-despawn side effects (pose.clear) after player is constructed. */
   setOnAfterDespawn: (fn: (instanceId: string) => void) => void;
 }
 
@@ -145,7 +140,6 @@ export interface SceneBindings {
   bind: (key: string) => BodyBind;
   bindOf: (instanceId: string) => BodyBind | null;
   sceneObjects: SceneObjectContext;
-  /** Hand the player subsystem's inventories to `sceneObjects.slots`, which is built before they exist. */
   setInventoryAccess: (access: ObjectSlotInventoryAccess) => void;
 }
 

@@ -1,12 +1,4 @@
-/**
- * The homepage's story: the decisions that made jgengine what it is, each with its date, the reason
- * given at the time, its numbers and where to check them. Every figure here is quoted from the PR,
- * issue, commit or committed file named in `source`; the native benchmark rows are `native/README.md`'s
- * results table as measured on 2026-11-07. Change a number only by changing its source first.
- */
-
 export type DecisionKind =
-  /** Shipped and still true. */
   | "ship"
   /** Something taken out of the engine. */
   | "remove"
@@ -14,21 +6,14 @@ export type DecisionKind =
   | "experiment";
 
 export interface Decision {
-  /** Anchor on the page. */
   id: string;
-  /** For an experiment, what became of it ("not shipped", "preview"). */
   outcome?: string;
-  /** ISO date the change merged. */
   date: string;
   kind: DecisionKind;
   title: string;
-  /** What was done, in one or two sentences. */
   did: string;
-  /** The reason given when it was done, or what the measurement showed; absent when none was recorded. */
   why?: string;
-  /** Measured numbers, each a short "value — what it is" pair. */
   numbers?: readonly { value: string; label: string }[];
-  /** Where to check it: PR, issue, commit or file. */
   source: { label: string; href: string };
 }
 
@@ -178,7 +163,6 @@ export interface BenchGame {
   rows: readonly BenchRow[];
 }
 
-/** native/README.md "Results": RTX 3070, 1920×1080, uncapped, 8 s of each game's perf walk. */
 export const NATIVE_BENCH: readonly BenchGame[] = [
   {
     game: "Harbor Heat",
@@ -206,7 +190,6 @@ export const NATIVE_BENCH: readonly BenchGame[] = [
 /** The largest fps in the benchmark, the full length of a bar. */
 export const BENCH_MAX_FPS = Math.max(...NATIVE_BENCH.flatMap((game) => game.rows.flatMap((row) => row.fps)));
 
-/** Repository counts at release 0.57.0 (2026-11-12), from git, GitHub and npm. */
 export const BUILT_IN_THE_OPEN: readonly { value: string; label: string }[] = [
   { value: "130", label: "days since the first commit" },
   { value: "4,912", label: "commits" },
@@ -218,7 +201,6 @@ export const BUILT_IN_THE_OPEN: readonly { value: string; label: string }[] = [
 
 export const COUNTS_AS_OF = "release 0.57.0, 12 November 2026";
 
-/** What runs at each layer and in which language, top (your code) to bottom (where it ships). */
 export const STACK: readonly { layer: string; runs: string; lang: "ts" | "js" | "wasm" | "mixed"; note: string }[] = [
   { layer: "Your game", runs: "rules, content, editor.scene.json", lang: "ts", note: "the part only you can write" },
   { layer: "Parts + features", runs: "@jgengine/core model files", lang: "ts", note: "no dependencies at all; a server imports them without UI or three.js" },

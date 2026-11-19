@@ -4,20 +4,16 @@
 
 import { escapeHtml } from "../escapeHtml";
 
-/** What the starter's rules and plan say: the game's name and the one-line brief it was created with. */
 export interface StarterGameOptions {
   id: string;
   name: string;
-  /** The create call's `--brief`, the user's words. */
   brief?: string | undefined;
   template: "3d" | "builder" | "2d";
-  /** The starter loop needs the authored caches and beacon of the starter scene. */
   loop: boolean;
   player?: string | undefined;
   ground: "flat" | "terrain";
 }
 
-/** `src/game/rules.ts`: the starter loop as plain functions over plain data, built from the parts. */
 export const starterRulesTs = `import { evaluatePredicate, type Predicate } from "@jgengine/core/rules/predicate";
 import { pickWeighted } from "@jgengine/core/random/pick";
 import { changeMeter, createMeter, tickMeter, type MeterRates, type MeterState } from "@jgengine/core/stats/statPool";
@@ -163,7 +159,6 @@ export function atBeacon(run: RunState, at: boolean): RunState {
 }
 `;
 
-/** `src/game/rules.test.ts`. */
 export const starterRulesTest = `import { describe, expect, test } from "bun:test";
 
 import { seededRng } from "@jgengine/core/random/rng";
@@ -206,7 +201,6 @@ describe("starter rules", () => {
 });
 `;
 
-/** `src/loop.ts` for the starter loop: authored caches and beacon drive the rules. */
 export const starterLoopTs = `import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -320,7 +314,6 @@ export function onNewPlayer(ctx: GameContext): void {
 }
 `;
 
-/** `src/game/probe.ts`: what the from-zero proof and `drive --playtest` read. */
 export const starterProbeTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { run, sites } from "../loop";
@@ -371,7 +364,6 @@ export function probe(ctx: GameContext) {
 }
 `;
 
-/** `src/game/ui/kit.ts`: the game's own UI language, reshaped from a built-in kit. */
 export const starterKitTs = `import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
 import { parchmentKit } from "@jgengine/core/ui/kit/uiKitParchment.view";
 
@@ -387,7 +379,6 @@ export const kit = customizeKit(parchmentKit, {
 });
 `;
 
-/** `src/game/credits.ts`: the credits document is the \`credits\` field of \`jgengine.json\`. */
 export const starterCreditsTs = `import type { CreditsDocument } from "@jgengine/core/menu/credits";
 
 import project from "../../jgengine.json";
@@ -396,7 +387,6 @@ import project from "../../jgengine.json";
 export const credits: CreditsDocument = project.credits;
 `;
 
-/** `src/game/ui/GameUI.tsx`: the main menu, pause menu and play HUD, all engine parts in the game's kit. */
 export const starterGameUiTsx = (id: string, name: string) => `import { HudSlots } from "@jgengine/core/hud/hudLayout.view";
 import { KitHint, KitVitals } from "@jgengine/core/hud/kitHud.view";
 import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
@@ -453,7 +443,6 @@ export function GameUI() {
 }
 `;
 
-/** `proofs/flows/from-zero.flow.ts`: a new game with no save, played through real keys to the goal. */
 export const starterFromZeroFlow = `import { defineFlow } from "@jgengine/core/play/flow";
 
 import { game } from "../../src/game.config";
@@ -486,7 +475,6 @@ export default defineFlow(game, {
 });
 `;
 
-/** `proofs/flows/from-zero.flow.ts` for a game without the starter loop: boots and walks. */
 export const walkFromZeroFlow = `import { defineFlow } from "@jgengine/core/play/flow";
 
 import { game } from "../../src/game.config";
@@ -501,7 +489,6 @@ export default defineFlow(game, {
 });
 `;
 
-/** `src/game/probe.ts` for a game without the starter loop. */
 export const walkProbeTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 /** The game's readings: add \`taught\`, \`unlocks\`, each content kind's Seen/Total and each system's reading as they land. */
@@ -536,8 +523,6 @@ const TEMPLATE_LOOK: Record<StarterGameOptions["template"], string> = {
   "2d": "a 2D board drawn by the HUD, no 3D scene",
 };
 
-/** `PLAN.md`: direction, features, gaps and milestones from the create call; the brief waits for milestone 1. */
-/** The line that stands in for a brief while milestone 1 is unticked. */
 const PENDING_BRIEF = "Pending: written once milestone 1 plays, from what building it taught.";
 
 export function planMd(options: StarterGameOptions): string {
@@ -588,7 +573,6 @@ ${features.join("\n")}
 `;
 }
 
-/** `README.md`: the design checklist and the loop proof line. */
 export function readmeMd(options: StarterGameOptions): string {
   return `# ${escapeHtml(options.name)}
 

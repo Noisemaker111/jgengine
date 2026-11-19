@@ -16,30 +16,24 @@ export interface StreetPlay {
   restorePursuit(ctx: GameContext, state: PursuitSave): void;
   enterVehicle(ctx: GameContext, vehicleId: string): void;
   exitVehicle(ctx: GameContext, force?: boolean): void;
-  /** Put a ground car somewhere else, at rest (dev staging and warps). */
   placeVehicle(ctx: GameContext, vehicleId: string, position: readonly [number, number, number], heading: number): void;
   drivingVehicleId(): string | null;
   carSpeedKmh(): number;
   telemetry(): VehicleTelemetry;
   tick(ctx: GameContext, dt: number): void;
   addHeat(ctx: GameContext, amount: number): void;
-  /** Take heat off at once; returns the stars left. */
   forgiveHeat(ctx: GameContext, amount: number): number;
-  /** Heat at the threshold of a star count. */
   heatForStars(stars: number): number;
   /** The player is in cover HHPD can't see into this tick. */
   setHidden(hidden: boolean): void;
   hidden(): boolean;
-  /** Who keeps quiet when HHPD asks the street. */
   setWitnessFilter(filter: WitnessFilter | null): void;
   clearWanted(ctx: GameContext): void;
   wanted(): WantedSnapshot;
   startRace(ctx: GameContext): boolean;
   raceActive(): boolean;
-  /** Each live car's bodywork stages, for the save document. */
   vehicleDamageSave(ctx: GameContext): Record<string, VehicleDamageState>;
   restoreVehicleDamage(ctx: GameContext, sections: Record<string, VehicleDamageState>): void;
-  /** Re-bake every owned car's handling after a mod was bought; dents stay. */
   retuneOwnedCars(ctx: GameContext): void;
   explodeVehicle(ctx: GameContext, vehicleId: string, at: readonly [number, number, number]): void;
 }
@@ -94,7 +88,6 @@ export function createStreetPlay(): StreetPlay {
 /** Per-`GameContext` streetPlay instance — replaces the old module-global singleton (#632). */
 export const streetPlayOf = perContext(() => createStreetPlay());
 
-/** The ground car the player is driving, or null on foot or in an aircraft: what races, fares and express parcels need. */
 export function groundCarId(ctx: GameContext): string | null {
   const id = streetPlayOf(ctx).drivingVehicleId();
   if (id === null) return null;

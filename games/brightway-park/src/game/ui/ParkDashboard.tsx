@@ -63,7 +63,6 @@ export function ParkStatus() {
   </Card>;
 }
 
-/** The one card that says what to do next: the first unmet goal, the checklist, and a hint when stuck. */
 export function ParkGoal() {
   const goal = useGameStore((ctx) => parkGoal(ctx));
   const phone = useRuneViewport().width < 600;
@@ -105,7 +104,6 @@ function parkGoal(ctx: GameContext): { eyebrow: string; title: string; steps?: {
   };
 }
 
-/** The ledger, the gate price, the bank and the next award: open when the player asks for them. Buttons run `brightway.act`. */
 export function ParkBooks({ onClose }: { onClose: () => void }) {
   const { commands } = useGame();
   const v = useGameStore((ctx) => booksView(ctx));
@@ -124,7 +122,6 @@ export function ParkBooks({ onClose }: { onClose: () => void }) {
   </Window>;
 }
 
-/** What {@link ParkBooks} draws, as plain values: the ledger re-renders when a shown figure changes, not on every tick. */
 function booksView(ctx: GameContext) {
   const w = park.of(ctx);
   const m = parkMetrics(w), peak = w.num("park.peak"), next = nextMilestone(peak), rides = rideBoard(ctx);

@@ -30,7 +30,6 @@ function brushError(request: { x: number; z: number; radius?: number; strength?:
   return null;
 }
 
-/** Sculpt heightfield, material painting, terrain layers, and foliage/scatter verbs. */
 export const terrainHandlers: Pick<
   HandlerTable,
   | "create_terrain"

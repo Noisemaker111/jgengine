@@ -8,10 +8,8 @@ import type { AuthoredWeatherSample } from "@jgengine/core/weather/authoredWeath
 import type { WindField } from "@jgengine/core/world/wind";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
-/** An `[x, y, z]` world vector, such as the wind. */
 export type WeatherVector = readonly [number, number, number];
 
-/** Actual procedural weather submissions and per-frame impact query work. */
 export interface WeatherParticleMetrics {
   rain: { count: number; capacity: number };
   snow: { count: number; capacity: number };
@@ -19,7 +17,6 @@ export interface WeatherParticleMetrics {
   impacts: { count: number; capacity: number; heightQueries: number; exposureQueries: number; queryBudget: number };
 }
 
-/** Uniforms every weather field shares: time, wind, lightning flash, rain, snow and dust amounts, and roof shelters. */
 export interface WeatherUniformSet extends WeatherShelterUniforms {
   time: THREE.IUniform<number>;
   wind: THREE.IUniform<THREE.Vector3>;
@@ -31,7 +28,6 @@ export interface WeatherUniformSet extends WeatherShelterUniforms {
   metrics?: WeatherParticleMetrics | undefined;
 }
 
-/** Options for the shared weather uniforms: wind, lightning, time scale or an authoritative clock, and an authored weather sampler. */
 export interface WeatherUniformOptions {
   wind?: WeatherVector | undefined;
   lightning?: number | undefined;
@@ -39,18 +35,14 @@ export interface WeatherUniformOptions {
   /** Absolute authoritative simulation seconds; no render delta is accumulated when supplied. */
   timeSeconds?: number | (() => number) | undefined;
   sample?: ((x: number, z: number) => AuthoredWeatherSample) | undefined;
-  /** The closest 32 authored shelter volumes clip cosmetic particles. */
   shelters?: readonly EditorVolume[] | undefined;
-  /** Opt-in counters read from submitted geometry and actual query calls. */
   metrics?: WeatherParticleMetrics | undefined;
-  /** The shared wind, read at the camera {@link WEATHER_WIND_SAMPLE_HEIGHT} up each frame; `wind` and `sample` win over it. */
   windField?: WindField | undefined;
 }
 
-/** Height, m, precipitation reads the shared wind at: the meteorological 10 m. */
 export const WEATHER_WIND_SAMPLE_HEIGHT = 10;
 
-/** The wind precipitation drifts with: an authored sample, a fixed vector, else the shared field at the camera. @internal */
+/** @internal */
 export function weatherWindAt(options: WeatherUniformOptions, sample: AuthoredWeatherSample | undefined, x: number, z: number, time: number): WeatherVector {
   if (sample !== undefined) return [sample.wind[0], 0, sample.wind[1]];
   if (options.wind !== undefined) return options.wind;

@@ -29,7 +29,6 @@ function drawTexture(draw: (g: CanvasRenderingContext2D, size: number) => void):
   return texture;
 }
 
-/** Four short strokes around an open centre: the classic shooter hit tick. */
 function markerTexture(): THREE.Texture {
   return drawTexture((g, size) => {
     const c = size / 2;
@@ -49,7 +48,6 @@ function markerTexture(): THREE.Texture {
   });
 }
 
-/** A bright star with a hot core, for the instant a gun goes off. */
 function flashTexture(): THREE.Texture {
   return drawTexture((g, size) => {
     const c = size / 2;
@@ -80,7 +78,6 @@ interface Slot {
   size: number;
 }
 
-/** Counts behind the `render/shotFeedback` devtools probe. */
 const stats = { markers: 0, crits: 0, kills: 0, flashes: 0 };
 
 let probeRegistered = false;
@@ -93,7 +90,6 @@ function ensureShotFeedbackProbe(): void {
   });
 }
 
-/** White for a hit, amber for a crit, red for a kill; crits and kills stay up longer and draw larger. */
 const MARKER_COLOR: Readonly<Record<HitMarkerKind, THREE.Color>> = {
   hit: new THREE.Color("#ffffff"),
   crit: new THREE.Color("#ffc23b"),
@@ -101,7 +97,6 @@ const MARKER_COLOR: Readonly<Record<HitMarkerKind, THREE.Color>> = {
 };
 const MARKER_LIFE: Readonly<Record<HitMarkerKind, number>> = { hit: 1, crit: 1.25, kill: 1.6 };
 const MARKER_SIZE: Readonly<Record<HitMarkerKind, number>> = { hit: 0.05, crit: 0.06, kill: 0.075 };
-/** How long a local shot's impact point stays the place a following damage event marks. */
 const SHOT_POINT_MS = 250;
 
 function makeSlots(count: number, make: () => THREE.SpriteMaterial): Slot[] {
@@ -230,11 +225,7 @@ export function hitMarkersDraw(getProps: () => HitMarkersDrawProps): EngineDraw 
   };
 }
 
-/**
- * Hit markers: when the local player's attack damages something, a tick flashes over the spot that was
- * hit (white for a hit, amber for a crit, larger and red for a kill), drawn on top of everything at a fixed screen size.
- * @internal
- */
+/** @internal */
 export function HitMarkers({ lifeMs = 180 }: { lifeMs?: number }) {
   const ctx = useGameContext();
   const latest = useRef({ ctx, lifeMs });
@@ -244,19 +235,12 @@ export function HitMarkers({ lifeMs = 180 }: { lifeMs?: number }) {
 
 export interface MuzzleFlashesDrawProps {
   ctx: GameContext;
-  /** Accessibility setting: smaller, dimmer flashes under reduced motion. */
   reducedMotion: boolean;
   /** Milliseconds a flash stays up. Default 55. */
   lifeMs?: number;
 }
 
-/**
- * Draw-side form of {@link MuzzleFlashes}: a short bright star where each direct-fire shot leaves
- * the gun (the shooter's hand or barrel, or the first-person gun). Reduced motion keeps the flash
- * but makes it smaller and dimmer. `lifeMs`/`reducedMotion` are read per event and the camera is the
- * frame state's live object, so only a `ctx` swap resubscribes — matching the old effect deps.
- * @internal
- */
+/** @internal */
 export function muzzleFlashesDraw(getProps: () => MuzzleFlashesDrawProps): EngineDraw {
   const texture = flashTexture();
   const slots = makeSlots(12, () =>
@@ -335,11 +319,7 @@ export function muzzleFlashesDraw(getProps: () => MuzzleFlashesDrawProps): Engin
   };
 }
 
-/**
- * Muzzle flashes: a short bright star where each direct-fire shot leaves the gun (the shooter's hand
- * or barrel, or the first-person gun). Reduced motion keeps the flash but makes it smaller and dimmer.
- * @internal
- */
+/** @internal */
 export function MuzzleFlashes({ lifeMs = 55 }: { lifeMs?: number }) {
   const ctx = useGameContext();
   const { reducedMotion } = useAccessibilitySettings();

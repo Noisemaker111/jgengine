@@ -23,7 +23,6 @@ export type CaptureViewResolution =
   | { kind: "error"; message: string }
   | { kind: "view"; name: string; overrides: CaptureViewOverrides };
 
-/** Sorted view names with their descriptions, for `--list-views` and every failure message. */
 export function describeViews(views: Record<string, GameCaptureView> | undefined): string[] {
   return Object.entries(views ?? {})
     .sort(([a], [b]) => a.localeCompare(b))
@@ -38,7 +37,6 @@ export function describeViews(views: Record<string, GameCaptureView> | undefined
 export function resolveCaptureView(args: {
   views: Record<string, GameCaptureView> | undefined;
   viewName: string | null;
-  /** Params already on the URL; each one present here wins over the shot's value. */
   explicit: CaptureViewOverrides;
 }): CaptureViewResolution {
   const { views, viewName, explicit } = args;

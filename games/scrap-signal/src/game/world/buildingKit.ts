@@ -63,7 +63,6 @@ export const RUIN_SETTLEMENT_KIT: BuildingKit = defineBuildingKit({
   omit: ["clothesline", "awning"],
 });
 
-/** Settlement art per zone style; `ZoneDef.settlement.style` indexes it. */
 export const SETTLEMENT_KITS: Record<"desert" | "ruin", BuildingKit> = {
   desert: DESERT_SETTLEMENT_KIT,
   ruin: RUIN_SETTLEMENT_KIT,

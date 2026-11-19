@@ -24,7 +24,6 @@ export const campDeathsStore = defineStore<Readonly<Record<string, number>>>("ca
 
 export const vendorOpenStore = defineStore<string | null>("vendorOpen", null);
 
-/** The last thing someone said over the radio or face to face. */
 export const speechStore = defineStore<{ speaker: string; line: string; atMs: number } | null>("scrap.speech", null);
 
 export const blackMarketOpenStore = defineStore<boolean>("blackMarketOpen", false);
@@ -42,7 +41,6 @@ export const characterIdStore = defineStore<string | null>("characterId", null);
 export const talentRanksStore = defineStore<Record<string, number>>("talentRanks", () => ({}));
 
 export const reactorOpenStore = defineStore<{ atMs: number } | null>("reactorOpen", null);
-
 
 export interface CurrentZoneView {
   id: string;

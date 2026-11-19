@@ -7,12 +7,9 @@ import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Props for {@link GeneratorMeshInstance}. */
 export interface GeneratorMeshInstanceProps {
   definition: GeneratorDefinition;
-  /** The placed object's `meta`: params and seed. */
   meta: Record<string, unknown> | undefined;
-  /** Seed used when `meta` carries none, e.g. the object id. */
   fallbackSeed: string;
   position?: readonly [number, number, number];
   rotationY?: number;

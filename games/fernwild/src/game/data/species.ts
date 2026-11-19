@@ -4,16 +4,13 @@ import type { VitalDose } from "@jgengine/core/stats/vitals";
 import { type KibbleTier, preferredKibble, withKibble } from "./kibble";
 import { AWAKE_TAMES, food, type TamingDef, tamingTable } from "./taming";
 
-/** How a wild creature treats the survivor, by ARK's temperament names. */
 export type Temperament = "oblivious" | "skittish" | "docile" | "territorial" | "aggressive";
 
-/** A creature's base stat and its gain per wild level (ARK's wild per-level increase). */
 export interface StatLine {
   base: number;
   perLevel: number;
 }
 
-/** One ARK species: stats, speeds, temperament, diet, taming table, saddle and carcass. */
 export interface SpeciesDef {
   id: string;
   label: string;
@@ -28,11 +25,9 @@ export interface SpeciesDef {
   /** Walk and sprint in metres per second (ARK units / 100). */
   walk: number;
   sprint: number;
-  /** Sprint once tamed, when ARK lists a different one (a tamed raptor outruns a wild one). */
   tamedSprint?: number;
   /** Stamina a second while ridden at a sprint (ARK's movement table). */
   sprintStamina: number;
-  /** ARK's base kill XP: a kill gives this x (1 + 0.1 x (level - 1)). */
   killXp: number;
   /** Bite: damage at level 1, seconds between bites, reach in metres. Null when it never fights. */
   attack: { damage: number; interval: number; reach: number } | null;
@@ -53,18 +48,12 @@ export interface SpeciesDef {
   kibble: KibbleTier | null;
 }
 
-/** Wild creatures roll levels 1-30 like ARK's Island at difficulty 1. */
 export const WILD_LEVELS = { min: 1, max: 30 } as const;
 
-/**
- * Danger rises with distance: a zone by the survivor's beach rolls levels up to 5, and the cap climbs a
- * level every 50 m out, so only zones 1250 m away or more roll the full 30.
- */
 export function wildLevelCap(metresFromStart: number): number {
   return Math.min(WILD_LEVELS.max, Math.max(5, Math.floor(5 + metresFromStart / 50)));
 }
 
-/** The three species with their full wiki taming tables. ARK wiki numbers (ark.wiki.gg). Speeds are units/s ÷ 100. */
 const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
   dodo: {
     id: "dodo",
@@ -225,7 +214,6 @@ const ROWS: Readonly<Record<string, Row>> = {
 
 const round = (value: number, step = 1) => Math.round(value / step) * step;
 
-/** A table row as a full species: ARK's per-level patterns and size-scaled tables fill what the row leaves out. */
 function fromRow(id: string, row: Row): Omit<SpeciesDef, "kibble"> {
   const [label, temperament, diet, health, healthPerLevel, stamina, torpor, torporPerLevel, weight, melee, walk, sprint, radius, saddleLevel] = row;
   // Meals scale with the torpor a body carries, as ARK's do: a raptor (180 torpor) eats 7 raw meat at level 1.
@@ -265,11 +253,6 @@ function fromRow(id: string, row: Row): Omit<SpeciesDef, "kibble"> {
   };
 }
 
-/**
- * The Broodmother Lysrix, one species per difficulty as ARK keeps them: the wiki's base health and its
- * per-level gain, the lighter of her two melee attacks, torpor 100000 (+6000 a level) that nothing
- * brings down, and 32 base kill XP. Her speeds, bite timing, size and carcass are approximate.
- */
 function broodmother(tier: "gamma" | "beta" | "alpha", health: number, healthPerLevel: number, melee: number): SpeciesDef {
   const label = `${tier[0]!.toUpperCase()}${tier.slice(1)} Broodmother`;
   return {
@@ -299,8 +282,6 @@ function broodmother(tier: "gamma" | "beta" | "alpha", health: number, healthPer
   };
 }
 
-/** Every species on the Island: the detailed three, the table's rest, and the Broodmother. */
-/** A tameable species with ARK's kibble in its foods: its tier and up first, the tiers below last. */
 function withBait(def: Omit<SpeciesDef, "kibble">): SpeciesDef {
   const tier = preferredKibble(def.id, def.taming.torpor.kind === "piecewise" ? (def.taming.torpor.points[0]?.[1] ?? 0) : 0);
   const baseline = def.diet === "carnivore" ? "raw_meat" : "mejoberry";
@@ -315,10 +296,8 @@ export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
   broodmother_alpha: broodmother("alpha", 972000, 243000, 540),
 };
 
-/** What a tame puts its level-up points into. */
 export type TameStat = "health" | "stamina" | "oxygen" | "food" | "weight" | "melee" | "speed";
 
-/** The stats a creature's wild levels go into and a baby inherits (ARK's, without torpor and speed). */
 export const WILD_STATS = ["health", "stamina", "oxygen", "food", "weight", "melee"] as const satisfies readonly TameStat[];
 export type WildStat = (typeof WILD_STATS)[number];
 
@@ -336,13 +315,8 @@ export const TAME_STATS: readonly { id: TameStat; label: string; perPoint: numbe
   { id: "speed", label: "Movement Speed", perPoint: 0.01, unit: "%" },
 ];
 
-/**
- * ARK's creature levels after taming: up to 88 more, the n-th costing 10 x n XP (10, 20, 30...),
- * from kills and a passive 0.66 XP a minute.
- */
 export const TAME_LEVELS = { max: 88, xpStep: 10, passivePerSecond: 0.66 / 60 } as const;
 
-/** XP a kill gives: ARK's base kill XP grown 10% a level. */
 export function killXp(def: SpeciesDef, level: number): number {
   return def.killXp * (1 + 0.1 * (level - 1));
 }
@@ -351,12 +325,10 @@ export function speciesDef(id: string): SpeciesDef | null {
   return SPECIES[id] ?? null;
 }
 
-/** A stat at a level: ARK's base plus its per-level increase for every level past the first. */
 export function statAt(line: StatLine, level: number): number {
   return line.base + line.perLevel * (level - 1);
 }
 
-/** ARK temperaments as tunings of the engine's three: oblivious and docile only answer a hit. Reach comes from the body. */
 export function temperamentOf(def: SpeciesDef): TemperamentConfig {
   switch (def.temperament) {
     case "oblivious":

@@ -7,21 +7,17 @@ import { tickCooldown } from "../time/cooldown";
 const EPSILON = 1e-9;
 const TWO_PI = Math.PI * 2;
 
-/** One car's live state, as a renderer, a game or the devtools overlay reads it. */
 export interface TrafficCarView {
   id: string;
   laneId: string;
   /** Arc, in metres, along the lane. */
   arc: number;
   position: Waypoint;
-  /** Yaw of travel, matching engine `rotationY`. */
   heading: number;
   /** World units per second. */
   speed: number;
   state: "driving" | "boxed" | "parked";
-  /** Parking spot held or reserved, while parking. */
   spotId: string | null;
-  /** Stable integer for the game's model or colour choice; derived from the injected RNG. */
   variant: number;
 }
 
@@ -30,25 +26,20 @@ export type TrafficRoutePolicy = (context: {
   carId: string;
   laneId: string;
   nodeId: string;
-  /** Outbound lanes that are not the lane the car arrived on, sorted by id. */
   options: readonly string[];
 }) => string | null;
 
-/** Every per-car behaviour number, retunable in play. */
 export interface TrafficTuning {
   /** Body length, metres; sets the spacing a follower keeps. Default 4.4. */
   carLength: number;
   /** Body width, metres — one lane-change blend and the fallback lane spacing. Default 1.9. */
   carWidth: number;
-  /** Acceleration while unobstructed, world units/s². Default 2.4. */
   maxAccel: number;
-  /** Comfortable braking, world units/s². Default 3.2. */
   comfortBrake: number;
   /** Bumper-to-bumper gap at a standstill, metres. Default 1.6. */
   minGap: number;
   /** Time headway a follower keeps, seconds. Default 1.25. */
   timeHeadway: number;
-  /** Multiplier on every lane's speed limit. Default 1. */
   speedScale: number;
   /** Free space the exit lane must show before a car is let into an intersection, metres. Default 6. */
   boxClearance: number;
@@ -60,35 +51,26 @@ export interface TrafficTuning {
   laneChangeBlockedSeconds: number;
   /** Seconds between lane changes by one car. Default 4. */
   laneChangeCooldown: number;
-  /** Clear window a lane change needs, as a multiple of the car's own length, each side. Default 1.6. */
   laneChangeGapFactor: number;
   /** Free stretch an entry lane must show before a car spawns on it, metres. Default 14. */
   spawnGap: number;
-  /** Fraction of the lane limit a spawned car starts at. Default 0.55. */
   spawnSpeedFactor: number;
-  /** Most cars spawned or retired in one tick. Default 3. */
   fleetPerTick: number;
   /**
    * Seconds a car may stay stopped before the deadlock watch reports it. A red light or a queue is
    * under this; a permanent stop is not. Default 60.
    */
   watchSeconds: number;
-  /** Fraction of the lane limit a car may carry into a turn sharper than 45°. Default 0.55. */
   turnSpeedFactor: number;
 }
 
-/** Counters a devtools probe, a HUD or a test reads. */
 export interface TrafficStats {
   cars: number;
   parked: number;
   boxed: number;
-  /** Cars holding at a stop line. */
   waiting: number;
-  /** Cars added by the demand controller. */
   spawned: number;
-  /** Cars that reached the end of the graph. */
   exited: number;
-  /** Cars the demand controller removed to shrink the fleet. */
   retired: number;
   laneChanges: number;
   parks: number;
@@ -105,18 +87,15 @@ export interface TrafficStats {
   meanSpeed: number;
 }
 
-/** An intersection's signal right now: which phase is green and for how long. */
 export interface TrafficSignalState {
   node: string;
   phase: number;
   state: "green" | "yellow" | "red";
   /** Seconds this phase has left, including its yellow and all-red. */
   remaining: number;
-  /** In-lanes this green phase serves. */
   lanes: readonly string[];
 }
 
-/** Serializable traffic state: the fleet, the parking occupancy, the signal clocks and the demand. */
 export interface TrafficSnapshot {
   tunables: TrafficTuning;
   demand: number;
@@ -158,10 +137,8 @@ export interface TrafficSnapshot {
   };
 }
 
-/** Everything {@link createTraffic} needs: the graph, the injected generator and the caller's policies. */
 export interface TrafficOptions {
   graph: LaneGraph;
-  /** Seed for the injected generator that varies cars. Same seed, same fleet. */
   seed?: string | number;
   /** Inject a generator instead of seeding one; its cursor is snapshotted when it has one. */
   rng?: () => number;
@@ -170,7 +147,6 @@ export interface TrafficOptions {
   route?: TrafficRoutePolicy;
   /** Initial fleet target; the caller moves this with the time of day. Omit to keep the fleet caller-driven. */
   demand?: number;
-  /** Prefix for demand-spawned ids. Default `"traffic"`. */
   idPrefix?: string;
   /** Register a devtools probe under this name so the perf overlay shows traffic counters. */
   devtoolsName?: string;
@@ -184,7 +160,6 @@ export interface TrafficOptions {
  * Bounded per tick: one pass over the cars, one sorted pass per occupied lane, no path search.
  */
 export interface Traffic {
-  /** Add a car at the start of a lane. False when the id exists or the lane is unknown. */
   add(id: string, spec: { laneId: string; arc?: number; speed?: number }): boolean;
   remove(id: string): boolean;
   has(id: string): boolean;
@@ -204,19 +179,14 @@ export interface Traffic {
    * built-in curve. `-1` turns the controller off and leaves the fleet entirely caller-driven.
    */
   setDemand(count: number): void;
-  /** Current fleet target, or `-1` when the fleet is caller-driven. */
   demand(): number;
-  /** Send a car to a parking spot on the lane it is already on. False when the spot is taken. */
   park(id: string, spotId?: string): boolean;
-  /** Give up a parked spot and rejoin the lane. */
   releaseParking(id: string): boolean;
-  /** Id of the car holding or reserving a spot, or null. */
   spotOwner(spotId: string): string | null;
   signal(nodeId: string): TrafficSignalState | null;
   stats(): TrafficStats;
   snapshot(): TrafficSnapshot;
   restore(next: TrafficSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -241,19 +211,14 @@ const DEFAULT_TUNING: TrafficTuning = {
   turnSpeedFactor: 0.55,
 };
 
-/** A lane's rear-most car this tick and its queue, kept per lane and refilled every tick. */
 interface LaneFront {
   arc: number;
   half: number;
-  /** False while the lane holds no car. */
   present: boolean;
-  /** The lane's cars, rear first: the same array `laneCars` holds. */
   queue: Car[];
-  /** Cars written into `queue` so far by the refill. */
   fill: number;
 }
 
-/** Order a lane queue rear first (then by id) in place; an insertion sort, since it is nearly sorted. */
 function sortQueue(queue: Car[]): void {
   for (let i = 1; i < queue.length; i += 1) {
     const car = queue[i]!;
@@ -304,7 +269,6 @@ interface IntersectionState {
   elapsed: number;
   cooldown: number;
   holder: Car | null;
-  /** Waiting cars collected during this tick's movement pass. */
   waiting: Car[];
   signal: TrafficSignalState | null;
 }
@@ -351,11 +315,7 @@ function idmAccel(
   return tuning.maxAccel * (free - interaction);
 }
 
-/**
- * Traffic for an authored lane graph (see {@link createLaneGraph}).
- *
- * @capability traffic lane-graph traffic with car following, signals, right-of-way, lane changes and parking
- */
+/** @capability traffic lane-graph traffic with car following, signals, right-of-way, lane changes and parking */
 export function createTraffic(options: TrafficOptions): Traffic {
   const graph = options.graph;
   const laneOf = new Map<string, LaneSpan>();

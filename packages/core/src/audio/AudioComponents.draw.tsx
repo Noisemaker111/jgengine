@@ -18,10 +18,7 @@ import { sampleEnclosure } from "./reverbRack.view";
 /** How often the shell listens for walls and a ceiling around the player, seconds. */
 const ENCLOSURE_INTERVAL_S = 0.5;
 
-/**
- * Where the player hears the room from: their body's head (what they drive, else their own body),
- * not the chase camera floating above it; the listener itself when there is no body. @internal
- */
+/** @internal */
 export function hearingPoint(
   ctx: {
     player: { userId: string; possession: { active(userId: string): string | null | undefined } };

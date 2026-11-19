@@ -25,7 +25,6 @@ import { hashUnit } from "../random/rng";
 import { cancelJob, createWorkQueue, enqueue, jobProgress, tick as tickQueue, type WorkQueueConfig, type WorkQueueState } from "../work/jobQueue";
 import type { ScenePoint3 } from "../world/sceneShapes";
 
-/** A fact's value: a number that moves, a name (an owner, a place) or a flag. */
 export type WorldFactValue = number | string | boolean;
 
 /** A fact that settles back toward `rest` by `decay` per second, clamped to `[min, max]`. */
@@ -37,7 +36,6 @@ export interface WorldFactSpec {
   max?: number;
 }
 
-/** Facts a subject starts with: a plain value, or a {@link WorldFactSpec} for one that calms down. */
 export type WorldFactsDecl = Readonly<Record<string, WorldFactValue | WorldFactSpec>>;
 
 /**
@@ -48,18 +46,14 @@ export function calm(value: number, perSecond: number, bounds: { rest?: number; 
   return { value, decay: perSecond, rest: bounds.rest ?? value, min: bounds.min ?? 0, max: bounds.max ?? 100 };
 }
 
-/** A test on one fact: equal to a value, or a numeric band, optionally negated. */
 export type WorldCondition = WorldFactValue | { atLeast?: number; atMost?: number; is?: WorldFactValue; not?: boolean };
 /** Every keyed fact must pass. `jobs.<id>` reads a job's status (`done`, `active`, `failed`). */
 export type WorldConditions = Readonly<Record<string, WorldCondition>>;
-/** Fact changes: a number adds, a string or flag sets. Keys are relative to the subject the change lands on. */
 export type WorldChanges = Readonly<Record<string, WorldFactValue>>;
 
-/** What a map draws for a subject. */
 export interface WorldBlipDecl {
   label?: string;
   icon?: string;
-  /** Only shown while these hold. */
   when?: WorldConditions;
 }
 
@@ -69,81 +63,56 @@ interface SubjectDecl {
   blip?: boolean | WorldBlipDecl;
 }
 
-/** A faction: a group with shared facts (mood, money) that places and things can belong to. */
 export interface WorldFactionDecl extends SubjectDecl {}
 
-/** A place in the world: a marker or position with a radius, an owner faction and its own facts. */
 export interface WorldPlaceDecl extends SubjectDecl {
-  /** Marker id the position comes from; or give `position`. */
   marker?: string;
   position?: readonly [number, number];
-  /** How far from the position a world event still counts as here (default 30). */
   radius?: number;
   /** Faction that holds the place; stored as the `owner` fact so a beat can change hands. */
   owner?: string;
 }
 
-/** One thing a person can say, shown while its conditions hold; the first that holds is current. */
 export interface WorldLine {
   text: string;
   when?: WorldConditions;
 }
 
-/** A person: where they are, whether they are on the phone, and what they say as the world changes. */
 export interface WorldPersonDecl extends SubjectDecl {
   name: string;
   faction?: string;
-  /** Place the person is found at; stored as the `at` fact. */
   at?: string;
-  /** In the phone's contact list once `known` is true (default true). */
   phone?: boolean;
   known?: boolean;
   says?: readonly WorldLine[];
 }
 
-/** Anything owned and located that is not a person: a car, a tower, a ride, a server rack. */
 export interface WorldThingDecl extends SubjectDecl {
   owner?: string;
   at?: string;
-  /** Counted with placed instances of this kind by `totals`, and a target for actions `on` it. */
   kind?: string;
 }
 
-/**
- * Something placed at runtime: a tower, a ride, a server rack, a bed. Each placed one is a subject
- * `<kind>-<n>` carrying the kind's facts, so ripples, totals, conditions and actions read it like
- * any declared thing.
- */
 export interface WorldKindDecl extends SubjectDecl {
-  /** Groups this kind belongs to (`tower`, `ride`); an action `on` or a total `of` a tag covers every kind carrying it. */
   tags?: readonly string[];
-  /** What a refusal says when `when` doesn't hold (default "<label> isn't available yet"). */
   refuse?: string;
-  /** Absolute changes paid on placing (negative numbers spend); refused when unaffordable. */
   cost?: WorldChanges;
   /** Seconds to build; the spot is reserved at once and the instance is `ready` when its order finishes. */
   takes?: number;
-  /** Queue the build waits in (default `"build"`). */
   queue?: string;
   /** Slot group it must occupy, e.g. `"plot"`. */
   slot?: string;
-  /** Grid it is placed on, and its footprint in cells (default 1 x 1). */
   grid?: string;
   size?: readonly [number, number];
-  /** Place it stands in when it has no slot or grid. */
   at?: string;
   owner?: string;
-  /** Most instances that may exist at once. */
   limit?: number;
-  /** Fraction of its cost returned when removed (default 0). */
   refund?: number;
   /** Placing is refused unless these absolute facts hold. */
   when?: WorldConditions;
-  /** A code hook run when an instance becomes ready. */
   hook?: string;
 }
 
-/** One spot in a slot group, positioned by a marker or a position. */
 export interface WorldSlotDecl {
   marker?: string;
   position?: readonly [number, number];
@@ -151,20 +120,14 @@ export interface WorldSlotDecl {
   label?: string;
 }
 
-/** A grid of cells things are placed on with a footprint: a park lot, a ship deck, a base floor. */
 export interface WorldGridDecl {
   cols: number;
   rows: number;
-  /** World units per cell (default 1). */
   cell?: number;
   /** World position of cell [0, 0]'s corner (default [0, 0]). */
   origin?: readonly [number, number];
 }
 
-/**
- * Something the player can do that may be refused: upgrade a tower, fix a ride, train a model, sell.
- * Costs are absolute facts; `effect` lands on the target. With `takes` it waits in a queue.
- */
 export interface WorldActionDecl {
   label?: string;
   /** Kind or tag the target must be (a placed instance, or a thing declaring that `kind`); omit for no target. */
@@ -173,43 +136,29 @@ export interface WorldActionDecl {
   when?: WorldConditions;
   /** Facts on the target that must hold, keyed without the subject (`{ level: { atMost: 2 } }`). */
   whenTarget?: WorldConditions | undefined;
-  /** Absolute changes paid (negative numbers spend); refused when unaffordable. */
   cost?: WorldChanges;
-  /** A target fact that multiplies `cost` and `world` numbers (an upgrade that costs more per level). */
   scaleBy?: string;
-  /** Changes on the target, keyed without the subject. */
   effect?: WorldChanges;
-  /** Absolute changes applied when it lands. */
   world?: WorldChanges;
-  /** Removes the target when it lands (sell, demolish), paying its kind's `refund`. */
   removes?: boolean;
   takes?: number;
   queue?: string;
-  /** A ripple fired at the target's place when it lands. */
   emit?: string;
-  /** A line for the news log; `{target}` is the target's label. */
   note?: string;
   hook?: string;
-  /** What a refusal says when `when` or `whenTarget` doesn't hold ("Already at top level"). */
   refuse?: string;
 }
 
-/** A fact computed over subjects of one kind: a park's rating, towers standing, a lab's income. */
 export interface WorldTotalDecl {
-  /** Kind or tag counted: placed instances and things declaring that `kind`. */
   of: string;
-  /** Sum this fact across them; with neither `sum` nor `max` the total counts them. */
   sum?: string;
   max?: string;
-  /** Only subjects whose facts pass, keyed without the subject. */
   where?: WorldConditions;
-  /** Count instances still being built too (default only ready ones). */
   building?: boolean;
 }
 
 /** A per-second stream into a fact: income, upkeep, hunger, a reactor's heat. */
 export interface WorldFlowDecl {
-  /** The fact that changes. */
   to: string;
   /** Units per second (default 1), multiplied by `from` when given. */
   rate?: number;
@@ -218,78 +167,51 @@ export interface WorldFlowDecl {
   when?: WorldConditions;
 }
 
-/** A queue timed work waits in, and how many orders run at once. */
 export interface WorldQueueDecl {
   lanes?: number;
   capacity?: number;
 }
 
-/** A story or side job: a mission the giver offers once its gates hold, and the beat it leaves behind. */
 export interface WorldJobDecl {
   title: string;
   mission: MissionDef;
   giver?: string;
   kind?: "story" | "side";
-  /** Story order: the lowest available act and declaration order lead `next()`. */
   act?: number;
   requires?: readonly string[];
   when?: WorldConditions;
-  /** Absolute `subject.fact` changes applied on completion. */
   beat?: WorldChanges;
-  /** Where the job starts when it has no giver, or the giver's place is wrong for it. */
   at?: string;
-  /** A job that can be run again after it is done (a side activity). */
   repeatable?: boolean;
-  /** One line said when the job is offered. */
   pitch?: string;
   /** A code hook (from `options.hooks`) run when the job is done, for what a beat can't declare. */
   hook?: string;
 }
 
-/** How one kind of world event spreads. */
 export interface WorldRippleDecl {
-  /** Changes on the place the event happened at. */
   place?: WorldChanges;
-  /** Changes on the faction that owns that place. */
   owner?: WorldChanges;
-  /** Changes on the faction the event names. */
   faction?: WorldChanges;
-  /** Changes on every person found at that place. */
   people?: WorldChanges;
-  /** Absolute `subject.fact` changes. */
   world?: WorldChanges;
-  /** Named amounts the game wires to its own systems (heat, traffic), scaled with the event. */
   out?: Readonly<Record<string, number>>;
-  /** A line for the world log and news feed; `{place}` is replaced by the place label. */
   note?: string;
   /** Only spread while these facts hold, so the same event lands differently as the world changes. */
   when?: WorldConditions;
-  /** Only spread when the place it lands on holds these facts (`{ owner: "player" }`), read relative to that place. */
   whenPlace?: WorldConditions;
-  /** Only spread when the event's target holds these facts, read relative to the target. */
   whenTarget?: WorldConditions;
-  /** Changes on the event's `target` (an instance or thing), relative to it. */
   target?: WorldChanges;
   /** A code hook (from `options.hooks`) run after the changes land, for what can't be declared. */
   hook?: string;
 }
 
-/** A ripple the world fires on its own clock: paydays, upkeep, shifts, raids, weather. */
 export interface WorldScheduleDecl {
   /** Seconds of world time between firings. */
   every: number;
-  /** The ripple to fire. */
   ripple: string;
-  /** Where it lands, for its `place`/`owner`/`people` changes. */
   place?: string;
-  /** Only fire while these facts hold. */
   when?: WorldConditions;
-  /**
-   * Aim each firing at one built instance (or thing) of this kind or tag, picked deterministically
-   * from the world clock; the ripple's `target` changes land on it and it lands at that instance's place.
-   */
   on?: string;
-  /** With `on`, only instances holding these facts (read relative to the instance) can be picked. */
   whenTarget?: WorldConditions;
   /** Share of firings that happen, 0-1 (default 1), dealt by {@link fairChance} from the world's seed and clock: the odds hold and streaks stay short. */
   chance?: number;
@@ -302,27 +224,20 @@ export interface WorldScheduleDecl {
  */
 export interface WorldTriggerDecl {
   when: WorldConditions;
-  /** Absolute `subject.fact` changes applied when it fires. */
   then?: WorldChanges;
-  /** A ripple to fire when it fires. */
   emit?: string;
-  /** Where that ripple lands. */
   place?: string;
-  /** A line for the world log. */
   note?: string;
   hook?: string;
-  /** Fire the first time only. */
   once?: boolean;
 }
 
-/** Everything a game declares about its world: factions, places, people, things, jobs and ripples. */
 export interface WorldModelDecl {
   factions?: Readonly<Record<string, WorldFactionDecl>>;
   places?: Readonly<Record<string, WorldPlaceDecl>>;
   people?: Readonly<Record<string, WorldPersonDecl>>;
   things?: Readonly<Record<string, WorldThingDecl>>;
   jobs?: Readonly<Record<string, WorldJobDecl>>;
-  /** How each event kind spreads; a list holds variants, each spreading when its own conditions hold. */
   ripples?: Readonly<Record<string, WorldRippleDecl | readonly WorldRippleDecl[]>>;
   schedule?: Readonly<Record<string, WorldScheduleDecl>>;
   triggers?: Readonly<Record<string, WorldTriggerDecl>>;
@@ -330,34 +245,26 @@ export interface WorldModelDecl {
   slots?: Readonly<Record<string, Readonly<Record<string, WorldSlotDecl>>>>;
   grids?: Readonly<Record<string, WorldGridDecl>>;
   actions?: Readonly<Record<string, WorldActionDecl>>;
-  /** Computed facts, keyed absolutely (`park.rating`); conditions, flows and views read them. */
   totals?: Readonly<Record<string, WorldTotalDecl>>;
   flows?: Readonly<Record<string, WorldFlowDecl>>;
   queues?: Readonly<Record<string, WorldQueueDecl>>;
-  /** Facts not tied to one subject (`story.act`), keyed absolutely. */
   facts?: WorldFactsDecl;
 }
 
-/** A checked declaration. */
 export interface WorldModelDef extends WorldModelDecl {
   readonly subjects: ReadonlyMap<string, "faction" | "place" | "person" | "thing">;
 }
 
-/** Something that happened, reported by the game. */
 export interface WorldEvent {
   kind: string;
-  /** Where it happened; resolved to the nearest place within its radius. */
   at?: readonly [number, number, number] | readonly [number, number];
   place?: string;
   by?: string;
   faction?: string;
-  /** The instance or thing it happened to, for a ripple's `target` changes and `{target}` in its note. */
   target?: string;
-  /** Multiplies every numeric change and output (default 1). */
   scale?: number;
 }
 
-/** One line of the world's recent history. */
 export interface WorldLogEntry {
   at: number;
   kind: string;
@@ -365,22 +272,17 @@ export interface WorldLogEntry {
   text: string;
 }
 
-/** Where a job stands for the player right now. */
 export type WorldJobStatus = "locked" | "available" | "active" | "done" | "failed";
 
-/** A placed instance as saved: what it is and where it stands. */
 export interface WorldInstance {
   kind: string;
   slot?: string;
   cell?: readonly [number, number];
   ready: boolean;
-  /** What it is worth: its price plus every upgrade paid, which a removal's refund is a share of. */
   paid?: WorldChanges;
-  /** Placed without paying (a starting layout): cancelling it mid-build returns nothing. */
   free?: boolean;
 }
 
-/** An instance that was removed, with what came back. */
 export interface WorldRemoved {
   id: string;
   kind: string;
@@ -388,12 +290,10 @@ export interface WorldRemoved {
   refund: WorldChanges;
 }
 
-/** What a queued order does when it finishes. */
 export type WorldOrderSpec =
   | { type: "place"; instance: string; takes: number; paid: WorldChanges }
   | { type: "act"; action: string; target: string | null; scale: number; takes: number; paid: WorldChanges };
 
-/** The saved form of a world model: facts, live mission, news log, placed instances and queued work. */
 export interface WorldModelState {
   time: number;
   facts: Record<string, WorldFactValue>;
@@ -403,20 +303,16 @@ export interface WorldModelState {
   instances?: Record<string, WorldInstance>;
   seq?: number;
   orders?: Record<string, WorkQueueState<WorldOrderSpec, WorldChanges>>;
-  /** Each trigger's conditions as last seen (true while they hold, and forever once a `once` trigger fired). */
   triggers?: Record<string, boolean>;
   /** The run's luck: every schedule roll is keyed by it, so a reloaded world rolls as before and another run rolls its own. */
   seed?: string;
 }
 
-/** How to place: `free` skips paying (a starting layout, a reward); a sale still refunds its share of the price. */
 export interface WorldPlaceOptions {
   free?: boolean;
-  /** Placed already built, skipping `takes`. */
   built?: boolean;
 }
 
-/** Where to place an instance. */
 export interface WorldPlacement {
   slot?: string;
   cell?: readonly [number, number];
@@ -427,14 +323,11 @@ export interface WorldRefusal {
   ok: false;
   reason: "unknown" | "locked" | "cost" | "taken" | "blocked" | "limit" | "target" | "busy";
   message: string;
-  /** For `cost`: how much of each fact is missing. */
   short?: Readonly<Record<string, number>>;
 }
 
-/** What placing, acting or removing did. */
 export type WorldResult = { ok: true; id: string | null; queued: boolean } | WorldRefusal;
 
-/** A placed instance as views read it. */
 export interface WorldInstanceView {
   id: string;
   kind: string;
@@ -445,7 +338,6 @@ export interface WorldInstanceView {
   position: readonly [number, number] | null;
 }
 
-/** Queued work as a progress bar reads it. */
 export interface WorldOrderView {
   id: string;
   queue: string;
@@ -462,16 +354,11 @@ export interface WorldModelStorage {
   write(next: WorldModelState): void;
 }
 
-/** Hooks that connect a world model to a game: markers, storage, rewards and outputs such as heat. */
 export interface WorldModelOptions {
-  /** Marker positions by id, for places that name a `marker` and for mission objectives. */
   markers?: Readonly<Record<string, ScenePoint3>>;
   storage?: WorldModelStorage;
-  /** Pay a job's mission rewards (cash, items) through the game's own wallet. */
   onReward?(rewards: MissionRewards, jobId: string): void;
-  /** Called with each named ripple output, e.g. `heat`. */
   onOutput?(name: string, amount: number, event: WorldEvent): void;
-  /** Mission actor id for `pursue` objectives that name no pursuer. */
   defaultPursuer?: string;
   logSize?: number;
   /** Code a declaration names with `hook`: the escape hatch for what facts and ripples can't say. */
@@ -481,7 +368,6 @@ export interface WorldModelOptions {
    * conditions, lines, jobs, flows and triggers see them, and they are never saved.
    */
   live?: () => Readonly<Record<string, WorldFactValue>>;
-  /** Luck for a new world, saved with it (an existing save keeps its own). Give each run its own so runs differ, and sweep seeds in tests. */
   seed?: string | number;
   /**
    * Report every numeric change to these facts with what caused it, after the change is written.
@@ -490,16 +376,12 @@ export interface WorldModelOptions {
   watch?: WorldFactWatch;
 }
 
-/** What moved a watched fact: the world call that wrote it, and the action, kind or event it named. */
 export interface WorldCause {
   kind: "change" | "spend" | "set" | "event" | "tick" | "advance" | "place" | "remove" | "act" | "cancel" | "job" | "restore";
-  /** The action id (`act`), kind id (`place`, `remove`), event kind (`event`) or order id (`cancel`). */
   name: string | null;
-  /** The instance or subject it was done to. */
   target: string | null;
 }
 
-/** One numeric change to a watched fact. A missing or non-numeric value reads as `0`. */
 export interface WorldFactChange {
   key: string;
   from: number;
@@ -513,26 +395,20 @@ export interface WorldFactWatch {
   onChange(change: WorldFactChange): void;
 }
 
-/** What {@link WorldModel.advance} did over the skipped time. */
 export interface WorldAdvanceResult {
   seconds: number;
-  /** How much each numeric fact moved, for a "while you were away" summary. */
   gained: Readonly<Record<string, number>>;
-  /** Log lines written while catching up. */
   log: readonly WorldLogEntry[];
 }
 
-/** What a code hook is handed: the live world, and the event or job that ran it. */
 export interface WorldHookCall {
   world: WorldModel;
   event: WorldEvent | null;
   place: string | null;
   jobId: string | null;
-  /** The instance or thing an action landed on, or the instance that just became ready. */
   target: string | null;
 }
 
-/** A job as menus, the phone and dialogue show it. */
 export interface WorldJobView {
   id: string;
   title: string;
@@ -541,11 +417,9 @@ export interface WorldJobView {
   giver: string | null;
   status: WorldJobStatus;
   pitch: string | null;
-  /** Where the job starts. */
   position: readonly [number, number] | null;
 }
 
-/** A phone contact: a known person with their current line and the jobs they offer. */
 export interface WorldContact {
   id: string;
   name: string;
@@ -554,7 +428,6 @@ export interface WorldContact {
   jobs: readonly WorldJobView[];
 }
 
-/** One thing to draw on a map: a place, person, thing, open job or the live objective. */
 export interface WorldBlip {
   id: string;
   kind: "place" | "person" | "thing" | "job" | "objective";
@@ -564,40 +437,31 @@ export interface WorldBlip {
   z: number;
 }
 
-/** The one thing the player should do next, with where to go. */
 export interface WorldNext {
   text: string;
   jobId: string | null;
   target: readonly [number, number] | null;
 }
 
-/** A job moved, as `tick` and `startJob` report it. */
 export type WorldJobEvent =
   | { kind: "job-started"; jobId: string }
   | { kind: "job-done"; jobId: string; beat: WorldChanges | null }
   | { kind: "job-failed"; jobId: string; reason: string };
 
-/** What changed during one tick: jobs finished or failed and objectives cleared. */
 export interface WorldTickResult {
   mission: readonly MissionEvent[];
   jobs: readonly WorldJobEvent[];
-  /** Instances whose build finished, for the game to spawn. */
   ready?: readonly WorldInstanceView[];
-  /** Instances removed (sold, demolished, cancelled), for the game to despawn. */
   removed?: readonly WorldRemoved[];
-  /** Actions that landed, queued or immediate. */
   landed?: readonly { action: string; target: string | null }[];
-  /** Triggers that fired. */
   fired?: readonly string[];
 }
 
-/** A live world: facts, events that ripple, jobs, and the views every screen reads. */
 export interface WorldModel {
   readonly def: WorldModelDef;
   fact(key: string): WorldFactValue | undefined;
   num(key: string): number;
   facts(): Readonly<Record<string, WorldFactValue>>;
-  /** Apply absolute `subject.fact` changes (numbers add, others set). */
   change(changes: WorldChanges, scale?: number): void;
   /** Apply changes all-or-nothing: refused (false) when any number would drop below its floor (`min`, else 0). */
   spend(changes: WorldChanges): boolean;
@@ -626,21 +490,15 @@ export interface WorldModel {
   log(): readonly WorldLogEntry[];
   snapshot(): WorldModelState;
   restore(next: WorldModelState): void;
-  /** Place an instance of a kind: pays its cost, takes its slot or cells, and builds over `takes`. */
   place(kind: string, at?: WorldPlacement, options?: WorldPlaceOptions): WorldResult;
   canPlace(kind: string, at?: WorldPlacement, options?: WorldPlaceOptions): WorldRefusal | null;
-  /** Remove an instance, paying back its kind's `refund` share of its cost. */
   remove(id: string): WorldResult;
-  /** Do an action on an optional target: refused, landed now, or queued. */
   act(action: string, target?: string): WorldResult;
   canAct(action: string, target?: string): WorldRefusal | null;
-  /** What an action costs right now, scaled for its target. */
   costOf(action: string, target?: string): WorldChanges;
-  /** Cancel a queued order and pay back what it reserved. */
   cancel(orderId: string): boolean;
   instances(kind?: string): readonly WorldInstanceView[];
   instance(id: string): WorldInstanceView | null;
-  /** The instance standing in a slot. */
   occupant(slot: string): string | null;
   orders(queue?: string): readonly WorldOrderView[];
 }
@@ -649,12 +507,7 @@ function issue(message: string): never {
   throw new Error(`world model: ${message}`);
 }
 
-/**
- * Check a world declaration once: subject ids unique across kinds, owners and factions declared,
- * people at declared places, job givers, requirements and missions valid.
- *
- * @capability world-model one declarative world of people, places, factions, things, jobs and ripples
- */
+/** @capability world-model one declarative world of people, places, factions, things, jobs and ripples */
 export function defineWorldModel(decl: WorldModelDecl): WorldModelDef {
   const subjects = new Map<string, "faction" | "place" | "person" | "thing">();
   const add = (kind: "faction" | "place" | "person" | "thing", ids: Iterable<string>) => {
@@ -794,12 +647,7 @@ function passes(value: WorldFactValue | undefined, condition: WorldCondition): b
 
 const DECAY_STEP = 0.25;
 
-/**
- * Run a declared world: facts that ripple and calm, jobs on the shared mission machine, and every
- * view a HUD, phone, map, dialogue or resident needs, all over one serializable state.
- *
- * @capability world-model one declarative world of people, places, factions, things, jobs and ripples
- */
+/** @capability world-model one declarative world of people, places, factions, things, jobs and ripples */
 export function createWorldModel(def: WorldModelDef, options: WorldModelOptions = {}): WorldModel {
   const { facts: startFacts, specs } = initialFacts(def);
   const markers = options.markers ?? {};
@@ -927,7 +775,6 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     for (const [fact, value] of Object.entries(changes)) applyInto(facts, prefix === "" ? fact : `${prefix}.${fact}`, value, scale);
   };
 
-  /** A kind id matches itself and every tag it carries. */
   const matchesKind = (kindId: string | null, want: string): boolean =>
     kindId !== null && (kindId === want || (kinds[kindId]?.tags ?? []).includes(want));
   const kindOf = (id: string, current: WorldModelState): string | null =>
@@ -984,13 +831,11 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     totalValues.set(key, value);
     return value;
   };
-  /** One fact as every reader sees it: a live fact, else a total, else the saved fact. No table is copied. */
   const factOf = (key: string, current: WorldModelState, live: Readonly<Record<string, WorldFactValue>> | undefined): WorldFactValue | undefined => {
     if (live !== undefined && Object.hasOwn(live, key)) return live[key];
     const total = def.totals !== undefined && Object.hasOwn(def.totals, key) ? def.totals[key] : undefined;
     return total === undefined ? current.facts[key] : totalOf(key, total, current);
   };
-  /** The whole fact table with totals and live facts in: one copy, for the few readers that hand it on. */
   const allFacts = (current: WorldModelState): Readonly<Record<string, WorldFactValue>> => {
     const live = options.live?.();
     if (def.totals === undefined && (live === undefined || Object.keys(live).length === 0)) return current.facts;
@@ -1034,7 +879,6 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     for (const [key, value] of Object.entries(changes ?? {})) out[key] = typeof value === "number" ? value * scale : value;
     return out;
   };
-  /** The gains that pay back the spends in `paid`, times `share`. */
   const payback = (paid: WorldChanges, share: number): WorldChanges => {
     const out: Record<string, number> = {};
     for (const [key, value] of Object.entries(paid)) if (typeof value === "number" && value < 0) out[key] = Math.round(-value * share);
@@ -1139,7 +983,6 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     return costRefusal(action.cost, actionScale(action, target, current), current, what);
   };
 
-  /** Drop an instance and its facts from `next`, paying back `share` of what it cost. */
   const dropInstance = (next: WorldModelState, id: string, share: number): WorldModelState => {
     const instance = next.instances?.[id];
     if (instance === undefined) return next;
@@ -1153,7 +996,6 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     return { ...next, facts, instances };
   };
 
-  /** Apply what an action does to `next`; returns the new state and the ripple to fire after writing. */
   const landAction = (next: WorldModelState, actionId: string, target: string | null, scale: number): { next: WorldModelState; ripple: WorldEvent | null } => {
     const action = def.actions![actionId]!;
     const facts = { ...next.facts };
@@ -1178,14 +1020,12 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     };
   };
 
-  /** Count what an action cost toward its target's refund. */
   const addPaid = (current: WorldModelState, target: string | null, paid: WorldChanges): WorldModelState => {
     const owned = target === null ? undefined : current.instances?.[target];
     if (owned === undefined || target === null || Object.keys(paid).length === 0) return current;
     return { ...current, instances: { ...current.instances, [target]: { ...owned, paid: addChanges(owned.paid ?? {}, paid) } } };
   };
 
-  /** Advance every queue by `dt`, landing what finished. */
   const tickOrders = (next: WorldModelState, dt: number): { next: WorldModelState; ripples: WorldEvent[] } => {
     const ripples: WorldEvent[] = [];
     if (next.orders === undefined) return { next, ripples };
@@ -1241,7 +1081,6 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     return def.things?.[id]?.label ?? id;
   };
 
-  /** An instance by its slot's name, else its kind's label; a thing or subject by its label. */
   const targetLabel = (id: string, current: WorldModelState): string => {
     const instance = current.instances?.[id];
     if (instance === undefined) return label(id);
@@ -1252,7 +1091,6 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     }
     return kinds[instance.kind]?.label ?? instance.kind;
   };
-  /** The place an instance or thing stands in. */
   const targetPlace = (id: string | null, current: WorldModelState): string | null => {
     if (id === null) return null;
     const instance = current.instances?.[id];

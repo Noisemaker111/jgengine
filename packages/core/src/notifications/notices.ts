@@ -1,66 +1,47 @@
 import type { GameEvents } from "../game/events";
 
-/** How a notice reads: neutral info, a win, a caution, or a refused action. */
 export type NoticeTone = "info" | "success" | "warn" | "deny";
 
-/** What a caller pushes: plain text, or text with a tone, a dedupe key and a lifetime. */
 export interface NoticeInput {
   text: string;
-  /** Default "info". */
   tone?: NoticeTone;
-  /** Live notices with the same key stack into one (count +1, lifetime refreshed). Default `${tone}:${text}`. */
   key?: string;
   /** Lifetime in ms. Defaults to the feed's `ttlMs`, or `denyTtlMs` for deny. */
   ttlMs?: number;
-  /** Skip this push's sound cue (the notice still shows). Default false. */
   silent?: boolean;
 }
 
-/** A live notice as the HUD renders it. */
 export interface Notice {
   id: string;
   text: string;
   tone: NoticeTone;
   key: string;
-  /** How many pushes stacked into this notice; render "×N" when above 1. */
   count: number;
   /** Clock time (ms) of the latest push. */
   at: number;
   expiresAt: number;
-  /** Set when the latest push asked for no sound cue. */
   silent?: true;
 }
 
-/** Plain JSON state of a {@link NoticeFeed}. */
 export interface NoticeFeedState {
   notices: Notice[];
   counter: number;
 }
 
-/** Tunables for {@link createNoticeFeed}; all retunable at runtime. */
 export interface NoticeFeedConfig {
-  /** Maximum live notices; the oldest falls off. Default 4. */
   cap?: number;
   /** Default lifetime in ms. Default 3200. */
   ttlMs?: number;
-  /** Lifetime for deny notices, which are short reactions. Default 2400. */
   denyTtlMs?: number;
 }
 
-/** A capped, self-expiring, deduping notice list every game reaches through `ctx.game.notices`. */
 export interface NoticeFeed {
-  /** Raise a notice (or stack it onto a live one with the same key); returns the live entry. */
   push(input: NoticeInput | string): Notice;
-  /** Remove one notice early. */
   dismiss(id: string): void;
-  /** Drop expired notices as of the feed clock. */
   prune(): void;
-  /** Live notices, oldest first. Stable reference until the next change. */
   list(): readonly Notice[];
   clear(): void;
-  /** Called after every change. */
   subscribe(listener: () => void): () => void;
-  /** Called once per push; `stacked` is true when it merged into a live notice. */
   onPush(listener: (notice: Notice, stacked: boolean) => void): () => void;
   retune(config: NoticeFeedConfig): void;
   snapshot(): NoticeFeedState;
@@ -155,7 +136,6 @@ export function createNoticeFeed(config: NoticeFeedConfig & { now?: () => number
   };
 }
 
-/** Options for {@link attachRefusalNotices}. */
 export interface RefusalNoticeOptions {
   /** Which actors' refusals to show. Default: commands run without an actor or by `localUserId`. */
   accept?: (refusal: { command: string; reason: string; actor: string | null }) => boolean;
@@ -163,12 +143,7 @@ export interface RefusalNoticeOptions {
   localUserId?: () => string;
 }
 
-/**
- * Show every player-facing command refusal (`validate` returned `{ reason, message }`) as a deny notice.
- * Refusals without a `message` stay silent: `reason` is a machine string. Returns the detach function.
- *
- * @capability refusal-feedback surface a refused command's player-facing message in the notice feed automatically
- */
+/** @capability refusal-feedback surface a refused command's player-facing message in the notice feed automatically */
 export function attachRefusalNotices(
   events: Pick<GameEvents, "on">,
   notices: Pick<NoticeFeed, "push">,

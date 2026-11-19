@@ -8,7 +8,6 @@ export interface RunePassThrough {
   move(x: number, y: number, buttons: number): void;
   down(x: number, y: number, onUi: boolean): void;
   up(x: number, y: number): void;
-  /** True when the UI canvas should take pointer events now. */
   takes(modal: boolean): boolean;
 }
 

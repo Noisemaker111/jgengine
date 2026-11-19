@@ -19,10 +19,8 @@ import { paceFrame } from "../settings/frameRateLimit";
 import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard.draw";
 import { bindFrameOwner, isPrimaryFrameOwner, joinFrameTask, withFrameOwner, type FrameOwner, type FrameSource } from "./frameBoard.draw";
 
-/** Frameloop modes the shell's Canvas accepted. */
 export type EngineFrameloop = "always" | "demand" | "never";
 
-/** Everything a system may read on a rendered frame. Mutable, reused per frame. */
 export interface EngineFrameState {
   readonly renderer: THREE.WebGLRenderer;
   /** Renderer used by frame callbacks. */
@@ -35,7 +33,6 @@ export interface EngineFrameState {
    * Absent on states built directly over a renderer root.
    */
   readonly rootScene?: THREE.Scene;
-  /** The loop this state belongs to on the frame board; child states carry their root's. */
   readonly frameOwner?: FrameOwner;
   readonly camera: THREE.Camera;
   readonly clock: THREE.Clock;
@@ -48,11 +45,9 @@ export interface EngineFrameState {
   /** Canvas CSS pixel size. */
   width: number;
   height: number;
-  /** The loop's frameloop mode. */
   readonly frameloop: EngineFrameloop;
   /** Demand mode: ask for another rendered frame. No-op under always/never. */
   invalidate(): void;
-  /** Pause or resume advancing+rendering while a surface covers the canvas. */
   setCovered(covered: boolean): void;
   readonly covered: boolean;
   /**
@@ -61,25 +56,13 @@ export interface EngineFrameState {
    * draw the scene into their own buffer (the post chain, the warmup gate) read it.
    */
   readonly renderPriority: number;
-  /**
-   * True while a positive-priority draw owns rendering. The loop renders nothing itself in
-   * that state; post chains and scissored viewports draw through their own passes.
-   */
   readonly renderTakenOver: boolean;
 }
 
-/** One ordered participant in the frame. Lower `priority` runs first; render happens after all. */
 export interface EngineDraw {
-  /**
-   * Draws run in ascending priority, then one render. A positive
-   * priority takes rendering into the draw's own hands — the loop renders
-   * nothing itself while one is mounted.
-   * Default 0.
-   */
   readonly priority?: number;
   /** Once, after the scene exists and before the first frame. Add objects here. */
   mount?(state: EngineFrameState): void;
-  /** Every rendered frame, in priority then registration order. `delta` mirrors `state.delta`. */
   frame?(state: EngineFrameState, delta: number): void;
   /**
    * Inputs changed outside a rendered frame. The UI bridge calls this after
@@ -88,11 +71,9 @@ export interface EngineDraw {
    * when their inputs change between frames.
    */
   update?(state: EngineFrameState): void;
-  /** Once, on teardown. Remove objects and free GPU resources here. */
   dispose?(state: EngineFrameState): void;
 }
 
-/** A shared per-priority task list: many small frame callbacks inside one draw (useSharedFrame's shape). */
 export interface EngineFrameBoard {
   /**
    * Run `task(state, delta)` on every rendered frame at `priority`, after the
@@ -122,7 +103,6 @@ export function childFrameState(state: EngineFrameState, parent: THREE.Object3D)
   return child;
 }
 
-/** The scoped state last built for each parent, with the state it reads through to. */
 const childStates = new WeakMap<THREE.Object3D, { base: EngineFrameState; child: EngineFrameState }>();
 
 /**
@@ -164,10 +144,8 @@ export interface EngineLoopOptions {
   canvas: HTMLCanvasElement;
   renderer: THREE.WebGLRenderer;
   scene?: THREE.Scene;
-  /** A camera to use; created from `cameraProps`/`orthographic` when absent. */
   camera?: THREE.Camera;
   orthographic?: boolean;
-  /** Values applied to the created camera. */
   cameraProps?: {
     fov?: number;
     zoom?: number;
@@ -175,7 +153,6 @@ export interface EngineLoopOptions {
     far?: number;
   };
   frameloop?: EngineFrameloop;
-  /** Nonzero marks a scissored viewport render, not the default target. */
   renderPriority?: number;
   /** Rendered fps cap; 0 or undefined renders every admitted refresh. */
   fpsLimit?: number;
@@ -190,13 +167,9 @@ export interface EngineLoop {
   readonly scene: THREE.Scene;
   readonly camera: THREE.Camera;
   readonly renderer: THREE.WebGLRenderer;
-  /** Shared frame tasks grouped by priority (the useSharedFrame/useFrameWhile seam). */
   readonly tasks: EngineFrameBoard;
-  /** Register a draw system; returns its unregister. Ordered by priority, then registration. */
   add(draw: EngineDraw): () => void;
-  /** Demand mode: schedule a rendered frame. */
   invalidate(): void;
-  /** Cover/uncover the canvas (menus, loading surfaces): stops advancing and drawing. */
   setCovered(covered: boolean): void;
   /** Change frameloop mode or the fps cap while running. */
   setFrameloop(mode: EngineFrameloop): void;
@@ -261,7 +234,6 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
 
   const draws: EngineDraw[] = [];
   const frameOwner: FrameOwner = {};
-  /** Mounted draws at positive priority — they own rendering while > 0. */
   let positiveDraws = 0;
   let raf = 0;
   let disposed = false;
@@ -360,7 +332,6 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
     if (frameloop !== "never") raf = requestAnimationFrame(frame);
   }
 
-  /** Insert keeping `draws` sorted by priority, stable within one priority. */
   function insertDraw(draw: EngineDraw): number {
     const priority = draw.priority ?? 0;
     if (priority > 0) positiveDraws += 1;

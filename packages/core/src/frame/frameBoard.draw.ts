@@ -17,22 +17,15 @@ import type { EngineFrameState } from "./engineLoop.draw";
 
 export type FrameTask = (state: EngineFrameState, delta: number) => void;
 
-/** A frame callback held by reference; the board stores these so observers see a stable task object. */
 export interface FrameTaskRef {
   current(state: EngineFrameState, delta: number): void;
 }
 
-/**
- * Attaches one priority level to the driving frame source and returns the
- * detach. `run` is the group's shared callback; the source decides how it is
- * scheduled (an ordered engine draw).
- */
 export type FrameSource = (
   priority: number,
   run: (state: EngineFrameState, delta: number) => void,
 ) => () => void;
 
-/** Identifies one frame loop: `EngineFrameState.frameOwner`. */
 export type FrameOwner = object;
 
 interface PriorityGroup {
@@ -42,21 +35,16 @@ interface PriorityGroup {
 
 type Board = Map<number, PriorityGroup>;
 
-/** The primary loop's tasks and every ownerless task. */
 const shared: Board = new Map();
-/** One board per bound loop that is not the primary. */
 const owned = new Map<FrameOwner, Board>();
 const sources = new Map<FrameOwner, FrameSource>();
 let primary: FrameOwner | null = null;
-/** The owner that draws mounting right now belong to; see {@link withFrameOwner}. */
 let ambient: FrameOwner | null = null;
-/** The owner `bindFrameSource` binds: a test or harness driving the board by hand. */
 const HAND_BOUND: FrameOwner = {};
 
-/** Optional per-task timing observer (the frame-breakdown devtools hook). */
 let observer: { enter(task: FrameTaskRef): void; leave(): void } | null = null;
 
-/** Set the observer called around every board task; `null` clears it. @internal */
+/** @internal */
 export function observeFrameTasks(next: { enter(task: FrameTaskRef): void; leave(): void } | null): void {
   observer = next;
 }
@@ -104,12 +92,7 @@ function unbind(owner: FrameOwner): void {
   primary = null;
 }
 
-/**
- * Bind the loop `owner` names as a frame source; returns the unbind. The first loop bound while
- * there is no primary becomes the primary and takes the shared board, so tasks that joined before
- * it existed attach without re-joining. Later loops run only the tasks joined under them.
- * @internal
- */
+/** @internal */
 export function bindFrameOwner(owner: FrameOwner, source: FrameSource): () => void {
   unbind(owner);
   sources.set(owner, source);
@@ -120,10 +103,6 @@ export function bindFrameOwner(owner: FrameOwner, source: FrameSource): () => vo
   return () => unbind(owner);
 }
 
-/**
- * Drive the shared board from `next` by hand (a test, a headless harness): it becomes the primary
- * whatever was bound before. `null` unbinds it.
- */
 export function bindFrameSource(next: FrameSource | null): void {
   unbind(HAND_BOUND);
   if (next === null) return;
@@ -134,7 +113,7 @@ export function bindFrameSource(next: FrameSource | null): void {
   bindFrameOwner(HAND_BOUND, next);
 }
 
-/** Whether `owner` names the primary loop: the one that runs the before/after-render tasks. @internal */
+/** @internal */
 export function isPrimaryFrameOwner(owner: FrameOwner): boolean {
   return primary === owner;
 }

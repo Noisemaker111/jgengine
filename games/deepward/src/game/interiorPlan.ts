@@ -2,7 +2,6 @@ import { planInteriorDressing, type InteriorClearance, type InteriorClutterSlot,
 
 import type { Stratum } from "./strata";
 
-/** A floor rectangle: centre and size on the ground plane. */
 export interface FloorRect { x: number; z: number; w: number; d: number }
 
 /**
@@ -59,7 +58,6 @@ export const DRESSING: Readonly<Record<Stratum, Omit<InteriorDressingOptions, "s
   },
 };
 
-/** The clutter props each floor draws from: real-size CC0 library models, picked per slot. */
 export const FLOOR_PROPS: Readonly<Record<Stratum, readonly string[]>> = {
   vault: ["industrial/metal-rack", "industrial/tool-cart", "industrial/plastic-crate", "industrial/wooden-crate", "industrial/storage-cart", "industrial/hand-truck", "industrial/tool-chest", "office/drawer-cabinet", "industrial/welding-cart", "office/fire-extinguisher", "industrial/power-box", "office/metal-desk"],
   cold: ["industrial/plastic-crate", "industrial/metal-rack", "industrial/compressor", "industrial/storage-cart", "industrial/propane-tank", "industrial/military-crate", "office/drawer-cabinet"],
@@ -67,7 +65,6 @@ export const FLOOR_PROPS: Readonly<Record<Stratum, readonly string[]>> = {
   choir: ["industrial/military-crate", "survival/ammo-box", "industrial/barrel", "office/drawer-cabinet"],
 };
 
-/** The loose floor debris each floor scatters: small CC0 library models, picked per slot. */
 export const FLOOR_DEBRIS: Readonly<Record<Stratum, readonly string[]>> = {
   vault: ["industrial/cardboard-box", "industrial/cardboard-box", "industrial/trash-bag", "office/clipboard", "industrial/oil-tin", "industrial/toolbox", "industrial/rusted-can", "industrial/pipe-wrench", "industrial/cement-bag"],
   cold: ["industrial/cardboard-box", "industrial/trash-bag", "industrial/rusted-can", "office/clipboard", "industrial/lpg-tank"],
@@ -75,7 +72,6 @@ export const FLOOR_DEBRIS: Readonly<Record<Stratum, readonly string[]>> = {
   choir: ["industrial/cement-bag", "industrial/rusted-can", "industrial/crowbar", "industrial/trash-bag"],
 };
 
-/** A floor's dressing plan plus which library model stands in each clutter slot and lies in each debris slot. */
 export interface FloorDressing {
   plan: InteriorDressingPlan;
   props: { slot: InteriorClutterSlot; model: string }[];
@@ -88,11 +84,6 @@ function overlaps(slot: InteriorClutterSlot, block: FloorRect, margin: number): 
   return Math.abs(slot.position[0] - block.x) < (w + block.w) / 2 + margin && Math.abs(slot.position[2] - block.z) < (d + block.d) / 2 + margin;
 }
 
-/**
- * Plan one floor's dressing from its authored rooms. Everything here is derived: the walls come
- * from the room footprints, nothing on the floor covers a kept-clear spot (lifts, pickups, spawns)
- * and no prop stands inside an authored structure.
- */
 export function planFloorDressing(stratum: Stratum, rooms: readonly FloorRect[], floorY: number, ceilingY: number, keepClear: readonly InteriorClearance[], blocks: readonly FloorRect[]): FloorDressing {
   const plan = planInteriorDressing(rooms, { seed: `deepward:${stratum}`, floorY, ceilingY, keepClear, ...DRESSING[stratum] });
   const pool = FLOOR_PROPS[stratum];
@@ -109,7 +100,6 @@ export function planFloorDressing(stratum: Stratum, rooms: readonly FloorRect[],
   };
 }
 
-/** The ground a clutter prop takes up, as a box the walk check can test. */
 export function clutterFootprint(slot: InteriorClutterSlot): FloorRect {
   const across = Math.abs(Math.sin(slot.rotationY)) > 0.5;
   return { x: slot.position[0], z: slot.position[2], w: across ? slot.depth : slot.width, d: across ? slot.width : slot.depth };

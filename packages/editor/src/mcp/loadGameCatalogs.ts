@@ -2,7 +2,6 @@ import type { EditorCatalogDefinition, EditorCatalogEntry, EditorCatalogsInput }
 import type { ParamSchema } from "@jgengine/core/generator/paramSchema";
 import { importOptionalGameModule } from "./importOptionalGameModule";
 
-/** Result of {@link loadGameCatalogs}: validated definitions, or diagnostics when the export is malformed. */
 export type LoadGameCatalogsResult =
   | { ok: true; catalogs: readonly EditorCatalogDefinition[] }
   | { ok: false; errors: { path: string; message: string }[] };
@@ -19,11 +18,7 @@ function decodeSchema(value: unknown, path: string, errors: { path: string; mess
   return value as unknown as ParamSchema;
 }
 
-/**
- * Validates an already-resolved `editorCatalogs` export (post module-load, post factory-call).
- * Missing/undefined yields an empty list — games without catalogs are valid.
- * @internal
- */
+/** @internal */
 export function decodeGameCatalogs(resolved: unknown): LoadGameCatalogsResult {
   if (resolved === undefined || resolved === null) return { ok: true, catalogs: [] };
   if (!Array.isArray(resolved)) {
@@ -64,11 +59,7 @@ export function decodeGameCatalogs(resolved: unknown): LoadGameCatalogsResult {
   return { ok: true, catalogs };
 }
 
-/**
- * Node-only: resolves a game's `editorCatalogs` export from games/<id>/src and validates its shape
- * before it reaches a live editor session.
- * @internal
- */
+/** @internal */
 export async function loadGameCatalogs(gameId: string): Promise<LoadGameCatalogsResult> {
   let resolved: unknown;
   try {

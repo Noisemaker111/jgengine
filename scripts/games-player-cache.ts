@@ -49,7 +49,6 @@ export function computeInputHash(): string {
   return hash.digest("hex");
 }
 
-/** Restores apps/web/public/play from the cache when the games-player inputs are unchanged. */
 export function restoreFromCache(): boolean {
   if (!existsSync(hashFile) || !existsSync(cachedOutput)) return false;
   if (readFileSync(hashFile, "utf8").trim() !== computeInputHash()) return false;

@@ -32,7 +32,7 @@ owns the discovery, upstream implementation, adoption and verification workflow.
 | Fernwild | `fernwild` | Dinosaur taming and survival |
 | LLMville | `llmville` | Shared-world AI-lab tycoon on a Convex backend (accounts, multiplayer); production still deploys from its old repo |
 
-See [the genre roadmap](./CLASSICS.md) for planned mechanics and [content provenance](./CONTENT-PROVENANCE.md) for source and asset attribution.
+See [content provenance](./CONTENT-PROVENANCE.md) for source and asset attribution.
 
 ## Improve the games
 
@@ -112,9 +112,6 @@ asset packs. Start it with `bun --cwd=games/deepward run dev`; see [its controls
 
 Each playable game is a standalone Vite harness: `index.html` loads
 `src/main.tsx`, and `vite.config.ts` resolves the engine packages from source. Run `bun run dev` inside the game's directory.
-
-See [historical published-package verification](GAME-PR-VERIFICATION.md) for earlier
-Brightway Park and Scrap Signal asset provisioning, checks and playtest limits.
 
 ## Engine source
 

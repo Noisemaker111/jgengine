@@ -32,21 +32,18 @@ const lootOf = perContext((ctx) => {
   return loot;
 });
 
-/** A crate's rolled loot, the same item from two picks merged into one stack. */
 export function rollCrate(ctx: GameContext, tier: string, rng: () => number = ctx.rng): RemainsStack[] {
   const merged = new Map<string, number>();
   for (const drop of lootOf(ctx).roll(tier, rng)) if (drop.item !== undefined) merged.set(drop.item, (merged.get(drop.item) ?? 0) + drop.count);
   return [...merged].map(([item, count]) => ({ item, count }));
 }
 
-/** An authored drop site: where a crate lands and the tier odds it sends. */
 export interface SupplySite {
   id: string;
   at: readonly [number, number, number];
   tiers: readonly { tier: string; weight: number }[];
 }
 
-/** The authored drop sites: each `supply_drop` marker, on the ground, with its biome's tier odds. */
 export function supplySites(ctx: GameContext): SupplySite[] {
   return markersOfKind(editorLayers, "supply_drop").map((marker) => {
     const meta = marker.meta as { tiers: { tier: string; weight: number }[] };
@@ -55,7 +52,6 @@ export function supplySites(ctx: GameContext): SupplySite[] {
   });
 }
 
-/** What a crate's remains carry: the crate, its site, its tier and when it started down. */
 interface CrateData {
   crateId: string;
   site: string;
@@ -63,7 +59,6 @@ interface CrateData {
   releasedAt: number;
 }
 
-/** A crate at its site: it starts down at `releasedAt` and lies where it lands. */
 interface SupplyCrate {
   id: string;
   site: string;
@@ -71,7 +66,6 @@ interface SupplyCrate {
   releasedAt: number;
 }
 
-/** A crate where it is now: falling from its site or landed and waiting to be opened. */
 interface SupplyDrop {
   id: string;
   site: string;
@@ -84,22 +78,18 @@ interface SupplyDrop {
   until: number | null;
 }
 
-/** A save of which sites hold a crate, when it started down, and what is in it. */
 export interface SupplyDropSave {
   seq: number;
   sites: RefillSlotsState;
   crates: RemainsSnapshot<CrateData>;
 }
 
-/** The crate a landed remains entry belongs to. */
 const crateOf = (data: CrateData): SupplyCrate => ({ id: data.crateId, site: data.site, tier: data.tier, releasedAt: data.releasedAt });
 
-/** The payload a crate keeps with its remains. */
 const dataOf = (crate: SupplyCrate): CrateData => ({ crateId: crate.id, site: crate.site, tier: crate.tier, releasedAt: crate.releasedAt });
 
 const present = (drop: SupplyDrop | null): drop is SupplyDrop => drop !== null;
 
-/** The tier a site sends, drawn from its weights. */
 function pickTier(site: SupplySite, rng: () => number): string {
   const chosen = pickWeighted(rng, site.tiers, (entry) => entry.weight);
   if (chosen === undefined) throw new Error(`supply drop site ${site.id} has no tier weight`);
@@ -109,7 +99,6 @@ function pickTier(site: SupplySite, rng: () => number): string {
 /** A site's first ready time: spread back over a crate's life, so a world already under way has crates down. */
 const seedReadyAt = (now: number, rng: () => number): number => now - rng() * (FALL_SECONDS + CRATE_LASTS) + rng() * SUPPLY_RESPAWN[1] * 0.5;
 
-/** A crate in the air where its fall has it at `now`. */
 function flyingView(crate: SupplyCrate, now: number, site: SupplySite): SupplyDrop {
   const [x, y, z] = site.at;
   const position: [number, number, number] = [0, 0, 0];
@@ -117,12 +106,10 @@ function flyingView(crate: SupplyCrate, now: number, site: SupplySite): SupplyDr
   return { ...crate, position, altitude: position[1] - y, landed: false, contents: [], until: null };
 }
 
-/** A crate down, where its remains lie. */
 function landedView(crate: SupplyCrate, entry: Remains<CrateData>): SupplyDrop {
   return { ...crate, position: [entry.at[0], entry.at[1], entry.at[2]], altitude: 0, landed: true, contents: entry.contents, until: entry.until };
 }
 
-/** A crate where it is at `now`: on its way down, or down where its remains lie. */
 function crateView(entry: Remains<CrateData>, now: number, siteOf: ReadonlyMap<string, SupplySite>): SupplyDrop | null {
   const data = entry.data;
   if (data === undefined) return null;
@@ -131,7 +118,6 @@ function crateView(entry: Remains<CrateData>, now: number, siteOf: ReadonlyMap<s
   return site !== undefined && now < entry.leftAt + FALL_SECONDS ? flyingView(crate, now, site) : landedView(crate, entry);
 }
 
-/** The closest landed crate within `reach` of `at` on the ground plane. */
 function nearestLanded(drops: readonly SupplyDrop[], at: readonly [number, number, number], reach: number): SupplyDrop | null {
   let best: SupplyDrop | null = null;
   let bestDistance = reach;
@@ -212,7 +198,6 @@ function createSupplyDropField(ctx: GameContext, sites: readonly SupplySite[]) {
 
 const dropsOf = perContext((ctx) => createSupplyDropField(ctx, supplySites(ctx)));
 
-/** Every crate in the world, falling or down, where it is now. */
 export function supplyDrops(ctx: GameContext): { id: string; tier: string; color: string; position: [number, number, number]; landed: boolean }[] {
   return dropsOf(ctx).list(ctx.time.now()).map((drop) => ({
     id: drop.id,
@@ -228,7 +213,6 @@ function crateNear(ctx: GameContext): SupplyDrop | null {
   return me === null ? null : dropsOf(ctx).nearest(me.position, OPEN_REACH, ctx.time.now());
 }
 
-/** E at a landed crate: if you are of its level, take all that fits; the rest stays in it. */
 export function openCrate(ctx: GameContext): void {
   const crate = crateNear(ctx);
   if (crate === null) return;
@@ -260,7 +244,6 @@ export function tickSupplyDrops(ctx: GameContext): void {
   dropsOf(ctx).tick(ctx.time.now(), ctx.rng);
 }
 
-/** ARK's admin drop, for proofs: send a crate of `tier` from the drop site nearest the survivor. Returns its site. */
 export function callSupplyDrop(ctx: GameContext, tier?: string): string | null {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return null;
@@ -274,7 +257,6 @@ export function callSupplyDrop(ctx: GameContext, tier?: string): string | null {
   return best.id;
 }
 
-/** The nearest crate for the HUD and probes: its tier, how far, and whether it is down yet. */
 export function nearestSupplyDrop(ctx: GameContext): { tier: string; distance: number; landed: boolean; altitude: number } | null {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return null;

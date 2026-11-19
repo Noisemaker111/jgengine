@@ -19,13 +19,11 @@ import {
   type AppKeybinds,
 } from "./keybinds";
 
-/** The game id the engine keys this game's binding overrides under: the shell reads them by game name. */
 export const LLMVILLE_SETTINGS_GAME_ID = "LLMville";
 
 /** Where binding overrides lived before the game mounted in the shell. */
 export const PREVIOUS_SETTINGS_GAME_ID = "llmville";
 
-/** The single JSON blob settings lived in before they moved onto the engine settings store. */
 export const LEGACY_APP_SETTINGS_KEY = "llmville:app-settings";
 
 export const GRAPHICS_PRESET_OPTIONS = [
@@ -76,7 +74,6 @@ function presetForQuality(quality: string): GraphicsPreset {
   return "balanced";
 }
 
-/** Reads the legacy blob the way the old settings module did: anything unreadable falls back to defaults. */
 function parseLegacyAppSettings(raw: string): AppSettings {
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -94,9 +91,7 @@ function parseLegacyAppSettings(raw: string): AppSettings {
   }
 }
 
-/** LLMville's settings over the engine settings store and binding overrides, on one injected storage. */
 export interface AppSettingsStore {
-  /** The engine settings store these settings live in, for engine settings blocks outside the shell. */
   engine: SettingsStore;
   get(): AppSettings;
   update(partial: Partial<AppSettings>): AppSettings;
@@ -106,11 +101,6 @@ export interface AppSettingsStore {
   reset(): void;
 }
 
-/**
- * Builds the store and moves a legacy `llmville:app-settings` blob onto the engine cells once:
- * values are written through the engine store, keybinds that differ from the defaults become
- * binding overrides, and the old key is removed.
- */
 export function createAppSettingsStore(storage: KeyValueStorage | null): AppSettingsStore {
   const settings = createSettingsStore(storage);
   const listeners = new Set<() => void>();
@@ -185,7 +175,6 @@ export function createAppSettingsStore(storage: KeyValueStorage | null): AppSett
   };
 }
 
-/** Moves overrides saved under the old game id once, renaming actions that changed id. */
 function movePreviousOverrides(storage: KeyValueStorage | null): void {
   const previous = loadBindingOverrides(PREVIOUS_SETTINGS_GAME_ID, storage);
   if (Object.keys(previous).length === 0) return;

@@ -3,7 +3,6 @@ import type { SurfaceMaterialMaps } from "../material/surfaceMaterialGenerator";
 import type { TerrainMaterialMaps } from "../world/features";
 import type { ResolvedTerrainSurfaces } from "./terrain";
 
-/** Largest edge a scan is packed at; ambientCG 1K archives are 1024 square. */
 export const TERRAIN_SCAN_SIZE = 1024;
 
 /** Decoded RGBA bytes of each map of one scan, all `size` square with row 0 at the top (image order). */
@@ -115,10 +114,7 @@ export async function loadTerrainScan(maps: TerrainMaterialMaps, size: number): 
   return packTerrainScan({ size, color, normal, roughness, ao, displacement });
 }
 
-/**
- * Every distinct scan a terrain names, across its surface roles and paint layers.
- * @internal
- */
+/** @internal */
 export function terrainScanRequests(
   surfaces: ResolvedTerrainSurfaces | undefined,
   paintScans: readonly (TerrainMaterialMaps | undefined)[],

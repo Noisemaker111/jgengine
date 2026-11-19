@@ -66,11 +66,7 @@ const STANDING: readonly [SkeletonSlot, number, number, number][] = [
   ["toes.r", -0.12, 0.04, 0.15],
 ];
 
-/**
- * The ragdoll a game gets when a standing humanoid dies: `ragdollConfigFromPoses` on a full standard rig in a standing
- * pose, `stature` m tall, with the engine's stock `HUMANOID_RAGDOLL_BODIES`.
- * @capability stock-humanoid-ragdoll the engine's default humanoid death ragdoll, standing, for measuring falls
- */
+/** @capability stock-humanoid-ragdoll the engine's default humanoid death ragdoll, standing, for measuring falls */
 export function stockHumanoidRagdoll(stature = 1.8): RagdollConfig {
   const scale = stature / 1.8;
   const poses: RagdollPose[] = STANDING.map(([slot, x, y, z]) => ({ slot, position: [x * scale, y * scale, z * scale], orientation: [0, 0, 0, 1] }));
@@ -79,26 +75,16 @@ export function stockHumanoidRagdoll(stature = 1.8): RagdollConfig {
   return ragdollConfigFromPoses({ scheme: "standard", slots, missing: [], unmapped: [] }, poses, { scale });
 }
 
-/** Settings for {@link measureRagdollFall}. */
 export interface RagdollFallOptions {
-  /** `PhysicsWorld` settings the game uses (gravity is set to Earth's for the comparison). */
   world?: Partial<Omit<PhysicsWorldConfig, "capacity" | "bounds" | "gravity">>;
-  /** Ragdoll to drop (default {@link stockHumanoidRagdoll}). The `head` bone and the `pelvis` (or `hips`) bone are read. */
   ragdoll?: RagdollConfig;
   /** Starting rotation rate backwards about the feet, rad/s (default 0.3). */
   push?: number;
-  /** Height the lowest bone starts above the floor, m (default 0). */
   dropHeight?: number;
-  /** Frame step the game advances the world by, s (default 1/60). */
   frame?: number;
 }
 
-/**
- * Topple or drop a game ragdoll in a `PhysicsWorld` and measure it like {@link simulateFall}: head and pelvis impact
- * speed and time, peak head and pelvis force from each bone's momentum change, foot force from the whole body's
- * momentum change (split over two feet), and HIC15 from the head's acceleration. Sampled once per frame, as a game sees it.
- * @capability ragdoll-fall-metrics measure a game ragdoll's fall: impact speeds, forces and head injury criterion
- */
+/** @capability ragdoll-fall-metrics measure a game ragdoll's fall: impact speeds, forces and head injury criterion */
 export function measureRagdollFall(options: RagdollFallOptions = {}): FallReport {
   const frame = options.frame ?? 1 / 60;
   const world = new PhysicsWorld({ capacity: 64, bounds: { min: [-20, 0, -20], max: [20, 20, 20] }, sleepThresholdSteps: 1e9, ...options.world, gravity: -9.81 });
@@ -185,7 +171,6 @@ export function measureRagdollFall(options: RagdollFallOptions = {}): FallReport
   return report;
 }
 
-/** One row of {@link compareRagdollFall}: the game ragdoll, the reference human, and the injury limit when one applies. */
 export interface RagdollFallRow {
   scenario: string;
   metric: keyof FallReport;
@@ -197,18 +182,9 @@ export interface RagdollFallRow {
   limit: number;
 }
 
-/**
- * Injury assessment reference values for a mid-size adult man: HIC15 700 and femur axial force 10 kN (US FMVSS 208,
- * 49 CFR 571.208), and a proximal femur breaking at about 7 kN when struck on the hip in a fall (A. C. Courtney et al.,
- * *J. Bone Joint Surg.* 77-A, 1995: young donors' femora, twice the strength of older ones).
- */
 export const INJURY_LIMITS = { hic15: 700, femurAxial: 10000, hipFracture: 7000 };
 
-/**
- * Fall a game ragdoll and the reference human the same three ways: a limp backward fall from standing, and drops from
- * 0.3 m and 1 m onto the feet. Each row pairs the game number with the human's and the injury limit.
- * @capability ragdoll-fall-compare score a game ragdoll's falls and landings against a simulated real person and injury thresholds
- */
+/** @capability ragdoll-fall-compare score a game ragdoll's falls and landings against a simulated real person and injury thresholds */
 export function compareRagdollFall(options: Omit<RagdollFallOptions, "push" | "dropHeight"> = {}): RagdollFallRow[] {
   const rows: RagdollFallRow[] = [];
   const fall = measureRagdollFall(options);
@@ -228,10 +204,7 @@ export function compareRagdollFall(options: Omit<RagdollFallOptions, "push" | "d
   return rows;
 }
 
-/**
- * Markdown table of {@link compareRagdollFall} rows.
- * @capability ragdoll-fall-table markdown table of a ragdoll's falls against the human reference and injury limits
- */
+/** @capability ragdoll-fall-table markdown table of a ragdoll's falls against the human reference and injury limits */
 export function formatRagdollFall(rows: readonly RagdollFallRow[]): string {
   const fmt = (v: number) => (Number.isNaN(v) ? "—" : Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(2));
   const lines = ["| Scenario | Metric | Game ragdoll | Human | Injury limit |", "| --- | --- | --- | --- | --- |"];

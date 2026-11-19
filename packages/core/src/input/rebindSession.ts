@@ -16,9 +16,7 @@ import { applyBindingOverrides, type BindingOverrides } from "./bindingOverrides
  * resets back to.
  */
 export interface RebindActionConfig {
-  /** Stable action id (also the {@link BindingOverrides} key). Free string. */
   id: string;
-  /** Human label shown in the controls list ("Move Forward"). Free string. */
   label: string;
   /** The game's authored binding for this action; `reset` returns here. `locked: true` here makes the row read-only. */
   defaultCodes: ActionCodes;
@@ -29,42 +27,31 @@ export interface RebindActionConfig {
   context?: string;
 }
 
-/** Config for {@link createRebindSession}: an explicit action list, or an {@link ActionCodesMap} + labels. */
 export type RebindSessionConfig = RebindSessionActionsConfig | RebindSessionMapConfig;
 
 interface RebindSessionCommon {
-  /** Player rebinds to start from (e.g. from {@link loadBindingOverrides}). */
   overrides?: BindingOverrides;
   /** Injected clock (ms) used to timestamp each rebind. Default `Date.now`. */
   now?: () => number;
 }
 
-/** Declare actions explicitly, in list order. */
 export interface RebindSessionActionsConfig extends RebindSessionCommon {
   actions: readonly RebindActionConfig[];
 }
 
-/** Declare actions from an authored {@link ActionCodesMap}, labelled by `labels` (falling back to the id). */
 export interface RebindSessionMapConfig extends RebindSessionCommon {
   input: ActionCodesMap;
   labels?: Record<string, string>;
 }
 
-/** One controls-list row: an action, its effective binding, and any conflicts. */
 export interface RebindRow {
-  /** The action's free-string id. */
   actionId: string;
-  /** The action's free-string label. */
   label: string;
-  /** Effective binding (default merged with the current override) — hold/toggle/repeat shape preserved. */
   codes: ActionCodes;
   /** Normalized primary code driving this action (`"KeyW"`, `"Space"`), or `null` when unbound. */
   code: string | null;
-  /** Short display glyph for {@link RebindRow.code} (via `bindingLabel`), or `""` when unbound. */
   bindingLabel: string;
-  /** True when no override is set — the effective binding is the authored default. */
   isDefault: boolean;
-  /** The game marked this action `locked`: capture and reset do nothing and it always shows its default. */
   locked: boolean;
   /** Other action ids that share a normalized code with this row (the conflict set). */
   conflictWith: string[];
@@ -76,13 +63,10 @@ export interface RebindRow {
 export interface RebindConflict {
   /** The shared normalized code. */
   code: string;
-  /** Every action id bound to {@link RebindConflict.code} (always length ≥ 2). */
   actionIds: string[];
 }
 
-/** Serializable session state for save/restore. */
 export interface RebindSessionSnapshot {
-  /** The current player rebinds. */
   overrides: BindingOverrides;
   /** When each action was last rebound (ms), by action id. */
   changedAt: Record<string, number>;
@@ -90,23 +74,13 @@ export interface RebindSessionSnapshot {
   capturingActionId: string | null;
 }
 
-/** A live, observable, conflict-aware key-remap editor over the action-binding model. */
 export interface RebindSession {
-  /** The declared actions, in list order. */
   actions(): readonly RebindActionConfig[];
-  /** One {@link RebindRow} per action, in list order, with effective binding + conflicts. */
   rows(): RebindRow[];
-  /** The row for a single action, or `null` if the id is unknown. */
   row(actionId: string): RebindRow | null;
-  /**
-   * Arm capture for an action: the next {@link RebindSession.capture} assigns to
-   * it. A UI host shows "Press a key…" for the armed action. No-op for an
-   * unknown or locked id.
-   */
   beginCapture(actionId: string): void;
   /** The action currently armed for capture, or `null`. */
   capturingActionId(): string | null;
-  /** Whether capture is armed (for `actionId` specifically, if given). */
   isCapturing(actionId?: string): boolean;
   /**
    * Feed a raw key/button code (e.g. a `KeyboardEvent.code`) to the armed action:
@@ -115,45 +89,29 @@ export interface RebindSession {
    * disarms. Returns whether an assignment happened (false when nothing is armed).
    */
   capture(code: string): boolean;
-  /** Disarm capture without changing any binding. */
   cancelCapture(): void;
   /** Every conflict group — actions that share a normalized code. Empty when clean. */
   conflicts(): RebindConflict[];
   /** Whether any two actions share a normalized code. */
   hasConflicts(): boolean;
-  /** Reset one action back to its `defaultCodes` (drops its override). */
   reset(actionId: string): void;
-  /** Reset every action back to defaults (drops all overrides). */
   resetAll(): void;
-  /** Whether an action has no override (its effective binding is the authored default). */
   isDefault(actionId: string): boolean;
-  /** The current {@link BindingOverrides} to persist (the caller saves via `saveBindingOverride`). */
   overrides(): BindingOverrides;
-  /**
-   * Hand the current overrides to a persist callback (e.g. one that calls
-   * `saveBindingOverride` per entry) and return them. With no callback it just
-   * returns the overrides — a convenient "commit" seam.
-   */
   apply(persistFn?: (overrides: BindingOverrides) => void): BindingOverrides;
-  /** Observe changes (capture, reset, restore, arm/disarm). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): RebindSessionSnapshot;
-  /** Restore from a {@link RebindSessionSnapshot}. */
   restore(snapshot: RebindSessionSnapshot): void;
 }
 
-/** All codes an {@link ActionCodes} entry binds (hold + toggle, or the plain array). */
 function allCodes(codes: ActionCodes): string[] {
   return [...allActionCodes(codes)];
 }
 
-/** The first (primary) code of an {@link ActionCodes} entry, or `null` when unbound. */
 function primaryCode(codes: ActionCodes): string | null {
   return allCodes(codes)[0] ?? null;
 }
 
-/** Replace the primary code of `codes` with `code`, keeping the hold/toggle/repeat shape. */
 function withPrimaryCode(codes: ActionCodes, code: string): ActionCodes {
   if (isCodeList(codes)) {
     return [code, ...codes.slice(1)];
@@ -221,12 +179,10 @@ export function createRebindSession(config: RebindSessionConfig): RebindSession 
     for (const listener of listeners) listener();
   }
 
-  /** Effective codes for an action: override merged over the authored default. */
   function effectiveMap(): ActionCodesMap {
     return applyBindingOverrides(defaultMap, overrides);
   }
 
-  /** Bucket key for a code within an action's context: only actions in one context can collide. */
   function bucketKey(context: string | undefined, code: string): string {
     return `${context ?? ""}\u0000${code}`;
   }

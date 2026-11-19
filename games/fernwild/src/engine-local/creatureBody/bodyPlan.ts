@@ -11,18 +11,11 @@ import { encodeGlb, glbDataUrl, type GlbModel, type GlbNode, type GlbPrimitive }
  * a target height when drawn, so only proportions matter.
  */
 export interface BodyPlan {
-  /** The trunk: an ellipsoid this long, tall and wide. */
   torso: { length: number; height: number; width: number };
-  /**
-   * Legs in pairs along the body. `biped`: the hind pair carries it and the front pair are short
-   * arms (`armScale` of a leg). Three or more pairs splay out sideways like an insect or spider.
-   * Zero pairs with `serpent` makes a legless, slithering body.
-   */
   legs: { pairs: 0 | 1 | 2 | 3 | 4; length: number; thickness: number; biped?: boolean; armScale?: number };
   neck?: { length: number; thickness: number; /** Degrees up from straight ahead. */ rise: number };
-  head: { length: number; height: number; width: number; /** Snout length as a share of the head. */ snout?: number };
+  head: { length: number; height: number; width: number;  snout?: number };
   tail?: { length: number; thickness: number; segments?: number; /** Metres the tail sinks per metre. */ droop?: number };
-  /** A long legless body of this many segments (snakes, leeches). The torso is the first segment. */
   serpent?: { segments: number };
   features?: BodyFeatures;
   colors: { body: string; belly?: string; accent?: string };
@@ -30,37 +23,22 @@ export interface BodyPlan {
 
 /** What sets a species apart. Every length is metres. */
 export interface BodyFeatures {
-  /** Horns on the head: one on the nose, two on the brow, three for both. */
   horns?: { count: 1 | 2 | 3; length: number };
-  /** A bony frill behind the head, this radius. */
   frill?: number;
-  /** Plates standing in a row along the back. */
   plates?: { count: number; height: number };
-  /** A sail along the back, this tall. */
   sail?: number;
-  /** A crest sweeping back from the head, this long. */
   crest?: number;
-  /** A domed skull, this radius. */
   dome?: number;
-  /** An armoured shell over the back, this much taller than the torso. */
   shell?: number;
-  /** A club at the tail's tip, this radius. */
   club?: number;
-  /** Tusks curving from the jaw, this long. */
   tusks?: number;
-  /** A trunk hanging from the snout, this long. */
   trunk?: number;
-  /** Wings from the shoulders, this full span. */
   wings?: number;
-  /** Pincer jaws on the head, this long. */
   mandibles?: number;
-  /** A hump on the back, this tall. */
   hump?: number;
   /** A pointed beak instead of a snout. */
   beak?: boolean;
-  /** A shaggy mane over neck and shoulders. */
   mane?: boolean;
-  /** Spikes along the tail, this long. */
   tailSpikes?: number;
 }
 
@@ -100,7 +78,6 @@ class Part {
     }
     return this;
   }
-  /** A tapered tube from `a` (radius r0) to `b` (radius r1), capped at both ends. */
   tube(a: V3, b: V3, r0: number, r1: number, seg = 7): this {
     const d = norm(sub(b, a));
     const up: V3 = Math.abs(d[1]) > 0.9 ? [1, 0, 0] : [0, 1, 0];
@@ -154,7 +131,6 @@ interface Built {
   parts: Map<number, Part>;
 }
 
-/** The node tree under construction, with the indices each clip needs. */
 class Rig {
   nodes: Built[] = [];
   add(name: string, parent: number, translation: V3): number {
@@ -178,10 +154,7 @@ class Rig {
   }
 }
 
-/**
- * Build a plan's node tree and its clips.
- * @capability creature-body-glb a body plan as a raw node tree and clips, to edit or write out yourself before encoding
- */
+/** @capability creature-body-glb a body plan as a raw node tree and clips, to edit or write out yourself before encoding */
 export function bodyGlbModel(plan: BodyPlan): GlbModel {
   const rig = new Rig();
   const f = plan.features ?? {};

@@ -1,9 +1,5 @@
 import { pickUniform, pickWeighted } from "../random/pick";
 
-/**
- * One selectable option in a generation step's pool: a stable `id` used in provenance and pinning,
- * the payload `value` a chosen option contributes, and an optional relative `weight` (default 1).
- */
 export interface GenOption<V = unknown> {
   id: string;
   value: V;
@@ -15,32 +11,18 @@ export interface GenOption<V = unknown> {
  * weight function, or transform so a decision can depend on earlier picks (dependent choice).
  */
 export interface GenChoices {
-  /** Whether a step has resolved to a (non-skipped) option. */
   has(step: string): boolean;
-  /** The chosen option id for a step, or undefined if unresolved or skipped. */
   optionId(step: string): string | undefined;
-  /** The chosen option value for a step, or undefined if unresolved or skipped. */
   value<V = unknown>(step: string): V | undefined;
 }
 
-/**
- * A step's candidate options: a fixed list, or a function of the choices resolved so far so pools
- * can narrow to earlier picks (a slot pool that depends on a chosen category).
- */
 export type GenPool<V = unknown> = readonly GenOption<V>[] | ((choices: GenChoices) => readonly GenOption<V>[]);
 
-/**
- * One decision point in a {@link GenSchema}: pick a single option from a pool, honoring an optional
- * constraint, dependent weighting, selection mode, and optionality. Steps resolve in array order.
- */
 export interface GenStep<V = unknown> {
   id: string;
   pool: GenPool<V>;
-  /** `"weighted"` (default) picks proportional to weight; `"uniform"` ignores weight and picks evenly. */
   select?: "weighted" | "uniform";
-  /** Constraint: only options for which this returns true are eligible, given the earlier choices. */
   accept?: (option: GenOption<V>, choices: GenChoices) => boolean;
-  /** Override an option's weight as a function of earlier choices; falls back to `option.weight ?? 1`. */
   weightOf?: (option: GenOption<V>, choices: GenChoices) => number;
   /** When no option is eligible, skip this step instead of failing or backtracking. */
   optional?: boolean;
@@ -54,44 +36,25 @@ export interface GenStep<V = unknown> {
 export interface TransformApi {
   readonly choices: GenChoices;
   readonly rng: () => number;
-  /** Current value of a field, or 0 if unset. */
   get(field: string): number;
-  /** Replace a field's value, recording the change. */
   set(field: string, value: number, note?: string): void;
-  /** Add to a field's value, recording the change. */
   add(field: string, amount: number, note?: string): void;
-  /** Multiply a field's value, recording the change. */
   mul(field: string, factor: number, note?: string): void;
 }
 
-/**
- * A named derivation over the numeric field bag, applied in schema order after all choices resolve
- * (affix rolls, level scaling, budget spend). Each field mutation it makes is recorded as provenance.
- */
 export interface GenTransform {
   id: string;
   apply: (api: TransformApi) => void;
 }
 
-/**
- * The resolved-but-unvalidated draft passed to each {@link GenValidator}: the step choices, their
- * values, and the transformed fields. Returning false from any validator rerolls the whole
- * generation up to the attempt budget.
- */
 export interface GenDraft {
   choices: Readonly<Record<string, string>>;
   values: Readonly<Record<string, unknown>>;
   fields: Readonly<Record<string, number>>;
 }
 
-/** A final-assembly check over a {@link GenDraft}; false triggers a whole-pipeline reroll. */
 export type GenValidator = (draft: GenDraft) => boolean;
 
-/**
- * Provenance for one resolved step: which option stuck, its effective weight, how many options were
- * eligible after constraints, and how many eligible options backtracking rejected before this one.
- * A skipped optional step is recorded with an empty `optionId`.
- */
 export interface GenChoiceRecord {
   step: string;
   optionId: string;
@@ -100,7 +63,6 @@ export interface GenChoiceRecord {
   rerolls: number;
 }
 
-/** Provenance for one field mutation a transform made: which transform, field, op, and before/after. */
 export interface GenFieldRecord {
   transform: string;
   field: string;
@@ -110,22 +72,12 @@ export interface GenFieldRecord {
   note?: string;
 }
 
-/**
- * The full explanation of a generated result: how many whole-pipeline attempts it took, every step
- * choice, and every field mutation. Plain, serializable data for UI, debugging, balancing, and
- * regeneration.
- */
 export interface GenProvenance {
   attempts: number;
   choices: readonly GenChoiceRecord[];
   fields: readonly GenFieldRecord[];
 }
 
-/**
- * A successful generation: the step-to-option map, step-to-value map, transformed numeric fields,
- * and the {@link GenProvenance} that explains them. Entirely serializable; round-trips through
- * save/load and multiplayer sync unchanged.
- */
 export interface GenResult {
   choices: Readonly<Record<string, string>>;
   values: Readonly<Record<string, unknown>>;
@@ -133,11 +85,6 @@ export interface GenResult {
   provenance: GenProvenance;
 }
 
-/**
- * The outcome of {@link generate}: either a successful {@link GenResult}, or a failure carrying the
- * reason (`"unsatisfiable"` — constraints left no valid assignment; `"rejected"` — validators kept
- * rejecting drafts) and the attempts spent.
- */
 export type GenOutcome =
   | { ok: true; result: GenResult }
   | { ok: false; reason: "unsatisfiable" | "rejected"; attempts: number };
@@ -151,13 +98,10 @@ export interface GenSchema {
   steps: readonly GenStep[];
   transforms?: readonly GenTransform[];
   validate?: readonly GenValidator[];
-  /** Max whole-pipeline attempts when a validator rejects a draft (default 24). */
   maxAttempts?: number;
-  /** Max option picks the backtracking search may spend satisfying constraints in one attempt (default 1024). */
   maxPicks?: number;
 }
 
-/** Per-call options for {@link generate}. */
 export interface GenerateOptions {
   /** Fix a step to an option id that still must satisfy its pool and constraint, consuming no rng for it. */
   pin?: Readonly<Record<string, string>>;

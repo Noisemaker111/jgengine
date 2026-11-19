@@ -9,15 +9,11 @@ import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 
 import { editorLayers } from "../../editorLayers";
 
-/** Glow colour of each obelisk by its `meta.color`. */
 const GLOW: Record<string, string> = { red: "#ff3b30", green: "#34ff6a", blue: "#3b8cff" };
-/** ARK's obelisks tower over the island; at the map's 3/8 scale they still stand this tall. */
 const HEIGHT = 60;
 const WIDTH = 7;
-/** They hover clear of the ground they mark. */
 const HOVER = 14;
 
-/** The three obelisks (`obelisk` markers in editor.scene.json): dark floating spires banded with their colour. */
 export function obelisksDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
   const group = new THREE.Group();
   const bodyGeometry = new THREE.BoxGeometry(WIDTH, HEIGHT, WIDTH * 0.7);

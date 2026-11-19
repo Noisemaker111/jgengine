@@ -14,10 +14,8 @@ export interface PerfHistoryStore {
   subscribe(listener: () => void): () => void;
 }
 
-/** Samples retained (~2 minutes at the 500ms poll). */
 export const PERF_HISTORY_CAPACITY = 240;
 
-/** Creates the rolling perf-sample history store. */
 export function createPerfHistoryStore(): PerfHistoryStore {
   let samples: EditorPerfSample[] = [];
   let paused = false;
@@ -57,7 +55,6 @@ export function createPerfHistoryStore(): PerfHistoryStore {
   };
 }
 
-/** Mean of a numeric series, 0 for empty input. */
 export function seriesAverage(values: readonly number[]): number {
   if (values.length === 0) return 0;
   let sum = 0;
@@ -82,7 +79,6 @@ export function seriesAverageDefined(values: readonly (number | undefined)[]): n
   return count === 0 ? 0 : sum / count;
 }
 
-/** Builds an SVG polyline `points` string for a series scaled into a width×height box. */
 export function sparklinePoints(
   values: readonly number[],
   width: number,
@@ -100,7 +96,6 @@ export function sparklinePoints(
     .join(" ");
 }
 
-/** Minimal frame-stats shape consumed when folding core `devtools.frame.stats()` into a sample. */
 export interface FrameBudgetStatsInput {
   avgSimMs: number;
   avgOutsideMs: number;
@@ -139,21 +134,12 @@ export function frameBudgetFromStats(stats: FrameBudgetStatsInput | null): Frame
   };
 }
 
-/**
- * True when any sample carries real sim/outside budget fields from the frame tracker.
- *
- * @internal
- */
+/** @internal */
 export function samplesHaveFrameBudget(samples: readonly EditorPerfSample[]): boolean {
   return samples.some((sample) => sample.simMs !== undefined && sample.outsideMs !== undefined);
 }
 
-/**
- * Latest non-empty phase list from the history (newest sample that reported phases).
- * Empty when no named `measure()` marks have been recorded.
- *
- * @internal
- */
+/** @internal */
 export function latestPhases(
   samples: readonly EditorPerfSample[],
 ): readonly { name: string; avgMs: number }[] {

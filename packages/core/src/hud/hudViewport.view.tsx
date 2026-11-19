@@ -6,7 +6,6 @@ export interface HudViewportContextValue {
   /** True unless the game's `platforms` explicitly excludes `"mobile"` — the HUD auto-fits the design resolution to the live viewport. */
   fitEnabled: boolean;
   config: HudViewportConfig | undefined;
-  /** Player's UI-scale setting; multiplies the computed fit scale everywhere. */
   userScale: number;
 }
 

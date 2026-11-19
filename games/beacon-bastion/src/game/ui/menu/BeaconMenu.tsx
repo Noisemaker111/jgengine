@@ -19,7 +19,6 @@ import { TOTAL_WAVES } from "../../waves/manifest";
 import { BLOOD, Brazier, DIM, FIRE, GOLD, Glyph, Heading, INK, Plank, Row, Tag, Text, usePhone } from "../look";
 import { StoneSettings } from "./StoneSettings";
 
-/** Capture-only focus request: a shot or a menu command names the screen it wants open. */
 export const menuFocus: { id: string | null } = { id: null };
 const focusListeners = new Set<() => void>();
 export function focusMenu(id: string | null): void {
@@ -27,10 +26,8 @@ export function focusMenu(id: string | null): void {
   for (const listener of focusListeners) listener();
 }
 
-/** Names a commander can sign with on a pad or a phone, where no keyboard is at hand. */
 const ROSTER = ["Mara Vell", "Osric Thane", "Edda Corr", "Bram Holt", "Isolde Rook"];
 
-/** Roman numerals for the wave the banner is stitched with. */
 function roman(value: number): string {
   const table: [number, string][] = [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
   let left = Math.max(0, Math.floor(value)), out = "";
@@ -38,7 +35,6 @@ function roman(value: number): string {
   return out === "" ? "0" : out;
 }
 
-/** A letter, digit, space or apostrophe typed onto the commission, from the key that was pressed. */
 function typed(code: string): string | null {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3).toLowerCase();
   if (/^Digit\d$/.test(code)) return code.slice(5);
@@ -51,7 +47,6 @@ const titleCase = (name: string) => name.replace(/(^|\s)([a-z])/g, (_, gap: stri
 
 type Busy = (label: string, work: () => Promise<unknown>) => Promise<void>;
 
-/** Beacon's front-end: the title is the keep's carved lintel and timber verbs; the pause is a war banner. */
 export function BeaconMenu() {
   const ctx = useGameContext(), phase = useOptionalGamePhase();
   const [busy, setBusy] = useState<string | null>(null);
@@ -84,7 +79,6 @@ function useFlow(routes: readonly string[], initial: (flow: RuneFlow) => void): 
   return flow;
 }
 
-/** One menu screen: dark dusk wash, a header line and the screen's own column, Back on Escape. */
 function Screen({ children, back, width = 760 }: { children: ReactNode; back?: () => void; width?: number }) {
   const viewport = useRuneViewport(), phone = viewport.width < 600;
   return <RuneView anchor="fill" gradient={{ angle: 180, stops: [[0, "#0b0705f0"], [0.6, "#1a100ad8"], [1, "#2a1608b0"]] }} padding={phone ? [20, 16, 20, 16] : [32, 40, 32, 40]} {...(back === undefined ? {} : { onBack: back })}>
@@ -149,7 +143,6 @@ function TitleMenu({ run }: { run: Busy }) {
   }}</RuneLayers>;
 }
 
-/** A timber verb on the title: label in Cinzel and its hint under it. */
 function Verb({ label, hint, disabled, run }: { label: string; hint?: string; disabled?: boolean; run: () => void }) {
   return <Plank label={label} disabled={disabled === true} run={run} layout="stack" gap={0} minHeight={46}>
     <Text family="Cinzel" weight={700} size={18} color={INK}>{label}</Text>
@@ -157,7 +150,6 @@ function Verb({ label, hint, disabled, run }: { label: string; hint?: string; di
   </Plank>;
 }
 
-/** The New Defense commission on parchment: who takes the wall, the oath and which keep they raise. */
 function Commission({ slot, commander, setCommander, difficulty, setDifficulty: choose, onBegin }: {
   slot: string | null; commander: string; setCommander: (name: string) => void; difficulty: DifficultyId; setDifficulty: (id: DifficultyId) => void; onBegin: () => void;
 }) {
@@ -195,7 +187,6 @@ function Commission({ slot, commander, setCommander, difficulty, setDifficulty: 
   </RuneView>;
 }
 
-/** One kept defense in its niche: last capture or a cold brazier, commander, wave, purse, walls. */
 function KeepNiche({ slot, recent, onTake }: { slot: SaveSlotMeta; recent: boolean; onTake: () => void }) {
   const label = KEEP_LABEL[slot.id] ?? slot.id, thumb = slotText(slot, "thumbnail");
   const wave = slotNumber(slot, "wave"), gold = slotNumber(slot, "gold"), lives = slotNumber(slot, "lives");
@@ -226,7 +217,6 @@ function Credits({ height }: { height: number }) {
   </RuneView>;
 }
 
-/** The pause: a war banner with the wave stitched in Roman numerals and the stitched verbs under it. */
 function PauseBanner({ ctx, run }: { ctx: GameContext; run: Busy }) {
   const phone = usePhone(), { height } = useRuneViewport();
   const [notice, setNotice] = useState<string | null>(null), [confirming, setConfirming] = useState(false);

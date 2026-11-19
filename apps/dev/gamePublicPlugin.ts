@@ -32,10 +32,8 @@ const TYPES: Readonly<Record<string, string>> = {
   ".otf": "font/otf",
 };
 
-/** The folder under the runner's base that serves one game's own `public/` files: `games/<id>/`. */
 export const GAME_PUBLIC_FOLDER = "games";
 
-/** The module the runner imports for a game's file list: `gamePublicFiles[id]()` resolves to its paths. */
 export const GAME_PUBLIC_MODULE = "virtual:jgengine-game-public";
 
 /**
@@ -98,12 +96,10 @@ export function resolvePublicFile(url: string, root: string, variantDir?: string
 /** A root-absolute asset path written as a string in a game's source or scene: `"/models/a/b.glb"`. */
 const ASSET_LITERAL = /["'`](\/[A-Za-z0-9_][A-Za-z0-9_./ -]*\.(?:glb|gltf|bin|png|jpe?g|webp|ktx2|hdr|exr|mp3|ogg|wav|m4a))["'`]/g;
 
-/** Every root-absolute asset path a game's text names. */
 export function assetLiterals(text: string): string[] {
   return [...new Set(captures(text, ASSET_LITERAL))].sort();
 }
 
-/** The first capture group of every match of a global pattern. */
 function captures(text: string, pattern: RegExp): string[] {
   const found: string[] = [];
   for (const [, capture] of text.matchAll(pattern)) if (capture !== undefined) found.push(capture);
@@ -175,7 +171,6 @@ export function gamePrefetchList(text: string, gameFiles: readonly string[], sha
   return [...new Set(all)].map((path) => ({ path, tier: prefetchTier(path) }));
 }
 
-/** A `/games/<id>/<path>` request split into the game and the path that game asked for. */
 export function splitGamePublicUrl(url: string): { game: string; path: string } | null {
   const [, game, path] = new RegExp(`^/${GAME_PUBLIC_FOLDER}/([^/?#]+)(/[^#]*)$`).exec(url) ?? [];
   return game === undefined || path === undefined ? null : { game: decodeURIComponent(game), path };
@@ -204,17 +199,11 @@ export function writeGamePublics(outDir: string, dirs: ReadonlyMap<string, strin
   return written;
 }
 
-/** The runner module that lists each game's own files and what to fetch when it opens, one lazy chunk per game. */
 export function gamePublicIndexModule(games: readonly string[]): string {
   const entries = games.map((game) => `  ${JSON.stringify(game)}: () => import(${JSON.stringify(`${GAME_PUBLIC_MODULE}/${game}`)}),`);
   return `export const GAME_PUBLIC_FOLDER = ${JSON.stringify(GAME_PUBLIC_FOLDER)};\nexport const gamePublic = {\n${entries.join("\n")}\n};\n`;
 }
 
-/**
- * The in-repo game folder the editor's asset library pulls into when the runner hosts `game`, or
- * undefined for an unknown game or one served from another checkout (`games:provision` takes an
- * in-repo game name).
- */
 export function libraryPullGameDir(dirs: ReadonlyMap<string, string>, gamesDir: string, game: string | undefined): string | undefined {
   const pub = game === undefined ? undefined : dirs.get(game);
   if (pub === undefined) return undefined;

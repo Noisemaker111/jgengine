@@ -13,13 +13,7 @@ import { getSceneKindRenderer } from "@jgengine/core/scene/sceneKindRenderers.dr
 import type { EditorHostApi } from "./session";
 import { useStoreSelector } from "./useStoreSelector";
 
-/**
- * Live edit-mode preview of every `city` district volume, so slider drags (grid-ness, curviness,
- * branching, block size, …) re-synthesize streets/buildings/parks in the viewport without entering
- * play mode. Mounts the exact runtime renderer the shell registers for the kind — the preview IS the
- * game's rendering, grounded on the sculpt terrain (or the game's ground) like {@link ScatterPreview}.
- * @internal — mounted by `EditorApp`; not a game-author entry point.
- */
+/** @internal — mounted by `EditorApp`; not a game-author entry point. */
 export const CityPreview = memo(function CityPreview({ api }: { api: EditorHostApi }) {
   registerAllSceneKindRenderers();
   const ctx = useGameContext();

@@ -2,7 +2,6 @@ import { createPhaseSchedule } from "../time/stateSchedule";
 
 export type RoundPhase = string;
 
-/** Default phase-duration shape for the built-in buy/live/end cycle; pass a wider `Record<string, number>` when using a custom `phaseOrder`. */
 export interface RoundPhaseDurations {
   buy: number;
   live: number;
@@ -15,7 +14,6 @@ export interface LossBonusRule {
   max: number;
 }
 
-/** A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`. */
 export interface RoundTeam {
   id: string;
   role?: string;
@@ -25,14 +23,7 @@ export interface RoundConfig<TPhase extends string = RoundPhase> {
   /** Duration in seconds for each phase name in `phaseOrder` (or the default `RoundPhaseDurations` shape). */
   phases: Record<TPhase, number>;
   teams: readonly string[] | readonly RoundTeam[];
-  /**
-   * Overrides the default `["buy", "live", "end"]` cycle. Phases other than the first and last are
-   * "conclude-eligible": `concludeRound`/`evaluate` may settle the round only while the current phase
-   * is neither the first nor the last entry, matching the original buy (no conclude) / live (conclude) /
-   * end (no conclude, settles the round) roles. The cycle wraps from the last entry back to the first.
-   */
   phaseOrder?: readonly TPhase[];
-  /** Evaluated by `evaluate()`; returning a team id concludes the round with that team as winner. */
   winCondition?: (state: RoundSnapshot<TPhase>) => string | null;
   maxRounds?: number;
   winReward?: number;
@@ -76,14 +67,12 @@ export interface RoundSnapshot<TPhase extends string = RoundPhase> {
   lossStreaks: Record<string, number>;
   roles: Record<string, string | undefined>;
   matchOver: boolean;
-  /** Winner of the round being settled, or null; drives `economyFor` until the next round starts. */
   pendingWinner: string | null;
 }
 
 export interface RoundState<TPhase extends string = RoundPhase> {
   tick(dt: number): RoundEvent<TPhase>[];
   concludeRound(winner: string): RoundEvent<TPhase>[];
-  /** Calls `RoundConfig.winCondition` (a no-op when absent) and concludes the round if it returns a team id. */
   evaluate(): RoundEvent<TPhase>[];
   onPhaseEnd(hook: PhaseEndHook<TPhase>): () => void;
   phase(): TPhase;
@@ -91,10 +80,8 @@ export interface RoundState<TPhase extends string = RoundPhase> {
   timeLeft(): number;
   score(team: string): number;
   economyFor(team: string): RoundEconomy;
-  /** The role tag configured for `team`, if any. */
   roleOf(team: string): string | undefined;
   snapshot(): RoundSnapshot<TPhase>;
-  /** Puts a {@link RoundState.snapshot} back; phase hooks stay registered. */
   restore(next: RoundSnapshot<TPhase>): void;
 }
 
@@ -121,11 +108,9 @@ function isConcludable<TPhase extends string>(order: readonly TPhase[], phase: T
 }
 
 /**
- * Run a match as repeating buy/action/end round phases with per-round win rewards and loss-streak economy.
- *
  * @capability match-rounds run buy/action/end round phases with per-round economy
-  * @internal
-  */
+ * @internal
+ */
 export function createRoundState(config: RoundConfig<RoundPhase>): RoundState<RoundPhase>;
 /** @internal */
 export function createRoundState<TPhase extends string>(

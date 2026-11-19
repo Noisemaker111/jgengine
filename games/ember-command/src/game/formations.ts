@@ -25,7 +25,6 @@ export interface FormationOption {
   blurb: string;
 }
 
-/** Command-card order, hotkeys clear of camera pan (WASD) and the recruit row (1/2/3). */
 export const FORMATIONS: readonly FormationOption[] = [
   { id: "line", label: "Line", hotkey: "L", blurb: "One rank abreast — the widest front, the least depth." },
   { id: "wedge", label: "Wedge", hotkey: "J", blurb: "Arrowhead with the tip forward — drives a hole and leaves the flanks trailing." },
@@ -34,7 +33,6 @@ export const FORMATIONS: readonly FormationOption[] = [
 
 export const DEFAULT_FORMATION: FormationKind = "line";
 
-/** A file: slot 0 leads, each later slot one `spacing` further back along -forward. */
 export function columnFormation(options: { spacing: number }): FormationSlotGenerator {
   const { spacing } = options;
   return (count) => {
@@ -64,7 +62,6 @@ export function offsetToWorld(anchor: { x: number; z: number }, facing: number, 
   return slot ?? [anchor.x, anchor.z];
 }
 
-/** World slots for `count` members in `kind` around `anchor` — the engine's own placement. */
 export function formationSlots(
   kind: FormationKind,
   anchor: { x: number; z: number },
@@ -75,17 +72,12 @@ export function formationSlots(
   return placeFormation([anchor.x, anchor.z], facing, count, formationGenerator(kind, spacing));
 }
 
-/** One held formation: who is in it, where its anchor stands, which way it faces, and the slot each
- * member owns. The offsets (not the world slots) are authoritative, so moving the anchor keeps every
- * rank in the same relative place — that is what "holds formation" means here. */
 export interface FormationState {
   kind: FormationKind;
   anchor: { x: number; z: number };
-  /** Engine yaw the formation faces; the group's travel direction when the anchor was set. */
   facing: number;
   /** Members in slot order, so the shape survives a re-anchor without a reshuffle. */
   members: string[];
-  /** Local slot offset per member id, in the group's frame. */
   offsets: Record<string, Vec2>;
 }
 
@@ -100,7 +92,6 @@ export function formationSlotFor(formation: FormationState, memberId: string): V
   return offsetToWorld(formation.anchor, formation.facing, offset);
 }
 
-/** Drop members that died, deserted to a gather/attack order, or left the roster. */
 export function pruneFormation(ctx: GameContext): void {
   const formation = session.formation;
   const keep: string[] = [];
@@ -117,8 +108,6 @@ export function pruneFormation(ctx: GameContext): void {
   }
 }
 
-/** Put `units` into the current shape around the ordered point: the anchor moves, every member keeps
- * a slot offset, and the nearest member-to-slot matching keeps the reshuffle down. */
 export function anchorFormation(ctx: GameContext, units: readonly UnitRuntime[], x: number, z: number, attackMove: boolean): void {
   const formation = session.formation;
   if (units.length === 0) return;

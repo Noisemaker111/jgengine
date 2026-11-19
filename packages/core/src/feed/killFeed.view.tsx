@@ -36,27 +36,19 @@ function rowFade(fade: number): { opacity: string; transform: string } {
   return { opacity: String(1 - fade * 0.85), transform: `translateX(${fade * 8}px)` };
 }
 
-/** Per-`kind` styling for a kill-feed row — accent color and an optional icon. */
 export interface KillFeedKindStyle {
-  /** Accent color for the row's icon and left rule. */
   accent?: string;
-  /** Free-string {@link GameIcon} name to show for this kind (overridden by an entry's own `icon`). */
   icon?: string;
   /** Text color for the row. Defaults to the theme text color. */
   color?: string;
 }
 
-/** Reskin tokens for {@link KillFeed}. */
 export interface KillFeedTheme {
-  /** Row background. Default reads `--jg-frame-bg`. */
   rowBg?: string;
-  /** Row text color. Default near-white. */
   text?: string;
   /** Fallback accent when a kind has none. Default reads `--jg-accent`. */
   accent?: string;
-  /** Font family. */
   fontFamily?: string;
-  /** Row corner radius. Default reads `--jg-frame-radius`. */
   radius?: string;
 }
 
@@ -70,26 +62,19 @@ function resolveTheme(theme: KillFeedTheme | undefined): Required<KillFeedTheme>
   };
 }
 
-/** Props for {@link KillFeed}. */
 export interface KillFeedProps {
-  /** The ticker to render. */
   ticker: EventTicker;
   /**
    * Per-`kind` accent + icon, keyed by the free-string `kind` a game pushes with ("kill",
    * "assist", "info", …). The matching entry styles that row; the model never interprets `kind`.
    */
   kindStyles?: Record<string, KillFeedKindStyle>;
-  /** Base reskin tokens. */
   theme?: KillFeedTheme;
   /** Icon size in px. Default `18`. */
   iconSize?: number;
-  /** Drive re-render on an animation frame. Default `true`. Turn off if the game ticks it. */
   animate?: boolean;
-  /** Extra `z-index` for the stack. Default `40`. */
   zIndex?: number;
-  /** Draws an entry's icon in place of the {@link GameIcon} lookup (a game's own item art); null draws none. */
   renderIcon?: (entry: EventTickerView) => ReactNode;
-  /** Merged over each row's style: `{ background: "none", borderLeft: "none" }` gives bare lines. */
   rowStyle?: CSSProperties;
   /** Show the oldest entry first, so a new line lands at the bottom. Default `false` (newest on top). */
   oldestFirst?: boolean;

@@ -10,21 +10,15 @@ import { recordProfile, RECORD_LABEL, RECORD_SLOTS, type RecordSession, type Run
 import type { Home } from "./state";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-/**
- * The record list the menu shows. The documents are the game's own save path (`openRecord`); this
- * index only carries what a card draws, refreshed through the shared save-slot index.
- */
 export const recordSlots = createSaveSlots({
   capacity: RECORD_SLOTS.length,
   slots: RECORD_SLOTS.map((id) => ({ id, empty: true, meta: {} })),
 });
 
-/** A room's authored name without its depth prefix ("04 / the printhouse" reads as "the printhouse"). */
 function roomName(room: string): string {
   return room.replace(/^\d+\s*\/\s*/, "");
 }
 
-/** The dive's own words for where it stands: its depth, its room and what it is carrying. */
 function diveChips(run: RunSnapshot, home: Home): Record<string, string> {
   const dive = run.dive;
   if (dive === null || run.mode === "home") {
@@ -39,7 +33,6 @@ function diveChips(run: RunSnapshot, home: Home): Record<string, string> {
   };
 }
 
-/** Read a record document into the words its card shows. */
 function chipsOf(_slot: string, document: GameSaveDocument): Record<string, string> {
   const home = (document.systems["marrow"] ?? null) as Home | null;
   const run = (document.systems["run"] ?? null) as RunSnapshot | null;
@@ -62,22 +55,16 @@ function nameOf(_slot: string, document: GameSaveDocument): string {
   return `${callsign ?? "Halloway"} · Life ${home.life}`;
 }
 
-/** The record session's documents, as the shared index reads them. */
 function recordSource(record: RecordSession): SaveSlotSource {
   return { slots: () => record.slots(), peek: (slot) => record.peek(slot) };
 }
 
-/** Keep the card list in step with the records on disk. */
 export async function refreshRecordSlots(ctx: GameContext): Promise<void> {
   const record = recordOf(ctx);
   if (record === null) return;
   await refreshSaveSlots(recordSource(record), recordSlots, { nameOf, metaOf: chipsOf });
 }
 
-/**
- * Capture the frame the record leaves behind. `requestSceneCapture` waits for the canvas binding and
- * its first painted frame itself, so there is no retry loop here.
- */
 export async function captureRecordThumb(): Promise<string | null> {
   const shot = await requestSceneThumbnail({ width: 320, height: 180 });
   if (shot.ok) recordProfile.thumbnail = shot.thumbnail;

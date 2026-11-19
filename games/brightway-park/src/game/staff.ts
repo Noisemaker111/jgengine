@@ -22,12 +22,10 @@ import { sessionOf, type StaffState } from "./session";
 
 const STAFF_WALK_SPEED = 3.4;
 const CLEAN_PER_POST = 0.6;
-/** A mechanic services a ride in its area once this many cycles of wear have built up. */
 const INSPECT_WEAR = 6;
 /** Seconds between a mechanic's inspections. */
 const INSPECT_SECONDS = 12;
 
-/** The body each role walks in. */
 export const STAFF_BODY: Record<StaffRole, string> = {
   handyman: "crew_handyman",
   mechanic: "crew_mechanic",
@@ -37,7 +35,6 @@ export const STAFF_BODY: Record<StaffRole, string> = {
 
 const posts = (ctx: GameContext): ParkObject[] => parkObjects(ctx).filter((obj) => obj.def.staff !== undefined);
 
-/** Every post gets one person; a removed post sends its person home. */
 export function syncStaff(ctx: GameContext): void {
   const all = posts(ctx);
   const live = new Set(all.map((post) => post.id));
@@ -66,7 +63,6 @@ function beatPoint(post: ParkObject, radius: number, place: string | null): [num
 
 const lastInspectionOf = perContext(() => new Map<string, number>());
 
-/** A mechanic at work: the most worn ride in its area gets serviced, if the till can pay. */
 function inspect(ctx: GameContext, state: StaffState, post: ParkObject, radius: number): void {
   const now = ctx.time.now();
   const lastInspection = lastInspectionOf(ctx);
@@ -85,10 +81,6 @@ function inspect(ctx: GameContext, state: StaffState, post: ParkObject, radius: 
   if (w.canAct(action, worst.obj.id) === null) w.act(action, worst.obj.id);
 }
 
-/**
- * Staff on the clock: the agent's own work beat says which point of its patrol it should be at,
- * the body walks there, and the role does its job.
- */
 export function tickStaff(ctx: GameContext, dt: number): void {
   syncStaff(ctx);
   const now = ctx.time.now();
@@ -125,7 +117,6 @@ export function tickStaff(ctx: GameContext, dt: number): void {
   }
 }
 
-/** Which roles are on duty within reach of a point: what a guest standing there feels. */
 export function staffCover(ctx: GameContext, x: number, z: number): Set<StaffRole> {
   const roles = new Set<StaffRole>();
   const w = park.of(ctx);
@@ -137,7 +128,6 @@ export function staffCover(ctx: GameContext, x: number, z: number): Set<StaffRol
   return roles;
 }
 
-/** Staff bodies the park had at save time; the agents come back from their own snapshots. */
 export function restoreStaff(ctx: GameContext, states: readonly StaffState[]): void {
   for (const state of states) {
     const post = parkObject(ctx, state.postId);

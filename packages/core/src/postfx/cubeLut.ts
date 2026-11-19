@@ -37,7 +37,6 @@ export function parseCubeLut(text: string): LutCube {
   return { size, data };
 }
 
-/** Writes a {@link LutCube} as `.cube` text (the inverse of {@link parseCubeLut}). */
 export function formatCubeLut(cube: LutCube, title = "JGengine grade"): string {
   const lines = [`TITLE "${title}"`, `LUT_3D_SIZE ${cube.size}`];
   for (let index = 0; index < cube.size ** 3; index += 1) {

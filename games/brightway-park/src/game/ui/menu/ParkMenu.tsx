@@ -21,7 +21,6 @@ import { resultOpen } from "../ParkFlow";
 import { Button, CORAL, CREAM, DISPLAY, GOLD, Heading, INK, PENCIL, Row, Tag, Text } from "../look";
 import { ParkSettings } from "./ParkSettings";
 
-/** Capture-only focus request: a shot declares which menu pane (`id`) and which HUD window (`panel`) it wants open. */
 export const parkFocusOf = perContext((): { id: string | null; panel: string | null } => ({ id: null, panel: null }));
 
 export interface ParkMenuProps {
@@ -48,7 +47,6 @@ const CREDITS = [
   { heading: "Engine", entries: [{ label: "JGengine", detail: "scene, save, menu" }] },
 ] as const;
 
-/** The gate board behind every menu screen: the park's sign, a tagline and one pane at a time. */
 function Board({ eyebrow, tagline, footer, children, onBack }: { eyebrow: string; tagline: string; footer: string; children: unknown; onBack?: () => void }) {
   const { width, height } = useRuneViewport(), phone = width < 600;
   const ctx = useGameContext();
@@ -64,14 +62,12 @@ function Board({ eyebrow, tagline, footer, children, onBack }: { eyebrow: string
   </RuneView>;
 }
 
-/** One menu verb: a wide ticket with its line of detail underneath. */
 function Verb({ label, hint, disabled, onPress, primary }: { label: string; hint?: string | undefined; disabled?: boolean; onPress: () => void; primary?: boolean }) {
   return <Button tone={primary === true ? "primary" : "ticket"} disabled={disabled === true} items="start" padding={[8, 14, 8, 14]} onPress={onPress} label={label}>
     <Text family={DISPLAY} size={20}>{label}</Text>{hint === undefined ? null : <Text size={12} color={PENCIL}>{hint}</Text>}
   </Button>;
 }
 
-/** Brightway Park's front end: the park behind, the gate board in front. A pause board while the park is held. */
 export function ParkMenu(props: ParkMenuProps) {
   const v = useGameStore((c) => { const flags = parkFlags(park.of(c)); return { paused: c.time.isPaused(), result: resultOpen(c), ended: flags.gameOver || flags.ribbon, started: sessionOf(c).started, status: sessionOf(c).saveStatus }; });
   if (v.started) return v.paused && !v.result ? <PauseBoard {...props} /> : null;
@@ -130,7 +126,6 @@ function SavesPane({ slots, onLoad }: { slots: readonly SaveSlotMeta[]; onLoad: 
 const LETTERS: Readonly<Record<string, string>> = { Space: " ", Minus: "-", Quote: "'", Period: "." };
 const NAMES = ["Brightway Park", "Gull Point Fair", "Saltwater Midway", "Harbour Lights", "Seabright Pier"];
 
-/** The park's name: tap it, type (Enter or Esc finishes), or cycle a seaside name on a touch screen. */
 function NameField() {
   const [name, setName] = useState(parkProfile.name ?? ""), [typing, setTyping] = useState(false);
   const commit = (next: string) => { setName(next); parkProfile.name = next.trim() === "" ? null : next.trim(); };
@@ -154,7 +149,6 @@ function NameField() {
   </RuneView>;
 }
 
-/** Name the park, then start a scenario or free play on the empty lot. */
 function NewParkPane({ hasSave, onFresh, onFreePlay, onScenario }: { hasSave: boolean; onFresh: () => void; onFreePlay: () => void; onScenario: (id: string) => void }) {
   const won = scenariosWon(useGameContext());
   return <>

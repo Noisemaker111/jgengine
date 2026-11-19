@@ -30,13 +30,9 @@ export const DEM_SAND: DemMaterial = { id: "quartz-sand", density: 2650, youngsM
 /** Soda-lime glass beads: restitution 0.97 and friction 0.092 measured by Foerster, Louge, Chang & Allia (1994). */
 export const DEM_GLASS_BEADS: DemMaterial = { id: "glass-beads", density: 2500, youngsModulus: 5e6, poissonRatio: 0.22, restitution: 0.97, friction: 0.092, rollingFriction: 0 };
 
-/** A rigid steel container wall (same simulation stiffness as the grains). */
 export const DEM_STEEL: DemMaterial = { id: "steel", density: 7800, youngsModulus: 5e6, poissonRatio: 0.3, restitution: 0.6, friction: 0.4, rollingFriction: 0.1 };
 
-/**
- * Capillary bridges of water on clean silica (surface tension 0.072 N/m, contact angle 0) at gravimetric `moisture`.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function waterBridges(moisture: number, grainRadius: number, solidDensity = DEM_SAND.density): DemLiquid {
   return { surfaceTension: 0.072, contactAngle: 0, bridgeVolume: bridgeVolumeFromMoisture(moisture, grainRadius, solidDensity) };
 }
@@ -88,43 +84,31 @@ export function settleGrains(dem: DiscreteElements, speed = 0.005, limit = 1): n
   return spent;
 }
 
-/** Options for {@link pouredCone}. */
 export interface PouredConeOptions {
   material?: DemMaterial;
   liquid?: DemLiquid;
-  /** Grains poured. Default 900. */
   grains?: number;
   /** Mean grain radius, m. Default 5 mm. */
   grainRadius?: number;
-  /** Radius of the glued-grain base disc, in grain radii. Default 16. */
   baseRadius?: number;
   /** Seconds between batches of 14 grains. Default 0.03. */
   interval?: number;
   seed?: string;
 }
 
-/** A cone poured onto a fixed rough base. */
 export interface PouredConeResult {
   /** Angle of repose from the apex height over the base radius, tan α = H / R (ISO 4324), degrees. */
   angle: number;
   /** Slope of the free surface fitted between the apex and the rim, degrees. */
   fittedAngle: number;
-  /** Apex height above the base, m. */
   height: number;
-  /** Base disc radius, m. */
   baseRadius: number;
-  /** Length of the sloping surface, m. */
   slopeLength: number;
-  /** Grains resting on the base. */
   grains: number;
   maxOverlap: number;
 }
 
-/**
- * Angle of repose by the fixed-base cone (the poured-heap method of ISO 4324 and Al-Hashemi & Al-Amoudi 2018): pour
- * grains slowly onto the axis of a disc of glued grains until the excess spills over the rim, then fit the cone.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function pouredCone(options: PouredConeOptions = {}): PouredConeResult {
   const r = options.grainRadius ?? 0.005;
   const count = options.grains ?? 900;
@@ -173,25 +157,18 @@ export function pouredCone(options: PouredConeOptions = {}): PouredConeResult {
   return { ...cone, grains: resting, maxOverlap: worst };
 }
 
-/** Options for {@link collapsedColumn}. */
 export interface ColumnCollapseOptions {
   material?: DemMaterial;
   grainRadius?: number;
-  /** Column height over radius, a = h_i / r_i. */
   aspect: number;
-  /** Column radius in grain radii. Default 10. */
   columnRadius?: number;
   seed?: string;
 }
 
-/** Where a released column came to rest. */
 export interface ColumnCollapseResult {
-  /** Column radius and settled height before release, m. */
   initialRadius: number;
   initialHeight: number;
-  /** Radius of the deposit's edge, the farthest grain once still, m (Lube et al. measured the edge). */
   runout: number;
-  /** Highest grain top once still, m. */
   finalHeight: number;
   /** Seconds from release until the grains stopped. */
   duration: number;
@@ -253,7 +230,6 @@ function clear(dem: DiscreteElements, x: number, y: number, z: number, gap: numb
   return true;
 }
 
-/** A hexagonal layer of fixed grains of radius `r` on the plane y = 0 out to `radius`: the glued-grain floor of a lab pile test. Returns how many it placed. */
 function roughFloor(dem: DiscreteElements, radius: number, r: number, material: number): number {
   let placed = 0;
   const rowPitch = Math.sqrt(3) * r;
@@ -315,7 +291,7 @@ function measureCone(dem: DiscreteElements, r: number, firstBody: number, floorT
   return { angle: (Math.atan(height / base) * 180) / Math.PI, fittedAngle: (Math.atan(-slope) * 180) / Math.PI, height, baseRadius: base, slopeLength: Math.hypot(base, height) };
 }
 
-/** Least-squares line through points. @internal */
+/** @internal */
 export function linearFit(xs: readonly number[], ys: readonly number[]): { slope: number; intercept: number } {
   const n = xs.length;
   if (n < 2) return { slope: 0, intercept: ys[0] ?? 0 };
@@ -350,16 +326,12 @@ export function nowakExcessAngle(dryAngle: number, surfaceTension: number, densi
   return Math.sqrt(Math.max(0, radicand));
 }
 
-/** Options for {@link janssenSilo}. */
 export interface SiloOptions {
   material?: DemMaterial;
   grainRadius?: number;
-  /** Silo radius in grain radii. Default 8. */
   siloRadius?: number;
-  /** Grains per filling layer. Default 100. */
   batch?: number;
   batches?: number;
-  /** Grain–wall friction. Default 0.7. */
   wallFriction?: number;
   seed?: string;
 }
@@ -368,22 +340,14 @@ export interface SiloOptions {
 export interface SiloResult {
   fillMass: number[];
   apparentMass: number[];
-  /** Fitted Janssen curve, {@link janssenLoad}. */
   fit: JanssenFit;
-  /** Janssen stress ratio K = ρ_b π R³ / (2 μ_w M_∞) from the fitted M_∞, the measured bulk density and the wall friction. */
   stressRatio: number;
   bulkDensity: number;
   wallFriction: number;
-  /** Wall shear over wall normal force in the full silo: the friction Janssen's wall actually mobilizes. */
   mobilizedFriction: number;
 }
 
-/**
- * A silo filled layer by layer, weighing its base after each layer settles (the experiment of Vanel & Clément 1999):
- * Janssen (1895) predicts the base carries M_∞ (1 − e^{−M/M_∞}) as wall friction takes the rest, above a bottom zone
- * that rests on the base in full.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function janssenSilo(options: SiloOptions = {}): SiloResult {
   const r = options.grainRadius ?? 0.005;
   const rs = (options.siloRadius ?? 8) * r;
@@ -459,7 +423,7 @@ export function janssenLoad(fill: number, fit: JanssenFit): number {
   return fit.hydrostaticMass + fit.saturationMass * (1 - Math.exp(-(fill - fit.hydrostaticMass) / fit.saturationMass));
 }
 
-/** Least-squares {@link JanssenFit} for (fill, apparent) pairs. @internal */
+/** @internal */
 export function fitJanssen(fill: readonly number[], apparent: readonly number[]): JanssenFit {
   const error = (fit: JanssenFit): number => {
     let sum = 0;
@@ -490,13 +454,10 @@ export function fitJanssen(fill: readonly number[], apparent: readonly number[])
   return best;
 }
 
-/** Options for {@link beverlooHopper}. */
 export interface HopperOptions {
   material?: DemMaterial;
   grainRadius?: number;
-  /** Orifice diameters in grain diameters. */
   orifices: readonly number[];
-  /** Silo radius in grain radii. Default 16. */
   siloRadius?: number;
   grains?: number;
   /** Seconds discarded before measuring, then measured. */
@@ -576,10 +537,7 @@ export function beverlooHopper(options: HopperOptions): HopperResult {
   return { orifices: [...options.orifices], rates, halves, bulkDensity, grainDiameter: 2 * r };
 }
 
-/**
- * Fit Beverloo's C and k to measured rates by least squares on W^{2/5} = (C ρ_b √g)^{2/5} (D − k d), which is linear in D.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function fitBeverloo(result: HopperResult, gravity = 9.81): { c: number; k: number } {
   const d = result.grainDiameter;
   const xs = result.orifices.map((n) => n * d);
@@ -590,10 +548,7 @@ export function fitBeverloo(result: HopperResult, gravity = 9.81): { c: number; 
   return { c, k };
 }
 
-/**
- * Normal coefficient of restitution measured from a head-on collision of two equal grains at `speed` each.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function measuredRestitution(material: DemMaterial, speed: number, grainRadius = 0.005): number {
   const dem = createDiscreteElements({ materials: [material], domain: { min: [-1, -1, -1], max: [1, 1, 1] }, gravity: [0, 0, 0], maxBodies: 2 });
   dem.addBody({ position: [-grainRadius * 1.0001, 0, 0], velocity: [speed, 0, 0], material: 0, radius: grainRadius });
@@ -602,36 +557,25 @@ export function measuredRestitution(material: DemMaterial, speed: number, grainR
   return ((dem.vx[1] ?? 0) - (dem.vx[0] ?? 0)) / (2 * speed);
 }
 
-/** Options for {@link brazilNutShaker}. */
 export interface ShakerOptions {
   material?: DemMaterial;
   grainRadius?: number;
   grains?: number;
-  /** Intruder radius over grain radius. Default 3. */
   sizeRatio?: number;
-  /** Peak acceleration over g. 0 runs the unshaken control. Default 3. */
   acceleration?: number;
   frequency?: number;
   seconds?: number;
-  /** Box half-width in grain radii. Default 10. */
   halfWidth?: number;
   seed?: string;
 }
 
-/** Intruder height over time in a vertically shaken bed. */
 export interface ShakerResult {
   times: number[];
-  /** Intruder centre height above the box floor, in grain diameters. */
   intruderHeight: number[];
-  /** Bed surface height (95th percentile of grain tops), in grain diameters. */
   bedHeight: number;
 }
 
-/**
- * A large intruder buried at the floor of a vertically vibrated box of small grains (Rosato, Strandburg, Prinz &
- * Swendsen 1987; Knight, Jaeger & Nagel 1993): it rises when the peak acceleration exceeds gravity.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
+/** @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion */
 export function brazilNutShaker(options: ShakerOptions = {}): ShakerResult {
   const r = options.grainRadius ?? 0.005;
   const count = options.grains ?? 700;

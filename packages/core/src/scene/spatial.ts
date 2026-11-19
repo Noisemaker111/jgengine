@@ -46,7 +46,6 @@ export interface SpatialApiOptions {
    * after an unreported batch, unless a version source is wired.
    */
   grid?: SpatialGridOptions | false;
-  /** When this number changes between queries, the grid rebuilds without an explicit `invalidate()`. */
   getVersion?: () => number;
   /** Opt in only when every candidate add/remove/position change calls `updateEntity(id)` or
    * `invalidate()`. Avoids scanning all candidate IDs on warm queries. Initially unresolved IDs
@@ -127,9 +126,7 @@ interface GridIndex {
 const DEFAULT_CELL_SIZE = 8;
 const MEMBERSHIP_REBUILD_THRESHOLD = 256;
 
-/** Spatial queries with an optional notified incremental broadphase.
- * @capability spatial-incremental Update one entity's spatial cell after a committed write without scanning the population
- */
+/** @capability spatial-incremental Update one entity's spatial cell after a committed write without scanning the population */
 export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
   const { resolvePosition, candidates, occluder, getVersion, resolveStep } = options;
   const gridConfig = options.grid === false ? undefined : (options.grid ?? { cellSize: DEFAULT_CELL_SIZE });

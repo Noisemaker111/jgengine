@@ -15,7 +15,6 @@ import { memoView } from "../memoView.view";
  * @capability hud-icons painted-icon treatment for hotbar/action slots — glyph + gradient + count badge
  */
 
-/** Element/school palette key — drives the radial gradient behind the glyph. */
 export type IconSchool =
   | "fire"
   | "frost"
@@ -58,37 +57,27 @@ function schoolFrom(text: string): IconSchool {
   return "neutral";
 }
 
-/** Infers an {@link IconSchool} from an item id (keyword match); `neutral` when nothing matches. */
 export function schoolForItem(itemId: string): IconSchool {
   return schoolFrom(itemId);
 }
 
-/** Infers an {@link IconSchool} from an action id (keyword match); `neutral` when nothing matches. */
 export function schoolForAction(action: string): IconSchool {
   return schoolFrom(action);
 }
 
-/** Props for {@link IconTreatment}. */
 export interface IconTreatmentProps {
-  /** A `GameIcon` name to render as the glyph. */
   icon?: GameIconName;
-  /** Or an explicit glyph node (a game-icons.net SVG, an `<img>`, custom art). Wins over `icon`. */
   glyph?: ReactNode;
-  /** School/element gradient behind the glyph. Default `neutral`. */
   school?: IconSchool;
   /** Face size in px. Default 44. */
   size?: number;
-  /** Stack count — a badge is drawn when > 1. */
   count?: number;
-  /** Keycap/hotkey drawn top-left. */
   keycap?: string;
-  /** Active/selected ring using `--jg-accent`. */
   active?: boolean;
   className?: string;
   style?: CSSProperties;
 }
 
-/** A painted icon face — gradient + vignette + gloss behind a glyph, with count/keycap badges. */
 export const IconTreatment = memoView("IconTreatment", function IconTreatment({
   icon,
   glyph,
@@ -155,7 +144,6 @@ export const IconTreatment = memoView("IconTreatment", function IconTreatment({
   );
 });
 
-/** Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school. */
 export function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode {
   const icon = iconForItemId(itemId) ?? undefined;
   return (
@@ -169,7 +157,6 @@ export function treatedItemIcon(itemId: string, options: { size?: number; count?
   );
 }
 
-/** A ready-made `ActionButton` `renderIcon` that paints the action's `GameIcon` with a treatment. */
 export function treatedActionIcon(action: { id?: string; label?: string; icon?: ReactNode }, size = 40): ReactNode {
   const key = action.id ?? action.label ?? "";
   const named = iconForAction(key);

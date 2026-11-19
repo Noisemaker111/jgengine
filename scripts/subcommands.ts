@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 import { renderUsage, type Usage } from "./script-help";
 
 export interface Verb {
-  /** The script the verb runs, repo-relative. */
   readonly script: string;
   /** Arguments put before the caller's own. */
   readonly args?: readonly string[];
@@ -20,7 +19,6 @@ export interface VerbTable {
   readonly name: string;
   readonly summary: string;
   readonly verbs: Readonly<Record<string, Verb>>;
-  /** The verb a first argument that names no verb goes to, with that argument kept. */
   readonly fallback?: string;
   readonly example: string;
 }
@@ -45,7 +43,6 @@ export function resolveVerb(table: VerbTable, argv: readonly string[]): string[]
   return ["bun", "scripts/guard.ts", String(verb.guardSeconds), `bun ${verb.script}`, ...args];
 }
 
-/** Run the verb `argv` names; prints the table's usage for `--help` or an unknown verb. */
 export function runVerb(table: VerbTable, argv: readonly string[]): number {
   const first = argv[0];
   if (first === undefined || first === "--help" || first === "-h") {

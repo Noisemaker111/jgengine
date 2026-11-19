@@ -6,77 +6,50 @@ import { seaWaterAt, type OceanSea } from "./oceanWaves";
 import { sectionHeave } from "./sectionHydrodynamics";
 import { heavePitchResponse, stripSections, type StripHull } from "./stripTheory";
 
-/**
- * A rigid hull for time-domain seakeeping, in hull axes (x forward from the aft end, y to port, z up from the keel).
- * Buoyancy and the Froude–Krylov wave force come from integrating the incident sea's pressure over the instantaneous
- * wetted mesh; radiation is constant added mass and damping about G; each station adds a diffraction force by the
- * strip-theory diffraction force (its section's diffraction integral at the reference frequency, applied to every wave
- * component) and a momentum slamming force when it re-enters the water.
- */
 export interface SeakeepingHull {
   mesh: HullMesh;
   massKg: number;
   centreOfGravity: readonly [number, number, number];
-  /** Radii of gyration about G, m: roll, pitch, yaw. */
   gyration: readonly [number, number, number];
-  /** 6×6 added mass about G in body axes (surge, sway, heave, roll, pitch, yaw), row-major. */
   addedMass: readonly number[];
-  /** 6×6 linear radiation and viscous damping about G in body axes, row-major. */
   damping: readonly number[];
-  /** Stations for the diffraction and slamming forces. */
   stations: readonly SeakeepingStation[];
   density: number;
   gravity: number;
 }
 
-/** One strip of the hull for the station forces. */
 export interface SeakeepingStation {
-  /** Station position along the hull, m, and its share of the length, m. */
   x: number;
   width: number;
   /** Sectional heave added mass, kg/m, and damping, N·s/m², at the reference frequency. */
   addedMass: number;
   damping: number;
-  /** Diffraction integral `∫φ₃·n_z·e^(kz) ds` of the section at the reference frequency, per unit heave velocity. */
   diffraction: readonly [number, number];
-  /** Keel height above the baseline, m. */
   keel: number;
   /** High-frequency added mass, kg/m, against immersion of the keel, m, for slamming. */
   slamDepths: readonly number[];
   slamAddedMass: readonly number[];
 }
 
-/** Body state: G in earth axes (z up from still water), roll/pitch/yaw, and body velocities `[u, v, w, p, q, r]` at G. */
 export interface SeakeepingState {
   position: [number, number, number];
   attitude: [number, number, number];
   velocity: [number, number, number, number, number, number];
   time: number;
-  /** Largest slamming force on any station during the last step, N, and the station's x. */
   slamForce: number;
   slamStation: number;
 }
 
-/** Options for {@link seakeepingHullFromStrip}. */
 export interface SeakeepingHullOptions {
   /** Frequency the radiation coefficients are taken at, rad/s (default: the heave natural frequency estimate). */
   referenceFrequency?: number;
-  /** Roll added inertia as a share of the dry roll inertia (default `0.2`). */
   rollAddedInertia?: number;
-  /** Roll damping as a share of critical (default `0.05`). */
   rollDamping?: number;
-  /** Roll and yaw radii of gyration over beam and length (defaults `0.35`, `0.25`). */
   rollRadius?: number;
   yawRadius?: number;
 }
 
-/**
- * Builds a {@link SeakeepingHull} from a strip-theory hull: mesh from its offsets, heave–pitch added mass and damping
- * from strip theory at the reference frequency, surge added mass from Lamb's spheroid, sway and yaw from flat-plate
- * strips (`ρπT²/2`), roll as shares of the dry inertia and of critical damping, and per-station diffraction and
- * high-frequency slamming tables from the 2-D sections.
- * @capability seakeeping-hull time-domain seakeeping hull built from strip theory
- */
+/** @capability seakeeping-hull time-domain seakeeping hull built from strip theory */
 export function seakeepingHullFromStrip(hull: StripHull, options: SeakeepingHullOptions = {}): SeakeepingHull {
   const density = hull.density ?? SEA_WATER_DENSITY;
   const gravity = hull.gravity ?? MARINE_GRAVITY;
@@ -165,7 +138,6 @@ function integratorFor(mesh: HullMesh): HullIntegrator {
   return created;
 }
 
-/** Row-major `Rz(yaw)·Ry(pitch)·Rx(roll)`: body to earth. */
 function attitudeMatrix(roll: number, pitch: number, yaw: number, out: Float64Array): Float64Array {
   const cr = Math.cos(roll), sr = Math.sin(roll), cp = Math.cos(pitch), sp = Math.sin(pitch), cy = Math.cos(yaw), sy = Math.sin(yaw);
   out[0] = cy * cp;
@@ -180,25 +152,15 @@ function attitudeMatrix(roll: number, pitch: number, yaw: number, out: Float64Ar
   return out;
 }
 
-/**
- * The hull floating at rest in still water: G above the origin at its equilibrium height, heel and trim.
- * @capability seakeeping-hull hull at rest in still water
- */
+/** @capability seakeeping-hull hull at rest in still water */
 export function restingSeakeepingState(hull: SeakeepingHull): SeakeepingState {
   const attitude = floatingEquilibrium(hull.mesh, { massKg: hull.massKg, centreOfGravity: hull.centreOfGravity, density: hull.density, gravity: hull.gravity });
   return { position: [0, 0, attitude.heightOfG], attitude: [attitude.heel, attitude.trim, 0], velocity: [0, 0, 0, 0, 0, 0], time: 0, slamForce: 0, slamStation: 0 };
 }
 
-/** External surge force along the body x axis, N, e.g. a propeller holding speed against resistance. */
 export type SurgeForce = (state: SeakeepingState) => number;
 
-/**
- * Advances a hull in a sea by `dt` with fourth-order Runge–Kutta, in place. Forces: weight; buoyancy and Froude–Krylov
- * from the sea pressure over the wetted mesh; constant added mass and damping; per-station diffraction
- * `ρω²·Re(A·D·e^(iθ))` from each section's diffraction integral; momentum slamming `−(dm∞/dh)·ḣ²` on a
- * station whose immersion `h` is rising; and an optional surge force.
- * @capability seakeeping-hull six-degree-of-freedom time step of a hull in waves
- */
+/** @capability seakeeping-hull six-degree-of-freedom time step of a hull in waves */
 export function stepSeakeeping(hull: SeakeepingHull, sea: OceanSea, state: SeakeepingState, dt: number, surge?: SurgeForce): SeakeepingState {
   const integrator = integratorFor(hull.mesh);
   const loads = createHullLoads();

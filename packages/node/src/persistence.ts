@@ -20,7 +20,6 @@ import { memoryWorldStore, type HostedWorldStore } from "@jgengine/core/runtime/
 
 export { memoryPersistence } from "@jgengine/ws/host";
 
-/** Per-world key a {@link WorldPersistence} resolves a {@link HostedWorldStore} for. */
 export interface WorldPersistenceKey {
   gameId: string;
   serverId: string;
@@ -36,7 +35,6 @@ export interface WorldPersistence {
   store(key: WorldPersistenceKey): HostedWorldStore;
 }
 
-/** Default {@link WorldPersistence}: an isolated in-memory {@link HostedWorldStore} per `gameId`/`serverId`, lost on process exit. */
 export function memoryWorldPersistence(): WorldPersistence {
   const stores = new Map<string, HostedWorldStore>();
   return {
@@ -104,7 +102,6 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
   const leaderboardPath = join(dir, "leaderboard.json");
   const journalPath = join(dir, "plan.journal.json");
 
-  /** Move every staged file into place and drop the journal. Safe to repeat: a missing temp was already moved. */
   const finish = async (journal: PlanJournal): Promise<void> => {
     for (const { temp, final } of journal.moves) {
       try {

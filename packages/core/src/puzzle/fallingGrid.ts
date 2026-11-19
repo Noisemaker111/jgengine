@@ -7,7 +7,6 @@ export interface FallingGridConfig {
   lockDelayMs?: number;
 }
 
-/** Elapsed grounded time for the lock-delay state machine. `null` means airborne / not timing. */
 export interface LockState {
   elapsedMs: number;
 }
@@ -25,22 +24,15 @@ export interface FallingGrid<TCell> {
   cellAt(col: number, row: number): TCell | null;
   setCell(col: number, row: number, value: TCell): void;
   clearCell(col: number, row: number): void;
-  /** Bounds + collision check for a footprint (`cells`, relative to `offset`). Rows above the grid (`row < 0`) are allowed through, mirroring a piece spawning above the visible board; only columns are bounds-checked there. */
   canPlace(cells: readonly FallingGridCell[], offset: FallingGridCell): boolean;
   /** Writes `value` into every in-bounds cell of the footprint if `canPlace` allows it. Cells above the grid are silently skipped. Returns whether the placement happened. */
   place(cells: readonly FallingGridCell[], offset: FallingGridCell, value: TCell): boolean;
-  /** Row indices that are fully occupied, in ascending order. */
   fullRows(): readonly number[];
-  /** Removes the given rows and shifts every row above them down, backfilling the top with empty rows. Returns the number of rows cleared. */
   clearRows(rows: readonly number[]): number;
-  /** Column-gravity collapse: every occupied cell in each column falls to the lowest free row below it, preserving relative order. Returns the number of cells that moved. */
   settle(): number;
-  /** Advances (or starts) a lock-delay timer while `grounded`, and clears it the instant the piece is airborne. */
   advanceLock(state: LockState | null, grounded: boolean, dtMs: number): LockState | null;
-  /** Whether a lock-delay timer has run out `lockDelayMs`. */
   lockExpired(state: LockState | null): boolean;
   snapshot(): FallingGridSnapshot<TCell>;
-  /** Clears every cell back to empty. */
   reset(): void;
 }
 
@@ -216,7 +208,6 @@ export function createFallingGrid<TCell>(config: FallingGridConfig): FallingGrid
   };
 }
 
-/** A falling piece: a shape id from a {@link ShapeTable}, its rotation index and its board offset. */
 export interface FallingPiece<TShape extends string = string> {
   readonly shape: TShape;
   readonly rotation: number;
@@ -224,48 +215,30 @@ export interface FallingPiece<TShape extends string = string> {
   readonly row: number;
 }
 
-/** Rotation states per shape: each state is the footprint cells relative to the piece offset. */
 export type ShapeTable<TShape extends string = string> = Record<TShape, readonly (readonly FallingGridCell[])[]>;
 
-/**
- * The relative footprint of `piece` at its rotation, wrapping by that shape's own rotation count. Pass it to `canPlace`/`place` with `[piece.col, piece.row]`.
- *
- * @internal
- */
+/** @internal */
 export function pieceFootprint<TShape extends string>(table: ShapeTable<TShape>, piece: FallingPiece<TShape>): readonly FallingGridCell[] {
   const rotations = table[piece.shape];
   const index = ((piece.rotation % rotations.length) + rotations.length) % rotations.length;
   return rotations[index]!;
 }
 
-/**
- * Rows a piece can fall straight down before it collides: the hard-drop distance.
- *
- * @internal
- */
+/** @internal */
 export function dropDistance<TCell>(grid: FallingGrid<TCell>, cells: readonly FallingGridCell[], offset: FallingGridCell): number {
   let distance = 0;
   while (grid.canPlace(cells, [offset[0], offset[1] + distance + 1])) distance += 1;
   return distance;
 }
 
-/**
- * Level reached after `lines` cleared lines, one level per `linesPerLevel` (default 10).
- *
- * @internal
- */
+/** @internal */
 export function levelForLines(lines: number, linesPerLevel = 10): number {
   return Math.floor(lines / linesPerLevel);
 }
 
-/** Classic line-clear points for 0-4 rows at level 0. */
 export const CLASSIC_LINE_SCORE: readonly number[] = [0, 40, 100, 300, 1200];
 
-/**
- * Points for clearing `cleared` rows at `level`: `table[cleared] * (level + 1)`.
- *
- * @internal
- */
+/** @internal */
 export function lineClearScore(cleared: number, level: number, table: readonly number[] = CLASSIC_LINE_SCORE): number {
   return (table[cleared] ?? 0) * (level + 1);
 }

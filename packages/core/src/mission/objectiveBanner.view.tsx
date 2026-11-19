@@ -32,17 +32,11 @@ export function useObjectiveBanner(
 }
 
 export interface ObjectiveBannerTheme {
-  /** Accent for the title glow and the divider rule. Default reads `--jg-accent`. */
   accent?: string;
-  /** Title text color. Default near-white. */
   title?: string;
-  /** Subtitle text color. */
   subtitle?: string;
-  /** Font family for the banner. */
   fontFamily?: string;
-  /** Title font size (CSS length). Default `"clamp(2.5rem, 8vw, 6rem)"`. */
   titleSize?: string;
-  /** Subtitle font size (CSS length). Default `"clamp(1rem, 2.5vw, 1.5rem)"`. */
   subtitleSize?: string;
 }
 
@@ -62,11 +56,6 @@ function easeOut(t: number): number {
   return 1 - (1 - t) ** 3;
 }
 
-/**
- * The animated transform + opacity for a banner from its phase and progress. The
- * banner flies up into place on the way `in`, holds fully visible, then lifts and
- * fades on the way `out`. Presentation-only — nothing here reads `kind`.
- */
 function bannerMotion(phase: ObjectiveBannerPhase, progress: number): { opacity: number; translateY: number; scale: number } {
   switch (phase) {
     case "in": {
@@ -81,11 +70,8 @@ function bannerMotion(phase: ObjectiveBannerPhase, progress: number): { opacity:
   }
 }
 
-/** Props for {@link ObjectiveBannerHost}. */
 export interface ObjectiveBannerHostProps {
-  /** The controller to render. */
   controller: ObjectiveBannerController;
-  /** Base reskin tokens. */
   theme?: ObjectiveBannerTheme;
   /**
    * Per-`kind` theme overrides, keyed by the free-string `kind` a game announces
@@ -93,14 +79,8 @@ export interface ObjectiveBannerHostProps {
    * so a game colors each banner variant without the model interpreting `kind`.
    */
   kindThemes?: Record<string, ObjectiveBannerTheme>;
-  /**
-   * Drive `advance()` on an animation frame. Default `true`. Turn off if the game
-   * already advances the controller from its own tick.
-   */
   animate?: boolean;
-  /** Dismiss the active banner when the overlay is clicked. Default `false`. */
   dismissOnClick?: boolean;
-  /** Extra `z-index` for the overlay root. Default `50`. */
   zIndex?: number;
   /**
    * `"overlay"` (default) covers the screen and centres the stamp. `"inline"` lays the stamp out in

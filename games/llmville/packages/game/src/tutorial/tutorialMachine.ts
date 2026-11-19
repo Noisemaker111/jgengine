@@ -70,7 +70,6 @@ interface TutorialStepRule {
   when: (signals: TutorialWorldSignals) => boolean;
 }
 
-/** The first-model tutorial's steps after bootstrap, in order, each done by a world condition. */
 const TUTORIAL_STEP_RULES: readonly TutorialStepRule[] = [
   { node: TUTORIAL_NODE.openTablet, text: "Open the tablet store", when: (signals) => signals.rackPlaced },
   { node: TUTORIAL_NODE.placeRack, text: "Place your rack", when: (signals) => signals.rackPlaced },
@@ -97,7 +96,6 @@ const TUTORIAL_ONBOARDING: OnboardingConfig<TutorialWorldSignals> = {
   steps: TUTORIAL_STEP_RULES.map((rule) => ({ id: rule.node, text: rule.text, done: { when: rule.when } })),
 };
 
-/** From `currentNode`, finish every step whose condition already holds and report where the tutorial stands. */
 export function advanceTutorialNode(
   currentNode: TutorialNode,
   signals: TutorialWorldSignals,
@@ -164,7 +162,6 @@ const TUTORIAL_STAGE_TO_NODE: Record<TutorialStage, TutorialNode> = {
   [TUTORIAL_STAGE.complete]: TUTORIAL_NODE.complete,
 };
 
-/** Canonical tutorial machine events — single source for reducer `type` strings. */
 export const tutorialEvents = {
   bootstrapped: (): TutorialEvent => ({ type: TUTORIAL_EVENT_TYPE.bootstrapped }),
   tabletStoreOpened: (): TutorialEvent => ({ type: TUTORIAL_EVENT_TYPE.tabletStoreOpened }),

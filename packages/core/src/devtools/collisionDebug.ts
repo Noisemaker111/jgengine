@@ -38,7 +38,6 @@ export interface CollisionDebugState {
   layers: CollisionDebugLayers;
   aimProbe: AimProbeConfig | null;
   projectileTraces: readonly ProjectileDebugTrace[];
-  /** Caps retained projectile paths/muzzle marks. */
   maxProjectileTraces: number;
   /** How long a projectile path stays visible (ms). */
   projectileTraceLifeMs: number;
@@ -98,7 +97,6 @@ export interface CollisionDebugController {
   toggleLayer(layer: CollisionDebugLayer): void;
   setLayers(partial: Partial<CollisionDebugLayers>): void;
   setAllLayers(on: boolean): void;
-  /** Updates aim probe without notifying subscribers (per-frame safe). */
   setAimProbe(probe: AimProbeConfig | null): void;
   getAimProbe(): AimProbeConfig | null;
   pushProjectileTrace(input: {
@@ -109,7 +107,6 @@ export interface CollisionDebugController {
   }): void;
   pruneProjectileTraces(nowMs: number): void;
   reset(): void;
-  /** True when any overlay work is scheduled. */
   isActive(): boolean;
 }
 

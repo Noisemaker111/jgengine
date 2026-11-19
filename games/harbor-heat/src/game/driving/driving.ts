@@ -44,18 +44,14 @@ export interface VehicleTelemetry {
   vtol: boolean;
 }
 
-/** The dash with nobody driving. */
 const ON_FOOT: VehicleTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
 
-/** Road-grip sampler for the car sims: full bite on asphalt, a linear washout across the curb, less off-road. */
 const SURFACE_SAMPLER = roadSurfaceSampler(streets, { onRoad: 1, offRoad: 0.72, shoulder: 3 });
-/** Extra velocity drag once off the road, ramping to ~0.35/s across the shoulder band — grass slows a car. */
 function offRoadDrag(x: number, z: number): number {
   const edge = distanceToRoadEdge(streets, x, z);
   if (edge <= 0) return 0;
   return 0.35 * Math.min(1, edge / 3);
 }
-/** How far around a car to gather solids (buildings, other cars) for the obstacle clamp, world units. */
 const OBSTACLE_GATHER = 30;
 
 /**
@@ -86,11 +82,6 @@ const DRIVE_AXIS_BINDINGS: AxisBindingMap = {
   handbrake: { positive: ["jump"] },
 };
 
-/**
- * The driving slice: the player's car/aircraft sims, per-car slide-along clamps, the vehicle-seat
- * mounts, and the shared vehicle registry (`makeCarSim`/`refreshClamp`/`dropCarSim`/`cruiserVehicles`)
- * the pursuit cruisers borrow. Owns `driving` (the currently piloted vehicle) and the latest telemetry.
- */
 export interface Driving {
   enterVehicle(ctx: GameContext, vehicleId: string): void;
   exitVehicle(ctx: GameContext, force?: boolean): void;
@@ -98,16 +89,11 @@ export interface Driving {
   carSpeedKmh(): number;
   telemetry(): VehicleTelemetry;
   tickDriving(ctx: GameContext, dt: number): void;
-  /** Blow up a vehicle; returns true when it was the one the player was driving (so heat can be added). */
   explodeVehicle(ctx: GameContext, vehicleId: string, at: readonly [number, number, number]): boolean;
-  /** Each live car's bodywork stages, for the save document. */
   vehicleDamageSave(ctx: GameContext): Record<string, VehicleDamageState>;
-  /** Re-apply saved bodywork to the cars a reload still has, handling included. */
   restoreVehicleDamage(ctx: GameContext, sections: Record<string, VehicleDamageState>): void;
-  /** Re-bake every owned car's handling after a mod was bought; dents stay. */
   retuneOwnedCars(ctx: GameContext): void;
   playerWorldPos(ctx: GameContext): readonly [number, number, number] | null;
-  /** Put a ground car somewhere else, at rest: the sim is rebuilt from the new pose on its next tick. */
   placeVehicle(ctx: GameContext, vehicleId: string, position: readonly [number, number, number], heading: number): void;
   makeCarSim(
     vehicleId: string,
@@ -124,7 +110,6 @@ export interface Driving {
 export function createDriving(): Driving {
   const carVehicles = new Map<string, VehicleDynamics>();
   const cruiserVehicles = new Map<string, VehicleDynamics>();
-  /** Per-car tick-fresh solid set the sim slides along, and the car's body radius. Keyed by scene entity id. */
   const carSolids = new Map<string, { obstacles: CollisionObstacle[]; radius: number }>();
   /** A crashed car's re-baked spec, so a car re-entered after a reload still drives dented. */
   const carTunings = new Map<string, VehicleSpec>();
@@ -177,7 +162,6 @@ export function createDriving(): Driving {
     return result;
   }
 
-  /** Build a road-aware car sim that slides along nearby solids, and register its solid set for tick refresh. */
   function makeCarSim(
     vehicleId: string,
     tuning: VehicleSpec,
@@ -197,7 +181,6 @@ export function createDriving(): Driving {
     });
   }
 
-  /** Refresh a car's nearby solids right before stepping its sim. */
   function refreshClamp(ctx: GameContext, vehicleId: string, position: readonly [number, number, number], _dt: number): void {
     const record = carSolids.get(vehicleId);
     if (record === undefined) return;
@@ -210,7 +193,6 @@ export function createDriving(): Driving {
     carSolids.delete(vehicleId);
   }
 
-  /** A car's handling before dents: stock for a stranger's car, with the bay's mods for one you own. */
   function baseTuning(ctx: GameContext, vehicleId: string, def: VehicleDef): VehicleSpec | null {
     if (def.dynamics.type !== "ground") return null;
     const owned = (ctx.scene.entity.get(vehicleId)?.meta as { owned?: boolean } | undefined)?.owned === true;
@@ -426,7 +408,6 @@ export function createDriving(): Driving {
     return step;
   }
 
-  /** The player is out of the car: drop the handle, the engine note, the dash and the car's touch layout. */
   function stopDriving(ctx: GameContext): void {
     driving = null;
     drivingAudio.stop(ctx);

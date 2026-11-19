@@ -7,13 +7,10 @@ import type { TransactionLedger } from "./transactionLedger";
  * integers, so a schedule adds up exactly.
  */
 
-/** Terms of one loan. Everything a repayment schedule needs, as plain data. */
 export interface LoanTerms {
-  /** Stable id, unique within a loan book. */
   id: string;
   /** Integer minor units borrowed; must be `> 0`. */
   principal: number;
-  /** Interest per period as a fraction of the balance, e.g. `0.05` for 5%. */
   ratePerPeriod: number;
   /**
    * Number of scheduled payments; integer `>= 1`. Required for `"amortized"` and `"flat"`; a
@@ -24,85 +21,55 @@ export interface LoanTerms {
   periodSeconds: number;
   /** When the first payment is due, in seconds. */
   startSeconds: number;
-  /**
-   * `"amortized"` (default) charges interest on the outstanding balance and levels the payment;
-   * `"flat"` charges interest on the original principal and splits principal evenly;
-   * `"revolving"` is an open credit line: each period charges interest on whatever is outstanding
-   * when it comes due and no principal, more can be drawn up to `limit`, and repaying to zero
-   * leaves the line open.
-   */
   method?: LoanMethod;
   /** Most a `"revolving"` line may have outstanding, in minor units; `>= principal`. Ignored otherwise. */
   limit?: number;
-  /** Currency the loan is denominated in; falls back to the book's default. */
   currency?: string;
-  /** Account that owes and pays; falls back to the book's default. */
   account?: string;
 }
 
-/** How a loan is repaid; see {@link LoanTerms.method}. */
 export type LoanMethod = "amortized" | "flat" | "revolving";
 
-/** One scheduled repayment, in integer minor units. */
 export interface LoanPayment {
   /** 1-based. */
   index: number;
   dueSeconds: number;
   interest: number;
   principal: number;
-  /** `interest + principal`. */
   amount: number;
-  /** Remaining principal after this payment. */
   balanceAfter: number;
 }
 
-/**
- * A full repayment plan: every payment, its interest/principal split and the running balance. A
- * `"revolving"` line has no fixed plan: `payments` is empty and each period's interest is worked out
- * from the balance when it comes due ({@link LoanBook.nextPayment}).
- */
 export interface LoanSchedule {
   id: string;
   principal: number;
   method: LoanMethod;
   payments: readonly LoanPayment[];
-  /** Sum of every payment's interest. */
   totalInterest: number;
-  /** Sum of every payment. */
   totalPaid: number;
 }
 
-/** One live loan: its plan plus how far it has been paid. */
 export interface LoanRecord {
   id: string;
   /** The terms it was drawn on, kept whole so a save stores them verbatim. */
   terms: LoanTerms;
   principal: number;
   ratePerPeriod: number;
-  /** Scheduled payments; `0` for a revolving line, which has no term. */
   periods: number;
-  /** Most a revolving line may have outstanding; `null` for a term loan. */
   limit: number | null;
   currency: string;
   account: string;
   schedule: LoanSchedule;
-  /** Payments settled so far. */
   paid: number;
-  /** Total settled, in minor units, including interest. */
   paidAmount: number;
-  /** Interest settled so far, in minor units. */
   interestPaid: number;
-  /** Scheduled payments that came due with no funds, counted once per advance. */
   missed: number;
-  /** True once `missed` reached the book's limit; a defaulted loan stops being advanced. */
   defaulted: boolean;
   /** True once the principal is fully repaid, early or on schedule. A revolving line never settles. */
   settled: boolean;
-  /** Remaining principal, in minor units. */
   outstanding: number;
 }
 
-/** Saved progress of one loan; the schedule is rebuilt from its terms on restore. */
 export interface LoanState {
   terms: LoanTerms;
   paid: number;
@@ -114,59 +81,46 @@ export interface LoanState {
   outstanding: number;
 }
 
-/** Serializable loan-book state. */
 export interface LoanBookState {
   loans: readonly LoanState[];
 }
 
-/** What one {@link LoanBook.advance} settled, and what it could not. */
 export interface LoanAdvanceResult {
   paid: readonly LoanPayment[];
-  /** Payments that came due with no funds; each counts once per advance. */
   missed: readonly { id: string; index: number; amount: number }[];
-  /** Loans that reached the miss limit during this advance. */
   defaulted: readonly string[];
 }
 
-/** Counters of a loan book, for a probe or a summary line. */
 export interface LoanBookStats {
   loans: number;
   active: number;
   defaulted: number;
   settled: number;
-  /** Remaining principal across every loan, in minor units. */
   outstanding: number;
   paidAmount: number;
   interestPaid: number;
   missed: number;
 }
 
-/** Outcome of an early repayment. */
 export interface LoanRepayment {
   ok: boolean;
-  /** Minor units actually applied to principal. */
   applied: number;
   outstanding: number;
   settled: boolean;
 }
 
-/** Outcome of a further draw on a revolving line. */
 export interface LoanDraw {
   ok: boolean;
-  /** Minor units added to the balance. */
   applied: number;
   outstanding: number;
 }
 
-/** Options for {@link createLoanBook}. */
 export interface LoanBookOptions {
-  /** The books every draw, payment and repayment is posted through. */
   ledger: TransactionLedger;
   /** Default currency for loans that do not name one. */
   currency?: string;
   /** Default owing account for loans that do not name one. */
   account?: string;
-  /** Due payments that may go unsettled before a loan is defaulted (default `3`). */
   maxMissed?: number;
   /**
    * Post due payments and early repayments even when the account cannot cover them: the borrower
@@ -174,35 +128,23 @@ export interface LoanBookOptions {
    * Default `false`.
    */
   overdraft?: boolean;
-  /** Register a devtools probe under this name reporting {@link LoanBookStats}. */
   devtoolsName?: string;
 }
 
-/** The loans a business owes: schedules, interest, arrears and default, posted to a ledger. */
 export interface LoanBook {
-  /** Draw a loan: posts the principal to the borrower's account and schedules the repayments. `null` for unusable terms or an unknown account. */
   originate(terms: LoanTerms): LoanRecord | null;
-  /** Settle every payment due at or before `nowSeconds`, in loan-id order. */
   advance(nowSeconds: number): LoanAdvanceResult;
-  /** Pay principal early. Interest already scheduled is unaffected. */
   repay(loanId: string, amount: number, atSeconds: number): LoanRepayment | null;
-  /**
-   * Draw more on a revolving line: posts `amount` to the borrower's account. Refused (`ok: false`)
-   * past the line's `limit`; `null` for a term loan, a defaulted line or an unusable amount.
-   */
   draw(loanId: string, amount: number, atSeconds: number): LoanDraw | null;
   outstanding(loanId: string): number;
-  /** The next payment due, or `null` when the loan is settled or paid off. A revolving line's is worked out from its balance now. */
   nextPayment(loanId: string): LoanPayment | null;
   scheduleOf(loanId: string): LoanSchedule | null;
   loan(loanId: string): LoanRecord | null;
   loans(): readonly LoanRecord[];
   snapshot(): LoanBookState;
-  /** Replace state; returns `false` without mutation when the state is malformed. */
   restore(next: LoanBookState): boolean;
   stats(): LoanBookStats;
   reset(): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -321,7 +263,6 @@ export function createLoanBook(options: LoanBookOptions): LoanBook {
     return { loans: records.size, active, defaulted, settled, outstanding, paidAmount, interestPaid, missed };
   }
 
-  /** The payment due next: the schedule's, or for a revolving line this period's interest on its balance. */
   function pending(loan: LoanRecord): LoanPayment | undefined {
     if (loan.limit === null) return loan.schedule.payments[loan.paid];
     const interest = Math.round(loan.outstanding * loan.ratePerPeriod);

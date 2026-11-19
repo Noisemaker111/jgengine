@@ -1,6 +1,5 @@
 import { pickWeighted } from "../random/pick";
 import { resolveRng } from "../random/resolveRng";
-/** One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds. */
 export interface LootEntry {
   item?: string;
   currency?: string;
@@ -13,26 +12,17 @@ export interface LootEntry {
    */
   generate?: (rng: () => number) => string;
   count: number | [number, number];
-  /** Relative pick weight — required in `"weighted"` mode, forbidden in `"independent"` mode. */
   weight?: number;
-  /** Per-entry drop probability in `(0, 1]` — required in `"independent"` mode, forbidden in `"weighted"` mode. */
   chance?: number;
 }
 
-/** A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries. */
 export interface LootTableDef {
   id: string;
   rolls?: number;
-  /**
-   * `"weighted"` (default): each roll picks exactly one entry by relative `weight`.
-   * `"independent"`: each roll gives every entry its own `chance` — classic drop lists
-   * where a kill can yield several items (or nothing) without filler entries.
-   */
   mode?: "weighted" | "independent";
   entries: LootEntry[];
 }
 
-/** A resolved loot outcome — one item or currency grant with its rolled count. */
 export interface Drop {
   item?: string | undefined;
   currency?: string | undefined;
@@ -45,7 +35,6 @@ export interface LootRegistry {
   roll(id: string, rng?: () => number): Drop[];
   /** Registered tables in registration order; plain JSON unless an entry uses `generate`. */
   snapshot(): LootTableDef[];
-  /** Replaces every registered table with `next`, validating each. */
   restore(next: readonly LootTableDef[]): void;
 }
 
@@ -99,7 +88,6 @@ function rollEntry(entry: LootEntry, rng: () => number): Drop {
   return entry.item !== undefined ? { item: entry.item, count } : { currency: entry.currency, count };
 }
 
-/** Options for {@link createLootRegistry} — inject a default RNG so bare `roll(id)` uses the world stream. */
 export interface LootRegistryOptions {
   /**
    * Default `[0,1)` stream when `roll` is called without an explicit rng.
@@ -109,11 +97,7 @@ export interface LootRegistryOptions {
   rng?: () => number;
 }
 
-/**
- * Register named loot tables and roll weighted randomized drops from them.
- *
- * @capability loot-table register loot tables and roll weighted randomized drops
- */
+/** @capability loot-table register loot tables and roll weighted randomized drops */
 export function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry {
   const tables = new Map<string, LootTableDef>();
   const defaultRng = resolveRng(options.rng, "createLootRegistry");
@@ -159,21 +143,13 @@ export function createLootRegistry(options: LootRegistryOptions = {}): LootRegis
   };
 }
 
-/**
- * Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
- *
- * @capability loot-table validate a loot table definition for use with the registry
- */
+/** @capability loot-table validate a loot table definition for use with the registry */
 export function lootTable(def: LootTableDef): LootTableDef {
   assertValidDef(def);
   return def;
 }
 
-/**
- * Hand rolled drops to their owner: items to inventory, currency to the economy.
- *
- * @capability grant-drops deliver rolled loot drops into inventory and currency
- */
+/** @capability grant-drops deliver rolled loot drops into inventory and currency */
 export function grantDrops(
   drops: Drop[],
   appliers: {

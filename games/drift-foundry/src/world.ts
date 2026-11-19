@@ -22,10 +22,8 @@ import { ZONES, type ZoneDef } from "./game/zones/catalog";
 import { ROW_SIX_TRACK, TRACKS, type Track } from "./game/tracks/catalog";
 import { YARD_GROUND } from "./game/tracks/ground";
 
-/** The racing line everywhere is dark cracked asphalt: oil-black against the packed-dirt yard. */
 const RACING_LINE_SCAN = librarySurfaceScan("asphalt/dark-cracked");
 
-/** Every yard track but Row Six, each laid in its own stretch of the yard along z. */
 const LAID_TRACKS: readonly Track[] = TRACKS.filter((track) => track !== ROW_SIX_TRACK);
 
 /**
@@ -58,7 +56,6 @@ function trackBand(track: Track): BiomeBand {
   };
 }
 
-/** The paved strip of every route: a ribbon the width of the track's paving, draped on the graded ground. */
 function trackRoads(track: Track): RoadEnvironmentDescriptor[] {
   return track.course.routes.map((route) =>
     road({
@@ -86,7 +83,6 @@ function trackShoulders(track: Track): TerrainMaterialRegion[] {
   }));
 }
 
-/** Slag pools and flood water: a liquid sheet over the track's lowland, its level the track's own. */
 function trackLiquid(track: Track): OceanEnvironmentDescriptor | null {
   const liquid = track.def.liquid;
   if (liquid === undefined) return null;
@@ -104,11 +100,9 @@ function trackLiquid(track: Track): OceanEnvironmentDescriptor | null {
   });
 }
 
-/** Haul road runs the whole corridor and a little past both ends so neither cap is a visible seam. */
 const HAUL_START_Z = -70;
 const HAUL_END_Z = EXIT_Z + 60;
 
-/** Frontage width the near wall lines: buildings front on the drivable corridor plus its shoulders. */
 const NEAR_WALL_FRONTAGE = 76;
 /** Second row sits a block back so the corridor reads as layered depth, not a single flat facade. */
 const FAR_WALL_FRONTAGE = 132;

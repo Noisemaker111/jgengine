@@ -1,6 +1,5 @@
 import { createHudLayout, type HudAnchor, type HudLayoutStore } from "@jgengine/core/hud/hudLayout";
 
-/** The rig panels a player may hide, with the chip label each one had on the old HUD canvas. */
 export const HUD_PANELS = [
   { id: "dead-air", chip: "Dead air", anchor: "top-left" },
   { id: "overdrive", chip: "Overdrive", anchor: "left" },
@@ -12,7 +11,6 @@ export const HUD_PANELS = [
 ] as const satisfies readonly { id: string; chip: string; anchor: HudAnchor }[];
 export type HudPanelId = (typeof HUD_PANELS)[number]["id"];
 
-/** The key the old `useHudLayout({ storageKey: "scrap-signal" })` wrote, so earlier choices carry over. */
 export const HUD_STORAGE_KEY = "jg:hud:scrap-signal";
 
 type Storage = Pick<globalThis.Storage, "getItem" | "setItem">;
@@ -23,10 +21,6 @@ export interface ScrapHudPanels {
   subscribe(listener: () => void): () => void;
 }
 
-/**
- * Which rig panels are shown, on the engine's headless HUD layout model: hydrated from and written
- * back to the same storage entry the old HUD canvas used.
- */
 export function createScrapHudPanels(storage: Storage | null): ScrapHudPanels {
   const layout = createHudLayout();
   for (const panel of HUD_PANELS) layout.register(panel.id, { anchor: panel.anchor, dx: 0, dy: 0 });
@@ -41,7 +35,6 @@ export function createScrapHudPanels(storage: Storage | null): ScrapHudPanels {
 }
 
 let shared: ScrapHudPanels | null = null;
-/** The page's panel choices, persisted to local storage when the page has it. */
 export function scrapHudPanels(): ScrapHudPanels {
   shared ??= createScrapHudPanels(typeof localStorage === "undefined" ? null : localStorage);
   return shared;

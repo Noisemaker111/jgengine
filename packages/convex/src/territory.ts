@@ -4,10 +4,7 @@ import type { GenericQueryCtx } from "convex/server";
 type JGQueryCtx = GenericQueryCtx<JGDataModel>;
 import type { GenericId } from "convex/values";
 
-/**
- * Trusted host hydration for claim/bootstrap work; the caller checks access before invoking it.
- * @capability territory-host-hydration Load an actor profile and bounded claim chunks for a host transaction.
- */
+/** @capability territory-host-hydration Load an actor profile and bounded claim chunks for a host transaction. */
 export async function loadTerritoryState(ctx: JGQueryCtx | JGMutationCtx, args: { serverId: string; gameId: string; userId: string; chunkKeys: readonly string[] }): Promise<GameRuntimeSnapshot> {
   const keys = [...new Set(args.chunkKeys)];
   if (keys.length > 64) throw new RangeError("Territory read exceeds 64 chunks");
@@ -20,10 +17,7 @@ export async function loadTerritoryState(ctx: JGQueryCtx | JGMutationCtx, args: 
   return createRuntimeSnapshot({ serverId: args.serverId, gameId: args.gameId, players: { [args.userId]: (profile?.playerState as RuntimePlayerRow | undefined) ?? createEmptyPlayerRow(args.userId) }, chunks, revision: profile?.revision ?? 0 });
 }
 
-/**
- * Persist dirty territory chunks and profiles in the caller's mutation, without a shared-server write.
- * @capability territory-host-persistence Persist dirty ownership chunks and profiles without rewriting the shared server.
- */
+/** @capability territory-host-persistence Persist dirty ownership chunks and profiles without rewriting the shared server. */
 export async function persistTerritoryState(ctx: JGMutationCtx, snapshot: GameRuntimeSnapshot, nowMs = Date.now()): Promise<void> {
   for (const userId of snapshot.dirty.players) {
     const playerState = snapshot.players[userId];

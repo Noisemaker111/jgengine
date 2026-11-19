@@ -9,11 +9,9 @@ export interface AbilitySlotConfig {
   resourceCost?: number;
   castType?: AbilityCastType;
   flashMs?: number;
-  /** Shared cooldown groups this slot participates in — ids declared in `AbilityKitOptions.groups`. */
   groups?: readonly string[];
 }
 
-/** A cooldown shared across every member slot: casting any member starts it, and no member can cast while it runs. One group that every slot joins is an MMO global cooldown. */
 export interface AbilityCooldownGroup {
   id: string;
   cooldownMs: number;
@@ -25,9 +23,7 @@ export interface AbilityCooldownGroup {
  * per-call `resourceAvailable` argument — the cast path actually spends instead of only gating (#357).
  */
 export interface AbilityResource {
-  /** Current spendable amount, read fresh on each cast/snapshot. */
   available(): number;
-  /** Deduct `cost` from the pool after a successful cast. */
   spend(cost: number): void;
 }
 
@@ -44,7 +40,6 @@ export interface AbilitySlotSnapshot {
   resourceCost: number;
   charges: number;
   chargesMax: number;
-  /** Max of the slot's own recharge and any blocking group cooldown. */
   cooldownRemainingMs: number;
   cooldownFraction: number;
   /** Remaining ms on the slowest of the slot's shared cooldown groups; 0 when unblocked. */
@@ -60,7 +55,6 @@ export interface AbilitySlotRetune {
   resourceCost?: number;
 }
 
-/** Mutable kit state; slot/group definitions and any bound resource are saved by the caller. */
 export interface AbilityKitState {
   slots: {
     id: string;
@@ -80,11 +74,9 @@ export type AbilityCastResult =
 export interface AbilityKit {
   slots(): readonly string[];
   config(slotId: string): AbilitySlotConfig | null;
-  /** Detached persistence state, including in-flight timers and slot retuning. */
   state(): AbilityKitState;
   state(slotId: string, resourceAvailable?: number): AbilitySlotSnapshot | null;
   snapshot(resourceAvailable?: number): AbilitySlotSnapshot[];
-  /** Restore without spending resources; returns false without mutation for mismatched slot/group ids. */
   restore(next: AbilityKitState): boolean;
   canCast(slotId: string, resourceAvailable?: number): AbilityCastResult;
   cast(slotId: string, resourceAvailable?: number): AbilityCastResult;
@@ -150,8 +142,6 @@ function snapshotOf(runtime: SlotRuntime, resourceAvailable: number, group: Grou
 }
 
 /**
- * A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
- *
  * @capability ability-bar a bar of cooldown-gated abilities the player triggers by slot
  * @capability global-cooldown share one cooldown across every ability slot (MMO global cooldown) with a cooldown group
  */

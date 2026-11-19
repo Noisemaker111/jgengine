@@ -28,11 +28,9 @@ const SELF = "check-path-portability.test.ts";
 const SKIP_DIRS = new Set(["node_modules", "dist", "build", "coverage", ".scratch"]);
 const ALLOW_REL = "scripts/path-portability-allow.json";
 
-/** What the assertion is compared against, and where the separator comes from. */
 const ASSERTION = /\.(?:toContainEqual|toStrictEqual|toContain|toEqual|toBe|toThrow|toMatch)\b|\b(?:includes|endsWith|startsWith)\(/;
 /** `join("/repo", ...)` and `resolve("/repo", ...)`: a leading `/` is not a root on Windows. */
 const ROOTING_CALL = /\b(?:join|resolve)\(\s*["'`]\//;
-/** Bare separator comparisons: the separator is the whole expected value. */
 const BARE_SEPARATOR = /\.(?:toContain|toEqual|toBe|endsWith|startsWith)\(\s*["'](?:\\+|\/)["']\s*\)/;
 /**
  * A call whose result carries the running platform's separator, in the same assertion: a literal on
@@ -50,12 +48,10 @@ export interface PathHit {
 }
 
 interface Literal {
-  /** Source text inside the quotes, escapes intact. */
   raw: string;
   line: number;
 }
 
-/** Every quoted string in `source`, by line: regex literals and comments are left alone. */
 function literalsOf(source: string): Literal[] {
   const found: Literal[] = [];
   const lines = source.split("\n");
@@ -89,7 +85,6 @@ function isWindowsPath(raw: string): boolean {
   return decoded.split(/[\\/]/).filter(Boolean).length >= 2;
 }
 
-/** A literal that is only a path (no spaces, at least one separator). */
 function isPathish(raw: string): boolean {
   return !/\s/.test(raw) && /[\\/]/.test(raw);
 }
@@ -110,7 +105,6 @@ function fixFor(rule: string, raw: string): string {
   return "`sep`, or a value built the same way the code builds it";
 }
 
-/** Assertions in `source` that encode one platform's separator, by line. */
 export function findSeparatorAssertions(source: string): PathHit[] {
   const hits: PathHit[] = [];
   const literals = literalsOf(source);
@@ -118,7 +112,6 @@ export function findSeparatorAssertions(source: string): PathHit[] {
 
   const balance = (text: string): number => (text.match(/\(/g) ?? []).length - (text.match(/\)/g) ?? []).length;
 
-  /** The assertion a literal sits in, when it spans lines: from the `expect(` to its closing paren. */
   const statementAt = (index: number): string => {
     let start = index;
     const opens = (at: number): boolean => ASSERTION.test(lines[at] ?? "") || /\bexpect\(/.test(lines[at] ?? "");
@@ -221,7 +214,6 @@ export function readAllowlist(root: string): AllowEntry[] {
   });
 }
 
-/** Every separator assertion in the repository, with the allowlist entry that explains it or null. */
 export function scanPathPortability(root: string): PortabilityFinding[] {
   const allow = readAllowlist(root);
   const findings: PortabilityFinding[] = [];

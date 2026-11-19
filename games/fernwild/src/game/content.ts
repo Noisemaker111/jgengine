@@ -4,7 +4,6 @@ import { ITEMS } from "./data/items";
 import { SPECIES } from "./data/species";
 import { MAX_LEVEL, SURVIVOR } from "./data/survivor";
 
-/** Every entity by catalog id: the survivor and each species. A creature's body stays where it falls, for harvesting. */
 const entities: Record<string, GameContextEntityEntry> = {
   player: {
     role: "player",
@@ -28,7 +27,6 @@ const entities: Record<string, GameContextEntityEntry> = {
   ),
 };
 
-/** Every item answers its hotbar key: the survivor system's "hotbar" use equips or eats it. */
 const items: Record<string, GameContextItemEntry> = Object.fromEntries(ITEMS.map((item) => [item.id, { use: "hotbar" }]));
 
 export const content = {

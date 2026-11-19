@@ -1,9 +1,3 @@
-/**
- * The engine systems the home page lists. `knobs` are real option names a game sets;
- * `ref` is a `skill/intent-key` row from a generated `capabilities.md` (its import line is
- * shown) and `capabilityIndex.test.ts` fails if one stops existing. `home` is the feature
- * folder for systems that have no capability row of their own.
- */
 export interface EngineSystem {
   readonly name: string;
   readonly line: string;

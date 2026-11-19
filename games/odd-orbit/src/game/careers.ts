@@ -10,27 +10,21 @@ import { WORK_EARN_PER_SECOND } from "./objects/catalog";
 import { bloomHarvest } from "./sim/bloom";
 import type { BloomCrop, HouseholdState, Lifestyle, MemberState } from "./session/types";
 
-/** The household's two paid stations. A post is native to one of them, or to both. */
 export type StationKind = "yield" | "bloom";
 
 export const STATION_LABEL: Record<StationKind, string> = { yield: "Yield Console", bloom: "Bloom Planter" };
 export const STATION_NAME: Record<StationKind, string> = { yield: "Yield", bloom: "Bloom" };
 
-/** A post is one of the household's existing jobs; the ladder is what the job grows into. */
 export type CareerId = (typeof JOBS)[number];
 
 export interface CareerDef {
   id: CareerId;
   label: string;
-  /** The station this post calls its own; `either` covers both from the first rung. */
   station: StationKind | "either";
-  /** Standing on the household track that opens the post on the board. */
   postGate: number;
-  /** Pay factor at each rung on the post's own station. */
   native: readonly [number, number, number];
   /** Pay factor when a cross-trained being covers the other station (rung 1 cannot). */
   cover: readonly [number, number, number];
-  /** Extra ration crystals at each rung when this post brings in a Bloom harvest. */
   rations: readonly [number, number, number];
   blurb: string;
 }
@@ -50,15 +44,12 @@ export const CAREERS: readonly CareerDef[] = [
 
 const CAREER_BY_ID = new Map(CAREERS.map((career) => [career.id, career]));
 
-/** Rung names, shared by every ladder: rung 1 is the post as it starts. */
 export const RUNG_NAMES = ["Hand", "Adept", "Master"] as const;
 export const RUNG_MARKS = ["I", "II", "III"] as const;
 export type Rung = 1 | 2 | 3;
 
-/** The two default posts a rhythm switches to; both open at zero standing. */
 export const DEFAULT_POST: Record<Lifestyle, CareerId> = { yield: "Signal-keeper", bloom: "Botanist" };
 
-/** Mastery tiers per station: a being's shift count crosses a level at each min. */
 export const MASTERY_TIERS: readonly ReputationTier[] = [
   { id: "novice", min: 0, relation: "neutral" },
   { id: "practised", min: 1, relation: "neutral" },
@@ -71,10 +62,8 @@ export const MASTERY_LABEL: Record<string, string> = {
   novice: "I", practised: "II", skilled: "III", expert: "IV", master: "V",
 };
 
-/** +5% pay for every mastery level above the first. */
 export const MASTERY_PAY_PER_LEVEL = 0.05;
 
-/** One standing ledger serves mastery (per station) and the post ladder (household). */
 export const ORBIT_STANDING = {
   tracks: [
     { id: "yield", label: "Yield mastery", initial: 0, min: 0, max: 999, tiers: MASTERY_TIERS },
@@ -100,10 +89,8 @@ export const ORBIT_STANDING = {
   ],
 } as const;
 
-/** Standing every post's gate reads. */
 export const STANDING_TRACKS = ["yield", "bloom", "orbit"] as const;
 
-/** The board of posts: a post opens at authored household standing, checked against live facts. */
 export const CAREER_BOARD = createGateSet({
   gates: CAREERS.map((career) => ({
     id: `post:${career.id}`,
@@ -128,7 +115,6 @@ export const CAREER_NODES: readonly UpgradeNodeDef[] = CAREERS.flatMap((career):
 
 export const CAREER_NODE_IDS: ReadonlySet<string> = new Set(CAREER_NODES.map((node) => node.id));
 
-/** Live handles over a save's standing records, post rungs and the ladder they gate. */
 export interface CareerView {
   standing: Standing;
   tree: ReturnType<typeof createUpgradeTree>;
@@ -145,7 +131,6 @@ export function careerById(id: string): CareerDef | null {
   return CAREER_BY_ID.get(id as CareerId) ?? null;
 }
 
-/** A being's post. Older saves stored any of `JOBS`; every job has a post. */
 export function careerOf(member: MemberState): CareerDef {
   const career = careerById(member.job);
   if (career !== null) return career;
@@ -159,7 +144,6 @@ export function rungIn(view: CareerView, member: MemberState): Rung {
   return 1;
 }
 
-/** The station a post calls its own, or the one an `either` post is working now. */
 export function stationOf(member: MemberState): StationKind {
   const career = careerOf(member);
   return career.station === "either" ? (member.lifestyle === "bloom" ? "bloom" : "yield") : career.station;
@@ -175,7 +159,6 @@ export interface StationCoverage {
   reason: string;
 }
 
-/** Whether a being can take a station at all: their post, or the other station once cross-trained. */
 export function coverageOf(view: CareerView, member: MemberState, station: StationKind): StationCoverage {
   const career = careerOf(member);
   if (stationCovers(career, station)) return { ok: true, reason: "" };
@@ -190,7 +173,6 @@ export function coverageOf(view: CareerView, member: MemberState, station: Stati
 export interface StationPay {
   career: CareerDef;
   rung: Rung;
-  /** True when the station is the post's own. */
   native: boolean;
   careerFactor: number;
   masteryLevel: number;
@@ -198,9 +180,7 @@ export interface StationPay {
   masteryFactor: number;
   /** Career and mastery multiplied; 0 when the being cannot take the station. */
   factor: number;
-  /** Extra ration crystals this post brings to a Bloom harvest at this rung. */
   rations: number;
-  /** Shifts worked at this station, the number mastery is read from. */
   shifts: number;
 }
 
@@ -211,7 +191,6 @@ function atRung(values: readonly number[], rung: number): number {
   return value;
 }
 
-/** What one being is paid on one station, from their post rung, mastery and shift count. */
 export function stationPayIn(view: CareerView, member: MemberState, station: StationKind): StationPay {
   const career = careerOf(member);
   const rung = rungIn(view, member);
@@ -237,7 +216,6 @@ export function stationPay(state: HouseholdState, member: MemberState, station: 
   return stationPayIn(careerView(state), member, station);
 }
 
-/** A Bloom harvest with the being's post and mastery applied; the base crop stays the game's. */
 export function bloomHarvestIn(view: CareerView, member: MemberState, crop: BloomCrop, friend: boolean): { rations: number; credits: number } {
   const base = bloomHarvest(crop, friend);
   const pay = stationPayIn(view, member, "bloom");
@@ -253,22 +231,18 @@ export function yieldRateIn(view: CareerView, member: MemberState): number {
   return pay.factor <= 0 ? 0 : WORK_EARN_PER_SECOND * pay.factor;
 }
 
-/** Credits a full Yield shift pays, as the inspector previews it. */
 export const YIELD_SHIFT_SECONDS = 20;
 
 export function yieldShiftValue(state: HouseholdState, member: MemberState): number {
   return Math.round(yieldRateIn(careerView(state), member) * YIELD_SHIFT_SECONDS * 100) / 100;
 }
 
-/** Rung the being can buy next, and what it still needs. */
 export interface RungProgress {
   career: CareerDef;
   rung: Rung;
   nextRung: 2 | 3 | null;
   nextLabel: string | null;
-  /** Household standing the next rung needs. */
   needs: number | null;
-  /** Household standing now. */
   have: number;
   canPromote: boolean;
   reason: string;
@@ -298,7 +272,6 @@ export function rungProgress(state: HouseholdState, member: MemberState): RungPr
   return rungProgressIn(careerView(state), member);
 }
 
-/** Buy the next rung of the being's post. Returns the reason when the ladder refuses. */
 export function promote(state: HouseholdState, member: MemberState): { ok: boolean; reason: string; rung: Rung } {
   const view = careerView(state);
   const progress = rungProgressIn(view, member);
@@ -335,7 +308,6 @@ export function postRows(state: HouseholdState, member: MemberState): PostRow[] 
   });
 }
 
-/** Whether the post's board gate is open for this being. */
 export function postOpen(state: HouseholdState, member: MemberState, career: CareerDef): boolean {
   return postRows(state, member).find((row) => row.career.id === career.id)?.open ?? false;
 }
@@ -359,7 +331,6 @@ export function postForLifestyle(lifestyle: Lifestyle): CareerDef {
   return CAREER_BY_ID.get(DEFAULT_POST[lifestyle])!;
 }
 
-/** A save written before careers has standing records absent; align each post with its rhythm. */
 export function alignLegacyPosts(state: HouseholdState): boolean {
   let changed = false;
   for (const id of state.order) {

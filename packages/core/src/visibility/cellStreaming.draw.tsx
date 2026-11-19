@@ -15,7 +15,6 @@ import { boundCellStreaming, type CellStreaming } from "./cellStreaming";
 
 const fetched = new Map<string, Promise<void>>();
 
-/** Fetch a model file once into the browser cache and start its parse, off the frame. */
 function fetchModel(url: string): Promise<void> {
   let known = fetched.get(url);
   if (known === undefined) {
@@ -27,12 +26,7 @@ function fetchModel(url: string): Promise<void> {
   return known;
 }
 
-/**
- * Draw a game's streamed cells: hold cells that are not ready on their far proxy, tell streaming when a
- * leaving cell's proxy is built so its props can go, and fetch every object model before a cell's
- * content is placed back. Mounted by the world scene; does nothing until a game binds its streaming.
- * @internal
- */
+/** @internal */
 export function cellStreamingDraw(ctx: GameContext, getModelUrls: () => readonly string[]): EngineDraw {
   let pool: StaticDrawPool | null = null;
   let attached: { streaming: CellStreaming; detach: () => void } | null = null;
@@ -79,12 +73,7 @@ export function cellStreamingDraw(ctx: GameContext, getModelUrls: () => readonly
   };
 }
 
-/**
- * Draw a game's streamed cells: hold cells that are not ready on their far proxy, tell streaming when a
- * leaving cell's proxy is built so its props can go, and fetch every object model before a cell's
- * content is placed back. Mounted by the world scene; does nothing until a game binds its streaming.
- * @internal
- */
+/** @internal */
 export function CellStreamingDriver({ modelUrls }: { modelUrls: () => readonly string[] }) {
   const ctx = useGameContext();
   const urls = useRef(modelUrls);

@@ -4,14 +4,11 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from "@jgengine
 import type { CodexEntryView } from "@jgengine/core/codex/codex";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
-/** Props for {@link CodexPanel}. */
 export interface CodexProps {
   entries: readonly CodexEntryView[];
   title?: string;
   columns?: number;
-  /** Mask name/description of secret + undiscovered entries as "???". Default true. */
   maskSecrets?: boolean;
-  /** Optional per-entry icon; falls back to the def `icon` glyph, a lock, or a silhouette dot. */
   renderIcon?: (entry: CodexEntryView) => ReactNode;
   onSelect?: (id: string) => void;
   emptyLabel?: string;
@@ -22,14 +19,7 @@ export interface CodexProps {
 const ALL = "__all";
 const MASK = "???";
 
-/**
- * CodexPanel / bestiary gallery — category tabs, a responsive grid of entry cards
- * (discovered vs. locked, secret entries masked until found), and a header
- * summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail
- * pane.
- *
- * @capability codex-gallery codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
- */
+/** @capability codex-gallery codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header */
 export function CodexPanel({
   entries,
   title = "Codex",

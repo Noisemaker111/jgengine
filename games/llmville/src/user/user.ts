@@ -31,12 +31,10 @@ export interface AvatarDefinition {
   outfit: string;
   bio: string;
   perkTitle: string;
-  /** Public URL under `llmville/public/` (e.g. `/images/…` for 9:16 portraits). */
   portraitSrc: string;
   perkKind: FounderPerkKind;
 }
 
-/** Portrait art: `llmville/public/images/*_portrait.png` (3:4 cards). */
 export const AVATARS: readonly [AvatarDefinition, ...AvatarDefinition[]] = [
   {
     id: "sam_altman",
@@ -87,7 +85,6 @@ export const AVATARS: readonly [AvatarDefinition, ...AvatarDefinition[]] = [
 
 const PROFILE_USERNAME_REGEX = /^[a-z0-9_]{3,24}$/;
 
-/** One-line bonus for mentor picker cards. */
 export function getMentorPerkSummary(avatarId: AvatarId): string {
   const id = normalizeAvatarId(avatarId);
   const pct = FOUNDER_PERK_DISPLAY_PERCENT[id];

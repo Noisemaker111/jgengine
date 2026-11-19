@@ -21,7 +21,6 @@ function assetInstances(asset: GeneratedAsset): StaticShapeInstance[] {
   }));
 }
 
-/** Props for {@link GeneratedAsset}: the placed instance's `meta` (assetId + params + seed) and transform. */
 export interface GeneratedAssetProps {
   /** The placed instance meta — `{ assetId, seed, ...params }`. Re-resolved every render, never baked. */
   meta: Record<string, unknown> | undefined;
@@ -88,7 +87,6 @@ export function GeneratedAssetInstance(props: GeneratedAssetProps) {
   return null;
 }
 
-/** All parts of one generated asset, batched into one instanced box draw per color. */
 function GeneratedParts({ asset }: { asset: GeneratedAsset }) {
   const instances = useMemo<StaticShapeInstance[]>(() => assetInstances(asset), [asset]);
   return <StaticShapeInstances instances={instances} />;
@@ -105,7 +103,7 @@ function PartsPreview(props: GeneratorPreviewProps) {
   return asset === null ? null : <GeneratedParts asset={asset} />;
 }
 
-/** Registers the variant-tile preview for parts generators. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerPartsPreview(): void {
   registerGeneratorPreview(PARTS_OUTPUT, {
     Component: PartsPreview,

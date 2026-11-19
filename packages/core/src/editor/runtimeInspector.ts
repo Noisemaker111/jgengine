@@ -6,13 +6,11 @@ import {
   type RuntimeStateSnapshot,
 } from "./liveSync";
 
-/** Play-mode sim gate held by the editor host — pause freezes ticks; step runs N frames then re-pauses. */
 export interface RuntimePlayControl {
   paused: boolean;
   pendingSteps: number;
 }
 
-/** Compact reverse-channel view for the play-mode inspector and `runtime_summary` RPC. */
 export interface RuntimeInspectorSummary {
   seq: number;
   entityCount: number;
@@ -27,7 +25,6 @@ export interface RuntimeInspectorSummary {
   play: RuntimePlayControl;
 }
 
-/** One resolved runtime field returned by `runtime_get`. */
 export interface RuntimeInspectorGetResult {
   id: string;
   kind: "entity" | "tunable" | "missing";
@@ -73,11 +70,7 @@ export function summarizeRuntimeInspector(
   };
 }
 
-/**
- * Resolves one entity, entity field, or tunable from the reverse-channel snapshot (with overrides
- * layered on top for entity rows).
- * @capability editor-runtime-inspector read one live runtime entity field or tunable
- */
+/** @capability editor-runtime-inspector read one live runtime entity field or tunable */
 export function getRuntimeInspectorValue(
   snapshot: RuntimeStateSnapshot,
   overrides: Readonly<Record<string, RuntimeEntityState>>,
@@ -157,11 +150,7 @@ function asPosition(value: unknown): { x: number; y: number; z: number } | null 
   return { x: record["x"], y: record["y"], z: record["z"] };
 }
 
-/**
- * Plans a play-mode poke: builds the ephemeral entity/tunable override and, when `writeBack` is
- * true, the undoable document commands that promote it into the scene document.
- * @capability editor-runtime-inspector plan a play-mode runtime_set with optional document write-back
- */
+/** @capability editor-runtime-inspector plan a play-mode runtime_set with optional document write-back */
 export function planRuntimeInspectorSet(
   document: EditorDocument,
   input: {
@@ -288,7 +277,6 @@ export function runtimeEntityMetaWriteBackCommand(
   return null;
 }
 
-/** Default play-control state when entering play mode (running). */
 export function createRuntimePlayControl(paused = false): RuntimePlayControl {
   return { paused, pendingSteps: 0 };
 }

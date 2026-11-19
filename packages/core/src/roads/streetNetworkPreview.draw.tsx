@@ -11,7 +11,6 @@ import { mergeRibbonGeometry } from "./RoadRibbons.draw";
 import { RACE_CIRCUIT_OUTPUT, type CircuitRoute, type RaceCircuit } from "./raceCircuit";
 import { STREET_NETWORK_OUTPUT, type StreetNetwork } from "./streetGenerator";
 
-/** One flat street layer of a top-down preview: polylines at a width, in one colour. */
 export interface StreetPreviewLayer {
   lines: readonly { points: readonly RoadPoint[]; width: number }[];
   color: string;
@@ -19,7 +18,7 @@ export interface StreetPreviewLayer {
   lift: number;
 }
 
-/** The street layers of a network, and its lap over them when there is one. @internal */
+/** @internal */
 export function streetPreviewLayers(network: StreetNetwork, route: CircuitRoute | null): StreetPreviewLayer[] {
   const layers: StreetPreviewLayer[] = [{ lines: network.streets.map((street) => ({ points: street.points, width: street.width })), color: "#3c4148", lift: 0.05 }];
   if (route !== null && route.centerline.length > 1) {

@@ -16,7 +16,6 @@ const text = (build: () => string, type: string) => (): Response =>
 
 type Handler = (request: Request) => Response | Promise<Response>;
 
-/** Path → method → handler. */
 const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
   "/api/github-proxy": { GET: githubProxy, POST: githubProxy },
   "/api/github-contributions": { GET: githubContributions },

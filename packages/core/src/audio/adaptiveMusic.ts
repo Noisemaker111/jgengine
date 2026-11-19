@@ -1,11 +1,6 @@
 import type { MusicInstrument, MusicTheme, NoteEvent } from "./music";
 import type { MusicTier } from "./musicState";
 
-/**
- * Soundtrack that follows the fight: the shell raises an intensity when the local player deals or
- * takes damage and lets it decay, and the tier ladder picks the theme. `true` uses the built-in
- * explore / tension / fight themes; an object swaps in the game's own tiers and themes.
- */
 export interface AdaptiveMusicConfig {
   /** Tier ladder over intensity `0..1`. Default {@link DEFAULT_ADAPTIVE_TIERS}. */
   tiers?: readonly MusicTier[];
@@ -13,11 +8,8 @@ export interface AdaptiveMusicConfig {
   release?: number;
   /** Intensity lost per second of quiet. Default 0.1. */
   decayPerSecond?: number;
-  /** Intensity added when the local player lands a hit. Default 0.18. */
   onHit?: number;
-  /** Intensity added when the local player is hit. Default 0.3. */
   onHurt?: number;
-  /** Intensity added when the local player kills. Default 0.15, on top of the hit. */
   onKill?: number;
 }
 
@@ -31,7 +23,6 @@ function every(step: number, beats: number, make: (beat: number, index: number) 
   return out;
 }
 
-/** Slow and open: an A-minor pad under a sparse flute, quiet enough to sit under exploring. */
 const explore: MusicTheme = {
   id: "jg.explore",
   bpm: 68,
@@ -50,7 +41,6 @@ const explore: MusicTheme = {
   ],
 };
 
-/** Something is near: a pulsing low string ostinato and a held horn, no drums yet. */
 const tension: MusicTheme = {
   id: "jg.tension",
   bpm: 96,
@@ -65,7 +55,6 @@ const tension: MusicTheme = {
   ],
 };
 
-/** The fight: war drums and a driving bass, brass stabs on the turnaround. */
 const fight: MusicTheme = {
   id: "jg.fight",
   bpm: 132,
@@ -85,10 +74,8 @@ const fight: MusicTheme = {
   ],
 };
 
-/** The built-in adaptive themes, keyed by id. */
 export const ADAPTIVE_THEMES: Readonly<Record<string, MusicTheme>> = { [explore.id]: explore, [tension.id]: tension, [fight.id]: fight };
 
-/** Explore below 0.25, tension from 0.25, fight from 0.6 and held at least 6 s once it starts. */
 export const DEFAULT_ADAPTIVE_TIERS: readonly MusicTier[] = [
   { id: "explore", theme: explore.id, enter: 0 },
   { id: "tension", theme: tension.id, enter: 0.25, holdMs: 3000 },
@@ -99,9 +86,7 @@ export const DEFAULT_ADAPTIVE_TIERS: readonly MusicTier[] = [
 export interface CombatIntensity {
   bump(amount: number, nowMs: number): void;
   read(nowMs: number): number;
-  /** The level and when it was last settled, for save/load and tests. */
   snapshot(): CombatIntensityState;
-  /** Put a snapshot back. */
   restore(next: CombatIntensityState): void;
 }
 

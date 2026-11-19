@@ -2,7 +2,6 @@ import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
 
-/** A raptor (aggressive, 180 torpor at level 1) 25 m away; the bow and tranquilizer arrows drop it before it reaches you. */
 export default defineProof(game, {
   proves: ["taming.ranged-knockout"],
   setup(s) {

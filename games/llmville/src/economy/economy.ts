@@ -29,7 +29,6 @@ export function formatCompactNumber(value: number): string {
   return `${sign}${(flooredValue / 1_000_000).toFixed(2)}M`;
 }
 
-/** Cash reads to the cent under $1,000 and abbreviates above it. */
 export function formatMoney(value: number): string {
   const rounded = Math.round(value * 100) / 100;
   const abs = Math.abs(rounded);

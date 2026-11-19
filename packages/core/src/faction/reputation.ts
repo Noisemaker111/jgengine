@@ -8,11 +8,7 @@ export interface ReputationTier {
   relation: FactionRelation;
 }
 
-/**
- * Map a faction standing value to its named reputation tier.
- *
- * @capability reputation faction standing that crosses named reputation tiers
- */
+/** @capability reputation faction standing that crosses named reputation tiers */
 export function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier {
   const match = tierAt(
     tiers.map((tier) => ({ at: tier.min, id: tier })),
@@ -25,14 +21,12 @@ export function tierForStanding(tiers: readonly ReputationTier[], standing: numb
 }
 
 export interface ReputationLedgerConfig {
-  /** Named bands this caller's standings cross, ascending by `min`. */
   tiers: readonly ReputationTier[];
   initial?: Readonly<Record<string, number>>;
   min?: number;
   max?: number;
 }
 
-/** Plain JSON standings of a {@link ReputationLedger}: stored values only, `initial` stays config. */
 export interface ReputationLedgerState {
   records: Record<string, Record<string, number>>;
 }

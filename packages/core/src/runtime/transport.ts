@@ -4,12 +4,10 @@ import type { PresenceTransport } from "../multiplayer/presenceContract";
 import type { WorldDiff } from "./worldReplication";
 import type { WorldSnapshot } from "./worldSnapshot";
 
-/** A revision-stamped world baseline or compact diff sent to a server-authoritative client. */
 export type WorldSyncFrame =
   | { kind: "baseline"; revision: number; snapshot: WorldSnapshot }
   | { kind: "diff"; revision: number; diff: WorldDiff };
 
-/** A short-lived credential allowing a disconnected client to reclaim one server membership. */
 export type ResumeTicket = {
   userId: string;
   serverId: string;
@@ -68,12 +66,10 @@ export type GameRuntimeTransport = {
    * the user a member while any of their sessions is still live.
    */
   joinServer: (args: { gameId: string; serverId?: string | undefined; role?: MultiplayerRole; sessionId?: string }) => Promise<JoinServerOutcome>;
-  /** Leave a server. With `sessionId` only that session ends; the user leaves once no session remains. Without it the user leaves outright. */
   leaveServer: (args: { serverId: string; sessionId?: string }) => Promise<void>;
   runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>;
 };
 
-/** Fresh id for one client session's join/leave pair (see {@link GameRuntimeTransport.joinServer}). */
 export function createTransportSessionId(): string {
   return crypto.randomUUID();
 }
@@ -110,7 +106,6 @@ export type PresencePoseRow = {
   userId: string;
   /** Set when the host tracks presence per session, so one user can hold two rows. */
   sessionId?: string;
-  /** Actor class, e.g. `"player"` / `"agent"` — a host may clamp each differently. */
   kind?: string;
   /** Display name carried on the row, so a nameplate needs no second lookup. */
   label?: string;

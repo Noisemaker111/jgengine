@@ -17,7 +17,6 @@ import {
 } from "./tunableSchema";
 import type { Devtools, DevtoolsControl, Tunable } from "./types";
 
-/** Internal mutable record backing a registered control: schema metadata, current value, and change listeners. */
 export interface ControlRecord {
   name: string;
   kind: DevtoolsControlKind;
@@ -45,7 +44,6 @@ export function isStructuralKind(kind: DevtoolsControlKind): boolean {
   return kind === "vec2" || kind === "vec3" || kind === "vec4" || kind === "interval";
 }
 
-/** Controls subsystem: the public controls facade plus internal register/write helpers and the record map. */
 export interface ControlsModule {
   controls: Devtools["controls"];
   register: <T>(name: string, initial: T, options?: TunableOptions<T>) => Tunable<T>;
@@ -53,7 +51,6 @@ export interface ControlsModule {
   controlRecords: Map<string, ControlRecord>;
 }
 
-/** Create the controls subsystem that registers, validates, and mutates tunable controls, notifying on change. */
 export const createControlsModule = (deps: { signal: ChangeSignal }): ControlsModule => {
   const { signal } = deps;
 

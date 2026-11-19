@@ -4,7 +4,7 @@ import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass.js";
 import { GTAOBlendShader } from "three/examples/jsm/shaders/GTAOShader.js";
 import { HALF_ROUNDING_GLSL } from "./halfPrecision.draw";
 
-/** The composite's fragment shader, exported for the GPU check that it matches the three draws. @internal */
+/** @internal */
 export const COMPOSITE_FRAGMENT = /* glsl */ `
   uniform sampler2D tBeauty;
   uniform sampler2D tAo;
@@ -74,12 +74,10 @@ export class SceneCompositePass extends Pass {
     this.quad = new FullScreenQuad(this.material);
   }
 
-  /** This frame's denoised AO, which the next render multiplies on. */
   takeAo(texture: THREE.Texture, intensity: number): void {
     this.ao = { texture, intensity };
   }
 
-  /** This frame's contact-shadow light factor, which the next render multiplies on. */
   takeShadow(texture: THREE.Texture): void {
     this.shadow = texture;
   }
@@ -92,7 +90,6 @@ export class SceneCompositePass extends Pass {
     this.shadow = null;
   }
 
-  /** Draw the last render's composite again into `target`, from the same inputs. */
   redraw(renderer: THREE.WebGLRenderer, target: THREE.WebGLRenderTarget): void {
     this.draw(renderer, target);
   }

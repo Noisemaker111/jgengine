@@ -1,8 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/**
- * The model report cards: name and source on top, three stat bars (quality, serving speed, data
- * yield) and a state-specific action on the right. Uses real model stats when available.
- */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
@@ -25,7 +21,6 @@ import { C, FULL, Label, Row, Text } from "../../ui/kit";
 import { MODEL_CARD_ACTION_VARIANT, ModelCardAction } from "./ModelCardAction";
 import { getDeltaFillOpacity, ModelStatRow, ModelTrainingDurationEstimate } from "./ModelPresentation";
 
-/** The card's frame: a report sheet with the name, the stats and the action column. */
 function ReportCard({ title, subtitle, onTitle, titleColor = C.cream, highlight = false, glow = false, stats, action }: {
   title: string; subtitle: ReactNode; onTitle?: (() => void) | undefined; titleColor?: string; highlight?: boolean; glow?: boolean; stats: ReactNode; action: ReactNode;
 }) {
@@ -43,17 +38,14 @@ function ReportCard({ title, subtitle, onTitle, titleColor = C.cream, highlight 
   </RuneView>;
 }
 
-/** State A: base model — train, license, scrape progress, serve the base or locked. */
 export function BaseModelCard({ model, justUnlocked, highlight = false, onPrimaryAction, onViewDetail, trainingSecondsRemaining, estimatedTrainingDurationSeconds }: {
   model: BaseModelLibraryEntry;
   justUnlocked?: boolean;
-  /** The tutorial points at this card. */
   highlight?: boolean;
   onPrimaryAction: () => void;
   onViewDetail?: (baseModelId: string) => void;
   /** When this base model is currently being trained, seconds until completion */
   trainingSecondsRemaining?: number | null;
-  /** Live preview from installed GPUs and site throttle (replaces static catalog hint). */
   estimatedTrainingDurationSeconds?: number | undefined;
 }) {
   const training = trainingSecondsRemaining != null;
@@ -82,7 +74,6 @@ export function BaseModelCard({ model, justUnlocked, highlight = false, onPrimar
     </>} />;
 }
 
-/** State B: Unknown model — Reveal (trained, stats hidden) */
 export function UnknownModelCard({ name = "Unknown Model", qualityTier, onReveal }: { name?: string; qualityTier?: GameUserModel["qualityTier"]; onReveal: () => void }) {
   return <ReportCard title="Unknown Model" titleColor="#f4ecdd66"
     subtitle={<Label size={11}>{(qualityTier ? `${formatModelQualityTierLabel(qualityTier)} · Hidden stats` : "Hidden stats").toUpperCase()}</Label>}
@@ -94,13 +85,10 @@ export function UnknownModelCard({ name = "Unknown Model", qualityTier, onReveal
     action={<ModelCardAction model={name} variant={MODEL_CARD_ACTION_VARIANT.reveal} onReveal={onReveal} />} />;
 }
 
-/** State C & D: Revealed model — Serve or • serving */
 export function RevealedModelCard({ model, onServe, onViewBaseModel, onViewUserModel }: {
   model: GameUserModel;
   onServe: () => void;
-  /** Opens the base model's page. */
   onViewBaseModel?: (baseModelId: string) => void;
-  /** Opens your model's detail page. */
   onViewUserModel?: () => void;
 }) {
   const isServing = model.launchState === "serving";

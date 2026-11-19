@@ -17,12 +17,10 @@ export const NEED_DEFS: Record<NeedId, NeedDef> = {
   fun: { id: "fun", label: "Play", icon: "✨", decayPerDay: 90 },
 };
 
-/** The day a being starts with; the shared agent's need set takes these as its start values. */
 export function emptyNeeds(): Record<NeedId, number> {
   return { hunger: 78, energy: 78, social: 70, fun: 70 };
 }
 
-/** A need or stress value held to its 0–100 scale. */
 export function clampNeed(value: number): number {
   return clamp(value, 0, 100);
 }

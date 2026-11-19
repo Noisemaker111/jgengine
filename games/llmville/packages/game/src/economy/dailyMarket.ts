@@ -25,10 +25,8 @@ export interface DailyMarketModifier {
   reasoningRevenueMult: number;
 }
 
-/** The market numbers a daily modifier stacks onto. */
 type DailyMarketStat = Exclude<keyof DailyMarketModifier, "type" | "label" | "description">;
 
-/** Every market number before a day's modifier: multipliers at 1, the frontier jump at 0. */
 const DAILY_MARKET_BASE: Readonly<Record<DailyMarketStat, number>> = {
   revenueMult: 1,
   reasoningRevenueMult: 1,
@@ -45,7 +43,6 @@ interface DailyMarketEntry {
   effects: Partial<Record<DailyMarketStat, readonly StatContribution[]>>;
 }
 
-/** The day's table: one entry per modifier, each a stack of Modifiers on the market numbers. */
 const DAILY_MARKET_TABLE: readonly DailyMarketEntry[] = [
   {
     type: "reasoning_demand_spike",
@@ -106,7 +103,6 @@ export function formatDailyMarketDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-/** Same modifier for every player on a given UTC calendar day. */
 export function getDailyModifier(date: Date = new Date()): DailyMarketModifier {
   const seed = formatDailyMarketDateKey(date);
   const picked = pickKeyed(hashString(seed), DAILY_MODIFIER_POOL);

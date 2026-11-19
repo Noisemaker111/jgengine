@@ -65,16 +65,13 @@ export const EXIT_VERIFY_FAILED = 1;
 export const EXIT_CANNOT_ANSWER = 3;
 export const EXIT_ANOTHER_RUN = 4;
 
-/** The lock file's name inside the worktree's git directory. */
 export const LANE_LOCK_FILE = "lane-close.lock";
 
 const root = landingRoot(import.meta.url);
 
 export interface LaneCloseArgs {
   pr?: number;
-  /** Paths `land --commit` may take although its guards refuse them; repeatable. */
   allow?: string[];
-  /** `-m`: the lane's own words for its change note; repeatable. */
   messages?: string[];
 }
 
@@ -104,12 +101,10 @@ export interface ReportInput {
   branch: string;
   pr: number;
   prUrl?: string | undefined;
-  /** The merge commit on the base. */
   merged: string;
   filesChanged: string;
 }
 
-/** The report a lane pastes: the numbers, filled in, with nothing to write by hand. */
 export function reportSkeleton(input: ReportInput): string {
   return [
     "Lane report",
@@ -137,19 +132,15 @@ export interface LaneIo {
   out: (line: string) => void;
   err: (line: string) => void;
   lock: LaneLockFs;
-  /** This run, as the lock records it. */
   pid: number;
   now: () => number;
   alive: (pid: number) => boolean;
   /** The working tree's id (`workingTree`): the same id is the same bytes. */
   tree: () => string;
-  /** The passing `verify:fast --landing` receipt for `tree` against this branch's merge base, or null. */
   passedOn: (tree: string) => string | null;
   /** Why this lane's verify:fast cannot write a receipt this landing code reads (`receiptsBehind`), or null. */
   receiptsBehind: () => string | null;
-  /** The GitHub client for `repo`; by default `gh api` through `sh`. */
   github?: (repo: string) => GitHub;
-  /** Waits between merge attempts while another merge moves the base. */
   pause?: (ms: number) => void;
   /**
    * The gate on the boat host (`remoteGate`): its exit code, or null when the host cannot run it
@@ -158,7 +149,6 @@ export interface LaneIo {
   remoteGate?: (withPreflight: boolean) => number | null;
 }
 
-/** The lock another run holds, or the lock this run now holds with the release that drops it. */
 type LaneHold = { release: () => void } | { heldBy: string };
 
 /**
@@ -393,7 +383,6 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   return EXIT_VERIFY_FAILED;
 }
 
-/** `verify:fast --landing` (on the boat host when it is up), and what to do when it fails. */
 function verify(io: LaneIo): boolean {
   const remote = io.remoteGate?.(false) ?? null;
   if (remote !== null) {
@@ -409,7 +398,6 @@ function verify(io: LaneIo): boolean {
   return true;
 }
 
-/** Paths whose content differs between two trees. */
 function changedBetween(from: string, to: string, io: LaneIo): string[] {
   if (from === to) return [];
   return io.sh(["git", "diff", "--name-only", "--no-renames", from, to], false).stdout.split("\n").map((line) => line.trim()).filter(Boolean);
@@ -458,7 +446,6 @@ export function readyThisPull(branch: string, pr: number | undefined, io: LaneIo
   return null;
 }
 
-/** This branch's PR: open, or already merged by an earlier close. */
 function branchPr(branch: string, repo: string, io: LaneIo): number | null {
   const listed = gitHub((args) => io.sh(["gh", ...args], false), repo).listPulls({ head: branch, state: "all", limit: 1 });
   return listed.ok ? (listed.value[0]?.number ?? null) : null;
@@ -470,7 +457,6 @@ function filesChanged(io: LaneIo): string {
   return text.length > 0 ? text : "none against origin/beta";
 }
 
-/** The landing mode besides closing this lane: `--batch` hands the rest of argv to its script. */
 export function landingMode(argv: readonly string[]): { script: string; rest: string[] } | null {
   if (argv[0] === "--batch") return { script: landingScript(import.meta.url, "land-batch.ts"), rest: argv.slice(1) };
   return null;

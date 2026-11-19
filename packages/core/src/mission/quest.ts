@@ -2,7 +2,6 @@ import type { GameEvents } from "../game/events";
 import { clamp } from "../math/scalar";
 import { evaluatePredicate, type Predicate } from "../rules/predicate";
 
-/** One quest objective: a kind (kill, collect, …), its target or item, how many, and optional party sharing. */
 export interface QuestObjective {
   id: string;
   kind: "kill" | "collect" | string;
@@ -12,7 +11,6 @@ export interface QuestObjective {
   partyShare?: { radius: number; credit: "all" | "tagger" };
 }
 
-/** What finishing a quest grants: XP, currency, items, unlocks and follow-up quests. */
 export interface QuestRewards {
   xp?: { amount: number };
   economy?: Record<string, number>;
@@ -21,7 +19,6 @@ export interface QuestRewards {
   quests?: string[];
 }
 
-/** An authored quest: id, title, giver, objectives, rewards and prerequisites. */
 export interface QuestDef {
   id: string;
   title: string;
@@ -33,10 +30,8 @@ export interface QuestDef {
   rewards?: QuestRewards;
 }
 
-/** Where an accepted quest is: still active or completed. */
 export type QuestStatus = "active" | "completed";
 
-/** Progress on one objective: the count so far against what it needs. */
 export interface QuestObjectiveProgress {
   id: string;
   kind: string;
@@ -45,21 +40,18 @@ export interface QuestObjectiveProgress {
   complete: boolean;
 }
 
-/** One accepted quest and its per-objective progress. */
 export interface QuestInstance {
   questId: string;
   status: QuestStatus;
   objectives: QuestObjectiveProgress[];
 }
 
-/** One quest in a saved journal: id, status and plain progress counts. */
 export type QuestSnapshotEntry = {
   questId: string;
   status: QuestStatus;
   progress: Record<string, number>;
 };
 
-/** What a quest journal needs from the game: its events and the reward appliers. */
 export interface QuestJournalDeps {
   events: GameEvents;
   rewards: {
@@ -74,9 +66,7 @@ export interface QuestJournalDeps {
   partyMembersNear?(userId: string, radius: number): string[];
 }
 
-/** A player's quest log wired to game events: accept, progress, turn in, snapshot and restore. */
 export interface QuestJournal {
-  /** Add or replace definitions and refresh active credit indexes; re-register after editing objectives. */
   register(catalog: readonly QuestDef[] | Record<string, QuestDef>): void;
   has(questId: string): boolean;
   canAccept(userId: string, questId: string): { reason: string } | null;
@@ -88,7 +78,6 @@ export interface QuestJournal {
   grant(userId: string, questId: string, options?: { completed?: boolean }): void;
   revoke(userId: string, questId: string): void;
   list(userId: string): QuestInstance[];
-  /** Credit objectives active at event start in catalog order; quests activated during credit join the next event. */
   bind(action: "entity.died" | "inventory.added"): () => void;
   snapshot(userId: string): QuestSnapshotEntry[];
   hydrate(userId: string, data: QuestSnapshotEntry[]): void;
@@ -102,19 +91,13 @@ interface QuestState {
   progress: Map<string, number>;
 }
 
-/** A prerequisite is met when that quest is completed, or the game says its unlock is held. */
 const REQUIREMENT_MET: Predicate = { any: [{ eq: ["status", "completed"] }, { eq: ["unlocked", true] }] };
 
-/** Facts one prerequisite reads: the quest's own status and whether the game holds its unlock. */
 function requirementFacts(status: QuestStatus | undefined, unlocked: boolean) {
   return { status, unlocked };
 }
 
-/**
- * Track accepted quests and their per-objective progress, granting rewards on completion.
- *
- * @capability quest-log track accepted quests and their per-objective progress
- */
+/** @capability quest-log track accepted quests and their per-objective progress */
 export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   const catalog = new Map<string, QuestDef>();
   const users = new Map<string, Map<string, QuestState>>();
@@ -489,17 +472,14 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   };
 }
 
-/** One objective as a tracker/HUD reads it — label + progress toward its count. */
 export interface TrackedObjectiveView {
   id: string;
-  /** Human label (e.g. "Defeat 3 wraiths"); falls back to the objective id. */
   label: string;
   count: number;
   progress: number;
   complete: boolean;
 }
 
-/** A quest as a tracker/HUD reads it — title, status, and per-objective progress. */
 export interface TrackedQuestView {
   id: string;
   title: string;
@@ -507,24 +487,14 @@ export interface TrackedQuestView {
   objectives: TrackedObjectiveView[];
 }
 
-/**
- * Default objective label: a readable "verb count noun" from a {@link QuestObjective}.
- *
- * @capability quest-objective-label readable default label for a quest objective in a tracker
- */
+/** @capability quest-objective-label readable default label for a quest objective in a tracker */
 export function defaultObjectiveLabel(objective: QuestObjective): string {
   const noun = objective.target ?? objective.item ?? objective.id;
   const verb = objective.kind === "kill" ? "Defeat" : objective.kind === "collect" ? "Collect" : objective.kind;
   return `${verb} ${objective.count} ${noun}`;
 }
 
-/**
- * Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance}
- * into a flat, renderer-free view a HUD tracker draws (title, status, labelled
- * objective progress). Pass `label` to override the derived objective text.
- *
- * @capability quest-tracker-view join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker
- */
+/** @capability quest-tracker-view join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker */
 export function describeTrackedQuest(
   def: QuestDef,
   instance: QuestInstance,
@@ -548,18 +518,15 @@ export function describeTrackedQuest(
   };
 }
 
-/** Options for accepting a quest: how to read unlocks its prerequisites name. */
 export interface QuestAcceptOptions {
   hasUnlock?(id: string): boolean;
 }
 
-/** The result of turning a quest in: the next journal state and the rewards it granted, if any. */
 export interface QuestTurnIn {
   state: QuestSnapshotEntry[];
   rewards: QuestRewards | null;
 }
 
-/** The pure quest log over a catalog: accept, apply events, complete and list quests from a snapshot. */
 export interface QuestEvaluator {
   has(questId: string): boolean;
   get(questId: string): QuestDef | null;
@@ -610,7 +577,6 @@ export function applyQuestRewards(
     grantXp?(amount: number): void;
     grantEconomy?(currencyId: string, amount: number): void;
     grantItem?(inventoryId: string, itemId: string, count: number): { reason: string } | null | void;
-    /** Grant every item, or reject without writes. Takes precedence over `grantItem`. */
     grantItems?(items: Readonly<NonNullable<QuestRewards["items"]>>): { reason: string } | null | void;
     grantUnlock?(unlockId: string): void;
   },
@@ -657,11 +623,7 @@ function toSnapshot(working: WorkingQuests): QuestSnapshotEntry[] {
   }));
 }
 
-/**
- * The quest log: accept, progress from game events, complete and snapshot quests.
- *
- * @capability quest-log track accepted quests and their objective progress from game events
- */
+/** @capability quest-log track accepted quests and their objective progress from game events */
 export function createQuestEvaluator(
   defs: QuestDef[] | Record<string, QuestDef>,
 ): QuestEvaluator {

@@ -3,10 +3,6 @@ import { quaterniusLowpolyCars } from "@jgengine/assets/generated/packs";
 import { buildMaterialCatalog } from "@jgengine/assets/materials";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-/**
- * Quaternius' CC0 low-poly cars give traffic its bodies beyond the library's one sports car: real
- * 4 m sedans, a taxi and a coupe, resprayed into the city's palette (see `world/models.ts`).
- */
 const MODEL_PACKS = [quaterniusLowpolyCars];
 
 /**
@@ -17,11 +13,6 @@ const MODEL_PACKS = [quaterniusLowpolyCars];
  */
 const GROUND_MATERIAL = "ambientcg-ground055s";
 
-/**
- * The scans behind the library surfaces the streets and buildings name (`asphalt/dark-cracked`,
- * `concrete/smooth`, `paving/stone`, and the `facade/*` brick and glass walls), listed by source id so provisioning
- * pulls them.
- */
 const SURFACE_MATERIALS = [
   "ambientcg-asphalt012",
   "ambientcg-concrete006",

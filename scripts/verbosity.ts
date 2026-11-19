@@ -8,7 +8,6 @@
 export const VERBOSE_FLAG = "--verbose";
 export const VERBOSE_ENV = "JG_VERBOSE";
 
-/** Whether this run prints its detail lines. */
 export function isVerbose(env: Record<string, string | undefined> = process.env): boolean {
   return env[VERBOSE_ENV] === "1";
 }
@@ -23,7 +22,6 @@ export function takeVerboseFlag(argv: readonly string[], env: Record<string, str
   return argv.filter((arg) => arg !== VERBOSE_FLAG);
 }
 
-/** Print a progress, reuse or timing line, only under `--verbose`. */
 export function detail(line: string): void {
   if (isVerbose()) console.error(line);
 }

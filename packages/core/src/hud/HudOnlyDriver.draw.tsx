@@ -59,7 +59,6 @@ export function HudOnlyDriver({
       if (!simulate(rawDt)) return;
       devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
     };
-    /** One frame of simulation; false when play is gated and nothing advanced. Shared with `sim_advance`. */
     const simulate = (rawDt: number): boolean => {
       const sendInput = () => {
         if (!serverAuthoritative || serverIdRef.current === null) return;

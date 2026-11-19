@@ -21,11 +21,6 @@ export type Desire =
   | { kind: "socialize" }
   | { kind: "wander" };
 
-/**
- * What the habitat offers a being this moment: a station for each need role it has, a paid shift
- * while one is open, an idle companion, and the habitat to wander. How much each is worth is the
- * being's own ladder (`MEMBER_OPTIONS`), scored by the shared utility brain.
- */
 export function desireTargets(available: RoleAvailability, isWorkHours: boolean, hasIdleCompanion: boolean): AgentTarget[] {
   const targets: AgentTarget[] = [];
   for (const need of NEEDS) if (available[need]) targets.push({ option: need, target: need });
@@ -35,7 +30,6 @@ export function desireTargets(available: RoleAvailability, isWorkHours: boolean,
   return targets;
 }
 
-/** The being's next desire: its agent's utility brain picks among what the habitat offers. */
 export function chooseDesire(agent: Agent, now: number, available: RoleAvailability, isWorkHours: boolean, hasIdleCompanion: boolean): Desire {
   const option = agent.update({ dt: 0, now, targets: desireTargets(available, isWorkHours, hasIdleCompanion) }).action.option;
   switch (option) {

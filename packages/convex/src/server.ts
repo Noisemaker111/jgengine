@@ -126,7 +126,6 @@ export function jgengineTables() {
       serverId: v.id("jgGameServers"),
       userId: v.string(),
       joinedAt: v.number(),
-      /** Live client sessions holding this membership; absent on legacy and host-driven joins. */
       sessionIds: v.optional(v.array(v.string())),
     }).index("by_server", ["serverId"]).index("by_server_and_user", ["serverId", "userId"]),
     jgRateLimits: defineTable({
@@ -181,9 +180,7 @@ export function jgengineTables() {
       userId: v.string(),
       /** One row per live session, so a second tab is a second row rather than a fight over one. */
       sessionId: v.optional(v.string()),
-      /** Actor class, e.g. `"player"` / `"agent"`, which selects the pose rules applied to it. */
       kind: v.optional(v.string()),
-      /** Display name carried on the row, so nameplates need no per-frame join against users. */
       label: v.optional(v.string()),
       x: v.number(),
       y: v.number(),
@@ -191,7 +188,6 @@ export function jgengineTables() {
       rotationY: v.number(),
       rotationPitch: v.number(),
       updatedAt: v.number(),
-      /** Set when the session was displaced or left; the reaper deletes the row once it goes idle. */
       revokedAt: v.optional(v.number()),
     })
       .index("by_server", ["serverId"])
@@ -245,13 +241,11 @@ const schemaForTypes = defineSchema(jgengineTables());
 export type JGDataModel = DataModelFromSchemaDefinition<typeof schemaForTypes>;
 /** Read-only context accepted by engine host queries. */
 export type JGQueryCtx = GenericQueryCtx<JGDataModel>;
-/** Mutation ctx accepted by {@link loadServerSnapshot} / {@link persistServerSnapshot}. */
 export type JGMutationCtx = GenericMutationCtx<JGDataModel>;
 const query = queryGeneric as QueryBuilder<JGDataModel, "public">;
 const mutation = mutationGeneric as MutationBuilder<JGDataModel, "public">;
 const internalMutation = internalMutationGeneric as MutationBuilder<JGDataModel, "internal">;
 
-/** A `jgGameServers` row — the server handle the persistence helpers load from and write back to. */
 export type ServerDoc = DocumentByName<JGDataModel, "jgGameServers">;
 
 export type JgAuthMode = "anonymous" | "required";
@@ -294,7 +288,6 @@ async function memberRow(ctx: JGQueryCtx | JGMutationCtx, serverId: GenericId<"j
   return ctx.db.query("jgServerMembers").withIndex("by_server_and_user", q => q.eq("serverId", serverId).eq("userId", userId)).unique();
 }
 
-/** Most live client sessions one shared-topology membership remembers; the oldest drop first. */
 export const MAX_MEMBER_SESSIONS = 16;
 
 function withSession(sessionIds: readonly string[] | undefined, sessionId: string): string[] {
@@ -318,9 +311,7 @@ async function requireServerMember(
   return server;
 }
 
-/** Resolve the acting user for a mutation, throwing the standard error when unauthenticated.
- * @internal
- */
+/** @internal */
 async function requireActor(
   ctx: { auth: Auth },
   externalId: string | undefined,
@@ -645,7 +636,6 @@ export async function persistServerSnapshot(
   return true;
 }
 
-/** Autosave a server whose `save.auto` interval has elapsed, reusing an already-hydrated snapshot. */
 async function flushServerIfDue(
   ctx: JGMutationCtx,
   server: ServerDoc,
@@ -664,16 +654,10 @@ async function flushServerIfDue(
 
 export const JG_RUNTIME_TICK_MS = 1_000;
 
-/** Outcome of a runtime command: applied, or refused with a reason (unknown server, non-member, validation, revision conflict). */
 export type RunCommandOutcome = { ok: true } | { ok: false; reason: string };
 
-/** Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper. */
 export type ConvexRunCommandArgs = RunCommandArgs & {
   externalId?: string | undefined;
-  /**
-   * How much of the server to hydrate before applying the command. Overrides whatever the
-   * {@link CommandDef} declares through its own `scope`; omit both to hydrate the whole world.
-   */
   scope?: LoadSnapshotScope;
   /**
    * Trusted host override after game-specific authorization; never forward a client-supplied actor.
@@ -684,7 +668,6 @@ export type ConvexRunCommandArgs = RunCommandArgs & {
   beforePersist?: (ctx: JGMutationCtx, loaded: LoadedServerSnapshot) => Promise<void>;
 };
 
-/** Server-selection arguments of the `joinServer` mutation, minus the caller identity. */
 type JoinServerArgs = {
   gameId: string;
   serverId?: GenericId<"jgGameServers"> | undefined;
@@ -699,7 +682,6 @@ export type EnsureJoinedOutcome =
   | { ok: true; serverId: GenericId<"jgGameServers">; isNew: boolean }
   | { ok: false; reason: "full" | "closed" | "unauthorized" };
 
-/** A server resolved for runtime work: its row, its registered runtime, and its hydrated snapshot. */
 export type LoadedServerSnapshot = {
   server: ServerDoc;
   runtime: GameRuntime;
@@ -735,10 +717,6 @@ export type GameServerHelpers = {
     snapshot: GameRuntimeSnapshot,
     save?: SaveConfig,
   ) => Promise<boolean>;
-  /**
-   * Apply a command as the actor. Refuses non-members with "Not a member of this server"; host
-   * mutations acting for a user who might have no live session call {@link ensureJoined} first.
-   */
   runCommand: (ctx: JGMutationCtx, args: ConvexRunCommandArgs) => Promise<RunCommandOutcome>;
   /**
    * Join a trusted, already-authorized actor through the same path as the `joinServer` mutation.
@@ -749,10 +727,8 @@ export type GameServerHelpers = {
   resetPlayerProfile: (ctx: JGMutationCtx, serverId: string, userId: string) => Promise<RuntimePlayerRow>;
 };
 
-/** How many running servers one `tickActiveServers` transaction may hydrate, tick, and persist. */
 export const DEFAULT_MAX_SERVERS_PER_TICK = 32;
 
-/** How many chunk rows one `getChunks` call may return. */
 export const MAX_CHUNKS_PER_QUERY = 64;
 
 /**
@@ -1616,7 +1592,6 @@ export function createLeaderboardFunctions(options?: { auth?: JgAuthMode }) {
   return { getTop, getProfile, incrementMany };
 }
 
-/** One member's pose as `list` reports it. */
 export type PresenceListRow = {
   userId: string;
   sessionId?: string;
@@ -1628,7 +1603,6 @@ export type PresenceListRow = {
   lastSeenAt: number;
 };
 
-/** What `sync` hands back: the pose the server holds after clamping, and whether this session had been displaced. */
 export type PresenceSyncResult = {
   pose: { x: number; y: number; z: number; rotationY: number; rotationPitch: number };
   lastSeenAt: number;
@@ -1655,11 +1629,9 @@ export function createPresenceFunctions(options?: {
   auth?: JgAuthMode;
   /** How recently a row must have been written to appear in `list`. */
   freshWindowMs?: number;
-  /** How long a row may go unwritten before `reapIdlePresence` deletes it. */
   idleCutoffMs?: number;
   /** Rows deleted per reaper run, so one sweep is a bounded transaction. */
   maxReapPerRun?: number;
-  /** Movement clamping, optionally per actor `kind` — an agent need not obey a human's speed cap. */
   poseRules?: PoseSyncRules | ((kind: string | undefined) => PoseSyncRules);
   /** Where a session with no row starts. Async and ctx-bearing, so a spawn can read the world. */
   resolveSpawn?: (
@@ -1919,7 +1891,6 @@ export function createPresenceFunctions(options?: {
   return { list, sync, leave, reapIdlePresence };
 }
 
-/** One active player delivered to an online-system batch. */
 export type OnlinePlayer = { serverId: string; userId: string; homeGameId?: string };
 
 /**
@@ -1933,7 +1904,6 @@ export async function forEachOnlinePlayer(ctx: JGMutationCtx, options: {
   cursor?: string | null;
   nowMs?: number;
   freshWindowMs?: number;
-  /** Deliver one representative per home game when several agents share a simulation. */
   groupBy?: "userId" | "homeGameId";
 }): Promise<{ scheduled: number; remaining: boolean }> {
   const batchSize = options.batchSize ?? 25;
@@ -1956,10 +1926,7 @@ export async function forEachOnlinePlayer(ctx: JGMutationCtx, options: {
   return { scheduled: players.length, remaining: !page.isDone };
 }
 
-/**
- * Consume one request in a fixed rate window; concurrent callers serialize on the indexed key.
- * @capability host-rate-limit Enforce indexed per-key request windows inside authoritative mutations.
- */
+/** @capability host-rate-limit Enforce indexed per-key request windows inside authoritative mutations. */
 export async function rateLimit(ctx: JGMutationCtx, args: { key: string; windowMs: number; max: number; nowMs?: number }): Promise<{ ok: boolean; retryAfterMs: number }> {
   const now = args.nowMs ?? Date.now();
   if (!args.key || args.key.length > 512 || !Number.isFinite(now) || !Number.isFinite(args.windowMs) || args.windowMs <= 0 || !Number.isFinite(now + args.windowMs) || !Number.isSafeInteger(args.max) || args.max < 1) throw new Error("Invalid rate limit policy");

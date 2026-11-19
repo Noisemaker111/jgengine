@@ -24,9 +24,7 @@ export function telegraphProgress(windupMs: number, startedAtMs: number, nowMs: 
 export interface HazardCycleConfig {
   windupMs: number;
   activeMs: number;
-  /** Rest between one activation's end and the next windup; default `0` (back-to-back). */
   cooldownMs?: number;
-  /** Shifts the whole cycle — staggers identical hazards. */
   offsetMs?: number;
 }
 
@@ -37,7 +35,6 @@ export interface HazardCycleSample {
   /** Elapsed fraction of the current phase in `[0, 1]` — the windup fraction is the decal fill. */
   fraction: number;
   remainingMs: number;
-  /** How many full cycles have completed before this one. */
   cycleIndex: number;
 }
 
@@ -80,9 +77,7 @@ export function hazardCycleAt(config: HazardCycleConfig, nowMs: number): HazardC
   };
 }
 
-/** Absolute time the hazard's next `active` phase begins at or after `nowMs` — the countdown seam.
- * @internal
- */
+/** @internal */
 export function nextHazardActiveAt(config: HazardCycleConfig, nowMs: number): number {
   const sample = hazardCycleAt(config, nowMs);
   if (sample.phase === "windup") return nowMs + sample.remainingMs;

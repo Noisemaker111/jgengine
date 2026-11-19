@@ -1,4 +1,4 @@
-/** Text stored as UTF-16 units in the same shared float buffer as numeric HUD values. @internal */
+/** @internal */
 export interface RuneTextSlots {
   n: number;
   u: number[];

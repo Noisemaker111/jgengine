@@ -10,27 +10,18 @@ export type HardwareArchetype =
 export const HARDWARE_VENDOR_VALUES = ["NVIDIA", "AMD", "Google", "AWS", "Cerebras", "Groq", "Apple"] as const;
 export type HardwareVendor = (typeof HARDWARE_VENDOR_VALUES)[number];
 
-/** consumer = desk GPU, datacenter = server GPU, accelerator = custom ASIC/wafer, rack_scale = a whole machine, appliance = turnkey box. */
 export const HARDWARE_CATEGORY_VALUES = ["consumer", "datacenter", "accelerator", "rack_scale", "appliance"] as const;
 export type HardwareCategory = (typeof HARDWARE_CATEGORY_VALUES)[number];
 
-/** What the part is built for; biases whether it shines at training throughput or serving/inference. */
 export const HARDWARE_KIND_VALUES = ["training", "inference", "balanced"] as const;
 export type HardwareKind = (typeof HARDWARE_KIND_VALUES)[number];
 
-/** Numeric formats a part can run; gates which model quantizations it can accelerate (see quantization phase). */
 export const COMPUTE_PRECISION_VALUES = ["fp16", "fp8", "fp4"] as const;
 export type ComputePrecision = (typeof COMPUTE_PRECISION_VALUES)[number];
 
 /** Fallback GB/s when a catalog row omits explicit memory bandwidth (≈32 GB/s per VRAM GB). */
 export const HARDWARE_BANDWIDTH_PER_VRAM_GB = 32;
 
-/**
- * Accelerator catalog. `trainingPowerFp16` is FP16/BF16 tensor TFLOPS (the core compute currency);
- * `fp8Tflops` is the FP8 peak used once a model is quantized. `unlockGameLevel` is a soft UI hint for
- * recommended progression tier — purchase gating uses room power/cooling capacity instead. TDP doubles as
- * heat output (kW) for the thermal system. Numbers track real 2025/2026 parts, scaled for game balance.
- */
 export const HARDWARE_CATALOG = [
   // Consumer / desk GPUs (early game).
   { id: "gpu_1", name: "GTX 1060", vendor: "NVIDIA", category: "consumer", kind: "balanced", unlockGameLevel: 1, vramGb: 6, memoryBandwidthGbps: 192, trainingPowerFp16: 11, buyPrice: 480, tdpWatts: 120, supportedPrecisions: ["fp16"] },
@@ -91,7 +82,6 @@ export interface HardwareModuleDefinition {
   unlockGameLevel: number;
   vramGb: number;
   memoryBandwidthGbps?: number;
-  /** Peak FP16/BF16 tensor throughput (TFLOPS); the core compute currency for training + serving. */
   trainingPowerFp16: number;
   buyPrice: number;
   tdpWatts: number;
@@ -99,7 +89,6 @@ export interface HardwareModuleDefinition {
   category: HardwareCategory;
   kind: HardwareKind;
   archetype?: HardwareArchetype;
-  /** Lowest numeric formats this part natively accelerates; lower precision unlocks more throughput when a model is quantized to it. */
   supportedPrecisions: readonly ComputePrecision[];
   /** Peak FP8 tensor throughput (TFLOPS) where the part supports it; used for quantized serving. */
   fp8Tflops?: number;
@@ -126,11 +115,6 @@ export const HARDWARE_MODEL_ID_VALUES = HARDWARE_CATALOG.map((hardware) => hardw
   HardwareModelId,
   ...HardwareModelId[],
 ];
-
-/**
- * Rack-mounted cooling catalog (v3). Coolers install into a rack's cooler slot;
- * capacity is per-rack, not site-wide.
- */
 
 export const RACK_COOLANT_TYPE_VALUES = ["air", "water", "ln2"] as const;
 export type RackCoolantType = (typeof RACK_COOLANT_TYPE_VALUES)[number];
@@ -258,9 +242,6 @@ export function coolerFitsRack(
   return allowedCoolantTypes.includes(coolerType);
 }
 
-/** Rack type catalog. Each rack defines slot count, allowed cooler families, passive cooling, and power efficiency. */
-
-
 export const RACK_CATALOG = [
   {
     id: "starter_rack",
@@ -365,7 +346,6 @@ export const RACK_CATALOG = [
 
 export type RackCatalogId = (typeof RACK_CATALOG)[number]["id"];
 
-/** Default 2-slot rack — tutorial and new-player starter build item. */
 export const STARTER_RACK_CATALOG_ID = "starter_rack" as const satisfies RackCatalogId;
 
 export const RACK_CATALOG_ID_VALUES = RACK_CATALOG.map((rack) => rack.id) as [

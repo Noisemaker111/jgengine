@@ -21,7 +21,6 @@ export const REFERENCE_STAND: PlantEnvironment = { ...OPEN_TEMPERATE_SITE, stand
  */
 export const STAND_ENVELOPE = { heightShare: 0.15, dbhShare: 0.25, ages: [20, 50, 100] } as const;
 
-/** Chapman–Richards growth curve y = a·(1 − e^(−k·t))^p of total age t. */
 export interface GrowthCurve {
   a: number;
   k: number;
@@ -34,13 +33,9 @@ export interface GrowthCurve {
  */
 export interface SpeciesReference {
   speciesId: string;
-  /** Carmean 1989 site-index curve of the species, where the Lake States variant of FVS has one. */
   carmean?: SiteIndexCurve;
-  /** Median site index of the FIA site trees, feet at 50 years. */
   siteIndexFt: number;
-  /** Years a seedling takes to reach breast height on that site: the Carmean curve, else Silvics. */
   yearsToBreastHeight: number;
-  /** FIA site trees behind the stand curves and the total ages they cover (5th percentile to oldest). */
   siteTrees: { count: number; youngestYears: number; oldestYears: number };
   /** Height (m) and DBH (cm) of a dominant stand-grown tree by total age, fitted to FIA site trees. */
   standHeightM: GrowthCurve;
@@ -50,11 +45,8 @@ export interface SpeciesReference {
    * DBH a dominant tree of a given height carries, read where the site trees are younger than any.
    */
   dbhByHeight: { a: number; b: number };
-  /** Tallo stand-grown crown width by DBH class, and the trees behind it. */
   crownWidth: { trees: number; classes: readonly CrownWidthClass[] };
-  /** Ek 1974 open-grown crown width from FVS `cwcalc.f`, where FVS has it. */
   openCrownWidth?: OpenCrownWidthEquation;
-  /** Bechtold 2003 forest-grown crown width from FVS `cwcalc.f`, where FVS has it. */
   forestCrownWidth?: ForestCrownWidthEquation;
 }
 
@@ -67,12 +59,7 @@ export function standHeightAtM(reference: SpeciesReference, ageYears: number): n
   return reference.carmean === undefined ? growthCurveAt(reference.standHeightM, ageYears) : siteIndexHeightM(reference.carmean, reference.siteIndexFt, ageYears);
 }
 
-/**
- * DBH in centimetres of a dominant stand-grown tree of the species at `ageYears`: its FIA site-tree
- * curve within the ages those trees cover; younger, the site trees' height–diameter relation read at
- * {@link standHeightAtM}, since height is known at every age and a young tree's DBH is not.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export function standDbhAtCm(reference: SpeciesReference, ageYears: number): number {
   if (ageYears >= reference.siteTrees.youngestYears) return growthCurveAt(reference.standDbhCm, ageYears);
   const aboveBreastHeight = standHeightAtM(reference, ageYears) - BREAST_HEIGHT_M;
@@ -81,10 +68,7 @@ export function standDbhAtCm(reference: SpeciesReference, ageYears: number): num
 
 const BREAST_HEIGHT_M = 1.3;
 
-/**
- * A {@link GrowthCurve} at `ageYears`.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export function growthCurveAt(curve: GrowthCurve, ageYears: number): number {
   return curve.a * plantPow(1 - plantExp(-curve.k * ageYears), curve.p);
 }

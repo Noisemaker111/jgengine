@@ -1,22 +1,12 @@
-/**
- * How hard a blow lands, by weapon or vehicle class. The shell reads a profile for every
- * `combat.damage` and missed direct-fire shot: sparks and dust at the point of impact, a mark on the
- * surface a shot missed into, a camera kick and rumble near big impacts, and a short hit-stop when the local player lands or takes a heavy hit
- * or a kill. Everything is blood-free; a game that wants blood plays its own effect.
- */
 export type ImpactClass = "light" | "medium" | "heavy" | "explosive" | "melee" | "vehicle";
 
-/** One class's numbers. Effect names are `ctx.particles` library names. */
 export interface ImpactProfile {
-  /** Sparks played at the point of impact; `count` scales the library effect's burst. */
   sparks: { effect: string; count: number } | null;
-  /** Dust or debris kicked up with the sparks. */
   dust: { effect: string; count: number } | null;
   /** Diameter in metres of the mark a missed shot leaves on the surface it hit; `0` leaves none. */
   markSize: number;
   /** Hit-stop on a hit the local player landed or took, in real milliseconds. */
   hitstopMs: number;
-  /** Hit-stop on a kill the local player landed. */
   killHitstopMs: number;
   /**
    * Camera kick (trauma `0..1`) and gamepad rumble when this impact lands within `kickRadius` metres

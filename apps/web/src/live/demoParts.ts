@@ -19,13 +19,10 @@ export type DemoKey =
 export interface DemoPart {
   key: DemoKey;
   label: string;
-  /** One sentence on what the demo shows. */
   does: string;
   /** Its section on /why, when it has a by-hand comparison there. */
   why?: string;
-  /** Engine exports this demo runs. */
   symbols: readonly string[];
-  /** Matches a game's source (or its editor scene) when the game uses this part. */
   source: RegExp;
 }
 
@@ -49,7 +46,6 @@ export function demoPart(key: DemoKey): DemoPart {
   return PART_BY_KEY[key];
 }
 
-/** The demo that runs one of these exports, if any. */
 export function demoForSymbols(symbols: readonly string[]): DemoPart | undefined {
   return DEMO_PARTS.find((part) => part.symbols.some((s) => symbols.includes(s)));
 }

@@ -14,7 +14,6 @@ export interface StatPoolInput {
   min?: number | undefined;
 }
 
-/** Partial update applied without mutating the previous pool. */
 export interface StatPoolPatch {
   current?: number;
   max?: number;
@@ -35,24 +34,17 @@ export interface StatPoolAccess<TOwnerId extends string = string, TStatId extend
 export interface StatPoolChange {
   previous: StatPool;
   pool: StatPool;
-  /** Actual applied amount after clamping. */
   applied: number;
-  /** Requested amount that did not fit: `amount - applied`. */
   overflow: number;
   hitMin: boolean;
   hitMax: boolean;
 }
 
-/** Outcome of changing a pool through {@link StatPoolAccess}. */
 export type StatPoolAccessResult =
   | ({ status: "ok" } & StatPoolChange)
   | { status: "rejected"; reason: string };
 
-/**
- * Normalize caller data into a complete plain-data pool.
- *
- * @capability stat-pool create a serializable current/min/max pool for any caller-named resource
- */
+/** @capability stat-pool create a serializable current/min/max pool for any caller-named resource */
 export function createStatPool(input: StatPoolInput): StatPool {
   const min = input.min ?? 0;
   return {
@@ -62,11 +54,7 @@ export function createStatPool(input: StatPoolInput): StatPool {
   };
 }
 
-/**
- * Apply new bounds/current to a pool, clamping the result and leaving the input untouched.
- *
- * @capability stat-pool-patch immutably retune a bounded resource's current value or bounds
- */
+/** @capability stat-pool-patch immutably retune a bounded resource's current value or bounds */
 export function patchStatPool(pool: StatPool, patch: StatPoolPatch): StatPool {
   const max = patch.max ?? pool.max;
   const min = patch.min ?? pool.min;
@@ -192,10 +180,7 @@ export function tickMeter(
   };
 }
 
-/** Add `amount` now (negative drains). A drop (applied < 0) resets sinceDrop to 0, a fill (applied > 0) resets sinceFill to 0.
- *
- * @capability meter-change drain or fill a ticking meter, restarting its regen delay on a drop
- */
+/** @capability meter-change drain or fill a ticking meter, restarting its regen delay on a drop */
 export function changeMeter(
   meter: MeterState,
   amount: number,

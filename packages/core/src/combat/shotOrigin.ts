@@ -49,10 +49,8 @@ const DEFAULT_MUZZLE_OFFSET: EntityPosition = [0, 1.4, 0.35];
 
 const EYE_HEIGHT_RATIO = 0.9;
 
-/** Shot-origin and first-person camera eye height above an entity's position: 90% of the default 1.8m hitbox top. */
 export const DEFAULT_EYE_HEIGHT = EYE_HEIGHT_RATIO * 1.8;
 
-/** Eye height derived from a collider set: 90% of the tallest hitbox top, or the humanoid default when unknown. */
 export function eyeHeightFromColliders(set: EntityColliderSet | null | undefined): number {
   const colliders = resolveColliders(set);
   let top = 0;
@@ -81,12 +79,7 @@ export function aimSpreadDeg(aim: Aim): number {
   return aim.spread ?? 0;
 }
 
-/**
- * Resolves a shot's world origin and direction from the shooter's eye or muzzle and an {@link Aim}, ready for
- * `ctx.scene.raycast` — the aim half of a hitscan weapon.
- *
- * @capability hitscan-shot aim a hitscan shot (shoot a gun): resolve origin and direction from the eye or muzzle for a raycast
- */
+/** @capability hitscan-shot aim a hitscan shot (shoot a gun): resolve origin and direction from the eye or muzzle for a raycast */
 export function resolveShot(
   deps: ShotOriginDeps,
   from: string,

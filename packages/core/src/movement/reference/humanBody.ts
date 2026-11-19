@@ -3,10 +3,8 @@ import { flatGround, footContactForce, groundHeight, SHOE_ON_CONCRETE, type Cont
 import { maxJointTorque, YOUNG_MALE_STRENGTH, type HumanJointStrength, type LegJoint } from "./jointStrength";
 import { createPlanarMultibody, type PlanarMultibody } from "./planarMultibody";
 
-/** A leg of the sagittal human. */
 export type HumanSide = "right" | "left";
 
-/** Joint torques commanded for one step, N·m, in the joint conventions of {@link HumanJointStrength}. */
 export interface HumanJointTorques {
   rightHip: number;
   rightKnee: number;
@@ -16,7 +14,6 @@ export interface HumanJointTorques {
   leftAnkle: number;
 }
 
-/** Options for {@link createHumanBody}. */
 export interface HumanBodyOptions {
   mass?: number;
   stature?: number;
@@ -27,11 +24,9 @@ export interface HumanBodyOptions {
   gravity?: number;
   /** Resting metabolic rate, W/kg (default 1.16: about 1750 kcal/day for a 73 kg man). */
   basalMetabolism?: number;
-  /** Fixed integration step, s (default 1/4000). */
   dt?: number;
 }
 
-/** Serializable state of a {@link HumanBody}. */
 export interface HumanBodyState {
   time: number;
   q: number[];
@@ -47,7 +42,6 @@ export interface FootForces {
   left: [number, number];
 }
 
-/** The sagittal human body: a seven-segment multibody on compliant foot contact, driven by torque-limited joints. */
 export interface HumanBody {
   readonly geometry: PlanarHumanGeometry;
   readonly model: PlanarMultibody;
@@ -58,27 +52,17 @@ export interface HumanBody {
   readonly q: Float64Array;
   readonly u: Float64Array;
   time: number;
-  /** Ground forces from the last step. */
   readonly feet: FootForces;
-  /** Muscle (actuator) work done so far, J: concentric positive, eccentric negative (as a positive number). */
   positiveWork: number;
   negativeWork: number;
   /** Resting metabolic rate, W/kg. */
   readonly basalMetabolism: number;
-  /** Relative joint angle and rate. */
   joint(side: HumanSide, joint: LegJoint): { angle: number; rate: number };
-  /** Whole-body centre of mass `[x, y, vx, vy]`. */
   centerOfMass(): Float64Array;
-  /** World position of a foot's heel, toe or ankle. */
   footPoint(side: HumanSide, which: "heel" | "toe" | "ankle", out?: Float64Array): Float64Array;
   /** Advance one step with the commanded torques (clamped to strength); returns the applied torques. */
   step(torques: HumanJointTorques): HumanJointTorques;
-  /**
-   * Advance one step with joint torques applied as given: for muscle-driven control, where the muscles' own
-   * force–length–velocity limits and energetics replace the torque generators.
-   */
   stepMuscles(torques: HumanJointTorques): void;
-  /** Stand still at `x`, feet flat on the ground, with joint angles from `pose` (default straight). */
   reset(x?: number, pose?: Partial<Record<`${HumanSide}${"Hip" | "Knee" | "Ankle"}`, number>> & { trunk?: number }, velocity?: number): void;
   snapshot(): HumanBodyState;
   restore(state: HumanBodyState): void;
@@ -90,7 +74,6 @@ const SEG: Record<HumanSide, { thigh: number; shank: number; foot: number }> = {
   left: { thigh: S.leftThigh, shank: S.leftShank, foot: S.leftFoot },
 };
 
-/** Passive range-of-motion stops (rad) of the hip, knee and ankle, as stiff joint end-stops. */
 const RANGE: Record<LegJoint, [number, number]> = { hip: [-0.6, 2.2], knee: [-2.5, 0], ankle: [-0.8, 0.45] };
 const LEG_JOINTS: readonly LegJoint[] = ["hip", "knee", "ankle"];
 const TORQUE_KEYS: readonly (keyof HumanJointTorques)[] = ["rightHip", "rightKnee", "rightAnkle", "leftHip", "leftKnee", "leftAnkle"];

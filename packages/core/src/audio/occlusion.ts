@@ -6,11 +6,9 @@
  * @capability audio-occlusion an emitter behind blocking world geometry is attenuated and darkened by a budgeted line test, and falls back to distance-only once the tick's budget is spent.
  */
 export interface AudioOcclusionConfig {
-  /** Geometry tests shared by every retained loop in one listener tick. Default 8; 0 keeps distance-only. */
   maxTestsPerTick?: number;
   /** Minimum milliseconds before the same loop is tested again. Default 150. */
   intervalMs?: number;
-  /** Gain multiplier at full blockage; 1 disables attenuation. Default 0.55. */
   attenuation?: number;
   /** Low-pass cutoff at full blockage in Hz. Default 1200; a loop already darker keeps its own cutoff. */
   lowpassHz?: number;
@@ -18,7 +16,6 @@ export interface AudioOcclusionConfig {
   maxDistance?: number;
 }
 
-/** Defaults for {@link AudioOcclusionConfig}. */
 export const AUDIO_OCCLUSION_DEFAULTS = {
   maxTestsPerTick: 8,
   intervalMs: 150,
@@ -27,7 +24,6 @@ export const AUDIO_OCCLUSION_DEFAULTS = {
   maxDistance: 60,
 } as const;
 
-/** A fully specified occlusion policy, with every unset field replaced by its default. */
 export interface ResolvedAudioOcclusionConfig {
   maxTestsPerTick: number;
   intervalMs: number;

@@ -1,16 +1,8 @@
-/**
- * The shell's focusable canvas wrapper owns play keyboard events. Browser
- * drivers restore its focus before key holds when no UI control owns focus. Helpers remain self-contained
- * for serialization into the page with `.toString()`.
- */
-
-/** Minimal focusable element shape (browser `HTMLElement` satisfies it). */
 export interface FocusableElement {
   focus(options?: { preventScroll?: boolean }): void;
   closest?(selector: string): FocusableElement | null;
 }
 
-/** Minimal document shape (browser `Document` satisfies it). */
 export interface FocusableDocument {
   querySelector(selector: string): FocusableElement | null;
   readonly activeElement: FocusableElement | null;
@@ -51,12 +43,6 @@ export function holdComplete(input: {
   return input.nowMs >= input.deadlineMs && input.framesElapsed >= 1;
 }
 
-/**
- * Maps a binding code (`mouse0`/`mouse1`/`mouse2`, as the shell's action tracker names pointer
- * buttons) to the CDP mouse button and its `buttons` mask, or `null` for a keyboard code — so
- * `--key mouse0:1200` holds the primary button over the play surface (hold-to-fire weapons).
- * Self-contained for browser serialization.
- */
 export function mouseButtonForCode(code: string): { button: "left" | "middle" | "right"; buttons: number } | null {
   if (code === "mouse0") return { button: "left", buttons: 1 };
   if (code === "mouse1") return { button: "middle", buttons: 4 };

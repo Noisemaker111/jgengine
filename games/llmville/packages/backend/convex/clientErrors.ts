@@ -4,7 +4,6 @@ import { createClientErrorFunctions } from "@jgengine/convex/server";
 
 export const { reportClientError: submit, pruneClientErrors: pruneOldClientErrors, pruneRateLimits } = createClientErrorFunctions();
 
-/** One-shot history migration; existing reports bypass current submission policy. */
 export const migrateLegacyReports = internalMutation({
   args: {},
   returns: v.object({ migrated: v.number(), remaining: v.boolean() }),

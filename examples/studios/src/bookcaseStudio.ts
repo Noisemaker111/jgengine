@@ -1,19 +1,10 @@
-/**
- * EXAMPLE GENERATOR ADOPTER — a "Bookcase Studio" (Chiro-Visuals style): dimensions, shelves, board
- * thickness, tint, book density/leaning, seeded randomize. NOT engine code — a self-contained module
- * that registers a parts generator with ONE `registerGenerator` call using only public seam
- * APIs. Placed instances persist `{ assetId, ...params, seed }` and re-resolve at runtime. Copy + swap
- * the schema/`generate` to make any slider-driven prop.
- */
 import { defineGenerator, registerGenerator, type GeneratorContext } from "@jgengine/core/generator/generator";
 import { defineParamSchema, type ParamsOf } from "@jgengine/core/generator/paramSchema";
 import { PARTS_OUTPUT, partsBounds, type GeneratedAsset, type GeneratedPart } from "@jgengine/core/scene/assetGenerator";
 import { DEFAULT_FORWARD } from "@jgengine/core/scene/facing";
 
-/** The generator id a catalog entry / placed marker references. */
 export const BOOKCASE_GENERATOR_ID = "bookcase";
 
-/** The bookcase slider schema — the editor auto-generates the inspector from this. */
 export const BOOKCASE_SCHEMA = defineParamSchema({
   fields: [
     { type: "range", key: "width", label: "width", min: 0.6, max: 3, step: 0.05, default: 1.2, unit: "m", group: "carcass" },
@@ -36,7 +27,6 @@ export const BOOKCASE_SCHEMA = defineParamSchema({
 
 const BOOK_COLORS = ["#8c3b3b", "#3b5a8c", "#3b8c5a", "#8c7a3b", "#5a3b8c", "#8c5a3b", "#2f2f34"];
 
-/** Generate a bookcase's board + book parts from validated params + seed — the seam hook. */
 export function generateBookcase(params: ParamsOf<typeof BOOKCASE_SCHEMA>, context: GeneratorContext): GeneratedAsset {
   const { width, height, depth, lean, tint } = params;
   const shelves = Math.round(params.shelves);
@@ -82,7 +72,6 @@ export function generateBookcase(params: ParamsOf<typeof BOOKCASE_SCHEMA>, conte
   return { parts, bounds: partsBounds(parts), forward: DEFAULT_FORWARD };
 }
 
-/** The bookcase parts generator. */
 export const BOOKCASE_GENERATOR = defineGenerator({
   id: BOOKCASE_GENERATOR_ID,
   label: "Bookcase",
@@ -91,7 +80,6 @@ export const BOOKCASE_GENERATOR = defineGenerator({
   generate: generateBookcase,
 });
 
-/** Register the bookcase generator asset. One call — no engine edits. */
 export function registerBookcaseStudio(): void {
   registerGenerator(BOOKCASE_GENERATOR);
 }

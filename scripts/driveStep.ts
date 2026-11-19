@@ -16,26 +16,20 @@ import { createFlowStepper, describeFlowReport, runFlowReport } from "../package
 import type { BrowserFlow } from "../packages/core/src/play/flow";
 import type { ProbeReadings } from "../packages/core/src/game/playableGame";
 
-
 export interface LiveStepOptions {
-  /** Flow calls to run in order, e.g. `f.click("Start")` or `await f.wait(500); return f.probe()`. */
   steps: readonly string[];
   /** Boot the page again instead of resuming the running one. */
   fresh: boolean;
-  /** The page to run on, built from the dev server's base URL. */
   targetUrl(base: string): URL;
-  /** An explicitly served page: skip starting the managed dev server. */
   externalBase?: string;
   device: Device;
   size: SizeMode;
   viewport: ViewportOverride;
   timeoutMs: number;
   reuseStorage: boolean;
-  /** Take a named screenshot of the page, the way `f.shot` does in a flow. */
   shot(session: CdpSession, name: string): Promise<void>;
 }
 
-/** Take `--step <code>` (repeatable) and `--fresh` out of a drive command line. */
 export function splitStepFlags(argv: readonly string[]): { argv: string[]; steps: string[]; fresh: boolean } {
   const rest: string[] = [];
   const steps: string[] = [];
@@ -111,8 +105,6 @@ async function listPages(debugPort: number): Promise<PageTarget[]> {
   return (Array.isArray(listed) ? listed : []).map(pageTarget).filter((page): page is PageTarget => page !== undefined && page.type === "page");
 }
 
-
-/** A step snippet as a function of `f`: an expression first, statements when it is not one. */
 export function compileStep(code: string): (f: unknown) => Promise<unknown> {
   let make: Function;
   try {
@@ -123,7 +115,6 @@ export function compileStep(code: string): (f: unknown) => Promise<unknown> {
   return (f) => Promise.resolve(make(f));
 }
 
-/** The flow with a misspelt call named, and the calls it could have meant. */
 export function guardFlowCalls<F extends object>(flow: F): F {
   return new Proxy(flow, {
     get(target, key, receiver) {
@@ -135,7 +126,6 @@ export function guardFlowCalls<F extends object>(flow: F): F {
   });
 }
 
-/** Run every step on the live page; 0 when all pass, 1 at the first failure. */
 export async function runLiveSteps(options: LiveStepOptions): Promise<number> {
   const warm = await acquireWarmCaptureOrExit({});
   return runWithDaemonRecovery(warm, async (daemon) => {
@@ -150,7 +140,6 @@ export async function runLiveSteps(options: LiveStepOptions): Promise<number> {
   });
 }
 
-/** An explicit target keeps its server; managed game steps start the dev server lazily. */
 export async function liveStepBase(external: string | undefined, managed: () => Promise<{ base: string }>): Promise<string> {
   return external ?? (await managed()).base;
 }

@@ -1,16 +1,12 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-/** Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
- * @internal
- */
+/** @internal */
 export function resolveGeneratedDir(cliDir: string): string {
   return join(resolve(cliDir, ".."), "generated");
 }
 
-/** Sprite-pack counterpart of `resolveGeneratedDir` — a separate generated tree, same sibling layout.
- * @internal
- */
+/** @internal */
 export function resolveGeneratedSpritesDir(cliDir: string): string {
   return join(resolve(cliDir, ".."), "generated-sprites");
 }

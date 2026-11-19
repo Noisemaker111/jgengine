@@ -37,7 +37,6 @@ export function gunById(id: string): GunDef | undefined {
   return gunRegistry.get(id);
 }
 
-/** The generation provenance for a rolled gun — every family/rarity/manufacturer pick and its weight. */
 export function gunProvenance(id: string): GenProvenance | undefined {
   return gunProvenanceById.get(id);
 }
@@ -51,12 +50,10 @@ export function allGuns(): readonly GunDef[] {
   return [...gunRegistry.values()];
 }
 
-/** Keep a restored document's ids from colliding with the next rolled gun. */
 export function ensureGunSerialAtLeast(value: number): void {
   if (Number.isFinite(value) && value > gunSerial) gunSerial = Math.floor(value);
 }
 
-/** The serial a rolled id carries, or 0 for an id this registry did not mint. */
 export function gunSerialOf(id: string): number {
   const match = /^gun_(\d+)_/.exec(id);
   return match === null ? 0 : Number(match[1]);
@@ -68,13 +65,11 @@ function pick<T>(rng: () => number, list: readonly T[]): T {
   return entry;
 }
 
-/** Rarity by weight, where luck lifts every tier but common. */
 export function rollRarity(rng: () => number, luck = 1): Rarity {
   const picked = pickWeighted(rng, RARITY_TIERS, (tier) => tier.weight * (tier.id === "common" ? 1 : luck));
   return picked?.id ?? "common";
 }
 
-/** A tier's place from common (0) to legendary (4). */
 export function rarityRank(rarity: Rarity): number {
   return RARITY_TIERS.findIndex((tier) => tier.id === rarity);
 }
@@ -84,17 +79,12 @@ export interface RollGunOptions {
   family?: GunFamily;
   level?: number;
   luck?: number;
-  /** Pin a named legendary ("Sixgun"): forces legendary rarity, its family and its maker. */
   legendary?: string;
-  /** Pin a maker for a non-legendary roll ("Chuckwerk"). */
   maker?: string;
-  /** The rarest tier this roll may land on; rarer tiers get no weight. A pinned rarity ignores it. */
   maxRarity?: Rarity;
-  /** Pin a quest-reward unique ("Kindler"): its maker, family, rarity, element and name. */
   unique?: string;
 }
 
-/** The family and maker a named legendary belongs to, or undefined for a name nobody rolls. */
 export function legendaryEntry(name: string): { family: GunFamily; maker: string } | undefined {
   for (const family of Object.keys(LEGENDARY_NAMES) as GunFamily[]) {
     for (const [maker, legendaryName] of LEGENDARY_NAMES[family]) {
@@ -104,13 +94,6 @@ export function legendaryEntry(name: string): { family: GunFamily; maker: string
   return undefined;
 }
 
-/**
- * Weighted family/rarity/manufacturer selection expressed on the engine's composable generation
- * seam (`@jgengine/core/item/itemgen`). The uniform/weighted picks consume the injected rng in the
- * same order the hand-rolled selection did, so drops stay identical while the roll now carries
- * serializable provenance (see {@link gunProvenance}). The gun-specific stat, element, and name
- * feel below stays game-local — the seam owns selection, not the numbers.
- */
 function gunSelectionSchema(luck: number, maxRarity: Rarity): GenSchema {
   const cap = RARITY_TIERS.findIndex((tier) => tier.id === maxRarity);
   return {
@@ -155,7 +138,6 @@ function procChanceFor(element: GunElement, tier: GunRarity): number {
 
 const ANY = { value: "", label: "any" } as const;
 
-/** What a gun roll takes; an empty pin is drawn, and pins follow {@link RollGunOptions}. */
 const GUN_SCHEMA = defineParamSchema({
   fields: [
     { type: "number", key: "level", label: "level", min: 1, step: 1, default: 1, explore: [1, 30] },
@@ -182,7 +164,6 @@ type GunParams = ParamsOf<typeof GUN_SCHEMA>;
 /** A rolled gun before the registry gives it an id and its perks. */
 export type GunRoll = Omit<GunDef, "id" | "perks">;
 
-/** The steps a roll pins and the rarest tier it may land on. */
 function gunPins(params: GunParams): { pin: Record<string, string>; maxRarity: Rarity } {
   const pin: Record<string, string> = {};
   if (params.family !== "") pin["family"] = params.family;
@@ -209,7 +190,6 @@ function gunPins(params: GunParams): { pin: Record<string, string>; maxRarity: R
   return { pin, maxRarity };
 }
 
-/** Scrap Signal's gun roll: family, rarity and maker on the generation seam, then the gun's own numbers and name. */
 const GUN_RECIPE: ItemRecipe<typeof GUN_SCHEMA, GunRoll> = {
   id: "scrap-signal.gun",
   label: "Scrap Signal gun",
@@ -282,10 +262,6 @@ const GUN_RECIPE: ItemRecipe<typeof GUN_SCHEMA, GunRoll> = {
 export const GUN_GENERATOR = defineItemGenerator(GUN_RECIPE);
 registerGenerator(GUN_GENERATOR);
 
-/**
- * Roll a gun from a live stream (a session's chest or drop stream) and register it: the same recipe
- * {@link GUN_GENERATOR} rolls from a seed, then a fresh serial id and the perks that id derives.
- */
 export function rollGun(rng: () => number, level: number, options: RollGunOptions = {}): GunDef {
   const params: GunParams = {
     level: options.level ?? level,

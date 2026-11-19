@@ -19,29 +19,19 @@ export interface ModalRecord {
   id: string;
   /** Free-form game style tag the renderer switches on (e.g. `"confirm"`, `"pause"`). Never interpreted here. */
   kind: string;
-  /** Arbitrary serializable data for the renderer (title/body/button labels, context ids, …). */
   payload?: unknown;
   /**
    * Auto-dismiss the modal this many ms after it opens, resolved by {@link ModalStack.tick} against
    * the injected clock. Omit for a modal that only closes on an explicit pop/resolve.
    */
   timeoutMs?: number;
-  /** Result delivered when {@link ModalRecord.timeoutMs} fires. Default {@link MODAL_CANCEL}. */
   timeoutResult?: string;
 }
 
-/** A modal to push — {@link ModalRecord} with an optional id (auto-assigned when absent). */
 export type ModalInput = Omit<ModalRecord, "id"> & { id?: string };
 
-/**
- * The outcome of closing a modal via {@link ModalStack.resolve} (or an auto-dismiss) — the closed
- * record's identity plus the free-form `result` string the caller chose. Delivered to the
- * `onResolve` option and stashed as {@link ModalStack.lastResolution}.
- */
 export interface ModalResolution {
-  /** The resolved record's id. */
   id: string;
-  /** The resolved record's kind. */
   kind: string;
   /** Free-form outcome — e.g. {@link MODAL_CONFIRM}, {@link MODAL_CANCEL}, or a game-specific choice. Never interpreted here. */
   result: string;
@@ -51,71 +41,40 @@ export interface ModalResolution {
   at: number;
 }
 
-/** A serialized stack entry: the opaque record plus the clock time it opened (for timer restore). */
 export interface ModalStackEntry {
   record: ModalRecord;
   /** Clock time (ms) this modal was pushed — the base for its auto-dismiss timer. */
   openedAt: number;
 }
 
-/** Serializable state — the ordered entries (bottom-first) and the id counter. Plain JSON. */
 export interface ModalStackSnapshot {
-  /** Stack entries from bottom to top; the last is the active (topmost) modal. */
   entries: readonly ModalStackEntry[];
-  /** Next auto-id counter, so restored stacks keep generating unique ids. */
   seq: number;
 }
 
-/** Options for {@link createModalStack}. */
 export interface ModalStackOptions {
   /** Injected clock (ms) for timestamps and auto-dismiss timers. Default `Date.now`. */
   now?: () => number;
-  /** Modals to open at construction, bottom-first. */
   initial?: readonly ModalInput[];
-  /** Called whenever a modal is pushed (opened). */
   onOpen?: (record: ModalRecord) => void;
-  /** Called whenever a modal closes via {@link ModalStack.resolve}, {@link ModalStack.pop}, or an auto-dismiss. */
   onResolve?: (resolution: ModalResolution) => void;
 }
 
-/** Conventional confirm result for a two-button dialog — a shared string, not model behavior. */
 export const MODAL_CONFIRM = "confirm";
-/** Conventional cancel/dismiss result (also the default auto-dismiss and pop result). */
 export const MODAL_CANCEL = "cancel";
 
-/** An observable, serializable stack of modal dialogs. See {@link createModalStack}. */
 export interface ModalStack {
-  /**
-   * Push a modal onto the top of the stack and return the stored record (with its resolved id).
-   * Fires `onOpen`.
-   */
   push(modal: ModalInput): ModalRecord;
-  /** Replace the top entry and notify once; an empty stack behaves like push. */
   replace(modal: ModalInput): ModalRecord;
-  /**
-   * Pop the topmost modal without a caller result — it resolves with {@link MODAL_CANCEL} (the ESC /
-   * backdrop-click behavior). Returns the removed record, or `null` when the stack is empty.
-   */
   pop(): ModalRecord | null;
-  /**
-   * Resolve a modal with a free-form `result` and remove it: the top by default, or the entry with
-   * `options.id` from anywhere in the stack. Fires `onResolve` and records {@link ModalStack.lastResolution}.
-   * Returns the resolution, or `null` when the stack is empty or the id is unknown.
-   */
   resolve(result: string, options?: { id?: string; payload?: unknown }): ModalResolution | null;
-  /** The active (topmost) modal, or `null` when nothing is open. */
   top(): ModalRecord | null;
-  /** Whether any modal is open (`depth() > 0`) — a game gates input/pause on this. */
   isOpen(): boolean;
-  /** Whether a modal with the given id is anywhere in the stack. */
   has(id: string): boolean;
-  /** Number of stacked modals. */
   depth(): number;
-  /** The full stack, bottom-first (last is the active modal). */
   stack(): readonly ModalRecord[];
   /** The most recent resolution (survives the modal being closed), or `null` if none yet. */
   lastResolution(): ModalResolution | null;
-  /** Close every open modal, each resolving with {@link MODAL_CANCEL} (top-first). */
   clear(): void;
   /**
    * Resolve every modal whose {@link ModalRecord.timeoutMs} has elapsed against `now` (default: the
@@ -128,11 +87,8 @@ export interface ModalStack {
    * timer / is absent. Clamped at 0 once elapsed — feed a countdown ring off it.
    */
   timeRemaining(id?: string): number | null;
-  /** Observe every change (push/pop/resolve/clear/tick/restore). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): ModalStackSnapshot;
-  /** Restore from a {@link ModalStackSnapshot}, replacing the current stack. */
   restore(snapshot: ModalStackSnapshot): void;
 }
 

@@ -2,10 +2,7 @@ import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { useEffect } from "@jgengine/core/ui/jsx";
 import { registerNativeRuneFont } from "./rune/nativeSurface.view";
 
-
-/** One font file a game ships (an OFL or other licensed TTF/WOFF2 bundled with the game). */
 export interface GameFontFace {
-  /** Family name the game's CSS uses, e.g. `"Bangers"`. */
   family: string;
   /** URL of the file, usually a Vite asset import (`import bangers from "./fonts/Bangers-Regular.ttf"`). */
   src: string;
@@ -14,7 +11,6 @@ export interface GameFontFace {
   style?: "normal" | "italic";
 }
 
-/** The pair of fonts that gives a game its voice: a display face for titles and numbers, a body face for reading. */
 export interface GameFontPairing {
   display: GameFontFace;
   body: GameFontFace;
@@ -29,12 +25,7 @@ const FALLBACK = {
 
 const quote = (family: string): string => `"${family.replace(/"/g, "")}"`;
 
-/**
- * The CSS font stacks for a pairing, with installed fallbacks, ready for a `hudTheme` or a kit:
- * `{ fontDisplay, fontBody, fontNumeric }`.
- *
- * @capability game-font-stacks display/body/numeric font stacks for a game's font pairing, with installed fallbacks
- */
+/** @capability game-font-stacks display/body/numeric font stacks for a game's font pairing, with installed fallbacks */
 export function gameFontStacks(pairing: GameFontPairing): { fontDisplay: string; fontBody: string; fontNumeric: string } {
   const display = `${quote(pairing.display.family)}, ${FALLBACK.display}`;
   return {
@@ -46,7 +37,6 @@ export function gameFontStacks(pairing: GameFontPairing): { fontDisplay: string;
 
 const loaded = new Set<string>();
 
-/** Registers `faces` with the document's font set once each and starts loading them. Safe on the server. */
 export function loadGameFonts(faces: readonly GameFontFace[]): void {
   if (typeof document === "undefined" || typeof FontFace === "undefined" || document.fonts === undefined) return;
   for (const face of faces) {

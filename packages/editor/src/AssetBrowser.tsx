@@ -6,25 +6,20 @@ import type { EditorSession } from "@jgengine/core/editor/index";
 
 import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
 
-/** A searchable, placeable asset shown in the editor's asset browser panel. */
 export interface EditorAssetEntry {
   id: string;
   label: string;
   kind: "model" | "catalog" | "marker";
   url?: string;
-  /** Animation clip names from the asset index — present on rigged catalog assets. */
   clips?: readonly string[];
 }
 
-/** "idle · walk · run" summary of a rigged asset's detected animation roles for the browser row badge.
- * @internal
- */
+/** @internal */
 export function describeClipRoles(clips: readonly string[]): string {
   const roles = Object.keys(rolesFromClips(clips));
   return roles.length === 0 ? "no roles detected" : roles.join(" · ");
 }
 
-/** Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone. */
 export const MATERIAL_DRAG_MIME = "application/x-jgengine-material";
 
 /**
@@ -33,7 +28,7 @@ export const MATERIAL_DRAG_MIME = "application/x-jgengine-material";
  */
 export const ASSET_DRAG_MIME = "application/x-jgengine-editor-asset";
 
-/** Serializes a placeable asset for HTML5 drag into the viewport. @internal */
+/** @internal */
 export function encodeAssetDragPayload(entry: EditorAssetEntry): string {
   return JSON.stringify({ id: entry.id, label: entry.label, kind: entry.kind });
 }
@@ -52,7 +47,6 @@ export function decodeAssetDragPayload(raw: string): EditorAssetEntry | null {
   }
 }
 
-/** Materials palette: drag a chip onto an outliner row (assign to that object) or the viewport (paint terrain / assign to the object under the cursor). */
 function MaterialsPalette() {
   return (
     <div className="flex flex-wrap gap-1 border-b border-white/[0.08] pb-2">
@@ -75,7 +69,6 @@ function MaterialsPalette() {
   );
 }
 
-/** Searchable panel for placing catalog assets or an empty marker into the scene. */
 export function AssetBrowser({
   assets,
   session,
@@ -157,7 +150,6 @@ export function AssetBrowser({
   );
 }
 
-/** Turns a game's asset catalog ids into editor asset entries for the browser panel. */
 export function assetsFromCatalog(
   ids: readonly string[],
   resolve?: (id: string) => { url?: string; clips?: readonly string[] } | null,
@@ -188,11 +180,7 @@ export function editorAssetFromImport(asset: { id: string; url: string; label?: 
   };
 }
 
-/**
- * Merges imported model entries into the live browser list, replacing any prior entry that shares
- * an id (re-import stays a single catalog row).
- * @internal
- */
+/** @internal */
 export function mergeEditorAssets(
   current: readonly EditorAssetEntry[],
   next: readonly EditorAssetEntry[],

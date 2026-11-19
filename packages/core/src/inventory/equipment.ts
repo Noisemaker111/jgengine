@@ -1,12 +1,8 @@
 import { devtools } from "../devtools/devtools";
 
-/** One body slot: the item kinds it accepts and the slots it occupies while filled. */
 export interface EquipSlotDef {
-  /** Stable slot id, in the caller's nouns ("weapon", "rig", "boots"). */
   id: string;
-  /** Item kinds this slot accepts; omitted accepts any kind. */
   accepts?: readonly string[];
-  /** Slot ids this slot occupies while filled, e.g. a two-handed weapon blocking "offhand". */
   blocks?: readonly string[];
 }
 
@@ -15,16 +11,12 @@ export interface EquipSlotDef {
  * the instance registry to its base and answers from that base's data — this is not a second item type.
  */
 export interface EquipItemDef {
-  /** Slot ids this item may occupy, most preferred first. */
   slots: readonly string[];
-  /** Kind tag checked against {@link EquipSlotDef.accepts}. */
   kind?: string;
 }
 
-/** Item lookup the rules read; returns nothing for an unknown id. */
 export type EquipItemLookup = (itemId: string) => EquipItemDef | null | undefined;
 
-/** Serializable equip state: the filled slots as `[slotId, itemId]` pairs. */
 export interface EquipmentState {
   slots: readonly (readonly [string, string])[];
 }
@@ -32,53 +24,40 @@ export interface EquipmentState {
 /** Why an equip attempt was refused; `detail` names the item and slots involved. */
 export type EquipRejection = "unknown-slot" | "not-equippable" | "wrong-slot" | "already-equipped" | "blocked";
 
-/** An equip attempt: the new worn set plus the replaced item, or the refusal with its reason and detail. */
 export type EquipResult =
   | { status: "ok"; state: EquipmentState; slotId: string; replaced: string | null }
   | { status: "rejected"; reason: EquipRejection; detail: string };
 
-/** An unequip attempt: the new worn set plus the item taken off, or the refusal with its detail. */
 export type UnequipResult =
   | { status: "ok"; state: EquipmentState; itemId: string }
   | { status: "rejected"; reason: "unknown-slot" | "empty-slot"; detail: string };
 
-/** One worn item and the slot holding it. */
 export interface WornEntry {
   slotId: string;
   itemId: string;
 }
 
-/** What the debug overlay reads about a worn set. */
 export interface EquipmentProbeReading {
   filled: number;
   slots: Readonly<Record<string, string>>;
 }
 
-/** A worn-gear set: one item per slot, rules from slot and item data, state out and back in. */
 export interface Equipment {
-  /** Wear `itemId` in `slotId`; a filled slot is replaced and its item returned as `replaced`. */
   equip(slotId: string, itemId: string): EquipResult;
-  /** Wear `itemId` in the first of its preferred slots that is empty, else the first slot that accepts it. */
   equipBest(itemId: string): EquipResult;
-  /** Clear `slotId` and hand back the item it held. */
   unequip(slotId: string): UnequipResult;
-  /** Worn items in declared slot order. */
   worn(): readonly WornEntry[];
   /** The slot holding `itemId`, or null when that item is not worn. */
   slotOf(itemId: string): string | null;
-  /** Declared slot ids, in order. */
   slotIds(): readonly string[];
   state(): EquipmentState;
   /** Replace the worn set; returns false without mutation when an entry breaks the rules. */
   restore(next: EquipmentState): boolean;
   reset(): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
-/** Options for {@link createEquipment}. */
 export interface EquipmentOptions {
-  /** Register a devtools probe under this name reporting which slots are filled. */
   devtoolsName?: string;
 }
 

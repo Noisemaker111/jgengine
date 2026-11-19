@@ -1,8 +1,3 @@
-/**
- * Live demo: the engine's weapon system firing at a range, seen from the side. One `WeaponDefinition`
- * drives cadence, pellets, spread, magazine and ballistic flight; the sliders rebuild it and `retune`
- * the running weapon. A stick figure aims and fires on its own until the visitor moves the mouse over it.
- */
 import { createDamageRuntime } from "@jgengine/core/combat/damage/damageRuntime";
 import type { WeaponDefinition, WeaponVec3 } from "@jgengine/core/combat/weaponDefinition";
 import { createWeaponSystem, type WeaponContact } from "@jgengine/core/combat/weaponSystem";
@@ -60,7 +55,6 @@ function definitionFrom(d: ProjectileDials): WeaponDefinition {
   };
 }
 
-/** Launch angle that lands a shot `dz` ahead and `dy` up, lower arc first. */
 function solvePitch(dz: number, dy: number, v: number, g: number): number {
   if (g < 0.05) return Math.atan2(dy, dz);
   const v2 = v * v;

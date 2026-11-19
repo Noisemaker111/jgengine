@@ -49,7 +49,6 @@ export async function decodeImage(bytes: Uint8Array): Promise<DecodedImage> {
   throw new Error("not a PNG or JPEG");
 }
 
-/** Block-compressed formats need whole 4×4 blocks at the top level; past 4096 the encoder runs out of room. */
 export function encodableSize(width: number, height: number): boolean {
   return width >= 4 && height >= 4 && width % 4 === 0 && height % 4 === 0 && Math.max(width, height) <= 4096;
 }
@@ -74,7 +73,6 @@ export async function encodeKtx2(job: EncodeJob, decode: (bytes: Uint8Array) => 
   });
 }
 
-// ---------------------------------------------------------------------------------------------
 // glTF / GLB
 
 interface GltfImage {
@@ -108,7 +106,6 @@ function slotRole(slot: string): TextureRole {
   return "data";
 }
 
-/** Every image a model's materials sample, with the role its slots give it (normal over colour over data). */
 export function modelImageRoles(json: GltfJson): Map<number, TextureRole> {
   const roles = new Map<number, TextureRole>();
   const visit = (value: unknown, slot: string): void => {
@@ -181,7 +178,6 @@ export function writeGlb(json: GltfJson, bin: Uint8Array | null): Uint8Array {
 /** An image a model samples: a file beside it, or bytes inside its binary chunk. */
 export type ModelImage = { index: number; role: TextureRole } & ({ kind: "file"; file: string; uri: string } | { kind: "embedded"; bytes: Uint8Array });
 
-/** The images of a parsed model the encoder can give a twin. */
 export function modelImages(json: GltfJson, modelDir: string, bin: Uint8Array | null): ModelImage[] {
   const found: ModelImage[] = [];
   for (const [index, role] of modelImageRoles(json)) {
@@ -249,10 +245,8 @@ export function applyImageTwins(json: GltfJson, bin: Uint8Array | null, twins: R
   return { json: out, bin: merged };
 }
 
-// ---------------------------------------------------------------------------------------------
 // The pass over a game's public/ folder
 
-/** Every file under `dir`, following the store links a game's `public/` is made of, each real folder once. */
 function walk(dir: string, seen = new Set<string>(), out: string[] = []): string[] {
   let real: string;
   try {
@@ -328,9 +322,7 @@ class EncoderPool {
 }
 
 export interface CompressResult {
-  /** Image twins written by this call. */
   images: number;
-  /** Model twins written by this call. */
   models: number;
   /** Images that cannot be block-compressed (size) or decoded; served as they are. */
   skipped: number;
@@ -346,7 +338,6 @@ function isMapCandidate(publicDir: string, file: string): boolean {
   return !NOT_MAPS.has(top.toLowerCase());
 }
 
-/** The lock that keeps two compressors (two dev servers starting at once) off the same cache. */
 function takeLock(variantDir: string): (() => void) | null {
   const path = join(variantDir, ".lock");
   const tryTake = (): boolean => {

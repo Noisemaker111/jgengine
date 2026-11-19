@@ -1,19 +1,14 @@
-/** How a radial impulse fades from the blast center to its edge. */
 export type RadialFalloff = "linear" | "quadratic" | "none";
 
 /** A radial push: the impulse vector plus the 0..1 falloff sampled at the target. */
 export interface RadialImpulse {
-  /** Impulse along the first axis (direction × magnitude). */
   x: number;
   /** Impulse along the second axis (direction × magnitude). */
   y: number;
-  /** Impulse magnitude = `power` × `falloff`. */
   magnitude: number;
-  /** Falloff weight at the target, 1 at the center down to 0 at the radius. */
   falloff: number;
 }
 
-/** Options for {@link radialImpulse}. */
 export interface RadialImpulseOptions {
   /** Falloff shape. Defaults to `"linear"` (`1 − d/r`). */
   falloff?: RadialFalloff;

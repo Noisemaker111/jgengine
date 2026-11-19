@@ -125,7 +125,6 @@ diffuseColor.rgb = mix(diffuseColor.rgb * 0.82, diffuseColor.rgb * vec3(1.08, 1.
   return material;
 }
 
-/** Minimal position/normal/index merge — avoids depending on a specific BufferGeometryUtils path. */
 function mergePositionGeometries(geometries: readonly THREE.BufferGeometry[]): THREE.BufferGeometry {
   let vertexCount = 0;
   let indexCount = 0;
@@ -379,7 +378,7 @@ function PoleLineObject({ object, context }: { object: SceneKindObject; context:
   return null;
 }
 
-/** Registers the built-in pole-line runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerPoleLineRenderer(): void {
   registerSceneKindRenderer(POLE_LINE_KIND, ({ objects, context }) => (
     <>

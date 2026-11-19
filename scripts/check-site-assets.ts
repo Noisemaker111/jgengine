@@ -26,7 +26,6 @@ const USAGE = {
   ],
 };
 
-/** The games the runner can load: a `games/<id>` with a `src/index.tsx`. */
 export function runnerGames(gamesDir: string): string[] {
   return readdirSync(gamesDir, { withFileTypes: true })
     .filter((entry) => (entry.isDirectory() || entry.isSymbolicLink()) && existsSync(join(gamesDir, entry.name, "src", "index.tsx")))
@@ -39,10 +38,6 @@ function fileIn(root: string, path: string): boolean {
   return existsSync(file) && statSync(file).isFile();
 }
 
-/**
- * What one game names that the built runner lacks: each literal asset path and each pack or library
- * model, looked up in the game's own folder (`games/<id>/`) first and the runner's shared files after.
- */
 export function missingGameAssets(game: string, text: string, playDir: string, catalogs: AssetCatalogs): string[] {
   const own = join(playDir, GAME_PUBLIC_FOLDER, game);
   const missing: string[] = [];
@@ -70,16 +65,11 @@ export interface BundlePart {
   files: number;
 }
 
-/** What one game downloads past the runner shell: all of it, and the part beyond the shared engine. */
 export interface GameBundle {
   total: BundlePart;
   own: BundlePart;
 }
 
-/**
- * The built runner's downloads, past the shell `index.html` already loads: the engine every game
- * shares, measured once, and what each game adds on top of it.
- */
 export interface RunnerBundles {
   engine: BundlePart;
   games: Map<string, GameBundle>;
@@ -132,7 +122,6 @@ export function runnerBundles(playDir: string): RunnerBundles {
 
 const kib = (bytes: number): number => Math.round((bytes / 1024) * 10) / 10;
 
-/** The shared engine's budget, in KiB: `engineKb` in the runner's `apps/dev/bundle-budget.json`. */
 export function loadEngineBudgetKb(root: string): number | undefined {
   const file = join(root, "apps", "dev", "bundle-budget.json");
   if (!existsSync(file)) return undefined;
@@ -141,10 +130,6 @@ export function loadEngineBudgetKb(root: string): number | undefined {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
-/**
- * The runner's bundles against their budgets: the shared engine once against `engineKb`, and each game's
- * own part against its `bundleKb`. Returns the printed table and every part over or without a budget.
- */
 export function bundleBudgetReport(
   bundles: RunnerBundles,
   engineBudgetKb: number | undefined,
@@ -169,7 +154,6 @@ export function bundleBudgetReport(
   return { table: [line(header), ...rows.map((cells) => line(cells.split("\t")))].join("\n"), failures };
 }
 
-/** Every game's missing assets, keyed by game; an empty map passes. */
 export async function checkSiteAssets(playDir: string, gamesDir: string): Promise<Map<string, string[]>> {
   const catalogs = await loadCatalogs();
   const failures = new Map<string, string[]>();

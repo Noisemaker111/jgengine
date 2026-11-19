@@ -2,81 +2,24 @@
 
 # jgengine-multiplayer — capability index
 
-Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
+Discover with `bun run find <intent>` or `npx jgengine find <intent>`.
 
-## authoritative-host — run authoritative game servers with sessions, ticking and persistence behind any transport
-
-- `createGameServerHost` (function) · `import { createGameServerHost } from "@jgengine/ws"`
-
-## client-error-reporting — Accept authenticated bounded diagnostics with cooldown and retention sweeps.
-
-- `createClientErrorFunctions` (function) · `import { createClientErrorFunctions } from "@jgengine/convex"`
-
-## convex-load-server-snapshot — read a hosted server's runtime snapshot inside a host-written Convex mutation
-
-- `loadServerSnapshot` (function) · `import { loadServerSnapshot } from "@jgengine/convex"`
-
-## convex-persist-server-snapshot — write runtime state and host tables in one Convex transaction
-
-- `persistServerSnapshot` (function) · `import { persistServerSnapshot } from "@jgengine/convex"`
-
-## convex-save — save a game to Convex (cloud) through the SaveBackend seam
-
-- `createConvexSaveBackend` (function) · `import { createConvexSaveBackend } from "@jgengine/convex"`
-
-## host-chat-history — Read bounded channel history inside an authorized host query.
-
-- `recentChatMessages` (function) · `import { recentChatMessages } from "@jgengine/convex"`
-
-## host-chat-send — Validate, rate-limit and persist chat inside an authorized host mutation.
-
-- `sendChatMessage` (function) · `import { sendChatMessage } from "@jgengine/convex"`
-
-## host-join-code-gate — membership-or-code gate for private hosted servers
-
-- `canJoinPrivateServer` (function) · `import { canJoinPrivateServer } from "@jgengine/convex"`
-
-## host-listing-filter — exclude private sessions from public browse results
-
-- `isListablePublicly` (function) · `import { isListablePublicly } from "@jgengine/convex"`
-
-## host-rate-limit — Enforce indexed per-key request windows inside authoritative mutations.
-
-- `rateLimit` (function) · `import { rateLimit } from "@jgengine/convex"`
-
-## hosted-world-persistence — Persist hosted authoritative world snapshots in a local file.
-
-- `fileWorldStore` (function) · `import { fileWorldStore } from "@jgengine/node"`
-- `sqlWorldStore` (function) · `import { sqlWorldStore } from "@jgengine/sql"`
-
-## join-gate — block gameplay until joined and show failures with retry
-
-- `JoinGate` (function) · `import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view"`
-
-## multiplayer-p2p — bootstrap a playable authoritative world for browser peer co-op
-
-- `resolvePeerShellMultiplayer` (function) · `import { resolvePeerShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw"`
-
-## online-player-batches — Schedule bounded active-player or home-game work in separate transactions.
-
-- `forEachOnlinePlayer` (function) · `import { forEachOnlinePlayer } from "@jgengine/convex"`
-
-## placed-object-rehydrate — rebuild live placed objects, with their state and slot contents, from persisted snapshot rows
-
-- `fromRuntimeObjectRow` (function) · `import { fromRuntimeObjectRow } from "@jgengine/core/multiplayer"`
-
-## placed-object-rows — a placed object's per-instance state and container contents convert to and from the persisted snapshot row a host stores
-
-- `toRuntimeObjectRow` (function) · `import { toRuntimeObjectRow } from "@jgengine/core/multiplayer"`
-
-## territory-host-hydration — Load an actor profile and bounded claim chunks for a host transaction.
-
-- `loadTerritoryState` (function) · `import { loadTerritoryState } from "@jgengine/convex/territory"`
-
-## territory-host-persistence — Persist dirty ownership chunks and profiles without rewriting the shared server.
-
-- `persistTerritoryState` (function) · `import { persistTerritoryState } from "@jgengine/convex/territory"`
-
-## world-presence-store — indexed neighborhood presence with pose throttling and physical expiry Call only after resolving the actor and their world access; browser arguments are not trusted identities.
-
-- `createWorldPresenceStore` (function) · `import { createWorldPresenceStore } from "@jgengine/convex/worldPresence"`
+- **authoritative-host** — run authoritative game servers with sessions, ticking and persistence behind any transport · `import { createGameServerHost } from "@jgengine/ws"`
+- **client-error-reporting** — Accept authenticated bounded diagnostics with cooldown and retention sweeps. · `import { createClientErrorFunctions } from "@jgengine/convex"`
+- **convex-load-server-snapshot** — read a hosted server's runtime snapshot inside a host-written Convex mutation · `import { loadServerSnapshot } from "@jgengine/convex"`
+- **convex-persist-server-snapshot** — write runtime state and host tables in one Convex transaction · `import { persistServerSnapshot } from "@jgengine/convex"`
+- **convex-save** — save a game to Convex (cloud) through the SaveBackend seam · `import { createConvexSaveBackend } from "@jgengine/convex"`
+- **host-chat-history** — Read bounded channel history inside an authorized host query. · `import { recentChatMessages } from "@jgengine/convex"`
+- **host-chat-send** — Validate, rate-limit and persist chat inside an authorized host mutation. · `import { sendChatMessage } from "@jgengine/convex"`
+- **host-join-code-gate** — membership-or-code gate for private hosted servers · `import { canJoinPrivateServer } from "@jgengine/convex"`
+- **host-listing-filter** — exclude private sessions from public browse results · `import { isListablePublicly } from "@jgengine/convex"`
+- **host-rate-limit** — Enforce indexed per-key request windows inside authoritative mutations. · `import { rateLimit } from "@jgengine/convex"`
+- **hosted-world-persistence** — Persist hosted authoritative world snapshots in a local file. · `import { fileWorldStore } from "@jgengine/node"` · `import { sqlWorldStore } from "@jgengine/sql"`
+- **join-gate** — block gameplay until joined and show failures with retry · `import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view"`
+- **multiplayer-p2p** — bootstrap a playable authoritative world for browser peer co-op · `import { resolvePeerShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw"`
+- **online-player-batches** — Schedule bounded active-player or home-game work in separate transactions. · `import { forEachOnlinePlayer } from "@jgengine/convex"`
+- **placed-object-rehydrate** — rebuild live placed objects, with their state and slot contents, from persisted snapshot rows · `import { fromRuntimeObjectRow } from "@jgengine/core/multiplayer"`
+- **placed-object-rows** — a placed object's per-instance state and container contents convert to and from the persisted snapshot row a host stores · `import { toRuntimeObjectRow } from "@jgengine/core/multiplayer"`
+- **territory-host-hydration** — Load an actor profile and bounded claim chunks for a host transaction. · `import { loadTerritoryState } from "@jgengine/convex/territory"`
+- **territory-host-persistence** — Persist dirty ownership chunks and profiles without rewriting the shared server. · `import { persistTerritoryState } from "@jgengine/convex/territory"`
+- **world-presence-store** — indexed neighborhood presence with pose throttling and physical expiry Call only after resolving the actor and their world access; browser arguments are not trusted identities. · `import { createWorldPresenceStore } from "@jgengine/convex/worldPresence"`

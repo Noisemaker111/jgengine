@@ -29,10 +29,7 @@ function seatSlotIds(ctx: GameContext): readonly string[] {
   return localPlayers(ctx).slots().map((slot) => slot.slotId);
 }
 
-/**
- * The viewports for the seats currently joined, re-resolved when a seat joins or leaves.
- * @internal
- */
+/** @internal */
 export function useSeatViewports(ctx: GameContext, config: ViewportsConfig | undefined): readonly ViewportDef[] {
   const seats = localPlayers(ctx);
   const key = useSyncExternalStore(
@@ -59,11 +56,7 @@ export interface SplitScreenRendererProps {
   mainCamera: GameCameraConfig | undefined;
 }
 
-/**
- * Draw-side form of {@link SplitScreenRenderer}: one scissored render per viewport at render
- * priority, seat rigs persisting across prop changes.
- * @internal
- */
+/** @internal */
 export function splitScreenRendererDraw(getProps: () => SplitScreenRendererProps): EngineDraw {
   const rigs = new Map<string, SeatRig>();
 
@@ -147,12 +140,7 @@ export function splitScreenRendererDraw(getProps: () => SplitScreenRendererProps
   };
 }
 
-/**
- * Draws one scissored render per viewport. The primary seat keeps the main camera and its rig; every
- * other seat gets a follow camera (chase or top-down) on its possessed entity. Mounted only while more
- * than one viewport is drawn, since a render-priority frame callback takes over the engine's default render.
- * @internal
- */
+/** @internal */
 export function SplitScreenRenderer(props: SplitScreenRendererProps) {
   const latest = useRef<SplitScreenRendererProps>(props);
   latest.current = props;

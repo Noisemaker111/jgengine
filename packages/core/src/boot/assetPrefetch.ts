@@ -1,7 +1,6 @@
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { orderPrefetch, type PrefetchItem, type PrefetchTier } from "@jgengine/core/boot/prefetchTier";
 
-/** How far a prefetch got, in files. */
 export interface PrefetchState {
   total: number;
   done: number;
@@ -14,14 +13,11 @@ const EMPTY: PrefetchState = { total: 0, done: 0, failed: 0, nearTotal: 0, nearD
 
 /** Downloads a game's files in the background, near ones first, so a later load reads them from the browser cache. */
 export interface AssetPrefetch {
-  /** Fetch these files, near tier first; a new call replaces the list and keeps what already finished. */
   start: (items: readonly PrefetchItem[]) => void;
   state: () => PrefetchState;
-  /** Every near file has been fetched (or failed, which a later load reports itself). */
   nearReady: () => boolean;
   subscribe: (listener: () => void) => () => void;
   snapshot: () => PrefetchState;
-  /** Stop fetching and forget the list. */
   reset: () => void;
 }
 
@@ -106,5 +102,4 @@ async function defaultFetchFile(url: string, tier: PrefetchTier): Promise<boolea
   return response.ok;
 }
 
-/** The page's prefetch: one game per page, started when the game opens. */
 export const pagePrefetch: AssetPrefetch = createAssetPrefetch();

@@ -10,7 +10,6 @@ const IDEAS = [
   { label: "Race", idea: "is a drift racer through a generated city with a rival crew" },
 ];
 
-/** Edit a one-line game idea and copy it as the prompt to give a coding agent. */
 export function PromptStudio() {
   const [idea, setIdea] = useState(IDEAS[0]!.idea);
   const prompt = `Make a game that ${idea.trim()} with jgengine`;

@@ -70,9 +70,7 @@ export interface RegionFieldConfig<T = unknown> {
   selectorFrequencies?: readonly number[];
   /** Per-axis distance weight when picking the nearest region (defaults to 1). */
   axisWeights?: readonly number[];
-  /** Border sharpness; higher = tighter blends. */
   sharpness?: number;
-  /** Domain-warp distance applied to selector sampling (0 disables). */
   warp?: number;
 }
 
@@ -223,7 +221,6 @@ export function createRegionField<T = unknown>(config: RegionFieldConfig<T>): Re
   };
 }
 
-/** `into += from * weight`, per channel; a missing `from` adds nothing. */
 function addScaled(into: [number, number, number], from: readonly [number, number, number] | undefined, weight: number): void {
   if (from === undefined) return;
   into[0] += from[0] * weight;

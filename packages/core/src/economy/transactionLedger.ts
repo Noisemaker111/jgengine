@@ -17,41 +17,32 @@ export interface LedgerEntry {
   at: number;
   account: string;
   currency: string;
-  /** Signed integer minor units; negative debits the account, positive credits it. */
   amount: number;
   /** The account's balance in this currency after the entry was applied. */
   balanceAfter: number;
   /** Caller-owned reason code — `"sale"`, `"upkeep"`, `"loan-interest"`. Never interpreted here. */
   reason: string;
-  /** Optional id of what caused the entry — a good, an order, a loan. */
   ref?: string;
 }
 
-/** A post to attempt. */
 export interface LedgerPostInput {
   at: number;
   account: string;
   currency: string;
-  /** Signed integer minor units. */
   amount: number;
   reason: string;
   ref?: string;
-  /** `true` allows any negative balance, `{ max }` caps how far into the red the post may go. */
   overdraft?: boolean | { max: number };
 }
 
-/** Outcome of {@link TransactionLedger.post}. A rejection leaves every balance untouched. */
 export type LedgerPostResult =
   | { ok: true; entry: LedgerEntry }
   | { ok: false; reason: "unknown-account" | "invalid-amount" | "invalid-reason" | "insufficient-funds" };
 
-/** A recurring charge — upkeep, rent, a subscription — settled by {@link TransactionLedger.chargeDue}. */
 export interface RecurringCharge {
-  /** Stable id, unique within the ledger. */
   id: string;
   account: string;
   currency: string;
-  /** Positive integer minor units charged each cadence. */
   amountPerPeriod: number;
   /** Cadence in seconds; must be `> 0`. */
   everySeconds: number;
@@ -59,29 +50,23 @@ export interface RecurringCharge {
   startSeconds?: number;
   reason: string;
   ref?: string;
-  /** How cycles that came due between two advances are settled: `"each"` (default), `"sum"`, `"skip"`. */
   catchUp?: "each" | "sum" | "skip";
   /** Due cycles beyond this in one advance are dropped rather than settled. */
   maxCatchUp?: number;
 }
 
-/** Mutable per-charge progress, kept apart from the {@link RecurringCharge} definition. */
 export interface ChargeCursor {
   nextDueSeconds: number;
   fired: number;
-  /** Cycles that came due and could not be settled for lack of funds. */
   missed: number;
   done: boolean;
 }
 
-/** What one reason code did to the books, kept across entry trimming. */
 export interface LedgerTotals {
   count: number;
-  /** Sum of the signed amounts posted under this reason, in minor units. */
   net: number;
 }
 
-/** Counters of a ledger, for a probe or a summary line. */
 export interface LedgerStats {
   accounts: number;
   entries: number;
@@ -89,7 +74,6 @@ export interface LedgerStats {
   seq: number;
 }
 
-/** Fully serializable ledger state: clock, balances, journal, totals, charges and cursors. */
 export interface LedgerState {
   nowSeconds: number;
   accounts: Record<string, Record<string, number>>;
@@ -100,57 +84,39 @@ export interface LedgerState {
   seq: number;
 }
 
-/** What one {@link TransactionLedger.chargeDue} settled, and what it could not. */
 export interface LedgerAdvanceResult {
   charged: readonly LedgerEntry[];
-  /** Charges that came due with no funds, and how many cycles were missed. */
   missed: readonly { id: string; cycles: number }[];
 }
 
-/** A filter over the journal. */
 export interface LedgerEntryFilter {
   account?: string;
   reason?: string;
-  /** Only entries at or after this time. */
   since?: number;
-  /** Keep at most this many of the most recent matches. */
   limit?: number;
 }
 
-/** Options for {@link createTransactionLedger}. */
 export interface TransactionLedgerOptions {
-  /** Journal entries retained; older ones drop and live on in {@link LedgerTotals} (default `1024`). */
   maxEntries?: number;
   /** Safety bound on cycles settled per charge per advance (default `256`). */
   maxCyclesPerAdvance?: number;
-  /** Register a devtools probe under this name reporting {@link LedgerStats} and per-reason totals. */
   devtoolsName?: string;
 }
 
-/** The books: balances with a reason-tagged journal, and recurring charges on a cadence. */
 export interface TransactionLedger {
-  /** Create an account/currency pair, or add a currency to an existing account. An existing balance is kept. */
   openAccount(account: string, currency: string, initial?: number): void;
   balanceOf(account: string, currency: string): number;
-  /** Record one movement of money. Rejected without mutation when the account is unknown, the amount unusable, or funds are short. */
   post(input: LedgerPostInput): LedgerPostResult;
-  /** Register a recurring charge. `false` for a duplicate id or unusable terms. */
   addCharge(charge: RecurringCharge): boolean;
-  /** Remove a recurring charge and its cursor. `false` if it was not registered. */
   removeCharge(id: string): boolean;
-  /** Advance the clock, settling every charge due at or before `nowSeconds` in sorted-id order. */
   chargeDue(nowSeconds: number): LedgerAdvanceResult;
-  /** Journal entries, newest last, filtered and capped. Copies, safe to retain. */
   entries(filter?: LedgerEntryFilter): LedgerEntry[];
-  /** Per-reason counts and net amounts over the ledger's whole life. */
   totals(): Record<string, LedgerTotals>;
   accounts(): Record<string, Record<string, number>>;
   snapshot(): LedgerState;
-  /** Replace state; returns `false` without mutation when the state is malformed. */
   restore(next: LedgerState): boolean;
   stats(): LedgerStats;
   reset(): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 

@@ -19,11 +19,7 @@ export function rowWords(text: string): Set<string> {
   return words;
 }
 
-/**
- * @internal A query token hits a word when their stems match, or when a 4+ letter stem prefixes the
- * word. Whole-word matching keeps "aim" off "claim" and "car" off "carry"; a token with punctuation
- * (an import path) falls back to substring.
- */
+/** @internal A query token hits a word when their stems match, or when a 4+ letter stem prefixes the word. Whole-word matching keeps "aim" off "claim" and "car" off "carry"; a token with punctuation (an import path) falls back to substring. */
 export function tokenHits(token: string, words: ReadonlySet<string>, raw: string): boolean {
   if (/[^a-z0-9]/.test(token)) return raw.includes(token);
   const target = stem(token);

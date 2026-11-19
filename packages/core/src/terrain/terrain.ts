@@ -29,10 +29,8 @@ import { hashString } from "../random/rng";
 import type { TerraformSnapshot } from "./terraform";
 import { clamp01, length2, lerp } from "../math/scalar";
 
-/** A surface normal vector at a terrain sample point. */
 export type TerrainNormal = readonly [number, number, number];
 
-/** A sampleable ground surface: height and normal at any x/z, with optional bounds and water level. */
 export interface TerrainField {
   sampleHeight(x: number, z: number): number;
   sampleNormal(x: number, z: number): TerrainNormal;
@@ -71,7 +69,6 @@ export function valueNoise(x: number, z: number, seed: number): number {
   return lerp(top, bottom, sz) * 2 - 1;
 }
 
-/** Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping. */
 export interface FractalNoiseConfig {
   seed: number;
   frequency: number;
@@ -107,9 +104,7 @@ export function seedFrom(value: string | number | undefined, fallback: number): 
   return fallback;
 }
 
-/** Derives a `TerrainField.sampleNormal` from a height sampler via finite-difference gradients.
- * @internal
- */
+/** @internal */
 export function withNormal(sampleHeight: (x: number, z: number) => number): TerrainField["sampleNormal"] {
   const epsilon = 0.75;
   return (x, z) => {
@@ -135,21 +130,17 @@ function fieldFromHeight(
   };
 }
 
-/** Level ground at height 0 everywhere. */
 export const FLAT_FIELD: TerrainField = {
   sampleHeight: () => 0,
   sampleNormal: () => [0, 1, 0] as const,
   heightRevision: () => 0,
 };
 
-/** A flat, zero-height `TerrainField` for arenas with no elevation.
- * @internal
- */
+/** @internal */
 export function flatField(): TerrainField {
   return FLAT_FIELD;
 }
 
-/** Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping. */
 export interface NoiseFieldConfig {
   seed?: string | number | undefined;
   amplitude?: number;
@@ -163,9 +154,7 @@ export interface NoiseFieldConfig {
   waterLevel?: number | undefined;
 }
 
-/** Builds a `TerrainField` whose height is fractal noise shaped by `config`.
- * @internal
- */
+/** @internal */
 export function noiseField(config: NoiseFieldConfig = {}): TerrainField {
   const fractal: FractalNoiseConfig = {
     seed: seedFrom(config.seed, 1337),
@@ -183,7 +172,6 @@ export function noiseField(config: NoiseFieldConfig = {}): TerrainField {
   });
 }
 
-/** Seed, amplitude, frequency and bounds for gentle rolling-hill ground. */
 export interface RollingFieldConfig {
   seed?: string | number;
   amplitude?: number;
@@ -203,7 +191,6 @@ export function rollingField(config: RollingFieldConfig = {}): TerrainField {
   });
 }
 
-/** Seed and bounds for the arena layout: a plateau, hills and a water basin. */
 export interface ArenaFieldConfig {
   seed?: string | number;
   bounds?: WorldBounds;
@@ -212,7 +199,6 @@ export interface ArenaFieldConfig {
 const ARENA_PLATEAU_HEIGHT = 6;
 const ARENA_HILL_HEIGHT = 4.2;
 const ARENA_BASIN_DEPTH = 2.6;
-/** Water surface height the arena field's basin fills to. */
 export const ARENA_WATER_LEVEL = -0.9;
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
@@ -221,9 +207,7 @@ function smoothstep(edge0: number, edge1: number, value: number): number {
   return t * t * (3 - 2 * t);
 }
 
-/** Builds a `TerrainField` with a flat spawn plateau, rolling hills, and a basin, for combat arenas.
- * @internal
- */
+/** @internal */
 export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
   const seed = seedFrom(config.seed ?? "arena", 7);
   const rolling: FractalNoiseConfig = {
@@ -276,7 +260,6 @@ export function hasEnvironmentTerrain(world: WorldFeature | undefined): boolean 
   return world?.kind === "environment" && (world.terrain !== undefined || (world.islands?.length ?? 0) > 0);
 }
 
-/** Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane. */
 export const ISLAND_VOID_HEIGHT = -256;
 
 function islandContains(descriptor: TerrainIslandDescriptor, x: number, z: number): boolean {
@@ -332,7 +315,6 @@ export function composeIslandFields(
   };
 }
 
-/** Bilinear offset sampled from an editor {@link TerraformSnapshot}'s vertex grid at a world point. */
 function sampleSnapshotOffset(snapshot: TerraformSnapshot, x: number, z: number): number {
   const { bounds, cols, rows, offsets } = snapshot;
   const vertsX = cols + 1;
@@ -355,10 +337,7 @@ function sampleSnapshotOffset(snapshot: TerraformSnapshot, x: number, z: number)
   return top + (bottom - top) * tz;
 }
 
-/**
- * Layers an authored sculpt snapshot's offsets over a base field — the editor-to-runtime ground seam.
- * @internal — reached through `environment({ sculpt })`; not called directly by games.
- */
+/** @internal — reached through `environment({ sculpt })`; not called directly by games. */
 export function sculptedField(base: TerrainField, snapshot: TerraformSnapshot): TerrainField {
   const sampleHeight = (x: number, z: number): number => base.sampleHeight(x, z) + sampleSnapshotOffset(snapshot, x, z);
   return {
@@ -369,12 +348,7 @@ export function sculptedField(base: TerrainField, snapshot: TerraformSnapshot): 
   };
 }
 
-/**
- * Levels a base field toward each clearance zone's center height within its radius (feathered) — so
- * spawns, plots, and paths sit on flat ground even when a mound is nearby. The strongest overlapping
- * zone wins. Pairs with scatter's avoid: one clearance zone both flattens ground and repels foliage.
- * @internal — reached through `environment({ clearings })`; not called directly by games.
- */
+/** @internal — reached through `environment({ clearings })`; not called directly by games. */
 export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone[]): TerrainField {
   if (zones.length === 0) return base;
   const sampleHeight = (x: number, z: number): number => {
@@ -515,11 +489,9 @@ export function resolveEnvironmentField(feature: EnvironmentWorldFeature): Terra
   return { ...result, heightRevision };
 }
 
-/** Which way the ground falls at a point and how steeply. */
 export interface TerrainSlopeSample {
   /** Unit XZ direction pointing downhill; `[0, 0]` on level ground. */
   downhill: readonly [number, number];
-  /** Rise over run (tan of the slope angle); `0` on level ground. */
   steepness: number;
 }
 
@@ -536,18 +508,13 @@ export function sampleSlope(field: TerrainField, x: number, z: number): TerrainS
   };
 }
 
-/**
- * Downhill force/acceleration from the local slope: direction × sin(slope angle) × `scale`.
- * Add it to any integrator's XZ velocity each tick (`scale` ≈ gravity for a free-rolling body).
-  * @internal
-  */
+/** @internal */
 export function slopeForce(field: TerrainField, x: number, z: number, scale = 9.8): readonly [number, number] {
   const [nx, , nz] = field.sampleNormal(x, z);
   if (Math.hypot(nx, nz) < 1e-9) return [0, 0];
   return [nx * scale, nz * scale];
 }
 
-/** XZ region a {@link raycastHeightField} march is clipped to. */
 export interface HeightFieldRayBounds {
   minX: number;
   minZ: number;
@@ -555,16 +522,13 @@ export interface HeightFieldRayBounds {
   maxZ: number;
 }
 
-/** Tuning for {@link raycastHeightField}: march resolution and refinement depth. */
 export interface HeightFieldRaycastOptions {
-  /** XZ region to march within; the ray is clipped to it before any sampling. */
   bounds: HeightFieldRayBounds;
   /**
    * March step in world units. Use about half the field's cell size — features narrower than one
    * step can be skipped. Defaults to 1/256 of the larger bounds span, clamped to `[0.25, 4]`.
    */
   step?: number;
-  /** Bisection iterations refining the crossing once found (default 8 ≈ step/256 precision). */
   refine?: number;
   /** Stop marching past this ray distance (default: the full bounds crossing). */
   maxDistance?: number;
@@ -576,7 +540,6 @@ export interface HeightFieldRaycastOptions {
   maxSteps?: number;
 }
 
-/** Where a {@link raycastHeightField} march crossed the surface. */
 export interface HeightFieldRayHit {
   x: number;
   y: number;
@@ -662,17 +625,14 @@ export function raycastHeightField(
   return null;
 }
 
-/** Ground colors for one terrain material: low ground, high ground and the waterline band. */
 export interface TerrainPalette {
   low: string;
   high: string;
   waterline: string;
 }
 
-/** The terrain material a world gets when it names none. */
 export const DEFAULT_TERRAIN_MATERIAL: TerrainMaterial = "grass";
 
-/** Built-in ground colors for each named terrain material. */
 export const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> = {
   grass: { low: "#30402c", high: "#7f8b50", waterline: "#1d4c6e" },
   sand: { low: "#9c8354", high: "#e0c98a", waterline: "#2f6f8f" },
@@ -683,7 +643,6 @@ export const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> 
   slate: { low: "#2f3540", high: "#7d8896", waterline: "#26404f" },
 };
 
-/** A resolved {@link TerrainDetailMaterialConfig} — `repeat`/`strength` filled with defaults, `maps` passed through. */
 export interface ResolvedTerrainDetailMaterial {
   maps: TerrainMaterialMaps;
   repeat: number;
@@ -700,10 +659,8 @@ export interface ResolvedTerrainSurfaceLayer {
   tint: number;
 }
 
-/** The terrain roles a generated surface can draw. */
 export type TerrainSurfaceRole = "ground" | "sand" | "rock";
 
-/** Resolved {@link TerrainSurfacesConfig}: only the roles the terrain set. */
 export type ResolvedTerrainSurfaces = Partial<Record<TerrainSurfaceRole, ResolvedTerrainSurfaceLayer>>;
 
 const SURFACE_ROLE_DEFAULTS: Record<TerrainSurfaceRole, { tile: number; tint: number }> = {
@@ -729,7 +686,6 @@ function resolveTerrainSurfaces(config: TerrainSurfacesConfig): ResolvedTerrainS
   return resolved;
 }
 
-/** A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes. */
 export type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps" | "surfaces">> & {
   waterLevel: number;
   material?: ResolvedTerrainDetailMaterial;
@@ -752,7 +708,6 @@ const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
   sweeps: { dry: [1.14, 1.05, 0.76], wet: [0.78, 1.0, 0.86] },
 };
 
-/** Detail for a terrain that declares none: quieter base sweeps and no altitude snow. */
 const IMPLICIT_TERRAIN_DETAIL: TerrainDetailConfig = {
   strength: 0.6,
   snowHeight: 1e6,
@@ -767,10 +722,7 @@ const DEFAULT_TERRAIN_MATERIAL_MISSING = "procedural" as const;
 /** Sand-band level for a terrain with no water: far below any ground, so no beach is painted. */
 const NO_WATER_SAND_LEVEL = -1e6;
 
-/** Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level,
- * and a terrain without one gets no sand band. `undefined` resolves the implicit default detail.
- * @internal
- */
+/** @internal */
 export function resolveTerrainDetail(config: TerrainDetailConfig | undefined, terrainWaterLevel?: number): ResolvedTerrainDetail {
   if (config === undefined) return resolveTerrainDetail(IMPLICIT_TERRAIN_DETAIL, terrainWaterLevel);
   return {
@@ -893,7 +845,6 @@ export function createBiomeBandSampler(
   return createBandValueSampler(bands, fallback, resolveTerrainPalette, mixPalette);
 }
 
-/** A concrete fog look — the shape `createBiomeFogSampler` resolves per z from a band's `fog` over the base fog. */
 export interface BiomeFogValue {
   color: string;
   near: number;
@@ -938,7 +889,6 @@ export function createBiomeFogSampler(
   );
 }
 
-/** A concrete sky look — the shape `createBiomeSkySampler` resolves per z from a band's `sky` over the base sky. */
 export interface BiomeSkyValue {
   horizonColor: string;
   zenithColor: string;
@@ -983,12 +933,7 @@ export function createBiomeSkySampler(
   );
 }
 
-/**
- * Per-position palette sampler over the descriptor's base `material`/`colors` plus its z-ordered
- * `biomeBands` (painted first) and radial `materialRegions` (painted over) — the multi-biome coloring
- * seam. Regions paint fully inside `radius` and blend back across `falloff`; later regions win overlaps.
-  * @internal
-  */
+/** @internal */
 export function createTerrainPaletteSampler(
   descriptor: Pick<TerrainEnvironmentConfig, "material" | "colors" | "materialRegions" | "biomeBands">,
 ): (x: number, z: number) => TerrainPalette {
@@ -1022,10 +967,6 @@ export function createTerrainPaletteSampler(
   };
 }
 
-/**
- * Cell size for the palette's region index, in world units: coarse enough that inserting a small
- * region touches one cell, fine enough that a vertex only tests the handful of regions over it.
- */
 const PALETTE_REGION_CELL = 32;
 
 /**
@@ -1160,7 +1101,6 @@ function withFlattenMasks(
   };
 }
 
-/** A grid of height samples (row-major) stretched over world bounds, with scale and base height. */
 export interface HeightMapFieldConfig {
   columns: number;
   rows: number;
@@ -1335,7 +1275,7 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
   };
 }
 
-/** A seed's phase angle in `[0, 2π)` — the offset coast wobble and survey plains start their waves from. @internal */
+/** @internal */
 export function seedPhase(seed: string): number {
   return (hashString(seed) / 4294967296) * Math.PI * 2;
 }
@@ -1401,9 +1341,7 @@ export function withCoast(height: (x: number, z: number) => number, coast: Terra
   };
 }
 
-/** Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
- * @internal
- */
+/** @internal */
 export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): TerrainField {
   if (descriptor === undefined) return flatField();
   if (descriptor.heightField === undefined && descriptor.heightMap !== undefined) {
@@ -1463,9 +1401,7 @@ export function applyPathProfiles(field: TerrainField, profiles: readonly Terrai
   };
 }
 
-/** Returns `position` with `y` replaced by the field's ground height (plus `offset`) at its `x`/`z`.
- * @internal
- */
+/** @internal */
 export function snapToGround(
   field: TerrainField,
   position: readonly [number, number, number],
@@ -1475,20 +1411,16 @@ export function snapToGround(
   return [x, field.sampleHeight(x, z) + offset, z];
 }
 
-/** Anything with a world position that can be dropped onto the ground. */
 export interface GroundSnapTarget {
   position: readonly [number, number, number];
 }
 
-/** The entity lookup and pose setter ground snapping needs. */
 export interface GroundSnapEntityStore {
   get(id: string): GroundSnapTarget | null;
   setPose(id: string, pose: { position?: readonly [number, number, number] }): boolean;
 }
 
-/** Ground-snaps an already-spawned entity in place; returns false when `id` is unknown.
- * @internal
- */
+/** @internal */
 export function snapEntityToGround(
   entities: GroundSnapEntityStore,
   id: string,
@@ -1503,9 +1435,7 @@ export function snapEntityToGround(
 /** Steepest rise over run a walker climbs by default (about 31 degrees). */
 export const DEFAULT_MAX_WALK_SLOPE = 0.6;
 
-/** Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.
- * @internal
- */
+/** @internal */
 export function resolveGroundStep(
   field: TerrainField,
   x: number,

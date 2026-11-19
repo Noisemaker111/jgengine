@@ -10,11 +10,9 @@ import { pathToFileURL } from "node:url";
 import { isProofFlow, type ProofFlow } from "../packages/core/src/play/flow";
 import { servedGameDir } from "./servedGame";
 
-/** What a run points at: a game id, a managed app route, or an external URL. */
 export interface DriveTarget {
   game: string;
   site?: string;
-  /** Set when `--url` selected an external page: its evidence lands in the working directory. */
   external?: boolean;
 }
 
@@ -44,15 +42,12 @@ export function driveProjectDir(
   return join(engineRoot, "games", target.game);
 }
 
-/** The flow folder a game owns. */
 export function flowsDirOf(projectDir: string): string {
   return join(projectDir, "proofs", "flows");
 }
 
-/** The file extension of a TypeScript proof flow. */
 export const FLOW_EXTENSION = ".flow.ts";
 
-/** Flow names in a folder, sorted; empty when there is no folder (a game with no flows yet). */
 export function listFlowNames(dir: string, readdir: (dir: string) => string[]): string[] {
   let entries: string[];
   try {
@@ -63,7 +58,6 @@ export function listFlowNames(dir: string, readdir: (dir: string) => string[]): 
   return entries.filter((name) => name.endsWith(FLOW_EXTENSION)).map((name) => name.slice(0, -FLOW_EXTENSION.length)).sort();
 }
 
-/** What a run says when a game has no flow folder: the folder, and what to write in it. */
 export function missingFlowsMessage(dir: string): string {
   return "no flows at " + dir + " — write <game>/proofs/flows/<name>" + FLOW_EXTENSION + " with defineFlow: the route and the arrival it expects";
 }
@@ -82,7 +76,6 @@ export function flowFileOf(dir: string, name: string, exists: (path: string) => 
   throw new Error("no flow named \"" + name + "\" in " + dir + " (" + (available.length === 0 ? missingFlowsMessage(dir) : "available: " + available.join(", ")) + ")");
 }
 
-/** Import a named flow and check its default export is a `defineFlow` result. */
 export async function loadFlow(dir: string, name: string): Promise<ProofFlow> {
   const path = flowFileOf(dir, name, existsSync, () => listFlowNames(dir, (folder) => readdirSync(folder)));
   const module: unknown = await import(pathToFileURL(path).href);

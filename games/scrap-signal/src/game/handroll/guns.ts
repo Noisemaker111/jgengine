@@ -13,7 +13,6 @@ export interface GunWeaponStats {
   critChance: number;
   critMult: number;
   pellets?: number;
-  /** A rocket: flies at this speed and bursts on the first thing it meets. */
   projectile?: { speed: number };
   explosion?: { radius: number };
 }
@@ -24,7 +23,6 @@ export interface GunDef {
   name: string;
   family: GunFamily;
   manufacturer: string;
-  /** The gun model: `legendary:<name>` for a named legendary, else `<maker>:<family>`. */
   model?: string;
   rarity: Rarity;
   element: GunElement;
@@ -38,7 +36,6 @@ export interface GunDef {
   elementDps: number;
   use: "fireGun";
   weapon: GunWeaponStats;
-  /** Perk ids (see `perks.ts`); absent on guns saved before perks, which derive the same list. */
   perks?: readonly string[];
 }
 

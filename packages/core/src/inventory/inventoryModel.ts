@@ -27,13 +27,11 @@ export type MoveResult =
   | { status: "ok"; from: InventoryState; to: InventoryState }
   | { status: "rejected"; reason: MoveRejection };
 
-/** One slot of one named inventory: the source or target of a move between two grids (bag to stash). */
 export interface InventorySlotRef {
   inventoryId: string;
   slot: number;
 }
 
-/** A slot ref as one string, `"<inventoryId>#<slot>"`, for a drag value or a drop-target id. */
 export function inventorySlotKey(ref: InventorySlotRef): string {
   return `${ref.inventoryId}#${ref.slot}`;
 }
@@ -52,16 +50,11 @@ export function parseInventorySlotKey(key: string): InventorySlotRef | null {
   return { inventoryId: key.slice(0, at), slot: Number(digits) };
 }
 
-/** Outcome of {@link splitStack}: the new state, or a rejection reason. */
 export type SplitResult =
   | { status: "ok"; state: InventoryState }
   | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "invalid-amount" | "no-space" | "slot-occupied" | "over-stack" };
 
-/**
- * A bag of stackable items supporting add, remove, count, and move — the base inventory model.
- *
- * @capability inventory-grid a bag of stackable items with add, remove, and move
- */
+/** @capability inventory-grid a bag of stackable items with add, remove, and move */
 export function createEmptyInventory(layout: InventoryLayout): InventoryState {
   return { slots: new Array(layout.slots).fill(null) };
 }
@@ -73,7 +66,6 @@ function violatesKind(layout: InventoryLayout, traits: ItemTraits, itemId: strin
   return kind !== layout.accepts;
 }
 
-/** The slot at `index`, or `undefined` when `index` is not a slot of this inventory. */
 function slotAt(state: InventoryState, index: number): InventorySlot | undefined {
   return Number.isInteger(index) ? state.slots[index] : undefined;
 }
@@ -152,7 +144,6 @@ function explicitPut(
   return { status: "ok", state: { slots } };
 }
 
-/** Add `count` of `itemId` — into a specific `options.slot`, or auto-stacked across free/partial slots. Rejects on no space or wrong kind. */
 export function putItem(
   state: InventoryState,
   layout: InventoryLayout,
@@ -165,7 +156,6 @@ export function putItem(
   return autoPut(state, layout, traits, itemId, count);
 }
 
-/** Remove `count` of `itemId`, draining from the last matching stacks first. Rejects if fewer than `count` are held. */
 export function takeItem(state: InventoryState, itemId: string, count: number): TakeResult {
   if (count <= 0) return { status: "ok", state };
   if (countItem(state, itemId) < count) return { status: "rejected", reason: "insufficient" };
@@ -184,14 +174,12 @@ export function takeItem(state: InventoryState, itemId: string, count: number): 
   return { status: "ok", state: { slots } };
 }
 
-/** Total quantity of `itemId` summed across every stack in the inventory. */
 export function countItem(state: InventoryState, itemId: string): number {
   let total = 0;
   for (const slot of state.slots) if (slot !== null && slot.itemId === itemId) total += slot.count;
   return total;
 }
 
-/** True when the inventory holds at least `count` of `itemId`. */
 export function hasItem(state: InventoryState, itemId: string, count: number): boolean {
   return countItem(state, itemId) >= count;
 }
@@ -319,13 +307,10 @@ export interface InventorySet<TId extends string> {
   replaceState(id: TId, state: InventoryState): void;
   /** Detached copy of every declared inventory — a save, never a live alias. */
   snapshot(): InventorySetState<TId>;
-  /** Replace every declared inventory from a snapshot; returns false without mutation when an entry is malformed or incomplete. */
   restore(next: InventorySetState<TId>): boolean;
-  /** Empty every declared inventory. */
   reset(): void;
 }
 
-/** Every inventory in a set, keyed by id, as plain slot data. */
 export type InventorySetState<TId extends string> = Record<TId, InventoryState>;
 
 function cloneSlots(slots: readonly InventorySlot[]): InventorySlot[] {
@@ -344,7 +329,6 @@ function validInventoryState(state: InventoryState, slots: number): boolean {
   return true;
 }
 
-/** Build a keyed set of named inventories from their `layouts`, sharing one `traits` table — the stateful façade over put/take/move/count. */
 export function createInventorySet<TId extends string>(
   layouts: Record<TId, InventoryLayout>,
   traits: ItemTraits,

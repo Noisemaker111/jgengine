@@ -3,48 +3,37 @@ import type { TerraformFalloff, TerraformShape } from "@jgengine/core/terrain/te
 
 import type { ClipPreviewSession } from "./shell/clipPreview";
 
-/** Which top-level editor tool is active: object placement/selection, or terrain sculpting. */
 export type EditorTool = "select" | "terrain";
 
-/** A heightfield sculpt brush the terrain tool can apply. */
 export type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp";
 
-/** The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it. */
 export type TerrainMode = "sculpt" | "paint";
 
-
-/** Live terrain material-paint controls driven by the terrain tool panel. */
 export interface PaintSettings {
   material: string;
   radius: number;
   shape: TerraformShape;
 }
 
-/** The terrain tool's default paint controls. */
 export const DEFAULT_PAINT_SETTINGS: PaintSettings = {
   material: "grass",
   radius: 12,
   shape: "circle",
 };
 
-/** Live terrain-brush controls driven by the terrain tool panel. */
 export interface SculptSettings {
   brush: TerrainBrushKind;
   radius: number;
   strength: number;
   falloff: TerraformFalloff;
   shape: TerraformShape;
-  /** Stamp spacing (world units) along a drag — smaller = denser strokes. */
   spacing: number;
-  /** Flatten target; `null` samples the ground height under the first click. */
   flattenHeight: number | null;
   noiseSeed: number;
-  /** Invert modifier — flips raise↔lower for the active brush. */
   invert: boolean;
   heightLimit: { min: number | null; max: number | null };
 }
 
-/** The terrain tool's default brush controls. */
 export const DEFAULT_SCULPT_SETTINGS: SculptSettings = {
   brush: "raise",
   radius: 12,
@@ -58,33 +47,21 @@ export const DEFAULT_SCULPT_SETTINGS: SculptSettings = {
   heightLimit: { min: null, max: null },
 };
 
-/** Which transform gizmo is active for the current selection. */
 export type GizmoMode = "translate" | "rotate" | "scale";
 
-/** Gizmo handle orientation: world axes, or the selection's local (yaw-rotated) axes. */
 export type GizmoSpace = "world" | "local";
 
-/**
- * Where multi-select gizmo handles sit:
- * - `origin` — primary selection (first selected id)
- * - `center` — arithmetic mean of selected object positions
- * - `median` — per-axis median of selected object positions
- */
 export type GizmoPivot = "origin" | "center" | "median";
 
-/** How gizmo drags land: stick to terrain height, quantize to a grid, or free. */
 export type EditorSnapMode = "ground" | "grid" | "off";
 
-/** Editor viewport camera projection — perspective (default) or orthographic top-down-friendly view. */
 export type CameraProjectionMode = "perspective" | "orthographic";
 
 /** Rotation snap increments (degrees) offered by the toolbar snap menu. */
 export const ROTATION_SNAP_CHOICES_DEG: readonly number[] = [5, 15, 45, 90];
 
-/** Scale snap increments offered by the toolbar snap menu. */
 export const SCALE_SNAP_CHOICES: readonly number[] = [0.1, 0.25, 0.5, 1];
 
-/** The active creation tool — what a viewport click places next. */
 export type PlacementTool =
   | { tool: "marker"; kind: string }
   | { tool: "volume"; kind: string; shape: EditorVolumeShape }
@@ -99,27 +76,20 @@ export interface EditorContextMenuState {
   ground: EditorVec3 | null;
 }
 
-/** Transient editor UI state shared between chrome, viewport, and gizmos. */
 export interface EditorUiState {
   gizmoMode: GizmoMode;
-  /** Whether gizmo handles align to world axes or the selection's yaw. */
   gizmoSpace: GizmoSpace;
-  /** Multi-select gizmo pivot policy. */
   gizmoPivot: GizmoPivot;
   snapMode: EditorSnapMode;
   gridSize: number;
   /** Rotation snap increment in degrees; `null` rotates freely. */
   rotationSnapDeg: number | null;
-  /** Scale snap increment; `null` scales freely. */
   scaleSnap: number | null;
-  /** Viewport camera projection (perspective vs orthographic). */
   cameraProjection: CameraProjectionMode;
   showGrid: boolean;
-  /** Surface-following iso-elevation contour overlay (terrain readability). */
   showContours: boolean;
   /** Terrain-draped reference grid overlay that climbs relief instead of being occluded by it. */
   showSurfaceGrid: boolean;
-  /** Measurable elevation HUD: cursor height/delta, region min/max/mean, contour interval. */
   showElevation: boolean;
   placement: PlacementTool | null;
   pathDraft: readonly EditorVec3[];
@@ -138,7 +108,6 @@ export interface EditorUiState {
   clipPreview: ClipPreviewSession | null;
 }
 
-/** Subscribable store for the editor's transient UI state (gizmo, snapping, placement). */
 export interface EditorUiStore {
   getState(): EditorUiState;
   patch(partial: Partial<EditorUiState>): void;
@@ -157,7 +126,6 @@ function placementId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.floor(Math.random() * 1296).toString(36)}`;
 }
 
-/** Creates the shared UI store the editor chrome and viewport both drive. */
 export function createEditorUiStore(): EditorUiStore {
   let state: EditorUiState = {
     gizmoMode: "translate",
@@ -254,7 +222,6 @@ export function createEditorUiStore(): EditorUiStore {
   return store;
 }
 
-/** Generates a fresh scene-object id for a placement tool click. */
 export function newPlacementId(prefix: string): string {
   return placementId(prefix);
 }

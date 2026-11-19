@@ -15,7 +15,6 @@ import { createOceanConfig, oceanBedResolution, type OceanConfig, type ResolvedO
 import { createOceanMaterial, deepBedTexture, syncOceanMaterial, type OceanShaderMaterial } from "./OceanMaterial.draw";
 import type { OceanBedBounds } from "./oceanBed";
 
-/** Props for {@link Ocean}: the ocean config, the ground under it, and mesh props. */
 export interface OceanProps extends Omit<OceanDrawProps, "ctx"> {
   config?: OceanConfig;
   /**
@@ -25,19 +24,12 @@ export interface OceanProps extends Omit<OceanDrawProps, "ctx"> {
    * surface rises or falls. Omit for open sea (everywhere deep).
    */
   bedAt?: (x: number, z: number) => number;
-  /** The local rect the bed map covers. Default the sheet. Outside it the water counts as deep. */
   bedBounds?: OceanBedBounds;
 }
 
-/** Fraction of the follow grid's half-width used at the centre: vertices pack near the camera. */
 const FOLLOW_CENTRE_SHARE = 0.05;
 
-/**
- * A square grid `2 * half` wide whose vertices pack toward the centre (spacing grows with the cube of
- * the distance), for a sheet that follows the camera: dense where waves are seen up close, sparse out
- * to the horizon. Returns the geometry and its centre vertex spacing.
- * @internal
- */
+/** @internal */
 export function createFollowGeometry(half: number, resolution: number): { geometry: THREE.PlaneGeometry; spacing: number } {
   const geometry = new THREE.PlaneGeometry(2, 2, resolution, resolution);
   geometry.rotateX(-Math.PI / 2);
@@ -57,10 +49,7 @@ function createSheetGeometry(config: ResolvedOceanConfig): THREE.PlaneGeometry {
   return geometry;
 }
 
-/**
- * Bake the ground under the sheet into a half-float height map, one row per slice.
- * @internal
- */
+/** @internal */
 export function* bakeOceanBed(bedAt: (x: number, z: number) => number, bounds: OceanBedBounds, resolution: number): SlicedJob<THREE.DataTexture> {
   const [minX, minZ, maxX, maxZ] = bounds;
   const width = maxX - minX;
@@ -83,7 +72,6 @@ export function* bakeOceanBed(bedAt: (x: number, z: number) => number, bounds: O
   return texture;
 }
 
-/** The slice of an {@link OceanProps} the draw reads; `ctx` carries game time like the old provider. */
 export interface OceanDrawProps {
   config?: OceanConfig | undefined;
   bedAt?: ((x: number, z: number) => number) | undefined;
@@ -93,11 +81,6 @@ export interface OceanDrawProps {
   ctx?: GameContext | null | undefined;
 }
 
-/**
- * An animated Gerstner-wave water surface lit by the scene's sky: it reflects the sky's colours, takes
- * the sun's and moon's light, clears over shallows and foams at the shore wherever `bedAt` puts the bed,
- * and follows the camera to the horizon when `config.follow` is set.
- */
 export function oceanDraw(getProps: () => OceanDrawProps): EngineDraw {
   let mesh: THREE.Mesh | null = null;
   let geometry: THREE.PlaneGeometry | null = null;
@@ -220,11 +203,6 @@ export function oceanDraw(getProps: () => OceanDrawProps): EngineDraw {
   };
 }
 
-/**
- * An animated Gerstner-wave water surface lit by the scene's sky: it reflects the sky's colours, takes
- * the sun's and moon's light, clears over shallows and foams at the shore wherever `bedAt` puts the bed,
- * and follows the camera to the horizon when `config.follow` is set.
- */
 export function Ocean(props: OceanProps) {
   const ctx = useOptionalGameContext();
   const latest = useRef<OceanDrawProps>({});

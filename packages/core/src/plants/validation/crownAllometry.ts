@@ -37,7 +37,6 @@ export function openGrownCrownWidthM(equation: OpenCrownWidthEquation, dbhCm: nu
   return (d >= 3 ? at(d) : (at(3) * d) / 3) * FOOT_M;
 }
 
-/** A DBH class of measured stand-grown trees: its middle and the 10th, 50th and 90th percentile crown width. */
 export interface CrownWidthClass {
   dbhCm: number;
   p10M: number;
@@ -47,26 +46,12 @@ export interface CrownWidthClass {
   genus?: true;
 }
 
-/** Where a crown carries its spread, from its envelope. */
 export interface CrownProfile {
-  /**
-   * Height of the crown's spread as a share of crown length, 0 at its base and 1 at its top: the
-   * centroid of the squared sector-mean radius. A cone is 0.25, a paraboloid 0.33 and a sphere 0.5.
-   */
   centroid: number;
-  /**
-   * Radius at three quarters up the crown over the widest radius: a cone is about 0.25, a paraboloid
-   * 0.5 and an ellipsoid 0.87.
-   */
   shoulder: number;
 }
 
-/**
- * Crown profile of a plant from its envelope's sector-mean radius per height bin. An excurrent
- * conifer carries its spread low with a narrow top; a decurrent broadleaf carries it near mid-crown
- * with full shoulders. One long low limb moves the centroid only as far as its share of the crown.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export function crownProfile(structure: PlantStructure): CrownProfile {
   const hull = structure.crownHull;
   const raw = new Float64Array(CROWN_HULL_BINS);

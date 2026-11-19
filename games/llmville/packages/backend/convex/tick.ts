@@ -23,19 +23,12 @@ type ServerTickSystem = TickSystemDefinition & {
  * - Bankruptcy is decided inside billAutoPay when a payment fails, not polled every heartbeat.
  */
 const SERVER_TICK_SYSTEMS: readonly ServerTickSystem[] = [
-  /** Advance the runtime training queue: drain work, bill distill vendors, roll finished models. */
   { id: "trainingQueue", intervalMs: 5_000, scope: "onlinePlayers", batchSize: 25, handler: internal.models.tickTrainingQueues },
-  /** Pay serving income (money) for served + hosted models. */
   { id: "servingIncome", intervalMs: 2_000, scope: "onlinePlayers", batchSize: 25, handler: internal.serving.tickAllServingIncome },
-  /** Accrue tiered-scraping data tokens on scraping-lane GPUs. */
   { id: "scraping", intervalMs: 10_000, scope: "onlinePlayers", batchSize: 25, handler: internal.serving.tickAllScraping },
-  /** Spawn cozy world events for eligible worlds. */
   { id: "eventSpawns", intervalMs: 20_000, scope: "onlinePlayers", batchSize: 25, handler: internal.world.spawnEventsForAllWorlds },
-  /** Spawn the once-per-game-day utility bills (gated by game day inside the system). */
   { id: "billSpawns", intervalMs: 30_000, scope: "onlinePlayers", batchSize: 25, handler: internal.bills.spawnBillsForAllGames },
-  /** Auto-deduct unpaid bills; insolvency triggers bankruptcy inside the system. */
   { id: "billAutoPay", intervalMs: 30_000, scope: "onlinePlayers", batchSize: 25, handler: internal.bills.autoPayBillsForAllGames },
-  /** Bump the global frontier on frontier_release days (gated to once per UTC day inside). */
   { id: "frontierRelease", intervalMs: 3_600_000, handler: internal.bills.applyDailyFrontierRelease },
 ];
 

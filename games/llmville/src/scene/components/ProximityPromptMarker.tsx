@@ -8,7 +8,6 @@ import type { PlacedRack } from "../../infrastructure/infrastructure";
 import { C, Text } from "../../ui/kit";
 
 const HINT_Y_OFFSET = 2.0;
-/** The marker's width; it centres over its anchor. */
 const MARKER_WIDTH = 96;
 
 export interface GaugeReading {
@@ -55,7 +54,6 @@ export function promptLines(display: ProximityPromptDisplay | null | undefined, 
   return hint ? { head: hint.key, body: hint.action } : null;
 }
 
-/** The floating prompt over the interactable rack or item: a key chip, gauge readout or label. */
 export function ProximityPromptMarker(props: ProximityPromptMarkerProps) {
   const position = resolveHintWorldPosition(props);
   const lines = promptLines(props.promptDisplay, props.hint, props.gaugeValues);

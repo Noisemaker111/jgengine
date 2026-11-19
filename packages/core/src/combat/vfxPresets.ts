@@ -8,11 +8,8 @@ import type { VfxKind } from "../game/events";
  */
 export interface VfxPreset {
   kind: VfxKind;
-  /** `0xRRGGBB` tint. */
   color: number;
-  /** Overrides the shell's per-`kind` default lifetime when set. */
   durationMs?: number;
-  /** Default effect radius for `nova`/aura flavors. */
   radius?: number;
 }
 
@@ -72,7 +69,6 @@ export const vfxPresets = {
   cast: { kind: "glow", color: 0xd98aff },
 } as const satisfies Record<string, VfxPreset>;
 
-/** A named key into {@link vfxPresets} (`"arrow" | "fireball" | "lightning" | "web" | "slash" | "shield" | "heal" | ...`). */
 export type VfxPresetName = keyof typeof vfxPresets;
 
 /** The fallback flavor used when a `vfx()` call names an unknown preset — so a typo still shows a spark instead of nothing. */

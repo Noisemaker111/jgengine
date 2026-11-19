@@ -10,10 +10,10 @@ import type { HlodConfig } from "@jgengine/core/visibility/config";
 import { cellProxyJob, type ProxyPart } from "./cellProxy.draw";
 import { showCulled } from "@jgengine/core/visibility/culledTransforms.draw";
 
-/** Marks the `BatchedMesh` draws a {@link StaticDrawPool} owns. @internal */
+/** @internal */
 export const STATIC_POOL_MESH_KEY = "jgStaticDrawPool";
 
-/** One draw source a pool can take: a material and a geometry, both shared with their model. @internal */
+/** @internal */
 export interface PooledSource {
   geometry: THREE.BufferGeometry;
   material: THREE.Material | THREE.Material[];
@@ -21,20 +21,14 @@ export interface PooledSource {
   receiveShadow?: boolean | undefined;
 }
 
-/** A placement a slot draws: its id names it to picking. @internal */
+/** @internal */
 export interface PooledPlacement {
   readonly instanceId: string;
 }
 
-/**
- * A source's part in its cells' far proxies. `"part"` adds its geometry to the proxy and hides behind
- * it (a model's coarsest mesh level); `"hidden"` hides behind the proxy without adding to it (a finer
- * level of a model whose coarsest level stands in for it); `"own"` neither adds nor hides, for a model
- * whose far placements draw as impostor cards.
- */
 export type ProxyRole = "part" | "hidden" | "own";
 
-/** Marks the merged far proxies a {@link StaticDrawPool} draws. @internal */
+/** @internal */
 export const STATIC_POOL_PROXY_KEY = "jgStaticDrawProxy";
 
 /**
@@ -47,12 +41,10 @@ export const STATIC_PROXY_CELL = 128;
 
 interface ProxyCell {
   readonly key: string;
-  /** Each member is one slot instance placed inside the cell. */
   readonly members: Set<ProxyMember>;
   readonly sphere: THREE.Sphere;
   boundsDirty: boolean;
   far: boolean;
-  /** Bumped whenever a placement in the cell is added, moved or removed. */
   version: number;
   proxy: THREE.Mesh | null;
   proxyVersion: number;
@@ -68,9 +60,7 @@ interface PoolGroup {
   readonly mesh: THREE.BatchedMesh;
   readonly slots: Set<StaticDrawSlot>;
   readonly material: THREE.Material;
-  /** Names the pool's copy of the source material this batch shares with its source's batches in other cells. */
   readonly materialKey: string;
-  /** Placement id per batch instance, read by picking. */
   readonly ids: string[];
   readonly geometries: Map<THREE.BufferGeometry, { id: number; refs: number }>;
   vertexCapacity: number;
@@ -103,7 +93,6 @@ function textureSignature(texture: THREE.Texture): string {
 
 const SKIPPED_KEYS = new Set(["uuid", "name", "id", "version", "userData", "defines", "onBeforeCompile", "customProgramCacheKey"]);
 
-/** A plain record without the keys scene-wide layers own, for a signature. */
 function ownEntries(record: Record<string, unknown> | undefined, isLayer: (key: string) => boolean): Record<string, unknown> {
   const own: Record<string, unknown> = {};
   for (const key of Object.keys(record ?? {}).sort()) if (!isLayer(key)) own[key] = record?.[key];
@@ -129,7 +118,6 @@ function valueSignature(value: unknown): string | null {
   }
 }
 
-/** The one material of a source, or null for a multi-material mesh. */
 function singleMaterial(material: THREE.Material | THREE.Material[]): THREE.Material | null {
   return Array.isArray(material) ? null : material;
 }
@@ -185,12 +173,7 @@ function plainLayout(geometry: THREE.BufferGeometry): string | null {
 
 const plainCopies = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
 
-/**
- * The geometry a batch copies from: the geometry itself, or once per geometry a copy whose
- * interleaved attributes (a compressed model's packed vertices) are laid out one array each, since a
- * batch copies vertices attribute by attribute anyway.
- * @internal
- */
+/** @internal */
 export function batchableGeometry(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
   if (!Object.values(geometry.attributes).some((attribute) => attribute instanceof THREE.InterleavedBufferAttribute)) return geometry;
   const known = plainCopies.get(geometry);
@@ -236,7 +219,7 @@ const scratchMatrix = new THREE.Matrix4();
 
 const pools = new WeakMap<THREE.Object3D, StaticDrawPool>();
 
-/** The pool whose batches hang under `parent` (a scene), made on first use. @internal */
+/** @internal */
 export function staticDrawPoolFor(parent: THREE.Object3D): StaticDrawPool {
   let pool = pools.get(parent);
   if (pool === undefined) {
@@ -246,7 +229,7 @@ export function staticDrawPoolFor(parent: THREE.Object3D): StaticDrawPool {
   return pool;
 }
 
-/** The placement ids a pooled batch shows this frame, for the batching probe. @internal */
+/** @internal */
 export function shownPooledIds(mesh: THREE.BatchedMesh, into: Set<string>): void {
   const ids = mesh.userData[POINTER_OBJECT_INSTANCES_KEY];
   if (!Array.isArray(ids)) return;
@@ -283,7 +266,6 @@ export class StaticDrawPool {
 
   constructor(private readonly parent: THREE.Object3D) {}
 
-  /** Turn far-cell proxies on with a game's distances, or off with null (every prop draws in its batch). */
   configure(hlod: HlodConfig | null): void {
     if (hlod !== null && !(hlod.distance > 0 && hlod.hysteresis >= 0 && hlod.cluster > 0)) {
       throw new Error("hlod needs a positive distance and cluster size and a non-negative hysteresis");
@@ -296,11 +278,6 @@ export class StaticDrawPool {
     }
   }
 
-  /**
-   * Let world streaming hold cells on their proxy: a held cell draws its proxy whatever the camera
-   * distance (building one if it has none), and keeps it after its props leave the scene, until the
-   * hold lifts. Null releases every hold.
-   */
   holdProxies(hold: ((x: number, z: number) => boolean) | null): void {
     this.hold = hold;
   }
@@ -353,26 +330,22 @@ export class StaticDrawPool {
     }
   }
 
-  /** Cells drawing their proxy right now. */
   proxiesShown(): number {
     let shown = 0;
     for (const cell of this.cells.values()) if (cell.proxy?.visible === true) shown += 1;
     return shown;
   }
 
-  /** Batches the pool holds. */
   batches(): number {
     return this.groups.size;
   }
 
-  /** Batches holding at least one shown instance: the draws the pool submits before three's own culling. */
   draws(): number {
     let draws = 0;
     for (const group of this.groups.values()) if (group.shown > 0) draws += 1;
     return draws;
   }
 
-  /** Instances shown across every batch. */
   shownInstances(): number {
     let shown = 0;
     for (const group of this.groups.values()) shown += group.shown;
@@ -414,7 +387,6 @@ export class StaticDrawPool {
     return slot;
   }
 
-  /** Remove every batch and proxy from the scene and free their buffers. */
   dispose(): void {
     this.building?.run.cancel();
     this.building = null;
@@ -427,12 +399,12 @@ export class StaticDrawPool {
     this.proxyMaterial = null;
   }
 
-  /** Whether a member's props give way to its cell's proxy. @internal */
+  /** @internal */
   proxied(cell: ProxyCell | null): boolean {
     return cell !== null && cell.far && cell.proxy !== null;
   }
 
-  /** File a placed instance under the proxy cell its position falls in. @internal */
+  /** @internal */
   file(member: ProxyMember, from: ProxyCell | null, x: number, z: number): ProxyCell {
     const key = `${Math.floor(x / STATIC_PROXY_CELL)},${Math.floor(z / STATIC_PROXY_CELL)}`;
     let cell = this.cells.get(key);
@@ -664,7 +636,7 @@ function mirrorSourceTextures(mesh: THREE.BatchedMesh, source: THREE.Material, o
   };
 }
 
-/** Bring a pool batch's material copy up to its source's textures now; it also happens before every draw. @internal */
+/** @internal */
 export function mirrorPooledTextures(mesh: THREE.BatchedMesh): void {
   mirrors.get(mesh)?.();
 }
@@ -701,16 +673,10 @@ export class StaticDrawSlot {
     this.members = instances.map((_, index) => ({ slot: this, index }));
   }
 
-  /** The batch this slot draws into. */
   get mesh(): THREE.BatchedMesh {
     return this.group.mesh;
   }
 
-  /**
-   * Show this frame's placements: `slotOf` names each one's instance (its index in the model batch),
-   * and `matrixOf` writes its world matrix whenever the placement record changed. Every other instance
-   * of the slot is hidden, and so is one whose cell draws its far proxy.
-   */
   sync<T extends PooledPlacement>(
     members: readonly T[],
     slotOf: (member: T) => number | undefined,
@@ -753,7 +719,7 @@ export class StaticDrawSlot {
     settleGroup(this.group);
   }
 
-  /** Show or hide one instance from what culling wants and whether its cell draws a proxy. @internal */
+  /** @internal */
   refresh(index: number): void {
     const instance = this.instances[index];
     if (instance === undefined) return;
@@ -767,14 +733,14 @@ export class StaticDrawSlot {
     showCulled(this.group.mesh, this.group.shown > 0);
   }
 
-  /** Grow `sphere` by every placed instance of this slot; an instance not yet placed has no bounds. @internal */
+  /** @internal */
   unionBounds(sphere: THREE.Sphere): void {
     this.instances.forEach((_, index) => {
       if (this.sphereAt(index, instanceSphere)) sphere.union(instanceSphere);
     });
   }
 
-  /** The world bounds of one placed instance into `target`; false when it is not placed. @internal */
+  /** @internal */
   sphereAt(index: number, target: THREE.Sphere): boolean {
     const instance = this.instances[index];
     const geometry = this.group.geometries.get(this.geometry);
@@ -792,7 +758,6 @@ export class StaticDrawSlot {
     return { geometry: this.geometry, matrix: this.group.mesh.getMatrixAt(instance, new THREE.Matrix4()), material: this.group.material };
   }
 
-  /** Give the instances back; the batch goes when its last slot does. */
   release(): void {
     if (this.released) return;
     this.released = true;

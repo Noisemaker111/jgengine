@@ -3,10 +3,8 @@ import type { TerrainField } from "./terrain";
 /** A world-space point on the ground plane as an `[x, z]` pair. */
 export type GroundPoint = readonly [number, number];
 
-/** A height sampler over the ground: world elevation at any `x`/`z`. */
 export type HeightSampler = (x: number, z: number) => number;
 
-/** An axis-aligned XZ rectangle to generate terrain-readability guides within. */
 export interface GuideRegion {
   minX: number;
   minZ: number;
@@ -32,10 +30,8 @@ function clampInt(value: number, min: number, max: number): number {
  */
 export interface HeightGrid {
   region: GuideRegion;
-  /** Sample columns and rows (each is `resolution + 1` points across its axis). */
   cols: number;
   rows: number;
-  /** Row-major heights, length `cols * rows` (row `r`, column `c` at index `r * cols + c`). */
   heights: Float64Array;
   min: number;
   max: number;
@@ -74,9 +70,7 @@ export function sampleHeightGrid(
   return { region, cols, rows, heights, min, max };
 }
 
-/** A single iso-elevation contour traced across a region as a flat list of XZ line segments. */
 export interface ContourLine {
-  /** The world elevation (`y`) this contour follows. */
   level: number;
   /** Whether this is a major (emphasised) contour rather than a minor one. */
   major: boolean;
@@ -87,16 +81,13 @@ export interface ContourLine {
   segments: readonly number[];
 }
 
-/** Shaping for {@link extractContours}: region, vertical spacing, emphasis cadence, and sample budget. */
 export interface ContourOptions {
   region: GuideRegion;
   /** Vertical spacing between adjacent contour lines, in world units. Must be `> 0`. */
   interval: number;
-  /** Every Nth line (counting from `y = 0`) is a major contour. Default `5`; `<= 1` makes all major. */
   majorEvery?: number;
   /** Samples per axis for the marching-squares grid. Default `128`, clamped to `[1, maxSamples]`. */
   resolution?: number;
-  /** Hard per-axis sample cap so extraction stays within an explicit budget. Default `256`. */
   maxSamples?: number;
 }
 
@@ -254,24 +245,15 @@ export function chooseContourInterval(range: number, targetLines = 12): number {
   return best;
 }
 
-/** Measurable elevation readout at a single world point — the cursor/hover feedback value. */
 export interface ElevationReadout {
   x: number;
   z: number;
-  /** Ground elevation at the point. */
   height: number;
-  /** `height - reference` — signed distance above (+) or below (−) the reference plane. */
   delta: number;
-  /** The reference-plane height the delta was measured against. */
   reference: number;
 }
 
-/**
- * Reads the ground elevation under a world point and its signed delta from a reference plane — the
- * measurable cursor/hover feedback ("+3.4 above the pad") an author needs to judge sculpted height.
- * @capability elevation-readout cursor height and delta-from-reference feedback
- * @consumer editor terrain-readability HUD readout
- */
+/** @capability elevation-readout cursor height and delta-from-reference feedback */
 export function sampleElevation(
   sampleHeight: HeightSampler,
   x: number,
@@ -282,18 +264,13 @@ export function sampleElevation(
   return { x, z, height, delta: height - reference, reference };
 }
 
-/** Aggregate elevation statistics over a region — the selection min/max/mean and legend range. */
 export interface ElevationSummary {
   min: number;
   max: number;
   mean: number;
-  /** `max - min` — the vertical relief across the region. */
   range: number;
-  /** World point where the lowest sample was found. */
   minAt: GroundPoint;
-  /** World point where the highest sample was found. */
   maxAt: GroundPoint;
-  /** Number of grid samples taken. */
   samples: number;
 }
 
@@ -346,13 +323,7 @@ export interface DrapeOptions {
   offset?: number;
 }
 
-/**
- * Drapes an XZ polyline onto the surface: subdivides each span to at most `spacing` and lifts every
- * vertex to `sampleHeight + offset`, returning flat `[x, y, z, ...]` world triples. The reusable seam
- * behind surface-following placement guides and grid lines — a straight guide bends to follow terrain.
- * @capability surface-drape lift an XZ polyline onto sculpted terrain
- * @consumer editor placement guides and surface grid overlay
- */
+/** @capability surface-drape lift an XZ polyline onto sculpted terrain */
 export function drapePolyline(
   sampleHeight: HeightSampler,
   points: readonly GroundPoint[],
@@ -383,13 +354,7 @@ export function drapePolyline(
   return out;
 }
 
-/**
- * A closed circle draped on the surface — the surface-following placement guide ring under a cursor or
- * a selected object. Returns flat `[x, y, z, ...]` world triples forming a loop (last vertex repeats
- * the first). `segments` sets the smoothness of the ring.
- * @capability surface-ring surface-following placement guide ring
- * @consumer editor cursor/placement guide
- */
+/** @capability surface-ring surface-following placement guide ring */
 export function surfaceRing(
   sampleHeight: HeightSampler,
   center: GroundPoint,
@@ -406,26 +371,18 @@ export function surfaceRing(
   return drapePolyline(sampleHeight, points, options);
 }
 
-/** One draped grid line from {@link surfaceGridLines}: its axis, emphasis, and draped vertices. */
 export interface SurfaceGridLine {
-  /** Which axis the line runs constant along: an `"x"` line holds `x` fixed and spans `z`, and vice versa. */
   axis: "x" | "z";
-  /** The constant coordinate value the line holds. */
   at: number;
-  /** Whether this is a major (emphasised) grid line. */
   major: boolean;
-  /** Flat `[x, y, z, ...]` world triples draped on the surface. */
   points: readonly number[];
 }
 
-/** Shaping for {@link surfaceGridLines}: region, spacing, emphasis cadence, and draping. */
 export interface SurfaceGridOptions {
   region: GuideRegion;
   /** World distance between adjacent grid lines. Must be `> 0`. */
   spacing: number;
-  /** Every Nth line (counting from origin) is a major line. Default `5`; `<= 1` makes all major. */
   majorEvery?: number;
-  /** Draping options for each line. */
   drape?: DrapeOptions;
 }
 
@@ -473,14 +430,7 @@ export function surfaceGridLines(sampleHeight: HeightSampler, options: SurfaceGr
   return lines;
 }
 
-/**
- * Convenience over {@link extractContours} that auto-picks the interval from the field's own relief:
- * summarises the region, chooses a readable interval for `targetLines` bands, and traces the contours —
- * the one call the editor overlay makes to turn a `TerrainField` into ready-to-draw guides. Returns an
- * empty list for flat ground.
- * @capability terrain-guides one-call adaptive contours for a terrain field
- * @consumer editor terrain-readability overlay
- */
+/** @capability terrain-guides one-call adaptive contours for a terrain field */
 export function terrainContourGuides(
   field: Pick<TerrainField, "sampleHeight">,
   region: GuideRegion,

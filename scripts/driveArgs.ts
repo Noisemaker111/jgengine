@@ -18,9 +18,7 @@ export type DriveArgs = {
   modeExplicit: boolean;
   device: Device;
   size: SizeMode;
-  /** The tier `--quality` pinned; undefined leaves the game's own tier, which the summary still reports. */
   quality?: GraphicsTier;
-  /** `--draft`: the low-tier half-size iteration preset. */
   draft: boolean;
   connect?: number | undefined;
   keep: boolean;
@@ -57,29 +55,20 @@ export type DriveArgs = {
   headed: boolean;
   /** `--cold`: boot Chrome and Vite directly, proving a clean start. */
   cold: boolean;
-  /** 960x540 iteration preset: one settled frame in a 2s window, no video, no perf pass. */
   quick: boolean;
   /** `--game-dir`: serve this game from another checkout instead of `games/<game>`. */
   gameDir: string | null;
-  /** Named flow this run plays, when it plays one. */
   flow?: string | undefined;
-  /** `--browser`: play a headless flow in the browser. */
   browser: boolean;
-  /** List the game's flows and exit. */
   flows: boolean;
-  /** Also write one JSONL line per step here. */
   log?: string | undefined;
   /** `--hitches`: record every frame over 33 ms of the run with its cause, and print them at the end. */
   hitches: boolean;
-  /** `--renders`: count every UI component render of the run and print the busiest components. */
   renders: boolean;
   /** `--renders-settle <ms>`: play this long before the render count starts, so loading and first mounts stay out of a steady-play reading. */
   rendersSettleMs: number;
-  /** `--allocations`: sample who allocated what over the run and print the biggest allocators. */
   allocations: boolean;
-  /** `--cpu`: sample the page's CPU over the run and list the functions that took each hitch. */
   cpu: boolean;
-  /** `--trace`: record a Chrome trace of every process (GPU process included) and name the long slices in each hitch. */
   trace: boolean;
 };
 
@@ -179,7 +168,6 @@ Warm capture (started for you; no lane starts the daemon by hand):
   bun run drive <game> --click START --shot after --connect <port> --quick
 `;
 
-/** The game (or site) project a run targets: its flows and evidence live under it; shots go in shots/. */
 export function projectDirOf(args: DriveArgs): string {
   // A game served from another checkout keeps its flows there too.
   if (args.gameDir !== null) return resolve(args.gameDir);
@@ -191,7 +179,6 @@ export function projectDirOf(args: DriveArgs): string {
   );
 }
 
-/** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto drive's options. */
 export function parseDriveArgs(argv: string[]): DriveArgs {
   // `--headed` is parsed here, not in CAPTURE_FLAGS: the scaffold's drive.mjs has no local window to
   // show, so the flag stays engine-only instead of parsing there and doing nothing.

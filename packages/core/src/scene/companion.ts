@@ -17,131 +17,83 @@ export type CompanionCommand = "follow" | "stay";
  */
 export type CompanionStance = "passive" | "neutral" | "aggressive";
 
-/**
- * Serializable per-companion state: who owns it, its standing order, where it holds, its
- * leash radius, and its levelled stat pool. Plain data — JSON round-trips without loss.
- */
 export interface CompanionRecord {
   id: string;
   /** Owning user/entity id — the roster ownership tie. */
   ownerId: string;
-  /** The {@link RosterEntry.id} this companion was tamed from, or `null` when free-standing. */
   sourceId: string | null;
   command: CompanionCommand;
   stance: CompanionStance;
   /** Hold/return anchor used by `stay`; `null` until the owner parks it somewhere. */
   home: MobVec3 | null;
-  /** Radius the game keeps the companion within of its resolved anchor (feeds a brain's leash distance). */
   leash: number;
   level: number;
-  /** Stat points earned from levels and not yet spent via {@link CompanionRoster.spend}. */
   unspentPoints: number;
-  /** Levelled stat pool, composed over `scene/entityStats`. */
   stats: StatValueMap;
 }
 
 /** Per-tick world context the game supplies so a command resolves into a concrete intent. */
 export interface CompanionIntentContext {
-  /** Owner's current world position — the anchor for every non-`stay` mode; `null` when absent. */
   ownerPosition?: MobVec3 | null;
-  /** The owner's current attack target — the companion assists/aggros it per its command. */
   ownerTargetId?: string | null;
-  /** Ids attacking the companion or its owner (already proximity-filtered upstream): neutral and aggressive fight these. */
   threats?: readonly string[];
-  /** Hostile ids near the companion that are not attacking: only an aggressive companion picks fights with these. */
   nearby?: readonly string[];
 }
 
-/**
- * The companion's decision for one tick, shaped for `ai/mobBrain`: feed `candidates` into
- * `MobBrainDeps.candidates()`, treat `leashTo` as the brain's `home`, and pass `leashDistance`
- * as `leashDistance`. `kind` summarises the posture for HUD/animation.
- */
 export interface CompanionIntent {
-  /** `follow`/`hold` when idle at the anchor; `engage` a fresh threat; `assist` the owner's target. */
   kind: "follow" | "hold" | "engage" | "assist";
-  /** Whether the companion leashes to the owner (follow modes) or its `home` (stay). */
   anchor: "owner" | "home";
-  /** Resolved anchor world point — owner position or `home`; `null` when that point is unknown. */
   leashTo: MobVec3 | null;
-  /** Leash radius (copied from the record) the game passes to the brain / clamps movement against. */
   leashDistance: number;
-  /** Threat ids to expose as `MobBrainDeps.candidates()`; empty when the command forbids engaging. */
   candidates: readonly string[];
-  /** The primary threat to engage/assist this tick — `candidates[0]`; `null` while following/holding. */
   targetId: string | null;
 }
 
 /** Rule for turning one spent level-point into a stat gain. Absent from config ⇒ the stat can't be upgraded. */
 export interface CompanionStatUpgrade {
-  /** Amount a single point adds to the stat's `max` (and heals into `current`). */
   increment: number;
-  /** Hard ceiling for the stat's `max`; spends that would exceed it are rejected. */
   maxCap?: number;
 }
 
-/** Outcome of {@link CompanionRoster.spend}: the updated record + stat, or a rejection reason. */
 export type CompanionSpendResult =
   | { status: "ok"; record: CompanionRecord; stat: StatValue }
   | { status: "rejected"; reason: string };
 
-/** Per-companion configuration shared by every companion the roster mints. */
 export interface CompanionConfig {
-  /** Stat catalog seeded into each new companion's pool (via `entityStats.seedStatValues`). */
   stats?: StatCatalog;
-  /** Per-stat upgrade rules consulted by {@link CompanionRoster.spend}. */
   upgrades?: Record<string, CompanionStatUpgrade>;
-  /** Points granted on reaching a given level; default `1` per level. Inject `progression/leveling` curves here. */
   pointsPerLevel?: (level: number) => number;
-  /** Level ceiling; `levelUp` past it is a no-op. Default `Infinity`. */
   maxLevel?: number;
-  /** Level every companion starts at; default `1`. */
   startLevel?: number;
-  /** Default leash radius for new companions; default `12`. */
   leash?: number;
 }
 
-/** Options for {@link CompanionRoster.adopt}. */
 export interface CompanionAdoptOptions {
   id?: string;
   /** The {@link RosterEntry.id} this companion springs from — the ownership/catalog tie. */
   sourceId?: string;
   command?: CompanionCommand;
-  /** Default `neutral`. */
   stance?: CompanionStance;
   home?: MobVec3 | null;
   leash?: number;
   level?: number;
-  /** Override the config stat catalog for this one companion. */
   stats?: StatCatalog;
 }
 
-/**
- * A set of tamed companions keyed by companion id, scoped to owners. Wraps allegiance/command
- * state, per-companion levelled stats, and intent resolution behind create/command/level/
- * snapshot/hydrate — the counterpart of `scene/roster` for creatures that fight beside you.
- */
 export interface CompanionRoster {
-  /** Mint a companion for an owner (optionally tied to a {@link RosterEntry}). */
   adopt(ownerId: string, options?: CompanionAdoptOptions): CompanionRecord;
   release(companionId: string): boolean;
   get(companionId: string): CompanionRecord | null;
   ownerOf(companionId: string): string | null;
   list(ownerId: string): readonly CompanionRecord[];
-  /** Set a companion's standing order; `null` if the id is unknown. */
   command(companionId: string, command: CompanionCommand): CompanionRecord | null;
-  /** Set what a companion fights; `null` if the id is unknown. */
   stance(companionId: string, stance: CompanionStance): CompanionRecord | null;
-  /** Park/clear a companion's `stay` anchor. */
   setHome(companionId: string, home: MobVec3 | null): CompanionRecord | null;
   setLeash(companionId: string, leash: number): CompanionRecord | null;
   /** Gain `levels` levels (bounded by `maxLevel`), accruing points from `pointsPerLevel`. */
   levelUp(companionId: string, levels?: number): CompanionRecord | null;
-  /** Spend one earned point into a stat per its {@link CompanionStatUpgrade} rule. */
   spend(companionId: string, statId: string): CompanionSpendResult;
-  /** Resolve the companion's per-tick {@link CompanionIntent}; `null` if the id is unknown. */
   resolveIntent(companionId: string, context: CompanionIntentContext): CompanionIntent | null;
-  /** Whole-store serializable copy — the save/replication seam. */
   snapshot(): Record<string, CompanionRecord>;
   hydrate(data: Record<string, CompanionRecord>): void;
 }

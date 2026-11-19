@@ -19,7 +19,6 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** How often (seconds) the cursor readout re-samples — a bounded per-frame cost, not every frame. */
 const CURSOR_SAMPLE_INTERVAL = 1 / 20;
-/** Cap on marching-squares samples per axis — the overlay's explicit performance budget. */
 const READOUT_MAX_SAMPLES = 200;
 /** Small lift keeping guide lines off the surface so they never z-fight the terrain mesh. */
 const DEPTH_BIAS = 0.08;
@@ -30,7 +29,6 @@ const MAJOR_GRID_COLOR = "#5b6b7d";
 const MINOR_GRID_COLOR = "#39434f";
 const CURSOR_RING_COLOR = "#ffd479";
 
-/** Expands a flat `[x,y,z,...]` polyline into consecutive `LineSegments` vertex pairs. */
 function polylineToSegments(points: readonly number[], into: number[]): void {
   const vertexCount = Math.floor(points.length / 3);
   for (let i = 0; i < vertexCount - 1; i += 1) {

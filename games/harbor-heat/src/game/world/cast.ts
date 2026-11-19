@@ -21,8 +21,6 @@ export const CAST: Record<string, string> = {
   bounty_mark: "human/woman-casual-2",
 };
 
-/** Every library person the city casts, so `provision` pulls them and the credits list them. */
 export const CAST_MODEL_NAMES: readonly string[] = [...new Set(Object.values(CAST))];
 
-/** The library car traffic is drawn with (Khronos CarConcept, CC-BY 4.0: credited in the menu). */
 export const CAR_MODEL_NAME = "vehicle/sports-car";

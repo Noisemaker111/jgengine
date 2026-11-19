@@ -2,11 +2,9 @@ import type { RadioBulletin } from "@jgengine/core/audio/radio";
 import type { WorldLogEntry } from "@jgengine/core/worldModel/worldModel";
 import { turfWar } from "../city";
 
-/** How the radio names each crew; the player is nobody's crew. */
 const CREW: Record<string, string> = { carmine: "the Carmines", riptide: "the Riptides" };
 const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** The three stations' wording for one story: the news desk reads it straight, Sully rants, Luna keeps it light. */
 function story(topic: string, priority: number, news: string[], talk: string[], dj: string[], cooldown = 75): RadioBulletin {
   return { topic, priority, cooldown, lines: news, byStation: { mnn: news, harbor_talk: talk, neon_tide: dj } };
 }

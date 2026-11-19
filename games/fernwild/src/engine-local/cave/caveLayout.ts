@@ -3,9 +3,7 @@ import type { WorldSolid } from "@jgengine/core/world/worldSolids";
 /** Ground height under a point, so the cave's floor, walls and roof follow the terrain. */
 export type CaveGround = (x: number, z: number) => number;
 
-/** A cave dug into the ground along a centreline: a tunnel from the mouth that opens into a chamber at its far end. */
 export interface CaveConfig {
-  /** Centreline in XZ, mouth first; the last point is the chamber's centre. At least two points. */
   path: readonly (readonly [number, number])[];
   /** Tunnel width wall to wall, metres. Default 7. */
   width?: number;
@@ -15,31 +13,24 @@ export interface CaveConfig {
   chamber?: number;
   /** Rock over the roof and beside the walls, metres: how thick the hill the cave sits in is, and its collision. Default 6. */
   cover?: number;
-  /** Seed for the rock's lumps. Default 1. */
   seed?: number;
 }
 
-/** Everything a game needs to place, draw and fill a cave. */
 export interface CaveLayout {
-  /** Centreline resampled about every half width, mouth first, ending at the chamber's centre. */
   path: readonly (readonly [number, number])[];
   width: number;
   height: number;
   cover: number;
   seed: number;
   chamber: { center: readonly [number, number]; radius: number };
-  /** Collision: the rock (`cover` thick) along both sides of the tunnel and round the chamber, open where the tunnel joins it. */
   solids: WorldSolid[];
-  /** Spots for creatures or loot: down the tunnel, then around the chamber. The last is the chamber's centre. */
   spots: readonly (readonly [number, number])[];
-  /** Whether a point is under the cave's roof. */
   inside(x: number, z: number): boolean;
   /** How far in a point is, metres along the tunnel from the mouth (the chamber counts as the end); null outside. */
   depth(x: number, z: number): number | null;
 }
 
 const DEFAULTS = { width: 7, height: 6, chamber: 12, cover: 6, seed: 1 };
-/** Sides of the chamber's wall ring. */
 const CHAMBER_SIDES = 28;
 
 type Point = readonly [number, number];
@@ -65,7 +56,6 @@ function toSegment(p: Point, a: Point, b: Point): { distance: number; t: number 
   return { distance: Math.hypot(p[0] - (a[0] + dx * t), p[1] - (a[1] + dz * t)), t };
 }
 
-/** A slab of wall from `a` to `b` in XZ, standing on the ground at its middle. */
 function slab(a: Point, b: Point, thickness: number, height: number, ground: CaveGround): WorldSolid {
   const mid: Point = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
   const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
@@ -78,12 +68,7 @@ function slab(a: Point, b: Point, thickness: number, height: number, ground: Cav
   };
 }
 
-/**
- * Lay out a cave along an authored centreline: wall collision down both sides of the tunnel, a round chamber
- * at the end walled all round except where the tunnel comes in, spots to put creatures and loot, and tests for
- * whether a point is inside. Pair with `caveMesh` to draw it.
- * @capability cave-layout a walkable cave (tunnel and chamber) from a centreline: collision, spawn spots, inside test
- */
+/** @capability cave-layout a walkable cave (tunnel and chamber) from a centreline: collision, spawn spots, inside test */
 export function caveLayout(config: CaveConfig, ground: CaveGround): CaveLayout {
   if (config.path.length < 2) throw new Error("caveLayout: a cave path needs a mouth and an end");
   const width = config.width ?? DEFAULTS.width;

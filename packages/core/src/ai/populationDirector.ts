@@ -3,47 +3,36 @@ import { pickUniform, pickWeighted } from "../random/pick";
 import { randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
 import { createPacedSchedule, type PacedSchedule } from "../time/pacedSchedule";
 
-/** One species that ambiently populates a region: how heavily it is favoured and its alive ceiling. */
 export interface PopulationSpeciesEntry {
   /** Opaque species/creature id the engine never interprets. */
   species: string;
-  /** Relative pick weight among species below their cap (default 1). */
   weight?: number;
-  /** Target/maximum number of this species alive in the region at once. */
   cap: number;
 }
 
-/** Ambient population budget for a single region: its species ceilings, refill timing, and spawn geometry. */
 export interface PopulationRegionConfig {
   /** Opaque region id the engine never interprets. */
   region: string;
   species: readonly PopulationSpeciesEntry[];
   /** Seconds a freed slot waits before it becomes a spawn candidate (overrides the director default). */
   respawnDelay?: number;
-  /** Candidate spawn locations; when present each request is tagged with one. */
   spawnPoints?: readonly NavPoint[];
 }
 
-/** Full ambient-population configuration: per-region species budgets plus global refill limits and PRNG seed. */
 export interface PopulationDirectorConfig {
   regions: readonly PopulationRegionConfig[];
   /** Default respawn delay in game-seconds for regions without their own (default 0 — refill on the next tick). */
   respawnDelay?: number;
-  /** Upper bound on spawn requests emitted per {@link PopulationDirector.tick} call (default 32). */
   maxSpawnsPerTick?: number;
-  /** Seed for the persisted, serializable PRNG cursor (default 1). */
   seed?: number;
 }
 
-/** A single ambient spawn the game should realise, refilling a region toward its species caps. */
 export interface PopulationSpawnRequest {
   region: string;
   species: string;
-  /** Chosen spawn location when the region declares `spawnPoints`. */
   point?: NavPoint;
 }
 
-/** Per-call spawn-point selection hook, letting a game apply bias (distance from players, etc.) at tick time. */
 export interface PopulationTickContext {
   /**
    * Choose a spawn point for a request. Receives the region id, its configured candidates, and a
@@ -51,21 +40,12 @@ export interface PopulationTickContext {
    * request unplaced. When omitted, a candidate is picked uniformly from the roll.
    */
   pickSpawnPoint?(region: string, candidates: readonly NavPoint[], roll: number): NavPoint | null;
-  /**
-   * Whether a region is awake this tick — for a big world, the regions near a player. A sleeping
-   * region keeps its due refill slots queued and spawns nothing until it wakes. Omitted, every region
-   * is awake. Asked at most once per region per tick, however many slots that region has queued.
-   */
   isActive?(region: string): boolean;
 }
 
-/** Live census of alive counts keyed `region -> species -> count`, used to reconcile the director to reality. */
 export type PopulationCensus = Record<string, Record<string, number>>;
 
-/**
- * A queued refill slot awaiting its {@link PopulationDirectorState.elapsed} deadline.
- * @internal
- */
+/** @internal */
 export interface PopulationRespawnSlot {
   region: string;
   readyAt: number;
@@ -78,7 +58,6 @@ export interface PopulationRespawnSlot {
 export interface PopulationDirectorState {
   /** Accumulated game-seconds. */
   elapsed: number;
-  /** Believed alive counts, `region -> species -> count`. */
   alive: Record<string, Record<string, number>>;
   /** Pending refill slots, each ready at its `readyAt` game-second. */
   queue: readonly PopulationRespawnSlot[];
@@ -86,7 +65,6 @@ export interface PopulationDirectorState {
   rng: RandomSeed;
 }
 
-/** Stateful ambient population manager for one world; drive it with `tick` and lifecycle notifications. */
 export interface PopulationDirector {
   /**
    * Advance by `dt` game-seconds and emit spawn requests for refill slots whose delay has elapsed,
@@ -99,27 +77,20 @@ export interface PopulationDirector {
    * so it is back as soon as the region wakes.
    */
   notifyRemoved(region: string, species: string, id?: string, options?: { delay?: number }): void;
-  /** Register a creature the game introduced itself (not via a request), so caps account for it. */
   notifySpawned(region: string, species: string, id?: string): void;
-  /** Snap believed alive counts to a live census and re-queue any deficit toward the caps. */
   reconcile(census: PopulationCensus): void;
-  /** Believed alive count for a `(region, species)` pair. */
   alive(region: string, species: string): number;
-  /** Serializable copy of the full director state (deep, safe to persist). */
   snapshot(): PopulationDirectorState;
-  /** Replace the director state from a previously taken (and possibly JSON round-tripped) snapshot. */
   hydrate(state: PopulationDirectorState): void;
 }
 
 const DEFAULT_MAX_SPAWNS_PER_TICK = 32;
 
-/** One queued refill: the region it refills and the one-shot deadline it waits on. */
 interface QueuedRefill {
   region: string;
   deadline: PacedSchedule;
 }
 
-/** A refill slot ready at `at` on the director's clock. */
 function refillAt(at: number): PacedSchedule {
   return createPacedSchedule({ firstAt: at, every: 0, count: 1 }, () => 0);
 }
@@ -191,7 +162,6 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
     return counts;
   };
 
-  /** Top up the queue so `alive + queued` reaches the region cap, appending ready-at slots. */
   const ensureDeficitQueued = (region: PopulationRegionConfig, readyAt: number): void => {
     const deficit = totalCap(region) - totalAlive(region.region) - queuedCount(region.region);
     if (deficit <= 0) return;

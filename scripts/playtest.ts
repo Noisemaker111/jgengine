@@ -14,7 +14,6 @@
 export interface ProbeSample {
   /** Milliseconds since sampling began. */
   t: number;
-  /** Flat map of the game's progress metrics at this instant. */
   metrics: Record<string, number>;
 }
 
@@ -22,7 +21,6 @@ export interface PlaytestOptions {
   seed: number;
   /** A flat span this long (ms) under active input is a softlock. */
   softlockThresholdMs: number;
-  /** A metric moving by more than this counts as progress. */
   epsilon: number;
   /**
    * Milliseconds since sampling began when the player first acted (a key, click or fill), or `null`
@@ -33,13 +31,10 @@ export interface PlaytestOptions {
 
 export interface PlaytestResult {
   seed: number;
-  /** Number of probe samples that returned metrics (0 = game exposed no probe). */
   framesElapsed: number;
   /** Wall-clock span the samples cover, ms. */
   durationMs: number;
-  /** Net change (last − first) per metric across the run. */
   progressDelta: Record<string, number>;
-  /** Sum of the absolute net changes — one scalar for "did anything move". */
   totalProgress: number;
   /** Longest contiguous span (ms) after the first input where every metric held flat within epsilon. */
   softlockWindowMs: number;
@@ -47,7 +42,6 @@ export interface PlaytestResult {
   softlocked: boolean;
   /** Whether the run drove any input, so a softlock could be judged at all. */
   acted: boolean;
-  /** Whether any probe sample was read at all. */
   probed: boolean;
 }
 
@@ -87,7 +81,6 @@ function metricKeys(samples: readonly ProbeSample[]): string[] {
   return [...keys];
 }
 
-/** Net change (last − first) for every metric that appears in the samples. */
 export function progressDelta(samples: readonly ProbeSample[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const key of metricKeys(samples)) {
@@ -141,7 +134,6 @@ export function longestFlatWindowMs(samples: readonly ProbeSample[], epsilon: nu
   return best;
 }
 
-/** Fold a run of probe samples into the playtest verdict. */
 export function summarizePlaytest(samples: readonly ProbeSample[], options: PlaytestOptions): PlaytestResult {
   const probed = samples.length > 0;
   const delta = progressDelta(samples);

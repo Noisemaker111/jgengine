@@ -60,7 +60,6 @@ function existingBarrelExports(root: string, skill: string): Map<string, Set<str
   return exportsByModule;
 }
 
-/** `surface` is core's export surface; reading it builds a whole TypeScript program, so pass one in for several skills. */
 export function collectBarrelReexports(root: string, skill: string, surface: ApiPackage = coreSurface(root)): Reexport[] {
   const existing = existingBarrelExports(root, skill);
 

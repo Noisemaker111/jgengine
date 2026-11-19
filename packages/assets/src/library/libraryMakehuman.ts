@@ -24,17 +24,12 @@ export const MAKEHUMAN_PRESETS: readonly MakeHumanPreset[] = [
   { id: "female-young-heavy-caucasian", title: "Heavy Young Woman (Caucasian)", gender: "female", age: 0, ethnicity: only("caucasian"), weight: "max", tags: ["heavy"] },
 ];
 
-/** The preset a library id names, or undefined. @internal */
+/** @internal */
 export function makehumanPreset(id: string): MakeHumanPreset | undefined {
   return MAKEHUMAN_PRESETS.find((preset) => preset.id === id);
 }
 
-/**
- * Library records for every pinned MakeHuman person: rigged characters on MakeHuman's default
- * skeleton with idle, walk and run baked on.
- *
- * @internal
- */
+/** @internal */
 export function makehumanRecords(): LibraryRecord[] {
   return MAKEHUMAN_PRESETS.map((preset) => {
     const ethnic = Object.entries(preset.ethnicity)

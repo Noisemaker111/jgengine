@@ -1,5 +1,4 @@
 // @skill jgengine-ui
-/** Reading direction of a locale. */
 export type TextDirection = "ltr" | "rtl";
 
 const RTL_LANGUAGES: ReadonlySet<string> = new Set(["ar", "he", "iw", "fa", "ur", "ps", "sd", "ug", "yi", "dv", "ckb", "ks", "ku"]);
@@ -11,13 +10,7 @@ function platformDirection(locale: Intl.Locale): unknown {
   return typeof info === "object" && info !== null ? Reflect.get(info, "direction") : undefined;
 }
 
-/**
- * Reading direction of a locale tag (`"ar"`, `"he-IL"`, `"ur-PK"` are `rtl`). An explicit script
- * subtag decides, then the platform's `Intl.Locale` text info, then the language; an unparseable
- * tag is `ltr`.
- *
- * @capability text-direction left-to-right or right-to-left for a locale tag, from the platform's Intl data
- */
+/** @capability text-direction left-to-right or right-to-left for a locale tag, from the platform's Intl data */
 export function localeDirection(locale: string): TextDirection {
   let parsed: Intl.Locale;
   try {

@@ -23,24 +23,18 @@ export function publishListsFrom(workflow: string): string[][] {
   return [...workflow.matchAll(/for p in ([a-z0-9 ]+); do/g)].map((match) => match[1]!.trim().split(/\s+/));
 }
 
-/** `const PACKAGES = [...]` in set-version.ts. */
 export function versionPackagesFrom(source: string): string[] {
   const match = /const PACKAGES = \[([^\]]+)\]/.exec(source);
   if (!match) throw new Error("set-version.ts has no `const PACKAGES = [...]`");
   return [...match[1]!.matchAll(/"([a-z0-9]+)"/g)].map((entry) => entry[1]!);
 }
 
-/** The `@jgengine/{a,b,c}` set named in the release lockstep bullet. */
 export function lockstepSetFrom(source: string): string[] {
   const match = /@jgengine\/\{([a-z0-9,]+)\}/.exec(source);
   if (!match) throw new Error("no `@jgengine/{...}` lockstep set found");
   return match[1]!.split(",");
 }
 
-/**
- * Checks one publish order against the manifests: every workspace dependency of a listed package is
- * listed, and listed before its dependent. `manifests` maps directory name to its parsed package.json.
- */
 export function checkPublishOrder(
   publishOrder: readonly string[],
   manifests: ReadonlyMap<string, { name: string; dependencies?: Record<string, string>; peerDependencies?: Record<string, string> }>,

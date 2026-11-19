@@ -15,13 +15,6 @@ export function grassMownAmount(look: Pick<GrassLook, "blade">): number {
   return (1 - smoothstep(0.15, 0.3, look.blade.heightVariation)) * (1 - smoothstep(0.12, 0.25, look.blade.bladeHeight));
 }
 
-/**
- * How much fuller each tuft grows when `detail` multiplies the blades by `scale`; the rest of the
- * scale becomes more tufts. A sward (`clumping` 0) splits it evenly, `sqrt(scale)` each way; a
- * bunchgrass (`clumping` 1) puts it all in its tufts, so its clumps keep their place and their cover
- * and only grow finer. Spreading a tussock's fine blades over more tufts thinned every clump into one
- * even haze at realism 1.
- */
 export function grassTuftGrowth(scale: number, clumping: number): number {
   return scale ** (0.5 + 0.5 * Math.max(0, Math.min(1, clumping)));
 }

@@ -10,7 +10,6 @@ import sceneJson from "./editor.scene.json";
  */
 export const editorLayers: EditorDocument = normalizeEditorLayers(sceneJson as unknown as EditorLayersInput);
 
-/** A static object placed from the authored document: catalog id, XZ, optional yaw, and its instance group. */
 export interface ScenePlacement {
   object: string;
   x: number;
@@ -33,16 +32,12 @@ function placementsForGroup(group: string): ScenePlacement[] {
     }));
 }
 
-/** Habitat shell pieces (walls, window, corner, gate) — read from the authored document. */
 export const HABITAT_STRUCTURES: readonly ScenePlacement[] = placementsForGroup("hab");
 
-/** Ambient decor props scattered around the habitat — read from the authored document. */
 export const DECOR_PLACEMENTS: readonly ScenePlacement[] = placementsForGroup("decor");
 
-/** The starter furniture set that satisfies member needs — read from the authored document. */
 export const STARTER_FURNITURE: readonly ScenePlacement[] = placementsForGroup("starter");
 
-/** Every authored static placement, in the original habitat → decor → furniture order. */
 export const SCENE_PLACEMENTS: readonly ScenePlacement[] = [
   ...HABITAT_STRUCTURES,
   ...DECOR_PLACEMENTS,

@@ -19,9 +19,7 @@ export interface TowerDef {
   damage: number;
   fireRateHz: number;
   splashRadius: number;
-  /** What the shot is made of, read against the raider's class and armor (`combat/damage.ts`). */
   damageType: DamageType;
-  /** Whether it can aim at a raider in the air. A shell lands where the road is; a wraith is above it. */
   hitsAir: boolean;
   slow?: SlowSpec;
   targeting: AutoTargetPolicy;
@@ -112,10 +110,6 @@ function num(meta: Record<string, unknown> | undefined, key: string, fallback: n
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-/**
- * Resolves a tower definition, overlaying in-editor catalog edits from the scene document when present
- * (`document.catalogs` / `findEditorCatalogEntry`).
- */
 export function towerDef(id: string, document?: EditorDocument): TowerDef {
   const def = TOWER_CATALOG[id];
   if (def === undefined) throw new Error(`beacon-bastion: unknown tower id "${id}"`);

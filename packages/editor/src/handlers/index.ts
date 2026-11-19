@@ -10,11 +10,6 @@ import { streetsHandlers } from "./streets";
 import { runtimeHandlers } from "./runtime";
 import { terrainHandlers } from "./terrain";
 
-/**
- * The complete method → handler dispatch table. Spreading the per-domain tables into a value typed
- * `HandlerTable` is the compile-time completeness check: if any union method lacks a handler (or a
- * domain misspells one), this assignment fails to type-check.
- */
 export const EDITOR_RPC_HANDLERS: HandlerTable = {
   ...documentHandlers,
   ...catalogHandlers,

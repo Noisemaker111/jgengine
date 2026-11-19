@@ -14,17 +14,14 @@ export type SceneCapture = () => string | null | Promise<string | null>;
 /** Why a capture request produced no image. */
 export type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable";
 
-/** A captured frame, or the stated reason there is none. */
 export type SceneCaptureResult =
   | { ok: true; capture: string }
   | { ok: false; reason: SceneCaptureFailure };
 
-/** A save-card thumbnail, or the stated reason there is none. */
 export type SceneThumbnailResult =
   | { ok: true; thumbnail: string }
   | { ok: false; reason: SceneCaptureFailure };
 
-/** How a capture request waits and retries. */
 export interface SceneCaptureRequestOptions {
   /**
    * How long to wait for a capture binding to mount, in milliseconds. Default 5000. A game that
@@ -36,11 +33,9 @@ export interface SceneCaptureRequestOptions {
    * canvas has drawn at least once. Default 2, which is one paint.
    */
   settleFrames?: number;
-  /** Reads attempted on later frames before reporting `"no-frame"`. Default 3. */
   attempts?: number;
 }
 
-/** The registered reader, and the requests waiting for one to appear. */
 let bound: SceneCapture | null = null;
 const waiting = new Set<(capture: SceneCapture) => void>();
 
@@ -122,12 +117,7 @@ export async function requestSceneCapture(
   return { ok: false, reason: "no-frame" };
 }
 
-/**
- * Request a save-card thumbnail from the live scene: the shared capture request, then
- * `shrinkCapture`. Pass what the slot card stores; omit everything for a 320x180 JPEG.
- *
- * @capability request-scene-thumbnail request a save-card thumbnail from the live scene, or a stated failure
- */
+/** @capability request-scene-thumbnail request a save-card thumbnail from the live scene, or a stated failure */
 export async function requestSceneThumbnail(
   options: SceneCaptureRequestOptions & SaveThumbnailOptions = {},
 ): Promise<SceneThumbnailResult> {

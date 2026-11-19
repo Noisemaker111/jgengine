@@ -96,7 +96,6 @@ function ModelRevealSealedCard({ onOpen }: { onOpen: () => void }) {
   </Button>;
 }
 
-/** The dossier flips open while the reveal request lands. */
 function ModelRevealOpeningCard({ showGlow }: { showGlow: boolean }) {
   return <RuneView width={208} height={256} radius={6} fill={C.paper} justify="center" items="center"
     {...(showGlow ? { shadow: { y: 0, blur: 40, spread: 6, color: "#e0a95c80" } } : {})}>
@@ -104,7 +103,6 @@ function ModelRevealOpeningCard({ showGlow }: { showGlow: boolean }) {
   </RuneView>;
 }
 
-/** One stat line that rises in when its turn comes. */
 function RevealStat({ stat, value, visible }: { stat: RevealedStatConfig; value: number; visible: boolean }) {
   const bar = getRevealBarValue(stat, value);
   const target = useRef(visible);

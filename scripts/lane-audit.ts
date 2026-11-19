@@ -103,10 +103,8 @@ const READ_ONLY = new Set([
   "test-path",
 ]);
 
-/** A wrapper anywhere in a segment whose quoted argument is the command that actually runs. */
 const SHELL_BODY =
   /\b(?:powershell|pwsh|cmd|bash|sh|zsh)(?:\.exe)?\s+(?:[-/]\w+\s+)*?(?:-command|-c|-lc|\/c|\/k)\s*(?:"([^"]*)"|'([^']*)')/gi;
-/** A runtime anywhere in a segment whose quoted argument after `-e` is code that runs. */
 const EVAL_BODY =
   /\b(?:node|bun|deno|tsx)(?:\.exe)?\s+(?:[-/]\w+\s+)*?(?:-e|--eval|-p|--print)\s*(?:"([^"]*)"|'([^']*)')/gi;
 
@@ -166,7 +164,6 @@ function scan(command: string): { segments: string[]; quoteSpans: { start: numbe
   return { segments, quoteSpans };
 }
 
-/** The same text with every balanced quoted argument dropped: a pattern is not a command. */
 export function stripQuoted(command: string): string {
   const { segments } = scan(command);
   return segments
@@ -284,21 +281,17 @@ export interface SessionAudit {
   readonly waitingShare: number;
   readonly calls: number;
   readonly longest: readonly { readonly ms: number; readonly command: string }[];
-  /** Every call that was a sleep/poll or a CI watch, oldest first: what the gate mode names. */
   readonly waits: readonly WaitCall[];
 }
 
 export interface RankedAudit extends SessionAudit {
-  /** Share of the window's sessions whose waiting minutes are lower; 100 means the worst lane. */
   readonly percentile: number;
 }
 
-/** One candidate lane and the evidence for and against calling it this worktree's lane. */
 export interface AuditedLane {
   readonly id: string;
   readonly title: string;
   readonly directory: string;
-  /** How many times this session's own calls name the target path. */
   readonly references: number;
   readonly waitingMs: number;
   readonly timeUpdated: number;
@@ -308,12 +301,10 @@ export interface LaneAttribution {
   /** The session this path belongs to, or null when nothing in the window is evidence for one. */
   readonly session: string | null;
   readonly target: string;
-  /** What the pick rests on: the lane's own commands, or only the directory it recorded. */
   readonly basis: "commands" | "directory" | null;
   readonly references: number;
   /** True when several lanes named the path equally often, so the pick is the worst-waiting of them. */
   readonly ambiguous: boolean;
-  /** One line naming the session and the evidence, printed wherever the resolution is used. */
   readonly reason: string;
   readonly candidates: readonly AuditedLane[];
 }
@@ -324,11 +315,9 @@ export interface LaneSession {
   readonly directory: string;
   readonly timeUpdated: number;
   readonly waitingMs: number;
-  /** Everything this session's own calls said: commands, paths, patterns. */
   readonly texts: readonly string[];
 }
 
-/** Tool calls in the order they ran, read out of the stored assistant message bodies. */
 export function toolCallsFromMessages(messages: readonly { readonly data: string }[]): ToolCall[] {
   const calls: ToolCall[] = [];
   for (const message of messages) {
@@ -427,13 +416,10 @@ export interface AuditTotals {
 export interface AuditReport {
   readonly sessions: readonly RankedAudit[];
   readonly totals: AuditTotals;
-  /** Every child session in the window, before `--cwd` narrowed the rows. */
   readonly population: number;
-  /** How `--cwd` found its lane; absent when the window was not narrowed. */
   readonly attribution?: LaneAttribution;
 }
 
-/** Waiting minutes first: the lane that waits most is the one to fix first. */
 export function rankSessions(sessions: readonly SessionAudit[]): RankedAudit[] {
   const ranked = [...sessions].sort((a, b) => waitingMs(b) - waitingMs(a) || b.spanMs - a.spanMs);
   const count = ranked.length;
@@ -497,10 +483,6 @@ export function pathForms(target: string): string[] {
   return [...forms].sort((a, b) => b.length - a.length);
 }
 
-/**
- * How many times these texts name the target path. A mention is counted once however many tails of
- * the same path it matches, and a longer sibling name (`lane-attribution-2`) is not this lane.
- */
 export function countReferences(texts: readonly string[], target: string): number {
   const forms = pathForms(target);
   if (forms.length === 0) return 0;
@@ -663,7 +645,6 @@ interface SessionRecord extends SessionIdentity {
   readonly parentId: string | null;
 }
 
-/** Child sessions that were still alive in the window, newest first. */
 export function loadSessions(database: Database, options: AuditOptions): SessionRecord[] {
   const since = options.now - options.hours * 3_600_000;
   const rows = database
@@ -714,7 +695,6 @@ export function auditDatabase(database: Database, options: AuditOptions): AuditR
   return auditRecords(sessions, calls, options);
 }
 
-/** The report for sessions already read from any source: an OpenCode database, Claude Code transcripts, or both. */
 export function auditRecords(
   sessions: readonly SessionIdentity[],
   calls: ReadonlyMap<string, readonly ToolCall[]>,
@@ -774,11 +754,6 @@ export function toJson(report: AuditReport): string {
   );
 }
 
-/**
- * Claude Code keeps each session (and each subagent it spawned) as a JSONL transcript under
- * `~/.claude/projects/<project>/`. A lane run by Claude Code is only visible there, so without this
- * source `lane:close` answered "no session found" for every Claude lane.
- */
 export function claudeProjectsDir(env: NodeJS.ProcessEnv = process.env): string {
   if (env["CLAUDE_PROJECTS_DIR"] !== undefined && env["CLAUDE_PROJECTS_DIR"] !== "") return env["CLAUDE_PROJECTS_DIR"];
   return join(env["CLAUDE_CONFIG_DIR"] ?? join(homedir(), ".claude"), "projects");
@@ -821,7 +796,6 @@ export function claudeTranscripts(dir: string, since: number): string[] {
   return found;
 }
 
-/** One transcript's identity and timed tool calls: a `tool_use` ends at its `tool_result`. */
 export function claudeSession(text: string, fallbackId: string): { session: SessionIdentity; calls: ToolCall[] } | null {
   const started = new Map<string, { name: string; input: unknown; at: number }>();
   const calls: ToolCall[] = [];
@@ -875,7 +849,6 @@ export function claudeSession(text: string, fallbackId: string): { session: Sess
   };
 }
 
-/** Every Claude Code session alive in the window, with its calls. */
 export function loadClaudeSessions(dir: string, options: { hours: number; now: number }): { sessions: SessionIdentity[]; calls: Map<string, ToolCall[]> } {
   const since = options.now - options.hours * 3_600_000;
   const sessions: SessionIdentity[] = [];
@@ -895,7 +868,6 @@ export function loadClaudeSessions(dir: string, options: { hours: number; now: n
   return { sessions, calls };
 }
 
-/** The OpenCode user-data database, most specific first. `OPENCODE_DB` overrides every guess. */
 export function candidateDatabases(env: NodeJS.ProcessEnv = process.env): string[] {
   const home = homedir();
   const candidates = [

@@ -48,7 +48,6 @@ export const UNBUNDLED_ENGINE_MODULES = ["@jgengine/core/assets/decoderFiles.dra
 export const standaloneOptimizeDeps = `  // Engine files with \`.js?url\` imports, which Vite's dependency pre-bundler cannot read.
   optimizeDeps: { exclude: ${JSON.stringify(UNBUNDLED_ENGINE_MODULES)} },`;
 
-/** `jgengine desktop` stages its build in `<game>/.jgengine/`; a dev server that watches it reloads on every write there. */
 export const DEV_WATCH_IGNORE = ["**/.jgengine/**"] as const;
 
 /** The `server` line of every generated `vite.config.ts`, so the dev server skips the desktop build folder. */
@@ -241,7 +240,6 @@ shots/
 .DS_Store
 `;
 
-
 // GameHost owns the whole editor summon (F2+E / ?mode=editor), the agent bridge hook, and the
 // DEV-guarded save endpoint — main.tsx stays a mount point.
 // An in-repo game names itself by its folder id, the id the dev runner and world host use.
@@ -287,7 +285,6 @@ export const STARTER_ENVIRONMENT = {
   fog: { color: "#cfe4f5", near: 90, far: 460 },
 } as const;
 
-/** The same sky in `sky()`'s own shape, for a game without the editor: the sun angles nest under `sun`. */
 const STARTER_SKY = (({ sunAzimuth, sunElevation, ...rest }) => ({ ...rest, sun: { azimuth: sunAzimuth, elevation: sunElevation } }))(
   STARTER_ENVIRONMENT,
 );
@@ -369,7 +366,6 @@ describe("authored scene", () => {
 });
 `;
 
-/** Does this document ship a goal marker that wins the moment the player walks into it? */
 function sceneHasWinGoal(scene: EditorSceneDoc): boolean {
   return (scene.markers ?? []).some(
     (marker) => marker.kind === "goal" && marker.meta?.on === "enter" && marker.meta?.action === "win",
@@ -436,13 +432,9 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
 };
 
 export interface GameConfigOptions {
-  /** Ship world.ts + game/assets.ts + game/models.ts (every 3d template). */
   world: boolean;
-  /** Ship the authored scene document + editor wiring (dropped by create --no-editor). */
   editor: boolean;
-  /** The starter loop (caches, energy, ranks, beacon) on the starter scene. */
   loop: boolean;
-  /** The title, pause and checkpoints of the game-flow system, drawn by a GameFlowUI GameUI. */
   flow: boolean;
 }
 
@@ -788,7 +780,6 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Play & test from the CLI: \`bun run drive\` (\`npx jgengine drive\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels; \`--right-click-at\` for right-click orders), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\` (or \`mouse0:1200\` to hold a mouse button over the play canvas), \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;
 
-/** The game-root agent file: short, game-owned, points at the game's README/PLAN and the engine's file. */
 const agentsMd = (name: string) => `# ${name} — agent guide
 
 Look in \`README.md\` for the game being built here (and \`PLAN.md\` for its plan and milestones). Keep both current as the game changes.
@@ -798,10 +789,6 @@ This game is built on **JGengine**. The engine's rules, how to find shipped capa
 Add this game's own rules below.
 `;
 
-/**
- * The engine-owned file in `jgengine/`. A standalone game gets the full engine briefing, since it has
- * no monorepo around it; an in-repo game gets a short pointer to the monorepo's root `AGENTS.md`.
- */
 const jgengineAgentsMd = (variant: TemplateVariant) =>
   variant === "standalone"
     ? engineBriefingMd(variant)

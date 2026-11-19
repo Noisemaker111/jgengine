@@ -4,16 +4,13 @@ import type { ModelMaterialOverride, ModelRimLight } from "@jgengine/core/game/p
 
 import { applyModelScan } from "@jgengine/core/model/modelScan.draw";
 
-/** Options for applyMaterialOverride: clone first, textures to apply and a hook that records replaced materials. */
 export interface MaterialOverrideOptions {
   clone?: boolean;
   /** Loaded PBR textures matching `ModelMaterialOverride.maps`' roles, applied onto each standard or physical material alongside the tint override. The caller (a UI component, via `useTexture`) owns loading; this function never fetches a URL. */
   textures?: MaterialOverrideTextures;
-  /** Records material replacements for the caller's resource owner. */
   ownMaterial?: (material: THREE.Material) => void;
 }
 
-/** Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles. */
 export interface MaterialOverrideTextures {
   color?: THREE.Texture;
   normal?: THREE.Texture;
@@ -37,7 +34,7 @@ export interface MaterialOverrideTextures {
   iridescenceThickness?: THREE.Texture;
 }
 
-/** Physical texture roles mapped to the pinned Three renderer's native properties. @internal */
+/** @internal */
 export const MATERIAL_TEXTURE_PROPERTIES = {
   color: "map", normal: "normalMap", roughness: "roughnessMap", ao: "aoMap", metalness: "metalnessMap", emissive: "emissiveMap", height: "displacementMap", alpha: "alphaMap",
   sheenColor: "sheenColorMap", sheenRoughness: "sheenRoughnessMap", anisotropy: "anisotropyMap", clearcoat: "clearcoatMap", clearcoatRoughness: "clearcoatRoughnessMap", clearcoatNormal: "clearcoatNormalMap", specularIntensity: "specularIntensityMap", specularColor: "specularColorMap", transmission: "transmissionMap", thickness: "thicknessMap", iridescence: "iridescenceMap", iridescenceThickness: "iridescenceThicknessMap",
@@ -46,7 +43,7 @@ export const MATERIAL_TEXTURE_PROPERTIES = {
 const physicalNumbers = ["sheen", "sheenRoughness", "anisotropy", "anisotropyRotation", "clearcoat", "clearcoatRoughness", "ior", "specularIntensity", "transmission", "thickness", "attenuationDistance", "iridescence", "iridescenceIOR"] as const;
 const physicalColors = ["sheenColor", "specularColor", "attenuationColor"] as const;
 
-/** Whether authored settings require a physical shader; ordinary PBR stays standard. @internal */
+/** @internal */
 export function requiresPhysicalMaterial(override: ModelMaterialOverride, textures?: MaterialOverrideTextures): boolean {
   return [...physicalNumbers, ...physicalColors, "iridescenceThicknessRange" as const].some(key => override[key] !== undefined) || Object.keys(textures ?? {}).some(key => ["sheenColor", "sheenRoughness", "anisotropy", "clearcoat", "clearcoatRoughness", "clearcoatNormal", "specularIntensity", "specularColor", "transmission", "thickness", "iridescence", "iridescenceThickness"].includes(key));
 }
@@ -75,12 +72,12 @@ export function applyMaterialOverride(
   });
 }
 
-/** Whether an override changes this material: a standard or physical one its `materials` list names, or any when it names none. @internal */
+/** @internal */
 export function overrideTargets(material: THREE.Material, override: ModelMaterialOverride): boolean {
   return isStandardOrPhysicalMaterial(material) && (override.materials === undefined || override.materials.includes(material.name));
 }
 
-/** Apply the shared override contract to one material. @internal */
+/** @internal */
 export function applyMaterialOverrideToMaterial(
   material: THREE.Material,
   override: ModelMaterialOverride,

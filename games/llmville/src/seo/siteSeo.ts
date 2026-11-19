@@ -14,16 +14,12 @@ export const ABOUT_PAGE_TITLE = "About LLMville";
 export const ABOUT_PAGE_DESCRIPTION =
   "Rack GPUs, train language models, serve inference, and grow from garage to datacenter in a cozy co-op 3D browser game.";
 
-/** What a screen shows in the browser tab, in search results and in link previews. */
 export interface PageHead {
-  /** Full document title (shown in tab and search results). */
   title: string;
   description: string;
-  /** Path only, e.g. `/` or `/about`. */
   path: string;
 }
 
-/** The head every screen without its own gets. */
 export const DEFAULT_PAGE_HEAD: PageHead = { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: "" };
 
 function setMeta(attribute: "name" | "property", key: string, content: string): void {
@@ -36,7 +32,6 @@ function setMeta(attribute: "name" | "property", key: string, content: string): 
   meta.content = content;
 }
 
-/** Write a screen's title, description, link-preview tags and canonical link into the document head. */
 export function applyPageHead({ title, description, path }: PageHead): void {
   const url = `${SITE_URL}${path}`;
   document.title = title;
@@ -55,7 +50,6 @@ export function applyPageHead({ title, description, path }: PageHead): void {
   canonical.href = url;
 }
 
-/** Put one JSON-LD document in the head under `id` (replacing an earlier one); returns its removal. */
 export function applyStructuredData(id: string, data: unknown): () => void {
   let script = document.getElementById(id);
   if (script === null) {

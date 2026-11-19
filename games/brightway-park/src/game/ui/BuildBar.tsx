@@ -17,7 +17,6 @@ import { guestRidePreference, rideFit } from "../sim/rideExperience";
 import { coasterCircuit } from "../rides";
 import { BAD, Button, Card, INK, PENCIL, Row, Text } from "./look";
 
-/** The three numbers a ride is judged by, as a compact line. */
 function ratingsLine(def: BuildableDef): string {
   const ride = def.ride!;
   return `Excitement ${ride.excitement.toFixed(1)} · Intensity ${ride.intensity.toFixed(1)} · Nausea ${ride.nausea.toFixed(1)}`;
@@ -38,7 +37,6 @@ function blueprintDetail(def: BuildableDef, circuit: ReturnType<typeof coasterCi
 
 interface Ticket { id: string; label: string; price: string; poor: boolean; locked: boolean; blurb: string; color: string | undefined }
 
-/** The catalog as a strip of fair tickets: pick a category (and ride family), pick a ticket, place it on the park. */
 export function BuildBar({ onClose, onResearch }: { onClose: () => void; onResearch: () => void }) {
   const [category, setCategory] = useState<BuildCategory>("ride");
   const [group, setGroup] = useState<RideGroup>("gentle");

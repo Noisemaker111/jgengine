@@ -5,7 +5,6 @@ import { accrueSince } from "@jgengine/core/time/accrueSince";
 import { TURF } from "./city";
 import { cityOf } from "./cityRuntime";
 
-/** What changed while the player slept or was away, for the morning paper. */
 export interface AwaySummary {
   kind: "sleep" | "away";
   title: string;
@@ -13,12 +12,9 @@ export interface AwaySummary {
   lines: readonly { label: string; value: string }[];
 }
 
-/** The morning paper waiting on screen; a menu, not run state. */
 export const awayStore = defineStore<AwaySummary | undefined>("harbor.away", undefined);
 
-/** At most this much real time catches up on Continue: the city keeps running, not forever. */
 export const AWAY_CAP_MS = 20 * 60 * 1000;
-/** Shorter gaps than this are a reload, not time away. */
 const AWAY_MIN_MS = 60 * 1000;
 /** Game-clock seconds in one in-game day (`game.config.ts` time.dayLength). */
 const DAY = 720;
@@ -71,7 +67,6 @@ export function secondsUntilMorning(ctx: GameContext): number {
 
 const anchors = perContext(() => ({ savedMs: null as number | null, appliedMs: 0 }));
 
-/** The wall clock a loaded save was written at (the document's own `savedAt`), so Continue knows how long the city ran without you. */
 export function noteSavedAt(ctx: GameContext, wallMs: number): void {
   anchors(ctx).savedMs = Number.isFinite(wallMs) && wallMs > 0 ? wallMs : null;
 }

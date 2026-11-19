@@ -23,38 +23,25 @@ export const SKIP_DIRS = [
 ] as const;
 
 export interface TextSearchOptions {
-  /** Content pattern (ripgrep regex syntax); absent lists files by `--glob`/`--kind` only. */
   pattern?: string | undefined;
   /** Directory to search; defaults to the current one. */
   in?: string | undefined;
-  /** Extensions without dots, such as `ts,tsx`. */
   kind?: readonly string[];
-  /** File name globs, such as `*.test.ts` or `**&#47;core&#47;*.ts`. */
   glob?: readonly string[];
-  /** Names only, no line text. */
   files?: boolean;
-  /** Stop after this many matches. */
   limit?: number;
-  /**
-   * Read files git ignores too. A search inside `.scratch/` is under the repository's own ignore
-   * rules, which is right for a lane and wrong for a fixture; only the tests ask for this.
-   */
   noIgnore?: boolean;
 }
 
 export interface TextSearchResult {
-  /** Lines to print, already in the requested shape. */
   lines: string[];
-  /** False when ripgrep was missing and the git-backed reader answered instead. */
   usedRipgrep: boolean;
 }
 
-/** The `-g` globs that keep a search out of skipped directories. */
 export function skipGlobs(dirs: readonly string[] = SKIP_DIRS): string[] {
   return dirs.map((dir) => `!**/${dir}/**`);
 }
 
-/** `ts,tsx` or `.ts,.tsx` as ripgrep globs: `*.ts`, `*.tsx`. */
 export function kindGlobs(kind: readonly string[]): string[] {
   return kind.map((entry) => `*.${entry.replace(/^\./, "")}`);
 }
@@ -74,7 +61,6 @@ export function ripgrepArgs(options: TextSearchOptions): string[] {
   return args;
 }
 
-/** Globs as one regular expression, for the reader used when ripgrep is absent: `*`, `**`, `?` and `{a,b}`. */
 export function globToRegExp(glob: string): RegExp {
   let source = "";
   for (let index = 0; index < glob.length; index += 1) {
@@ -163,14 +149,12 @@ export function findInProcess(options: TextSearchOptions): TextSearchResult {
   return { lines: options.limit === undefined ? lines : lines.slice(0, options.limit), usedRipgrep: false };
 }
 
-/** `.\scripts\find.ts:12:` reads the same everywhere as `scripts/find.ts:12:`. */
 export function normalizePath(line: string): string {
   const match = /^(.*?)(?::(\d+):(.*))?$/.exec(line);
   const path = (match?.[1] ?? line).replace(/^\.\//, "").replace(/^\.\\/, "").split("\\").join("/");
   return match?.[2] === undefined ? path : `${path}:${match[2]}:${match[3] ?? ""}`;
 }
 
-/** Run one search, returning the lines to print. Throws on a pattern ripgrep rejects. */
 export function searchText(options: TextSearchOptions): TextSearchResult {
   const root = resolve(options.in ?? ".");
   try {

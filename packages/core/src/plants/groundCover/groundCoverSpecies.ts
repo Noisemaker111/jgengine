@@ -1,59 +1,34 @@
 import type { PLANT_SOURCES } from "../species/speciesSources";
 
-/**
- * A grass, herb or moss as data for the tiller field: how fast its shoots make leaves and daughters,
- * how tall its leaves and flowering stems grow, what makes it flower, and how it spreads. A tiller is a
- * grass tiller, a herb's rosette or a moss shoot. A new ground-cover plant is one record.
- */
 export interface GroundCoverSpecies {
   id: string;
-  /** Bumped whenever a value changes. */
   version: number;
   names: { scientific: string; common: Readonly<Record<string, string>> };
-  /**
-   * `graminoid`: a grass tiller ends in its flower head, so setting seed or losing the head kills it.
-   * `forb`: a herb's rosette outlives its flowering stems. `moss`: a mat that fills the ground the
-   * sward leaves bare and grows on the light that passes its leaves, whatever the soil compaction.
-   */
   habit: "graminoid" | "forb" | "moss";
-  /** Thermal time between two leaves of a tiller, °C·d above `baseTemperatureC`. */
   phyllochronCd: number;
   baseTemperatureC: number;
-  /** Leaves alive on a tiller at once; the oldest dies as a new one appears. */
   liveLeaves: number;
   /** Height of the leaf canopy left uncut, metres. */
   maxLeafLengthM: number;
   leafWidthM: number;
-  /** Daughter tillers per tiller per new leaf in full light and an open sward (site filling). */
   siteFilling: number;
-  /** K in the self-thinning line: most tillers per m² = K × leaf length^(−2/3). */
   densityConstant: number;
-  /** Weeks under 5 °C a tiller needs before it can flower; 0 needs none. */
   vernalizationWeeks: number;
-  /** Day length a vernalized tiller needs to start a flowering stem, hours. */
   criticalDaylengthH: number;
-  /** Share of tillers that flower in a season left uncut. */
   reproductiveShare: number;
   /** Height of a flowering stem with its head, metres. */
   culmHeightM: number;
-  /** Share of a cell's tillers that root into each neighbouring cell per new leaf, by rhizomes or stolons. */
   rhizomeRate: number;
-  /** New tillers per flowering tiller that root in the cell and each neighbour when its seed (or spores) ripen. */
   seedEstablishment: number;
   /** 0..1: the share of open-sky light below which tillers start to die back (for a moss, the light under the sward). */
   shadeTolerance: number;
   colors: { leaf: string; tip: string; flower: string; straw: string };
-  /** Where each value comes from, as ids into `PLANT_SOURCES`. */
   sources: readonly (keyof typeof PLANT_SOURCES)[];
 }
 
 const GRASS_SOURCES = ["usda-plant-guides", "davies-1988", "lemaire-2000", "neuteboom-1989", "matthew-1995", "evers-2007", "heide-1994", "oborny-2000", "may-2009"] as const;
 
-/**
- * Perennial ryegrass: the bunch grass of most lawns and sown pastures. Phyllochron and three live
- * leaves from Davies 1988 and Lemaire & Agnusdei 2000; vernalization and long-day flowering from Heide 1994.
- * @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
- */
+/** @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape */
 export const LOLIUM_PERENNE: GroundCoverSpecies = {
   id: "lolium-perenne",
   version: 1,
@@ -104,10 +79,7 @@ export const PHLEUM_PRATENSE: GroundCoverSpecies = {
   sources: GRASS_SOURCES,
 };
 
-/**
- * Kentucky bluegrass: a rhizomatous lawn and pasture grass that knits trampled ground back together.
- * @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
- */
+/** @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape */
 export const POA_PRATENSIS: GroundCoverSpecies = {
   id: "poa-pratensis",
   version: 1,
@@ -190,11 +162,7 @@ export const TARAXACUM_OFFICINALE: GroundCoverSpecies = {
   sources: HERB_SOURCES,
 };
 
-/**
- * Oxeye daisy: a meadow herb whose rosettes need a winter's cold and long June days before they send
- * up knee-high stems of white flowers; mowing keeps it a flat rosette.
- * @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
- */
+/** @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape */
 export const LEUCANTHEMUM_VULGARE: GroundCoverSpecies = {
   id: "leucanthemum-vulgare",
   version: 1,
@@ -247,14 +215,8 @@ export const RHYTIDIADELPHUS_SQUARROSUS: GroundCoverSpecies = {
   sources: MOSS_SOURCES,
 };
 
-/**
- * The grasses shipped with the engine.
- * @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
- */
+/** @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape */
 export const GRASS_LIBRARY: readonly GroundCoverSpecies[] = [LOLIUM_PERENNE, PHLEUM_PRATENSE, POA_PRATENSIS];
 
-/**
- * Every ground-cover record shipped with the engine: grasses, herbs and mosses.
- * @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
- */
+/** @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape */
 export const GROUND_COVER_LIBRARY: readonly GroundCoverSpecies[] = [...GRASS_LIBRARY, TRIFOLIUM_REPENS, TARAXACUM_OFFICINALE, LEUCANTHEMUM_VULGARE, RHYTIDIADELPHUS_SQUARROSUS];

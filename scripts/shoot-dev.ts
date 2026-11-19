@@ -88,7 +88,6 @@ import {
 /** One reload retry absorbs Vite's transient post-HMR rebuild window; see capture-retry.ts. */
 const CAPTURE_MAX_ATTEMPTS = 2;
 
-/** What this run served, set once the engine gate passes and stamped into every shot record. */
 let engineForRecord: EngineRecord | null = null;
 
 /**
@@ -108,9 +107,7 @@ type Args = {
   mode: Mode;
   device: DeviceArg;
   size: SizeMode;
-  /** The tier `--quality` pinned; undefined leaves the game's own tier, which the summary still reports. */
   quality?: GraphicsTier;
-  /** `--draft`: the low-tier half-size iteration preset. */
   draft: boolean;
   stage?: boolean | undefined;
   state?: string | undefined;
@@ -135,7 +132,6 @@ type Args = {
   inspect: boolean;
   /** Show a real window (off-screen) instead of headless Chrome. */
   headed: boolean;
-  /** 960x540 iteration preset: one settled frame, no evidence claims. */
   quick: boolean;
   /** `--game-dir`: serve this game from another checkout instead of `games/<game>`. */
   gameDir: string | null;
@@ -186,7 +182,6 @@ Manual warm loop:
   the PR.
 `;
 
-/** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto shoot's options. */
 function parseArgs(argv: string[]): Args {
   // `--headed` is parsed here, not in CAPTURE_FLAGS: the scaffold's shoot.mjs has no local window to
   // show, so the flag stays engine-only instead of parsing there and doing nothing.
@@ -683,11 +678,6 @@ async function resolveTarget(daemon: ShootDaemonState | null): Promise<ShootTarg
     args.site === undefined ? ensureDevServer() : ensureWebServer());
   return { devBase: server.base, server: server.child, serverPid: server.pid, attachedDaemon: false };
 }
-/**
- * Print the game's declared `capture.views`. The runner publishes them on `data-jg-shots` as soon
- * as the game module resolves — well before an honest frame — so discovery costs a navigation, not
- * a capture, and still works when the `?shot=` that sent you here was the wrong name.
- */
 async function listViews(debugPort: number, base: string, game: string): Promise<number> {
   const session = await openPageSession(debugPort);
   try {
@@ -802,7 +792,6 @@ const warm = explicitTarget
       cold: args.cold || ownBrowser !== undefined,
       ...(ownBrowser === undefined ? {} : { because: ownBrowser }),
     });
-/** Run one session, reporting a failure the same way `withBrowserSession` does. */
 async function attempt(daemon: ShootDaemonState | null): Promise<number> {
   try {
     return await shootSession(daemon);

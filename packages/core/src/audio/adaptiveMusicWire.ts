@@ -3,21 +3,17 @@ import { createMusicState, resolveMusicState } from "@jgengine/core/audio/musicS
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { AudioIntensityEvent, DamageAppliedEvent } from "@jgengine/core/game/events";
 
-/** The slice of the game an adaptive soundtrack listens to. @internal */
+/** @internal */
 export interface AdaptiveMusicSource {
   on(event: "combat.damage", handler: (event: DamageAppliedEvent) => void): () => void;
   on(event: "audio.intensity", handler: (event: AudioIntensityEvent) => void): () => void;
-  /** Whether an id is the local player or what they drive. */
   isLocal(id: string | undefined): boolean;
 }
 
 /** How often the tier is re-resolved, milliseconds. */
 const TICK_MS = 250;
 
-/**
- * Drive the soundtrack from the fight: hits dealt, hits taken and kills raise an intensity that
- * decays over quiet time, and the tier ladder crossfades the theme. Returns the teardown. @internal
- */
+/** @internal */
 export function attachAdaptiveMusic(
   source: AdaptiveMusicSource,
   playMusic: (theme: string | null) => void,

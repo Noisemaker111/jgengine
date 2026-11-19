@@ -5,13 +5,10 @@ import * as THREE from "three";
 import { materialAssetMaterial, type MaterialAssetLease } from "./materialAsset.draw";
 import { batchSafeSignature, markBatchSafe } from "./compileLayers.draw";
 
-/** Inputs for {@link applyTriplanarProjection}. */
 export interface TriplanarProjectionOptions {
   /** Metres one texture tile covers in world space. Must be finite and positive. */
   tileMetres: number;
-  /** Blend sharpness between the three projections; 4 keeps corners soft, 8 is decisive. */
   sharpness?: number;
-  /** Normal strength applied to each projection's tangent-space perturbation. */
   normalScale?: number;
 }
 

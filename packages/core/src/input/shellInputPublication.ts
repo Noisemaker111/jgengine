@@ -7,7 +7,7 @@ import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 type Change = "discrete" | "reset" | "analog";
 let lastPressSeq = 0;
-/** Observes the actual shell tracker without moving command edges or changing binding behavior. @internal */
+/** @internal */
 export function observableShellTracker(tracker: ActionStateTracker<string>) {
   const listeners = new Set<(change: Change, presses: NonNullable<InputFrame["presses"]>) => void>();
   const notify = (change: Change, presses: NonNullable<InputFrame["presses"]> = []) => { for (const listener of listeners) listener(change, presses); };

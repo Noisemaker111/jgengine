@@ -7,7 +7,6 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 export const CONTRABAND = "contraband_crate";
 export const CONTRABAND_MASS = 5;
 export const CARGO_CAPACITY = 12;
-/** Harbor's cargo bands: encumbered from 85% of the hold, slowing toward half speed at the limit. */
 const CARGO_ENCUMBRANCE = { soft: 0.85, floor: 0.5 } as const;
 
 export interface CargoView {
@@ -53,7 +52,6 @@ function write(ctx: GameContext): CargoView {
   return next;
 }
 
-/** Load a job's contraband into the cargo hold; over the weight cap, the rest stays ashore. */
 export function loadContraband(ctx: GameContext, crates = 2): number {
   let loaded = 0;
   for (let i = 0; i < crates; i += 1) if (haul.carry(CONTRABAND, 1).ok) loaded += 1;
@@ -61,7 +59,6 @@ export function loadContraband(ctx: GameContext, crates = 2): number {
   return loaded;
 }
 
-/** A failed job loses everything in the cargo hold; the lockup keeps what earlier jobs banked. */
 export function failContraband(ctx: GameContext): number {
   const lost = haul.fail().stacks.reduce((sum, stack) => sum + stack.count, 0);
   write(ctx);
@@ -69,7 +66,6 @@ export function failContraband(ctx: GameContext): number {
   return lost;
 }
 
-/** A delivered job banks the cargo hold into the persistent lockup. */
 export function bankContraband(ctx: GameContext): number {
   const moved = haul.bank().stacks.reduce((sum, stack) => sum + stack.count, 0);
   write(ctx);
@@ -77,7 +73,6 @@ export function bankContraband(ctx: GameContext): number {
   return moved;
 }
 
-/** Detached cargo and lockup counts for a test or a HUD refresh. */
 export function cargoState(): CargoView {
   return view();
 }

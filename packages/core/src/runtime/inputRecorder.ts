@@ -1,24 +1,19 @@
 import type { InputFrame } from "./inputSnapshot";
 
-/** An input frame and the first tick it applies to. */
 export interface RecordedInput {
   tick: number;
   frame: InputFrame;
 }
 
-/** Serializable recorder contents, sorted by tick. */
 export interface InputRecorderState {
   frames: RecordedInput[];
 }
 
-/** Tick-indexed input log: record per tick, look up the frame in force at any tick. */
 export interface InputRecorder {
-  /** Store held state from `tick` onward and presses on that tick only. Same-tick recordings merge press identities while replacing continuous state. */
   record(tick: number, frame: InputFrame): void;
   /** The frame in force at `tick`: the latest recorded frame whose tick is at most `tick`, or `null` before the first. */
   frameAt(tick: number): InputFrame | null;
   frames(): readonly RecordedInput[];
-  /** Highest recorded tick, or `-1` when empty. */
   lastTick(): number;
   clear(): void;
   snapshot(): InputRecorderState;

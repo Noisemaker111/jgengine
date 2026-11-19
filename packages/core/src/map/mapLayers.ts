@@ -1,48 +1,39 @@
-/** A world `[x, z]` point on the map. */
 export type MapXZ = readonly [number, number];
 
 /** Colour role of a map layer: danger, warning, info, safe or neutral. */
 export type MapLayerTone = "danger" | "warning" | "info" | "safe" | "neutral";
 
-/** A polyline drawn on the map, optionally dashed as a forecast. */
 export interface MapRoute {
   id: string;
-  /** World-XZ polyline. */
   points: readonly MapXZ[];
   tone?: MapLayerTone;
   /** Dashed rendering — a planned/forecast route rather than a live one. */
   forecast?: boolean;
   /** Line width in map pixels; default `2`. */
   width?: number;
-  /** Close the polyline back to its first point (patrol loops). */
   closed?: boolean;
 }
 
-/** A map zone's shape: circle, rotated rectangle or polygon. */
 export type MapZoneShape =
   | { kind: "circle"; center: MapXZ; radius: number }
   | { kind: "rect"; center: MapXZ; w: number; d: number; rotate?: number }
   | { kind: "polygon"; points: readonly MapXZ[] };
 
-/** A tinted area drawn on the map, optionally dashed as a preview. */
 export interface MapZone {
   id: string;
   shape: MapZoneShape;
   tone?: MapLayerTone;
   /** Fill opacity in `[0, 1]`; default `0.25`. */
   opacity?: number;
-  /** Dashed outline + no fill — the previewed future state (storm's next ring, incoming hazard band). */
   forecast?: boolean;
   label?: string;
 }
 
-/** Sparse per-cell tones drawn on the map over a grid. */
 export interface MapCellStates {
   id: string;
   /** World-space center of cell (0, 0). */
   origin: MapXZ;
   cellSize: number;
-  /** Sparse cell statuses — pair with `world/cellStates`' `cellsIn`/`counts` output. */
   cells: readonly { col: number; row: number; tone: MapLayerTone; opacity?: number }[];
 }
 
@@ -80,7 +71,6 @@ export function pointInMapZone(zone: MapZoneShape, x: number, z: number): boolea
   return inside;
 }
 
-/** The colour each {@link MapLayerTone} draws with. */
 export const MAP_LAYER_TONE_COLORS: Record<MapLayerTone, string> = {
   danger: "#ef4444",
   warning: "#f59e0b",
@@ -89,7 +79,6 @@ export const MAP_LAYER_TONE_COLORS: Record<MapLayerTone, string> = {
   neutral: "#a1a1aa",
 };
 
-/** The colour for a tone; neutral when none is given. */
 export function mapLayerColor(tone: MapLayerTone | undefined): string {
   return MAP_LAYER_TONE_COLORS[tone ?? "neutral"];
 }

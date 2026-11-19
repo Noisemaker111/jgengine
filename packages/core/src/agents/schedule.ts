@@ -7,45 +7,34 @@ import { createStateSchedule, type StateSchedule } from "../time/stateSchedule";
  * rather than a special case.
  */
 export interface AgentScheduleStop extends RoutineStopSpec {
-  /** Places walked in order while this stop holds. Omit to stay put at `place`. */
   readonly beat?: readonly string[];
   /** Seconds at each beat place. Default: the stop's own length split evenly across the beat. */
   readonly beatDwellSeconds?: number;
 }
 
-/** An agent's whole day as data: what it does, where, and when. */
 export interface AgentScheduleConfig {
   readonly stops: readonly AgentScheduleStop[];
   /** Cycle length in game-seconds; default one game day. */
   readonly cycleSeconds?: number;
-  /** Injected travel time between two places when a stop does not author `travelSeconds`. */
   readonly travelSeconds?: (from: string, to: string) => number;
 }
 
-/** Where a schedule puts an agent at one instant. */
 export interface AgentSchedulePhase {
-  /** Opaque place the agent occupies, or the place it is walking from. */
   readonly place: string;
-  /** Place it is walking to; `null` while holding. */
   readonly nextPlace: string | null;
-  /** The stop's activity label ("work", "meal", "sleep"); `null` while travelling. */
   readonly activity: string | null;
   /** Where the beat posts the agent right now: a patrol place on a beating stop, `place` otherwise, `null` while travelling. */
   readonly post: string | null;
   readonly travelling: boolean;
-  /** 0 at departure to 1 on arrival. */
   readonly progress: number;
   /** Absolute game-second this phase began. */
   readonly since: number;
   /** Absolute game-second the next phase begins. */
   readonly until: number;
-  /** Index of the stop held here, or the stop being walked away from. */
   readonly stop: number;
-  /** Needs this stop refills on arrival, or `null`. */
   readonly refill: Readonly<Record<string, number>> | null;
 }
 
-/** A day plan resolved against the world clock. No state to tick: a far agent reads the same day. */
 export interface AgentSchedule {
   readonly cycleSeconds: number;
   readonly stops: readonly AgentScheduleStop[];
@@ -54,10 +43,8 @@ export interface AgentSchedule {
   nextChangeAfter(time: number): number;
 }
 
-/** One compiled beat: the places a working stop walks, each on the beat's own clock. */
 interface CompiledBeat {
   readonly places: readonly string[];
-  /** The places one after another, one full pass of the beat; `null` when the beat has no length to step. */
   readonly schedule: StateSchedule<string> | null;
 }
 

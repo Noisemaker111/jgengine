@@ -6,9 +6,7 @@ import { devtools } from "./devtools";
  * RPC exactly like {@link import("./fallbackSeams").FallbackSeamsReport}.
  */
 export interface TextureLoadError {
-  /** The URL the loader tried and failed to fetch (e.g. a `THREE.GLTFLoader` texture image). */
   url: string;
-  /** How many load attempts for this URL have errored since the probe was armed. */
   count: number;
 }
 
@@ -31,11 +29,7 @@ export function armTextureErrors(on: boolean): void {
   lastSignature = "";
 }
 
-/**
- * Clear the texture-error tally without changing the armed state. Used to bracket a fresh observation
- * (e.g. between scenes or in tests). No-op when disarmed.
- * @capability render-fallback-diagnostics Reset the texture-load-error tally.
- */
+/** @capability render-fallback-diagnostics Reset the texture-load-error tally. */
 export function resetTextureErrors(): void {
   if (!enabled) return;
   counts.clear();

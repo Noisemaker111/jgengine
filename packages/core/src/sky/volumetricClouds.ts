@@ -10,33 +10,23 @@ import { clamp01, lerp } from "../math/scalar";
  * @capability volumetric-clouds raymarched cloud layer, lit by the day and thickened by the weather
  */
 
-/** Volumetric cloud layer params, as authored on `sky({ volumetricClouds })`. All fields optional. */
 export interface VolumetricCloudsConfig {
   /** Fraction of a clear sky covered by cloud, 0..1; the weather's cloud cover raises it. Default 0.42. */
   coverage?: number;
-  /** Raymarch density multiplier — thicker, more opaque cloud bodies at higher values. Default 1.5. */
   density?: number;
-  /** Cloud layer base altitude in world units. Default 90. */
   height?: number;
-  /** Cloud layer vertical thickness in world units. Default 55. */
   thickness?: number;
   /** Horizontal drift speed, world units/second. Default 1.1. */
   speed?: number;
-  /** Noise feature scale — world units per cloud puff; larger = bigger, fewer puffs. Default 140. */
   scale?: number;
-  /** Distance in world units over which far cloud sinks into the horizon colour. Default 8 × `height`. */
   fade?: number;
-  /** Cloud body base color (shadowed side). Default "#c9d3de". */
   color?: string;
-  /** Sun-facing lit edge color (silver-lining / forward scatter). Default "#fff6e0". */
   sunColor?: string;
   /** Forward sun-scatter strength, 0..1 — brighter, more luminous edges toward the sun. Default 0.9. */
   sunScatter?: number;
-  /** Seed string; same seed reproduces the same cloud layout. */
   seed?: string;
 }
 
-/** Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`. */
 export interface VolumetricCloudsRules {
   coverage: number;
   density: number;
@@ -112,7 +102,6 @@ export function resolveVolumetricClouds(config: VolumetricCloudsConfig = {}): Vo
   };
 }
 
-/** Edge length of the tileable cloud noise volume, in voxels. */
 export const CLOUD_NOISE_SIZE = 32;
 
 function latticeHash(x: number, y: number, z: number, period: number): number {

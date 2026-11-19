@@ -1,4 +1,3 @@
-/** Hull force derivatives of the MMG standard method, over `½ρ·L·d·U²` (forces) and `½ρ·L²·d·U²` (moment). */
 export interface ManoeuvringDerivatives {
   Xvv: number;
   Xvr: number;
@@ -20,28 +19,18 @@ export interface ManoeuvringDerivatives {
 
 /** A rudder behind the propeller and its interaction with hull and race (MMG standard method). */
 export interface ManoeuvringRudder {
-  /** Movable area, m². */
   area: number;
-  /** Span, m. */
   height: number;
-  /** Longitudinal position over the length from midship, negative aft. */
   position: number;
-  /** Steering resistance deduction `t_R`. */
   deduction: number;
-  /** Rudder force increase factor `a_H`. */
   hullForceFactor: number;
-  /** Where the hull's extra side force acts, `x'_H` over the length. */
   hullForcePosition: number;
-  /** Flow straightening `γ_R` for negative and positive inflow angle. */
   straighteningNegative: number;
   straighteningPositive: number;
-  /** Effective rudder lever `ℓ'_R` in `β_R = β − ℓ'_R·r'`. */
   inflowLever: number;
-  /** Wake ratio rudder over propeller `ε`. */
   wakeRatio: number;
   /** Propeller race coefficient `κ`. */
   raceFactor: number;
-  /** Lift slope `f_α`, per rad. */
   liftSlope: number;
 }
 
@@ -55,13 +44,11 @@ export interface ManoeuvringRudder {
 export interface HullManoeuvring {
   /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Mean draught `d`, m, for the non-dimensional scale. */
   draft: number;
   derivatives: ManoeuvringDerivatives;
   rudder?: ManoeuvringRudder;
 }
 
-/** Forces at midship in ship axes (x forward, y to starboard, yaw to starboard), N and N·m. */
 export type ManoeuvringLoads = [x: number, y: number, n: number];
 
 /**

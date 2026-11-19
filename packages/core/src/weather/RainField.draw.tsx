@@ -20,7 +20,6 @@ import {
   type WeatherVector,
 } from "./weatherUniforms.draw";
 
-/** Props for {@link RainField}: drop count, density and budget, area, fall speed, wind and look. */
 export interface RainFieldProps {
   count?: number;
   density?: number;
@@ -71,12 +70,6 @@ type RainMaterialUniforms = {
   uColor: { value: THREE.Color };
 };
 
-/**
- * GPU-animated rain streaks around the camera, sheltered under authored roofs.
- * `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`,
- * already ticked); without it the draw owns a local set and ticks it on the
- * board at weather priority, matching the old local-uniforms path.
- */
 export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: WeatherUniformSet): EngineDraw {
   const source = {};
   let mesh: THREE.Mesh | null = null;
@@ -229,7 +222,6 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
   };
 }
 
-/** GPU-animated rain streaks around the camera, sheltered under authored roofs. */
 export function RainField(props: RainFieldProps) {
   const uniforms = useWeatherUniformSet({
     wind: props.wind,

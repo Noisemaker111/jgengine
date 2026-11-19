@@ -14,11 +14,9 @@ export interface CourseDriveOptions {
   /** Brake this many seconds from `stallAt` (default 12 s). */
   stall?: number;
   stallAt?: number;
-  /** Shortcut ids to take. */
   take?: readonly string[];
   /** Give up after this many seconds of run clock. */
   limit?: number;
-  /** Ignore the crossing lights and drive into the freight. */
   reckless?: boolean;
 }
 
@@ -51,22 +49,16 @@ function bearing(from: readonly number[], to: CourseVec2): number {
   return Math.atan2(to[0] - from[0]!, to[1] - from[2]!);
 }
 
-/** One frame of the pilot's driving: what it holds on the pedals and wheel, and what it presses. */
 export interface PilotFrame {
   axis: { throttle: number; brake: number; steer: number };
   input: { jumpPressed: boolean; plowBracing: boolean; salvageSwap: boolean };
 }
 
-/**
- * The scripted driver as a per-frame pilot: hand it each snapshot and it answers with the frame's
- * controls. {@link driveCourse} runs it headless; the dev build can put it behind the wheel live.
- */
 export function createCoursePilot(track: Track, options: Pick<CourseDriveOptions, "sweep" | "take" | "reckless"> = {}): (snap: SessionSnapshot) => PilotFrame {
   const take = new Set(options.take ?? []);
   const line = track.course.line({ take: [...take], step: LINE_STEP });
   const routes = new Set([MAIN_ROUTE, ...take]);
   const taken = track.def.branches.filter((branch) => take.has(branch.id));
-  /** The route this driver is on at a run mark. */
   const routeAt = (run: number): string => taken.find((branch) => run > branch.from && run < branch.to)?.id ?? MAIN_ROUTE;
   let cursor = 0;
   return (snap) => {

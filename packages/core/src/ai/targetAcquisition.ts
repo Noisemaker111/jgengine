@@ -6,10 +6,8 @@
  * and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
  */
 
-/** A per-pair acquisition range: a static radius, or a function that varies range by pair. */
 export type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number);
 
-/** Retention hysteresis that keeps an already-held target from flickering under churn. */
 export interface AcquisitionRetention {
   /**
    * A challenger's score must beat the held target's by at least this additive margin to steal
@@ -32,9 +30,7 @@ export interface AcquisitionRetention {
 export interface AcquisitionPolicy {
   /** Bounded candidate ids for `selfId` — wire a spatial-index query here, not a whole-world list. */
   readonly candidates: (selfId: string) => Iterable<string>;
-  /** Distance self→candidate; `null` rejects the candidate (despawned / unmeasurable). */
   readonly distance: (selfId: string, candidateId: string) => number | null;
-  /** Per-pair acquisition range (the dynamic envelope). Default `Infinity` (range-unbounded). */
   readonly range?: AcquisitionEnvelope;
   /** Eligibility filter run first — faction, alive, targetable, stealth, ownership. Default: all pass. */
   readonly eligible?: (selfId: string, candidateId: string) => boolean;
@@ -44,17 +40,12 @@ export interface AcquisitionPolicy {
   readonly score?: (selfId: string, candidateId: string, distance: number) => number;
   /** Deterministic tie-break when scores are equal (return <0 to prefer `a`). Default: id order. */
   readonly tieBreak?: (a: string, b: string) => number;
-  /** Retention/hysteresis for an already-held target. Omit for no stickiness. */
   readonly retention?: AcquisitionRetention;
 }
 
-/** Outcome of one acquisition pass. */
 export interface AcquisitionResult {
-  /** The chosen target, or `null` when nothing qualifies. */
   readonly targetId: string | null;
-  /** True when `targetId` differs from the `held` target passed in (a fresh acquire or a switch). */
   readonly changed: boolean;
-  /** Candidates that passed eligibility + range + perception this pass — a cheap tuning/metric signal. */
   readonly considered: number;
 }
 
@@ -122,17 +113,12 @@ export function acquireTarget(
   return { targetId: bestId, changed: bestId !== held, considered };
 }
 
-/** A stateful acquirer that holds the current target across passes — sugar over {@link acquireTarget}. */
 export interface TargetAcquirer {
-  /** Re-run acquisition for `selfId`, update the held target, and return it. */
   acquire(selfId: string): string | null;
-  /** The held target without re-running acquisition. */
   target(): string | null;
-  /** Candidates considered on the last {@link acquire} pass. */
   considered(): number;
   /** Force the held target — external override for taunt, script, or ownership handoff. */
   hold(targetId: string | null): void;
-  /** Drop back to unacquired. */
   clear(): void;
 }
 

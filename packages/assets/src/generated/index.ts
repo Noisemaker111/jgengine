@@ -66,7 +66,6 @@ import {
   quaterniusToonShooter,
 } from "./packs";
 
-/** Every pulled pack. Importing this bundles the whole library; a game imports only its own packs from `./packs`. */
 export const generatedPacks: readonly AssetPack[] = [
   kaykitAdventurers,
   kaykitCityBuilder,

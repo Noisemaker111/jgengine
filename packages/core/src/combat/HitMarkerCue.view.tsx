@@ -11,13 +11,7 @@ function gameMs(ctx: { time: { now(): number } }): number {
   return ctx.time.now() * 1000;
 }
 
-/**
- * The hit-marker model for the current world, listening to `combat.damage` for the local player's
- * confirmed hits on the game clock. The model is rebuilt when the world (or the timing object)
- * changes; keep `timing` a module constant.
- *
- * @capability use-hit-markers UI hook that feeds the local player's confirmed hits, crits and kills into a hit-marker model
- */
+/** @capability use-hit-markers UI hook that feeds the local player's confirmed hits, crits and kills into a hit-marker model */
 export function useHitMarkers(timing: HitMarkerTiming): HitMarkers {
   const ctx = useGameContext();
   const markers = useMemo(() => createHitMarkers(timing, (id) => isLocalSource(ctx, id)), [ctx, timing]);
@@ -25,21 +19,14 @@ export function useHitMarkers(timing: HitMarkerTiming): HitMarkers {
   return markers;
 }
 
-/** Props for {@link HitMarkerCue}. Every look and number is the game's. */
 export interface HitMarkerCueProps {
   /** The marker's pop, hold and fade. Keep it a module constant so the model is built once per world. */
   timing: HitMarkerTiming;
-  /** SVG artwork for the tick, drawn in each kind's colour. */
   artwork: string;
-  /** Artwork edge in points. */
   size: number;
-  /** Colour per kind. */
   colors: Readonly<Record<HitMarkerKind, string>>;
-  /** Extra content shown only while a marker of that kind is up (a "KILL" stamp under the tick). */
   labels?: Partial<Record<HitMarkerKind, ReactNode>>;
-  /** Where the cue sits. Default `"center"`, over the crosshair. */
   anchor?: RuneViewProps["anchor"];
-  /** Space between the tick and a label. Default 0. */
   gap?: number;
 }
 

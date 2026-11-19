@@ -1,4 +1,3 @@
-/** Editor-authoring cost the {@link PerfProbe} folds into its sample, separate from frame/sim cost. */
 export type PerfMarkKind = "raycast" | "rebuild";
 
 /** Rolling averages (ms) of the authoring marks recorded since the last flush. */
@@ -19,10 +18,7 @@ export interface PerfAccumulator {
   flush(): PerfMarkSummary;
 }
 
-/**
- * Creates an isolated authoring-perf accumulator.
- * @internal — the editor's `PerfProbe` folds `editorPerfMarks` into the perf sample; not game-facing.
- */
+/** @internal — the editor's `PerfProbe` folds `editorPerfMarks` into the perf sample; not game-facing. */
 export function createPerfAccumulator(): PerfAccumulator {
   let raycastSum = 0;
   let raycastCount = 0;
@@ -52,5 +48,4 @@ export function createPerfAccumulator(): PerfAccumulator {
   };
 }
 
-/** Shared accumulator the sculpt/paint layer records into and the perf probe flushes each window. */
 export const editorPerfMarks: PerfAccumulator = createPerfAccumulator();

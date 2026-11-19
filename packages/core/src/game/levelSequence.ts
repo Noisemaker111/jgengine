@@ -5,10 +5,8 @@ export interface LevelDescriptor<TLevelConfig> {
   config: TLevelConfig;
 }
 
-/** A level's star rating, 0 (cleared, no stars) to 3. */
 export type LevelStars = 0 | 1 | 2 | 3;
 
-/** Persisted per-level outcome: whether it has ever been cleared and the best star rating achieved. */
 export interface LevelRecord {
   cleared: boolean;
   stars: LevelStars;
@@ -20,7 +18,6 @@ export interface LevelSequenceConfig<TLevelConfig> {
   retriesPerLevel?: number;
   /** Persistence key for per-level completion/stars. Omit to keep records in-memory only. */
   key?: string;
-  /** Storage backend for the records (browser `localStorage` by default when `key` is set); pass `null` for memory-only. */
   storage?: KeyValueStorage | null;
 }
 
@@ -42,26 +39,18 @@ export interface LevelSequenceProgress {
 export interface LevelSequence<TLevelConfig> {
   current(): CurrentLevel<TLevelConfig> | null;
   status(): LevelSequenceStatus;
-  /** Enters level 0. A no-op on an empty level list, which leaves `status()` at "idle" forever. */
   start(): void;
-  /** Marks the current level cleared, recording its best star rating; call `advance()` to move to the next one. */
   clear(stars?: LevelStars): void;
-  /** Consumes an attempt on the current level. Returns "retry" while attempts remain, else "failed". */
   fail(): "retry" | "failed";
-  /** Restarts the current level after a "retry"-eligible failure. Returns false if there was nothing to retry. */
   retry(): boolean;
   /** Moves past a cleared level, or to "complete" if it was the last one. Returns false unless status is "cleared". */
   advance(): boolean;
-  /** Jumps directly to an unlocked level and starts it. Returns false for an unknown or still-locked level. */
   select(level: string): boolean;
-  /** Whether a level can be entered: the first level always, later ones once the preceding level has a cleared record. */
   isUnlocked(level: string): boolean;
   /** The persisted record for a level, or `null` if it has never been cleared. */
   record(level: string): LevelRecord | null;
-  /** A snapshot of every persisted level record, keyed by level id. */
   records(): Readonly<Record<string, LevelRecord>>;
   reset(): void;
-  /** Wipes all persisted completion/star records (and the frontier), returning to a fresh campaign. */
   clearRecords(): void;
   progress(): LevelSequenceProgress;
 }

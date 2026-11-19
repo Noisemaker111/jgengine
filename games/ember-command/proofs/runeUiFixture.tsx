@@ -26,7 +26,6 @@ export async function runeUiFixture(state: NativeFixture, width = 1280, height =
   finally { ui.unmount(); }
 }
 
-/** Settings rows that record what the UI set, for checks that drive the settings sheet. */
 export function fixtureSettings(): { controller: SettingsController; volume: number[]; mute: boolean[] } {
   const volume: number[] = [], mute: boolean[] = [];
   const controller: SettingsController = {
@@ -38,11 +37,6 @@ export function fixtureSettings(): { controller: SettingsController; volume: num
   return { controller, volume, mute };
 }
 
-/**
- * Mount the real GameUI over the real skirmish wiring in a headless native tree. `press`, `key` and
- * `adjust` call the same native handlers a pointer, a key or a pad step reaches; `text` reads the
- * visible native labels, as `window.__jg?.nativeUi.text()` does in the page.
- */
 export async function mountEmberUi(state: NativeFixture, width = 1280, height = 720, settings = fixtureSettings().controller) {
   const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   const memory = new Map<string, string>();

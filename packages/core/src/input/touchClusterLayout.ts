@@ -3,18 +3,14 @@ import type { TouchButton, TouchScheme } from "@jgengine/core/input/touchScheme"
 
 /** Button sizes for the thumb cluster, in CSS px, derived from the screen's short side. */
 export interface TouchClusterSizes {
-  /** The main (fire/attack) button. */
   main: number;
-  /** Each secondary button on the arcs around it. */
   secondary: number;
-  /** Slot-strip and menu chips. */
   chip: number;
   gap: number;
 }
 
 /** Fallback short side when no viewport is measurable (tests, SSR): a phone held in landscape. */
 export const DEFAULT_TOUCH_SHORT_SIDE = 390;
-
 
 /**
  * Cluster sizes scaled to the viewport's short side: the main button about a fifth of it, secondaries
@@ -39,7 +35,6 @@ export interface ClusterPlacement {
   bottom: number;
 }
 
-/** Where every cluster button sits, plus the cluster box size. */
 export interface TouchClusterLayout {
   sizes: TouchClusterSizes;
   main: ClusterPlacement;
@@ -48,14 +43,7 @@ export interface TouchClusterLayout {
   height: number;
 }
 
-/**
- * Places the main button in the bottom-right corner and its secondaries on concentric arcs around
- * it, inner ring first. Each ring spans from just below "left of the main button" to just past
- * "above it", as wide as fits without a button leaving the cluster box, and holds as many buttons
- * as fit edge to edge with a gap. Mirror it for a bottom-left cluster by swapping `right` for `left`.
- *
- * @internal
- */
+/** @internal */
 export function touchClusterLayout(secondaryCount: number, sizes: TouchClusterSizes): TouchClusterLayout {
   const { main, secondary, gap } = sizes;
   const center = main / 2;
@@ -88,12 +76,7 @@ export function touchClusterLayout(secondaryCount: number, sizes: TouchClusterSi
   return { sizes, main: { right: 0, bottom: 0 }, secondaries, width, height };
 }
 
-/**
- * The cluster's main button: the one the game marked `main`, else the first fire/shoot/attack
- * verb, else the first button. -1 for an empty list.
- *
- * @internal
- */
+/** @internal */
 export function mainButtonIndex(buttons: readonly Pick<TouchButton, "action" | "main">[]): number {
   if (buttons.length === 0) return -1;
   const marked = buttons.findIndex((button) => button.main === true);
@@ -102,11 +85,7 @@ export function mainButtonIndex(buttons: readonly Pick<TouchButton, "action" | "
   return verb === -1 ? 0 : verb;
 }
 
-/**
- * Docked buttons split the way the dock draws them: the arc cluster and the small menu-type buttons.
- *
- * @internal
- */
+/** @internal */
 export function partitionDockButtons(scheme: Pick<TouchScheme, "buttons">): { primary: TouchButton[]; utility: TouchButton[] } {
   const primary: TouchButton[] = [];
   const utility: TouchButton[] = [];
@@ -117,10 +96,8 @@ export function partitionDockButtons(scheme: Pick<TouchScheme, "buttons">): { pr
   return { primary, utility };
 }
 
-/** Utility buttons past this count fold into one overflow button. */
 export const UTILITY_INLINE_LIMIT = 2;
 
-/** Dock geometry constants the renderer sizes the stick and side rails from. */
 export const DOCK_GEOMETRY = {
   joystick: 132,
   joystickThumb: 52,

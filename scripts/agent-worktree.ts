@@ -22,7 +22,6 @@ import { hasInstall, missingDependencies } from "./checkout-ready";
 
 export const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
-/** Workspace roots whose per-package node_modules hold the isolated linker's symlinks. */
 const WORKSPACE_GROUPS = ["packages", "apps", "examples", "games", "games/llmville/packages"];
 
 /** Bundler caches that belong to one checkout and must not be shared. */
@@ -38,7 +37,6 @@ export function worktreeTarget(mainRoot: string, name: string): { path: string }
   return { path };
 }
 
-/** Workspace-relative dirs (plus the root) whose node_modules a linked worktree needs. */
 export function workspaceDirs(root: string): string[] {
   const dirs = [""];
   for (const group of WORKSPACE_GROUPS) {
@@ -52,7 +50,6 @@ export function workspaceDirs(root: string): string[] {
   return dirs;
 }
 
-/** True when the worktree can reuse the main checkout's installed dependencies. */
 export function canLinkDeps(mainRoot: string, target: string): boolean {
   return hasInstall(mainRoot) && locksMatch(mainRoot, target);
 }
@@ -149,11 +146,6 @@ export function linkDeps(mainRoot: string, target: string): string[] {
   return linked;
 }
 
-/**
- * Gitignored content the main checkout pulled once: public assets under apps/dev and under each
- * game (models, materials and sprites from `assets pull`).
- * `ignored` is `git ls-files --others --ignored --exclude-standard --directory` output.
- */
 export function assetLinks(mainRoot: string, ignored: string[]): string[] {
   const links: string[] = [];
   for (const line of ignored) {
@@ -199,13 +191,10 @@ export function mainCheckoutRoot(cwd: string): string | null {
 
 export interface WorktreeReadiness {
   mainRoot: string;
-  /** Workspace-relative node_modules dirs linked by this call. */
   deps: string[];
-  /** Workspace-relative asset links created by this call. */
   assets: string[];
   /** True when this call ran `bun install` because the locks differ. */
   installed: boolean;
-  /** True when the tree already had everything: nothing was touched. */
   unchanged: boolean;
 }
 
@@ -284,11 +273,6 @@ export function ensureWorktreeReady(cwd: string, options: WorktreeReadyOptions =
   return result;
 }
 
-/**
- * Link every game's referenced packs from the shared asset store (`packages/assets/src/assetStore.ts`).
- * Nothing is downloaded: a pack no checkout has pulled yet is fetched once, into the store, the first
- * time a dev server or `games:provision` needs it.
- */
 export async function linkGameAssets(target: string): Promise<{ linked: number; absent: number; store: string }> {
   const { provisionGame } = await import("../games/shared/provisionAssets");
   const { assetStoreRoot } = await import("../packages/assets/src/assetStore");

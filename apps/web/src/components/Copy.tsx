@@ -64,7 +64,6 @@ export function CopyButton({
   );
 }
 
-/** A single copyable line: what a person says to their agent, or a shell command. */
 export function CommandBlock({
   command,
   kind = "shell",

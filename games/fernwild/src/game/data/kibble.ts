@@ -12,7 +12,6 @@ import type { VitalDose } from "@jgengine/core/stats/vitals";
 export const KIBBLE_TIERS = ["basic", "simple", "regular", "superior", "exceptional"] as const;
 export type KibbleTier = (typeof KIBBLE_TIERS)[number];
 
-/** Egg sizes, smallest first; each tier's kibble needs one egg of the matching size. */
 export const EGG_SIZES = ["xs", "s", "m", "l", "xl"] as const;
 export type EggSize = (typeof EGG_SIZES)[number];
 
@@ -22,7 +21,6 @@ export const KIBBLE_LABEL: Readonly<Record<KibbleTier, string>> = { basic: "Basi
 export const eggItem = (size: EggSize): string => `egg_${size}`;
 export const kibbleItem = (tier: KibbleTier): string => `kibble_${tier}`;
 
-/** The wiki's preferred-tier examples; every other species is placed by its torpor (how big a body it is). */
 const PREFERRED: Readonly<Record<string, KibbleTier>> = {
   dodo: "basic", dilophosaur: "basic", parasaur: "basic", phiomia: "basic",
   raptor: "simple", triceratops: "simple", pachy: "simple", iguanodon: "simple",
@@ -31,7 +29,6 @@ const PREFERRED: Readonly<Record<string, KibbleTier>> = {
   rex: "exceptional", yutyrannus: "exceptional", thylacoleo: "exceptional", megalania: "exceptional",
 };
 
-/** The tier a species tames best on (and every tier above it). */
 export function preferredKibble(species: string, torpor: number): KibbleTier {
   const named = PREFERRED[species];
   if (named !== undefined) return named;
@@ -51,7 +48,6 @@ export function eggSizeFor(radius: number): EggSize {
   return "xl";
 }
 
-/** Each dose of `doses` scaled by vital: the plain food's affinity, belly and ineffectiveness, times these. */
 const scaled = (doses: readonly VitalDose[], by: Readonly<Record<string, number>>): VitalDose[] =>
   doses.map((dose) => ({ ...dose, amount: dose.amount * (by[dose.vital] ?? 1) }));
 
@@ -73,7 +69,6 @@ export function withKibble(foods: Readonly<Record<string, readonly VitalDose[]>>
   return { ...Object.fromEntries(above), ...foods, ...Object.fromEntries(below) };
 }
 
-/** Cooking-pot recipes, one per tier. The egg is ARK's; the rest stands in for crops Fernwild does not grow yet (approx). */
 const RECIPE_INPUTS: Readonly<Record<KibbleTier, Record<string, number>>> = {
   basic: { mejoberry: 5, amarberry: 10, tintoberry: 10, cooked_meat: 1, fiber: 5 },
   simple: { mejoberry: 5, cooked_meat: 1, fiber: 10 },
@@ -95,5 +90,4 @@ export const KIBBLE_RECIPES: readonly RecipeDef[] = KIBBLE_TIERS.map((tier, inde
 
 /** A wild female egg-layer drops an unfertilized egg about this often (game seconds; ARK's wild laying is random, approx). */
 export const EGG_LAY_SECONDS = 600;
-/** Eggs lying near one creature before it stops laying more. */
 export const EGGS_NEARBY_CAP = 2;

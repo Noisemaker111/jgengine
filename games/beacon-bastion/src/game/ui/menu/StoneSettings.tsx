@@ -7,11 +7,6 @@ import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";
 
 import { FIRE, FULL, Plank, Row, Text } from "../look";
 
-/**
- * The keep's settings cut into the stone tablet: category notches, one channel per row, sliders a
- * fire-lit groove, keybinds armed by a press and set by the next key. Every row writes straight to
- * the shell's settings store.
- */
 export function StoneSettings() {
   const settings = useSettings();
   const [chosen, setChosen] = useState<string | null>(null), [armed, setArmed] = useState<string | null>(null);

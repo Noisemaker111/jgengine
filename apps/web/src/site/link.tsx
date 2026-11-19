@@ -9,10 +9,8 @@ export interface SiteLocation {
   params: Params;
 }
 
-/** The page being drawn: its path and `$` parameters. */
 export const LocationContext = createContext<SiteLocation>({ pathname: "/", params: {} });
 
-/** The current page's `$` parameters, such as `{ id }` on `/games/$id`. */
 export function useParams<T extends Params = Params>(): T {
   return useContext(LocationContext).params as T;
 }

@@ -7,16 +7,12 @@ import { FONT_DIR, fontFileName, fontOriginPath, fontOriginUrl, fontOf, FONT_LIB
 import { HDRI_DIR, HDRI_LIBRARY, hdriFileName, hdriOf, hdriOriginUrl } from "./hdriLibrary";
 import { LUT_GRADES, LUT_GRADE_DIR, lutGradeFile, lutGradeFileName, lutGradeOf } from "./lutGrades";
 
-/** The three curated looks that are files a game serves. */
 export type CuratedKind = "hdri" | "lut" | "font";
 
-/** One curated file to serve: what it is, its id and the folder under `public/` that holds it. */
 export interface CuratedJob {
   kind: CuratedKind;
   id: string;
-  /** Folder relative to `public/`, one per id, e.g. `hdri/library/golden-hour`. */
   dir: string;
-  /** Pull target the CLI takes: `look:hdri/golden-hour`. */
   target: string;
 }
 
@@ -34,7 +30,6 @@ function job(kind: CuratedKind, id: string): CuratedJob {
   return { kind, id, dir: `${DIRS[kind]}/${id}`, target: `look:${kind}/${id}` };
 }
 
-/** Every curated look a game's source names through `hdriEnvironment`, `lutGrade`, `libraryFont` or `libraryFontPairing`. */
 /** @internal */
 export function curatedJobsIn(text: string): CuratedJob[] {
   const found = new Map<string, CuratedJob>();
@@ -57,7 +52,6 @@ export function parseLookTarget(target: string): { kind: CuratedKind; id: string
   return { kind, id: match?.[2] ?? "" };
 }
 
-/** Name of the file in the `packs` release that mirrors a curated binary, e.g. `look-hdri-golden-hour.hdr`. */
 /** @internal */
 export function lookMirrorName(kind: CuratedKind, id: string): string {
   if (kind === "hdri") return `look-hdri-${hdriOf(id).id}.hdr`;
@@ -65,7 +59,6 @@ export function lookMirrorName(kind: CuratedKind, id: string): string {
   return `look-lut-${lutGradeOf(id).id}.cube`;
 }
 
-/** The served path under `public/` of a curated file. */
 /** @internal */
 export function lookServedPath(kind: CuratedKind, id: string): string {
   if (kind === "hdri") return `${HDRI_DIR}/${hdriFileName(id)}`;
@@ -73,7 +66,6 @@ export function lookServedPath(kind: CuratedKind, id: string): string {
   return `${LUT_GRADE_DIR}/${lutGradeFileName(id)}`;
 }
 
-/** Reads one file out of an uncompressed ustar archive. */
 /** @internal */
 export function untarFile(tar: Uint8Array, path: string): Uint8Array {
   let offset = 0;
@@ -94,22 +86,14 @@ async function bytesOf(fetchImpl: typeof fetch, url: string): Promise<Uint8Array
   return new Uint8Array(await response.arrayBuffer());
 }
 
-/** What {@link pullCuratedLook} needs from its caller. */
 export interface CuratedPullContext {
-  /** The `public/`-shaped root to write into (a game's `public/` or the shared asset store). */
   outRoot: string;
   fetchImpl?: typeof fetch;
-  /** Base URL of the `packs` release mirror; default is this repository's. A mirror miss falls back to the origin. */
   mirrorBase?: string;
   log?: (line: string) => void;
 }
 
-/**
- * Writes one curated look to `ctx.outRoot`: a grade is baked locally, an HDRI comes from the packs
- * mirror (else Poly Haven's 2K file) and a font from the mirror (else its pinned Fontsource npm tarball).
- *
- * @internal
- */
+/** @internal */
 export async function pullCuratedLook(kind: CuratedKind, id: string, ctx: CuratedPullContext): Promise<string> {
   const fetchImpl = ctx.fetchImpl ?? fetch;
   const path = join(ctx.outRoot, ...lookServedPath(kind, id).split("/"));

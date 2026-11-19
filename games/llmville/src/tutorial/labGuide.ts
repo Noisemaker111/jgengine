@@ -23,10 +23,8 @@ export interface LabGoal {
   label: string;
 }
 
-/** What the lab guide says now: the tutorial step, or the next open goal, and the one action that moves it on. */
 export interface LabGuideState {
   heading: string;
-  /** Tutorial step and total while the tutorial runs. */
   step: { step: number; total: number } | null;
   title: string;
   detail: string;
@@ -38,7 +36,6 @@ export interface LabGuideState {
 
 type GuideNav = Pick<TabletNavState, "closeMenu" | "openTabletApp" | "openMenu">;
 
-/** The guide's words and action for this world, tutorial and chosen goal. */
 export function labGuideState(world: ReadyWorldViewModel, tutorial: TutorialViewModel, nav: GuideNav, chosenGoal: string | null): LabGuideState {
   const placeStarterRack = () => {
     world.engine.dispatch(engineActions.startPlacementDraft(STARTER_RACK_CATALOG_ID));

@@ -13,11 +13,7 @@ export class UniformMaterial<U extends Record<string, THREE.IUniform>> extends T
   }
 }
 
-/**
- * The uniform `name` from a shader whose uniforms are untyped (a three-stdlib pass clones them into a
- * plain record); throws when the shader does not declare it, which is a shader/code mismatch.
- * @internal
- */
+/** @internal */
 export function requireUniform(uniforms: Record<string, THREE.IUniform>, name: string): THREE.IUniform {
   const uniform = uniforms[name];
   if (uniform === undefined) throw new Error(`shader has no uniform "${name}"`);

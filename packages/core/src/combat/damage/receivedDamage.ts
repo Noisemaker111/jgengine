@@ -8,13 +8,9 @@ import type { DamageChannelId } from "./damageMatchup";
  */
 export interface DamageContext {
   channel: DamageChannelId;
-  /** Attacker/source id, when known. */
   source?: string;
-  /** The receiving target's id. */
   target: string;
-  /** Status ids currently on the target — lets a modifier fire only `whileStatus`. */
   targetStatuses?: readonly string[];
-  /** Arbitrary caller tags on the hit (`"crit"`, `"melee"`, `"aoe"`). */
   tags?: readonly string[];
 }
 
@@ -24,22 +20,13 @@ export interface DamageContext {
  * (targetStatuses/tags). An empty predicate matches every hit.
  */
 export interface DamagePredicate {
-  /** Fire only for these channels. */
   channels?: readonly DamageChannelId[];
-  /** Fire only for these attacker sources. */
   sources?: readonly string[];
-  /** Fire only while the target carries one of these statuses. */
   whileStatus?: readonly string[];
   /** Fire only when the hit carries one of these tags. */
   tags?: readonly string[];
 }
 
-/**
- * What a matched modifier does to the incoming amount. Amplification is one policy beside
- * reduction — both are `scale` (factor `> 1` amplifies, `< 1` reduces). `cap`/`floor` clamp,
- * `flat` adds/subtracts, `convert` moves a portion to another channel on the same target,
- * `redirect` moves a portion to another target, and `immune` zeroes the hit outright.
- */
 export type ReceivedPolicy =
   | { kind: "scale"; factor: number }
   | { kind: "flat"; delta: number }
@@ -49,51 +36,37 @@ export type ReceivedPolicy =
   | { kind: "redirect"; toTarget: string; portion?: number }
   | { kind: "immune" };
 
-/** One serializable receiver-side rule: an optional predicate, a policy, and an ordering key. */
 export interface ReceivedModifier {
-  /** Stable id echoed in provenance; helps UI/debug attribute a change. */
   id?: string;
-  /** When the modifier fires; omitted means always. */
   when?: DamagePredicate;
   policy: ReceivedPolicy;
   /** Lower runs first; ties keep declaration order. Defaults to 0. */
   order?: number;
 }
 
-/** One recorded transformation — the provenance a UI or debugger reads to explain a final number. */
 export interface ReceivedStep {
   modifierId: string | null;
   kind: ReceivedPolicy["kind"];
   before: number;
   after: number;
-  /** Portion diverted to a redirect target or converted channel, when the policy did so. */
   diverted?: number;
 }
 
-/** A portion of the hit sent elsewhere by a `redirect`/`convert` policy. */
 export interface DamageDivert {
-  /** For a redirect: the receiving target. For a convert: unset. */
   target?: string;
-  /** For a convert: the channel the portion becomes. For a redirect: unset. */
   channel?: DamageChannelId;
   amount: number;
 }
 
-/** The full, provenance-rich outcome of running received modifiers over one hit. */
 export interface ReceivedDamageResult {
   /** Final amount landing on the primary target/channel; never negative. */
   amount: number;
-  /** True when an `immune` policy zeroed the hit. */
   immune: boolean;
-  /** Portions redirected to other targets. */
   redirects: DamageDivert[];
-  /** Portions converted to other channels on the same target. */
   conversions: DamageDivert[];
-  /** Ordered record of every modifier that ran and what it changed. */
   steps: ReceivedStep[];
 }
 
-/** The incoming amount, its {@link DamageContext}, and the receiver's modifier list to run over it. */
 export interface ReceivedDamageInput {
   amount: number;
   context: DamageContext;

@@ -3,11 +3,6 @@ import { game } from "../../src/game.config";
 import openPark from "./to-open-park.flow";
 import { lotScreen } from "./lotScreen";
 
-/**
- * From the empty lot to a park with a crowd: the open-park proof, then a handyman hired by clicking
- * the Staff palette and the grass, and the guests' own thoughts read off the status card and a
- * clicked guest's window.
- */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

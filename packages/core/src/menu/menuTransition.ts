@@ -5,41 +5,32 @@
  * of skipping the state machine, so callers never branch on it.
  */
 
-/** Where a menu screen is in its enter/exit animation. */
 export type MenuTransitionPhase = "closed" | "enter" | "open" | "exit";
 
-/** Durations and accessibility policy for one transition. */
 export interface MenuTransitionConfig {
   /** Enter duration, ms. Default 220. */
   enterMs?: number;
   /** Exit duration, ms. Default 160. */
   exitMs?: number;
-  /** Collapse both durations to zero (the accessibility "reduced motion" preference). */
   reducedMotion?: boolean;
 }
 
-/** Serializable phase state. */
 export interface MenuTransitionSnapshot {
   phase: MenuTransitionPhase;
   /** Clock time (ms) the phase started. */
   since: number;
 }
 
-/** Observable enter/exit phase machine. */
 export interface MenuTransition {
   state(): MenuTransitionSnapshot;
-  /** Begin entering from closed/exit, or go straight to open when motion is off. No-op when entering/open. */
   open(now: number): void;
-  /** Begin exiting from entering/open. No-op when already exiting/closed. */
   close(now: number): void;
-  /** Advance the machine to `now`; entering → open and exiting → closed happen here. */
   tick(now: number): MenuTransitionSnapshot;
   subscribe(listener: () => void): () => void;
   snapshot(): MenuTransitionSnapshot;
   restore(snapshot: MenuTransitionSnapshot): void;
 }
 
-/** The enter and exit durations after reduced-motion is applied. */
 export function menuTransitionDurations(config: MenuTransitionConfig = {}): { enter: number; exit: number } {
   if (config.reducedMotion === true) return { enter: 0, exit: 0 };
   return { enter: Math.max(0, config.enterMs ?? 220), exit: Math.max(0, config.exitMs ?? 160) };
@@ -51,12 +42,7 @@ export function menuTransitionPhaseMs(phase: MenuTransitionPhase, config: MenuTr
   return phase === "enter" ? enter : phase === "exit" ? exit : 0;
 }
 
-/**
- * Create a {@link MenuTransition}. `open`/`close` start a phase; `tick` advances it once its duration
- * has elapsed. Nothing schedules timers here — the caller ticks from its animation loop or a timeout.
- *
- * @capability menu-transition enter/exit phase timing for an animated menu screen, with reduced-motion collapse and snapshot/restore
- */
+/** @capability menu-transition enter/exit phase timing for an animated menu screen, with reduced-motion collapse and snapshot/restore */
 export function createMenuTransition(config: MenuTransitionConfig = {}, initial?: MenuTransitionSnapshot): MenuTransition {
   let state: MenuTransitionSnapshot = initial ?? { phase: "closed", since: 0 };
   const listeners = new Set<() => void>();

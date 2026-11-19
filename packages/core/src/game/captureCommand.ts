@@ -1,4 +1,3 @@
-/** One entry of `capture.play` or `capture.states[name]`: a command name, or a name with the input it needs. */
 export type CaptureCommandEntry = string | { readonly name: string; readonly input?: unknown };
 
 /**

@@ -11,22 +11,16 @@ export interface VehicleSuspensionKinematicsEffect {
    * (capped below the centre of mass) and more camber gain; sane over `0..4`.
    */
   strength?: number;
-  /** Front and rear roll-centre height above the ground, m (default `0.12`, `0.09`: the reference MX-5's linkages). */
   rollCentreFront?: number;
   rollCentreRear?: number;
-  /** Front axle's share of the car's roll stiffness, springs and bar together (default `0.54`). */
   rollStiffnessFront?: number;
-  /** Share of body roll each axle's wheels lean with, from its camber gain (default `0.67` front, `0.9` rear; `1` a beam axle). */
   rollFollowFront?: number;
   rollFollowRear?: number;
 }
 
-/** What {@link suspensionKinematics} works out for one lateral acceleration. */
 export interface SuspensionKinematicsLoads {
-  /** Load moved to the outside wheel of each axle, N. */
   transferFront: number;
   transferRear: number;
-  /** Lever from the roll axis to the centre of mass, m: body roll is `m·ay·arm / rollStiffness`. */
   rollArm: number;
   rollFollowFront: number;
   rollFollowRear: number;

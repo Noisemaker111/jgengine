@@ -16,16 +16,6 @@ import { hudType } from "./hudTokens";
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
-/**
- * Composable UI renderers over the headless selection view model
- * (`@jgengine/core/ui/selectionModel`) — the data/renderer/chrome split for an RTS selection panel, a
- * party frame, or a squad summary. `useSelectionView` is the DATA/HOOK layer (summary + focus +
- * virtualization), `EntityPortrait`/`SelectionCollectionChrome` are composable
- * renderers, and `SelectionPanel` is the batteries-included default. A game supplies the entity data
- * from wherever selection lives and swaps renderer or chrome without forking the logic.
- */
-
-/** A move that steps the selection focus by keyboard/controller. */
 const SELECTION_KEYS: Record<string, SelectionFocusDirection> = {
   ArrowRight: "next",
   ArrowDown: "next",
@@ -35,39 +25,26 @@ const SELECTION_KEYS: Record<string, SelectionFocusDirection> = {
   End: "last",
 };
 
-/** A minimal keyboard-event shape — a real `KeyboardEvent`/UI synthetic event satisfies it. */
 export interface SelectionKeyEvent {
   key: string;
   preventDefault(): void;
 }
 
-/** Options for {@link useSelectionView}. */
 export interface UseSelectionViewOptions {
-  /** Member count above which `grouped` flips true (default 12). */
   groupThreshold?: number | undefined;
-  /** Map a member `kind` to a display label for its group. */
   labelOf?: ((kind: string) => string) | undefined;
-  /** Fired when the focused (primary) member changes. */
   onFocusChange?: ((id: string) => void) | undefined;
 }
 
-/** The live selection model returned by {@link useSelectionView}. */
 export interface SelectionModel {
   view: SelectionView;
   focusId: string | null;
   setFocus: (id: string) => void;
   onKeyDown: (event: SelectionKeyEvent) => void;
-  /** A virtualization window over the members, for a large selection strip. */
   window: (scroll: number, size: number) => SelectionWindow;
 }
 
-/**
- * The DATA/HOOK layer: summarize a selected-entity list into a live model with a focused primary,
- * ordered members, same-kind groups, keyboard focus stepping, and a virtualization window.
- * Rendering-agnostic — feed it to {@link SelectionPanel} or read the `view` directly.
- *
- * @capability selection-model headless multi-entity selection model with primary focus, grouping, and virtualization
- */
+/** @capability selection-model headless multi-entity selection model with primary focus, grouping, and virtualization */
 export function useSelectionView(
   members: readonly EntitySummaryDef[],
   options?: UseSelectionViewOptions,
@@ -129,13 +106,7 @@ const PORTRAIT_BASE: CSSProperties = {
   padding: 2,
 };
 
-/**
- * A selectable entity portrait tile — icon/initials, an optional thin health strip, and complete
- * selected/hover/focus states as a real `<button>` (`aria-pressed`). The unit-of-a-selection chrome;
- * swap the face via `renderIcon`. Accessible and keyboard-focusable.
- *
- * @capability entity-portrait selectable entity portrait tile with vitals and selected/focus states
- */
+/** @capability entity-portrait selectable entity portrait tile with vitals and selected/focus states */
 export function EntityPortrait({
   entity,
   selected = false,
@@ -228,12 +199,7 @@ function PrimarySummary({ entity, renderVital }: { entity: EntitySummaryDef; ren
   );
 }
 
-/**
- * A same-kind selection chip — icon plus count — for the grouped large-selection view. The default
- * chrome {@link SelectionCollectionChrome} renders per group; swap it via `renderGroup`.
- *
- * @capability selection-group-chip same-kind selection chip (icon + count) for a grouped selection
- */
+/** @capability selection-group-chip same-kind selection chip (icon + count) for a grouped selection */
 export function SelectionGroupChip({
   group,
   onSelect,
@@ -263,14 +229,7 @@ export function SelectionGroupChip({
   );
 }
 
-/**
- * The composable RENDERER for the member collection: a portrait strip for a small selection, or the
- * same-kind group chips once the model is `grouped`. Roving tabindex + arrow-key focus. Swap
- * `renderMember`/`renderGroup` for custom chrome, or read the model and lay it out yourself. No panel
- * skin — a behavior/accessibility layer only.
- *
- * @capability selection-collection accessible portrait-strip / group-chip renderer over a selection model
- */
+/** @capability selection-collection accessible portrait-strip / group-chip renderer over a selection model */
 export function SelectionCollectionChrome({
   model,
   itemSize = 44,
@@ -287,7 +246,6 @@ export function SelectionCollectionChrome({
   model: SelectionModel;
   itemSize?: number;
   gap?: number;
-  /** Cap the mounted portraits; the model virtualizes past this many members. */
   windowSize?: number | undefined;
   scroll?: number;
   ariaLabel?: string;

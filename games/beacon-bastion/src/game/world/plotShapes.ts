@@ -2,11 +2,6 @@ import type { StaticShapeInstance } from "@jgengine/core/instancing/staticShapeI
 
 type Vec3 = readonly [number, number, number];
 
-/**
- * The empty build plots as static primitive instances: a stone foundation, a worn cap and the
- * affordability halo, one batch each however many plots the field authors. The halo is a disk under
- * the cap, so only its rim shows.
- */
 export function plotShapes(plots: readonly { position: Vec3 }[], open: readonly boolean[], haloColor: string): StaticShapeInstance[] {
   const shapes: StaticShapeInstance[] = [];
   plots.forEach((plot, index) => {

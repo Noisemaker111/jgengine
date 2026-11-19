@@ -1,8 +1,6 @@
 export type Easing = (t: number) => number;
 
-/** Linearly interpolate from `from` to `to` by fraction `t` (unclamped).
- * @internal
- */
+/** @internal */
 export function lerp(from: number, to: number, t: number): number {
   return from + (to - from) * t;
 }

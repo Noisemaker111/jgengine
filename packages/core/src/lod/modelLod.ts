@@ -1,7 +1,6 @@
 import type { LodBand } from "./lod";
 import { lodBandIndex } from "./lod";
 
-/** How a model, or one of its variant levels, takes part in the shadow pass. */
 export type ModelShadowMode = "cast" | "receive" | "both" | "none";
 
 /** One mesh level of a {@link ModelVariantLodConfig}: a full or decimated GLB, how far it draws and how it shadows. */
@@ -18,13 +17,7 @@ export interface ModelVariantConfig {
   shadows?: ModelShadowMode | "inherit";
 }
 
-/**
- * Ordered mesh detail levels for one model, switched per instance by camera distance. The first level
- * is the full mesh the model's own `url` names; every later level is a cheaper asset. A tree line uses
- * this so near trees keep their full mesh while far ones draw a decimated copy of the same species.
- */
 export interface ModelVariantLodConfig {
-  /** Levels ordered near to far; the first covers everything up to its `maxDistance`. Two or more. */
   levels: readonly ModelVariantConfig[];
   /** Metres an instance must travel past a switch boundary before it changes level, so a camera resting on the boundary cannot flicker. Default 6. */
   hysteresis?: number;
@@ -45,18 +38,15 @@ export function variantBand(boundary: number, hysteresis: number, ratio: number)
   return hysteresis + (Number.isFinite(boundary) ? boundary * ratio : 0);
 }
 
-/** Plain JSON state of a {@link ModelVariantSelector}: each id's current level index. */
 export interface ModelVariantSelectorState {
   levels: Record<string, number>;
 }
 
-/** Per-instance distance switch over a model's detail levels: one answer per id, held across a boundary until the instance clears it. */
 export interface ModelVariantSelector {
   /** Levels near to far, with the last level's `maxDistance` normalized to `Infinity`. */
   levels(): readonly { url: string; maxDistance: number }[];
   /** The same boundaries as scheduler bands, so a `createLodScheduler` never throttles an id at a different distance than its mesh switches. */
   bands(): readonly LodBand[];
-  /** True when callers divide each distance by the instance's placement scale ({@link ModelVariantLodConfig.scaleWithInstance}). */
   readonly scaleWithInstance: boolean;
   /** Level index for `id` at `distance` metres, carrying hysteresis from its previous answer. */
   level(id: string, distance: number): number;
@@ -95,7 +85,6 @@ function normalize(config: ModelVariantLodConfig): readonly { url: string; maxDi
   });
 }
 
-/** Builds the per-instance distance switch for a model's variant levels. */
 export function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector {
   const levels = normalize(config);
   const hysteresis = Math.max(0, config.hysteresis ?? DEFAULT_VARIANT_HYSTERESIS);

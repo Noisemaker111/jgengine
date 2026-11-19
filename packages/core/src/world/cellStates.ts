@@ -1,11 +1,9 @@
 export interface CellStateGridConfig<TState extends string> {
   cols: number;
   rows: number;
-  /** The ordered escalation ladder; every cell starts at `states[0]`. */
   states: readonly TState[];
   /** World-space center of cell (0, 0), for `cellOf` world→cell mapping. Default `[0, 0]`. */
   origin?: readonly [number, number];
-  /** World units per cell, for `cellOf`. Default `1`. */
   cellSize?: number;
 }
 
@@ -25,22 +23,18 @@ export interface CellStateGrid<TState extends string> {
   readonly rows: number;
   readonly states: readonly TState[];
   stateAt(col: number, row: number): TState | null;
-  /** Ladder index at a cell; `-1` outside the grid. */
   indexAt(col: number, row: number): number;
   /** Step a cell up the ladder (clamped at the last state); returns the new state or `null` outside the grid. */
   escalate(col: number, row: number, steps?: number): TState | null;
   /** Step a cell back down (clamped at the first state). */
   regress(col: number, row: number, steps?: number): TState | null;
   set(col: number, row: number, state: TState): boolean;
-  /** Escalate every cell the predicate matches; returns how many changed. */
   escalateWhere(predicate: (col: number, row: number, state: TState) => boolean, steps?: number): number;
   cellsIn(state: TState): CellRef[];
   counts(): Record<TState, number>;
-  /** World position → cell, using `origin`/`cellSize`; `null` outside the grid. */
   cellOf(x: number, z: number): CellRef | null;
   /** World-space center of a cell. */
   centerOf(col: number, row: number): readonly [number, number];
-  /** Bumps on every state change — key re-renders/dirty checks off it. */
   version(): number;
   reset(): void;
 }

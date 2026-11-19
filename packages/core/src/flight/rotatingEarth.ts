@@ -13,27 +13,19 @@ export interface AircraftRotatingEarth {
    * past `1` the planet spins faster (the rotation rate scales with the strength; gravity stays as measured); sane over `0..4`.
    */
   strength?: number;
-  /** Latitude of the world origin, rad (default `0`). */
   latitude?: number;
-  /** Compass bearing of world `+z`, rad from north, east positive (default `0`: `+z` north, `+x` west). */
   bearing?: number;
-  /** Planet radius, m (default `6 378 137`, WGS 84 equatorial). */
   radius?: number;
-  /** Gravitational parameter, m³/s² (default `3.986004418e14`, WGS 84). */
   mu?: number;
   /** Sidereal rotation rate, rad/s (default `7.292115e-5`, WGS 84). */
   rotationRate?: number;
 }
 
-/** Where a world point sits on the rotating planet. */
 export interface RotatingEarthFrame {
-  /** Height above the sphere, m. */
   altitude: number;
-  /** Local vertical, world axes. */
   up: [number, number, number];
   /** Space-fixed velocity, world axes, m/s: the Earth-relative velocity plus the frame's spin at that point. */
   inertialVelocity: [number, number, number];
-  /** Great-circle distance from the world origin over the surface, m. */
   surfaceRange: number;
 }
 
@@ -75,10 +67,7 @@ export function rotatingEarthAcceleration(effect: AircraftRotatingEarth, strengt
   return out;
 }
 
-/**
- * Altitude, local vertical, space-fixed velocity and surface range of a world point and Earth-relative velocity.
- * @capability aircraft-rotating-earth altitude, local vertical and space-fixed velocity on a rotating planet
- */
+/** @capability aircraft-rotating-earth altitude, local vertical and space-fixed velocity on a rotating planet */
 export function rotatingEarthFrame(effect: AircraftRotatingEarth, strength: number, position: AircraftVector, velocity: AircraftVector): RotatingEarthFrame {
   const radius = effect.radius ?? 6378137;
   const rx = position[0];

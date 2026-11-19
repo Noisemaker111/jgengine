@@ -101,7 +101,6 @@ export class Panel {
       `<text x="${(this.X(p[0]) + dx).toFixed(1)}" y="${(this.Y(p[1]) + dy).toFixed(1)}" font-size="${sizePx}" fill="${fill}" font-family="monospace" text-anchor="${anchor}" stroke="#fff" stroke-width="2.5" paint-order="stroke">${esc(text)}</text>`,
     );
   }
-  /** Caption lines in the strip above the map. */
   caption(lines: readonly string[], sizePx = 10): void {
     lines.slice(0, 3).forEach((line, i) =>
       this.chrome.push(`<text x="${this.x0 + 2}" y="${this.y0 - PANEL_HEADER + 12 + i * (sizePx + 4)}" font-size="${sizePx}" font-family="monospace" fill="#111">${esc(line)}</text>`),
@@ -130,7 +129,6 @@ export class Panel {
       }
     });
   }
-  /** Ramp key (min..max with a unit) in the strip below the map. */
   rampKey(label: string, lo: number, hi: number, unit: string, note = ""): void {
     const y = this.y0 + this.size + 5;
     for (let i = 0; i < 20; i += 1) this.chrome.push(`<rect x="${this.x0 + 2 + i * 6}" y="${y}" width="6" height="9" fill="${ramp(i / 19)}"/>`);
@@ -155,14 +153,12 @@ export class Panel {
   }
 }
 
-/** Lay panels out as a grid of `columns` and wrap them in one SVG with a title. */
 export function contactSheet(title: string, subtitle: string, rows: readonly (readonly Panel[])[]): string {
   const width = Math.max(...rows.map((row) => Math.max(0, ...row.map((p) => p.x0 + p.size)))) + 10;
   const height = Math.max(...rows.map((row) => Math.max(0, ...row.map((p) => p.y0 + p.size)))) + PANEL_FOOTER + 6;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(width)}" height="${Math.ceil(height)}" viewBox="0 0 ${Math.ceil(width)} ${Math.ceil(height)}"><rect width="100%" height="100%" fill="#fff"/><text x="10" y="20" font-size="15" font-family="monospace" font-weight="bold">${esc(title)}</text><text x="10" y="38" font-size="11" font-family="monospace" fill="#444">${esc(subtitle)}</text>${rows.flat().map(String).join("\n")}</svg>`;
 }
 
-/** A street the drawing reads (a generated `Street` or a `CityStreet`). */
 export interface DrawStreet {
   readonly points: readonly PlanPoint[];
   readonly width: number;
@@ -173,7 +169,6 @@ export interface DrawStreet {
   readonly sidewalks?: { readonly left: readonly PlanPoint[]; readonly right: readonly PlanPoint[] };
 }
 
-/** Streets by level (or road height), bridges, tunnels, interior dead ends; optional terrain underlay. */
 export function drawStreets(
   panel: Panel,
   net: {
@@ -242,7 +237,6 @@ export function drawStreets(
     ]);
 }
 
-/** A lot the city drawing reads (a `CityLot`). */
 export interface DrawLot {
   readonly center: readonly [number, number];
   readonly rotationY: number;
@@ -278,7 +272,6 @@ function pieceRing(lot: DrawLot, piece: DrawLot["pieces"][number]): PlanPoint[] 
   });
 }
 
-/** Blocks, parks, streets and buildings coloured by class (`use`) or by roof height (`height`). */
 export function drawCity(
   panel: Panel,
   city: {
@@ -323,11 +316,6 @@ export interface DrawRace {
   readonly length?: number;
 }
 
-/**
- * A lap three ways: `detail` (corners by kind with radius/angle labels, straights, gates, grid, seals,
- * sectors, start line, pit lanes, overtaking spots), `speed` (point-mass sim speed with braking
- * zones) and `elevation` (road height).
- */
 export function drawCircuit(
   panel: Panel,
   analysis: CircuitAnalysis,

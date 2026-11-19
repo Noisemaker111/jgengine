@@ -8,10 +8,8 @@ import { singles } from "./singles";
 import { materialSources, modelSources, spriteSources } from "./sources";
 import { keyFromSpriteFile } from "./spriteIndexGen";
 
-/** What a match is: a model file, a whole pack, a material, a HUD component, an icon, or a sprite (pack). */
 export type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack";
 
-/** One catalog entry a query matched, shaped by its kind. */
 export type AssetMatch =
   | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" }
   | { kind: "pack"; source: string; title: string; categories: readonly string[] }
@@ -23,15 +21,11 @@ export type AssetMatch =
   /** A whole sprite/icon pack, not yet resolved to individual files — same role as `pack` for models. */
   | { kind: "spritePack"; source: string; title: string; categories: readonly string[] };
 
-/** Narrowing for {@link rankAssets}. */
 export interface RankAssetsOptions {
-  /** Restrict results to one kind. */
   kind?: AssetKind | undefined;
-  /** Cap the number of matches returned (default 12). */
   limit?: number;
 }
 
-/** A match with its score, 0 (none) to 100 (exact). */
 export interface RankedMatch {
   match: AssetMatch;
   score: number;
@@ -49,11 +43,6 @@ function tokenScore(token: string, hay: string, words: readonly string[]): numbe
   return 0;
 }
 
-/**
- * 0 (no match) … 100 (exact). Single-word queries reward whole-word and prefix
- * hits over loose substrings; a multi-word query ("mana bar") scores by the mean
- * of its tokens and only counts when *every* token lands in the field.
- */
 function scoreText(needle: string, hay: string): number {
   const n = normalize(needle);
   const h = normalize(hay);
@@ -71,10 +60,7 @@ function scoreText(needle: string, hay: string): number {
   return Math.min(90, Math.round(sum / tokens.length));
 }
 
-/**
- * How well `needle` names any of `hays`, 0 (none) to 100 (exact): the score every asset search ranks by.
- * @internal
- */
+/** @internal */
 export function scoreAssetText(needle: string, ...hays: (string | undefined)[]): number {
   let top = 0;
   for (const hay of hays) {
@@ -89,11 +75,7 @@ function sourceOf(id: string): string {
   return slash === -1 ? id : id.slice(0, slash);
 }
 
-/**
- * Rank every catalog entry — models, packs, HUD components, icons — against one query.
- *
- * @capability rank-assets find the model, pack, material, sprite, HUD component or icon for a word, best first
- */
+/** @capability rank-assets find the model, pack, material, sprite, HUD component or icon for a word, best first */
 export function rankAssets(query: string, options: RankAssetsOptions = {}): RankedMatch[] {
   const q = query.trim();
   const ranked: RankedMatch[] = [];
@@ -233,11 +215,7 @@ function dedupe(ranked: readonly RankedMatch[]): RankedMatch[] {
   return out;
 }
 
-/**
- * One line naming a match for a terminal list: kind, id and title.
- *
- * @capability describe-asset-match print a ranked asset match as one readable line
- */
+/** @capability describe-asset-match print a ranked asset match as one readable line */
 export function describeAssetMatch(match: AssetMatch): string {
   switch (match.kind) {
     case "model":

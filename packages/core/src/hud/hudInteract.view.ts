@@ -1,18 +1,13 @@
 import { createContext, createElement, useCallback, useContext, type ReactNode } from "@jgengine/core/ui/jsx";
 
-/** What happened to an engine HUD primitive. */
 export type HudInteractKind = "hover" | "press" | "activate" | "focus" | "open" | "close";
 
-/** One interaction reported by an engine HUD primitive to an `onInteract` listener. */
 export interface HudInteractEvent {
   kind: HudInteractKind;
-  /** The primitive's `cue` (also rendered as `data-jg-cue`), naming which feedback to play. */
   cue?: string;
-  /** Primitive family, e.g. `"button"`, `"panel"`, `"window"`, `"action"`. */
   source: string;
 }
 
-/** Listener for {@link HudInteractEvent}s. */
 export type HudInteractListener = (event: HudInteractEvent) => void;
 
 const HudInteractContext = createContext<HudInteractListener | null>(null);
@@ -36,7 +31,6 @@ export function HudInteractProvider({ onInteract, children }: { onInteract: HudI
   return createElement(HudInteractContext.Provider, { value: listener }, children);
 }
 
-/** Returns a reporter that calls the instance listener, then the nearest {@link HudInteractProvider}. */
 export function useHudInteract(source: string, cue?: string, onInteract?: HudInteractListener): (kind: HudInteractKind) => void {
   const context = useContext(HudInteractContext);
   return useCallback(

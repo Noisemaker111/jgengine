@@ -34,10 +34,7 @@ export function rockCell(radii: CellVec, facets: number, roughness: number, rng:
   return cell;
 }
 
-/**
- * A fragment's mesh, positions relative to its centre: one flat-shaded polygon per face, fracture faces in `fractureColor`.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function fragmentMesh(fragment: Pick<RockFragment, "cell" | "centre">, color: NatureRgb, fractureColor: NatureRgb, offset: CellVec = [0, 0, 0]): NatureMesh {
   const builder = new NatureMeshBuilder();
   addCell(builder, fragment.cell, fragment.centre, color, fractureColor, offset);
@@ -53,7 +50,6 @@ function addCell(builder: NatureMeshBuilder, cell: ConvexCell, centre: CellVec, 
   }
 }
 
-/** Params of `fracture.rock`. */
 export const ROCK_FRACTURE_SCHEMA = defineParamSchema({
   groups: [
     { id: "stone", label: "Stone" },
@@ -117,7 +113,6 @@ export const ROCK_FRACTURE_GENERATOR = defineGenerator({
   },
 });
 
-/** The fracture generators. */
 export const FRACTURE_GENERATORS: readonly GeneratorDefinition[] = [untypedGenerator(ROCK_FRACTURE_GENERATOR)];
 
 /** Registers `fracture.rock`. Idempotent. @internal */

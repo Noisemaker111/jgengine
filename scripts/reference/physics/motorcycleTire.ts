@@ -6,9 +6,7 @@
  * without sideslip. SI units, angles in rad.
  */
 export interface MotorcycleTireCoefficients {
-  /** Nominal load Fz0, N. */
   fz0: number;
-  /** Crown radius R0 of the tread's circular cross-section, m (the moment arm scale in Dt and Dr). */
   crownRadius: number;
   // Pure longitudinal slip (Eqs. 1–6, Table I).
   cx: number;
@@ -67,17 +65,12 @@ export interface MotorcycleTireCoefficients {
   rby2: number;
   rby3: number;
   cyk: number;
-  /** Lateral relaxation length per cornering stiffness, `σα = Kyα·(r0 + r1·V + r2·V²)` (§4.8), m per N/rad. */
   relaxation: readonly [number, number, number];
 }
 
 const LONGITUDINAL_160_70 = { cx: 1.6064, pex1: 0.0263, pex2: 0.27056, pex3: -0.0769, pex4: 1.1268, pkx1: 25.94, pkx2: -4.233, pkx3: 0.3369 };
 const COMBINED = { rbx1: 13.476, rbx2: 11.354, cxa: 1.1231, rby1: 7.7856, rby2: 8.1697, rby3: -0.05914, cyk: 1.0533 };
 
-/**
- * Front 120/70 ZR17 sport tyre (Sharp, Evangelou & Limebeer 2004, Tables II–III middle rows; longitudinal shape
- * from the 160/70 fit with pDx1 = 1.381, pDx2 = −0.04143, §4.5; relaxation §4.8).
- */
 export const SPORT_FRONT_120_70_ZR17: Readonly<MotorcycleTireCoefficients> = {
   fz0: 1100,
   crownRadius: 0.06,
@@ -124,10 +117,6 @@ export const SPORT_FRONT_120_70_ZR17: Readonly<MotorcycleTireCoefficients> = {
   relaxation: [8.633e-6, 3.725e-8, 8.389e-10],
 };
 
-/**
- * Rear 180/55 ZR17 sport tyre (Sharp, Evangelou & Limebeer 2004, Tables II–III bottom rows; pDx1 = 1.355,
- * pDx2 = −0.0603, §4.5; relaxation §4.8).
- */
 export const SPORT_REAR_180_55_ZR17: Readonly<MotorcycleTireCoefficients> = {
   fz0: 1600,
   crownRadius: 0.09,
@@ -174,30 +163,19 @@ export const SPORT_REAR_180_55_ZR17: Readonly<MotorcycleTireCoefficients> = {
   relaxation: [9.694e-6, -1.333e-8, 1.898e-9],
 };
 
-/** Inputs to {@link motorcycleMagicFormula}, ISO-W axes (x forward, y left, z up). */
 export interface MotorcycleTireInput {
-  /** Longitudinal slip κ, positive driving. */
   kappa: number;
-  /** Slip angle α, rad, positive when the contact moves left. */
   alpha: number;
-  /** Inclination γ, rad, positive with the wheel top leaning toward −y (leaning right). */
   gamma: number;
-  /** Vertical load, N; `≤ 0` gives no force. */
   fz: number;
 }
 
-/** Forces and moment from {@link motorcycleMagicFormula}, ISO-W axes, at the contact point. */
 export interface MotorcycleTireOutput {
   fx: number;
-  /** Side force, N: negative for positive α or γ (it pushes toward the lean and against the slip). */
   fy: number;
-  /** Aligning plus camber twisting moment about the vertical, N·m. */
   mz: number;
-  /** Cornering stiffness Kyα at this load and camber, N/rad (positive). */
   kya: number;
-  /** Camber stiffness Kyγ, N/rad. */
   kyg: number;
-  /** Longitudinal slip stiffness Kxκ, N. */
   kxk: number;
   /** Lateral relaxation length at speed `v`, m (only when `v` is given). */
   relaxationLength: number;
@@ -212,7 +190,6 @@ function shape(b: number, c: number, e: number, x: number): number {
   return c * Math.atan(bx - e * (bx - Math.atan(bx)));
 }
 
-/** Pure side force in Sharp et al.'s sign convention (positive for positive β and γ), Eqs. (7)–(13). */
 function sideForce(p: Readonly<MotorcycleTireCoefficients>, fz: number, dfz: number, beta: number, gamma: number): { fy: number; kya: number; kyg: number } {
   const g2 = gamma * gamma;
   const dy = (fz * p.pdy1 * Math.exp(p.pdy2 * dfz)) / (1 + p.pdy3 * g2);

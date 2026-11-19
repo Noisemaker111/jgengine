@@ -3,7 +3,6 @@ import { Suspense, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode
 
 import { pageBoot, type BootStep } from "@jgengine/core/boot/bootSequence";
 
-/** The boot screen showing now, re-rendered as the page's boot moves. */
 export function useBootStep(): BootStep {
   return useSyncExternalStore(pageBoot.subscribe, pageBoot.step, pageBoot.step);
 }
@@ -62,7 +61,6 @@ export function BootLoading({ reason, label, progress }: { reason: string; label
 
 const loadingAreas = new Set<string>();
 
-/** How many world pieces are still loading; Play waits on the entering screen until none are. */
 export function bootLoadingAreas(): number {
   return loadingAreas.size;
 }

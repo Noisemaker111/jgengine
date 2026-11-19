@@ -2,7 +2,6 @@ import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
 
-/** The foot of a steep rise inland of the south beach: 26 m higher 35 m on along this heading. */
 const FOOT = [12, 275] as const;
 const UPHILL = 3.93;
 

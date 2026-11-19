@@ -5,7 +5,6 @@
 
 import { addGameAssetFiles } from "@jgengine/core/assets/assetBase";
 
-/** One user-supplied model the editor can place: a stable id and a resolvable URL. */
 export interface StandaloneAsset {
   id: string;
   url: string;
@@ -103,11 +102,7 @@ export async function loadDroppedAssets(
   return out;
 }
 
-/**
- * Appends freshly dropped assets, replacing any prior entry that shares an id (re-imports stay a
- * single catalog entry). Shared by the standalone strip and the in-game Content Browser importer.
- * @internal
- */
+/** @internal */
 export function mergeStandaloneAssets(
   current: readonly StandaloneAsset[],
   next: readonly StandaloneAsset[],

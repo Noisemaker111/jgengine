@@ -1,9 +1,5 @@
 import type { ParkMetrics } from "../park";
 
-/**
- * The rating's blend: what the park offers (appeal and variety, from the world's totals), how the
- * crowd feels, how many came today and how clean it is. Pure math over world facts.
- */
 export function ratingTarget(
   metrics: Pick<ParkMetrics, "totalAppeal" | "variety">,
   mood: number,

@@ -23,10 +23,8 @@ import { speciesDef, WILD_STATS, type WildStat } from "./data/species";
 import { BABY_FOOD_DRAIN_SECONDS, NEWBORN_FOOD, TAME_FOOD_DRAIN_SECONDS } from "./data/tameFood";
 import { setFoodPace, setTameFood } from "./tameHunger";
 
-/** How close the survivor stands to a baby to cuddle or feed it. */
 const CARE_REACH = 4;
 
-/** What a hungry baby wants fed by hand: ARK's kibble, here its kind's favourite food. */
 function favouriteFood(species: string): string {
   return speciesDef(species)?.diet === "carnivore" ? "raw_meat" : "mejoberry";
 }
@@ -62,7 +60,6 @@ const nurseryOf = perContext(
   }),
 );
 
-/** Which parent each of a baby's stats came from: its levels less what mutations added, matched to a parent's. */
 function lineageOf(mother: string, father: string, mum: Record<WildStat, number>, dad: Record<WildStat, number>, inherited: Inherited<WildStat>): Lineage {
   const from = Object.fromEntries(
     WILD_STATS.map((stat) => {
@@ -73,7 +70,6 @@ function lineageOf(mother: string, father: string, mum: Record<WildStat, number>
   return { mother, father, from, mutated: [...inherited.mutations] };
 }
 
-/** Set the chance of each mutation roll a baby gets (a cheat, for proofs: ARK's is 2.5%). */
 export function setMutationChance(ctx: GameContext, chance: number): void {
   nurseryOf(ctx).mutationChance = Math.max(0, Math.min(1, chance));
 }
@@ -88,10 +84,8 @@ function bringIntoWorld(ctx: GameContext, species: string, at: readonly [number,
   setTameFood(ctx, id, NEWBORN_FOOD);
 }
 
-/** A baby is hungrier while small: its food drains R x (1 - maturation) on top of a grown tame's rate. */
 const babyPace = (matured: number): number => 1 + (TAME_FOOD_DRAIN_SECONDS / BABY_FOOD_DRAIN_SECONDS) * (1 - matured);
 
-/** Mating, eggs, births and babies growing, each fixed tick. */
 export function tickBreeding(ctx: GameContext, dt: number): void {
   const nursery = nurseryOf(ctx);
   const now = ctx.time.now();
@@ -164,7 +158,6 @@ function giveCare(ctx: GameContext, id: string, kind: string): void {
   ctx.scene.entity.floatText({ instanceId: id, text: `Imprinting ${Math.round(isBaby.bond * 100)}%`, kind: "pickup" });
 }
 
-/** The baby in front of the survivor, close enough to cuddle or feed. */
 function babyInReach(ctx: GameContext) {
   const id = aimedCreature(ctx);
   const baby = id === null ? null : nurseryOf(ctx).field.offspringOf(id);
@@ -174,7 +167,6 @@ function babyInReach(ctx: GameContext) {
   return Math.hypot(entity.position[0] - me.position[0], entity.position[2] - me.position[2]) <= CARE_REACH ? { baby, at: entity.position } : null;
 }
 
-/** E on a baby asking for a cuddle, or for food the survivor carries: give it. */
 export function careForBaby(ctx: GameContext): void {
   const near = babyInReach(ctx);
   if (near === null || near.baby.wants === null) return;
@@ -198,19 +190,16 @@ export function breedingPrompts(ctx: GameContext): PositionedPrompt[] {
   return [{ id: `baby:${near.baby.id}`, position: { x: near.at[0], z: near.at[2] }, priority: 3, prompt: proximityPrompt({ radius: CARE_REACH + 1, display: keybind("interact", text), invoke: command("careForBaby") }) }];
 }
 
-/** Every egg lying in the world, for drawing. */
 export function eggs(ctx: GameContext) {
   return nurseryOf(ctx).field.eggs();
 }
 
-/** ARK's breeding multipliers as an admin setting: hatch, maturation, mating interval and care all this much faster. */
 export function setBreedingSpeed(ctx: GameContext, multiplier: number): void {
   const speed = Math.max(0.001, multiplier);
   const speeds: BreedingSpeeds = { pair: speed, carry: speed, grow: speed, bond: speed };
   nurseryOf(ctx).field.setSpeeds(speeds);
 }
 
-/** Breeding for one creature, for its inventory screen: mating, pregnancy, or a baby's growing and imprint. */
 export function breedingCard(ctx: GameContext, id: string) {
   const nursery = nurseryOf(ctx);
   const now = ctx.time.now();
@@ -243,13 +232,11 @@ export function breedingCard(ctx: GameContext, id: string) {
 
 export type BreedingCard = NonNullable<ReturnType<typeof breedingCard>>;
 
-/** The open creature screen's breeding card, for the UI. */
 export function viewedBreeding(ctx: GameContext): BreedingCard | null {
   const id = viewedCreature(ctx);
   return id === null ? null : breedingCard(ctx, id);
 }
 
-/** For probes and the HUD: eggs lying, the nearest one's incubation and health, and babies growing with their imprint. */
 export function breedingView(ctx: GameContext) {
   const nursery = nurseryOf(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);

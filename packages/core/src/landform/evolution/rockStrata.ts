@@ -10,27 +10,20 @@
 import { plantCos, plantSin, PLANT_PI } from "../../plants/growth/plantMath";
 import type { GrainMix } from "../materials/sedimentCover";
 
-/** One rock layer. */
 export interface RockLayer {
-  /** Rock name, e.g. `"sandstone"`; material layers report it per cell. */
   readonly id: string;
   /** Thickness in metres; the last layer extends down forever. */
   readonly thickness: number;
-  /** Multiplier on river erodibility K: below 1 resists incision, above 1 yields to it. */
   readonly erodibility: number;
-  /** Multiplier on hillslope diffusivity. Default 1. */
   readonly diffusivity?: number;
   /** Steepest angle in degrees the bare rock stands at before it fails. Default 45. */
   readonly criticalAngle?: number;
-  /** Multiplier on soil production from this rock: below 1 for rock that weathers slowly. Default 1. */
   readonly weathering?: number;
   /** What the rock breaks into when rivers cut it. Default 20% gravel, 50% sand, 30% silt. */
   readonly yields?: GrainMix;
 }
 
-/** A tilted stack of rock layers. */
 export interface LandformStrata {
-  /** Layers from the top down. */
   readonly layers: readonly RockLayer[];
   /** Rock elevation in metres of the top of the first layer at the grid origin; rock above it is the first layer too. Default 0. */
   readonly top?: number;
@@ -40,13 +33,11 @@ export interface LandformStrata {
   readonly dipDirection?: number;
 }
 
-/** The default single rock: uniform, standing at 45°. */
 export const UNIFORM_ROCK: LandformStrata = { layers: [{ id: "rock", thickness: 1, erodibility: 1 }] };
 
-/** Strata resolved for one grid: per-cell horizontal offsets and the layer bounds. @internal */
+/** @internal */
 export interface ResolvedStrata {
   readonly layers: readonly RockLayer[];
-  /** Layer index at a cell for a rock elevation. */
   layerAt(cell: number, rockElevation: number): number;
 }
 
@@ -56,7 +47,7 @@ export function tanDegrees(degrees: number): number {
   return plantSin(radians) / plantCos(radians);
 }
 
-/** Resolve strata over a grid. @internal */
+/** @internal */
 export function resolveStrata(strata: LandformStrata, cols: number, rows: number, cellSize: number): ResolvedStrata {
   const layers = strata.layers.length > 0 ? strata.layers : UNIFORM_ROCK.layers;
   const top = strata.top ?? 0;

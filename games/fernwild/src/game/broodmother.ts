@@ -16,7 +16,6 @@ import { itemLabel } from "./data/items";
 import { setScreen } from "./screens";
 import { drugSurvivor, give, survivorLevel, takeAnywhere, webSurvivor } from "./survivor";
 
-/** The layer the lair's wall occupies in the world's collision. */
 const SOLIDS_LAYER = "fernwild:broodLair";
 /** How near the obelisk's foot E reaches its terminal, metres. */
 const TERMINAL_REACH = 12;
@@ -27,17 +26,12 @@ export const FIRST_SPIT = 3;
 
 interface Brood {
   arena: SummonedEncounter<SummonCandidate>;
-  /** The Broodmother's creature id while she is in the lair. */
   boss: string | null;
   phase: PhaseClockState | null;
-  /** The Araneo she has called. */
   brood: string[];
   nextSpit: number;
-  /** Her last spit, for the drawing: from her to where the survivor stood. */
   spit: { at: number; from: readonly [number, number, number]; to: readonly [number, number, number] } | null;
-  /** The phase tell on screen and until when. */
   tell: { text: string; until: number } | null;
-  /** Her health as a share of her species' (1, ARK's; a server's boss difficulty, or a proof, turns it down). */
   strength: number;
 }
 
@@ -46,7 +40,6 @@ const broodOf = perContext((ctx: GameContext): Brood => {
   return { arena: lairEncounter(), boss: null, phase: null, brood: [], nextSpit: 0, spit: null, tell: null, strength: 1 };
 });
 
-/** Her lair's fight: a survivor level the summon asks, the artifact cost, the portal, and the trip home. */
 function lairEncounter(): SummonedEncounter<SummonCandidate> {
   return createSummonedEncounter<SummonCandidate>({
     tiers: BROOD_TIERS,
@@ -57,12 +50,10 @@ function lairEncounter(): SummonedEncounter<SummonCandidate> {
   });
 }
 
-/** The lair's ring wall, standing on its islet. */
 export function lairWall(ctx: GameContext) {
   return ringWallSolids({ center: BROOD_LAIR.center, radius: BROOD_LAIR.radius, height: BROOD_LAIR.wallHeight, thickness: 5, sides: 36, groundHeight: ctx.world.groundHeightAt });
 }
 
-/** The Green Obelisk: where the terminal stands, on the ground under the floating spire. */
 export function greenObelisk(ctx: GameContext): readonly [number, number, number] {
   const marker = markersOfKind(editorLayers, "obelisk").find((entry) => entry.meta?.["color"] === "green");
   if (marker === undefined) throw new Error("editor.scene.json has no green obelisk");
@@ -78,12 +69,9 @@ function inLair(at: readonly number[]): boolean {
   return Math.hypot(at[0]! - BROOD_LAIR.center[0], at[2]! - BROOD_LAIR.center[1]) <= BROOD_LAIR.radius + 2;
 }
 
-/** A point in the lair `along` of the way from its centre to the wall, at `angle` (0 is east, π west). */
 function lairSpot(along: number, angle: number): [number, number] {
   return [BROOD_LAIR.center[0] + Math.cos(angle) * BROOD_LAIR.radius * along, BROOD_LAIR.center[1] + Math.sin(angle) * BROOD_LAIR.radius * along];
 }
-
-// --- the terminal ----------------------------------------------------------------------------------
 
 function nearTerminal(ctx: GameContext): boolean {
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -94,7 +82,6 @@ function carried(ctx: GameContext, item: string): number {
   return ctx.player.inventory.count(BAG, item) + ctx.player.inventory.count(HOTBAR, item);
 }
 
-/** E at the Green Obelisk's foot: its terminal, listing each difficulty's tribute. */
 export function obeliskPrompts(ctx: GameContext): PositionedPrompt[] {
   if (!nearTerminal(ctx) || broodOf(ctx).arena.state().phase !== "idle") return [];
   const [x, , z] = greenObelisk(ctx);
@@ -105,7 +92,6 @@ export function useObelisk(ctx: GameContext): void {
   if (nearTerminal(ctx)) setScreen(ctx, "obelisk");
 }
 
-/** Pay a difficulty's tribute and open the portal. */
 export function summonBroodmother(ctx: GameContext, tierId: string): void {
   const tier = broodTier(tierId);
   if (tier === null || !nearTerminal(ctx)) return;
@@ -120,7 +106,6 @@ export function summonBroodmother(ctx: GameContext, tierId: string): void {
   ctx.game.notices.push({ text: `${tier.label} Broodmother summoned. The portal opens in ${Math.round(broodOf(ctx).arena.secondsLeft(ctx.time.now()) ?? 0)} seconds: stay near the obelisk with your tames.`, tone: "success" });
 }
 
-/** What the terminal screen lists: each difficulty, its level and tribute against what the survivor carries. */
 export function obeliskView(ctx: GameContext) {
   const level = survivorLevel(ctx);
   const arena = broodOf(ctx).arena;
@@ -141,9 +126,6 @@ export function obeliskView(ctx: GameContext) {
   };
 }
 
-// --- the fight -------------------------------------------------------------------------------------
-
-/** Everyone the portal can take: the survivor and each living tame of theirs within range of the obelisk. */
 function gather(ctx: GameContext): SummonCandidate[] {
   const obelisk = greenObelisk(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -222,7 +204,6 @@ function fight(ctx: GameContext, brood: Brood, dt: number): void {
   }
 }
 
-/** The obelisk's clock: the portal, the fight, the win and the trip home. */
 export function tickBroodmother(ctx: GameContext, dt: number): void {
   const brood = broodOf(ctx);
   const now = ctx.time.now();
@@ -256,7 +237,6 @@ export function tickBroodmother(ctx: GameContext, dt: number): void {
   }
 }
 
-/** What the HUD and the world draw: the fight's phase and clock, her health and phase, the portal and her last spit. */
 export function broodView(ctx: GameContext) {
   const brood = broodOf(ctx);
   const state = brood.arena.state();
@@ -277,7 +257,6 @@ export function broodView(ctx: GameContext) {
 
 export type BroodView = ReturnType<typeof broodView>;
 
-/** The acid in flight, for the drawing: where it is now, or null. */
 export function spitInFlight(ctx: GameContext): readonly [number, number, number] | null {
   const spit = broodOf(ctx).spit;
   const t = spit === null ? 1 : (ctx.time.now() - spit.at) / SPIT_FLIGHT;
@@ -286,7 +265,6 @@ export function spitInFlight(ctx: GameContext): readonly [number, number, number
   return [lerp(0), lerp(1) + Math.sin(t * Math.PI) * 4, lerp(2)];
 }
 
-/** ARK's admin SetHealth on the Broodmother: her health to this share of its max, for proofs. */
 export function setBroodHealth(ctx: GameContext, share: number): void {
   const boss = broodOf(ctx).boss;
   const health = boss === null ? null : ctx.scene.entity.stats.get(boss, "health");
@@ -294,7 +272,6 @@ export function setBroodHealth(ctx: GameContext, share: number): void {
   ctx.scene.entity.stats.set(boss, "health", { current: Math.max(0, Math.min(1, share)) * health.max });
 }
 
-/** ARK's server boss difficulty: each Broodmother summoned from now on has this share of her health. */
 export function setBroodStrength(ctx: GameContext, share: number): void {
   broodOf(ctx).strength = Math.max(0.0001, Math.min(1, share));
 }

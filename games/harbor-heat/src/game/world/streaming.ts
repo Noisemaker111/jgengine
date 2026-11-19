@@ -40,11 +40,6 @@ function focus(ctx: GameContext): StreamFocus {
   return { x, z };
 }
 
-/**
- * Stream the city by 128 m blocks once it is laid: props and their bodies past the keep radius leave
- * the scene (saved, same ids) and the fixed cast there freezes, both coming back a few per tick as
- * the player nears. The renderer draws each away block as its far proxy.
- */
 export function setupStreaming(ctx: GameContext): void {
   disposeStreaming(ctx);
   const objects = createCellContent({ rule: "despawn", adapter: sceneObjectCells(ctx.scene.object), restoresPerStep: RESTORES_PER_STEP });

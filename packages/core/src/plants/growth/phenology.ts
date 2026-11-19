@@ -2,18 +2,13 @@ import type { PlantSpecies } from "../species/plantSpecies";
 import { PLANT_PI, plantAcos, plantCos, plantSin } from "./plantMath";
 import type { PlantEnvironment } from "./plantEnvironment";
 
-/** The leaf-on window of one year and the radiation it collects. */
 export interface GrowingSeason {
-  /** Day of year leaves are out (budburst). */
   leafOnDay: number;
-  /** Day of year leaves fall. */
   leafOffDay: number;
-  /** Photosynthetically active radiation reaching open ground while leaves are out, MJ per m². */
   parMJ: number;
 }
 
 const SOLAR_CONSTANT = 0.082;
-/** Global radiation as a share of extraterrestrial radiation under half sunshine (Angström, FAO-56 eq. 35). */
 const CLEARNESS = 0.5;
 const PAR_SHARE = 0.48;
 const DEGREE = PLANT_PI / 180;
@@ -22,19 +17,13 @@ function tanOf(angle: number): number {
   return plantSin(angle) / plantCos(angle);
 }
 
-/**
- * Daily mean temperature on a sinusoidal year, coldest in mid-January.
- * @internal
- */
+/** @internal */
 export function dailyTemperatureC(env: PlantEnvironment, day: number): number {
   const range = env.seasonalRangeC ?? 13;
   return env.temperatureC + range * plantSin((2 * PLANT_PI * (day - 106)) / 365);
 }
 
-/**
- * Extraterrestrial radiation (MJ/m²/day) and day length (hours), FAO-56 equations 21–25 and 34.
- * @internal
- */
+/** @internal */
 export function solarDay(latitudeDeg: number, day: number): { radiationMJ: number; daylengthH: number } {
   const phi = latitudeDeg * DEGREE;
   const angle = (2 * PLANT_PI * day) / 365;
@@ -46,11 +35,7 @@ export function solarDay(latitudeDeg: number, day: number): { radiationMJ: numbe
   return { radiationMJ: radiation > 0 ? radiation : 0, daylengthH: (24 / PLANT_PI) * omega };
 }
 
-/**
- * Budburst from spring thermal time above the species' base temperature, leaf fall when day length
- * drops under its senescence photoperiod after midsummer, and the PAR collected in between.
- * @internal
- */
+/** @internal */
 export function growingSeason(species: PlantSpecies, env: PlantEnvironment): GrowingSeason {
   if (species.leaf.lifespanYears >= 1) {
     let par = 0;

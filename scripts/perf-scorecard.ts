@@ -15,7 +15,6 @@ import type { PerfBuild } from "./prodServer";
 
 /** Frame budgets a hitch is counted against: one 60 Hz frame, and two. */
 export const HITCH_MS = [16.7, 33.3] as const;
-/** The slowdown of the slow-CPU window, the stand-in for a laptop or phone (Chrome's CPU throttling); `--cpu` changes it. */
 export const SLOW_CPU_RATE = 4;
 
 export interface FrameScore {
@@ -36,7 +35,6 @@ const round = (value: number, digits = 2): number => {
   return Math.round(value * scale) / scale;
 };
 
-/** Percentiles, the worst frame and the hitch counts of one window of frame times. */
 export function frameScore(deltas: readonly number[]): FrameScore {
   const kept = deltas.filter((ms) => Number.isFinite(ms) && ms > 0).sort((a, b) => a - b);
   if (kept.length === 0) return { frames: 0, p50Ms: 0, p95Ms: 0, p99Ms: 0, worstMs: 0, over16: 0, over33: 0, seconds: 0 };
@@ -53,14 +51,9 @@ export function frameScore(deltas: readonly number[]): FrameScore {
   };
 }
 
-/** Whose code a profile frame is. `browser` is everything with no script: natives, GC, the compositor. */
 export type CodeOwner = "react" | "ui" | "r3f" | "drei" | "three" | "engine" | "game" | "library" | "browser";
 export const CODE_OWNERS: readonly CodeOwner[] = ["react", "ui", "r3f", "drei", "three", "engine", "game", "library", "browser"];
 
-/**
- * Whose code a source path is. react-three-fiber bundles its own reconciler, so `react-reconciler`,
- * Legacy dependencies `its-fine` and `suspend-react` are attributed to r3f in old profiles.
- */
 export function codeOwner(source: string): CodeOwner {
   const path = source.replaceAll("\\", "/");
   if (/(?:^|\/)packages\/(?:ui\/|core\/src\/ui\/(?:jsx\/|rune\/|runeUi\.))/.test(path) || /(?:^|\/)(?:jg-ui\/|jg_ui(?:_bg)?\.(?:js|wasm))/.test(path)) return "ui";
@@ -91,14 +84,11 @@ export function codeOwner(source: string): CodeOwner {
 
 const VLQ = new Map([..."ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"].map((char, index) => [char.charCodeAt(0), index]));
 
-/** A source map reduced to what a profile needs: per generated line, each segment's column and source. */
 export interface DecodedMap {
   sources: string[];
-  /** Per generated line, `[column, sourceIndex]` pairs flattened, columns ascending. */
   lines: Int32Array[];
 }
 
-/** Decode a source map's `mappings` to column → source per generated line. */
 export function decodeSourceMap(map: { sources?: readonly string[]; mappings?: string }): DecodedMap {
   const mappings = map.mappings ?? "";
   const lines: Int32Array[] = [];
@@ -163,11 +153,9 @@ interface ScoredNode {
 export interface ProfileScore {
   /** Main-thread time the profile saw, idle included, in ms. */
   totalMs: number;
-  /** Main-thread time that was not idle: scripts, natives, GC and the browser's own work. */
   busyMs: number;
   /** Self time per owner, ms over the window. */
   selfMs: Record<CodeOwner, number>;
-  /** Time with a React frame anywhere on the stack: React's own work and every component it renders. */
   reactInclusiveMs: number;
   /** Engine UI runtime, Rune bridge and wasm, including component callbacks underneath them. */
   uiInclusiveMs: number;
@@ -176,16 +164,10 @@ export interface ProfileScore {
    * render ran under it: this measures what the former driver drove, not its own cost.
    */
   r3fInclusiveMs: number;
-  /** Time in the garbage collector. */
   gcMs: number;
-  /** Self time in React's development build (`jsxDEV`, `*.development.js`): zero in the build players get. */
   devReactMs: number;
 }
 
-/**
- * Split a CPU profile's main-thread time by whose code ran. `sourceOf` names the source file of a
- * frame (through the chunk's source map in a production build), or null to judge by the frame's URL.
- */
 export function scoreProfile(
   profile: { nodes: readonly ScoredNode[]; samples: readonly number[]; timeDeltas: readonly number[] },
   sourceOf: (url: string, line: number, column: number) => string | null,
@@ -243,11 +225,6 @@ export function scoreProfile(
   };
 }
 
-/**
- * The source-file lookup for a profile's frames. A production chunk is named through the `.map` the
- * build wrote beside it; a dev-server dependency bundle through the map the dev server serves. Maps are
- * read once per script.
- */
 export async function profileSources(
   urls: Iterable<string>,
   options: { outDir?: string | undefined },
@@ -292,7 +269,6 @@ export async function profileSources(
   };
 }
 
-/** What a page downloaded to become playable, read from its resource timing. */
 export interface LoadScore {
   /** Ms from navigation to the page reporting itself ready to play (assets in, shaders warmed). */
   readyMs: number;
@@ -301,12 +277,10 @@ export interface LoadScore {
   jsBytes: number;
   wasmBytes: number;
   totalBytes: number;
-  /** Script requests, and how many of them were unbundled source modules (zero in a production build). */
   scripts: number;
   sourceModules: number;
 }
 
-/** Reads every resource the page has fetched so far: `[url, encodedBodySize]` pairs, the document included. */
 export const LOAD_RESOURCES_SCRIPT = `(() => {
   const out = [];
   for (const entry of [...performance.getEntriesByType("navigation"), ...performance.getEntriesByType("resource")]) {
@@ -353,7 +327,6 @@ export async function cpuBusyPct(ms = 1_000): Promise<number> {
   return after.all === before.all ? 0 : Math.round(((after.busy - before.busy) / (after.all - before.all)) * 100);
 }
 
-/** One game on one build at one CPU speed: everything the scorecard prints. */
 export interface Scorecard {
   build: PerfBuild;
   /**
@@ -379,7 +352,6 @@ export interface Scorecard {
     r3fInclusivePct: number;
     reactSelfMsPerFrame: number;
     r3fSelfMsPerFrame: number;
-    /** Self time per owner as a percent of the busy main thread. */
     selfPct: Record<CodeOwner, number>;
     gcMsPerSecond: number;
     gcPct: number;
@@ -390,7 +362,6 @@ export interface Scorecard {
   load: LoadScore | null;
 }
 
-/** Fold a profile, its frame count and what it allocated into the scorecard's main-thread block. */
 export function mainScore(profile: ProfileScore, frames: number, seconds: number, allocatedBytes: number | null): NonNullable<Scorecard["main"]> {
   const busy = Math.max(profile.busyMs, 0.001);
   const pct = (ms: number) => round((ms / busy) * 100, 1);
@@ -430,13 +401,11 @@ export function productionProblem(card: Scorecard): string | null {
 
 const kb = (bytes: number): string => (bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(2)} MB` : `${Math.round(bytes / 1024)} KB`);
 
-/** A column of the printed scorecard: a heading and the card under it, or null for a run that failed. */
 export interface ScorecardColumn {
   label: string;
   card: Scorecard | null;
 }
 
-/** The scorecard's rows, one value per column: the table `perf` and `perf ab` both lead with. */
 export function scorecardRows(columns: readonly ScorecardColumn[]): string[][] {
   const row = (name: string, value: (card: Scorecard) => string): string[] => [name, ...columns.map(({ card }) => (card === null ? "failed" : value(card)))];
   const main = (value: (main: NonNullable<Scorecard["main"]>) => string) => (card: Scorecard) => (card.main === null ? "-" : value(card.main));
@@ -471,7 +440,6 @@ export function scorecardRows(columns: readonly ScorecardColumn[]): string[][] {
   ];
 }
 
-/** The scorecard as a table: plain columns for a terminal, or Markdown for a PR. */
 export function renderScorecard(columns: readonly ScorecardColumn[], markdown = false): string {
   const head = ["", ...columns.map((column) => column.label)];
   const rows = scorecardRows(columns);
@@ -484,12 +452,10 @@ export function renderScorecard(columns: readonly ScorecardColumn[], markdown = 
   return [line(head), ...rows.map(line)].join("\n");
 }
 
-/** `production` or `dev`: how a scorecard column is headed. */
 export function scorecardLabel(card: Pick<Scorecard, "build">): string {
   return card.build;
 }
 
-/** The scorecard as tally rows: `[metric, value, unit]`, a row left out where the run did not measure it. */
 export function scorecardMetrics(card: Scorecard): Array<[string, number, string]> {
   const rows: Array<[string, number, string]> = [
     ["frame.p50", card.frame.p50Ms, "ms"],

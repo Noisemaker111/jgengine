@@ -19,16 +19,13 @@ import { HH, DISPLAY } from "./theme";
 type Pt = readonly [number, number];
 const RADIUS = 130;
 const TINTS: Record<string, string> = { mainsail_boulevard: "#dcc79b", downtown: "#a8a496", port_carmine: "#918e84", palm_heights: "#b9ad7e" };
-/** Sea and beach bands, in world XZ: the same coastline the terrain's shore falloff carves. */
 const SEA: Pt[] = [[SHORE_X - 22, -600], [-900, -600], [-900, 600], [SHORE_X - 22, 600]];
 const BEACH: Pt[] = [[SHORE_X + 24, -600], [SHORE_X - 24, -600], [SHORE_X - 24, 600], [SHORE_X + 24, 600]];
-/** World-model blips: the live objective, open jobs, people and places the city marks. */
 const BLIP: Record<WorldBlip["kind"], [string, number]> = { objective: ["#ffb020", 5.5], job: ["#ffe066", 5], person: ["#f4e8c8", 4], place: ["#c23b3b", 4], thing: ["#4fa5e8", 4] };
 
 interface Pin { id: string; position: Pt; color: string; radius: number }
 const pin = (id: string, position: Pt, color: string, radius: number): Pin => ({ id, position, color, radius });
 
-/** Everything the chart draws, read once per store version. */
 function readMap(ctx: GameContext) {
   const body = ctx.scene.entity.get(drivingStore.read(ctx) ?? ctx.player.userId) ?? ctx.scene.entity.get(ctx.player.userId);
   if (body === null) return null;
@@ -64,7 +61,6 @@ function chartShape(ctx: GameContext) {
 }
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** A thick line segment as a four-point polygon. */
 function segment(a: { x: number; y: number }, b: { x: number; y: number }, width: number): Pt[] {
   const dx = b.x - a.x, dy = b.y - a.y, length = Math.hypot(dx, dy) || 1;
   const nx = (-dy / length) * width / 2, ny = (dx / length) * width / 2;
@@ -90,7 +86,6 @@ export function CityMinimap() {
   const project = (point: Pt) => projectToMinimap(point, view());
   const polygon = (corners: readonly Pt[]) => bind(() => ({ points: corners.map((c) => { const p = project(c); return [p.x, p.y] as Pt; }), viewBox: [size, size] as const }));
   const full = { pin: [0, 0, null, null] as const, width: size, height: size };
-  /** A round mark centred on a bound map point. */
   const dot = (id: string, radius: number, color: string, where: () => Pt) => (
     <RuneView key={id} pin={[0, 0, null, null]} width={radius * 2} height={radius * 2} radius={radius} fill={color} border={{ width: 1.5, color: HH.ink }}
       x={bind(() => project(where()).x - radius)} y={bind(() => project(where()).y - radius)} />

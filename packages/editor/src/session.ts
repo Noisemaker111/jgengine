@@ -43,7 +43,7 @@ registerAllSceneKinds();
 /** How the editor hosts the game: frozen placement view, roamable world, the real game, or HUD-layout authoring. */
 export type EditorRunMode = "edit" | "walk" | "play" | "hud";
 
-/** The accepted run modes, in canonical order — the runtime guard behind {@link EditorRunMode}. @internal */
+/** @internal */
 export const EDITOR_RUN_MODES: readonly EditorRunMode[] = ["edit", "walk", "play", "hud"];
 
 /** RPC request shapes the editor host understands, used by the MCP bridge and UI. */
@@ -322,14 +322,12 @@ export type EditorBridgeRequest =
   | { method: "clear_runtime_override"; id: string }
   | { method: "write_back_override"; id: string };
 
-/** Result envelope returned by every editor host RPC call. */
 export type EditorBridgeResponse = {
   ok: boolean;
   result?: unknown;
   error?: string;
 };
 
-/** A placeable asset entry offered in the editor's asset browser. */
 export interface EditorAssetInfo {
   id: string;
   label: string;
@@ -337,7 +335,6 @@ export interface EditorAssetInfo {
   url?: string;
 }
 
-/** Canonical imported slot names and mesh prerequisites reported by the loaded model. */
 export type EditorMaterialSlotInfo = Readonly<Omit<ModelMaterialSlotInfo, "uvSets">> & { readonly uvSets: readonly number[] };
 
 /** A live model-source observation; loading and unavailable reports never contain fabricated slots. */
@@ -346,10 +343,8 @@ export type EditorMaterialSlotReport =
   | { status: "loading" }
   | { status: "unavailable"; reason: string };
 
-/** A marker's current imported-model inventory, including an explicit availability state. */
 export type EditorMaterialSlotInventory = EditorMaterialSlotReport & { id: string; sourceUrl?: string };
 
-/** Rolling frame-rate sample published by the in-canvas PerfProbe. */
 export interface EditorPerfSample {
   /**
    * JS heap used in megabytes when the browser exposes `performance.memory` (Chromium).
@@ -367,11 +362,8 @@ export interface EditorPerfSample {
    * shows a neutral "idle" instead of the red danger cue.
    */
   active: boolean;
-  /** Avg viewport raycast (pick) time this window — editor-authoring cost, not sim cost. */
   raycastMs?: number;
-  /** Avg preview-mesh rebuild (displace) time this window — editor-authoring cost, not sim cost. */
   rebuildMs?: number;
-  /** raycastMs + rebuildMs — total authoring overhead separated from the frame/sim budget. */
   authoringMs?: number;
   /**
    * Average sim-driver time (ms) from core `devtools.frame` when FrameDriver has recorded frames.
@@ -401,21 +393,17 @@ export interface EditorFocusTarget {
   x: number;
   y: number;
   z: number;
-  /** Radial distance from the target to the camera, world units. */
   distance?: number;
   /** Elevation above the horizon, degrees (90 = straight-down aerial). */
   pitch?: number;
   /** Azimuth around the target, degrees. */
   yaw?: number;
-  /** Explicit camera height above the target; overrides the pitch-derived height. */
   height?: number;
 }
 
-/** The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC. */
 export interface EditorHostApi {
   gameId: string;
   getSession(): EditorSession;
-  /** Two-way document/runtime live-sync bus shared with AuthoredScene and the bridge. */
   getLiveSync(): DocumentLiveSync;
   getVisibility(): EditorKindVisibility;
   setVisibility(next: EditorKindVisibility): void;
@@ -425,9 +413,7 @@ export interface EditorHostApi {
   subscribeFocus(listener: (target: EditorFocusTarget | null) => void): () => void;
   getAssets(): readonly EditorAssetInfo[];
   setAssets(assets: readonly EditorAssetInfo[]): void;
-  /** Read observed slot data for the marker's current model URL; headless or unloaded sources are unavailable. */
   getMaterialSlots(id: string): EditorMaterialSlotInventory;
-  /** Publish a loaded-model observation only while its marker still resolves to this source URL. */
   reportMaterialSlots(id: string, sourceUrl: string, report: EditorMaterialSlotReport): boolean;
   getCatalogDefinitions(): readonly EditorCatalogDefinition[];
   getPerf(): EditorPerfSample | null;
@@ -444,30 +430,25 @@ export interface EditorHostApi {
   getPlayDocument(): EditorDocument | null;
   setMode(mode: EditorRunMode): void;
   subscribeMode(listener: (mode: EditorRunMode) => void): () => void;
-  /** Play-mode pause/step gate consumed by the runtime publisher. */
   getPlayControl(): RuntimePlayControl;
-  /** Normalizes and stores the play control, notifies listeners, and returns the applied value. */
   setPlayControl(next: RuntimePlayControl): RuntimePlayControl;
   subscribePlayControl(listener: (play: RuntimePlayControl) => void): () => void;
   handle(request: EditorBridgeRequest): EditorBridgeResponse;
 }
 
-
-/** Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn. */
 export function installEditorHost(api: EditorHostApi): () => void {
   return publishOnPage("editorHost", api);
 }
 
-/** Retrieves the globally installed editor host, or null if none is mounted. @internal */
+/** @internal */
 export function getEditorHost(): EditorHostApi | null {
   return (onPage("editorHost") as EditorHostApi | undefined) ?? null;
 }
 
-/** Builds and installs an editor host for a game: session, visibility, assets, and RPC handling. @internal */
+/** @internal */
 export function createEditorHost(options: {
   gameId: string;
   layers: EditorLayersInput | undefined;
-  /** Game-exported gameplay catalog definitions (schemas + defaults); seeds document.catalogs. */
   catalogs?: readonly EditorCatalogDefinition[] | undefined;
   assets?: readonly EditorAssetInfo[];
   onFocus?: (target: { x: number; y: number; z: number } | null) => void;
@@ -517,9 +498,6 @@ export function createEditorHost(options: {
   const modeListeners = new Set<(mode: EditorRunMode) => void>();
   const playControlListeners = new Set<(play: RuntimePlayControl) => void>();
 
-  /** Dispatches a command and reports whether it actually mutated the session ΓÇö a rejected
-   * mutation (locked target, cyclic parent, nothing to undo/redo, ΓÇª) returns the session's prior
-   * state object unchanged, so identity tells the RPC layer apart from a real edit landing. */
   const dispatchGuarded = (command: EditorCommand): { applied: boolean; state: EditorSessionState } => {
     const before = session.getState();
     const state = session.dispatch(command);
@@ -686,11 +664,7 @@ export function createEditorHost(options: {
   return { session, api, dispose };
 }
 
-/** The full authored scene: every marker, volume, path, and note for a game. */
 export type { EditorDocument };
-/** Per-kind show/hide flags for the editor's layer panel. */
 export type { EditorKindVisibility };
-/** Stateful, undoable handle for driving scene edits from UI or an MCP agent. */
 export type { EditorSession };
-/** The document plus current selection at a point in editor history. */
 export type { EditorSessionState };

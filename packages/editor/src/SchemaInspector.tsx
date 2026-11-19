@@ -23,14 +23,8 @@ const INPUT = `px-2 py-1 ${INPUT_CLS}`;
 const MICRO = MICRO_LABEL;
 const BTN = `${CONTROL} px-2 py-1 text-[10px] disabled:opacity-40`;
 
-/** A patch to a single meta key, coalesced under a stable undo key. */
 export type MetaPatch = (patch: Record<string, unknown>, coalesce: string) => void;
 
-/**
- * One-click archetype bundles: picking a preset writes its whole value bag as a single meta patch.
- * Presets with a `group` list under that heading; a schema with a `presetKey` also records which
- * preset backs the object and shows it as the current choice.
- */
 function PresetRow({ schema, meta, onMeta }: { schema: ParamSchema; meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
   const presets = schema.presets ?? [];
   if (presets.length === 0) return null;
@@ -280,7 +274,6 @@ function WeightedListField({
   );
 }
 
-/** Curve field: an SVG preview of the sampled curve plus one x/y row per control point. */
 function CurveField({
   field,
   value,
@@ -328,7 +321,6 @@ function CurveField({
   );
 }
 
-/** Gradient field: a preview bar plus one position/colour row per stop. */
 function GradientField({
   field,
   value,
@@ -416,7 +408,6 @@ function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<str
   }
 }
 
-/** A schema action button (randomize / reset a group) — computed patches from the core helpers. */
 function ActionButton({ field, schema, onMeta }: { field: Extract<ParamField, { type: "action" }>; schema: ParamSchema; onMeta: MetaPatch }) {
   const run = () =>
     onMeta(
@@ -435,7 +426,6 @@ function ActionButton({ field, schema, onMeta }: { field: Extract<ParamField, { 
   );
 }
 
-/** A collapsible group section: header (click to toggle) + its fields + any action buttons. */
 function GroupSection({
   group,
   accent,
@@ -483,7 +473,6 @@ function GroupSection({
   );
 }
 
-/** True when a group or any group nested under it holds a visible field. */
 function groupHasFields(schema: ParamSchema, groupId: string, visible: readonly ParamField[]): boolean {
   if (visible.some((field) => field.group === groupId)) return true;
   return childParamGroups(schema, groupId).some((child) => groupHasFields(schema, child.id, visible));
@@ -512,7 +501,6 @@ export function SchemaInspector({
   note?: string | undefined;
   meta: Record<string, unknown> | undefined;
   onMeta: MetaPatch;
-  /** Field keys to omit from this body — hoisted elsewhere (e.g. the density slider in `CoverageSection`). */
   hideKeys?: readonly string[];
 }) {
   const groups = schema.groups ?? [];

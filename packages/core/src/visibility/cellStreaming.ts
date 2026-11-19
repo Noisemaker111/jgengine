@@ -11,7 +11,6 @@ import {
   type WorldStreamerTuning,
 } from "./streamer";
 
-/** One kind of content that follows its cells; every {@link CellContent} is one. */
 export interface CellFollower {
   unload(cell: string, bounds: CellBounds): number;
   load(cell: string): void;
@@ -27,36 +26,28 @@ export interface CellFollower {
  */
 export type StreamedCellState = "unloaded" | "loading" | "ready" | "leaving" | "warming";
 
-/** Play-time tuning of a {@link CellStreaming}. */
 export interface CellStreamingTuning extends WorldStreamerTuning {
   /** Cells this close to a focus whose far proxy was never built are placed one at a time, hidden, so the renderer can build it. 0 turns warming off. Default 0. */
   warmRadius?: number;
 }
 
-/** Options for {@link createCellStreaming}. */
 export interface CellStreamingOptions extends CellStreamingTuning {
-  /** The world area cells cover. */
   area: CellBounds;
   /** Cell edge in metres. With far proxies on, a multiple of the proxy cell (128 m). */
   cellSize: number;
-  /** The content kinds that follow their cells (bodies, entities). */
   content: readonly CellFollower[];
 }
 
-/** What a renderer attaching to {@link CellStreaming} supplies. */
 export interface CellStreamingRenderer {
-  /** Fetch what a cell's content needs to draw (model files) before it is placed back. */
   prepare?(cell: string): Promise<void>;
 }
 
-/** Plain JSON state of a {@link CellStreaming}; each content kind snapshots its own parked records. */
 export interface CellStreamingState {
   streamer: WorldStreamerState;
   cells: [cell: string, state: StreamedCellState][];
   proxied: string[];
 }
 
-/** Gauges for the perf overlay and probes. */
 export interface CellStreamingStats {
   cells: number;
   ready: number;
@@ -64,33 +55,25 @@ export interface CellStreamingStats {
   leaving: number;
   warming: number;
   unloaded: number;
-  /** Loads and unloads the per-update budget held back. */
   pending: number;
-  /** Content items placed back by the last tick. */
   restored: number;
   /** Main-thread ms of the last tick, content placement included. */
   lastTickMs: number;
 }
 
-/** Cells of a world streaming in and out around focus points, with their content following by rule. */
 export interface CellStreaming {
   readonly cellSize: number;
   /** Park every cell out of reach of the first focus points at once, before the first frame draws them. */
   start(focus: StreamFocus | readonly StreamFocus[]): void;
-  /** Bring every parked cell's content back at once and forget residency, for a world about to be rebuilt or restored; `start` streams it again. */
   stop(): void;
-  /** Advance residency for this tick's focus points (every player's), within the load and unload budgets. */
   tick(focus: StreamFocus | readonly StreamFocus[]): void;
   state(cell: string): StreamedCellState;
   cellAt(x: number, z: number): string;
   boundsOf(cell: string): CellBounds;
   /** Whether a renderer should draw the cell at a world point as its far proxy rather than its props. */
   holdsProxy(x: number, z: number): boolean;
-  /** Cells waiting for the renderer's far proxy before their content is parked. */
   leaving(): readonly string[];
-  /** The renderer finished a leaving cell's proxy: park its content now. */
   proxyReady(cell: string): void;
-  /** A renderer draws this world: leaving cells now wait for its proxies. Returns the detach. */
   attachRenderer(renderer: CellStreamingRenderer): () => void;
   retune(patch: Partial<CellStreamingTuning>): void;
   stats(): CellStreamingStats;
@@ -119,7 +102,6 @@ export function createCellStreaming(options: CellStreamingOptions): CellStreamin
   const content = options.content;
   let warmRadius = Math.max(0, options.warmRadius ?? 0);
   const states = new Map<string, StreamedCellState>();
-  /** Cells loading or warming: the only ones a tick checks for settled content. */
   const active = new Set<string>();
   const leavingSet = new Set<string>();
   const setState = (cell: string, state: StreamedCellState) => {
@@ -322,12 +304,11 @@ export function createCellStreaming(options: CellStreamingOptions): CellStreamin
 
 const bound = perContext((): { streaming: CellStreaming | null } => ({ streaming: null }));
 
-/** Hand a game's streaming to the renderer, which draws far proxies for the cells it holds. Pass null to detach. */
 export function bindCellStreaming(ctx: GameContext, streaming: CellStreaming | null): void {
   bound(ctx).streaming = streaming;
 }
 
-/** The streaming a game bound to this context, if any. @internal */
+/** @internal */
 export function boundCellStreaming(ctx: GameContext): CellStreaming | null {
   return bound(ctx).streaming;
 }

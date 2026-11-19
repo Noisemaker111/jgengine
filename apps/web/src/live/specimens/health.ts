@@ -1,8 +1,3 @@
-/**
- * Live demo: the engine's stat pool over state the page owns. A hero takes hits and drinks potions; every
- * change goes through `applyStatPoolDelta` and a two-method adapter, and the floating numbers show what
- * was really applied after clamping. Click the stage to throw a hit yourself.
- */
 import { applyStatPoolDelta, createStatPool, type StatPool } from "@jgengine/core/stats/statPool";
 
 import { drawPill, mountCanvas2d, takeover } from "../canvas2d";

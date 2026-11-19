@@ -18,7 +18,6 @@ import {
   type WeatherVector,
 } from "./weatherUniforms.draw";
 
-/** Props for {@link SnowField}: flake count, density and budget, area, fall speed, wind and look. */
 export interface SnowFieldProps {
   count?: number;
   density?: number;
@@ -62,12 +61,6 @@ type SnowMaterialUniforms = {
   uColor: { value: THREE.Color };
 };
 
-/**
- * GPU-animated drifting snowflakes around the camera, sheltered under authored roofs.
- * `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`,
- * already ticked); without it the draw owns a local set and ticks it on the
- * board at weather priority, matching the old local-uniforms path.
- */
 export function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: WeatherUniformSet): EngineDraw {
   let mesh: THREE.Mesh | null = null;
   let geometry: THREE.InstancedBufferGeometry | null = null;
@@ -216,7 +209,6 @@ export function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: Weather
   };
 }
 
-/** GPU-animated drifting snowflakes around the camera, sheltered under authored roofs. */
 export function SnowField(props: SnowFieldProps) {
   const uniforms = useWeatherUniformSet({
     wind: props.wind,

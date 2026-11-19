@@ -9,23 +9,16 @@ import { clamp01 } from "../math/scalar";
 export interface EventTickerInput {
   /** Free-string category the game styles; the model never branches on it. */
   kind: string;
-  /** The line to show (e.g. `"Ranger eliminated Marauder"`). */
   text: string;
-  /** Optional free-string icon name the renderer resolves. */
   icon?: string;
 }
 
-/** A stored ticker entry — an {@link EventTickerInput} stamped with an id and clock time. */
 export interface EventTickerEntry extends TimedFeedEntry {
-  /** Stable id assigned at push time. */
   id: number;
   /** Clock time (ms) the entry was pushed, for age-based fade/prune. */
   at: number;
-  /** The game-owned free-string category. */
   kind: string;
-  /** The line to show. */
   text: string;
-  /** Optional free-string icon name. */
   icon: string | undefined;
 }
 
@@ -36,25 +29,19 @@ export interface EventTickerEntry extends TimedFeedEntry {
  * is configured.
  */
 export interface EventTickerView extends EventTickerEntry {
-  /** How faded this entry should be, `0` (fresh) → `1` (about to expire). */
   fade: number;
 }
 
-/** Serializable state of the ticker, for save/restore. */
 export interface EventTickerSnapshot {
   /** Wall-clock (ms) the snapshot was taken, so restore re-anchors entry ages. */
   now: number;
-  /** Next id to hand out. */
   nextId: number;
-  /** The kept entries, oldest first. */
   entries: readonly EventTickerEntry[];
 }
 
-/** Options for {@link createEventTicker}. */
 export interface EventTickerOptions {
   /** Injected clock (ms). Default `Date.now`. */
   now?: () => number;
-  /** Max entries kept — older ones drop off the tail. Omit for no count cap. */
   limit?: number;
   /**
    * How long (ms) an entry lives before it should be fully faded and pruned. Omit to keep
@@ -63,12 +50,7 @@ export interface EventTickerOptions {
   ttlMs?: number;
 }
 
-/** A live, observable event/kill-feed ticker. */
 export interface EventTicker {
-  /**
-   * Append an event. Stamps `at` from the injected clock, assigns an id, applies the count
-   * cap, and notifies subscribers. Returns the new entry's id.
-   */
   push(input: EventTickerInput): number;
   /**
    * Prune entries older than `ttlMs` (relative to `nowOverride ?? now()`), then return the
@@ -76,15 +58,10 @@ export interface EventTicker {
    * it drops expired entries but does not notify (the caller re-renders on its own tick).
    */
   recent(nowOverride?: number): EventTickerView[];
-  /** The kept entries oldest-first, without `fade` — a plain snapshot of the buffer. */
   entries(): EventTickerEntry[];
-  /** Drop every entry. Notifies subscribers. */
   clear(): void;
-  /** Observe changes (push, clear, restore). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): EventTickerSnapshot;
-  /** Restore from an {@link EventTickerSnapshot}, re-anchoring entry ages to the current clock. */
   restore(snapshot: EventTickerSnapshot): void;
 }
 
@@ -113,7 +90,6 @@ export function createEventTicker(config: EventTickerOptions = {}): EventTicker 
     for (const listener of listeners) listener();
   }
 
-  /** Drop expired entries in place; returns `true` when the list changed. */
   function prune(t: number): boolean {
     if (ttlMs === undefined) return false;
     const kept = pruneFeed(entries, t, ttlMs);

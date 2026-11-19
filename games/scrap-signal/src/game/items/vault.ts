@@ -6,7 +6,6 @@ import { gunById } from "../handroll";
 import { openWeaponSlots } from "../progression/unlocks";
 import { session } from "../session";
 
-/** Whether the Coretown vault's window is open. */
 export const vaultOpenStore = defineStore<boolean>("scrap.vaultOpen", false);
 
 export const VAULT = "vault";
@@ -16,7 +15,6 @@ function deny(ctx: GameContext, text: string): false {
   return false;
 }
 
-/** Put the gun in weapon slot `slot` into the vault. */
 export function depositGun(ctx: GameContext, slot: number): boolean {
   const stack = ctx.player.inventory.state("hotbar").slots[slot] ?? null;
   if (stack === null || gunById(stack.itemId) === undefined) return deny(ctx, "No gun in that slot.");
@@ -28,7 +26,6 @@ export function depositGun(ctx: GameContext, slot: number): boolean {
   return true;
 }
 
-/** Take a gun out of the vault into the first free weapon slot that is open. */
 export function withdrawGun(ctx: GameContext, itemId: string): boolean {
   if (ctx.player.inventory.count(VAULT, itemId) <= 0) return deny(ctx, "That gun is not in the vault.");
   const open = openWeaponSlots(ctx);

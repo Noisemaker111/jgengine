@@ -1,6 +1,5 @@
 import type { HudRect, HudSize } from "./hudLayout";
 
-/** Where a game is meant to be played. `"web"` alone keeps today's desktop-first HUD; adding `"mobile"` turns on design-resolution fit scaling on compact displays. */
 export type HudPlatform = "web" | "mobile";
 
 /**
@@ -11,7 +10,6 @@ export type HudPlatform = "web" | "mobile";
  */
 export interface HudFitConfig {
   designSize?: HudSize;
-  /** Floor for the computed scale — below this, shrinking further makes text unreadable. Default 0.4. */
   minScale?: number;
   /** Ceiling for the computed scale. Default 1 (never upscale past authored size). */
   maxScale?: number;

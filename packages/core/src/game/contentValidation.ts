@@ -1,18 +1,14 @@
-/** A definition in a game-owned namespace, located in its authored document. */
 export interface ContentEntry {
   kind: string;
   id: string;
   path: string;
 }
 
-/** A located reference; namespaces can express game-owned roles such as questgiver. */
 export interface ContentReference extends ContentEntry {
   contentId: string;
-  /** Optional game-declared relationship, such as the quests offered by this particular giver. */
   allowedIds?: readonly string[];
 }
 
-/** A repairable authoring issue. Paths are caller document locations, usually JSON Pointers. */
 export interface ContentIssue {
   code: string;
   severity: "error" | "warning";
@@ -71,14 +67,12 @@ export interface ContentProgressionRule {
   provides: readonly string[];
 }
 
-/** A game-declared availability requirement, located at the content that needs it. */
 export interface ContentProgressionRequirement {
   id: string;
   path: string;
   contentId: string;
 }
 
-/** Explicit possible sources; opaque fact strings may represent items, unlocks or skill milestones. */
 export interface ContentProgressionInput {
   initial: readonly string[];
   rules: readonly ContentProgressionRule[];

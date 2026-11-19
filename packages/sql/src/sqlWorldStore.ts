@@ -1,9 +1,7 @@
 import type { HostedWorldRecord, HostedWorldStore } from "@jgengine/core/save/hostedWorldStore";
 import type { SqlQueryable } from "./sqlPersistence";
 
-/** Create an asynchronous hosted-world store backed by one JSONB row.
- * @capability hosted-world-persistence Persist hosted authoritative world snapshots in SQL.
- */
+/** @capability hosted-world-persistence Persist hosted authoritative world snapshots in SQL. */
 export function sqlWorldStore(pool: SqlQueryable, worldId: string): HostedWorldStore {
   return {
     async load() {

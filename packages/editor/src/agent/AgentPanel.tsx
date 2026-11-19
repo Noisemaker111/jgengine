@@ -47,18 +47,13 @@ function buildEndpoint(url: string, apiKey: string): AgentEndpoint {
   return createLocalAgentEndpoint();
 }
 
-/**
- * Dockable in-editor agent chat: humans and agents share the same RPC/undo surface.
- * Tool calls route through `EditorHostApi.handle`; patches appear in the transcript and can be undone.
- * @internal — mounted by `EditorChrome`.
- */
+/** @internal — mounted by `EditorChrome`. */
 export function AgentPanel({
   api,
   onClose,
   embedded = false,
 }: {
   api: EditorHostApi;
-  /** Close affordance for the side-dock variant; omit when the host owns dismissal. */
   onClose?: () => void;
   /** Fill the parent (bottom-dock tab) instead of rendering the resizable right aside. */
   embedded?: boolean;
@@ -351,5 +346,4 @@ function TranscriptRow({
   );
 }
 
-/** Re-export for hosts that want a default endpoint without the panel. */
 export { createDefaultAgentEndpoint };

@@ -14,7 +14,7 @@ export const PAINT_TEXTURE_SIZE = 512;
 
 const modelResources = new WeakMap<THREE.Object3D, { materials: Set<THREE.Material>; skeletons: Set<THREE.Skeleton> }>();
 
-/** Register an instance replacement without transferring borrowed geometry or textures. @internal */
+/** @internal */
 export function ownModelMaterial(root: THREE.Object3D, material: THREE.Material): boolean {
   const resources = modelResources.get(root);
   if (resources === undefined) return false;
@@ -22,7 +22,7 @@ export function ownModelMaterial(root: THREE.Object3D, material: THREE.Material)
   return true;
 }
 
-/** Resolve placement from bind bounds in the frame containing the imported root, shared by rendering and collider measurement. @internal */
+/** @internal */
 export function modelPlacementTransform(root: THREE.Object3D, model: ModelConfig, bindBounds?: MeasuredLocalBounds | null): { scale: number; position: [number, number, number] } {
   let scale = model.scale ?? 1;
   let minY = 0;
@@ -43,10 +43,7 @@ export function modelPlacementTransform(root: THREE.Object3D, model: ModelConfig
   return { scale, position: [-scale * centerX, (model.y ?? 0) - scale * minY, -scale * centerZ] };
 }
 
-/**
- * Clone a model with independent pose and materials, retaining shared geometry and textures.
- * @capability model-instance clone a loaded model for independent styling and animation
- */
+/** @capability model-instance clone a loaded model for independent styling and animation */
 export function cloneModelScene(
   source: THREE.Object3D,
   options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode | undefined; surfaceDetail?: boolean | undefined },
@@ -94,10 +91,7 @@ export function cloneModelScene(
   return clone;
 }
 
-/**
- * Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
- * @capability model-instance release a cloned model without disposing cached geometry or textures
- */
+/** @capability model-instance release a cloned model without disposing cached geometry or textures */
 export function disposeModelScene(root: THREE.Object3D): void {
   const resources = modelResources.get(root);
   if (resources === undefined) return;
@@ -137,7 +131,6 @@ export function standardMaterialsOf(root: THREE.Object3D): THREE.MeshStandardMat
   return materials;
 }
 
-/** A model's standard materials and the seed color they were tinted from. */
 export interface MaterialCache {
   materials: THREE.MeshStandardMaterial[];
   seedColor: THREE.Color;
@@ -162,7 +155,6 @@ export function applyPaintTextureToMaterials(
   }
 }
 
-/** The canvas, 2D context and texture behind a model's paint layer. */
 export interface PaintCanvas {
   canvas: HTMLCanvasElement;
   context: CanvasRenderingContext2D;

@@ -1,9 +1,3 @@
-/**
- * The engine's UI element: what JSX compiles to. An element is a plain record of
- * a type (a host tag, a component function or one of the built-in marker types),
- * its props and its key. Nothing here knows about a renderer.
- */
-
 export const ELEMENT = Symbol.for("jg.ui.element");
 const FRAGMENT = Symbol.for("jg.ui.fragment");
 const STRICT_MODE = Symbol.for("jg.ui.strict-mode");
@@ -16,7 +10,6 @@ export const LAZY = Symbol.for("jg.ui.lazy");
 export type Key = string | number | bigint;
 export type Props = Record<string, unknown>;
 
-/** Whatever can stand as an element's type at run time: a tag name, a component, a marker. */
 export type AnyType = string | symbol | object;
 
 export interface UiElement<P = Props> {
@@ -26,7 +19,6 @@ export interface UiElement<P = Props> {
   readonly key: string | null;
 }
 
-/** Anything a component may return or take as children. */
 export type UiNode = UiElement | string | number | bigint | boolean | null | undefined | Iterable<UiNode>;
 
 export interface FunctionComponent<P = object> {
@@ -50,7 +42,6 @@ export interface ComponentClass<P = object> {
   getDerivedStateFromError?(error: unknown): object | null;
 }
 
-/** A component type as code names it: a tag, a function component or a class. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ElementType<P = any> = string | FunctionComponent<P> | ComponentClass<P>;
 
@@ -69,10 +60,6 @@ export interface LazyType {
   error: unknown;
 }
 
-/**
- * A context. `<Ctx value>` and `<Ctx.Provider value>` provide; `useContext(Ctx)` reads. It is
- * typed as a component so JSX accepts it; at run time it is a marker the reconciler knows.
- */
 export interface ContextType<T> {
   (props: { value: T; children?: UiNode }): UiNode;
   readonly $$kind: typeof PROVIDER;
@@ -89,7 +76,6 @@ export function createElementRecord(type: AnyType, props: Props, key: unknown): 
   return { $$typeof: ELEMENT, type, props, key: key === undefined || key === null ? null : String(key) };
 }
 
-/** The automatic JSX runtime entry (`jsx`, `jsxs`, `jsxDEV`). */
 export function jsx(type: AnyType, props: Props, key?: unknown): UiElement {
   if (props !== null && typeof props === "object" && "key" in props) {
     const { key: spreadKey, ...rest } = props;
@@ -98,7 +84,6 @@ export function jsx(type: AnyType, props: Props, key?: unknown): UiElement {
   return createElementRecord(type, props, key);
 }
 
-/** The classic entry: `createElement(type, props, ...children)`. */
 export function createElement(type: AnyType, config?: object | null, ...children: UiNode[]): UiElement {
   const props: Props = {};
   let key: unknown = null;
@@ -133,7 +118,6 @@ export function cloneElement<P>(element: UiElement<P>, config?: object | null, .
   return createElementRecord(element.type, props, key) as UiElement<P>;
 }
 
-/** Flattens children into the elements and text a parent actually holds; empties are dropped. */
 export function flattenChildren(children: unknown, out: (UiElement | string)[] = []): (UiElement | string)[] {
   if (children === null || children === undefined || typeof children === "boolean") return out;
   if (typeof children === "string") {
@@ -177,7 +161,6 @@ export const Children = {
   },
 };
 
-/** Skips a component's render when its props are shallowly equal to the last ones (or `equal` says so). */
 export function memo<P>(inner: FunctionComponent<P> | ComponentClass<P>, equal?: (previous: Readonly<P>, next: Readonly<P>) => boolean): FunctionComponent<P> {
   const type: MemoType = { $$kind: MEMO, inner, equal: (equal as MemoType["equal"]) ?? null };
   return type as unknown as FunctionComponent<P>; // type-escape: a memo marker stands where its component is used

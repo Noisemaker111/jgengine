@@ -1,7 +1,5 @@
-/** Where an item instance stands: still usable, broken down, or sold. */
 export type ItemLifecycle = "owned" | "salvaged" | "sold";
 
-/** Items that have left play, keyed by instance id; anything absent is still `owned`. */
 export type ItemLedgerState = Readonly<Record<string, Exclude<ItemLifecycle, "owned">>>;
 
 /**
@@ -11,22 +9,14 @@ export type ItemLedgerState = Readonly<Record<string, Exclude<ItemLifecycle, "ow
  */
 export interface ItemLedger {
   status(id: string): ItemLifecycle;
-  /** True only while the instance is `owned`; a salvaged or sold item is no longer usable. */
   canUse(id: string): boolean;
-  /** Claim `id` for `salvaged` or `sold`; false when it already left play. */
   spend(id: string, how: Exclude<ItemLifecycle, "owned">): boolean;
   snapshot(): ItemLedgerState;
-  /** Replace the ledger; false without mutation when an entry names an unknown outcome. */
   restore(next: ItemLedgerState): boolean;
   reset(): void;
 }
 
-/**
- * Build an item ledger. Ids are consumed once: the first successful {@link ItemLedger.spend} wins,
- * every later call fails, which is what makes salvage and sale mutually exclusive.
- *
- * @capability item-ledger track which rolled item instances are still owned, salvaged or sold
- */
+/** @capability item-ledger track which rolled item instances are still owned, salvaged or sold */
 export function createItemLedger(initial: ItemLedgerState = {}): ItemLedger {
   const spent = new Map<string, Exclude<ItemLifecycle, "owned">>();
   for (const [id, how] of Object.entries(initial)) {
@@ -64,15 +54,10 @@ export interface SalvageYield {
   amount: number;
 }
 
-/** What a broken-down item is worth: a game-authored currency, rate and per-rarity multiplier. */
 export interface SalvageTable {
-  /** Wallet currency key the yield is granted in, e.g. `"cores"`. */
   currency: string;
-  /** Units paid per item level at multiplier `1`. */
   perLevel: number;
-  /** Multiplier per rarity id; omitted rarities use `1`. */
   rarityMultiplier?: Readonly<Record<string, number>>;
-  /** Floor for the yield (default `1`). */
   minimum?: number;
 }
 
@@ -89,14 +74,12 @@ export function salvageValue(item: Pick<ItemDropLike, "level" | "rarity">, table
   return { currency: table.currency, amount };
 }
 
-/** The fields salvage reads; an `ItemDrop` from `./drop` satisfies it. */
 export interface ItemDropLike {
   id: string;
   level: number;
   rarity: string;
 }
 
-/** Salvage outcome: the yield, or the reason the instance could not be broken down. */
 export type SalvageResult =
   | { ok: true; id: string; yield: SalvageYield }
   | { ok: false; reason: "already-spent" | "invalid-item" };

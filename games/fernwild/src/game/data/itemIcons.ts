@@ -3,7 +3,6 @@ import { libraryIconCredits } from "@jgengine/assets/library/libraryIcons";
 import { itemDef } from "./items";
 import { structureDef } from "./structures";
 
-/** game-icons.net icon per item id. */
 const BY_ITEM: Readonly<Record<string, string>> = {
   thatch: "gameicons:delapouite/round-straw-bale",
   wood: "gameicons:delapouite/log",
@@ -63,7 +62,6 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   brood_treads: "gameicons:lorc/steeltoe-boots",
 };
 
-/** Families sharing one icon, by id prefix or suffix. */
 const ARTIFACT = "gameicons:delapouite/glowing-artifact";
 const TROPHY = "gameicons:lorc/trophy";
 const BERRY = "gameicons:lorc/elderberry";
@@ -71,7 +69,6 @@ const SADDLE = "gameicons:delapouite/saddle";
 const EGG = "gameicons:lorc/egg-clutch";
 const KIBBLE = "gameicons:delapouite/dog-bowl";
 
-/** Building pieces by shape. */
 const BY_SHAPE: Readonly<Record<string, string>> = {
   campfire: "gameicons:lorc/campfire",
   mortar_and_pestle: "gameicons:skoll/pestle-mortar",
@@ -85,7 +82,6 @@ const BY_SHAPE: Readonly<Record<string, string>> = {
   pillar: "gameicons:delapouite/wood-beam",
 };
 
-/** ARK's vital icons on the HUD, one game-icons.net glyph per pool. */
 export const VITAL_ICON = {
   health: "gameicons:sbed/health-normal",
   stamina: "gameicons:badges/bolt",
@@ -98,7 +94,6 @@ export const VITAL_ICON = {
   temperature: "gameicons:lorc/thermometer-scale",
 } as const;
 
-/** The game-icons.net key an item draws with, or null for an item with none. */
 export function itemIconKey(itemId: string): string | null {
   const direct = BY_ITEM[itemId];
   if (direct !== undefined) return direct;
@@ -113,10 +108,8 @@ export function itemIconKey(itemId: string): string | null {
   return shape === undefined ? null : (BY_SHAPE[shape] ?? null);
 }
 
-/** Every icon the game ships, for its credits. */
 export const ITEM_ICON_KEYS: readonly string[] = [...new Set([...Object.values(BY_ITEM), ARTIFACT, TROPHY, BERRY, SADDLE, EGG, KIBBLE, ...Object.values(BY_SHAPE), ...Object.values(VITAL_ICON)])];
 
-/** One credit line per game-icons.net artist. */
 export function itemIconCredits(): string[] {
   return libraryIconCredits(ITEM_ICON_KEYS).flatMap((section) => section.entries.map((entry) => `${entry.label} (${section.heading}): ${entry.detail ?? ""}`));
 }

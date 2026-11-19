@@ -25,9 +25,7 @@ export interface AssetProvenance {
   resolvedPath: string | null;
   /** The pack source that must be pulled, for `provisioned` ids. */
   sourceId?: string;
-  /** The exact command that makes a `provisioned` id resolve, e.g. `assets pull quaternius-stylized-nature`. */
   provisioningStep?: string;
-  /** When the id was reached through an alias, the alias key that pointed at it. */
   viaAlias?: string;
 }
 
@@ -79,15 +77,11 @@ export function resolveProvenance(id: string, options: ResolveProvenanceOptions 
   return { id, kind: "dangling", resolvedPath: null };
 }
 
-/** A logical asset id referenced by some consumer (a game, scene, or config), for validation. */
 export interface AssetReference {
-  /** Who references the id — a game id, scene path, or config name — surfaced in the failure. */
   consumer: string;
-  /** The logical asset id / alias key the consumer expects to resolve. */
   id: string;
 }
 
-/** The verdict for one {@link AssetReference}. */
 export interface ReferenceValidation {
   reference: AssetReference;
   provenance: AssetProvenance;
@@ -96,7 +90,6 @@ export interface ReferenceValidation {
   error?: string;
 }
 
-/** Options for {@link validateAssetReferences}: the resolution data plus an optional on-disk `present` check. */
 export interface ValidateAssetReferencesOptions extends ResolveProvenanceOptions {
   /**
    * Optional predicate reporting whether a `provisioned` id's bytes are already
@@ -108,13 +101,10 @@ export interface ValidateAssetReferencesOptions extends ResolveProvenanceOptions
   present?: (resolvedPath: string) => boolean;
 }
 
-/** The aggregate result of validating a set of references against the provisioning contract. */
 export interface ValidateAssetReferencesResult {
   ok: boolean;
   results: readonly ReferenceValidation[];
-  /** One diagnostic line per failing reference. */
   errors: readonly string[];
-  /** The unique provisioning steps every `provisioned` reference needs, e.g. for `ensure-ready`. */
   provisioning: readonly string[];
 }
 

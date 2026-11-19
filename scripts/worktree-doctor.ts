@@ -18,7 +18,6 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { removeDirSync } from "./removeDir";
 
-
 export interface WorktreeRef {
   path: string;
   branch: string | null;
@@ -30,12 +29,10 @@ export interface WorktreeReport {
   name: string;
   path: string;
   branch: string | null;
-  /** false when the directory is gone but git still registers the worktree. */
   directory: boolean;
   nodeModules: boolean;
   expectedDeps: number;
   missingDeps: string[];
-  /** `@jgengine/*` workspace links the packages and games declare. */
   expectedJge: number;
   missingJge: string[];
   /** Informational: in-repo tests resolve `@jgengine/*` to source, so no build is required. */
@@ -50,7 +47,6 @@ export interface WorktreeReport {
 /** The tree cannot resolve its own dependencies: a rerun fails in confusing ways. */
 export const BROKEN = 4;
 
-/** Installing is what fills the disk, so repair stops before repeating tonight's failure. */
 const MIN_FREE_GB = 10;
 
 export function parseWorktreeList(porcelain: string): WorktreeRef[] {
@@ -157,8 +153,6 @@ function expandWorkspacePattern(root: string, pattern: string): string[] {
     .map((entry) => (base ? `${base}/${entry.name}` : entry.name));
 }
 
-
-/** Resolve through node_modules the way a test or typecheck would, symlinks included. */
 export function missingPackages(worktree: string, expected: string[]): string[] {
   return expected.filter((name) => !existsSync(join(worktree, "node_modules", name, "package.json")));
 }
@@ -207,7 +201,6 @@ export function lockVerdict(worktree: string, parentLock: string | null): "match
   return readFileSync(lockPath, "utf8") === parentLock ? "match" : "differs";
 }
 
-/** An install older than its lockfile predates a dependency change. */
 export function installStale(worktree: string): boolean {
   try {
     const lock = statSync(join(worktree, "bun.lock")).mtimeMs;
@@ -240,7 +233,6 @@ export function statusOf(severity: number): string {
   return "ok";
 }
 
-/** Worst first: install severity, then dirty ahead of clean, then repo and name. */
 export function sortReports(rows: WorktreeReport[]): WorktreeReport[] {
   return [...rows].sort(
     (a, b) =>
@@ -291,7 +283,6 @@ export function planRepair(rows: WorktreeReport[]): { repair: WorktreeReport[]; 
   };
 }
 
-/** `--only foo,bar` picks worktrees by substring of `repo/name`; no patterns means every repairable one. */
 export function filterOnly(rows: WorktreeReport[], patterns: string[]): WorktreeReport[] {
   if (patterns.length === 0) return rows;
   return rows.filter((row) =>
@@ -373,7 +364,6 @@ function readParentLock(root: string): string | null {
   return existsSync(lockPath) ? readFileSync(lockPath, "utf8") : null;
 }
 
-/** The main checkout, whichever worktree asked: `.git` of a linked worktree is a file. */
 function mainRootOf(worktree: string): string {
   const common = git(worktree, ["rev-parse", "--path-format=absolute", "--git-common-dir"]);
   if (!common.ok || common.out === "") return worktree;

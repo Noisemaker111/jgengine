@@ -5,14 +5,11 @@ import type { GaitReport } from "./humanGaitAnalysis";
 import { simulateJump } from "./humanJump";
 import { RECREATIONAL_RUNNER, springMassStep } from "./springMassRunning";
 
-/** One reference number against the range published for real people. */
 export interface HumanValidationRow {
   metric: string;
   label: string;
   unit: string;
-  /** The reference model's value. */
   reference: number;
-  /** Published range for real people. */
   low: number;
   high: number;
   source: string;
@@ -88,12 +85,7 @@ export function measureFittedWalks(walks: readonly FittedWalk[] = FITTED_WALKS):
   return walks.map((walk) => ({ walk, report: measureWalk(walk) }));
 }
 
-/**
- * Validate the human locomotion reference against published biomechanics: walking energetics, stride and ground
- * force from the muscle-reflex walker; the walk–run transition; running ground force and contact from the
- * spring-mass runner; sprint, braking, change of direction and curve limits; and the countermovement jump.
- * @capability human-reference-validation check the locomotion reference human against published walking, running, sprint, turn and jump data
- */
+/** @capability human-reference-validation check the locomotion reference human against published walking, running, sprint, turn and jump data */
 export function validateHumanReference(measured = measureFittedWalks()): HumanValidationRow[] {
   const level = measured.filter((m) => m.walk.terrain === "level" && !m.report.fell);
   const near = (speed: number) => level.reduce<(typeof level)[number] | undefined>((best, m) => (best === undefined || Math.abs(m.walk.speed - speed) < Math.abs(best.walk.speed - speed) ? m : best), undefined);
@@ -149,10 +141,7 @@ export function validateHumanReference(measured = measureFittedWalks()): HumanVa
   return rows;
 }
 
-/**
- * Plain-text table of {@link validateHumanReference} rows.
- * @capability human-validation-table markdown table of the locomotion reference against published ranges
- */
+/** @capability human-validation-table markdown table of the locomotion reference against published ranges */
 export function formatHumanValidation(rows: readonly HumanValidationRow[]): string {
   const lines = ["| Metric | Reference | Published | Source | |", "| --- | --- | --- | --- | --- |"];
   for (const r of rows) lines.push(`| ${r.label} | ${r.reference.toFixed(2)} ${r.unit} | ${r.low}–${r.high} ${r.unit} | ${r.source} | ${r.pass ? "pass" : "FAIL"} |`);

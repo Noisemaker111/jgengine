@@ -16,21 +16,12 @@ export type PartIconId =
   | "roll_cage"
   | "armor_plating";
 
-/**
- * Route capabilities the barricade gates read. These are the kart's rules, not handling numbers -
- * every handling claim a part makes lives in its inherited `effects`/`gripCurve`, composed by
- * `applyVehicleParts` in `build.ts`.
- */
 export interface PartGrants {
   plow?: number;
   jumpPower?: number;
   armor?: number;
 }
 
-/**
- * A salvage part is a `VehiclePart` (id, slot, handling effects, optional tire compound) plus the
- * radio/blurb copy and the route grants that make the plow-and-jump gauntlet work.
- */
 export interface DriftFoundryPartDef extends VehiclePart {
   id: PartIconId;
   slot: PartSlotId;
@@ -41,7 +32,6 @@ export interface DriftFoundryPartDef extends VehiclePart {
   grants?: PartGrants;
 }
 
-/** Treaded compound: peak grip holds out to a wider slip angle and bites harder once sliding. */
 const MONSTER_TREAD_CURVE: GripCurve = {
   points: [
     [0, 1],

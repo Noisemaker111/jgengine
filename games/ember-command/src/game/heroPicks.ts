@@ -3,27 +3,16 @@ import { talentTreeViewFrom, type TalentNodeView } from "@jgengine/core/talents/
 import { defineStore } from "@jgengine/core/store/defineStore";
 import type { StatModifierSet } from "@jgengine/core/stats/statModifiers";
 
-/**
- * Bram's field kit: the picks a level-up offers, authored as engine talent nodes.
- *
- * `@jgengine/core/talents/talents` owns the model (points, prerequisites, ranks, grants, the stat and
- * ability resolution) and `talentTreeViewFrom` owns the render view the choice card reads. What Ember
- * owns is the content: which two picks each level offers, in its own voice, and the store the campaign
- * save keeps them in. The picked ranks are the only hero state that outlives a battle.
- */
-
 /** Stats a pick may move. Read by the hero kit; the engine never interprets them. */
 export type HeroPickStat = "damage" | "incoming" | "maxHealth" | "manaRegen" | "cooldown";
 
 export type HeroPickKind = "active" | "passive";
 
-/** A pick: an engine talent node plus the copy and art the field desk shows. */
 export interface HeroPickDef extends TalentNodeDef<HeroPickStat> {
   label: string;
   blurb: string;
   icon: string;
   kind: HeroPickKind;
-  /** The act this pick hands to the hero's bar (actives only). */
   act?: string;
 }
 
@@ -114,7 +103,6 @@ export const HERO_PICKS: readonly HeroPickDef[] = [
   },
 ];
 
-/** What each level-up offers, one active against one passive item. Levels outside this table offer nothing. */
 export const LEVEL_OFFERS: Readonly<Record<number, readonly [string, string]>> = {
   2: ["muster", "signet"],
   3: ["volley", "draught"],
@@ -125,7 +113,6 @@ export const LEVEL_OFFERS: Readonly<Record<number, readonly [string, string]>> =
 /** Top hero level that still has an offer, so the field desk knows when the kit is complete. */
 export const LAST_OFFER_LEVEL = Math.max(...Object.keys(LEVEL_OFFERS).map(Number));
 
-/** The campaign save's slot for the picked ranks (`{ pickId: 1 }`). */
 export const heroPickStore = defineStore<Record<string, number>>("ember.hero.picks", () => ({}));
 
 /** A saved kit naming a pick this build does not author: the save is stale, not the battle. */
@@ -176,7 +163,6 @@ export function savedPicksError(issues: readonly TalentHydrateIssue[], nodes: re
   return new HeroPickLoadError(lines.join("; "));
 }
 
-/** The ranks a live tree holds, in the shape the save keeps. */
 export function pickedRanks(tree: TalentTree<HeroPickStat>): Record<string, number> {
   const snapshot: TalentSnapshot = tree.snapshot();
   return { ...snapshot.ranks };
@@ -187,7 +173,6 @@ export function picksTaken(tree: TalentTree<HeroPickStat>): number {
   return tree.pointsSpent();
 }
 
-/** Render view of the whole kit, from the engine's talent-tree selector. */
 export function pickView(nodes: readonly HeroPickDef[], tree: TalentTree<HeroPickStat>): TalentNodeView[] {
   return talentTreeViewFrom(nodes, (node) => ({
     rank: tree.rank(node.id),
@@ -195,7 +180,6 @@ export function pickView(nodes: readonly HeroPickDef[], tree: TalentTree<HeroPic
   })).nodes as TalentNodeView[];
 }
 
-/** The two options the next level offers, in authored order, or null once the kit is complete. */
 export function offerFor(tree: TalentTree<HeroPickStat>, nodes: readonly HeroPickDef[] = HERO_PICKS, offers = LEVEL_OFFERS): { level: number; options: readonly TalentNodeView[] } | null {
   const level = 2 + picksTaken(tree);
   const pair = offers[level];
@@ -205,12 +189,10 @@ export function offerFor(tree: TalentTree<HeroPickStat>, nodes: readonly HeroPic
   return options.length === 2 ? { level, options } : null;
 }
 
-/** The picks a hero already carries, by id, for the command card's kit line. */
 export function carriedPicks(tree: TalentTree<HeroPickStat>, nodes: readonly HeroPickDef[] = HERO_PICKS): readonly HeroPickDef[] {
   return nodes.filter((node) => tree.rank(node.id) > 0);
 }
 
-/** Stat totals the picked nodes resolve to, straight from the engine model. */
 export function pickStats(tree: TalentTree<HeroPickStat>): StatModifierSet<HeroPickStat> {
   return tree.resolved().stats;
 }

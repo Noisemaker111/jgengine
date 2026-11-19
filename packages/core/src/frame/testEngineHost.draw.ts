@@ -20,9 +20,7 @@ export interface TestEngineHost {
   readonly state: EngineFrameState;
   readonly scene: THREE.Scene;
   readonly camera: THREE.PerspectiveCamera;
-  /** Rendered frame count (the stub renderer's `render` calls). */
   readonly renders: number;
-  /** Every `setFpsLimit` value the host was handed, in order. */
   readonly fpsLimits: readonly number[];
   /** Run one frame: `delta` seconds (default 1/60), board tasks in priority order, then render. */
   step(delta?: number): void;
@@ -159,7 +157,6 @@ export interface MountedTestDraws {
   readonly engine: TestEngineHost;
   readonly scene: THREE.Scene;
   readonly camera: THREE.Camera;
-  /** Re-render `element` under the same host provider (the old `root.render` call). */
   render(element: ReactElement): Promise<void>;
   /** Advance the engine clock `seconds` (default one 60 fps frame) inside act. */
   advance(seconds?: number): Promise<void>;

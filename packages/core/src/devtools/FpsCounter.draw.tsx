@@ -3,12 +3,11 @@ import { useEffect, useRef, type ReactElement } from "@jgengine/core/ui/jsx";
 
 import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 
-/** Mutable frame tally shared between the in-Canvas probe and the DOM readout. */
 export interface FrameTally {
   frames: number;
 }
 
-/** Counts rendered frames. Mount inside the Canvas. @internal */
+/** @internal */
 export function FpsProbe({ tally }: { tally: FrameTally }): null {
   const joinFrame = useFrameJoin();
   useEffect(() => joinFrame(0, () => {

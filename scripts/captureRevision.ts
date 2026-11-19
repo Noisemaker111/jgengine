@@ -14,7 +14,6 @@ import { spawnSync } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-/** Commit the checkout currently points at, or undefined outside a git tree. */
 export function headRevision(cwd = process.cwd()): string | undefined {
   try {
     const result = spawnSync("git", ["rev-parse", "HEAD"], {
@@ -52,7 +51,6 @@ export function viteCacheDirs(repoRoot: string): string[] {
   ];
 }
 
-/** Remove the dep-optimizer caches; returns the directories actually deleted. */
 export function clearViteCaches(repoRoot: string): string[] {
   const removed: string[] = [];
   for (const dir of viteCacheDirs(repoRoot)) {

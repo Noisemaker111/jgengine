@@ -10,16 +10,11 @@ const SLUG_FT2 = 14.59390294 * FT * FT;
 const DEG = Math.PI / 180;
 const HP = 745.699872;
 
-/** Cessna 172N geometry (Cessna 172N Pilot's Operating Handbook §1, FAA TCDS 3A12). */
 const WING_AREA = 174 * FT * FT;
 const SPAN = 35.83 * FT;
 const CHORD = 4.9 * FT;
 const ASPECT_RATIO = (SPAN * SPAN) / WING_AREA;
 
-/**
- * Airplane coefficients for the same 174 ft², 36 ft, NACA 2412 wing in cruise (Roskam, *Airplane Flight Dynamics and
- * Automatic Flight Controls* Part I, Appendix B, Airplane A, the Cessna 182), stability axes, per rad.
- */
 const DERIVATIVES = {
   cl0: 0.307,
   clAlpha: 4.41,
@@ -50,10 +45,6 @@ const DERIVATIVES = {
   cnRudder: -0.0645,
 } as const;
 
-/**
- * Wing-body maximum lift: NACA 2412 section `cl_max = 1.6` at Re 3.1 × 10⁶ (Abbott, von Doenhoff & Stivers, NACA
- * Report 824) times 0.9 for a straight, moderately tapered wing of aspect ratio 7.4 (USAF DATCOM §4.1.3.4).
- */
 const CL_MAX = 0.9 * 1.6;
 
 interface LiftDrag {
@@ -115,10 +106,6 @@ function buildLiftDrag(): LiftDrag {
   return { lift: createCoefficientTable(axis, lift), drag: createCoefficientTable(axis, drag), stallAlpha: alphaStall };
 }
 
-/**
- * McCauley 1C160/DTM7553 fixed-pitch propeller: 75 in diameter, 53 in geometric pitch, two blades. The planform is a
- * representative metal GA blade (activity factor about 85), widest near 45% radius.
- */
 export const C172_PROPELLER: PropellerGeometry = {
   diameter: 75 * 0.0254,
   blades: 2,
@@ -147,7 +134,6 @@ function createPistonPropulsion(map: PropellerMap): ReferencePropulsion {
     const cp = map.power.sample(point);
     return { thrust: ct * air.density * n * n * diameter ** 4, torque: (cp * air.density * n * n * diameter ** 5) / (2 * Math.PI) };
   };
-  /** Shaft torque: Gagg–Ferrar altitude lapse, manifold pressure from the throttle, closed-throttle pumping loss. */
   const engineTorque = (omega: number, throttle: number, air: ReferenceAirData): number => {
     const sigma = air.density / SEA_LEVEL_DENSITY;
     const manifold = 0.08 + 0.92 * throttle;
@@ -187,26 +173,13 @@ function createPistonPropulsion(map: PropellerMap): ReferencePropulsion {
   };
 }
 
-/**
- * Tricycle gear on Cessna 172N dimensions (8 ft 3 in track, about 65 in wheelbase): spring-steel mains and an oleo
- * nose strut steered ±10° by the pedals (TCDS 3A12). Rolling friction 0.02 on a paved runway (Anderson, *Aircraft
- * Performance and Design*, §6.7), braking friction 0.4.
- */
 const C172_GEAR: readonly ReferenceGearLeg[] = [
   { name: "nose", at: [1.15, 0, 1.0], stiffness: 30000, damping: 2000, travel: 0.15, rollingFriction: 0.02, brakeFriction: 0, sideFriction: 0.8, corneringStiffness: 8, steering: 10 * DEG },
   { name: "left main", at: [-0.5, -1.27, 1.0], stiffness: 60000, damping: 4000, travel: 0.15, rollingFriction: 0.02, brakeFriction: 0.4, sideFriction: 0.8, corneringStiffness: 8, steering: 0 },
   { name: "right main", at: [-0.5, 1.27, 1.0], stiffness: 60000, damping: 4000, travel: 0.15, rollingFriction: 0.02, brakeFriction: 0.4, sideFriction: 0.8, corneringStiffness: 8, steering: 0 },
 ];
 
-/**
- * A Cessna 172N at its 2300 lb gross weight, flaps up. Geometry, weights and control travel come from the 172N
- * handbook and FAA type certificate; stability and control derivatives from Roskam's data for the Cessna 182, which
- * flies the same wing; maximum lift from NACA 2412 section data; post-stall lift and drag from Viterna–Corrigan;
- * inertia from Roskam scaled to this weight. Ground effect cuts induced drag (McCormick's high-wing factor). Power is
- * a Lycoming O-320-H2AD with Gagg–Ferrar altitude lapse driving a blade-element McCauley 1C160 propeller, with the
- * shaft speed integrated, its gyroscopic momentum and its torque reaction on the airframe.
- * @capability cessna172-reference Cessna 172N reference airframe — tabled lift and drag through the stall, propeller and piston engine, tricycle gear
- */
+/** @capability cessna172-reference Cessna 172N reference airframe — tabled lift and drag through the stall, propeller and piston engine, tricycle gear */
 export function createCessna172Model(): ReferenceAircraftModel {
   const d = DERIVATIVES;
   const { lift, drag, stallAlpha } = buildLiftDrag();

@@ -159,7 +159,6 @@ const gamesPlayerDevPlugin = (): Plugin => {
   };
 };
 
-/** True for a request the site's page renderer answers: a GET for a path with no file extension. */
 export const isPageRequest = (method: string | undefined, url: string | undefined): boolean => {
   if (method !== "GET" && method !== "HEAD") return false;
   const pathname = url?.split(/[?#]/, 1)[0];

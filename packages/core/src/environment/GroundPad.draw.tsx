@@ -8,13 +8,11 @@ import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { PAD_THICKNESS, resolvePadMeshY, resolvePadShape } from "./groundPadMath";
 
-/** Props for {@link GroundPad}: the pad descriptor and the terrain field it sits on. */
 export interface GroundPadProps {
   pad: PadEnvironmentDescriptor;
   field: TerrainField;
 }
 
-/** A flat circular or rectangular pad resting on a terrain field. */
 export function groundPadDraw({ pad, field }: GroundPadProps): EngineDraw {
   let mesh: THREE.Mesh | null = null;
   let geometry: THREE.BufferGeometry | null = null;
@@ -46,7 +44,6 @@ export function groundPadDraw({ pad, field }: GroundPadProps): EngineDraw {
   };
 }
 
-/** UI mount for {@link groundPadDraw} while parents still render through the Canvas. */
 export function GroundPad({ pad, field }: GroundPadProps) {
   useEngineDraw(() => groundPadDraw({ pad, field }), [pad, field]);
   return null;

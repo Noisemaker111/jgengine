@@ -23,7 +23,6 @@ import { defineParamSchema, type ParamField, type ParamsOf } from "../generator/
 import { courseDriveTime, courseSlotRisk, courseStopLoss, type CourseCornerKind, type CourseLayout, type CourseSlot } from "./courseLayout";
 import { buildRouteCourse, type CourseBranchSpec, type CoursePiece, type CourseSpanCycle } from "./routeCourse";
 
-/** The course generator's output family: a {@link CourseLayout}. */
 export const COURSE_OUTPUT = "course";
 
 /** Metres of road laid past the finish line, so a kart crossing it at speed has somewhere to go. */
@@ -65,12 +64,6 @@ const COURSE_FIELDS = [
   { type: "range", key: "landmarks", label: "landmark slots", group: "slots", min: 0, max: 16, step: 1, default: 6 },
 ] as const satisfies readonly ParamField[];
 
-/**
- * The course generator's schema. `meta.theme` names a preset whose values back every dial the meta
- * leaves unset: `causeway` (hairpin switchbacks, timed bursts), `maze` (narrow right angles, lane
- * belts), `climb` (ramps and hairpins up a long rise), `pit` (drops into a low, glazed section) and
- * `sprint` (fast sweepers and a jump).
- */
 export const COURSE_SCHEMA = defineParamSchema({
   presetKey: "theme",
   groups: [
@@ -88,15 +81,12 @@ export const COURSE_SCHEMA = defineParamSchema({
   fields: COURSE_FIELDS,
 });
 
-/** Parsed course params. */
 export type CourseParams = ParamsOf<typeof COURSE_SCHEMA>;
 
 const DEG = Math.PI / 180;
 /** Metres every laid stretch keeps clear of the walls of any stretch that is not its neighbour. */
 const WALL_GAP = 6;
-/** Sample spacing of the layout search. */
 const SAMPLE = 3;
-/** Layout attempts (each a fresh beat sheet) and candidate lays per attempt before giving up. */
 const ATTEMPTS = 16;
 const LAY_BUDGET = 6000;
 /** Least straight between two corner complexes, metres. */
@@ -109,7 +99,6 @@ interface Template {
   /** Degrees; the side is chosen when laid. */
   angle: number;
   radius: number;
-  /** Chicane: straight between the two bends. Detour: each leg. */
   leg: number;
   turns: number;
 }
@@ -230,7 +219,6 @@ interface Pose {
 interface Sample {
   x: number;
   z: number;
-  /** Main-line range this sample stands for (a chord sample spans its junctions). */
   lo: number;
   hi: number;
 }
@@ -270,7 +258,6 @@ function lay(pose: Pose, pieces: readonly CoursePiece[], s0: number): { end: Pos
 
 const CELL = 24;
 
-/** Laid samples in a coarse grid, for clearance checks. */
 class SampleGrid {
   private cells = new Map<string, Sample[]>();
   readonly all: Sample[] = [];
@@ -320,10 +307,6 @@ interface Laid {
   length: number;
 }
 
-/**
- * Lay a plan inside the footprint: each beat tries both sides and, when the box or the course already
- * laid is in the way, a shorter straight (the rest carried to the next one), then backtracks.
- */
 function layPlan(params: CourseParams, plan: Plan, random: () => number): Laid | null {
   const hw = params.halfWidth;
   const halfX = params.width / 2 - hw - 4;
@@ -354,7 +337,6 @@ function layPlan(params: CourseParams, plan: Plan, random: () => number): Laid |
     return Math.max(0, t);
   };
 
-  /** Lay pieces at `s`: the samples if every one is in the box and clear of the course laid so far. */
   function tryLay(pose: Pose, pieces: readonly CoursePiece[], s: number) {
     lays += 1;
     const laid = lay(pose, pieces, s);
@@ -455,7 +437,6 @@ function layPlan(params: CourseParams, plan: Plan, random: () => number): Laid |
   return placed ? result : null;
 }
 
-/** A plain straight of a laid course (not inside a chicane or a shortcut's bulge): its piece index and main-line range. */
 interface StraightRun {
   piece: number;
   from: number;
@@ -473,7 +454,6 @@ function straightRuns(laid: Laid): StraightRun[] {
   return runs;
 }
 
-/** Ramps and drops: the climb rides the longest middle straights, each descent a straight of its own. */
 function shapeElevation(params: CourseParams, laid: Laid, random: () => number): void {
   const middle = straightRuns(laid).filter((run) => run.from >= laid.openingEnd - 1 && run.to <= laid.finishFrom + 1);
   // A climb may also ride the finish straight: a drag up to the line.
@@ -514,7 +494,6 @@ interface Occupied {
   to: number;
 }
 
-/** Fill the slots: opening drops and the first barricade, shortcut risks and rewards, drop lips, then the rest spread with spacing. */
 function placeSlots(params: CourseParams, laid: Laid, startLine: number, finish: number, branches: readonly CourseBranchSpec[], savings: readonly number[], random: () => number): CourseSlot[] {
   const hw = params.halfWidth;
   const end = finish;
@@ -555,11 +534,6 @@ function placeSlots(params: CourseParams, laid: Laid, startLine: number, finish:
     }
     return best;
   };
-  /**
-   * The free point nearest `target`, keeping `gap` from every event, `buffer` from every `avoid`
-   * span and off the shortcuts: on a straight first, then at relaxed spacing, and with `anywhere`
-   * finally on any stretch of the middle, corners included.
-   */
   const nearestFree = (target: number, gap: number, avoid: readonly Occupied[] = [], buffer = 8, anywhere = false): number | null => {
     for (const level of levels) {
       const ok = (at: number): boolean => free(at, gap * level.gap) && !branchAt(at) && !inSpan(at, avoid, buffer * level.gap);
@@ -757,7 +731,6 @@ function pieceStart(pieces: readonly CoursePiece[], index: number): number {
   return s;
 }
 
-/** Shortcut branches: the chord across every detour, narrower than the main line. */
 function shortcutBranches(params: CourseParams, laid: Laid): CourseBranchSpec[] {
   return laid.beats
     .filter((beat) => beat.template.kind === "detour")

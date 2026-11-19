@@ -1,10 +1,8 @@
 import * as THREE from "three";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
-/** Sampling resolution; lower resolutions change thin geometry and alpha-mask raster coverage. */
 export interface ProjectedOverdrawOptions { width?: number; height?: number }
 
-/** Projected mesh-fragment overlap, with depth rejection disabled; this is not production early-Z overdraw or GPU timing. */
 export interface ProjectedOverdrawReport {
   width: number;
   height: number;
@@ -16,9 +14,7 @@ export interface ProjectedOverdrawReport {
   max: number;
   meshes: number;
   materialSlots: number;
-  /** Native opaque render-queue slots, including masked slots. */
   opaqueSlots: number;
-  /** Slots with alphaTest/alphaHash; this can overlap queue counts. */
   maskedSlots: number;
   blendedSlots: number;
   transmissionSlots: number;
@@ -30,7 +26,7 @@ function supported(material: THREE.Material): boolean {
   return flags.isMeshStandardMaterial === true || flags.isMeshBasicMaterial === true;
 }
 
-/** Convert finite nonnegative RGBA32F sample counts to overlap statistics. @internal */
+/** @internal */
 export function summarizeProjectedOverdraw(pixels: Float32Array, width: number, height: number): Pick<ProjectedOverdrawReport, "sampledPixels" | "coveredPixels" | "fragmentSamples" | "mean" | "meanCovered" | "max"> {
   if (pixels.length !== width * height * 4) throw new Error("Projected-overdraw readback dimensions do not match the RGBA buffer");
   let coveredPixels = 0, fragmentSamples = 0, max = 0;

@@ -1,11 +1,8 @@
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 
-/** Serializable playback position for a named sprite animation. */
 export interface SpriteClipState { animation: string; frameIndex: number; elapsed: number; done: boolean }
 
-/** Create a renderer-independent sprite animation player.
- * @capability sprite-2d animate a sprite atlas clip from headless or rendered game code
- */
+/** @capability sprite-2d animate a sprite atlas clip from headless or rendered game code */
 export function createSpriteClipPlayer(atlas: SpriteAtlas) {
   let state: SpriteClipState = { animation: Object.keys(atlas.animations)[0] ?? "", frameIndex: 0, elapsed: 0, done: false };
   let speed = 1;
@@ -22,7 +19,5 @@ export function createSpriteClipPlayer(atlas: SpriteAtlas) {
 
 /** Canonical layers used by 2D presentations. */
 export const SortingLayers = ["background", "world", "actors", "effects", "foreground", "ui"] as const;
-/** Resolve a layer name and local offset into a stable render order.
- * @capability sprite-2d order sprites by named presentation layers
- */
+/** @capability sprite-2d order sprites by named presentation layers */
 export function sortingOrder(layers: readonly string[], layer: string, offset = 0): number { const index = layers.indexOf(layer); if (index < 0) throw new Error(`Unknown sorting layer: ${layer}.`); if (!Number.isFinite(offset)) throw new Error("offset must be finite."); return index + offset; }

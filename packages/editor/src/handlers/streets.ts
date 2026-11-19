@@ -18,18 +18,15 @@ import type { HandlerTable } from "./context";
  * or hand-edit afterwards.
  */
 
-/** Requested topology family — selects the default slider preset the generator grows from. */
 type RequestedMode = "net" | "circuit";
 
 /** The tag every baked path carries in `meta.generator`, so a re-run can find and replace its own output. */
 const GENERATOR_TAG = "streetGenerator";
 
-/** Stable id prefix for a seed's baked paths — the idempotency key for replace-on-re-run. */
 function genPrefix(seed: string): string {
   return `gen-${seed}-`;
 }
 
-/** True when a path was baked by this generator for `seed` (matches id prefix OR the meta tag). */
 function isGeneratedForSeed(path: EditorPath, seed: string): boolean {
   if (path.id.startsWith(genPrefix(seed))) return true;
   const meta = path.meta;
@@ -46,7 +43,6 @@ function volumeFootprint(volume: EditorVolume): { hx: number; hz: number; origin
   return { hx: r, hz: r, origin: volume.center };
 }
 
-/** Document, selection, camera, mode, asset placement, and status verbs. */
 export const streetsHandlers: Pick<HandlerTable, "generate_streets"> = {
   generate_streets: (ctx, request) => {
     const doc = ctx.session.getState().document;

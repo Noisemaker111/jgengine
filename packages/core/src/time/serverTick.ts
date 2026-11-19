@@ -1,18 +1,14 @@
 export interface TickSystemDefinition<TSystemId extends string = string> {
   id: TSystemId;
-  /** Minimum real time between runs; the heartbeat fires the system on the first tick at or past it. */
   intervalMs: number;
   scope?: "onlinePlayers" | "allServers";
   batchSize?: number;
 }
 
-/** Last-run timestamp per system id. */
 export type TickAnchors = Record<string, number>;
 
-/** One due system and how many times this heartbeat owes it. */
 export interface TickSystemRun<TSystemId extends string = string> {
   id: TSystemId;
-  /** Times to run the system now; above 1 when wall time stalled past several intervals. */
   runs: number;
   scope?: "onlinePlayers" | "allServers";
   batchSize?: number;
@@ -77,7 +73,6 @@ export function planServerTick<TSystemId extends string>(
   return { due, anchors: nextAnchors };
 }
 
-/** Times this plan owes `id`, or 0 when it is not due. Saves a host a lookup over {@link ServerTickPlan.due}. */
 export function tickRunCount<TSystemId extends string>(
   plan: ServerTickPlan<TSystemId>,
   id: TSystemId,

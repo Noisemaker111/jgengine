@@ -23,7 +23,6 @@ const PROP_MODELS: Readonly<Record<string, ModelConfig>> = Object.fromEntries(
 );
 const resolveProp = (item: string): ModelConfig | null => PROP_MODELS[item] ?? null;
 
-/** The room shell (floor slabs, ceilings, walls) and the ceiling lamp strips, in this floor's materials. */
 export function shellShapes(stratum: Stratum, look: FloorLook = FLOOR_LOOK[stratum]): StaticShapeInstance[] {
   const room = deriveRoomPresentation(stratum);
   const lamp = STRATA[stratum].lamp.color;
@@ -44,11 +43,6 @@ export function shellShapes(stratum: Stratum, look: FloorLook = FLOOR_LOOK[strat
   return shapes;
 }
 
-/**
- * The editor's station parts on this floor in its materials: painted panels become the floor's
- * plate, concrete or rock scan, tinted part of the way from their authored colour to its palette.
- * Lamps, glass and rubber keep their plain finishes. Placement is the editor's, untouched.
- */
 export function structureShapes(stratum: Stratum, look: FloorLook = FLOOR_LOOK[stratum]): StaticShapeInstance[] {
   const replacements = stationModelReplacements(stratum);
   const shapes: StaticShapeInstance[] = [];
@@ -86,11 +80,6 @@ export function FloorPracticals({ place }: { place: Place }) {
   return <PracticalLights {...(look ?? FLOOR_LOOK.vault).practical} fixtures={fixtures} count={PRACTICAL_POOL} shadowed={PRACTICAL_SHADOWED} lit={look?.practical.count ?? 0} />;
 }
 
-/**
- * One floor's interior: its shell and station parts in the floor's scanned materials, the derived
- * trims, pipes, cables, stains and wall lamps, and library clutter props GPU-instanced against the
- * walls. The lamps' light is {@link FloorPracticals}, mounted in every place.
- */
 export function InteriorArt({ stratum }: { stratum: Stratum }) {
   const look = FLOOR_LOOK[stratum];
   const dressing = floorDressing(stratum);

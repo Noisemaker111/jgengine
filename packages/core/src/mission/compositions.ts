@@ -1,9 +1,3 @@
-/**
- * Escort, chase and defend as compositions — data built from the same objective kinds the mission
- * machine already runs, not three bespoke systems. Each builder returns a plain {@link MissionDef} a
- * game can edit, and every number is an option.
- */
-
 import {
   DEFAULT_PURSUE_DISTANCE,
   type MissionDef,
@@ -12,14 +6,11 @@ import {
   type MissionRewards,
 } from "./mission";
 
-/** Options shared by every composed mission. */
 export interface ComposedMissionOptions {
   id: string;
   title: string;
   description?: string;
-  /** Rewards paid on completion. */
   rewards?: MissionRewards;
-  /** Follow-up mission started on completion. */
   next?: string;
 }
 
@@ -29,45 +20,33 @@ export interface EscortMissionOptions extends ComposedMissionOptions {
   escortee: string;
   /** Marker id the escortee must reach. */
   destination: string;
-  /** Marker the escortee is first met at; omit to start already escorting. */
   meetMarker?: string;
   /** Seconds allowed for the delivery; expiry fails into `failState`. */
   timeoutSeconds?: number;
-  /** Named fail state for death or expiry. Default `${id}_lost`. */
   failState?: string;
-  /** Arrival radius (m). */
   radius?: number;
 }
 
-/** Options for {@link chaseMission}: a target kept close until it is caught. */
 export interface ChaseMissionOptions extends ComposedMissionOptions {
-  /** Actor being pursued. */
   target: string;
-  /** Pursuer; omit to use the runtime's `defaultPursuer`. */
   pursuer?: string;
-  /** Keep-close distance (m). Default {@link DEFAULT_PURSUE_DISTANCE}. */
   distance?: number;
-  /** Distance past which the target counts as escaped. */
   escapeDistance?: number;
   /** Seconds past `escapeDistance` before the chase fails. */
   escapeGrace?: number;
   /** Marker the pursuer must reach to close the chase after catching up; omit to end on the catch. */
   catchMarker?: string;
-  /** Named fail state for an escape. Default `${id}_escaped`. */
   failState?: string;
   /** Seconds allowed for the chase; expiry fails into `failState`. */
   timeoutSeconds?: number;
 }
 
-/** Options for {@link defendMission}: hold a position, scored by what is left standing. */
 export interface DefendMissionOptions extends ComposedMissionOptions {
   /** Seconds the position must be held. */
   seconds: number;
   /** Survivors that must remain; dropping below fails the mission. */
   minSurvivors?: number;
-  /** Named fail state for a breach. Default `${id}_overrun`. */
   failState?: string;
-  /** Human label for the hold objective. */
   label?: string;
 }
 
@@ -125,13 +104,7 @@ export function escortMission(options: EscortMissionOptions): MissionDef {
   };
 }
 
-/**
- * A target kept close until it is caught: a `pursue` objective with an escape distance and grace, and
- * an optional `reach` objective to close the chase. The pursuit is the same primitive a bodyguard
- * detail uses; only the numbers differ.
- *
- * @capability mission-compositions build escort, chase and defend missions from the shared objective kinds
- */
+/** @capability mission-compositions build escort, chase and defend missions from the shared objective kinds */
 export function chaseMission(options: ChaseMissionOptions): MissionDef {
   const failState = options.failState ?? `${options.id}_escaped`;
   const objectives: MissionObjectiveDef[] = [{

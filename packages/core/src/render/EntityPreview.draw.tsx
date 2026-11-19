@@ -10,13 +10,7 @@ import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 
-/** Props for {@link EntityPreview}. */
 export interface EntityPreviewProps {
-  /**
-   * The rendered entity — the game's *own* `renderEntity` content (e.g. its procedural body component),
-   * which may call `useEntityRenderCues(id)` / `useGameContext()` internally to mirror the live game.
-   * Takes precedence over `model`. Omit both to render an empty lit stage.
-   */
   children?: ReactNode;
   /**
    * Convenience for engine-native models: render this {@link ModelConfig} via `IsolatedEntityModel`.
@@ -24,9 +18,7 @@ export interface EntityPreviewProps {
    * sync with the world. Ignored when `children` is supplied.
    */
   model?: ModelConfig;
-  /** Live entity id driving motion cues for `model` (also lets a custom child resolve the same entity). */
   instanceId?: string;
-  /** Lighting mood for the stage. Default `"studio"`. */
   mood?: StudioMood;
   /** Override the backdrop color (hex). Default: the mood's backdrop. */
   backdrop?: string;
@@ -34,15 +26,10 @@ export interface EntityPreviewProps {
   turntable?: number;
   /** Yaw the subject to face the camera each frame instead of spinning. Overrides `turntable`. */
   faceCamera?: boolean;
-  /** The subject's declared forward axis for `faceCamera`. Default `[0, 0, 1]`. */
   forward?: readonly [number, number, number];
-  /** Draw the backdrop + floor (true) or keep a transparent stage as a pure lighting rig (false). Default true. */
   environment?: boolean;
-  /** Camera position framing the subject. Default `[0, 1, 3]`. */
   cameraPosition?: [number, number, number];
-  /** Point the camera looks at, e.g. a standing figure's chest. Default `[0, 0, 0]`, the subject's feet. */
   cameraTarget?: readonly [number, number, number];
-  /** Camera field of view. Default 35. */
   fov?: number;
   /** Device pixel ratio clamp. Default `[1, 2]`. */
   dpr?: number | [number, number];

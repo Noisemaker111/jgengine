@@ -8,43 +8,26 @@ const EULER_GAMMA = 0.5772156649015329;
 const GAUSS_POINTS = [-0.9602898564975363, -0.796666477413627, -0.525532409916329, -0.1834346424956498, 0.1834346424956498, 0.525532409916329, 0.796666477413627, 0.9602898564975363];
 const GAUSS_WEIGHTS = [0.1012285362903763, 0.2223810344533745, 0.3137066458778873, 0.362683783378362, 0.362683783378362, 0.3137066458778873, 0.2223810344533745, 0.1012285362903763];
 
-/** A hull as a table of offsets: `x` forward from the aft end, `z` up from the keel, half-breadths `[station][waterline]`, m. */
 export interface HullOffsetTable {
   stations: readonly number[];
   waterlines: readonly number[];
   halfBreadths: readonly (readonly number[])[];
 }
 
-/**
- * Heave, pitch and roll in waves, the `seakeeping` effect of `boatDynamics`. The hull is cut into strips; each strip's
- * heave added mass and radiation damping come from Frank's close-fit source method at a reference frequency, the
- * restoring from its waterline breadth, and the wave force from the incident pressure on its contour (Froude–Krylov,
- * decaying with depth) plus diffraction. Summed about G they drive heave and pitch in the time domain; roll is a
- * damped oscillator on the metacentric height forced by the wave slope across the hull. With a `sea` wave field the
- * forcing is per component; without one the hull samples `waterHeight` along its length (the long-wave limit).
- */
 export interface HullSeakeeping {
   /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Hull lines; default a Wigley hull (`C_B` 4/9) of the tuning's length, beam and mass. */
   offsets?: HullOffsetTable;
   /** Draught the hull floats at, m (default: what the offsets or the Wigley hull need to carry the mass). */
   draft?: number;
-  /** Centre of gravity, m: forward of the aft end and above the keel (default mid-length, on the waterline). */
   centreOfGravity?: readonly [number, number];
-  /** Pitch radius of gyration about G, m (default `0.25·length`). */
   pitchRadius?: number;
-  /** Roll radius of gyration about G, m (default `0.35·beam`). */
   rollRadius?: number;
-  /** Roll added inertia as a share of the dry roll inertia (default `0.2`). */
   rollAddedInertia?: number;
-  /** Roll damping as a share of critical (default `0.05`). */
   rollDamping?: number;
   /** Frequency the radiation coefficients are taken at, rad/s (default the sea's peak, else the heave natural frequency). */
   referenceFrequency?: number;
-  /** Strips along the hull for a generated Wigley hull (default `11`). */
   stations?: number;
-  /** Panels per half-section (default `6`). */
   panels?: number;
 }
 
@@ -107,7 +90,6 @@ function expIntegral(u: Complex): Complex {
   return [-EULER_GAMMA - Math.log(size) - sum[0], -arg - sum[1]];
 }
 
-/** Wave part of the 2-D pulsating-source Green's function and its x and y derivatives. */
 function waveTerm(dx: number, sy: number, nu: number): { value: Complex; dx: Complex; dy: Complex } {
   const z: Complex = [sy, dx];
   const u: Complex = [nu * sy, nu * dx];
@@ -171,27 +153,17 @@ function resample(section: HalfSection, panels: number): [number, number][] {
   return out;
 }
 
-/** A section's radiation solution at one frequency: heave added mass and damping, and its panels for the wave-force integrals. */
 export interface SectionRadiation {
   /** Heave added mass, kg/m. */
   addedMass: number;
-  /** Heave radiation damping, N·s/m². */
   damping: number;
-  /** Panel midpoint depths (≤ 0), m. */
   depth: Float64Array;
-  /** `2·n_z·length` per panel (both halves), m. */
   weight: Float64Array;
-  /** Heave radiation potential per unit velocity on each panel, real and imaginary. */
   potentialRe: Float64Array;
   potentialIm: Float64Array;
 }
 
-/**
- * Heave added mass and radiation damping of a symmetric section by Frank's close-fit source method: pulsating sources
- * of constant strength on straight panels mirrored to port, the deep-water free-surface Green's function, the body
- * condition at panel midpoints. The section runs keel to waterline as `[half-breadth, depth ≤ 0]` points.
- * @capability boat-seakeeping 2-D heave added mass and radiation damping of a hull section (Frank close-fit)
- */
+/** @capability boat-seakeeping 2-D heave added mass and radiation damping of a hull section (Frank close-fit) */
 export function sectionRadiation(section: HalfSection, frequency: number, density = 1025, gravity = 9.81, panels = 6): SectionRadiation {
   const nodes = resample(section, panels);
   const n = panels;
@@ -289,10 +261,7 @@ function interpolate(xs: readonly number[], ys: readonly number[], x: number): n
   return ys[ys.length - 1] ?? 0;
 }
 
-/**
- * A Wigley hull `y = (B/2)·(1 − ξ²)·(1 − ζ²)` as a table of offsets, stations clustered toward the ends.
- * @capability boat-seakeeping Wigley hull offsets from length, beam and draught
- */
+/** @capability boat-seakeeping Wigley hull offsets from length, beam and draught */
 export function wigleyOffsets(length: number, beam: number, draft: number, stations = 11, waterlines = 6): HullOffsetTable {
   const xs = Array.from({ length: stations }, (_, i) => length * (0.5 - 0.5 * Math.cos((Math.PI * i) / (stations - 1))));
   const below = Array.from({ length: waterlines }, (_, i) => (draft * i) / (waterlines - 1));
@@ -359,24 +328,18 @@ function cutBelow(offsets: HullOffsetTable, draft: number): Cut {
   return { sections, halfBreadth, areas, volume, centreOfBuoyancyHeight: volume > 0 ? moment / volume : 0 };
 }
 
-/** A hull's strips and coefficients, ready for {@link seakeepingForces}. */
 export interface PreparedSeakeeping {
   /** Reference frequency the radiation coefficients were taken at, rad/s. */
   frequency: number;
   draft: number;
-  /** Station positions forward of G, m, and their trapezoid weights along the hull, m. */
   stationX: Float64Array;
   stationWeight: Float64Array;
-  /** Waterline half-breadth at each station, m. */
   halfBreadth: Float64Array;
-  /** Heave–pitch mass, added mass, damping and restoring about G: `[33, 35, 55]` (35 = 53). */
   inertia: readonly [number, number, number];
   addedMass: readonly [number, number, number];
   damping: readonly [number, number, number];
   restoring: readonly [number, number, number];
-  /** Roll inertia (with added), damping and stiffness `ρg∇·GM`. */
   roll: readonly [number, number, number];
-  /** Each station's radiation solution, for the wave-force integrals. */
   sections: readonly (SectionRadiation | undefined)[];
   density: number;
   gravity: number;
@@ -392,11 +355,7 @@ function trapezoidWeights(x: readonly number[]): Float64Array {
   return out;
 }
 
-/**
- * Cuts a hull into strips at its draught and works out its heave–pitch added mass, damping and restoring about G at the
- * reference frequency (strip theory, zero speed), its roll oscillator, and each strip's radiation solution.
- * @capability boat-seakeeping strip-theory heave, pitch and roll coefficients of a hull
- */
+/** @capability boat-seakeeping strip-theory heave, pitch and roll coefficients of a hull */
 export function prepareSeakeeping(hull: HullSeakeeping, length: number, beam: number, massKg: number, water: BoatWater = {}, seaFrequency?: number): PreparedSeakeeping {
   const rho = water.density ?? 1025;
   const g = water.gravity ?? 9.81;
@@ -463,19 +422,13 @@ export function prepareSeakeeping(hull: HullSeakeeping, length: number, beam: nu
   };
 }
 
-/** Each wave component's sectional exciting force per unit amplitude, ready to sum: `[component][station]`, real and imaginary. */
 export interface SeakeepingExcitation {
   re: Float64Array;
   im: Float64Array;
   stations: number;
 }
 
-/**
- * Sectional exciting force per unit wave amplitude for every component of a wave field: the Froude–Krylov pressure
- * `−ρg·∫e^(kz)·n_z ds` on each section plus diffraction `ρω²·∫φ₃·n_z·e^(kz) ds` from the radiation potential, times the
- * strip's length weight.
- * @capability boat-seakeeping Froude–Krylov and diffraction wave forces per strip for a wave field
- */
+/** @capability boat-seakeeping Froude–Krylov and diffraction wave forces per strip for a wave field */
 export function seakeepingExcitation(prepared: PreparedSeakeeping, field: WaveField): SeakeepingExcitation {
   const stations = prepared.stationX.length;
   const count = field.components.length;
@@ -507,15 +460,9 @@ export function seakeepingExcitation(prepared: PreparedSeakeeping, field: WaveFi
   return { re, im, stations };
 }
 
-/** Heave force, pitch moment (bow down) and roll moment (port down) on a hull, N and N·m. */
 export type SeakeepingLoads = [heave: number, pitch: number, roll: number];
 
-/**
- * Wave loads on a hull at G `(x, z)` heading along `(forwardX, forwardZ)` at a time: each component's sectional force
- * summed with its phase along the hull and the beam-averaging `sinc(k_t·b)` of its crests across each strip, and the
- * roll moment from the wave slope across the hull.
- * @capability boat-seakeeping time-domain wave loads on a hull from a wave field
- */
+/** @capability boat-seakeeping time-domain wave loads on a hull from a wave field */
 export function seakeepingForces(prepared: PreparedSeakeeping, excitation: SeakeepingExcitation, field: WaveField, x: number, z: number, forwardX: number, forwardZ: number, time: number, out: SeakeepingLoads = [0, 0, 0]): SeakeepingLoads {
   let heave = 0;
   let pitch = 0;
@@ -552,11 +499,7 @@ export function seakeepingForces(prepared: PreparedSeakeeping, excitation: Seake
   return out;
 }
 
-/**
- * Wave loads from a plain surface-height function (no wave field): each strip's waterline breadth times its surface
- * elevation above `level` (Froude–Krylov in the long-wave limit), and roll from the height difference across the beam.
- * @capability boat-seakeeping wave loads on a hull from any water-height function
- */
+/** @capability boat-seakeeping wave loads on a hull from any water-height function */
 export function seakeepingForcesFromHeight(prepared: PreparedSeakeeping, height: (x: number, z: number) => number, level: number, x: number, z: number, forwardX: number, forwardZ: number, out: SeakeepingLoads = [0, 0, 0]): SeakeepingLoads {
   const rhoG = prepared.density * prepared.gravity;
   let heave = 0;

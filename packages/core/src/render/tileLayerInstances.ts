@@ -1,6 +1,5 @@
 import type { TilemapWorldConfig } from "@jgengine/core/world/features";
 
-/** One resolved map cell with its world position and atlas UV rectangle. */
 export interface TileLayerInstance {
   x: number;
   z: number;

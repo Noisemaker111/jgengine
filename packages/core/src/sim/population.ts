@@ -1,26 +1,21 @@
 import { devtools } from "../devtools/devtools";
 import type { Vec3 } from "../world/geometry";
 
-/** One visitor on site: the id its body, its needs and its money are keyed by. */
 export interface Visitor {
   readonly id: string;
   /** Game-second it arrived; a restored visitor keeps the original. */
   readonly admittedAt: number;
 }
 
-/** What a flow policy reads to decide how many arrive and when one has had enough. */
 export interface VisitorFlow {
   /** Visitors on site this tick — the member count, never a tally kept beside it. */
   readonly onSite: number;
-  /** Most visitors the gates hold this tick, after resolving {@link VisitorPolicy.capacity}. */
   readonly capacity: number;
-  /** Arrivals since {@link VisitorPopulation.rollDay}. */
   readonly arrivalsToday: number;
   readonly departuresToday: number;
   readonly now: number;
 }
 
-/** The game's world behind every counted visitor: it creates and removes the body. */
 export interface VisitorWorld {
   /**
    * Create one visitor's body and its game-side record, and return where the body now stands.
@@ -28,7 +23,6 @@ export interface VisitorWorld {
    * counted as on site or as an arrival.
    */
   readonly admit: (visitor: Visitor) => Vec3 | null;
-  /** Remove one visitor's body and record. Called for every departure, refusal and reset. */
   readonly release: (visitor: Visitor) => void;
   /**
    * True when the world currently holds a body for this id. `adopt` and `restore` refuse an id the
@@ -37,50 +31,38 @@ export interface VisitorWorld {
   readonly has: (id: string) => boolean;
 }
 
-/** The game's flow policy: what draws visitors in, how many fit, and when one has had enough. */
 export interface VisitorPolicy {
-  /** Most visitors on site at once; a function lets the cap follow a rating, a level or a build. */
   readonly capacity: number | ((now: number) => number);
   /** Visitors arriving per second at this instant; `0` with the gates shut. */
   readonly arrivalRate: (flow: VisitorFlow) => number;
-  /** True when this visitor should leave now. Omit for a population that only leaves when told. */
   readonly shouldLeave?: (visitor: Visitor, flow: VisitorFlow) => boolean;
 }
 
-/** Flow policy fields a scenario can change in play. */
 export interface VisitorPolicyPatch {
   readonly capacity?: number | ((now: number) => number);
   readonly arrivalRate?: (flow: VisitorFlow) => number;
-  /** `null` removes the leaving rule, so visitors stay until {@link VisitorPopulation.leave}. */
   readonly shouldLeave?: ((visitor: Visitor, flow: VisitorFlow) => boolean) | null;
   readonly arrivalBudget?: number;
-  /** `null` counts every admitted body as on site. */
   readonly inside?: ((position: Vec3) => boolean) | null;
 }
 
-/** Counters a HUD, a probe or a test reads. The on-site figure is the visitor list's length. */
 export interface VisitorPopulationStats {
   onSite: number;
   capacity: number;
   arrivalsToday: number;
   departuresToday: number;
-  /** Highest on-site count since the last {@link VisitorPopulation.rollDay}. */
   peakToday: number;
   /** Bodies the world or the bounds check refused. Never counted as arrivals. */
   refused: number;
-  /** Arrival credit not yet spent. */
   pending: number;
 }
 
-/** How a body the game made itself joins the population. */
 export interface VisitorAdoption {
   /** Game-second it arrived; defaults to the current tick's clock. */
   readonly admittedAt?: number;
-  /** True for a body that is a new arrival today; false for one a save or a seed restored. */
   readonly arrival?: boolean;
 }
 
-/** Serializable state. No on-site count is stored: it is the restored visitor list. */
 export interface VisitorPopulationSnapshot {
   visitors: { id: string; admittedAt: number }[];
   arrivalsToday: number;
@@ -91,13 +73,10 @@ export interface VisitorPopulationSnapshot {
   sequence: number;
 }
 
-/** Options for {@link createVisitorPopulation}. */
 export interface VisitorPopulationOptions {
   readonly world: VisitorWorld;
   readonly policy: VisitorPolicy;
-  /** First half of every generated id. Default `"visitor#"`. */
   readonly idPrefix?: string;
-  /** First suffix used after `idPrefix`. Default 1. */
   readonly sequenceStart?: number;
   /** Most bodies one tick may admit, so a long frame cannot flood the park. Default 4. */
   readonly arrivalBudget?: number;
@@ -116,38 +95,25 @@ export interface VisitorPopulationOptions {
 export interface VisitorPopulation {
   /** Run the flow for `dt` seconds: leaving first, then arrivals within the budget and the cap. */
   tick(dt: number, now: number): void;
-  /** Visitors on site. Reads the member count — no scan of the world, safe for a per-frame HUD. */
   onSite(): number;
   arrivalsToday(): number;
   departuresToday(): number;
   peakToday(): number;
-  /** Ids on site, arrival order. Allocates — HUD lists and tests. */
   ids(): readonly string[];
   has(id: string): boolean;
   visitor(id: string): Visitor | null;
-  /** Send one visitor home now (it reached the exit, or the game evicted it). */
   leave(id: string): boolean;
   /**
    * Reserve the next generated id for a body the game makes itself (a crowd seeded at park open, a
    * scripted visitor), so it never collides with an arrival's id. `adopt` the body once it exists.
    */
   nextId(): string;
-  /**
-   * Take over a body the game created itself — one restored from a save, seeded at park open, or
-   * scripted. It is on site from now on; pass `arrival: true` when it is also a new arrival today.
-   */
   adopt(id: string, adoption?: VisitorAdoption): boolean;
-  /** Close the day: arrivals, departures and peak reset. The crowd stays where it stands. */
   rollDay(): void;
   retune(patch: VisitorPolicyPatch): void;
   stats(): VisitorPopulationStats;
   snapshot(): VisitorPopulationSnapshot;
-  /**
-   * Replace the members with the saved ones. Only visitors the world already holds come back, so
-   * restore the bodies first (or `adopt` each one as it spawns); the rest count as refused.
-   */
   restore(next: VisitorPopulationSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 

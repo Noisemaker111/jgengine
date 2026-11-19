@@ -21,11 +21,7 @@ export function toRuntimeObjectRow(object: SceneObject): RuntimeObjectRow {
   };
 }
 
-/**
- * Inverse of {@link toRuntimeObjectRow}: rebuild the live placed object a host persisted.
- *
- * @capability placed-object-rehydrate rebuild live placed objects, with their state and slot contents, from persisted snapshot rows
- */
+/** @capability placed-object-rehydrate rebuild live placed objects, with their state and slot contents, from persisted snapshot rows */
 export function fromRuntimeObjectRow(row: RuntimeObjectRow): SceneObject {
   return {
     instanceId: row.instanceId,

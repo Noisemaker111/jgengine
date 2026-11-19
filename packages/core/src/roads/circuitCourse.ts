@@ -12,7 +12,6 @@
 import type { CircuitRoute } from "./raceCircuit";
 import { buildRouteCourse, type CourseSpanSpec, type CourseVec2, type RouteCourse } from "./routeCourse";
 
-/** A circuit as a closed course, with where its gates fall on it. */
 export interface CircuitCourse {
   course: RouteCourse;
   /** Main-line metres of each of the circuit's checkpoint gates in race order, the finish line (0) last. */
@@ -20,23 +19,15 @@ export interface CircuitCourse {
   laps: number;
 }
 
-/** Span tags {@link courseFromCircuit} hangs on the lap. */
 export const CIRCUIT_CORNER_TAG = "corner";
 export const CIRCUIT_SECTOR_TAG = "sector";
 
-/** Options for {@link courseFromCircuit}. */
 export interface CircuitCourseOptions {
   /** Sample spacing the course keeps for its branches and lines, metres. Default 2. */
   step?: number;
 }
 
-/**
- * Turn a lifted lap into a closed {@link RouteCourse} that starts at the circuit's start line.
- * `course.checkpoints({ at: gates.slice(0, -1), finish: 0 })` hands straight to
- * `raceTrack({ checkpoints, laps })`.
- *
- * @capability route-course drive a lap lifted from city streets as a closed route course: locate, clamp, racing line, spans, checkpoints
- */
+/** @capability route-course drive a lap lifted from city streets as a closed route course: locate, clamp, racing line, spans, checkpoints */
 export function courseFromCircuit(route: CircuitRoute, options: CircuitCourseOptions = {}): CircuitCourse {
   const n = route.centerline.length;
   if (n < 3) throw new Error("circuit course: the lap needs at least three points");

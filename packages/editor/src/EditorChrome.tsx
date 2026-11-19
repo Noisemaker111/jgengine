@@ -120,12 +120,6 @@ const LEFT_PAGES: readonly { id: LeftDockPage; label: string }[] = [
 /** The Animation workspace needs room for a graph's layers, so it raises a shorter dock to this height. */
 const ANIMATION_DOCK_HEIGHT = 400;
 
-/**
- * The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable
- * hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI
- * assistant), viewport overlays, and status bar — wired to the session, UI store, layout store,
- * and host RPC. Mounted by `EditorApp`; not a game-author entry point.
- */
 export function EditorChrome({
   gameId,
   session,
@@ -151,7 +145,6 @@ export function EditorChrome({
   api: EditorHostApi;
   assets: readonly EditorAssetEntry[];
   ui: EditorUiStore;
-  /** The document as loaded — drives the header unsaved indicator by reference compare. */
   baselineDocument?: EditorDocument;
   save?: ((json: string) => Promise<{ ok: boolean; path?: string; error?: string }>) | undefined;
   /** Closes the editor and returns to the game; set only when summoned over a game. Shows "Exit to game". */
@@ -172,12 +165,7 @@ export function EditorChrome({
    * (`POST /__jgengine/import-asset`); when no host answers, imports degrade to blob URLs.
    */
   importAsset?: AssetImporter;
-  /**
-   * Optional side-effect after a model import succeeds: register the id/url into the live game
-   * asset catalog so AuthoredObjects can resolve the mesh without remounting the playable.
-   */
   onRegisterAsset?: (id: string, url: string) => void;
-  /** Receives shared-library cards dropped on the viewport; the chrome pulls and places them. */
   libraryDropTarget?: LibraryDropTarget | undefined;
 }) {
   const layoutRef = useRef<ReturnType<typeof createShellLayoutStore> | null>(null);
@@ -190,7 +178,6 @@ export function EditorChrome({
   const perfHistoryRef = useRef<ReturnType<typeof createPerfHistoryStore> | null>(null);
   perfHistoryRef.current ??= createPerfHistoryStore();
   const perfHistory = perfHistoryRef.current;
-  /** Models added this session via Content Browser Import / drop — merged over the game catalog. */
   const [importedAssets, setImportedAssets] = useState<readonly EditorAssetEntry[]>([]);
   const [importBusy, setImportBusy] = useState(false);
   const [materialInventory, setMaterialInventory] = useState<{ source: string; slots: ModelMaterialSlotInfo[] } | null>(null);

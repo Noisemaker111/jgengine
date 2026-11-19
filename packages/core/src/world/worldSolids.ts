@@ -4,7 +4,6 @@ import type { EnvironmentWorldFeature } from "./features";
 import type { Aabb, Vec2 } from "./geometry";
 import type { WallSegment } from "./walls";
 
-/** One solid box in world space: the collision half of generated or authored world geometry. */
 export interface WorldSolid {
   center: readonly [number, number, number];
   halfExtents: readonly [number, number, number];
@@ -12,18 +11,13 @@ export interface WorldSolid {
   rotationY?: number;
 }
 
-/** Serializable contents of a {@link WorldSolids}: every layer's solids by layer id. */
 export interface WorldSolidsState {
   layers: Record<string, readonly WorldSolid[]>;
 }
 
-/** Caller-owned work counters, reset by each world-solid ray candidate query. */
 export interface WorldSolidRayWork {
-  /** Hash-grid cell lookups, including empty cells. */
   cells: number;
-  /** Indexed entry visits, including duplicates removed before bounds tests. */
   entries: number;
-  /** Cached AABB ray tests after deduplication. */
   bounds: number;
 }
 
@@ -34,23 +28,17 @@ export interface WorldSolidRayWork {
  * `syncWorldColliders` (physics backends) and `populateNavGridFromSolids` all read this one store.
  */
 export interface WorldSolids {
-  /** Replace a layer's solids; an empty list removes the layer. */
   set(layer: string, solids: readonly WorldSolid[]): void;
   remove(layer: string): void;
-  /** Run several `set`/`remove` calls as one change: one index rebuild, one notification. */
   batch(apply: () => void): void;
-  /** Solids in one layer, empty when absent. */
   layer(layer: string): readonly WorldSolid[];
   layers(): readonly string[];
   /** Every solid whose world AABB overlaps `min`..`max`. Bounded by a uniform XZ hash grid. */
-  /** Solids overlapping the box. With `out`, they are written into it (cleared first) and it is returned. */
   inBox(min: readonly [number, number, number], max: readonly [number, number, number], out?: WorldSolid[]): WorldSolid[];
   /** Optional accelerated ray candidates; finite coordinates/direction and nonnegative finite distance, normalized internally. */
   inRay?(origin: readonly [number, number, number], direction: readonly [number, number, number], maxDistance: number, work?: WorldSolidRayWork): WorldSolid[];
-  /** Every solid in every layer. */
   all(): WorldSolid[];
   count(): number;
-  /** Bumps on every change; cheap cache key for consumers. */
   version(): number;
   subscribe(listener: () => void): () => void;
   snapshot(): WorldSolidsState;
@@ -73,10 +61,7 @@ const DEFAULT_CELL_SIZE = 16;
 const MAX_CELLS_PER_SOLID = 256;
 const CELL_OFFSET = 32768;
 
-/**
- * Yaw-expanded world AABB of an oriented solid box.
- * @capability world-solid-bounds world AABB and nav footprint of a world solid
- */
+/** @capability world-solid-bounds world AABB and nav footprint of a world solid */
 export function worldSolidBounds(solid: WorldSolid): {
   min: [number, number, number];
   max: [number, number, number];
@@ -91,19 +76,13 @@ export function worldSolidBounds(solid: WorldSolid): {
   return { min: [cx - ex, cy - hy, cz - ez], max: [cx + ex, cy + hy, cz + ez] };
 }
 
-/**
- * XZ footprint of a solid's world AABB, for 2D consumers such as nav grids.
- * @capability world-solid-bounds world AABB and nav footprint of a world solid
- */
+/** @capability world-solid-bounds world AABB and nav footprint of a world solid */
 export function worldSolidFootprint(solid: WorldSolid): Aabb {
   const { min, max } = worldSolidBounds(solid);
   return { minX: min[0], minZ: min[2], maxX: max[0], maxZ: max[2] };
 }
 
-/**
- * A store of static world solids in named layers.
- * @capability world-solids collision for generated and authored world geometry (buildings, city lots, walls)
- */
+/** @capability world-solids collision for generated and authored world geometry (buildings, city lots, walls) */
 export function createWorldSolids(options: { cellSize?: number } = {}): WorldSolids {
   const cellSize = options.cellSize ?? DEFAULT_CELL_SIZE;
   if (!Number.isFinite(cellSize) || cellSize <= 0) throw new RangeError("World solid cellSize must be finite and positive");
@@ -364,10 +343,7 @@ export function buildingSolids(
   });
 }
 
-/**
- * Solids for every `structures` descriptor on an environment feature, skipping any marked `solid: false`.
- * @capability world-solids-from-data derive collision boxes from generated buildings and wall runs
- */
+/** @capability world-solids-from-data derive collision boxes from generated buildings and wall runs */
 export function structureSolids(
   world: EnvironmentWorldFeature,
   groundHeight?: (x: number, z: number) => number,
@@ -380,26 +356,20 @@ export function structureSolids(
   return solids;
 }
 
-/** Wall height, thickness and base for {@link wallSolids}. */
 export interface WallSolidOptions {
   height: number;
   thickness: number;
-  /** Ground height under a point; the wall stands on it at each segment's midpoint. Default flat `0`. */
   groundHeight?: (x: number, z: number) => number;
 }
 
-/** Ring wall options: a closed wall round a circular floor. */
 export interface RingWallOptions {
-  /** XZ of the ring's center. */
   center: readonly [number, number];
   /** Radius of the open floor inside the wall, metres. */
   radius: number;
   height: number;
   /** Wall thickness, metres. */
   thickness: number;
-  /** Straight slabs round the ring. */
   sides: number;
-  /** Ground height under a point; each slab stands on the lowest ground of its own footprint. Default flat `0`. */
   groundHeight?: (x: number, z: number) => number;
 }
 
@@ -433,10 +403,7 @@ export function ringWallSolids(options: RingWallOptions): WorldSolid[] {
   return out;
 }
 
-/**
- * One oriented solid per wall segment (see `wallSegments` in `world/walls`).
- * @capability world-solids-from-data derive collision boxes from generated buildings and wall runs
- */
+/** @capability world-solids-from-data derive collision boxes from generated buildings and wall runs */
 export function wallSolids(segments: readonly WallSegment[], options: WallSolidOptions): WorldSolid[] {
   return segments
     .filter((segment) => segment.length > 0)

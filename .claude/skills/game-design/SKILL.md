@@ -13,7 +13,7 @@ Use `level-design` for spatial realization; route implementation to `jgengine-ga
 
 For a new game, start with `create-game-jg`, which agrees the direction and writes `PLAN.md` before any code. For a substantial existing-game quality pass spanning concept, depth, world and presentation, use `game-improvement` to sequence these owners and keep a per-game implementation plan and acceptance evidence.
 
-For a greenfield build, the design work is the `## Design brief` in the game's `PLAN.md` (`create-game-jg` step 3): core, session and long loops, second 0, the first 10 minutes beat by beat, start state, content budget, systems, pace and onboarding. Read [references/application-playbook.md](references/application-playbook.md) §1 for how to design it. Audits may read only the playbook's audit sections. Read [references/field-guide.md](references/field-guide.md) when the task needs deeper loop, economy, progression, genre, accessibility, or research guidance.
+For a greenfield build, the design work is the `## Design brief` in the game's `PLAN.md` (`create-game-jg` step 3): core, session and long loops, second 0, the first 10 minutes beat by beat, start state, content budget, systems, pace and onboarding. Read [references/application-playbook.md](references/application-playbook.md) §1 for how to design it. Audits may read only the playbook's audit sections.
 
 ## Choose the mode
 

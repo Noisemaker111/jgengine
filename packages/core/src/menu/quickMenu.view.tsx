@@ -6,29 +6,22 @@ import type { RadialArc } from "@jgengine/core/menu/radialMenu";
 import { RadialMenu, type RadialMenuOption } from "./radialMenu.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
-/** An entry on a {@link QuickMenu}: a leaf action, or (with `children`) a submenu. */
 export interface QuickMenuItem extends RadialMenuOption {
   /** Nested items; selecting this entry drills into them instead of firing `onSelect`. */
   children?: readonly QuickMenuItem[];
-  /** Optional group heading (list/grid layouts). */
   section?: string;
 }
 
-/** The forms a {@link QuickMenu} can take. */
 export type QuickMenuLayout = "radial" | "arc" | "list" | "grid";
 
-/** Props for {@link QuickMenu}. */
 export interface QuickMenuProps {
   items: readonly QuickMenuItem[];
   layout?: QuickMenuLayout;
   onSelect: (id: string) => void;
   onClose?: () => void;
   title?: string;
-  /** Grid columns. Default 3. */
   columns?: number;
-  /** Arc span for `layout="arc"`. Default a bottom half. */
   arc?: RadialArc;
-  /** Diameter for radial/arc forms. Default 300. */
   radialSize?: number;
   accent?: string;
   className?: string;
@@ -73,15 +66,7 @@ function Badges({ item, accent }: { item: QuickMenuItem; accent: string }): Reac
   );
 }
 
-/**
- * Versatile quick menu that takes many forms — a `radial` wheel, a partial
- * `arc`, a vertical `list`, or a `grid` — over one item model with icons,
- * labels, hotkeys, count badges, cooldowns, section headers, and nested
- * submenus (drill in / back). Radial and arc forms reuse {@link RadialMenu};
- * list and grid render sectioned rows/tiles. The game supplies content and skin.
- *
- * @capability quick-menu multi-form quick menu (radial / arc / list / grid) over one item model with hotkeys, badges, cooldowns, sections, and nested submenus
- */
+/** @capability quick-menu multi-form quick menu (radial / arc / list / grid) over one item model with hotkeys, badges, cooldowns, sections, and nested submenus */
 export function QuickMenu({
   items,
   layout = "list",

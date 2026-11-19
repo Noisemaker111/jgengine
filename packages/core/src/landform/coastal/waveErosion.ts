@@ -17,17 +17,15 @@ import { plantExp } from "../../plants/growth/plantMath";
 import { createCellHeap } from "../flow/cellHeap";
 import type { LandformTopology } from "../grid/landformGrid";
 
-/** Wave settings for one pass. @internal */
+/** @internal */
 export interface WaveSettings {
   /** Sea surface in metres. */
   seaLevel: number;
-  /** Cliff retreat rate R₀ in m/yr under waves arriving across deep water. */
   cliffRetreat: number;
   /** Distance W* in metres of shallow water over which waves lose a factor e of their energy. */
   attenuation: number;
   /** Depth in metres below which water no longer damps waves. */
   waveBase: number;
-  /** Lowering rate in m/yr of a platform at the waterline under full waves. */
   platformErosion: number;
   /** Depth in metres over which platform lowering falls by e. */
   platformDepthScale: number;
@@ -35,7 +33,7 @@ export interface WaveSettings {
   notchDepth: number;
 }
 
-/** A reusable wave solver for one grid. @internal */
+/** @internal */
 export interface WaveEroder {
   /** Wave energy 0..1 reaching each sea cell, and each cliff cell from its sea, after the last pass. */
   readonly energy: Float64Array;
@@ -48,7 +46,7 @@ export interface WaveEroder {
   erode(height: Float64Array, settings: WaveSettings, dt: number, cut: Float64Array, maxSubsteps: number): number;
 }
 
-/** A wave solver for a topology. @internal */
+/** @internal */
 // stateless: scratch fields; the coast itself lives in the caller's height array.
 export function createWaveEroder(topology: LandformTopology): WaveEroder {
   const { cells, cellSize, base, neighbour, distance } = topology;

@@ -7,14 +7,8 @@ import { INCIDENTS } from "../../src/game/sim/events";
 const LOOK_MS = 3000;
 /** A term is a handful of days; past this the first review never came and the flow fails. */
 const MAX_LOOKS = 4000;
-/** Reading a transmission before answering it. */
 const READ_MS = 4000;
 
-/**
- * A new household lived through its first charter term the way a first-time player plays it: the
- * members go about their days on their own, every transmission is read and answered (the careful
- * choice the slip offers), and when the term closes its review is read and dismissed.
- */
 export default defineFlow(game, {
   async run(f) {
     await f.waitFor((p) => p.members === 4, { timeoutMs: 40_000, note: "a new household of four moves in" });

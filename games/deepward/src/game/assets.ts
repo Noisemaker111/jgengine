@@ -3,7 +3,6 @@ import fitterManifest from '../../public/models/imported/deepward/fitter/asset-m
 import faunaManifest from '../../public/models/imported/deepward/fauna/asset-manifest.json';
 import manifest from '../../public/models/imported/deepward/asset-manifest.json';
 
-/** Original CC0 models exported by our reproducible machinery authoring tool. */
 export const stationAssetManifest = manifest;
 export const stationAssets = createAssetCatalog();
 export const actorAssetManifest = fitterManifest;

@@ -31,12 +31,7 @@ export { withDevtoolsLatency } from "./latencyInstrumentation.draw";
 const RENDER_SAMPLE_MS = 500;
 const RENDER_PROBE_FRAME_PRIORITY = -10;
 
-/**
- * Draw-side form of {@link DevtoolsRendererProbe}: registers the render probes against the mounted
- * renderer and scene, owns `gl.info.autoReset` for the frame, and samples draw stats once per
- * {@link RENDER_SAMPLE_MS} at {@link RENDER_PROBE_FRAME_PRIORITY}.
- * @internal
- */
+/** @internal */
 export function devtoolsRendererProbeDraw(): EngineDraw {
   let disposes: (() => void)[] = [];
   let lastSampleAt = 0;

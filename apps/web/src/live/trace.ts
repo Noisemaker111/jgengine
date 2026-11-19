@@ -1,10 +1,5 @@
-/**
- * What a demo is doing right now, as short tags ("throttle", "save"). A demo calls `hit` every frame a
- * thing happens; the code panels beside it light the lines that do that thing.
- */
 export interface Trace {
   hit(tag: string): void;
-  /** Tags hit within the last `holdMs`. */
   lit(now: number): ReadonlySet<string>;
 }
 
@@ -22,10 +17,8 @@ export function createTrace(holdMs = 220): Trace {
   };
 }
 
-/** For each tag, bits of text that pick out the lines doing that thing. */
 export type TraceLines = Readonly<Record<string, readonly string[]>>;
 
-/** Indexes of the lines in `code` that match any lit tag. */
 export function litLines(code: string, lines: TraceLines, lit: ReadonlySet<string>): Set<number> {
   const out = new Set<number>();
   if (lit.size === 0) return out;

@@ -40,10 +40,6 @@ function sourceFiles(games: readonly string[]): string[] {
 
 type FoundAircraft = FlightComparisonAircraft & JetComparisonAircraft;
 
-/**
- * Every fixed-wing tuning a module exports, named by the nearest `label` or `id` above it, with the nearest `afterburner`
- * thrust multiplier beside it. Rotor-only craft go to `rotors` alone; a VTOL goes to both.
- */
 function aircraftIn(module: Record<string, unknown>, file: string, rotors: FoundAircraft[]): FoundAircraft[] {
   const found: FoundAircraft[] = [];
   const seen = new Set<unknown>();

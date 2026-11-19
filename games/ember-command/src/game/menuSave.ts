@@ -10,7 +10,6 @@ import { openTreasury } from "./treasury";
 import { GOLD, LUMBER } from "./tuning";
 import { setupSkirmish } from "./world/scene";
 
-/** The three campaign records; the labels are the field desk's own words for them. */
 export const CAMPAIGN_SLOTS = ["campaign-1", "campaign-2", "campaign-3"] as const;
 export const CAMPAIGN_LABEL: Record<string, string> = { "campaign-1": "Campaign I", "campaign-2": "Campaign II", "campaign-3": "Campaign III" };
 export function campaignLabel(slot: string): string {
@@ -20,13 +19,11 @@ export function campaignLabel(slot: string): string {
 /** The commander name the last record carried, so a loaded campaign keeps its commander. */
 export const commandProfile: { name: string } = { name: "" };
 
-/** The menu's slot list, filled from the campaign documents' records. */
 export const campaignSlots = createSaveSlots({
   capacity: CAMPAIGN_SLOTS.length,
   slots: CAMPAIGN_SLOTS.map((id) => ({ id, empty: true, meta: {} })),
 });
 
-/** Refresh the card list from the campaign documents. */
 export async function refreshCampaignSlots(ctx: GameContext): Promise<void> {
   for (const slot of CAMPAIGN_SLOTS) {
     const record = await recordOfSlot(ctx, slot);
@@ -51,13 +48,11 @@ function playtimeLabel(seconds: number): string {
   return hours > 0 ? `${hours}h ${minutes}m` : minutes > 0 ? `${minutes}m` : "< 1m";
 }
 
-/** Capture the field the record leaves. The shared request waits for the canvas itself. */
 export async function captureCampaignThumb(): Promise<string | null> {
   const shot = await requestSceneThumbnail({ width: 320, height: 180 });
   return shot.ok ? shot.thumbnail : null;
 }
 
-/** Write the campaign record as it stands: the name, the offered mission and the stores it carries. */
 export async function saveCampaignRecord(ctx: GameContext, name?: string): Promise<void> {
   const slot = campaignSlot(ctx);
   const readout = campaignReadout(ctx);
@@ -79,10 +74,6 @@ export async function saveCampaignRecord(ctx: GameContext, name?: string): Promi
   await refreshCampaignSlots(ctx);
 }
 
-/**
- * Open a campaign record: read its document into the campaign track, restage the vale, open the
- * treasury at the stores the record carries, and leave the field desk offering the mission it reached.
- */
 export async function loadCampaignRecord(ctx: GameContext, slot: string): Promise<boolean> {
   const record = await recordOfSlot(ctx, slot);
   if (record === null) return false;
@@ -99,7 +90,6 @@ export async function loadCampaignRecord(ctx: GameContext, slot: string): Promis
   return true;
 }
 
-/** Start a fresh campaign in a slot, carrying the commander's name. */
 export async function newCampaignRecord(ctx: GameContext, slot: string, name: string): Promise<void> {
   if (campaignSlot(ctx) !== slot) await openCampaignSlot(ctx, slot);
   setupSkirmish(ctx);

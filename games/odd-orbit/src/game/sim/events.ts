@@ -24,7 +24,6 @@ export interface IncidentReading {
 export interface IncidentChoice {
   id: string;
   label: string;
-  /** What it costs or does, in numbers. */
   detail: (state: HouseholdState, incident: PendingIncident) => string;
   /** Null when the choice can be taken, else why not. */
   blocked?: (state: HouseholdState, incident: PendingIncident) => string | null;
@@ -36,12 +35,9 @@ export interface IncidentDef extends StoryIncident<IncidentReading> {
   tone: NoticeTone;
   /** Who or what the incident lands on, chosen when it fires; null when nothing fits. */
   pick?: (state: HouseholdState, objects: readonly SceneObject[], rng: () => number) => Omit<PendingIncident, "id" | "deadline"> | null;
-  /** The transmission's body text. */
   text: (state: HouseholdState, incident: PendingIncident) => string;
-  /** No choices: applied the moment it fires. */
   auto?: (state: HouseholdState, incident: PendingIncident, now: number) => void;
   choices?: readonly IncidentChoice[];
-  /** The choice the household takes when the deadline passes. */
   fallback?: string;
 }
 
@@ -83,8 +79,6 @@ function randomMember(state: HouseholdState, rng: () => number, ok: (m: MemberSt
   return pool.length === 0 ? null : pool[Math.floor(rng() * pool.length) % pool.length]!.id;
 }
 
-
-/** Mark a furnishing out of service and send everyone using it on their way. */
 function breakObject(state: HouseholdState, objId: string): void {
   const h = hazards(state);
   if (!h.broken.includes(objId)) h.broken = [...h.broken, objId];
@@ -105,7 +99,6 @@ export function repairObject(state: HouseholdState, objId: string): void {
 /** Patching a hull leak after the transmission has passed. */
 export const HULL_PATCH_COST = 70;
 
-/** Price to mend a broken furnishing: 40% of what it cost. */
 export function repairCost(catalogId: string): number {
   return Math.round((FURNITURE_BY_ID[catalogId]?.cost ?? 100) * 0.4);
 }
@@ -128,7 +121,6 @@ function shiftOpinion(state: HouseholdState, a: string, b: string, delta: number
   syncBook(state, book);
 }
 
-/** The household's incident book: four boons, two offers and eight kinds of trouble. */
 export const INCIDENTS: readonly IncidentDef[] = [
   {
     id: "comet", cost: 0, weight: 1, cooldownSeconds: DAY_LENGTH * 2, title: "A comet passes", tone: "success",
@@ -306,7 +298,6 @@ function brokenName(_state: HouseholdState, incident: PendingIncident): string {
   return (incident.objCatalog !== null ? FURNITURE_BY_ID[incident.objCatalog]?.name : undefined) ?? "furnishing";
 }
 
-/** Threat points build faster as the charter goes on and as the household grows richer. */
 export const STORY_CONFIG: StorytellerConfig<IncidentReading> = {
   incidents: INCIDENTS,
   pointsPerSecond: (elapsed) => 0.05 + (elapsed / DAY_LENGTH) * 0.012,
@@ -320,14 +311,12 @@ export const STORY_CONFIG: StorytellerConfig<IncidentReading> = {
   preferSpend: 0.8,
 };
 
-/** One storyteller per household state; it carries no state of its own between steps. */
 const teller = createStoryteller(STORY_CONFIG);
 
 function incidentRng(state: HouseholdState, salt: number): () => number {
   return seededRng(`${state.seed}:story:${salt}`);
 }
 
-/** Advance the household's storyteller by `dt` and fire what it draws. */
 export function advanceIncidents(state: HouseholdState, objects: readonly SceneObject[], now: number, dt: number, notices: Pick<NoticeFeed, "push">): void {
   if (state.order.length === 0 || charterOf(state).outcome === "evicted") return;
   expireHazards(state, now);
@@ -359,7 +348,6 @@ export function advanceIncidents(state: HouseholdState, objects: readonly SceneO
   noteEvent(state, notices, `Transmission: ${def.title}. ${def.text(state, pending)}`, def.tone);
 }
 
-/** Answer the waiting transmission; `choiceId` null takes its default. Returns false when refused. */
 export function answerIncident(state: HouseholdState, choiceId: string | null, now: number, notices: Pick<NoticeFeed, "push">): boolean {
   const pending = state.incident;
   if (pending == null) return false;
@@ -402,7 +390,6 @@ export function dusty(state: HouseholdState, now: number): boolean {
   return (state.hazards?.dustUntil ?? 0) > now;
 }
 
-/** How fast a Torpor Pod rests a being: half while the hull leaks. */
 export function restFactor(state: HouseholdState): number {
   return state.hazards?.hullLeak === true ? 0.5 : 1;
 }

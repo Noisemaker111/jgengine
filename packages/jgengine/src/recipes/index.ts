@@ -12,11 +12,8 @@
  */
 
 export interface Recipe {
-  /** CLI name, e.g. "combat-loop". */
   name: string;
-  /** One-line description shown in the list. */
   description: string;
-  /** The copy-paste snippet — identical to `src/recipes/snippets/<name>.ts` (`.tsx` for a recipe with UI). */
   code: string;
 }
 
@@ -773,17 +770,14 @@ export const RECIPES: readonly Recipe[] = [
   },
 ] as const;
 
-/** Recipe names in list order. */
 export function recipeNames(): string[] {
   return RECIPES.map((recipe) => recipe.name);
 }
 
-/** Look a recipe up by name. */
 export function getRecipe(name: string): Recipe | undefined {
   return RECIPES.find((recipe) => recipe.name === name);
 }
 
-/** Two-space-indented `name   <description>` lines with the name column padded. */
 export function renderRecipeList(): string {
   const width = Math.max(...RECIPES.map((recipe) => recipe.name.length));
   return RECIPES.map((recipe) => `  ${recipe.name.padEnd(width)}   ${recipe.description}`).join("\n");

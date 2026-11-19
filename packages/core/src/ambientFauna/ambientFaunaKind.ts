@@ -4,11 +4,7 @@ import { registerSceneKind, type SceneKindObject } from "../scene/sceneKinds";
 import { WATER_VOLUME_KIND } from "../water/waterKind";
 import type { FaunaArea, FaunaGroup, FaunaMotion, FaunaWindow } from "./ambientFauna";
 
-/**
- * The editor volume kind that places an ambient group: its footprint is the area, or it borrows the
- * footprint of another volume (a water volume for a school, a grass field for a swarm).
- * @capability ambient-fauna-zone editor-authorable ambient group zone stored in editor.scene.json
- */
+/** @capability ambient-fauna-zone editor-authorable ambient group zone stored in editor.scene.json */
 export const AMBIENT_FAUNA_KIND = "ambient_fauna";
 
 const MOTIONS: readonly FaunaMotion[] = ["school", "swarm", "drift", "soar"];
@@ -20,7 +16,6 @@ const WINDOWS: Record<string, FaunaWindow | undefined> = {
   twilight: { sunMin: -0.25, sunMax: 0.15, fade: 0.1 },
 };
 
-/** The ambient group zone's parameters. */
 export const AMBIENT_FAUNA_SCHEMA: ParamSchema = {
   fields: [
     { type: "text", key: "species", label: "species", default: "" },
@@ -71,11 +66,6 @@ function footprint(volume: Pick<EditorVolume, "shape" | "center" | "radius" | "h
   return { shape: "disc", x: volume.center.x, z: volume.center.z, radius };
 }
 
-/**
- * The ambient groups an editor document places: one per `ambient_fauna` volume. A volume with no
- * `species` is skipped; `volumeId` borrows another volume's footprint and, for a water volume, its
- * top face as the school's surface.
- */
 export function faunaGroupsFromVolumes(volumes: readonly Pick<EditorVolume, "id" | "kind" | "shape" | "center" | "radius" | "halfExtents" | "meta">[]): FaunaGroup[] {
   const groups: FaunaGroup[] = [];
   for (const volume of volumes) {
@@ -115,7 +105,7 @@ export function faunaGroupsFromVolumes(volumes: readonly Pick<EditorVolume, "id"
   return groups;
 }
 
-/** Registers the `ambient_fauna` scene kind. Called by `registerBuiltinSceneKinds`. @internal */
+/** @internal */
 export function registerAmbientFaunaKind(): void {
   registerSceneKind({
     kind: AMBIENT_FAUNA_KIND,

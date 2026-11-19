@@ -29,35 +29,21 @@ export type MusicInstrument =
   | "cymSwell"
   | "oboe";
 
-/** One scheduled note in a theme, positioned on the loop's quarter-note grid. */
 export interface NoteEvent {
   /** Quarter-note position within the loop (0-based). */
   beat: number;
-  /** MIDI note number (60 = middle C). */
   midi: number;
-  /** Sounding length in quarter-note beats. */
   dur: number;
   /** Velocity 0..1. */
   vel: number;
-  /** Which instrument voice plays it. */
   inst: MusicInstrument;
 }
 
-/**
- * A through-composed, looping music track. `events` need not be sorted; the
- * director schedules them ahead against a fixed anchor so loops are seamless.
- */
 export interface MusicTheme {
   id: string;
-  /** Tempo in beats (quarter notes) per minute. */
   bpm: number;
-  /** Loop length in 4/4 bars; the loop is `bars * 4` beats long. */
   bars: number;
   events: readonly NoteEvent[];
-  /**
-   * Per-theme loudness normalisation multiplied into the crossfade target, so
-   * dense and sparse themes sit at the same perceived level. Default 1.
-   */
   trim?: number;
 }
 

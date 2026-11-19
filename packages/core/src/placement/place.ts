@@ -16,26 +16,15 @@ import type { PhysicsConfig } from "../game/defineGame";
  * - No genre or franchise presets. `generator` carries algorithm parameters only.
  */
 
-/**
- * Matter/feel laws of a place's ground that systems, physics, and audio read — restitution for a
- * metal chamber the pieces ping off, stickiness for a slime pit, a soft felt mat. The same rule
- * systems play on any surface; swapping the surface (plus content audio) changes the feel without
- * forking the rules. This is place law, not a theme kit: visual/audio dressing stays in content.
- */
 export interface SurfaceLaws {
-  /** Named matter of the ground ("metal", "slime", "felt", …) — a label systems and audio cues key off. */
   matter?: string;
-  /** Sliding friction scalar, 0 (ice) … 1+ (grippy). Interpreted by movement/physics systems. */
   friction?: number;
-  /** Bounce energy retention, 0 (dead stop) … 1 (perfect bounce). Interpreted by physics/board systems. */
   restitution?: number;
-  /** Free-form serializable place-law traits game systems read (e.g. `{ stuckTurns: 1 }` for slime). */
   traits?: Readonly<Record<string, number | string | boolean>>;
 }
 
 /** Serializable algorithm parameters for a procedural ground generator. Never a genre kit. */
 export interface GroundGenerator {
-  /** Algorithm identifier the game's generation system resolves (e.g. "fbm", "caves", "layers"). */
   algorithm: string;
   /**
    * Algorithm tuning only — amplitudes, frequencies, thresholds, palettes of ids. Never a `seed`
@@ -44,19 +33,13 @@ export interface GroundGenerator {
   params?: Readonly<Record<string, number | string | boolean>>;
 }
 
-/**
- * Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an
- * endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
- */
 export interface FlatGroundSize {
   x: number;
-  /** Optional vertical bound of the play volume; omit for open sky. */
   y?: number;
   z: number;
   radius?: never;
 }
 
-/** Size of a `round` ground: the planet/sphere radius in world units. Nothing else. */
 export interface RoundGroundSize {
   radius: number;
   x?: never;
@@ -64,7 +47,6 @@ export interface RoundGroundSize {
   z?: never;
 }
 
-/** Size of a `voxel` ground: the generator's domain per axis; axes may be `Infinity` for streaming volumes. */
 export interface VoxelGroundSize {
   x: number;
   y: number;
@@ -72,7 +54,6 @@ export interface VoxelGroundSize {
   radius?: never;
 }
 
-/** Size of a `board` ground: a 2D surface you look at, in cells or layout units. */
 export interface BoardGroundSize {
   x: number;
   y: number;
@@ -80,7 +61,6 @@ export interface BoardGroundSize {
   radius?: never;
 }
 
-/** A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists. */
 export interface FlatGround {
   mode: "flat";
   size: FlatGroundSize;
@@ -88,7 +68,6 @@ export interface FlatGround {
   generator?: GroundGenerator;
 }
 
-/** A planet/sphere you play on the outside of. Sized by `radius` only. */
 export interface RoundGround {
   mode: "round";
   size: RoundGroundSize;
@@ -96,7 +75,6 @@ export interface RoundGround {
   generator?: GroundGenerator;
 }
 
-/** A procedural volume of blocks. `size` is the generator domain; `generator` is algorithm params only. */
 export interface VoxelGround {
   mode: "voxel";
   size: VoxelGroundSize;
@@ -104,10 +82,6 @@ export interface VoxelGround {
   generator?: GroundGenerator;
 }
 
-/**
- * A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or
- * omitted; the game owns the face it draws on the board.
- */
 export interface BoardGround {
   /** `"stage"` is accepted as an alias and normalized to `"board"`. */
   mode: "board" | "stage";
@@ -115,23 +89,16 @@ export interface BoardGround {
   surface?: SurfaceLaws;
 }
 
-/** The substrate of a place, discriminated by `mode` — TS rejects a `radius` on `flat` and `x`/`z` on `round`. */
 export type GroundConfig = FlatGround | RoundGround | VoxelGround | BoardGround;
 
-/** Canonical ground modes after normalization (`stage` → `board`). */
 export type GroundMode = "flat" | "round" | "voxel" | "board";
 
-/** {@link BoardGround} with the `stage` alias resolved away. */
 export type ResolvedBoardGround = Omit<BoardGround, "mode"> & { mode: "board" };
 
-/** A place's ground after `world()` normalization. */
 export type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround;
 
-/** Input to {@link world}: place identity, substrate, and the laws of this place. */
 export interface PlaceConfig {
-  /** Place identity — names the world for saves, seeds, and world switching. */
   id: string;
-  /** The substrate: what you stand on / look at, discriminated by `mode`. */
   ground: GroundConfig;
   /**
    * Laws of THIS place (gravity, jump). Each world carries its own physics, so a game with several
@@ -141,7 +108,6 @@ export interface PlaceConfig {
   physics?: PhysicsConfig;
 }
 
-/** A declared place — the `world()` result carried on `GameDefinition.world`. */
 export interface PlaceWorldFeature {
   kind: "place";
   id: string;
@@ -208,15 +174,7 @@ function resolveGround(ground: GroundConfig): ResolvedGround {
   }
 }
 
-/**
- * Declares the place a game is played in: substrate (`ground`) + laws (`physics`, `ground.surface`).
- * The thin default start — `flat` with `Infinity` axes and default physics, `board` for 2D — is a
- * complete world; dressing it (sky, foliage, props, sculpt) is editor-authored scene content.
- * Multiple worlds per game are first-class: declare one `world()` per place, each with its own id,
- * ground, and physics. Games that are not a spatial place (pure UI/rules) omit `world` entirely.
- *
- * @capability world-place declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics
- */
+/** @capability world-place declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics */
 export function world(config: PlaceConfig): PlaceWorldFeature {
   if (config.id.trim().length === 0) {
     throw new Error("world: id must be non-empty — it names the place for saves, seeds, and world switching");
@@ -242,11 +200,6 @@ export function seedForPlace(worldId: string, runSeed = ""): string {
   return runSeed.length === 0 ? worldId : `${worldId}:${runSeed}`;
 }
 
-/**
- * Resolves the physics laws in effect for the active world: a place world's own `physics` wins
- * field-by-field over the game-level default. Non-place worlds (and games with no world) keep the
- * game-level config unchanged.
- */
 export function resolveWorldPhysics(
   worldFeature: { kind: string; physics?: PhysicsConfig } | undefined,
   base: PhysicsConfig | undefined,
@@ -255,7 +208,6 @@ export function resolveWorldPhysics(
   return base === undefined ? worldFeature.physics : { ...base, ...definedOnly(worldFeature.physics) };
 }
 
-/** Type guard for the place-model world feature. */
 export function isPlaceWorld(worldFeature: { kind: string } | undefined): worldFeature is PlaceWorldFeature {
   return worldFeature?.kind === "place";
 }

@@ -48,9 +48,7 @@ export interface LoadArgs {
   trace: boolean;
   compare: string | null;
   timeoutMs: number;
-  /** Compare against the saved baseline and exit 1 on a regression. */
   guard: boolean;
-  /** Write this run into the saved baseline. */
   saveBaseline: boolean;
 }
 
@@ -85,9 +83,7 @@ export function parseLoadArgs(argv: readonly string[], known: readonly string[])
 /** One cold open of one game. Times are ms from the site page's navigation start; null = never. */
 export interface LoadSample {
   game: string;
-  /** First contentful paint of the /play frame. */
   firstPaint: number | null;
-  /** A menu button is on top and visible. */
   menuShown: number | null;
   /**
    * The worst wait a click on the menu could have had: the longest gap between drawn frames while
@@ -97,7 +93,6 @@ export interface LoadSample {
   worstClick: number | null;
   /** Loading covers gone and 30 frames in a row under 50 ms, with the menu still up. */
   sceneReady: number | null;
-  /** The same, after Play was pressed: the player is in the game. */
   playable: number | null;
   /** The longest gap between drawn frames in the two seconds after the loading cover lifts. */
   revealWorstFrame: number | null;
@@ -113,22 +108,17 @@ export interface LoadSample {
   /** Bytes the page and the frame fetched. */
   transferKb: number;
   menuLabel: string | null;
-  /** The first console errors and uncaught exceptions, when there were any. */
   pageErrors?: string[];
-  /** Distinct coarse colours in the scene canvas at scene ready; a blank scene has a handful. */
   sceneColors?: number | null;
   /** WebGL errors the page logged (a failed draw draws nothing). */
   glErrors?: number;
   /** The WebGL renderer string: timings are only comparable on the same GPU. */
   gpu?: string;
-  /** The screens the game showed, in order (`open>loading>menu>playing`), as the engine recorded them. */
   boot?: string | undefined;
-  /** Files the game asked for that the server did not have. */
   missingFiles?: string[];
   error?: string;
 }
 
-/** Runs in every frame before any page script; only the /play frame records. */
 export const PAGE_PROBE = `(() => {
   if (!location.pathname.startsWith("/play")) return;
   const epoch = () => performance.timeOrigin + performance.now();
@@ -254,7 +244,6 @@ interface ProbeState {
   playableAt: number | null;
 }
 
-/** How long the menu may wait for the scene to settle before Play is pressed anyway. */
 const PRESS_AFTER_MENU_MS = 60_000;
 
 function median(values: readonly (number | null)[]): number | null {
@@ -308,7 +297,6 @@ export function revealSummary(frames: readonly number[] | undefined, covered = f
   return `${frames.length} frames${covered ? " once the game's menu lifted" : ""}, worst ${Math.round(sorted[sorted.length - 1]!)} ms, median ${Math.round(sorted[Math.floor(sorted.length / 2)]!)} ms, ${slow} over 33 ms`;
 }
 
-/** A markdown table, with `before -> after` cells when a previous run is given. */
 export function renderTable(rows: readonly LoadSample[], before: readonly LoadSample[] = []): string {
   const previous = new Map(before.map((row) => [row.game, row]));
   const header = `| game | ${COLUMNS.map(([label]) => label).join(" | ")} |`;
@@ -321,7 +309,6 @@ export function renderTable(rows: readonly LoadSample[], before: readonly LoadSa
   return [header, rule, ...body].join("\n");
 }
 
-/** Where `--guard` keeps each game's accepted load on this machine's GPU. */
 export const BASELINE_FILE = join(repoRoot, "scripts", "load-baseline.json");
 
 export interface LoadBaseline {
@@ -338,7 +325,6 @@ export const GUARD_LIMITS = {
   sceneReady: { ratio: 1.3, ms: 1500, label: "scene ready" },
 } as const;
 
-/** Fewer distinct coarse colours than this in the scene canvas reads as a blank scene, not a drawn one. */
 export const BLANK_SCENE_COLORS = 40;
 
 /**
@@ -358,7 +344,6 @@ export function judgeOpen(game: string, sample: LoadSample): string[] {
   return failures;
 }
 
-/** Each way `now` loads worse than `base`, as a sentence; empty when it holds. */
 export function judgeLoad(game: string, base: LoadBaseline["games"][string], now: LoadSample): string[] {
   if (now.error !== undefined) return [`${game}: ${now.error}`];
   const failures: string[] = [];
@@ -389,7 +374,6 @@ export interface CpuTimes {
   idle: number;
 }
 
-/** Busy and idle CPU time summed over every core, from `os.cpus()`. */
 export function cpuTimes(cores: readonly { times: { user: number; nice: number; sys: number; idle: number; irq: number } }[]): CpuTimes {
   let busy = 0;
   let idle = 0;
@@ -414,10 +398,6 @@ async function machineBusy(): Promise<number> {
   return busyShare(before, cpuTimes(cpus()));
 }
 
-/**
- * The guard's verdict on a load slower than its baseline: a failure on a quiet PC, and not judged
- * on one other work kept busy, since the wall clock then measures the neighbours.
- */
 export function guardVerdict(judged: readonly string[], busy: number): { failures: string[]; unjudged: string[] } {
   if (judged.length === 0) return { failures: [], unjudged: [] };
   if (busy <= BUSY_LIMIT) return { failures: [...judged], unjudged: [] };

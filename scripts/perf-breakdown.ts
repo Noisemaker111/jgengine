@@ -5,7 +5,6 @@ import { cdpField, remoteObjectId, type CdpSession } from "./browser-lib";
 import { type FrameBreakdownSummary, type HitchSession, type NamedCost } from "../packages/core/src/devtools/frameBreakdown";
 import { SourceMap } from "node:module";
 
-/** How the run moves through the game while it is measured. */
 export type PerfPath = "walk" | "still";
 
 /**
@@ -36,15 +35,10 @@ export async function startPath(session: CdpSession, path: PerfPath): Promise<()
   };
 }
 
-/** Start the page's breakdown window over. False when the page has none (no dev telemetry). */
 export async function resetBreakdown(session: CdpSession): Promise<boolean> {
   return (await session.evaluate<boolean>(`(() => { const b = globalThis.__jg?.frames; if (!b) return false; b.reset(); return true; })()`)) === true;
 }
 
-/**
- * Read the page's breakdown and give each `frame#<n>` callback its source (`frame#3 src/scene/Water.draw.tsx:41`),
- * read from the function's own location through the debugger, since an anonymous frame callback has no name.
- */
 export async function readBreakdown(session: CdpSession, privateMap?: (scriptId: string) => Promise<string | null>, top = 15): Promise<FrameBreakdownSummary | null> {
   const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jg?.frames?.summary({ top: ${Math.max(1, Math.floor(top))} }) ?? null`);
   if (summary === null || summary === undefined) return null;
@@ -132,7 +126,6 @@ async function scriptMap(session: CdpSession, scriptId: string, script: { url: s
   return map;
 }
 
-/** A served path as the repo names it: `games/deepward/src/game/ui/GameUI.tsx`. */
 function repoPath(url: string): string {
   return url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "").replace(/^\/@fs\//, "").replace(/^.*?\/(packages|games|apps|node_modules)\//, "$1/");
 }
@@ -199,7 +192,6 @@ export async function readHitchSession(session: CdpSession, privateMap?: (script
   return read;
 }
 
-/** The session's hitches for a person: count, worst, and each with its cause and the scripts in it. */
 export function renderHitchSession(read: HitchSession, title: string): string {
   // A stall behind a travel card or a full-screen cover froze that, not the game: counted apart.
   const seen = read.hitches.filter((hitch) => hitch.covered === undefined);
@@ -219,7 +211,6 @@ export function renderHitchSession(read: HitchSession, title: string): string {
   ].join("\n");
 }
 
-/** A cost's system: its `frame#<n>` or system label, without the source location appended to it. */
 function systemOf(name: string): string {
   return name.split(" ", 1)[0] ?? name;
 }
@@ -235,7 +226,6 @@ function costRows(title: string, before: readonly NamedCost[], after: readonly N
   return rows.length === 0 ? [] : [title, ...rows];
 }
 
-/** A before/after table of two breakdowns: frame spread, CPU and GPU cost, counts, and the top systems. */
 export function compareBreakdowns(before: FrameBreakdownSummary, after: FrameBreakdownSummary): string {
   const line = (name: string, a: number, b: number, unit = "ms") =>
     `  ${name.padEnd(14)} ${a.toFixed(2).padStart(9)} -> ${b.toFixed(2).padStart(9)} ${unit}  (${signed(b - a)}, ${a > 0 ? signed(((b - a) / a) * 100, 0) : "n/a"}%)`;

@@ -1,13 +1,9 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
-/** A placement footprint cell and its authoritative preview status. */
 export type TerritoryPreviewCell = { key: string; x: number; z: number; status: "owned" | "claimable" | "blocked" };
 
-/**
- * Placement footprint feedback with inline claim cost and affordability.
- * @capability territory-overlay show footprint ownership, claim cost, and affordability
- */
+/** @capability territory-overlay show footprint ownership, claim cost, and affordability */
 export function TerritoryOverlay({ cells, cost, affordable, formatCost = String, renderCell, className, style }: {
   cells: readonly TerritoryPreviewCell[];
   cost: number;

@@ -11,10 +11,6 @@ import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 export interface ReplicationPolicy {
   /** Decimal places used for replicated positions and angles. */
   quantize?: { position?: number; angle?: number };
-  /**
-   * Replicate each player's private per-user state (inventory) only to that player — other viewers
-   * receive none of it. Off by default so existing games keep broadcasting every player's state.
-   */
   privatePerUser?: boolean;
   /**
    * Area-of-interest radius in world units: an entity replicates to a viewer only when within this
@@ -22,24 +18,16 @@ export interface ReplicationPolicy {
    * always receives its own entity. Omit for no distance culling — every entity to every viewer.
    */
   aoiRadius?: number;
-  /**
-   * Entity ids every viewer receives whatever the distance (a boss, an objective, a flag carrier), as a list or
-   * a function the host reads once per viewer per tick. Only read when {@link aoiRadius} is set.
-   */
   aoiAlways?: readonly string[] | (() => Iterable<string>);
 }
 
-/** True when at least one field of the policy would change the wire payload. A no-op policy needs no projection.
- * @internal host projection plumbing — games set ReplicationPolicy; the runtime applies it.
- */
+/** @internal host projection plumbing — games set ReplicationPolicy; the runtime applies it. */
 export function policyProjectsViewers(policy: ReplicationPolicy | undefined): boolean {
   if (policy === undefined) return false;
   return policy.privatePerUser === true || policy.aoiRadius !== undefined || policy.quantize !== undefined;
 }
 
-/** Quantize replicated entity poses according to a host projection policy.
- * @internal host projection plumbing
- */
+/** @internal host projection plumbing */
 export function quantizeWorldForReplication(world: WorldSnapshot, policy: ReplicationPolicy | undefined): WorldSnapshot {
   if (policy?.quantize?.position === undefined && policy?.quantize?.angle === undefined) return world;
   const digits = (value: number, places: number | undefined) => places === undefined ? value : Number(value.toFixed(Math.max(0, places)));
@@ -80,9 +68,7 @@ export function projectEntitiesForViewer(
   );
 }
 
-/** The set of entity ids a viewer can see under an area-of-interest radius — the visibility set entity-keyed modules cull against.
- * @internal host projection plumbing
- */
+/** @internal host projection plumbing */
 export function visibleEntityIds(
   entities: readonly SceneEntity[],
   viewer: SnapshotViewer,
@@ -91,30 +77,20 @@ export function visibleEntityIds(
   return new Set(projectEntitiesForViewer(entities, viewer, radius).map((entity) => entity.id));
 }
 
-/** Keep only the entries of an entity-id-keyed record whose id is in `visible` — the projection for entity stats under area-of-interest.
- * @internal host projection plumbing
- */
+/** @internal host projection plumbing */
 export function projectByVisibleIds<T>(byId: Record<string, T>, visible: Set<string>): Record<string, T> {
   const out: Record<string, T> = {};
   for (const [id, value] of Object.entries(byId)) if (visible.has(id)) out[id] = value;
   return out;
 }
 
-/** Where a viewer is standing, read off the replicated entity set; `undefined` when it has no entity yet.
- * @internal host projection plumbing
- */
+/** @internal host projection plumbing */
 export function viewerOrigin(world: WorldSnapshot, viewer: SnapshotViewer): EntityPosition | undefined {
   const entities = (world["entities"] ?? []) as readonly SceneEntity[];
   return entities.find((entity) => entity.id === viewer.userId)?.position;
 }
 
-/**
- * Cull placed objects to a viewer's area of interest. Placed objects are the one large spatial set a
- * world grows without bound — a datacenter of racks, a city of props — so without this every viewer
- * downloads every placement. Fails open (full list) when the viewer has no locatable entity, matching
- * {@link projectEntitiesForViewer}.
- * @internal host projection plumbing
- */
+/** @internal host projection plumbing */
 export function projectObjectsForViewer<T extends { position: EntityPosition }>(
   objects: readonly T[],
   origin: EntityPosition | undefined,

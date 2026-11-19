@@ -35,13 +35,7 @@ import { IMPOSTOR_LEVEL_URL, type BuiltLodMeta } from "@jgengine/core/lod/builtL
 import type { HlodConfig } from "@jgengine/core/visibility/config";
 import { blendsSource, canInstanceStaticScene, countStaticBatchDraws, staticBatchCell, gatherStaticMembers, harvestStaticPieces, incompatibleStaticObjectIds, isCompatibleStaticObject, sortFarToNear, STATIC_BATCH_MESH_KEY, staticModelPieces, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
 
-/**
- * Report what static object batching is doing to `debug_snapshot().systems`: the grouped batches, the
- * total instances behind them, and how many instances survived per-instance culling this frame. A
- * batch whose instances are all outside the view contributes a draw of zero, so `drawn` is the culling
- * evidence, not a claim.
- * @internal
- */
+/** @internal */
 export function useStaticObjectBatchProbe(
   scene: THREE.Object3D,
   stats: { batches: number; instances: number; singles: number },
@@ -113,7 +107,6 @@ export class SourceSteps {
     this.pending.delete(step);
   }
 
-  /** Run the steps due, given the object store's version and the members' gather count. */
   run(objects: number, members: number): void {
     if (this.objects !== objects || this.members !== members) {
       this.objects = objects;
@@ -132,23 +125,18 @@ export class SourceSteps {
  * Join `run` to the sources `members` drives. It runs on the frame after any render of its owner and
  * after the batch's members or a placed object changed; on any other frame it is not called at all.
  * A world of a thousand still props paid a callback per source per frame only to find nothing new.
- *//** A flag that `mark` raises and `take` answers and lowers; raised at first. */
+ */
 function createChangeFlag(): { take(): boolean; mark(): void } {
   let dirty = true;
   return { mark: () => { dirty = true; }, take: () => { const was = dirty; dirty = false; return was; } };
 }
 
-/** Draw-side `useObjectChanges`: the same dirty flag, fed by the object store's change subscription. */
 function watchObjectChanges(ctx: GameContext): { take(): boolean; dispose(): void } {
   const flag = createChangeFlag();
   const off = ctx.scene.object.subscribe(flag.mark);
   return { take: flag.take, dispose: off };
 }
 
-/**
- * Draw-side `useMemberVisibilityChanges`: answers and resets whether one of the watched objects
- * entered or left the render-visible set, re-watching when the object list identity changes.
- */
 class MemberVisibilityWatch {
   private readonly flag = createChangeFlag();
   private objects: readonly SceneObject[] | null = null;
@@ -171,7 +159,6 @@ class MemberVisibilityWatch {
   }
 }
 
-/** Everything a static-batch draw reads live: context, the render-visibility feed and the singles sink. */
 interface StaticBatchEnv {
   readonly ctx: GameContext;
   visibility(): (id: string) => boolean;
@@ -212,7 +199,6 @@ class StaticMembersDriver {
     this.leaveSteps = joinFrameTask(CAMERA_POST_FRAME_PRIORITY + 0.2, () => this.runSteps());
   }
 
-  /** A source re-registers pending after any owner update, like the old layout-effect mark. */
   poke(): void {
     for (const step of this.steps.all) this.steps.pending.add(step);
   }
@@ -294,10 +280,6 @@ class BatchMembership {
   }
 }
 
-/**
- * The objects one batch still draws through the individual renderer, aggregated across its levels
- * and its fallbacks. Contributors key their entries; the batch flushes the union to the UI.
- */
 class StaticSingles {
   private readonly entries = new Map<string, SceneObject>();
   private dirty = false;
@@ -322,7 +304,6 @@ class StaticSingles {
   }
 }
 
-/** An inner {@link EngineDraw} mounted under a parent group: fresh child frame state per call, board-joined frame. */
 class MountedDraw {
   private leave: (() => void) | null = null;
   constructor(private readonly draw: EngineDraw, private readonly parent: THREE.Object3D) {}
@@ -341,7 +322,7 @@ class MountedDraw {
   }
 }
 
-/** What a pooled source last placed: its slot, its objects, and each one's record as it was. @internal */
+/** @internal */
 export interface SourcePlacement<Slot> {
   slot: Slot;
   objects: readonly SceneObject[];
@@ -358,7 +339,6 @@ export function placementStale<Slot>(last: SourcePlacement<Slot> | null, slot: S
   return last === null || last.slot !== slot || last.objects !== objects || objects.some((object, index) => get(object.instanceId) !== last.records[index]);
 }
 
-/** A source whose material a pool batch shares: its placements are instances of that batch. */
 function pooledSourceDraw(env: StaticBatchEnv, args: {
   slot: StaticDrawSlot;
   source: ScatterModelSource;
@@ -423,7 +403,6 @@ function pooledSourceDraw(env: StaticBatchEnv, args: {
   };
 }
 
-/** A source drawn on its own: one instanced draw holding this batch's placements. */
 function instancedSourceDraw(args: {
   source: ScatterModelSource;
   members: StaticMembersDriver;
@@ -565,10 +544,6 @@ function objectSourceDraw(env: StaticBatchEnv, args: {
   };
 }
 
-/**
- * One instanced draw of impostor cards for the placements `assignment` put on `level`, sharing its
- * card pool with every batch of the same atlas. Placements in the visibility pass's culled set draw none.
- */
 function impostorCardsDraw(env: StaticBatchEnv, args: {
   poolKey: string;
   atlas: ImpostorAtlas;
@@ -661,7 +636,6 @@ function impostorCardsDraw(env: StaticBatchEnv, args: {
 const probe = new THREE.Vector3();
 const cardPose = new THREE.Object3D();
 
-/** The shared impostor entry a batch's far placements draw through, acquired and released with the draw. */
 class ImpostorEntryDriver {
   entry: ImpostorEntry | null = null;
   cardsMounted = false;
@@ -702,11 +676,6 @@ class ImpostorEntryDriver {
   }
 }
 
-/**
- * A batch of a model big enough to read from afar: near placements draw the real model, far ones
- * one impostor card each in a single instanced draw. The split reruns when the camera moves or a
- * placement does.
- */
 function impostorStaticDraw(env: StaticBatchEnv, args: {
   batch: StaticObjectBatch;
   model: ModelConfig;
@@ -829,7 +798,6 @@ function impostorStaticDraw(env: StaticBatchEnv, args: {
   };
 }
 
-/** Bounds and collision triangles of one harvested model, measured once however often its batch re-renders. */
 const sourceMeasures = new WeakMap<object, { bounds: ReturnType<typeof measureLocalBounds>; triangles: ReturnType<typeof measureLocalCollisionTriangles> }>();
 
 function reportSourceMeasures(ctx: GameContext, harvested: { sources: readonly ScatterModelSource[] }, batch: StaticObjectBatch): void {
@@ -985,7 +953,6 @@ function variantLevelDraw(env: StaticBatchEnv, args: {
   };
 }
 
-/** The impostor level of a built model: one card per placement the selector put past its impostor distance. */
 function variantImpostorLevelDraw(env: StaticBatchEnv, args: {
   model: ModelConfig;
   meta: BuiltLodMeta;
@@ -1042,11 +1009,6 @@ function variantImpostorLevelDraw(env: StaticBatchEnv, args: {
   };
 }
 
-/**
- * A batch whose model declares detail levels: every level draws its own instanced meshes and claims
- * only the instances the shared distance switch put on it, so near and far trees of one species keep
- * their own mesh inside one batch cell â€” the draw-side `VariantStaticObjects`.
- */
 function variantStaticDraw(env: StaticBatchEnv, args: {
   batch: StaticObjectBatch;
   objects: () => readonly SceneObject[];
@@ -1143,11 +1105,6 @@ function variantStaticDraw(env: StaticBatchEnv, args: {
   };
 }
 
-/**
- * A batch drawn with the model its built levels resolved to â€” the draw-side `LoadedStaticObjects`:
- * harvests the model's pieces into instanced draws, or impostor cards when it is big enough to read
- * from afar.
- */
 function loadedStaticDraw(env: StaticBatchEnv, args: {
   batch: StaticObjectBatch;
   model: ModelConfig;
@@ -1361,11 +1318,7 @@ export function staticObjectBatchDraw(getEnv: () => {
   };
 }
 
-/**
- * Keeps the scene's static draw pool on the game's far-cell proxy settings and switches each cell
- * between its batches and its proxy as the camera moves.
- * @internal
- */
+/** @internal */
 export function staticDrawPoolDriverDraw(getHlod: () => HlodConfig | undefined): EngineDraw {
   let pool: ReturnType<typeof staticDrawPoolFor> | null = null;
   const eye = new THREE.Vector3();
@@ -1440,11 +1393,7 @@ export const StaticObjectModels = memo(function StaticObjectModels({ batch, sing
   );
 });
 
-/**
- * Keeps the scene's static draw pool on the game's far-cell proxy settings and switches each cell
- * between its batches and its proxy as the camera moves.
- * @internal
- */
+/** @internal */
 export function StaticDrawPoolDriver({ hlod }: { hlod: HlodConfig | undefined }) {
   const latest = useRef(hlod);
   latest.current = hlod;

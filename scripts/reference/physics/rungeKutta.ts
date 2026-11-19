@@ -1,4 +1,3 @@
-/** A reusable classical fourth-order Runge–Kutta stepper over a fixed-size state vector. */
 export interface RungeKutta4 {
   /**
    * Advance `x` in place by `h` seconds of `dx/dt = derivative(x)`. `derivative` writes into `out` and must not keep

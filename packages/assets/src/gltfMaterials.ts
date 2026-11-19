@@ -12,7 +12,6 @@ export const GLTF_MATERIAL_EXTENSIONS: readonly string[] = [
 
 /** A native glTF texture use; embedded images retain their source index instead of an invented URL. */
 export interface GltfMaterialTexture {
-  /** Bump is native normal perturbation, distinct from authored height displacement. */
   role: MaterialTextureRole | "bump";
   texture: number;
   image: number;
@@ -22,11 +21,9 @@ export interface GltfMaterialTexture {
   metadata: Omit<MaterialTextureMetadata, "url"> & { url?: string };
   /** Packed source channel meanings; anisotropy RG direction is remapped to [-1, 1]. */
   channels: Readonly<Record<string, string>>;
-  /** Complete native textureInfo, including unrecognized extensions. */
   native: GLTF.ITextureInfo;
 }
 
-/** One imported material with the native definition retained as an independent JSON snapshot. */
 export interface GltfImportedMaterial {
   /** Stable within the pinned model bytes; duplicate or absent material names are safe. */
   id: string;
@@ -40,7 +37,6 @@ export interface GltfImportedMaterial {
   native: GLTF.IMaterial;
 }
 
-/** A primitive slot retains mesh and material indices even when display names collide. */
 export interface GltfMaterialSlot {
   id: string;
   mesh: number;
@@ -63,7 +59,6 @@ export interface GltfMaterialDiagnostic {
   message: string;
 }
 
-/** Native material inventory, primitive selectors, attribution, and renderer compatibility diagnostics. */
 export interface GltfMaterialInspection {
   assetId: string;
   materials: readonly GltfImportedMaterial[];

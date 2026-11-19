@@ -13,7 +13,6 @@ import { Obelisks } from "./Obelisks";
 import { SupplyDrops } from "./SupplyDrops";
 import { WildEggs } from "./WildEggs";
 
-/** What the game draws into the world: the survivor's base (pieces by tier colour, the build ghost), the obelisks, the caves, fallen survivors' bodies, supply crates, fertilized eggs and the Broodmother's lair. */
 export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
   return (
     <>

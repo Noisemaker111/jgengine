@@ -12,7 +12,6 @@ function isMutationCtx(ctx: MutationCtx | QueryCtx): ctx is MutationCtx {
   return "insert" in ctx.db;
 }
 
-/** The owner external id behind an actor — a bot maps to its owner. */
 export function ownerExternalIdForActor(actorExternalId: string): string {
   return isBotActorExternalId(actorExternalId) ? ownerFromBotActor(actorExternalId) : actorExternalId;
 }
@@ -67,9 +66,6 @@ export async function resolveActor(
   return identity.subject;
 }
 
-/**
- * Returns true if the actor owns the game.
- */
 export function isOwner(game: Doc<"games">, actorExternalId: string): boolean {
   return game.createdBy === actorExternalId;
 }
@@ -82,7 +78,6 @@ async function isGuestActor(ctx: MutationCtx | QueryCtx, actorExternalId: string
 
 type LabRole = "visitor" | "bot" | "owner";
 
-/** Every signed-in player looks at every lab; the owner and the owner's connected bot build in it. */
 const LAB_ROLES: BuildRoleLadder<LabRole> = {
   ladder: ["visitor", "bot", "owner"],
   editor: "bot",
@@ -90,10 +85,6 @@ const LAB_ROLES: BuildRoleLadder<LabRole> = {
   everyone: "visitor",
 };
 
-/**
- * One actor's rights on one lab. A guest, or anyone whose owner is banned from the lab, holds no
- * role; the owner's bot builds only while it presents its current token.
- */
 async function labAccess(
   ctx: MutationCtx | QueryCtx,
   game: Doc<"games">,
@@ -117,7 +108,6 @@ async function labAccess(
   return { canView: lab.canView(actor), canEdit: lab.canEdit(actor) };
 }
 
-/** Returns true if the actor can read the game: the owner, the owner's connected bot, or any signed-in non-banned visitor. */
 export async function canRead(
   ctx: MutationCtx | QueryCtx,
   game: Doc<"games">,
@@ -126,7 +116,6 @@ export async function canRead(
   return (await labAccess(ctx, game, actorExternalId)).canView;
 }
 
-/** Returns true if the actor can edit the game: the owner, or the owner's connected bot presenting its current token. */
 export async function canEdit(
   ctx: MutationCtx | QueryCtx,
   game: Doc<"games">,
@@ -152,9 +141,6 @@ export async function getOwnerAccess(
   return { game, actorExternalId };
 }
 
-/**
- * Requires edit access (owner or the owner's connected bot). Throws when access is denied.
- */
 export async function getEditorAccess(
   ctx: MutationCtx,
   gameId: Id<"games">,
@@ -167,10 +153,6 @@ export async function getEditorAccess(
   return { game, actorExternalId };
 }
 
-/**
- * Gets read access without exposing the loaded game. Returns actorExternalId + canEdit or null.
- * Visitors read with canEdit false.
- */
 export async function getReadAccess(
   ctx: MutationCtx | QueryCtx,
   gameId: Id<"games">,

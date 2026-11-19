@@ -12,7 +12,6 @@ export interface AssistNetworkConfig {
   distanceBetween?: (a: string, b: string) => number;
 }
 
-/** Plain JSON membership of an {@link AssistNetwork}, in registration order; threat lives in each member's own table. */
 export interface AssistNetworkState {
   members: { id: string; groupId: string }[];
 }
@@ -24,7 +23,6 @@ export interface AssistNetwork {
   assistersOf(memberId: string): string[];
   addThreat(memberId: string, sourceId: string, amount: number): string[];
   snapshot(): AssistNetworkState;
-  /** Replaces the membership; `tableOf` supplies each member's (separately restored) threat table. */
   restore(next: AssistNetworkState, tableOf: (memberId: string) => ThreatTable): void;
 }
 

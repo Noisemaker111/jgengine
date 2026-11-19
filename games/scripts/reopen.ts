@@ -16,7 +16,6 @@ export interface PageLeftovers {
   listeners: string[];
   listenerSources: string[];
   frames: number;
-  /** Where each still-pending frame callback was asked for. */
   frameSources: string[];
   globals: string[];
   contexts: number;
@@ -30,7 +29,6 @@ export interface ReopenResult {
   errors: string[];
 }
 
-/** Counts every listener, frame callback and GL context the page makes, before any app code runs. */
 const INSTRUMENT = `(() => {
   const live = new Map();
   const sources = new Map();
@@ -98,7 +96,6 @@ window.__reopen = {
 }
 
 const leftovers = (page: Page) => page.evaluate(() => (window as unknown as { __leftovers(): PageLeftovers }).__leftovers());
-/** A few frames for teardown work that a closed game queued (a cancelled loop stops within one). */
 const settle = (page: Page) => page.evaluate(() => new Promise<void>((done) => { let n = 0; const tick = () => (++n >= 4 ? done() : requestAnimationFrame(tick)); requestAnimationFrame(tick); }));
 
 async function openGame(page: Page): Promise<void> {
@@ -111,7 +108,6 @@ async function closeGame(page: Page, baseline: PageLeftovers): Promise<void> {
   await page.evaluate(() => (window as unknown as { __reopen: { unmount(): void } }).__reopen.unmount());
   await settle(page);
   // Some libraries let go a moment after their last subscriber leaves (nanostores waits a second); wait
-  // for the page to get back to its listener count, and judge whatever is still there after that.
   await page
     .waitForFunction((count) => (window as unknown as { __leftovers(): PageLeftovers }).__leftovers().listeners.length <= count, baseline.listeners.length, { timeout: 5_000, polling: 100 })
     .catch(() => undefined);
@@ -143,7 +139,6 @@ export async function reopenGame(browser: Browser, base: string, game: string): 
   return { game, baseline, afterClose, afterReopen, errors };
 }
 
-/** What a closed game left on the page, compared with the page before it opened; empty when nothing. */
 export function leftBehind(result: ReopenResult): string[] {
   const { baseline, afterReopen } = result;
   const problems: string[] = [];

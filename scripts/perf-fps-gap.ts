@@ -33,13 +33,11 @@ const WARMUP_MS = 5_000;
 const BREAKDOWN_TOP = 80;
 export const DEFAULT_RECORDS = join(repoRoot, ".scratch", "perf-fps-gap");
 
-/** Where sampled main-thread time went by layer, as a share of the profiled wall clock. */
 export interface ProfileLayer {
   layer: string;
   pct: number;
 }
 
-/** One game's saved measurement: the perf record plus what only this report reads. */
 export interface FpsGapEntry {
   record: PerfRecord;
   layers: ProfileLayer[];
@@ -53,7 +51,6 @@ export interface FpsGapArgs {
   /** Read saved entries from `records` instead of measuring. */
   reuse: boolean;
   markdown: boolean;
-  /** The backends each game is measured on, in order; `both` compares them side by side. */
   renderers: RendererBackend[];
 }
 
@@ -110,7 +107,6 @@ export function parseFpsGapArgs(argv: readonly string[]): FpsGapArgs | "help" {
   return { games: games ?? [...FRAME_GAMES], seconds, records, reuse, markdown, renderers };
 }
 
-/** The layer a sampled function belongs to, from its script URL. */
 export function profileLayerOf(node: Pick<ProfileNode, "callFrame">): string {
   const { functionName, url } = node.callFrame;
   if (url === "") {
@@ -133,7 +129,6 @@ export function profileLayerOf(node: Pick<ProfileNode, "callFrame">): string {
   return "other scripts";
 }
 
-/** Self time per layer over a CPU profile, biggest first. */
 export function profileLayers(profile: Pick<RawProfile, "nodes" | "samples" | "timeDeltas">): ProfileLayer[] {
   const layerById = new Map<number, string>(profile.nodes.map((node) => [node.id, profileLayerOf(node)]));
   const totals = new Map<string, number>();
@@ -150,7 +145,6 @@ export function profileLayers(profile: Pick<RawProfile, "nodes" | "samples" | "t
     .sort((a, b) => b.pct - a.pct);
 }
 
-/** The engine-level work a breakdown CPU row belongs to. */
 export function cpuGroupOf(name: string): string {
   if (name === "render:main" || name === "render:post:BeautyPass" || name === "render:post:RenderPass") return "scene submission (three.js traversal, sort, draw calls)";
   if (name === "render:shadow") return "shadow map submission";
@@ -174,7 +168,6 @@ export function cpuGroupOf(name: string): string {
   return folder === "" ? "frame callbacks (other)" : `frame callbacks: ${folder}`;
 }
 
-/** The engine-level work a GPU pass belongs to. */
 export function gpuGroupOf(pass: string): string {
   if (pass === "main" || pass === "post:BeautyPass" || pass === "post:RenderPass") return "scene raster (GPU)";
   if (pass === "shadow") return "shadow map raster (GPU)";
@@ -183,7 +176,6 @@ export function gpuGroupOf(pass: string): string {
 
 const UNATTRIBUTED = "untimed work inside the frame (engine loop, UI effects)";
 const BETWEEN = "between frames (GPU wait, compositing, UI commits, GC)";
-/** Fixed steps the driver ran between frames (`ctx.sim.stepAhead`): main-thread time inside the gap, not the frame. */
 const AHEAD = "60 Hz sim tick, run between frames";
 
 /**
@@ -212,11 +204,9 @@ export function groupCosts(breakdown: FrameBreakdownSummary, gpuWork?: FrameBrea
   return { cpu, gpu };
 }
 
-/** One engine-level work item across games. */
 export interface WorkItem {
   group: string;
   side: "CPU" | "GPU" | "GC";
-  /** Games where this group costs at least {@link BLOCKING_SHARE} of the budget. */
   blocks: string[];
   /** Sum of the group's average ms per frame over every game. */
   totalMs: number;
@@ -260,7 +250,6 @@ export function gcPer8s(breakdown: Pick<FrameBreakdownSummary, "counts" | "secon
   return breakdown.seconds > 0 ? Math.round((breakdown.counts.gcMb * 8) / breakdown.seconds) : 0;
 }
 
-/** The larger of CPU and GPU p50: what a frame costs when the two overlap fully. */
 export function frameCost(breakdown: Pick<FrameBreakdownSummary, "work" | "gpu">): { ms: number; bound: "CPU" | "GPU" } {
   const gpu = breakdown.gpu?.p50 ?? 0;
   return breakdown.work.p50 >= gpu ? { ms: breakdown.work.p50, bound: "CPU" } : { ms: gpu, bound: "GPU" };
@@ -281,7 +270,6 @@ function renderTable(table: Table, markdown: boolean): string {
 const ms2 = (value: number) => value.toFixed(2);
 const top = (costs: readonly NamedCost[], count: number) => costs.slice(0, count).map((cost) => `${shortName(cost.name)} ${cost.avgMs.toFixed(2)}`).join("; ");
 
-/** A breakdown row name without its frame label or package prefix, short enough for a table cell. */
 export function shortName(name: string): string {
   const owner = name.split(" | ")[0] ?? name;
   const match = /^frame#\d+(?::(\S+))?\s+(\S+)/.exec(owner);
@@ -290,7 +278,6 @@ export function shortName(name: string): string {
   return match[1] === undefined ? file : `${file} (${match[1]})`;
 }
 
-/** The whole report: conditions, the per-game table, each game's top costs, and the ranked work items. */
 export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { markdown: boolean }): string {
   const { markdown } = options;
   const out: string[] = [];

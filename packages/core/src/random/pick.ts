@@ -21,11 +21,7 @@ export function pickKeyed<T>(key: number, items: readonly T[]): T | undefined {
   return items[index < 0 ? index + items.length : index];
 }
 
-/**
- * A shuffled copy of `values` (Fisher–Yates) drawn from `rng`; the same seeded stream always gives the same order.
- *
- * @capability weighted-pick pick one item from a set with an injected random source
- */
+/** @capability weighted-pick pick one item from a set with an injected random source */
 export function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] {
   const out = values.slice();
   for (let i = out.length - 1; i > 0; i--) {

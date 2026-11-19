@@ -8,17 +8,12 @@ import {
   type TransactionLedgerOptions,
 } from "./transactionLedger";
 
-/** Options for {@link createWalletBooks}. */
 export interface WalletBooksOptions {
-  /** The account the journal keeps, usually the player's user id or a faction id. */
   account: string;
-  /** Every currency the journal follows. */
   currencies: readonly string[];
-  /** The live balance the journal explains: a wallet, a world fact. Whole units only. */
   balance(currency: string): number;
   /** Caller clock in seconds, stamped on each entry. */
   now(): number;
-  /** Reason for a difference the journal did not see happen, such as a host write (default `"reconcile"`). */
   unexplained?: string;
   /**
    * How a fresh journal opens. Without it each account opens at the live balance and no entry
@@ -26,7 +21,6 @@ export interface WalletBooksOptions {
    * so the history alone explains the whole balance.
    */
   opening?: string;
-  /** Options for the underlying {@link TransactionLedger}. */
   ledger?: TransactionLedgerOptions;
 }
 
@@ -37,25 +31,15 @@ export interface WalletBooksOptions {
  */
 export interface WalletBooks {
   readonly ledger: TransactionLedger;
-  /**
-   * Post a movement that already happened in the source. A difference the journal had not seen
-   * before it posts first under the `unexplained` reason, so only `delta` lands under `reason`.
-   */
   record(currency: string, delta: number, reason: string, ref?: string): void;
-  /** Run a mutation of the source and post what it moved in each currency under `reason`. */
   track<T>(reason: string, mutate: () => T, ref?: string): T;
-  /** Post any difference between the journal and the live source under `reason` (default `unexplained`). */
   square(reason?: string, ref?: string): void;
-  /** Source minus journal per currency; every value is `0` while the books explain the balance. */
   unexplained(): Record<string, number>;
-  /** The journal's balance in one currency. */
   balanceOf(currency: string): number;
   entries(filter?: Omit<LedgerEntryFilter, "account">): LedgerEntry[];
   totals(): Record<string, LedgerTotals>;
   snapshot(): LedgerState;
-  /** Restore a saved journal and square it to the live source under `reason`. `false` leaves the books untouched. */
   restore(state: LedgerState, reason?: string): boolean;
-  /** Clear the journal and reopen it at the live source; `opening` posts that balance under its own reason. */
   reset(opening?: string): void;
   dispose(): void;
 }

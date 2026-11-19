@@ -9,20 +9,14 @@
 import { closedCurvature, closedSpacing, simulateLap } from "./circuitSim";
 import type { StreetVec2 } from "./streetGenerator";
 
-/** Grid rows stand this far apart, the front row this far behind the line (m). */
 export const GRID_ROW_PITCH = 9;
 export const GRID_FRONT_GAP = 8;
 
-/** Length of road (m) a grid of `slots` cars occupies behind the line, front row to last row. */
 export function gridLength(slots: number): number {
   const rows = Math.ceil(Math.max(0, slots) / 2);
   return rows === 0 ? 0 : GRID_FRONT_GAP + (rows - 1) * GRID_ROW_PITCH + 4;
 }
 
-/**
- * Arc distance from the start of a straight to the start/finish line: far enough in that the whole grid
- * stands on the straight behind it, and short of the braking zone at its end.
- */
 export function startLineOffset(straightLength: number, slots: number): number {
   const grid = gridLength(slots);
   const latest = straightLength - Math.max(10, straightLength * 0.12);
@@ -76,7 +70,6 @@ export function timedSectors(
   return out;
 }
 
-/** Simulated per-sample time of a lap read straight off its geometry (for laps with no design). */
 export function lapTimeProfile(centerline: readonly StreetVec2[]): { time: number[]; lapTime: number } {
   const sim = simulateLap(closedCurvature(centerline, 10), closedSpacing(centerline));
   return { time: sim.time, lapTime: sim.lapTime };

@@ -8,7 +8,6 @@ import { gameClockMs, session } from "../session";
 import { abilityDef, ABILITIES, BEACON_FIRE, FROST_BELL } from "./abilities";
 import { scorch } from "./strike";
 
-/** The council's cooldown for an ability, kept on the engine kit's slot. */
 function retuneCooldowns(ctx: GameContext): void {
   for (const ability of ABILITIES) {
     const scale = councilScale(ctx, ability.id === "beacon_fire" ? "fire_cooldown" : "bell_cooldown");
@@ -43,10 +42,6 @@ function ringBell(ctx: GameContext): void {
   ctx.game.audio.play("upgrade");
 }
 
-/**
- * Use an ability. An instant one (the bell) rings at once; a targeted one (the fire) arms and waits
- * for a point on the road, which `castAt` supplies.
- */
 export function useAbility(ctx: GameContext, id: string): boolean {
   retuneCooldowns(ctx);
   const def = abilityDef(id);
@@ -67,7 +62,6 @@ export function useAbility(ctx: GameContext, id: string): boolean {
   return true;
 }
 
-/** A click on the field while an ability is armed: drop it there. */
 export function castAt(ctx: GameContext, point: EntityPosition): boolean {
   const id = session.armedAbility;
   if (id === null) return false;
@@ -77,7 +71,6 @@ export function castAt(ctx: GameContext, point: EntityPosition): boolean {
   return true;
 }
 
-/** Cooldowns and falling fire, once a frame. */
 export function tickAbilities(ctx: GameContext, dt: number): void {
   session.abilities.tick(dt);
   if (session.falling.length === 0) return;

@@ -7,7 +7,7 @@ export interface EmitterPose {
   position: readonly [number, number, number];
 }
 
-/** Read side of the emitters a game declares sounds for. @internal */
+/** @internal */
 export interface EmitterSources {
   /**
    * Every candidate id. Identity changes only on spawn/despawn (`ids()` in the entity and object
@@ -20,9 +20,7 @@ export interface EmitterSources {
 
 /** Retained loops for one sound map, maintained by membership and pose events instead of rebuilt per frame. @internal */
 export interface EmitterTracker {
-  /** Advance one frame: pick up spawned/moved/despawned emitters and write nothing when nothing moved. */
   step(): void;
-  /** Live emitters, for probes and assertions. */
   count(): number;
   dispose(): void;
 }

@@ -1,7 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** A survivor made in the creator wakes on the north coast in their chosen body, shows in the pane, and wakes there again after dying. */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

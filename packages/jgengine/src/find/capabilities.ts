@@ -6,34 +6,37 @@ import { findUp } from "../pkg";
 import { RECIPES } from "../recipes";
 import { queryTokens, rowWords, tokenHits } from "./words";
 
-/**
- * The shipped-capability half of `jgengine find`: the capability indexes inside this CLI's own tarball
- * (`skills/<domain>/capabilities.md`), so a consumer project without engine source still gets the drop-in
- * primitive and its import.
- */
-
-/** One capability row parsed from a `capabilities.md` — a need mapped to the primitive that already does it. */
 export interface CapabilityEntry {
-  /** Owning skill/domain, e.g. `jgengine-ui`. */
   skill: string;
-  /** The `## <slug>` capability id, e.g. `panel-host`. */
   slug: string;
-  /** The one-line "what you need" description after the slug. */
   description: string;
-  /** Import statements that provide the primitive (one per exported symbol). */
   imports: string[];
-  /** Exported symbol names for the primitive. */
   symbols: string[];
 }
 
-/**
- * Parse one domain's `capabilities.md` into rows. The generated format is a `## slug — description`
- * heading followed by `` - `Symbol` (kind) · `import { Symbol } from "@jgengine/pkg"` `` bullets. The
- * slug ends at the FIRST ` — `; the description (which may itself contain ` — `) is the remainder.
- */
 export function parseCapabilities(markdown: string, skill: string): CapabilityEntry[] {
   const entries: CapabilityEntry[] = [];
-  // Everything before the first "## " is the H1 + generated-comment preamble.
+  for (const raw of markdown.split("\n")) {
+    const compact = /^- \*\*([^\s*]+)\*\* — (.+)$/.exec(raw.trimEnd());
+    if (compact === null) continue;
+    const slug = compact[1]!;
+    const rest = compact[2]!;
+    const splitAt = rest.indexOf(" · `import ");
+    const description = (splitAt === -1 ? rest : rest.slice(0, splitAt)).trim();
+    const tail = splitAt === -1 ? "" : rest.slice(splitAt + 3);
+    const imports: string[] = [];
+    const symbols: string[] = [];
+    for (const match of tail.matchAll(/`(import \{([^}]+)\} from "[^"]+")`/g)) {
+      imports.push(match[1]!);
+      for (const name of match[2]!.split(",")) {
+        const trimmed = name.trim();
+        if (trimmed !== "") symbols.push(trimmed);
+      }
+    }
+    if (imports.length > 0 || symbols.length > 0) entries.push({ skill, slug, description, imports, symbols });
+  }
+  if (entries.length > 0) return entries;
+
   const blocks = markdown.split(/\n## /).slice(1);
   for (const block of blocks) {
     const newline = block.indexOf("\n");
@@ -71,18 +74,11 @@ function indexRow(entry: CapabilityEntry): IndexedRow {
   return { entry, raw: raw.toLowerCase(), words: rowWords(raw), nameWords: rowWords(name) };
 }
 
-/** Result of a `find` search: `partial` is true when no row carried every token and the best partial hits were returned. */
 export interface FindResult {
   matches: CapabilityEntry[];
   partial: boolean;
 }
 
-/**
- * Rank capability rows against a free-text intent. Tokens match whole words (stemmed, camelCase-split),
- * stopwords are dropped, and a multi-word query also tries its words joined ("pick up" → "pickup").
- * Rows carrying every token come first, name/slug hits ranked above description mentions. When no row
- * carries every token, the rows that carry the most tokens are returned with `partial: true`.
- */
 export function findCapabilities(entries: readonly CapabilityEntry[], query: string): FindResult {
   const tokens = queryTokens(query);
   if (tokens.length === 0) return { matches: [], partial: false };
@@ -112,16 +108,13 @@ export function findCapabilities(entries: readonly CapabilityEntry[], query: str
   return { matches: kept.map((row) => row.entry), partial: partial && kept.length > 0 };
 }
 
-/** Rows that carry every query token, best first — `findCapabilities` without the partial fallback. */
 export function searchCapabilities(entries: readonly CapabilityEntry[], query: string): CapabilityEntry[] {
   const result = findCapabilities(entries, query);
   return result.partial ? [] : result.matches;
 }
 
-/** Capability rows shown when `--limit` is not given. */
 export const MAX_RESULTS = 40;
 
-/** Render matches as grouped `[skill] slug — description` blocks with the import line(s) beneath. */
 export function renderFindResults(matches: readonly CapabilityEntry[], query: string, partial = false, limit = MAX_RESULTS): string {
   if (matches.length === 0) {
     return [
@@ -153,16 +146,10 @@ export function renderFindResults(matches: readonly CapabilityEntry[], query: st
   return lines.join("\n");
 }
 
-/** Render bounded machine-readable discovery while preserving total and partial-match metadata. */
 export function renderFindJsonResults(matches: readonly CapabilityEntry[], query: string, partial = false, limit = MAX_RESULTS): string {
   return JSON.stringify({ query, total: matches.length, partial, truncated: matches.length > limit, matches: matches.slice(0, limit) });
 }
 
-/**
- * Locate the staged `skills/` directory that ships inside this CLI's tarball. In a published consumer
- * that is `node_modules/jgengine/skills`; in the monorepo it is `packages/jgengine/skills` (populated by
- * `bun scripts/stage-skills.ts`). Resolves by walking up from this module to the `jgengine` package root.
- */
 export function resolveSkillsDir(fromDir: string = dirname(fileURLToPath(import.meta.url))): string | null {
   const packageRoot = findUp(fromDir, (dir) => existsSync(join(dir, "skills")) && existsSync(join(dir, "package.json")));
   if (packageRoot === null) return null;
@@ -170,7 +157,6 @@ export function resolveSkillsDir(fromDir: string = dirname(fileURLToPath(import.
   return existsSync(skills) ? skills : null;
 }
 
-/** Read and parse every `<skillsDir>/<domain>/capabilities.md` into a flat capability index. */
 export function loadCapabilityIndex(skillsDir: string): CapabilityEntry[] {
   const entries: CapabilityEntry[] = [];
   let domains: string[];
@@ -189,17 +175,12 @@ export function loadCapabilityIndex(skillsDir: string): CapabilityEntry[] {
   return entries;
 }
 
-/**
- * Every searchable row: the capability indexes and skill recipes shipped in this CLI (or, in the
- * monorepo, `.claude/skills` under `checkout`) plus the CLI recipes.
- */
 export function loadAllCapabilities(checkout: string | null): CapabilityEntry[] {
   const repoSkills = checkout === null ? null : join(checkout, ".claude", "skills");
   const skillsDir = resolveSkillsDir() ?? (repoSkills !== null && existsSync(repoSkills) ? repoSkills : null);
   return skillsDir === null ? [] : [...loadCapabilityIndex(skillsDir), ...loadSkillRecipes(skillsDir), ...recipeCapabilities()];
 }
 
-/** CLI recipes (`npx jgengine recipe <name>`) as searchable rows. */
 export function recipeCapabilities(): CapabilityEntry[] {
   return RECIPES.map((recipe) => ({
     skill: "recipe",
@@ -210,10 +191,6 @@ export function recipeCapabilities(): CapabilityEntry[] {
   }));
 }
 
-/**
- * Skill recipe documents (`<skillsDir>/<domain>/recipes/*.md`) as searchable rows: the H1 (minus a
- * leading "Recipe —") plus the "What this wires" line, pointing at the installed path.
- */
 export function loadSkillRecipes(skillsDir: string): CapabilityEntry[] {
   const entries: CapabilityEntry[] = [];
   let domains: string[];

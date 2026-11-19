@@ -4,19 +4,16 @@ import { DEMO_PARTS, type DemoKey } from "../live/demoParts";
 
 export { GAME_IDS };
 
-/** Attribution for a game, sourced from its own `export const credit` in game.config.ts. */
 export interface GameCredit {
   readonly text: string;
   readonly url?: string;
   readonly handle?: string;
 }
 
-/** The game's authored attribution, or `null` when it declares none. */
 export function gameCredit(id: string): GameCredit | null {
   return GAME_CREDITS[id] ?? null;
 }
 
-/** The README title, else "scrap-signal" → "Scrap Signal". */
 export function gameTitle(id: string): string {
   return (
     GAME_META[id]?.title ??
@@ -27,12 +24,10 @@ export function gameTitle(id: string): string {
   );
 }
 
-/** One-line description from the games repo README, or null. */
 export function gameBlurb(id: string): string | null {
   return GAME_META[id]?.blurb ?? null;
 }
 
-/** Public path of the committed cover screenshot, or null. */
 export function gameCover(id: string): string | null {
   return GAME_THUMBS.includes(id) ? `/covers/${id}.webp` : null;
 }
@@ -46,11 +41,9 @@ export function gameSeed(id: string): string | null {
   return GAME_SEEDS[id] ?? null;
 }
 
-/** The engine parts with a live demo on this site that the game's source uses, in demo order. */
 export function gameParts(id: string): readonly DemoKey[] {
   const used = GAME_PARTS[id] ?? [];
   return DEMO_PARTS.filter((part) => used.includes(part.key)).map((part) => part.key);
 }
 
-/** How many listed games started as a one-line idea. */
 export const SEEDED_GAME_COUNT = GAME_IDS.filter((id) => GAME_SEEDS[id] !== undefined).length;

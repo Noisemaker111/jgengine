@@ -67,9 +67,7 @@ export interface RacerProgress {
   finishTime: number | null;
   eliminated: boolean;
   splits: readonly number[];
-  /** Fork id → route id last taken through it. */
   routesTaken: Readonly<Record<string, string>>;
-  /** Route the racer is currently inside, or `null` on the mainline. */
   activeRoute: { forkId: string; routeId: string } | null;
 }
 
@@ -80,7 +78,6 @@ export type RaceEvent =
       checkpoint: number;
       lap: number;
       time: number;
-      /** Set when the hit is a fork-route checkpoint (`checkpoint` is then the fork's `afterIndex`). */
       fork?: { forkId: string; routeId: string; index: number };
     }
   | { type: "fork.taken"; racerId: string; forkId: string; routeId: string; time: number }
@@ -115,7 +112,6 @@ export function everyoneFinishes(): RaceWinCondition {
   };
 }
 
-/** Destruction-derby last-man-standing: ends when at most one racer is left un-eliminated. */
 export function lastStanding(): RaceWinCondition {
   return (standings) => {
     const alive = standings.filter((s) => !s.eliminated);
@@ -209,7 +205,6 @@ export class RaceState {
     this.order.push(racerId);
   }
 
-  /** Removes a racer's progress/standing and renumbers the remaining field's positions; a no-op for an unknown id. */
   removeRacer(racerId: string): void {
     if (!this.racers.delete(racerId)) return;
     const idx = this.order.indexOf(racerId);
@@ -434,7 +429,6 @@ export function createRaceState(config: RaceStateConfig): RaceState {
   return new RaceState(config);
 }
 
-/** Wall-clock lap timing: the current/last/best/total split-book every racing HUD reads. */
 export interface LapTimerSnapshot {
   /** Seconds elapsed in the lap now underway. */
   currentLap: number;
@@ -442,11 +436,8 @@ export interface LapTimerSnapshot {
   lastLap: number | null;
   /** Fastest completed lap so far, or `null` before the first lap closes. */
   bestLap: number | null;
-  /** Total time across every lap, including the current one. */
   total: number;
-  /** Number of laps completed. */
   lapCount: number;
-  /** Completed lap durations in order — the split book for a results screen. */
   splits: readonly number[];
 }
 
@@ -459,21 +450,15 @@ export interface LapTimerSnapshot {
 export interface LapTimer {
   /** Advance the current lap and total by `dt` seconds. */
   tick(dt: number): void;
-  /** Close the current lap: bank its split, update last/best, reset the current lap to 0, and return its time. */
   completeLap(): number;
   /** Add a time penalty (seconds) to the lap currently underway. */
   penalize(seconds: number): void;
-  /** Clear all timing back to the start line. */
   reset(): void;
   /** Immutable view of the current timing state. */
   snapshot(): LapTimerSnapshot;
 }
 
-/**
- * Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded.
- *
- * @capability lap-timer wall-clock current/last/best lap timing with splits
- */
+/** @capability lap-timer wall-clock current/last/best lap timing with splits */
 export function createLapTimer(): LapTimer {
   let currentLap = 0;
   let lastLap: number | null = null;
@@ -530,7 +515,6 @@ export interface RaceSessionState {
   readonly elapsed: number;
 }
 
-/** Options for {@link startRaceCountdown}. */
 export interface RaceCountdownOptions {
   /** Countdown length in seconds before the race goes green (default 3). A value ≤ 0 starts racing immediately. */
   readonly seconds?: number;
@@ -572,12 +556,10 @@ export function tickRaceSession(session: RaceSessionState, dt: number): RaceSess
   return session;
 }
 
-/** Cross the flag: move a `racing` session to `finished`, freezing its `elapsed`. A no-op in any other phase. */
 export function finishRaceSession(session: RaceSessionState): RaceSessionState {
   return session.phase === "racing" ? { phase: "finished", countdown: 0, elapsed: session.elapsed } : session;
 }
 
-/** Whether a racer won or lost, derived from where they placed against the winning-places cutoff. */
 export type RaceOutcome = "win" | "lose";
 
 /** A racer's finishing position (`place`, 1-based) in a finish order, and the {@link RaceOutcome} it earns. */
@@ -588,9 +570,7 @@ export interface RacePlacement {
   readonly outcome: RaceOutcome;
 }
 
-/** Options for {@link racePlacements} / {@link placementOf} / {@link raceOutcomeOf}. */
 export interface PlacementOptions {
-  /** How many top places count as a win (default 1). A podium finish would pass `3`. */
   readonly winningPlaces?: number;
 }
 
@@ -621,22 +601,11 @@ export function placementOf(finishOrder: readonly string[], racerId: string, opt
   return { racerId, place: index + 1, outcome: outcomeForPlace(index + 1, winningPlaces) };
 }
 
-/**
- * The win/lose verdict for one racer in a finish order — `ranking[0] === player ? "win" : "lose"`, the
- * check every racing game hand-rolls, generalized to a `winningPlaces` cutoff. A racer absent from the
- * order counts as a `lose`.
- */
 export function raceOutcomeOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RaceOutcome {
   return placementOf(finishOrder, racerId, options)?.outcome ?? "lose";
 }
 
-/**
- * Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`):
- * `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the
- * cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
- *
- * @capability lap-splits turn cumulative split times into per-segment leg times
- */
+/** @capability lap-splits turn cumulative split times into per-segment leg times */
 export function splitSegments(splits: readonly number[], start = 0): number[] {
   const segments: number[] = [];
   let previous = start;
@@ -647,12 +616,7 @@ export function splitSegments(splits: readonly number[], start = 0): number[] {
   return segments;
 }
 
-/**
- * Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time
- * is its finish-gate split minus the previous lap's finish. Only complete laps are returned.
- *
- * @capability lap-splits per-lap durations from a cumulative split book
- */
+/** @capability lap-splits per-lap durations from a cumulative split book */
 export function lapDurations(splits: readonly number[], gatesPerLap: number): number[] {
   if (gatesPerLap <= 0) return [];
   const laps: number[] = [];
@@ -665,13 +629,7 @@ export function lapDurations(splits: readonly number[], gatesPerLap: number): nu
   return laps;
 }
 
-/**
- * Elementwise delta of a cumulative split book against a `reference` book (a personal best or par lap):
- * positive means behind the reference at that checkpoint. Compared up to the shorter length — the
- * `+0.3s` / `−1.2s` gap every racing HUD shows against its ghost.
- *
- * @capability lap-splits delta of splits against a personal-best or par reference
- */
+/** @capability lap-splits delta of splits against a personal-best or par reference */
 export function parDelta(splits: readonly number[], reference: readonly number[]): number[] {
   const count = Math.min(splits.length, reference.length);
   const deltas: number[] = [];

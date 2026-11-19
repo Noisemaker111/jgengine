@@ -114,7 +114,6 @@ function pathToKindObject(path: EditorPath): SceneKindObject {
   return { id: path.id, kind: path.kind, points: path.points.map((point) => ({ x: point.x, y: point.y, z: point.z })), ...(path.meta === undefined ? {} : { meta: path.meta }) };
 }
 
-/** Renders every marker placed as a parametric generator asset, re-resolved from its `meta` + seed. */
 function AuthoredGenerators({ document, field }: { document: EditorDocument; field: TerrainField }) {
   const markers = useMemo(
     () => document.markers.flatMap((marker) => {
@@ -165,16 +164,10 @@ function AuthoredStudios({ document, context }: { document: EditorDocument; cont
   );
 }
 
-/** Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter. */
 export interface AuthoredPathsProps {
   document: EditorDocument;
   field: TerrainField;
-  /** Only render these path kinds; default renders every non-scatter path. */
   kinds?: readonly string[];
-  /**
-   * Shade paths with the terrain's procedural surfaces (dirt, gravel, paving), wear and soft edges.
-   * Default true; false keeps flat-colour ribbons. One path opts out with `meta.surfaceDetail: false`.
-   */
   surfaceDetail?: boolean;
 }
 
@@ -197,7 +190,6 @@ export function AuthoredPaths({ document, field, kinds, surfaceDetail = true }: 
   return <Roads roads={roads} field={field} />;
 }
 
-/** Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting. */
 export interface AuthoredObjectsProps extends ResolveAuthoredObjectsOptions {
   document: EditorDocument;
   field: TerrainField;
@@ -208,16 +200,10 @@ export interface AuthoredObjectsProps extends ResolveAuthoredObjectsOptions {
    * `placeAuthoredObjects` call wins and remounts stay remount-safe.
    */
   onExisting?: "throw" | "replace" | "keep";
-  /** Synchronize authored edits and remove previously owned placements absent from the document. */
   synchronize?: boolean;
 }
 
-/**
- * Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`.
- * WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure
- * headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
- * @capability authored-objects place editor markers with catalog ids into the scene, grounded on the terrain
- */
+/** @capability authored-objects place editor markers with catalog ids into the scene, grounded on the terrain */
 export function AuthoredObjects({
   document,
   field,
@@ -253,11 +239,7 @@ export function AuthoredObjects({
   return null;
 }
 
-/**
- * Writes the document's studio solids (city buildings and any kind with a `solids` hook) into
- * `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
- * @capability authored-solids collision for studio-authored world content such as city volumes
- */
+/** @capability authored-solids collision for studio-authored world content such as city volumes */
 export function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }) {
   const ctx = useGameContext();
   useEffect(() => {
@@ -272,7 +254,6 @@ export function AuthoredSolids({ document, field }: { document: EditorDocument; 
   return null;
 }
 
-/** Resolve palette items to generator items directly and to models through the catalog. */
 function scatterItemResolver(
   map: Record<string, string | ModelConfig | ScatterGeneratorItem> | undefined,
   assets: AssetCatalog | undefined,
@@ -289,15 +270,12 @@ function scatterItemResolver(
   return (item) => grown.get(item) ?? resolveModel?.(item) ?? null;
 }
 
-/** Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on. */
 export interface AuthoredSceneProps {
   document: EditorDocument;
   /** Register bounded procedural weather counts in the supported diagnostics probes. */
   diagnostics?: boolean;
   field: TerrainField;
-  /** Restrict rendered path kinds; default renders every non-scatter path. */
   pathKinds?: readonly string[];
-  /** Procedural surface, wear and soft edges on paths (default true); see {@link AuthoredPathsProps.surfaceDetail}. */
   pathSurfaceDetail?: boolean;
   /**
    * Scatter palette item id → model asset id, `ModelConfig`, or {@link ScatterGeneratorItem}; a mapped
@@ -306,28 +284,12 @@ export interface AuthoredSceneProps {
    * with `entityModels`). Asset ids and model configs require `assets`.
    */
   scatterModels?: Record<string, string | ModelConfig | ScatterGeneratorItem>;
-  /** Most scatter instances drawn; past it the foliage thins evenly. Default 20000. */
   scatterBudget?: number;
-  /** Scatter palette item → the box each of its placements blocks with; unlisted items stay walk-through. */
   scatterSolids?: Readonly<Record<string, ScatterSolidSpec>>;
-  /** Animated models keyed by authored cosmetic habitat species. */
   flockModels?: Record<string, string | ModelConfig>;
-  /** Catalog `scatterModels` string ids resolve through; required together with `scatterModels`. */
   assets?: AssetCatalog;
-  /**
-   * When true (default), subscribe to the global document live-sync bus if the editor host is
-   * mounted so headless/RPC document patches hot-apply without a full reload. Pass false to pin
-   * the `document` prop (tests, one-shot previews).
-   */
   live?: boolean;
-  /**
-   * Place the document's catalog-id markers into the object
-   * store — WorldScene renders them via the game's `objectModels` seam. Omit when the game places
-   * props itself in onInit with `placeAuthoredObjects`. `excludeKinds` replaces the resolver's
-   * default mob/boss exclusions; include those when adding other game-owned entity spawn kinds.
-   */
   placeObjects?: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions);
-  /** Terrain surface color sampler forwarded to studio renderers (see `SceneKindRenderContext.groundColorAt`). */
   groundColorAt?: (x: number, z: number) => string;
 }
 

@@ -15,15 +15,11 @@ export interface AircraftDerivatives extends AircraftAeroGeometry {
    * stability and control power stay as measured; sane over `0..4`.
    */
   strength?: number;
-  /** Rolling moment coefficient build-up, positive right wing down. */
   roll: readonly AeroTerm[];
-  /** Pitching moment coefficient build-up about the centre of gravity, positive nose up. */
   pitch: readonly AeroTerm[];
-  /** Yawing moment coefficient build-up, positive nose right. */
   yaw: readonly AeroTerm[];
 }
 
-/** Moment coefficients split into static-and-control and damping parts. */
 export interface DerivativeMoments {
   roll: number;
   pitch: number;

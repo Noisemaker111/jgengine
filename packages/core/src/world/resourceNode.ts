@@ -5,7 +5,6 @@ import { createRefillSlots } from "../time/refillSlots";
 /** A quantity that is either fixed or a uniformly sampled `[min, max]` range resolved by the field rng. */
 export type Quantity = number | readonly [number, number];
 
-/** One resource kind a node can yield and its base per-harvest amount (before tool bias and harvester multiplier). */
 export interface ResourceYield {
   /** Generic resource kind id — "wood", "ore", "fiber", "hide". The field never interprets it. */
   kind: string;
@@ -13,12 +12,9 @@ export interface ResourceYield {
   amount: Quantity;
 }
 
-/** A harvestable node definition: a finite budget, the resources it yields, and how it respawns. */
 export interface ResourceNodeDef {
   id: string;
-  /** Total harvestable budget (hit points / finite quantity). Each harvest consumes the tool's `power`. */
   budget: number;
-  /** Resource kinds this node can yield; a tool's bias selects and scales among them. */
   resources: readonly ResourceYield[];
   /** Seconds to refill after depletion. Omit for a node that never respawns (a one-shot deposit). */
   respawn?: number;
@@ -26,68 +22,46 @@ export interface ResourceNodeDef {
   respawnBudget?: number;
 }
 
-/**
- * How a tool extracts from a node — its per-hit power and per-resource yield bias. Two profiles over the
- * same multi-resource node return different resources and amounts: the generic pick-vs-hatchet mechanic.
- */
 export interface ToolProfile {
   /** Budget consumed per harvest hit; defaults to 1. Clamped to the node's remaining budget. */
   power?: number;
-  /** Per-resource-kind yield multiplier. A kind absent here falls back to `defaultBias`. */
   biases?: Readonly<Record<string, number>>;
   /** Multiplier for resource kinds not listed in `biases`; defaults to 1 (set 0 for a tool that only extracts listed kinds). */
   defaultBias?: number;
 }
 
-/** Options for a single harvest. */
 export interface HarvestOptions {
   /** Scalar applied to every granted amount — a stronger creature/harvester yields more; defaults to 1. */
   multiplier?: number;
 }
 
-/** One resource kind granted by a harvest and its resolved amount. */
 export interface ResourceGrant {
   kind: string;
   amount: number;
 }
 
-/** Outcome of one harvest attempt. */
 export interface HarvestResult {
   nodeId: string;
-  /** Resources granted this harvest; empty when the node was already depleted or the tool extracted nothing. */
   granted: readonly ResourceGrant[];
-  /** Budget actually consumed (0 when the node was already depleted). */
   spent: number;
-  /** Whether the node still had budget and produced a harvest. */
   harvested: boolean;
-  /** Whether this harvest reduced the node to empty. */
   depleted: boolean;
 }
 
-/** Serializable per-node runtime state — round-trips through save/load and multiplayer sync. */
 export interface ResourceNodeState {
   id: string;
-  /** Remaining budget. */
   budget: number;
-  /** Budget the node refills to on respawn — the nominal "full" value for `fraction`. */
   maxBudget: number;
   depleted: boolean;
   /** Seconds remaining until respawn; 0 when full or when the node never respawns. */
   respawnTimer: number;
-  /** Explicit respawn-block flag (a structure claimed the spot); OR-ed with the field's suppression predicate. */
   respawnBlocked: boolean;
   /** 0..1 remaining fraction of `maxBudget`. */
   fraction: number;
 }
 
-/** Construction options for {@link createResourceNodeField}: node definitions and an optional RNG/suppression hook. */
 export interface ResourceNodeFieldConfig {
   nodes: readonly ResourceNodeDef[];
-  /**
-   * Resolve a node not listed in `nodes` on first touch — a field over thousands of placed trees and rocks
-   * keeps state only for the ones someone hit. A resolved node that respawns back to full is forgotten
-   * again, so `ids()` and `snapshot()` stay as small as the player's footprint.
-   */
   resolve?: (nodeId: string) => ResourceNodeDef | null;
   /** Injected [0,1) generator for deterministic yield variance. Omitting it falls back to `Math.random` and warns once. */
   rng?: () => number;
@@ -98,19 +72,14 @@ export interface ResourceNodeFieldConfig {
   respawnSuppressed?: (state: ResourceNodeState) => boolean;
 }
 
-/** A set of harvestable nodes: harvest with tool profiles, tick respawn timers, snapshot/hydrate for save-load. */
 export interface ResourceNodeField {
-  /** Apply one harvest hit with `tool`; returns the granted resources and decrements the node's budget. */
   harvest(nodeId: string, tool: ToolProfile, options?: HarvestOptions): HarvestResult;
-  /** Count down respawn timers by `dt`; refill any node whose timer elapses and is not suppressed. */
   tick(dt: number): void;
   state(nodeId: string): ResourceNodeState;
   isDepleted(nodeId: string): boolean;
-  /** Set the explicit respawn-block flag; persisted in state and honored by `tick`. */
   setRespawnBlocked(nodeId: string, blocked: boolean): void;
   ids(): readonly string[];
   snapshot(): Record<string, ResourceNodeState>;
-  /** Restore mutable per-node state (budget, depletion, timers, block flag) from a {@link snapshot}. */
   hydrate(snapshot: Record<string, ResourceNodeState>): void;
 }
 

@@ -13,41 +13,28 @@ const WATER_DENSITY = 1025;
 const DEFAULT_SUBSTEP = 1 / 240;
 const DEG = Math.PI / 180;
 
-/** How the boat turns: a rudder needs water flowing past it; an outboard swings its own thrust. */
 export type BoatSteering =
   | {
       kind: "rudder";
-      /** Rudder area, m². */
       area: number;
-      /** Largest rudder angle, rad (default `0.6`). */
       maxAngle?: number;
       /** Share of prop thrust that washes over the rudder as flow, `0..1` (default `0.5`) — steering at low speed. */
       propWash?: number;
     }
   | {
       kind: "outboard";
-      /** Largest thrust angle, rad (default `0.5`). */
       maxAngle?: number;
     };
 
-/**
- * A powered hull in physical units. Drag rises toward hull speed (`√(g·L)·1.34`) and then falls away once the hull
- * planes, the keel resists sliding sideways, and the prop's thrust fades as the boat approaches the prop's speed.
- */
 export interface BoatTuning {
   /** Displacement, kg. */
   massKg: number;
-  /** Waterline length, m; sets hull speed and the rudder's lever arm. */
   length: number;
-  /** Beam, m; sets the visual roll response. */
   beam: number;
-  /** Peak prop thrust, N. */
   maxThrust: number;
   /** Speed at which prop thrust reaches zero, m/s. */
   propSpeed: number;
-  /** Reverse thrust as a share of `maxThrust` (default `0.4`). */
   reverseScale?: number;
-  /** Hull drag coefficient × wetted frontal area, m², before planing (default `0.3 · beam`). */
   dragArea?: number;
   /** Speed where the hull planes and drag drops, m/s; omit for a displacement hull that never planes. */
   planingSpeed?: number;
@@ -60,22 +47,13 @@ export interface BoatTuning {
   steering: BoatSteering;
   /** Rudder or outboard slew rate, rad/s (default `2`). */
   steerRate?: number;
-  /** Largest bow-up pitch while climbing onto the plane, rad (default `0.12`). */
   bowRise?: number;
-  /** Largest heel in a hard turn, rad (default `0.15`); planing hulls lean into the turn. */
   maxHeel?: number;
-  /** Integration substep, s (default `1/240`). */
   maxSubstep?: number;
-  /** The water the hydrodynamic effects use (default sea water at 15 °C). */
   water?: BoatWater;
-  /** Physical effects, each its own term with its own toggle; an effect left out keeps the simple model's term. */
   effects?: BoatEffects;
 }
 
-/**
- * Hydrodynamic inertia, the `addedMass` effect: the water the hull carries along when it surges, sways and yaws, plus
- * the hull's own yaw inertia and centre of gravity for the coupled sway–yaw equations.
- */
 export interface BoatAddedMass {
   /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
@@ -85,9 +63,7 @@ export interface BoatAddedMass {
   sway?: number;
   /** Yaw added inertia, kg·m² (default `0`). */
   yaw?: number;
-  /** Centre of gravity forward of midship, m (default `0`). */
   centreOfGravity?: number;
-  /** Yaw radius of gyration about G, m (default `length/√12`). */
   yawRadius?: number;
 }
 
@@ -104,37 +80,25 @@ export interface BoatAddedMass {
  * drag, seakeeping on a raft). `boatFromReference` gives a published hull's defaults with every effect at strength 1.
  */
 export interface BoatEffects {
-  /** Added mass and yaw inertia. */
   addedMass?: BoatAddedMass;
-  /** Calm-water resistance: friction line, form factor and wave-making (Holtrop–Mennen), or a measured coefficient. */
   resistance?: HullResistance;
-  /** Savitsky planing lift, friction and running trim. */
   planing?: PlaningBottom;
-  /** Screw propeller thrust from `K_T` at the advance ratio, driven by a governed or power-limited engine. */
   propeller?: BoatPropeller;
-  /** MMG hull derivatives and rudder. */
   manoeuvring?: HullManoeuvring;
-  /** Heave, pitch and roll in waves by strip theory. */
   seakeeping?: HullSeakeeping;
 }
 
-/** World hooks for a boat instance. */
 export interface BoatOptions {
   position?: readonly [number, number, number];
   heading?: number;
-  /** Water surface height, m, under a point at a time (waves); default flat at the spawn height. */
   waterHeight?: (x: number, z: number, time: number) => number;
   /** Surface current, m/s, `[vx, vz]`; the hull drags toward it. */
   current?: (x: number, z: number) => readonly [number, number];
-  /** The sea state the hull rides: its surface replaces `waterHeight`, and the `seakeeping` effect takes its wave forces from it. */
   sea?: WaveField;
-  /** Still-water level for the `seakeeping` effect without a `sea`, m (default the spawn height). */
   waterLevel?: number;
-  /** The shared wind on the hull's above-water areas; omit for still air. */
   wind?: BoatWind;
 }
 
-/** Serializable boat state. */
 export interface BoatState {
   x: number;
   y: number;
@@ -147,40 +111,29 @@ export interface BoatState {
   time: number;
   bodyPitch: number;
   bodyRoll: number;
-  /** Planing running trim, rad, bow up (`planing` effect). */
   trim: number;
-  /** The simple model's bow rise, rad, which a part-strength `planing` effect blends with `trim`. */
   bowRise: number;
-  /** Heave of G above the still level, m, and its rate (`seakeeping` effect). */
   heave: number;
   heaveRate: number;
-  /** Wave pitch, rad, bow down, and its rate (`seakeeping` effect). */
   pitch: number;
   pitchRate: number;
-  /** Wave roll, rad, port down, and its rate (`seakeeping` effect). */
   roll: number;
   rollRate: number;
 }
 
-/** One boat tick: pose plus the telemetry wake, spray and engine sound read, grouped like `VehicleDynamicsStep`. */
 export interface BoatStep {
   motion: Pick<VehicleStepMotion, "position" | "heading" | "forwardSpeed" | "lateralSpeed" | "yawRate">;
-  /** Rudder or outboard angle, rad, positive steers like `steer > 0`. */
   steering: Pick<VehicleStepSteering, "steerAngle">;
   hull: {
-    /** `0` displacement … `1` fully planing. */
     planing: number;
-    /** Calm-water resistance along the hull, N. */
     resistance: number;
   };
   /** `engineLoad` is thrust in use as a share of `maxThrust`, `0..1`; `thrust` is the net propulsive force along the hull, N (after thrust deduction with the `propeller` effect); `propRevs` is the shaft speed, rev/s (`0` without the `propeller` effect). */
   engine: Pick<VehicleStepEngine, "engineLoad"> & { thrust: number; propRevs: number };
   body: Pick<VehicleStepBody, "bodyPitch" | "bodyRoll">;
-  /** `airOffset` is always `0`: the hull rides the water surface. Present so `tickDrivableVehicle` can drive it. */
   air: Pick<VehicleStepAir, "airOffset" | "airborne">;
 }
 
-/** A force-based powered hull on the same tick/snapshot/retune contract as `VehicleDynamics`. */
 export interface BoatDynamics {
   tick(dt: number, input: AxisInput): BoatStep;
   pose(): { position: readonly [number, number, number]; heading: number };
@@ -191,7 +144,6 @@ export interface BoatDynamics {
   snapshot(): BoatState;
   restore(state: BoatState): void;
   resetTo(position: readonly [number, number, number], heading: number): void;
-  /** Swap the sea state the hull rides (weather), or `undefined` to fall back to `waterHeight`. */
   setSea(sea: WaveField | undefined): void;
 }
 
@@ -199,11 +151,7 @@ function forwardOf(heading: number): readonly [number, number] {
   return [Math.sin(heading), Math.cos(heading)];
 }
 
-/**
- * Surge added mass of a hull as half a prolate spheroid of its length and twice its volume (the double-body image across
- * the still surface): Lamb's `k₁ = α₀/(2 − α₀)` times the displaced mass.
- * @capability boat-dynamics surge added mass of a hull from Lamb's prolate-spheroid coefficient
- */
+/** @capability boat-dynamics surge added mass of a hull from Lamb's prolate-spheroid coefficient */
 export function hullSurgeAddedMass(massKg: number, length: number, density = WATER_DENSITY): number {
   const a = length / 2;
   const b = Math.sqrt((3 * (2 * massKg) / density) / (4 * Math.PI * a));
@@ -221,7 +169,6 @@ function on<T extends { strength?: number }>(effect: T | undefined): T | undefin
   return strengthOf(effect) > 0 ? effect : undefined;
 }
 
-/** Up to strength 1 the simple term blends into the physical one; past 1 the physical term scales with the strength. */
 function mix(simple: number, physical: number, strength: number): number {
   return strength >= 1 ? physical * strength : strength <= 0 ? simple : simple + (physical - simple) * strength;
 }
@@ -231,11 +178,9 @@ function blend(simple: number, physical: number, strength: number): number {
   return mix(simple, physical, Math.min(1, strength));
 }
 
-/** Every effect's speed-independent numbers, worked out once per tuning (and per sea for seakeeping). */
 interface PreparedEffects {
   planar: boolean;
   density: number;
-  /** Each effect's strength, `0` upward. */
   strength: { addedMass: number; resistance: number; planing: number; propeller: number; manoeuvring: number; seakeeping: number };
   resistance: ((speed: number) => number) | undefined;
   planing: { bottom: PlaningBottom; floor: number; floorTrim: number; floorResistance: number } | undefined;

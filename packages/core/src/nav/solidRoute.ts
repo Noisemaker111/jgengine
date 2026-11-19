@@ -3,32 +3,24 @@ import type { Aabb } from "../world/geometry";
 import { createNavGrid, findPathResult, type NavPoint } from "./navGrid";
 import type { Waypoint } from "./pathFollow";
 
-/** Caller-owned local collision query and terrain policy; no movement or perception state. */
 export interface SolidRouteOptions {
   bounds: Aabb;
   cellSize: number;
-  /** Query the indexed movement geometry, including mover clearance outside these bounds. */
   obstaclesInBounds: (bounds: Aabb) => Iterable<CollisionObstacle>;
   radius?: number;
   height?: number;
   /** Intermediate waypoint elevation. Defaults to the start's feet height. */
   sampleHeight?: (x: number, z: number) => number;
-  /** Terrain/door policy for every edge and smoothing shortcut. */
   canTraverse?: (from: Waypoint, to: Waypoint) => boolean;
   /** Cost multiplier >=1. Suppresses smoothing by default to retain the priced route. */
   stepCost?: (from: NavPoint, to: NavPoint) => number;
   smooth?: boolean;
-  /** Grid allocation cap. Default 4096. */
   maxCells?: number;
-  /** Gathered obstacle/sub-box cap. Default 256. */
   maxBoxes?: number;
-  /** Search expansion cap. Default 1024. */
   maxNodes?: number;
-  /** Collision-box tests and terrain-policy calls combined. Default 100000. */
   maxChecks?: number;
 }
 
-/** Work counters exclude the caller's spatial-query implementation. */
 export interface SolidRouteWork { cells: number; boxes: number; visited: number; checks: number }
 
 /** Failures never carry a partial or snapped route. */

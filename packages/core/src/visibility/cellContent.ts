@@ -10,15 +10,12 @@ import type { PlaceOptions, SceneObject } from "../scene/objectStore";
  */
 export type OffCellRule = "simulate" | "freeze" | "despawn";
 
-/** A cell's XZ footprint. */
 export interface CellBounds {
   min: readonly [number, number];
   max: readonly [number, number];
 }
 
-/** How {@link createCellContent} reads, saves and restores one kind of content. */
 export interface CellContentAdapter<TRecord, TFrozen = never> {
-  /** Ids of this content standing in a cell, read through the store's spatial index. */
   idsIn(bounds: CellBounds): readonly string[];
   /** A plain JSON record that brings the item back, or null for an item that must never leave (the player). */
   save(id: string): TRecord | null;
@@ -29,11 +26,9 @@ export interface CellContentAdapter<TRecord, TFrozen = never> {
   thaw?(id: string, frozen: TFrozen): void;
 }
 
-/** Options for {@link createCellContent}. */
 export interface CellContentOptions<TRecord, TFrozen = never> {
   rule: OffCellRule;
   adapter: CellContentAdapter<TRecord, TFrozen>;
-  /** Most saved items one {@link CellContent.step} brings back. Default 64. */
   restoresPerStep?: number;
 }
 
@@ -45,31 +40,25 @@ export interface CellContentState<TRecord, TFrozen = never> {
   restoring: string[];
 }
 
-/** Gauges of what a {@link CellContent} holds. */
 export interface CellContentStats {
   parkedCells: number;
   parkedItems: number;
   frozenItems: number;
   restoring: number;
-  /** Items brought back by the last step. */
   restoredLastStep: number;
 }
 
-/** One kind of content following its cells in and out of residency. */
 export interface CellContent<TRecord, TFrozen = never> {
   /** The cell unloaded: save, freeze or leave its content by the rule. Returns how many items it touched. */
   unload(cell: string, bounds: CellBounds): number;
   /** The cell loaded: thaw its frozen items now and queue its saved ones for {@link step}. */
   load(cell: string): void;
-  /** Bring back up to `restoresPerStep` queued items. */
   step(): number;
-  /** Whether a loaded cell has all of its content back. */
   settled(cell: string): boolean;
   isFrozen(id: string): boolean;
   /** Every saved record waiting in an unloaded cell, for a save that must still hold them. */
   parkedRecords(): TRecord[];
   rule(): OffCellRule;
-  /** Change the rule for cells that unload from now on; cells already unloaded keep how they left. */
   retune(patch: { rule?: OffCellRule; restoresPerStep?: number }): void;
   stats(): CellContentStats;
   snapshot(): CellContentState<TRecord, TFrozen>;
@@ -193,7 +182,6 @@ export function createCellContent<TRecord, TFrozen = never>(options: CellContent
   };
 }
 
-/** The slice of the scene object API {@link sceneObjectCells} reads and writes. */
 export interface CellObjectStore {
   get(instanceId: string): SceneObject | null;
   inBox(min: readonly [number, number, number], max: readonly [number, number, number]): readonly SceneObject[];
@@ -203,7 +191,6 @@ export interface CellObjectStore {
   collidersOf(instanceId: string): EntityColliderSet | null;
 }
 
-/** A placed object saved with its body, ready to place again. */
 export interface CellObjectRecord {
   object: SceneObject;
   colliders: EntityColliderSet | null;
@@ -243,7 +230,6 @@ export function sceneObjectCells(objects: CellObjectStore, options: { keep?: (ob
   };
 }
 
-/** The slice of the scene entity API {@link sceneEntityCells} reads and writes. */
 export interface CellEntityStore {
   get(id: string): SceneEntity | null;
   inRadius(center: readonly [number, number, number], radius: number): string[];
@@ -274,11 +260,9 @@ export interface FrozenEntity {
   hidden: boolean;
 }
 
-/** A despawned entity's saved body, ready to spawn again. */
 export interface CellEntityRecord {
   entity: SceneEntity;
   colliders: EntityColliderSet | null;
-  /** What the game's `extra.save` kept for this entity. */
   extra?: unknown;
 }
 

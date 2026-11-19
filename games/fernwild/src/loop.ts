@@ -227,50 +227,35 @@ export const systems = [
 interface Cheat {
   give?: Record<string, number>;
   xp?: number;
-  /** Spend stat points: stat id → points. */
   spend?: Record<string, number>;
   tamingSpeed?: number;
-  /** Every tame's food set to this share of its max. */
   tameFood?: number;
   /** Seconds of fuel onto every campfire and cooking pot. */
   fuel?: number;
   /** Spawn a creature this many metres in front of the survivor, and `side` metres to their right. */
   summon?: { species: string; level?: number; distance?: number; side?: number; sex?: "female" | "male"; tamed?: boolean; mating?: boolean; knockedOut?: boolean };
-  /** ARK's breeding multipliers (hatch, maturation, mating interval, imprint interval) all at once. */
   breedingSpeed?: number;
   /** The chance of each of a baby's three mutation rolls, 0 to 1 (ARK's is 0.025). */
   mutationChance?: number;
-  /** Tame the wild creature in front at once. */
   forceTame?: boolean;
-  /** XP for the mount under you, or the tame whose inventory is open. */
   tameXp?: number;
-  /** Items straight into the mount under you, or the tame whose inventory is open. */
   tameLoad?: { itemId: string; count: number };
-  /** Move these items' stacks from the bag to the hotbar, in order (the double-click, for proofs). */
   toHotbar?: string[];
   /** Stand `back` metres outside a cave's mouth (negative: that far inside), facing in, the camera behind. */
   goto?: { cave: string; back?: number };
-  /** ARK's admin kill: the survivor dies where they stand. */
   kill?: boolean;
-  /** ARK's admin DestroyWildDinos: every wild creature gone; their zones refill later. */
   destroyWild?: boolean;
   /** ARK's admin settimeofday, as a whole world clock: jump to this many seconds, weather schedule and all. */
   clock?: number;
   /** ARK's admin SetPlayerPos: stand on the ground at this x, z, facing this yaw (radians) when given, the camera behind. */
   teleport?: readonly [number, number] | readonly [number, number, number];
-  /** Send a supply crate from the drop site nearest the survivor, of this tier (true: the site's own odds). */
   drop?: string | true;
-  /** ARK's admin SetHealth on the Broodmother in her lair: her health to this share of its max. */
   broodHealth?: number;
-  /** ARK's server boss difficulty: every Broodmother summoned after this has this share of her health. */
   broodStrength?: number;
-  /** Wear these armour items from the bag, as a double-click would. */
   wear?: readonly string[];
-  /** Take off what these body slots hold, into the bag, as the inventory's take-off would. */
   takeOff?: readonly string[];
   /** Turn the survivor this many radians where they stand, the camera left behind: Math.PI shows their front. */
   turn?: number;
-  /** A closed hut of this tier (thatch, wood, stone) 4 m ahead, its shut door facing the survivor. */
   hut?: string;
 }
 
@@ -341,10 +326,8 @@ function cheat(ctx: GameContext, input: Cheat): void {
   }
 }
 
-/** The fresh survivor's start, built by the engine from `data/start.ts`. */
 export const survivorStart: NewGameConfig ={ state: START, unlock: (ctx, engramId) => learnFree(ctx, engramId) };
 
-/** Wake on the authored beach with nothing, like a fresh survivor. */
 export function onNewPlayer(ctx: GameContext): void {
   const spawn = authoredSpawnPosition(editorLayers) ?? ORIGIN;
   ctx.scene.entity.spawn("player", { id: ctx.player.userId, position: [spawn[0], ctx.world.groundHeightAt(spawn[0], spawn[2]), spawn[2]], rotationY: authoredSpawnRotation(editorLayers), role: "player" });

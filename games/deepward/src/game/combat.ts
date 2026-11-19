@@ -9,18 +9,14 @@ import { SPECIES, isSpecies } from "./fauna";
 import { weaponStats, type Item } from "./items";
 import type { Dive } from "./state";
 
-/** What the printer's Fitter starts with, and the health a HUD line reads. */
 export const FITTER_HEALTH = 80;
-/** Half-width of the Fitter's hittable silhouette, m - the aim tolerance the shot test has always used. */
 export const AIM_TOLERANCE = 0.65;
 export const SIDEARM_RANGE = 24;
 export const RIFLE_RANGE = 30;
 export const MAGAZINE = 6;
 export const RELOAD_SECONDS = 1.3;
-/** Issue hand: 20 damage on a 0.32 s cycle. */
 export const SIDEARM = { damage: 20, interval: 0.32, label: "Kessler / issue sidearm" } as const;
 
-/** Both hands draw from the one reserve the tank refit buys. */
 export function reserveOf(refits: readonly string[]): number {
   return refits.includes("reserve") ? 30 : 18;
 }
@@ -42,7 +38,6 @@ export const HIT_ZONES: HitZoneTable = {
   critChance: 0,
 };
 
-/** One damage model per world, with the Fitter already registered as a target. */
 export function createDeepwardDamage(rng: () => number): DamageRuntime {
   const damage = createDamageRuntime({ table: DAMAGE_TABLE, zones: HIT_ZONES, rng, devtoolsName: "deepward.damage" });
   damage.registerTarget(PRINT_ID, { resistance: "flesh", armor: 0 });
@@ -81,14 +76,12 @@ export function rifleInHand(dive: Dive): Item | null {
   return dive.cache.find(item => item.baseId === "service-rifle") ?? null;
 }
 
-/** The definition in force for the hand the diver is holding; both hands draw the dive's issued reserve. */
 export function weaponDefinition(dive: Dive): WeaponDefinition {
   if (dive.hand !== "service-rifle") return sidearmDefinition(dive.reservePool);
   const rifle = rifleInHand(dive);
   return rifle === null ? sidearmDefinition(dive.reservePool) : rifleDefinition(rifle, dive.reservePool);
 }
 
-/** What a HUD line and the weapon pose read about the hand in force. */
 export function weaponReadout(dive: Dive | null): { damage: number; interval: number; label: string } {
   if (dive === null) return { damage: SIDEARM.damage, interval: SIDEARM.interval, label: SIDEARM.label };
   const definition = weaponDefinition(dive);
@@ -100,21 +93,14 @@ export function weaponReadout(dive: Dive | null): { damage: number; interval: nu
   };
 }
 
-/** Where a shot originates: the diver's eye, the same 1.62 m the camera sits at. */
 export function muzzleOf(at: Point): Point {
   return [at[0], 1.62, at[2]];
 }
 
-/** The Fitter's body point a ray is tested against. */
 export function fitterPoint(print: Dive["print"]): Point {
   return [print.at[0], 1.1, print.at[2]];
 }
 
-/**
- * The game's one world query for a shot: does this ray reach the Fitter? The same test the local
- * hit path used - inside the weapon's range, within {@link AIM_TOLERANCE} of the body point, and a
- * clear line from where the diver stands - so adopting the runtime did not move what counts as a hit.
- */
 export function fitterContact(input: {
   from: Point;
   direction: Point;
@@ -132,7 +118,6 @@ export function fitterContact(input: {
   return { target: PRINT_ID, point: enemy };
 }
 
-/** A creature a shot can land on: where it stands and how big its body is. */
 export interface ShotTarget { id: string; at: Point; size: number }
 
 export interface WeaponDepsInput {
@@ -140,12 +125,10 @@ export interface WeaponDepsInput {
   damage: DamageRuntime;
   at: () => Point | null;
   print: () => Dive["print"] | null;
-  /** Creatures in the stratum the diver stands in, and that stratum's walls. */
   creatures?: () => readonly ShotTarget[];
   place?: () => Place;
 }
 
-/** The nearest creature along the ray, with the same aim tolerance (scaled by body size) and wall test. */
 export function creatureContact(input: { from: Point; direction: Point; maxRange: number; diverAt: Point; targets: readonly ShotTarget[]; place: Place }): (WeaponContact & { distance: number }) | null {
   let best: (WeaponContact & { distance: number }) | null = null;
   for (const target of input.targets) {
@@ -160,14 +143,11 @@ export function creatureContact(input: { from: Point; direction: Point; maxRange
   return best;
 }
 
-/** Creatures alive in a stratum, as shot targets. */
 export function shotTargets(fauna: Dive["fauna"], place: Place): ShotTarget[] {
   return Object.values(fauna).filter(creature => creature.place === place && creature.health > 0 && isSpecies(creature.species))
     .map(creature => ({ id: creature.id, at: creature.at, size: SPECIES[creature.species].size }));
 }
 
-/** One held weapon per dive; the hand is swapped by retuning it, so ammo and cadence carry over. */
-/** A creature hit as the weapon's contact, without the range the pick compared. */
 function contactOf({ distance: _distance, ...contact }: WeaponContact & { distance: number }): WeaponContact {
   return contact;
 }

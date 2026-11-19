@@ -2,7 +2,6 @@ import { createContext, useCallback, useMemo, useRef, useState, useSyncExternalS
 import type { EditorSession } from "@jgengine/core/editor/commands";
 import type { EditorDocument } from "@jgengine/core/editor/types";
 
-/** Document save lifecycle owned by the mounted authoring session, across viewport modes. */
 export interface EditorDocumentSave {
   available: boolean;
   dirty: boolean;
@@ -12,7 +11,7 @@ export interface EditorDocumentSave {
   doSave(): void;
 }
 
-/** Save status shared with editor chrome without changing the viewport component identity. @internal */
+/** @internal */
 export const EditorDocumentSaveContext = createContext<EditorDocumentSave | undefined>(undefined);
 
 type SaveFn = (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
@@ -23,7 +22,7 @@ interface SaveStatus {
   at: number | null;
 }
 
-/** Keep the acknowledged document and pending/error status alive while editor chrome unmounts. @internal */
+/** @internal */
 export function useDocumentSave(session: EditorSession, save: SaveFn | undefined, onResult?: (ok: boolean, detail: string) => void): EditorDocumentSave {
   const store = useMemo(() => ({ subscribe: (listener: () => void) => session.subscribe(listener), getSnapshot: () => session.getState().document }), [session]);
   const document = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);

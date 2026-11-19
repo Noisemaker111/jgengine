@@ -40,16 +40,8 @@ export const MATTINGLY_LEVEL_4: GasTurbineComponents = {
   nozzlePressure: 0.98,
 };
 
-/** Mattingly's customer bleed and turbine coolant shares for a fighter-class core: 1% bleed, 5% nozzle, 5% rotor. */
 const COOLING = { bleed: 0.01, nozzle: 0.05, rotor: 0.05 };
 
-/**
- * Pratt & Whitney F100-PW-220 (F-16C/D), sized at sea-level static from its published figures: 228 lb/s airflow,
- * bypass ratio 0.63, overall pressure ratio 25. Fitted: the turbine inlet temperature so military thrust is 14 590 lbf,
- * the afterburner temperature so full afterburner is 23 770 lbf, and the control schedule (5% temperature margin over
- * the sea-level point, corrected fan speed rising 0.2 per unit cold inlet ratio) to the NASA TP-1538 installed thrust
- * tables. The fan pressure ratio comes from the mixed-flow rule (≈ 3.0). Mattingly level 3 components.
- */
 export const F100_PW_220: GasTurbineDesign = {
   name: "F100-PW-220",
   massFlow: 228 * LB,
@@ -82,7 +74,6 @@ export const F100_PW_220_DYNAMICS: GasTurbineEngineOptions = {
   maxMach: 2,
 };
 
-/** F100-PW-220 published sea-level static ratings (uninstalled): military 14 590 lbf at 0.73 lb/(lbf·h), afterburner 23 770 lbf. */
 export const F100_PW_220_PUBLISHED = {
   militaryThrust: 14590 * LBF,
   militaryTsfc: 0.73 * (LB / LBF / 3600),

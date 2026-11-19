@@ -7,8 +7,6 @@ import { session } from "../session";
 const FRIENDLY = "#46c85a";
 const HOSTILE = "#e0553b";
 
-/** commander-view floating health bars: green over your Vanguard, red over the Marauders, wider for
- * keeps. Replaces the shell's always-red world bars so friend/foe reads at a glance. */
 function renderBar(sample: NameplateSample) {
   if (sample.percent === null) return null; // decor / statless entities
   const unit = session.units.get(sample.id);
@@ -33,9 +31,6 @@ function renderBar(sample: NameplateSample) {
   );
 }
 
-/** VFX-only overlay: the faction health bars. The authored map dressing (dirt war-road ribbon +
- * instanced forest ring) is auto-mounted by `defineGame({ editorLayers })`; units/keeps/props are
- * spawned as entities elsewhere, so `scenePlacement` stays off — no double render. */
 export function EmberCommandWorldOverlay() {
   return <>
     <SceneCaptureBinding />

@@ -15,7 +15,6 @@ const definition = untypedGenerator(SURFACE_MATERIAL_GENERATOR);
 /** Tiles bake at 256 so a grid of twenty stays quick; the terrain bakes at 512. */
 const TILE_RESOLUTION = "256";
 
-/** `?preset=cliff` shows twenty seeded variants of one look; no preset shows every preset side by side. */
 function pagePreset(): string | undefined {
   if (typeof window === "undefined") return undefined;
   return new URLSearchParams(window.location.search).get("preset") ?? undefined;
@@ -47,7 +46,6 @@ function VariantPanel() {
   );
 }
 
-/** The surface material generator's variant grid: every preset, or one look's seeded variants. */
 export const materialVariantsGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "material-variants" },

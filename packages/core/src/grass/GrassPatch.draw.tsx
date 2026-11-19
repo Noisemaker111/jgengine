@@ -35,31 +35,24 @@ function grassCoverLift(look: GrassLook): number {
   return Math.min(0.035, Math.max(0.005, look.blade.bladeHeight * 0.25 * (1 - look.tuft.cushion * 0.6)));
 }
 
-/** Props for {@link GrassPatch}. */
 export interface GrassPatchProps extends Pick<DrawAttachProps, "position" | "rotation" | "scale" | "visible"> {
-  /** The patch's look (`readGrassLook` from a `grass_field` volume, or a `grass()` descriptor's `look`). */
   look: GrassLook;
   /** Footprint size in metres, centred on the group origin. */
   area: TerrainArea;
-  /** Seed used when `look.seed` is empty (an editor volume passes its id). */
   seed?: TerrainSeed;
   /** Metres of soft fringe at the patch border. Default scales with the patch, 1.5–4 m. */
   edgeFeather?: number;
   exclude?: readonly GrassExclusion[];
-  /** Patch-local ground height. */
   heightAt?: TerrainHeightSampler;
   /** Revision of mutable ground heights; omit when the sampler is immutable. */
   heightRevision?: (() => number | undefined) | undefined;
   /** Patch-local 0..1 coverage (roads, footings); 0 grows nothing. */
   coverageAt?: TerrainHeightSampler;
-  /** World height of the patch origin, for `look.growAbove`. Default 0. */
   baseHeight?: number;
-  /** Terrain colour the blade roots and far field blend into. */
   groundColor?: THREE.ColorRepresentation | undefined;
   castShadow?: boolean;
   receiveShadow?: boolean;
   frustumCulled?: boolean;
-  /** A shared wind the blades read each frame; omit to sway with the look's own wind numbers. */
   wind?: GrassWindSource | undefined;
 }
 

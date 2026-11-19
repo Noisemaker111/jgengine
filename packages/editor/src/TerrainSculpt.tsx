@@ -59,7 +59,6 @@ const COLOR_SPAN = 24;
 
 type PaletteSampler = (x: number, z: number) => TerrainPalette;
 
-/** The game's `environment({ terrain })` descriptor, when the world it declares carries one — the same descriptor `TerrainGround` samples at runtime via `createTerrainPaletteSampler`. */
 function terrainDescriptorOf(world: WorldFeature | undefined): TerrainEnvironmentDescriptor | undefined {
   return world?.kind === "environment" ? world.terrain : undefined;
 }
@@ -115,12 +114,10 @@ function editFromSettings(
   };
 }
 
-/** World-unit spacing between topographic relief bands drawn on the sculpt preview. */
 const CONTOUR_INTERVAL = 1.5;
 const BLEND_A = new THREE.Color();
 const BLEND_B = new THREE.Color();
 
-/** Multiplicative contour bands preserve painted hue while making elevation readable. */
 function applyRelief(out: THREE.Color, height: number, strength: number): void {
   if (strength <= 0) return;
   const band = 0.5 + 0.5 * Math.cos((height / CONTOUR_INTERVAL) * Math.PI * 2);
@@ -156,21 +153,11 @@ function toneAt(
   paintColorAt?.(x, z, out);
 }
 
-/** GPU paint coverage the shared terrain surface material samples; repacked after every displace. */
 interface SculptSurface {
   paint: TerrainPaintTextures;
   weights: TerrainPaintWeights;
 }
 
-/**
- * Re-samples vertex Y, vertex color, and vertex normals from the live terrain via the shared
- * {@link displaceHeightfieldGeometry} primitive. A dirty `region` keeps a brush stamp O(brush
- * footprint) — no whole-mesh normal or bounding pass per stamp. With a `surface`, paint and relief
- * contours are drawn by the runtime terrain material and vertices carry only the base palette tone;
- * without one, painted/blended layers and contours are baked into the vertex color. Unpainted ground
- * falls back to the runtime terrain palette (or the flat height gradient with no descriptor).
- * Records rebuild time.
- */
 function displace(
   geometry: THREE.BufferGeometry,
   terrain: EditableTerrain,
@@ -234,7 +221,6 @@ const SculptMesh = memo(function SculptMesh({
   paletteAt: PaletteSampler | null;
   heightRange: readonly [number, number];
   contourStrength: number;
-  /** The game's resolved terrain detail; `null` (detail opted out) keeps the flat vertex-colour preview. */
   detail: ResolvedTerrainDetail | null;
 }) {
   const host = useEngineHost();
@@ -338,12 +324,7 @@ function sculptUiEqual(a: SculptUiSlice, b: SculptUiSlice): boolean {
   );
 }
 
-/**
- * Terrain-sculpt viewport layer: renders the editable heightfield and, while the terrain tool is
- * active, converts pointer drags into brush strokes. A whole drag batches into one
- * `sculptTerrain` command committed on release, so undo replays the stroke as a single step.
- * @internal — mounted by `EditorApp`; not a game-author entry point.
- */
+/** @internal — mounted by `EditorApp`; not a game-author entry point. */
 export const TerrainSculpt = memo(function TerrainSculpt({
   api,
   ui,

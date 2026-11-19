@@ -8,27 +8,13 @@
 
 export type DecalVec3 = readonly [number, number, number];
 
-/**
- * The marks the decal draw has artwork for. A game picks one per kind and tints it, so "bullet hole
- * in concrete" and "bullet hole in sheet metal" are the same look in two colours.
- * - `scorch`: a dark core inside a pale chipped ring; reads on dark asphalt and pale stone alike.
- * - `hole`: a small dark puncture with a thin crushed rim.
- * - `dent`: a bright scuffed crater, for metal.
- * - `splash`: an irregular blob with droplets, for dirt, mud, oil or paint.
- * - `chip`: a ragged pale flake pattern, for stone, plaster and concrete.
- * - `crack`: radial cracks from a pinpoint, for glass and ice.
- */
 export type DecalLook = "scorch" | "hole" | "dent" | "splash" | "chip" | "crack";
 
-/** Every look, in the order the decal draw lays them out in its atlas. */
 export const DECAL_LOOKS: readonly DecalLook[] = ["scorch", "hole", "dent", "splash", "chip", "crack"];
 
-/** One kind of mark: which artwork, what colour, how big and how long it stays. */
 export interface ImpactDecalKind {
   look: DecalLook;
-  /** Multiplies the artwork's colour, as `#rrggbb`. Default white (the artwork as drawn). */
   tint?: string;
-  /** Scale on the size the caller asks for (an impact class's mark size). Default 1. */
   size?: number;
   /** Seconds the mark stays, fade included. */
   lifeSeconds: number;
@@ -36,7 +22,6 @@ export interface ImpactDecalKind {
   fadeSeconds: number;
 }
 
-/** What a shot can land on, as the scene raycast names it. */
 export type DecalSurfaceKind = "terrain" | "wall" | "object" | "entity";
 
 /**
@@ -55,17 +40,14 @@ export interface ImpactDecalSurfaces {
   impacts?: Readonly<Record<string, string | null>>;
 }
 
-/** A game's decal look book: its kinds, and which surface takes which. */
 export interface ImpactDecalsConfig {
   kinds: Readonly<Record<string, ImpactDecalKind>>;
   surfaces: ImpactDecalSurfaces;
 }
 
-/** What a shot struck, for {@link impactDecalKindFor}. */
 export interface DecalSurfaceHit {
   targetKind: DecalSurfaceKind;
   catalogId?: string | undefined;
-  /** The impact class of the blow (`"light"`, `"explosive"`). */
   impact?: string | undefined;
 }
 
@@ -86,13 +68,11 @@ export function impactDecalKindFor(surfaces: ImpactDecalSurfaces, hit: DecalSurf
   return surfaces[hit.targetKind] ?? null;
 }
 
-/** One live mark. `position` already sits off the surface along `normal`. */
 export interface ImpactDecal {
   /** Monotonic: a higher `seq` was added later and draws over a lower one. */
   seq: number;
   kind: string;
   position: DecalVec3;
-  /** Unit length, pointing out of the surface. */
   normal: DecalVec3;
   /** Edge length in metres. */
   size: number;
@@ -102,10 +82,8 @@ export interface ImpactDecal {
   bornAt: number;
 }
 
-/** A mark to lay. */
 export interface ImpactDecalInput {
   kind: string;
-  /** The surface point that was hit. */
   point: DecalVec3;
   /** The surface normal there; need not be unit length, must not be zero. */
   normal: DecalVec3;
@@ -113,12 +91,10 @@ export interface ImpactDecalInput {
   size: number;
   /** Clock time now, in seconds. */
   at: number;
-  /** Rotation about the normal; default 0. Pass a seeded random angle so marks vary. */
   spin?: number;
 }
 
 export interface ImpactDecalPoolOptions {
-  /** Most marks alive at once; the oldest is evicted to make room. `0` keeps none. */
   capacity: number;
   kinds: Readonly<Record<string, ImpactDecalKind>>;
   /**
@@ -131,28 +107,20 @@ export interface ImpactDecalPoolOptions {
    * an older one sits a hair in front of it. Default 0.002.
    */
   layerOffset?: number;
-  /** How many layer steps the lift cycles through. Default 4. */
   layers?: number;
 }
 
 export interface ImpactDecalPool {
   readonly capacity: number;
-  /** Lay a mark. Returns `null` for an unknown kind, a zero normal, a non-positive size or a zero capacity. */
   add(input: ImpactDecalInput): ImpactDecal | null;
-  /** Drop every mark whose life has run out at `now`. Returns how many were dropped. */
   prune(now: number): number;
-  /** Live marks, oldest first, which is the order they draw in (newest on top). */
   list(): readonly ImpactDecal[];
-  /** A mark's strength at `now`: 1 until its fade starts, then down to 0 at the end of its life. */
   opacity(decal: ImpactDecal, now: number): number;
-  /** Whether any live mark is part-way through its fade at `now` (its draw needs refreshing). */
   fading(now: number): boolean;
-  /** Change the capacity (a graphics tier change), keeping the newest marks. */
   resize(capacity: number): void;
   clear(): void;
   /** Bumps whenever the set of marks changes, so a draw rewrites only then. */
   version(): number;
-  /** The kind table the pool was built with. */
   kind(id: string): ImpactDecalKind | undefined;
 }
 

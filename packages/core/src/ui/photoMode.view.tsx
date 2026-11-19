@@ -4,15 +4,12 @@ import { useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgeng
 import type { PhotoModeState, PhotoModeStore } from "@jgengine/core/ui/photoMode";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
-/** Subscribe to a photo-mode store's live state. */
 export function usePhotoMode(store: PhotoModeStore): PhotoModeState {
   return useSyncExternalStore(store.subscribe, store.get, store.get);
 }
 
-/** Props for {@link PhotoModeControls}. */
 export interface PhotoModeControlsProps {
   store: PhotoModeStore;
-  /** Take the shot — wire to shell `captureCanvas` + `downloadImage`. */
   onCapture?: () => void;
   className?: string;
   style?: CSSProperties;
@@ -29,14 +26,7 @@ const BTN: CSSProperties = {
   cursor: "pointer",
 };
 
-/**
- * Photo-mode toolbar — a hide/show-HUD toggle, a capture button, and an exit
- * button, bound to a `createPhotoModeStore`. Presentation-only: the game wires
- * `onCapture` to shell `captureCanvas`/`downloadImage` and reads `hideHud` to
- * drop its gameplay HUD.
- *
- * @capability photo-mode-controls photo-mode toolbar (hide-HUD toggle, capture, exit) bound to a photo-mode store
- */
+/** @capability photo-mode-controls photo-mode toolbar (hide-HUD toggle, capture, exit) bound to a photo-mode store */
 export function PhotoModeControls({ store, onCapture, className, style }: PhotoModeControlsProps): ReactNode {
   const state = usePhotoMode(store);
   return (

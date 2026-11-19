@@ -16,7 +16,6 @@ import { createContextSimSnapshot, type SimSnapshot } from "./simSnapshot";
 
 /** One step's worth of player intent handed to {@link HeadlessRunner.step} — the held-action set and pointer state the shell would otherwise publish from the browser each frame. */
 export interface HeadlessInput {
-  /** Discrete presses on this recorded step, including taps released before its held-state sample. */
   presses?: InputFrame["presses"];
   /** Replaces the held-action set for this step; edge detection (`justPressed`/`justReleased`) rolls the previous set forward. Omit to keep the last published set. */
   held?: readonly string[];
@@ -24,15 +23,8 @@ export interface HeadlessInput {
   pointer?: PointerAxisState | null;
 }
 
-/** Any playable game, whatever its UI and render types (what `defineGame` returns); `TProbe` is what its `capture.probe` returns. */
 export type HeadlessPlayable<TProbe extends ProbeReadings = ProbeReadings> = PlayableGameContract<unknown, unknown, unknown, unknown, unknown, unknown, TProbe>;
 
-/**
- * Where a headless run gets its game. Pass the whole playable (`game`, what `defineGame` returns) and the runner
- * reads its content, its phase-synced loop, its movement and collision config and whether the shell walks the
- * player, the way play does. Pass a bare `definition` only for a test that builds a partial game; then content,
- * loop, movement and collision are yours to pass, and passing them alongside `game` is a type error.
- */
 export type HeadlessGameSource<TAssetRef extends ModelAssetRef, TMultiplayer> =
   | {
       game: HeadlessPlayable;
@@ -49,9 +41,7 @@ export type HeadlessGameSource<TAssetRef extends ModelAssetRef, TMultiplayer> =
       content?: GameContextContent;
       /** Lifecycle hooks — `onInit`/`onNewPlayer` fire at construction, `onTick` on every {@link HeadlessRunner.step}. Default: the definition's own loop, which runs its `systems`. */
       loop?: GameLoop<GameContext>;
-      /** Movement tuning — pass a direct config to test flight or other movement overrides headlessly. */
       movement?: PlayerMovementConfig;
-      /** Voxel collision config (`defineGame({ collision })`) — the shell's walk controller reads it, so pass the same object to walk the same geometry. */
       collision?: VoxelCollisionConfig;
     };
 
@@ -78,21 +68,15 @@ export type HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer>
   heading?: number;
   /** Pitch (radians) fed alongside yaw for 6DOF spectator flight when `alignWithLook` is set. */
   pitch?: number;
-  /** Render-model lookup for collider auto-fit — pass what the shell would derive from `entityModels`/`objectModels` so headless raycasts hit the same boxes as play. */
   models?: GameContextModels;
-  /** Where `ctx.game.save` keeps its saves; default the game's own (its `persist` setting). Two runs given one backend share their saves. */
   save?: RuntimeSaveOptions;
 };
 
-/** Canvas-free command/intent surface for {@link HeadlessRunner} — invoke a game's registered UI commands and read the resulting reactive state off `ctx`. */
 export interface HeadlessCommandInterface {
   /** Invoke a registered command/intent by name against the live context. Throws on `unknown-command` or a validation rejection so a headless UI-flow test fails loudly instead of silently no-op'ing. */
   invoke(name: string, input?: unknown): void;
-  /** Non-throwing {@link invoke} returning the raw command result (inspect `status`). */
   tryInvoke(name: string, input?: unknown): ReturnType<GameContext["game"]["commands"]["run"]>;
-  /** Registered command names. */
   names(): string[];
-  /** Is a command registered? */
   has(name: string): boolean;
 }
 
@@ -106,22 +90,13 @@ export interface HeadlessCommandInterface {
  * @capability headless-runner play a real game loop with no renderer — tick, feed input, read the world snapshot
  */
 export interface HeadlessRunner {
-  /** The live game context — read `ctx.scene.entity.list()`, `ctx.game.store`, `ctx.subscribe`/`ctx.version()` for the world snapshot. */
   readonly ctx: GameContext;
-  /** The per-frame input the loop reads; the same object exposed as `ctx.input`. */
   readonly input: InputSnapshot;
   readonly userId: string;
-  /** The yaw/pitch the walk controller steers by this step: set by {@link aim} or by the game's `ctx.camera.turnTo`. */
   readonly look: Readonly<{ heading: number; pitch: number }>;
-  /**
-   * Advance the simulation by `dtSeconds` of real time. Publishes `input` (if given), then runs as many frames
-   * of at most `maxStepSeconds` as the time needs: each advances the sim clock, runs player movement, then
-   * `loop.onTick` and behaviour nav. Returns the total scaled game dt the frames saw.
-   */
   step(dtSeconds: number, input?: HeadlessInput): number;
   /** Publish input without advancing — for pre-seeding the held set before the first {@link step}. */
   publishInput(input: HeadlessInput): void;
-  /** Drive the game's own UI commands / intents headlessly — the same registry `ctx.game.commands` and the shell's command sink dispatch into. No renderer, no pointer simulation: dispatch an intent, then read reactive state off `ctx`. */
   readonly ui: HeadlessCommandInterface;
   /** Point the movement controller at a yaw/pitch mid-run — what the shell does when the camera turns, so a scripted run can walk one way and then another. */
   aim(look: { heading?: number; pitch?: number }): void;
@@ -132,7 +107,6 @@ export interface HeadlessRunner {
    */
   snapshot(): SimSnapshot;
   restore(snapshot: SimSnapshot): void;
-  /** Current simulation tick (`ctx.sim.tick()`). */
   tick(): number;
 }
 
@@ -182,7 +156,6 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
     if (input.pointer !== undefined) ctx.input.publishPointer(input.pointer);
   }
 
-  /** One frame of at most `maxStep`: the shell's FrameDriver body. */
   function frame(dt: number): number {
     // The shell's camera rig drains a queued turn once per frame and walks along it; headless does the same.
     const turn = ctx.camera.takeTurnTo();

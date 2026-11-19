@@ -11,7 +11,6 @@ import { useGameContext } from "@jgengine/ui/provider";
 
 import { GLYPHS, type GlyphName } from "./glyphs";
 
-/** The beacon's fire, soot timber, carved stone, parchment and the red war enamel. */
 export const FIRE = "#ffb347", GOLD = "#f6cf5a", BLOOD = "#e0624a", INK = "#f4ead2", DIM = "#c2b08c", SOOT = "#1f1813";
 export const PARCHMENT_INK = "#2e1f12", ENAMEL = "#8a2414", STONE = "#57524a", WOOD = "#6b4a2c";
 export const FULL = { fraction: 1 };
@@ -51,7 +50,6 @@ export function Caption({ maxWidth, ...props }: TextProps & { maxWidth?: number 
 }
 export function Row(props: RuneViewProps) { return <RuneView layout="row" gap={8} items="center" {...props} />; }
 
-/** A pressable plank; `tone` picks timber, enamel or a quiet text stitch. */
 export function Plank({ tone = "plank", children, run, ...props }: RuneActionProps & { tone?: "plank" | "enamel" }) {
   const ctx = useGameContext();
   // Every press answers with the engine's confirm cue on the ui bus, as the timber kit's buttons did.
@@ -83,7 +81,6 @@ export function Brazier({ size = 48, strength }: { size?: number; strength: Live
   </RuneView>;
 }
 
-/** A full-screen sheet the field is shut out behind: dark wash, one centred slab, Back on Escape. */
 export function Sheet({ children, label, close, width = 640, variant = "stone" }: { children: ReactNode; label: string; close?: () => void; width?: number; variant?: "stone" | "parchment" }) {
   const viewport = useRuneViewport();
   return <RuneView anchor="fill" fill="#0b0705d8" modal {...(close === undefined ? {} : { onBack: close })}>
@@ -93,5 +90,4 @@ export function Sheet({ children, label, close, width = 640, variant = "stone" }
   </RuneView>;
 }
 
-/** The viewport's class, read once per render for layout decisions that change structure. */
 export function usePhone(): boolean { return useRuneViewport().width < 600; }

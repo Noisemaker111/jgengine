@@ -11,14 +11,7 @@ import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
-
-/**
- * The onboarding's on-screen pointer, mounted in a game's `WorldOverlay`: a pin over the current
- * step's target while it is in view, an edge arrow pointing the way with the distance while it is
- * not (`WaypointMarkers` over the onboarding's waypoint).
- *
- * @capability onboarding-pointer on-screen pin or edge arrow with distance to the current onboarding step's target
- */
+/** @capability onboarding-pointer on-screen pin or edge arrow with distance to the current onboarding step's target */
 export function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: WaypointMarkerTheme }): ReactNode {
   const runtime = onboardingOf(ctx);
   const size = useEngineHost().frame.size;

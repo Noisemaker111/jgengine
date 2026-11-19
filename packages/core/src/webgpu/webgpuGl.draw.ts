@@ -52,7 +52,6 @@ export interface WebGpuGlAttributes {
   desynchronized: boolean;
 }
 
-/** Counters a perf probe reads per frame. */
 export interface WebGpuGlStats {
   frames: number;
   draws: number;
@@ -61,7 +60,6 @@ export interface WebGpuGlStats {
   clearPasses: number;
   /** Passes replayed from render bundles because they repeated the last frame's (see WebGpuGl.encodePass). */
   replayedPasses: number;
-  /** Render bundle sets recorded for repeating passes. */
   bundles: number;
   /** Passes encoded draw by draw because their commands differ from the forms kept for them. */
   changedPasses: number;
@@ -71,9 +69,7 @@ export interface WebGpuGlStats {
   pipelines: number;
   bindGroups: number;
   uniformBytes: number;
-  /** Sum of every linked program's uniform block size: what one full restage of all programs would upload. */
   uniformBlockBytes: number;
-  /** Flushes forced by an upload into a resource the open batch already used. */
   orderFlushes: number;
   /** Programs linked, and the milliseconds spent translating them to WGSL. */
   programs: number;
@@ -96,7 +92,6 @@ const MAX_UNITS = 32;
 
 let nextId = 1;
 let nextRevision = 1;
-/** Timestamps one batch can write: two per render pass while a GPU timer runs. A batch past it times no more passes. */
 const STAMPS_PER_BATCH = 4096;
 /** Texture sets a program keeps before it starts over: a program drawn with every texture of a long session stays bounded. */
 const MAX_TEXTURE_SETS = 512;
@@ -112,7 +107,6 @@ interface GlTexture {
 interface GlRenderbuffer { kind: "renderbuffer"; id: number; gpu: GPUTexture | null; format: GlTextureFormat | null; width: number; height: number; samples: number; view: GPUTextureView | null }
 interface Attachment { object: GlTexture | GlRenderbuffer; level: number; layer: number }
 interface GlFramebuffer { kind: "framebuffer"; id: number; colors: (Attachment | null)[]; depth: Attachment | null; stencil: Attachment | null; drawBuffers: number[]; version: number;
-  /** Its pass, built once per change (see WebGpuGl.passPlan). */
   plan: PassPlan | null }
 interface GlShader { kind: "shader"; id: number; type: number; source: string; compiled: boolean }
 interface VertexAttrib { enabled: boolean; buffer: GlBuffer | null; size: number; type: number; normalized: boolean; stride: number; offset: number; divisor: number; integer: boolean }
@@ -120,7 +114,6 @@ interface GlVertexArray { kind: "vao"; id: number; attribs: VertexAttrib[]; elem
 interface UniformLocation { program: GlProgram; slot: WgslUniformSlot | null; element: number; sampler: number }
 interface GlQuery {
   kind: "query"; id: number; result: number; available: boolean;
-  /** A TIME_ELAPSED query: the stamp serials of its first pass's start and its last pass's end so far (-1 for none), and those stamps once read back. */
   start: number; end: number; ended: boolean; startNs: number | null; endNs: number | null; endNsSerial: number;
 }
 /** One of a program's two uniform blocks: the CPU copy three's uniform writes land in, and the
@@ -130,48 +123,37 @@ interface GlUniformSide {
   block: ArrayBuffer; f32: Float32Array; i32: Int32Array; u32: Uint32Array; bytes: Uint8Array;
   /** Allocated bytes, a multiple of 16 and at least 16. */
   size: number;
-  /** Object: restage into the ring. Shared: has an unflushed span in `sharedLo..sharedHi`. */
   dirty: boolean;
-  /** Object only: the pass epoch and ring offset its last staging took. */
   slotBatch: number; slotOffset: number;
 }
 interface GlProgram {
   kind: "program"; id: number; shaders: GlShader[]; linked: boolean; log: string; translated: WgslProgram | null; pending: PendingTranslation | null;
   vertex: GPUShaderModule | null; fragment: GPUShaderModule | null;
-  /** Whether the browser has compiled the shaders for the GPU (see {@link WebGpuGl.precompile}). */
   compiled: boolean;
   uniforms: Map<string, WgslUniformSlot>; samplerIndex: Map<string, number>; active: { name: string; size: number; type: number }[]; attribs: { name: string; size: number; type: number; location: number }[];
   objectSide: GlUniformSide; sharedSide: GlUniformSide;
-  /** The shared block's persistent GPU buffer and the group(0) bind group every draw of this program uses. */
   sharedBuf: GPUBuffer | null; uniformGroup: GPUBindGroup | null;
   /** The batch this program last drew in: a shared write after that must flush first (see markShared). */
   usedBatch: number;
   /** Unflushed shared byte span, valid while the program is in {@link WebGpuGl.sharedDirty}. */
   sharedLo: number; sharedHi: number;
   units: Int32Array; layouts: Map<string, { group: GPUBindGroupLayout; pipeline: GPUPipelineLayout }>;
-  /** Each vertex array's plan for this program, valid while the array's version is the one it was made at. */
   vertexCache: WeakMap<GlVertexArray, { version: number; plan: VertexPlan }>;
-  /** Texture sets this program drew with, by a hash of their textures and revisions; see {@link WebGpuGl.textureSetFor}. */
   textureSets: Map<number, TextureSet[]>;
-  /** The set this program last drew with, reused untested while `epoch` is the context's texture epoch. */
   lastTextures: TextureSet | null;
-  /** Pipelines this program drew with, by a hash of what each was made for. */
   pipelineSets: Map<number, PipelineEntry[]>;
 }
-/** One combination of textures a program sampled, and the bind group made for it. */
 interface TextureSet {
   epoch: number;
   /** Each slot's bound texture as bound (null when none), and its revision then. */
   bound: (GlTexture | null)[];
   revisions: number[];
-  /** Each slot's texture as drawn: null where the bound one had no storage. */
   list: (GlTexture | null)[];
   sig: string;
   sigId: number;
   group: GPUBindGroup;
 }
 interface PipelineEntry { layoutId: number; stateId: number; targetId: number; mode: number; indexType: number | null; sigId: number; pipeline: GPURenderPipeline }
-/** One attribute as GL reads it from its buffer. */
 interface AttribSource { buffer: GlBuffer; offset: number; stride: number; type: number; size: number; normalized: boolean; convert: boolean; location: number; format: GPUVertexFormat }
 interface VertexSlot {
   buffer: GlBuffer | null; offset: number; stride: number; step: GPUVertexStepMode; attributes: GPUVertexAttribute[]; convert: { type: number; size: number; normalized: boolean } | null; constant: boolean;
@@ -180,14 +162,11 @@ interface VertexSlot {
   packed: { gpu: GPUBuffer | null; ids: number[]; versions: number[]; out?: Uint8Array } | null;
 }
 interface VertexPlan {
-  /** The interned vertex layout (`key`): a plan rebuilt with the same layout keeps its pipelines. */
   id: number; key: string; slots: VertexSlot[]; constants: number[]; instanceCapacity: (instances: number) => number;
-  /** Whether any GL attribute steps per instance (a multi-draw's firstInstance would offset it). */
   perInstance: boolean;
 }
 /** A WEBGL_multi_draw call: item i draws counts[countsOffset + i] from starts[startsOffset + i] (elements: a byte offset). */
 interface MultiDraw { starts: ArrayLike<number>; startsOffset: number; counts: ArrayLike<number>; countsOffset: number; drawCount: number }
-/** How many numbers describe the fixed-function state a pipeline bakes in (see `stateId`). */
 const STATE_FIELDS = 29;
 
 const WEBGL_CONSTANTS: Record<string, number> = (() => {
@@ -203,13 +182,9 @@ const WEBGL_CONSTANTS: Record<string, number> = (() => {
 
 interface PassTarget { fb: GlFramebuffer | null; version: number; width: number; height: number; colorFormats: (GPUTextureFormat | null)[]; depthFormat: GPUTextureFormat | null; samples: number; key: string; id: number }
 interface PendingClear { fb: GlFramebuffer | null; color: (GPUColor | null)[]; depth: number | null; stencil: number | null }
-/** A framebuffer's pass, as {@link WebGpuGl.passPlan} builds it. */
 interface PassPlan {
-  /** What the attachments were when it was built (see {@link attachmentDeps}); the back buffer's views for the default framebuffer. */
   deps: unknown[];
-  /** The GL color index each color attachment came from, for picking its clear value; -1 for a gap. */
   colorIndex: number[];
-  /** Every attachment loaded and stored. */
   descriptor: GPURenderPassDescriptor;
   /** The attached textures, marked as used by each batch drawing into them. */
   textures: GlTexture[];
@@ -236,15 +211,11 @@ const OP_BLEND = 10;
  */
 class RecordedPass {
   readonly ops: unknown[] = [];
-  /** Whether {@link descriptor} is this pass's own copy, so changing it leaves the framebuffer's plan alone. */
   private owned = false;
-  /** Where this pass's uniforms start in the batch's staging ring; every dynamic offset it binds is at or after it. */
   uniformBase = 0;
-  /** Where they end, set when the pass ends. */
   uniformEnd = 0;
   /** Where this pass's constant vertex attributes start in the batch's constant ring, in bytes. */
   constantBase = 0;
-  /** Where they end, set when the pass ends. */
   constantEnd = 0;
   descriptor: GPURenderPassDescriptor;
   fb: GlFramebuffer | null;
@@ -308,7 +279,6 @@ class RecordedPass {
     this.descriptor = { ...this.descriptor, colorAttachments: [...this.descriptor.colorAttachments] };
   }
 
-  /** Encode the pass onto `encoder`. */
   encode(encoder: GPUCommandEncoder, offset: Uint32Array): void {
     const pass = encoder.beginRenderPass(this.descriptor);
     const ops = this.ops as any[];
@@ -334,7 +304,6 @@ class RecordedPass {
 
 /** Forms of one pass kept to match against: two, so a pass reading a ping-pong target on alternate frames repeats. */
 const REPLAY_FORMS = 2;
-/** A replay step that runs a render bundle; other steps are pass state ops (viewport, scissor, references). */
 const STEP_BUNDLE = 100;
 
 /**
@@ -343,41 +312,28 @@ const STEP_BUNDLE = 100;
  * relative to the pass's own range, so a pass repeats whatever the passes before it bound.
  */
 interface PassReplay {
-  /** The pass's commands with each uniform bind as (block size, offset into the pass's range). */
   ops: unknown[];
-  /** Frames in a row the commands repeated. */
   repeats: number;
-  /** Bundles and the state ops between them; null until the commands repeat. */
   steps: unknown[] | null;
-  /**
-   * The pass's own buffer the bundles bind: its uniforms from 0, its constant vertex attributes
-   * from {@link constantsAt}, both copied from the batch's rings before each replay.
-   */
   buffer: GPUBuffer | null;
-  /** Room for uniforms, which is also where the constant attributes start. */
   constantsAt: number;
-  /** Room for constant attributes. */
   constantRoom: number;
 }
 
-/** Stands for the replay's own buffer in a recorded vertex bind of the constant-attribute ring. */
 const CONSTANTS = Symbol("constants");
 
-/** Encoder work recorded after a pass that is still unencoded, run in order when the passes are flushed. */
 interface RecordedAction {
   run: (encoder: GPUCommandEncoder) => void;
   /** Textures it reads: an attachment one of these is cannot be discarded by the pass before it. */
   reads: GPUTexture[];
 }
 
-/** Whether two relative op lists are the same commands on the same objects. */
 function sameOps(a: unknown[], b: unknown[]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
   return true;
 }
 
-/** Run a replay's steps on `pass`: its bundles, and the state ops between them. */
 function replaySteps(pass: GPURenderPassEncoder, steps: unknown[]): void {
   const s = steps as any[];
   for (let i = 0; i < s.length;) {
@@ -401,20 +357,17 @@ function attachmentDeps(fb: GlFramebuffer): unknown[] {
   for (const a of fb.colors) out.push(attachmentDep(a));
   return out;
 }
-/** Whether `fb`'s attachments are still those {@link attachmentDeps} saw, without building a list. */
 function sameDeps(fb: GlFramebuffer, deps: unknown[]): boolean {
   if (deps.length !== fb.colors.length + 2 || deps[0] !== attachmentDep(fb.depth) || deps[1] !== attachmentDep(fb.stencil)) return false;
   for (let i = 0; i < fb.colors.length; i += 1) if (deps[i + 2] !== attachmentDep(fb.colors[i])) return false;
   return true;
 }
-/** A depth/stencil attachment that loads and stores whichever aspects `format` has. */
 function loadDepth(view: GPUTextureView, format: GPUTextureFormat): GPURenderPassDepthStencilAttachment {
   const a: GPURenderPassDepthStencilAttachment = { view };
   if (format !== "stencil8") { a.depthLoadOp = "load"; a.depthStoreOp = "store"; }
   if (format === "stencil8" || hasStencil(format)) { a.stencilLoadOp = "load"; a.stencilStoreOp = "store"; }
   return a;
 }
-/** `base` with `clear`'s values as clear load ops on the attachments it names. */
 function withClears(base: GPURenderPassDescriptor, colorIndex: number[], clear: PendingClear): GPURenderPassDescriptor {
   const colors = [...base.colorAttachments].map((a, i) => {
     const value = a == null ? null : clear.color[colorIndex[i]!] ?? null;
@@ -429,7 +382,6 @@ function withClears(base: GPURenderPassDescriptor, colorIndex: number[], clear: 
   return depth === undefined ? { colorAttachments: colors } : { colorAttachments: colors, depthStencilAttachment: depth };
 }
 
-/** A small, stable number for a string, assigned on first sight. */
 function internId(ids: Map<string, number>, key: string): number {
   let id = ids.get(key);
   if (id === undefined) {
@@ -439,7 +391,6 @@ function internId(ids: Map<string, number>, key: string): number {
   return id;
 }
 
-/** GL's active-uniform type enum for a translated slot. */
 function uniformType(slot: WgslUniformSlot): number {
   if (slot.columns > 1) {
     if (slot.columns === 2 && slot.rows === 2) return 0x8b5a;
@@ -488,7 +439,7 @@ function asView(data: any): ArrayBufferView {
   return new Uint8Array(0);
 }
 
-/** The vertex input a multi-draw program reads its `gl_DrawID` from. @internal */
+/** @internal */
 export const DRAW_ID_INPUT = "jgDrawId";
 const MULTI_DRAW_EXTENSION = /^[ \t]*#extension[ \t]+GL_ANGLE_multi_draw[ \t]*:[ \t]*\w+[ \t]*$/m;
 
@@ -534,7 +485,6 @@ struct Out { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> };
 /** A WebGPU device ready for one canvas, from {@link requestWebGpuDevice}. */
 export interface WebGpuDevice {
   device: GPUDevice;
-  /** The adapter's description, reported as the GL renderer string. */
   label: string;
 }
 
@@ -573,12 +523,10 @@ export function createWebGpuGl(canvas: HTMLCanvasElement, gpu: WebGpuDevice, att
 class GlConstants {}
 Object.assign(GlConstants.prototype, WEBGL_CONSTANTS);
 
-/** The GL-shaped context. Construct through {@link createWebGpuGl}. */
 export class WebGpuGl extends GlConstants {
   readonly canvas: HTMLCanvasElement;
   readonly device: GPUDevice;
   readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, clearPasses: 0, replayedPasses: 0, bundles: 0, changedPasses: 0, unreplayablePasses: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, uniformBlockBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
-  /** Every distinct problem a draw hit, once each (also printed once). */
   readonly warnings = new Map<string, number>();
   drawingBufferColorSpace: PredefinedColorSpace = "srgb";
   unpackColorSpace: PredefinedColorSpace = "srgb";
@@ -589,7 +537,6 @@ export class WebGpuGl extends GlConstants {
   private readonly float32Blendable: boolean;
   private readonly canvasFormat: GPUTextureFormat;
   private readonly uniformLayout: GPUBindGroupLayout;
-  /** Programs' group(0): the shared block static at binding 0, the per-object block dynamic at binding 1. */
   private readonly programUniformLayout: GPUBindGroupLayout;
   private readonly emptyLayout: GPUBindGroupLayout;
   private readonly emptyGroup: GPUBindGroup;
@@ -630,19 +577,9 @@ export class WebGpuGl extends GlConstants {
   private stencilBack = { func: 0x207, ref: 0, mask: 0xff, fail: 0x1e00, zfail: 0x1e00, zpass: 0x1e00, writeMask: 0xff };
   private readonly pixelStore = new Map<number, number | boolean>([[0x0cf5, 4], [0x0d05, 4], [0x9240, false], [0x9241, false], [0x9243, 0x9244]]);
   private stateVersion = 1;
-  /**
-   * Bumped by every change that can alter what a program's samplers resolve to: a binding, a
-   * sampler uniform, texture parameters, storage, deletion. A program's cached bind group holds
-   * while the epoch it was made at is current.
-   */
   private textureEpoch = 1;
   private stateKeyVersion = 0;
   private stateKeyId = 0;
-  /**
-   * The pipeline state's fields, written in place and interned by value: three flips depth, blend
-   * and stencil state hundreds of times a frame (Fernwild: 214), and building a string key each time
-   * was a fifth of the context's garbage.
-   */
   private readonly stateFields = new Float64Array(STATE_FIELDS);
   private readonly stateTable = new Map<number, { fields: Float64Array; id: number }[]>();
   private stateCount = 0;
@@ -656,11 +593,8 @@ export class WebGpuGl extends GlConstants {
   private stampFirst = 0;
   private stampOverflowed = false;
   private timedQuery: GlQuery | null = null;
-  /** A TIME_ELAPSED query has been begun: from then on every pass writes stamps. */
   private timersInUse = false;
-  /** The open pass's begin stamp serial, or -1 when no pass is open or it writes none. */
   private openPassStamp = -1;
-  /** TIME_ELAPSED queries begun and not yet answered. */
   private readonly timedPending = new Set<GlQuery>();
   /** Small numbers for the strings a pipeline depends on, so a draw compares numbers instead of building a key. */
   private readonly targetIds = new Map<string, number>();
@@ -670,11 +604,8 @@ export class WebGpuGl extends GlConstants {
   // WebGPU work.
   private encoder: GPUCommandEncoder | null = null;
   private pass: RecordedPass | null = null;
-  /** Passes ended but not yet encoded, and encoder work recorded after them, in order (see {@link RecordedPass}). */
   private readonly unencoded: (RecordedPass | RecordedAction)[] = [];
-  /** Encoded passes kept for their ops array's capacity; a frame records the same passes again. */
   private readonly passPool: RecordedPass[] = [];
-  /** Scratch for a pass's relative ops; a replay match compares against it without allocating. */
   private readonly relScratch: unknown[] = [];
   private readonly replayOffset = new Uint32Array(1);
   /**
@@ -685,11 +616,8 @@ export class WebGpuGl extends GlConstants {
   private slotEpoch = 0;
   /** Each target's passes this frame so far, so the n-th pass into a target meets last frame's n-th. */
   private readonly passOrdinals = new Map<GlFramebuffer | null, number>();
-  /** Last frames' passes per target and ordinal, replayed from render bundles when a pass repeats (see {@link encodePass}). */
   private readonly replays = new Map<GlFramebuffer | null, PassReplay[][]>();
-  /** The uniform block size each ring bind group binds: a program's group binds its object block. */
   private readonly ringGroupSizes = new WeakMap<GPUBindGroup, number>();
-  /** The program each program uniform bind group belongs to, for replay bind groups. */
   private readonly uniformGroupPrograms = new WeakMap<GPUBindGroup, GlProgram>();
   /** Programs whose shared block has bytes to upload at the next submit. */
   private readonly sharedDirty = new Set<GlProgram>();
@@ -700,12 +628,9 @@ export class WebGpuGl extends GlConstants {
   private stagingUsed = 0;
   private ring: GPUBuffer;
   private ringGroups = new Map<number, GPUBindGroup>();
-  /** The one dynamic offset a uniform bind takes, passed as a typed array: an array literal per draw allocated and went through the binding's slow sequence conversion. */
   private readonly dynamicOffset = new Uint32Array(1);
   private readonly uniformAlign: number;
-  /** `device.limits.maxVertexBuffers`, read once: each read of it is two native getter calls, and a draw read it every time. */
   private readonly maxVertexBuffers: number;
-  /** `device.queue`, read once for the same reason. */
   private readonly queue: GPUQueue;
   private constants = new Float32Array(1 << 16);
   private constantsUsed = 0;
@@ -733,7 +658,6 @@ export class WebGpuGl extends GlConstants {
   private backColorMsaa: GPUTexture | null = null;
   private backDepth: GPUTexture | null = null;
   private backViews: { color: GPUTextureView; msaa: GPUTextureView | null; depth: GPUTextureView | null } | null = null;
-  /** The default framebuffer's pass, for the current {@link backViews}. */
   private backPlan: PassPlan | null = null;
   private backSize = [0, 0];
   private presentPipeline: GPURenderPipeline | null = null;
@@ -799,10 +723,7 @@ export class WebGpuGl extends GlConstants {
 
   private touchState(): void { this.stateVersion += 1; }
 
-  // ---------------------------------------------------------------- context queries
-
   getContextAttributes(): WebGpuGlAttributes { return { ...this.attributes }; }
-  /** Set once renderer teardown forces a context loss: the device is gone. */
   private contextLost = false;
   isContextLost(): boolean { return this.contextLost; }
   /**
@@ -900,8 +821,6 @@ export class WebGpuGl extends GlConstants {
 
   getShaderPrecisionFormat(): { rangeMin: number; rangeMax: number; precision: number } { return { rangeMin: 127, rangeMax: 127, precision: 23 }; }
 
-  // ---------------------------------------------------------------- state
-
   enable(cap: number): void { if (!this.enabled.has(cap)) { this.enabled.add(cap); this.touchState(); } }
   disable(cap: number): void { if (this.enabled.delete(cap)) this.touchState(); }
   isEnabled(cap: number): boolean { return this.enabled.has(cap); }
@@ -934,8 +853,6 @@ export class WebGpuGl extends GlConstants {
   sampleCoverage(): void {}
   flush(): void {}
   finish(): void { this.submit(); }
-
-  // ---------------------------------------------------------------- buffers
 
   createBuffer(): GlBuffer { return { kind: "buffer", id: nextId++, gpu: null, size: 0, data: null, version: 0, usedBatch: 0, floatCopies: null, deleted: false }; }
   deleteBuffer(b: GlBuffer | null): void { if (b === null) return; b.deleted = true; this.retire(b.gpu); b.gpu = null; for (const c2 of b.floatCopies?.values() ?? []) this.retire(c2.gpu); b.floatCopies = null; }
@@ -1041,8 +958,6 @@ export class WebGpuGl extends GlConstants {
     out.set(from.subarray(srcOffset, srcOffset + out.byteLength));
   }
 
-  // ---------------------------------------------------------------- vertex arrays
-
   private makeVao(): GlVertexArray {
     return { kind: "vao", id: nextId++, attribs: Array.from({ length: 32 }, () => ({ enabled: false, buffer: null, size: 4, type: 0x1406, normalized: false, stride: 0, offset: 0, divisor: 0, integer: false })), elements: null, version: 1 };
   }
@@ -1054,7 +969,6 @@ export class WebGpuGl extends GlConstants {
   disableVertexAttribArray(i: number): void { const a = this.vao.attribs[i]!; if (a.enabled) { a.enabled = false; this.vao.version += 1; } }
   vertexAttribPointer(i: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void { this.setAttrib(i, size, type, normalized, stride, offset, false); }
   vertexAttribIPointer(i: number, size: number, type: number, stride: number, offset: number): void { this.setAttrib(i, size, type, false, stride, offset, true); }
-  /** Point attribute `i` at the bound array buffer. Re-pointing it where it already points (three does every frame for some objects) keeps the vao's vertex plan. */
   private setAttrib(i: number, size: number, type: number, normalized: boolean, stride: number, offset: number, integer: boolean): void {
     const a = this.vao.attribs[i]!;
     const buffer = this.arrayBuffer;
@@ -1071,8 +985,6 @@ export class WebGpuGl extends GlConstants {
   vertexAttrib2fv(i: number, v: ArrayLike<number>): void { this.vertexAttrib2f(i, v[0]!, v[1]!); }
   vertexAttrib3fv(i: number, v: ArrayLike<number>): void { this.vertexAttrib3f(i, v[0]!, v[1]!, v[2]!); }
   vertexAttrib4fv(i: number, v: ArrayLike<number>): void { this.vertexAttrib4f(i, v[0]!, v[1]!, v[2]!, v[3]!); }
-
-  // ---------------------------------------------------------------- shaders and programs
 
   createShader(type: number): GlShader { return { kind: "shader", id: nextId++, type, source: "", compiled: false }; }
   deleteShader(): void {}
@@ -1114,7 +1026,6 @@ export class WebGpuGl extends GlConstants {
     this.stats.programs += 1;
   }
 
-  /** Finish `p`'s link: take the worker's translation, or translate now if it has not arrived. */
   private settle(p: GlProgram): void {
     const pending = p.pending;
     if (pending === null) return;
@@ -1299,7 +1210,6 @@ export class WebGpuGl extends GlConstants {
     p.sharedSide.dirty = true;
   }
 
-  /** `uniform{1,2,3,4}{f,i,ui}`: one element written from its arguments, with no array made per call. */
   private writeScalars(loc: UniformLocation | null, components: number, integer: boolean, x: number, y: number, z: number, w: number): void {
     if (loc === null) return;
     const slot = loc.slot;
@@ -1327,7 +1237,6 @@ export class WebGpuGl extends GlConstants {
     }
   }
 
-  /** Whether {@link writeScalars}' write would change the shared block, without writing it. */
   private scalarsChange(p: GlProgram, slot: WgslUniformSlot, element: number, components: number, integer: boolean, x: number, y: number, z: number, w: number): boolean {
     const side = p.sharedSide;
     const view = slot.kind === "f" ? side.f32 : slot.kind === "u" ? side.u32 : side.i32;
@@ -1376,7 +1285,6 @@ export class WebGpuGl extends GlConstants {
     }
   }
 
-  /** Whether {@link writeUniform}'s write would change the shared block, without writing it. */
   private uniformsChange(p: GlProgram, slot: WgslUniformSlot, element: number, data: ArrayLike<number>, components: number, integer: boolean): boolean {
     const side = p.sharedSide;
     const view = slot.kind === "f" ? side.f32 : slot.kind === "u" ? side.u32 : side.i32;
@@ -1422,7 +1330,6 @@ export class WebGpuGl extends GlConstants {
     }
   }
 
-  /** Whether {@link writeMatrix}'s write would change the shared block, without writing it. */
   private matricesChange(p: GlProgram, slot: WgslUniformSlot, element: number, data: ArrayLike<number>, columns: number, rows: number): boolean {
     const side = p.sharedSide;
     const per = columns * rows;
@@ -1467,8 +1374,6 @@ export class WebGpuGl extends GlConstants {
   uniformMatrix3fv(l: UniformLocation | null, _t: boolean, v: ArrayLike<number>): void { this.writeMatrix(l, v, 3, 3); }
   uniformMatrix4fv(l: UniformLocation | null, _t: boolean, v: ArrayLike<number>): void { this.writeMatrix(l, v, 4, 4); }
 
-  // ---------------------------------------------------------------- textures
-
   createTexture(): GlTexture {
     return { kind: "texture", id: nextId++, target: 0, gpu: null, format: null, width: 0, height: 0, depth: 1, levels: 1, immutable: false, wrap: [0x2901, 0x2901, 0x2901], minFilter: 0x2702, magFilter: 0x2601, compareMode: 0, compareFunc: 0x203, anisotropy: 1, baseLevel: 0, maxLevel: 1000, samplerKey: "", views: new Map(), usedBatch: 0, deleted: false, definedLevels: 0, revision: nextRevision++ };
   }
@@ -1507,7 +1412,6 @@ export class WebGpuGl extends GlConstants {
   texParameterf(target: number, p: number, v: number): void { this.texParameteri(target, p, v); }
   getTexParameter(): null { return null; }
 
-  /** (Re)create `t`'s GPU texture for this size, format and level count, keeping it when they match. */
   private allocate(t: GlTexture, format: GlTextureFormat, width: number, height: number, depth: number, levels: number): void {
     // three passes log2(size) + 1 unrounded (10.58 for 768 wide); GL's GLsizei truncates it, and so
     // does WebGPU's mipLevelCount, so the count kept here must too or a level past the last passes
@@ -1764,8 +1668,6 @@ export class WebGpuGl extends GlConstants {
     return v;
   }
 
-  // ---------------------------------------------------------------- framebuffers
-
   createFramebuffer(): GlFramebuffer { return { kind: "framebuffer", id: nextId++, colors: [], depth: null, stencil: null, drawBuffers: [0x8ce0], version: 1, plan: null }; }
   deleteFramebuffer(fb: GlFramebuffer | null): void { if (fb !== null && this.drawFb === fb) this.drawFb = null; }
   isFramebuffer(fb: unknown): boolean { return (fb as GlFramebuffer | null)?.kind === "framebuffer"; }
@@ -1842,7 +1744,6 @@ export class WebGpuGl extends GlConstants {
   getRenderbufferParameter(): number { return 0; }
   getFramebufferAttachmentParameter(): number { return 0; }
 
-  /** The single-sample color texture behind a framebuffer's attachment (the default framebuffer's back buffer). */
   private colorTexture(fb: GlFramebuffer | null, index: number): { texture: GPUTexture; level: number; layer: number } | null {
     if (fb === null) { this.ensureBackBuffer(); return { texture: this.backColor!, level: 0, layer: 0 }; }
     const a = fb.colors[index];
@@ -2000,12 +1901,6 @@ struct U { shift: vec2<i32> };
 
   private readsSinceFence: Promise<void>[] = [];
 
-  /**
-   * Signals once the commands before it are submitted and every readback queued before it has
-   * landed: the only GPU results a page can observe. It does not wait for the queue to drain
-   * (`onSubmittedWorkDone`): Chrome answers that late, 3.8 s per fence on average while the
-   * shader warmup waited on one per batch of programs.
-   */
   fenceSync(): { kind: "sync"; signaled: boolean } {
     const sync = { kind: "sync" as const, signaled: false };
     this.ensureEncoder();
@@ -2070,7 +1965,6 @@ struct U { shift: vec2<i32> };
   }
   getQueryParameter(q: GlQuery, p: number): number | boolean { return p === 0x8867 ? q.available : q.result; }
 
-  /** Answer a timer query whose stamps have all come back: its last pass's end minus its first pass's start. */
   private settleTimer(q: GlQuery): void {
     if (!q.ended || q.available) return;
     if (q.start < 0) {
@@ -2083,7 +1977,6 @@ struct U { shift: vec2<i32> };
     this.timedPending.delete(q);
   }
 
-  /** The timestamp writes for a pass about to begin, once the page uses timers. */
   private passStamps(): GPURenderPassTimestampWrites | undefined {
     this.openPassStamp = -1;
     if (!this.timersInUse || this.stamps === null) return undefined;
@@ -2103,7 +1996,6 @@ struct U { shift: vec2<i32> };
     return { querySet: this.stamps, beginningOfPassWriteIndex: begin - this.stampFirst, endOfPassWriteIndex: begin + 1 - this.stampFirst };
   }
 
-  /** Resolve the batch's stamps into a readback, and hand them to the timer queries waiting on them once the GPU is done. */
   private resolveStamps(encoder: GPUCommandEncoder): void {
     const first = this.stampFirst;
     const count = this.stampSerial - first;
@@ -2129,15 +2021,11 @@ struct U { shift: vec2<i32> };
     });
   }
 
-  // ---------------------------------------------------------------- passes
-
-  /** The batch's encoder, with every ended pass encoded onto it first, for work that goes after them. */
   private ensureEncoder(): GPUCommandEncoder {
     this.schedulePresent();
     return this.encodeEnded();
   }
 
-  /** Present (and submit) at the end of this task, as GL shows a frame once the task that drew it returns. */
   private schedulePresent(): void {
     if (this.presentScheduled) return;
     this.presentScheduled = true;
@@ -2338,7 +2226,6 @@ struct U { shift: vec2<i32> };
     this.stats.bundles += 1;
   }
 
-  /** Run `run` on the encoder after every pass ended so far, without encoding them yet. */
   private afterEnded(reads: GPUTexture[], run: (encoder: GPUCommandEncoder) => void): void {
     this.schedulePresent();
     if (this.unencoded.length === 0) run(this.encodeEnded());
@@ -2416,7 +2303,6 @@ struct U { shift: vec2<i32> };
     return v;
   }
 
-  /** Make sure a render pass is open on the current draw framebuffer, applying any pending clear. */
   private openPass(): boolean {
     const fb = this.drawFb;
     const version = fb === null ? -1 : fb.version;
@@ -2505,7 +2391,6 @@ struct U { shift: vec2<i32> };
     return { deps, colorIndex, descriptor, textures, target: { fb, version: fb === null ? -1 : fb.version, width, height, colorFormats, depthFormat, samples, key, id: internId(this.targetIds, key) } };
   }
 
-  /** Open a render pass on `fb`, with `clear`'s values as load ops. */
   private beginPass(fb: GlFramebuffer | null, clear: PendingClear | null): boolean {
     const plan = this.passPlan(fb);
     if (plan === null) return false;
@@ -2620,7 +2505,6 @@ struct U { shift: vec2<i32> };
 
   private readonly clearPipelines = new Map<string, GPURenderPipeline>();
 
-  /** A clear limited by the scissor box or write masks: a full-target triangle writing the clear values. */
   private clearQuad(mask: number): void {
     if (!this.openPass()) return;
     const target = this.passTarget!;
@@ -2695,8 +2579,6 @@ struct O { ${outputs} };
     if (a == null) return 0;
     return a.object.kind === "texture" ? Math.max(1, a.object.height >> a.level) : a.object.height;
   }
-
-  // ---------------------------------------------------------------- draws
 
   drawArrays(mode: number, first: number, count: number): void { this.draw(mode, first, count, 1, null, 0); }
   drawArraysInstanced(mode: number, first: number, count: number, instances: number): void { this.draw(mode, first, count, instances, null, 0); }
@@ -2927,7 +2809,6 @@ struct O { ${outputs} };
     return layout;
   }
 
-  /** The texture bound to each of the program's sampler slots, and the layout signature they make. */
   private textures(p: GlProgram): { sig: string; list: (GlTexture | null)[] } {
     const slots = p.translated!.layout.samplers;
     let sig = "";
@@ -3051,7 +2932,6 @@ struct O { ${outputs} };
     return g;
   }
 
-  /** Interleave a packed slot's sources into one buffer, rebuilt when any source changes. */
   private packedCopy(slot: VertexSlot): GPUBuffer | null {
     const packed = slot.packed!;
     const sources = slot.sources;
@@ -3285,7 +3165,6 @@ struct O { ${outputs} };
 
   private drawIdBuffer: GlBuffer | null = null;
 
-  /** The buffer holding 0, 1, 2... that multi-draw items read their `gl_DrawID` from, grown to hold `count`. */
   private drawIds(count: number): GlBuffer {
     const b = (this.drawIdBuffer ??= this.createBuffer());
     if (b.gpu !== null && b.size >= count * 4) return b;
@@ -3315,17 +3194,13 @@ struct O { ${outputs} };
     return gpu;
   }
 
-  // ---------------------------------------------------------------- submission
-
   private readonly afterSubmit: (() => void)[] = [];
 
-  /** An upload is about to change a resource the open batch already drew with: submit first so GL's order holds. */
   private orderFlush(): void {
     this.stats.orderFlushes += 1;
     this.submit();
   }
 
-  /** End the open pass, upload the batch's uniforms and submit its commands. */
   private submit(): void {
     this.endPass();
     if (this.unencoded.length > 0) this.encodeEnded();
@@ -3370,7 +3245,6 @@ struct O { ${outputs} };
     for (const f of this.afterSubmit.splice(0)) f();
   }
 
-  /** Copy the back buffer onto the canvas (flipped to top-down) and submit the frame. */
   private present(): void {
     this.presentScheduled = false;
     this.endPass();
@@ -3395,7 +3269,6 @@ struct O { ${outputs} };
   }
 }
 
-/** One vertex component as GL reads it into a float attribute. */
 function readComponent(src: DataView, at: number, type: number, normalized: boolean): number {
   let v: number;
   switch (type) {

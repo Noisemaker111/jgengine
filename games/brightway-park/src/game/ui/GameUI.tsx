@@ -68,7 +68,6 @@ export function GameUI() {
 
 type Panels = ReturnType<typeof usePanels>;
 
-/** The live park: the status and goal cards, the hint, the clock, the side window, the palette and the touch camera. */
 function Hud({ panels, paused }: { panels: Panels; paused: boolean }) {
   const { width, height } = useRuneViewport(), phone = width < 600;
   const inspecting = useGameStore((ctx) => sessionOf(ctx).selectedObject !== null || ctx.scene.entity.selection.list().length > 0);
@@ -112,11 +111,6 @@ function TimeBar({ panels }: { panels: Panels }) {
   </RuneView>;
 }
 
-/**
- * The first scenario's next step from the engine's onboarding: a card that says what to do, and a
- * ring on the control that does it (`hintRing`). The world arrow for a spot on the lot is drawn by
- * the world overlay from the same step. "Hide hints" skips the rest.
- */
 function ParkHint() {
   const { commands } = useGame();
   const ctx = useGameContext();
@@ -131,7 +125,6 @@ function ParkHint() {
   </Card>;
 }
 
-/** Touch-only camera keys: they feed the published RTS rig's existing keyboard input boundary. */
 function CameraPad() {
   const touch = useInputDevice() === "touch";
   const held = useRef(new Set<string>());

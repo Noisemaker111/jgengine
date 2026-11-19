@@ -12,10 +12,8 @@ const SLUG = 14.59390294;
 const SLUG_FT2 = SLUG * FT * FT;
 const GRAVITY = 9.80665;
 
-/** The published airframes {@link aircraftFromReference} knows, and the class names that start from them. */
 export type AircraftReferenceId = "cessna-172" | "f-16" | "bo-105" | "saturn-v" | "trainer" | "jet" | "light-helicopter" | "rocket";
 
-/** Every id {@link aircraftFromReference} accepts. */
 export const AIRCRAFT_REFERENCE_IDS: readonly AircraftReferenceId[] = ["cessna-172", "f-16", "bo-105", "saturn-v", "trainer", "jet", "light-helicopter", "rocket"];
 
 function evenly(start: number, end: number, count: number): number[] {
@@ -26,7 +24,6 @@ function table(inputs: AeroTable["inputs"], breakpoints: readonly (readonly numb
   return { inputs, breakpoints, values, extrapolate: "linear" };
 }
 
-/** Two wing panels, a tailplane and a fin: the simple model a reference airframe falls back to at strength 0. */
 function simpleSurfaces(area: number, span: number, tailArm: number, cl0: number, slope: number, stall: number, cd0: number, k: number): AircraftSurface[] {
   const panel = { area: area / 2, liftSlope: slope, stallAngle: stall, postStallLift: 0.55, incidence: cl0 / slope, cd0, inducedDrag: k, control: { roll: 0.3 } };
   return [
@@ -37,10 +34,8 @@ function simpleSurfaces(area: number, span: number, tailArm: number, cl0: number
   ];
 }
 
-/** Cessna 172N geometry (POH §1, FAA TCDS 3A12). */
 const C172 = { area: 174 * FT * FT, span: 35.83 * FT, chord: 4.9 * FT };
 
-/** Roskam's airplane A (the Cessna 182, same 174 ft² NACA 2412 wing) cruise derivatives, stability axes, per rad. */
 const C172_DERIVATIVES = {
   cl0: 0.307, clAlpha: 4.41, clAlphaDot: 1.7, clQ: 3.9, clElevator: 0.43,
   cm0: 0.04, cmAlpha: -0.613, cmAlphaDot: -7.27, cmQ: -12.4, cmElevator: -1.122,
@@ -50,11 +45,6 @@ const C172_DERIVATIVES = {
   cnBeta: 0.0587, cnP: -0.0278, cnR: -0.0937, cnAileron: -0.0216, cnRudder: -0.0645,
 } as const;
 
-/**
- * Cessna 172N lift and drag through the stall, as the reference airframe builds them: Roskam's linear lift curve, a
- * round-over to `CL_max = 0.9 × 1.6` (NACA 2412, DATCOM), Viterna–Corrigan post-stall lift and drag, and the
- * parabolic polar through Roskam's cruise point.
- */
 function cessnaLiftDrag(): { lift: AeroTable; drag: AeroTable; stall: number; k: number } {
   const d = C172_DERIVATIVES;
   const aspect = C172.span ** 2 / C172.area;
@@ -107,11 +97,6 @@ function staticPropellerThrust(propeller: AircraftPropeller): number {
   return propellerLoads(propeller, omega, 0, 1, 1.225, 340.294, { thrust: 0, torque: 0, engineTorque: 0 }).thrust;
 }
 
-/**
- * Cessna 172N at 2300 lb, flaps up, as `scripts/reference/flight/cessna172Aircraft.ts` builds it: Roskam's derivatives,
- * NACA 2412 maximum lift, Viterna–Corrigan post-stall, McCormick ground effect, a Lycoming O-320 with Gagg–Ferrar
- * lapse on a blade-element McCauley 1C160 propeller, inertia from Roskam scaled to this weight.
- */
 function cessna172(): RigidAircraftTuning {
   const d = C172_DERIVATIVES;
   const { lift, drag, stall, k } = cessnaLiftDrag();
@@ -209,7 +194,6 @@ const F16_DNDR = [
   -0.022, -0.009, -0.052, -0.034, -0.036, -0.036, -0.035, -0.028, -0.024, -0.023, -0.02, -0.016, -0.01, -0.014, -0.062, -0.034, -0.027, -0.028, -0.027,
   -0.027, -0.023, -0.023, -0.019, -0.009, -0.025, -0.01,
 ];
-/** Damping derivatives by angle of attack: CXq, CYr, CYp, CZq, Clr, Clp, Cmq, Cnr, Cnp. */
 const F16_DAMPING = [
   [-0.267, -0.11, 0.308, 1.34, 2.08, 2.91, 2.76, 2.05, 1.5, 1.49, 1.83, 1.21],
   [0.882, 0.852, 0.876, 0.958, 0.962, 0.974, 0.819, 0.483, 0.59, 1.21, -0.493, -1.04],
@@ -222,13 +206,6 @@ const F16_DAMPING = [
   [0.061, 0.052, 0.052, -0.012, -0.013, -0.024, 0.05, 0.15, 0.13, 0.158, 0.24, 0.15],
 ];
 
-/**
- * The F-16 of Stevens & Lewis (*Aircraft Control and Simulation*, Appendix A) at a 30% chord centre of gravity, as
- * `scripts/reference/flight/f16Aircraft.ts` flies it: NASA TP-1538 tables carried from body axes into lift and drag,
- * damping derivatives by angle of attack, the centre-of-gravity shift folded into the pitching and yawing moments, and
- * an F100-PW-220 with the reference cycle's thrust lapse, spool and afterburner. The `CZ` sideslip factor, the `Ixz`
- * product of inertia and engine gyroscopic momentum are left out.
- */
 function f16(): RigidAircraftTuning {
   const area = 300 * FT * FT;
   const span = 30 * FT;
@@ -350,15 +327,8 @@ function bo105(): RigidAircraftTuning {
   };
 }
 
-/** Rocketdyne F-1 on AS-506: 7.955 MN vacuum thrust, vacuum Isp 305.5 s, 11.4 m² exit (MPR-SAT-FE-69-9). */
 const F1 = { vacuumThrust: 7.955e6, specificImpulse: 305.5, exitArea: 11.4 };
 
-/**
- * The Saturn V AS-506 (Apollo 11) S-IC flight, as the reference rocket flies it (`scripts/reference/flight/saturnV.ts`):
- * five F-1 at vacuum thrust with the centre engine cut at 135.2 s, the report's propellant, stage and upper-stack mass,
- * the axial-force coefficient through Mach, the standard atmosphere and the rotating Earth from Launch Complex 39A with
- * world `−z` along the 72.058° flight azimuth. The motor's pitch input tilts the nose toward `−z`.
- */
 function saturnV(): RigidAircraftTuning {
   const flow = (5 * F1.vacuumThrust) / (F1.specificImpulse * GRAVITY);
   const burn = 135.2 - 0.3;

@@ -20,7 +20,6 @@ export function servedGameDir(): string | null {
 }
 
 export interface GameDirOption {
-  /** Every argv entry except `--game-dir <path>`, in order. */
   argv: string[];
   dir: string | null;
 }

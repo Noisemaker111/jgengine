@@ -18,7 +18,6 @@ export type FallbackCause = "omittedMapping" | "unpulledPack" | "noScene" | "ren
 /** A per-seam, per-cause count table. Serializable, allocation-stable (keys never change). */
 export type FallbackSeamCounts = Record<FallbackSeam, Record<FallbackCause, number>>;
 
-/** Non-zero-only view of {@link FallbackSeamCounts} returned by {@link fallbackSeamsSnapshot}. */
 export type FallbackSeamsReport = Partial<Record<FallbackSeam, Partial<Record<FallbackCause, number>>>>;
 
 const SEAMS: readonly FallbackSeam[] = ["ground", "entity", "object", "scatter"];
@@ -74,13 +73,11 @@ export function reportFallbackSeam(seam: FallbackSeam, cause: FallbackCause): vo
   counts[seam][cause] += 1;
 }
 
-/** Zero one seam's tally before it re-reports (per-seam frame boundary). No-op when disarmed. */
 export function beginFallbackSeam(seam: FallbackSeam): void {
   if (!enabled) return;
   zeroSeam(seam);
 }
 
-/** Zero every seam's tally. Used to bracket a whole observation batch (e.g. in tests). No-op when disarmed. */
 export function beginFallbackPass(): void {
   if (!enabled) return;
   for (const seam of SEAMS) zeroSeam(seam);

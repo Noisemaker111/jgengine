@@ -1,10 +1,4 @@
-/**
- * Per-frame camera orientation channel between the in-canvas probe and the DOM orientation
- * widget. Deliberately a mutable record, not UI state: the probe writes every frame and the
- * widget reads on its own rAF loop, applying styles directly — zero shell rerenders.
- */
 export interface CameraTelemetry {
-  /** Camera-space basis (world-matrix columns): screen-projects world axes without a matrix lib. */
   rightX: number;
   rightY: number;
   rightZ: number;
@@ -22,7 +16,6 @@ export interface CameraTelemetry {
   version: number;
 }
 
-/** Creates a telemetry record seeded at rest (identity basis). */
 export function createCameraTelemetry(): CameraTelemetry {
   return {
     rightX: 1,
@@ -42,7 +35,6 @@ export function createCameraTelemetry(): CameraTelemetry {
 
 let shared: CameraTelemetry | null = null;
 
-/** Shared telemetry — probe and widget may mount in different UI trees. */
 export function getCameraTelemetry(): CameraTelemetry {
   shared ??= createCameraTelemetry();
   return shared;

@@ -13,7 +13,6 @@ export interface FakePull {
   merged?: boolean;
   draft?: boolean;
   labels?: string[];
-  /** REST `mergeable_state`: `clean`, `behind`, `dirty`, ... */
   mergeableState?: string;
   updatedAt?: string;
   crossRepo?: boolean;
@@ -42,10 +41,8 @@ export interface FakeCall {
 export interface FakeGitHub {
   github: GitHub;
   gh: GhRunner;
-  /** Every `gh api` call, in order. */
   calls: FakeCall[];
   pulls: Map<number, FakePull>;
-  /** Check runs per commit sha; a test changes them between polls. */
   checks: Record<string, FakeCheck[]>;
   comments: { number: number; body: string }[];
   /**
@@ -53,21 +50,16 @@ export interface FakeGitHub {
    * head branch exists until it is deleted.
    */
   branches: Map<string, string>;
-  /** Branches deleted through `DELETE git/refs/heads/<branch>`, in order. */
   deleted: string[];
 }
 
 export function fakeGitHub(seed: {
   repo?: string;
   pulls?: FakePull[];
-  /** Check runs per commit sha. */
   checks?: Record<string, FakeCheck[]>;
   runs?: FakeRun[];
-  /** Branch tips on origin, over the ones each PR's head implies. */
   branches?: Record<string, string>;
-  /** The number the next opened PR gets (its head sha is `sha-<number>`). */
   nextNumber?: number;
-  /** A stderr for a call that should fail, e.g. a 403 or a merge GitHub refuses. */
   fail?: (call: FakeCall) => string | undefined;
 } = {}): FakeGitHub {
   const repo = seed.repo ?? "me/game";

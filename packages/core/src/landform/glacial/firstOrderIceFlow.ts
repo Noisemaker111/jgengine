@@ -35,15 +35,11 @@ export interface FirstOrderGrid {
   readonly dx: number;
   /** Node spacing along rows (y) in metres. Default `dx`. */
   readonly dy?: number;
-  /** Element layers in each ice column. Default 10. */
   readonly layers?: number;
-  /** Wrap the x axis: node `cols − 1` meets node 0. Default false. */
   readonly periodicX?: boolean;
-  /** Wrap the y axis. Default false. */
   readonly periodicY?: boolean;
 }
 
-/** Ice geometry and rheology for one solve. */
 export interface FirstOrderInput {
   /** Bed elevation per plan node in metres, row-major (index `row * cols + col`). */
   readonly bed: ArrayLike<number>;
@@ -54,29 +50,20 @@ export interface FirstOrderInput {
    * `Infinity` freezes the ice to its bed. Default frozen.
    */
   readonly friction?: ArrayLike<number> | number;
-  /** Glen's rate factor A in Pa⁻ⁿ a⁻¹. */
   readonly rateFactor: number;
-  /** Glen's exponent n. Default 3. */
   readonly glenExponent?: number;
   /** Height the geometry gains crossing the periodic x seam from the last node to the first, in metres (−L·tan α for a slope α down x). Default 0. */
   readonly dropX?: number;
-  /** Height gained crossing the periodic y seam. Default 0. */
   readonly dropY?: number;
 }
 
-/** How hard to solve. */
 export interface FirstOrderOptions {
-  /** Relative change of velocity between Picard iterations that counts as converged. Default 1e-5. */
   readonly tolerance?: number;
-  /** Most Picard iterations. Default 60. */
   readonly maxIterations?: number;
-  /** Relative residual of the linear solves near convergence; early solves stop sooner. Default 1e-8. */
   readonly linearTolerance?: number;
   /** Relative velocity change below which Picard iterations give way to Newton's. Default 0.3; 0 keeps Picard. */
   readonly newtonBelow?: number;
-  /** Most conjugate-gradient iterations per linear solve. Default 600. */
   readonly maxLinearIterations?: number;
-  /** Strain rate in a⁻¹ added to the effective strain rate so η stays finite in still ice. Default 1e-8. */
   readonly strainFloor?: number;
   /** Columns thinner than this, in metres, do not move. Default 1. */
   readonly minThickness?: number;
@@ -84,34 +71,23 @@ export interface FirstOrderOptions {
   readonly cold?: boolean;
 }
 
-/** What one solve did. */
 export interface FirstOrderReport {
   readonly iterations: number;
   readonly linearIterations: number;
-  /** Relative velocity change at the last Picard iteration. */
   readonly change: number;
   readonly converged: boolean;
 }
 
-/** A reusable first-order Stokes solver for one grid. */
 export interface FirstOrderIceFlow {
   readonly cols: number;
   readonly rows: number;
-  /** Nodes per column, `layers + 1`, bed first. */
   readonly levels: number;
-  /** Velocity along x in m/a per node, index `(row * cols + col) * levels + level`. */
   readonly u: Float64Array;
-  /** Velocity along y in m/a per node. */
   readonly v: Float64Array;
-  /** Solve for the velocity of `input`'s ice, starting from the last answer. */
   solve(input: FirstOrderInput, options?: FirstOrderOptions): FirstOrderReport;
-  /** Surface speed in m/a of each plan node. */
   surfaceSpeed(out?: Float64Array): Float64Array;
-  /** Speed of the ice over its bed in m/a per plan node, the vertical part included; `bed` is the last solve's. */
   slidingSpeed(bed: ArrayLike<number>, out?: Float64Array): Float64Array;
-  /** Depth-averaged velocity per plan node in m/a, x then y components. */
   meanVelocity(outX?: Float64Array, outY?: Float64Array): [Float64Array, Float64Array];
-  /** Forget the last velocity. */
   reset(): void;
 }
 
@@ -167,10 +143,7 @@ function at(values: ArrayLike<number> | number | undefined, i: number, fallback:
   return values[i] ?? fallback;
 }
 
-/**
- * A first-order (Blatter–Pattyn) Stokes ice-flow solver for a plan grid.
- * @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
- */
+/** @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines */
 // stateless: velocity is a warm start for the next solve, not simulation state; reset() clears it.
 export function createFirstOrderIceFlow(grid: FirstOrderGrid): FirstOrderIceFlow {
   const { cols, rows, dx } = grid;

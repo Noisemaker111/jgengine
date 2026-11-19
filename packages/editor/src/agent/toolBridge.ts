@@ -2,23 +2,19 @@ import type { EditorBridgeRequest, EditorBridgeResponse, EditorHostApi } from ".
 import { decodeEditorBridgeRequest } from "../mcp/rpcRequest";
 import { emitEditorConsole } from "../shell/consoleSink";
 
-/** One tool call from an agent turn — name maps 1:1 onto an editor RPC method. */
 export interface AgentToolCall {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
 }
 
-/** Result of routing one tool call through the editor host. */
 export interface AgentToolResult {
   id: string;
   name: string;
   ok: boolean;
   result?: unknown;
   error?: string | undefined;
-  /** True when the document JSON changed — lands as one undo step the human can reverse. */
   mutated: boolean;
-  /** Short human-readable summary for the patch transcript. */
   patchSummary: string;
 }
 
@@ -70,11 +66,6 @@ function summarizeCall(name: string, args: Record<string, unknown>, response: Ed
   return `${name} (read)`;
 }
 
-/**
- * Routes one agent tool call through the same editor RPC surface humans use.
- * Mutating calls share the session undo stack — no parallel history.
- * Tool name maps 1:1 onto `EditorBridgeRequest.method` (same verbs as MCP/CLI).
- */
 export function routeToolCall(api: EditorHostApi, call: AgentToolCall): AgentToolResult {
   const built = toolCallToRequest(call);
   if (!built.ok) {

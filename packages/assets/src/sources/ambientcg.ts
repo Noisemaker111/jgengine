@@ -60,12 +60,9 @@ const FAMILIES: readonly MaterialFamily[] = [
  * lettered variants (`Asphalt025C`) or families it does not list; a pin names the archive directly.
  */
 export interface AmbientcgPinnedMaterial {
-  /** Upstream ambientCG id. */
   assetId: string;
   categories: readonly string[];
-  /** Optional map roles the pinned 1K-JPG archive carries, beyond color/normal/displacement. */
   maps?: readonly ("roughness" | "ao" | "opacity")[];
-  /** Set false for archives published without a displacement map. */
   displacement?: false;
 }
 
@@ -74,7 +71,6 @@ export const AMBIENTCG_PINNED_ASSET_IDS: ReadonlyMap<string, string> = new Map(
   AMBIENTCG_PINNED.map((entry) => [`ambientcg-${entry.assetId.toLowerCase()}`, entry.assetId]),
 );
 
-/** Upstream asset id (`Grass001`) for a material source id (`ambientcg-grass001`). */
 export function ambientcgAssetId(source: AssetSource): string {
   const pinned = AMBIENTCG_PINNED_ASSET_IDS.get(source.id);
   if (pinned !== undefined) return pinned;

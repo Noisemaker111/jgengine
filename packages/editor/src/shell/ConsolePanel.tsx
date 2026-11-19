@@ -18,10 +18,6 @@ function formatTime(at: number): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-/**
- * Console dock tab over the real editor event log — notifications, save/import results, RPC and
- * agent errors. Severity filters, counts, search, timestamps, and clear; no fabricated entries.
- */
 export function ConsolePanel({ store }: { store: EditorConsoleStore }) {
   const entries = useSyncExternalStore(store.subscribe, store.getEntries, store.getEntries);
   const [enabled, setEnabled] = useState<Record<ConsoleSeverity, boolean>>({ info: true, warning: true, error: true });

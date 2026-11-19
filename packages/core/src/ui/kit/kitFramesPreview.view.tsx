@@ -38,10 +38,6 @@ function CursorMenu({ variant, material, cut, tint }: { variant: GameCursorStyle
   );
 }
 
-/**
- * Contact sheet for the game-UI building blocks: every material and cut, game buttons with each
- * cursor, and the drawn sliders, over a sunset backdrop.
- */
 export function KitFramesPreview({ className }: { className?: string }): ReactNode {
   const [volume, setVolume] = useState(0.7);
   const [power, setPower] = useState(0.4);

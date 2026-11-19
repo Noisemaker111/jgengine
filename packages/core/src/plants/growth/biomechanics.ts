@@ -4,15 +4,10 @@ import { PLANT_PI, plantAcos, plantCos, plantSin } from "./plantMath";
 import { hasCambium, thickenNode } from "./pipeModel";
 
 const GRAVITY = 9.81;
-/** Fresh leaf mass over dry leaf mass. */
 const LEAF_FRESH_FACTOR = 2.5;
 const MAX_BEND_PER_YEAR = 0.25;
 const MIN_TURN_SQ = 2.5e-15;
 const INV_FOUR_PI = 1 / (4 * PLANT_PI);
-/**
- * Difference in maturation strain between reaction wood and the wood opposite it (Alméras & Fournier
- * 2009 measure 0.1–0.4%): how hard a new ring pulls a leaning stem back.
- */
 const REACTION_STRAIN = 0.003;
 /** Height a limb resting on the ground lies at, metres. */
 const GROUND_REST_M = 0.02;
@@ -26,28 +21,18 @@ const INV_56 = 1 / 56;
 const INV_72 = 1 / 72;
 const INV_90 = 1 / 90;
 
-/**
- * Reused per-node buffers for one sag pass.
- * @internal
- */
+/** @internal */
 export interface SagScratch {
   mass: Float64Array;
   mx: Float64Array;
   mz: Float64Array;
-  /** Accumulated rotation per node as a quaternion (x, y, z, w). */
   turn: Float64Array;
-  /** Tips before this year's sag, 3 per node. */
   before: Float32Array;
-  /** Sapwood area each node laid down this year, m². */
   ring: Float64Array;
-  /** First node of the stem each node belongs to. */
   stemBase: Int32Array;
 }
 
-/**
- * Allocate sag buffers for `capacity` nodes.
- * @internal
- */
+/** @internal */
 export function createSagScratch(capacity: number): SagScratch {
   return {
     mass: new Float64Array(capacity),
@@ -60,11 +45,7 @@ export function createSagScratch(capacity: number): SagScratch {
   };
 }
 
-/**
- * This year's ring, laid in the same pass as the load it adds: `share` of each node's `need` plus
- * `surplusPerFoliage` m² of sapwood per m² of leaves above it.
- * @internal
- */
+/** @internal */
 export interface SagRing {
   foliageAbove: Float64Array;
   need: Float64Array;

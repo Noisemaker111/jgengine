@@ -1,27 +1,20 @@
 // @skill jgengine-world
 
-/** Air state at one altitude, SI units. */
 export interface AtmosphereSample {
-  /** Kinetic temperature, K. */
   temperature: number;
-  /** Static pressure, Pa. */
   pressure: number;
   /** Density, kg/m³. */
   density: number;
   /** Speed of sound, m/s. */
   speedOfSound: number;
-  /** Dynamic viscosity, Pa·s. */
   viscosity: number;
 }
 
-/** An air model: geometric altitude above mean sea level, m, to the air state there. */
 export type AtmosphereModel = (altitude: number) => AtmosphereSample;
 
-/** Effective Earth radius the 1976 standard uses for geopotential altitude and gravity, m. */
 export const STANDARD_EARTH_RADIUS = 6356766;
 /** Standard sea-level gravity, m/s². */
 export const STANDARD_GRAVITY = 9.80665;
-/** Sea-level standard pressure, Pa. */
 export const SEA_LEVEL_PRESSURE = 101325;
 /** Sea-level standard density, kg/m³. */
 export const SEA_LEVEL_DENSITY = 1.225;
@@ -35,7 +28,6 @@ const GAMMA = 1.4;
 const SUTHERLAND_BETA = 1.458e-6;
 const SUTHERLAND_S = 110.4;
 
-/** Geopotential layer bases, m', and molecular-scale temperature gradients, K/m' (USSA 1976 Table 4). */
 const LAYER_BASE = [0, 11000, 20000, 32000, 47000, 51000, 71000, 84852] as const;
 const LAYER_GRADIENT = [-0.0065, 0, 0.001, 0.0028, 0, -0.0028, -0.002] as const;
 
@@ -83,10 +75,7 @@ function molecularRatio(altitude: number): number {
   return lower + (upper - lower) * (position - index);
 }
 
-/**
- * Geopotential altitude, m', of a geometric altitude, m.
- * @capability standard-atmosphere geopotential altitude from geometric altitude
- */
+/** @capability standard-atmosphere geopotential altitude from geometric altitude */
 export function geopotentialAltitude(altitude: number): number {
   return (STANDARD_EARTH_RADIUS * altitude) / (STANDARD_EARTH_RADIUS + altitude);
 }

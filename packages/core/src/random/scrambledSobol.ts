@@ -8,7 +8,6 @@ function reverseBits(x: number): number {
   return ((x >>> 16) | (x << 16)) >>> 0;
 }
 
-/** Laine and Karras' hash, which scrambles each bit by the bits below it. */
 function laineKarras(x: number, seed: number): number {
   x = (x + seed) >>> 0;
   x = (x ^ Math.imul(x, 0x6c50b47c)) >>> 0;
@@ -18,7 +17,6 @@ function laineKarras(x: number, seed: number): number {
   return x;
 }
 
-/** Nested uniform (Owen) scramble of a 32-bit fixed-point coordinate: each bit is flipped by a hash of the bits above it. */
 function owenScramble(x: number, seed: number): number {
   return reverseBits(laineKarras(reverseBits(x), seed));
 }

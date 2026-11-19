@@ -79,7 +79,6 @@ export function parseAuditArgs(argv: readonly string[]): AuditArgs | "help" {
   return { games: games ?? [...FRAME_GAMES], seconds, path, renderer };
 }
 
-/** One game's audit: the probe system's counters and what the comparison found. */
 export interface AuditRow {
   game: string;
   counters: Record<string, number> | null;
@@ -119,16 +118,10 @@ export function renderShadowAudit(rows: readonly AuditRow[]): string {
   return [line(head), ...body.map(line)].join("\n");
 }
 
-/**
- * What one audit verb plays each game with and reads back: the page flag that turns the audit on, the
- * probe system whose counters carry its findings, and how a row of them is judged and shown.
- */
 export interface AuditKind {
-  /** The verb, for progress lines and the records folder: `perf <name>`. */
   name: string;
   param: string;
   system: string;
-  /** The row's error when the page registered no such system. */
   missing: string;
   verdict(row: AuditRow): string;
   passing: ReadonlySet<string>;
@@ -191,7 +184,6 @@ async function auditGame(kind: AuditKind, game: string, args: AuditArgs, started
   return { game, counters, error: counters === null ? kind.missing : auditPageProblem(args.renderer, drawing) };
 }
 
-/** Play each game the arguments name with `kind`'s audit on, print the table and fail on any row that does not pass. */
 export async function runAudit(kind: AuditKind, argv: readonly string[], usage: string): Promise<void> {
   const parsed = parseAuditArgs(argv);
   if (parsed === "help") {

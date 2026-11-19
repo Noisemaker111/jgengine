@@ -1,7 +1,5 @@
-/** Supported logical kinds for user-supplied assets. */
 export type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri";
 
-/** A game-owned import description; paths are relative POSIX paths, roles are authored labels. */
 export interface AssetImportSpec {
   id: string;
   kind: AssetImportKind;
@@ -9,7 +7,6 @@ export interface AssetImportSpec {
   meta?: Record<string, unknown>;
 }
 
-/** Result of validating an import description; a successful entry is an independent JSON snapshot. */
 export type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string };
 
 const kinds = new Set<string>(["model", "texture", "material", "sprite", "spriteSheet", "audio", "font", "hdri"]);
@@ -43,11 +40,7 @@ function jsonData(value: unknown, ancestors = new Set<object>(), depth = 0): boo
   return valid;
 }
 
-/**
- * Validate untrusted import descriptions without filesystem access or path rewriting.
- * Requires unique relative files, printable non-empty roles and plain JSON metadata (maximum depth 64).
- * @capability asset-import-validation validate game-owned multi-file asset descriptions before ingest
- */
+/** @capability asset-import-validation validate game-owned multi-file asset descriptions before ingest */
 export function validateImportSpec(spec: unknown): ImportSpecValidation {
   if (!record(spec)) return { ok: false, reason: "spec must be an object" };
   if (typeof spec["id"] !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(spec["id"]) || !safePath(spec["id"])) {

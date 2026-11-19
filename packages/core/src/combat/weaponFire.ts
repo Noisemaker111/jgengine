@@ -1,11 +1,9 @@
 import { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./damage/damageResolution";
 import { createMagazine, type Magazine, type MagazineConfig } from "./magazine";
 
-/** Tuning for {@link createFireCadence}: the minimum interval between actions and whether it starts ready. */
 export interface FireCadenceConfig {
   /** Minimum milliseconds between successful `fire()` calls. `<= 0` disables the limit (always ready). */
   intervalMs: number;
-  /** Start ready to fire (default) or mid-cooldown. */
   ready?: boolean;
 }
 
@@ -15,19 +13,15 @@ export interface FireCadenceConfig {
  * whole state is the elapsed time since the last action, exposed via {@link FireCadence.elapsedMs}.
  */
 export interface FireCadence {
-  /** True when at least `intervalMs` has elapsed since the last successful `fire()`. */
   ready(): boolean;
   /** Progress toward ready in `[0, 1]`; `1` when ready. */
   readyFraction(): number;
   /** Milliseconds until ready; `0` when ready. */
   remainingMs(): number;
-  /** Consume the gate: resets the interval and returns `true`, or returns `false` without effect when not `ready()`. */
   fire(): boolean;
-  /** Advance the internal clock by `dtSeconds`. */
   tick(dtSeconds: number): void;
   /** Elapsed milliseconds since the last successful `fire()` (capped at `intervalMs`) — the full serializable state. */
   elapsedMs(): number;
-  /** Restore a prior {@link FireCadence.elapsedMs} value (e.g. from a save/replay snapshot). */
   restore(elapsedMs: number): void;
 }
 
@@ -66,16 +60,9 @@ export function createFireCadence(config: FireCadenceConfig): FireCadence {
 /** Why a {@link WeaponRuntime.fire} attempt resolved the way it did. */
 export type WeaponFireStatus = "fired" | "cooling" | "empty" | "reloading";
 
-/**
- * The result of a {@link WeaponRuntime.fire} attempt. On `"fired"`, `hits` is whatever the
- * caller's raycast returned and `resolutions` holds the portable damage provenance for each hit
- * that produced a {@link DamageHitInput}; on any blocked status both are empty and no round was spent.
- */
 export interface WeaponFireResult<THit> {
   status: WeaponFireStatus;
-  /** The hits the caller's `resolveHits` returned (empty when the shot was blocked). */
   hits: readonly THit[];
-  /** One {@link DamageHitResolution} per hit that mapped to a {@link DamageHitInput}. */
   resolutions: readonly DamageHitResolution[];
   /** Loaded rounds remaining after the attempt, or `null` when the weapon has no magazine. */
   loaded: number | null;
@@ -90,19 +77,9 @@ export interface WeaponFireResult<THit> {
 export interface WeaponRuntimeConfig<TAim, THit> {
   /** Minimum milliseconds between shots. From a rounds-per-second fire rate, pass `1000 / roundsPerSecond`. */
   cadenceMs: number;
-  /** Optional discrete-ammo model; omit for an unlimited-fire weapon. */
   magazine?: MagazineConfig;
-  /** Start the cadence ready to fire (default) or mid-cooldown. */
   ready?: boolean;
-  /**
-   * Caller-owned aim → hits. This is where the game runs its OWN raycaster, projectile sweep, or
-   * spatial query and returns whatever hit shape it likes. Called once per fired shot.
-   */
   resolveHits: (aim: TAim) => readonly THit[];
-  /**
-   * Map one resolved hit into a portable {@link DamageHitInput}, or `null` to skip damage for that
-   * hit (e.g. a wall). The runtime feeds the result to {@link resolveDamageHit}.
-   */
   damageFor: (hit: THit, aim: TAim) => DamageHitInput | null;
   /** Deterministic RNG forwarded to status rolls in {@link resolveDamageHit} when a hit's input omits its own. */
   rng?: () => number;
@@ -115,22 +92,12 @@ export interface WeaponRuntimeConfig<TAim, THit> {
  * the raycaster itself.
  */
 export interface WeaponRuntime<TAim, THit> {
-  /**
-   * Attempt one shot with the given aim. Gates on cadence, reload state, and ammo (in that order);
-   * only a `"fired"` result spends a round, resets the cadence, runs `resolveHits`, and resolves damage.
-   */
   fire(aim: TAim): WeaponFireResult<THit>;
-  /** Whether {@link WeaponRuntime.fire} would fire right now (cadence ready, not reloading, ammo available). */
   canFire(): boolean;
-  /** Begin a magazine reload if possible; always `false` for a weapon with no magazine. */
   startReload(): boolean;
-  /** Abort an in-progress reload. */
   cancelReload(): void;
-  /** Advance the cadence gate and any magazine reload timer by `dtSeconds`. */
   tick(dtSeconds: number): void;
-  /** The underlying cadence gate (for HUD readouts and snapshot/restore). */
   readonly cadence: FireCadence;
-  /** The magazine, or `null` when the weapon has no ammo model. */
   readonly magazine: Magazine | null;
 }
 

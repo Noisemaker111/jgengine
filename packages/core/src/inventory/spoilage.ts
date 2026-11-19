@@ -13,7 +13,6 @@ export interface SpoilingStack {
   rate?: number;
 }
 
-/** Units of one stack that went off this tick: take `count` of `itemId` from `key`, give `count` of `into`. */
 export interface SpoiledUnits {
   key: string;
   itemId: string;
@@ -21,7 +20,6 @@ export interface SpoiledUnits {
   count: number;
 }
 
-/** The spoil timers of every perishable stack carried, advanced together; `snapshot`/`restore` keep them across a save. */
 export interface Spoilage {
   /** Advance every listed stack by `dt` seconds; stacks no longer listed lose their timers. */
   tick(dt: number, stacks: readonly SpoilingStack[]): SpoiledUnits[];

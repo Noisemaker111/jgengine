@@ -17,11 +17,8 @@ import { jitterParams, parseParams, type ParamSchema, type ParamsOf } from "./pa
  * @typeParam Input world data the output depends on that params cannot hold (see {@link GeneratorContext.input}).
  */
 export interface GeneratorContext<Input = unknown> {
-  /** The resolved seed string. */
   readonly seed: string;
-  /** A seeded stream for one named purpose; the same seed and name always replay the same sequence. */
   random(stream?: string): SeededRng;
-  /** Detail level the output is baked at, 1 full to near 0 coarsest. */
   readonly detail: number;
   /**
    * World data the caller hands in that a `meta` bag cannot hold: a ground sampler, neighbouring
@@ -46,7 +43,6 @@ export interface GeneratorDefinition<Schema extends ParamSchema = ParamSchema, O
    * (`registerGeneratorPreview`), so every generator of a family previews with no code of its own.
    */
   readonly output: string;
-  /** Detail levels {@link bakeGeneratorVariants} bakes per variant, highest first. Default `[1]`. */
   readonly lods?: readonly number[];
   /**
    * Optional slow or stored work for one params, seed and detail (growing a plant, reading a cache)
@@ -58,17 +54,15 @@ export interface GeneratorDefinition<Schema extends ParamSchema = ParamSchema, O
   generate(params: ParamsOf<Schema>, context: GeneratorContext<Input>): Output;
 }
 
-/** The output type of a generator. */
 export type GeneratorOutput<Definition> = Definition extends GeneratorDefinition<ParamSchema, infer Output> ? Output : never;
 
-/** Declare a generator with its schema, output and input types inferred. */
 export function defineGenerator<Schema extends ParamSchema, Output, Input = unknown>(
   definition: GeneratorDefinition<Schema, Output, Input>,
 ): GeneratorDefinition<Schema, Output, Input> {
   return definition;
 }
 
-/** The context a generate call receives for `seed` at `detail`, with an optional world `input`. @internal */
+/** @internal */
 export function generatorContext<Input = unknown>(seed: string, detail = 1, input?: Input): GeneratorContext<Input> {
   return {
     seed,
@@ -88,17 +82,13 @@ export function generatorSeed(schema: ParamSchema, meta: Readonly<Record<string,
   return typeof raw === "string" && raw.length > 0 ? raw : fallback;
 }
 
-/** Options for {@link runGenerator}. */
 export interface RunGeneratorOptions<Input = unknown> {
-  /** Seed used when `meta` carries none. Default the generator id. */
   fallbackSeed?: string;
   /** Detail level, 0..1. Default 1. */
   detail?: number;
-  /** The generator's world input (see {@link GeneratorContext.input}). */
   input?: Input;
 }
 
-/** Parse `meta` against the generator's schema, resolve its seed and generate. */
 export function runGenerator<Schema extends ParamSchema, Output, Input = unknown>(
   definition: GeneratorDefinition<Schema, Output, Input>,
   meta: Readonly<Record<string, unknown>> | undefined,
@@ -108,10 +98,6 @@ export function runGenerator<Schema extends ParamSchema, Output, Input = unknown
   return definition.generate(parseParams(definition.schema, meta), generatorContext(seed, options.detail ?? 1, options.input));
 }
 
-/**
- * Await a generator's `prepare` for the output {@link runGenerator} would return with the same
- * arguments. Resolves at once for a generator without one.
- */
 export async function prepareGenerator<Schema extends ParamSchema, Output, Input = unknown>(
   definition: GeneratorDefinition<Schema, Output, Input>,
   meta: Readonly<Record<string, unknown>> | undefined,
@@ -122,27 +108,21 @@ export async function prepareGenerator<Schema extends ParamSchema, Output, Input
   await definition.prepare(parseParams(definition.schema, meta), generatorContext(seed, options.detail ?? 1, options.input));
 }
 
-/** One seeded variant: the `meta` it would write, and its parsed params and seed. */
 export interface GeneratorVariant<Schema extends ParamSchema = ParamSchema> {
   index: number;
   seed: string;
-  /** The full `meta` bag this variant writes onto an object (seed included). */
   meta: Record<string, unknown>;
   params: ParamsOf<Schema>;
 }
 
-/** Options for {@link generatorVariants}. */
 export interface GeneratorVariantOptions {
-  /** How many variants. Default 20. */
   count?: number;
-  /** Seed of the variant set; the same seed lays out the same grid. Default `"variants"`. */
   seed?: string;
   /**
    * 0..1 how far each variant's params wander from the base values (see `jitterParams`). 0 varies
    * only the seed. Default 0.25.
    */
   explore?: number;
-  /** Variants pinned at the front of the grid unchanged, as `meta` bags (the "keep" action). */
   keep?: readonly Readonly<Record<string, unknown>>[];
 }
 
@@ -150,12 +130,6 @@ function seedKey(schema: ParamSchema): string {
   return schema.fields.find((field) => field.type === "seed")?.key ?? "seed";
 }
 
-/**
- * A grid of seeded variants around `base`: kept variants first, then the base itself, then
- * fresh ones, each with its own seed and params nudged by `explore`. Pure — the same base and
- * options always give the same grid, which is what the editor's variant panel and the
- * `generator_variants` verb show.
- */
 export function generatorVariants<Schema extends ParamSchema>(
   definition: GeneratorDefinition<Schema, unknown>,
   base: Readonly<Record<string, unknown>> | undefined,
@@ -200,17 +174,12 @@ export function generatorVariantFor<Schema extends ParamSchema>(
   return { index: -1, seed: generatorSeed(definition.schema, meta, baseSeed), meta, params: parseParams(definition.schema, meta) };
 }
 
-/** One baked variant: the variant and its output at each detail level, highest detail first. */
 export interface BakedGeneratorVariant<Schema extends ParamSchema, Output> {
   variant: GeneratorVariant<Schema>;
   lods: { detail: number; output: Output }[];
 }
 
-/**
- * Bake N variants of a generator at each of its `lods` — the set an instanced renderer draws from
- * (pick one per instance with {@link variantIndexAt}) and the editor's variant grid previews.
- * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
- */
+/** @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure */
 export function bakeGeneratorVariants<Schema extends ParamSchema, Output>(
   definition: GeneratorDefinition<Schema, Output>,
   base: Readonly<Record<string, unknown>> | undefined,
@@ -244,10 +213,7 @@ export async function prepareGeneratorVariants<Schema extends ParamSchema, Outpu
   await Promise.all(jobs);
 }
 
-/**
- * A stable variant index in `[0, count)` for one placed instance key (an id, a grid cell).
- * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
- */
+/** @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure */
 export function variantIndexAt(count: number, seed: string, key: string | number): number {
   if (count <= 1) return 0;
   return Math.floor(seededRng(`${seed}#${key}`)() * count) % count;
@@ -260,12 +226,7 @@ export function registerGenerator<Schema extends ParamSchema, Output>(definition
   generators.set(definition.id, untypedGenerator(definition));
 }
 
-/**
- * The untyped view of a typed generator, for code that holds raw meta bags (the editor, the variant
- * grid): its `generate` parses params against the schema first. Registered generators are already
- * this shape.
- * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
- */
+/** @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure */
 export function untypedGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): GeneratorDefinition {
   return {
     id: definition.id,
@@ -281,12 +242,10 @@ export function untypedGenerator<Schema extends ParamSchema, Output>(definition:
   };
 }
 
-/** The registered generator for an id, or undefined. */
 export function getGenerator(id: string): GeneratorDefinition | undefined {
   return generators.get(id);
 }
 
-/** Every registered generator, in registration order, optionally of one output family. */
 export function listGenerators(output?: string): GeneratorDefinition[] {
   const all = [...generators.values()];
   return output === undefined ? all : all.filter((definition) => definition.output === output);

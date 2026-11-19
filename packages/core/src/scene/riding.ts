@@ -17,13 +17,10 @@ export type RideResult = { ok: true } | { ok: false; reason: string };
  * @capability riding ride a tamed creature or vehicle: controls and camera follow the mount, the rider sits on its seat, dismount sets them down beside it
  */
 export interface Riding {
-  /** Put `userId`'s own entity on `mountId` at `seat`, and steer the mount. */
   ride(userId: string, mountId: string, seat: SeatOffset): RideResult;
   /** Get off; returns the mount ridden, or null when not riding. */
   dismount(userId: string): string | null;
-  /** The mount `userId` is riding, or null. */
   mountOf(userId: string): string | null;
-  /** Who rides `mountId`, or null. */
   riderOf(mountId: string): string | null;
   snapshot(): { riders: MountedRider[]; seats: Record<string, SeatOffset> };
   restore(data: { riders: readonly MountedRider[]; seats: Record<string, SeatOffset> }): void;
@@ -44,7 +41,6 @@ function carry(ctx: GameContext, mounts: MountController, seats: Map<string, Sea
   }
 }
 
-/** The context's one riding service; it carries riders after movement on every simulation step. */
 export const ridingOf: (ctx: GameContext) => Riding = perContext((ctx: GameContext): Riding => {
   const mounts = new MountController();
   const seats = new Map<string, SeatOffset>();

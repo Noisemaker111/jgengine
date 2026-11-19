@@ -6,20 +6,13 @@ import type { ScatterInstance } from "./scatterRegion";
  * placement becomes one upright box scaled by the placement's own scale.
  */
 export interface ScatterSolidSpec {
-  /** Half-width of the blocking box: about the visible footprint's radius. */
   radius: number;
-  /** Height of the blocking box above the placement's grounded base. */
   height: number;
 }
 
-/** Layer {@link syncScatterSolids} owns in `ctx.world.solids`. */
 export const SCATTER_SOLID_LAYER = "scatter:solids";
 
-/**
- * One solid per placement whose palette item has a spec, skipping `hidden` placements (a mined rock
- * stops blocking once it is gone).
- * @capability scatter-solids scattered rocks and props block the player, NPCs and physics like any wall
- */
+/** @capability scatter-solids scattered rocks and props block the player, NPCs and physics like any wall */
 export function scatterSolids(
   instances: readonly ScatterInstance[],
   specs: Readonly<Record<string, ScatterSolidSpec>>,
@@ -37,12 +30,7 @@ export function scatterSolids(
   return out;
 }
 
-/**
- * Write the solid placements into `solids` (usually `ctx.world.solids`) as the
- * {@link SCATTER_SOLID_LAYER} layer; an empty result removes the layer. Call again when the
- * placements or the hidden set change.
- * @capability scatter-solids scattered rocks and props block the player, NPCs and physics like any wall
- */
+/** @capability scatter-solids scattered rocks and props block the player, NPCs and physics like any wall */
 export function syncScatterSolids(
   solids: Pick<WorldSolids, "set">,
   instances: readonly ScatterInstance[],

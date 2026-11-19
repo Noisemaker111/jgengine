@@ -30,7 +30,6 @@ export function AxisNumberField({
   disabled = false,
   mixed = false,
 }: {
-  /** Axis coloring; omit for a neutral field. */
   axis?: "x" | "y" | "z";
   label: string;
   value: number;
@@ -38,7 +37,6 @@ export function AxisNumberField({
   step?: number;
   precision?: number;
   disabled?: boolean;
-  /** Multi-select mixed values: show an em dash until the user commits a concrete number. */
   mixed?: boolean;
 }) {
   // `text` only exists while the input has focus; otherwise the shown value derives from props.
@@ -147,7 +145,6 @@ export function AxisNumberField({
   );
 }
 
-/** Labeled row wrapper aligning a caption with one or more fields. */
 export function FieldRow({ label, children, title }: { label: string; children: ReactNode; title?: string }) {
   return (
     <div className="flex items-center gap-2" title={title}>
@@ -182,7 +179,6 @@ export function TextField({
   );
 }
 
-/** Small ghost action used inside section headers (reset, link). */
 export function SectionAction({
   label,
   onClick,

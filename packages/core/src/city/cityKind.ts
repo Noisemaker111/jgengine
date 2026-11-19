@@ -100,13 +100,10 @@ import type { Vec2 } from "../world/geometry";
 import { CHARACTER_CLASS_BIAS, CHARACTER_FILL, cityDistrictField, districtCharacter, type CityDistrictField, type CityDistrictKind } from "./cityDistricts";
 import { VILLAGE_MAX_CELLS, villageGreen, villageLanes } from "./cityVillage";
 
-/** The editor volume kind marking a box as a procedural city district. */
 export const CITY_KIND = "city";
 
-/** The editor volume kind that locally overrides a city's zone band/mix — a district in a district. */
 export const CITY_ZONE_KIND = "cityzone";
 
-/** The city parameter schema — drives the inspector sliders and `meta` parse via the studio seam. */
 export const CITY_SCHEMA = defineParamSchema({
   groups: [
     { id: "layout", label: "Layout" },
@@ -545,7 +542,6 @@ export const CITY_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Zone-override schema for `cityzone` volumes: pin a band and optionally a bespoke class mix. */
 export const CITY_ZONE_SCHEMA = defineParamSchema({
   fields: [
     {
@@ -559,13 +555,8 @@ export const CITY_ZONE_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Parsed `city` params. */
 export type CityParams = ParamsOf<typeof CITY_SCHEMA>;
 
-/**
- * The params a city grows from: the parsed schema values with the floor range ordered and the style
- * narrowed to a known palette.
- */
 export type CityRules = Omit<CityParams, "style"> & { style: BuildingStyle };
 
 function isBuildingStyle(value: string): value is BuildingStyle {
@@ -588,7 +579,6 @@ export interface CityStreet {
   width: number;
   level: "boulevard" | "avenue" | "street" | "lane";
   surface: "asphalt" | "gravel";
-  /** Whether sidewalk ribbons flank this street. */
   sidewalk: boolean;
   /** Grade-limited road-surface height per point, present only when `elevation` is above 0. This is
    * ROAD relief, not the terrain the district stands on. */
@@ -599,7 +589,6 @@ export interface CityStreet {
   features?: readonly { kind: StreetFeatureKind; from: number; to: number; bankHeight: number }[];
 }
 
-/** One crossing of two through streets: patch center/radius plus crosswalk arm directions. */
 export interface CityIntersection {
   id: string;
   x: number;
@@ -611,7 +600,6 @@ export interface CityIntersection {
   arms: readonly { angle: number; width: number }[];
 }
 
-/** One building lot: footprint, zone band, class, seeded floors, massing pieces, street anchor. */
 export interface CityLot {
   id: string;
   /**
@@ -624,82 +612,59 @@ export interface CityLot {
   rotationY: number;
   floors: number;
   jitter: number;
-  /** Building class the zone mix picked. */
   class: CityLotClass;
-  /** Zone band the lot fell in (after overrides). */
   zone: CityZoneBand;
-  /** Frontage point on the street centerline the lot faces. */
   anchor: RoadPoint;
   /** Deterministic massing pieces in lot-local space (see {@link CityLotPiece}). */
   pieces: readonly CityLotPiece[];
-  /** The class's massing template the pieces follow (`podium`, `mansard`, `dutch`…), or the landmark class. */
   template: string;
-  /** Id of the parcel this building stands on. */
   parcel?: string;
   /** Set when the building is a civic landmark filling its whole block; `class` is then the ordinary class used for styling. */
   landmark?: CityLandmarkClass;
 }
 
-/** One closed city block: a face of the road graph, inset to curb and land boundaries. */
 export interface CityBlock {
   id: string;
-  /** How the block is used: buildable, a park/plaza/field open space, or a landscaped buffer sliver. */
   kind: CityBlockKind;
-  /** Land polygon behind the sidewalk band (world XZ, closed ring). */
   polygon: readonly RoadPoint[];
-  /** Pavement-edge polygon (curb line). The sidewalk band lies between `curb` and `polygon`. */
   curb: readonly RoadPoint[];
-  /** Land area in m². */
   area: number;
-  /** Zone band the block falls in (after overrides). */
   band: CityZoneBand;
-  /** The district character the block reads as — what biased its class mix and how fully it filled. */
   district: CityDistrictKind;
 }
 
-/** One street-frontage edge of a parcel. */
 export interface CityParcelFrontageOut {
-  /** Street id (`street:N`) the frontage faces. */
   road: string;
   edgeStart: RoadPoint;
   edgeEnd: RoadPoint;
-  /** Unit tangent along the frontage chord. */
   tangent: RoadPoint;
 }
 
-/** One polygonal parcel subdivided from a block's street frontage. */
 export interface CityParcel {
   id: string;
-  /** Owning block id. */
   block: string;
   polygon: readonly RoadPoint[];
-  /** Buildable polygon after front/side/rear setbacks ([] when setbacks consume the parcel). */
   buildable: readonly RoadPoint[];
   frontage: readonly CityParcelFrontageOut[];
   area: number;
   /** Usable depth from the frontage chord to the parcel rear, meters. */
   depth: number;
   isCorner: boolean;
-  /** built = carries a lot; vacant = intentionally unbuilt gap; yard = leftover strip kept green. */
   kind: "built" | "vacant" | "yard";
 }
 
-/** One bridge deck spanning water: bank-to-bank polyline plus the silhouette style. */
 export interface CityBridge {
   id: string;
   points: readonly RoadPoint[];
   width: number;
   style: CityRules["bridgeStyle"];
-  /** Ground height at the banks — the deck reference the renderer drapes to. */
   bankHeight: number;
 }
 
-/** One tunnel bore piercing a ridge: portal-to-portal polyline held at bank height. */
 export interface CityTunnel {
   id: string;
   points: readonly RoadPoint[];
   width: number;
-  /** Ground height at the portals — the road floor stays flat at this height through the ridge. */
   bankHeight: number;
 }
 
@@ -711,16 +676,11 @@ export interface CityPark {
   rotationY: number;
   type: "plaza" | "green" | "meadow" | "field" | "courtyard" | "buffer";
   jitter: number;
-  /** Road-derived polygon (world XZ). Present on every block-pipeline park; the rect fields above
-   * are its bounding proxy for coarse consumers. */
   polygon?: readonly RoadPoint[];
-  /** Crop-row polylines for `field` parks, clipped around farm lots. */
   rows?: readonly (readonly RoadPoint[])[];
-  /** Footpath centerlines across greens, meadows and courtyards (about 2.4 m wide), world XZ. */
   paths?: readonly (readonly RoadPoint[])[];
 }
 
-/** One placed tree: world XZ, species, and seeded scale/color jitter. */
 export interface CityTree {
   x: number;
   z: number;
@@ -729,47 +689,37 @@ export interface CityTree {
   jitter: number;
 }
 
-/** One street light: curb position plus the yaw its arm faces (over the road). */
 export interface CityLight {
   x: number;
   z: number;
-  /** Yaw facing the road (engine rotationY convention). */
   heading: number;
 }
 
-/** One hedge run: a thin box strip (estate perimeter). */
 export interface CityHedge {
   center: RoadPoint;
-  /** Length along the run and thickness across it. */
   size: readonly [number, number];
   rotationY: number;
 }
 
-/** One driveway ribbon from a street to a lot. */
 export interface CityDriveway {
   points: readonly RoadPoint[];
   width: number;
   surface: "gravel" | "pavement";
 }
 
-/** One parking pad behind a commercial lot. */
 export interface CityParking {
   center: RoadPoint;
   size: readonly [number, number];
   rotationY: number;
 }
 
-/** Silhouette class of a parked vehicle — sizes the body the renderer instances. */
 export type CityVehicleKind = "car" | "van" | "truck";
 
-/** One parked vehicle standing at a curb or nose-in inside a parking pad. */
 export interface CityVehicle {
   x: number;
   z: number;
-  /** Yaw the body points down (engine rotationY convention). */
   rotationY: number;
   kind: CityVehicleKind;
-  /** Seeded body-paint index; the renderer maps it into its own palette. */
   paint: number;
   /** Where it stands, so the renderer drapes it onto carriageway or pad height. */
   stall: "curb" | "lot";
@@ -779,10 +729,8 @@ export interface CityVehicle {
 export interface CitySignal {
   x: number;
   z: number;
-  /** Yaw the head faces — into the traffic approaching down this arm. */
   heading: number;
   kind: "signal" | "sign";
-  /** How far the mast arm reaches over the carriageway, to the right of {@link CitySignal.heading}. */
   reach: number;
 }
 
@@ -796,7 +744,6 @@ export interface CityRaceSeal {
   kind: CircuitSealKind;
 }
 
-/** One barrier run of a chicane: world XZ, the yaw of travel it stands across, and its run length. */
 export interface CityRaceBarrier {
   x: number;
   z: number;
@@ -805,7 +752,6 @@ export interface CityRaceBarrier {
   kind: CircuitSealKind;
 }
 
-/** A barrier chicane on one of the lap's secondary straights (`entry`/`exit` index the centerline). */
 export interface CityRaceChicane {
   entry: number;
   exit: number;
@@ -817,28 +763,22 @@ export interface CityRaceKerb {
   points: readonly RoadPoint[];
   /** Strip width across, meters. */
   width: number;
-  /** Which side of travel the strip sits on: -1 left, 1 right. */
   side: -1 | 1;
   /** Alternating stripe length along the run, meters. */
   stripe: number;
-  /** Corner this kerb belongs to (index into {@link ResolvedRace.corners}). */
   corner: number;
 }
 
-/** The start/finish line: where it is, which way cars face, and the painted line across the road. */
 export interface CityRaceStart {
   x: number;
   z: number;
-  /** Yaw cars face on the grid (direction of travel). */
   heading: number;
-  /** The two road-edge ends of the painted line. */
   line: readonly [RoadPoint, RoadPoint];
   /** Arc-length position of the line along the lap, meters. */
   distance: number;
   width: number;
 }
 
-/** One staggered spawn behind the start line. */
 export interface CityRaceGridSlot {
   x: number;
   z: number;
@@ -850,32 +790,23 @@ export interface CityRaceGridSlot {
  * with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
  */
 export interface ResolvedRace {
-  /** Closed lap centerline — the last point joins the first. */
   centerline: readonly RoadPoint[];
-  /** Road width at each centerline point, inherited from the streets the lap follows. */
   widths: readonly number[];
   /** Road-surface height per point, present only when the district carries `elevation`. */
   heights?: readonly number[];
   /** Lap length, meters. */
   length: number;
-  /** Ids of the district streets the lap runs on — style exactly these as track surface. */
   streets: readonly string[];
-  /**
-   * Side streets closed off, and the chicanes' barriers: EVENT-SCOPED — the renderer stands them up
-   * only while `startStreetRaceEvent(<city volume id>)` holds (`roads/raceEvents`).
-   */
   seals: readonly CityRaceSeal[];
   chicanes: readonly CityRaceChicane[];
   corners: readonly CircuitCorner[];
   kerbs: readonly CityRaceKerb[];
-  /** Ordered gates, finish last — ready for `raceTrack({ checkpoints, laps })`. */
   checkpoints: readonly CircuitGate[];
   laps: number;
   start: CityRaceStart;
   grid: readonly CityRaceGridSlot[];
   /** Arc-length fractions (0..1) where each timing sector begins; the first is always 0. */
   sectors: readonly number[];
-  /** Tightest radius (m) the finished racing line actually holds. */
   tightestRadius: number;
 }
 
@@ -888,11 +819,8 @@ export interface ResolvedCity {
   streets: readonly CityStreet[];
   intersections: readonly CityIntersection[];
   bridges: readonly CityBridge[];
-  /** Tunnel bores piercing ridges — path features on continuous streets. */
   tunnels: readonly CityTunnel[];
-  /** Closed road-derived block polygons — the land the street network encloses. */
   blocks: readonly CityBlock[];
-  /** Polygonal parcels subdivided from block frontage. */
   parcels: readonly CityParcel[];
   lots: readonly CityLot[];
   parks: readonly CityPark[];
@@ -901,20 +829,14 @@ export interface ResolvedCity {
   hedges: readonly CityHedge[];
   driveways: readonly CityDriveway[];
   parkingLots: readonly CityParking[];
-  /** Parked vehicles along the curbs and inside the parking pads. */
   vehicles: readonly CityVehicle[];
   /** Traffic signals and sign posts, one per controlled junction approach. */
   signals: readonly CitySignal[];
   /** The instanced street race through these streets, when `race` is on and a lap could be found. */
   race?: ResolvedRace;
-  /**
-   * The street graph the district grew from, in district-local XZ (before `center` and `rotationY`).
-   * Plain data: rebuild its road-surface field with `streetElevationField({ elevation, halfX, halfZ }, seed)`.
-   */
   network?: StreetNetwork;
 }
 
-/** Lot pieces that block: walls and roofs. Trim and accents (cornices, awnings) stay passable. */
 const SOLID_PIECE_ROLES: ReadonlySet<CityLotPiece["role"]> = new Set(["wall", "roof"]);
 
 /**
@@ -966,7 +888,6 @@ export function citySolids(
   return solids;
 }
 
-/** Extended resolve context: sibling `cityzone` volumes that override the band/mix locally. */
 export interface CityResolveContext extends SceneKindResolveContext {
   zoneOverrides?: readonly SceneKindObject[];
   /**
@@ -1007,7 +928,6 @@ const MAX_VEHICLES = 900;
 const MAX_SIGNALS = 640;
 const MAX_RACE_SEALS = 400;
 const MAX_RACE_KERBS = 320;
-/** Ridge height (m) above a street's banks that bores it through as a tunnel. */
 const CITY_TUNNEL_CLEARANCE = 6;
 const TAU = Math.PI * 2;
 /**
@@ -1016,13 +936,11 @@ const TAU = Math.PI * 2;
  */
 const TIE_EPSILON = 1e-7;
 
-/** Body footprint per silhouette as `[half width across, half length along the heading]`. */
 const VEHICLE_HALF_EXTENTS: Record<CityVehicleKind, readonly [number, number]> = {
   car: [0.95, 2.25],
   van: [1.05, 2.65],
   truck: [1.2, 3.5],
 };
-/** Paint slots the resolver spreads vehicles across; the renderer owns the actual colors. */
 const VEHICLE_PAINT_COUNT = 8;
 
 interface LocalStreet {
@@ -1049,13 +967,6 @@ function makeWander(rng: () => number, amplitude: number, wavelength: number): (
   return (t) => amplitude * (Math.sin(t * f1 + p1) * 0.65 + Math.sin(t * f2 + p2) * 0.35);
 }
 
-
-
-/**
- * Spatial hash of dense street centerline samples (with per-sample clearance radius). Serves both
- * "is this point on/near a road" lot rejection and branch-to-street connection tests without
- * quadratic polyline scans.
- */
 class StreetIndex {
   private cells = new Map<string, { x: number; z: number; r: number; street: number }[]>();
   private readonly cell = 10;
@@ -1084,7 +995,6 @@ class StreetIndex {
     }
   }
 
-  /** Smallest (distance − clearance) to any street sample near the point; Infinity when clear. */
   clearance(x: number, z: number, margin: number, excludeStreet = -1): number {
     const cx = Math.floor(x / this.cell);
     const cz = Math.floor(z / this.cell);
@@ -1138,7 +1048,6 @@ interface PlacedLot {
   angle: number;
 }
 
-/** Broadphase grid over placed lots so overlap tests only touch neighbors. */
 class LotIndex {
   private cells = new Map<string, PlacedLot[]>();
   private readonly cell = 24;
@@ -1172,7 +1081,6 @@ class LotIndex {
 }
 
 const LEVEL_RANK: Record<CityStreet["level"], number> = { boulevard: 3, avenue: 2, street: 1, lane: 0 };
-
 
 interface LocalPark {
   id: string;
@@ -1233,7 +1141,6 @@ interface FabricResult {
   driveways: { points: [number, number][]; width: number; surface: CityDriveway["surface"] }[];
 }
 
-/** Ordinary lot class each landmark is styled as (palette and window rules). */
 const LANDMARK_STYLE_CLASS: Record<CityLandmarkClass, CityLotClass> = {
   hall: "slab",
   arena: "slab",
@@ -1243,14 +1150,12 @@ const LANDMARK_STYLE_CLASS: Record<CityLandmarkClass, CityLotClass> = {
   church: "house",
 };
 
-/** A gameplay spot the fabric keeps clear (district-local XZ). */
 interface KeepOut {
   x: number;
   z: number;
   radius: number;
 }
 
-/** Everything the block-first fabric reads besides the rules. */
 interface FabricContext {
   rules: CityRules;
   streams: (stream: string) => () => number;
@@ -1265,7 +1170,6 @@ interface FabricContext {
   field: CityDistrictField;
   halfX: number;
   halfZ: number;
-  /** Gameplay spots no building, tree or parked car may cover. */
   keepOut: readonly KeepOut[];
   /** A village's green: parcels never cut into it. */
   green: Vec2[] | null;
@@ -1273,11 +1177,6 @@ interface FabricContext {
   hub: Vec2 | null;
 }
 
-/**
- * Stamp one civic landmark over a whole buildable block: the largest rect that fits the setback
- * land, facing the nearest street, massed by its landmark class. Returns false (leaving the block
- * to ordinary parcels) when the block is too small, too steep or too low.
- */
 function placeLandmark(ctx: FabricContext, result: FabricResult, land: Vec2[], bi: number, blockId: number, band: CityZoneBand, landmark: CityLandmarkClass): boolean {
   const { rules } = ctx;
   const rng = ctx.streams(`landmark-lot:${bi}`);
@@ -1377,7 +1276,6 @@ function landmarkSite(
   return { site, fit, rotationY, near, depth: maxB - minB };
 }
 
-/** Whether a block-scale footprint keeps clear of every street, sampled every ~4 m across it. */
 function rectClearOfStreets(index: StreetIndex, fit: { cx: number; cz: number; w: number; d: number }, rotationY: number): boolean {
   const ca = Math.cos(rotationY);
   const sa = Math.sin(rotationY);
@@ -1393,7 +1291,6 @@ function rectClearOfStreets(index: StreetIndex, fit: { cx: number; cz: number; w
   return true;
 }
 
-/** {@link polygonsOverlap} behind a bounding-box reject: parcel clash tests run per frontage step. */
 function parcelsOverlap(a: readonly Vec2[], b: readonly Vec2[], shrink: number): boolean {
   const ba = ringBounds(a);
   const bb = ringBounds(b);
@@ -1416,7 +1313,6 @@ function ringFromSharpestCorner(ring: Vec2[]): Vec2[] {
   return best === 0 ? ring : [...ring.slice(best), ...ring.slice(0, best)];
 }
 
-/** What the pre-pass learns about one traced block before any of them is used. */
 interface BlockInfo {
   bi: number;
   rings: GraphBlockRings;
@@ -1431,7 +1327,6 @@ interface BlockInfo {
   extent: number;
 }
 
-/** How a selected block is used before frontage subdivision. */
 type BlockUse = { kind: "open"; type: CityPark["type"] } | { kind: "landmark"; landmark: CityLandmarkClass };
 
 /**
@@ -1533,7 +1428,6 @@ function selectBlockUses(ctx: FabricContext, infos: readonly BlockInfo[]): Map<n
   return uses;
 }
 
-/** Whether ground near a block centroid drops below the build floor — a block on the water's edge. */
 function frontsWater(ctx: FabricContext, centroid: Vec2, area: number): boolean {
   if (ctx.heightAt === null) return false;
   const reach = Math.min(70, Math.max(20, Math.sqrt(area) / 2 + 12));
@@ -1547,12 +1441,6 @@ function frontsWater(ctx: FabricContext, centroid: Vec2, area: number): boolean 
   return false;
 }
 
-/**
- * Close the district's outer blocks along its rim when the street graph leaves them open: every
- * street end dangling on the footprint edge is joined round the rim (with the four corners) by
- * zero-width, sidewalk-free boundary edges, so frontage along those streets still bounds a block.
- * A network that already frames its footprint has no dangling rim ends and gets nothing.
- */
 function rimClosure(nodes: readonly StreetNode[], edges: readonly StreetEdge[], hx: number, hz: number): { nodes: GraphBlockNode[]; edges: GraphBlockEdge[] } {
   const degree = new Array<number>(nodes.length).fill(0);
   for (const edge of edges) {
@@ -1649,7 +1537,6 @@ function buildFabric(ctx: FabricContext): FabricResult {
     };
   };
 
-  // --- pre-pass: band, character and shape of every traced block ---
   const infos: BlockInfo[] = [];
   const scraps: { bi: number; rings: GraphBlockRings; parkJitter: number }[] = [];
   for (let bi = 0; bi < fabric.blocks.length; bi += 1) {
@@ -1719,7 +1606,6 @@ function buildFabric(ctx: FabricContext): FabricResult {
       if (use?.kind === "landmark" && result.lots.length < MAX_LOTS && placeLandmark(ctx, result, land, bi, blockId, band, use.landmark)) continue;
     }
 
-    // --- parcel subdivision along the block's frontage ring ---
     // A village clusters its frontage: its terraces and shops close up into a continuous street front.
     const fill = Math.min(1, Math.max(rules.blockDensity * CHARACTER_FILL[character], ctx.hub === null ? 0 : 0.7));
     const bias = CHARACTER_CLASS_BIAS[character];
@@ -2049,11 +1935,6 @@ function buildFabric(ctx: FabricContext): FabricResult {
   return result;
 }
 
-/**
- * A rear building inside a block's leftover interior: a back-lot slab downtown and on the
- * waterfront, a shed in an industrial estate, a rear wing in the old town — set back from the
- * frontage parcels, aligned with the block's longest side. Returns false when nothing fits.
- */
 function placeInfill(
   ctx: FabricContext,
   result: FabricResult,
@@ -2127,7 +2008,6 @@ function placeInfill(
   return true;
 }
 
-/** Crop rows for field parks, clipped to the park's road-derived polygon and around placed lots. */
 function buildFieldRows(parks: LocalPark[], placed: LotIndex, streams: (stream: string) => () => number): void {
   let total = 0;
   const rng = streams("fields");
@@ -2164,7 +2044,6 @@ function buildFieldRows(parks: LocalPark[], placed: LotIndex, streams: (stream: 
   }
 }
 
-/** Ids of the through-streets carrying a lap's graph edges, in lap order and without repeats. */
 function lapStreetIds(network: StreetNetwork, edges: readonly number[], streetCount: number): string[] {
   const pairKey = (a: number, b: number): string => (a < b ? `${a}:${b}` : `${b}:${a}`);
   const owner = new Map<string, number>();
@@ -2186,7 +2065,6 @@ function lapStreetIds(network: StreetNetwork, edges: readonly number[], streetCo
   return ids;
 }
 
-/** Rotate and translate a volume-local circuit route into the world frame the rest of the plan uses. */
 function raceToWorld(
   route: CircuitRoute,
   streets: readonly string[],
@@ -2260,35 +2138,19 @@ function raceToWorld(
   };
 }
 
-/** The city generator's output family: a {@link ResolvedCity}. */
 export const CITY_OUTPUT = "city";
 
-/**
- * Where a district stands and what it reads from around it: the city generator's world input. A
- * placed `city` volume hands in its footprint, frame, the terrain and its sibling `cityzone` volumes
- * ({@link resolveCityObject}); without an input (the variant grid) a district grows 400 m square at the origin.
- */
 export interface CityInput {
-  /** World centre of the district. Default the origin. */
   center?: { x: number; y: number; z: number };
-  /** Half-extents of the footprint (m). Default 200 each. */
   halfX?: number;
   halfZ?: number;
   /** Yaw of the district frame (radians). Default 0. */
   rotationY?: number;
-  /** World ground height; lots respect the `maxSlope` cliff rule and streets bridge gaps and bore ridges over it. */
   sampleHeight?: ((x: number, z: number) => number) | undefined;
-  /** Sibling `cityzone` volumes: lots inside one adopt its band and mix. */
   zoneOverrides?: readonly SceneKindObject[] | undefined;
-  /**
-   * Gameplay spots (world XZ discs) the district keeps clear — spawns, mines, objectives. No
-   * building, tree or parked vehicle covers one. {@link resolveCityObject} derives them from the
-   * document's clearance-tagged markers and volumes.
-   */
   keepOut?: readonly { x: number; z: number; radius: number }[] | undefined;
 }
 
-/** The default district footprint half-extent (m) when the input names none. */
 const DEFAULT_CITY_HALF_EXTENT = 200;
 
 /**
@@ -2507,7 +2369,6 @@ function generateCity(rules: CityRules, context: GeneratorContext<CityInput>): R
   const parks = lotResult.parks;
   if (rules.fabric) buildFieldRows(parks, lotResult.placed, streams);
 
-  // --- Street furniture: bounded, seeded, and hooked to the network. ---
   const trees: { x: number; z: number; species: CityTreeSpecies; scale: number; jitter: number }[] = [];
   const lights: { x: number; z: number; heading: number }[] = [];
   const nearIntersection = (x: number, z: number, pad: number): boolean => {

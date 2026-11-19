@@ -17,11 +17,8 @@ import { pickWeighted } from "../random/pick";
 import { seededStreams } from "../random/rng";
 import type { Vec2 } from "../world/geometry";
 
-/** One road the frontage placer lines with buildings: a centerline polyline, its width and its sidewalks. */
 export interface RoadFrontage {
-  /** Road centerline vertices in world XZ; at least two points. */
   path: readonly Vec2[];
-  /** Carriageway full width in world units, kerb to kerb. */
   width: number;
   /**
    * Sidewalk on each side, metres from the kerb: a number, a `road()` descriptor's sidewalk band,
@@ -41,19 +38,14 @@ export function frontageSidewalk(road: Pick<RoadFrontage, "sidewalk">): number {
 export interface LotArea {
   /** World-space center of the region; default `[0, 0]`. */
   center?: Vec2;
-  /** Half-extents along world x and z. */
   halfExtents: Vec2;
 }
 
-/** One weighted plot size a frontage can mix in: `w` along the road, `d` into the block. */
 export interface PlotVariant extends WorldBounds {
-  /** Relative pick weight among the variants. Default 1. */
   weight?: number;
 }
 
-/** Options for {@link deriveBuildingLots}. */
 export interface BuildingLotOptions {
-  /** Roads whose frontage is lined with lots. */
   roads: readonly RoadFrontage[];
   /**
    * Plot size(s): `w` is frontage width (along the road), `d` is depth (into the block). Pass one
@@ -63,12 +55,7 @@ export interface BuildingLotOptions {
    * a street can read differently. Default `{ w: 12, d: 10 }`.
    */
   footprint?: WorldBounds | readonly PlotVariant[];
-  /** Gap between neighbouring lots along a frontage, world units. Default 2. */
   spacing?: number;
-  /**
-   * Gap between the back of the sidewalk (the kerb when a road has none) and the building front,
-   * world units. Default 3.
-   */
   setback?: number;
   /**
    * Manhattan streetwall dial (0..1). Omit (default) keeps the legacy look byte-for-byte. When set,
@@ -79,7 +66,6 @@ export interface BuildingLotOptions {
    * pure frontage compaction; block-interior fill lives in the content pass (`resolveCityLotContent`).
    */
   blockFill?: number;
-  /** Place lots on both sides of each road. Default true. */
   bothSides?: boolean;
   /** Clip region; lots whose center falls outside are dropped. Omit to keep every lot. */
   area?: LotArea;
@@ -94,30 +80,18 @@ export interface BuildingLotOptions {
    * the junction instead of touching the cross street's asphalt. Default 0.
    */
   crossClearance?: number;
-  /**
-   * Seed for the plot-variant rolls when `footprint` is a variant list (identical inputs always
-   * yield the identical layout, with or without it). With a single footprint, lot geometry is
-   * fully determined by the roads and dials; per-building variation (floors, massing) is seeded
-   * downstream where the lots become buildings.
-   */
   seed?: string;
   /** Hard cap on emitted lots so a long network stays bounded. Default 400. */
   maxLots?: number;
 }
 
-/** One placed building lot: where a building stands and how it is turned to face its road. */
 export interface PlacedBuildingLot {
-  /** Lot (building footprint) center in world XZ. */
   center: Vec2;
   /** Building yaw (radians) so its FRONT (+z local face) points at the road. */
   rotationY: number;
-  /** Footprint of the lot: `w` along the frontage, `d` into the block. */
   footprint: WorldBounds;
-  /** Index into the input `roads`. */
   road: number;
-  /** Which side of the road: +1 = left normal, -1 = right normal. */
   side: 1 | -1;
-  /** Distance from the lot's front face to the road centerline (= `width / 2 + sidewalk + setback`). */
   frontDistance: number;
 }
 
@@ -128,7 +102,6 @@ const DEFAULT_FOOTPRINT: WorldBounds = { w: 12, d: 10 };
  * so callers can leave `blockFill` unset for the classic look and this value reproduces it exactly.
  */
 export const FRONTAGE_FILL_REFERENCE = 0.45;
-/** Modest extra frontage-width growth applied at full fill so consecutive lots touch (edge-to-edge). */
 const FRONTAGE_WIDTH_OVERFILL = 0.1;
 
 /**
@@ -146,11 +119,9 @@ export function frontageCompaction(blockFill: number | undefined): { spacingScal
 
 interface Station {
   p: Vec2;
-  /** Unit tangent along the road at this station. */
   tangent: Vec2;
 }
 
-/** Cumulative arc length of a polyline. */
 function polylineLength(path: readonly Vec2[]): number {
   let sum = 0;
   for (let i = 0; i + 1 < path.length; i += 1) {

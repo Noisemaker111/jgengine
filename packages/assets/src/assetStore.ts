@@ -15,10 +15,7 @@ export function assetStoreRoot(repoRoot: string, env: Readonly<Record<string, st
   return join(mainCheckoutOf(repoRoot) ?? repoRoot, ".asset-store");
 }
 
-/**
- * The main checkout a linked worktree belongs to (`.git` is a file there), or null for the main checkout itself.
- * @internal
- */
+/** @internal */
 export function mainCheckoutOf(repoRoot: string): string | null {
   const dotGit = join(repoRoot, ".git");
   try {
@@ -32,10 +29,7 @@ export function mainCheckoutOf(repoRoot: string): string | null {
   }
 }
 
-/**
- * Whether `dir` exists and holds at least one entry.
- * @internal
- */
+/** @internal */
 export function dirHasEntries(dir: string): boolean {
   try {
     return readdirSync(dir).length > 0;
@@ -44,14 +38,7 @@ export function dirHasEntries(dir: string): boolean {
   }
 }
 
-/**
- * Whether `dir` holds what a pull put there: every one of `files` when the pack's index lists them,
- * or anything at all when nothing lists them. A pack whose index grew after a machine pulled it has
- * entries and still lacks the new models, so "has entries" alone kept it short for ever: on
- * 2026-11-12 a boat host's store held 45 of quaternius-toon-shooter's 73 models, and every
- * scrap-signal model test failed there while it passed on the PC.
- * @internal
- */
+/** @internal */
 export function dirHasFiles(dir: string, files?: readonly string[]): boolean {
   if (files === undefined || files.length === 0) return dirHasEntries(dir);
   return files.every((file) => existsSync(join(dir, ...file.split("/"))));
@@ -108,7 +95,6 @@ export function linkFromStore(storeDir: string, publicPath: string): boolean {
   return true;
 }
 
-/** The checkout `path` sits in (the nearest folder with a `.git` file or folder) and its git common dir. */
 function checkoutOf(path: string): { top: string; commonDir: string } | null {
   for (let dir = dirname(resolve(path)); ; dir = dirname(dir)) {
     const dotGit = join(dir, ".git");
@@ -159,38 +145,23 @@ export function seedCandidates(roots: readonly string[], rel: string): string[] 
   return found;
 }
 
-/** One pack or library model a game needs on disk. */
 export interface PullJob {
-  /** The `assets pull` target: a pack id, or `model:<name>` for a library model. */
   target: string;
-  /** Where it lands, relative to the game's `public/` (`models/<pack>`, `models/library/<name>`). */
   dir: string;
   /** The files a pulled model pack holds, from its index: it is on disk only when all are (`dirHasFiles`). */
   files?: readonly string[];
 }
 
-/** What {@link provisionJobs} did with each target. */
 export interface ProvisionResult {
-  /** Targets now served from the shared store through a link. */
   linked: string[];
-  /** Targets downloaded into the store by this call. */
   pulled: string[];
-  /** Targets a download was tried for and failed. */
   failed: string[];
-  /** Targets the store lacks and this call was told not to download (`download: false`). */
   absent: string[];
 }
 
-/** How {@link provisionJobs} fetches a target the store lacks: `assets pull <target> --dir <outRoot>`, true on success. */
 export type PullTarget = (target: string, outRoot: string) => Promise<boolean>;
 
-/**
- * Serve each job to the game from the shared store: link it when the store has it, seed the store
- * from a copy any checkout already pulled, and only then download into the store. A job the game's
- * `public/` already holds is linked in place without work. `download: false` links what the store
- * has and downloads nothing.
- * @internal
- */
+/** @internal */
 export async function provisionJobs(
   gameDir: string,
   jobs: readonly PullJob[],

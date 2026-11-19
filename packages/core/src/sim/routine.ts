@@ -1,7 +1,6 @@
 import { SECONDS_PER_GAME_DAY } from "../time/gameClock";
 import { createStateSchedule, type StateSchedule } from "../time/stateSchedule";
 
-/** One authored stop in a day: where the agent belongs, and when it wants to get there. */
 export interface RoutineStopSpec {
   /** Opaque place id the agent occupies; the caller owns what a place means and where it stands. */
   readonly place: string;
@@ -11,11 +10,9 @@ export interface RoutineStopSpec {
   readonly activity?: string;
   /** Seconds spent walking here from the previous stop; overrides `RoutineConfig.travelSeconds`. */
   readonly travelSeconds?: number;
-  /** Need refills applied on arrival — a meal restores hunger while the agent stands there. */
   readonly refill?: Readonly<Record<string, number>>;
 }
 
-/** Everything needed to resolve a routine: its authored stops, its cycle, and how far apart places are. */
 export interface RoutineConfig {
   readonly stops: readonly RoutineStopSpec[];
   /** Cycle length in game-seconds; default one game day (`SECONDS_PER_GAME_DAY`). */
@@ -27,31 +24,24 @@ export interface RoutineConfig {
   readonly travelSeconds?: (from: string, to: string) => number;
 }
 
-/** One stop after travel is accounted for: the authored time and the time the agent really gets there. */
 export interface RoutineStop {
   readonly index: number;
   readonly place: string;
   readonly activity: string | null;
   /** The authored arrival time, in cycle seconds. */
   readonly plannedArriveAt: number;
-  /** Real arrival — later than planned when the previous stop's walk ran into this one. */
   readonly arriveAt: number;
   /** When the agent must leave to reach the next stop on time; never before `arriveAt`. */
   readonly departAt: number;
   readonly refill: Readonly<Record<string, number>> | null;
 }
 
-/** Where a routine puts its agent at one instant. */
 export interface RoutinePhase {
-  /** Index of the stop held here, or the stop being walked away from. */
   readonly stop: number;
-  /** Place the agent is at, or the place it is walking from. */
   readonly place: string;
-  /** Place it is walking to; `null` while holding. */
   readonly nextPlace: string | null;
   readonly activity: string | null;
   readonly travelling: boolean;
-  /** 0 at departure to 1 on arrival; `0` while holding. */
   readonly progress: number;
   /** Absolute game-second this phase began. */
   readonly since: number;
@@ -67,7 +57,6 @@ export interface RoutinePhase {
 export interface RoutineTimeline {
   /** Seconds in one cycle. */
   readonly cycleSeconds: number;
-  /** Stops in order, with real arrival and departure times. */
   readonly stops: readonly RoutineStop[];
   /** Where the routine puts the agent at absolute game-second `time`; wraps every cycle. */
   phaseAt(time: number): RoutinePhase;
@@ -87,7 +76,6 @@ function localAt(time: number, cycleSeconds: number): { cycle: number; local: nu
   return { cycle, local: time - cycle, tolerance: Math.max(1e-9, Math.abs(time) * Number.EPSILON * 8) };
 }
 
-/** One stretch of the day: standing at a stop, or walking from it to the next one. */
 type RoutineSlot =
   | { readonly kind: "hold"; readonly stop: number }
   | { readonly kind: "travel"; readonly from: number };

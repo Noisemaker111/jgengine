@@ -2,30 +2,20 @@
 import { ANDERSON_FUEL_MODELS, KJ_KG_PER_BTU_LB, M_PER_FT, type FuelMoisture } from "./fuelModels";
 import { KW_M_PER_BTU_FT_S, MPS_PER_MPH, surfaceFuelbed, surfaceSpread, type SurfaceFuelbed } from "./surfaceFire";
 
-/** The canopy fuel of a forest stand, as crown fire models read it. */
 export interface CanopyFuel {
-  /** Canopy base height: lowest live crown fuel dense enough to carry fire, m. */
   baseHeightM: number;
-  /** Stand height, m. */
   heightM: number;
   /** Canopy bulk density, kg/m³. */
   bulkDensity: number;
-  /** Foliar moisture content, fraction of dry mass (1.0 = 100 %). */
   foliarMoisture: number;
 }
 
 /** Low heat of combustion of crown foliage, kJ/kg (8000 Btu/lb, as BehavePlus). */
 export const CANOPY_HEAT_KJ_KG = 8000 * KJ_KG_PER_BTU_LB;
-/** Midflame wind as a share of the 20-ft wind for the Rothermel 1991 crown correlation. */
 const CROWN_WIND_FACTOR = 0.4;
 const FM10 = ANDERSON_FUEL_MODELS["FM10"];
 
-/**
- * Van Wagner 1977 critical surface fireline intensity to ignite the crown, kW/m:
- * I₀ = (0.010·CBH·(460 + 25.9·FMC))^1.5, CBH in m, FMC in percent (floored at 30 %).
- *
- * @capability fire-crown-initiation Van Wagner 1977 surface intensity needed to torch a canopy
- */
+/** @capability fire-crown-initiation Van Wagner 1977 surface intensity needed to torch a canopy */
 export function crownInitiationIntensity(canopy: CanopyFuel): number {
   const fmc = Math.max(30, canopy.foliarMoisture * 100);
   const cbh = Math.max(0.1, canopy.baseHeightM);
@@ -72,11 +62,7 @@ export function crownLengthToBreadth(twentyFootWind: number): number {
   return twentyFootWind > 1e-9 ? 1 + 0.125 * (twentyFootWind / MPS_PER_MPH) : 1;
 }
 
-/**
- * Thomas 1963 crown flame length, m, from fireline intensity, kW/m: L = 0.2·I^(2/3) (ft, Btu/ft/s).
- *
- * @capability fire-crown-flame-length Thomas 1963 crown fire flame length from intensity
- */
+/** @capability fire-crown-flame-length Thomas 1963 crown fire flame length from intensity */
 export function crownFlameLength(firelineIntensityKWm: number): number {
   const i = firelineIntensityKWm / KW_M_PER_BTU_FT_S;
   return i > 0 ? 0.2 * Math.pow(i, 2 / 3) * M_PER_FT : 0;
@@ -90,31 +76,19 @@ export function crownFlameLength(firelineIntensityKWm: number): number {
  */
 export type CrownFireType = "surface" | "torching" | "crowning" | "conditional";
 
-/** A crown fire assessment for one place. */
 export interface CrownFire {
   type: CrownFireType;
-  /** Surface fire intensity over Van Wagner's initiation intensity. */
   transitionRatio: number;
-  /** Crown spread rate over Van Wagner's active threshold. */
   activeRatio: number;
   /** Rothermel 1991 crown spread rate, m/s. */
   crownRate: number;
-  /** Heat per unit area of surface plus canopy fuel, kJ/m². */
   crownHeatPerUnitArea: number;
-  /** Crown fireline intensity at the crown rate, kW/m. */
   crownIntensity: number;
-  /** Thomas 1963 crown flame length, m. */
   crownFlameLength: number;
-  /** Crown ellipse length-to-breadth ratio. */
   lengthToBreadth: number;
 }
 
-/**
- * Assess crown fire from a surface fire under a canopy: Van Wagner 1977 initiation and active
- * thresholds, Rothermel 1991 crown spread rate and shape, Thomas 1963 flame length.
- *
- * @capability fire-crown-fire classify a surface fire as surface, torching, crowning or conditional crown fire and give the crown rate and intensity
- */
+/** @capability fire-crown-fire classify a surface fire as surface, torching, crowning or conditional crown fire and give the crown rate and intensity */
 export function assessCrownFire(input: {
   canopy: CanopyFuel;
   moisture: FuelMoisture;

@@ -1,6 +1,5 @@
 import { extname } from "node:path";
 
-/** File extensions the editor treats as placeable models. */
 export const MODEL_EXT = /\.(glb|gltf)$/i;
 
 /**

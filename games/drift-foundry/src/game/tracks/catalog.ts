@@ -23,11 +23,9 @@ import { SLAG_RIVER } from "./slagRiver";
 import { SMELTER_CLIMB } from "./smelterClimb";
 import type { HazardKind, TrackDef } from "./types";
 
-/** Row Six's barricades span past its fences, the way the corridor was first built. */
 const ROW_SIX_LANE: readonly [number, number] = [-20, 20];
 const PICKUP_Y = 0.9;
 
-/** A hazard as the run meets it: the span the course found, with the track's own words. */
 export interface ActiveHazard {
   id: string;
   kind: HazardKind;
@@ -35,7 +33,6 @@ export interface ActiveHazard {
   push: number;
 }
 
-/** A track built for the run: its route course and everything placed on it, in world space too. */
 export interface Track {
   readonly def: TrackDef;
   readonly id: string;
@@ -56,14 +53,11 @@ export interface Track {
   /** The world point at run metres on a route, `offset` metres left of its centreline. */
   point(route: string, run: number, offset?: number): CoursePoint;
   locate(x: number, z: number, hint?: CourseFix | null): CourseFix;
-  /** Hazards covering a fix at run time `time`. */
   hazardsAt(fix: CourseFix, time: number): readonly ActiveHazard[];
-  /** Every hazard span on the track, for dressing and the HUD. */
   readonly hazardSpans: readonly (CourseSpan & { kind: HazardKind; label: string })[];
   zoneAt(run: number): TrackZone;
 }
 
-/** Lay a track's course and place its gates, drops and hazards on it. */
 export function buildTrack(def: TrackDef): Track {
   const base = { start: def.start, halfWidth: def.halfWidth, pieces: def.pieces };
   // A branch without control points runs the chord between its junctions.
@@ -161,7 +155,6 @@ export function buildTrack(def: TrackDef): Track {
 /** Where every kart's grid is measured from: the start line is run metre 0, the spawn 4 m past it. */
 export const SPAWN_RUN = 4;
 
-/** A track whose course is a `course` marker in editor.scene.json, with its theme from its own file. */
 function sceneTrack(theme: TrackTheme): TrackDef {
   return trackDefFromCourse(theme, courseLayout(sceneCourse(theme.id)));
 }
@@ -174,13 +167,8 @@ export function dayKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-/** Escape time the line multiplier judges a generated course against: its sim time at a kart's pace. */
 const GENERATED_PAR_SCALE = 1.45;
 
-/**
- * The Reroute as laid on `day`: the scene's generated course with that day's seed, its par from its
- * own drive time.
- */
 export function rerouteTrackDef(day: string): TrackDef {
   const marker = sceneCourse(REROUTE.id);
   const layout = courseLayout(marker, `${String(marker.meta?.["seed"] ?? REROUTE.id)}-${day}`);

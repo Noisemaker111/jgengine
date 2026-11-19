@@ -56,7 +56,6 @@ export interface AimLaserDebug {
   kind: AimEndpointKind;
   nearest: SceneRaycastHit | null;
   firstImpact: SceneRaycastHit | null;
-  /** Counts scene raycast calls performed (0 when skipped). */
   queryCount: number;
 }
 
@@ -77,7 +76,6 @@ export interface CollectDebugShapesInput {
   entityCollidersOf?(instanceId: string): EntityColliderSet | null | undefined;
   objectCollidersOf?(instanceId: string): EntityColliderSet | null | undefined;
   objectHalfExtentsOf?(catalogId: string): EntityPosition | null | undefined;
-  /** Mutated when a scene scan runs — tests assert 0 when hidden. */
   counters?: { scans: number; shapes: number };
 }
 
@@ -217,11 +215,7 @@ export interface ComputeAimLaserInput {
   counters?: { queries: number };
 }
 
-/**
- * Builds the authoritative aim-laser segment using resolveShot + scene raycast
- * (same seam as projectile prediction/settlement). Zero queries when aimLaser is off.
-  * @internal
-  */
+/** @internal */
 export function computeAimLaser(input: ComputeAimLaserInput): AimLaserDebug | null {
   if (!aimProbeNeeded(input.layers)) {
     return null;

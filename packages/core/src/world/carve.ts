@@ -4,43 +4,33 @@ import type { WorldBounds } from "./features";
 export const EMPTY_VOXEL = 0;
 
 export interface VoxelMaterial {
-  /** Cell value stored in the grid; 0 is reserved for empty. */
   id: number;
   name: string;
   /** A carve tool's strength must reach this to remove the material — hard rock resists a weak drill. Default 0 (anything digs it). */
   strength: number;
-  /** Debris/harvest hint carried through to game code; the engine only tallies removed cells by id. */
   drop?: string;
 }
 
 export type VoxelMaterialTable = Readonly<Record<number, VoxelMaterial>>;
 
 export interface VoxelVolumeConfig {
-  /** Grid resolution in cells: [nx, ny, nz]. */
   dims: readonly [number, number, number];
-  /** World position of the min corner of cell [0,0,0]. Default [0,0,0]. */
   origin?: readonly [number, number, number];
   /** World-space edge length of one cubic cell. Default 1. */
   scale?: number;
-  /** Material id every cell starts as. Default 1 (a solid volume waiting to be dug). */
   fill?: number;
-  /** Strength lookup by material id; carve honours it against a tool strength. */
   materials?: VoxelMaterialTable;
 }
 
 export interface CarveOp {
-  /** Sphere centre in world coordinates. */
   center: readonly [number, number, number];
-  /** Sphere radius in world units. */
   radius: number;
-  /** Only cells whose material `strength` is ≤ this are removed. Default Infinity (dig anything). */
   toolStrength?: number;
 }
 
 export interface DepositOp {
   center: readonly [number, number, number];
   radius: number;
-  /** Material id to fill empty cells with (Engineer platform / Astroneer terrain add). */
   material: number;
 }
 
@@ -158,7 +148,6 @@ export class VoxelVolume {
     return removed;
   }
 
-  /** Fill every empty cell in the sphere with `material`; returns the number filled. */
   deposit(op: DepositOp): number {
     let filled = 0;
     this.forEachCellInSphere(op.center, op.radius, (ix, iy, iz) => {
@@ -178,11 +167,9 @@ interface HeightEdit {
 }
 
 export interface CraterOp {
-  /** Crater centre (x, z in world units). */
   x: number;
   z: number;
   radius: number;
-  /** How deep the bowl cuts at its centre. */
   depth: number;
 }
 
@@ -190,7 +177,6 @@ export interface MoundOp {
   x: number;
   z: number;
   radius: number;
-  /** How high the mound rises at its centre. */
   height: number;
 }
 
@@ -199,13 +185,6 @@ function bowl(t: number): number {
   return s;
 }
 
-/**
- * A `TerrainField` you can write craters and mounds into at runtime — the height-field side of
- * destructible terrain (Helldivers 2 explosion craters, engineer-deposited berms). Wraps a base field
- * and layers smooth radial deformations on top, so `sampleHeight` (and therefore ground-snap,
- * collision, and the shell's terrain mesh) all read the deformed surface. `carve` digs a bowl,
- * `deposit` raises a mound.
- */
 export class CarvableField implements TerrainField {
   readonly bounds?: WorldBounds;
   readonly waterLevel?: number;
@@ -251,7 +230,6 @@ export class CarvableField implements TerrainField {
     return id;
   }
 
-  /** Removes one edit by the id `carve`/`deposit` returned — capped-history destructibles evict without rebuilding the field. */
   removeEdit(editId: number): boolean {
     return this.edits.delete(editId);
   }

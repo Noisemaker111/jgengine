@@ -1,36 +1,21 @@
 // @skill jgengine-world
-/**
- * The ground a landform simulation leaves, as blend weights over the surface materials the engine
- * bakes (`material/surfaceMaterialGenerator`): bare rock where erosion outpaces weathering, scree and
- * gravel under cliffs, on fan heads and in moraines of glacial till, sand downstream and on beaches, silt as mud under water and as soil on dry
- * floodplains, and weathered soil on gentle hills. Each cell's weights sum to 1, so terrain paints
- * them straight into a material layer stack.
- *
- * @capability landform-materials per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation
- */
+/** @capability landform-materials per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation */
 import { plantExp } from "../../plants/growth/plantMath";
 import type { SurfaceMaterialKind } from "../../material/surfaceMaterialGenerator";
 import type { LandscapeEvolution } from "../evolution/landscapeEvolution";
 import { COVER, COVER_CLASSES } from "./sedimentCover";
 
-/** The surface kinds a landform paints, in their order in {@link LandformSurface.weights}. */
 export const LANDFORM_SURFACE_KINDS = ["rock", "gravel", "sand", "mud", "soil"] as const satisfies readonly SurfaceMaterialKind[];
 
-/** One surface kind a landform paints. */
 export type LandformSurfaceKind = (typeof LANDFORM_SURFACE_KINDS)[number];
 
-/** A landform's ground, per cell. */
 export interface LandformSurface {
   readonly cols: number;
   readonly rows: number;
   readonly cellSize: number;
-  /** Kinds in weight order. */
   readonly kinds: readonly LandformSurfaceKind[];
-  /** `cells × kinds` blend weights, cell-major; each cell sums to 1. */
   readonly weights: Float32Array;
-  /** Index into {@link LandformSurface.bedrockIds} of the rock under each cell. */
   readonly bedrock: Uint8Array;
-  /** Rock layer ids, from the strata. */
   readonly bedrockIds: readonly string[];
   /** Loose cover thickness in metres. */
   readonly coverDepth: Float32Array;
@@ -38,16 +23,12 @@ export interface LandformSurface {
   readonly waterDepth: Float32Array;
 }
 
-/** Options for {@link landformSurface}. */
 export interface LandformSurfaceOptions {
   /** Cover thickness in metres at which rock is 63% hidden. Default 0.2. */
   coverScale?: number;
 }
 
-/**
- * Read a landscape's ground out as surface material weights.
- * @capability landform-materials per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation
- */
+/** @capability landform-materials per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation */
 export function landformSurface(model: LandscapeEvolution, options: LandformSurfaceOptions = {}): LandformSurface {
   const { cols, rows, cellSize } = model.grid;
   const cells = cols * rows;

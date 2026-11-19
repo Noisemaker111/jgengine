@@ -123,10 +123,6 @@ export class DamageModel {
     return transition;
   }
 
-  /**
-   * Route a raw {@link CollisionEvent} into a zone by a caller-supplied selector (front/rear/side from
-   * `nx`/`nz`, or which body index took the hit). The event's `impulse` feeds `absorb`.
-   */
   routeCollision(
     event: CollisionEvent,
     resolveZone: (event: CollisionEvent) => string | null,

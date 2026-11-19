@@ -1,4 +1,3 @@
-/** Portable image atlas data shared by renderers and headless game logic. */
 export interface SpriteAtlas {
   image: string;
   size: [number, number];
@@ -43,7 +42,6 @@ function animationFrames(names: string[], fps = 10, loop = true): { frames: stri
   return { frames: names, fps, ...(loop ? {} : { loop: false }) };
 }
 
-/** Convert Aseprite JSON exports (hash or array frame layouts) to the portable atlas format. */
 export function fromAseprite(json: unknown): SpriteAtlas {
   const root = object(json, "Aseprite export"); const framesRoot = root["frames"];
   const frames: Record<string, FrameData> = {};
@@ -62,7 +60,6 @@ export function fromAseprite(json: unknown): SpriteAtlas {
   return { image: size.image, size: size.size, frames, animations };
 }
 
-/** Convert TexturePacker JSON exports to the portable atlas format. */
 export function fromTexturePacker(json: unknown): SpriteAtlas {
   const root = object(json, "TexturePacker export"); const size = imageAndSize(root); const frames: Record<string, FrameData> = {};
   const source = Array.isArray(root["frames"]) ? root["frames"].map((entry, index) => [String((object(entry, `frames[${index}]`)["filename"] ?? index)), entry] as const) : Object.entries(object(root["frames"], "frames"));

@@ -27,47 +27,27 @@ import { useMountPresence } from "@jgengine/core/ui/presence.view";
  * these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
  */
 
-/** The live modal view returned by {@link useModalStack}: the active record (or `null`) plus the stack depth. */
 export interface ModalStackView {
-  /** The topmost open modal, or `null` when nothing is open. */
   top: ModalRecord | null;
-  /** Number of stacked modals (for a "2 of 3"-style affordance or a dim-per-layer backdrop). */
   depth: number;
 }
 
-/**
- * Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
- *
- * @capability use-modal-stack UI hook binding a modal stack to a component — re-renders on push/pop/resolve
- */
+/** @capability use-modal-stack UI hook binding a modal stack to a component — re-renders on push/pop/resolve */
 export function useModalStack(stack: ModalStack): ModalStackView {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => stack.subscribe(bump), [stack]);
   return { top: stack.top(), depth: stack.depth() };
 }
 
-/** Props for {@link ModalHost}. */
 export interface ModalHostProps {
-  /** The stack to render the top of. */
   stack: ModalStack;
-  /**
-   * Render the active modal's content. Receives the record and controls bound to the stack —
-   * `resolve(result)` closes it with a free-form outcome, `cancel()` is the Esc/backdrop shortcut
-   * (`resolve(MODAL_CANCEL)`). Switch on `record.kind` to pick a {@link ConfirmDialog}, a
-   * {@link PauseMenu} (`menu/pauseMenu`), or your own content.
-   */
   children: (record: ModalRecord, controls: ModalControls) => ReactNode;
-  /** Dim the scene behind the modal. Default `true`. */
   showBackdrop?: boolean;
-  /** Backdrop color (default `rgba(4,7,12,0.62)`, or the `--jg-backdrop` token). */
   backdrop?: string;
-  /** Close the top modal (cancel) on backdrop click. Default `true`. */
   closeOnBackdrop?: boolean;
-  /** Close the top modal (cancel) on Escape. Default `true`. */
   closeOnEsc?: boolean;
   /** z-index of the host's stacking context — sits above the HUD/windows. Default 80. */
   zIndexBase?: number;
-  /** Called with `open` / `close` as modals show and the stack empties (`cue` is the modal kind) — the UI sound seam. */
   onInteract?: HudInteractListener;
   className?: string;
   style?: CSSProperties;
@@ -75,25 +55,13 @@ export interface ModalHostProps {
 
 const MODAL_EXIT_MS = 140;
 
-/** Stack-bound controls handed to a {@link ModalHost} render callback. */
 export interface ModalControls {
-  /** Resolve the active modal with a free-form result and close it. */
   resolve: (result: string, payload?: unknown) => void;
-  /** Resolve the active modal with {@link MODAL_CONFIRM}. */
   confirm: (payload?: unknown) => void;
-  /** Resolve the active modal with {@link MODAL_CANCEL} — the Esc / backdrop behavior. */
   cancel: () => void;
 }
 
-/**
- * Full-screen modal host: watches a stack, renders only the topmost modal centered over a dimmed
- * backdrop, and manages accessibility — the panel is a `role="dialog" aria-modal`, focus moves into
- * it on open and is trapped with Tab/Shift+Tab cycling, Escape and (optionally) a backdrop click
- * cancel the top modal, and focus returns to the previously focused element on close. It renders
- * nothing when the stack is empty. Skin the panel and backdrop via `HudTheme` tokens.
- *
- * @capability modal-host full-screen modal/dialog host over a modal stack — dimmed backdrop, focus trap, Esc/backdrop-to-cancel, aria-modal dialog
- */
+/** @capability modal-host full-screen modal/dialog host over a modal stack — dimmed backdrop, focus trap, Esc/backdrop-to-cancel, aria-modal dialog */
 export function ModalHost({
   stack,
   children,
@@ -181,34 +149,20 @@ const DIALOG_TITLE: CSSProperties = { margin: 0, fontFamily: "var(--jg-font-disp
 const DIALOG_BODY: CSSProperties = { margin: "10px 0 0", fontSize: hudType("md"), lineHeight: 1.55, color: "var(--jg-text-dim, rgba(226,232,240,0.82))" };
 const BUTTON_ROW: CSSProperties = { display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" };
 
-/** Props for {@link ConfirmDialog}. */
 export interface ConfirmDialogProps {
   title: ReactNode;
-  /** Explanatory body copy under the title. */
   body?: ReactNode;
-  /** Confirm button label (default `"Confirm"`). */
   confirmLabel?: ReactNode;
-  /** Cancel button label (default `"Cancel"`). */
   cancelLabel?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
-  /** Style the confirm button as destructive (red). Default `false`. */
   danger?: boolean;
-  /** Fixed dialog width (default 360). */
   width?: number | string;
   className?: string;
   style?: CSSProperties;
 }
 
-/**
- * A generic two-button confirmation dialog — title, optional body, and Cancel / Confirm buttons over
- * a `HudTheme`-token-driven {@link HudSurface}. Presentation-only: wire `onConfirm`/`onCancel` to a
- * modal stack's `resolve` (typically inside a {@link ModalHost} render callback) and reskin via
- * `HudTheme` tokens or `danger` for a destructive action. It interprets nothing — the game supplies
- * the copy.
- *
- * @capability confirm-dialog generic themeable confirm/cancel dialog — title, body, two buttons, danger styling
- */
+/** @capability confirm-dialog generic themeable confirm/cancel dialog — title, body, two buttons, danger styling */
 export function ConfirmDialog({
   title,
   body,

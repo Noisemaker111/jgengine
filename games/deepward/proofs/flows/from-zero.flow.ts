@@ -1,11 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/**
- * A new diver's first dive, on the keys: walk down Marrow's workshop to the rail, ride it down to
- * Bellwether, search the receiving spool for its wire, carry it back across the floor and ride the rail
- * home, where the haul is banked.
- */
 export default defineFlow(game, {
   async run(f) {
     // The title card's Enter: into Marrow, where a new record stands at the workshop.

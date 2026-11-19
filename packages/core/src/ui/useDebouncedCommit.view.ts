@@ -16,11 +16,8 @@ import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
  * the thumb tracks the pointer instantly.
  */
 export interface DebouncedCommit<T> {
-  /** The live, locally-mirrored value. Always render the control + readout from this. */
   value: T;
-  /** Feed a raw input value: mirrors it locally now, schedules the trailing `commit`. */
   onInput: (next: T) => void;
-  /** Commit any pending value immediately (pointer-up / blur / Enter). No-op when clean. */
   flush: () => void;
 }
 
@@ -35,12 +32,7 @@ const defaultTimer: DebounceTimer = {
   clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
 };
 
-/**
- * Framework-free core of {@link useDebouncedCommit}: owns the live value, the dirty flag, and the
- * trailing-debounce timer. Notifies the caller of local-value changes through `onLocalChange` (the
- * hook wires this to `setState`). Exposed for focused testing with an injected {@link DebounceTimer}.
- * @internal
- */
+/** @internal */
 export function createDebouncedCommit<T>(options: {
   initial: T;
   commit: (value: T) => void;
@@ -97,11 +89,7 @@ export function createDebouncedCommit<T>(options: {
   };
 }
 
-/**
- * See {@link DebouncedCommit}. `commit` and `delayMs` may change between renders (kept in refs); the
- * binding identity stays stable except when `value` (the local mirror) changes.
- * @capability debounced-commit bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring
- */
+/** @capability debounced-commit bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring */
 export function useDebouncedCommit<T>(
   value: T,
   commit: (value: T) => void,

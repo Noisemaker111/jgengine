@@ -2,12 +2,6 @@ import type { SceneEntity } from "../scene/entityStore";
 import type { StatValueMap } from "../scene/entityStats";
 import type { WorldSnapshot } from "./worldSnapshot";
 
-/**
- * A revision-stamped delta over a {@link WorldSnapshot}. The host sends one per tick to each client, carrying
- * only what changed since that client's last acknowledged revision — entity/stat/store deltas plus whole
- * snapshots of any other opted-in module (feed, leaderboard, chat, …) that changed. Fold it onto a prior
- * baseline with {@link applyWorldDiff}.
- */
 export interface WorldDiff {
   revision: number;
   /**
@@ -25,7 +19,6 @@ export interface WorldDiff {
   removedStore: readonly string[];
   /** Changed whole-module snapshots keyed by module name — everything a client can't reconstruct from deltas. */
   modules: WorldSnapshot;
-  /** Module keys present in a prior baseline that no longer exist — a client drops them wholesale on apply. */
   removedModules: readonly string[];
 }
 
@@ -43,27 +36,18 @@ function parsedValue(tracked: Tracked): unknown {
   return tracked.value;
 }
 
-/**
- * What one viewer has been sent, held by whoever serves that viewer (one per connection and world). `sent` is
- * the entity ids the viewer's mirror holds; `null` means no baseline has been served yet. `all` marks a viewer
- * that holds every entity (no interest radius applied to it), so narrowing later knows what to drop.
- */
 export interface WorldViewState {
   sent: Set<string> | null;
   all: boolean;
 }
 
-/** A fresh {@link WorldViewState}: the next pull is a baseline. */
 export function createWorldViewState(): WorldViewState {
   return { sent: null, all: false };
 }
 
-/** Narrows {@link WorldReplicator.diff} to one viewer's interest. */
 export interface ReplicatorView {
   state: WorldViewState;
-  /** Entity ids the viewer should hold now, from the spatial index; `null` means every entity. */
   wanted: readonly string[] | null;
-  /** Narrows or rewrites a changed whole-module snapshot for this viewer (private state, placed objects). */
   projectModule?: (key: string, value: unknown) => unknown;
 }
 
@@ -75,7 +59,6 @@ export interface ReplicatorView {
  */
 export interface WorldReplicatorOptions {
   worldVersion?: () => number;
-  /** Cursor loaded with a persisted baseline; new commits continue above it. Default `0`. */
   initialRevision?: number;
 }
 
@@ -249,7 +232,6 @@ export function createWorldReplicator(
   return { commit, diff, revision: () => revision };
 }
 
-/** The stateful diff tracker returned by {@link createWorldReplicator}: `commit()`, `diff(sinceRevision)`, `revision()`. */
 export type WorldReplicator = ReturnType<typeof createWorldReplicator>;
 
 function keysAfter(map: Map<string, number>, sinceRevision: number): string[] {
@@ -329,12 +311,7 @@ export function diffSnapshots(
   };
 }
 
-/**
- * Fold a {@link WorldDiff} onto a prior {@link WorldSnapshot} baseline, returning the next full snapshot — the
- * client-side inverse of {@link createWorldReplicator}. Pure data in, pure data out: upserts changed entities,
- * stats and store keys, drops the removed ones, and replaces changed module snapshots wholesale.
-  * @internal
-  */
+/** @internal */
 export function applyWorldDiff(baseline: WorldSnapshot, diff: WorldDiff): WorldSnapshot {
   const next: WorldSnapshot = { ...baseline };
 

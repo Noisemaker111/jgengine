@@ -64,13 +64,11 @@ export const CAMERA_RIG_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY;
 /** useFrame priority for work that must read the camera after the rig moved it this frame (culling, HUD anchors, LOD). */
 export const CAMERA_POST_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY + 0.5;
 
-/** Props shared by every camera rig: look refs, the game's camera config and the followed entity. */
 export interface RigProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
   config?: GameCameraConfig | undefined;
   followEntityId?: string | null | undefined;
-  /** When true, pose FOV is treated as absolute (cinematic keyframes). */
   absoluteFov?: boolean;
 }
 
@@ -112,7 +110,6 @@ function readFollow(ctx: GameContext, followId: string | null): FollowSample | n
     yaw: followPose[3],
   };
 }
-/** Everything a rig draw reads live: latest props plus the UI-side singletons its wrapper resolved. */
 export interface CameraRigEnv {
   props: RigProps & { panKeysEnabled?: boolean | undefined; rotateKeysEnabled?: boolean | undefined; onComplete?: (() => void) | undefined };
   ctx: GameContext;
@@ -123,11 +120,6 @@ export interface CameraRigEnv {
 
 const ZERO: Xyz = { x: 0, y: 0, z: 0 };
 
-/**
- * Draw-side form of the old `useCameraCommit`: the crossfade blend captured on a rig swap, the
- * trauma-channel shake and the `onCameraFollow` report every rig funnels through. `commit` takes
- * the frame state's camera; `beginTransition` runs on mount and on the rig's own swap signals.
- */
 function createCameraCommit(getEnv: () => CameraRigEnv) {
   const blendScratch = createCameraBlendScratch(Vector3, Quaternion);
   let blending = false;
@@ -184,7 +176,6 @@ function createCameraCommit(getEnv: () => CameraRigEnv) {
   return { beginTransition, commit };
 }
 
-/** Draw-side form of `useHeldKeys`: window key listeners maintaining a held-code set. */
 function createHeldKeys(getCodes: () => readonly string[]): { held: Set<string>; sync(): void; dispose(): void } {
   const held = new Set<string>();
   let codesKey = "";
@@ -214,7 +205,6 @@ function createHeldKeys(getCodes: () => readonly string[]): { held: Set<string>;
   };
 }
 
-/** Resolve-and-cache helper: `resolveX(config)` results keyed on config identity, like the old memos. */
 function memoConfig<T>(resolve: (config: unknown) => T): (config: unknown) => T {
   let entry: { config: unknown; value: T } | null = null;
   return (config) => {
@@ -225,7 +215,6 @@ function memoConfig<T>(resolve: (config: unknown) => T): (config: unknown) => T 
 
 const UNSET_CONFIG = Symbol("unset-config");
 
-/** Overhead follow rig at a fixed height and angle. */
 export function topDownRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
   const commit = createCameraCommit(getEnv);
   const resolve = memoConfig((config: unknown) => resolveTopDown(config as TopDownCameraConfig | undefined));
@@ -332,7 +321,6 @@ const RTS_PAN_KEYS = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "A
 const RTS_WASD_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const RTS_ROTATE_KEYS = new Set(["KeyQ", "KeyE"]);
 
-/** Strategy rig that pans with keys or screen edges, zooms and rotates over the map. */
 export function rtsRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
   const commit = createCameraCommit(getEnv);
   const resolve = memoConfig((config: unknown) => resolveTopDown(config as RtsCameraConfig | undefined));
@@ -462,7 +450,6 @@ export function rtsRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
   };
 }
 
-/** Over-the-shoulder third-person rig with mouse look and shoulder offset. */
 export function shoulderRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
   const commit = createCameraCommit(getEnv);
   let side = 1;
@@ -567,7 +554,6 @@ function pickLockTarget(ctx: GameContext, followId: string | null, config: LockO
   return nearest;
 }
 
-/** Rig that frames the player and a locked-on target together. */
 export function lockOnRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
   const commit = createCameraCommit(getEnv);
   let yaw = 0;
@@ -606,7 +592,6 @@ export function lockOnRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
   };
 }
 
-/** Vehicle chase rig that trails behind the followed entity's heading. */
 export function chaseRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
   const commit = createCameraCommit(getEnv);
   const staticResolve = memoConfig((config: unknown) => resolveChase(config as ChaseCameraConfig | undefined));
@@ -765,7 +750,6 @@ export function observerRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
   };
 }
 
-/** Plays a cinematic keyframe path and calls onComplete when it ends. */
 export function cinematicRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
   const commit = createCameraCommit(getEnv);
   let elapsed = 0;
@@ -820,7 +804,6 @@ function useRigEnv(props: CameraRigEnv["props"]): { latest: { current: CameraRig
   return { latest };
 }
 
-/** Overhead follow rig at a fixed height and angle. */
 export function TopDownRig(props: RigProps) {
   const { latest } = useRigEnv(props);
   useEngineDraw(() => topDownRigDraw(() => latest.current), []);
@@ -834,28 +817,24 @@ export function SideScrollRig(props: RigProps) {
   return null;
 }
 
-/** Strategy rig that pans with keys or screen edges, zooms and rotates over the map. */
 export function RtsRig(props: RigProps & { panKeysEnabled?: boolean | undefined; rotateKeysEnabled?: boolean | undefined }) {
   const { latest } = useRigEnv(props);
   useEngineDraw(() => rtsRigDraw(() => latest.current), []);
   return null;
 }
 
-/** Over-the-shoulder third-person rig with mouse look and shoulder offset. */
 export function ShoulderRig(props: RigProps) {
   const { latest } = useRigEnv(props);
   useEngineDraw(() => shoulderRigDraw(() => latest.current), []);
   return null;
 }
 
-/** Rig that frames the player and a locked-on target together. */
 export function LockOnRig(props: RigProps) {
   const { latest } = useRigEnv(props);
   useEngineDraw(() => lockOnRigDraw(() => latest.current), []);
   return null;
 }
 
-/** Vehicle chase rig that trails behind the followed entity's heading. */
 export function ChaseRig(props: RigProps) {
   const { latest } = useRigEnv(props);
   useEngineDraw(() => chaseRigDraw(() => latest.current), []);
@@ -873,7 +852,6 @@ export function ObserverRig(props: RigProps) {
   return null;
 }
 
-/** Plays a cinematic keyframe path and calls onComplete when it ends. */
 export function CinematicRig(props: RigProps & { onComplete?: () => void }) {
   const { latest } = useRigEnv(props);
   useEngineDraw(() => cinematicRigDraw(() => latest.current), []);

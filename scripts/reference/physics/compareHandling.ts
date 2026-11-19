@@ -8,7 +8,6 @@ import { createRiddenMotorcycle } from "./motorcycleRider";
 import { REAL_MOTORCYCLES, type PublishedMotorcyclePerformance, type RealMotorcycle } from "./realMotorcycles";
 import { measureStandardManeuvers } from "./standardManeuvers";
 
-/** The metrics {@link compareVehicleTuning} puts side by side; each is comparable across any `CourseSubject`. */
 export interface ComparableHandlingMetrics {
   /** Standing start to 100 km/h, s. */
   zeroTo100: number;
@@ -16,35 +15,24 @@ export interface ComparableHandlingMetrics {
   brake100To0: number;
   /** Speed after 40 s of full throttle, km/h. */
   topSpeed: number;
-  /** Highest lateral acceleration held on a circle of the real car's skidpad radius, g. */
   skidpadG: number;
   /** ISO 4138 understeer gradient, degrees of road-wheel angle per g. */
   understeerGradient: number;
-  /** ISO 4138 highest lateral acceleration held on a 40 m circle, g. */
   steadyStateMaxG: number;
   /** ISO 7401 yaw-rate response time at 80 km/h and 4 m/s², s. */
   stepResponseTime: number;
-  /** ISO 7401 yaw-rate overshoot, peak over steady. */
   stepOvershoot: number;
   /** ISO 3888-1 double lane change (speed held), highest clean entry speed, km/h. */
   laneChangeSpeed: number;
 }
 
-/** Scenario settings for {@link measureComparableHandling}. */
 export interface ComparableHandlingOptions {
-  /** Wheelbase of the vehicle under test, m. */
   wheelbase: number;
-  /** Skidpad radius, m (default `30`). */
   skidpadRadius?: number;
-  /** Fixed tick, s (default `1/60`). */
   dt?: number;
 }
 
-/**
- * Drives fresh vehicles from `create` through every comparison scenario: launch, top speed and braking from
- * `measureHandling`, the skidpad from `measureCourse`, and the ISO tests from `measureStandardManeuvers`.
- * @capability handling-compare measure any vehicle sim on every comparison scenario (0-100, braking, skidpad, ISO tests)
- */
+/** @capability handling-compare measure any vehicle sim on every comparison scenario (0-100, braking, skidpad, ISO tests) */
 export function measureComparableHandling(create: () => CourseSubject, options: ComparableHandlingOptions): ComparableHandlingMetrics {
   const dt = options.dt ?? 1 / 60;
   const handling = measureHandling(create, { dt });
@@ -63,16 +51,13 @@ export function measureComparableHandling(create: () => CourseSubject, options: 
   };
 }
 
-/** One metric across the game model, the reference vehicle and the real vehicle's published number. */
 export interface HandlingComparisonRow<Metric extends string = keyof ComparableHandlingMetrics> {
   metric: Metric;
   label: string;
   unit: string;
   game: number;
   reference: number;
-  /** The real car's published value, or `null` when none was published. */
   real: number | null;
-  /** `game − reference`. */
   delta: number;
   /** `delta / |reference|`; `NaN` when the reference is `0` or not finite. */
   deltaShare: number;
@@ -90,10 +75,7 @@ const ROWS: readonly { metric: keyof ComparableHandlingMetrics; label: string; u
   { metric: "laneChangeSpeed", label: "lane change (ISO 3888-1)", unit: "km/h" },
 ];
 
-/**
- * Line up two measured metric sets and, optionally, a real car's published numbers.
- * @capability handling-compare line up two vehicles' measured handling metrics with deltas per metric
- */
+/** @capability handling-compare line up two vehicles' measured handling metrics with deltas per metric */
 export function compareHandlingMetrics(
   game: ComparableHandlingMetrics,
   reference: ComparableHandlingMetrics,
@@ -117,7 +99,6 @@ export function compareHandlingMetrics(
   });
 }
 
-/** Result of {@link compareVehicleTuning}. */
 export interface VehicleHandlingComparison {
   car: RealCar;
   game: ComparableHandlingMetrics;
@@ -125,7 +106,6 @@ export interface VehicleHandlingComparison {
   rows: HandlingComparisonRow[];
 }
 
-/** Measure a real car's reference model; pass the result to {@link compareVehicleTuning} to reuse it across many game cars. */
 export function measureReferenceCar(car: RealCar, dt?: number): ComparableHandlingMetrics {
   return measureComparableHandling(() => createReferenceCar(car.spec), {
     wheelbase: car.spec.wheelbase,
@@ -134,12 +114,7 @@ export function measureReferenceCar(car: RealCar, dt?: number): ComparableHandli
   });
 }
 
-/**
- * Score a game's `VehicleDynamics` tuning against real physics: run the same scenarios on the game model and on
- * the multi-body reference model of `car`, and line up game / reference / real per metric. A bad feel becomes a
- * named number ("the game pulls 1.4 g on the skidpad where the reference and the real car pull 0.9 g").
- * @capability handling-compare score a game car tuning against a real-physics reference car and real published test numbers, per metric
- */
+/** @capability handling-compare score a game car tuning against a real-physics reference car and real published test numbers, per metric */
 export function compareVehicleTuning(tuning: VehicleDynamicsTuning, car: RealCar, reference?: ComparableHandlingMetrics): VehicleHandlingComparison {
   const game = measureComparableHandling(() => createVehicleDynamics(tuning), { wheelbase: tuning.wheelbase, skidpadRadius: car.tested.skidpadRadius });
   const ref = reference ?? measureReferenceCar(car);
@@ -152,7 +127,6 @@ function cell(value: number | null, digits: number): string {
   return value.toFixed(digits);
 }
 
-/** Plain-text table of comparison rows: metric, unit, game, reference, real, and game − reference. */
 export function formatHandlingComparison(title: string, rows: readonly HandlingComparisonRow<string>[]): string {
   const header = ["metric", "unit", "game", "reference", "real", "game - ref"];
   const lines = rows.map((row) => {
@@ -172,21 +146,16 @@ export function formatHandlingComparison(title: string, rows: readonly HandlingC
  */
 export const PUBLISHED_TOLERANCES = { zeroTo100: 0.05, brake100To0: 0.05, skidpadG: 0.03 } as const;
 
-/** One published number checked against the reference car by {@link checkReferenceAgainstPublished}. */
 export interface PublishedCheck {
   metric: keyof typeof PUBLISHED_TOLERANCES;
   reference: number;
   published: number;
-  /** Relative gap for times and distances, absolute gap in g for the skidpad. */
   gap: number;
   allowed: number;
   pass: boolean;
 }
 
-/**
- * Check a real car's measured reference metrics against its published test numbers within {@link PUBLISHED_TOLERANCES}.
- * @capability reference-validation check the reference car model against a real car's published 0-100, braking and skidpad numbers
- */
+/** @capability reference-validation check the reference car model against a real car's published 0-100, braking and skidpad numbers */
 export function checkReferenceAgainstPublished(car: RealCar, reference: ComparableHandlingMetrics): PublishedCheck[] {
   return (["zeroTo100", "brake100To0", "skidpadG"] as const).map((metric) => {
     const published = car.tested[metric];
@@ -222,11 +191,7 @@ const BIKE_ROWS: readonly { metric: keyof BikeHandlingMetrics; label: string; un
   { metric: "slalomSpeed", label: "slalom (18 m cones)", unit: "km/h" },
 ];
 
-/**
- * Line up a game bike's and the reference motorcycle's measured bike metrics and, optionally, the real bike's
- * published numbers.
- * @capability handling-compare line up two bikes' measured metrics with deltas per metric
- */
+/** @capability handling-compare line up two bikes' measured metrics with deltas per metric */
 export function compareBikeMetrics(
   game: BikeHandlingMetrics,
   reference: BikeHandlingMetrics,
@@ -249,12 +214,10 @@ export function compareBikeMetrics(
   });
 }
 
-/** Measure a real motorcycle's reference model with its rider; pass the result to {@link compareBikeTuning} to reuse it. */
 export function measureReferenceMotorcycle(bike: RealMotorcycle, options: { dt?: number; tests?: readonly BikeScenario[] } = {}): BikeHandlingMetrics {
   return measureBikeHandling((speed) => createRiddenMotorcycle(bike.spec, { speed }), { maxLean: 0.785, ...options });
 }
 
-/** Result of {@link compareBikeTuning}. */
 export interface BikeHandlingComparison {
   bike: RealMotorcycle;
   game: BikeHandlingMetrics;
@@ -262,12 +225,7 @@ export interface BikeHandlingComparison {
   rows: HandlingComparisonRow<keyof BikeHandlingMetrics>[];
 }
 
-/**
- * Score a game's single-track `VehicleDynamics` tuning (one with a `lean` block) against the multibody reference
- * motorcycle ridden by its steering-torque rider and the real bike's published tests: launch, braking, lean,
- * countersteer, lane change and slalom, game / reference / real per metric.
- * @capability handling-compare score a game bike tuning against a multibody reference motorcycle and real published tests
- */
+/** @capability handling-compare score a game bike tuning against a multibody reference motorcycle and real published tests */
 export function compareBikeTuning(tuning: VehicleDynamicsTuning, bike: RealMotorcycle, reference?: BikeHandlingMetrics): BikeHandlingComparison {
   const maxLean = tuning.lean?.maxLean;
   if (maxLean === undefined) throw new Error("compareBikeTuning: the tuning has no lean block");
@@ -282,22 +240,16 @@ export function compareBikeTuning(tuning: VehicleDynamicsTuning, bike: RealMotor
  */
 export const MOTORCYCLE_PUBLISHED_TOLERANCES = { zeroTo100: 0.12, zeroTo200: 0.12, brake100: 0.05 } as const;
 
-/** One published number checked against the reference motorcycle. */
 export interface MotorcyclePublishedCheck {
   metric: keyof typeof MOTORCYCLE_PUBLISHED_TOLERANCES;
   reference: number;
   published: number;
-  /** Relative gap. */
   gap: number;
   allowed: number;
   pass: boolean;
 }
 
-/**
- * Check a real motorcycle's measured reference metrics against its published tests within
- * {@link MOTORCYCLE_PUBLISHED_TOLERANCES}.
- * @capability reference-validation check the reference motorcycle against a real bike's published 0-100, 0-200 and braking
- */
+/** @capability reference-validation check the reference motorcycle against a real bike's published 0-100, 0-200 and braking */
 export function checkReferenceMotorcycle(bike: RealMotorcycle, reference: BikeHandlingMetrics): MotorcyclePublishedCheck[] {
   const measured = { zeroTo100: reference.zeroTo100, zeroTo200: reference.zeroTo200, brake100: reference.brake100To0 };
   return (["zeroTo100", "zeroTo200", "brake100"] as const).map((metric) => {
@@ -328,22 +280,17 @@ export function validateReferenceMotorcycles(
  */
 export const RUNTIME_TOLERANCE = { share: 0.05, nearZero: 0.25 } as const;
 
-/** One metric of the runtime car checked against its reference sim by {@link checkRuntimeAgainstReference}. */
 export interface RuntimeCheck {
   metric: string;
   label: string;
   game: number;
   reference: number;
-  /** Relative gap, or the absolute gap where the reference is zero. */
   gap: number;
   allowed: number;
   pass: boolean;
 }
 
-/**
- * Check comparison rows (game = the runtime car with every effect at 1) against {@link RUNTIME_TOLERANCE}.
- * @capability reference-validation check the runtime car from carFromReference against its reference sim on every metric
- */
+/** @capability reference-validation check the runtime car from carFromReference against its reference sim on every metric */
 export function checkRuntimeAgainstReference(rows: readonly HandlingComparisonRow<string>[]): RuntimeCheck[] {
   return rows.map((row) => {
     const absolute = Math.abs(row.reference) < 1e-9;
@@ -353,11 +300,7 @@ export function checkRuntimeAgainstReference(rows: readonly HandlingComparisonRo
   });
 }
 
-/**
- * Run `carFromReference(id)` (every effect at 1) and the reference sim of the same real car through every comparison
- * scenario and check each metric: the proof that the runtime car reproduces the reference.
- * @capability handling-compare score the runtime car from carFromReference against its multibody reference, per metric, with tolerances
- */
+/** @capability handling-compare score the runtime car from carFromReference against its multibody reference, per metric, with tolerances */
 export function compareRuntimeCar(car: RealCar, reference?: ComparableHandlingMetrics): { comparison: VehicleHandlingComparison; checks: RuntimeCheck[] } {
   const id = CAR_REFERENCE_VEHICLE_IDS.find((known) => known === car.id);
   if (id === undefined) throw new Error(`compareRuntimeCar: carFromReference has no ${car.id}`);
@@ -365,10 +308,7 @@ export function compareRuntimeCar(car: RealCar, reference?: ComparableHandlingMe
   return { comparison, checks: checkRuntimeAgainstReference(comparison.rows) };
 }
 
-/**
- * The runtime GSX-R1000 from `carFromReference` against the multibody reference motorcycle and its rider.
- * @capability handling-compare score the runtime bike from carFromReference against the multibody reference motorcycle, per metric, with tolerances
- */
+/** @capability handling-compare score the runtime bike from carFromReference against the multibody reference motorcycle, per metric, with tolerances */
 export function compareRuntimeBike(bike: RealMotorcycle, reference?: BikeHandlingMetrics): { comparison: BikeHandlingComparison; checks: RuntimeCheck[] } {
   const comparison = compareBikeTuning(carFromReference("suzuki-gsxr1000-k1"), bike, reference);
   return { comparison, checks: checkRuntimeAgainstReference(comparison.rows) };

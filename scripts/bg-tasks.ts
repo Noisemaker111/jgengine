@@ -12,7 +12,6 @@ import { join } from "node:path";
 
 export const BG_DIR = join(".scratch", "bg");
 
-/** A task id is a folder name and nothing else: no separators, no dots, no traversal. */
 export const TASK_ID = /^[a-z0-9][a-z0-9-]{5,40}$/;
 
 export function tasksRoot(checkout: string): string {
@@ -23,7 +22,6 @@ export function taskDir(checkout: string, id: string): string {
   return join(tasksRoot(checkout), id);
 }
 
-/** `20261023-204501-k3f`: sortable by start time, unique enough for one machine's lanes. */
 export function newTaskId(now: number = Date.now(), random: () => number = Math.random): string {
   const stamp = new Date(now).toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "").replace("T", "-").toLowerCase();
   const tail = Math.floor(random() * 36 ** 3)
@@ -54,7 +52,6 @@ export function readCommand(dir: string): string {
   return (readText(join(dir, "cmd.txt")) ?? "").trim();
 }
 
-/** The pid of the runner watching the command, once it has recorded one. */
 export function readRunner(dir: string): number | null {
   const pid = Number((readText(join(dir, "runner")) ?? "").trim());
   return Number.isInteger(pid) && pid > 0 ? pid : null;
@@ -62,7 +59,6 @@ export function readRunner(dir: string): number | null {
 
 export const AWAITER = "awaiter";
 
-/** The pid of the `background await` waiting on this task, while one is waiting. */
 export function readAwaiter(dir: string): number | null {
   const pid = Number((readText(join(dir, AWAITER)) ?? "").trim());
   return Number.isInteger(pid) && pid > 0 ? pid : null;

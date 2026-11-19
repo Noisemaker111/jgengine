@@ -6,40 +6,24 @@ import type { Cost } from "./catalog";
 import { livingUnits, session } from "./session";
 import type { Faction } from "./tuning";
 
-/**
- * Player research. A Barracks funds permanent, ranked upgrades over the shared work-queue: Iron
- * Weapons and Iron Armor stack with anything, while the two doctrines are a fork. Assault hits harder
- * and marches slower; Bulwark takes and deals less. Starting either one's first rank closes the other
- * for the battle. Ranks live on the serializable `session.research` clock; each upgrade states what it
- * changes as named contributions, and {@link factionDamage} and {@link factionSpeed} fold them.
- */
-
-/** A value research can change: damage a soldier deals, damage it takes, or how fast it marches. */
 export type ResearchStat = "dealt" | "taken" | "speed";
 
 export interface UpgradeDef {
   id: string;
   label: string;
-  /** Short command-card blurb. */
   blurb: string;
   maxRank: number;
-  /** When the next rank may start, over `owns.<building>` and `have.<upgrade>` facts. */
   requires: Predicate;
-  /** Cost to advance from `have` ranks to `have + 1`. */
   cost: (have: number) => Cost;
   /** Seconds to research the `have → have + 1` rank. */
   researchSeconds: (have: number) => number;
-  /** What `rank` ranks of this upgrade do to a research stat. */
   effect: (stat: ResearchStat, rank: number) => StatContribution | null;
 }
 
-/** Damage added per Iron Weapons rank; damage removed per Iron Armor rank. */
 export const WEAPON_DMG_PER_RANK = 3;
 export const ARMOR_REDUCE_PER_RANK = 2;
-/** Assault: damage added and march speed lost per rank. */
 export const ASSAULT_DMG_PER_RANK = 3;
 export const ASSAULT_SLOW_PER_RANK = 0.05;
-/** Bulwark: damage removed from each blow taken, and from each blow dealt, per rank. */
 export const BULWARK_GUARD_PER_RANK = 2;
 export const BULWARK_DULL_PER_RANK = 1;
 
@@ -47,7 +31,6 @@ export type UpgradeId = "weapons" | "armor" | "assault" | "bulwark";
 
 const atBarracks: Predicate = { eq: ["owns.barracks", true] };
 
-/** A doctrine needs a Barracks and no rank of its rival, finished or under way. */
 function doctrine(rival: UpgradeId): Predicate {
   return { all: [atBarracks, { eq: [`have.${rival}`, 0] }] };
 }
@@ -112,32 +95,26 @@ export function upgradeDef(id: string): UpgradeDef | undefined {
   return upgradeById.get(id);
 }
 
-/** What a completed research job grants: one rank of one upgrade. */
 export interface ResearchSpec {
   upgradeId: string;
   toRank: number;
 }
 
-/** The research queue config — duration is the per-rank research time; completion output raises the
- * upgrade's rank. A couple may research at once. */
 export const RESEARCH_CONFIG: WorkQueueConfig<ResearchSpec, undefined, ResearchSpec> = {
   duration: (spec) => upgradeDef(spec.upgradeId)?.researchSeconds(spec.toRank - 1) ?? 0,
   concurrency: 2,
   output: (job) => job.spec,
 };
 
-/** Apply a finished research job to the rank table — the one place a rank ever rises. */
 export function grantResearch(spec: ResearchSpec): void {
   const cur = session.research.ranks[spec.upgradeId] ?? 0;
   session.research.ranks[spec.upgradeId] = Math.max(cur, spec.toRank);
 }
 
-/** Ranks already researched for `id`. */
 export function upgradeRank(id: string): number {
   return session.research.ranks[id] ?? 0;
 }
 
-/** Ranks of `id` currently in the research queue (active or waiting) but not yet finished. */
 export function pendingRanks(id: string): number {
   let n = 0;
   for (const job of activeJobs(session.research.queue)) if (job.spec.upgradeId === id) n += 1;
@@ -150,7 +127,6 @@ export function upgradeHave(id: string): number {
   return upgradeRank(id) + pendingRanks(id);
 }
 
-/** The facts a research requirement reads: which buildings stand and how far each upgrade has gone. */
 export function researchFacts(): { owns: Record<string, boolean>; have: Record<string, number> } {
   const owns: Record<string, boolean> = {};
   for (const building of livingUnits("player", "building")) owns[building.catalogId] = true;
@@ -159,13 +135,11 @@ export function researchFacts(): { owns: Record<string, boolean>; have: Record<s
   return { owns, have };
 }
 
-/** Whether `id`'s requirement holds right now (the Barracks stands, a rival doctrine is not chosen). */
 export function researchUnlocked(id: string): boolean {
   const up = upgradeDef(id);
   return up !== undefined && evaluatePredicate(up.requires, researchFacts());
 }
 
-/** What a set of finished ranks contributes to `stat`, in upgrade order. */
 export function rankContributions(rankOf: (id: UpgradeId) => number, stat: ResearchStat): StatContribution[] {
   const out: StatContribution[] = [];
   for (const id of UPGRADE_IDS) {
@@ -189,7 +163,6 @@ export function factionDamage(base: number, attacker: Faction, defender: Faction
   return Math.max(1, foldStatContributions(dealt, researchContributions(defender, "taken")));
 }
 
-/** A unit's march speed after its side's research. */
 export function factionSpeed(base: number, faction: Faction): number {
   return Math.max(0, foldStatContributions(base, researchContributions(faction, "speed")));
 }

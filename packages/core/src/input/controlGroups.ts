@@ -11,7 +11,6 @@
  * replay-safe. The caller owns actually binding/recalling and the focus hook.
  */
 
-/** What a control-group key press means once modifiers and double-tap timing are resolved. */
 export type ControlGroupIntent =
   | { kind: "bind"; key: string }
   /** Shift+digit: add the current selection to the set saved under `key`. */
@@ -23,35 +22,22 @@ export type ControlGroupIntent =
   /** Second digit tap within the double-tap window: recall and focus the camera on `key`. */
   | { kind: "focus"; key: string };
 
-/** A decoded control-group key press plus the memory needed to detect a double-tap. */
 export interface ControlGroupInput {
-  /** The pressed group digit, 0–9. */
   digit: number;
-  /** True when a bind modifier (Ctrl by default) was held. */
   bindModifier: boolean;
-  /** True when the append modifier (Shift by default) was held; ignored when `bindModifier` is also held. */
   appendModifier?: boolean;
   /** Monotonic time of this press, same clock as `lastRecall`. */
   now: number;
-  /** The previous recall (its key and time), or null if none — drives double-tap focus detection. */
   lastRecall: { key: string; at: number } | null;
 }
 
-/** Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace. */
 export interface ControlGroupOptions {
   /** Max gap (ms) between two recalls of the same group that counts as a focus double-tap. Default 300. */
   doubleTapMs?: number;
-  /** Prefix for the generated bookmark key, so control groups can share a store with other bookmarks. Default `""` (bare digit). */
   keyPrefix?: string;
 }
 
-/**
- * The stable bookmark key for a control-group `digit` under `options.keyPrefix` —
- * the key a caller passes to `SelectionBookmarks.bind`/`recall` to store a group
- * without going through {@link resolveControlGroupIntent}.
- *
- * @capability rts-control-groups map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
- */
+/** @capability rts-control-groups map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents */
 export function controlGroupKey(digit: number, options: ControlGroupOptions = {}): string {
   if (!Number.isInteger(digit) || digit < 0 || digit > 9) {
     throw new Error(`controlGroupKey: digit must be an integer in [0, 9], got ${digit}`);

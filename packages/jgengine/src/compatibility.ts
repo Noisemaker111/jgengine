@@ -76,7 +76,7 @@ function sdkRangeMatches(range: string, version: string): boolean | null {
   return major > 0 ? a === major : a === 0 && b === minor && (minor > 0 || c === patch);
 }
 
-/** Inspect direct consumers and their installed SDK dependency/peer identities without importing modules or scanning the filesystem. @internal */
+/** @internal */
 export function inspectInstalledSdkGraph(dir: string, options: { maxPackages?: number } = {}): InstalledSdkGraph {
   const maximum = options.maxPackages ?? 256;
   if (!Number.isInteger(maximum) || maximum < 1 || maximum > 256) throw new Error("SDK graph maxPackages must be between 1 and 256");

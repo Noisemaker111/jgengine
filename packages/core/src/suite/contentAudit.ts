@@ -4,26 +4,19 @@ import { validateContentProgression, type ContentProgressionRule } from "@jgengi
 
 import type { SuiteDataResult } from "./gameSuite";
 
-/** One item as the content check sees it. */
 export interface SuiteContentItem {
   id: string;
-  /** The item says it can be placed: a structure, station, container or bed. */
   placeable?: boolean;
-  /** A weapon that fires: the ammo item ids it takes, or `"none"` when it needs none. Melee weapons leave it out. */
   ammo?: readonly string[] | "none";
 }
 
-/** One way items get used: a recipe's inputs, eating, equipping, feeding a creature, a summon offering. */
 export interface SuiteContentUse {
   id: string;
-  /** Where it is defined, for the report. */
   path: string;
   items: readonly string[];
 }
 
-/** One unlock on the game's progression axis (a level, a wave, a chapter, money). */
 export interface SuiteUnlock {
-  /** The fact it provides, usually the recipe or option it opens. */
   id: string;
   at: number;
 }
@@ -35,26 +28,16 @@ export interface SuiteUnlock {
  */
 export interface SuiteContent {
   items: readonly SuiteContentItem[];
-  /** Facts the player has at the start. */
   start: readonly string[];
-  /** Every way to get something: a recipe, a drop, a harvest, a vendor, spoiling. */
   sources: readonly ContentProgressionRule[];
   uses: readonly SuiteContentUse[];
-  /** Item ids the game's placement catalog can place. Each gives the fact `placed:<id>`. */
   places: readonly string[];
-  /** The progression axis and what unlocks along it, for the runway check. Unlocks at or under the cap are reachable facts. */
   runway?: { axis: string; cap: number; unlocks: readonly SuiteUnlock[]; maxGap?: number };
 }
 
-/** The fact a placed item gives, which a station recipe requires. */
 export const placedFact = (id: string): string => `placed:${id}`;
 
-/**
- * Sources and uses from engine recipes: each recipe needs its inputs, its station placed and its unlocks,
- * and gives its outputs; its inputs are uses.
- *
- * @capability suite-recipe-content turn engine recipes into the game suite's content sources and uses
- */
+/** @capability suite-recipe-content turn engine recipes into the game suite's content sources and uses */
 export function recipeContent(recipes: readonly RecipeDef[], path = "recipes"): { sources: ContentProgressionRule[]; uses: SuiteContentUse[] } {
   return {
     sources: recipes.map((recipe) => ({
@@ -73,13 +56,7 @@ function listed(ids: readonly string[]): string {
   return ids.length <= MAX_LISTED ? ids.join(", ") : `${ids.slice(0, MAX_LISTED).join(", ")} and ${ids.length - MAX_LISTED} more`;
 }
 
-/**
- * The generic content check behind the suite's data entries: every item has a source and a use, every
- * source is usable, every placeable item places, every firing weapon has obtainable ammo, and unlocks run
- * steadily to the progression cap. Builds on {@link validateContentProgression} as a closed world.
- *
- * @capability suite-content-audit prove the game suite's data entries (item sources and uses, placeables, ammo, unlock runway) from a game's content
- */
+/** @capability suite-content-audit prove the game suite's data entries (item sources and uses, placeables, ammo, unlock runway) from a game's content */
 export function auditSuiteContent(content: SuiteContent): SuiteDataResult[] {
   const itemIds = new Set(content.items.map((item) => item.id));
   const placeable = new Set(content.places);

@@ -13,48 +13,35 @@
 import { clipHalfPlane, distanceToRing, extractSimpleLoop, insetRing, pointInPolygon, polygonArea, polygonCentroid, polygonMeanWidth, polygonSignedArea } from "../world/polygon";
 import type { Vec2 } from "../world/geometry";
 
-/** How a block (a face of the road graph) is used. */
 export type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer";
 
-/** One closed block: a face of the road network, inset to its curb and land boundaries. */
 export interface CityBlockLocal {
   id: string;
   /** Face polygon on road CENTERLINES (CCW) — the raw graph face. */
   face: Vec2[];
-  /** Street index bordering each face edge (edge i = face[i]→face[i+1]); -1 = district boundary. */
   faceStreets: number[];
-  /** Pavement edge: face inset by each bordering road's half width (+ curb margin). */
   curb: Vec2[];
-  /** Land edge: curb inset further by the sidewalk band where the bordering street has one. */
   polygon: Vec2[];
   kind: CityBlockKind;
   area: number;
 }
 
-/** One street-frontage reference of a parcel. */
 export interface CityParcelFrontage {
-  /** Index into the resolved city's street list. */
   street: number;
-  /** Frontage chord endpoints on the parcel boundary. */
   edgeStart: Vec2;
   edgeEnd: Vec2;
-  /** Unit tangent along the frontage chord. */
   tangent: Vec2;
 }
 
-/** How a parcel is used after occupancy/fitting rolls. */
 export type CityParcelKind = "built" | "vacant" | "yard";
 
-/** One polygonal parcel subdivided out of a block's street frontage. */
 export interface CityParcelLocal {
   id: string;
   block: number;
   polygon: Vec2[];
-  /** Buildable polygon after front/side/rear setbacks; [] when setbacks consume the parcel. */
   buildable: Vec2[];
   frontage: CityParcelFrontage[];
   area: number;
-  /** Usable depth from the frontage chord to the parcel rear. */
   depth: number;
   isCorner: boolean;
   kind: CityParcelKind;
@@ -62,10 +49,8 @@ export interface CityParcelLocal {
 
 const MAX_BLOCKS = 420;
 
-/** Street hierarchy level a block edge carries (matches `StreetLevel`). */
 type FabricLevel = "boulevard" | "avenue" | "street" | "lane";
 
-/** Sidewalk band width by street hierarchy (base = the district's street-level width). */
 export function sidewalkWidthFor(level: FabricLevel, base: number): number {
   switch (level) {
     case "boulevard":
@@ -79,15 +64,12 @@ export function sidewalkWidthFor(level: FabricLevel, base: number): number {
   }
 }
 
-/** Minimal node/edge shapes {@link extractGraphBlocks} needs (matches `StreetNetwork.nodes`/`edges`). */
 export interface GraphBlockNode {
   x: number;
   z: number;
 }
 
-/** One street-graph edge {@link extractGraphBlocks} traces block faces through. */
 export interface GraphBlockEdge {
-  /** Endpoint node indices. `points[0]` sits exactly on node `a`, the last on node `b`. */
   a: number;
   b: number;
   points: readonly (readonly [number, number])[];
@@ -99,13 +81,10 @@ export interface GraphBlockEdge {
   sidewalk?: boolean;
 }
 
-/** One block from {@link extractGraphBlocks}: the face polygon and its inset land ring. */
 export interface GraphBlockRings {
   /** Face polygon on road CENTERLINES (as traced, interior faces CCW). */
   face: Vec2[];
-  /** Curb ring: face inset by each bordering edge's half width + curb margin (the pavement edge). */
   curb: Vec2[];
-  /** Land ring: face inset by each bordering edge's half width + curb margin + sidewalk band. */
   land: Vec2[];
 }
 
@@ -124,7 +103,6 @@ export function extractGraphBlocks(
   edges: readonly GraphBlockEdge[],
   params: { sidewalkBase: number; curbMargin: number },
 ): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number; level: FabricLevel; street?: number | undefined }[] } {
-  // --- prune dangling chains: an edge touching a degree-1 node can't border a closed face ---
   const degree = new Array<number>(nodes.length).fill(0);
   const alive = edges.map((e) => e.a !== e.b && e.points.length >= 2);
   edges.forEach((e, i) => {
@@ -149,7 +127,6 @@ export function extractGraphBlocks(
     }
   }
 
-  // --- half-edge rotation system on the surviving 2-core ---
   interface Half {
     to: number;
     pts: Vec2[];
@@ -182,7 +159,6 @@ export function extractGraphBlocks(
   });
   for (const list of out) list.sort((a, b) => angles[a]! - angles[b]!);
 
-  // --- trace interior faces: at each destination, rotate clockwise from the twin ---
   const blocks: GraphBlockRings[] = [];
   for (let start = 0; start < halves.length && blocks.length < MAX_BLOCKS; start += 1) {
     if (halves[start]!.visited) continue;
@@ -242,7 +218,6 @@ export function extractGraphBlocks(
   return { blocks, deadEnds };
 }
 
-/** Arc-length station lookup along a closed ring. */
 export class RingWalker {
   readonly ring: readonly Vec2[];
   readonly cum: number[];
@@ -285,7 +260,6 @@ export class RingWalker {
     };
   }
 
-  /** Ring vertex indices whose arc position lies strictly inside (s0, s1) (wrapping). */
   verticesBetween(s0: number, s1: number): number[] {
     const out: number[] = [];
     const span = s1 - s0;
@@ -316,12 +290,9 @@ export class RingWalker {
   }
 }
 
-/** Inputs for one parcel strip cut from a block ring. */
 export interface ParcelCut {
-  /** Arc-length start/end stations along the block's land ring. */
   s0: number;
   s1: number;
-  /** Strip depth from the frontage inward. */
   depth: number;
 }
 
@@ -364,11 +335,6 @@ export function cutParcel(walker: RingWalker, blockRing: readonly Vec2[], cut: P
   return clipped;
 }
 
-/**
- * Conform a polygon to a containing ring: sample every edge (a straight edge can bulge across a
- * concave notch even when its endpoints hug the boundary), then pull each escaping point to its
- * nearest boundary point. Callers re-run this after any operation that adds mid-edge vertices.
- */
 export function conformPolygonToRing(poly: readonly Vec2[], ring: readonly Vec2[]): Vec2[] {
   const refined: Vec2[] = [];
   for (let i = 0; i < poly.length; i += 1) {
@@ -415,11 +381,6 @@ export function conformPolygonToRing(poly: readonly Vec2[], ring: readonly Vec2[
   return extractSimpleLoop(out);
 }
 
-/**
- * Buildable polygon for a parcel: the parcel clipped by the front setback (a half-plane pushed in
- * from the frontage chord), side gaps along both cut lines, and a rear margin. Works on any
- * parcel polygon — no vertex correspondence needed.
- */
 export function buildablePolygon(
   parcel: readonly Vec2[],
   frontA: Vec2,
@@ -451,10 +412,6 @@ export function buildablePolygon(
   return poly.length >= 3 ? poly : [];
 }
 
-/**
- * Carve dead-end road corridors (cul-de-sac lanes pruned from the face graph) out of a polygon:
- * for every corridor segment crossing it, keep the polygon piece on the side where `keep` lies.
- */
 export function carveCorridors(
   poly: Vec2[],
   keep: Vec2,

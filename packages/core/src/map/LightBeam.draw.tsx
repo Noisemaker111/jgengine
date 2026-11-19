@@ -6,15 +6,11 @@ import { AdditiveBlending } from "three";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** {@link LightBeam} look. */
 export interface LightBeamProps {
   /** Metres it rises from its foot. Default 80, enough to show over a forest from far off. */
   height?: number;
-  /** Default 0.25. */
   radius?: number;
-  /** Default a pale blue-white. */
   color?: string;
-  /** Default 0.35. */
   opacity?: number;
 }
 
@@ -53,7 +49,6 @@ export function lightBeamDraw({ height = 80, radius = 0.25, color = "#cfe8ff", o
   };
 }
 
-/** UI mount for {@link lightBeamDraw} while parents still render through the Canvas. */
 export function LightBeam(props: LightBeamProps): null {
   useEngineDraw(() => lightBeamDraw(props), [props.height, props.radius, props.color, props.opacity]);
   return null;

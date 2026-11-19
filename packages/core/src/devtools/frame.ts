@@ -105,14 +105,12 @@ interface PhaseAccumulator {
   samples: number;
 }
 
-/** Frame subsystem exposing the frame-timing, profiling, and render-sample facades. */
 export interface FrameModule {
   frame: Devtools["frame"];
   profile: Devtools["profile"];
   render: Devtools["render"];
 }
 
-/** Create the frame subsystem that records frame/sim/phase timings, computes stats, and captures long-frame events. */
 export const createFrameModule = (deps: {
   readProbes: () => Record<string, unknown>;
 }): FrameModule => {

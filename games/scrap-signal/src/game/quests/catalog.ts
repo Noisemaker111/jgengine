@@ -3,7 +3,6 @@ import type { QuestDef } from "@jgengine/core/mission/quest";
 import { enemyById } from "../entities/enemies/catalog";
 import { unlock } from "../progression/unlocks";
 
-/** The people who hand out quests, and the entity each one is in the world. */
 export const NPCS = {
   bolt: { name: "B0-LT", entity: "bolt_1" },
   sparx: { name: "Dr. Sparx", entity: "npc_sparx" },
@@ -17,15 +16,9 @@ export function isNpcId(id: string): id is NpcId {
   return Object.hasOwn(NPCS, id);
 }
 
-/** `radio`: the quest turns itself in over the radio the moment its last objective is done. */
 export type TurnIn = NpcId | "radio";
 
-/**
- * One thing a quest asks for. `kill` counts kills of an enemy type; `chest` opening a named chest;
- * `pickup` taking a gun into a weapon slot; `reach` entering a zone; `talk` speaking to someone.
- */
 export type ScrapObjective =
-  /** `near`: a side camp (`SIDE_POIS` id) the marker leads to, for a job about one place's pack. */
   | { id: string; kind: "kill"; target: string; count: number; near?: string }
   | { id: string; kind: "chest"; target: string; count: 1; label: string }
   | { id: string; kind: "pickup"; target: "gun"; count: number; label: string }
@@ -40,20 +33,13 @@ export interface ScrapQuest {
   giver: NpcId;
   turnIn: TurnIn;
   requires?: readonly string[];
-  /** The level a giver waits for before offering it. */
   minLevel?: number;
-  /** What the giver says when handing it over. */
   brief: string;
-  /** What is said when it is turned in. */
   done: string;
   objectives: readonly ScrapObjective[];
-  /** `gun`: a quest-reward unique (`UNIQUE_GUNS`), rolled at the player's level and set down at their feet. */
   reward: { xp: number; cash?: number; cores?: number; unlocks?: readonly string[]; gun?: string };
-  /** Unlocks granted the moment the quest is accepted: the road it sends you down. */
   opens?: readonly string[];
-  /** The editor marker the giver walks to when the quest is accepted, to wait for the player there. */
   meetAt?: string;
-  /** An enemy the quest puts in the world when it is accepted, at an editor marker. */
   spawn?: { catalogId: string; marker: string; instanceId: string };
 }
 
@@ -79,7 +65,6 @@ export const QUEST_IDS = {
   bruiserSurvey: "q_bruiser_survey",
 } as const;
 
-/** A wanted poster: kill one named target, which the quest puts at its editor marker. */
 function wanted(
   quest: Omit<ScrapQuest, "act" | "main" | "objectives" | "spawn"> & { act: ScrapQuest["act"]; target: string },
 ): ScrapQuest {
@@ -644,7 +629,6 @@ const STORY_QUESTS: readonly ScrapQuest[] = [
 
 export const scrapQuests: readonly ScrapQuest[] = [...STORY_QUESTS, ...SIDE_QUESTS];
 
-/** The words the tracker and the offer card show for one objective. */
 export function objectiveLabel(objective: ScrapObjective): string {
   if (objective.kind !== "kill") return objective.label;
   const name = enemyById(objective.target)?.name ?? "hostiles";
@@ -657,13 +641,11 @@ export function scrapQuestById(id: string): ScrapQuest | undefined {
   return byId.get(id);
 }
 
-/** The quest whose acceptance opens the road into `zoneId`. */
 export function zoneOpener(zoneId: string): ScrapQuest | undefined {
   const id = unlock.zone(zoneId);
   return scrapQuests.find((quest) => quest.opens?.includes(id) === true);
 }
 
-/** The engine's view of the catalog: rewards stay with the game, which pays XP through its own level track. */
 export const quests: readonly QuestDef[] = scrapQuests.map((quest) => ({
   id: quest.id,
   title: quest.title,

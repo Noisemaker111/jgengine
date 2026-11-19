@@ -26,7 +26,6 @@ function rel(path: string): string {
   return path.replace(root + "/", "").replaceAll("\\", "/");
 }
 
-// --- valid published import specifiers, from the reviewed export manifest ---
 const manifest = JSON.parse(readFileSync(join(root, "scripts", "export-manifest.json"), "utf8")) as Record<
   string,
   string[]
@@ -38,7 +37,6 @@ for (const [pkg, subpaths] of Object.entries(manifest)) {
   }
 }
 
-// --- collect recipe files ---------------------------------------------------
 function recipeFiles(): string[] {
   const out: string[] = [];
   for (const skill of readdirSync(skillsRoot)) {

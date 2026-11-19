@@ -10,13 +10,12 @@
  */
 import type { LandformTopology } from "../grid/landformGrid";
 
-/** A reusable diffusion solver for one grid. @internal */
+/** @internal */
 export interface HillslopeDiffuser {
-  /** Diffuse `height` in place for `dt` years with per-cell diffusivity `diffusivity` (m²/yr). */
   diffuse(height: Float64Array, diffusivity: Float64Array, dt: number): void;
 }
 
-/** A diffuser for a topology. @internal */
+/** @internal */
 export function createHillslopeDiffuser(topology: LandformTopology): HillslopeDiffuser {
   const { cols, rows, base, cellSize } = topology;
   const side = Math.max(cols, rows);

@@ -28,9 +28,7 @@ export function bindingMatches<TCode extends string>(code: TCode, binding: Actio
   return pressed === normalizeKeyCode(binding.primary) || (binding.secondary !== null && pressed === normalizeKeyCode(binding.secondary));
 }
 
-/** First action (in the map's key order) bound to the given control code, or null.
- * @internal
- */
+/** @internal */
 export function resolveBoundAction<TAction extends string, TCode extends string>(
   code: TCode,
   bindings: ActionBindingMap<TAction, TCode>,
@@ -41,11 +39,7 @@ export function resolveBoundAction<TAction extends string, TCode extends string>
   return null;
 }
 
-/**
- * Collapse left/right modifier variants of a KeyboardEvent.code so bindings
- * store one logical key.
-  * @internal
-  */
+/** @internal */
 export function normalizeKeyCode(code: string): string {
   if (code === "ShiftLeft" || code === "ShiftRight") return "Shift";
   if (code === "ControlLeft" || code === "ControlRight") return "Control";
@@ -64,7 +58,6 @@ export type ActionStateBindingMap<TAction extends string, TCode extends string =
   ActionBindingConfig<TCode>
 >;
 
-/** The hold/toggle form of an {@link ActionCodes} entry, with an optional auto-repeat rate and rebind lock. */
 export interface ActionCodeModes<TCode extends string = string> {
   hold?: readonly TCode[];
   toggle?: readonly TCode[];
@@ -73,7 +66,6 @@ export interface ActionCodeModes<TCode extends string = string> {
   locked?: boolean;
 }
 
-/** One action's input codes: a plain code list, or {@link ActionCodeModes} for hold/toggle, repeat and lock. */
 export type ActionCodes<TCode extends string = string> = readonly TCode[] | ActionCodeModes<TCode>;
 
 /**
@@ -84,18 +76,12 @@ export function isCodeList<TCode extends string>(codes: ActionCodes<TCode>): cod
   return Array.isArray(codes);
 }
 
-/**
- * Every code an {@link ActionCodes} entry binds: the plain list, or hold then toggle.
- * @internal
- */
+/** @internal */
 export function allActionCodes<TCode extends string>(codes: ActionCodes<TCode>): readonly TCode[] {
   return isCodeList(codes) ? codes : [...(codes.hold ?? []), ...(codes.toggle ?? [])];
 }
 
-/**
- * The codes that name an action in labels and lookups: the plain list, else hold, else toggle.
- * @internal
- */
+/** @internal */
 export function primaryActionCodes<TCode extends string>(codes: ActionCodes<TCode>): readonly TCode[] {
   return isCodeList(codes) ? codes : codes.hold ?? codes.toggle ?? [];
 }
@@ -119,7 +105,6 @@ export function actionRepeatMs(codes: ActionCodes | undefined): number | undefin
   return codes.repeatMs;
 }
 
-/** Whether an action's authored codes mark it as not rebindable (`locked: true`). */
 export function isActionLocked(codes: ActionCodes | undefined): boolean {
   if (codes === undefined || isCodeList(codes)) return false;
   return codes.locked === true;
@@ -187,13 +172,7 @@ export const DEFAULT_WALK_CODES = {
   jump: ["Space"],
 } as const satisfies ActionCodesMap;
 
-/**
- * Stock keyboard codes for driving a vehicle: WASD or the arrows for throttle, brake and steering, Space for
- * the handbrake. Spread it as the base of a racing map and override what the game uses differently
- * (`input: { ...DEFAULT_DRIVE_CODES, handbrake: ["KeyX"], hop: ["Space"] }`).
- *
- * @capability default-drive-codes stock WASD/arrow throttle, brake, steer and handbrake key codes
- */
+/** @capability default-drive-codes stock WASD/arrow throttle, brake, steer and handbrake key codes */
 export const DEFAULT_DRIVE_CODES = {
   throttle: ["KeyW", "ArrowUp"],
   brake: ["KeyS", "ArrowDown"],
@@ -202,13 +181,7 @@ export const DEFAULT_DRIVE_CODES = {
   handbrake: ["Space"],
 } as const satisfies ActionCodesMap;
 
-/**
- * Number-row bindings for `count` numbered actions: slot 1 on Digit1 through slot 10 on Digit0. Name the
- * actions with `action` (`hotbarSlotBindings(4, { action: (slot) => `buildTower${slot}` })`); the
- * default names are `hotbarSlot1`…, which the shell routes to the hotbar on its own.
- *
- * @capability hotbar-slot-bindings number-row key codes for a run of numbered actions (hotbar, build menu, tools)
- */
+/** @capability hotbar-slot-bindings number-row key codes for a run of numbered actions (hotbar, build menu, tools) */
 export function hotbarSlotBindings(
   count: number,
   options?: { action?: (slot: number) => string },
@@ -281,9 +254,7 @@ const CODE_LABELS: Record<string, string> = {
   ArrowRight: "→",
 };
 
-/** Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
- * @internal
- */
+/** @internal */
 export function bindingLabel(code: string, glyphSet: GamepadGlyphName | GamepadGlyphSet = "generic"): string {
   const padButton = /^pad:(\d+)$/.exec(code);
   if (padButton !== null) {
@@ -322,7 +293,6 @@ export interface ActionStateTracker<TAction extends string> {
    * come back later.
    */
   rebind(map: ActionStateBindingMap<TAction, string>): void;
-  /** The action names in the current binding map. */
   actions(): readonly TAction[];
 }
 

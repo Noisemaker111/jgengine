@@ -1,4 +1,3 @@
-/** Who a host→client snapshot is being projected for — the identity a {@link SnapshotModule.project} filters against. */
 export interface SnapshotViewer {
   readonly userId: string;
   /** A read-only connection role; spectators receive snapshots but cannot mutate the world. */
@@ -40,21 +39,13 @@ export interface SnapshotModule<T = unknown> {
    * full value is sent to every viewer.
    */
   project?(data: T, viewer: SnapshotViewer, world: WorldSnapshot): T;
-  /** Monotone change counter; unchanged between host commits means this module didn't mutate and need not re-serialize. */
   version?(): number;
-  /** Return the host tick interval for this module; values greater than one omit it on intervening ticks. */
   priority?(data: T, viewer: SnapshotViewer): number;
 }
 
-/** Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem. */
 export type WorldSnapshot = Record<string, unknown>;
 
-/**
- * Serialize every registered module into one keyed baseline — the host→client full-world send. When a
- * `viewer` is supplied, each module that implements {@link SnapshotModule.project} narrows its value to
- * what that viewer may see; modules without a projector are sent verbatim.
- * @internal
- */
+/** @internal */
 export function composeWorldSnapshot(
   modules: readonly SnapshotModule[],
   viewer?: SnapshotViewer,

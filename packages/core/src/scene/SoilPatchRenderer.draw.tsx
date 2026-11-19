@@ -109,7 +109,7 @@ function SoilPatch({ object, context }: { object: SceneKindObject; context: Scen
   );
 }
 
-/** Registers the `soil` volume runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerSoilPatchRenderer(): void {
   registerSceneKindRenderer("soil", ({ objects, context }) => (
     <>

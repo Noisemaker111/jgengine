@@ -6,11 +6,8 @@ export type VoiceMemberId = string;
 
 export interface VoiceChannelDef {
   id: VoiceChannelId;
-  /** Positional channels (proximity voice) attenuate by distance from the listener; non-positional channels (walkie/crew) play at flat gain regardless of distance. */
   positional: boolean;
-  /** Only read when `positional` is true. */
   falloff?: AudioFalloffConfig;
-  /** Flat gain multiplier applied on top of any falloff. Default 1. */
   gain?: number;
 }
 

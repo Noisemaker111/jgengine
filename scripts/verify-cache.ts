@@ -13,10 +13,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
 
-/** At most this many passes are kept; the oldest go first. */
 export const MAX_ENTRIES = 20_000;
 
-/** The input that stands for every file in the tree. */
 export const WHOLE_TREE = "*";
 
 export interface PassCache {
@@ -26,11 +24,8 @@ export interface PassCache {
 }
 
 export interface PassCacheOptions {
-  /** Where the passes are stored. */
   file: string;
-  /** A content digest for a path; `absent` when it does not exist. */
   digest: (path: string) => string;
-  /** Every path in the tree, for `*`. */
   tree: () => readonly string[];
   /** Part of every key: a different Bun can run the same files differently. */
   runtime?: string;
@@ -92,11 +87,6 @@ export function writeAtomically(file: string, text: string): void {
   renameSync(temporary, file);
 }
 
-/**
- * Where verify:fast keeps what every worktree of this clone may share: the pass cache and the
- * measured test costs. It is inside git's common directory, which all worktrees of a clone have in
- * common and no checkout tracks; outside a git checkout it is the checkout's own `.scratch`.
- */
 export function sharedVerifyDir(root: string): string {
   const run = spawnSync("git", ["rev-parse", "--git-common-dir"], { cwd: root, encoding: "utf8" });
   const common = (run.stdout ?? "").trim();

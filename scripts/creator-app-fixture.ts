@@ -17,11 +17,8 @@ export interface CreatorAppSession {
   page: Page;
   server: ReturnType<typeof Bun.serve>;
   scratch: string;
-  /** Where a scenario writes its screenshots; one directory per fixture name. */
   evidence: string;
-  /** Page errors the scenario asserts are empty at its end. */
   errors: string[];
-  /** Resolves once the save the fixture is holding has actually reached the server. */
   heldSaveArrived(): Promise<void>;
 }
 

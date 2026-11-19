@@ -7,7 +7,6 @@ import { BUILT_IN_THE_OPEN, COUNTS_AS_OF, STACK } from "../../lib/story";
 import { useInView } from "./useInView";
 
 const PARTS = ["Meter", "Ladder", "Phases", "Schedule", "Slots", "Placement", "Table", "Requirement", "Modifiers", "Inheritance", "Motion track"];
-/** README "The parts": a supply drop is these parts combined by the game. */
 const SUPPLY_DROP = new Set(["Schedule", "Placement", "Ladder", "Requirement", "Table", "Motion track", "Slots"]);
 
 const AGENT_COMMANDS: readonly [string, string][] = [
@@ -180,7 +179,6 @@ export function Different() {
   );
 }
 
-/** What runs at each layer and in which language, as an exploded stack. */
 export function Stack() {
   const ref = useInView<HTMLOListElement>();
   const LANG: Record<string, string> = { ts: "TypeScript", js: "JavaScript", wasm: "Rust → wasm", mixed: "build targets" };

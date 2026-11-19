@@ -13,11 +13,6 @@ import sceneJson from "./decals.scene.json";
 
 const decalDocument = normalizeEditorLayers(sceneJson as unknown as EditorLayersInput);
 
-/**
- * Decal showcase: five `decal` markers authored in the scene document — dirt, cracks, blood and
- * paint on the floor, blood and paint standing on the back wall — rendered by the built-in decal
- * renderer with no game code. The wall and floor are the demo's environment, not decal geometry.
- */
 function DecalStage() {
   const stage = useMemo(() => {
     const root = new Group();

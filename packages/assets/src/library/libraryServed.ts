@@ -1,29 +1,17 @@
 import type { LibraryEntry } from "./assetLibrary";
 import { rocketboxClipOf } from "./libraryRocketbox";
 
-/**
- * A library id as a folder-safe lowercase slug (`Bricks090` → `bricks090`), the shipped catalog's material id scheme.
- *
- * @internal
- */
+/** @internal */
 export function lowerLibraryId(id: string): string {
   return id.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 }
 
-/** Where a pulled library entry is served from, relative to a game's `public/`. */
 export interface LibraryServedPath {
-  /** The folder `assets pull` fills (and the shared asset store links). */
   dir: string;
-  /** The URL a game loads: a model file, a material folder, an HDRI or an icon. */
   url: string;
 }
 
-/**
- * The served folder and URL for a library entry. Pack entries (KayKit, Quaternius, game-icons) share
- * their pack's folder; everything else gets its own.
- *
- * @capability library-served-path the public folder and URL a pulled library asset is served from
- */
+/** @capability library-served-path the public folder and URL a pulled library asset is served from */
 export function libraryServedPath(entry: LibraryEntry): LibraryServedPath {
   if (entry.pack !== undefined) {
     const kindDir = entry.kind === "icon" ? "sprites" : "models";

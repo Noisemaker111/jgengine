@@ -1,17 +1,14 @@
 import type { SceneMarkerLike } from "./sceneShapes";
 import { readSpawnOverride } from "./spawnOverride";
 
-/** Minimal marker shape spawn queries read; any `EditorMarker` satisfies it. */
 export interface AuthoredSpawnMarkerLike extends SceneMarkerLike {
   rotationY?: number;
 }
 
-/** Minimal document shape spawn queries walk; any `EditorDocument` satisfies it. */
 export interface AuthoredSpawnDocumentLike {
   markers: readonly AuthoredSpawnMarkerLike[];
 }
 
-/** Marker kind {@link authoredSpawnPosition} resolves by default. */
 export const PLAYER_SPAWN_KIND = "player_spawn";
 
 /**
@@ -26,11 +23,8 @@ export function markersOfKind<TMarker extends AuthoredSpawnMarkerLike>(
   return document.markers.filter((marker) => marker.kind === kind);
 }
 
-/** Options for {@link authoredSpawnPosition}: pick a specific marker id or a non-default kind. */
 export interface AuthoredSpawnOptions {
-  /** Marker kind to resolve. Default {@link PLAYER_SPAWN_KIND}. */
   kind?: string;
-  /** Exact marker id; when set, kind only filters among markers with this id's kind. */
   id?: string;
 }
 

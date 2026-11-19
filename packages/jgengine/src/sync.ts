@@ -7,10 +7,6 @@ import { compareSemver, loadReleaseNotes, lowestSdkVersion, releasesBetween, ren
 import { gameTemplate, type TemplateVariant } from "./templates";
 import { applyCatalogSync, planCatalogSync, readWorkspaceCatalog } from "./workspaceCatalog";
 
-/**
- * The files a template shares with every game made from it: wiring, page, tooling scripts and the
- * agent guide. Sync rewrites them from the running engine; everything else in a game is its own.
- */
 export const TEMPLATE_SHARED_FILES = [
   ".gitignore",
   "index.html",
@@ -22,19 +18,16 @@ export const TEMPLATE_SHARED_FILES = [
   "vite.config.ts",
 ] as const;
 
-/** Files templates used to ship and no longer do; sync removes them from a template game. */
 export const RETIRED_TEMPLATE_FILES = ["scripts/browser.mjs", "scripts/drive.mjs", "scripts/shoot.mjs"] as const;
 
 /** package.json scripts a template owns: they run the jgengine CLI, so they stay in step with it. */
 export const TEMPLATE_SCRIPTS = ["drive", "shoot"] as const;
 
-/** One file sync would write, with its new contents; null contents delete it. */
 export interface SyncWrite {
   path: string;
   contents: string | null;
 }
 
-/** Where a game sits: inside the engine monorepo's `games/`, or its own project on the npm packages. */
 export interface SyncContext {
   variant: TemplateVariant;
   engineVersion: string;
@@ -57,7 +50,6 @@ function engineSpec(context: SyncContext, current: string | undefined): string {
   return `^${context.engineVersion}`;
 }
 
-/** package.json with its `@jgengine/*` dependencies matching `engine` and the running engine version. */
 export function syncManifest(
   manifest: Manifest,
   config: ProjectConfig,
@@ -96,7 +88,6 @@ function sameText(a: string, b: string): boolean {
   return a.replace(/\r\n/g, "\n") === b.replace(/\r\n/g, "\n");
 }
 
-/** Every write that would make the game at `dir` match its `jgengine.json` and the running engine. */
 export function planSync(dir: string, context: SyncContext): SyncWrite[] {
   const config = readProjectConfig(dir);
   if (config.editor === true && !config.engine.includes("editor")) {
@@ -144,7 +135,6 @@ export function planSync(dir: string, context: SyncContext): SyncWrite[] {
   return writes;
 }
 
-/** Apply a plan from {@link planSync}. */
 export function applySync(dir: string, writes: SyncWrite[]): void {
   for (const write of writes) {
     const dest = join(dir, write.path);
@@ -159,7 +149,6 @@ export function applySync(dir: string, writes: SyncWrite[]): void {
   }
 }
 
-/** The context sync runs a game in: the monorepo variant when it sits in the engine's `games/`. */
 export function syncContext(dir: string): SyncContext {
   const workspaceRoot = findWorkspaceRoot(dir);
   const inRepo =
@@ -187,7 +176,6 @@ function isWorkspaceRoot(dir: string): boolean {
   return Array.isArray(workspaces) || Array.isArray(workspaces?.packages);
 }
 
-/** Workspace members of `root` that are games (have a `jgengine.json`), from `dir` and `dir/*` patterns. */
 export function workspaceGames(root: string): string[] {
   const workspaces = readPackageJson(join(root, "package.json"))?.workspaces;
   const patterns: string[] = Array.isArray(workspaces) ? workspaces : Array.isArray(workspaces?.packages) ? workspaces.packages : [];

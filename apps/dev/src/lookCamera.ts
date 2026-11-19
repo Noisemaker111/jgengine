@@ -9,7 +9,6 @@
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import type { WorldBounds } from "@jgengine/core/world/features";
 
-/** Default least clearance between the camera and the ground beneath it; a fourth `lookFrom` number sets another (a grass close-up sits centimetres up). */
 export const LOOK_GROUND_CLEARANCE = 1.5;
 export const LOOK_DEFAULTS = { distance: 12, height: 5, angle: 0 } as const;
 
@@ -19,7 +18,6 @@ export interface LookAppliedAim {
   distance: number;
   height: number;
   angle: number;
-  /** True when the requested height would have buried the camera and was raised. */
   lifted: boolean;
   /** The `@marker:`/`@entity:` token this aim came from, when it was named rather than typed. */
   subject?: string;
@@ -30,7 +28,6 @@ export interface LookTerrain {
   bounds?: WorldBounds | undefined;
 }
 
-/** Authored markers the `@marker:<id>` form aims at, keyed by the id in `editor.scene.json`. */
 export type LookMarkers = Record<string, { x: number; y: number; z: number }>;
 
 const SUBJECT_RE = /^@([a-z]+):(.+)$/;
@@ -197,7 +194,6 @@ export function verifyLookSubject(
     : `look=@entity:${id} — no such entity in the live scene, so the camera fell back to the world origin`;
 }
 
-/** One-line summary of the applied aim, published to the capture host and the console. */
 export function formatAppliedAim(applied: LookAppliedAim): string {
   const round = (value: number): number => Math.round(value * 100) / 100;
   const triple = (v: { x: number; y: number; z: number }): number[] | null =>
@@ -238,7 +234,6 @@ function observerCamera(opts: {
   };
 }
 
-/** Shared `?lookFrom=` decode for the subject forms, which skip the coordinate path. */
 function readVantage(lookFrom: string | null): { distance: number; height: number; angle: number } | string {
   const vantage = lookFrom === null || lookFrom.length === 0 ? [] : parseFields("lookFrom", lookFrom, 4, true);
   if (typeof vantage === "string") return vantage;

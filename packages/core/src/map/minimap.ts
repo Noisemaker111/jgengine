@@ -1,4 +1,3 @@
-/** A world `[x, z]` point. */
 export type WorldXZ = readonly [number, number];
 
 const TWO_PI = Math.PI * 2;
@@ -23,7 +22,6 @@ export function headingToBearing(yaw: number): number {
   return normalizeAngle(Math.atan2(Math.sin(yaw), -Math.cos(yaw)));
 }
 
-/** One of the eight compass points. */
 export type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
 
 const CARDINALS: readonly Cardinal[] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
@@ -34,7 +32,6 @@ export function bearingToCardinal(bearing: number): Cardinal {
   return CARDINALS[index]!;
 }
 
-/** Signed offset of `bearing` from `reference`, wrapped into (−π, π]. */
 export function relativeBearing(bearing: number, reference: number): number {
   let delta = normalizeAngle(bearing) - normalizeAngle(reference);
   if (delta > Math.PI) delta -= TWO_PI;
@@ -44,9 +41,7 @@ export function relativeBearing(bearing: number, reference: number): number {
 
 /** What a minimap shows: centre, world radius, pixel size and rotation. */
 export interface MinimapView {
-  /** World XZ at the minimap center (usually the player position). */
   center: WorldXZ;
-  /** World-unit distance from center to the minimap edge. */
   worldRadius: number;
   /** Pixel diameter of the minimap. */
   size: number;
@@ -62,9 +57,7 @@ export interface MinimapView {
 export interface MinimapPoint {
   x: number;
   y: number;
-  /** Radial distance in world units. */
   distance: number;
-  /** True when within `worldRadius` of center. */
   inside: boolean;
 }
 
@@ -123,7 +116,6 @@ export function unprojectFromMinimap(
   return [view.center[0] + dx, view.center[1] + dz];
 }
 
-/** Clamp a projected point to the minimap edge, preserving direction (edge markers). */
 export function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } {
   const half = size / 2;
   const dx = point.x - half;

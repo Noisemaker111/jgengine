@@ -34,7 +34,6 @@ export const entityDefinitionSchema: ParamSchema = {
   ],
 };
 
-/** Minimal document shape {@link entityEntryFromCatalog} reads — any `EditorDocument` satisfies it. */
 export interface EntityCatalogDocumentLike {
   catalogs: readonly EditorCatalogData[];
 }

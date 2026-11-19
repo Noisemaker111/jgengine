@@ -6,7 +6,6 @@ const REFRESH_MS = 80;
 const CHANGE = 0.03;
 const SILENT = 0.01;
 
-/** Last command sent to one pad. */
 export interface PadHapticState {
   strong: number;
   weak: number;
@@ -14,7 +13,7 @@ export interface PadHapticState {
   active: boolean;
 }
 
-/** Fresh state for {@link stepPadHaptics}. @internal */
+/** @internal */
 export function emptyPadHapticState(): PadHapticState {
   return { strong: 0, weak: 0, sentAtMs: -Infinity, active: false };
 }

@@ -33,7 +33,6 @@ const DEFAULT_MAX_PITCH = 1.45;
 const VIEWMODEL_ORIGIN = new THREE.Vector3(0.34, -0.26, -0.72);
 const MUZZLE_TIP_LOCAL = new THREE.Vector3(0, 0.03, -0.61);
 
-/** Presentation muzzle in world space; camera-scoped when supplied, false leaves target unchanged. */
 export function readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera): boolean {
   return readRegisteredFirstPersonMuzzle(target, camera);
 }
@@ -43,26 +42,20 @@ export interface ViewmodelProps {
   cuesRef: MutableRefObject<EntityRenderCues>;
 }
 
-/** Props for GameFirstPersonCamera: look refs, first-person config, the followed entity and an optional custom viewmodel. */
 export interface GameFirstPersonCameraProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
   config?: FirstPersonCameraConfig | undefined;
   followEntityId?: string | undefined;
-  /** Custom viewmodel component replacing the built-in three-mesh gun, rendered inside the same camera-locked, muzzle-tracked anchor. Ignored when `config.viewmodel === false`. */
   viewmodel?: ComponentType<ViewmodelProps> | undefined;
-  /** Held-weapon source (`GameCameraConfig.weapon`): poses the viewmodel and adds recoil to the look. */
   weapon?: ((entityId: string, ctx: GameContext) => CameraWeaponView | null) | undefined;
 }
 
-/** Everything the first-person draw reads, resolved by the UI wrapper. */
 export interface GameFirstPersonCameraDrawProps extends GameFirstPersonCameraProps {
   ctx: GameContext;
   userId: string;
   playerFov: PlayerFovState;
-  /** Shared with the viewmodel: the weapon pose computed each frame. */
   poseRef: MutableRefObject<WeaponPose | null>;
-  /** Live render cues for the followed entity (speed/bob feed weapon presentation). */
   cuesRef: MutableRefObject<EntityRenderCues>;
 }
 
@@ -213,7 +206,6 @@ export function firstPersonCameraDraw(getProps: () => GameFirstPersonCameraDrawP
   };
 }
 
-/** First-person camera locked to the followed entity's eyes, with mouse look, head bob and the muzzle-tracked viewmodel. */
 export function GameFirstPersonCamera(props: GameFirstPersonCameraProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();

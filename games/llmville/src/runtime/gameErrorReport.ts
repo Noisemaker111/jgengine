@@ -90,7 +90,6 @@ function isAppStackLocation(location: string): boolean {
   return normalized.includes("packages/") || normalized.includes("llmville/src/");
 }
 
-/** Keeps app-owned stack frames; drops node_modules and UI runtime internals. */
 function condenseStackTrace(stack: string, maxFrames = 8): string[] {
   const frames: string[] = [];
 
@@ -120,7 +119,6 @@ function condenseStackTrace(stack: string, maxFrames = 8): string[] {
   return frames;
 }
 
-/** Keeps mounted app components; drops router/provider boilerplate. */
 function condenseComponentStack(componentStack: string, maxFrames = 4): string[] {
   const frames: string[] = [];
 
@@ -148,7 +146,6 @@ const KIND_LABEL: Record<GameErrorKind, string> = {
   chunk: "stale chunk / failed dynamic import",
 };
 
-/** Formats a paste-ready prompt for an AI coding agent. */
 export function formatGameErrorAgentPrompt(input: GameErrorReportInput): string {
   const kind = input.kind ?? "runtime";
   const lines = [`Fix LLMville ${KIND_LABEL[kind]}: ${input.message}`];

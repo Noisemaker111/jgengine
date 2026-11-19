@@ -23,7 +23,6 @@ import { checkSaveStates, describeSaveStateFailures, RULE } from "../shared/save
 import { parkSaveStates } from "../brightway-park/src/game/saveStates";
 import { orbitSaveStates } from "../odd-orbit/src/game/session/saveStates";
 
-/** The games the gate proves today, each with the save states its own module registers. */
 export const REGISTERED: readonly SaveStateGate[] = [parkSaveStates, orbitSaveStates];
 
 /**

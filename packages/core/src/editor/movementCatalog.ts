@@ -3,15 +3,12 @@ import type { PhysicsConfig } from "../game/defineGame";
 import type { ParamSchema } from "../generator/paramSchema";
 import type { EditorCatalogData } from "./types";
 
-/** Numeric character controls a game elects to author through its own named catalog rows. */
 export interface AuthoredMovementValues {
   walkSpeed?: number;
   gravity?: number;
   jumpVelocity?: number;
   stepHeight?: number;
-  /** Optional positive heightfield collision span from feet; independent of model and camera scale. */
   collisionHeight?: number;
-  /** Optional heightfield rise/run limit; omitted controls retain the game's movement policy. */
   maxClimbGrade?: number;
   groundAcceleration?: number;
   airAcceleration?: number;
@@ -26,25 +23,21 @@ export interface AuthoredMovementValues {
   apexSpeed?: number;
   fallGravityScale?: number;
   landingRecoveryMs?: number;
-  /** Initial landing speed multiplier; values above 1 retain the existing runtime contract. */
   landingSpeedScale?: number;
 }
 
-/** Only authored values, ready to overlay on a game's existing movement and physics policy. */
 export interface AuthoredMovementConfig {
   readonly walkSpeed?: number;
   readonly physics?: { readonly gravity?: number; readonly jumpVelocity?: number };
   readonly movement?: Pick<PlayerMovementConfig, "stepHeight" | "collisionHeight" | "maxClimbGrade" | "feel">;
 }
 
-/** A persisted movement value rejected before it can replace the game's current setting. */
 export interface AuthoredMovementDiagnostic {
   readonly path: string;
   readonly message: string;
   readonly repair: string;
 }
 
-/** Valid partial tuning plus located rejected values; absent rows leave game defaults intact. */
 export interface AuthoredMovementResult {
   readonly config: AuthoredMovementConfig;
   readonly diagnostics: readonly AuthoredMovementDiagnostic[];
@@ -55,13 +48,11 @@ export interface MovementCatalogDocumentLike {
   readonly catalogs: readonly EditorCatalogData[];
 }
 
-/** Game-owned callbacks, collision and physics settings retained beneath authored numeric controls. */
 export interface AuthoredMovementDefaults {
   readonly movement?: PlayerMovementConfig;
   readonly physics?: PhysicsConfig;
 }
 
-/** Stable runtime objects whose numeric getters resolve the current authored document. */
 export interface AuthoredMovementBinding {
   readonly movement: PlayerMovementConfig;
   readonly physics: PhysicsConfig;
@@ -124,11 +115,7 @@ export function createMovementSchema(defaults: AuthoredMovementValues): ParamSch
   };
 }
 
-/**
- * Reads one game-named row as partial runtime tuning, retaining game defaults for omitted or invalid
- * values. Rejected values include their document path and repair; no policy callbacks are replaced.
- * @capability editor-movement resolve saved movement controls without replacing a game's character rules
- */
+/** @capability editor-movement resolve saved movement controls without replacing a game's character rules */
 export function readAuthoredMovement(
   document: MovementCatalogDocumentLike,
   catalogId: string,
@@ -182,11 +169,7 @@ export function createAuthoredMovementReader(
   };
 }
 
-/**
- * Binds live authored numeric controls onto stable runtime objects, preserving the game's callbacks,
- * collision, backend and other policy. The movement controller reads these getters each step.
- * @capability editor-movement bind live character tuning while preserving distinctive game policy
- */
+/** @capability editor-movement bind live character tuning while preserving distinctive game policy */
 export function bindAuthoredMovement(
   read: () => AuthoredMovementResult,
   defaults: AuthoredMovementDefaults,

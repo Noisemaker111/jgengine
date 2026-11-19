@@ -20,28 +20,21 @@ import { clamp01 } from "../math/scalar";
  * `environment({ terrain: terrain({ bounds }), clearings, sculpt })`.
  */
 
-/** Options controlling how {@link environmentContentFromDocument} sizes and clears the world. */
 export interface EnvironmentContentOptions extends ClearanceOptions {
-  /** Padding (m) added around the authored objects' extent when sizing the terrain. Default 24. */
   padding?: number;
   /** Minimum terrain footprint so a sparse document still yields a walkable world. Default 64×64. */
   minBounds?: WorldBounds;
 }
 
-/** The coordinate/placement content of a world, derived from its scene document. */
 export interface EnvironmentContent {
-  /** Terrain footprint (origin-centered) sized to cover every authored object plus padding. */
   bounds: WorldBounds;
-  /** Ground-flatten discs under authored spawns/plots/POIs — feed `environment({ clearings })`. */
   clearings: AvoidZone[];
-  /** The document's authored sculpt snapshot, when it has one — feed `environment({ sculpt })`. */
   sculpt?: TerraformSnapshot;
   /**
    * Scene-document sky/fog/lighting (#1110), when authored. Feed into `environment({ sky: sky(sky) })`
    * so the lighting workspace owns the look without hardcoding coordinates in world.ts.
    */
   sky?: SkyEnvironmentConfig;
-  /** The document's world grass style, when authored — feed `environment({ grassStyle })` so code-side `grass()` bands match its volumes. */
   grassStyle?: GrassStyleSettings;
 }
 
@@ -57,11 +50,7 @@ export function skyFromDocument(doc: EditorDocument): SkyEnvironmentConfig | und
   return skyConfigFromEnvironment(env);
 }
 
-/**
- * Projects a validated {@link EditorEnvironment} bag onto {@link SkyEnvironmentConfig}.
- *
- * @internal
- */
+/** @internal */
 export function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironmentConfig {
   return {
     ...(env.preset === undefined ? {} : { preset: env.preset }),
@@ -83,16 +72,12 @@ export function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironment
   };
 }
 
-/**
- * The baked irradiance volumes a scene document authored, flattened for the renderer.
- * @capability light-probes read the scene document's baked irradiance volumes at runtime
- */
+/** @capability light-probes read the scene document's baked irradiance volumes at runtime */
 export function lightProbesFromDocument(doc: EditorDocument): readonly IrradianceVolume[] {
   return doc.environment?.probes ?? [];
 }
 
 const GRADING_LUMA: readonly [number, number, number] = [0.2126, 0.7152, 0.0722];
-/** Cube sizes outside this bake either alias (2) or stop being a small authored file (16+). */
 const MIN_LUT_SIZE = 2;
 const MAX_LUT_SIZE = 16;
 const DEFAULT_LUT_SIZE = 8;
@@ -173,9 +158,7 @@ export function lutCubeFromGrading(grading: EditorColorGrading): LutCube {
   return { size, data };
 }
 
-/** The renderer-facing result of a document's authored grade. */
 export interface DocumentColorGrade {
-  /** Display-space LUT baked from the authored bands, saturation and contrast. */
   lut?: LutCube;
   /** Authored clamped auto-exposure range, when the document set one. */
   autoExposure?: EditorAutoExposure;
@@ -199,10 +182,7 @@ export function colorGradeFromDocument(doc: EditorDocument): DocumentColorGrade 
   };
 }
 
-/**
- * The lamps a bake should include: authored light markers plus the environment's point lights.
- * @capability light-probes fold the document's authored lamps into a probe bake
- */
+/** @capability light-probes fold the document's authored lamps into a probe bake */
 export function authoredLightsFromDocument(doc: EditorDocument): readonly { position: readonly [number, number, number]; color?: string; intensity?: number; distance?: number }[] {
   const lamps: { position: readonly [number, number, number]; color?: string; intensity?: number; distance?: number }[] = [];
   for (const marker of doc.markers) {
@@ -247,13 +227,11 @@ export function bakeLightProbe(probe: EditorLightProbe, doc: EditorDocument): Ed
   };
 }
 
-/** Lamps folded into a probe: its own bake lights when authored, else the document's lamps. */
 function bakedLampsFor(probe: EditorLightProbe, doc: EditorDocument): NonNullable<IrradianceBakeSettings["lights"]> {
   if (probe.bake?.lights !== undefined && probe.bake.lights.length > 0) return probe.bake.lights;
   return authoredLightsFromDocument(doc);
 }
 
-/** Converts authored `light` markers into the runtime lighting contract. */
 export function lightingFromDocument(doc: EditorDocument): LightingConfig | undefined {
   const points: PointLightingConfig[] = [];
   const spots: SpotLightingConfig[] = [];
@@ -292,7 +270,6 @@ const LAKEBED_CELL = 1.5;
 const LAKEBED_UNDERCUT = 1.2;
 /** Meters from the shoreline over which the bed ramps to full depth. */
 const LAKEBED_SHORE_RAMP = 4;
-/** Wavelength (m) of the seeded shore-ramp modulation that keeps the waterline organic. */
 const LAKEBED_SHORE_NOISE_SCALE = 5.5;
 
 /** Deterministic 2D value noise in [0,1] — the shoreline wobble must be stable across runs. */

@@ -254,45 +254,27 @@ export function parseTirFile(text: string, base: Readonly<MagicFormulaCoefficien
   return out;
 }
 
-/** One steady-state evaluation of {@link magicFormula}. Angles in rad, ISO-W axes (x forward, y left, z up). */
 export interface MagicFormulaInput {
-  /** Longitudinal slip κ = −Vsx/|Vcx|; positive drives. */
   kappa: number;
-  /** Slip angle α, rad, `tan α = Vcy/|Vcx|`; positive when the contact patch moves left. */
   alpha: number;
-  /** Inclination γ, rad, a rotation about +x: positive tilts the top of the wheel toward −y. */
   gamma: number;
-  /** Vertical load, N; `≤ 0` returns zero force. */
   fz: number;
   /** Longitudinal speed of the wheel centre, m/s (default `LONGVL`). Sets rolling resistance, low-speed shifts and reversing. */
   vx?: number;
-  /** Inflation pressure, Pa (default the file's `INFLPRES`). */
   pressure?: number;
-  /** Spin slip φ, 1/m, from {@link magicFormulaSpinSlip}. Giving `phi` or `phit` turns on the turn-slip equations. */
   phi?: number;
-  /** Turn slip φt, 1/m: path curvature, positive turning left. */
   phit?: number;
 }
 
-/** Forces and moments from {@link magicFormula}, in the tyre's ISO-W axes. */
 export interface MagicFormulaOutput {
-  /** Longitudinal force, N. */
   fx: number;
-  /** Lateral force, N; opposes positive `alpha` (negative cornering stiffness, as in the TNO convention). */
   fy: number;
-  /** Self-aligning moment, N·m. */
   mz: number;
-  /** Overturning moment, N·m. */
   mx: number;
-  /** Rolling-resistance moment, N·m; opposes the wheel's spin. */
   my: number;
-  /** Pneumatic trail, m. */
   trail: number;
-  /** Pure-slip longitudinal slip stiffness `∂Fx/∂κ` at κ = 0, N. */
   kxk: number;
-  /** Pure-slip cornering stiffness `∂Fy/∂α` at α = 0, N/rad (negative). */
   kya: number;
-  /** Peak friction coefficients at this load. */
   mux: number;
   muy: number;
 }
@@ -314,12 +296,10 @@ function cosMagic(b: number, c: number, e: number, x: number): number {
   return Math.cos(c * Math.atan(bx - e * (bx - Math.atan(bx))));
 }
 
-/** Pressure-corrected vertical stiffness `Cz·(1 + PFZ1·dpi)`, N/m. */
 function verticalStiffnessAt(p: Readonly<MagicFormulaCoefficients>, pressure: number): number {
   return p.verticalStiffness * (1 + (p.pfz1 * (pressure - p.nompres)) / p.nompres);
 }
 
-/** Cornering stiffness (4.E25) without the turn-slip factor. */
 function corneringStiffness(p: Readonly<MagicFormulaCoefficients>, fz: number, gammaStar: number, dpi: number): number {
   const fz0 = p.fnomin * p.lfzo;
   return (
@@ -332,18 +312,11 @@ function corneringStiffness(p: Readonly<MagicFormulaCoefficients>, fz: number, g
   );
 }
 
-/** Longitudinal slip stiffness (4.E15). */
 function slipStiffness(p: Readonly<MagicFormulaCoefficients>, fz: number, dfz: number, dpi: number): number {
   return fz * (p.pkx1 + p.pkx2 * dfz) * Math.exp(p.pkx3 * dfz) * (1 + p.ppx1 * dpi + p.ppx2 * dpi * dpi) * p.lkx;
 }
 
-/**
- * Spin slip φ and turn slip φt (Pacejka 2012 §4.3.3, Eqs. 4.75–4.76 written for ISO yaw), 1/m, for
- * {@link MagicFormulaInput}: `φt = ψ̇/Vc` and `φ = (ψ̇ + (1 − εγ)·Ω·sin γ)/Vc`, where εγ = `PECP1·(1 + PECP2·dfz)` is the
- * share of camber that does not act as spin. A wheel leaning into a turn at its own rolling-cone curvature has φ ≈ 0.
- * `Vc` is floored at `VXLOW`.
- * @capability tire-spin-slip spin and turn slip of a yawing, cambered wheel for the Magic Formula turn-slip terms
- */
+/** @capability tire-spin-slip spin and turn slip of a yawing, cambered wheel for the Magic Formula turn-slip terms */
 export function magicFormulaSpinSlip(
   p: Readonly<MagicFormulaCoefficients>,
   input: { yawRate: number; spin: number; gamma: number; vx: number; vy?: number; fz: number },
@@ -512,7 +485,6 @@ export function magicFormula(p: Readonly<MagicFormulaCoefficients>, input: Magic
   return { fx, fy, mz, mx, my, trail, kxk, kya, mux, muy };
 }
 
-/** Fy0 at γ = 0 and no turn slip, the side force the pneumatic trail acts on (4.E32, 4.E74). */
 function pureLateralAtZeroCamber(p: Readonly<MagicFormulaCoefficients>, fz: number, dfz: number, dpi: number, alphaStar: number, smooth: number): number {
   const kya = corneringStiffness(p, fz, 0, dpi);
   const shy = (p.phy1 + p.phy2 * dfz) * p.lhy * smooth;
@@ -541,11 +513,7 @@ function rollingMoment(p: Readonly<MagicFormulaCoefficients>, fz: number, fx: nu
   return -magnitude * Math.sin((Math.PI / 2) * Math.max(-1, Math.min(1, rolling / p.vxlow)));
 }
 
-/**
- * Overall carcass stiffness and first-order relaxation lengths (MF 6.1, Pacejka 2012 §7.2): `σκ = Kxκ/Cx`,
- * `σα = |Kyα|/Cy`, with `Cx`, `Cy` from `LONGITUDINAL_STIFFNESS`/`LATERAL_STIFFNESS` and their load and pressure terms.
- * @capability tire-relaxation-length tyre relaxation lengths and carcass stiffness from a Magic Formula set
- */
+/** @capability tire-relaxation-length tyre relaxation lengths and carcass stiffness from a Magic Formula set */
 export function magicFormulaRelaxation(
   p: Readonly<MagicFormulaCoefficients>,
   fz: number,
@@ -561,12 +529,7 @@ export function magicFormulaRelaxation(
   return { longitudinal: Math.abs(kxk) / cx, lateral: Math.abs(kya) / cy, longitudinalStiffness: cx, lateralStiffness: cy };
 }
 
-/**
- * Effective rolling radius, m (MF 6.1, Besselink et al. 2010 Eqs. 1 and 7): the radius that turns wheel spin `Ω` into
- * ground speed. Grows with spin by `Q_V1` and shrinks with load by the `BREFF`/`DREFF`/`FREFF` law on the
- * pressure-corrected vertical stiffness.
- * @capability tire-rolling-radius effective rolling radius of a loaded, spinning tyre
- */
+/** @capability tire-rolling-radius effective rolling radius of a loaded, spinning tyre */
 export function magicFormulaRollingRadius(p: Readonly<MagicFormulaCoefficients>, fz: number, spin: number, pressure?: number): number {
   const fn = p.fnomin;
   const r0 = p.unloadedRadius;
@@ -575,18 +538,14 @@ export function magicFormulaRollingRadius(p: Readonly<MagicFormulaCoefficients>,
   return romega - (fn / verticalStiffnessAt(p, pressure ?? p.inflpres)) * (p.dreff * Math.atan(p.breff * load) + p.freff * load);
 }
 
-/** Inputs to {@link magicFormulaVerticalForce}. */
 export interface MagicFormulaVerticalInput {
-  /** Radial tyre deflection ρ, m (free radius minus loaded radius). */
   deflection: number;
   /** Deflection rate, m/s, positive compressing (adds `VERTICAL_DAMPING`). */
   deflectionRate?: number;
   /** Wheel spin Ω, rad/s (stiffens the tyre by `Q_V2`). */
   spin?: number;
-  /** Current horizontal forces, N (soften the tyre by `Q_FCX`, `Q_FCY`). */
   fx?: number;
   fy?: number;
-  /** Inflation pressure, Pa (default `INFLPRES`). */
   pressure?: number;
 }
 
@@ -614,11 +573,8 @@ export function magicFormulaVerticalForce(p: Readonly<MagicFormulaCoefficients>,
   return Math.max(0, force);
 }
 
-/** Options for {@link createMagicFormulaTire}. */
 export interface MagicFormulaTireOptions {
-  /** Which side of the car; the right tyre mirrors the file's left-hand fit (α, γ, φ, Fy, Mz, Mx). Default `"left"`. */
   side?: "left" | "right";
-  /** Evaluate turn and spin slip (default `true`). */
   turnSlip?: boolean;
   /**
    * Low-speed contact damping, s/m: Pacejka's `kVlow0` (2012 §7.2) divided by the slip stiffness. Below `VXLOW` the
@@ -628,35 +584,26 @@ export interface MagicFormulaTireOptions {
   lowSpeedDamping?: number;
 }
 
-/** One {@link MagicFormulaTire.step} input: the wheel's motion in its own ISO-W axes. */
 export interface MagicFormulaTireStepInput {
   /** Contact-centre velocity, m/s, forward and leftward in the wheel plane. */
   vx: number;
   vy: number;
   /** Wheel spin Ω, rad/s, positive rolling forward. */
   spin: number;
-  /** Vertical load, N. */
   fz: number;
-  /** Inclination, rad (ISO; the right tyre takes its own ISO value and is mirrored inside). */
   gamma?: number;
   /** Yaw rate of the wheel plane, rad/s, positive turning left. */
   yawRate?: number;
-  /** Inflation pressure, Pa. */
   pressure?: number;
 }
 
-/** {@link MagicFormulaTire.step} result: forces and moments plus the lagged slips that produced them. */
 export interface MagicFormulaTireStep extends MagicFormulaOutput {
-  /** Transient slip ratio and slip angle (rad) after relaxation. */
   kappa: number;
   alpha: number;
-  /** Effective rolling radius, m. */
   rollingRadius: number;
 }
 
-/** Serializable transient state of a {@link MagicFormulaTire}: contact deflections and the last slip velocities. */
 export interface MagicFormulaTireState {
-  /** Longitudinal and lateral contact deflection, m, and the lagged spin slip φ′, 1/m. */
   u: number;
   v: number;
   phi: number;
@@ -667,13 +614,11 @@ export interface MagicFormulaTireState {
   primed: boolean;
 }
 
-/** A transient Magic Formula tyre: relaxation-length dynamics on top of {@link magicFormula}. */
 export interface MagicFormulaTire {
   /** Advance the contact by `dt` seconds and return forces in the wheel's ISO-W axes. */
   step(dt: number, input: MagicFormulaTireStepInput): MagicFormulaTireStep;
   snapshot(): MagicFormulaTireState;
   restore(state: Readonly<MagicFormulaTireState>): void;
-  /** Relaxed contact: no deflection. */
   reset(): void;
   readonly coefficients: Readonly<MagicFormulaCoefficients>;
 }
@@ -699,7 +644,6 @@ function holdStep(x: number, a: number, b0: number, b1: number, dt: number): num
   return decay * x + b0 * f1 + ((b1 - b0) / dt) * f2;
 }
 
-/** Relaxation terms of the contact for one wheel motion: `d(state)/dt = drive − decay·state`. */
 interface ContactTerms {
   fz: number;
   pressure: number;
@@ -774,20 +718,13 @@ function contactForces(p: Readonly<MagicFormulaCoefficients>, terms: ContactTerm
   return { ...out, fy: out.fy * mirror, mz: out.mz * mirror, mx: out.mx * mirror, kappa, alpha: alpha * mirror, rollingRadius: terms.rollingRadius };
 }
 
-/** Contact deflections of a transient tyre: longitudinal `u` and lateral `v`, m, and lagged spin slip `phi`, 1/m. */
 export interface MagicFormulaContactState {
   u: number;
   v: number;
   phi: number;
 }
 
-/**
- * The transient contact of {@link createMagicFormulaTire} as a pure right-hand side, for a caller that integrates the
- * deflections itself (a multibody car's ODE): forces from the current deflections and the deflection rates
- * `du/dt = −Vsx − |Vx|·u/σκ`, `dv/dt = Vsy − |Vx|·v/σα`, `dφ′/dt = |Vx|·(φ − φ′)/σα`. Right-tyre states live in the
- * mirrored frame.
- * @capability magic-formula-contact relaxation-length tire contact as a pure ODE right-hand side for a multibody integrator
- */
+/** @capability magic-formula-contact relaxation-length tire contact as a pure ODE right-hand side for a multibody integrator */
 export function magicFormulaContact(
   coefficients: Readonly<MagicFormulaCoefficients>,
   contact: Readonly<MagicFormulaContactState>,

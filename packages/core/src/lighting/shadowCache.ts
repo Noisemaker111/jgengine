@@ -7,9 +7,7 @@
  * over every fragment, so the map is bit-identical to drawing every caster again.
  */
 
-/** What a light's depth pass does this frame. */
 export type ShadowPassPlan =
-  /** Draw every caster, as three does without a cache. */
   | "full"
   /** Draw the static casters into the layer, then copy it into the map and draw the changed casters over it. */
   | "rebuild"
@@ -18,9 +16,8 @@ export type ShadowPassPlan =
   /** The map already holds exactly the layer and no changed caster reaches it: draw nothing. */
   | "hold";
 
-/** One light's cache bookkeeping. @internal */
+/** @internal */
 export interface ShadowLayerState {
-  /** Projection key the map was last drawn with; null before its first pass. */
   drawnKey: number[] | null;
   /** Passes in a row drawn at `drawnKey` after the one that moved to it. */
   heldPasses: number;
@@ -32,13 +29,9 @@ export interface ShadowLayerState {
    * each that serves a pass lowers it, down to 1.
    */
   rebuildAfter: number;
-  /** The layer was built since the key last moved and has not served a pass yet. */
   layerUnproven: boolean;
-  /** Key the static layer was drawn at; null while there is none. */
   layerKey: number[] | null;
-  /** A static caster this light's layer can see changed since the layer was drawn. */
   layerStale: boolean;
-  /** The map holds the layer alone, with no changed caster drawn over it. */
   mapIsLayer: boolean;
 }
 
@@ -47,21 +40,16 @@ export function createShadowLayerState(): ShadowLayerState {
   return { drawnKey: null, heldPasses: 0, rebuildAfter: 1, layerUnproven: false, layerKey: null, layerStale: false, mapIsLayer: false };
 }
 
-/** Exact equality of two projection keys. @internal */
+/** @internal */
 export function sameShadowKey(a: readonly number[] | null, b: readonly number[]): boolean {
   if (a === null || a.length !== b.length) return false;
   for (let index = 0; index < b.length; index += 1) if (a[index] !== b[index]) return false;
   return true;
 }
 
-/** Upper bound for {@link ShadowLayerState.rebuildAfter}. */
 const MAX_REBUILD_AFTER = 8;
 
-/**
- * Whether this pass could be served from the light's layer, or build one: only a pass at the key the
- * map was last drawn with, or at the layer's own key. Anything else draws in full, and the cache can
- * skip checking its casters. @internal
- */
+/** @internal */
 export function shadowPassMayCache(state: ShadowLayerState, key: readonly number[]): boolean {
   return sameShadowKey(state.drawnKey, key) || (!state.layerStale && sameShadowKey(state.layerKey, key));
 }

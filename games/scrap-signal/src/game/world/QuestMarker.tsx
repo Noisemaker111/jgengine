@@ -16,12 +16,6 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 /** Frames between looks for the objective: enemies walk, so the marker follows them a few times a second. */
 const LOOK_EVERY_FRAMES = 8;
 
-
-/**
- * The quest marker: a pin over the tracked objective while it is in view, an edge arrow with the
- * distance while it is not. It follows the mission log's first card, and with no mission it points at
- * the nearest person who has one.
- */
 export function QuestMarker(): ReactNode {
   const ctx = useGameContext();
   const size = useEngineHost().frame.size;

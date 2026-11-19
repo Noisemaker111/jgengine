@@ -109,11 +109,6 @@ export const DEFAULTS: Dials = {
   cameraYaw: 45,
 };
 
-/**
- * The mode buttons are PRESETS over the one shared slider set, not three tools: each writes the same
- * layout dials to a different corner of the generator's space, so dragging away from a preset morphs
- * a city into a circuit continuously.
- */
 export const PRESETS: Record<Mode, Partial<Dials>> = {
   city: {
     gridness: 0.85,
@@ -167,10 +162,8 @@ const MAX_GRADE = 0.12;
 const MIN_TURN_ANGLE = 12;
 const MAX_TURN_ANGLE = 110;
 
-/** The street generator's topology dials: everything but its seed, footprint and terrain switches. */
 type PlaygroundStreetDials = Omit<StreetNetworkParams, "seed" | "halfX" | "halfZ" | "bridges" | "tunnels" | "minElevation" | "tunnelClearance">;
 
-/** Every street dial the playground drives, in one place — the same set for all three modes. */
 export function playgroundStreetRules(dials: Dials): PlaygroundStreetDials {
   return {
     gridness: dials.gridness,
@@ -196,7 +189,6 @@ export function playgroundStreetRules(dials: Dials): PlaygroundStreetDials {
   };
 }
 
-/** The city the playground draws: the street graph plus the buildings the city kind placed on it. */
 export interface PlaygroundCity {
   network: StreetNetwork;
   lots: readonly CityLot[];
@@ -207,7 +199,6 @@ export interface PlaygroundResult {
   city: PlaygroundCity | null;
   /** The lap lifted out of `network` in race mode; null in other modes or when no cycle exists. */
   route: CircuitRoute | null;
-  /** What the sliders actually asked the generator for, independent of the chosen preset. */
   topology: StreetNetworkMode;
 }
 
@@ -686,7 +677,6 @@ const DIAL_RANGES = {
   cameraYaw: [-180, 180],
 } as const satisfies Partial<Record<keyof Dials, readonly [number, number]>>;
 
-/** Parse every shareable playground control without allowing invalid geometry or camera values through. */
 export function parsePlaygroundQuery(search: string): PlaygroundQuery {
   const query = new URLSearchParams(search);
   const dials: Partial<Dials> = {};

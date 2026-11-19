@@ -5,7 +5,6 @@
 import type { CdpSession } from "./browser-lib";
 import type { TimedPng } from "./apng";
 
-/** A lockstep step that commits no new frame falls back to a forced capture after this. */
 const LOCKSTEP_FRAME_TIMEOUT_MS = 20_000;
 
 /**
@@ -23,7 +22,6 @@ export class LockstepRecorder {
   readonly frames: TimedPng[] = [];
   readonly frameMs: number;
   private virtualMs = 0;
-  /** The clock this recorder has advanced to; the run reads it as the time source under a lockstep record. */
   get virtualNow(): number {
     return this.virtualMs;
   }
@@ -78,7 +76,6 @@ export class LockstepRecorder {
     await this.captureFrame();
   }
 
-  /** Release the screencast pump; safe to call twice. */
   async stop(): Promise<void> {
     this.stopPump?.();
     this.stopPump = null;

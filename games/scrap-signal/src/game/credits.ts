@@ -4,7 +4,6 @@ import { mergeCredits } from "@jgengine/core/menu/credits";
 import { lookCredits } from "../art/look";
 import { ASSET_SOURCE_IDS } from "./assets";
 
-/** Scrap Signal's own work, then every pack it ships, generated from the ids its catalogs load. */
 export const SCRAP_CREDITS = mergeCredits(
   {
     title: "SCRAP SIGNAL",

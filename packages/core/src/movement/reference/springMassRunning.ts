@@ -1,13 +1,7 @@
-/**
- * A runner as the spring-mass model of R. Blickhan ("The spring-mass model for running and hopping", *J. Biomech.* 22,
- * 1989) and T. A. McMahon and G. C. Cheng (*J. Biomech.* 23, 1990): a point mass on a massless linear leg spring.
- */
 export interface SpringMassRunner {
   /** Body mass, kg. */
   mass: number;
-  /** Hip height standing (leg length), m. */
   legLength: number;
-  /** Leg spring stiffness, N/m. */
   stiffness: number;
   /** Stride frequency at a running speed, Hz. */
   strideFrequency(speed: number): number;
@@ -26,26 +20,16 @@ export const RECREATIONAL_RUNNER: SpringMassRunner = {
   strideFrequency: (speed) => 1.35 + 0.0667 * Math.max(0, speed - 3),
 };
 
-/** A steady spring-mass running step from {@link springMassStep}. */
 export interface SpringMassStep {
   speed: number;
-  /** Leg angle from vertical at touchdown, rad. */
   touchdownAngle: number;
-  /** Ground contact per step, s. */
   contactTime: number;
-  /** Flight per step, s. */
   flightTime: number;
-  /** Contact over stride time for one foot. */
   dutyFactor: number;
-  /** Highest vertical ground force, body weights (one hump: running has no heel-strike double peak in this model). */
   peakForce: number;
-  /** Leg compression at mid-stance, m. */
   legCompression: number;
-  /** Centre-of-mass drop from touchdown to mid-stance, m. */
   verticalExcursion: number;
-  /** Stride length (two steps), m. */
   strideLength: number;
-  /** Peak vertical force over vertical excursion, kN/m. */
   verticalStiffness: number;
 }
 

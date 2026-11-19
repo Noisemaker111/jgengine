@@ -4,12 +4,7 @@ interface FrameShare {
   busyLast: number;
 }
 
-/**
- * One frame's grass work shared by every patch drawn by one renderer. A patch asks for its slice
- * before it works and says whether it still has work after; the frame's budget is split evenly
- * among the patches that still had work the frame before, so ten patches cost what one does.
- * @internal
- */
+/** @internal */
 export class GrassFrameShare {
   private readonly shares = new WeakMap<object, FrameShare>();
 
@@ -28,7 +23,6 @@ export class GrassFrameShare {
     return totalMs / share.busyLast;
   }
 
-  /** Record that a patch still has work after its slice this frame. */
   stillBusy(renderer: object): void {
     const share = this.shares.get(renderer);
     if (share !== undefined) share.busy += 1;

@@ -14,8 +14,6 @@ import type { AlienBodyPlan } from "./creatures/bodyPlan";
 import { decayFactor } from "./traits";
 import { pairKey, type HouseholdState, type MemberState } from "./session/types";
 
-/** The household's tone on the shared mood scale; the face is the game's own art. */
-/** Pair levels the crew reaches, by opinion of each other. */
 export const PAIR_MILESTONES: readonly RelationshipMilestone[] = [
   { id: "friends", label: "Friends", at: 35 },
   { id: "close", label: "Close", at: 70 },
@@ -45,7 +43,6 @@ const MOOD_WEIGHTS = [
   { need: "fun", weight: 2.1 },
 ];
 
-/** Mood read straight off a being's need record - no agent needed, safe for a HUD frame. */
 export function moodOfNeeds(needs: Readonly<Record<NeedId, number>>): Mood & { face: string } {
   const mood = readMood(
     { ids: () => NEEDS, fraction: (id) => (needs[id as NeedId] ?? 0) / 100 },
@@ -118,10 +115,8 @@ export function memberNeeds(plan: AlienBodyPlan, traits: Pick<MemberState, "trai
  */
 const agents = new WeakMap<MemberState, Agent>();
 
-/** A new world brings new member objects, so there is nothing to clear; kept for the call sites. */
 export function resetAgents(): void {}
 
-/** The live agent for a being, built from its saved need record and kept for the session. */
 export function memberAgent(member: MemberState, rng: () => number): Agent {
   const existing = agents.get(member);
   if (existing !== undefined) return existing;
@@ -142,7 +137,6 @@ export function memberAgent(member: MemberState, rng: () => number): Agent {
   return agent;
 }
 
-/** Copy a being's live need values back into the plain record a save, HUD and tests read. */
 export function syncMember(member: MemberState, rng: () => number): void {
   const agent = memberAgent(member, rng);
   for (const need of NEEDS) member.needs[need] = agent.needs.value(need);
@@ -178,7 +172,6 @@ export function householdBook(state: HouseholdState): RelationshipBook {
   return book;
 }
 
-/** Write the book back into the household's plain records. */
 export function syncBook(state: HouseholdState, book: RelationshipBook): void {
   for (const id of state.order) {
     for (const other of book.partnersOf(id)) {
@@ -190,10 +183,8 @@ export function syncBook(state: HouseholdState, book: RelationshipBook): void {
   }
 }
 
-/** Kept for callers that reset a world; the book keeps no hidden state to clear. */
 export function resetBook(): void {}
 
-/** The household's words for an opinion score, from rival to lifelong bond. */
 export function relationLabel(opinion: number): string {
   if (opinion >= 95) return "Bonded";
   if (opinion >= 70) return "Close";
@@ -204,7 +195,6 @@ export function relationLabel(opinion: number): string {
   return "Rivals";
 }
 
-/** The one relationship that shapes a being's day: its bonded partner, else its warmest. */
 export function partnerOf(state: HouseholdState, id: string): string | null {
   return bondLine(state, id)?.id ?? null;
 }
@@ -231,7 +221,6 @@ export function bondLine(state: HouseholdState, id: string): { id: string; name:
   return { id: partner, name, word: bondWord(book, id, partner) };
 }
 
-/** The book's word for one pair: its milestone when reached, else the household's standing words. */
 export function bondWord(book: RelationshipBook, a: string, b: string): string {
   return book.milestone(a, b)?.label ?? relationLabel(book.opinion(a, b));
 }

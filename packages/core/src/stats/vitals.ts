@@ -3,17 +3,13 @@ import { changeStatPool, createStatPool, statPoolFraction, type StatPool } from 
 
 /** A per-second change one vital applies to another while a condition holds. */
 export interface VitalLink {
-  /** The vital that changes. */
   vital: string;
   /** Units per second; negative drains (starving takes health), positive fills. */
   rate: number;
 }
 
-/** A named condition a vital raises from its value, with optional hysteresis. */
 export interface VitalFlag {
-  /** Flag id the game reads (`unconscious`, `exhausted`, `starving`). */
   id: string;
-  /** Raise the flag when the value is `atLeast` or `atMost` the `on` level. */
   when: "atLeast" | "atMost";
   /** Level as a fraction of the vital's max (0..1). */
   on: number;
@@ -21,13 +17,10 @@ export interface VitalFlag {
   off?: number;
 }
 
-/** One survival vital: its range, how it moves on its own, what it costs and what it does when empty. */
 export interface VitalDef {
   id: string;
   max: number;
-  /** Floor; default 0. */
   min?: number;
-  /** Starting value; default `max`. Torpor starts at 0. */
   start?: number;
   /**
    * Passive change per second at multiplier 1: negative drains (food, water, torpor wearing off),
@@ -36,11 +29,9 @@ export interface VitalDef {
   rate?: number;
   /** Seconds after a {@link Vitals.spend} or a drop through {@link Vitals.change} before a positive rate resumes. */
   regenDelay?: number;
-  /** Regenerating this vital draws other vitals: `perPoint` of `vital` per point regained (health regen eats food). Regen stops while a payer is empty. */
   regenCost?: readonly { vital: string; perPoint: number }[];
   /** While this vital sits at its floor, these links apply every second (no food: health drains, torpor rises). */
   whenEmpty?: readonly VitalLink[];
-  /** Conditions this vital raises. */
   flags?: readonly VitalFlag[];
 }
 
@@ -56,13 +47,10 @@ export interface VitalDose {
   amount: number;
   /** Seconds to spread it over; absent or 0 lands it now. Over time, the seconds still to go. */
   seconds?: number;
-  /** Stop at this value: no higher for a gain, no lower for a loss. */
   upTo?: number;
-  /** What gave it (an item id, an attack), for reading back what is still working. */
   source?: string;
 }
 
-/** Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns, raised flags and doses still landing. */
 export interface VitalsState {
   values: Record<string, number>;
   maxes: Record<string, number>;
@@ -71,20 +59,15 @@ export interface VitalsState {
   doses: VitalDose[];
 }
 
-/** Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast). */
 export type VitalRateModifier = StatRateModifier;
 
-/** Options for {@link Vitals.tick}. */
 export interface VitalsTickOptions {
-  /** Multiplies negative (drain) rates. */
   drain?: VitalRateModifier;
-  /** Multiplies positive (regen) rates. */
   regen?: VitalRateModifier;
   /** Extra per-second changes this tick (sprinting spends stamina, a fire warms, a heat stroke hurts). */
   extra?: readonly VitalLink[];
 }
 
-/** A flag that changed this tick. */
 export interface VitalFlagChange {
   id: string;
   raised: boolean;
@@ -95,7 +78,6 @@ export interface Vitals {
   value(id: string): number;
   max(id: string): number;
   fraction(id: string): number;
-  /** Flags currently raised. */
   flags(): readonly string[];
   has(flag: string): boolean;
   /** Spend `amount` only when that much is available; returns false and changes nothing otherwise. Starts the regen delay. */
@@ -104,17 +86,13 @@ export interface Vitals {
   change(id: string, delta: number): number;
   /** Take doses: each lands now or over its seconds, a loss starting the regen delay like {@link change}. */
   dose(...doses: readonly VitalDose[]): void;
-  /** Doses still landing, with what is left of each. */
   doses(): readonly VitalDose[];
-  /** Set a vital's max (a level-up point, a buff). `fill` raises current by the same amount. */
   setMax(id: string, max: number, fill?: boolean): void;
   /** Advance `dt` seconds; returns flags raised or cleared since the last tick (a change between ticks raises its flag at once, and is reported here). */
   tick(dt: number, options?: VitalsTickOptions): readonly VitalFlagChange[];
-  /** Replace the definitions in play (rates, flags, links) keeping current values. */
   retune(defs: readonly VitalDef[]): void;
   state(): VitalsState;
   restore(state: VitalsState): void;
-  /** Back to the definitions' starting values and maxes. */
   reset(): void;
 }
 
@@ -136,7 +114,6 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
   const cooldowns = new Map<string, number>();
   const raised = new Set<string>();
   let active: VitalDose[] = [];
-  /** Flags a change between ticks raised or cleared, for the next tick to report. */
   let pending: VitalFlagChange[] = [];
   const settle = (): void => {
     pending.push(...refreshFlags());

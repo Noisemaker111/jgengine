@@ -18,7 +18,6 @@ import { createEmptyPlayerRow, splitProfilePlayer } from "./snapshot";
 
 export type GameServerStatus = "open" | "running" | "closed";
 
-
 export type SessionAttributes = {
   label?: string;
   mode?: string;
@@ -115,7 +114,6 @@ export function clampLimit(value: number | undefined, fallback: number, max: num
   return Math.min(Math.max(Math.floor(candidate), 1), max);
 }
 
-/** A {@link LeaderboardRow} as a host stores it: keyed by game, stamped with its last write. */
 export type StoredLeaderboardRow = LeaderboardRow & {
   gameId: string;
   updatedAt: number;
@@ -331,7 +329,6 @@ export function buildHydratePlayers(
   return players;
 }
 
-/** True when a snapshot carries no unwritten mutation — nothing for a persist to do. */
 export function isSnapshotClean(snapshot: GameRuntimeSnapshot): boolean {
   return (
     !snapshot.dirty.server &&
@@ -351,11 +348,6 @@ export type ServerPersistPlan = {
   chunks: WorldChunkRecord[];
   deletedChunks: string[];
   leaderboard: LeaderboardIncrement[];
-  /**
-   * Which fields of the server row the plan actually moved. A store that pays per written field —
-   * or whose subscribers re-push a whole document on any change — writes only what changed and skips
-   * the row entirely when `changed.any` is false.
-   */
   changed: {
     serverState: boolean;
     sessionPlayers: boolean;

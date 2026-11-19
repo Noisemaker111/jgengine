@@ -156,7 +156,6 @@ function CoasterTrain({ object, circuit }: { object: ParkObject; circuit: Return
 const GATE_URL = new URL("../../../public/art/models/deco_gate.glb", import.meta.url).href;
 const SIGN_URL = new URL("../../../public/art/brightway-sign.svg", import.meta.url).href;
 
-/** The entrance gate model and its backlit sign, loaded together as one draw. */
 function entranceDraw(): EngineDraw {
   const group = new Group();
   let mounted = false;
@@ -199,7 +198,6 @@ function Entrance() {
   </SceneObjectGroup>;
 }
 
-/** The perimeter fence: every post and rail as one static draw, sharing geometry and materials. */
 function fenceDraw(): EngineDraw {
   const group = new Group();
   const postGeometry = new BoxGeometry(0.23, 1.6, 0.23);
@@ -346,7 +344,6 @@ function Land() {
   return <EngineDrawMount create={() => landDraw(cells)} deps={[cells]} />;
 }
 
-/** A flat ground cell the blueprint paints: a no-raycast plane at the hovered height. */
 function cellPlaneDraw(cells: { key: string; x: number; y: number; z: number; color?: string | undefined; size?: number | undefined; opacity?: number }[]): EngineDraw {
   const group = new Group();
   const geometry = new PlaneGeometry(1, 1);
@@ -379,7 +376,6 @@ function cellPlaneDraw(cells: { key: string; x: number; y: number; z: number; co
   };
 }
 
-/** A staff post's patrol area on the ground: where its person walks and does its job. */
 function patrolRingDraw(x: number, z: number, radius: number): EngineDraw {
   const group = new Group();
   group.position.set(x, 0.25, z);
@@ -464,7 +460,6 @@ function Blueprint() {
 type BlueprintView =
   | { mode: "land"; refusal: string | null; color: string; cells: { key: string; x: number; y: number; z: number }[] }
   | { mode: "build"; refusal: string | null; kind: string; ghost: { x: number; y: number; z: number } | null; patrol: { x: number; z: number; radius: number } | null; cells: { key: string; x: number; y: number; z: number; color: string }[] };
-/** What the blueprint draws under the cursor, as plain values: it redraws when the hover, the tool or the answer changes, not every tick. */
 function blueprintView(ctx: GameContext, selected: string | null, hover: [number, number] | null, down: [number, number] | null): BlueprintView | null {
   const w = park.of(ctx);
   const def = selected ? BUILDABLES[selected] ?? null : null;
@@ -505,7 +500,6 @@ function ScreenProbe() {
   }, [project, gl, ctx]);
   return null;
 }
-/** The first scenario's hint pointing at a spot on the lot: a bobbing arrow over it. */
 function hintArrowDraw(x: number, z: number, groundY: number, reduced: boolean): EngineDraw {
   const group = new Group();
   group.position.set(x, groundY + 6, z);
@@ -547,7 +541,6 @@ function HintArrow() {
   return <EngineDrawMount create={() => hintArrowDraw(x, z, groundAt(park.of(ctx), x, z), reduced)} deps={[x, z, reduced, ctx]} />;
 }
 
-/** The selection ring under the object the build tool has in hand. */
 function selectionRingDraw(x: number, z: number, radius: number): EngineDraw {
   const group = new Group();
   group.position.set(x, 0.23, z);

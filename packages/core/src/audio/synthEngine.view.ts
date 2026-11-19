@@ -98,18 +98,11 @@ function trackVoice(source: AudioScheduledSourceNode, nodes: AudioNode[], ended:
   };
 }
 
-/** Scheduled procedural sources; stopping releases their source/filter/envelope graph. */
 export interface SynthPlayback {
   stop(): void;
-  /** Called once after every source ends; late subscribers are notified immediately. */
   onEnded(callback: () => void): void;
 }
 
-/**
- * Realise a procedural cue on Web Audio: every voice is scheduled at
- * `ctx.currentTime + delay` into `out`, summed into one one-shot. `noiseBuf` is
- * the shared buffer from {@link createNoiseBuffer}.
- */
 export function realizeSynthPatch(ctx: BaseAudioContext, out: AudioNode, noiseBuf: AudioBuffer, patch: SynthPatch): SynthPlayback {
   const cueGain = patch.gain ?? 1;
   const at = ctx.currentTime;

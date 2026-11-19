@@ -29,14 +29,6 @@ export function resolveRuntimeCameraConfig(config: GameCameraConfig | undefined,
 }
 
 /**
- * The camera config that renders this frame, with the capture camera winning over everything.
- *
- * A game owns its camera three ways: the static `camera` block, a runtime `ctx.camera.setRig`
- * selection, and a director cinematic. A capture harness can rewrite the first, but the other two
- * run afterwards and quietly photograph the game's own camera. `installCaptureCamera` is read here,
- * above all three, so `?look=`/`--look` frames what it was asked for; with nothing installed this is
- * exactly `resolveRuntimeCameraConfig` and every game behaves as before.
- *
  * @capability capture render a framed capture camera over a game that owns its camera
  * @internal
  */
@@ -44,7 +36,7 @@ export function resolveCaptureCameraConfig(config: GameCameraConfig | undefined,
   return resolveRuntimeCameraConfig(config, readCaptureCamera() ?? override);
 }
 
-/** The flat orbit-rig config the orbit camera reads: the `orbit` block plus the follow lock switches. @internal */
+/** @internal */
 export function orbitRigConfig(config: GameCameraConfig | undefined): OrbitCameraConfig {
   const follow = config?.follow;
   return {
@@ -78,11 +70,7 @@ export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigK
   return "orbit";
 }
 
-/**
- * The turntable rig is a flat facade over the observer's point-orbit mode: map
- * its `target`/`distance`/… onto an observer block so ObserverRig runs unchanged.
-  * @internal
-  */
+/** @internal */
 export function turntableAsObserver(config: GameCameraConfig | undefined): GameCameraConfig {
   const t = config?.rigs?.turntable;
   if (t === undefined) return config ?? {};

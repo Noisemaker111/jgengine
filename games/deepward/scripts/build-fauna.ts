@@ -21,7 +21,6 @@ PALETTE["optic"] = { color: hex("#eab379"), metal: 0, rough: 0.4, emissive: hex(
 interface Joint { name: string; parent: number; at: V3 }
 type Track = { joint: number; path: "rotation" | "translation"; keys: Array<[number, number[]]> };
 const quat = (axis: 0 | 1 | 2, angle: number): number[] => { const q = [0, 0, 0, Math.cos(angle / 2)]; q[axis] = Math.sin(angle / 2); return q; };
-/** A looping sway of one joint around an axis, sampled at nine keys. */
 const sway = (joint: number, axis: 0 | 1 | 2, amp: number, phase: number, period: number, bias = 0): Track => ({
   joint, path: "rotation", keys: Array.from({ length: 9 }, (_, k) => [(k / 8) * period, quat(axis, bias + amp * Math.sin((k / 8) * Math.PI * 2 + phase))]),
 });
@@ -74,7 +73,6 @@ async function write(name: string, joints: Joint[], mesh: Mesh, clips: Record<st
   return { id: `deepward/fauna/${name}`, file, url: `/models/imported/deepward/fauna/${file}`, sha256: createHash("sha256").update(bytes).digest("hex"), bytes: bytes.length, clips: Object.keys(clips), bounds: { min, max }, dims: [max[0] - min[0], max[1] - min[1], max[2] - min[2]] };
 }
 
-/** The hand: a flat palm that walks on five two-jointed fingers; the thumb leads. */
 async function hand(): Promise<Record<string, unknown>> {
   const joints: Joint[] = [{ name: "root", parent: -1, at: [0, 0.12, 0] }], m = new Mesh();
   m.joint = 0;
@@ -97,7 +95,6 @@ async function hand(): Promise<Record<string, unknown>> {
   });
 }
 
-/** Builds a low four- or six-legged body: torso, a head with one lit optic and gaunt two-segment legs. */
 async function quadruped(name: string, o: { length: number; width: number; height: number; legs: number; leg: number; thick: number; body: string; limb: string; optics: number }): Promise<Record<string, unknown>> {
   const top = o.leg + o.height / 2, joints: Joint[] = [{ name: "root", parent: -1, at: [0, o.leg, 0] }, { name: "head", parent: 0, at: [0, top, o.length / 2] }], m = new Mesh();
   m.joint = 0;

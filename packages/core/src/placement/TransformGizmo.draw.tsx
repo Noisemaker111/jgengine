@@ -7,50 +7,38 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { setCameraControlsEnabled } from "../camera/activeControls.draw";
 
-/** Active TransformControls mode for the runtime selection gizmo. */
 export type TransformGizmoMode = "translate" | "rotate" | "scale";
-/** Snap policy: grid quantize, free drag, or ground-height sample on release. */
 export type TransformGizmoSnap = "grid" | "free" | "ground";
-/** Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes. */
 export type TransformGizmoSpace = "world" | "local";
 
 /** Default rotation snap increment (radians) when callers don't configure one. */
 export const DEFAULT_ROTATION_SNAP = Math.PI / 12;
 
-/** Pose reported by {@link TransformGizmo} when the user releases a drag. */
 export interface TransformGizmoPose {
   position: { x: number; y: number; z: number };
   rotationY: number;
   scale: { x: number; y: number; z: number };
 }
 
-/** Props for the shared runtime/editor selection gizmo. */
 export interface TransformGizmoProps {
   position: { x: number; y: number; z: number };
   rotationY?: number;
   mode?: TransformGizmoMode;
   snapMode?: TransformGizmoSnap;
   gridSize?: number;
-  /** Handle orientation; `"local"` aligns handles to the target's yaw. */
   space?: TransformGizmoSpace;
   /** Rotation snap increment in radians; `null` rotates freely. */
   rotationSnap?: number | null;
-  /** Scale snap increment; `null` (default) scales freely. */
   scaleSnap?: number | null;
   /** Vertical offset so the gizmo sits above ground markers. */
   lift?: number;
   size?: number;
   groundSnap?: ((x: number, z: number) => number) | undefined;
-  /** Disable orbit/pan while dragging (shell/editor cameras). */
   onDraggingChange?: (dragging: boolean) => void;
   onRelease: (pose: TransformGizmoPose) => void;
 }
 
-/**
- * Draw-side form of {@link TransformGizmo}: three's `TransformControls` attaches to an anchor
- * group; prop changes sync in `update`, drags suspend the registered camera rigs.
- * @internal
- */
+/** @internal */
 export function transformGizmoDraw(getProps: () => TransformGizmoProps): EngineDraw {
   const group = new THREE.Group();
   let controls: TransformControls | null = null;
@@ -141,11 +129,7 @@ export function transformGizmoDraw(getProps: () => TransformGizmoProps): EngineD
   };
 }
 
-/**
- * Runtime selection/move gizmo shared by games and the editor.
- * Wraps TransformControls; callers own selection and commit side-effects.
- * @capability transform-gizmo in-game select/move/rotate/scale gizmo
- */
+/** @capability transform-gizmo in-game select/move/rotate/scale gizmo */
 export const TransformGizmo = memo(function TransformGizmo(props: TransformGizmoProps) {
   const latest = useRef(props);
   latest.current = props;

@@ -13,13 +13,9 @@
  * value pulled from this constant must go through `style`.
  */
 export const UI_LAYER = {
-  /** In-world HUD: resource panel, interaction hints, diagnostics. */
   hud: 20,
-  /** Raised HUD accents over `hud` (launch celebration, "return inside"). */
   hudRaised: 30,
-  /** Rack config and other blocking in-world menus. */
   rackMenuOverlay: 50,
-  /** Sliding tablet sheet — collapsed peek handle and the open app surface. */
   tablet: 105,
   /**
    * On-screen walk / jump / interact controls. Deliberately ABOVE `tablet` so a
@@ -28,10 +24,7 @@ export const UI_LAYER = {
    * tablet is open (see PlayMovementHud), so the open sheet never fights them.
    */
   touchControls: 106,
-  /** Toast notifications that float over the controls. */
   notification: 140,
-  /** Settings modal. */
   settingsModal: 180,
-  /** Model detail / reveal / training-commitment modals — top of the normal stack. */
   modal: 200,
 } as const;

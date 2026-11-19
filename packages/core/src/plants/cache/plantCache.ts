@@ -87,13 +87,11 @@ export function createIndexedDbPlantCacheStorage(name = "jgengine-plants"): Plan
   };
 }
 
-/** A structure with the hash every mesh built from it carries. */
 export interface CachedPlantStructure {
   structure: PlantStructure;
   hash: string;
 }
 
-/** Counters of a {@link PlantCache}'s memory tier. */
 export interface PlantCacheState {
   structures: number;
   meshes: number;
@@ -101,9 +99,7 @@ export interface PlantCacheState {
   memoryBytes: number;
 }
 
-/** Options for {@link createPlantCache}. */
 export interface PlantCacheOptions {
-  /** Persistent tier; null keeps plants in memory only. */
   storage?: PlantCacheStorage | null;
   /** Most bytes the memory tier holds before it drops the least recently used entries. Default 192 MB. */
   memoryBytes?: number;
@@ -117,18 +113,13 @@ export interface PlantCacheOptions {
 export interface PlantCache {
   structure(key: string): CachedPlantStructure | undefined;
   mesh(key: string): PlantMesh | undefined;
-  /** Memory first, then storage (decoded into memory). */
   loadStructure(key: string): Promise<CachedPlantStructure | undefined>;
   loadMesh(key: string): Promise<PlantMesh | undefined>;
-  /** Into memory now, and into storage in the background. */
   putStructure(key: string, entry: CachedPlantStructure): void;
   putMesh(key: string, mesh: PlantMesh): void;
-  /** Swap the persistent tier, e.g. to a game's own database name. */
   setStorage(storage: PlantCacheStorage | null): void;
-  /** Resolves once every background write so far has landed. */
   flush(): Promise<void>;
   state(): PlantCacheState;
-  /** Empty the memory tier; storage keeps its entries. */
   reset(): void;
 }
 
@@ -150,10 +141,7 @@ function meshBytes(mesh: PlantMesh): number {
 
 type Entry = { kind: "structure"; value: CachedPlantStructure; bytes: number } | { kind: "mesh"; value: PlantMesh; bytes: number };
 
-/**
- * A plant cache over injected storage.
- * @capability plant-cache cache grown plant structures and styled meshes in memory and injected storage
- */
+/** @capability plant-cache cache grown plant structures and styled meshes in memory and injected storage */
 export function createPlantCache(options: PlantCacheOptions = {}): PlantCache {
   let storage = options.storage ?? null;
   const memoryBytes = options.memoryBytes ?? DEFAULT_MEMORY_BYTES;

@@ -1,6 +1,5 @@
 import type { TemplateFile } from "./types";
 
-/** The line every engine and game `.tsx` file starts with: its JSX compiles against the engine's UI runtime. */
 export const JSX_SOURCE_LINE = "/** @jsxImportSource @jgengine/core/ui/jsx */";
 
 /**

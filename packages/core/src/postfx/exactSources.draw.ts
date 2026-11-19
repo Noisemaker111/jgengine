@@ -6,7 +6,6 @@ import { CONTACT_APPLY_FRAGMENT } from "./contactShadowPass.draw";
 import { HALF_ROUNDING_GLSL } from "./halfPrecision.draw";
 import { COMPOSITE_FRAGMENT } from "./sceneCompositePass.draw";
 
-/** three's `#include <chunk>` expansion, which it applies to every material before compiling. */
 function resolveIncludes(source: string): string {
   return source.replace(/^[ \t]*#include +<([\w./]+)>/gm, (_, name: string) => {
     const chunk = (ShaderChunk as unknown as Record<string, string | undefined>)[name];

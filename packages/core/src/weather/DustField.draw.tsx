@@ -34,7 +34,6 @@ export interface DustFieldProps {
   /** Horizontal drift added to `wind`, in world units per second. */
   speed?: number;
   size?: number;
-  /** Amplitude of the slow vertical bob that keeps motes from travelling on rails. */
   sway?: number;
   opacity?: number;
   color?: THREE.ColorRepresentation;

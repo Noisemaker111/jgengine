@@ -36,11 +36,8 @@ export interface DifficultyProfile {
    * moments, high values hold them for strong windows (see {@link shouldUseAbility}).
    */
   abilityDiscipline: number;
-  /** Multiplier games apply to sight/aggro/awareness radii (e.g. `aggroRadius * perceptionScale`). */
   perceptionScale: number;
-  /** Lookahead plies for {@link planLookahead}; `1` is greedy. */
   planDepth: number;
-  /** Candidate moves considered per ply in {@link planLookahead} (branching bound). */
   planWidth: number;
 }
 
@@ -59,39 +56,19 @@ export function difficultyProfile<T extends string>(
   return { ...tiers[tier], ...overrides };
 }
 
-/**
- * Serializable reaction-gate state: the value the agent is currently acting on plus the newer
- * value it has noticed but not yet committed to. `T` should be serializable (ids, positions as
- * tuples) if the gate lives in saved state.
- */
 export interface ReactionGateState<T> {
-  /** The value currently in effect — what the agent acts on this step. */
   committed: T;
-  /** The newer observed value waiting out the reaction delay, or the committed value when idle. */
   pending: T;
   /** Seconds the pending value has been observed. */
   pendingSeconds: number;
 }
 
-/**
- * A fresh gate already committed to `initial`.
- *
- * @capability difficulty-reaction-gate-state fresh serializable reaction-gate state for one observed value
- */
+/** @capability difficulty-reaction-gate-state fresh serializable reaction-gate state for one observed value */
 export function createReactionGate<T>(initial: T): ReactionGateState<T> {
   return { committed: initial, pending: initial, pendingSeconds: 0 };
 }
 
-/**
- * Advance one reaction step and return the value to act on. `desired` is what a perfect agent
- * would act on this frame (current best target, latest known player position); the gate holds the
- * previously committed value until `desired` has been stable for `profile.reactionSeconds`,
- * restarting the delay whenever `desired` changes again (compared with `Object.is`). Feed the
- * returned value — not `desired` — into pursuit/aim/ability logic. Mutates `state` in place;
- * allocation-free.
- *
- * @capability difficulty-reaction-gate delay acting on new information by the profile's reaction time
- */
+/** @capability difficulty-reaction-gate delay acting on new information by the profile's reaction time */
 export function advanceReactionGate<T>(
   state: ReactionGateState<T>,
   dt: number,
@@ -115,7 +92,6 @@ export function advanceReactionGate<T>(
   return state.committed;
 }
 
-/** One candidate with a caller-computed score; higher is better. */
 export interface ScoredOption<T> {
   option: T;
   score: number;
@@ -183,20 +159,10 @@ export function shouldUseAbility(
  * types; the planner never inspects them.
  */
 export interface LookaheadDomain<S, M> {
-  /**
-   * Candidate moves from `state` with immediate scores (higher better for the player to move).
-   * The planner explores only the best `planWidth` of these per ply.
-   */
   moves(state: S): readonly ScoredOption<M>[];
   /** The successor state after the player to move plays `move`. Must not mutate `state`. */
   apply(state: S, move: M): S;
-  /** Static evaluation of `state` from the perspective of the player to move in it. */
   evaluate(state: S): number;
-  /**
-   * `true` (default) alternates perspective each ply — adversarial turn games (chess-like,
-   * duels). `false` keeps one perspective — planning the agent's own action sequence
-   * (rotations, build orders, multi-step routes).
-   */
   adversarial?: boolean;
 }
 

@@ -32,5 +32,4 @@ export const worldHeartbeat = defineSystem({
   },
 });
 
-/** The keep's world (`keep.system`: builds, upgrades, sales, ripples) beside the real-time sim. */
 export const systems = [keep.system, waves, towers, worldHeartbeat];

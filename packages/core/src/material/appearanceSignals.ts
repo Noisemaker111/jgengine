@@ -1,7 +1,6 @@
 import type { EnvironmentField, EnvironmentSample } from "../world/envField";
 import type { MaterialSurfaceParameters } from "./materialAsset";
 
-/** Resolved dry values from one assigned surface, after imported and instance edits. RGB is linear. */
 export interface MaterialAppearanceBaseline {
   roughness: number;
   colorLinear: readonly [number, number, number];
@@ -16,18 +15,14 @@ export interface MaterialWetnessPolicy {
   roughness?: number;
   colorRetention?: number;
   sheen?: number;
-  /** Requires an already physical material; omitting this preserves imported coat without enabling a new one. */
   clearcoat?: { strength: number; roughness?: number };
 }
 
-/** Local appearance only. Wind is a separate geometry/simulation input, and no field creates motion. */
 export interface MaterialAppearancePolicy {
   wetness?: MaterialWetnessPolicy;
-  /** Sky-exposure attenuation of existing hair-card backlighting; this is not a shadow or scattering model. */
   cardBacklightExposure?: boolean;
 }
 
-/** Sparse edits for one sample. Unrequested imported parameters, textures, coverage and transmission stay intact. */
 export interface MaterialAppearanceResponse {
   surface: MaterialSurfaceParameters;
   colorLinear?: [number, number, number];
@@ -79,10 +74,7 @@ export interface MaterialAppearanceTarget {
   time: number;
 }
 
-/**
- * Exactly one field sample per target; no traversal, subscription, hidden tick, or full-world scan.
- * @capability material-appearance-signals sample one explicitly scheduled appearance target from the shared environment field
- */
+/** @capability material-appearance-signals sample one explicitly scheduled appearance target from the shared environment field */
 export function sampleMaterialAppearance(field: Pick<EnvironmentField, "sample">, target: MaterialAppearanceTarget, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse {
   return resolveMaterialAppearance(field.sample(target.x, target.z, target.time, target.y), baseline, policy);
 }

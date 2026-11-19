@@ -22,12 +22,10 @@ import { publishForContext } from "@jgengine/core/runtime/contextDisposal";
 
 declare module "@jgengine/core/runtime/pageHandle" {
   interface JgPage {
-    /** This game's dev readout, as its proofs read it. */
     brightway?: { read(): unknown };
   }
 }
 
-/** What a staged park should look like when the capture takes it. */
 export type StageMode = "full";
 
 const STEP = 1 / 20;
@@ -41,10 +39,6 @@ function updateOpenState(ctx: GameContext): void {
   if (wantOpen) ctx.game.audio.play("gates");
 }
 
-/**
- * One tick of a live park, shared by the frame loop and the staging that fast-forwards a day, so
- * both advance exactly the same systems.
- */
 export function stepPark(ctx: GameContext, dt: number): void {
   syncAmbience(ctx);
   const w = park.of(ctx);
@@ -71,11 +65,6 @@ export function stepPark(ctx: GameContext, dt: number): void {
   }
 }
 
-/**
- * Dev-only staging for the state that needs a played day: a park at capacity, gates open, the
- * authored starter rides running lines and guests standing in them. Play reaches this by opening
- * the gates and waiting most of a day; `shoot --state full-park` jumps here instead.
- */
 export function stagePark(ctx: GameContext, mode: StageMode): void {
   void mode;
   // Past the open fraction so the gates, the spawner and the HUD all read "open", not "closed for
@@ -97,7 +86,6 @@ function advance(ctx: GameContext, seconds: number): void {
   }
 }
 
-/** Take a ride down now and report it, exactly as the ride sim's own breakdown would. */
 export function forceBreakdown(ctx: GameContext, id: string): boolean {
   syncRidePark(ctx);
   if (!breakRide(ctx, id)) return false;
@@ -105,7 +93,6 @@ export function forceBreakdown(ctx: GameContext, id: string): boolean {
   return true;
 }
 
-/** What the drive reads back (`globalThis.__brightway.read()`): the world's numbers, the rides and the crew. */
 export function parkReadout(ctx: GameContext): Record<string, unknown> {
   const w = park.of(ctx);
   const metrics = parkMetrics(w);
@@ -199,5 +186,4 @@ export function registerCaptureCommands(ctx: GameContext): void {
     },
   });
 }
-
 

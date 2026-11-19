@@ -10,10 +10,8 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internalMutation } from "./_generated/server";
 import { claimsNearOrigin } from "./datacenter";
 
-/** How long an unwritten pose row stays listed and alive; the reaper collects it after that. */
 export const PRESENCE_IDLE_TIMEOUT_MS = 4 * 60 * 1000;
 
-/** Where a lab's avatar enters the shared datacenter: where it last stood, else a seeded free spot. */
 export async function spawnForGame(ctx: QueryCtx | MutationCtx, gameId: Id<"games">): Promise<{ x: number; y: number; z: number }> {
   const game = await ctx.db.get("games", gameId);
   const saved = game?.lastWorldPosition;
@@ -22,7 +20,6 @@ export async function spawnForGame(ctx: QueryCtx | MutationCtx, gameId: Id<"game
   return { x: spawn.x, y: 0, z: spawn.z };
 }
 
-/** Saves where a lab's avatar stands onto the lab, which spawns it there next time and shows it while offline. */
 export async function persistGameWorldSnapshot(
   ctx: MutationCtx,
   gameId: Id<"games">,
@@ -51,11 +48,6 @@ export const saveLastWorldPosition = internalMutation({
   },
 });
 
-/**
- * The shell's presence lane (`createConvexPresenceSync` reads `presence:list`, `presence:sync`,
- * `presence:leave`). Rows live in the engine's `jgPoses`, shared with the bot API in
- * `multiplayer/worldPresence`; `ensureHumanPresence` stamps the lab, name and spawn on a human's row.
- */
 export const { list, sync, leave } = createPresenceFunctions({
   freshWindowMs: PRESENCE_IDLE_TIMEOUT_MS,
   poseRules: WORLD_POSE_RULES,

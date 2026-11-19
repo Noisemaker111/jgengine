@@ -8,18 +8,15 @@ type Vec3 = readonly [number, number, number];
 
 /** An egg's incubation condition and the seconds it survives while the condition fails before it is lost. */
 export interface BreedingEggSpec {
-  /** Holds while the egg can incubate; read against the facts `{ temperature }` at the egg. */
   incubation: Predicate;
   healthSeconds: number;
 }
 
-/** One growth stage: its name and the share of a species' maturation time it lasts. Shares add up to 1. */
 export interface GrowthStage {
   id: string;
   share: number;
 }
 
-/** How one species breeds. */
 export interface BreedingSpecies {
   /** Seconds a pair must stay together to conceive. */
   mateSeconds: number;
@@ -35,7 +32,6 @@ export interface BreedingSpecies {
   cooldownSeconds: readonly [number, number];
 }
 
-/** A creature offered for mating this tick. */
 export interface MateCandidate {
   id: string;
   species: string;
@@ -43,35 +39,24 @@ export interface MateCandidate {
   at: Vec3;
 }
 
-/** How much faster each part of breeding runs than its times say. All start at 1. */
 export interface BreedingSpeeds {
-  /** A mother is ready to mate again this much sooner. */
   pair: number;
-  /** Incubation and carrying. */
   carry: number;
-  /** Growing. */
   grow: number;
-  /** Care requests come this much more often. */
   bond: number;
 }
 
-/** {@link createBreedingField} setup. */
 export interface BreedingOptions<P> {
   /** How a species breeds; null for one that cannot. */
   species(id: string): BreedingSpecies | null;
-  /** What each young one of a pairing will be, rolled when the mother conceives; the genes are the game's (inheritValues). */
   conceive(mother: string, father: string, rng: () => number): P;
   /** Seconds between a young one's care requests. */
   careIntervalSeconds: number;
-  /** The kinds of care it may ask for, one at random each time. */
   careKinds: readonly string[];
-  /** The game's growth stages in order; each young one walks them as a phase schedule. */
   stages: readonly GrowthStage[];
-  /** How many young one pairing has, from the game's own odds; omitted means one. */
   litter?(rng: () => number): number;
 }
 
-/** A fertilized egg lying where it was laid, carrying its young one's genes `P`; it progresses only inside its incubation band. */
 export interface BreedingEgg<P> {
   id: string;
   species: string;
@@ -97,19 +82,15 @@ export interface BreedingPregnancy<P> {
 export interface BreedingOffspring {
   id: string;
   species: string;
-  /** The stage its growth puts it in, from the game's stage list. */
   stage: string;
   /** Growing, 0 to 1. */
   matured: number;
   /** How much of the bond it has earned, 0 to 1. */
   bond: number;
-  /** The care it is asking for, or null between requests. */
   wants: string | null;
-  /** When it next asks. */
   nextCareAt: number;
 }
 
-/** What happened this tick. */
 export type BreedingEvent<P> =
   | { type: "conceived"; mother: string; father: string; species: string; count: number }
   | { type: "laid"; egg: BreedingEgg<P> }
@@ -119,7 +100,6 @@ export type BreedingEvent<P> =
   | { type: "wants"; offspring: string; care: string }
   | { type: "grown"; offspring: string; bond: number };
 
-/** Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, the growing young and speeds. */
 export interface BreedingSnapshot<P> {
   seq: number;
   mating: Record<string, { father: string; progress: number }>;
@@ -131,18 +111,10 @@ export interface BreedingSnapshot<P> {
   speeds: BreedingSpeeds;
 }
 
-/** The breeding of a world's creatures, made by {@link createBreedingField}. */
 export interface BreedingField<P> {
-  /**
-   * Pairs mating: each ready mother with the nearest willing male of her kind in range fills her mating bar; apart,
-   * it starts over. A full bar lays an egg where she stands or makes her pregnant.
-   */
   mate(candidates: readonly MateCandidate[], dt: number, rng: () => number): BreedingEvent<P>[];
-  /** Eggs incubate in their temperature (and lose health out of it), mothers carry, the young grow and ask for care. */
   tick(now: number, dt: number, temperatureAt: (at: Vec3) => number, rng: () => number): BreedingEvent<P>[];
-  /** Start raising a hatched or newborn young one: it grows from 0 and first asks for care one interval in. */
   raise(id: string, species: string, now: number): BreedingOffspring;
-  /** Give a young one care: the kind it asked for adds its share of bond and clears the request. Returns the bond gained. */
   care(id: string, kind: string): number;
   /** A mother's mating bar, 0 to 1, or null when she is not mating. */
   matingProgress(mother: string): number | null;
@@ -150,12 +122,9 @@ export interface BreedingField<P> {
   cooldown(mother: string): number;
   pregnancy(mother: string): Readonly<BreedingPregnancy<P>> | null;
   eggs(): readonly Readonly<BreedingEgg<P>>[];
-  /** Take an egg out of the world (picked up, eaten); returns it. */
   removeEgg(id: string): BreedingEgg<P> | null;
-  /** The young ones still growing. */
   offspring(): readonly Readonly<BreedingOffspring>[];
   offspringOf(id: string): Readonly<BreedingOffspring> | null;
-  /** A creature gone (killed, released): its mating, pregnancy and growing record go too. */
   forget(id: string): void;
   speeds(): BreedingSpeeds;
   setSpeeds(speeds: Partial<BreedingSpeeds>): void;
@@ -215,13 +184,7 @@ const viewEgg = <P>(egg: EggState<P>): BreedingEgg<P> => ({
   health: fraction(egg.health),
 });
 
-/**
- * Pairs left together mate, a mother lays an egg that hatches only in its temperature band or carries her young to
- * birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace through the
- * game's stage list and ask for care on an interval; each answered request adds its share of the bond. Species times,
- * care kinds, stages, the size of a litter and what a young one is all come from the game.
- * @capability breeding pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care
- */
+/** @capability breeding pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care */
 export function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> {
   const litter = options.litter ?? (() => 1);
 

@@ -4,39 +4,24 @@ import type { MedalBoardConfig } from "@jgengine/core/progression/medalBoard";
 import { levelDamageMult, levelHealthMult } from "../entities/enemies/catalog";
 import { MAX_LEVEL } from "../progression/curves";
 
-/**
- * Overdrive: the Rustflat Front run again with the wreck's signal pushed past the red line. Each tier
- * is the same four-wave fight against crews levelled past the reclaimer, carrying the tier's mutators,
- * on a clock the medal board grades. Borderlands' Mayhem levels, Diablo's Greater Rifts and Destiny's
- * Nightfall modifiers are the references: a ladder that keeps a finished character fighting.
- */
 export const RIFT_TIER_COUNT = 20;
 
 /** Seconds between a cleared wave and the next going out on its own; calling it early saves the rest. */
 export const RIFT_INTERMISSION_SECONDS = 12;
 
 export interface RiftMutatorEffect {
-  /** Multiplier on every rift crew member's health. */
   health?: number;
-  /** Multiplier on the damage a rift crew member deals. */
   damage?: number;
-  /** Multiplier on a crew member's attack interval (below 1 attacks faster). */
   interval?: number;
-  /** Multiplier on a crew member's walk speed. */
   speed?: number;
-  /** The surface every crew member presents to the element chart. */
   surface?: "flesh" | "armor";
-  /** Chance each non-boss arrival brings a twin. */
   twinChance?: number;
   /** A crew member bursts on death: radius in metres, damage as a share of its own max health. */
   burst?: { radius: number; share: number };
   /** Share of max health a crew member regenerates per second. */
   regen?: number;
-  /** Multiplier on the reclaimer's shield recharge. */
   shieldRegen?: number;
-  /** Multiplier on the rift's cash payout. */
   cash?: number;
-  /** An extra elite arrives with each wave. */
   escort?: boolean;
 }
 
@@ -60,7 +45,6 @@ export function mutatorById(id: string): RiftMutator | undefined {
   return RIFT_MUTATORS.find((mutator) => mutator.id === id);
 }
 
-/** How many mutators a tier carries: the first tier is the plain fight, then one, two and three. */
 export function mutatorCountFor(tier: number): number {
   if (tier <= 1) return 0;
   if (tier <= 3) return 1;
@@ -70,13 +54,10 @@ export function mutatorCountFor(tier: number): number {
 
 export interface RiftScaling {
   tier: number;
-  /** Level the crews fight at: the reclaimer's own, plus the tier. */
   enemyLevel: number;
   health: number;
   damage: number;
-  /** Item level a rift drop rolls at. */
   lootLevel: number;
-  /** Rarity luck on every rift drop. */
   luck: number;
   cash: number;
   cores: number;

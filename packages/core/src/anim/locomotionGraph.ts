@@ -1,44 +1,29 @@
 import type { ModelAnimationConfig } from "../game/playableGame";
 import type { AnimGraph, AnimState, AnimTransition } from "./animGraph";
 
-/** Inputs for {@link locomotionGraph}: the locomotion clip names and the one-shot table a rig config already carries. */
 export interface LocomotionGraphInput {
   idle: string;
   walk: string;
   run?: string;
-  /** Clip for moving to the character's left; adds the `strafe` state. */
   strafeLeft?: string;
-  /** Clip for moving to the character's right; adds the `strafe` state. */
   strafeRight?: string;
-  /** Clip for moving backwards; adds the `backward` state. */
   backward?: string;
-  /** Clip for turning on the spot. Omitted, the turn blend uses `walk` as its pivot step. */
   turn?: string;
-  /** Clip held while the body is off the ground; adds the `airborne` state on the `airborne` parameter. */
   jump?: string;
-  /** Clip while swimming and moving; adds the `swim` state on the `swimming` parameter. */
   swim?: string;
-  /** Clip while swimming in place. Omitted, `swim` plays at every speed. */
   tread?: string;
   /** Speed (world units/sec) above which the character walks. Default 0.5. */
   walkSpeed?: number | undefined;
-  /** Speed above which it runs. Default 6. */
   runSpeed?: number | undefined;
   /** Crossfade seconds between locomotion states. Default 0.2. */
   fadeSec?: number | undefined;
-  /** Lateral share above which the character counts as strafing. Default 0.35. */
   strafeGate?: number;
-  /** Lateral share at or below which it stops strafing. Default 0.2. */
   strafeRelease?: number;
-  /** Facing-vs-motion dot below which it counts as moving backwards. Default -0.35. */
   backwardGate?: number;
-  /** Facing-vs-motion dot at or above which it stops. Default -0.2. */
   backwardRelease?: number;
   /** Turn rate (radians/sec) above which the character counts as turning on the spot. Default 1.5. */
   turnGate?: number;
-  /** Turn rate at which the turn blend reaches its pivot clip. Default 4. */
   turnFull?: number;
-  /** Speed below which a turn counts as turning on the spot. Default 0.5. */
   turnSpeed?: number;
   /**
    * Mark every locomotion state as a root-motion state, so the rig plays in place and the blended
@@ -51,46 +36,23 @@ export interface LocomotionGraphInput {
   oneShots?: Readonly<Record<string, string | readonly string[]>>;
 }
 
-/** The parameter name the shell feeds with the entity's smoothed ground speed. */
 export const LOCOMOTION_SPEED_PARAM = "speed";
-/** Ground contact reported by the shared player motor; absent for custom movers without authored parameters. */
 export const LOCOMOTION_GROUNDED_PARAM = "grounded";
 /** Resolved vertical velocity from the shared player motor, in world units/sec. */
 export const LOCOMOTION_VERTICAL_SPEED_PARAM = "verticalSpeed";
-/** Physically resolved crouch stance from the shared player motor. */
 export const LOCOMOTION_CROUCHED_PARAM = "crouched";
-/**
- * Off the ground, as the shared player motor reports it: `true` in a jump or a fall. Absent for a
- * custom mover, which reads as grounded; a custom mover feeds it under `ANIM_PARAMS_KEY`.
- */
 export const LOCOMOTION_AIRBORNE_PARAM = "airborne";
-/** Swimming, as the shared player motor reports it; a custom mover feeds it under `ANIM_PARAMS_KEY`. */
 export const LOCOMOTION_SWIMMING_PARAM = "swimming";
-/**
- * Signed lateral share of the character's motion: `-1` fully to its left, `+1` fully to its right,
- * `0` straight ahead or straight back. A custom mover feeds it under `ANIM_PARAMS_KEY`.
- */
 export const LOCOMOTION_DIRECTION_PARAM = "direction";
-/**
- * Dot of the character's facing with its motion direction: `1` running forward, `-1` running
- * backwards. A custom mover feeds it under `ANIM_PARAMS_KEY`.
- */
 export const LOCOMOTION_FACING_PARAM = "facing";
 /** Signed yaw rate in radians/sec; a custom mover feeds it under `ANIM_PARAMS_KEY`. */
 export const LOCOMOTION_TURN_RATE_PARAM = "turnRate";
-/** Layer id the locomotion graph uses; query `runtime.stateOf(LOCOMOTION_LAYER)`. */
 export const LOCOMOTION_LAYER = "base";
-/** State id of the forward idle/walk/run blend. */
 export const LOCOMOTION_STATE = "locomotion";
-/** State id of the lateral strafe blend. */
 export const LOCOMOTION_STRAFE_STATE = "strafe";
-/** State id of the backwards blend. */
 export const LOCOMOTION_BACKWARD_STATE = "backward";
-/** State id of the on-the-spot turn blend. */
 export const LOCOMOTION_TURN_STATE = "turn";
-/** State id of the clip held while off the ground. */
 export const LOCOMOTION_AIRBORNE_STATE = "airborne";
-/** State id of the swim blend. */
 export const LOCOMOTION_SWIM_STATE = "swim";
 
 const DEFAULT_STRAFE_GATE = 0.35;

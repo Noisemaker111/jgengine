@@ -11,23 +11,13 @@ export interface WalletState {
  */
 export type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" };
 
-/**
- * Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go
- * arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once
- * `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
- */
 export type Overdraft = boolean | { max: number };
 
-/** Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`. */
 export interface ChargeOptions {
   overdraft?: Overdraft;
 }
 
-/**
- * Hold per-currency balances with affordability checks and charge/grant operations.
- *
- * @capability wallet hold currency balances with charge and affordability checks
- */
+/** @capability wallet hold currency balances with charge and affordability checks */
 export function createEmptyWallet(): WalletState {
   return { balances: {} };
 }
@@ -90,12 +80,10 @@ export function charge(
   };
 }
 
-/** True once `balance(state, currency)` has gone negative under an overdraft-enabled charge. */
 export function isOverdrawn(state: WalletState, currency: string | CurrencyDefinition): boolean {
   return balance(state, currency) < 0;
 }
 
-/** True when every currency in `costs` has at least that much balance (a pure, non-mutating check). */
 export function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean {
   return Object.entries(costs).every(([currency, amount]) => balance(state, currency) >= amount);
 }

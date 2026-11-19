@@ -1,56 +1,33 @@
 import type { LeaderboardRow } from "./leaderboard";
 
-/**
- * A single input score to rank. Accepts the raw shape produced by
- * {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a
- * minimal `{ userId, value }` pair with an optional display `label` the game owns.
- */
 export interface RankableRow {
-  /** Stable identity of the scoring player/profile. */
   userId: string;
-  /** The numeric score to rank on. */
   value: number;
   /** Optional display name the UI shows instead of `userId`. Free string the game owns. */
   label?: string;
 }
 
-/**
- * How equal scores share ranks:
- * - `"standard"` (competition ranking): ties share a rank and the next distinct
- *   score skips ahead — `1, 2, 2, 4`.
- * - `"dense"`: ties share a rank and the next distinct score is the very next
- *   integer — `1, 2, 2, 3`.
- */
 export type TieMode = "standard" | "dense";
 
-/** Options for {@link rankLeaderboard}. All optional. */
 export interface RankLeaderboardOptions {
   /**
    * `userId` of the local player. The matching entry gets `isLocal: true` so the
    * renderer can highlight "you" in the table. No effect on ordering.
    */
   highlightUserId?: string;
-  /** Tie handling for equal scores. Default `"standard"`. */
   tieMode?: TieMode;
   /** Keep only the first N ranked entries (applied after ranking). Default: keep all. */
   limit?: number;
-  /** Sort direction on `value`. `"desc"` (default) ranks the highest score #1; `"asc"` ranks the lowest #1. */
   order?: "desc" | "asc";
 }
 
-/** One render-ready row of the ranked table produced by {@link rankLeaderboard}. */
 export interface RankedEntry {
   /** 1-based rank after tie handling. */
   rank: number;
-  /** Carried through from the input row. */
   userId: string;
-  /** Carried through from the input row. */
   value: number;
-  /** The display label if the input row carried one, else `undefined`. */
   label: string | undefined;
-  /** `true` when this row shares its `value` with at least one other ranked row. */
   isTie: boolean;
-  /** `true` when `userId === options.highlightUserId` — the local "you" row. */
   isLocal: boolean;
 }
 

@@ -1,15 +1,10 @@
-/** A cell in a nonogram line: not yet determined, painted, or ruled out. */
 export type NonogramCell = "unknown" | "filled" | "empty";
 
-/** A line clue — the lengths of its consecutive filled runs, in order. */
 export type NonogramClue = readonly number[];
 
-/** A solved grid, row-major; `true` is a filled cell. */
 export type NonogramSolution = readonly (readonly boolean[])[];
 
-/** Run lengths of the filled cells in a boolean line — the clue a solved line yields.
- * @internal
- */
+/** @internal */
 export function runLengths(line: readonly boolean[]): number[] {
   const runs: number[] = [];
   let run = 0;
@@ -25,9 +20,7 @@ export function runLengths(line: readonly boolean[]): number[] {
   return runs;
 }
 
-/** Row and column clues derived from a solution grid — the puzzle a solved board poses.
- * @internal
- */
+/** @internal */
 export function deriveClues(solution: NonogramSolution): { rows: number[][]; cols: number[][] } {
   const width = solution[0]?.length ?? 0;
   const rows = solution.map((row) => runLengths(row));
@@ -36,13 +29,7 @@ export function deriveClues(solution: NonogramSolution): { rows: number[][]; col
   return { rows, cols };
 }
 
-/**
- * Constraint-propagate one line against its `clue`: intersect every clue-consistent arrangement, forcing a
- * cell `filled` when it is filled in all of them and `empty` when empty in all, leaving the rest `unknown`.
- * Returns the tightened line, or `null` on contradiction (no arrangement fits the current cells) — the
- * per-line deduction step at the heart of every nonogram/picross solver.
-  * @internal
-  */
+/** @internal */
 export function solveLine(line: readonly NonogramCell[], clue: NonogramClue): NonogramCell[] | null {
   const n = line.length;
   const everFilled = new Array<boolean>(n).fill(false);
@@ -99,20 +86,12 @@ export function solveLine(line: readonly NonogramCell[], clue: NonogramClue): No
   return out;
 }
 
-/** Outcome of {@link solveNonogram}: the deduced board and whether propagation fully determined it. */
 export interface NonogramSolveResult {
-  /** True when every cell is decided by line propagation alone (the puzzle is uniquely line-solvable). */
   solved: boolean;
-  /** The board after propagation stalls — `unknown` cells remain when solving needs guessing. */
   board: NonogramCell[][];
 }
 
-/**
- * Solve a nonogram from its row and column clues by iterated line propagation until the board stops
- * changing. `solved` is true iff the board is fully determined without guessing — the standard test for
- * whether a nonogram is fair. Returns `solved: false` with a partial board on contradiction or ambiguity.
-  * @internal
-  */
+/** @internal */
 export function solveNonogram(rows: readonly NonogramClue[], cols: readonly NonogramClue[]): NonogramSolveResult {
   const height = rows.length;
   const width = cols.length;

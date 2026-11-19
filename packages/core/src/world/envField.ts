@@ -11,7 +11,6 @@ export interface OccluderRect {
   shade?: number;
 }
 
-/** A localized warmth source — campfire, forge, geothermal vent. */
 export interface HeatSource {
   x: number;
   z: number;
@@ -26,24 +25,19 @@ export type ScalarField = number | ((x: number, z: number, time: number) => numb
 export interface EnvironmentFieldConfig {
   /** Game-seconds per day; drives the sun-elevation cycle. Default matches the sim clock day. */
   dayLength?: number;
-  /** Temperature at sea level under a noon sun with no weather. Default 20. */
   baseTemperature?: number;
   /** Degrees colder at deep night vs noon. Default 12. */
   nightDrop?: number;
   /** Degrees lost per world-height unit above `seaLevel` (altitude lapse). Default 0. */
   altitudeLapse?: number;
   seaLevel?: number;
-  /** Terrain field used to look up ground altitude when a caller omits `y`. */
   terrain?: TerrainField;
   /** Rain/precipitation intensity 0..1 at a position — from a weather state. Default 0. */
   rain?: ScalarField;
-  /** Sky occluders (structures, canopy) that block sun and shelter from rain. */
   occluders?: ShadeProvider;
-  /** Campfires and other warmth emitters. */
   heatSources?: readonly HeatSource[];
   /** Minimum ambient light at night (moonlight floor), 0..1. Default 0.05. */
   ambientFloor?: number;
-  /** Per-position base-temperature offset (biome map). Added to `baseTemperature`. */
   temperatureAt?: (x: number, z: number) => number;
 }
 
@@ -56,7 +50,6 @@ export interface EnvironmentSample {
   lightExposure: number;
   /** 0..1 overall light level for spawn gating — includes ambient/moonlight. */
   ambientLight: number;
-  /** Under an occluder (roof/canopy) enough to shelter from rain. */
   sheltered: boolean;
 }
 

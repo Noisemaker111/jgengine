@@ -9,7 +9,7 @@ void main() {
 }
 `;
 
-/** The beauty copy's fragment shader, exported for the GPU check of the pass that replaces it. @internal */
+/** @internal */
 export const BEAUTY_COPY_FRAGMENT = /* glsl */ `
 uniform sampler2D tDiffuse;
 varying vec2 vUv;

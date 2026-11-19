@@ -5,14 +5,8 @@ import { HERO_ID } from "../../src/game/hero";
 
 /** A commander glances at the treasury and the field about once a second. */
 const LOOK_MS = 1000;
-/** Where a Barracks goes: on the vale floor beside the keep. */
 const BARRACKS_OFFSET = { x: 12, z: 6 };
 
-/**
- * A new commander's first order, First Muster, played on the command card: arm a Barracks and set it
- * down beside the keep, train four Footmen as the gold comes in, then select Bram and send him to
- * the muster ground, until the mission is won.
- */
 export default defineFlow(game, {
   async run(f) {
     const start = await f.expect((p) => p.won === 0 && p.barracks === 0, "a new campaign: nothing won, no Barracks yet, the opening line at the keep");

@@ -10,7 +10,6 @@ import { authClient } from "./auth/authClient";
 import { createConvexClient, initialConvexToken } from "./auth/convexClient";
 import { Screens } from "./screens/screens";
 
-/** The backend and the signed-in account, for everything LLMville mounts: its screens, or a world on its own. */
 export function LlmvilleBackend({ client, children }: { client: ConvexReactClient; children: ReactNode }) {
   useInsertionEffect(() => {
     loadGameFonts(GAME_FONTS);
@@ -22,7 +21,6 @@ export function LlmvilleBackend({ client, children }: { client: ConvexReactClien
   );
 }
 
-/** All of LLMville: its backend, and whichever screen the installed address is on. */
 export function LlmvilleApp() {
   const client = useMemo(createConvexClient, []);
   useEffect(() => () => void client.close(), [client]);

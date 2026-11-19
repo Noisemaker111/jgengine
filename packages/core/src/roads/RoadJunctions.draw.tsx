@@ -11,7 +11,7 @@ import type { SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTex
 import { scannedRibbonDraw, type ScannedRibbonSpec, type SurfaceRibbonMaterialOptions } from "./surfaceRibbonMaterial.draw";
 import { mergeRibbonGeometry, type JunctionSurface } from "./RoadRibbons.draw";
 
-/** Stop-line and crosswalk paint tone. @internal */
+/** @internal */
 export const JUNCTION_PAINT = "#e6e9ee";
 
 interface JunctionPatchProps {
@@ -22,7 +22,6 @@ interface JunctionPatchProps {
   scan: TerrainDetailMaterialConfig | undefined;
 }
 
-/** One welded crossing surface, shaded like the carriageway ribbons. */
 function junctionPatchDraw(getProps: () => JunctionPatchProps): EngineDraw {
   return scannedRibbonDraw((): ScannedRibbonSpec => {
     const props = getProps();
@@ -115,16 +114,11 @@ export function mergeJunctionSurfaces(surfaces: readonly JunctionSurface[]): { c
   return patches;
 }
 
-/** Props for {@link RoadJunctions}. */
 export interface RoadJunctionsProps {
   surfaces: readonly JunctionSurface[];
-  /** Stop-line and crosswalk ribbons from `buildAuthoredRoadNetwork`. */
   paint: readonly RoadRibbon[];
-  /** Shade the welded surfaces with the asphalt procedural surface, matching the ribbons. Default true. */
   surfaceDetail?: boolean;
-  /** Surface the welded crossings shade with, as the roads meeting there do. Default `"road"`. */
   surface?: string;
-  /** Scanned carriageway from the first road that names one, so junctions match the ribbons. */
   scan?: TerrainDetailMaterialConfig | undefined;
 }
 

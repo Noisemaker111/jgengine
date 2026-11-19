@@ -6,7 +6,6 @@ export type NavPoint = readonly [number, number];
 export interface NavGridConfig {
   bounds: Aabb;
   cellSize: number;
-  /** Allow 8-neighbour movement (no corner cutting). Default true. */
   diagonal?: boolean;
 }
 
@@ -16,15 +15,10 @@ export interface NavCell {
 }
 
 export interface FindPathOptions {
-  /** String-pull the raw grid path into straight runs where line-of-sight is clear. Default true. */
   smooth?: boolean;
-  /** Diameter of the mover in world units — blocks cells within this margin of an obstacle. Default 0. */
   clearance?: number;
-  /** Multiplier (>=1) applied to the base cost of stepping from one cell center to a neighbour's. Use to penalize slopes, terrain, etc. */
   stepCost?: ((from: NavPoint, to: NavPoint) => number) | undefined;
-  /** Additional edge/shortcut policy. Called after grid occupancy checks. */
   canTraverse?: (from: NavPoint, to: NavPoint) => boolean;
-  /** Maximum expanded cells. Omit for the legacy whole-grid search. */
   maxNodes?: number;
 }
 
@@ -42,9 +36,7 @@ export interface NavGrid {
   inBounds(col: number, row: number): boolean;
   cellAt(point: NavPoint): NavCell;
   center(col: number, row: number): NavPoint;
-  /** Nearest walkable cell to a point (spiral search); null if the whole grid is blocked. */
   nearestWalkable(point: NavPoint): NavCell | null;
-  /** Unobstructed straight line between two world points (supercover cell walk). */
   lineOfSight(from: NavPoint, to: NavPoint): boolean;
 }
 
@@ -236,10 +228,7 @@ export type FindPathResult =
   | { status: "path"; points: NavPoint[]; visited: number }
   | { status: "no-path" | "budget"; visited: number };
 
-/**
- * Same endpoint snapping as {@link findPath}, with explicit search-budget exhaustion.
- * @capability bounded-grid-route distinguish no path from exhausted grid search work
- */
+/** @capability bounded-grid-route distinguish no path from exhausted grid search work */
 export function findPathResult(
   grid: NavGrid,
   from: NavPoint,
@@ -342,11 +331,6 @@ export function findPathResult(
 
 const DEFAULT_SLOPE_STEP_WEIGHT = 1;
 
-/**
- * `FindPathOptions.stepCost` factory that penalizes steep terrain: cost is
- * `1 + weight * |Δheight| / horizontalDistance`, so with the default weight a
- * 45° slope roughly doubles the step cost.
- */
 export function slopeStepCost(
   field: { sampleHeight(x: number, z: number): number },
   weight = DEFAULT_SLOPE_STEP_WEIGHT,

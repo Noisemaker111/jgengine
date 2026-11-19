@@ -14,40 +14,30 @@ import {
   type ThreatReading,
 } from "./squadTactics";
 
-/** One combatant the runtime drives: whose side it is on, where it stands, and how hurt it is. */
 export interface SquadMemberSpec {
   id: string;
-  /** Side the member fights for; only other sides are threats. */
   team: string;
   /** Squad it shares roles and cover with. Defaults to its team. */
   squad?: string;
   position: Vec3;
-  /** Health fraction at spawn, which is what the runtime reports until `healthOf` is given. */
   health?: number;
 }
 
-/** What a member is doing this tick: moving to cover, holding it, leaning out, falling back, or down. */
 export type SquadMode = "advance" | "cover" | "peek" | "retreat" | "down";
 
-/** In-play dials, every one retunable. */
 export interface SquadCombatTunables {
   /** Seconds between cover re-selections for one member. Default `0.6`. */
   reselectSeconds?: number;
-  /** Most cover points one selection pass scores. Default `24`. */
   maxCoverCandidates?: number;
-  /** Radius a member searches for cover, world units. Default `12`. */
   coverRadius?: number;
-  /** Most remembered threats one member considers per tick. Default `6`. */
   maxThreats?: number;
   /** Seconds a hit keeps a member pinned and unable to shoot. Default `2.5`. */
   suppressSeconds?: number;
-  /** Suppression at or above this pins a member. Default `0.5`. */
   pinAt?: number;
   /** Exposure seconds the run counts as a breach. Default `3`. */
   exposureLimitSeconds?: number;
   /** Crowd walking speed, world units per second. Default `3.2`. */
   speed?: number;
-  /** Crowd avoidance radius, world units. Default `0.4`. */
   radius?: number;
   /** How far a goal must move before the crowd is asked to re-plan. Default `0.15`. */
   goalEpsilon?: number;
@@ -57,35 +47,24 @@ export interface SquadCombatTunables {
   relocateAfterSeconds?: number;
 }
 
-/** Everything the squad AI reads from the game, plus its tunables. */
 export interface SquadCombatOptions extends SquadCombatTunables {
   nav: NavRuntime;
   perception: PerceptionService;
   /** Bounded cover query — authored geometry (`createCoverField`) or the game's own. */
   cover: CoverSource;
-  /** Roles per squad id, or a function that answers for one squad. */
   composition: SquadComposition | ((squad: string) => SquadComposition | undefined);
-  /** Role for a squad the composition does not name. Default `{ id: "member" }`. */
   defaultRole?: SquadRole;
   members: readonly SquadMemberSpec[];
   /** Which side an id fights for, so a remembered target can be classed as hostile. */
   teamOf: (id: string) => string | null;
-  /** Authoritative health fraction for a member. Default the spawn value. */
   healthOf?: (id: string) => number;
-  /** True when nothing blocks the segment — the game's collision layer. */
   blocked: (from: Vec3, to: Vec3) => boolean;
-  /**
-   * Fire one paced shot and resolve it in the game's own damage pipeline. Returns damage dealt, which
-   * the runtime only counts; call {@link SquadCombat.underFire} on the victim yourself.
-   */
   engage?: (memberId: string, targetId: string, distance: number) => number;
-  /** Seeded `[0,1)` stream, used to de-sync each member's peek phase. */
   rng?: () => number;
   /** Register a devtools probe under this name so the overlay shows the squad's behavior. */
   devtoolsName?: string;
 }
 
-/** One member as a HUD, a probe or a test reads it. Allocates. */
 export interface SquadMemberView {
   id: string;
   team: string;
@@ -93,7 +72,6 @@ export interface SquadMemberView {
   role: string;
   mode: SquadMode;
   target: string | null;
-  /** Cover point the member is heading for or holding. */
   cover: string | null;
   position: Vec3;
   health: number;
@@ -104,7 +82,6 @@ export interface SquadMemberView {
   shots: number;
 }
 
-/** Counters a probe or a test reads. */
 export interface SquadCombatStats {
   members: number;
   ticks: number;
@@ -114,12 +91,10 @@ export interface SquadCombatStats {
   shots: number;
   /** Worst consecutive exposure against a remembered threat, seconds. */
   worstExposure: number;
-  /** Exposure spells longer than `exposureLimitSeconds`. */
   exposuresOverLimit: number;
   slowestTickMs: number;
 }
 
-/** Serializable squad state: member decisions, the crowd, and the tuning they ran under. */
 export interface SquadCombatSnapshot {
   nowMs: number;
   tunables: Required<SquadCombatTunables>;
@@ -154,11 +129,8 @@ export interface SquadCombatSnapshot {
   exposuresOverLimit: number;
 }
 
-/** Drive a squad: cover by threat, flanking, fire discipline, suppression and retreat. */
 export interface SquadCombat {
-  /** Advance every member one tick; movement goes through the shared nav crowd. */
   tick(dt: number): void;
-  /** Report incoming fire on a member: raises its suppression and pins it to cover. */
   underFire(memberId: string, amount?: number): void;
   member(id: string): SquadMemberView | null;
   members(): readonly SquadMemberView[];
@@ -166,7 +138,6 @@ export interface SquadCombat {
   retune(patch: SquadCombatTunables): void;
   snapshot(): SquadCombatSnapshot;
   restore(next: SquadCombatSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -189,7 +160,6 @@ interface Member {
   mode: SquadMode;
   target: string | null;
   targetPosition: Vec3 | null;
-  /** The strongest remembered threat, seen or not — where a peek leans out to look. */
   threatPosition: Vec3 | null;
   cover: CoverChoice | null;
   goal: Vec3 | null;
@@ -200,7 +170,6 @@ interface Member {
   suppression: number;
   exposure: number;
   shots: number;
-  /** Built once: this member's side test for a remembered target id. */
   hostile: (targetId: string) => boolean;
 }
 

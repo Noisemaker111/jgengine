@@ -10,7 +10,6 @@ import { localSaveBackend } from "@jgengine/core/save/saveStore";
  */
 export const COMMANDER_SAVE_KEY = "ember-command.commander";
 export const COMMANDER_SLOT = "commander";
-/** Where an older build kept the record; read once and rewritten as the document's section. */
 export const COMMANDER_KEY = "ember-command.commander.v1";
 export interface CommanderPreferences {
   largeText: boolean;
@@ -25,7 +24,6 @@ const defaults: CommanderPreferences = {
   wins: 0, losses: 0, bestVictory: null,
 };
 
-/** A stored `preferences` section, field by field; anything missing or bad is the default. */
 export function readPreferences(value: unknown): CommanderPreferences {
   if (!value || typeof value !== "object") return { ...defaults };
   const data = value as Partial<Record<keyof CommanderPreferences, unknown>>;
@@ -39,10 +37,6 @@ export function readPreferences(value: unknown): CommanderPreferences {
   };
 }
 
-/**
- * This context's commander record. It starts at the defaults and takes the stored record once the
- * document is read (`ready`); a change made before then is kept on top of what was stored.
- */
 export const preferences = perContext(() => {
   let value = { ...defaults };
   let early: Partial<CommanderPreferences> = {};
@@ -68,7 +62,6 @@ export const preferences = perContext(() => {
   );
   return {
     get: () => value,
-    /** Settles once the stored record has been read. */
     ready,
     subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
     set(patch: Partial<CommanderPreferences>) {
@@ -77,7 +70,6 @@ export const preferences = perContext(() => {
       void ready.then(() => save.save());
       notify();
     },
-    /** The document's state digest, for a restore test. */
     digest: () => save.digest(),
   };
 });

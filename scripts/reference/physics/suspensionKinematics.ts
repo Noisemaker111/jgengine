@@ -1,12 +1,6 @@
 /** A point or direction in body axes: x forward, y left, z up, metres. */
 export type SuspensionPoint = readonly [number, number, number];
 
-/**
- * Short-long-arm double wishbone (also a fair stand-in for a five-link rear): two A-arms on the body, an upright
- * between their ball joints, a tie rod (or toe link) setting steer, and a coil-over from the body to the lower arm.
- * Points are for the left corner, body axes at design ride height: x from the axle line, y from the car's centreline,
- * z above the ground.
- */
 export interface DoubleWishboneGeometry {
   kind: "doubleWishbone";
   lowerFront: SuspensionPoint;
@@ -18,18 +12,12 @@ export interface DoubleWishboneGeometry {
   tieRodInner: SuspensionPoint;
   tieRodOuter: SuspensionPoint;
   wheelCenter: SuspensionPoint;
-  /** Static camber, rad (negative tops the wheel inboard), and toe, rad (positive points the nose inboard). */
   camber: number;
   toe: number;
-  /** Coil-over top on the body and bottom on the lower arm. */
   springBody: SuspensionPoint;
   springArm: SuspensionPoint;
 }
 
-/**
- * MacPherson strut: one lower arm, and a strut fixed to the upright that slides through a top mount on the body. The
- * strut line runs through `strutTop` and `strutLower` (a point on the upright) at design; the coil-over acts along it.
- */
 export interface MacPhersonGeometry {
   kind: "macPherson";
   lowerFront: SuspensionPoint;
@@ -44,19 +32,13 @@ export interface MacPhersonGeometry {
   toe: number;
 }
 
-/** One corner's linkage. */
 export type SuspensionGeometry = DoubleWishboneGeometry | MacPhersonGeometry;
 
-/** Where the linkage puts the upright for one lower-arm angle and rack position (left corner, body axes). */
 export interface SuspensionPose {
   wheelCenter: [number, number, number];
-  /** Spin axis, unit, pointing outboard. */
   axle: [number, number, number];
-  /** Upright rotation from its design attitude, row-major 3×3. */
   rotation: number[];
-  /** Coil-over length, m. */
   springLength: number;
-  /** A point on the steering (kingpin) axis and its unit direction, lower to upper. */
   kingpinPoint: [number, number, number];
   kingpinAxis: [number, number, number];
 }
@@ -86,7 +68,6 @@ function unit(a: SuspensionPoint): V {
   return [a[0] / n, a[1] / n, a[2] / n];
 }
 
-/** Rotation matrix about unit axis `k` by `angle` (Rodrigues), row-major. */
 function axisAngle(k: SuspensionPoint, angle: number): number[] {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
@@ -95,7 +76,6 @@ function axisAngle(k: SuspensionPoint, angle: number): number[] {
   return [t * x * x + c, t * x * y - s * z, t * x * z + s * y, t * x * y + s * z, t * y * y + c, t * y * z - s * x, t * x * z - s * y, t * y * z + s * x, t * z * z + c];
 }
 
-/** The smallest rotation taking unit `from` onto unit `to`. */
 function between(from: SuspensionPoint, to: SuspensionPoint): number[] {
   const axis = cross(from, to);
   const s = norm(axis);
@@ -118,12 +98,10 @@ function multiply(a: readonly number[], b: readonly number[]): number[] {
   return out;
 }
 
-/** Rotate point `p` about the line through `origin` along unit `axis`. */
 function rotateAbout(p: SuspensionPoint, origin: SuspensionPoint, axis: SuspensionPoint, angle: number): V {
   return add(origin, apply(axisAngle(axis, angle), sub(p, origin)));
 }
 
-/** Root of `f` near `guess` by the secant method with bisection safeguarding inside `[lo, hi]`. */
 function solve(f: (x: number) => number, guess: number, lo: number, hi: number): number {
   let a = lo;
   let b = hi;
@@ -154,16 +132,11 @@ function raisingAxis(g: SuspensionGeometry): V {
   return cross(axis, sub(g.lowerBallJoint, g.lowerFront))[2] < 0 ? scale(axis, -1) : axis;
 }
 
-/** Upright attitude: map the design kingpin direction onto the current one, then turn about it by `psi`. */
 function uprightRotation(designAxis: SuspensionPoint, axis: SuspensionPoint, psi: number): number[] {
   return multiply(axisAngle(axis, psi), between(designAxis, axis));
 }
 
-/**
- * Solve the linkage: the lower arm turned `theta` rad about its body pivots (positive raises the wheel on a typical
- * corner), the rack moved `rack` m toward +y. Exact closure of every link length, no small-angle terms.
- * @capability suspension-kinematics solve a double-wishbone or MacPherson corner from hardpoints — camber, toe, track and spring length through travel and steer
- */
+/** @capability suspension-kinematics solve a double-wishbone or MacPherson corner from hardpoints — camber, toe, track and spring length through travel and steer */
 export function solveSuspension(geometry: SuspensionGeometry, theta: number, rack: number, guess: { upper: number; psi: number } = { upper: 0, psi: 0 }): SuspensionPose & { upper: number; psi: number } {
   const g = geometry;
   const lowerAxis = raisingAxis(g);
@@ -226,30 +199,20 @@ export function solveSuspension(geometry: SuspensionGeometry, theta: number, rac
   }
 }
 
-/** The design spin axis from the static alignment: outboard, tilted by camber, turned by toe. */
 function designAxle(g: SuspensionGeometry): V {
   const heading: V = [Math.cos(g.toe), -Math.sin(g.toe), 0];
   const outboard = cross([0, 0, 1], heading);
   return unit(add(scale(outboard, Math.cos(g.camber)), [0, 0, -Math.sin(g.camber)]));
 }
 
-/** Tabulated linkage for fast, smooth lookup: value and θ-derivatives at grid nodes, cubic in θ and linear in rack. */
 export interface SuspensionTable {
-  /** Lower-arm angle range covered, rad. */
   readonly thetaMin: number;
   readonly thetaMax: number;
-  /** Rack range covered, m (both 0 for a corner without steering). */
   readonly rackMin: number;
   readonly rackMax: number;
-  /** Fill `out` with the pose at (`theta`, `rack`); see {@link SuspensionSample}. */
   sample(theta: number, rack: number, out: SuspensionSample): SuspensionSample;
 }
 
-/**
- * Pose and its derivatives with respect to the lower-arm angle θ, what a multibody equation of motion needs: wheel
- * centre `w`, `dw/dθ`, `d²w/dθ²`; spin axis and `d(axle)/dθ`; the upright's angular velocity per unit θ̇; coil-over
- * length and `dl/dθ`; kingpin point and axis. Left corner, body axes.
- */
 export interface SuspensionSample {
   w: number[];
   dw: number[];
@@ -263,10 +226,7 @@ export interface SuspensionSample {
   kingpinAxis: number[];
 }
 
-/**
- * An empty {@link SuspensionSample} to reuse with {@link SuspensionTable.sample}.
- * @capability suspension-kinematics allocate a reusable sample for table lookups in a hot loop
- */
+/** @capability suspension-kinematics allocate a reusable sample for table lookups in a hot loop */
 export function createSuspensionSample(): SuspensionSample {
   return { w: [0, 0, 0], dw: [0, 0, 0], ddw: [0, 0, 0], axle: [0, 0, 0], daxle: [0, 0, 0], spin: [0, 0, 0], springLength: 0, dSpringLength: 0, kingpinPoint: [0, 0, 0], kingpinAxis: [0, 0, 0] };
 }
@@ -286,11 +246,7 @@ const DDDW = 26;
 const DDAX = 29;
 const STRIDE = 32;
 
-/**
- * Tabulate a corner's linkage over lower-arm angles `[thetaMin, thetaMax]` and rack travel `±rackTravel` by exact
- * solves; θ-derivatives come from central differences of exact solves.
- * @capability suspension-kinematics tabulate a corner's exact linkage for fast lookups with smooth derivatives in a vehicle sim
- */
+/** @capability suspension-kinematics tabulate a corner's exact linkage for fast lookups with smooth derivatives in a vehicle sim */
 export function createSuspensionTable(geometry: SuspensionGeometry, range: { thetaMin: number; thetaMax: number; rackTravel?: number; thetaNodes?: number; rackNodes?: number }): SuspensionTable {
   const nt = range.thetaNodes ?? 81;
   const rackTravel = range.rackTravel ?? 0;

@@ -14,7 +14,6 @@ export interface HealthRegionConfig {
 export interface AilmentConfig {
   id: string;
   label: string;
-  /** The part this injury belongs to; drain (bleed) applies here. */
   region?: string;
   severity?: MoodleSeverity;
   icon?: string;
@@ -22,13 +21,11 @@ export interface AilmentConfig {
   drainPerSecond?: number;
   /** Can queue multiple instances (three bleeds stack); otherwise re-applying refreshes. */
   stacking?: boolean;
-  /** Treatment item ids that clear this injury — bandage, tourniquet, splint. */
   treatedBy?: readonly string[];
 }
 
 export interface MultiRegionHealthConfig {
   regions: readonly HealthRegionConfig[];
-  /** Ailment catalog keyed by id — the queue references these. */
   ailments?: Record<string, AilmentConfig>;
 }
 
@@ -48,17 +45,14 @@ export interface AilmentInstance {
 
 export interface DamageResult {
   region: RegionHealthState;
-  /** Damage actually applied after vulnerability. */
   applied: number;
   dead: boolean;
 }
 
 export interface TreatResult {
-  /** Ailment ids fully or partially cleared by the item. */
   treated: readonly string[];
 }
 
-/** Per-limb / per-region health track with treat/damage/heal APIs. */
 export interface MultiRegionHealth {
   damage(regionId: string, amount: number): DamageResult;
   heal(regionId: string, amount: number): RegionHealthState;
@@ -66,14 +60,10 @@ export interface MultiRegionHealth {
   regions(): RegionHealthState[];
   /** 0..1 aggregate across all parts (share-weighted by max). */
   overall(): number;
-  /** Queue an ailment from the catalog; stacking ailments increment, others refresh. */
   applyAilment(ailmentId: string): void;
-  /** Clear ailments treated by an item id; one item clears one stack of each match. */
   treat(itemId: string): TreatResult;
-  /** Apply ailment drains over game-time `dt`; may kill via a vital part. */
   tick(dt: number): { dead: boolean };
   ailments(): AilmentInstance[];
-  /** Wounds as moodles for the shared status stack (#78 shares #90's moodle display). */
   ailmentMoodles(): Moodle[];
   readonly dead: boolean;
 }

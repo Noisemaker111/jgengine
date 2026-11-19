@@ -13,7 +13,6 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 
 import { demoGame } from "./demoGame";
 
-/** Three looks built from style params alone; the engine names none of them. */
 const STYLES = [
   { label: "Realistic", meta: { foliage: "leaves", shading: "lit", barkGrain: true } },
   { label: "Toon", meta: { foliage: "leaves", shading: "ramp", rampBands: 3, rampSoftness: 0.08, rampShadow: 0.4, saturation: 1.35, brightness: 1.1, barkGrain: false } },
@@ -29,10 +28,8 @@ const PLANTS = [
 ];
 
 const SPACING = 22;
-/** The realistic look again at the three lower detail levels, beside each tree's style row. */
 const DETAILS = [0.5, 0.25, 0.1];
 const DETAIL_ROW_OFFSET = 75;
-/** A contact sheet of 100 sugar maples of one age, each from its own seed (the unique-trees test's seeds). */
 const UNIQUE = { x: 300, columns: 10, rows: 10, spacing: 11, age: 20, detail: 0.25 };
 
 function GrownPlant({ meta, detail, position }: { meta: Record<string, unknown>; detail: number; position: [number, number, number] }) {
@@ -107,7 +104,6 @@ function PlantStyles() {
   );
 }
 
-/** One grown maple and one grown pine, each in three looks from the same structure and at each lower detail level. */
 export const plantStylesGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-styles" },

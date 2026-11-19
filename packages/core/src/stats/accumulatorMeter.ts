@@ -35,7 +35,6 @@ export interface AccumulatorMeterState {
 export interface AccumulatorMeter {
   /** Detached state for persistence and deterministic continuation. */
   state(): AccumulatorMeterState;
-  /** Restore using the caller's existing configuration. */
   restore(next: AccumulatorMeterState): void;
   value(): number;
   fraction(): number;

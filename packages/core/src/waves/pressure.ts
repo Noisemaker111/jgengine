@@ -7,7 +7,6 @@
 import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 import { clamp01 } from "../math/scalar";
 
-/** What the director reads about the player before it chooses a tier. */
 export interface PressureReading {
   /** Player health fraction `0..1`. A healthier player is leaned on harder. */
   health: number;
@@ -17,37 +16,26 @@ export interface PressureReading {
   elapsed: number;
 }
 
-/** The weights and window that turn a reading into an index, plus the hard cap. */
 export interface PressureRule {
-  /** Weight of the player staying in control (health). Default `0.5`. */
   healthWeight?: number;
-  /** Weight of how far through the encounter the player is. Default `1`. */
   progressWeight?: number;
-  /** Weight of time spent past `timeFloorSeconds`. Default `0.5`. */
   timeWeight?: number;
   /** Seconds of encounter time before the clock term starts. Default `90`. */
   timeFloorSeconds?: number;
   /** Seconds at which the clock term is full. Default `300`. */
   timeWindowSeconds?: number;
-  /** Highest tier this rule can reach. Default `2`. Every plan bound derives from it. */
   maxTier?: number;
 }
 
 /** One bounded answer to "how hard now", plus the effects the encounter layer applies. */
 export interface PressurePlan {
-  /** `0..maxTier`. */
   tier: number;
   /** The weighted reading in `0..1` before quantization. */
   index: number;
-  /** Extra units each pressure-scaled group gains: `0..maxTier`. */
   countBonus: number;
-  /** Extra elite slots unlocked: `0..maxTier`. */
   eliteSlots: number;
-  /** Multiplier on authored entry delays, `>= 1 / (1 + maxTier / 2)`. */
   cadenceScale: number;
-  /** True when the tier sits on the rule's cap. */
   atCap: boolean;
-  /** One line naming the terms, for a probe or a test failure. */
   reason: string;
 }
 

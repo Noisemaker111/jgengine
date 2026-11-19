@@ -1,9 +1,3 @@
-/**
- * Pure collect of authored behavior triggers from a scene document for the scripting workspace.
- * Object-centric: one row per marker/volume that carries at least one valid on/action binding.
- * Runtime dispatch still uses {@link collectAuthoredTriggers}; this is the editor list model.
- */
-
 import {
   readTriggerSpecs,
   type TriggerEvent,
@@ -11,16 +5,11 @@ import {
 } from "@jgengine/core/scene/authoredTriggers";
 import type { SceneDocumentLike, SceneMarkerLike, SceneVolumeLike } from "@jgengine/core/world/sceneShapes";
 
-/** One on/action binding shown on a document trigger row. */
 export interface DocumentTriggerBinding {
   on: TriggerEvent;
   action: string;
 }
 
-/**
- * A marker or volume that owns one or more authored triggers, with a display label for the
- * scripting workspace list.
- */
 export interface DocumentTriggerEntry {
   sourceId: string;
   sourceKind: TriggerSourceKind;
@@ -30,7 +19,6 @@ export interface DocumentTriggerEntry {
   bindings: readonly DocumentTriggerBinding[];
 }
 
-/** Document slice the list helper needs — `EditorDocument` satisfies this structurally. */
 export interface DocumentTriggersSource {
   markers: readonly (SceneMarkerLike & { label?: string })[];
   volumes: readonly (SceneVolumeLike & { label?: string })[];

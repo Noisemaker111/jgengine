@@ -23,9 +23,7 @@ export function NestedSchemaSection({
   label: string;
   accent?: string;
   note?: string;
-  /** The bag as authored; `undefined` when nothing is set here. */
   authored: Readonly<Record<string, unknown>> | undefined;
-  /** Every field's value in effect, shown on the sliders. */
   effective: Readonly<Record<string, unknown>>;
   onChange: (next: Record<string, unknown> | undefined, coalesce: string) => void;
 }) {

@@ -77,7 +77,6 @@ function canopy(model: string, tint: string, material: string, scale = 1): Model
   return { model: `${NATURE}/${model}`, style: { scale, material: { color: tint, materials: [material] }, wind: { strength: 0.25, speed: 0.8 } } };
 }
 
-/** Scatter palette items in editor.scene.json → the autumn Quaternius set: rust and gold broadleaf, olive pines. */
 export const scatterModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
   pine: canopy("Pine_2", OLIVE, "Leaves_Pine", 0.5),
   tree: canopy("CommonTree_2", RUST, "Leaves_NormalTree", 0.5),

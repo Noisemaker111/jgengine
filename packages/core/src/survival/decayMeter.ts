@@ -23,7 +23,6 @@ export interface DecayMeterConfig {
    * (hunger, oxygen), negative fills toward `max` (a warmth meter recovering by a fire).
    */
   rate: number;
-  /** Status thresholds → moodles, distinct from the raw numeric bar. */
   thresholds?: readonly MeterThreshold[];
 }
 

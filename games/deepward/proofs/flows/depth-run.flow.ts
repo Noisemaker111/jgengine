@@ -78,7 +78,6 @@ export default defineFlow(game, {
     await f.waitFor((p) => p.hunting >= 1, { timeoutMs: 20000 });
     await f.wait(900);
     await f.shot("run-08-courier-hunts");
-    // throw a blood lure
     await f.press("KeyG");
     await f.waitFor((p) => p.luresOut === 1, { timeoutMs: 4000 });
     // lamp off, stand still

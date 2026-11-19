@@ -18,13 +18,11 @@ import { magicFormulaCoefficients, magicFormulaWheel, type MagicFormulaTireCoeff
  * numbers read the way a driver feels them: how much grip, how early it peaks, how much is left sliding.
  */
 export interface VehicleTireTuning {
-  /** Peak lateral friction coefficient μ on an ideal surface (0.7 worn street … 1.1 sport … 1.6 slick/arcade). */
   peakGrip: number;
   /** Slip angle in radians where lateral force peaks (0.07 stiff race tire … 0.2 soft, forgiving tire). */
   peakSlipAngle: number;
   /** Fraction of peak force left at a full 90° slide, `0..1` (0.6 snappy … 0.95 drift-friendly). */
   slideGrip: number;
-  /** Peak longitudinal friction μ for drive and braking (default `peakGrip`; a road tyre's is about 15% higher). */
   longitudinalGrip?: number;
   /**
    * Cornering stiffness per unit load, 1/rad: lateral force per radian of slip at small slip over wheel load (a road
@@ -36,7 +34,6 @@ export interface VehicleTireTuning {
 /** Engine and gearbox. Drive force at the wheels = torque · curve(rpm) · gear · finalDrive · efficiency / wheelRadius. */
 export interface VehicleGearboxTuning {
   kind: "gearbox";
-  /** Peak engine torque, N·m. */
   peakTorque: number;
   /** Torque multiplier by normalized rpm (`0` = idle, `1` = redline); same shape as a grip curve. */
   torqueCurve: GripCurve;
@@ -49,34 +46,24 @@ export interface VehicleGearboxTuning {
   gears: readonly number[];
   reverseGear: number;
   finalDrive: number;
-  /** Driven wheel radius, m. */
   wheelRadius: number;
   /** Driveline efficiency `0..1` (default `0.85`). */
   efficiency?: number;
-  /** Engine-braking torque at the crank with the throttle closed, N·m (default `0.12 · peakTorque`; `0` switches engine braking off). */
   engineBrakeTorque?: number;
-  /** Extra throttle-off drag at the wheels on top of engine braking, N (default `0`). */
   coastForce?: number;
   /** Clutch-slip rpm the engine holds while launching from rest (default halfway between idle and peak). */
   launchRpm?: number;
 }
 
-/** Single-speed drive (electric, kart, arcade ball-car): force capped by power, so top speed comes out of drag. */
 export interface VehicleDirectDriveTuning {
   kind: "direct";
-  /** Maximum tractive force at the wheels, N. */
   maxForce: number;
-  /** Maximum power, W; force falls off as `power / speed` above the crossover. */
   maxPower: number;
-  /** Reverse force as a fraction of `maxForce` (default `0.5`). */
   reverseScale?: number;
-  /** Throttle-off drag force at the wheels, N (default `0.08 · maxForce`). */
   coastForce?: number;
 }
 
-/** Steering rack: lock and rack speed. Speed-sensitive lock and caster self-alignment are effects of their own. */
 export interface VehicleSteeringTuning {
-  /** Front-wheel lock, rad. */
   maxAngle: number;
   /** Rack speed toward the requested angle, rad/s — a keyboard tap and a stick flick both pass through this. */
   rate: number;
@@ -84,26 +71,18 @@ export interface VehicleSteeringTuning {
   returnRate?: number;
 }
 
-/** Friction ellipse: drive and brake force use up the same tyre's cornering grip. Omit for tyres that corner at full grip whatever the pedals do. */
 export interface VehicleCombinedSlipEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /**
-   * Exponent of the friction limit `|Fx/Fx,max|^n + |Fy/Fy,max|^n ≤ 1` (default `2`, the ellipse). Higher keeps
-   * more cornering grip under light pedal, lower trades it away sooner.
-   */
   exponent?: number;
 }
 
-/** A wheel that locks under braking or spins under drive slides, and a sliding tyre grips less than its peak. */
 export interface VehicleWheelSlideEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Longitudinal force left at a full lock or spin as a share of peak (default the tyre's `slideGrip`). */
   slideGrip?: number;
 }
 
-/** Load moves forward under braking and back under drive, by `m·a·comHeight / wheelbase`. */
 export interface VehicleLongitudinalLoadTransferEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
@@ -111,7 +90,6 @@ export interface VehicleLongitudinalLoadTransferEffect {
   share?: number;
 }
 
-/** Load moves to the outside wheels in a corner, by `m·a·comHeight / trackWidth`. */
 export interface VehicleLateralLoadTransferEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
@@ -129,15 +107,8 @@ export interface VehicleLateralLoadTransferEffect {
 export interface VehicleLoadSensitivityEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Peak-grip loss per unit of load above nominal: `μ = peakGrip·(1 − grip·(Fz/Fz₀ − 1))` (default `0.05`; a road tyre ~`0.08`). */
   grip?: number;
-  /** Cornering-stiffness loss per unit of load above nominal (default `0`; a road tyre ~`0.3`). Moves the peak to larger slip on the loaded wheel. */
   stiffness?: number;
-  /**
-   * Load per wheel where the tyre has exactly `peakGrip`, N. Omit to use each axle's current mean wheel load, so only
-   * the split across an axle costs grip; set it (usually the static wheel load) for grip that also falls with downforce
-   * and longitudinal transfer.
-   */
   nominalLoad?: number;
 }
 
@@ -149,19 +120,15 @@ export interface VehicleTireRelaxationEffect {
   length: number;
 }
 
-/** Camber thrust: a tyre leaning into the turn pushes harder, one leaning out pushes less. */
 export interface VehicleCamberEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Static camber, rad; negative tops the wheel inboard, which helps the loaded outside wheel (default `0`). */
   static?: number;
   /** Share of body roll the wheels lean with, `0..1` (default `0.7`; `1` a beam axle rolling with the body, `0` wheels that stay upright). */
   rollFollow?: number;
-  /** Lateral force per rad of camber, as a share of wheel load (default `0.8`). */
   thrust?: number;
 }
 
-/** Steer from bushing and steering-system compliance: the wheels give way under cornering force. */
 export interface VehicleComplianceSteerEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
@@ -171,13 +138,10 @@ export interface VehicleComplianceSteerEffect {
   rear?: number;
 }
 
-/** Steer from suspension geometry as the body rolls. */
 export interface VehicleRollSteerEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Front steer per rad of body roll; positive steers out of the turn (understeer). */
   front?: number;
-  /** Rear steer per rad of body roll; positive steers out of the turn (oversteer), negative into it (stable). */
   rear?: number;
 }
 
@@ -185,13 +149,10 @@ export interface VehicleRollSteerEffect {
 export interface VehicleAeroDragEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Drag coefficient × frontal area, m² (0.6 sports car … 1.0 SUV). */
   area: number;
-  /** Side-force coefficient × side area, m²: how hard a crosswind pushes the car sideways (default `0`; ~`2` a hatchback, ~`8` a high-sided truck). Needs the `wind` option. */
   sideArea?: number;
 }
 
-/** Aerodynamic downforce `½·ρ·ClA·v²`, pressing the tyres harder as speed rises. */
 export interface VehicleDownforceEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
@@ -201,11 +162,9 @@ export interface VehicleDownforceEffect {
   frontShare?: number;
 }
 
-/** Tyre rolling resistance, `Crr · load`. */
 export interface VehicleRollingResistanceEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Rolling-resistance coefficient (default `0.015`; a modern road tyre ~`0.01`). */
   coefficient?: number;
   /**
    * The Magic Formula's growth with speed, `C·(1 + …)`: `coefficient + linear·(v/referenceSpeed) + quartic·(v/referenceSpeed)⁴`
@@ -214,7 +173,6 @@ export interface VehicleRollingResistanceEffect {
   speedTerms?: { linear: number; quartic: number; referenceSpeed: number };
 }
 
-/** Spinning parts take part of every speed change: the car behaves heavier than its mass, most in low gears. */
 export interface VehicleRotatingInertiaEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
@@ -224,9 +182,7 @@ export interface VehicleRotatingInertiaEffect {
   wheels?: number;
 }
 
-/** The driven axle's differential: how drive is shared between its left and right wheels. */
 export type VehicleDifferentialEffect = (
-  /** Equal torque both sides: the unloaded inside wheel spins first and caps the axle at twice its grip. */
   | { kind: "open" }
   /** Torque may differ by up to `bias` times between sides (Torsen, clutch LSD). */
   | { kind: "limitedSlip"; bias: number }
@@ -247,15 +203,12 @@ export type VehicleDifferentialEffect = (
   strength?: number;
 };
 
-/** Brake hydraulics: pressure follows the pedal with a lag. */
 export interface VehicleBrakeLagEffect {
   /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Time constant, s (0.03 road car). */
   seconds: number;
 }
 
-/** Caster self-alignment: the front wheels steer into a slide on their own. */
 export interface VehicleSelfAlignEffect {
   /** Share of the car's sideslip the wheels steer into, `0..1` (`~0.3` a street car, `0.8+` catches slides for the player). */
   strength: number;
@@ -265,7 +218,6 @@ export interface VehicleSelfAlignEffect {
 export interface VehicleSpeedSensitiveSteeringEffect {
   /** Multiplier on the lock cut: `0` off, `1` as given (default), past `1` cut further (never below a tenth of full lock); sane over `0..4`. */
   strength?: number;
-  /** Lock at and above `at`, rad. */
   angle: number;
   /** Speed where lock reaches `angle`, m/s. */
   at: number;
@@ -275,33 +227,26 @@ export interface VehicleSpeedSensitiveSteeringEffect {
 export interface VehicleAbsEffect {
   /** How firmly excess brake is removed, `0..1` (default `1`). */
   strength?: number;
-  /** Share of the available grip ABS brakes up to (default `1 − 0.2·strength`; a modern system ~`0.97`). */
   holds?: number;
 }
 
-/** Traction control: drive force capped below the driven axle's remaining grip. */
 export interface VehicleTractionControlEffect {
   /** `0..1` (default `1`). */
   strength?: number;
-  /** Share of the driven axle's remaining grip drive is held to (default `1 − 0.35·strength`; a launch held at peak slip ~`0.98`). */
   holds?: number;
 }
 
-/** Stability (yaw) control: a corrective yaw torque once sideslip passes `maxSideslip`. */
 export interface VehicleStabilityEffect {
   /** `0..1` (default `1`; real ESC is subtle at `~0.3`, an arcade car that can't spin sits near `1`). */
   strength?: number;
-  /** Sideslip in rad allowed before it intervenes (default `0.2`, ≈11°). */
   maxSideslip?: number;
 }
 
-/** Anti-wheelie: drive capped below the acceleration that lifts the front (`g·b/h`); reports as `tractionLimited`. */
 export interface VehicleAntiWheelieEffect {
   /** `0..1` (default `1`). */
   strength?: number;
 }
 
-/** Anti-stoppie: braking capped below the deceleration that lifts the rear (`g·a/h`); reports as `absActive`. */
 export interface VehicleAntiStoppieEffect {
   /** `0..1` (default `1`). */
   strength?: number;
@@ -344,7 +289,6 @@ export interface VehicleEffects {
   antiStoppie?: VehicleAntiStoppieEffect;
 }
 
-/** The name of one {@link VehicleEffects} term. */
 export type VehicleEffectName = keyof VehicleEffects;
 
 /**
@@ -355,39 +299,27 @@ export type VehicleEffectName = keyof VehicleEffects;
 export interface VehicleSuspensionTuning {
   /** Spring rate per wheel, N/m (20 000 soft road car … 60 000 race car; monster trucks go lower with more travel). */
   springRate: number;
-  /** Damper rate per wheel in compression, N·s/m (roughly 2·√(k·m/4)·0.3 for a comfortable car, higher for a racer). */
   damperRate: number;
-  /** Damper rate per wheel in extension, N·s/m (default `1.5 · damperRate`); higher keeps a landing from bouncing. */
   reboundRate?: number;
   /** Compression available before the bump stop, m (0.08 race car … 0.6 monster truck). */
   travel: number;
-  /** Centre-of-mass height above level ground at static rest, m. */
   rideHeight: number;
-  /** Total anti-roll bar stiffness, N·m/rad, split between axles by `antiRollFront` (default `0`). */
   antiRoll?: number;
   /** Share of `antiRoll` on the front axle, `0..1` (default `0.5`). */
   antiRollFront?: number;
-  /** Pitch inertia as a multiple of `m·a·b` (default `0.9`). */
   pitchInertiaIndex?: number;
 }
 
-/** Control of the body while airborne (needs `suspension`, the only way to leave the ground). */
 export interface VehicleAirTuning {
   /** Angular acceleration at full input, rad/s², per axis. */
   pitchAccel: number;
   yawAccel: number;
   rollAccel: number;
-  /** Angular damping while airborne, 1/s (default `1.5`); higher stops rotation when input is released. */
   damping?: number;
   /** Largest angular rate input can build, rad/s (default `5.5`). */
   maxRate?: number;
 }
 
-/**
- * Single-track lean for motorcycles, bicycles and scooters. Steer input asks for a lean angle; the front wheel
- * then takes whatever angle a balanced turn at that lean needs (curvature = g·tan(lean) / v²), with a brief
- * countersteer as the lean starts. Tire grip still limits the turn, so over-leaning on a low-grip surface slides.
- */
 export interface VehicleLeanTuning {
   /** Largest lean the rider asks for at full steer, rad (0.7 ≈ 40° road bike … 0.95 ≈ 55° race bike). */
   maxLean: number;
@@ -397,17 +329,13 @@ export interface VehicleLeanTuning {
   countersteer?: number;
   /** Below this speed the bar steers directly, like walking a bike (default `3` m/s). */
   directSteerBelow?: number;
-  /** How fast the rider's bar correction closes the gap to the lean's turn, 1/s (default `3`; a racer on a quick bike ~`10`). */
   trimGain?: number;
-  /** Time constant the bike's lean follows the request with, s, before `leanRate` caps it (default `0`: the lean moves at `leanRate` until it arrives). */
   leanLag?: number;
 }
 
-/** Jumps from the ground and in the air. */
 export interface VehicleJumpTuning {
   /** Upward velocity a jump adds, m/s. */
   speed: number;
-  /** Jumps allowed per flight, counting the first from the ground (default `1`; `2` = double jump). */
   count?: number;
   /** Seconds after leaving the ground during which later jumps are allowed (default `Infinity`). */
   window?: number;
@@ -426,15 +354,11 @@ export interface VehicleJumpTuning {
 export interface VehicleDynamicsTuning {
   /** Total mass, kg. */
   massKg: number;
-  /** Axle-to-axle distance, m. */
   wheelbase: number;
   /** Share of static weight on the front axle, `0..1` (0.6 front-engined FWD … 0.45 mid-engine). */
   frontWeight: number;
-  /** Centre-of-mass height, m; sizes load transfer and body attitude. */
   comHeight: number;
-  /** Track width, m. */
   trackWidth: number;
-  /** Yaw inertia as a dynamic index `Iz / (m·a·b)` (default `1`; `<1` rotates eagerly, `>1` lazily). */
   yawInertiaIndex?: number;
   front: VehicleTireTuning;
   /** Rear tire; defaults to `front`. */
@@ -442,14 +366,11 @@ export interface VehicleDynamicsTuning {
   /** Share of drive force to the front axle, `0..1` (`0` RWD, `1` FWD, `0.35` rear-biased AWD). */
   driveFront: number;
   powertrain: VehicleGearboxTuning | VehicleDirectDriveTuning;
-  /** Peak service-brake force across all wheels, N. */
   brakeForce: number;
   /** Share of brake force on the front axle, `0..1` (default `0.65`). */
   brakeFront?: number;
-  /** Rear lateral grip multiplier while the handbrake is fully on (default `0.35`). */
   handbrakeGrip?: number;
   steering: VehicleSteeringTuning;
-  /** The physical effects and aids this car runs; each omitted term is off. */
   effects?: VehicleEffects;
   /**
    * Drive governor, m/s: drive force fades out over the last 0.5 m/s below it (arcade caps, electronic
@@ -458,23 +379,15 @@ export interface VehicleDynamicsTuning {
   speedLimit?: number;
   /** Reverse speed cap, m/s (default `8`). */
   reverseSpeed?: number;
-  /** Body roll stiffness, N·m/rad, for the flat model's lean (default derived for ~3° at 1 g). */
   rollStiffness?: number;
-  /** Body pitch stiffness, N·m/rad, for the flat model's dive and squat (default derived for ~2° at 1 g). */
   pitchStiffness?: number;
-  /** Flat-model settle rate for load transfer and body attitude, 1/s (default `8`). */
   suspensionResponse?: number;
   /** Largest integration substep, s (default `1/240`); ticks are split so the result does not depend on frame rate. */
   maxSubstep?: number;
-  /** Brake held near standstill drives in reverse (default `true`). Set `false` for a separate reverse action. */
   reverseOnBrake?: boolean;
-  /** Sprung corners, slopes and air; omit for the flat-ground model. */
   suspension?: VehicleSuspensionTuning;
-  /** Air control; needs `suspension`. Input comes from `modifiers.air`, else throttle−brake pitches and steer yaws. */
   air?: VehicleAirTuning;
-  /** Enables {@link VehicleDynamics.jump}; needs `suspension`. */
   jump?: VehicleJumpTuning;
-  /** Single-track lean (motorcycle); omit for a four-wheeled car. `trackWidth` then only sets the render width. */
   lean?: VehicleLeanTuning;
 }
 
@@ -514,28 +427,17 @@ export interface VehicleDynamicsModifiers {
   brakeScale?: number;
   gripScale?: number;
   steerScale?: number;
-  /** Scale `speedLimit` this tick (nitro, a slow zone, an off-road penalty); ignored without a `speedLimit`. */
   speedLimitScale?: number;
-  /** Thrust along the heading that bypasses the tires, N — boost, a rocket, a tow. */
   thrust?: number;
-  /** Air-control input this tick; omitted, throttle−brake pitches and steer yaws while airborne. */
   air?: VehicleAirInput;
 }
 
-/** World hooks for one vehicle instance. */
 export interface VehicleDynamicsOptions {
   position?: readonly [number, number, number];
   heading?: number;
-  /** Grip multiplier by world position (gravel, ice, wet paint); default `1`. */
   surfaceFriction?: (x: number, z: number) => number;
-  /** Name of the surface under a point, read by the `roadFriction` effect's `surfaces` table (`"asphalt"`, `"gravel"`). */
   surfaceAt?: (x: number, z: number) => string;
-  /**
-   * The wind, sampled at the car's centre height each substep (`windField(...)` from `world/wind`): drag and the
-   * `aeroDrag` side force act on the air speed relative to it. Omit for still air.
-   */
   wind?: Pick<WindField, "atHeight">;
-  /** Clamp a planar move; optional result `motion` separates permitted displacement from position recovery. Called once per physics substep. */
   clampMove?: VehicleMoveClamp;
   /**
    * World solids near the car, sampled once per tick (buildings, props, other cars). The car slides along
@@ -543,15 +445,12 @@ export interface VehicleDynamicsOptions {
    * `impact`. Hand back an already-filtered nearby set; the call is per tick, not per substep.
    */
   obstacles?: () => readonly CollisionObstacle[];
-  /** Body radius the `obstacles` footprints are inflated by, m (default `1.2`). */
   bodyRadius?: number;
   /** Extra velocity damping per second by world position (mud, sand, deep grass); default `0`. */
   dragAt?: (x: number, z: number) => number;
-  /** Terrain height under a point; read per wheel when `suspension` is set (ramps, hills, ledges). Default flat at the spawn height. */
   groundHeight?: (x: number, z: number) => number;
 }
 
-/** Planar pose and velocity of a {@link VehicleDynamicsState}. */
 export interface VehicleMotionState {
   x: number;
   y: number;
@@ -565,19 +464,15 @@ export interface VehicleMotionState {
   time: number;
 }
 
-/** Gearbox, engine speed and brake-pressure state. */
 export interface VehicleDrivetrainState {
   gearIndex: number;
   reversing: boolean;
   shiftRemaining: number;
   rpm: number;
-  /** Brake pressure share following the pedal (`brakeLag`). */
   brakeLevel: number;
-  /** Lumped brake-disc temperature, °C (`brakeFade`). */
   brakeTemperature: number;
 }
 
-/** Body acceleration, pitch/roll and spring state (`suspension`). */
 export interface VehicleBodyState {
   longitudinalAccel: number;
   lateralAccel: number;
@@ -587,43 +482,31 @@ export interface VehicleBodyState {
   vy: number;
   pitchRate: number;
   rollRate: number;
-  /** Per-corner spring compression, m, in order front-left, front-right, rear-left, rear-right. */
   compression: [number, number, number, number];
 }
 
-/** Airborne and jump bookkeeping. */
 export interface VehicleAirState {
   airborne: boolean;
-  /** Jumps used since last on the ground. */
   jumpsUsed: number;
   /** Seconds since leaving the ground (`0` while grounded). */
   airTime: number;
-  /** Height above the ground from a hop without `suspension`, m. */
   hopHeight: number;
 }
 
-/** Rider lean (`lean`). */
 export interface VehicleLeanState {
-  /** The lean the rider is asking for, rad, positive right; it sets the turn the bar steers for. */
   lean: number;
-  /** The rider's bar correction on top of the balanced-turn angle, rad. */
   leanTrim: number;
 }
 
-/** Tire memory: relaxed slip (`tireRelaxation`) and last axle forces (compliance steer). */
 export interface VehicleTireState {
-  /** Relaxed slip angles the tyres carry, rad (`tireRelaxation`). */
   slipFront: number;
   slipRear: number;
-  /** Last substep's axle lateral forces, N, for compliance steer. */
   forceFront: number;
   forceRear: number;
-  /** Last substep's outside and inside front wheel loads, N, for the self-aligning torque. */
   frontOuterLoad: number;
   frontInnerLoad: number;
 }
 
-/** Serializable integrator state: everything {@link VehicleDynamics.restore} needs to resume bit-for-bit. */
 export interface VehicleDynamicsState {
   motion: VehicleMotionState;
   drivetrain: VehicleDrivetrainState;
@@ -633,7 +516,6 @@ export interface VehicleDynamicsState {
   tires: VehicleTireState;
 }
 
-/** Pose and planar motion of a {@link VehicleDynamicsStep}. */
 export interface VehicleStepMotion {
   position: readonly [number, number, number];
   heading: number;
@@ -647,24 +529,18 @@ export interface VehicleStepMotion {
   longitudinalAccel: number;
 }
 
-/** Front-wheel angles of a {@link VehicleDynamicsStep}. */
 export interface VehicleStepSteering {
-  /** Front-wheel angle the rack asks for, rad; positive steers the heading down, like `AxisInput.steer`. */
   steerAngle: number;
-  /** Front-wheel angle the wheels reach after compliance and roll steer, rad, same sign. */
   roadWheelAngle: number;
 }
 
-/** Tire telemetry of a {@link VehicleDynamicsStep}: slip, saturation and slide state. */
 export interface VehicleStepTires {
-  /** Body sideslip β, rad: angle between heading and velocity. */
   sideslip: number;
   slipAngleFront: number;
   slipAngleRear: number;
   /** Share of each axle's friction budget in use, `0..1+`; `≥1` means that axle is sliding. Squeal, rumble and HUD key off it. */
   frontSaturation: number;
   rearSaturation: number;
-  /** Surface multiplier sampled this tick. */
   surface: number;
   wheelspin: boolean;
   wheelLock: boolean;
@@ -675,61 +551,46 @@ export interface VehicleStepTires {
   slip: number;
 }
 
-/** Axle and wheel loads of a {@link VehicleDynamicsStep}. */
 export interface VehicleStepLoads {
   frontLoad: number;
   rearLoad: number;
-  /** Per-corner tyre load, N (front-left, front-right, rear-left, rear-right): spring loads with `suspension`, else axle loads split by lateral transfer. */
   wheelLoads: readonly [number, number, number, number];
-  /** Acceleration has taken all the load off the front axle. */
   wheelie: boolean;
-  /** Braking has taken all the load off the rear axle. */
   stoppie: boolean;
 }
 
-/** Engine telemetry of a {@link VehicleDynamicsStep}. */
 export interface VehicleStepEngine {
-  /** One-based forward gear; `-1` in reverse. */
   gear: number;
   rpm: number;
   /** Throttle `0..1` actually applied after traction control and the rev limiter — engine audio load. */
   engineLoad: number;
 }
 
-/** Which driver aids intervened this tick. */
 export interface VehicleStepAids {
   absActive: boolean;
   tractionLimited: boolean;
   stabilityActive: boolean;
 }
 
-/** Body attitude of a {@link VehicleDynamicsStep}. */
 export interface VehicleStepBody {
   bodyPitch: number;
   bodyRoll: number;
-  /** Balance lean the bike actually shows, `atan(lateral g)`, rad, positive leaning right; `0` without a `lean` block. */
   lean: number;
 }
 
-/** Brake telemetry of a {@link VehicleDynamicsStep}. */
 export interface VehicleStepBrakes {
-  /** Lumped disc temperature, °C (`brakeFade`; ambient without it). */
   temperature: number;
   /** Share of cold brake force the hot pads still give, `0..1` (`1` without `brakeFade`). */
   fade: number;
 }
 
-/** Airborne telemetry of a {@link VehicleDynamicsStep}. */
 export interface VehicleStepAir {
-  /** Height of the car's base above the terrain under it, m; `0` on the ground and always `0` without `suspension`. */
   airOffset: number;
-  /** No wheel touches the ground. */
   airborne: boolean;
   /** Vertical speed at the moment of touchdown this tick, m/s (`0` otherwise) — landing shake, thud, rumble. */
   landingSpeed: number;
 }
 
-/** Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read, grouped by the part that produced it. */
 export interface VehicleDynamicsStep {
   motion: VehicleStepMotion;
   steering: VehicleStepSteering;
@@ -740,7 +601,6 @@ export interface VehicleDynamicsStep {
   body: VehicleStepBody;
   brakes: VehicleStepBrakes;
   air: VehicleStepAir;
-  /** The hardest hit on an `obstacles` solid this tick, or `null`. */
   impact: VehicleImpact | null;
 }
 
@@ -769,7 +629,6 @@ export interface VehicleDynamics {
   jump(speed?: number): boolean;
   /** Add angular velocity to the body, rad/s: `pitch > 0` noses down, `yaw` in heading sense, `roll > 0` drops the left side (dodges, flips, hits). */
   applyAngularImpulse(pitch: number, yaw: number, roll: number): void;
-  /** Swap tuning in place (upgrades, damage, a live tuning panel, an effect switched off) without losing momentum. */
   retune(next: VehicleDynamicsTuning): void;
   tuning(): VehicleDynamicsTuning;
   snapshot(): VehicleDynamicsState;
@@ -779,12 +638,10 @@ export interface VehicleDynamics {
 
 const GRAVITY = 9.81;
 const AIR_DENSITY = 1.225;
-/** Below this speed slip angles use it as the longitudinal reference, avoiding the atan singularity at rest. */
 const SLIP_REFERENCE_SPEED = 2;
 const DEFAULT_SUBSTEP = 1 / 240;
 const NO_EFFECTS: VehicleEffects = {};
 
-/** An effect's dial: `0` when it is absent or switched off, else its `strength` (default `1`). */
 function strengthOf(effect: { strength?: number } | undefined): number {
   return effect === undefined ? 0 : Math.max(0, effect.strength ?? 1);
 }
@@ -799,17 +656,12 @@ function scaledShare(share: number, strength: number, floor: number): number {
   return strength === 1 ? share : Math.max(floor, Math.min(1, 1 - strength * (1 - share)));
 }
 
-/**
- * Cornering room the friction ellipse leaves at a longitudinal use `used`: below strength `1` it blends from no
- * penalty to the ellipse, past `1` the exponent falls toward `1` (grip traded away sooner). Exact at `1`.
- */
 function ellipseRoom(used: number, exponent: number, strength: number): number {
   const n = strength > 1 ? Math.max(1, exponent / strength) : exponent;
   const room = Math.pow(Math.max(0, 1 - Math.pow(used, n)), 1 / n);
   return strength >= 1 ? room : 1 + (room - 1) * strength;
 }
 
-/** Simplified Pacejka `sin(C·atan(Bα − E·(Bα − atan Bα)))`; `peakX` is `Bα` at the peak. */
 interface CurveShape {
   b: number;
   c: number;
@@ -835,17 +687,13 @@ function lateralCurve(b: number, c: number, e: number, alpha: number): number {
   return Math.sin(c * Math.atan(x - e * (x - Math.atan(x))));
 }
 
-/** One axle's two tyres at their own loads, after load sensitivity: their summed grip and the curve each runs. */
 interface AxleGrip {
-  /** Lateral and longitudinal force capacity, N. */
   capY: number;
   capX: number;
-  /** Per-wheel lateral capacity (outside wheel first) and curve stiffness `B`. */
   capOuter: number;
   capInner: number;
   bOuter: number;
   bInner: number;
-  /** Longitudinal capacity of the inside wheel, N (open and limited-slip differentials). */
   capXInner: number;
   capXOuter: number;
   /** Per-wheel curve shape `C` and curvature `E` (the axle's own unless the Magic Formula sets each wheel's). */
@@ -855,10 +703,7 @@ interface AxleGrip {
   eInner: number;
 }
 
-/**
- * Creates a {@link VehicleDynamics}.
- * @capability vehicle-dynamics force-based car handling built from separate effects — tyres, load transfer, drivetrain, aero, compliance, aids — each switchable and tuned with physical numbers
- */
+/** @capability vehicle-dynamics force-based car handling built from separate effects — tyres, load transfer, drivetrain, aero, compliance, aids — each switchable and tuned with physical numbers */
 export function createVehicleDynamics(
   initialTuning: VehicleDynamicsTuning,
   options: VehicleDynamicsOptions = {},
@@ -914,7 +759,6 @@ export function createVehicleDynamics(
   const state: VehicleDynamicsState = freshState(tuning, options.position ?? [0, 0, 0], options.heading ?? 0);
   settleOnGround();
 
-  /** Spawn resting on the terrain: pitch, roll and height fitted to the ground under the four wheels. */
   function settleOnGround(): void {
     const suspension = tuning.suspension;
     if (suspension === undefined) return;
@@ -1034,10 +878,6 @@ export function createVehicleDynamics(
   const frontGripScratch = blankAxleGrip();
   const rearGripScratch = blankAxleGrip();
 
-  /**
-   * Both tyres of one axle at their own loads, after load sensitivity or the Magic Formula, written
-   * into `grip` (one per axle, reused every substep).
-   */
   function axleGrip(
     tire: VehicleTireTuning,
     shape: CurveShape,
@@ -1126,7 +966,6 @@ export function createVehicleDynamics(
     return grip;
   }
 
-  /** Lateral force of an axle's two tyres at slip `alpha`, as a share of the axle's lateral capacity (signed like the curve). */
   function axleCurve(grip: AxleGrip, alpha: number): number {
     if (grip.capY <= 0) return 0;
     return (grip.capOuter * lateralCurve(grip.bOuter, grip.cOuter, grip.eOuter, alpha) + grip.capInner * lateralCurve(grip.bInner, grip.cInner, grip.eInner, alpha)) / grip.capY;
@@ -1681,7 +1520,6 @@ export function createVehicleDynamics(
     return pt.kind === "gearbox" ? Math.max(0.05, pt.wheelRadius) : 0.33;
   }
 
-  /** Mass the spinning parts add to a speed change: `(I_wheels + I_engine·G²·η) / r²`, the engine only while coupled. */
   function reflectedMass(inertia: VehicleRotatingInertiaEffect | undefined, grounded: boolean, brakeInput: number): number {
     if (inertia === undefined || !grounded) return 0;
     const pt = tuning.powertrain;
@@ -1697,7 +1535,6 @@ export function createVehicleDynamics(
 
   const corner: Corners = [0, 0, 0, 0];
 
-  /** Spring + damper + anti-roll force at each corner from the current body pose; updates stored compression. */
   function springForces(suspension: VehicleSuspensionTuning, a: number, b: number, h: number): Corners {
     const t = tuning;
     const half = Math.max(0.15, t.trackWidth / 2);
@@ -1749,7 +1586,6 @@ export function createVehicleDynamics(
     state.body.rollRate = driveRate(state.body.rollRate, roll * air.rollAccel, damping, maxRate, h);
   }
 
-  /** Heave, pitch and roll from the corner forces found this substep plus the tires' inertial moments. */
   function integrateBody(
     suspension: VehicleSuspensionTuning,
     a: number,
@@ -1987,13 +1823,11 @@ function emptyTelemetry(): Telemetry {
   };
 }
 
-/** One number per wheel: front-left, front-right, rear-left, rear-right. */
 type Corners = [number, number, number, number];
 type Corner = 0 | 1 | 2 | 3;
 const CORNERS: readonly Corner[] = [0, 1, 2, 3];
 const AXLES: readonly (readonly [Corner, Corner])[] = [[0, 1], [2, 3]];
 
-/** Static spring compression at each corner that holds the car level at `rideHeight`. */
 function staticSags(tuning: VehicleDynamicsTuning, suspension: VehicleSuspensionTuning): Corners {
   const front = clamp01(tuning.frontWeight);
   const perFront = (tuning.massKg * GRAVITY * front) / 2 / Math.max(1, suspension.springRate);
@@ -2043,7 +1877,6 @@ function combine(
   return { fx, fy };
 }
 
-/** The differential with its locking scaled by `strength` (the same object at `1`). */
 function lockScaled(diff: VehicleDifferentialEffect | undefined): VehicleDifferentialEffect | undefined {
   const dial = strengthOf(diff);
   if (diff === undefined || dial === 1) return diff;
@@ -2059,7 +1892,6 @@ function lockScaled(diff: VehicleDifferentialEffect | undefined): VehicleDiffere
   }
 }
 
-/** Torque a clutch differential can hold between its wheels at axle torque `axleTorque`, N·m. */
 function clutchCapacity(diff: { preload: number; powerLock: number; coastLock: number }, axleTorque: number): number {
   return Math.max(0, diff.preload) + Math.max(0, axleTorque >= 0 ? diff.powerLock : diff.coastLock) * Math.abs(axleTorque);
 }
@@ -2068,7 +1900,6 @@ function peakAngle(shape: CurveShape): number {
   return shape.peakX / shape.b;
 }
 
-/** Write a substep's wheel loads into the tick's telemetry tuple, which is fresh per tick (the step result keeps it). */
 function setWheelLoads(out: Telemetry, frontOuter: number, frontInner: number, rearOuter: number, rearInner: number): void {
   const loads = out.wheelLoads as [number, number, number, number];
   loads[0] = frontOuter;
@@ -2103,13 +1934,10 @@ function freshState(
   };
 }
 
-/** The lean that balances a lateral acceleration: a bike leans until gravity's moment matches the corner's. */
 function balanceLean(lateralAccel: number): number {
   return Math.atan(lateralAccel / GRAVITY);
 }
 
-
-/** Angular rate driven by input acceleration and slowed by damping, capped at `maxRate` only while input pushes past it. */
 function driveRate(rate: number, accel: number, damping: number, maxRate: number, h: number): number {
   let next = rate + (accel - damping * rate) * h;
   if (Math.abs(next) > maxRate && Math.sign(accel) === Math.sign(next) && Math.abs(next) > Math.abs(rate)) {

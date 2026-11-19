@@ -1,11 +1,7 @@
 // @skill jgengine-world
-/** Kinematic viscosity of sea water at 15 °C (ITTC 7.5-02-01-03), m²/s. */
 export const SEA_WATER_VISCOSITY = 1.18831e-6;
 
-/**
- * ITTC-1957 model–ship correlation line, `C_F = 0.075 / (log₁₀ Re − 2)²`.
- * @capability ship-resistance ITTC-1957 friction line
- */
+/** @capability ship-resistance ITTC-1957 friction line */
 export function ittc1957Friction(reynolds: number): number {
   const log = Math.log10(Math.max(reynolds, 1e3)) - 2;
   return 0.075 / (log * log);
@@ -27,31 +23,20 @@ export function schoenherrFriction(reynolds: number): number {
   return cf;
 }
 
-/** A hull as the Holtrop–Mennen method describes it, SI units. */
 export interface HoltropHull {
-  /** Waterline length, m. */
   length: number;
-  /** Length between perpendiculars, m (default `length`). */
   lengthBetweenPerpendiculars?: number;
   beam: number;
-  /** Draught at the forward and aft perpendiculars, m. */
   draftForward: number;
   draftAft: number;
-  /** Moulded displacement volume, m³. */
   volume: number;
-  /** Longitudinal centre of buoyancy forward of 0.5L, percent of L (negative is aft). */
   lcb: number;
-  /** Transverse area of the bulbous bow at the stem, m² (default `0`). */
   bulbArea?: number;
-  /** Height of the bulb area's centre above the keel, m. */
   bulbCentre?: number;
   midshipCoefficient: number;
   waterplaneCoefficient: number;
-  /** Immersed transom area at rest, m² (default `0`). */
   transomArea?: number;
-  /** Afterbody shape: −25 pram with gondola, −10 V sections, 0 normal, +10 U sections with Hogner stern (default `0`). */
   sternShape?: number;
-  /** Appendages: wetted area, m², and its form factor `1 + k₂` (rudder behind skeg 1.5–2.0, shafts 2.0–4.0 …). */
   appendages?: readonly { area: number; formFactor: number }[];
   /** Half angle of entrance, deg; estimated from the hull when omitted. */
   entranceAngle?: number;
@@ -59,14 +44,12 @@ export interface HoltropHull {
   wettedArea?: number;
 }
 
-/** Fluid and roughness settings for {@link holtropMennenResistance}. */
 export interface HoltropConditions {
   density?: number;
   viscosity?: number;
   gravity?: number;
 }
 
-/** Every resistance component and intermediate coefficient, SI units (N, m²). */
 export interface HoltropResistance {
   speed: number;
   froude: number;
@@ -74,15 +57,12 @@ export interface HoltropResistance {
   prismaticCoefficient: number;
   blockCoefficient: number;
   lengthOfRun: number;
-  /** Hull form factor `1 + k₁`. */
   formFactor: number;
   wettedArea: number;
-  /** Wetted area of the appendages, m². */
   appendageArea: number;
   frictionCoefficient: number;
   friction: number;
   appendage: number;
-  /** Half angle of entrance used, deg. */
   entranceAngle: number;
   c1: number;
   c2: number;
@@ -100,21 +80,12 @@ export interface HoltropResistance {
   correlationAllowance: number;
   correlation: number;
   total: number;
-  /** Effective power `R·V`, W. */
   effectivePower: number;
-  /** Equivalent `1 + k` of hull and appendages together, for the viscous coefficient. */
   totalFormFactor: number;
-  /** Viscous resistance coefficient `(1 + k)·C_F + C_A`. */
   viscousCoefficient: number;
 }
 
-/**
- * Holtrop and Mennen's statistical resistance prediction for displacement ships: ITTC-1957 friction times the regressed
- * form factor, appendages, wave-making and wave-breaking, a bulb near the surface, an immersed transom and the
- * model–ship correlation allowance. Wave resistance up to `Fn = 0.4` is the 1982 formula; above `Fn = 0.55` it is the
- * 1984 high-speed formula; between them, the 1984 interpolation.
- * @capability ship-resistance Holtrop–Mennen (1982/1984) displacement-ship resistance, component by component
- */
+/** @capability ship-resistance Holtrop–Mennen (1982/1984) displacement-ship resistance, component by component */
 export function holtropMennenResistance(hull: HoltropHull, speed: number, conditions: HoltropConditions = {}): HoltropResistance {
   const rho = conditions.density ?? 1025;
   const nu = conditions.viscosity ?? SEA_WATER_VISCOSITY;
@@ -226,31 +197,22 @@ export function holtropMennenResistance(hull: HoltropHull, speed: number, condit
   };
 }
 
-/** A single-screw propeller as the propulsion-factor regressions need it. */
 export interface HoltropPropeller {
   diameter: number;
   blades: number;
-  /** Clearance of the tip above the keel line, m. */
   tipClearance: number;
 }
 
-/** Wake, thrust deduction and the propeller's minimum blade area. */
 export interface HoltropPropulsionFactors {
-  /** Effective wake fraction. */
   wake: number;
-  /** Thrust deduction fraction. */
   thrustDeduction: number;
-  /** Required thrust `R / (1 − t)`, N. */
   thrust: number;
-  /** Keller's minimum expanded blade-area ratio for this thrust and shaft immersion. */
   bladeAreaRatio: number;
-  /** Relative-rotative efficiency. */
   relativeRotative: number;
   c8: number;
   c9: number;
   c10: number;
   c11: number;
-  /** `C_P1 = 1.45·C_P − 0.315 − 0.0225·lcb`. */
   cp1: number;
 }
 

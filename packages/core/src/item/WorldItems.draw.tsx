@@ -136,10 +136,6 @@ export function worldItemMarkerDraw(getProps: () => {
   };
 }
 
-/**
- * The marker's UI label, projected each frame with distance scaling
- * `distanceFactor / (2·tan(fov/2)·dist)`.
- */
 function WorldItemLabel({
   instanceId,
   label,
@@ -235,7 +231,6 @@ function WorldItemMarker({
   );
 }
 
-/** Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`. */
 export function WorldItems({ config }: { config?: WorldItemRenderConfig | undefined }) {
   const ctx = useGameContext();
   const items = useWorldItems();

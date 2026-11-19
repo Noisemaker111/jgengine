@@ -12,21 +12,15 @@
 
 import type { Vec2 } from "../world/geometry";
 
-/** A circular agent that avoidance may push on the XZ plane. */
 export interface AvoidanceAgent {
-  /** Current XZ position; reassigned in place by {@link resolveLocalAvoidance}. */
   position: Vec2;
-  /** Collision radius (world units). */
   radius: number;
 }
 
-/** Tuning for {@link resolveLocalAvoidance}. */
 export interface LocalAvoidanceOptions {
-  /** Relaxation passes; more converges denser packs. Default `2`. */
   iterations?: number;
   /** Fraction of each overlap resolved per pass, `0..1`. Lower is softer/less jittery. Default `1`. */
   strength?: number;
-  /** Extra gap enforced beyond the two radii (world units). Default `0`. */
   padding?: number;
   /**
    * Per-agent inverse mass, parallel to the agent list. `0` pins an agent

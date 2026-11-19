@@ -16,13 +16,10 @@ export interface EntityDiedEvent {
   catalogId: string;
   userId?: string;
   displayName?: string;
-  /** The cause (`reason.kind`) and, through `source`, what dealt it. */
   reason: DeathReason;
-  /** Instance id of the killer, hazard or effect that caused it, when the caller knew one. */
   source?: string | undefined;
   position: [number, number, number];
   serverId?: string;
-  /** The catalog's `onDeath.keep`: the entity stayed in the scene and the game decides what comes next. */
   kept?: true;
 }
 
@@ -32,17 +29,13 @@ export interface EntityDiedEvent {
  * two separate events and a HUD reads only the one whose `target` it owns.
  */
 export interface DamageAppliedEvent {
-  /** The registered target that took the damage. */
   target: string;
-  /** Who or what dealt it: an attacker instance id, a hazard, or the status that ticked. */
   source?: string;
   /** Damage type resolved through the target's table (`"kinetic"`, `"fire"`). On the effect path (`ctx.scene.entity.effect`) there is no table, so it is the effect id that landed. */
   type: string;
   /** Damage dealt after the zone, type and armor steps. */
   amount: number;
-  /** How much of the zone-adjusted incoming amount resistance and armor stopped. */
   absorbed: number;
-  /** Health left after this application, or `null` when the runtime was given no health reader. */
   remaining: number | null;
   /** True only when a health reader reported the pool reaching zero or below. */
   lethal: boolean;
@@ -61,13 +54,11 @@ export interface DamageAppliedEvent {
   position?: readonly [number, number, number];
 }
 
-/** Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state. With an `animation.graph`, `event` arms the trigger of that name. */
 export interface EntityAnimationEvent {
   instanceId: string;
   event: string;
 }
 
-/** A named clip moment (`AnimGraph.events`) the rig just crossed — foot plant, hit frame, reload point. Audio and combat listen by `name`. */
 export interface AnimationClipEvent {
   instanceId: string;
   name: string;
@@ -193,10 +184,8 @@ export interface EntityFloatTextEvent {
   scale?: number;
 }
 
-/** The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, a scattering impact spark, or a melee swing arc drawn across the attacker's front. */
 export type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" | "arc";
 
-/** A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects). */
 export interface CombatVfxEvent {
   id: number;
   kind: VfxKind;
@@ -230,7 +219,6 @@ export interface CombatTelegraphEvent {
 }
 
 export interface CombatTelegraphCancelledEvent {
-  /** The `combat.telegraph` event id whose decal should disappear early. */
   id: number;
 }
 
@@ -250,7 +238,6 @@ export interface CombatHitReactionEvent {
  * cursor-aimed view the look is not the aim, so a game shows recoil as spread instead.
  */
 export interface CombatRecoilEvent {
-  /** The shooter; only the local player's (or what they drive) moves the view. */
   from: string;
   pitch: number;
   yaw?: number;
@@ -258,24 +245,16 @@ export interface CombatRecoilEvent {
   recover?: number;
 }
 
-/** Exactly-once projectile result for shot-specific game policy and presentation. */
 export interface ProjectileSettledEvent {
   shotId: string;
-  /** Actual applied effects; empty for misses and cover impacts. */
   hits: readonly EffectResult[];
   from: string;
   origin: [number, number, number];
   at: [number, number, number];
   effect: string;
   hit: boolean;
-  /**
-   * True for arced/exploding shots (grenades, launchers), false for direct-fire (bullets, bolts).
-   * Straight muzzle→impact tracers only make sense for direct-fire shots, so renderers skip the arced ones.
-   */
   ballistic: boolean;
-  /** The catalog item the shot was fired with, when it named one (`via.item`). */
   item?: string;
-  /** The shot's presentation `impact` tag (`"explosive"` for a grenade), when it set one. */
   impact?: ImpactClass;
 }
 
@@ -308,26 +287,18 @@ export interface AudioPlayEvent {
   at?: readonly [number, number, number];
 }
 
-/** Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload. */
 export type AudioResumeEvent = Record<string, never>;
 
-/**
- * A gameplay moment the game announces itself, for the moments no engine event covers (a wave
- * starting, a scripted beat). The shell reacts with the cue's sound, rumble, camera kick and caption.
- */
 export interface FeedbackCueEvent {
   cue: FeedbackCue;
-  /** Caption text that replaces the cue's default label ("WAVE 3"). */
   caption?: string;
 }
 
-/** Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones. */
 /** Raise the adaptive soundtrack's intensity by `amount` (`0..1`). */
 export interface AudioIntensityEvent {
   amount: number;
 }
 
-/** Crossfade the procedural soundtrack to `theme` (null fades out), optionally shifted `transpose` semitones. */
 export interface AudioMusicEvent {
   theme: string | null;
   transpose?: number;
@@ -335,7 +306,6 @@ export interface AudioMusicEvent {
   offset?: number;
 }
 
-/** Say `text` through the shell's speech channel; voice fields are hints the shell matches against system voices. */
 export interface AudioSpeakEvent {
   text: string;
   voiceKey?: string;
@@ -345,10 +315,8 @@ export interface AudioSpeakEvent {
   rate?: number;
 }
 
-/** Stop speech and drop queued lines. */
 export interface AudioSpeechStopEvent {}
 
-/** Hold `bus` lowered by `amount` under key `id`; 0 releases that hold. */
 export interface AudioDuckEvent {
   id: string;
   bus: string;
@@ -376,7 +344,6 @@ export interface AudioLoopSetEvent {
   rate?: number;
   gain?: number;
   at?: readonly [number, number, number];
-  /** Emitter velocity (world units/s) for doppler on sounds that declare `doppler`. */
   velocity?: readonly [number, number, number];
   /** Lowpass cutoff in Hz. */
   lowpass?: number;
@@ -384,15 +351,10 @@ export interface AudioLoopSetEvent {
   highpass?: number;
 }
 
-/**
- * A command run through `ctx.game.commands` (or a bound host) was refused. `reason` is the machine code;
- * `message` is the player-facing text the command's `validate` returned, when it gave one.
- */
 export interface CommandRefusedEvent {
   command: string;
   reason: string;
   message?: string;
-  /** `runAs` actor, or null for a plain `run`. */
   actor: string | null;
 }
 
@@ -465,11 +427,7 @@ export interface GameEvents<TMap extends GameEventMap = GameEventMap> {
   emit<TName extends keyof TMap>(name: TName, payload: TMap[TName]): void;
 }
 
-/**
- * A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
- *
- * @capability event-bus typed publish/subscribe bus for gameplay events
- */
+/** @capability event-bus typed publish/subscribe bus for gameplay events */
 export function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> {
   const listeners = new Map<keyof TMap, Set<GameEventHandler<never>>>();
 

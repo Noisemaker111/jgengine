@@ -3,18 +3,15 @@ import { RPC_FIELD_SCHEMAS, type RpcFieldSpec } from "./fieldSpec";
 
 export { EDITOR_BRIDGE_METHOD_NAMES } from "./fieldSpec";
 
-/** One field-level failure surfaced while decoding an untrusted RPC request. */
 export interface RpcRequestDiagnostic {
   path: string;
   message: string;
 }
 
-/** Result of {@link decodeEditorBridgeRequest}: a request whose `method` is a real one, or the diagnostic that rejected it. */
 export type DecodeRpcRequestResult =
   | { ok: true; request: EditorBridgeRequest }
   | { ok: false; errors: RpcRequestDiagnostic[] };
 
-/** Every `method` an {@link EditorBridgeRequest} may carry, derived from the schema table's keys. */
 const EDITOR_BRIDGE_METHODS: ReadonlySet<string> = new Set(Object.keys(RPC_FIELD_SCHEMAS));
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

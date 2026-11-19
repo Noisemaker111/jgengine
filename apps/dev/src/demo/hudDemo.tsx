@@ -7,11 +7,6 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 
 import { demoGame } from "./demoGame";
 
-/**
- * Dev showcase of optional HUD building blocks (`@jgengine/ui`) — not a template for shipped
- * game UI. Every real game owns custom chrome and art direction; this page only exercises the
- * stock widgets against demo gameplay data so layout/hooks stay testable in isolation.
- */
 function PlayerStat({ stat, tone, label }: { stat: string; tone: KitTone; label: string }) {
   const value = useEntityStat(usePlayer().userId, stat);
   return value === null ? null : <KitMeter size="sm" label={label} value={value.current - value.min} max={value.max - value.min} tone={tone} readout style={{ width: 170 }} />;
@@ -47,5 +42,4 @@ function HudShowcaseUI() {
   );
 }
 
-/** The demo's gameplay data + the opt-in HUD widgets as its `GameUI`. */
 export const hudShowcaseGame: PlayableGame = { ...demoGame, GameUI: HudShowcaseUI };

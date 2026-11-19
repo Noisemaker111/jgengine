@@ -9,7 +9,6 @@ import {
 import type { ActionCodesMap, ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import type { LocalPlayerSlot, LocalPlayers } from "@jgengine/core/runtime/localPlayers";
 
-/** Buffers one shell gamepad poll reuses across frames. */
 export interface GamepadPoll {
   held: Set<string>;
   nextHeld: Set<string>;
@@ -18,12 +17,10 @@ export interface GamepadPoll {
   base: Readonly<Record<string, number>> | null;
 }
 
-/** Fresh buffers for {@link stepGamepadPoll}. */
 export function emptyGamepadPoll(): GamepadPoll {
   return { held: new Set(), nextHeld: new Set(), frame: { held: [], analog: {} }, merged: {}, base: null };
 }
 
-/** The pad-only slice of an action binding map, in the shape {@link resolveGamepadFrame} reads. */
 export function gamepadCodes(bindings: ActionCodesMap): GamepadBindings {
   const result: Record<string, GamepadCode[]> = {};
   for (const [action, config] of Object.entries(bindings)) {
@@ -48,11 +45,6 @@ function syncTracker(tracker: ActionStateTracker<string>, bindings: GamepadBindi
   }
 }
 
-/**
- * Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes
- * of pad-held actions whose pad codes changed (the next poll presses them under the new map), and
- * keep the rest held.
- */
 export function rebindGamepadPoll(
   poll: GamepadPoll,
   previous: GamepadBindings,
@@ -113,18 +105,14 @@ export function stepGamepadPoll(
   return any ? merged : null;
 }
 
-/** Where each connected pad's input goes this frame; buffers are reused across frames. */
 export interface GamepadRoute {
-  /** Pads driving the primary player, by pad index (`null` for pads routed elsewhere). */
   primary: (GamepadSample | null)[];
   /** Pads driving another local seat; entries past `seatCount` are stale pooled slots. */
   seats: { slotId: string; pad: GamepadSample }[];
   seatCount: number;
-  /** Seats opened this frame. */
   joined: LocalPlayerSlot[];
 }
 
-/** Fresh buffers for {@link routeGamepads}. */
 export function emptyGamepadRoute(): GamepadRoute {
   return { primary: [], seats: [], seatCount: 0, joined: [] };
 }

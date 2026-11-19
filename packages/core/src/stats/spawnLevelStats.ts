@@ -17,12 +17,6 @@ export interface SpawnStatDef {
  */
 export type SpawnSpeciesDef<TStat extends string> = Record<TStat, SpawnStatDef>;
 
-/**
- * A single creature's serializable stat record — a reference to its species (`speciesId`), the
- * current `level`, the per-stat count of distributed points, and how many post-capture domestic
- * levels have been spent. Plain data: round-trips through JSON, save/load, and multiplayer sync.
- * Resolve display values with {@link resolveSpawnStats}.
- */
 export interface CreatureStatInstance<TStat extends string> {
   speciesId: string;
   level: number;
@@ -30,31 +24,19 @@ export interface CreatureStatInstance<TStat extends string> {
   domesticLevels: number;
 }
 
-/**
- * Outcome of {@link applyCaptureEffectiveness}: the granted `bonusLevels`, the `tamedLevel`
- * (wild level plus bonus levels), and the post-capture {@link CreatureStatInstance}.
- * @internal
- */
+/** @internal */
 export interface CaptureResult<TStat extends string> {
   bonusLevels: number;
   tamedLevel: number;
   instance: CreatureStatInstance<TStat>;
 }
 
-/**
- * Options for {@link spendDomesticLevel}. `maxDomesticLevels` caps how many post-capture levels a
- * creature may spend; once reached, further spends are refused.
- * @internal
- */
+/** @internal */
 export interface SpendLevelOptions {
   maxDomesticLevels?: number;
 }
 
-/**
- * Result of {@link spendDomesticLevel}: the resulting instance and whether the level was applied
- * (`spent: false` when the domestic-level cap blocked it, leaving the instance untouched).
- * @internal
- */
+/** @internal */
 export interface SpendLevelResult<TStat extends string> {
   instance: CreatureStatInstance<TStat>;
   spent: boolean;
@@ -114,12 +96,7 @@ export function rollSpawnInstance<TStat extends string>(
   return { speciesId, level: normalized, points, domesticLevels: 0 };
 }
 
-/**
- * Resolve an instance's live stat values from its distributed points:
- * `value = base * (1 + points * growth)` per stat. Stats with zero points return their base.
- *
- * @capability spawn-stat-values resolve a creature's per-stat values from its distributed points
- */
+/** @capability spawn-stat-values resolve a creature's per-stat values from its distributed points */
 export function resolveSpawnStats<TStat extends string>(
   species: SpawnSpeciesDef<TStat>,
   instance: CreatureStatInstance<TStat>,
@@ -144,14 +121,7 @@ export function captureBonusLevels(level: number, effectiveness: number): number
   return Math.floor((normalizeLevel(level) * clamp01(effectiveness)) / 2);
 }
 
-/**
- * Apply a capture at the given effectiveness: compute bonus levels via {@link captureBonusLevels},
- * distribute those extra points randomly with the injected rng, and return the post-capture
- * instance (level raised to the tamed total) alongside the granted bonus levels and tamed level.
- * The input instance is not mutated.
- *
- * @capability capture-effectiveness-tame apply capture effectiveness to grant and distribute bonus levels
- */
+/** @capability capture-effectiveness-tame apply capture effectiveness to grant and distribute bonus levels */
 export function applyCaptureEffectiveness<TStat extends string>(
   species: SpawnSpeciesDef<TStat>,
   instance: CreatureStatInstance<TStat>,

@@ -7,7 +7,6 @@ import { parseTextSearchArgs, searchText } from "./textSearch";
 import { queryTokens } from "./words";
 
 const MAX_LIMIT = 100;
-/** Any of these makes `find` a plain content search. */
 const TEXT_FLAGS = new Set(["--text", "--in", "--kind", "--glob", "--files"]);
 /** Capability rows shown under a code answer unless `--limit` asks for more. */
 const CAPABILITIES_BESIDE_CODE = 8;
@@ -79,7 +78,6 @@ function runText(argv: readonly string[]): number {
   }
 }
 
-/** `jgengine find` command entry. */
 export async function runFind(argv: string[]): Promise<number> {
   if (argv.some((arg) => TEXT_FLAGS.has(arg)) && !argv.includes("--help") && !argv.includes("-h")) return runText(argv);
   const words: string[] = [];

@@ -14,14 +14,8 @@ import type { WindMode } from "../dunes/duneField";
 import { LANDFORM_GENERATOR_ID } from "./landformDocument";
 import { growLandform, LANDFORM_TERRAIN_MAX_SIDE, type LandformRecipe, type LandformTerrain } from "./landformTerrain";
 
-/** The output family of landform generators. */
 export const LANDFORM_OUTPUT = "landform";
 
-/**
- * The `landform` generator's params. Its presets are the named starts (`meta.start`), each about a
- * 960 m map: a range cut by rivers then worked by ice above its snowline, a sand sea under one wind,
- * and a river-cut range drowned to a coast, simulated at full scale and shrunk to the map.
- */
 export const LANDFORM_SCHEMA = defineParamSchema({
   presetKey: "start",
   presets: [
@@ -55,7 +49,6 @@ export const LANDFORM_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Parsed params of the `landform` generator. */
 export type LandformGeneratorParams = ParamsOf<typeof LANDFORM_SCHEMA>;
 
 // One wind at spread 0; two winds either side of `toward` up to 180°; past that, three from all sides.
@@ -65,10 +58,7 @@ function windRegime(toward: number, spread: number): WindMode[] {
   return [0, 120, 240].map((turn) => ({ toward: toward + turn, share: 1 }));
 }
 
-/**
- * The recipe a generator's params and detail level grow: lower detail keeps the map size with fewer, larger cells.
- * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
- */
+/** @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime */
 export function landformRecipe(params: LandformGeneratorParams, detail = 1): LandformRecipe {
   const side = Math.max(16, Math.min(LANDFORM_TERRAIN_MAX_SIDE, Math.round(params.side * detail)));
   const extent = params.side * params.cellSize;
@@ -94,10 +84,7 @@ export function landformRecipe(params: LandformGeneratorParams, detail = 1): Lan
 // Bump when growLandform changes what a recipe grows, so stored terrain is not reused.
 const LANDFORM_VERSION = 1;
 
-/**
- * The cache key of a grown landform: model version, recipe and seed.
- * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
- */
+/** @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime */
 export function landformKey(recipe: LandformRecipe, seed: string): string {
   return JSON.stringify([LANDFORM_VERSION, seed, recipe]);
 }
@@ -114,27 +101,18 @@ export interface LandformCache {
   put(key: string, terrain: LandformTerrain): void;
   /** Load from storage into memory; the terrain, or undefined when neither holds it. */
   load(key: string): Promise<LandformTerrain | undefined>;
-  /** Keys held in memory, oldest first. */
   keys(): string[];
-  /** The landforms held in memory, oldest first. */
   snapshot(): Array<[string, LandformTerrain]>;
-  /** Replace what memory holds with `entries`, oldest first; storage is untouched. */
   restore(entries: ReadonlyArray<readonly [string, LandformTerrain]>): void;
-  /** Forget everything in memory; storage is untouched. */
   reset(): void;
 }
 
-/** Options for {@link createLandformCache}. */
 export interface LandformCacheOptions {
-  /** Most landforms kept in memory. Default 6. */
   limit?: number;
   store?: LandformStore;
 }
 
-/**
- * A landform cache.
- * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
- */
+/** @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime */
 export function createLandformCache(options: LandformCacheOptions = {}): LandformCache {
   const limit = Math.max(1, options.limit ?? 6);
   const memory = new Map<string, LandformTerrain>();
@@ -174,7 +152,6 @@ export function createLandformCache(options: LandformCacheOptions = {}): Landfor
   };
 }
 
-/** Grows landforms somewhere other than the caller's frame. */
 export interface LandformGrower {
   grow(recipe: LandformRecipe, seed: string): Promise<LandformTerrain>;
   dispose(): void;
@@ -200,20 +177,13 @@ function isLandformReply(value: unknown): value is LandformReply {
   return ("error" in value && typeof value.error === "string") || ("terrain" in value && typeof value.terrain === "object");
 }
 
-/** Options for {@link createWorkerLandformGrower}. */
 export interface WorkerLandformGrowerOptions {
-  /** Most workers at once. Default 2. */
   workers?: number;
-  /** Start one worker; default spawns `landformWorker.ts` as a module worker. */
   spawn?: () => Worker;
 }
 
 // stateless: its queue holds in-flight promises, not state to save; a new grower is the reset.
-/**
- * A pool of workers that grow landforms with the same models as the main thread. Workers start on
- * demand and stop when the queue drains. Null where the platform has no workers.
- * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
- */
+/** @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime */
 export function createWorkerLandformGrower(options: WorkerLandformGrowerOptions = {}): LandformGrower | null {
   if (typeof Worker === "undefined") return null;
   const most = Math.max(1, options.workers ?? 2);
@@ -283,16 +253,11 @@ export function createWorkerLandformGrower(options: WorkerLandformGrowerOptions 
   };
 }
 
-/** Options for {@link createLandformGenerator}. */
 export interface LandformGeneratorOptions {
-  /** Where `prepare` grows landforms. Default a worker pool where the platform has workers; null grows on the calling thread. */
   grower?: LandformGrower | null;
 }
 
-/**
- * A landform generator over one cache.
- * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
- */
+/** @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime */
 export function createLandformGenerator(cache: LandformCache, options: LandformGeneratorOptions = {}) {
   let grower: LandformGrower | null | undefined = options.grower;
   const growing = new Map<string, Promise<void>>();
@@ -341,10 +306,8 @@ export function createLandformGenerator(cache: LandformCache, options: LandformG
   });
 }
 
-/** The cache {@link LANDFORM_GENERATOR} uses: memory only. */
 export const LANDFORM_CACHE = createLandformCache();
 
-/** The built-in landform generator. */
 export const LANDFORM_GENERATOR = createLandformGenerator(LANDFORM_CACHE);
 
 /** Register {@link LANDFORM_GENERATOR} so the editor's variant grid and `list_generators` find it. Loaded on demand (`ON_DEMAND_SCENE_KINDS`). @internal */

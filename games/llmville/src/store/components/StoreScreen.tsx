@@ -48,7 +48,6 @@ interface StoreScreenProps {
   ) => Promise<boolean>;
 }
 
-/** Rack-mounted coolers: research with data tokens, then buy with cash. */
 function CoolingList({ shopItems, money, dataTokens, onBuyItem, onUnlockResearch }: Pick<StoreScreenProps, "shopItems" | "money" | "dataTokens" | "onBuyItem" | "onUnlockResearch">) {
   const [pendingResearchId, setPendingResearchId] = useState<string | null>(null);
   return <Stack gap={10}>

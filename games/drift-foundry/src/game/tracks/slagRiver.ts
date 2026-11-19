@@ -1,12 +1,6 @@
 import { TRACK_OBJECT as O } from "../objects/catalog";
 import type { TrackTheme } from "./course";
 
-/**
- * Slag River: three causeways laid across a lake of molten slag, joined by two tight hairpins. The
- * first causeway swings wide around a pour pool; the broken ladle bridge goes straight across it, if
- * the springs can clear the gap in the middle. Spurts of slag cross the causeways on a beat. The
- * course itself is the `slag-river` course in editor.scene.json.
- */
 export const SLAG_RIVER: TrackTheme = {
   id: "slag-river",
   label: "Slag River",

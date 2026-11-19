@@ -81,16 +81,13 @@ export interface SettingsControllerInput {
   categories: readonly SettingCategoryDef[];
   hide: readonly SettingCategory[];
   fovEnabled: boolean;
-  /** The game's per-tier profile overrides (`defineGame({ graphics })`), so tier defaults match what renders. */
   graphics?: GraphicsProfileOverrides | undefined;
   /** The post chain this game actually runs, so a stage row never outlives its pass. */
   postProcessing?: PostProcessingConfig | undefined;
   /** True when a light this game runs sets `lightSize`, so the soft-shadows row switches something. */
   softShadows?: boolean | undefined;
-  /** True when the game turns on auto quality, so Graphics shows the Auto quality row. */
   autoQuality?: boolean | undefined;
   hideBindings: readonly string[];
-  /** Show the touch-controls skin selector in Controls (touch device with a dock). */
   touchStyle: boolean;
   overrides: BindingOverrides;
   rebind: (action: string, code: string) => void;
@@ -249,11 +246,7 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
   return views;
 }
 
-/**
- * The Controls keybind rows: every visible action with its effective key; `locked` actions keep
- * their authored key whatever overrides say.
- * @internal
- */
+/** @internal */
 export function keybindSettingRows(
   config: Pick<SettingsControllerInput, "input" | "overrides" | "hideBindings" | "rebind" | "resetBinding">,
 ): SettingsKeybindRow[] {

@@ -1,13 +1,7 @@
 import { createObservableKeyedStore } from "@jgengine/core/store/observableKeyedStore";
 
-/** A marker's world `[x, y, z]` position. */
 export type MarkerPosition = readonly [number, number, number];
 
-/**
- * Small, display-only marker shape consumed by map renderers. Existing games
- * can project their own entities to this view without adopting marker
- * lifecycle storage or duplicating them into a {@link MarkerSet}.
- */
 export interface MarkerView<TMeta = unknown> {
   id: string;
   position: MarkerPosition;
@@ -18,7 +12,6 @@ export interface MarkerView<TMeta = unknown> {
   meta?: TMeta;
 }
 
-/** A marker owned by {@link MarkerSet}, including its lifecycle and query fields. */
 export interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> {
   kind: string;
   owner?: string;
@@ -26,7 +19,6 @@ export interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> {
   expiresAt?: number;
 }
 
-/** A marker to add: kind, position and optional id, label, heading, owner, expiry and metadata. */
 export interface MarkerInput<TMeta = unknown> {
   id?: string;
   kind: string;
@@ -40,7 +32,6 @@ export interface MarkerInput<TMeta = unknown> {
   meta?: TMeta;
 }
 
-/** Filter for {@link MarkerSet} queries: kind, owner, and a radius around a point. */
 export interface MarkerQuery {
   kind?: string;
   owner?: string;
@@ -48,11 +39,6 @@ export interface MarkerQuery {
   radius?: number;
 }
 
-/**
- * Visual descriptor for a marker kind. Games supply their own palette; the
- * engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that
- * the react minimap/compass read for colors and glyphs.
- */
 export interface MarkerKindStyle {
   id: string;
   color: string;
@@ -60,7 +46,6 @@ export interface MarkerKindStyle {
   priority: number;
 }
 
-/** Built-in marker kinds (player, ally, objective, location, loot, enemy, ...) with colour, glyph and priority. */
 export const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> = {
   player: { id: "player", color: "#4ade80", glyph: "◆", priority: 90 },
   ally: { id: "ally", color: "#38bdf8", glyph: "▲", priority: 70 },
@@ -73,7 +58,6 @@ export const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> = {
   waypoint: { id: "waypoint", color: "#f59e0b", glyph: "⚑", priority: 95 },
 };
 
-/** The style for a marker kind, falling back to a plain dot for unknown kinds. */
 export function markerKindStyle(
   kind: string | undefined,
   styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS,
@@ -82,7 +66,6 @@ export function markerKindStyle(
   return styles[kind] ?? { id: kind, color: "#e2e8f0", glyph: "•", priority: 30 };
 }
 
-/** A live, subscribable set of map markers: add, remove, query and prune expired ones. */
 export interface MarkerSet<TMeta = unknown> {
   add(marker: MarkerInput<TMeta>): string;
   remove(id: string): boolean;
@@ -107,21 +90,16 @@ export interface MarkerSource<TMarker extends MarkerView = MarkerView> {
   getServerSnapshot?: () => readonly TMarker[];
 }
 
-/** Marker data accepted by portable consumers: static views, an external source, or a native set. */
 export type MarkerCollection<TMarker extends MarkerView = MarkerView> =
   | readonly TMarker[]
   | MarkerSource<TMarker>
   | MarkerSet;
 
-/** Configuration for projecting a caller-owned collection into display-only markers. */
 export interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> {
-  /** Subscribe to changes in the caller-owned collection. Static collections may omit this. */
   subscribe?: (listener: () => void) => () => void;
-  /** Read the current caller-owned collection. Keep its identity stable between changes. */
   getSnapshot: () => readonly TEntity[];
   /** Optional server collection used to keep hydration output deterministic. */
   getServerSnapshot?: () => readonly TEntity[];
-  /** Project one caller-owned record into the minimal marker view. */
   project: (value: TEntity, index: number) => TMarker;
 }
 
@@ -186,7 +164,6 @@ function distanceXZ(a: MarkerPosition, b: MarkerPosition): number {
   return Math.hypot(a[0] - b[0], a[2] - b[2]);
 }
 
-/** Create an empty {@link MarkerSet}; `now` drives marker expiry. */
 export function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> {
   const store = createObservableKeyedStore<MapMarker<TMeta>>();
   let counter = 0;

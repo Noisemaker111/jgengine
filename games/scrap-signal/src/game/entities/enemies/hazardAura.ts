@@ -13,7 +13,6 @@ import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 export interface BossAuraTuning {
   /** Aura sphere radius in metres. */
   readonly radius: number;
-  /** Damage applied per refresh cadence (scaled by the boss's zone level). */
   readonly damagePerTick: number;
   /** Milliseconds between damage ticks. */
   readonly refreshMs: number;
@@ -21,30 +20,21 @@ export interface BossAuraTuning {
 
 export const BOSS_AURA: BossAuraTuning = { radius: 3, damagePerTick: 6, refreshMs: 700 };
 
-/** A live boss the aura should follow this tick. */
 export interface BossSample {
   readonly id: string;
   readonly position: EntityPosition;
-  /** Zone level at the boss, used to scale aura damage like the boss's other attacks. */
   readonly level: number;
 }
 
-/** One resolved aura damage instance to route through the game's effect pipeline. */
 export interface AuraDamage {
   readonly bossId: string;
   readonly amount: number;
 }
 
-/** Build the singleton field the enemy AI drives each tick. */
 export function createBossAuraField(): AreaEffectField<{ level: number }> {
   return createAreaEffectField<{ level: number }>();
 }
 
-/**
- * Advance the boss aura field one tick: register/refresh a following source per live boss, remove
- * sources whose boss is gone (auto-emitting cleanup leaves), then convert refresh edges on the player
- * into damage. Pass `player: null` (e.g. while downed) to hold the field without dealing damage.
- */
 export function reconcileBossAuras(
   field: AreaEffectField<{ level: number }>,
   bosses: readonly BossSample[],

@@ -45,7 +45,6 @@ function handleEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
   }
 }
 
-/** Retry the run, preserving settings and avoiding duplicate death subscriptions. */
 export function restartDefense(ctx: GameContext): void {
   for (const id of [...session.creeps.keys(), BASE_ENTITY_ID]) ctx.scene.entity.despawn(id);
   resetSession();
@@ -58,7 +57,6 @@ export function restartDefense(ctx: GameContext): void {
   setGamePhase(ctx, "playing");
 }
 
-/** The campaign's own commands: pick a difficulty and seat the war council between defenses. */
 function registerCampaignCommands(ctx: GameContext): void {
   ctx.game.commands.define<{ difficulty?: string } | undefined>("campaign.difficulty", {
     validate: (_state, input) => (DIFFICULTY_IDS.includes(input?.difficulty as DifficultyId) ? null : { reason: "unknown-difficulty" }),

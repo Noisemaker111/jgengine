@@ -236,7 +236,6 @@ export const LOOP_SOUND_IDS = [
   "gate_drone",
 ] as const;
 
-/** Ids that play from a world position and attenuate with listener distance. */
 export const POSITIONAL_SOUND_IDS = new Set<string>([
   "mach_hum",
   "lamp_buzz",

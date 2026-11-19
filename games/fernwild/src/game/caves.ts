@@ -11,29 +11,20 @@ import { CAVE_HAZARDS, type CaveHazard } from "./data/caveHazards";
 import { itemLabel } from "./data/items";
 import { give, grantXp } from "./survivor";
 
-/** The layer the caves' rock occupies in the world's collision. */
 const SOLIDS_LAYER = "fernwild:caves";
 /** How near the artifact's pedestal E reaches, metres. */
 const TAKE_REACH = 3;
-/** ARK's artifacts come back about half an hour after they are taken. */
 const ARTIFACT_RESPAWN = 1800;
-/** XP for bringing one out. */
 const ARTIFACT_XP = 200;
 
-/** One of the Island's caves: where it runs, what it guards, and when its artifact is back. */
 export interface IslandCave {
   id: string;
   label: string;
   artifact: string;
-  /** ARK's hard caves: deeper, more dwellers. */
   hard: boolean;
   layout: CaveLayout;
 }
 
-/**
- * The caves are `cave` paths in editor.scene.json, mouth to chamber, each with the artifact its chamber
- * holds; the creatures inside are ordinary spawn zones in the chamber.
- */
 export function islandCaves(ground: (x: number, z: number) => number): IslandCave[] {
   return editorLayers.paths
     .filter((path) => path.kind === "cave")
@@ -61,9 +52,7 @@ export function islandCaves(ground: (x: number, z: number) => number): IslandCav
 
 interface CaveState {
   caves: IslandCave[];
-  /** Cave id → game time its artifact is back on the pedestal. */
   takenUntil: Map<string, number>;
-  /** Each hostile cave's air as an area its occupants are members of. */
   air: AreaEffectField<CaveHazard>;
 }
 
@@ -85,7 +74,6 @@ const caveStateOf = perContext((ctx: GameContext): CaveState => {
   return { caves, takenUntil: new Map(), air };
 });
 
-/** The caves of this world, laid out (and their rock made solid) on first use. */
 export function cavesOf(ctx: GameContext): readonly IslandCave[] {
   return caveStateOf(ctx).caves;
 }
@@ -108,7 +96,6 @@ export function caveExposure(ctx: GameContext, id: string): { temperatureC: numb
   };
 }
 
-/** Whether `cave`'s artifact sits on its pedestal right now. */
 export function artifactHere(ctx: GameContext, cave: IslandCave): boolean {
   return (caveStateOf(ctx).takenUntil.get(cave.id) ?? -Infinity) <= ctx.time.now();
 }
@@ -132,7 +119,6 @@ function pedestalNear(ctx: GameContext): IslandCave | null {
   return null;
 }
 
-/** E at a chamber's pedestal: take its artifact. */
 export function takeArtifact(ctx: GameContext): void {
   const cave = pedestalNear(ctx);
   if (cave === null || give(ctx, cave.artifact, 1) === 0) return;
@@ -148,7 +134,6 @@ export function cavePrompts(ctx: GameContext): PositionedPrompt[] {
   return [{ id: `artifact:${cave.id}`, position: { x, z }, priority: 3, prompt: proximityPrompt({ radius: TAKE_REACH + 1, display: keybind("interact", `Take ${itemLabel(cave.artifact)}`), invoke: command("takeArtifact") }) }];
 }
 
-/** What the world draws and the HUD reads: each cave, whether its artifact is in place, and the cave the survivor is in. */
 export function cavesView(ctx: GameContext) {
   const me = ctx.scene.entity.get(ctx.player.userId);
   const here = me === null ? null : caveAt(ctx, me.position[0], me.position[2]);
@@ -172,7 +157,6 @@ export function cavesSave(ctx: GameContext) {
   };
 }
 
-/** Every artifact back on its pedestal. */
 export function resetCaves(ctx: GameContext): void {
   caveStateOf(ctx).takenUntil.clear();
 }

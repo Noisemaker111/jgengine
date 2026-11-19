@@ -29,7 +29,6 @@ export interface TrackHazardDef {
   cycle?: CourseSpanCycle;
   /** Belt push along the route heading, m/s (negative pushes back). */
   push?: number;
-  /** What the radio calls it. */
   label: string;
 }
 
@@ -38,7 +37,6 @@ export interface TrackGateDef {
   requirement: "plow" | "jump";
   /** Run metres of the barricade. On a branch, the main-line metres it stands in for. */
   at: number;
-  /** Route id; default the main line. */
   route?: string;
   label: string;
   radioLine: string;
@@ -59,15 +57,12 @@ export interface TrackBranchDef {
   id: string;
   from: number;
   to: number;
-  /** World control points. Omitted, the branch is the straight chord between its two junctions. */
   via?: readonly CourseVec2[];
   halfWidth: number;
   label: string;
 }
 
-/** A placed library or yard prop the track is dressed with: a landmark or set-piece. */
 export interface TrackLandmark {
-  /** Object catalog id. */
   object: string;
   /** Run metres along the main line, or a world `[x, z]`. */
   at: number | readonly [number, number];
@@ -77,13 +72,11 @@ export interface TrackLandmark {
 }
 
 export interface TrackDressing {
-  /** Wall post object tiled along every route edge. */
   edge: string;
   edgeSpacing: number;
   /** Lamp object down the edges, every `lampSpacing` metres, alternating sides. */
   lamp: string;
   lampSpacing: number;
-  /** Props scattered off the course. */
   scatter: readonly string[];
   scatterCount: number;
   landmarks: readonly TrackLandmark[];
@@ -92,13 +85,11 @@ export interface TrackDressing {
 export interface TrackDef {
   id: string;
   label: string;
-  /** One line on the calendar card: what makes this layout this layout. */
   blurb: string;
   /** Main-line metres laid behind the start line: the compactor's run-up and the grid. */
   origin: number;
   start: { x: number; z: number; heading: number; elevation?: number };
   halfWidth: number;
-  /** Paved strip half-width; beyond it is the shoulder. */
   pavedHalfWidth: number;
   pieces: readonly CoursePiece[];
   branches: readonly TrackBranchDef[];
@@ -109,7 +100,6 @@ export interface TrackDef {
   exitAt: number;
   /** The yard's zones in run metres, first to last. */
   zones: readonly TrackZone[];
-  /** World z the track's lighting band is centred on. */
   bandZ: number;
   ground: TerrainColors;
   fog: BiomeFog;
@@ -117,13 +107,10 @@ export interface TrackDef {
   weather?: "rain" | "snow";
   /** Ground level around the course, metres; the course rides its own elevation and banks down to this. */
   baseLevel: number;
-  /** A liquid sheet across the track's ground: slag, flood water. */
   liquid?: { level: number; color: string; waveHeight: number; palette?: OceanPalette };
-  /** Branch ids each rival takes on this track. */
   rivalTake: Readonly<Record<string, readonly string[]>>;
   /** Escape time the line multiplier is judged against, seconds. */
   par: number;
-  /** Generic course dressing. Row Six omits it: the corridor keeps its own zone scatter, lamps and towers. */
   dressing?: TrackDressing;
 }
 

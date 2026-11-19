@@ -14,11 +14,7 @@ export type GamePlayerProps = {
   multiplayer?: ShellMultiplayer | null;
 };
 
-/**
- * Registry-driven lazy loader over {@link GamePlayerShell} for multi-game hosts.
- * Games mount through `GameHost` — the one documented mount.
- * @internal
- */
+/** @internal */
 export function GamePlayer({ gameId, registry, fallbackGameId, loading = null, multiplayer = null }: GamePlayerProps) {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
   useEffect(() => {

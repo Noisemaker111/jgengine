@@ -2,18 +2,15 @@ import * as THREE from "three";
 
 import type { SlicedJob } from "@jgengine/core/run/slicedWork";
 
-/** One placed piece a cell proxy merges: its geometry, where it stands, and what colours it. @internal */
+/** @internal */
 export interface ProxyPart {
   geometry: THREE.BufferGeometry;
   matrix: THREE.Matrix4;
   material: THREE.Material;
 }
 
-/** Triangles a proxy build handles between yields. */
 const TRIANGLES_PER_STEP = 4096;
-/** Edge of the downsampled texture a proxy reads its colours from. */
 const SAMPLE_EDGE = 128;
-/** Grid units either side of the origin a cluster key holds (2^16 clusters), keeping three packed axes under 2^53. */
 const KEY_OFFSET = 1 << 16;
 const KEY_SPAN = 1 << 17;
 
@@ -58,7 +55,6 @@ const SRGB_TO_LINEAR = Array.from({ length: 256 }, (_, value) => {
   return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 });
 
-/** How one part colours a vertex: the material colour, times its map at the vertex's UV, times its vertex colour. */
 function partColorer(part: ProxyPart): (vertex: number, out: THREE.Color) => THREE.Color {
   const material = part.material;
   const base = new THREE.Color(1, 1, 1);

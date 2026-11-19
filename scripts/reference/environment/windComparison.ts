@@ -8,25 +8,20 @@ import type { WindSurfaceClass } from "@jgengine/core/world/windEffects";
 
 import { EN1991_TERRAIN, logLawRatio, turbulenceIntensity, windowedShare } from "./windProfile";
 
-/** One compared quantity: what the field did, what the reference says, and whether the gap is within tolerance. */
 export interface WindComparisonRow {
   label: string;
   field: number;
   reference: number;
-  /** |field / reference − 1|. */
   gap: number;
   pass: boolean;
 }
 
-/** Options for {@link compareWind}. */
 export interface WindComparisonOptions {
   /** Mean speed at 10 m, m/s. Default 10. */
   speed?: number;
   heights?: readonly number[];
   classes?: readonly WindSurfaceClass[];
-  /** Largest relative gap that passes. Default 0.1. */
   tolerance?: number;
-  /** Build the field for a class; default every effect at strength 1. */
   build?: (surface: WindSurfaceClass, speed: number) => WindField;
 }
 
@@ -34,7 +29,6 @@ const DURATION = 4 * 3600;
 const DT = 0.25;
 const WINDOW = 10;
 
-/** Sample the field at one height and return mean, gust σ and the 10 s-window variance share. */
 export function measureWind(field: WindField, heightM: number): { mean: number; sigma: number; windowed: number } {
   const n = Math.floor(DURATION / DT);
   const u = new Float64Array(n);
@@ -65,7 +59,6 @@ function row(label: string, field: number, reference: number, tolerance: number)
   return { label, field, reference, gap, pass: gap <= tolerance };
 }
 
-/** Compare a field per surface class and height against the reference. */
 export function compareWind(options: WindComparisonOptions = {}): WindComparisonRow[] {
   const speed = options.speed ?? 10;
   const tolerance = options.tolerance ?? 0.1;
@@ -87,7 +80,6 @@ export function compareWind(options: WindComparisonOptions = {}): WindComparison
   return rows;
 }
 
-/** The comparison as a printable table. */
 export function formatWindComparison(rows: readonly WindComparisonRow[]): string {
   return rows.map((r) => `${r.pass ? "ok  " : "FAIL"} ${r.label.padEnd(48)} field ${r.field.toFixed(3).padStart(8)}  ref ${r.reference.toFixed(3).padStart(8)}  gap ${(100 * r.gap).toFixed(1)}%`).join("\n");
 }

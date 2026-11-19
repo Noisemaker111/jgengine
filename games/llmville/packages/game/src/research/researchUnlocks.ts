@@ -1,8 +1,3 @@
-/**
- * Universal token-research unlock system. Items across hardware, decor, cooling,
- * and racks cost data tokens to research-unlock, then money to buy.
- */
-
 import { evaluatePredicate, type Predicate } from "@jgengine/core/rules/predicate";
 import { tierAt, type ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 import { HARDWARE_CATALOG } from "@llmville/game/infrastructure/catalog";
@@ -31,7 +26,6 @@ interface HardwareResearchTier {
 
 const TOP_HARDWARE_RESEARCH_TIER: HardwareResearchTier = { baseTokens: 10000, tokensPerIndex: 500 };
 
-/** Hardware research tiers by the card's recommended game level: each step covers levels up to its `at`. */
 const HARDWARE_RESEARCH_TIERS: readonly ThresholdBoundary<HardwareResearchTier>[] = [
   { at: 5, id: { baseTokens: 50, tokensPerIndex: 25 } },
   { at: 25, id: { baseTokens: 200, tokensPerIndex: 40 } },
@@ -40,7 +34,6 @@ const HARDWARE_RESEARCH_TIERS: readonly ThresholdBoundary<HardwareResearchTier>[
   { at: Number.POSITIVE_INFINITY, id: TOP_HARDWARE_RESEARCH_TIER },
 ];
 
-/** Token costs scale with catalog tier; 0 = free research (starter items). */
 function hardwareTokenCost(index: number, unlockGameLevel: number): number {
   if (index === 0) return 0;
   const tier = tierAt(HARDWARE_RESEARCH_TIERS, unlockGameLevel, { descending: true })?.id ?? TOP_HARDWARE_RESEARCH_TIER;
@@ -113,7 +106,6 @@ export function withResearchUnlocked(
   };
 }
 
-/** 0-token starter items per category, auto-unlocked at world creation. */
 const AUTO_RESEARCH_UNLOCK_IDS = RESEARCH_CATALOG.filter(
   (entry) => entry.unlockDataTokens === 0,
 ).map((entry) => entry.id);
@@ -122,10 +114,8 @@ export function createDefaultResearchUnlocks(): ResearchUnlocks {
   return Object.fromEntries(AUTO_RESEARCH_UNLOCK_IDS.map((id) => [id, { isUnlocked: true }]));
 }
 
-/** Seed unlocks from owned inventory counts (migration / existing players). */
 export function seedResearchUnlocksFromInventory(args: {
   hardwareInventory?: Record<string, number | undefined>;
-  /** Rack-mounted cooler units held as cooling stock. */
   coolingInventory?: Record<string, number | undefined>;
   buildInventory?: Record<string, number | undefined>;
 }): ResearchUnlocks {
@@ -151,7 +141,6 @@ export function getResearchTokenCost(itemId: string): number | null {
   return RESEARCH_BY_ID[itemId]?.unlockDataTokens ?? null;
 }
 
-/** The data-token Requirement on researching an entry; free research has none. */
 export function researchRequirement(entry: Pick<ResearchCatalogEntry, "unlockDataTokens">): Predicate | undefined {
   return entry.unlockDataTokens > 0 ? { not: { lt: ["dataTokens", entry.unlockDataTokens] } } : undefined;
 }

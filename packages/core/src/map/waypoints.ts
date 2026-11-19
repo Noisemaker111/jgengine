@@ -6,13 +6,11 @@ import {
 } from "./minimap";
 import type { MarkerSet } from "./markers";
 
-/** A single player-placed waypoint. World-XZ only — serializable and renderer-free. */
 export interface WaypointEntry {
   id: string;
   position: WorldXZ;
   kind: string;
   label?: string;
-  /** World Y of the pin's anchor, for screen markers that project it in 3D. Default 0. */
   height?: number;
 }
 
@@ -21,32 +19,25 @@ export function waypointAnchor(entry: WaypointEntry): readonly [number, number, 
   return [entry.position[0], entry.height ?? 0, entry.position[1]];
 }
 
-/** Direction/range to the tracked waypoint, for an on-screen guide arrow. */
 export interface WaypointGuidance {
   id: string;
-  /** XZ distance in world units. */
   distance: number;
   /** Absolute compass bearing (radians) from the query point to the waypoint. */
   bearing: number;
-  /** Bearing relative to facing, wrapped to (−π, π]; 0 = dead ahead. Rotate the arrow by this. */
   relative: number;
 }
 
-/** Whole serializable state of a {@link WaypointStore} — drop into a save blob. */
 export interface WaypointSnapshot {
   waypoints: readonly WaypointEntry[];
   tracked: string | null;
 }
 
-/** Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data. */
 export interface WaypointStore {
-  /** Drop a waypoint at a world-XZ point. Returns its id; `track: true` makes it the followed one. */
   place(position: WorldXZ, options?: { id?: string; kind?: string; label?: string; height?: number; track?: boolean }): string;
   remove(id: string): boolean;
   clear(): void;
   list(): readonly WaypointEntry[];
   get(id: string): WaypointEntry | null;
-  /** Follow a waypoint (drives {@link WaypointStore.guidance}); returns false if the id is unknown. */
   track(id: string): boolean;
   clearTrack(): void;
   tracked(): WaypointEntry | null;
@@ -57,22 +48,13 @@ export interface WaypointStore {
   restore(snapshot: WaypointSnapshot): void;
 }
 
-/** Construction options for {@link createWaypointStore}. */
 export interface WaypointStoreDeps {
   /** Optional MarkerSet to mirror waypoints into, so every map surface renders them with no extra wiring. */
   markers?: MarkerSet;
-  /** Marker/waypoint kind applied when `place` gets no explicit `kind`. Default `"waypoint"`. */
   defaultKind?: string;
 }
 
-/**
- * Player-owned waypoint layer: place/track/clear pins, mirror them into a shared
- * `MarkerSet` (so `Minimap`/`WorldMap`/`Compass` render them for free), and read
- * bearing/distance guidance for an on-screen arrow to the tracked one. State is
- * plain data — `snapshot()`/`restore()` round-trip through any save blob.
- *
- * @capability waypoint-store serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint
- */
+/** @capability waypoint-store serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint */
 export function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore {
   const defaultKind = deps.defaultKind ?? "waypoint";
   const markers = deps.markers;

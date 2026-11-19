@@ -240,7 +240,6 @@ function readBinChunk(bytes: Uint8Array): Uint8Array | null {
   return bytes.subarray(start, end);
 }
 
-/** Float32 VEC3 accessor values in model space, honoring bufferView/accessor byteOffset and byteStride; `null` for a malformed or out-of-bounds accessor. */
 function readVec3Accessor(gltf: GltfJson, bin: Uint8Array, accessorIndex: number): Float64Array | null {
   const accessor = gltf.accessors?.[accessorIndex];
   if (accessor === undefined) return null;
@@ -264,7 +263,6 @@ function readVec3Accessor(gltf: GltfJson, bin: Uint8Array, accessorIndex: number
   return out;
 }
 
-/** Scalar index accessor values (u8/u16/u32), honoring byteOffset and byteStride; `null` for a malformed or out-of-bounds accessor. */
 function readIndexAccessor(gltf: GltfJson, bin: Uint8Array, accessorIndex: number): Uint32Array | null {
   const accessor = gltf.accessors?.[accessorIndex];
   if (accessor === undefined || accessor.type !== "SCALAR") return null;

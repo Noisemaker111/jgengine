@@ -11,9 +11,7 @@ import { dependencyPlan, probeInstall } from "./worktree-doctor";
 export const EXIT_NOT_SET_UP = 78;
 
 export interface CheckoutProblem {
-  /** What is missing, in the checkout's own words. */
   detail: string;
-  /** The exact command that fixes it. */
   fix: string;
 }
 
@@ -26,7 +24,6 @@ export function tsgoBin(root: string): string {
   return join(root, "node_modules", ".bin", process.platform === "win32" ? "tsgo.exe" : "tsgo");
 }
 
-/** True when `root` has an install at all (or a linked one). Whether it is complete is `missingDependencies`. */
 export function hasInstall(root: string): boolean {
   return existsSync(tsgoBin(root));
 }

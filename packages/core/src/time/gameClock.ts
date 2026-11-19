@@ -1,6 +1,3 @@
-/**
- * Simulation clock: real time scaled into game time, plus the derived game-day counter.
- */
 export const DEFAULT_TIME_SCALE = 24;
 export const SECONDS_PER_GAME_DAY = 24 * 3600;
 

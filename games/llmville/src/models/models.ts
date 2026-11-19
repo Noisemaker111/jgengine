@@ -20,7 +20,6 @@ export interface GameUserModel {
   moneyPerToken: number;
   tokensPerSecond: number;
   tokensPerToken: number;
-  /** $/s this model would earn on the cards bound to it (or one starter GPU when unassigned). */
   estimatedIncomePerSecond: number;
   baseModelId?: string | undefined;
   trainingDataTokens?: number | undefined;
@@ -32,7 +31,6 @@ export interface GameUserModel {
   benchmarkScore: number;
 }
 
-/** Subtitle copy from the base catalog’s training-volume rule (data tokens / distill pool). */
 export function userModelTrainingVolumeLabel(model: Pick<GameUserModel, "baseModelId">): string {
   if (model.baseModelId) {
     const b = getBaseModelDefinition(model.baseModelId);
@@ -46,7 +44,6 @@ export type ModelArchetype = "chat" | "code" | "vision" | "agentic";
 export interface GeneratedModelSpec {
   name: string;
   archetype: ModelArchetype;
-  /** Human-readable training volume (data tokens / pool); not a duplicate “params” integer. */
   trainingVolumeLabel: string;
   maxTokensPerSecond: number;
   moneyPerToken: number;
@@ -182,7 +179,6 @@ export function tpsToBarValue(tps: number): number {
   return Math.min(100, Math.round(((tps ?? 1) / maxTps) * 100));
 }
 
-/** Bar fill for data-token accrual rate (tokens per inference token), typical range 0–0.05. */
 export function dataTokenRateToBarValue(rate: number): number {
   const maxRate = 0.05;
   return Math.min(100, Math.round(((rate ?? 0) / maxRate) * 100));

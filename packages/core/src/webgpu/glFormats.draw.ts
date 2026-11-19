@@ -3,7 +3,6 @@
  * (`webgpuGl.draw.ts`). GL numbers are written out so this file needs no browser globals.
  */
 
-/** How a texture binds: decides the bind group layout entry and the sampler type. */
 export type TextureBinding = "float" | "unfilterable" | "depth" | "uint" | "sint";
 
 export interface GlTextureFormat {
@@ -14,7 +13,6 @@ export interface GlTextureFormat {
   block: number;
   /** GL source bytes per texel when they differ from `bytes` (RGB data widened to RGBA). */
   sourceBytes?: number;
-  /** Widen GL's 3-channel source rows to 4 channels, with this alpha. */
   widen?: { channels: 3; alpha: number; element: 1 | 2 | 4 };
   renderable: boolean;
   binding: TextureBinding;
@@ -23,7 +21,6 @@ export interface GlTextureFormat {
 const f = (format: GPUTextureFormat, bytes: number, binding: TextureBinding = "float", renderable = true): GlTextureFormat => ({ format, bytes, block: 1, renderable, binding });
 const c = (format: GPUTextureFormat, bytes: number): GlTextureFormat => ({ format, bytes, block: 4, renderable: false, binding: "float" });
 
-/** Sized internal formats (texStorage, renderbufferStorage, sized texImage). */
 const SIZED: Record<number, GlTextureFormat> = {
   0x8058: f("rgba8unorm", 4), // RGBA8
   0x8c43: f("rgba8unorm-srgb", 4), // SRGB8_ALPHA8
@@ -101,7 +98,6 @@ export function glTextureFormat(internal: number, format = 0, type = 0): GlTextu
   return SIZED[channels === 4 ? 0x8058 : channels === 3 ? 0x8051 : channels === 2 ? 0x822b : 0x8229] ?? null;
 }
 
-/** A texture format's bind type when `float32-filterable` is (or is not) enabled. */
 export function textureBinding(format: GlTextureFormat, float32Filterable: boolean): TextureBinding {
   if (format.binding !== "float") return format.binding;
   if (!float32Filterable && (format.format === "rgba32float" || format.format === "rg32float" || format.format === "r32float")) return "unfilterable";
@@ -177,7 +173,6 @@ export function addressMode(wrap: number): GPUAddressMode {
   return "clamp-to-edge";
 }
 
-/** GL min filter: (filter, mipmap filter, samples mips). */
 export function minFilter(m: number): [GPUFilterMode, GPUMipmapFilterMode, boolean] {
   switch (m) {
     case 0x2600: return ["nearest", "nearest", false];
@@ -189,7 +184,6 @@ export function minFilter(m: number): [GPUFilterMode, GPUMipmapFilterMode, boole
   }
 }
 
-/** GL draw mode to topology; LINE_LOOP and TRIANGLE_FAN have none (`null`). */
 export function topology(mode: number): GPUPrimitiveTopology | null {
   switch (mode) {
     case 0: return "point-list";
@@ -231,7 +225,6 @@ export function vertexFormat(type: number, size: number, normalized: boolean, in
   return (`${signed ? "snorm" : "unorm"}${bits}${n}` as GPUVertexFormat);
 }
 
-/** One per-instance attribute of a draw, on its buffer's GL layout. */
 export interface InstancedAttribute {
   /** The buffer's byte length. */
   size: number;

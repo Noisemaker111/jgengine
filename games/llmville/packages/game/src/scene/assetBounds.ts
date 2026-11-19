@@ -10,7 +10,6 @@ import {
 export type SourceForwardAxis = "+Z" | "-Z" | "+X" | "-X";
 
 export type AssetFloorAnchor =
-  /** Footprint center on the floor at Y=0. Default for most props. */
   | "floor-center"
   /** Center of the front footprint edge — good for vehicles parked nose-out. */
   | "floor-front-center";
@@ -24,7 +23,6 @@ export interface AssetBoundsMeters {
 export interface AssetFrame {
   /** Raw mesh forward axis before correction. Defaults to +Z (North). */
   sourceForward?: SourceForwardAxis;
-  /** Where the placement point sits on the asset. */
   anchor?: AssetFloorAnchor;
   /** Uniformly scale mesh to fit catalog footprint using measured GLB size. */
   fitFootprint?: boolean;
@@ -32,7 +30,6 @@ export interface AssetFrame {
   correction?: [number, number, number];
   /** Local offset from the placement anchor (meters). */
   offset?: [number, number, number];
-  /** Multiplier applied after footprint fitting. */
   scale?: number | [number, number, number];
 }
 
@@ -95,7 +92,6 @@ export function normalizeScaleVec(scale?: number | [number, number, number]): [n
   return scale;
 }
 
-/** Map mesh X/Z extents to footprint width/depth given raw forward axis. */
 export function meshExtentsToFootprintAxes(
   extents: AssetBoundsMeters,
   sourceForward: SourceForwardAxis,

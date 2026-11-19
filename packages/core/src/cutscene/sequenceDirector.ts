@@ -1,4 +1,3 @@
-/** One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`. */
 export interface SequenceCue<Payload = unknown> {
   /** Playhead time (ms from the start of the timeline) at which this cue fires. Must be `>= 0`. */
   atMs: number;
@@ -7,17 +6,12 @@ export interface SequenceCue<Payload = unknown> {
    * The director never interprets it; the game switches on `kind` to act on the {@link SequenceCue.payload}.
    */
   kind: string;
-  /** Arbitrary serializable data the game reads when the cue fires. Opaque to the director. */
   payload?: Payload;
-  /** Optional stable id, surfaced on emission and useful for logging/debugging. */
   id?: string;
 }
 
-/** A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners. */
 export interface EmittedCue<Payload = unknown> {
-  /** The cue that fired. */
   cue: SequenceCue<Payload>;
-  /** Its index in the ordered cue list. */
   index: number;
   /** Playhead (ms) at the moment it was emitted — `>= cue.atMs`, possibly well past on a large jump. */
   atPlayheadMs: number;
@@ -27,51 +21,33 @@ export interface EmittedCue<Payload = unknown> {
 export interface SequenceState {
   /** Current playhead position in ms from the start of the timeline. */
   playheadMs: number;
-  /** Total timeline length — the largest cue `atMs` (0 when empty). */
   durationMs: number;
-  /** Whether the clock is currently advancing the playhead. */
   playing: boolean;
-  /** True once the playhead has reached the end (every cue has fired). */
   done: boolean;
   /** Fraction of the timeline elapsed, in `[0, 1]`; `1` when `durationMs` is 0. */
   progress: number;
-  /** How many cues have fired so far (a prefix of the ordered list). */
   firedCount: number;
-  /** Total number of cues. */
   total: number;
 }
 
-/** Serializable snapshot — enough to resume a cutscene exactly where a save left it. */
 export interface SequenceSnapshot {
   /** Playhead position in ms. */
   playheadMs: number;
-  /** Index of the next cue to fire; cues before it are considered already fired. */
   nextIndex: number;
-  /** Whether playback was running when captured. */
   playing: boolean;
 }
 
-/** Options for {@link createSequenceDirector}. */
 export interface SequenceDirectorOptions<Payload = unknown> {
-  /** The timeline: cues in any order (sorted by `atMs` internally, stably). */
   cues: readonly SequenceCue<Payload>[];
   /** Injected clock (ms) that drives playback. Default `Date.now`; inject a fake for deterministic tests. */
   now?: () => number;
-  /** Start playing immediately (default `false` — call {@link SequenceDirector.play}). */
   autoplay?: boolean;
 }
 
-/** A cue listener, called once per cue as it fires. Returns nothing. */
 export type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void;
 
-/**
- * A data-driven cutscene: an ordered timeline of typed cues that fire on a single
- * injected clock. See {@link createSequenceDirector}.
- */
 export interface SequenceDirector<Payload = unknown> {
-  /** The cues, sorted by `atMs`. */
   readonly cues: readonly SequenceCue<Payload>[];
-  /** Start (or resume) playback from the current playhead. No-op if already playing or done. */
   play(): void;
   /** Freeze the playhead, capturing elapsed clock time up to now. No-op if not playing. */
   pause(): void;
@@ -81,24 +57,13 @@ export interface SequenceDirector<Payload = unknown> {
    * re-arms cues now in the future without emitting them.
    */
   seek(ms: number): void;
-  /** Fast-forward to the end: emit every remaining cue in order, then stop and mark done. */
   skip(): void;
-  /** Halt and rewind: pause, reset the playhead to 0, and re-arm every cue. */
   stop(): void;
-  /**
-   * Advance the playhead by the elapsed injected-clock time since the last tick/resume and
-   * emit any cues now due. A host calls this once per frame while playing; a no-op when paused.
-   */
   tick(): void;
-  /** Current playback state (playhead, duration, playing/done, progress). */
   state(): SequenceState;
-  /** Register a cue listener; returns an unsubscribe fn. */
   onCue(listener: CueListener<Payload>): () => void;
-  /** Observe state changes (play/pause/seek/skip/stop/tick/restore); returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): SequenceSnapshot;
-  /** Restore from a {@link SequenceSnapshot}; does not re-emit already-fired cues. */
   restore(snapshot: SequenceSnapshot): void;
 }
 
@@ -137,7 +102,6 @@ export function createSequenceDirector<Payload = unknown>(
     for (const listener of stateListeners) listener();
   }
 
-  /** Emit every un-fired cue with `atMs <= playheadMs`, in order. Allocation-free. */
   function fireDue(): boolean {
     let fired = false;
     while (nextIndex < cues.length && cues[nextIndex]!.atMs <= playheadMs) {
@@ -150,7 +114,6 @@ export function createSequenceDirector<Payload = unknown>(
     return fired;
   }
 
-  /** Fold elapsed injected-clock time into the playhead and fire due cues. */
   function advanceToNow(): boolean {
     const t = now();
     const delta = t - lastNow;

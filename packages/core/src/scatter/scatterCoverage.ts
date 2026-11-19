@@ -18,7 +18,6 @@
  * @capability scatter-coverage shared density/budget semantics for scatterable kinds
  */
 
-/** The scatterable kinds that share the coverage contract. */
 export type ScatterCoverageKind = "grass_field" | "scatter" | "city";
 
 /**
@@ -30,25 +29,20 @@ export const SCATTER_INSTANCE_BUDGET = 250_000;
 /** Max buildings a single `city` district generates — the block/parcel pipeline's bounded lot cap. */
 export const CITY_BUILDING_BUDGET = 2_600;
 
-/** Per-kind coverage descriptor: the unit noun, whether density is per-m², and the placement budget. */
 export interface ScatterCoverageSpec {
   kind: ScatterCoverageKind;
-  /** Plural noun for one placed instance: `blades` | `placements` | `buildings`. */
   unit: string;
   /** Density is per-square-meter (grass/scatter). City fills by street fabric, not by a per-m² dial. */
   perArea: boolean;
-  /** Hard cap on placed instances for one patch/district; `null` when cost follows the camera instead (grass). */
   budget: number | null;
 }
 
-/** The coverage spec per scatterable kind — the single source for its unit + budget. */
 export const SCATTER_COVERAGE_SPECS: Record<ScatterCoverageKind, ScatterCoverageSpec> = {
   grass_field: { kind: "grass_field", unit: "blades", perArea: true, budget: null },
   scatter: { kind: "scatter", unit: "placements", perArea: true, budget: SCATTER_INSTANCE_BUDGET },
   city: { kind: "city", unit: "buildings", perArea: false, budget: CITY_BUILDING_BUDGET },
 };
 
-/** The coverage spec for a scatterable kind, or `null` when the kind is not scatterable. */
 export function scatterCoverageSpec(kind: string): ScatterCoverageSpec | null {
   return (SCATTER_COVERAGE_SPECS as Record<string, ScatterCoverageSpec | undefined>)[kind] ?? null;
 }
@@ -63,11 +57,9 @@ export function scatterCoverageSpec(kind: string): ScatterCoverageSpec | null {
 export interface ScatterCoverage {
   kind: ScatterCoverageKind;
   unit: string;
-  /** Footprint area in m² (0 when unknown / not applicable). */
   area: number;
   /** Instances the density asks for before the budget clamp; `null` when only the placed count is known. */
   requested: number | null;
-  /** Instances actually placed: `min(requested, budget)`, or the generator's reported count. */
   count: number;
   budget: number | null;
   capped: boolean;
@@ -111,11 +103,6 @@ export function densityCoverage(kind: "grass_field" | "scatter", area: number, d
   return { kind, unit: spec.unit, area: a, requested, count, budget: spec.budget, capped: spec.budget !== null && requested > spec.budget };
 }
 
-/**
- * Coverage for a kind whose placed `count` is already known from its generator (city, from its
- * resolved lots). No pre-cap `requested` is available — the generator stops at the budget — so
- * `capped` is inferred from the placed count reaching the ceiling.
- */
 export function placedCoverage(kind: ScatterCoverageKind, area: number, placed: number): ScatterCoverage {
   const spec = SCATTER_COVERAGE_SPECS[kind];
   const count = Math.max(0, Math.floor(nonNegative(placed)));
@@ -138,7 +125,6 @@ export function budgetWarning(coverage: ScatterCoverage): string {
   return ` · capped at ${fmt(coverage.budget)} (budget)`;
 }
 
-/** The full one-line coverage readout: `≈ N unit · A m²` plus the {@link budgetWarning} when capped. */
 export function describeScatterCoverage(coverage: ScatterCoverage): string {
   const head = `≈ ${fmt(coverage.count)} ${coverage.unit}`;
   const area = coverage.area > 0 ? ` · ${fmt(coverage.area)} m²` : "";

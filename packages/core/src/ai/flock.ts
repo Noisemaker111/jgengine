@@ -10,30 +10,18 @@ export interface FlockAgent {
 
 export interface FlockConfig {
   maxSpeed: number;
-  /** How hard steering can change velocity (units/s²); default `maxSpeed * 2`. */
   accel?: number;
   separationRadius: number;
   separationWeight?: number;
-  /** Neighbors inside this radius pull toward the local centroid and average heading. */
   neighborRadius: number;
   cohesionWeight?: number;
   alignmentWeight?: number;
-  /** Pull toward the seek target; default `1`. */
   seekWeight?: number;
-  /** Beyond this distance from the flock centroid an agent's cohesion is boosted so stragglers rejoin. */
   stragglerRadius?: number;
-  /** Cohesion multiplier applied to stragglers; default `3`. */
   stragglerBoost?: number;
 }
 
-/**
- * Classic per-agent boid steering — seek + separation + cohesion + alignment with a straggler
- * rescue radius — the many-agents-to-*each-other* primitive `ai/crowd`'s navmesh flow field
- * (many-agents-to-POI) deliberately isn't. Pure: returns the desired acceleration for one agent;
- * `stepFlock` is the convenience integrator. O(neighbors) per agent — pre-filter with a spatial
- * grid past a few hundred agents.
-  * @internal
-  */
+/** @internal */
 export function flockSteer(
   agent: FlockAgent,
   neighbors: readonly FlockAgent[],
@@ -156,7 +144,6 @@ interface FlockScratch {
   candidates: Int32Array;
   neighbors: FlockAgent[];
   steer: Float64Array;
-  /** One agent's steering, written by {@link flockSteerInto}. */
   agentSteer: [number, number, number];
   /** Rebuilt every step; replaced only when the neighbour radius changes its cell size. */
   grid: PointGrid | null;
@@ -187,9 +174,7 @@ function releaseFlockScratch(scratch: FlockScratch): void {
   flockScratch.push(scratch);
 }
 
-/** Integrate one tick in place: steer every agent, clamp to `maxSpeed`, advance positions.
- * @internal
- */
+/** @internal */
 export function stepFlock(
   agents: FlockStepAgent[],
   config: FlockConfig,
@@ -279,32 +264,23 @@ function stepFlockInto(
   }
 }
 
-/** Typed-array agents for {@link createFlockStepper}: `position` and `velocity` hold x,y,z per agent. */
 export interface FlockBuffers {
   position: Float32Array;
   velocity: Float32Array;
 }
 
-/** Sizing of a {@link FlockStepper}. */
 export interface FlockStepperState {
   capacity: number;
   maxNeighbors: number;
 }
 
-/** Allocation-free flock stepping over typed arrays, sized once for `capacity` agents. */
 export interface FlockStepper {
   readonly capacity: number;
   /** Its sizing. The grid and steering scratch hold nothing between steps, so this is all there is to save. */
   snapshot(): FlockStepperState;
   /** Accepts only a snapshot of the same sizing; throws otherwise. */
   restore(state: FlockStepperState): void;
-  /** Clear the scratch; the next step rebuilds it from the agents. */
   reset(): void;
-  /**
-   * Steer and integrate the first `count` agents by `dt`; same seek + separation + cohesion + alignment
-   * terms as {@link flockSteer}. `targets` (x,y,z per agent) gives each agent its own seek point and
-   * overrides `target` (one shared point). Visits at most `maxNeighbors` flockmates per agent. Allocates nothing.
-   */
   step(buffers: FlockBuffers, count: number, config: FlockConfig, dt: number, target?: FlockVec3 | null, targets?: Float32Array | null): void;
 }
 

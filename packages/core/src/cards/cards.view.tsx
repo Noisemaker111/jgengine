@@ -3,24 +3,18 @@ import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 import type { CardPileState } from "@jgengine/core/cards/cardPile";
 import { DraggableCard, DropZone, type DragLayer } from "../inventory/dragLayer.view";
 
-/** The four French-deck suits. */
 export type Suit = "clubs" | "diamonds" | "hearts" | "spades";
 
-/** A playing-card rank, ace through king. */
 export type Rank = "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K";
 
-/** Suits in canonical order (clubs, diamonds, hearts, spades). */
 export const SUITS: readonly Suit[] = ["clubs", "diamonds", "hearts", "spades"];
 
-/** Ranks in ascending order, ace low. */
 export const RANKS: readonly Rank[] = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
-/** True for the red suits (hearts, diamonds). */
 export function isRedSuit(suit: Suit): boolean {
   return suit === "hearts" || suit === "diamonds";
 }
 
-/** A single card in a stack: an id plus its face and orientation. */
 export interface PlayingCard {
   id: string;
   rank: Rank;
@@ -62,7 +56,6 @@ const SUIT_LABEL: Record<Suit, string> = {
   spades: "spades",
 };
 
-/** A single playing-card face: rank + suit pips, or a patterned back when `faceDown`. */
 export function CardFace({
   rank,
   suit,
@@ -174,10 +167,6 @@ export function CardFace({
   );
 }
 
-/**
- * An overlapping fan of `CardFace`s. Plain-props: pass `cards`. Optional drag: pass a `layer`
- * to make each card a `DraggableCard`, and `dropId` to wrap the pile in a `DropZone`.
- */
 export function StackedPile({
   cards,
   faceDown,
@@ -271,10 +260,6 @@ export function StackedPile({
   return body;
 }
 
-/**
- * `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from
- * `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
- */
 export function CardStack({
   pile,
   zone,

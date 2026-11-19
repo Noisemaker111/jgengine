@@ -10,14 +10,12 @@ import { useUiCue } from "../uiCues.view";
 import type { KitTone } from "./uiKit.view";
 import { KitActionPrompt, KitButton, KitMeter, KitPanel, useKitPresence, useUiKit, type KitActionPromptProps } from "./uiKitRoot.view";
 
-/** One line of a {@link KitObjective} checklist. */
 export interface KitObjectiveStep {
   id: string;
   label: ReactNode;
   done?: boolean;
 }
 
-/** A countdown on an objective. */
 export interface KitObjectiveDeadline {
   /** Seconds left. */
   remaining: number;
@@ -25,7 +23,6 @@ export interface KitObjectiveDeadline {
   total: number;
 }
 
-/** How urgent a deadline is: `calm` above half, `warn` below half, `urgent` in the last stretch. */
 export type KitDeadlineStage = "calm" | "warn" | "urgent";
 
 /**
@@ -45,12 +42,9 @@ export function formatCountdown(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-/** Props for {@link KitObjective}. */
 export interface KitObjectiveProps {
-  /** What to do now, in a few words: "Deliver to Shore Steps". */
   title: ReactNode;
   eyebrow?: ReactNode | undefined;
-  /** Optional checklist; done steps are struck. */
   steps?: readonly KitObjectiveStep[] | undefined;
   /** Metres to the target; shown as "72 m". Give `live(() => metres)` when it moves every frame. */
   distance?: Live<number>;
@@ -59,7 +53,6 @@ export interface KitObjectiveProps {
    * ahead). Shows an arrow so the player never walks the wrong way. Live when it moves every frame.
    */
   bearing?: Live<number>;
-  /** The countdown; `live(() => ({ remaining, total }))` when it ticks. */
   deadline?: Live<KitObjectiveDeadline> | undefined;
   /** Seconds left at which the deadline turns urgent. Default the larger of 10 s and a quarter of the total. */
   urgentAt?: number;
@@ -67,9 +60,7 @@ export interface KitObjectiveProps {
   hint?: ReactNode;
   /** Seconds without progress before the hint appears. Default 12. */
   hintAfter?: number;
-  /** Anything that changes when the player makes progress (distance bucket, step count); resets the hint timer. */
   progressKey?: string | number | undefined;
-  /** The next action, drawn as a device-correct prompt under the objective. */
   prompt?: KitActionPromptProps;
   className?: string;
   style?: CSSProperties;
@@ -188,24 +179,19 @@ function KitObjectiveCountdown({ deadline, tone }: { deadline: Live<KitObjective
   );
 }
 
-/** One row of a {@link KitResultScreen} tally. */
 export interface KitResultStat {
   label: ReactNode;
   value: ReactNode;
 }
 
-/** One choice on a {@link KitResultScreen}. */
 export interface KitResultAction {
   id: string;
   label: ReactNode;
-  /** The highlighted default (Retry, Next day). The first action when none is marked. */
   primary?: boolean;
 }
 
-/** Props for {@link KitResultScreen}. */
 export interface KitResultScreenProps {
   open: boolean;
-  /** `good` a win, `bad` a loss, `neutral` a day's end. */
   tone?: KitTone;
   eyebrow?: ReactNode;
   title: ReactNode;
@@ -214,7 +200,6 @@ export interface KitResultScreenProps {
   stats?: readonly KitResultStat[];
   actions: readonly KitResultAction[];
   onAction: (id: string) => void;
-  /** Escape/B: usually the same as the quiet action. */
   onBack?: () => void;
   className?: string;
   style?: CSSProperties;
@@ -304,16 +289,13 @@ export const KitResultScreen = memoView("KitResultScreen", function KitResultScr
   );
 });
 
-/** Props for {@link KitBanner}. */
 export interface KitBannerProps {
-  /** Show the banner each time this changes (a day number, a wave, a phase). `null` shows nothing. */
   cue: string | number | null;
   title: ReactNode;
   subtitle?: ReactNode;
   tone?: KitTone;
   /** How long it stays, ms. Default 2400. */
   ms?: number;
-  /** Also show for the first value. Default false. */
   initial?: boolean;
   className?: string;
   style?: CSSProperties;

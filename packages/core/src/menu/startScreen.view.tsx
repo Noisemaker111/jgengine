@@ -104,7 +104,6 @@ export function ControlsList({
   );
 }
 
-/** Which corner of a `StartScreen` the opt-in settings slot is pinned to. */
 export type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 const CORNER_STYLE: Record<StartScreenCorner, CSSProperties> = {
@@ -114,15 +113,7 @@ const CORNER_STYLE: Record<StartScreenCorner, CSSProperties> = {
   "bottom-right": { position: "absolute", bottom: 0, right: 0 },
 };
 
-/**
- * Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay
- * that positions and centers the game's own content, with an opt-in settings
- * corner. It imposes no look — the game supplies the title, art, and buttons as
- * children and styles the container through `className`/`style` (per the
- * composable-chrome rule: a placement hook, not a mandated menu).
- *
- * @capability start-screen headless title/attract overlay the game fills and skins
- */
+/** @capability start-screen headless title/attract overlay the game fills and skins */
 export function StartScreen({
   open = true,
   className,

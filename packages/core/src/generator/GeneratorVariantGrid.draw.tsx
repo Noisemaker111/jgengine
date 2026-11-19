@@ -11,36 +11,23 @@ import type { GeneratorDefinition, GeneratorVariant } from "@jgengine/core/gener
 import { getGeneratorPreview } from "@jgengine/core/generator/generatorPreview.draw";
 import { generatorVariantText, getGeneratorText } from "@jgengine/core/generator/generatorText";
 
-/** Props for {@link GeneratorVariantGrid}. */
 export interface GeneratorVariantGridProps {
   definition: GeneratorDefinition;
-  /** The variants to show, usually `generatorVariants(definition, meta)`. */
   variants: readonly GeneratorVariant[];
-  /** Index of the variant to outline as current. */
   selected?: number | undefined;
-  /** Indices of kept variants, marked with a pin. */
   kept?: readonly number[] | undefined;
-  /** Click on a tile. */
   onPick?: ((variant: GeneratorVariant) => void) | undefined;
-  /** Extra controls under each tile (keep, place, …). */
   actions?: ((variant: GeneratorVariant) => ReactNode) | undefined;
-  /** Tiles per row. Default 4. */
   columns?: number;
-  /** Accent colour for the selected outline. */
   accent?: string;
 }
 
-/** One tile's own scene and camera plus the element whose rect it draws into. */
 interface VariantTile {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   element: HTMLElement | null;
 }
 
-/**
- * A tile's scene and camera, matching the old drei `View` + `PerspectiveCamera`: the preview's frame
- * sets the camera, `#1c2127` is the backdrop, and the same hemisphere/key light rig lights it.
- */
 function buildVariantTile(definition: GeneratorDefinition, variant: GeneratorVariant): { scene: THREE.Scene; camera: THREE.PerspectiveCamera } | null {
   const preview = getGeneratorPreview(definition.output);
   if (preview === undefined) return null;
@@ -140,7 +127,6 @@ function VariantTile({
   );
 }
 
-/** A tile for an output family with no 3D form: the variant's text preview, one line per row, clipped to the tile. */
 function VariantTextTile({ definition, variant }: { definition: GeneratorDefinition; variant: GeneratorVariant }) {
   const lines = generatorVariantText(definition, variant) ?? [];
   return (

@@ -18,7 +18,6 @@ import { acquirePerfLock, withPerfLock } from "./perf-lock";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
-
 const USAGE = `usage: bun run perf network <game...> [--seconds n] [--all] [--json path]
 
   <game...>       one or more game ids from games/
@@ -192,7 +191,6 @@ class NetworkRecorder {
       }));
   }
 
-  /** Every recorded request, for a one-off look at a suspicious URL. */
   dump(): Array<{ url: string; method: string; type: string; status: number | null; bytes: number; cached: boolean; phase: Phase; cacheControl: string | null }> {
     return [...this.rows.values()].map((row) => ({
       url: row.url.replace(/^https?:\/\/[^/]+/, ""),
@@ -206,7 +204,6 @@ class NetworkRecorder {
     }));
   }
 
-  /** URLs whose body was transferred more than once in one phase — paid for again. */
   duplicates(phase: Phase, count = 8): Array<{ url: string; requests: number; bytes: number }> {
     const byUrl = new Map<string, { requests: number; bytes: number }>();
     for (const row of this.rows.values()) {
@@ -236,7 +233,6 @@ class NetworkRecorder {
       }));
   }
 
-  /** Game request count in one phase (telemetry round-trips excluded), for quiet-window detection. */
   phaseRequests(phase: Phase): number {
     return this.gameRequests[phase];
   }
@@ -381,7 +377,6 @@ interface GameMeasurement {
   requests: number;
   wsFrames: number;
   cacheHits: number;
-  /** Requests the dev server answered for its own modules: the number a production build removes. */
   devRequests: number;
   devBytes: number;
   perMinuteRequests: number;

@@ -17,10 +17,6 @@ import { worldLabels } from "../worldLabels";
 
 const scratch = new Vector3();
 
-/**
- * Dev overlay: footprint tile outline + forward arrow (+Z).
- * Enable with ?frames=1 or ?debug=frames in the URL.
- */
 export function useShowAssetFrames(): boolean {
   if (typeof window === "undefined") return false;
   const params = new URLSearchParams(window.location.search);

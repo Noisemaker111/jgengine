@@ -210,7 +210,6 @@ export function createSurfacePaint(): SurfacePaintStore {
   };
 }
 
-/** Plain JSON state of a {@link WallDrawTool}: the drawn points and whether the loop is closed. */
 export interface WallDrawToolState {
   points: Vec2[];
   closed: boolean;

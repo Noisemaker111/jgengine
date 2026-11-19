@@ -1,15 +1,9 @@
-/** Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives. */
 export interface MagazineReserve {
   current(): number;
   spend(amount: number): boolean;
   gain?(amount: number): void;
 }
 
-/**
- * The two calls a {@link statPoolReserve} needs from the caller's stat store: read a pool's current
- * value and move it by a signed amount. `ctx.scene.entity.stats` satisfies it, and so does any store
- * that can read and nudge a named number per owner.
- */
 export interface ReserveStatAccess {
   get(ownerId: string, statId: string): { current: number } | null;
   delta(ownerId: string, statId: string, amount: number): unknown;
@@ -38,7 +32,6 @@ export function statPoolReserve(stats: ReserveStatAccess, ownerId: string, statI
   };
 }
 
-/** Tuning for `createMagazine`: mag capacity, reload delay, and where reserve ammo is drawn from. */
 export interface MagazineConfig {
   capacity: number;
   reloadMs: number;
@@ -60,12 +53,10 @@ export interface MagazineTuning {
   overflow?: "reject" | "discard" | "return-to-reserve";
 }
 
-/** Complete serializable state for a {@link Magazine}; `reserve: null` means infinite reserve. */
 export interface MagazineSnapshot {
   loaded: number;
   reloadElapsedMs: number | null;
   reserve: number | null;
-  /** Present and `true` only while a reload is suspended, so idle snapshots keep their shape. */
   paused?: boolean;
 }
 
@@ -77,9 +68,7 @@ export interface MagazineSnapshot {
 export interface Magazine {
   loaded(): number;
   capacity(): number;
-  /** Retune without granting ammo or resetting reload elapsed time; false leaves all state unchanged. */
   retune(tuning: MagazineTuning): boolean;
-  /** Reserve rounds available to reload from, or `null` when the reserve is infinite. */
   reserve(): number | null;
   isReloading(): boolean;
   /** Reload progress in `[0, 1]`; 0 while idle. */
@@ -87,25 +76,16 @@ export interface Magazine {
   isEmpty(): boolean;
   isFull(): boolean;
   canFire(rounds?: number): boolean;
-  /** Spend `rounds` (default 1) loaded ammo; returns false without effect when insufficient. */
   fire(rounds?: number): boolean;
-  /** True when a reload could start: not already full, not already reloading, reserve has rounds. */
   canReload(): boolean;
-  /** Begin the reload timer if `canReload()`; returns whether it started. */
   startReload(): boolean;
   /** Suspend an in-progress reload, keeping its elapsed progress, so it can be resumed later. */
   pauseReload(): boolean;
-  /** Continue a paused reload from the progress it kept. */
   resumeReload(): boolean;
-  /** True while a reload is suspended by `pauseReload()`. */
   isPaused(): boolean;
-  /** Abort an in-progress reload; loaded/reserve are unchanged (only completion moves ammo). */
   cancelReload(): void;
-  /** Add `amount` to a self-contained numeric reserve (a pickup); a no-op against an infinite or externally-owned reserve without a `gain`. */
   addReserve(amount: number): void;
-  /** Advance the reload timer; completes the reload once `reloadMs` has elapsed. */
   tick(dtSeconds: number): void;
-  /** Return detached plain data for save, rollback, replay, or worker transfer. */
   snapshot(): MagazineSnapshot;
   /**
    * Restore decoded snapshot data. Returns false without changing loaded/reload
@@ -135,11 +115,7 @@ const INFINITE_RESERVE: MagazineReserve = {
   spend: () => true,
 };
 
-/**
- * Builds a {@link Magazine}: discrete loaded ammo, a timed reload, and reserve-pool interaction.
- *
- * @capability magazine a weapon magazine with capacity, timed reload, and reserve-pool interaction
- */
+/** @capability magazine a weapon magazine with capacity, timed reload, and reserve-pool interaction */
 export function createMagazine(config: MagazineConfig): Magazine {
   let capacity = Math.max(0, config.capacity);
   let reloadMs = Math.max(0, config.reloadMs);
@@ -261,6 +237,5 @@ export function createMagazine(config: MagazineConfig): Magazine {
     },
   };
 }
-
 
 // Measurement line batch5.

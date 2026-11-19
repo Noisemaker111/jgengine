@@ -11,7 +11,6 @@ export interface GhRun {
   stderr: string;
 }
 
-/** Runs `gh <args>`; tests pass a fake that serves `gh api` paths from memory. */
 export type GhRunner = (args: string[]) => GhRun;
 
 export type GhResult<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -21,7 +20,6 @@ export type GhResult<T> = { ok: true; value: T } | { ok: false; error: string };
  * later goes through. On 4 Nov they ended a landing three times in a row, on a read, a push and a merge.
  */
 export const GITHUB_OUTAGE = /HTTP 5\d\d|Internal Server Error|Server Error|Bad Gateway|Service Unavailable|error: 5\d\d|error connecting to/i;
-/** Tries of one request GitHub answered with {@link GITHUB_OUTAGE} before its error is returned. */
 export const OUTAGE_ATTEMPTS = 3;
 
 /** Blocks this process for `ms`: the landing scripts are synchronous. */
@@ -29,10 +27,6 @@ export function sleepSync(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
-/**
- * Runs a command again, after a pause, while it fails with a {@link GITHUB_OUTAGE} answer; any other
- * failure, a refusal or a rejected push included, comes back at once.
- */
 export function retryOutages<R extends { status: number; stdout: string; stderr: string }>(
   run: () => R,
   pause: (ms: number) => void = sleepSync,
@@ -44,7 +38,6 @@ export function retryOutages<R extends { status: number; stdout: string; stderr:
   }
 }
 
-/** One pull request, in the words the landing scripts read. */
 export interface Pull {
   number: number;
   url: string;
@@ -57,7 +50,6 @@ export interface Pull {
   headRefOid: string;
   baseRefName: string;
   updatedAt: string | null;
-  /** `BEHIND`, `DIRTY`, `CLEAN`, `BLOCKED`, ...; `UNKNOWN` until GitHub has computed it (and always in a list). */
   mergeStateStatus: string;
   labels: string[];
 }
@@ -74,7 +66,6 @@ interface WorkflowRun {
   headSha: string;
 }
 
-/** The pull request, check and workflow-run calls the landing scripts make, all over `gh api`. */
 export interface GitHub {
   readonly repo: string;
   listPulls(query: PullQuery): GhResult<Pull[]>;
@@ -83,39 +74,29 @@ export interface GitHub {
   checks(sha: string): GhResult<RollupEntry[]>;
   createPull(input: { base: string; head: string; title: string; body: string }): GhResult<{ number: number; url: string }>;
   editPull(number: number, patch: { title?: string; body?: string }): GhResult<null>;
-  /**
-   * Merge the PR only while its head is still `headSha`, the commit the landing verified; the merge
-   * commit's sha on success.
-   */
   mergePull(number: number, headSha: string): GhResult<{ sha: string }>;
-  /** Leave a comment on the PR, then close it. */
   closePull(number: number, comment: string): GhResult<null>;
   /** Take a draft PR out of draft (GraphQL only: REST cannot), so GitHub will merge it. */
   markReady(number: number): GhResult<null>;
   branchRuns(branch: string, limit: number): GhResult<WorkflowRun[]>;
   /** The commit `branch` points at on GitHub, or null when the branch is not there. */
   branchHead(branch: string): GhResult<string | null>;
-  /** Delete `branch` on GitHub (`DELETE git/refs/heads/<branch>`). */
   deleteBranch(branch: string): GhResult<null>;
 }
 
-/** GitHub's answer for a ref that is not there: 404 on a read, 422 on a delete. */
 export const BRANCH_GONE = /HTTP 404|HTTP 422|Not Found|Reference does not exist/i;
 
-/** `owner/repo` from a remote URL (github.com over https or ssh, or a proxy whose path ends in it), or `owner/repo` itself. */
 export function repoFromRemote(remote: string): string | null {
   const trimmed = remote.trim().replace(/\.git$/, "").replace(/\/+$/, "");
   const match = /(?:^|[:/])([^/:\s]+)\/([^/:\s]+)$/.exec(trimmed);
   return match === null ? null : `${match[1]}/${match[2]}`;
 }
 
-/** `owner/repo` of the checkout at `cwd`, read from its origin remote. */
 function originRepo(cwd: string): string | null {
   const remote = spawnSync("git", ["remote", "get-url", "origin"], { cwd, encoding: "utf8", timeout: 30_000 });
   return remote.status === 0 ? repoFromRemote(remote.stdout ?? "") : null;
 }
 
-/** The real `gh` CLI, run with a timeout. */
 export function ghCli(cwd?: string): GhRunner {
   return (args) => {
     const result = spawnSync("gh", args, { encoding: "utf8", timeout: 120_000, maxBuffer: 64 * 1024 * 1024, ...(cwd === undefined ? {} : { cwd }) });
@@ -123,14 +104,12 @@ export function ghCli(cwd?: string): GhRunner {
   };
 }
 
-/** The checkout's GitHub repository through the real `gh`; throws when origin names none. */
 export function checkoutGitHub(cwd: string): GitHub {
   const repo = originRepo(cwd);
   if (repo === null) throw new Error(`no GitHub repository in the origin remote of ${cwd}`);
   return gitHub(ghCli(cwd), repo);
 }
 
-/** A branch name as a REST path: each segment encoded, the slashes kept. */
 function refPath(branch: string): string {
   return branch.split("/").map(encodeURIComponent).join("/");
 }
@@ -182,7 +161,6 @@ function checkOf(value: unknown): RollupEntry {
   };
 }
 
-/** GitHub for `repo` (`owner/name`) through `gh api`; a request GitHub's outage answered is tried again. */
 export function gitHub(gh: GhRunner, repo: string, pause: (ms: number) => void = sleepSync): GitHub {
   const call = (args: string[]): GhResult<unknown> => {
     const run = retryOutages(() => gh(["api", ...args]), pause);

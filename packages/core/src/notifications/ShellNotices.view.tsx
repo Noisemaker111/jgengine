@@ -32,7 +32,7 @@ export function attachShellNotices(ctx: GameContext, config: NoticePresentationC
   };
 }
 
-/** The shell-mounted notice feed, rendered inside the HUD theme root; `playable.notices: false` removes it. @internal */
+/** @internal */
 export function ShellNotices({
   ctx,
   config,

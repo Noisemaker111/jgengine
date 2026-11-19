@@ -43,10 +43,6 @@ export interface PlacedObjectPosition {
   z: number;
 }
 
-/**
- * `ownerUserId` is the external user id — the same identifier as the command actor and
- * `jgPlayerProfiles.userId`. It is the only authoritative owner key; there is no game-row id here.
- */
 interface PlacedObjectBase {
   instanceId: string;
   ownerUserId: string;

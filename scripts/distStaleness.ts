@@ -26,9 +26,7 @@ export type StaleKind = "missing-dist" | "missing-emit" | "stale-emit";
 
 export interface DistStaleness {
   kind: StaleKind;
-  /** Source file (relative to the package dir) that triggered the verdict. */
   sourcePath: string;
-  /** One-line human-readable explanation. */
   detail: string;
 }
 
@@ -82,12 +80,6 @@ interface BuildTsconfig {
   exclude?: string[];
 }
 
-/**
- * Convert a tsconfig include/exclude glob into a matcher against a package-relative
- * POSIX path. `**` spans directories, `*`/`?` stay within a segment. A pattern
- * with no wildcard that names a directory also matches everything beneath it
- * (tsconfig directory-exclude semantics), e.g. `src/recipes/snippets`.
- */
 function globToMatcher(pattern: string): (relPosix: string) => boolean {
   const normalized = pattern.replaceAll("\\", "/").replace(/\/+$/, "");
   let re = "";
@@ -136,7 +128,6 @@ function readBuildConfig(pkgDir: string): {
   };
 }
 
-/** Absolute paths of source files the build would compile to `dist/*.js`. */
 function emittingSources(pkgDir: string, rootDir: string, isExcluded: (relPosix: string) => boolean): string[] {
   const out: string[] = [];
   const walk = (dir: string): void => {
@@ -155,11 +146,6 @@ function emittingSources(pkgDir: string, rootDir: string, isExcluded: (relPosix:
   return out;
 }
 
-/**
- * Return the first way a package's `dist` fails to reflect current source, or
- * `null` when `dist` is complete and fresh. Packages with no `tsconfig.build.json`
- * (nothing to emit to dist) return `null`.
- */
 export function distStalenessForPackageDir(pkgDir: string): DistStaleness | null {
   const config = readBuildConfig(pkgDir);
   if (!config) return null;

@@ -1,7 +1,6 @@
 import type { Vec3 } from "@jgengine/core/world/geometry";
 import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra";
 
-/** How a body moves relative to its parent. */
 export type RigidJoint =
   /** Six degrees of freedom; only the root (body 0) may use it. */
   | { kind: "free" }
@@ -19,35 +18,21 @@ export interface RigidBodyDefinition {
   /** Index of the parent body; `-1` only for the root, which must come first. Parents come before children. */
   parent: number;
   joint: RigidJoint;
-  /** World position of this body's frame origin (its joint) in the reference pose, m. */
   origin: Vec3;
   mass: number;
-  /** World position of the centre of mass in the reference pose, m. */
   com: Vec3;
   /** Inertia tensor about the centre of mass in world axes in the reference pose, kg·m²: `[Ixx, Iyy, Izz, Ixy, Ixz, Iyz]` (tensor elements, so a product is `−∫xy dm`). */
   inertia: readonly [number, number, number, number, number, number];
 }
 
-/**
- * The positions of a tree: root position (3, world) and unit quaternion `[w, x, y, z]` (body to world), then one
- * coordinate per non-root joint. Velocities: root angular then linear velocity of the root origin, both in root
- * axes (6), then one rate per non-root joint.
- */
 export interface RigidBodyTree {
   readonly bodies: readonly RigidBodyDefinition[];
-  /** Number of position coordinates (`7 + joints`). */
   readonly positions: number;
-  /** Number of velocity coordinates (`6 + joints`). */
   readonly dofs: number;
-  /** Velocity index of a non-root body's joint rate. */
   dofOf(body: number): number;
-  /** Position index of a non-root body's joint coordinate. */
   coordinateOf(body: number): number;
-  /** Compute poses and velocities for `q`, `u`; everything below reads this state. */
   update(q: ArrayLike<number>, u: ArrayLike<number>): void;
-  /** World rotation (body axes to world, row-major 3×3) of a body after {@link update}. */
   rotation(body: number): Float64Array;
-  /** World position of a body's origin after {@link update}. */
   origin(body: number): Float64Array;
   /** World angular velocity of a body, rad/s. */
   angularVelocity(body: number, out: Float64Array): Float64Array;
@@ -55,42 +40,23 @@ export interface RigidBodyTree {
   pointVelocity(body: number, p: ArrayLike<number>, out: Float64Array): Float64Array;
   /** Clear applied forces, then add gravity `g` (world, m/s²) at every centre of mass. */
   clearForces(gravity: Vec3): void;
-  /** Apply a world force at a world point on `body`. */
   applyForce(body: number, point: ArrayLike<number>, force: ArrayLike<number>): void;
-  /** Apply a world torque to `body`. */
   applyTorque(body: number, torque: ArrayLike<number>): void;
-  /** Add a generalized force on a velocity coordinate (a joint actuator; the equal and opposite reaction is implicit). */
   applyGeneralized(dof: number, value: number): void;
-  /** Mass matrix `H(q)` (dofs × dofs, row-major) into `out`. */
   massMatrix(out: Float64Array): Float64Array;
-  /** `τ_applied − C(q, u)`: applied generalized forces minus Coriolis, centrifugal and gyroscopic terms. */
   forcing(out: Float64Array): Float64Array;
-  /** Velocity coordinates' accelerations `u̇ = H⁻¹(τ − C)` for the current state and forces. */
   accelerations(out: Float64Array): Float64Array;
-  /**
-   * Jacobian of the world velocity of the material point of `body` now at world `p` (3 × dofs, row-major), and its
-   * acceleration with `u̇ = 0` (the velocity-product term), so `a_p = J·u̇ + bias`.
-   */
   pointJacobian(body: number, p: ArrayLike<number>, jacobian: Float64Array, bias: Float64Array): void;
-  /** Kinetic energy, J. */
   kineticEnergy(): number;
-  /** Write the position-coordinate rates `q̇` for velocities `u` (quaternion kinematics for the root). */
   positionRates(q: ArrayLike<number>, u: ArrayLike<number>, out: Float64Array, offset?: number): void;
-  /** Copy of the last {@link update} state and the applied forces. */
   snapshot(): RigidBodyTreeState;
-  /** Put a {@link snapshot} back: re-runs {@link update} with its coordinates and restores the applied forces. */
   restore(state: RigidBodyTreeState): void;
 }
 
-/** A {@link RigidBodyTree}'s state: coordinates from the last update and the forces applied since the last clear. */
 export interface RigidBodyTreeState {
-  /** Position coordinates, length `positions`. */
   readonly q: readonly number[];
-  /** Velocity coordinates, length `dofs`. */
   readonly u: readonly number[];
-  /** Applied spatial force per body at its origin, body axes, `6 × bodies`. */
   readonly forces: readonly number[];
-  /** Applied generalized force per velocity coordinate, length `dofs`. */
   readonly generalized: readonly number[];
 }
 
@@ -106,7 +72,6 @@ function cross(a: ArrayLike<number>, b: ArrayLike<number>, out: Float64Array, o 
   out[o + 2] = ax * by - ay * bx;
 }
 
-/** `out = M·v` for row-major 3×3 `M` (offsets into flat arrays). */
 function mulMv(m: ArrayLike<number>, mo: number, v: ArrayLike<number>, vo: number, out: Float64Array, oo: number): void {
   const x = v[vo] ?? 0;
   const y = v[vo + 1] ?? 0;
@@ -116,7 +81,6 @@ function mulMv(m: ArrayLike<number>, mo: number, v: ArrayLike<number>, vo: numbe
   out[oo + 2] = (m[mo + 6] ?? 0) * x + (m[mo + 7] ?? 0) * y + (m[mo + 8] ?? 0) * z;
 }
 
-/** `out = Mᵀ·v`. */
 function mulMtv(m: ArrayLike<number>, mo: number, v: ArrayLike<number>, vo: number, out: Float64Array, oo: number): void {
   const x = v[vo] ?? 0;
   const y = v[vo + 1] ?? 0;
@@ -231,7 +195,6 @@ export function createRigidBodyTree(definitions: readonly RigidBodyDefinition[])
   const H = new Float64Array(dofs * dofs);
   const rhs = new Float64Array(dofs);
 
-  /** Motion transform parent → body i: out = X·m (6-vectors at offsets). */
   function motionToChild(i: number, m: Float64Array, mo: number, out: Float64Array, oo: number): void {
     // ω' = E ω ; v' = E (v − r × ω)
     t3[0] = m[mo + 3] ?? 0;
@@ -245,7 +208,6 @@ export function createRigidBodyTree(definitions: readonly RigidBodyDefinition[])
     mulMv(E, 9 * i, t3, 0, out, oo + 3);
   }
 
-  /** Force transform body i → parent, added into `out`: n_p += Eᵀn + r × Eᵀf ; f_p += Eᵀf. */
   function addForceToParent(i: number, fo: Float64Array, foo: number, out: Float64Array, oo: number): void {
     mulMtv(E, 9 * i, fo, foo + 3, t3, 0);
     mulMtv(E, 9 * i, fo, foo, t3b, 0);
@@ -258,7 +220,6 @@ export function createRigidBodyTree(definitions: readonly RigidBodyDefinition[])
     out[oo + 5] = (out[oo + 5] ?? 0) + (t3[2] ?? 0);
   }
 
-  /** out = I_i·m for body i's own rigid inertia (spatial, at its origin). */
   function inertiaTimes(mm: number, h: Float64Array, ho: number, io: Float64Array, ioo: number, m: Float64Array, mo: number, out: Float64Array, oo: number): void {
     const wx = m[mo] ?? 0;
     const wy = m[mo + 1] ?? 0;

@@ -39,7 +39,6 @@ function slotProbeDraw(url: string, onSlots: ((slots: ModelMaterialSlotInfo[]) =
   };
 }
 
-/** Sphere (or flat card for hair/fabric) swatch wearing the asset's physical material — replaces `<MaterialAssetSurface>`. */
 function assetSwatchDraw(asset: MaterialAsset, flat: boolean, orientationDeg: number): EngineDraw {
   let mesh: THREE.Mesh | null = null;
   let lease: MaterialAssetLease | null = null;

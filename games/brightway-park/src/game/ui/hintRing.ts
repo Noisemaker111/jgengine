@@ -15,13 +15,11 @@ function recompute(ctx: GameContext): void {
   ring.pointed = ring.wanted.find((key) => (ring.mounted.get(key) ?? 0) > 0) ?? null;
 }
 
-/** The hint's controls, in the order the ring prefers them. */
 export function pointHint(ctx: GameContext, keys: readonly string[]): void {
   hintRingOf(ctx).wanted = keys;
   recompute(ctx);
 }
 
-/** Register a control under its hint key while it is mounted. */
 export function useHintTarget(key: string | undefined): void {
   const ctx = useGameContext();
   useEffect(() => {

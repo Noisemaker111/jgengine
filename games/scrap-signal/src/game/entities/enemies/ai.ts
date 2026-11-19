@@ -29,12 +29,10 @@ export const LEASH_RADIUS = 46;
 
 export { rememberHome };
 
-
 function distance2d(a: EntityPosition, b: EntityPosition): number {
   return length2(a[0] - b[0], a[2] - b[2]);
 }
 
-/** One move order refilled per call: the move reads it and keeps none of it. */
 const moveOrder = { speed: 0, stopDistance: 0, dt: 0 };
 
 function moveEnemy(ctx: GameContext, id: string, target: EntityPosition, speed: number, stopDistance: number, dt: number): void {

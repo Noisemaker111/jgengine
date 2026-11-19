@@ -11,7 +11,6 @@ import type { IrradianceBakeSettings, IrradianceVolume } from "@jgengine/core/li
 import type { GrassStyleSettings } from "@jgengine/core/grass/grassStyle";
 import type { VolumetricCloudsConfig } from "@jgengine/core/sky/volumetricClouds";
 import type { PointLightingConfig } from "../game/playableGame";
-/** Runtime point-light shape reused by authored editor light markers. */
 export type { PointLightingConfig } from "../game/playableGame";
 
 export type { EditorUiDocument, EditorUiPanelLayout, HudResizeAxes, HudPanelTypeDef } from "../hud/hudDocument";
@@ -19,10 +18,8 @@ export type { EditorUiDocument, EditorUiPanelLayout, HudResizeAxes, HudPanelType
 /** A world-space point used across editor markers, volumes, and paths. */
 export type EditorVec3 = { x: number; y: number; z: number };
 
-/** Collision shape a volume is rendered and tested as. */
 export type EditorVolumeShape = "sphere" | "cylinder" | "box";
 
-/** A placeable point object in the scene — spawn, mob, chest, POI, etc. */
 export interface EditorMarker {
   id: string;
   kind: string;
@@ -30,27 +27,13 @@ export interface EditorMarker {
   rotationY?: number;
   color?: string | undefined;
   label?: string;
-  /**
-   * Catalog object id for a placed prop mesh. Prefer this over `meta.catalogId` for new content;
-   * `resolveAuthoredObjects` still reads `meta.catalogId` as the migration alias.
-   */
   catalogId?: string;
-  /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
-  /**
-   * Per-object edit lock — blocks transform/remove the same way a locked collection does.
-   * Combined with collection locks in `isEditorObjectLocked`.
-   */
   locked?: boolean;
-  /**
-   * Per-object viewport hide — object stays in the hierarchy/document but is omitted from
-   * editor overlays and picking when true. Independent of per-kind layer visibility.
-   */
   hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
-/** A spatial region — zone, aggro range, capture area — placed in the scene. */
 export interface EditorVolume {
   id: string;
   kind: string;
@@ -61,16 +44,12 @@ export interface EditorVolume {
   halfExtents?: EditorVec3;
   color?: string | undefined;
   label?: string;
-  /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
-  /** Per-object edit lock — see {@link EditorMarker.locked}. */
   locked?: boolean;
-  /** Per-object viewport hide — see {@link EditorMarker.hidden}. */
   hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
-/** A polyline of points — road, corridor, patrol route — placed in the scene. */
 export interface EditorPath {
   id: string;
   kind: string;
@@ -78,40 +57,26 @@ export interface EditorPath {
   width?: number;
   color?: string | undefined;
   label?: string;
-  /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
-  /** Per-object edit lock — see {@link EditorMarker.locked}. */
   locked?: boolean;
-  /** Per-object viewport hide — see {@link EditorMarker.hidden}. */
   hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
-/** A free-text annotation pinned to a world position for designers. */
 export interface EditorNote {
   id: string;
   text: string;
   position: EditorVec3;
   color?: string;
-  /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
-  /** Per-object edit lock — see {@link EditorMarker.locked}. */
   locked?: boolean;
-  /** Per-object viewport hide — see {@link EditorMarker.hidden}. */
   hidden?: boolean;
   meta?: Record<string, unknown>;
 }
 
-/**
- * A sculpted heightfield authored in the editor: the {@link TerraformSnapshot} of offset deltas
- * over the game's base ground. Serializes with the scene; a game rebuilds the field with
- * `editableTerrainFromSnapshot`.
- */
 export type EditorTerrain = TerraformSnapshot;
 
-/** The four placeable-object collections a prefab fragment or clipboard fragment carries. */
 export interface EditorFragmentContent {
-  /** Referenced reusable materials travel with prefab and clipboard content. */
   materialAssets?: MaterialAsset[];
   markers: readonly EditorMarker[];
   volumes: readonly EditorVolume[];
@@ -129,15 +94,9 @@ export interface EditorPrefab {
   id: string;
   name: string;
   fragment: EditorFragmentContent;
-  /** Offline export settings; world instances remain authored markers. */
   staticBake?: StaticPrefabBake;
 }
 
-/**
- * A named, persisted list of object ids — a selection bookmark (restore, add-to) that can also
- * double as a production group: `locked` blocks `translate`/`setTransform`/`remove`/`removeMany`
- * on its members, `color`/`visible` are UI-only hints for the collections panel.
- */
 export interface EditorCollection {
   id: string;
   name: string;
@@ -147,40 +106,22 @@ export interface EditorCollection {
   visible?: boolean;
 }
 
-/**
- * One row in a gameplay data catalog — id + optional label + a meta bag matching the catalog's
- * `ParamSchema`. Values persist on the scene document; the schema lives in the game export.
- * @capability editor-catalogs Persist and load one gameplay catalog entry's tuned params.
- */
+/** @capability editor-catalogs Persist and load one gameplay catalog entry's tuned params. */
 export interface EditorCatalogEntry {
   id: string;
   label?: string;
   meta?: Record<string, unknown>;
 }
 
-/**
- * Persisted values for one gameplay data catalog (weapons, waves, economy, …). Schemas are not
- * stored here — they come from the game's `editorCatalogs` export and drive SchemaInspector.
- * @capability editor-catalogs Persist gameplay tuning rows on the scene document.
- */
+/** @capability editor-catalogs Persist gameplay tuning rows on the scene document. */
 export interface EditorCatalogData {
   id: string;
   entries: EditorCatalogEntry[];
-  /**
-   * Optional document-carried `ParamSchema`. Present only for editor-authored catalogs (created from
-   * the Data tab, no matching game export); game-exported catalogs keep their schema in code. Carrying
-   * it here is what lets an editor-only catalog round-trip through save/reload and drive the inspector.
-   */
   schema?: ParamSchema;
-  /** Optional display label for a document-authored catalog; falls back to the id when absent. */
   label?: string;
 }
 
-/**
- * Game-exported catalog definition: a `ParamSchema` plus default entries. Schemas stay in code;
- * entry values merge into `document.catalogs` and are what the editor/RPC edits and saves.
- * @capability editor-catalogs Export typed gameplay catalogs for in-editor tuning.
- */
+/** @capability editor-catalogs Export typed gameplay catalogs for in-editor tuning. */
 export interface EditorCatalogDefinition {
   id: string;
   label: string;
@@ -188,7 +129,6 @@ export interface EditorCatalogDefinition {
   entries: readonly EditorCatalogEntry[];
 }
 
-/** Accepted shape for a game's `editorCatalogs` export: definitions, or a factory. */
 export type EditorCatalogsInput =
   | readonly EditorCatalogDefinition[]
   | (() => readonly EditorCatalogDefinition[]);
@@ -200,20 +140,17 @@ export type EditorCatalogsInput =
  * @capability minimap-bake persist a baked minimap PNG + bounds on the scene document
  */
 export interface EditorMinimapBake {
-  /** `data:image/png;base64,…` background produced by `bakeMinimapFromDocument`. */
   background: string;
   /** World-space rectangle the baked image spans. */
   bounds: MinimapBakeBounds;
 }
 
-/** A named baked artifact produced by an editor or build tool. */
 export interface EditorBake {
   kind: "nav" | "minimap";
   id: string;
   data: unknown;
 }
 
-/** Named sky look stored on the scene document; matches runtime `SkyEnvironmentConfig.preset`. */
 export type EditorSkyPreset = "day" | "dusk" | "night";
 
 /**
@@ -222,16 +159,10 @@ export type EditorSkyPreset = "day" | "dusk" | "night";
  * @capability light-probes author a baked irradiance volume on the scene document
  */
 export interface EditorLightProbe extends IrradianceVolume {
-  /** Label shown in the lighting workspace. */
   label?: string;
-  /** The authored bake inputs; absent means the volume was authored elsewhere and only the probe data matters. */
   bake?: IrradianceBakeSettings;
 }
 
-/**
- * Linear distance fog authored on the scene document — serializable subset of sky/backdrop fog.
- * Absent fields keep engine defaults when the document is applied at runtime.
- */
 export interface EditorFogConfig {
   color?: string;
   near?: number;
@@ -250,17 +181,12 @@ export interface EditorFogConfig {
 export interface EditorColorGrading {
   /** Cube edge length the runtime bakes, 2..16. Default 8 — small enough to read, smooth enough for a grade. */
   size?: number;
-  /** Swatch shadows are tinted toward, e.g. `#2a3a52` for a cool night. Absent leaves shadows alone. */
   shadows?: string;
-  /** Swatch midtones are tinted toward. Absent leaves midtones alone. */
   midtones?: string;
-  /** Swatch highlights are tinted toward, e.g. `#ffe9c4` for a warm sun. Absent leaves highlights alone. */
   highlights?: string;
   /** How far each band is pulled toward its swatch, 0..1. Default 0.45. */
   tint?: number;
-  /** Display saturation around luma. Default 1. */
   saturation?: number;
-  /** Display contrast around mid-grey. Default 1. */
   contrast?: number;
   /** Clamped auto-exposure authored with the grade; absent uses the pipeline's default range. */
   autoExposure?: EditorAutoExposure;
@@ -283,7 +209,6 @@ export interface EditorAutoExposure {
  * @capability editor-environment persist sky/fog/lighting knobs on the scene document
  */
 export interface EditorEnvironment {
-  /** Optional runtime environment map source; absent keeps the procedural gradient. */
   source?: EnvironmentSource;
   /** Authored clamped auto-exposure and colour grade; the shell applies it to the post chain. */
   grading?: EditorColorGrading;
@@ -295,7 +220,6 @@ export interface EditorEnvironment {
    * from its own lights instead of the sky.
    */
   probes?: readonly EditorLightProbe[];
-  /** Fixed sky look when `timeOfDay` is off (or no clock is available). */
   preset?: EditorSkyPreset;
   /** Drive sun/sky from the world clock's day fraction instead of the fixed `preset`. */
   timeOfDay?: boolean;
@@ -313,44 +237,23 @@ export interface EditorEnvironment {
    * a named preset. Every grass and ground-cover volume draws with it unless its own `style` overrides it.
    */
   grassStyle?: GrassStyleSettings;
-  /**
-   * The raymarched cloud layer (`sky({ volumetricClouds })`). Present turns the layer on: `{}` draws
-   * it at the engine defaults. Absent leaves whatever the game's `world.ts` sky says.
-   */
   volumetricClouds?: VolumetricCloudsConfig;
 }
 
-/** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */
 export interface EditorDocument {
-  /** Reusable material library; per-marker named assignments live in meta.materialAssignments. */
   materialAssets?: MaterialAsset[] | undefined;
   version: 1;
-  /** Authored weather, emitter, fire and habitat inputs; runtime state saves separately. */
   simulation?: EditorSimulation;
   markers: EditorMarker[];
   volumes: EditorVolume[];
   paths: EditorPath[];
   annotations: EditorNote[];
-  /** Optional sculpted heightfield overlay; absent until terrain is created in the editor. */
   terrain?: EditorTerrain;
-  /** What grows `terrain` on first load when it is absent (`landform/generator/landformStart`). */
   terrainGenerator?: import("../landform/generator/landformDocument").EditorTerrainGenerator | undefined;
-  /** Reusable object stamps authored with "make prefab", inserted anywhere with "insert prefab". */
   prefabs: EditorPrefab[];
-  /** Named selection sets / production groups — restore, add-to, lock, color, visibility. */
   collections: EditorCollection[];
-  /** Persisted gameplay catalog values; schemas come from the game's `editorCatalogs` export. */
   catalogs: EditorCatalogData[];
-  /**
-   * Editor-owned grid/tile layers — sparse `col,row` → value-id maps authored in the editor and
-   * read by runtime + rendering through `@jgengine/core/editor/grid`. Absent until a game or the
-   * editor adds a grid layer, so existing documents load unchanged.
-   */
   grids?: EditorGridLayer[];
-  /**
-   * HUD layout owned by the scene document — panel id → anchor/offset/size/visibility.
-   * Canvas mode (F2+C) and `canvas_move_panel` / `canvas_resize_panel` write here; HudPanel reads it.
-   */
   ui?: EditorUiDocument | undefined;
   /**
    * Procedural **directives** — the scene-authorable face of the runtime scatter/population
@@ -365,7 +268,6 @@ export interface EditorDocument {
    * until baked, so old docs and unbaked games load unchanged.
    */
   minimap?: EditorMinimapBake;
-  /** Named baked artifacts; `minimap` remains as a compatible legacy alias. */
   bakes?: EditorBake[] | undefined;
   /**
    * Scene-document sky/fog/lighting (#1110). Absent until authored in the lighting workspace or
@@ -382,26 +284,19 @@ export interface EditorDirectiveArea {
 
 /** Fields shared by every directive: a stable id, the region/area it fills, and a deterministic seed. */
 interface EditorDirectiveBase {
-  /** Stable directive id; also the prefix of every minted instance id (`<id>#<index>`). */
   id: string;
-  /** Id of a document volume or scatter path whose footprint bounds the directive. */
   region?: string;
-  /** Explicit XZ bounds used when no `region` is named. */
   area?: EditorDirectiveArea;
   /** Deterministic seed — the same directive + seed always materializes the same field. */
   seed?: string | number;
-  /** Free-form authoring metadata. */
   meta?: Record<string, unknown>;
 }
 
-/** Scatters catalog props (rocks/trees/foliage) across a region — feeds the existing scatter system. */
 export interface EditorScatterDirective extends EditorDirectiveBase {
   kind: "scatter";
-  /** Catalog/asset id every placement instantiates. */
   asset: string;
   /** Items per square meter across the footprint. */
   density: number;
-  /** Minimum spacing between placements (m); 0 allows clumping. */
   minSpacing?: number;
   /** Grid jitter 0..1 — 0 is a rigid lattice, 1 fully scattered. */
   jitter?: number;
@@ -412,39 +307,31 @@ export interface EditorScatterDirective extends EditorDirectiveBase {
   maxYaw?: number;
 }
 
-/** One weighted species in a population directive, with a hard instance cap. */
 export interface EditorPopulationSpecies {
   id: string;
   /** Relative spawn weight; defaults to 1. */
   weight?: number;
-  /** Maximum instances of this species the directive materializes. */
   cap: number;
 }
 
-/** Populates a region with weighted, capped mob spawns — config for `ai/populationDirector`. */
 export interface EditorPopulationDirective extends EditorDirectiveBase {
   kind: "population";
   species: EditorPopulationSpecies[];
 }
 
-/** A procedural directive on the scene document: scatter props or a mob population. */
 export type EditorDirective = EditorScatterDirective | EditorPopulationDirective;
 
-/** The distinct directive kinds a materializer expands. */
 export type EditorDirectiveKind = EditorDirective["kind"];
 
-/** Accepted shape for a game's `editorLayers` export: a document, partial data, or a factory. */
 export type EditorLayersInput =
   | EditorDocument
   | Partial<Omit<EditorDocument, "version">>
   | (() => EditorDocument | Partial<Omit<EditorDocument, "version">>);
 
-/** Per-kind show/hide flags for the editor's layer panel. */
 export interface EditorKindVisibility {
   [kind: string]: boolean;
 }
 
-/** Standard marker kinds recognized with default colors and behavior. */
 export const WELL_KNOWN_MARKER_KINDS = [
   "player_spawn",
   "mob",
@@ -459,7 +346,6 @@ export const WELL_KNOWN_MARKER_KINDS = [
   "branch",
 ] as const;
 
-/** Standard volume kinds recognized with default colors and behavior. */
 export const WELL_KNOWN_VOLUME_KINDS = [
   "zone",
   "flatten",
@@ -473,5 +359,4 @@ export const WELL_KNOWN_VOLUME_KINDS = [
   "respawn_skip",
 ] as const;
 
-/** Standard path kinds recognized with default colors and behavior. */
 export const WELL_KNOWN_PATH_KINDS = ["road", "corridor", "branch", "route"] as const;

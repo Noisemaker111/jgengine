@@ -8,16 +8,13 @@ import type { ModelQualityTierId } from "./modelQuality";
 
 import { DEFAULT_MODEL_PARAMS_B, computeModelVramFootprintGb, getQuantizationProfile } from "./quantization";
 
-/** Benchmark that maps to neutral demand (~the first model). Better benchmarks command more $/token. */
 export const BENCHMARK_DEMAND_REFERENCE = 50;
 
-/** Demand premium from a model's benchmark score: a stronger model gets used more and charges more. */
 export function computeBenchmarkDemandMultiplier(benchmarkScore?: number | null): number {
   const score = benchmarkScore ?? BENCHMARK_DEMAND_REFERENCE;
   return Math.max(0.7, Math.min(1.6, 1 + (score - BENCHMARK_DEMAND_REFERENCE) / 100));
 }
 
-/** Quality tier nudges a trained model's benchmark above its base. */
 export const MODEL_TIER_BENCHMARK_BONUS: Record<ModelQualityTierId, number> = {
   common: 0,
   uncommon: 3,
@@ -46,7 +43,6 @@ export interface EffectiveModelServingOptions {
   servingTps?: number;
 }
 
-/** Apply quantization, benchmark demand, frontier decay, and optional demand saturation. */
 export function effectiveModelServingStats(
   model: {
     tokensPerSecond: number;

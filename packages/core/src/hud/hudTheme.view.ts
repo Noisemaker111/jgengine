@@ -14,7 +14,6 @@ export { hudSkinVars, type HudSkin } from "./hudSkin.view";
  * @capability hud-theme game-authored token object covering bars, frames, slots, chrome, text, status colors, fonts, and rarity
  */
 
-/** Per-readout fill colors plus a shared accent/glow. Each `*Deep` is the shaded companion fill. */
 export interface HudThemePalette {
   health: string;
   healthLow: string;
@@ -32,15 +31,11 @@ export interface HudThemePalette {
   boss: string;
   /** Accent used for glow/keycap/active states. */
   accent: string;
-  /** Shaded accent for gradients and pressed states. */
   accentDeep: string;
-  /** Translucent accent for outer glows. */
   accentGlow: string;
-  /** Soft accent wash for large background gradients. */
   accentDim: string;
 }
 
-/** Chrome surfaces, edges, and text — what panels, overlays, and menus are built out of. */
 export interface HudThemeSurface {
   surface: string;
   surfaceDeep: string;
@@ -48,11 +43,9 @@ export interface HudThemeSurface {
   edgeBright: string;
   text: string;
   textDim: string;
-  /** Full-screen dim behind modals and overlays. */
   backdrop: string;
 }
 
-/** Semantic status colors — outcome, threat, and relationship coloring. */
 export interface HudThemeStatus {
   danger: string;
   warning: string;
@@ -62,14 +55,12 @@ export interface HudThemeStatus {
   neutral: string;
 }
 
-/** Typography roles. Any CSS `font-family` list. */
 export interface HudThemeFont {
   display: string;
   numeric: string;
   body: string;
 }
 
-/** Item-rarity coloring shared by loot cards, tooltips, and inventory slots. */
 export interface HudThemeRarity {
   common: string;
   uncommon: string;
@@ -78,18 +69,13 @@ export interface HudThemeRarity {
   legendary: string;
 }
 
-/** Frame material + shape tokens (panels, `HudFrame variation="themed"`). */
 export interface HudThemeFrame {
-  /** Panel background (gradient or solid). */
   bg: string;
   border: string;
-  /** Corner radius (any CSS length, e.g. `"10px"`, `"0"`). */
   radius: string;
-  /** Outer glow / drop shadow. */
   glow: string;
 }
 
-/** Action/inventory slot tokens. */
 export interface HudThemeSlot {
   bg: string;
   border: string;
@@ -109,13 +95,10 @@ export interface HudThemeType {
   xl: string;
   xxl: string;
   display: string;
-  /** Body line height (unitless). */
   leading: string;
-  /** Letter spacing for uppercase labels and headers. */
   tracking: string;
 }
 
-/** Spacing steps (any CSS length). */
 export interface HudThemeSpace {
   xs: string;
   sm: string;
@@ -124,51 +107,32 @@ export interface HudThemeSpace {
   xl: string;
 }
 
-/**
- * Motion durations and easings. Blocks multiply durations by `--jg-motion-scale`, which the engine
- * stylesheet sets to 0 under `prefers-reduced-motion` or `[data-reduced-motion="true"]`.
- */
 export interface HudThemeMotion {
   fast: string;
   base: string;
   slow: string;
-  /** Standard ease for state changes. */
   ease: string;
-  /** Decelerating ease for entrances. */
   easeOut: string;
-  /** Slight overshoot for pops and presses releasing. */
   spring: string;
 }
 
-/** Layered `box-shadow` stacks by height, plus the inner top highlight a lit panel edge gets. */
 export interface HudThemeElevation {
-  /** Resting panels and buttons. */
   raised: string;
-  /** Hovered buttons, popovers, tooltips. */
   overlay: string;
   /** Windows and modal dialogs. */
   modal: string;
-  /** Inset top-edge highlight, layered into the stacks above by blocks that want a lit rim. */
   highlight: string;
 }
 
-/** Interactive-state tokens shared by every engine button, slot, and window. */
 export interface HudThemeState {
-  /** Overlay color washed over a hovered control. */
   hover: string;
-  /** Hover lift as a `translate` Y length (e.g. `"-1px"`). */
   hoverLift: string;
-  /** Overlay color washed over a pressed control. */
   press: string;
-  /** Pressed `scale` factor (e.g. `"0.97"`). */
   pressScale: string;
-  /** Focus ring as a `box-shadow` value. Unset derives a two-tone ring from the accent. */
   focusRing?: string;
-  /** Opacity of a disabled control. */
   disabledOpacity: string;
 }
 
-/** A full HUD theme. Author one with {@link hudTheme} or {@link deriveHudTheme}. */
 export interface HudTheme {
   palette: HudThemePalette;
   surface: HudThemeSurface;
@@ -177,18 +141,12 @@ export interface HudTheme {
   rarity: HudThemeRarity;
   frame: HudThemeFrame;
   slot: HudThemeSlot;
-  /** Minimap chrome ring color. */
   ring: string;
   skin?: HudSkin | undefined;
-  /** Type scale; unset uses {@link defaultHudTheme}'s. */
   type?: HudThemeType;
-  /** Spacing steps; unset uses {@link defaultHudTheme}'s. */
   space?: HudThemeSpace;
-  /** Durations and easings; unset uses {@link defaultHudTheme}'s. */
   motion?: HudThemeMotion;
-  /** Shadow stacks; unset uses {@link defaultHudTheme}'s. */
   elevation?: HudThemeElevation;
-  /** Hover, press, focus, and disabled tokens; unset uses {@link defaultHudTheme}'s. */
   state?: HudThemeState;
 }
 
@@ -235,7 +193,6 @@ function focusRing(theme: HudTheme): string {
   return theme.state?.focusRing ?? `0 0 0 2px ${theme.surface.surfaceDeep}, 0 0 0 4px ${theme.palette.accent}`;
 }
 
-/** Emits theme CSS properties, resetting inherited skins when absent. Spread onto a HUD ancestor. */
 export function hudThemeVars(theme: HudTheme): CSSProperties {
   const { palette, surface, status, font, rarity, frame, slot } = theme;
   return {
@@ -377,12 +334,6 @@ const UI_FONT =
 const DISPLAY_FONT =
   '"Inter Display", "Inter Variable", Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
-/**
- * The engine's default HUD look, applied by the shell at the HUD root of every game that does not
- * opt out: a strong system UI font stack, layered translucent panels with a lit top rim and crisp
- * hairline borders, a 12px type floor, and motion that honours reduced-motion. Games override any
- * part with their own theme on a HUD ancestor.
- */
 export const defaultHudTheme: HudTheme = {
   palette: {
     health: "#e5484d",
@@ -452,7 +403,6 @@ export const defaultHudTheme: HudTheme = {
   state: DEFAULT_STATE,
 };
 
-/** Per-group partial overrides accepted by {@link hudTheme}. */
 export interface HudThemeOverrides {
   palette?: Partial<HudThemePalette>;
   surface?: Partial<HudThemeSurface>;
@@ -470,13 +420,7 @@ export interface HudThemeOverrides {
   state?: Partial<HudThemeState>;
 }
 
-/**
- * Builds a full {@link HudTheme} from per-group partials, filling the rest from
- * {@link defaultHudTheme}. Reach for this when a game wants to name exact values; use
- * {@link deriveHudTheme} when a seed color pair is enough.
- *
- * @capability hud-theme-author fill a full HudTheme from per-group partial overrides
- */
+/** @capability hud-theme-author fill a full HudTheme from per-group partial overrides */
 export function hudTheme(overrides: HudThemeOverrides): HudTheme {
   return {
     palette: { ...defaultHudTheme.palette, ...overrides.palette },
@@ -515,7 +459,6 @@ interface ChromeSpec {
   rarity: HudThemeRarity;
 }
 
-/** Builds a chrome-led preset: the named surface/edge values drive frames, troughs, and slots. */
 function chrome(spec: ChromeSpec): HudTheme {
   return theme({
     palette: {
@@ -561,7 +504,6 @@ function chrome(spec: ChromeSpec): HudTheme {
   });
 }
 
-/** Built-in theme presets for demos/scaffold only — not product identity; games author their own theme. */
 export const HUD_THEME_PRESETS = {
   "arcane-stone": theme({
     palette: { health: "#c0392b", mana: "#7c5cff", xp: "#d4a017", accent: "#b483ff", shield: "#8e7bd6" },
@@ -718,7 +660,6 @@ export const HUD_THEME_PRESETS = {
   }),
 } satisfies Record<string, HudTheme>;
 
-/** Built-in demo/scaffold theme preset name — not a game identity. */
 export type HudThemePreset = keyof typeof HUD_THEME_PRESETS;
 
 interface Rgb {
@@ -757,7 +698,6 @@ function alpha(hex: string, value: number): string {
   return `rgba(${r}, ${g}, ${b}, ${value})`;
 }
 
-/** Seed colors for {@link deriveHudTheme}. Only `accent` and `surface` are required. */
 export interface HudThemeSeed {
   accent: string;
   surface: string;
@@ -834,7 +774,6 @@ export function deriveHudTheme(seed: HudThemeSeed): HudTheme {
   });
 }
 
-/** Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme. */
 export function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme {
   if (theme === undefined) return defaultHudTheme;
   if (typeof theme === "string") return HUD_THEME_PRESETS[theme] ?? defaultHudTheme;

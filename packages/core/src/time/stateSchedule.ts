@@ -5,15 +5,12 @@ export interface SchedulePhase<T> {
 
 export interface StateScheduleConfig<T> {
   phases: readonly SchedulePhase<T>[];
-  /** Repeat the phase list forever (default); `false` clamps to the last phase after one pass. */
   loop?: boolean;
-  /** Shifts the whole timeline so `t = 0` lands `offsetSeconds` into the cycle — staggers identical schedules. */
   offsetSeconds?: number;
 }
 
 export interface ScheduleSample<T> {
   state: T;
-  /** Index into `phases`. */
   index: number;
   elapsedSeconds: number;
   /** Seconds until this phase ends; `Infinity` on the clamped final phase of a non-looping schedule. */
@@ -34,15 +31,12 @@ export interface ScheduleWindow {
  * `nextTransitionAt` for countdowns, `windowsOf`/`nextWindow` for "when is it safe" forecasts.
  */
 export interface StateSchedule<T> {
-  /** Sum of all phase durations — one full cycle. */
   readonly cycleSeconds: number;
   stateAt(t: number): T;
   sampleAt(t: number): ScheduleSample<T>;
-  /** Absolute time of the next phase boundary after `t`; `Infinity` once a non-looping schedule ends. */
   nextTransitionAt(t: number): number;
   /** All windows within `[fromT, fromT + horizonSeconds]` where the state matches. */
   windowsOf(match: (state: T) => boolean, fromT: number, horizonSeconds: number): ScheduleWindow[];
-  /** The first matching window at or after `fromT` (looking ahead `horizonSeconds`, default one full cycle). */
   nextWindow(match: (state: T) => boolean, fromT: number, horizonSeconds?: number): ScheduleWindow | null;
 }
 
@@ -143,7 +137,6 @@ export function createStateSchedule<T>(config: StateScheduleConfig<T>): StateSch
   };
 }
 
-/** One phase of a {@link PhaseSchedule}: a named state that ends on its own duration or when the caller advances it. */
 export interface PhaseSpec<T> {
   state: T;
   /** Seconds this phase holds before it ends on its own; omit it for a phase that only `advance()` ends. */
@@ -157,31 +150,21 @@ export interface PhaseSpec<T> {
   next?: string;
 }
 
-/** Named states one after another, each ended by its own duration or by the caller. */
 export interface PhaseScheduleConfig<T> {
   phases: readonly PhaseSpec<T>[];
-  /** Wrap from the last phase back to the first (default `false`: the last phase ends the schedule). */
   loop?: boolean;
-  /**
-   * What a tick does with the time a phase had left over: `carry` (default) spends it in the phases
-   * it reaches, `drop` ends the tick at its first phase change and discards the rest.
-   */
   overshoot?: "carry" | "drop";
 }
 
-/** One phase change a {@link PhaseSchedule.tick} made. */
 export interface PhaseTransition<T> {
   from: T;
   to: T;
-  /** True when the change wrapped from the last phase back to the first. */
   wrapped: boolean;
 }
 
-/** Plain JSON position in a phase schedule. */
 export interface PhaseScheduleState {
   index: number;
   elapsedSeconds: number;
-  /** True once the last phase of a non-looping schedule has ended. */
   ended: boolean;
 }
 
@@ -202,19 +185,13 @@ export interface PhaseSchedule<T> {
   remainingSeconds(): number | null;
   /** Elapsed fraction of a timed phase in `[0, 1]`; `0` on a phase that waits for `advance()`. */
   fraction(): number;
-  /** True once the last phase of a non-looping schedule ended; `advance()` is then a no-op. */
   ended(): boolean;
-  /** End the current phase now. Returns the state entered; stays put at the end of a non-looping schedule. */
   advance(): T;
-  /** Jump to the phase whose state is `state`, clearing its elapsed time; false when the list has no such phase. */
   enter(state: T): boolean;
-  /** Jump to the phase named `id`, clearing its elapsed time; false when no phase has that name. */
   goTo(id: string): boolean;
-  /** Change how long the phase named `id` holds, in play; the running phase keeps its elapsed time. False for an unknown name. */
   retune(id: string, seconds: number): boolean;
   /** Advance by `dt` through every timed phase it ends, in order. Phases without a duration never end here. */
   tick(dt: number): PhaseTransition<T>[];
-  /** Back to the first phase, elapsed cleared, `ended()` false. */
   reset(): void;
   snapshot(): PhaseScheduleState;
   restore(state: PhaseScheduleState): void;
@@ -225,7 +202,6 @@ interface PhaseClock<T> {
   readonly state: T;
   readonly key: string | null;
   durationSeconds: number | null;
-  /** The phase named by this phase's own `next`, or `null` to follow list order. */
   nextAt: number | null;
 }
 
@@ -235,11 +211,7 @@ function phaseClock<T>(phases: readonly PhaseClock<T>[], at: number): PhaseClock
   return phase;
 }
 
-/**
- * A stateful timeline of named phases, ended by their own durations or by `advance()`.
- *
- * @capability phase-schedule advance named phases by time or by event, with snapshot/restore
- */
+/** @capability phase-schedule advance named phases by time or by event, with snapshot/restore */
 export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSchedule<T> {
   if (config.phases.length === 0) throw new Error("phase schedule needs at least one phase");
   const phases: PhaseClock<T>[] = config.phases.map((phase, index) => {
@@ -367,16 +339,11 @@ export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSch
 export interface ClearWindowScan {
   fromSeconds: number;
   horizonSeconds: number;
-  /** Sampling resolution; smaller catches shorter gaps. */
   stepSeconds: number;
   /** Reject windows shorter than this; default `0`. */
   minDurationSeconds?: number;
 }
 
-/**
- * Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the
- * next open window. Sampling-based: pick `stepSeconds` at or below half the shortest gap that matters.
- */
 export function nextClearWindow(isClear: (t: number) => boolean, scan: ClearWindowScan): ScheduleWindow | null {
   const minDuration = scan.minDurationSeconds ?? 0;
   const end = scan.fromSeconds + scan.horizonSeconds;

@@ -24,7 +24,6 @@ function LaunchCelebration() {
   </RuneView>;
 }
 
-/** Shared in-world overlays: the crosshair, the lab guide, placement and the launch celebration. */
 export function GameplayChrome({ world, build, tutorial, isTouch, chatOpen = false, goalSelection }: {
   world: ReadyWorldViewModel; build: BuildViewModel; tutorial: TutorialViewModel; isTouch: boolean; chatOpen?: boolean; goalSelection: LabGoalSelection;
 }) {

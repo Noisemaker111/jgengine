@@ -6,7 +6,6 @@
  * Declare a schema with {@link defineParamSchema} and {@link ParamsOf} gives the parsed params' type.
  */
 
-/** One weighted entry in a `weightedList` param — an item id and its relative spawn weight. */
 export interface WeightedParamEntry {
   item: string;
   weight: number;
@@ -24,13 +23,10 @@ export interface GradientStop {
   color: string;
 }
 
-/** What every field row carries. */
 interface ParamFieldBase {
   key: string;
   label?: string | undefined;
-  /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
   group?: string;
-  /** `false` keeps this field fixed when the variant grid explores around the current values. */
   vary?: boolean;
 }
 
@@ -41,7 +37,6 @@ export interface RangeParamField extends ParamFieldBase {
   max: number;
   step?: number;
   default: number;
-  /** Suffix shown next to the readout, e.g. "m" or "/m²". */
   unit?: string;
   /** The window variants explore inside, when the full range allows values that stop looking right. Defaults to `[min, max]`. */
   explore?: readonly [number, number];
@@ -60,24 +55,20 @@ export interface NumberParamField extends ParamFieldBase {
   explore?: readonly [number, number];
 }
 
-/** A checkbox. */
 export interface BoolParamField extends ParamFieldBase {
   type: "bool";
   default: boolean;
 }
 
-/** A dropdown of fixed string options. */
 export interface SelectParamField extends ParamFieldBase {
   type: "select";
   options: readonly { value: string; label?: string }[];
   default: string;
 }
 
-/** A hex colour picker. */
 export interface ColorParamField extends ParamFieldBase {
   type: "color";
   default: string;
-  /** How far variants shift this colour at full explore. */
   explore?: ColorExplore;
 }
 
@@ -88,28 +79,23 @@ export interface ColorParamField extends ParamFieldBase {
 export interface ColorExplore {
   /** Hue shift in degrees. Default 24. */
   hue?: number;
-  /** Saturation change as a fraction of the current saturation. Default 0.25. */
   saturation?: number;
   /** Lightness change, 0..1. Default 0.08. */
   lightness?: number;
 }
 
-/** A free string input. */
 export interface TextParamField extends ParamFieldBase {
   type: "text";
   default: string;
 }
 
-/** A seed string with a reroll button — same seed reproduces the same generated result. */
 export interface SeedParamField extends ParamFieldBase {
   type: "seed";
   default: string;
 }
 
-/** A repeatable list of weighted `{ item, weight }` rows (species palette, book set, …). */
 export interface WeightedListParamField extends ParamFieldBase {
   type: "weightedList";
-  /** Placeholder for the item id input. */
   itemLabel?: string;
   default: readonly WeightedParamEntry[];
 }
@@ -120,9 +106,7 @@ export interface WeightedListParamField extends ParamFieldBase {
  */
 export interface CurveParamField extends ParamFieldBase {
   type: "curve";
-  /** Lowest allowed `y`. Default 0. */
   min?: number;
-  /** Highest allowed `y`. Default 1. */
   max?: number;
   default: readonly CurvePoint[];
 }
@@ -131,15 +115,9 @@ export interface CurveParamField extends ParamFieldBase {
 export interface GradientParamField extends ParamFieldBase {
   type: "gradient";
   default: readonly GradientStop[];
-  /** How far variants shift every stop at full explore; all stops shift together. */
   explore?: ColorExplore;
 }
 
-/**
- * A button row that runs a built-in inspector action on its group — currently `"randomize"` (reroll
- * the group's numeric/seed/bool/select fields within their bounds) or `"reset"` (restore group
- * defaults). Carries no persisted value; purely a control.
- */
 export interface ActionParamField {
   type: "action";
   key: string;
@@ -148,7 +126,6 @@ export interface ActionParamField {
   action: "randomize" | "reset";
 }
 
-/** One row in a parameter schema — the union the generic inspector knows how to render. */
 export type ParamField =
   | RangeParamField
   | NumberParamField
@@ -162,13 +139,10 @@ export type ParamField =
   | GradientParamField
   | ActionParamField;
 
-/** A named, optionally collapsed section the inspector groups fields under (by `field.group === id`). */
 export interface ParamGroup {
   id: string;
   label: string;
-  /** Start collapsed. Default expanded. */
   collapsed?: boolean;
-  /** Parent group id: this section renders inside that one. Omit for a top-level section. */
   parent?: string;
 }
 
@@ -182,30 +156,16 @@ export interface ParamPreset {
   label?: string;
   /** Heading the inspector lists this preset under, so a long preset library stays browsable. */
   group?: string;
-  /** Field values the preset writes; fields not listed keep their current values. */
   values: Readonly<Record<string, unknown>>;
 }
 
-/** A full parameter surface: an ordered list of fields the inspector renders top to bottom. */
 export interface ParamSchema<Fields extends readonly ParamField[] = readonly ParamField[]> {
   fields: Fields;
-  /** Optional named sections; fields reference one by `group`. Ungrouped fields render first, headerless. */
   groups?: readonly ParamGroup[] | undefined;
-  /** Optional named field-value bundles the inspector offers as one-click applies. */
   presets?: readonly ParamPreset[];
-  /**
-   * A `meta` key naming one of {@link presets}: that preset's values back every field the meta
-   * leaves unset, so `{ species: "tall-fescue", bladeHeight: 0.2 }` is the whole fescue look with one
-   * override. Parsing, validation and the inspector all read through it.
-   */
   presetKey?: string;
 }
 
-/**
- * A `meta` bag with its {@link ParamSchema.presetKey} preset filled in under it: the preset's values,
- * then the meta's own keys on top. The meta unchanged when the schema has no preset key or the meta
- * names no known preset.
- */
 export function presetBackedMeta(schema: ParamSchema, meta: Readonly<Record<string, unknown>> | undefined): Readonly<Record<string, unknown>> | undefined {
   if (schema.presetKey === undefined || meta === undefined) return meta;
   const id = meta[schema.presetKey];
@@ -213,7 +173,6 @@ export function presetBackedMeta(schema: ParamSchema, meta: Readonly<Record<stri
   return preset === undefined ? meta : { ...preset.values, ...meta };
 }
 
-/** The parsed value one field yields. */
 export type ParamValue<Field extends ParamField> = Field extends RangeParamField | NumberParamField
   ? number
   : Field extends BoolParamField
@@ -230,16 +189,10 @@ export type ParamValue<Field extends ParamField> = Field extends RangeParamField
               ? GradientStop[]
               : never;
 
-/** Parsed params after `parseParams` on an untyped schema: every field present, validated and defaulted. */
 export type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[] | CurvePoint[] | GradientStop[]>;
 
 type ValueField<Schema extends ParamSchema> = Exclude<Schema["fields"][number], ActionParamField>;
 
-/**
- * The typed params a schema parses to: one property per non-action field, keyed by its `key`. A
- * schema declared with {@link defineParamSchema} keeps literal keys, so `ParamsOf<typeof SCHEMA>` is
- * an exact object type; a plain `ParamSchema` falls back to {@link ParsedParams}.
- */
 export type ParamsOf<Schema extends ParamSchema> = string extends ValueField<Schema>["key"]
   ? ParsedParams
   : { [Field in ValueField<Schema> as Field["key"]]: ParamValue<Field> };
@@ -252,14 +205,12 @@ export function defineParamSchema<const Fields extends readonly ParamField[]>(sc
   return schema;
 }
 
-/** Look up a schema preset by id, or undefined — the seam `apply_preset` and games resolve bundles through. */
 export function findSchemaPreset(schema: ParamSchema, id: string): ParamPreset | undefined {
   return schema.presets?.find((preset) => preset.id === id);
 }
 
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
-/** True for a `#rgb` or `#rrggbb` hex colour string. */
 function isHexColor(value: unknown): value is string {
   return typeof value === "string" && HEX.test(value);
 }
@@ -641,7 +592,7 @@ function defaultValue(field: Exclude<ParamField, ActionParamField>): unknown {
   }
 }
 
-/** A `meta` patch restoring every field in `groupId` to its schema default — the "reset" button. @internal */
+/** @internal */
 export function resetGroupParams(schema: ParamSchema, groupId: string | undefined): Record<string, unknown> {
   const patch: Record<string, unknown> = {};
   for (const field of schema.fields) {
@@ -651,7 +602,7 @@ export function resetGroupParams(schema: ParamSchema, groupId: string | undefine
   return patch;
 }
 
-/** The `meta` patch that fills a fresh object with its schema defaults. @internal */
+/** @internal */
 export function defaultParamMeta(schema: ParamSchema): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const field of schema.fields) {
@@ -661,7 +612,6 @@ export function defaultParamMeta(schema: ParamSchema): Record<string, unknown> {
   return out;
 }
 
-/** The groups nested directly under `parent` (top-level groups when `parent` is undefined), in declared order. */
 export function childParamGroups(schema: ParamSchema, parent: string | undefined): ParamGroup[] {
   const groups = schema.groups ?? [];
   const known = new Set(groups.map((group) => group.id));

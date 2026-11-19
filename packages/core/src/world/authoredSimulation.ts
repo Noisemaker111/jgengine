@@ -15,7 +15,6 @@ import type { Vec3 } from "./geometry";
 /** A watched surface is sampled in metres. Its accumulation survives runtime save/restore. */
 export interface AuthoredSurface extends WeatherExposureSurface { y?: number }
 
-/** Appearance adapters consume these units without owning weather state or its clock. */
 export interface EnvironmentAppearanceSignals {
   timeSeconds: number;
   wind: Vec3;
@@ -27,7 +26,6 @@ export interface EnvironmentAppearanceSignals {
   temperatureOffsetC: number;
 }
 
-/** Runtime state excludes authored configuration and cosmetic particle pools. */
 export interface AuthoredSimulationSnapshot {
   surfaces: WeatherExposureSnapshot;
   watched: AuthoredSurface[];
@@ -35,15 +33,11 @@ export interface AuthoredSimulationSnapshot {
   flocks: { id: string; agents: FlockStepAgent[]; routeIndex: number }[];
 }
 
-/** One authored fire area at runtime: its landscape fire and the fuel moisture authored weather drives. */
 export interface AuthoredFireRuntime {
   readonly fire: FireLandscape;
   readonly moisture: FuelMoistureModel;
-  /** Light the cell under a world position; false off the grid. */
   ignite(x: number, z: number): boolean;
-  /** Douse the cell under a world position: soak its fine fuel and its neighbours', and put it out. */
   extinguish(x: number, z: number): boolean;
-  /** Cells flaming or smouldering. */
   readonly burning: number;
 }
 
@@ -115,7 +109,6 @@ function createFireArea(area: AuthoredFireArea, exposureAt: (x: number, y: numbe
   };
 }
 
-/** A habitat's live poses; game species determine appearance and gameplay actor policy. */
 export interface AuthoredFlockState {
   readonly id: string;
   readonly species: string;
@@ -143,7 +136,6 @@ export interface AuthoredSimulationRuntime {
   /** Sum authored fields and wind (response 1/second), capped in metres/second² by game policy. */
   accelerationAt(position: Vec3, timeSeconds: number, windResponse: number, maxAcceleration: number, mask?: number, out?: [number, number, number]): Vec3;
   fire(id: string): AuthoredFireRuntime | undefined;
-  /** Cosmetic poses render directly; gameplay habitats are consumed by game actor adapters. */
   flocks(): readonly AuthoredFlockState[];
   step(gameDt: number): void;
   retune(document: EditorDocument): void;
@@ -166,9 +158,7 @@ function inside(shelter: EditorVolume, x: number, y: number, z: number): boolean
   return shelter.shape === "sphere" ? dx * dx + dy * dy + dz * dz <= radius * radius : dx * dx + dz * dz <= radius * radius && Math.abs(dy) <= (shelter.height ?? 0) / 2;
 }
 
-/** Compose authored weather, shelter, accumulation, named effect intents and fire with one clock.
- * @capability authored-environment compose authored weather, shelter, accumulation, fire, flocks and effects using one simulation clock
- */
+/** @capability authored-environment compose authored weather, shelter, accumulation, fire, flocks and effects using one simulation clock */
 export function createAuthoredSimulation(options: { document?: EditorDocument | undefined; timeSeconds: () => number; particles?: ParticleDirector | undefined; maxSurfaces?: number }): AuthoredSimulationRuntime {
   let document = options.document ?? createEmptyEditorDocument();
   let config: EditorSimulation = decodeEditorSimulation(document.simulation ?? {}, document);

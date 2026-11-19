@@ -4,7 +4,6 @@ import type { ReactNode } from "@jgengine/core/ui/jsx";
 import type { TouchButton } from "@jgengine/core/input/touchScheme";
 import { GameIcon, iconForAction, isGameIconName, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 
-/** Shooter verbs the shared `GameIcon` catalog has no glyph for. Same 24-unit, `currentColor` style. */
 const TOUCH_GLYPHS = {
   fire: (
     <>
@@ -41,10 +40,8 @@ const TOUCH_GLYPHS = {
   ),
 } as const satisfies Record<string, ReactNode>;
 
-/** A glyph the touch dock draws itself, beyond the shared `GameIcon` catalog. */
 export type TouchGlyphName = keyof typeof TOUCH_GLYPHS;
 
-/** What a touch button face shows: a drawn glyph, or a 1–3 character text glyph when nothing fits. */
 export type TouchButtonFace = { kind: "glyph"; name: GameIconName | TouchGlyphName } | { kind: "text"; text: string };
 
 function isTouchGlyphName(value: string): value is TouchGlyphName {
@@ -70,11 +67,7 @@ const TOUCH_ICON_RULES: readonly (readonly [readonly string[], GameIconName | To
   [["settings", "options"], "gear"],
 ];
 
-/**
- * Short initials from a label: `Relay Overclock` → `RO`, `Honk` → `HO`.
- *
- * @internal
- */
+/** @internal */
 export function touchInitials(label: string): string {
   const words = label.split(/[\s._\-−+]+/).filter((word) => /[a-z0-9]/i.test(word));
   if (words.length === 0) return "?";

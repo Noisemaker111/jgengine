@@ -60,7 +60,6 @@ export function buildingSurfaceTextures(surface: BuildingSurfaceMaterial | undef
 const SURFACE_ROLES = ["color", "normal", "roughness", "ao", "metalness"] as const;
 type SurfaceRole = (typeof SURFACE_ROLES)[number];
 
-/** A surface that names at least one map URL. */
 export type TexturedBuildingSurface = BuildingSurfaceMaterial & { maps: BuildingSurfaceMaps };
 
 /** True when the surface names at least one map URL, so the batch needs the textured path. */
@@ -69,7 +68,6 @@ export function surfaceHasMaps(surface: BuildingSurfaceMaterial | undefined): su
   return SURFACE_ROLES.some((role) => surface.maps?.[role] !== undefined);
 }
 
-/** A stable key for bucketing instances that share one surface (same colour, maps, tiling, and response). */
 export function surfaceKey(surface: BuildingSurfaceMaterial | undefined): string {
   if (surface === undefined) return "";
   const repeat = surface.repeat === undefined ? 1 : surface.repeat;
@@ -175,7 +173,7 @@ export function useBuildingSurfaceTextures(
   return textures;
 }
 
-/** Applies a surface's colour, response, and loaded maps onto a standard or physical material in place. @internal */
+/** @internal */
 export function applyBuildingSurface(
   material: THREE.MeshStandardMaterial,
   surface: BuildingSurfaceMaterial,

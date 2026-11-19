@@ -18,7 +18,6 @@ export const PALETTE: Palette = {
 };
 export class Mesh {
   parts = new Map<string, Part>();
-  /** The joint that owns vertices added next. */
   joint = 0;
   part(material: string): Part {
     let part = this.parts.get(material);
@@ -54,7 +53,6 @@ export class Mesh {
     while (p.joints.length < p.positions.length / 3) p.joints.push(this.joint);
     void first;
   }
-  /** A cylinder along `axis` (0 x, 1 y, 2 z) centred on `center`. */
   cylinder(material: string, center: V3, radius: number, length: number, axis: 0 | 1 | 2, segments = 12): this {
     const p = this.part(material), first = p.positions.length / 3;
     const at = (a: number, r: number, along: number): { pos: V3; nrm: V3 } => {

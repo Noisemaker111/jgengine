@@ -1,12 +1,9 @@
 import { randomSeedFrom, stepRandomSeed, hashString, type RandomSeed } from "../random/rng";
 
-/** What a station mostly broadcasts; a HUD can style or group stations by it. */
 export type RadioStationKind = "music" | "talk" | "news";
 
-/** One kind of programme segment. `bulletin` is reserved for segments the radio builds from reported game events. */
 export type RadioSegmentKind = "song" | "dj" | "ad" | "talk" | "news" | "jingle" | "bulletin";
 
-/** A spoken line inside a segment. A bare string in a definition is a line in the station's default voice. */
 export interface RadioLineDef {
   text: string;
   /** Voice id the playback maps to a speech voice (a DJ, a caller, an ad announcer). Default: the segment's or station's voice. */
@@ -15,51 +12,36 @@ export interface RadioLineDef {
   at?: number;
 }
 
-/** An authored programme segment: a song (a music theme id), a DJ link, an ad, a talk bit or a news item. */
 export interface RadioSegmentDef {
   id: string;
   kind: Exclude<RadioSegmentKind, "bulletin">;
-  /** Title shown on the HUD ("Neon Tidewater", "Carmine Gold Pawn - ad"). */
   title: string;
-  /** Artist or host credit shown under the title. */
   artist?: string;
   /** Segment length in seconds. Default: long enough for its lines, or 30 s with none. */
   seconds?: number;
-  /** Music theme id played while the segment is on air: the song itself, or a bed under talk. */
   theme?: string;
-  /** Semitones the theme is shifted for this segment. */
   transpose?: number;
-  /** Default voice for this segment's lines. */
   voice?: string;
   lines?: readonly (string | RadioLineDef)[];
 }
 
-/** How a station reads bulletins the game reports. */
 export interface RadioBulletinPolicy {
-  /** Lines one of which is said before every bulletin ("This just in."). */
   intro?: readonly string[];
-  /** Lines one of which is said after every bulletin. */
   outro?: readonly string[];
   /** Voice the bulletin is read in. Default: the station's voice. */
   voice?: string;
-  /** HUD title of a bulletin segment. Default "News". */
   title?: string;
   /** A bulletin at or above this priority cuts the current segment off. Default: never. */
   breakIn?: number;
-  /** Theme played under bulletins (a news sting bed). */
   theme?: string;
-  /** Most bulletins waiting on this station; the lowest priority is dropped past it. Default 4. */
   maxQueue?: number;
 }
 
-/** One station on the dial. */
 export interface RadioStationDef {
   id: string;
   name: string;
-  /** Dial label ("94.7 FM"). */
   frequency: string;
   kind: RadioStationKind;
-  /** Default voice for every spoken line on this station. */
   voice?: string;
   /** Theme played under segments that name none (a talk-show bed). Default: silence. */
   bed?: string;
@@ -73,7 +55,6 @@ export interface RadioStationDef {
   bulletins?: RadioBulletinPolicy | false;
 }
 
-/** Timing knobs a game may retune during play. */
 export interface RadioTiming {
   /** Speaking speed used to estimate how long a line takes. Default 2.6 words per second. */
   wordsPerSecond?: number;
@@ -83,26 +64,20 @@ export interface RadioTiming {
   bulletinTtl?: number;
 }
 
-/** A whole radio: its dial and how it times speech. */
 export interface RadioDef extends RadioTiming {
   stations: readonly RadioStationDef[];
-  /** Seed for the shuffled running orders. Default "radio". */
   seed?: string | number;
   /** Station tuned in at creation. Default: the first. */
   initial?: string;
 }
 
-/** A game event the radio should talk about ("shots fired in Port Carmine"). */
 export interface RadioBulletin {
-  /** Topic key that cooldowns are tracked by ("shots", "wanted-5", "turf"). */
   topic: string;
   /** Higher plays first and may break in. Default 1. */
   priority?: number;
   /** HUD title for this bulletin. Default: the station's bulletin title. */
   title?: string;
-  /** What any accepting station says. */
   lines: readonly string[];
-  /** Per-station wording (a DJ jokes, the news desk reads it straight); stations not listed use `lines`. */
   byStation?: Readonly<Record<string, readonly string[]>>;
   /** Stations that hear it. Default: every station that reads bulletins. */
   stations?: readonly string[];
@@ -112,7 +87,6 @@ export interface RadioBulletin {
   ttl?: number;
 }
 
-/** A line as scheduled inside a resolved segment. */
 export interface RadioLine {
   text: string;
   voice: string | null;
@@ -132,11 +106,9 @@ export interface RadioSegment {
   theme: string | null;
   transpose: number;
   lines: readonly RadioLine[];
-  /** The bulletin topic, for a bulletin segment. */
   topic: string | null;
 }
 
-/** Something the playback should do now for the station being listened to. */
 export type RadioCue =
   /** A segment went on air (or the listener tuned in mid-segment): start its theme `offset` seconds in. */
   | { kind: "segment"; station: string; segment: RadioSegment; offset: number }
@@ -145,15 +117,12 @@ export type RadioCue =
   /** The radio went silent (powered off). */
   | { kind: "off" };
 
-/** HUD view of a station's programme. */
 export interface RadioNowPlaying {
   station: { id: string; name: string; frequency: string; kind: RadioStationKind };
   segment: { id: string; kind: RadioSegmentKind; title: string; artist: string | null };
   elapsed: number;
   seconds: number;
-  /** The line being said, held a moment after it ends; null between lines and during songs. */
   line: string | null;
-  /** Voice of {@link line}. */
   voice: string | null;
 }
 
@@ -180,7 +149,6 @@ interface StationState {
   queue: QueuedBulletin[];
 }
 
-/** Serializable radio state: every station's place in its programme, the queues, cooldowns and the dial. */
 export interface RadioSnapshot {
   clock: number;
   seed: number;
@@ -191,32 +159,21 @@ export interface RadioSnapshot {
   stations: Record<string, StationState>;
 }
 
-/** A radio with a running broadcast. */
 export interface Radio {
   /** Advance every station's clock by `dt` seconds and return what the tuned station's playback should do. */
   tick(dt: number): RadioCue[];
-  /** Tune to a station (it powers the radio on). Unknown ids are ignored. */
   tune(stationId: string): void;
-  /** Next or previous station on the dial, wrapping. Powers the radio on. */
   step(direction: 1 | -1): string;
-  /** Power off keeps the station, power on returns to it. */
   power(on: boolean): void;
   powered(): boolean;
-  /** Station being listened to, or null while off. */
   tuned(): string | null;
-  /** Station the dial is on, even while off. */
   dial(): string;
-  /** Re-announce the tuned station's current segment at its offset (after a pause or a reload). */
   cueCurrent(): void;
-  /** Queue a bulletin on every accepting station. Returns false while its topic is cooling down. */
   report(bulletin: RadioBulletin): boolean;
   /** Seconds until `topic` accepts another bulletin. */
   cooldown(topic: string): number;
-  /** What the tuned station is playing, or null while off. */
   nowPlaying(): RadioNowPlaying | null;
-  /** What any station is playing, tuned or not. */
   station(stationId: string): RadioNowPlaying | null;
-  /** Bulletins waiting on a station. */
   queued(stationId: string): number;
   stations(): readonly { id: string; name: string; frequency: string; kind: RadioStationKind }[];
   retune(timing: RadioTiming): void;

@@ -4,15 +4,12 @@ import { grantCred } from "../progression/cred";
 import { earn } from "../cash";
 import { STASH_SPOTS } from "../world/districts";
 
-/** World-item id every hidden stash pickup shares — the tick filters the ground on it. */
 export const STASH_ITEM = "vice_stash";
 export const STASH_PICKUP_RADIUS = 4;
 export const STASH_PAYOUT = 300;
 export const STASH_CRED = 25;
-/** One-off reward for bagging every stash on the isle. */
 export const STASH_COMPLETE_BONUS = 6000;
 
-/** Collected authored stash ids — persisted with the whole-world save. */
 export const stashStore = defineStore<string[] | undefined>("harbor.stashes", undefined);
 
 /**
@@ -30,7 +27,6 @@ export function stashPayout(): number {
   return STASH_PAYOUT;
 }
 
-/** How many stashes are still out there for a given collected count. */
 export function stashesRemaining(collected: number, total: number = STASH_SPOTS.length): number {
   return Math.max(0, total - collected);
 }

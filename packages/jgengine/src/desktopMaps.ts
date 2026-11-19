@@ -7,7 +7,7 @@ export const desktopSha256 = (bytes: string | Uint8Array): string => createHash(
 
 interface MapEntry { script: string; map: string }
 
-/** Move maps outside the packaged dist and bind each to the exact generated script. @internal */
+/** @internal */
 export function extractDesktopMaps(dist: string, privateRoot: string): { digest: string; directory: string; count: number } {
   const entries: Record<string, MapEntry> = {};
   const maps: { path: string; hash: string; bytes: Uint8Array }[] = [];
@@ -43,7 +43,7 @@ export function extractDesktopMaps(dist: string, privateRoot: string): { digest:
   return { digest, directory, count: Object.keys(entries).length };
 }
 
-/** Resolve only maps bound to the app's embedded index and exact running script. @internal */
+/** @internal */
 export function readPrivateDesktopMap(directory: string, digest: string, script: string): string | null {
   if (!/^[a-f0-9]{64}$/.test(digest)) throw new Error("invalid private map identity");
   const index = readFileSync(join(directory, digest, "index.json"), "utf8");

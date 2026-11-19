@@ -17,7 +17,6 @@ export interface SensorReadoutMeterProps {
   className?: string;
 }
 
-/** A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state. */
 export function SensorReadoutMeter({ label, reading, className }: SensorReadoutMeterProps) {
   const percent = reading === null ? 0 : Math.round(reading.strength * 100);
   return (

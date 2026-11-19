@@ -28,9 +28,7 @@ export type PerfBuild = "production" | "dev";
 
 const BUILD_ROOT = join(".scratch", "perf-prod");
 const BUILT_MARKER = ".built.json";
-/** Builds kept per checkout: the current one and the one before it (an A/B across an edit). */
 const KEEP_BUILDS = 2;
-/** Brotli level the static files are compressed at once, at build time: about what a CDN serves. */
 const BROTLI_QUALITY = 9;
 const COMPRESSED = new Set([".js", ".css", ".html", ".json", ".svg", ".wasm", ".txt", ".gltf"]);
 
@@ -57,7 +55,6 @@ const TYPES: Readonly<Record<string, string>> = {
 };
 
 export interface ProdBuild {
-  /** The folder the build was written to; chunks under `assets/`, each with its `.map`. */
   outDir: string;
   fingerprint: string;
   /** Seconds the build took, or 0 when an earlier build of the same files was reused. */
@@ -79,7 +76,6 @@ function compressTree(dir: string): void {
   }
 }
 
-/** One hash of every file name under the runner's and each game's `public/`: what a build copies beside its chunks. */
 function publicFilesHash(root: string): string {
   const hash = createHash("sha1");
   const dirs = [["", join(root, "apps", "dev", "public")], ...gamePublicDirs(undefined, join(root, "games"))] as const;
@@ -87,10 +83,6 @@ function publicFilesHash(root: string): string {
   return hash.digest("hex").slice(0, 8);
 }
 
-/**
- * Build (or reuse) the production runner for the files `cwd` serves now. Link the asset packs of the
- * games to be measured first (`provisionCapturedGame`). Throws with the build's log path when it fails.
- */
 export function buildProdRunner(cwd: string): ProdBuild {
   const root = resolve(cwd);
   const registries = join(root, "apps", "dev", "src", "registries.tsx");

@@ -12,9 +12,7 @@ import { LIBRARY_PROPS } from "./props";
 
 const art = (file: string): string => new URL(`../../art/${file}.glb`, import.meta.url).href;
 
-/** Lacquered body paint: the clearcoat is what separates a car from a clay toy. */
 const GLOSS = librarySurfaceParameters("paint/gloss");
-/** The unit building every lot scales to its own width, depth and storey height. */
 const CITY_BLOCK_URL = art("city-block");
 
 /**
@@ -46,7 +44,6 @@ const HHPD_WHITE: MaterialAsset = {
 };
 const LIGHT_BAR_URL = new URL("../../art/hhpd-lightbar.glb", import.meta.url).href;
 
-/** HHPD cruiser: navy body, white upper panels, red-and-blue bar on the roof. */
 function cruiser(): ModelConfig {
   return {
     ...libraryModel(CAR_MODEL_NAME),
@@ -95,7 +92,6 @@ export const entityModels: Record<string, ModelConfig> = {
   ...castModels,
 };
 
-/** Habitat species the scene document's flocks draw: gulls over the beach and the bay. */
 export const flockModels: Record<string, ModelConfig> = { gull: { url: art("gull"), anchor: "origin" } };
 
 /**
@@ -121,9 +117,7 @@ export const PALM_IDS: readonly string[] = [
   "obj_palm_tall",
 ];
 
-/** Shop signs share one authored board; each shop paints it in its own colour. */
 const shopSign = (color: string): ModelConfig => ({ url: art("shop-sign"), anchor: "origin", material: { color, materials: ["board"] } });
-/** Containers share one authored box; the paint is the only difference. */
 const container = (color: string): ModelConfig => ({ url: art("shipping-container"), anchor: "origin", material: { color, materials: ["container paint"] } });
 
 const AUTHORED_OBJECTS: Record<string, ModelConfig> = {
@@ -142,10 +136,6 @@ const AUTHORED_OBJECTS: Record<string, ModelConfig> = {
   obj_roof_c: { url: art("roof-clutter-c"), anchor: "origin" },
 };
 
-/**
- * Each cast is the unit block with one scanned facade on its walls; the roof keeps its own membrane.
- * Native size (no `targetHeight`): every placement scales it to its lot through `visual.scale`.
- */
 const BUILDING_MODELS: Record<string, ModelConfig> = Object.fromEntries(
   BUILDING_SPECS.map((b) => [
     b.id,

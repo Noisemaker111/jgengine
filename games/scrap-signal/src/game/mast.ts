@@ -50,7 +50,6 @@ const runtimes = perContext((ctx: GameContext) =>
   }),
 );
 
-/** The scene's authored mission markers (the watch board), lifted to the live ground like the objective markers. */
 const boards = perContext((ctx: GameContext) =>
   createMissionTriggerBridge({
     runtime: runtimes(ctx),
@@ -64,7 +63,6 @@ const boards = perContext((ctx: GameContext) =>
   }),
 );
 
-/** Kills reported this frame, handed to the mission machine next tick. */
 const pendingKills = perContext(() => [] as MissionWorldEvent[]);
 
 export function mastRuntime(ctx: GameContext) {
@@ -186,7 +184,6 @@ export function tickMastWatch(ctx: GameContext, dt: number): void {
   commit(ctx);
 }
 
-/** Rebuild the runtime over a restored whole-world save: the store holds the last committed snapshot. */
 export function restoreMastWatch(ctx: GameContext): void {
   const snapshot = mastSnapshotStore.read(ctx);
   if (snapshot !== null) mastRuntime(ctx).restore(snapshot);

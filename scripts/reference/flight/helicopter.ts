@@ -17,28 +17,19 @@ import {
   type ReferenceVector,
 } from "./referenceAircraft";
 
-/** A small lifting surface on the airframe (tailplane or fin), sized and placed in body axes. */
 export interface HelicopterSurface {
-  /** m². */
   area: number;
-  /** Aerodynamic centre, body axes m from the centre of gravity. */
   at: ReferenceVector;
-  /** Lift slope, per rad. */
   liftSlope: number;
-  /** Setting angle, rad (the fin's offloads the tail rotor in cruise). */
   incidence?: number;
-  /** Lift coefficient where it stalls flat (default `1`). */
   maxLift?: number;
 }
 
-/** A single-main-rotor helicopter with a tail rotor, a turboshaft and a speed governor. Body axes: x forward, y right, z down. */
 export interface HelicopterDesign {
   name: string;
   mass: ReferenceMassProperties;
   mainRotor: RotorDesign;
-  /** Main rotor hub, body axes m from the centre of gravity. */
   hub: ReferenceVector;
-  /** Forward tilt of the main rotor shaft, rad. */
   shaftTilt: number;
   /** A tail rotor that thrusts to the right (body +y), countering a counter-clockwise main rotor. */
   tailRotor: RotorDesign;
@@ -46,28 +37,21 @@ export interface HelicopterDesign {
   /** Polar inertia of the main rotor and drive train about the main shaft, kg·m². */
   rotorInertia: number;
   engine: {
-    /** Shaft power available at sea level, W; it falls with density. */
     maxPower: number;
     /** Governor closed-loop bandwidth, rad/s (default `2`). */
     governorFrequency?: number;
-    /** Governor damping ratio (default `0.7`). */
     governorDamping?: number;
   };
   controls: {
-    /** Main rotor collective at 75% radius at the bottom and top of the lever, rad. */
     collective: [number, number];
-    /** Longitudinal cyclic at full aft stick, rad (`sin ψ` pitch: aft stick tilts the disc back). */
     longitudinal: number;
-    /** Lateral cyclic at full right stick, rad (`cos ψ` pitch: right stick tilts the disc right). */
     lateral: number;
-    /** Tail rotor collective with pedals centred, and the change at full pedal, rad (right pedal lowers it). */
     tailPitch: [number, number];
     /** Swashplate servo bandwidth, rad/s, and slew limit, rad/s. */
     bandwidth: number;
     rateLimit: number;
   };
   fuselage: {
-    /** Drag area along x, y and z, m² (`D = ½ρV²·area`). */
     dragArea: number;
     sideArea: number;
     verticalArea: number;
@@ -77,31 +61,21 @@ export interface HelicopterDesign {
   gear: readonly ReferenceGearLeg[];
 }
 
-/** Options for {@link createHelicopterModel}. */
 export interface HelicopterModelOptions {
-  /** Overrides the engine's sea-level power, W; `0` flies with the engine failed (the rotor freewheels). */
   enginePower?: number;
 }
 
-/** A helicopter model with its design and per-rotor telemetry. */
 export interface HelicopterModel extends ReferenceAircraftModel {
   readonly design: HelicopterDesign;
-  /** Main rotor, tail rotor and engine figures for a propulsion state in this air, as the last evaluation saw them. */
   rotorTelemetry(): HelicopterRotorTelemetry;
 }
 
-/** What the rotors did at the last evaluation. */
 export interface HelicopterRotorTelemetry {
-  /** Main rotor thrust along the shaft, N. */
   mainThrust: number;
-  /** Main rotor aerodynamic power, W. */
   mainPower: number;
-  /** Tail rotor thrust to the right, N. */
   tailThrust: number;
   tailPower: number;
-  /** Engine shaft power, W. */
   enginePower: number;
-  /** Rotor speed over rated. */
   rotorSpeed: number;
   groundEffect: number;
 }
@@ -328,7 +302,6 @@ export function createHelicopterModel(design: HelicopterDesign, options: Helicop
   };
 }
 
-/** A steady helicopter flight condition: ground speed along the heading and climb rate, still air. */
 export interface HelicopterTrimCondition {
   /** Horizontal speed, m/s (`0` hovers). */
   speed: number;
@@ -337,16 +310,13 @@ export interface HelicopterTrimCondition {
   climbRate?: number;
 }
 
-/** A trimmed helicopter: attitude, controls and the power it takes. */
 export interface HelicopterTrim {
   pitch: number;
   bank: number;
   /** Collective lever, `0..1`. */
   collective: number;
   surfaces: ReferenceSurfaces;
-  /** Main rotor shaft angle to the flight path, rad, positive tilted aft (wind-tunnel convention). */
   shaftAngle: number;
-  /** Engine shaft power, W. */
   power: number;
   telemetry: HelicopterRotorTelemetry;
   state: ReferenceAircraftState;

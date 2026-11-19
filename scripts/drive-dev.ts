@@ -86,7 +86,6 @@ import { profileHitches, renderProfiledHitches, startCpuProfile, stopCpuProfile 
 
 type Step = CaptureStep;
 
-/** What this run served, set once the engine gate passes and stamped into every saved record. */
 let engineForRecord: EngineRecord | null = null;
 
 /** Below this effective render cadence (frames actually drawn per second over the
@@ -192,13 +191,11 @@ if (args.flows) {
   process.exit(0);
 }
 
-/** The flow this run plays, loaded once; `null` for a run of step flags. */
 const flow: ProofFlow | null = args.flow === undefined ? null : await loadFlow(flowsDirOf(projectDirOf(args)), args.flow).catch((error: unknown) => {
   console.error("drive: " + (error instanceof Error ? error.message : String(error)));
   process.exit(1);
 });
 
-/** Print a flow's result the quiet way, write its --log rows, and give the exit code. */
 function finishFlow(name: string, report: FlowRunReport): number {
   for (const line of describeFlowReport(name, report)) (report.ok ? console.log : console.error)(line);
   if (args.log !== undefined) {
@@ -295,7 +292,6 @@ const clickPoints = new Map<CaptureStep, { x: number; y: number }>();
 }
 if (args.port !== undefined) process.env["JG_DEV_PORT"] = String(args.port);
 
-/** The page a run opens on the dev server at `base`: the game, mode and every option the page reads. */
 function targetUrl(base: string): URL {
   const url = applyCaptureQuality(driveTargetUrl(args, base), args.quality);
   url.searchParams.set("capture", "1");
@@ -320,7 +316,6 @@ function targetUrl(base: string): URL {
 async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
   requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, daemon !== null);
   // --hitches and --trace time the run's frames, so the drive holds the perf lock from before it asks
-  // for its dev server (one asked for before a long wait can be gone after it); a drive that times
   // nothing does not wait for it.
   const timed = args.hitches || args.trace;
   const releaseLock = timed
@@ -746,7 +741,6 @@ async function driveLocked(daemon: ShootDaemonState | null, timed: boolean): Pro
   ));
 }
 
-/** Run one drive, reporting a failure the same way `withBrowserSession` does. */
 async function attempt(daemon: ShootDaemonState | null): Promise<number> {
   try {
     return await driveSession(daemon);

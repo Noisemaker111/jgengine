@@ -2,1242 +2,169 @@
 
 # jgengine-assets — exported API surface
 
-## @jgengine/assets
-
-- `AssetAlias` (interface): interface AssetAlias { key: string; target: string } — ⚠ undocumented · used by `aliases`: Semantic keys → live catalog ids.
-- `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload | PolyPizzaBundleDownload | ItchDownload — ⚠ undocumented
-- `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
-- `AssetImportSpec` (interface): interface AssetImportSpec — A game-owned import description; paths are relative POSIX paths, roles are authored labels.
-- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — What a match is: a model file, a whole pack, a material, a HUD component, an icon, or a sprite (pack).
-- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — One catalog entry a query matched, shaped by its kind.
-- `AssetPack` (interface): interface AssetPack — One pulled model pack's index: its source id and every entry measured from its GLBs. Each pack is its own named export in `@jgengine/assets/generated/packs`, so a game bundles only the packs it imports and hands to `buildCatalog({ packs })`.
-- `AssetProvenance` (interface): interface AssetProvenance — The resolved ownership of one logical asset id — the provisioning contract for that id.
-- `AssetProvenanceKind` (type): type AssetProvenanceKind = "committed" | "provisioned" | "dangling" — How an asset id's bytes reach a clean checkout: - `committed` — resolves to a self-hosted / remote URL carried in the shipped index (a {@link SingleAsset}); no pull step, available immediately. - `provisioned` — a pack {@link IndexEntry}; the id is declared but its GLB is fetched on demand by `assets pull <source>` into the consumer's served dir. - `dangling` — nothing in the index, singles, or aliases owns the id, so no provisioning step exists and it can never resolve on a clean clone.
-- `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
-- `AssetReference` (interface): interface AssetReference — A logical asset id referenced by some consumer (a game, scene, or config), for validation.
-- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; spriteLayout?: "flat" | "folders"; materialMaps?: read… — ⚠ undocumented · used by `ambientcgSources`: Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
-- `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
-- `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
-- `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; packs: readonly AssetPack[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases.
-- `BuildMaterialCatalogOptions` (interface): interface BuildMaterialCatalogOptions — Options for `buildMaterialCatalog`.
-- `BuildSpriteCatalogOptions` (interface): interface BuildSpriteCatalogOptions — Options for `buildSpriteCatalog`.
-- `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
-- `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
-- `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
-- `FindLibraryModelOptions` (interface): interface FindLibraryModelOptions — Narrowing for {@link findLibraryModel}.
-- `GeneratedModelOrigin` (interface): interface GeneratedModelOrigin — A model a game generated itself (text or image to 3D, e.g. LLMville's fal.ai diorama-assets skill). The library never runs or pays for a generator: the game generates, reviews and commits the GLB, then registers it here with the generator and terms it was made under. `assets pull` skips these; `libraryModel` serves the committed file from `generatedBasePath`.
-- `GlbMetrics` (interface): interface GlbMetrics — Stored geometry and image inventory; triangles count mesh primitives once, regardless of scene instances.
-- `GlbTextureMetrics` (interface): interface GlbTextureMetrics — Dimensions and encoded bytes for one glTF image, including images referenced by texture extensions.
-- `ImportSpecValidation` (type): type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string } — Result of validating an import description; a successful entry is an independent JSON snapshot.
-- `IndexEntry` (interface): interface IndexEntry — A source-owned model or sprite id, with optional offline model measurements.
-- `ItchDownload` (interface): interface ItchDownload — A free itch.io download: the game page URL and the title of the upload to take.
-- `LibraryGroup` (type): type LibraryGroup = | "asphalt" | "concrete" | "stucco" | "brick" | "facade" | "tile" | "metal" | "wood" | "foliage" | "ground" | "fabric" | "stone" | "glass" | "water" — Browse groups the library browser and `assets list` share.
-- `LibraryMaterial` (interface): interface LibraryMaterial — One named material a game or the editor selects by name. `source` names the ambientCG catalog entry whose pulled maps it uses; glass and water carry response parameters only, because ambientCG publishes no scanned glass or water material and both are shader surfaces.
-- `LibraryMaterialOptions` (interface): interface LibraryMaterialOptions — Options for {@link libraryMaterialMaps} and {@link libraryMaterialAsset}.
-- `LibraryModelOptions` (interface): interface LibraryModelOptions — URL and LOD options for {@link libraryModel}.
-- `LibrarySurface` (type): type LibrarySurface = "opaque" | "foliage" | "glass" | "water" — How a library surface renders: an ordinary PBR surface, cut-out foliage, glass or water.
-- `MATERIAL_LIBRARY` (const): const MATERIAL_LIBRARY: readonly LibraryMaterial[] — The shared library: ambientCG PBR materials plus the glass and water surfaces that need a shader rather than a scan.
-- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly opacity: "opacity.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role. Kept in its own module so catalogs and editors can name a pulled file without loading the archive reader.
-- `MODEL_LIBRARY` (const): const MODEL_LIBRARY: readonly ModelLibraryEntry[] — Every library entry.
-- `MODEL_LIBRARY_GAPS` (const): const MODEL_LIBRARY_GAPS: readonly ModelLibraryGap[] — Known gaps: requests with no licensed realistic model yet, and how each would be closed.
-- `MODEL_LIBRARY_GENRES` (const): const MODEL_LIBRARY_GENRES: readonly ModelLibraryGenre[] — Every genre, in browse order.
-- `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
-- `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material, including an optional compressed KTX2 asset.
-- `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`roughness`/`opacity`/`ktx2`/`displacement` appear only when declared by its source.
-- `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
-- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
-- `ModelLibraryEntry` (interface): interface ModelLibraryEntry — One named realistic model with its source, credit and license.
-- `ModelLibraryGap` (interface): interface ModelLibraryGap — Things games ask for that no licensed realistic source in the library covers yet, and the route to close each one. `findLibraryModel` returns the gap instead of a wrong-looking substitute.
-- `ModelLibraryGenre` (type): type ModelLibraryGenre = | "city" | "park" | "nature" | "creature" | "survival" | "industrial" | "scifi" | "tower-defense" | "office" — The realistic model library: real-world-scale, licensed, compressed models a game asks for by what it needs ("street lamp", "boulder", "office desk") rather than by pack and file name.
-- `ModelLibraryMatch` (interface): interface ModelLibraryMatch — One ranked answer to "what do you have for X".
-- `ModelLibraryOrigin` (type): type ModelLibraryOrigin = | PolyHavenModelOrigin | RocketboxModelOrigin | KhronosModelOrigin | AuthoredModelOrigin | GeneratedModelOrigin — Where an entry's bytes come from: a scan or rig pulled from its source, an engine-authored model, or a game-committed generated one.
-- `ModelSnippetOptions` (interface): interface ModelSnippetOptions { basePath?: string; seam?: "objectModels" | "entityModels" } — ⚠ undocumented · used by `modelWiringSnippet`: Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
-- `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
-- `PolyHavenModelOrigin` (interface): interface PolyHavenModelOrigin — A Poly Haven model (CC0), fetched from `api.polyhaven.com` at its 1k texture tier.
-- `PolyPizzaBundleDownload` (interface): interface PolyPizzaBundleDownload — A Poly Pizza bundle (the `poly.pizza/bundle/<slug>` path), zipped on download as one `.glb` per model. Every model's licence must match the source's.
-- `RankAssetsOptions` (interface): interface RankAssetsOptions — Narrowing for {@link rankAssets}.
-- `RankedMatch` (interface): interface RankedMatch — A match with its score, 0 (none) to 100 (exact).
-- `ReferenceValidation` (interface): interface ReferenceValidation — The verdict for one {@link AssetReference}.
-- `RegistryCatalog` (interface): interface RegistryCatalog { homepage: string; components: readonly RegistryComponent[]; icons: readonly string[] } — ⚠ undocumented
-- `RegistryComponent` (interface): interface RegistryComponent { name: string; title: string; description: string } — ⚠ undocumented · used by `componentWiringSnippet`: Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
-- `ReindexSpritesResult` (interface): interface ReindexSpritesResult — Per-source and total counts returned by `reindexSprites`.
-- `ResolveProvenanceOptions` (interface): interface ResolveProvenanceOptions — Override the data {@link resolveProvenance} resolves against; every field defaults to the shipped catalog.
-- `STARTER_ASSETS` (const): const STARTER_ASSETS: readonly StarterAsset[] — Flat list of every curated starter asset across themes.
-- `STARTER_MODEL_PACKS` (const): const STARTER_MODEL_PACKS: readonly AssetPack[] — The model packs behind the curated starter assets: the same packs, in order, as `STARTER_SOURCE_PACKS`.
-- `STARTER_PACKS` (const): const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> — Theme → assets table for browse/docs (`STARTER_PACKS.props`, …).
-- `STARTER_PEOPLE` (const): const STARTER_PEOPLE: readonly string[] — The model-library people a fresh game pulls with the starter packs: realistic rigged humans, a man and a woman, that `libraryModel(name)` animates with the full humanoid clip set.
-- `STARTER_SOURCE_PACKS` (const): const STARTER_SOURCE_PACKS: readonly string[] — Source pack ids a game must pull so every starter asset URL resolves on disk.
-- `STARTER_THEMES` (const): const STARTER_THEMES: readonly StarterTheme[] — Ordered starter theme ids: props, nature, urban.
-- `ScrapeDownload` (interface): interface ScrapeDownload { scrape: string } — ⚠ undocumented
-- `SingleAsset` (interface): interface SingleAsset { id: string; url: string; license: string; author: string; categories: readonly string[] } — ⚠ undocumented
-- `StarterAsset` (interface): interface StarterAsset — One curated starter model: short id, theme, live catalog target, license, suggested height.
-- `StarterTheme` (type): type StarterTheme = "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `objectModels: { crate: "asset:prop_crate" }`. People are not a starter theme: a person is a realistic rigged human from the model library ({@link STARTER_PEOPLE}). Never Kenney — Quaternius / KayKit only.
-- `ValidateAssetReferencesOptions` (interface): interface ValidateAssetReferencesOptions extends ResolveProvenanceOptions — Options for {@link validateAssetReferences}: the resolution data plus an optional on-disk `present` check.
-- `ValidateAssetReferencesResult` (interface): interface ValidateAssetReferencesResult — The aggregate result of validating a set of references against the provisioning contract.
-- `VerifyResult` (interface): interface VerifyResult { ok: boolean; errors: string[] } — ⚠ undocumented
-- `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:prop_crate`, `nature_tree`, …) come from {@link starterAliases}.
-- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs. A pinned id the family sweep already covers stays with the sweep, so catalog ids never appear twice.
-- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions): AssetCatalog — Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra; an alias whose target is in no named pack is skipped. See {@link BuildCatalogOptions} for the pack list and opt-outs.
-- `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
-- `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
-- `classifyAssetFile` (function): function classifyAssetFile(bytes: Uint8Array, _filename: string): AssetImportKind | null — Classify supported container headers from complete file bytes; filenames never override bytes. Recognizes GLB/glTF, PNG/JPEG/KTX2, Ogg/WAV/MP3, TTF/OTF/WOFF/WOFF2, HDR/EXR and JSON sprite sheets. This is format detection, not decoder validation. Images classify as texture; authors choose sprite/material in the spec.
-- `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
-- `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
-- `createStarterCatalog` (function): function createStarterCatalog(options: Partial<BuildCatalogOptions> = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (props/nature/urban). Prefer this for scaffolds and probes so `asset:prop_crate` etc. resolve without pulling the whole library. Pass `packs` to swap them; full control: {@link buildCatalog}.
-- `describeAssetMatch` (function): function describeAssetMatch(match: AssetMatch): string — One line naming a match for a terminal list: kind, id and title.
-- `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
-- `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
-- `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
-- `filterLibraryMaterials` (function): function filterLibraryMaterials(query: string, group?: LibraryGroup): readonly LibraryMaterial[] — Filter the library for a picker: case-insensitive match on name, title, group or source. Empty query returns everything, so a browser can render the full library first.
-- `findLibraryMaterial` (function): function findLibraryMaterial(name: string): LibraryMaterial | null — Resolve a library name; unknown names return `null` so a caller can report them by name.
-- `findLibraryModel` (function): function findLibraryModel(query: string, options: FindLibraryModelOptions = {}): readonly ModelLibraryMatch[] — Rank library models for a plain-words request: an exact intent wins, then intent and title word overlap; a genre filter narrows the set. An empty result with a matching `libraryModelGap` means the library knows it has nothing realistic for that request.
-- `findLibraryModelByName` (function): function findLibraryModelByName(name: string): ModelLibraryEntry | null — The entry with this exact name, or `null`.
-- `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
-- `generatedBySource` (const): const generatedBySource: Readonly<Record<string, readonly IndexEntry[]>> — ⚠ undocumented
-- `generatedIndex` (const): const generatedIndex: readonly IndexEntry[] — ⚠ undocumented
-- `generatedPacks` (const): const generatedPacks: readonly AssetPack[] — Every pulled pack. Importing this bundles the whole library; a game imports only its own packs from `./packs`.
-- `generatedSpriteBySource` (const): const generatedSpriteBySource: Record<string, IndexEntry[]> — Pulled sprite/icon entries grouped by source id.
-- `generatedSpriteIndex` (const): const generatedSpriteIndex: IndexEntry[] — Every pulled sprite/icon entry across all sources, flattened.
-- `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
-- `importedPackNames` (function): function importedPackNames(text: string): ReadonlySet<string> — The original export names imported from `generated/packs`, including imports renamed locally.
-- `indexSpriteSourceDir` (function): function indexSpriteSourceDir(source: AssetSource, dir: string): IndexEntry[] — Walks a pulled sprite-pack directory and returns one `IndexEntry` per SVG/PNG, deduped by filename.
-- `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
-- `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
-- `keyFromSpriteFile` (function): function keyFromSpriteFile(file: string): string — Strips the `.svg`/`.png` extension off a pulled sprite/icon filename to get its id suffix.
-- `libraryMaterialAsset` (function): function libraryMaterialAsset(name: string, options: LibraryMaterialOptions = {}): MaterialAsset — Build the editable, serializable material asset for a library name: maps, response and CC0 attribution in one value the editor can save into `editor.scene.json` and the shell renders. `projection` records whether those maps should sample authored UVs or world-space triplanar.
-- `libraryMaterialMaps` (function): function libraryMaterialMaps(entry: LibraryMaterial, options: LibraryMaterialOptions = {}): Partial<Record<MaterialTextureRole, MaterialTextureMetadata>> — Serialized runtime map URLs for a library material, matching what `assets pull <source>` writes into `<basePath>/<source-id>/`. Roles the archive does not ship are omitted, never invented. `displacement` is not loaded here: no standard-path renderer samples a height map, and a decoded 1K map per material would cost real GPU memory. Terrain callers get the URL through {@link libraryTerrainMaterial} instead.
-- `libraryMaterialNames` (function): function libraryMaterialNames(): readonly string[] — Every library name, in authored order.
-- `libraryMaterialRoles` (function): function libraryMaterialRoles(entry: LibraryMaterial): readonly LibraryMapRole[] — Map roles the pinned archive of `entry` actually ships, from its catalog source declaration.
-- `libraryModel` (function): function libraryModel(name: string, options: LibraryModelOptions = {}): ModelConfig — The `ModelConfig` that draws a library model: real-world size, grounded at its origin, with its near and far levels switched by distance. Throws for an unknown name, so a typo fails at boot.
-- `libraryModelCredits` (function): function libraryModelCredits(names: readonly string[]): readonly string[] — Credit lines for the library models a game uses, one per entry: title, author, license, page.
-- `libraryModelDir` (function): function libraryModelDir(name: string): string — Folder an entry's pulled files live in, relative to the models root: `library/<name>`.
-- `libraryModelGap` (function): function libraryModelGap(query: string): ModelLibraryGap | null — The known gap a request falls in, when the library has no realistic answer for it.
-- `libraryModelNames` (function): function libraryModelNames(): readonly string[] — Every entry name, in library order.
-- `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
-- `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
-- `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model.
-- `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Quaternius, KayKit packs).
-- `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
-- `packExportName` (function): function packExportName(sourceId: string): string — The name a pack is exported under in `generated/packs`: its source id in camelCase (`kaykit-dungeon` → `kaykitDungeon`).
-- `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
-- `rankAssets` (function): function rankAssets(query: string, options: RankAssetsOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
-- `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
-- `readGlbMetrics` (function): function readGlbMetrics(bytes: Uint8Array, readResource?: (uri: string) => Uint8Array): GlbMetrics — Inspect GLB v2 geometry accessors and image headers offline. Throws on unreadable resources, malformed geometry, or required geometry compression; never silently reports missing data as zero. External resources are supplied by the caller; this function never fetches or decompresses bytes.
-- `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
-- `reindexSprites` (function): function reindexSprites(spritesDir: string, outDir: string): ReindexSpritesResult — Same shape as `reindex` (models) but walks SVG/PNG files and skips dims measurement — sprites have no footprint.
-- `resolveProvenance` (function): function resolveProvenance(id: string, options: ResolveProvenanceOptions = {}): AssetProvenance — Resolve one logical asset id (a pack id, a single id, or an alias key) to its {@link AssetProvenance}. Aliases are followed one hop to their target. An id that matches no declared owner is `dangling` — the signal a clean-clone gate turns into a hard failure, because no provisioning step can ever satisfy it.
-- `singles` (const): const singles: readonly SingleAsset[] — ⚠ undocumented
-- `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
-- `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
-- `spriteSources` (const): const spriteSources: readonly AssetSource[] — Every `kind: "sprite"` source — a pack of individual 2D icon/UI files, resolvable via `buildSpriteCatalog`.
-- `spriteWiringSnippet` (function): function spriteWiringSnippet(id: string, basePath = "/sprites"): string — Copy-paste wiring for a pulled sprite/icon-pack file: resolve through the sprite catalog.
-- `validateAssetReferences` (function): function validateAssetReferences(references: readonly AssetReference[], options: ValidateAssetReferencesOptions = {}): ValidateAssetReferencesResult — Validate that every {@link AssetReference} resolves against the declared provisioning contract — not by grepping source text, but by resolving each logical id to its committed / provisioned / dangling owner. A `dangling` reference fails with the referencing consumer, the logical id, the (null) resolved path, and the missing provisioning step; a `provisioned` reference passes and contributes its `assets pull <source>` step to `provisioning` (unless `present` is supplied and reports the bytes absent).
-- `validateImportSpec` (function): function validateImportSpec(spec: unknown): ImportSpecValidation — Validate untrusted import descriptions without filesystem access or path rewriting. Requires unique relative files, printable non-empty roles and plain JSON metadata (maximum depth 64).
-- `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
-
-## @jgengine/assets/aliases
-
-- `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:prop_crate`, `nature_tree`, …) come from {@link starterAliases}.
-
-## @jgengine/assets/assetBudget
-
-- `AssetBudget` (interface): interface AssetBudget — Per-model limits chosen by the game; equality passes and omitted limits only report.
-- `AssetBudgetEntry` (interface): interface AssetBudgetEntry — One model's measured inventory or actionable inspection/budget errors.
-- `AssetBudgetReport` (interface): interface AssetBudgetReport — Deterministic offline report; an empty directory or any unreadable model fails.
-- `checkAssetBudget` (function): function checkAssetBudget(metrics: GlbMetrics, budget: AssetBudget): string[] — Check measured per-model bytes, stored triangles, and maximum image dimension against caller-owned limits.
-- `createAssetBudgetReport` (function): function createAssetBudgetReport(target: string, budget: AssetBudget = {}): AssetBudgetReport — Scan a file or directory recursively for GLBs without changing their bytes or the catalog. Paths are relative to the scanned directory, sorted lexically; unknown/custom asset folders work equally.
-- `readGlbFileMetrics` (function): function readGlbFileMetrics(file: string, resourceRoot = dirname(file)): GlbMetrics — Read a GLB plus local resources under `resourceRoot`; remote URLs and symlink escapes fail without fetching.
-
-## @jgengine/assets/assetStore
-
-- `ProvisionResult` (interface): interface ProvisionResult — What {@link provisionJobs} did with each target.
-- `PullJob` (interface): interface PullJob — One pack or library model a game needs on disk.
-- `PullTarget` (type): type PullTarget = (target: string, outRoot: string) => Promise<boolean> — How {@link provisionJobs} fetches a target the store lacks: `assets pull <target> --dir <outRoot>`, true on success.
-
-## @jgengine/assets/catalogs/build
-
-- `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; packs: readonly AssetPack[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases.
-- `CatalogExtra` (interface): interface CatalogExtra — A durable, hand-or-tool authored catalog entry that is not part of the generated pack index, singles, or aliases — the shape the editor writes into a promoted game's `src/game/assets.ts` when an asset is imported. `label` is human-facing only and is intentionally not registered into the catalog (it mirrors how a single asset's author/license live only in the source literal), so at runtime an extra resolves to exactly `{ url }`.
-- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions): AssetCatalog — Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra; an alias whose target is in no named pack is skipped. See {@link BuildCatalogOptions} for the pack list and opt-outs.
-- `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
-
-## @jgengine/assets/catalogs/buildSprites
-
-- `BuildSpriteCatalogOptions` (interface): interface BuildSpriteCatalogOptions — Options for `buildSpriteCatalog`.
-- `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
-
-## @jgengine/assets/catalogs/curatedPull
-
-- `CuratedJob` (interface): interface CuratedJob — One curated file to serve: what it is, its id and the folder under `public/` that holds it.
-- `CuratedKind` (type): type CuratedKind = "hdri" | "lut" | "font" — The three curated looks that are files a game serves.
-- `CuratedPullContext` (interface): interface CuratedPullContext — What {@link pullCuratedLook} needs from its caller.
-
-## @jgengine/assets/catalogs/entryFiles
-
-- `LIBRARY_LISTS` (const): const LIBRARY_LISTS: readonly LibraryList[] — Every shared library list kept as one file per entry.
-- `LibraryList` (interface): interface LibraryList — A shared library kept as one file per entry, so two branches that add the same id collide on the same file name in git instead of both merging into one list. The folder's `index.ts` is generated.
-
-## @jgengine/assets/catalogs/fontLibrary
-
-- `FONT_DIR` (const): const FONT_DIR: "fonts" — Where a game serves fonts from, relative to `public/`.
-- `FONT_LIBRARY` (const): const FONT_LIBRARY: readonly [{ readonly id: "alegreya"; readonly family: "Alegreya"; readonly role: "body"; readonly moods: readonly ["fantasy", "historical", "cozy"]; readonly author: "Juan Pablo del Peral"; readonly package: "alegreya"; }, { readonly id: "bangers"; readonly family: "Bangers"; rea… — The shipped font families, each a display or a body face.
-- `FONT_LICENSE` (const): const FONT_LICENSE: "OFL-1.1" — Licence of every shipped family.
-- `FONT_PACKAGE_VERSION` (const): const FONT_PACKAGE_VERSION: "5.3.0" — The Fontsource release every file is taken from.
-- `FontEntry` (interface): interface FontEntry — One curated OFL family, shipped as its Latin 400 woff2 file.
-- `FontId` (type): type FontId = (typeof FONT_LIBRARY)[number]["id"] — The id of one family in {@link FONT_LIBRARY}.
-- `FontRole` (type): type FontRole = "display" | "body" | "both" — What a family is for: titles and numbers, reading text, or either.
-- `libraryFontPairing` (function): function libraryFontPairing(display: FontId, body: FontId, numeric?: FontId, baseUrl?: string): GameFontPairing — A display and a body family by id as the pairing a game's HUD kit and menus take: `const FONTS = libraryFontPairing("oswald", "barlow"); useGameFonts(FONTS); gameFontStacks(FONTS)`. Throws on an unknown id or a family used in the wrong role.
-
-## @jgengine/assets/catalogs/fonts
-
-- `FONT_LIBRARY` (const): const FONT_LIBRARY: readonly [{ readonly id: "alegreya"; readonly family: "Alegreya"; readonly role: "body"; readonly moods: readonly ["fantasy", "historical", "cozy"]; readonly author: "Juan Pablo del Peral"; readonly package: "alegreya"; }, { readonly id: "bangers"; readonly family: "Bangers"; rea… — The shipped font families, each a display or a body face.
-
-## @jgengine/assets/catalogs/grades
-
-- `LUT_GRADES` (const): const LUT_GRADES: readonly [{ readonly id: "autumn-painterly"; readonly title: "Autumn painterly"; readonly look: "Golden late-afternoon midtones, cool blue-grey shadows, cream highlights, richer colour."; readonly recipe: { readonly contrast: 1.08; readonly saturation: 1.15; readonly gain: readonly… — The shipped colour grades, each a recipe baked into a 32³ cube.
-
-## @jgengine/assets/catalogs/hdriLibrary
-
-- `HDRI_DIR` (const): const HDRI_DIR: "hdri/library" — Where a game serves the HDRI folder from, relative to `public/`.
-- `HDRI_LIBRARY` (const): const HDRI_LIBRARY: readonly [{ readonly id: "clear-noon"; readonly title: "Noon Grass"; readonly polyhaven: "noon_grass"; readonly author: "Greg Zaal"; readonly look: "Clear blue sky, high sun, open grass."; }, { readonly id: "clear-puresky"; readonly title: "Kloofendal 43d Clear (Pure Sky)"; reado… — The shipped HDRIs, each one Poly Haven asset under a plain id.
-- `HDRI_LICENSE` (const): const HDRI_LICENSE: "CC0-1.0" — Licence of every shipped HDRI (Poly Haven publishes all of them as CC0).
-- `HDRI_RESOLUTION` (const): const HDRI_RESOLUTION: "2k" — Resolution every shipped HDRI is pulled at.
-- `HdriEntry` (interface): interface HdriEntry — One curated Poly Haven HDRI.
-- `HdriId` (type): type HdriId = (typeof HDRI_LIBRARY)[number]["id"] — The id of one HDRI in {@link HDRI_LIBRARY}.
-- `hdriEnvironment` (function): function hdriEnvironment(id: HdriId, options: { intensity?: number; rotation?: number; baseUrl?: string } = {}): Extract<EnvironmentSource, { kind: "hdri" }> — A curated HDRI by id as the lighting source a scene takes: `environment: hdriEnvironment("golden-hour")`. Pass `intensity` or `rotation` to retune it. Throws on an unknown id.
-
-## @jgengine/assets/catalogs/hdris
-
-- `HDRI_LIBRARY` (const): const HDRI_LIBRARY: readonly [{ readonly id: "clear-noon"; readonly title: "Noon Grass"; readonly polyhaven: "noon_grass"; readonly author: "Greg Zaal"; readonly look: "Clear blue sky, high sun, open grass."; }, { readonly id: "clear-puresky"; readonly title: "Kloofendal 43d Clear (Pure Sky)"; reado… — The shipped HDRIs, each one Poly Haven asset under a plain id.
-
-## @jgengine/assets/catalogs/looksCredits
-
-- `LooksUsed` (interface): interface LooksUsed — The curated looks a game ships, by id. Omit a list to credit none of that kind.
-- `creditsForLooks` (function): function creditsForLooks(used: LooksUsed): CreditsSection[] — Credit sections for the HDRIs, colour grades and fonts a game ships, each entry with its author and licence. Fold the result into a game's credits with `mergeCredits`.
-
-## @jgengine/assets/catalogs/lutGrades
-
-- `LUT_GRADES` (const): const LUT_GRADES: readonly [{ readonly id: "autumn-painterly"; readonly title: "Autumn painterly"; readonly look: "Golden late-afternoon midtones, cool blue-grey shadows, cream highlights, richer colour."; readonly recipe: { readonly contrast: 1.08; readonly saturation: 1.15; readonly gain: readonly… — The shipped colour grades, each a recipe baked into a 32³ cube.
-- `LUT_GRADE_DIR` (const): const LUT_GRADE_DIR: "lut" — Where a game serves the grade files from, relative to `public/`.
-- `LUT_GRADE_LICENSE` (const): const LUT_GRADE_LICENSE: "CC0-1.0" — Licence of every grade: authored in this repository by `bakeLutGrade`.
-- `LUT_GRADE_SIZE` (const): const LUT_GRADE_SIZE: 32 — Edge length of every shipped cube.
-- `LutGrade` (interface): interface LutGrade — One named, licensed colour grade.
-- `LutGradeId` (type): type LutGradeId = (typeof LUT_GRADES)[number]["id"] — The id of one grade in {@link LUT_GRADES}.
-- `LutGradeRecipe` (interface): interface LutGradeRecipe — The numeric recipe behind one grade. Every field is optional; an empty recipe is the identity.
-- `lutGrade` (function): function lutGrade(id: LutGradeId, baseUrl = `/${LUT_GRADE_DIR}`): GradeLut — A shipped colour grade by id, ready for the postfx grade stage: `grade: { lut: lutGrade("cold-teal") }`. Throws on an id that is not in {@link LUT_GRADES}. The file is served from `/lut/<id>/<id>.cube`, which `bun run games:provision` serves to a game that names the id.
-
-## @jgengine/assets/catalogs/materialLibrary
-
-- `LibraryBuildingSurfaceOptions` (interface): interface LibraryBuildingSurfaceOptions — Options for {@link libraryBuildingSurface}.
-- `LibraryGroup` (type): type LibraryGroup = | "asphalt" | "concrete" | "stucco" | "brick" | "facade" | "tile" | "metal" | "wood" | "foliage" | "ground" | "fabric" | "stone" | "glass" | "water" — Browse groups the library browser and `assets list` share.
-- `LibraryMapRole` (type): type LibraryMapRole = "color" | "normal" | "roughness" | "ao" | "opacity" | "displacement" — Map roles a library scan can carry: the PBR set plus cut-out coverage and a height map.
-- `LibraryMaterial` (interface): interface LibraryMaterial — One named material a game or the editor selects by name. `source` names the ambientCG catalog entry whose pulled maps it uses; glass and water carry response parameters only, because ambientCG publishes no scanned glass or water material and both are shader surfaces.
-- `LibraryMaterialOptions` (interface): interface LibraryMaterialOptions — Options for {@link libraryMaterialMaps} and {@link libraryMaterialAsset}.
-- `LibrarySurface` (type): type LibrarySurface = "opaque" | "foliage" | "glass" | "water" — How a library surface renders: an ordinary PBR surface, cut-out foliage, glass or water.
-- `LibraryTerrainDetail` (interface): interface LibraryTerrainDetail — Blend policy for putting a library scan on terrain; only entries whose scale needs it declare one.
-- `LibraryTerrainOptions` (interface): interface LibraryTerrainOptions — Options for {@link libraryTerrainMaterial}.
-- `LibraryTerrainSurfaceOptions` (interface): interface LibraryTerrainSurfaceOptions — Options for {@link libraryTerrainSurface}.
-- `MATERIAL_LIBRARY` (const): const MATERIAL_LIBRARY: readonly LibraryMaterial[] — The shared library: ambientCG PBR materials plus the glass and water surfaces that need a shader rather than a scan.
-- `filterLibraryMaterials` (function): function filterLibraryMaterials(query: string, group?: LibraryGroup): readonly LibraryMaterial[] — Filter the library for a picker: case-insensitive match on name, title, group or source. Empty query returns everything, so a browser can render the full library first.
-- `findLibraryMaterial` (function): function findLibraryMaterial(name: string): LibraryMaterial | null — Resolve a library name; unknown names return `null` so a caller can report them by name.
-- `libraryBuildingSurface` (function): function libraryBuildingSurface(name: string, options: LibraryBuildingSurfaceOptions = {}): BuildingSurfaceMaterial — A library name as a building surface: `building({ palette: { wall: libraryBuildingSurface("brick/red", { slotMetres: [12, 3] }) } })`. The maps tile at the entry's authored metres, and the response's colour/roughness/metalness come with them, so a facade picks a material by name instead of hand-wiring a surface per part kind.
-- `libraryMaterialAsset` (function): function libraryMaterialAsset(name: string, options: LibraryMaterialOptions = {}): MaterialAsset — Build the editable, serializable material asset for a library name: maps, response and CC0 attribution in one value the editor can save into `editor.scene.json` and the shell renders. `projection` records whether those maps should sample authored UVs or world-space triplanar.
-- `libraryMaterialMaps` (function): function libraryMaterialMaps(entry: LibraryMaterial, options: LibraryMaterialOptions = {}): Partial<Record<MaterialTextureRole, MaterialTextureMetadata>> — Serialized runtime map URLs for a library material, matching what `assets pull <source>` writes into `<basePath>/<source-id>/`. Roles the archive does not ship are omitted, never invented. `displacement` is not loaded here: no standard-path renderer samples a height map, and a decoded 1K map per material would cost real GPU memory. Terrain callers get the URL through {@link libraryTerrainMaterial} instead.
-- `libraryMaterialNames` (function): function libraryMaterialNames(): readonly string[] — Every library name, in authored order.
-- `libraryMaterialRoles` (function): function libraryMaterialRoles(entry: LibraryMaterial): readonly LibraryMapRole[] — Map roles the pinned archive of `entry` actually ships, from its catalog source declaration.
-- `librarySurfaceParameters` (function): function librarySurfaceParameters(name: string): MaterialSurfaceParameters — A library name as the sparse surface parameters a `MaterialAsset` or a render-time override takes, so a material picked by name keeps its authored roughness, metalness and cut-out policy.
-- `librarySurfaceScan` (function): function librarySurfaceScan(name: string, options: LibraryTerrainOptions = {}): TerrainDetailMaterialConfig — A library name as a scanned surface for any renderer that tiles one over authored colour: terrain detail, a `road({ materials })` layer, or a model's `material.scan`. Tiling comes from the entry's authored metres and blend from its terrain policy (else full strength, full tint), so `road({ materials: { road: librarySurfaceScan("asphalt/dry") } })` shows real asphalt and `material: { scan: librarySurfaceScan("stucco/painted", { tint: 0 }) }` keeps a model's paint and adds the plaster's grain. Only maps the pulled archive ships are named.
-- `libraryTerrainMaterial` (function): function libraryTerrainMaterial(name: string, options: LibraryTerrainOptions = {}): TerrainDetailMaterialConfig — A library name as terrain detail material config: `terrain({ detail: { material: libraryTerrainMaterial("foliage/grass-macro") } })`. Tiling comes from the entry's authored metres and blend from its terrain policy, so a game selects a ground by name instead of assembling map URLs. A map the archive does not ship is omitted, so `displacement` is never a URL the caller had to invent.
-- `libraryTerrainSurface` (function): function libraryTerrainSurface(name: string, options: LibraryTerrainSurfaceOptions = {}): { scan: TerrainMaterialMaps; tile: number; tint?: number } — A library name as a terrain surface role: `terrain({ detail: { surfaces: { ground: libraryTerrainSurface("foliage/meadow") } } })`. The terrain shader samples its colour, normal, roughness, AO and height maps, projected from above and on their own face on slopes, and uses the height to decide which layer breaks through at a blend edge. An unknown name throws.
-
-## @jgengine/assets/catalogs/materials
-
-- `MATERIAL_LIBRARY` (const): const MATERIAL_LIBRARY: readonly LibraryMaterial[] — The shared library: ambientCG PBR materials plus the glass and water surfaces that need a shader rather than a scan.
-
-## @jgengine/assets/catalogs/modelLibrary
-
-- `AuthoredModelOrigin` (interface): interface AuthoredModelOrigin — A model the engine builds itself from code and CC0 materials (no download), for shapes no licensed scan covers. `builder` names the function in `modelLibraryAuthored`.
-- `FindLibraryModelOptions` (interface): interface FindLibraryModelOptions — Narrowing for {@link findLibraryModel}.
-- `GeneratedModelOrigin` (interface): interface GeneratedModelOrigin — A model a game generated itself (text or image to 3D, e.g. LLMville's fal.ai diorama-assets skill). The library never runs or pays for a generator: the game generates, reviews and commits the GLB, then registers it here with the generator and terms it was made under. `assets pull` skips these; `libraryModel` serves the committed file from `generatedBasePath`.
-- `KhronosModelOrigin` (interface): interface KhronosModelOrigin — A Khronos glTF Sample Assets model, fetched from `KhronosGroup/glTF-Sample-Assets` at a pinned commit. `drop` names nodes to remove before compression (trademarked logos the license excludes).
-- `LibraryModelOptions` (interface): interface LibraryModelOptions — URL and LOD options for {@link libraryModel}.
-- `MODEL_LIBRARY` (const): const MODEL_LIBRARY: readonly ModelLibraryEntry[] — Every library entry.
-- `MODEL_LIBRARY_GAPS` (const): const MODEL_LIBRARY_GAPS: readonly ModelLibraryGap[] — Known gaps: requests with no licensed realistic model yet, and how each would be closed.
-- `MODEL_LIBRARY_GENRES` (const): const MODEL_LIBRARY_GENRES: readonly ModelLibraryGenre[] — Every genre, in browse order.
-- `ModelLibraryEntry` (interface): interface ModelLibraryEntry — One named realistic model with its source, credit and license.
-- `ModelLibraryGap` (interface): interface ModelLibraryGap — Things games ask for that no licensed realistic source in the library covers yet, and the route to close each one. `findLibraryModel` returns the gap instead of a wrong-looking substitute.
-- `ModelLibraryGenre` (type): type ModelLibraryGenre = | "city" | "park" | "nature" | "creature" | "survival" | "industrial" | "scifi" | "tower-defense" | "office" — The realistic model library: real-world-scale, licensed, compressed models a game asks for by what it needs ("street lamp", "boulder", "office desk") rather than by pack and file name.
-- `ModelLibraryMatch` (interface): interface ModelLibraryMatch — One ranked answer to "what do you have for X".
-- `ModelLibraryOrigin` (type): type ModelLibraryOrigin = | PolyHavenModelOrigin | RocketboxModelOrigin | KhronosModelOrigin | AuthoredModelOrigin | GeneratedModelOrigin — Where an entry's bytes come from: a scan or rig pulled from its source, an engine-authored model, or a game-committed generated one.
-- `PolyHavenModelOrigin` (interface): interface PolyHavenModelOrigin — A Poly Haven model (CC0), fetched from `api.polyhaven.com` at its 1k texture tier.
-- `RocketboxClip` (interface): interface RocketboxClip — One animation a Rocketbox entry carries, taken from the shared Rocketbox animation library.
-- `RocketboxModelOrigin` (interface): interface RocketboxModelOrigin — A rigged Microsoft Rocketbox avatar or animal (MIT), converted from FBX at a pinned commit of `github.com/microsoft/Microsoft-Rocketbox`. One skinned GLB with its clips; no far level.
-- `findLibraryModel` (function): function findLibraryModel(query: string, options: FindLibraryModelOptions = {}): readonly ModelLibraryMatch[] — Rank library models for a plain-words request: an exact intent wins, then intent and title word overlap; a genre filter narrows the set. An empty result with a matching `libraryModelGap` means the library knows it has nothing realistic for that request.
-- `findLibraryModelByName` (function): function findLibraryModelByName(name: string): ModelLibraryEntry | null — The entry with this exact name, or `null`.
-- `libraryModel` (function): function libraryModel(name: string, options: LibraryModelOptions = {}): ModelConfig — The `ModelConfig` that draws a library model: real-world size, grounded at its origin, with its near and far levels switched by distance. Throws for an unknown name, so a typo fails at boot.
-- `libraryModelCredits` (function): function libraryModelCredits(names: readonly string[]): readonly string[] — Credit lines for the library models a game uses, one per entry: title, author, license, page.
-- `libraryModelDir` (function): function libraryModelDir(name: string): string — Folder an entry's pulled files live in, relative to the models root: `library/<name>`.
-- `libraryModelGap` (function): function libraryModelGap(query: string): ModelLibraryGap | null — The known gap a request falls in, when the library has no realistic answer for it.
-- `libraryModelNames` (function): function libraryModelNames(): readonly string[] — Every entry name, in library order.
-
-## @jgengine/assets/catalogs/modelLibraryEntries
-
-- `MODEL_LIBRARY_ENTRIES` (const): const MODEL_LIBRARY_ENTRIES: readonly ModelLibraryEntry[] — Curated library entries. Poly Haven models are CC0-1.0; authors are as Poly Haven credits them. Add an entry by name, title, genres, intents and origin; `assets pull model:<name>` fetches it.
-
-## @jgengine/assets/catalogs/modelLibraryRiggedEntries
-
-- `MODEL_LIBRARY_RIGGED_ENTRIES` (const): const MODEL_LIBRARY_RIGGED_ENTRIES: readonly ModelLibraryEntry[] — The library entries beyond the Poly Haven scans: rigged Rocketbox humans and animals, the Khronos sports car, foliage scans that need thinning and the engine-authored sci-fi props.
-
-## @jgengine/assets/catalogs/starter
-
-- `STARTER_MODEL_PACKS` (const): const STARTER_MODEL_PACKS: readonly AssetPack[] — The model packs behind the curated starter assets: the same packs, in order, as `STARTER_SOURCE_PACKS`.
-- `createStarterCatalog` (function): function createStarterCatalog(options: Partial<BuildCatalogOptions> = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (props/nature/urban). Prefer this for scaffolds and probes so `asset:prop_crate` etc. resolve without pulling the whole library. Pass `packs` to swap them; full control: {@link buildCatalog}.
-
-## @jgengine/assets/cli/find
-
-- `FindProvisionReport` (interface): interface FindProvisionReport — What `--provision` did: packs and library models served to the game, files copied from other games.
-- `FindRequest` (interface): interface FindRequest — One request: a name, and optionally the match id to provision instead of the top one.
-
-## @jgengine/assets/cli/githubToken
-
-- `GITHUB_TOKEN_HOSTS` (const): const GITHUB_TOKEN_HOSTS: ReadonlySet<string> — Hosts that rate-limit anonymous pulls (60 API calls an hour per IP, shared by every agent on the machine) and accept a token. Release downloads on github.com are left alone: they redirect to a signed storage URL that rejects a second credential.
-- `GhTokenReader` (type): type GhTokenReader = () => string | null — Run `gh auth token`; null when gh is missing, signed out or slow.
-- `resolveGithubToken` (function): function resolveGithubToken(env: NodeJS.ProcessEnv = process.env, readGh: GhTokenReader = readGhToken): string | undefined — `GITHUB_TOKEN`, then `GH_TOKEN`, then the signed-in gh CLI's token; undefined when none exists.
-- `wantsGithubToken` (function): function wantsGithubToken(url: string): boolean — True when `url` goes to a host that should carry the token.
-- `withGithubAuth` (function): function withGithubAuth(url: string, headers: HeadersInit | undefined, token: string | undefined): Headers — Request headers with `authorization` added for a GitHub host, unless the caller set one.
-
-## @jgengine/assets/cli/pull
-
-- `cliFetch` (const): const cliFetch: typeof fetch — The runtime's own fetch, with a curl fallback for hosts it cannot reach — some proxied sandboxes tear down bun's TLS stream to GitHub's release-asset host while curl (which honors SSL_CERT_FILE) gets through fine. GitHub hosts get the token, and every request has a hard budget, so a stalled body fails naming its URL instead of hanging the pull.
-- `fetchTimeoutMs` (function): function fetchTimeoutMs(env: NodeJS.ProcessEnv = process.env): number — One request's hard budget: `JG_FETCH_TIMEOUT_MS`, else ten minutes (the curl fallback's own cap).
-- `generatedDir` (const): const generatedDir: string — Sibling of `cli/` under `src/` (dev) or `dist/` (published) so reindex writes the tree consumers import.
-- `generatedSpritesDir` (const): const generatedSpritesDir: string — Sprite-pack counterpart of `generatedDir`.
-- `pullGithubToken` (function): function pullGithubToken(): string | undefined — The GitHub token every pull uses, read once per run: env first, then `gh auth token`.
-
-## @jgengine/assets/clipRetarget
-
-- `RetargetBone` (interface): interface RetargetBone — One retargeted bone: the target bone driven by a source bone, and optional children that aim each.
-- `RetargetOptions` (interface): interface RetargetOptions — How {@link retargetClipByRest} maps one skeleton's motion onto another.
-- `retargetClipByRest` (function): function retargetClipByRest(target: THREE.Object3D, source: THREE.Object3D, clip: THREE.AnimationClip, options: RetargetOptions): THREE.AnimationClip — Retarget a clip from one skeleton onto another whose bones have different names, orientations and rest pose. Each mapped bone takes the source bone's world-space rotation away from its rest, applied after turning the target's rest bone to point where the source's does (`aim`), so an A-pose body plays T-pose motion with its arms down. Unmapped bones keep their rest pose relative to their parent. Both roots must be at rest when called; the source is posed while sampling and returned to rest. Bone lengths stay the target's; only the hip translates.
-
-## @jgengine/assets/collisionMeshAssets
-
-- `COLLISION_MESH_ASSET_IDS` (const): const COLLISION_MESH_ASSET_IDS: ReadonlySet<string> — Catalog assets that ship a collision mesh in the generated index. Opt-in only: each entry adds ~10-30KB of quantized triangles to the index and a BVH raycast per query, so list only concave models whose fitted box lies (archways, rings, frames).
-
-## @jgengine/assets/credits
-
-- `CreditsGrouping` (type): type CreditsGrouping = "license" | "provider" — Grouping for {@link creditsForSources} — one section per license (default) or per provider.
-- `allAssetSources` (function): function allAssetSources(): readonly AssetSource[] — Every catalogued source, for a credits screen that lists the whole shipped catalog.
-- `creditsForAssetIds` (function): function creditsForAssetIds(ids: Iterable<string>, options: { title?: string; grouping?: CreditsGrouping; notice?: string } = {}): CreditsDocument — One call from the asset ids a game ships to a ready {@link CreditsDocument} — the credit obligation for borrowed assets, derived rather than hand-maintained.
-- `creditsForSourceIds` (function): function creditsForSourceIds(ids: Iterable<string>, options: { title?: string; grouping?: CreditsGrouping; notice?: string } = {}): CreditsDocument — One call from the source ids a game declares to a ready {@link CreditsDocument} — the usual entry point, since the packs a game hands to `buildCatalog({ packs })` already carry them.
-- `creditsForSources` (function): function creditsForSources(used: readonly AssetSource[], grouping: CreditsGrouping = "license"): CreditsSection[] — Turns asset sources into credit sections, one per license or provider, each entry naming the pack and its author with the pack homepage as `href`. Feed it {@link sourcesForAssetIds} so the screen credits what shipped, and fold the result into the game's hand-authored credits with `mergeCredits`.
-- `sourcesForAssetIds` (function): function sourcesForAssetIds(ids: Iterable<string>): AssetSource[] — The distinct asset sources behind a set of asset ids — the packs a game actually ships, not the whole catalog. Unknown ids are skipped; order follows first use so a stable id list gives a stable credits screen.
-- `sourcesForSourceIds` (function): function sourcesForSourceIds(ids: Iterable<string>): AssetSource[] — The distinct sources behind a set of source ids — the `id`s of the packs a game hands to `buildCatalog({ packs })`, plus its material sources. Unknown ids are skipped.
-
-## @jgengine/assets/dims
-
-- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
-- `readGlbClips` (function): function readGlbClips(bytes: Uint8Array): string[] | null — Animation clip names read from a GLB's JSON chunk, de-duplicated and order-preserving; `null` for an unreadable GLB or one with no (named) animations.
-- `readGlbCollisionMesh` (function): function readGlbCollisionMesh(bytes: Uint8Array): CollisionMeshData | null — Extract a model-space collision triangle soup from a GLB and compress it with {@link encodeCollisionMesh}. Walks the default scene, transforming each TRIANGLES primitive's float32 VEC3 positions by the node's world matrix, and returns `null` for a JSON-only GLB or when no triangle survives quantization.
-- `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
-
-## @jgengine/assets/download
-
-- `DEFAULT_RELEASE_BASE` (const): const DEFAULT_RELEASE_BASE: "https://github.com/Noisemaker111/jgengine/releases/download/packs" — Default asset mirror: this repo's own GitHub Releases, reachable from every cloud sandbox without network-policy changes (github.com is on the default allowlist). Assets live on the rolling `packs` release, one flat zip per pack named `<provider>-<packId>.zip`, kept in sync with the source catalog by `.github/workflows/mirror-assets.yml` — adding a catalog entry is the whole publishing step. Override the chain with `--mirror` / `JGENGINE_ASSETS_MIRROR`, or disable this hop with `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`.
-- `DownloadPackOptions` (interface): interface DownloadPackOptions { mirrorBase?: string | undefined; fetchImpl?: FetchLike } — ⚠ undocumented
-- `DownloadPackResult` (interface): interface DownloadPackResult { archive: Uint8Array; url: string; attempted: readonly string[] } — ⚠ undocumented
-- `ExtractedGlb` (interface): interface ExtractedGlb { file: string; bytes: Uint8Array } — ⚠ undocumented
-- `ExtractedPack` (interface): interface ExtractedPack — What `extractGlbs` pulls out of a pack archive: the models plus the textures they reference.
-- `ExtractedPackImage` (interface): interface ExtractedPackImage — An image a pack's models reference, shipped flat beside the `.glb` files.
-- `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
-- `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
-- `MAX_ARCHIVE_COMPRESSION_RATIO` (const): const MAX_ARCHIVE_COMPRESSION_RATIO: 100 — Max allowed originalSize/size ratio for a single archive entry — past this it's treated as a zip bomb.
-- `MAX_ARCHIVE_DOWNLOAD_BYTES` (const): const MAX_ARCHIVE_DOWNLOAD_BYTES: number — Max size of a downloaded (still-compressed) archive, in bytes. Provider zips run tens of MB; this leaves headroom without buffering an unbounded response.
-- `MAX_ARCHIVE_ENTRY_COUNT` (const): const MAX_ARCHIVE_ENTRY_COUNT: 20000 — Max number of entries this module will extract out of one archive.
-- `MAX_ARCHIVE_UNCOMPRESSED_BYTES` (const): const MAX_ARCHIVE_UNCOMPRESSED_BYTES: number — Max total uncompressed size this module will inflate out of one archive, in bytes.
-- `mirrorOverrideBase` (function): function mirrorOverrideBase(env: Readonly<Record<string, string | undefined>> = process.env): string | undefined — The `JGENGINE_ASSETS_MIRROR` base URL without a trailing slash, or undefined when unset.
-
-## @jgengine/assets/findAssets
-
-- `AssetFindResult` (interface): interface AssetFindResult — Everything one request turned up.
-- `CONFIDENT_SCORE` (const): const CONFIDENT_SCORE: 60 — A match at or above this score is a real answer; below it the free sources are offered too.
-- `ElsewhereSource` (interface): interface ElsewhereSource — A free source to look on when nothing here fits, with the search already filled in.
-- `FindAssetsContext` (interface): interface FindAssetsContext — Where to look on disk: `has(rel)` answers for a path under the game's `public/` (or the store).
-- `FoundAsset` (type): type FoundAsset = | (FoundBase & { kind: "model"; source: string; url: string; pull: string }) /** A realistic library model: draw it with `libraryModel(name)`; `pull` is `null` for one a game generated and committed. */ | (FoundBase & { kind: "library"; url: string; use: string; pull: string | null… — One answer to an asset request, shaped by where its bytes come from.
-- `GameModelFile` (interface): interface GameModelFile — A model file a game already ships under its `public/` (`models/imported/creatures/trex.glb`).
-- `findAssets` (function): function findAssets(query: string, ctx: FindAssetsContext): AssetFindResult — Answer one asset request from everything the engine can reach: catalog pack models and aliases, the realistic model library, whole packs not indexed yet, and model files games already ship. Each match carries its licence, the URL a game loads it from and whether it is on disk; a weak answer also names the free sources to search, and the library's own note when it knows the gap.
-
-## @jgengine/assets/generated
-
-- `generatedBySource` (const): const generatedBySource: Readonly<Record<string, readonly IndexEntry[]>> — ⚠ undocumented
-- `generatedIndex` (const): const generatedIndex: readonly IndexEntry[] — ⚠ undocumented
-- `generatedPacks` (const): const generatedPacks: readonly AssetPack[] — Every pulled pack. Importing this bundles the whole library; a game imports only its own packs from `./packs`.
-
-## @jgengine/assets/generated-sprites
-
-- `generatedSpriteBySource` (const): const generatedSpriteBySource: Record<string, IndexEntry[]> — Pulled sprite/icon entries grouped by source id.
-- `generatedSpriteIndex` (const): const generatedSpriteIndex: IndexEntry[] — Every pulled sprite/icon entry across all sources, flattened.
-
-## @jgengine/assets/generated/pack/kaykit-adventurers
-
-- `kaykitAdventurers` (const): const kaykitAdventurers: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/kaykit-city-builder
-
-- `kaykitCityBuilder` (const): const kaykitCityBuilder: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/kaykit-dungeon
-
-- `kaykitDungeon` (const): const kaykitDungeon: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/kaykit-forest
-
-- `kaykitForest` (const): const kaykitForest: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/kaykit-furniture
-
-- `kaykitFurniture` (const): const kaykitFurniture: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/kaykit-medieval-hexagon
-
-- `kaykitMedievalHexagon` (const): const kaykitMedievalHexagon: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/kaykit-skeletons
-
-- `kaykitSkeletons` (const): const kaykitSkeletons: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/kaykit-space-base
-
-- `kaykitSpaceBase` (const): const kaykitSpaceBase: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-5-low-poly-animals
-
-- `quaternius5LowPolyAnimals` (const): const quaternius5LowPolyAnimals: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-animated-animales-low-poly
-
-- `quaterniusAnimatedAnimalesLowPoly` (const): const quaterniusAnimatedAnimalesLowPoly: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-animated-animals
-
-- `quaterniusAnimatedAnimals` (const): const quaterniusAnimatedAnimals: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-animated-characters-pack
-
-- `quaterniusAnimatedCharactersPack` (const): const quaterniusAnimatedCharactersPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-animated-dinosaurs
-
-- `quaterniusAnimatedDinosaurs` (const): const quaterniusAnimatedDinosaurs: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-animated-fish
-
-- `quaterniusAnimatedFish` (const): const quaterniusAnimatedFish: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-animated-human-low-poly
-
-- `quaterniusAnimatedHumanLowPoly` (const): const quaterniusAnimatedHumanLowPoly: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-animated-lowpoly-robot
-
-- `quaterniusAnimatedLowpolyRobot` (const): const quaterniusAnimatedLowpolyRobot: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-animated-mech-pack
-
-- `quaterniusAnimatedMechPack` (const): const quaterniusAnimatedMechPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-fantasy-low-poly-trees-and-bushes
-
-- `quaterniusFantasyLowPolyTreesAndBushes` (const): const quaterniusFantasyLowPolyTreesAndBushes: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-fantasy-props
-
-- `quaterniusFantasyProps` (const): const quaterniusFantasyProps: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-furniture-low-poly
-
-- `quaterniusFurnitureLowPoly` (const): const quaterniusFurnitureLowPoly: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-animated-guns
-
-- `quaterniusLowPolyAnimatedGuns` (const): const quaterniusLowPolyAnimatedGuns: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-cars-0
-
-- `quaterniusLowPolyCars0` (const): const quaterniusLowPolyCars0: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-desert-assets
-
-- `quaterniusLowPolyDesertAssets` (const): const quaterniusLowPolyDesertAssets: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-food-pack
-
-- `quaterniusLowPolyFoodPack` (const): const quaterniusLowPolyFoodPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-furniture-1
-
-- `quaterniusLowPolyFurniture1` (const): const quaterniusLowPolyFurniture1: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-guns
-
-- `quaterniusLowPolyGuns` (const): const quaterniusLowPolyGuns: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-guns-pack
-
-- `quaterniusLowPolyGunsPack` (const): const quaterniusLowPolyGunsPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-medieval-weapons
-
-- `quaterniusLowPolyMedievalWeapons` (const): const quaterniusLowPolyMedievalWeapons: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-nature-pack-1
-
-- `quaterniusLowPolyNaturePack1` (const): const quaterniusLowPolyNaturePack1: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-pirate-pack
-
-- `quaterniusLowPolyPiratePack` (const): const quaterniusLowPolyPiratePack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-rpg-pack
-
-- `quaterniusLowPolyRpgPack` (const): const quaterniusLowPolyRpgPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-low-poly-space-assets
-
-- `quaterniusLowPolySpaceAssets` (const): const quaterniusLowPolySpaceAssets: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-animated-farm-animal-pack
-
-- `quaterniusLowpolyAnimatedFarmAnimalPack` (const): const quaterniusLowpolyAnimatedFarmAnimalPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-animated-knight
-
-- `quaterniusLowpolyAnimatedKnight` (const): const quaterniusLowpolyAnimatedKnight: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-animated-monsters
-
-- `quaterniusLowpolyAnimatedMonsters` (const): const quaterniusLowpolyAnimatedMonsters: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-buildings
-
-- `quaterniusLowpolyBuildings` (const): const quaterniusLowpolyBuildings: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-buildings-pack
-
-- `quaterniusLowpolyBuildingsPack` (const): const quaterniusLowpolyBuildingsPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-cars
-
-- `quaterniusLowpolyCars` (const): const quaterniusLowpolyCars: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-crops-pack
-
-- `quaterniusLowpolyCropsPack` (const): const quaterniusLowpolyCropsPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-house-interior-pack
-
-- `quaterniusLowpolyHouseInteriorPack` (const): const quaterniusLowpolyHouseInteriorPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-medieval-buildings
-
-- `quaterniusLowpolyMedievalBuildings` (const): const quaterniusLowpolyMedievalBuildings: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-medieval-village-pack
-
-- `quaterniusLowpolyMedievalVillagePack` (const): const quaterniusLowpolyMedievalVillagePack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-medieval-weapons
-
-- `quaterniusLowpolyMedievalWeapons` (const): const quaterniusLowpolyMedievalWeapons: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-modular-dungeon-pack
-
-- `quaterniusLowpolyModularDungeonPack` (const): const quaterniusLowpolyModularDungeonPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-modular-sci-fi-environments
-
-- `quaterniusLowpolyModularSciFiEnvironments` (const): const quaterniusLowpolyModularSciFiEnvironments: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-modular-street-pack
-
-- `quaterniusLowpolyModularStreetPack` (const): const quaterniusLowpolyModularStreetPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-nature-pack
-
-- `quaterniusLowpolyNaturePack` (const): const quaterniusLowpolyNaturePack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-posed-humans
-
-- `quaterniusLowpolyPosedHumans` (const): const quaterniusLowpolyPosedHumans: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-public-transport
-
-- `quaterniusLowpolyPublicTransport` (const): const quaterniusLowpolyPublicTransport: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-rpg
-
-- `quaterniusLowpolyRpg` (const): const quaterniusLowpolyRpg: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-rpg-characters
-
-- `quaterniusLowpolyRpgCharacters` (const): const quaterniusLowpolyRpgCharacters: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-ship-pack
-
-- `quaterniusLowpolyShipPack` (const): const quaterniusLowpolyShipPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-spaceships-pack
-
-- `quaterniusLowpolySpaceshipsPack` (const): const quaterniusLowpolySpaceshipsPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-steampunk-turrets
-
-- `quaterniusLowpolySteampunkTurrets` (const): const quaterniusLowpolySteampunkTurrets: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-survival-pack
-
-- `quaterniusLowpolySurvivalPack` (const): const quaterniusLowpolySurvivalPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-lowpoly-textured-trees
-
-- `quaterniusLowpolyTexturedTrees` (const): const quaterniusLowpolyTexturedTrees: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-medieval-village
-
-- `quaterniusMedievalVillage` (const): const quaterniusMedievalVillage: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-modular-men
-
-- `quaterniusModularMen` (const): const quaterniusModularMen: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-modular-scifi
-
-- `quaterniusModularScifi` (const): const quaterniusModularScifi: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-modular-women
-
-- `quaterniusModularWomen` (const): const quaterniusModularWomen: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-stylized-nature
-
-- `quaterniusStylizedNature` (const): const quaterniusStylizedNature: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-textured-cute-monster-pack
-
-- `quaterniusTexturedCuteMonsterPack` (const): const quaterniusTexturedCuteMonsterPack: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/pack/quaternius-toon-shooter
-
-- `quaterniusToonShooter` (const): const quaterniusToonShooter: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/generated/packs
-
-- `kaykitAdventurers` (const): const kaykitAdventurers: AssetPack — ⚠ undocumented
-- `kaykitCityBuilder` (const): const kaykitCityBuilder: AssetPack — ⚠ undocumented
-- `kaykitDungeon` (const): const kaykitDungeon: AssetPack — ⚠ undocumented
-- `kaykitForest` (const): const kaykitForest: AssetPack — ⚠ undocumented
-- `kaykitFurniture` (const): const kaykitFurniture: AssetPack — ⚠ undocumented
-- `kaykitMedievalHexagon` (const): const kaykitMedievalHexagon: AssetPack — ⚠ undocumented
-- `kaykitSkeletons` (const): const kaykitSkeletons: AssetPack — ⚠ undocumented
-- `kaykitSpaceBase` (const): const kaykitSpaceBase: AssetPack — ⚠ undocumented
-- `quaternius5LowPolyAnimals` (const): const quaternius5LowPolyAnimals: AssetPack — ⚠ undocumented
-- `quaterniusAnimatedAnimalesLowPoly` (const): const quaterniusAnimatedAnimalesLowPoly: AssetPack — ⚠ undocumented
-- `quaterniusAnimatedAnimals` (const): const quaterniusAnimatedAnimals: AssetPack — ⚠ undocumented
-- `quaterniusAnimatedCharactersPack` (const): const quaterniusAnimatedCharactersPack: AssetPack — ⚠ undocumented
-- `quaterniusAnimatedDinosaurs` (const): const quaterniusAnimatedDinosaurs: AssetPack — ⚠ undocumented
-- `quaterniusAnimatedFish` (const): const quaterniusAnimatedFish: AssetPack — ⚠ undocumented
-- `quaterniusAnimatedHumanLowPoly` (const): const quaterniusAnimatedHumanLowPoly: AssetPack — ⚠ undocumented
-- `quaterniusAnimatedLowpolyRobot` (const): const quaterniusAnimatedLowpolyRobot: AssetPack — ⚠ undocumented
-- `quaterniusAnimatedMechPack` (const): const quaterniusAnimatedMechPack: AssetPack — ⚠ undocumented
-- `quaterniusFantasyLowPolyTreesAndBushes` (const): const quaterniusFantasyLowPolyTreesAndBushes: AssetPack — ⚠ undocumented
-- `quaterniusFantasyProps` (const): const quaterniusFantasyProps: AssetPack — ⚠ undocumented
-- `quaterniusFurnitureLowPoly` (const): const quaterniusFurnitureLowPoly: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyAnimatedGuns` (const): const quaterniusLowPolyAnimatedGuns: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyCars0` (const): const quaterniusLowPolyCars0: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyDesertAssets` (const): const quaterniusLowPolyDesertAssets: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyFoodPack` (const): const quaterniusLowPolyFoodPack: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyFurniture1` (const): const quaterniusLowPolyFurniture1: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyGuns` (const): const quaterniusLowPolyGuns: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyGunsPack` (const): const quaterniusLowPolyGunsPack: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyMedievalWeapons` (const): const quaterniusLowPolyMedievalWeapons: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyNaturePack1` (const): const quaterniusLowPolyNaturePack1: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyPiratePack` (const): const quaterniusLowPolyPiratePack: AssetPack — ⚠ undocumented
-- `quaterniusLowPolyRpgPack` (const): const quaterniusLowPolyRpgPack: AssetPack — ⚠ undocumented
-- `quaterniusLowPolySpaceAssets` (const): const quaterniusLowPolySpaceAssets: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyAnimatedFarmAnimalPack` (const): const quaterniusLowpolyAnimatedFarmAnimalPack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyAnimatedKnight` (const): const quaterniusLowpolyAnimatedKnight: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyAnimatedMonsters` (const): const quaterniusLowpolyAnimatedMonsters: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyBuildings` (const): const quaterniusLowpolyBuildings: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyBuildingsPack` (const): const quaterniusLowpolyBuildingsPack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyCars` (const): const quaterniusLowpolyCars: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyCropsPack` (const): const quaterniusLowpolyCropsPack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyHouseInteriorPack` (const): const quaterniusLowpolyHouseInteriorPack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyMedievalBuildings` (const): const quaterniusLowpolyMedievalBuildings: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyMedievalVillagePack` (const): const quaterniusLowpolyMedievalVillagePack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyMedievalWeapons` (const): const quaterniusLowpolyMedievalWeapons: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyModularDungeonPack` (const): const quaterniusLowpolyModularDungeonPack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyModularSciFiEnvironments` (const): const quaterniusLowpolyModularSciFiEnvironments: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyModularStreetPack` (const): const quaterniusLowpolyModularStreetPack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyNaturePack` (const): const quaterniusLowpolyNaturePack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyPosedHumans` (const): const quaterniusLowpolyPosedHumans: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyPublicTransport` (const): const quaterniusLowpolyPublicTransport: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyRpg` (const): const quaterniusLowpolyRpg: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyRpgCharacters` (const): const quaterniusLowpolyRpgCharacters: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyShipPack` (const): const quaterniusLowpolyShipPack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolySpaceshipsPack` (const): const quaterniusLowpolySpaceshipsPack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolySteampunkTurrets` (const): const quaterniusLowpolySteampunkTurrets: AssetPack — ⚠ undocumented
-- `quaterniusLowpolySurvivalPack` (const): const quaterniusLowpolySurvivalPack: AssetPack — ⚠ undocumented
-- `quaterniusLowpolyTexturedTrees` (const): const quaterniusLowpolyTexturedTrees: AssetPack — ⚠ undocumented
-- `quaterniusMedievalVillage` (const): const quaterniusMedievalVillage: AssetPack — ⚠ undocumented
-- `quaterniusModularMen` (const): const quaterniusModularMen: AssetPack — ⚠ undocumented
-- `quaterniusModularScifi` (const): const quaterniusModularScifi: AssetPack — ⚠ undocumented
-- `quaterniusModularWomen` (const): const quaterniusModularWomen: AssetPack — ⚠ undocumented
-- `quaterniusStylizedNature` (const): const quaterniusStylizedNature: AssetPack — ⚠ undocumented
-- `quaterniusTexturedCuteMonsterPack` (const): const quaterniusTexturedCuteMonsterPack: AssetPack — ⚠ undocumented
-- `quaterniusToonShooter` (const): const quaterniusToonShooter: AssetPack — ⚠ undocumented
-
-## @jgengine/assets/glbMetrics
-
-- `GlbMetrics` (interface): interface GlbMetrics — Stored geometry and image inventory; triangles count mesh primitives once, regardless of scene instances.
-- `GlbTextureMetrics` (interface): interface GlbTextureMetrics — Dimensions and encoded bytes for one glTF image, including images referenced by texture extensions.
-- `readGlbMetrics` (function): function readGlbMetrics(bytes: Uint8Array, readResource?: (uri: string) => Uint8Array): GlbMetrics — Inspect GLB v2 geometry accessors and image headers offline. Throws on unreadable resources, malformed geometry, or required geometry compression; never silently reports missing data as zero. External resources are supplied by the caller; this function never fetches or decompresses bytes.
-
-## @jgengine/assets/gltfMaterials
-
-- `GLTF_MATERIAL_EXTENSIONS` (const): const GLTF_MATERIAL_EXTENSIONS: readonly string[] — Native material/texture extensions the pinned Three.js GLTFLoader implements. Decoders are still required.
-- `GltfImportedMaterial` (interface): interface GltfImportedMaterial — One imported material with the native definition retained as an independent JSON snapshot.
-- `GltfMaterialDiagnostic` (interface): interface GltfMaterialDiagnostic — Actionable fidelity warning or error; this inspector never changes imported surfaces.
-- `GltfMaterialInspection` (interface): interface GltfMaterialInspection — Native material inventory, primitive selectors, attribution, and renderer compatibility diagnostics.
-- `GltfMaterialSlot` (interface): interface GltfMaterialSlot — A primitive slot retains mesh and material indices even when display names collide.
-- `GltfMaterialTexture` (interface): interface GltfMaterialTexture — A native glTF texture use; embedded images retain their source index instead of an invented URL.
-- `inspectGlbMaterials` (function): function inspectGlbMaterials(bytes: Uint8Array, assetId: string): GltfMaterialInspection — Inspect the JSON chunk of complete GLB v2 bytes, including models with compressed geometry. This measures material metadata only; it never decodes geometry or resolves image URLs.
-- `inspectGltfMaterials` (function): function inspectGltfMaterials(json: GLTF.IGLTF, assetId: string): GltfMaterialInspection — Inventory validated glTF JSON without flattening slots, decoding compressed geometry, or changing materials. IDs use the supplied model namespace plus source indices, and remain stable while its pinned bytes remain stable.
-
-## @jgengine/assets/imageCodec
-
-- `RgbaImage` (interface): interface RgbaImage — A decoded image as top-row-first RGBA.
-
-## @jgengine/assets/importSpec
-
-- `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
-- `AssetImportSpec` (interface): interface AssetImportSpec — A game-owned import description; paths are relative POSIX paths, roles are authored labels.
-- `ImportSpecValidation` (type): type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string } — Result of validating an import description; a successful entry is an independent JSON snapshot.
-- `classifyAssetFile` (function): function classifyAssetFile(bytes: Uint8Array, _filename: string): AssetImportKind | null — Classify supported container headers from complete file bytes; filenames never override bytes. Recognizes GLB/glTF, PNG/JPEG/KTX2, Ogg/WAV/MP3, TTF/OTF/WOFF/WOFF2, HDR/EXR and JSON sprite sheets. This is format detection, not decoder validation. Images classify as texture; authors choose sprite/material in the spec.
-- `validateImportSpec` (function): function validateImportSpec(spec: unknown): ImportSpecValidation — Validate untrusted import descriptions without filesystem access or path rewriting. Requires unique relative files, printable non-empty roles and plain JSON metadata (maximum depth 64).
-
-## @jgengine/assets/indexGen
-
-- `ReindexResult` (interface): interface ReindexResult { perSource: {source: string; count: number}[]; total: number } — ⚠ undocumented
-- `entryForFile` (function): function entryForFile(source: AssetSource, file: string, dims?: ModelDims, collisionMesh?: CollisionMeshData, clips?: readonly string[], metrics?: GlbMetrics): IndexEntry — Build a source-owned model entry, preserving optional measured bounds, collision, clips, and inventory.
-- `indexSourceDir` (function): function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] — ⚠ undocumented
-- `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
-- `reindex` (function): function reindex(modelsDir: string, outDir: string): ReindexResult — ⚠ undocumented
-- `writeIndexBarrels` (function): function writeIndexBarrels(outDir: string): void — Writes the generated pack modules and the barrel over every `<source>.json` already in `outDir`.
-
-## @jgengine/assets/library/assetLibrary
-
-- `LibraryEntry` (interface): interface LibraryEntry extends LibraryRecord — One asset in the shared library, with its source defaults filled in.
-- `LibraryHit` (interface): interface LibraryHit — A ranked {@link searchLibrary} hit.
-- `LibraryIssue` (interface): interface LibraryIssue — One reason a library entry is refused.
-- `LibraryRecord` (interface): interface LibraryRecord — One indexed asset as ingest writes it: only what differs from its source's defaults. Committed as JSON under `library/generated/`; the bytes stay upstream until `assets pull <key>`.
-- `LibraryRecordFile` (interface): interface LibraryRecordFile — A committed ingest result: one source's records.
-- `LibrarySearchOptions` (interface): interface LibrarySearchOptions — Filters for {@link searchLibrary}.
-- `libraryCreditSections` (function): function libraryCreditSections(used: readonly LibraryEntry[]): CreditsSection[] — Credit sections for the library entries a game ships: one section per source, one line per credited author (game-icons.net's "Icons made by …" rule) with the entries listed, and one line per CC0 source. Fold it into the game's own credits with `mergeCredits`.
-- `libraryCredits` (function): function libraryCredits(used: readonly LibraryEntry[], options: { title?: string; notice?: string } = {}): CreditsDocument — {@link libraryCreditSections} as a ready {@link CreditsDocument}.
-- `libraryLicenseLabel` (function): function libraryLicenseLabel(license: LibraryLicense): string — A short human label for a licence (`CC BY 3.0`).
-- `libraryTagCounts` (function): function libraryTagCounts(entries: readonly LibraryEntry[], limit = 40): { tag: string; count: number }[] — How many entries carry each tag, most common first: the browser's tag chips.
-- `searchLibrary` (function): function searchLibrary(entries: readonly LibraryEntry[], query: string, options: LibrarySearchOptions = {}): LibraryHit[] — Ranks library entries against free text. Every word must match the title, a tag or the id; a whole title word ranks above a tag, a tag above a prefix. An empty query lists the filtered entries in index order.
-- `validateLibrary` (function): function validateLibrary(entries: readonly LibraryEntry[]): LibraryIssue[] — Checks every entry carries an accepted licence, an author, a page and a credit-ready title, that kinds are known, keys are unique and tags are lowercase. An empty array means the library is clean.
-
-## @jgengine/assets/library/generated
-
-- `libraryRecordFiles` (const): const libraryRecordFiles: readonly unknown[] — Every committed library ingest file, as untyped JSON; `readLibraryRecordFile` checks each one.
-
-## @jgengine/assets/library/libraryIcons
-
-- `GAMEICONS_ARTISTS` (const): const GAMEICONS_ARTISTS: Readonly<Record<string, string>> — game-icons.net's folder names and the credit each artist asks for ("Icons made by {author}"), from the repository's `license.txt`. Ingest refuses a folder missing here, so every icon has a named artist.
-- `GAMEICONS_CC0_ARTISTS` (const): const GAMEICONS_CC0_ARTISTS: ReadonlySet<string> — game-icons.net artists who release under CC0 instead of CC BY 3.0 (`license.txt`).
-- `GAMEICONS_PACK` (const): const GAMEICONS_PACK: "gameicons-icons" — The pack every game-icons.net library entry is pulled with (`assets pull gameicons-icons`).
-- `libraryIconCredits` (function): function libraryIconCredits(keys: Iterable<string>): CreditsSection[] — Credit sections for the game-icons.net icons a game ships: one "Icons made by …" line per artist.
-- `libraryIconUrl` (function): function libraryIconUrl(key: string, options: { basePath?: string } = {}): string — The URL a pulled game-icons.net icon is served at (`/sprites/gameicons-icons/lorc/broadsword.svg`). Draw it with `SpriteIcon` from `@jgengine/core/ui/icons/spriteIcon.view`, which tints it.
-
-## @jgengine/assets/library/libraryIndex
-
-- `assetLibrary` (function): function assetLibrary(): readonly LibraryEntry[] — Every entry in the shared asset library: the committed ingest files plus the measured packs. Built once on first call. Import this module lazily from a browser (`await import(...)`): the index is a few megabytes of metadata.
-
-## @jgengine/assets/library/libraryIngest
-
-- `IngestFetch` (type): type IngestFetch = (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }> — The fetch seam ingest uses; tests pass a stub.
-- `IngestOptions` (interface): interface IngestOptions — What every ingester takes.
-- `KayKitTreePack` (interface): interface KayKitTreePack — One KayKit pack the library lists from its repository tree before any pull has indexed it.
-
-## @jgengine/assets/library/libraryLicense
-
-- `EXCLUDED_PROVIDERS` (const): const EXCLUDED_PROVIDERS: RegExp — Providers JGengine never ships, whatever licence a re-upload claims: Kenney (house rule), and Mixamo, Textures.com, Fab and BlenderKit (no redistribution). Matched against author, title and tags.
-- `LIBRARY_LICENSES` (const): const LIBRARY_LICENSES: readonly ["CC0-1.0", "public-domain", "MIT", "CC-BY-3.0", "CC-BY-4.0"] — The only licences the shared asset library accepts: each allows commercial use and re-hosting, and the CC BY ones only ask for a credit, which the library generates from each entry's data.
-- `LibraryLicense` (type): type LibraryLicense = (typeof LIBRARY_LICENSES)[number] — One accepted library licence (an SPDX id, or `public-domain`).
-- `licenseRequiresCredit` (function): function licenseRequiresCredit(license: LibraryLicense): boolean — Whether shipping an asset under this licence obliges a visible credit.
-- `normalizeLibraryLicense` (function): function normalizeLibraryLicense(label: string): LibraryLicense | null — Maps a provider's licence label (`"CC0 Public Domain"`, `"CC Attribution"`, `"MIT License"`) to an accepted {@link LibraryLicense}, or `null` for anything else. Non-commercial, share-alike, no-derivatives, editorial, store and custom licences all return `null`: the library refuses them.
-
-## @jgengine/assets/library/libraryMakehuman
-
-- `MAKEHUMAN_PRESETS` (const): const MAKEHUMAN_PRESETS: readonly MakeHumanPreset[] — The pinned MakeHuman people the library lists: both genders across MakeHuman's three ethnic targets, ages from young adult to old, and muscle and weight extremes. Each is built on pull from the CC0 base mesh and targets, so the set is data, not files.
-
-## @jgengine/assets/library/libraryPull
-
-- `LibraryPullContext` (interface): interface LibraryPullContext — What {@link pullLibraryEntry} needs from its caller.
-- `pullLibraryEntry` (function): function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullContext): Promise<LibraryServedPath> — Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through the model library's converters (a Rocketbox character with `ctx.clips` baked on), a Rocketbox animation as a skeleton-only clip GLB, a MakeHuman person built from its CC0 base mesh and targets, a Smithsonian scan as its CC0 GLB, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
-
-## @jgengine/assets/library/libraryRocketbox
-
-- `ROCKETBOX_CLIP_FOLDERS` (const): const ROCKETBOX_CLIP_FOLDERS: { readonly static: "all_animations_max_motextr_static"; readonly xy: "all_animations_max_motextr_xy"; readonly xyz: "all_animations_max_motextr_xyz"; } — Rocketbox's three animation folders: in place (`static`), travelling on the ground (`xy`) and in 3D (`xyz`).
-
-## @jgengine/assets/library/libraryServed
-
-- `LibraryServedPath` (interface): interface LibraryServedPath — Where a pulled library entry is served from, relative to a game's `public/`.
-- `libraryServedPath` (function): function libraryServedPath(entry: LibraryEntry): LibraryServedPath — The served folder and URL for a library entry. Pack entries (KayKit, Quaternius, game-icons) share their pack's folder; everything else gets its own.
-
-## @jgengine/assets/library/librarySources
-
-- `ASSET_LIBRARY_SOURCES` (const): const ASSET_LIBRARY_SOURCES: readonly LibrarySource[] — The upstreams the shared asset library indexes, in ingest order.
-- `GAMEICONS_REVISION` (const): const GAMEICONS_REVISION: "82d948812bfe3f269ef8f731dcdb07b08160edc4" — The game-icons.net repository commit the icon index and thumbnails are pinned to.
-- `LIBRARY_KINDS` (const): const LIBRARY_KINDS: readonly LibraryKind[] — Every {@link LibraryKind}, in browser tab order.
-- `LibraryKind` (type): type LibraryKind = "model" | "character" | "animation" | "material" | "decal" | "hdri" | "icon" — What a library entry is, which decides where it is served and which browser tab shows it.
-- `LibrarySource` (interface): interface LibrarySource — One upstream the library indexes. `{id}` in a template is replaced by the entry's native id.
-- `LibrarySourceId` (type): type LibrarySourceId = | "ambientcg" | "polyhaven" | "gameicons" | "sketchfab" | "kaykit" | "quaternius" | "rocketbox" | "makehuman" | "smithsonian" — Where a library entry's bytes come from.
-- `MAKEHUMAN_REVISION` (const): const MAKEHUMAN_REVISION: "a8bc2d54ff0ac92e78ff71431b1023eda42bf482" — The MakeHuman commit the pinned people are built from (the same one `makehumanPull` reads).
-- `ROCKETBOX_REVISION` (const): const ROCKETBOX_REVISION: "0943055db6ec570bcef9f2c8b41c9e5467c808f9" — The Microsoft Rocketbox commit the avatar index and previews are pinned to (the same one `rocketboxPull` reads).
-- `librarySource` (function): function librarySource(id: string): LibrarySource | undefined — The library source with this id, or undefined.
-
-## @jgengine/assets/makehumanPull
-
-- `MAKEHUMAN_COMMIT` (const): const MAKEHUMAN_COMMIT: "a8bc2d54ff0ac92e78ff71431b1023eda42bf482" — MakeHuman (CC0 assets since September 2020) builds people from one base mesh and a library of morph targets. This plays MakeHuman's export in Bun: it reads the base mesh, the ethnicity, age and body targets, the default skeleton, its weights and the eye proxy at a pinned commit (each file checked against Git's blob hash), sums the targets a preset names, places every joint from the morphed mesh, skins the body, and bakes Rocketbox idle, walk and run clips onto it with a rest-aligned retarget. The result is one meshopt GLB in metres, standing on y = 0, facing +Z.
-- `MakeHumanEthnicity` (interface): interface MakeHumanEthnicity — Ethnic mix of a MakeHuman body; MakeHuman normalises the three to sum to 1.
-- `MakeHumanPreset` (interface): interface MakeHumanPreset — One pinned MakeHuman person: the macro settings MakeHuman's sliders would hold.
-- `PullMakeHumanOptions` (interface): interface PullMakeHumanOptions — Settings for {@link pullMakeHumanCharacter}.
-- `PulledMakeHuman` (interface): interface PulledMakeHuman — What one MakeHuman build wrote.
-- `pullMakeHumanCharacter` (function): function pullMakeHumanCharacter(preset: MakeHumanPreset, options: PullMakeHumanOptions): Promise<PulledMakeHuman> — Build one pinned MakeHuman person and write `<outDir>/model.glb`: the skinned body and eyes on MakeHuman's default skeleton, a skin tone from the ethnic mix, and Rocketbox `Idle`, `Walk` and `Run` retargeted onto it (walk and run in place).
-
-## @jgengine/assets/manifest
-
-- `AssetAlias` (interface): interface AssetAlias { key: string; target: string } — ⚠ undocumented · used by `aliases` (@jgengine/assets): Semantic keys → live catalog ids.
-- `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload | PolyPizzaBundleDownload | ItchDownload — ⚠ undocumented
-- `AssetPack` (interface): interface AssetPack — One pulled model pack's index: its source id and every entry measured from its GLBs. Each pack is its own named export in `@jgengine/assets/generated/packs`, so a game bundles only the packs it imports and hands to `buildCatalog({ packs })`.
-- `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
-- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; spriteLayout?: "flat" | "folders"; materialMaps?: read… — ⚠ undocumented · used by `ambientcgSources` (@jgengine/assets): Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
-- `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
-- `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
-- `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
-- `IndexEntry` (interface): interface IndexEntry — A source-owned model or sprite id, with optional offline model measurements.
-- `ItchDownload` (interface): interface ItchDownload — A free itch.io download: the game page URL and the title of the upload to take.
-- `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
-- `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
-- `PolyPizzaBundleDownload` (interface): interface PolyPizzaBundleDownload — A Poly Pizza bundle (the `poly.pizza/bundle/<slug>` path), zipped on download as one `.glb` per model. Every model's licence must match the source's.
-- `ScrapeDownload` (interface): interface ScrapeDownload { scrape: string } — ⚠ undocumented
-- `SingleAsset` (interface): interface SingleAsset { id: string; url: string; license: string; author: string; categories: readonly string[] } — ⚠ undocumented
-- `importedPackNames` (function): function importedPackNames(text: string): ReadonlySet<string> — The original export names imported from `generated/packs`, including imports renamed locally.
-- `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
-- `packExportName` (function): function packExportName(sourceId: string): string — The name a pack is exported under in `generated/packs`: its source id in camelCase (`kaykit-dungeon` → `kaykitDungeon`).
-
-## @jgengine/assets/materialMapFiles
-
-- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly opacity: "opacity.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role. Kept in its own module so catalogs and editors can name a pulled file without loading the archive reader.
-- `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material, including an optional compressed KTX2 asset.
-
-## @jgengine/assets/materials
-
-- `BuildMaterialCatalogOptions` (interface): interface BuildMaterialCatalogOptions — Options for `buildMaterialCatalog`.
-- `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
-- `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly opacity: "opacity.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role. Kept in its own module so catalogs and editors can name a pulled file without loading the archive reader.
-- `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
-- `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material, including an optional compressed KTX2 asset.
-- `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`roughness`/`opacity`/`ktx2`/`displacement` appear only when declared by its source.
-- `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
-- `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
-- `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
-- `materialAliases` (const): const materialAliases: readonly AssetAlias[] — Semantic keys onto the ambientCG catalog, mirroring the model alias layer.
-
-## @jgengine/assets/modelLibraryAuthored
-
-- `AUTHORED_BUILDERS` (const): const AUTHORED_BUILDERS: Readonly<Record<string, () => Builder>> — Every engine-authored builder, by the `builder` an entry names.
-- `BuiltAuthoredModel` (interface): interface BuiltAuthoredModel — What an authored pull wrote.
-- `buildAuthoredModel` (function): function buildAuthoredModel(entry: ModelLibraryEntry, modelsRoot: string): Promise<BuiltAuthoredModel> — Build an authored entry and write `<modelsRoot>/library/<name>/model.glb`. Nothing is downloaded.
-
-## @jgengine/assets/modelLibraryPull
-
-- `KHRONOS_COMMIT` (const): const KHRONOS_COMMIT: "8f492390ddc7a2ae221a1369ef560589cf8c70fb" — The commit of `KhronosGroup/glTF-Sample-Assets` every Khronos entry is read from.
-- `PullLibraryModelOptions` (interface): interface PullLibraryModelOptions — Where {@link pullLibraryModel} writes and how it fetches.
-- `PulledLibraryModel` (interface): interface PulledLibraryModel — What one pull wrote: folder, bytes, triangle counts per level and measured size.
-- `downscaleJpeg` (function): function downscaleJpeg(bytes: Uint8Array, max: number): Uint8Array — Halve a JPEG (2x2 box filter) until its longest edge fits `max`; smaller maps pass through untouched.
-- `pullLibraryModel` (function): function pullLibraryModel(entry: ModelLibraryEntry, options: PullLibraryModelOptions): Promise<PulledLibraryModel> — Download one library model from its official source, simplify it into a near and a far level, meshopt-compress both and write them as `near.gltf` / `far.gltf` sharing one set of textures (so the far level costs geometry only). Every file is checked against the source's published md5.
-- `thinIslands` (function): function thinIslands(document: Document, material: RegExp, share: number): number — Keep an evenly spread `share` of the connected triangle islands (leaf clusters) on every primitive whose material name matches `material`, and grow each kept island about its own centre by `share^-0.35` so the canopy keeps most of its cover — the usual foliage LOD trade, not a change to the tree's size. Returns the triangles removed.
-
-## @jgengine/assets/modelLodBuild
-
-- `BakedImpostorPixels` (interface): interface BakedImpostorPixels — A baked atlas pair as raw RGBA rows, bottom row first (as the GPU reads them back).
-- `ImpostorBakePlan` (interface): interface ImpostorBakePlan — How far-view impostors are baked: data in `assetBuild.impostors`.
-- `ImpostorBaker` (type): type ImpostorBaker = (file: string, frames: number, cell: number) => Promise<BakedImpostorPixels | null> — Renders a model file's impostor atlas; the pipeline passes one backed by a headless browser.
-- `LodBuildPlan` (interface): interface LodBuildPlan — How a game's models are simplified: data in the game's `jgengine.json` `assetBuild.lods`.
-- `LodLevelPlan` (interface): interface LodLevelPlan — One simplified level a build writes: the share of triangles to keep and the simplifier's error budget.
-- `ModelLodBuildResult` (interface): interface ModelLodBuildResult — What one model's build did.
-- `SOURCE_MATERIAL_KEY` (const): const SOURCE_MATERIAL_KEY: "jgSourceMaterial" — The material extras key a level keeps its source material index under; the runtime reskins by it.
-- `buildModelLods` (function): function buildModelLods(file: string, plan: LodBuildPlan, options: { impostor?: ImpostorBakePlan | null; bake?: ImpostorBaker } = {}): Promise<ModelLodBuildResult> — Build the simplified levels (and, with a baker, the impostor atlas) for one model file into `<file>.lods/`, the folder the runtime reads (`@jgengine/core/lod/builtLods`). Cached: a source and plan that match the meta on disk rebuild nothing. Animated and skinned models are skipped.
-
-## @jgengine/assets/modelMirror
-
-- `modelMirrorAssetName` (function): function modelMirrorAssetName(name: string): string — `model-library-<name>.zip`, the release asset holding one per-model pull exactly as it lands in the store.
-- `modelMirrorUrls` (function): function modelMirrorUrls(name: string, env: Readonly<Record<string, string | undefined>> = process.env): string[] — Every base URL to try for a per-model zip, in order: `JGENGINE_ASSETS_MIRROR`, then the default release (unless disabled).
-- `pullMirroredModel` (function): function pullMirroredModel<T>(name: string, modelsRoot: string, fetchImpl: typeof fetch, env: Readonly<Record<string, string | undefined>> = process.env): Promise<{ recorded: T; dir: string } | null> — Restore a per-model pull from the mirror into `<modelsRoot>/library/<name>/`. Returns the pull's recorded result and folder, or null when no mirror holds a usable zip, so the caller falls back to the source.
-- `zipPulledModel` (function): function zipPulledModel(dir: string, result: object): Uint8Array — Zip a pulled model folder with the pull's result, ready to upload as {@link modelMirrorAssetName}.
-
-## @jgengine/assets/packs/starter
-
-- `STARTER_ASSETS` (const): const STARTER_ASSETS: readonly StarterAsset[] — Flat list of every curated starter asset across themes.
-- `STARTER_PACKS` (const): const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> — Theme → assets table for browse/docs (`STARTER_PACKS.props`, …).
-- `STARTER_PEOPLE` (const): const STARTER_PEOPLE: readonly string[] — The model-library people a fresh game pulls with the starter packs: realistic rigged humans, a man and a woman, that `libraryModel(name)` animates with the full humanoid clip set.
-- `STARTER_SOURCE_PACKS` (const): const STARTER_SOURCE_PACKS: readonly string[] — Source pack ids a game must pull so every starter asset URL resolves on disk.
-- `STARTER_THEMES` (const): const STARTER_THEMES: readonly StarterTheme[] — Ordered starter theme ids: props, nature, urban.
-- `StarterAsset` (interface): interface StarterAsset — One curated starter model: short id, theme, live catalog target, license, suggested height.
-- `StarterTheme` (type): type StarterTheme = "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `objectModels: { crate: "asset:prop_crate" }`. People are not a starter theme: a person is a realistic rigged human from the model library ({@link STARTER_PEOPLE}). Never Kenney — Quaternius / KayKit only.
-
-## @jgengine/assets/polyPizzaArchive
-
-- `PolyPizzaModel` (interface): interface PolyPizzaModel — One model card on a Poly Pizza bundle page.
-
-## @jgengine/assets/provisioning
-
-- `AssetProvenance` (interface): interface AssetProvenance — The resolved ownership of one logical asset id — the provisioning contract for that id.
-- `AssetProvenanceKind` (type): type AssetProvenanceKind = "committed" | "provisioned" | "dangling" — How an asset id's bytes reach a clean checkout: - `committed` — resolves to a self-hosted / remote URL carried in the shipped index (a {@link SingleAsset}); no pull step, available immediately. - `provisioned` — a pack {@link IndexEntry}; the id is declared but its GLB is fetched on demand by `assets pull <source>` into the consumer's served dir. - `dangling` — nothing in the index, singles, or aliases owns the id, so no provisioning step exists and it can never resolve on a clean clone.
-- `AssetReference` (interface): interface AssetReference — A logical asset id referenced by some consumer (a game, scene, or config), for validation.
-- `ReferenceValidation` (interface): interface ReferenceValidation — The verdict for one {@link AssetReference}.
-- `ResolveProvenanceOptions` (interface): interface ResolveProvenanceOptions — Override the data {@link resolveProvenance} resolves against; every field defaults to the shipped catalog.
-- `ValidateAssetReferencesOptions` (interface): interface ValidateAssetReferencesOptions extends ResolveProvenanceOptions — Options for {@link validateAssetReferences}: the resolution data plus an optional on-disk `present` check.
-- `ValidateAssetReferencesResult` (interface): interface ValidateAssetReferencesResult — The aggregate result of validating a set of references against the provisioning contract.
-- `resolveProvenance` (function): function resolveProvenance(id: string, options: ResolveProvenanceOptions = {}): AssetProvenance — Resolve one logical asset id (a pack id, a single id, or an alias key) to its {@link AssetProvenance}. Aliases are followed one hop to their target. An id that matches no declared owner is `dangling` — the signal a clean-clone gate turns into a hard failure, because no provisioning step can ever satisfy it.
-- `validateAssetReferences` (function): function validateAssetReferences(references: readonly AssetReference[], options: ValidateAssetReferencesOptions = {}): ValidateAssetReferencesResult — Validate that every {@link AssetReference} resolves against the declared provisioning contract — not by grepping source text, but by resolving each logical id to its committed / provisioned / dangling owner. A `dangling` reference fails with the referencing consumer, the logical id, the (null) resolved path, and the missing provisioning step; a `provisioned` reference passes and contributes its `assets pull <source>` step to `provisioning` (unless `present` is supplied and reports the bytes absent).
-
-## @jgengine/assets/rankAssets
-
-- `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — What a match is: a model file, a whole pack, a material, a HUD component, an icon, or a sprite (pack).
-- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — One catalog entry a query matched, shaped by its kind.
-- `RankAssetsOptions` (interface): interface RankAssetsOptions — Narrowing for {@link rankAssets}.
-- `RankedMatch` (interface): interface RankedMatch — A match with its score, 0 (none) to 100 (exact).
-- `describeAssetMatch` (function): function describeAssetMatch(match: AssetMatch): string — One line naming a match for a terminal list: kind, id and title.
-- `rankAssets` (function): function rankAssets(query: string, options: RankAssetsOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
-
-## @jgengine/assets/registry
-
-- `RegistryCatalog` (interface): interface RegistryCatalog { homepage: string; components: readonly RegistryComponent[]; icons: readonly string[] } — ⚠ undocumented
-- `RegistryComponent` (interface): interface RegistryComponent { name: string; title: string; description: string } — ⚠ undocumented · used by `componentWiringSnippet` (@jgengine/assets): Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
-- `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
-- `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
-
-## @jgengine/assets/rocketboxPull
-
-- `LoadedRocketboxClip` (interface): interface LoadedRocketboxClip — One Rocketbox clip loaded in memory: its skeleton at rest (metres, no mesh) and the animation.
-- `PullRocketboxClipOptions` (interface): interface PullRocketboxClipOptions — Settings for {@link pullRocketboxClip}.
-- `PullRocketboxOptions` (interface): interface PullRocketboxOptions — Fetch and settings for {@link pullRocketboxModel}.
-- `PulledRocketboxClip` (interface): interface PulledRocketboxClip — What one Rocketbox clip pull wrote.
-- `PulledRocketboxModel` (interface): interface PulledRocketboxModel — What one Rocketbox pull wrote.
-- `ROCKETBOX_COMMIT` (const): const ROCKETBOX_COMMIT: "0943055db6ec570bcef9f2c8b41c9e5467c808f9" — Microsoft Rocketbox (MIT) ships rigged avatars and animals as FBX with 2048 px TGA maps. This converts one into a single meshopt-compressed GLB the engine can draw and animate: the avatar's skinned mesh and bones, the requested clips retargeted by bone name (the library is one skeleton family), metres instead of centimetres, and JPEG/PNG maps halved to the texture budget. Every file comes from the repository at a pinned commit and is checked against Git's own blob hash.
-- `pullRocketboxClip` (function): function pullRocketboxClip(clip: RocketboxClip, options: PullRocketboxClipOptions): Promise<PulledRocketboxClip> — Pull one clip from Rocketbox's animation library and write `<outDir>/clip.glb`: the shared skeleton (no mesh) and one animation named `clip.name`, its tracks keyed by bone name in the same centimetre-under-a-0.01-root units a pulled avatar uses, so a mixer on any pulled Rocketbox human plays it unchanged. Travel is kept; bake a clip onto a character with `clips` for in-place.
-- `pullRocketboxModel` (function): function pullRocketboxModel(entry: ModelLibraryEntry, options: PullRocketboxOptions): Promise<PulledRocketboxModel> — Pull one Rocketbox avatar or animal and write `<modelsRoot>/library/<name>/model.glb`: the skinned mesh, its bones, the entry's clips (in place), base colour and normal maps.
-
-## @jgengine/assets/singles
-
-- `singles` (const): const singles: readonly SingleAsset[] — ⚠ undocumented
-
-## @jgengine/assets/snippet
-
-- `ModelSnippetOptions` (interface): interface ModelSnippetOptions { basePath?: string; seam?: "objectModels" | "entityModels" } — ⚠ undocumented · used by `modelWiringSnippet`: Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
-- `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
-- `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
-- `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model.
-- `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
-- `spriteWiringSnippet` (function): function spriteWiringSnippet(id: string, basePath = "/sprites"): string — Copy-paste wiring for a pulled sprite/icon-pack file: resolve through the sprite catalog.
-
-## @jgengine/assets/sources
-
-- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs. A pinned id the family sweep already covers stays with the sweep, so catalog ids never appear twice.
-- `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
-- `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
-- `materialSources` (const): const materialSources: readonly AssetSource[] — Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`.
-- `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Quaternius, KayKit packs).
-- `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
-- `sourceById` (const): const sourceById: ReadonlyMap<string, AssetSource> — ⚠ undocumented
-- `sources` (const): const sources: readonly AssetSource[] — ⚠ undocumented
-- `spriteSources` (const): const spriteSources: readonly AssetSource[] — Every `kind: "sprite"` source — a pack of individual 2D icon/UI files, resolvable via `buildSpriteCatalog`.
-
-## @jgengine/assets/sources/ambientcg
-
-- `AMBIENTCG_PINNED_ASSET_IDS` (const): const AMBIENTCG_PINNED_ASSET_IDS: ReadonlyMap<string, string> — Upstream asset id pinned to a material source id, so the reverse lookup never guesses a variant.
-- `AmbientcgPinnedMaterial` (interface): interface AmbientcgPinnedMaterial — One exact upstream material the shared library pins, one file per material in `ambientcg/`. The family table above generates contiguous `Family001…NNN` ids, which cannot address ambientCG's lettered variants (`Asphalt025C`) or families it does not list; a pin names the archive directly.
-- `ambientcgAssetId` (function): function ambientcgAssetId(source: AssetSource): string — Upstream asset id (`Grass001`) for a material source id (`ambientcg-grass001`).
-- `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs. A pinned id the family sweep already covers stays with the sweep, so catalog ids never appear twice.
-
-## @jgengine/assets/sources/ambientcg
-
-- `AMBIENTCG_PINNED` (const): const AMBIENTCG_PINNED: readonly AmbientcgPinnedMaterial[] — Exact upstream ambientCG materials the shared library pins, beyond the numbered family sweep.
-
-## @jgengine/assets/sources/gameicons
-
-- `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
-
-## @jgengine/assets/sources/kaykit
-
-- `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
-
-## @jgengine/assets/sources/quaternius
-
-- `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
-
-## @jgengine/assets/spriteIndexGen
-
-- `ReindexSpritesResult` (interface): interface ReindexSpritesResult — Per-source and total counts returned by `reindexSprites`.
-- `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
-- `indexSpriteSourceDir` (function): function indexSpriteSourceDir(source: AssetSource, dir: string): IndexEntry[] — Walks a pulled sprite-pack directory and returns one `IndexEntry` per SVG/PNG, deduped by filename.
-- `keyFromSpriteFile` (function): function keyFromSpriteFile(file: string): string — Strips the `.svg`/`.png` extension off a pulled sprite/icon filename to get its id suffix.
-- `reindexSprites` (function): function reindexSprites(spritesDir: string, outDir: string): ReindexSpritesResult — Same shape as `reindex` (models) but walks SVG/PNG files and skips dims measurement — sprites have no footprint.
-
-## @jgengine/assets/staticPrefabBake
-
-- `StaticPrefabBakeReport` (interface): interface StaticPrefabBakeReport — Deterministic inventory and provenance for an editor-authored static artifact.
-- `StaticPrefabBakeResult` (interface): interface StaticPrefabBakeResult — GLB bytes and catalog-ready metadata; origin anchoring preserves the editable fragment's local frame.
-- `StaticPrefabSource` (interface): interface StaticPrefabSource — Original static model bytes; paths are absolute and every external image must have a pin.
-- `StaticPrefabTextureSource` (interface): interface StaticPrefabTextureSource — A verified external source image and its complete runtime URL. URI matches the source GLB exactly.
-- `bakeStaticPrefab` (function): function bakeStaticPrefab(prefab: EditorPrefab, sources: readonly StaticPrefabSource[]): Promise<StaticPrefabBakeResult> — Bake pinned static source art in an editor prefab's local frame. Node-only; never mutates authored data.
-
-## @jgengine/assets/verify
-
-- `VerifyInput` (interface): interface VerifyInput { sources: readonly AssetSource[]; singles: readonly SingleAsset[]; aliases: readonly AssetAlias[]; index: readonly IndexEntry[]; materialAliases?: readonly AssetAlias[] } — ⚠ undocumented
-- `VerifyResult` (interface): interface VerifyResult { ok: boolean; errors: string[] } — ⚠ undocumented
-- `verifyData` (function): function verifyData(input: VerifyInput): VerifyResult — ⚠ undocumented
-- `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
-
-## @jgengine/core/material/appearanceSignals.draw
-
-- `RenderMaterialAppearanceBaseline` (interface): interface RenderMaterialAppearanceBaseline extends MaterialAppearanceBaseline — Immutable resolved baseline for one caller-owned assigned material, including its original card exposure.
-- `applyMaterialAppearanceSignals` (function): function applyMaterialAppearanceSignals(material: THREE.MeshStandardMaterial, baseline: MaterialAppearanceBaseline, sample: EnvironmentSample, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Apply one sample to an already owned material. Imported/cache materials must be cloned before use. Allocates no textures or materials; clearcoat/sheen require an existing physical material and opt-in policy.
-- `captureMaterialAppearanceBaseline` (function): function captureMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial): RenderMaterialAppearanceBaseline — Capture once after assignment; recapture after an authored change. Never capture an already wet material.
-- `restoreMaterialAppearanceBaseline` (function): function restoreMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial, baseline: RenderMaterialAppearanceBaseline): void — Restore the dry baseline when removing an appearance binding; maps and unrelated imported features remain borrowed.
-
-## @jgengine/core/material/authoredSurfaceMaterial.draw
-
-- `AuthoredSurfaceConfig` (interface): interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> — Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract.
-- `SurfaceShape` (type): type SurfaceShape = "box" | "cylinder" — Primitive UV layout whose physical dimensions drive `repeatMetres`.
-
-## @jgengine/core/material/hairCards
-
-- `HAIR_CARD_STRAND_ROTATION` (const): const HAIR_CARD_STRAND_ROTATION: number — Tangents follow card width (UV U); strand length follows UV V. Angles are radians.
-- `HairCardAuthoring` (interface): interface HairCardAuthoring — Serializable geometry authoring, independent of materials, grooming physics and collisions.
-- `HairCardGuide` (interface): interface HairCardGuide — An authored centreline, in model-local metres, with root-to-tip points.
-- `HairCardMesh` (interface): interface HairCardMesh — Renderer-neutral indexed ribbons with an explicit tangent frame and guide ranges.
-- `buildHairCards` (function): function buildHairCards(input: HairCardAuthoring): HairCardMesh — Build deterministic model-local ribbon geometry; guides remain separately editable source data.
-- `validateHairCardAuthoring` (function): function validateHairCardAuthoring(value: unknown): MaterialDiagnostic[] — Validate finite guides, tangent frames and bounded generation; crossing/collision is not solved.
-
-## @jgengine/core/material/hairCards.draw
-
-- `HairCards` (function): function HairCards({ cards, material: asset }: { cards: HairCardAuthoring; material: MaterialAsset }): null — Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned.
-- `hairCardsDraw` (function): function hairCardsDraw(cards: HairCardAuthoring, material: THREE.Material): EngineDraw — ⚠ undocumented
-
-## @jgengine/core/material/materialAsset
-
-- `FabricAppearance` (interface): interface FabricAppearance — Procedural cloth surface response; this does not create or bend cloth geometry.
-- `HairAppearance` (interface): interface HairAppearance — Anisotropic surface approximation for existing hair cards or strand meshes, without grooming.
-- `MATERIAL_SURFACE_CAPABILITIES` (const): const MATERIAL_SURFACE_CAPABILITIES: Partial<Record<keyof MaterialSurfaceParameters, MaterialCapability>> — Feature declarations required by each sparse physical parameter.
-- `MATERIAL_TEXTURE_CAPABILITIES` (const): const MATERIAL_TEXTURE_CAPABILITIES: Readonly<Partial<Record<MaterialTextureRole, MaterialCapability>>> — Feature declarations required by authored texture roles.
-- `MATERIAL_TEXTURE_SEMANTICS` (const): const MATERIAL_TEXTURE_SEMANTICS: Readonly<Record<MaterialTextureRole, { colorSpace: "srgb" | "linear"; channel: MaterialTextureChannel }>> — Shader channel defaults; standalone alpha maps use green, base-color alpha stays in its color map.
-- `MaterialAsset` (interface): interface MaterialAsset — Shared, versioned authoring data. IDs survive rename, save and export.
-- `MaterialAssignment` (interface): interface MaterialAssignment — A reusable asset reference with an optional instance-only sparse edit.
-- `MaterialAssignmentValidationOptions` (interface): interface MaterialAssignmentValidationOptions — Optional renderer limits; ordinary model assignment accepts every supported texture role.
-- `MaterialCapability` (type): type MaterialCapability = "pbr" | "sheen" | "anisotropy" | "clearcoat" | "specular" | "transmission" | "volume" | "iridescence" | "alpha" — Renderer features an authored material explicitly requires.
-- `MaterialDiagnostic` (interface): interface MaterialDiagnostic — An actionable authoring/import diagnostic.
-- `MaterialFamily` (type): type MaterialFamily = "standard" | "fabric" | "hair" | "glass" | "metal" | "skin" | "stone" | "plastic" — Physical surface families; these describe appearance, never geometry or simulation.
-- `MaterialProvenance` (interface): interface MaterialProvenance — Portable material or image authorship.
-- `MaterialSelector` (interface): interface MaterialSelector — Names constrain mesh and imported material slot independently; all provided tests must match.
-- `MaterialSurfaceParameters` (interface): interface MaterialSurfaceParameters — Sparse surface edits. Omitted values preserve the imported material. Angles are radians.
-- `MaterialTemplate` (type): type MaterialTemplate = "wool" | "cotton" | "silk" | "brushed-metal" | "glass" | "coated-plastic" | "stone" | "hair-cards" — Editable engine-authored surface starting points, independent of any game's palette or assets.
-- `MaterialTextureChannel` (type): type MaterialTextureChannel = "r" | "g" | "b" | "a" | "rgb" | "rgba" — Texture channels used by the pinned standard/physical shader path.
-- `MaterialTextureMetadata` (interface): interface MaterialTextureMetadata — Serializable sampling and UV metadata; metres are descriptive, UV transforms drive rendering.
-- `MaterialTextureRole` (type): type MaterialTextureRole = "color" | "normal" | "roughness" | "metalness" | "ao" | "emissive" | "alpha" | "height" | "sheenColor" | "sheenRoughness" | "anisotropy" | "clearcoat" | "clearcoatRoughness" | "clearcoatNormal" | "specularIntensity" | "specularColor" | "transmission" | "thickness" | "iride… — Supported texture semantics; packed channels follow glTF and Three's PBR shaders.
-- `createMaterialTemplate` (function): function createMaterialTemplate(template: MaterialTemplate, id: string, name = template): MaterialAsset — Create fresh, serializable material data with provenance; templates create no textures or geometry.
-- `matchesMaterialSelector` (function): function matchesMaterialSelector(selector: MaterialSelector, mesh: string, slot: string, slotIndex: number): boolean — Exact name/index selector matching shared by authoring and rendering.
-- `materialCapabilitiesForAsset` (function): function materialCapabilitiesForAsset(asset: Pick<MaterialAsset, "surface" | "textures" | "fabric" | "hair">): MaterialCapability[] — Determine required shader features from surface fields, maps and appearance adapters without editing them.
-- `materialCapabilitiesForSurface` (function): function materialCapabilitiesForSurface(surface: MaterialSurfaceParameters): MaterialCapability[] — Determine feature requirements from authored fields, including intentional zero values.
-- `parseMaterialAssignments` (function): function parseMaterialAssignments(value: unknown): MaterialAssignment[] — Parse assignment JSON at editor/RPC boundaries. Invalid data fails with an actionable path.
-- `validateMaterialAsset` (function): function validateMaterialAsset(value: unknown): MaterialDiagnostic[] — Validate material JSON and renderer prerequisites before saving or assigning it.
-- `validateMaterialAssignments` (function): function validateMaterialAssignments(assignments: readonly MaterialAssignment[], assets: readonly MaterialAsset[], options: MaterialAssignmentValidationOptions = {}): MaterialDiagnostic[] — Validate references and selectors without accepting accidental whole-model assignment.
-- `validateMaterialSurface` (function): function validateMaterialSurface(value: unknown, path = "surface"): MaterialDiagnostic[] — Validate sparse surface edits without mutating them or guessing unsupported fields.
-
-## @jgengine/core/material/materialAsset.draw
-
-- `MaterialAssetSurfaceOptions` (interface): interface MaterialAssetSurfaceOptions — Reusable primitive surface options; physical metre UVs reuse the instanced surface renderer.
-- `MaterialAssignmentTargetOptions` (interface): interface MaterialAssignmentTargetOptions extends MaterialAssignmentValidationOptions — Read-only target validation policy; source coverage can reflect an earlier all-slot override.
-- `ModelMaterialSlotInfo` (interface): interface ModelMaterialSlotInfo — Runtime imported-slot inventory for precise authoring selectors; indices address the mesh material array.
-- `applyMaterialAsset` (function): function applyMaterialAsset(material: THREE.Material, asset: MaterialAsset, textures?: MaterialOverrideTextures, overrides?: MaterialSurfaceParameters): THREE.MeshStandardMaterial — Apply one reusable material's parameters, map views and construction to an imported PBR slot.
-- `applyMaterialAssignments` (function): function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map(), options: Pick<MaterialAssignmentTargetOptions, "unmatched"> = {}): THREE.Material[] — Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them only after success.
-- `configureMaterialTexture` (function): function configureMaterialTexture(role: MaterialTextureRole, metadata: MaterialTextureMetadata, source: THREE.Texture): THREE.Texture — Validate and configure an owned texture view while retaining the loader's immutable source.
-- `inspectModelMaterialSlots` (function): function inspectModelMaterialSlots(root: THREE.Object3D): ModelMaterialSlotInfo[] — Inspect imported names, local slot indices and directional/map prerequisites without mutating the source.
-- `leasedMaterialMeshDraw` (function): function leasedMaterialMeshDraw(options: { geometry: THREE.BufferGeometry; load: (renderer: THREE.WebGLRenderer | null) => Promise<MaterialAssetLease>; fallback?: THREE.Material | undefined; castShadow?: boolean | undefined; receiveShadow?: boolean | undefined; renderOrder?: number | undefined; posi… — An {@link EngineDraw} mesh whose material arrives asynchronously: mounts with `fallback` (or a plain standard material), swaps in the leased material when `load` resolves, and disposes the lease with the draw. The draw-side replacement for the old suspending material components.
-- `materialAssetMaterial` (function): function materialAssetMaterial(asset: MaterialAsset, options: MaterialAssetSurfaceOptions = {}, renderer?: THREE.WebGLRenderer | null): Promise<MaterialAssetLease> — The draw-side form of the old `useMaterialAssetMaterial`: loads the asset's map views through the shared texture cache, builds the same physical shader model assignments use, and returns an owned lease the caller disposes with the draw. Nothing renders until the load resolves â€” pair with `loadDraw`/`loadDrawSystem`.
-- `materialAssetSurface` (function): function materialAssetSurface(asset: MaterialAsset, overrides: MaterialSurfaceParameters = {}): MaterialSurfaceParameters — Physical defaults adapt a declared construction; explicit authored parameters remain authoritative.
-- `materialAssetSwatchDraw` (function): function materialAssetSwatchDraw(asset: MaterialAsset, options: { flat?: boolean | undefined; repeatMetres?: number | undefined; shape?: SurfaceShape | undefined; overrides?: MaterialSurfaceParameters | undefined; fallback?: THREE.Material | undefined } = {}): EngineDraw — The draw-side form of the old `MaterialAssetSurface` component: a sphere (or flat card when `options.flat`) wearing the asset's leased physical material.
-- `materialResourceMetrics` (function): function materialResourceMetrics(materials: readonly THREE.Material[]): { materials: number; textures: number; textureBytes: number; unknownTextureSizes: number; blendedMaterials: number; maskedMaterials: number; transmissionMaterials: number; doubleSidedMaterials: number; physicalMaterials: number … — Estimate texture allocation from loaded dimensions/mips and report pass/coverage risks. Compressed maps count actual mip bytes; uncompressed bytes bound texture views that may share uploads. This does not measure pixel overdraw.
-- `setHairCardLightExposure` (function): function setHairCardLightExposure(material: THREE.Material, exposure: number): void — Gate the existing thin-sheet hair-card scatter by sampled local light exposure, without changing scene exposure.
-- `validateMaterialAssignmentTargets` (function): function validateMaterialAssignmentTargets(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], options: MaterialAssignmentTargetOptions = {}): void — Check selectors, PBR slots, UVs and construction prerequisites before allocating material or texture views. Optional role restrictions apply only to referenced assets; imported maps remain untouched.
-
-## @jgengine/core/material/materialOverride.draw
-
-- `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions — Options for applyMaterialOverride: clone first, textures to apply and a hook that records replaced materials.
-- `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
-
-## @jgengine/core/material/surfaceMaterialGenerator
-
-- `SURFACE_MATERIAL_GENERATOR` (const): const SURFACE_MATERIAL_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "kind"; readonly label: "kind"; readonly group: "surface"; readonly vary: false; readon… — The surface material generator: one schema for every kind, with presets for the common looks. Bake one with {@link bakeSurfaceMaterial}, a variant grid with `generatorVariants`.
-- `SURFACE_MATERIAL_KINDS` (const): const SURFACE_MATERIAL_KINDS: readonly ["sand", "grass", "soil", "mud", "rock", "gravel", "bark", "snow"] — The surface kinds the material generator draws.
-- `SURFACE_MATERIAL_OUTPUT` (const): const SURFACE_MATERIAL_OUTPUT: "surface-material" — The generator output family every surface material returns: {@link SurfaceMaterialMaps}.
-- `SURFACE_MATERIAL_SCHEMA` (const): const SURFACE_MATERIAL_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "kind"; readonly label: "kind"; readonly group: "surface"; readonly vary: false; readonly default: "sand"; rea… — The surface material param schema: kind, colours, feature scale, stones, cracks, cover and wear.
-- `SurfaceMaterialKind` (type): type SurfaceMaterialKind = (typeof SURFACE_MATERIAL_KINDS)[number] — One surface kind.
-- `SurfaceMaterialMaps` (interface): interface SurfaceMaterialMaps — One baked surface material: square tileable maps, row-major, `size` texels a side, `v` down the rows. Albedo is sRGB with height (0..1) in alpha; `surface` packs the tangent-space normal's x and y (0.5 is flat; x tilts toward +u, y toward +v), roughness and ambient occlusion.
-- `SurfaceMaterialParams` (type): type SurfaceMaterialParams = ParamsOf<typeof SURFACE_MATERIAL_SCHEMA> — Parsed surface material params.
-- `SurfaceMaterialSpec` (interface): interface SurfaceMaterialSpec — A surface material by preset and overrides: `{ preset: "beach-sand", params: { stones: 0.4 } }`.
-- `bakeSurfaceMaterial` (function): function bakeSurfaceMaterial(spec: SurfaceMaterialSpec, options: { detail?: number } = {}): SurfaceMaterialMaps — Bake a surface material from a spec (or a raw `meta` bag). Pure and deterministic; cost grows with the resolution squared, about 30–150 ms for a 512 map, so bake once at load and share the result.
-- `bakeSurfaceMaterialJob` (function): function bakeSurfaceMaterialJob(spec: SurfaceMaterialSpec, options: { detail?: number } = {}): SlicedJob<SurfaceMaterialMaps> — {@link bakeSurfaceMaterial} as a sliced job that yields between rows, so `runSliced` can bake at load without freezing the page. Same bytes as the direct bake.
-- `isSurfaceMaterialMaps` (function): function isSurfaceMaterialMaps(value: unknown): value is SurfaceMaterialMaps — True when a generator output is {@link SurfaceMaterialMaps}.
-- `surfaceMaterialMeta` (function): function surfaceMaterialMeta(spec: SurfaceMaterialSpec): Record<string, unknown> — The `meta` bag a {@link SurfaceMaterialSpec} resolves to: preset values, then overrides, then seed.
-
-## @jgengine/core/material/surfaceMaterialPreview.draw
-
-- `surfaceMaterialPreviewDraw` (function): function surfaceMaterialPreviewDraw({ definition, variant }: GeneratorPreviewProps): EngineDraw — ⚠ undocumented
-
-## @jgengine/core/material/surfaceMaterialTextures.draw
-
-- `SurfaceMaterialArrayTextures` (interface): interface SurfaceMaterialArrayTextures — Baked surfaces stacked as array-texture layers, one layer per material, in the order given.
-- `SurfaceMaterialStandardMaps` (interface): interface SurfaceMaterialStandardMaps — A baked surface as the maps a stock `MeshStandardMaterial` reads.
-- `bakeSurfaceMaterialShared` (function): function bakeSurfaceMaterialShared(spec: SurfaceMaterialSpec, detail = 1): SurfaceMaterialMaps — Bake a surface material once per spec and detail level and share it: a world that names the same sand twice, or remounts its terrain, pays for one bake. Keeps the last few specs.
-- `bakeSurfaceMaterialSharedJob` (function): function bakeSurfaceMaterialSharedJob(spec: SurfaceMaterialSpec, detail = 1): SlicedJob<SurfaceMaterialMaps> — {@link bakeSurfaceMaterialShared} as a sliced job, for bakes that run at load under `runSliced`.
-- `surfaceMaterialArrayTextures` (function): function surfaceMaterialArrayTextures(layers: readonly SurfaceMaterialMaps[]): SurfaceMaterialArrayTextures — Stack baked surface materials into two array textures, so a shader samples any of them through two samplers. Every map must share one size. The caller owns the textures.
-- `surfaceMaterialStandardMaps` (function): function surfaceMaterialStandardMaps(maps: SurfaceMaterialMaps): SurfaceMaterialStandardMaps — Unpack a baked surface into standard-material maps (albedo, normal, AO + roughness), for meshes and previews that use a stock material. The caller owns the textures.
-
-## @jgengine/core/material/surfaceScanShader.draw
-
-- `SURFACE_SCAN_PARS_GLSL` (const): const SURFACE_SCAN_PARS_GLSL: "\n#ifdef JG_SCAN\nuniform sampler2D uScanColor;\nuniform sampler2D uScanNormal;\n#ifdef JG_SCAN_ROUGH\nuniform sampler2D uScanRough;\n#endif\n#ifdef JG_SCAN_AO\nuniform sampler2D uScanAo;\n#endif\nuniform float uScanRepeat;\nuniform float uScanStrength;\nuniform float … — Fragment helpers for a scanned surface: uniforms, the scan's mean tone (its last mip), the grain/tint recolour, mean-relative roughness and a derivative cotangent frame for its normal map. Guarded by `JG_SCAN`, so a material compiled before its maps arrive carries none of it.
-- `SurfaceScanBlend` (interface): interface SurfaceScanBlend — Blend settings for one scanned layer.
-- `SurfaceScanUniforms` (interface): interface SurfaceScanUniforms — Uniform values a scanned-surface shader reads; one object per material, maps shared.
-
-## @jgengine/core/material/surfaceScanTextures.draw
-
-- `SurfaceScanLoader` (type): type SurfaceScanLoader = (url: string, onLoad: (texture: THREE.Texture) => void, onError: () => void) => void — Loads one map; the default goes through {@link ImageTextureLoader}.
-- `SurfaceScanState` (interface): interface SurfaceScanState — A scan's maps as a component sees them.
-- `SurfaceScanTextures` (interface): interface SurfaceScanTextures — Decoded maps of one scanned surface, shared by every material that tiles it.
-- `SurfaceScanTrack` (interface): interface SurfaceScanTrack — A scan tracked outside the UI runtime: `useSurfaceScan`'s draw-side twin for EngineDraw factories.
-- `trackSurfaceScan` (function): function trackSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled: boolean, scene: THREE.Scene, onChange: () => void): SurfaceScanTrack — Acquire a scan for draw code: the first holder starts the decode, `onChange` fires once the maps are ready or have failed, and the last release frees the GPU textures. `sync` follows prop changes the way the hook's effect deps did.
-
-## @jgengine/core/material/toonRamp
-
-- `TOON_RAMP_TEXELS` (const): const TOON_RAMP_TEXELS: 64 — Texels across a ramp texture: enough for 8 bands with blended edges.
-- `ToonRamp` (interface): interface ToonRamp — A cel-shading ramp: how diffuse light (0 facing away .. 1 facing the light) maps to brightness. A game builds its toon look from one, and the draw side turns it into a toon material's gradient.
-
-## @jgengine/core/material/toonRamp.draw
-
-- `toonRampMaterial` (function): function toonRampMaterial(ramp: ToonRamp): THREE.MeshToonMaterial — A shared vertex-coloured toon material for a ramp: one per distinct ramp, so every mesh drawn with the same look batches into the same program.
-
-## @jgengine/core/material/triplanarMaterial.draw
-
-- `TriplanarProjectionOptions` (interface): interface TriplanarProjectionOptions — Inputs for {@link applyTriplanarProjection}.
-- `triplanarAssetMaterial` (function): function triplanarAssetMaterial(asset: MaterialAsset, options: { tileMetres?: number; sharpness?: number; normalScale?: number } = {}): Promise<MaterialAssetLease> — The draw-side form of the old `useTriplanarAssetMaterial`: resolves the asset's maps, applies world-space triplanar projection and returns an owned lease. Tile size defaults to the asset's own `physicalSize`, which the shared library sets per surface.
-
-## @jgengine/core/model/SceneModels.draw
-
-- `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget | undefined; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): JSX… — Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement.
-- `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): JSX.Element — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
-- `IsolatedEntityModel` (function): function IsolatedEntityModel(props: IsolatedEntityModelProps): JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`.
-- `useEntityLookModel` (function): function useEntityLookModel(model: ModelConfig | undefined, instanceId: string | undefined): ModelConfig | undefined — `model` as the live entity `instanceId` draws it: its current `look` laid over the model ({@link modelForLook}), re-rendering only when the look changes. Without an entity, the model itself.
-
-## @jgengine/core/model/entityModelDraw.draw
-
-- `EntityModelDrawOptions` (interface): interface EntityModelDrawOptions { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget | undefined; lodLevel?: number; ctx: GameContext | null; seam?: FallbackSeam | undefined; fallback?: (() => EngineDraw) | undefined } — ⚠ undocumented · used by `entityModelDraw`: Draws an entity's model without the UI runtime: loading, cloning, materials, paint, attachments, parts, animation, foot IK, glance, bounds a…
-- `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
-- `ModelTextureEntries` (interface): interface ModelTextureEntries { global: MaterialOverrideTextures; assets: ReadonlyMap<string, MaterialOverrideTextures>; dispose(): void } — ⚠ undocumented · used by `loadModelMaterialTextures`: Load and own every map view one model configuration references — the UI-free equivalent of `useModelMaterialTextures`.
-- `entityModelDraw` (function): function entityModelDraw(options: EntityModelDrawOptions): EngineDraw — Draws an entity's model without the UI runtime: loading, cloning, materials, paint, attachments, parts, animation, foot IK, glance, bounds and collision measurement — the `EntityModel` contract on the engine frame loop. A live `instanceId` follows `look`, `held`, `worn`, `characterMotion` and death through context notifications, rebuilding only what changed.
-- `entitySpriteDraw` (function): function entitySpriteDraw(sprite: EntitySpriteConfig): EngineDraw — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
-- `isolatedEntityModelDraw` (function): function isolatedEntityModelDraw(options: EntityModelDrawOptions): EngineDraw — The draw `IsolatedEntityModel` mounts: the camera-distance level switch when the model has variants and a live instance, the plain entity model otherwise.
-- `isolatedModelUsesVariants` (function): function isolatedModelUsesVariants(model: ModelConfig, instanceId: string | undefined): boolean — Whether an isolated model switches variant levels: it needs both levels and a live instance to measure from.
-- `loadModelMaterialTextures` (function): function loadModelMaterialTextures(model: Pick<ModelConfig, "material" | "materialAssets" | "materialAssignments">): Promise<ModelTextureEntries> — Load and own every map view one model configuration references — the UI-free equivalent of `useModelMaterialTextures`. Resolves once all images arrive; `dispose` releases the owned views while the loaded sources stay cached.
-- `singleVariantModelDraw` (function): function singleVariantModelDraw(options: EntityModelDrawOptions): EngineDraw — One prop at its own camera distance with level switching — the `SingleVariantModel` contract as a draw.
-
-## @jgengine/core/model/measureBounds.draw
-
-- `MEASURE_EXCLUDE_KEY` (const): const MEASURE_EXCLUDE_KEY: "jgMeasureExclude" — Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos, selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible subtrees are always excluded.
-- `MeasuredBoundsGroup` (function): function MeasuredBoundsGroup({ target, measureKey, children, }: { target: "entity" | "object"; measureKey: string; children: ReactNode; }): JSX.Element — ⚠ undocumented
-- `MeasuredLocalBounds` (interface): interface MeasuredLocalBounds — Entity-local AABB of the meshes under a measured root, plus how many meshes contributed — the count lets callers detect async subtree fill-in without diffing bounds.
-- `measureLocalBounds` (function): function measureLocalBounds(root: THREE.Object3D): MeasuredLocalBounds | null — Measure the meshes under `root` in `root`'s own frame (root's transform is the measuring frame, children compose their local matrices below it). Returns `null` when nothing measurable is mounted. Skinned meshes measure at bind pose — the standard engine approximation.
-- `measuredBoundsDraw` (function): function measuredBoundsDraw(getProps: () => { ctx: GameContext; target: "entity" | "object"; measureKey: string; anchor: THREE.Object3D | null; }): EngineDraw — Wraps custom-rendered actor content (`renderEntity` / `renderObject`) and reports its measured entity-local bounds into collider resolution, so the hitbox wraps what is actually on screen instead of the fixed-size fallback box. A successful measure re-reports only when the subtree gained or lost meshes (async fill-in), not when idle animation nudges the same meshes. The draw-side form measures the caller's group on the same bounded retry schedule.
-- `reportMeasuredBounds` (function): function reportMeasuredBounds(ctx: GameContext, target: "entity" | "object", key: string, bounds: MeasuredLocalBounds): void — Forward a measured result into the context (entity kind or object catalog id), deduping repeat reports of the same shape so remounts and multi-instance kinds don't churn collider resolution.
-
-## @jgengine/core/model/measureCollisionMesh.draw
-
-- `MeasuredCollisionTriangles` (interface): interface MeasuredCollisionTriangles extends CollisionMeshSource — Entity-local triangle soup of the meshes under a measured root, plus the contributing mesh count (same async fill-in detection as measured bounds). Satisfies {@link CollisionMeshSource}.
-- `measureLocalCollisionTriangles` (function): function measureLocalCollisionTriangles(root: THREE.Object3D, transform?: { scale: number; offset: readonly [number, number, number] }): MeasuredCollisionTriangles | null — Collect the triangle soup of the meshes under `root` in `root`'s own frame — the mesh-accurate counterpart to `measureLocalBounds`, with the same visibility/sprite/{@link MEASURE_EXCLUDE_KEY} exclusions (skinned meshes contribute their bind pose). An optional uniform `scale` + `offset` maps the result into entity-local space when the caller mounts the root scaled/translated (the model-primitive path). Returns `null` when nothing is measurable or the soup exceeds the triangle budget — callers keep their box fallback.
-- `reportMeasuredCollisionMesh` (function): function reportMeasuredCollisionMesh(ctx: GameContext, target: "entity" | "object", key: string, triangles: MeasuredCollisionTriangles): void — Forward measured triangles into the context (entity kind or object catalog id), deduping repeat reports of the same soup so remounts and multi-instance kinds don't rebuild the BVH.
-
-## @jgengine/core/model/modelInstanceDraw.draw
-
-- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick< ModelConfig, | "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind" | "lod" > — Model loading, placement, shadows and animation for a custom renderer.
-- `ModelInstanceDrawOptions` (interface): interface ModelInstanceDrawOptions extends ModelInstanceOptions { onReady?: (ready: ModelInstanceReady) => (() => void) | void } — ⚠ undocumented · used by `modelInstanceDraw`: The draw-side {@link ModelInstanceConfig} renderer: loads the shared GLTF, clones and places the model through the same build path entity dr…
-- `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
-- `ModelInstanceReady` (interface): interface ModelInstanceReady — The built instance handed to `onReady` once the model has loaded and placed.
-- `modelInstanceDraw` (function): function modelInstanceDraw(model: ModelInstanceConfig, options: ModelInstanceDrawOptions = {}): EngineDraw — The draw-side {@link ModelInstanceConfig} renderer: loads the shared GLTF, clones and places the model through the same build path entity draws use, then poses it every frame. Mount under an {@link EngineSceneContext} parent (or the scene root) for the world transform.
-
-## @jgengine/core/model/modelLoad.draw
-
-- `DEFAULT_MODEL_TRIANGLE_BUDGET` (const): const DEFAULT_MODEL_TRIANGLE_BUDGET: 100000 — Per-model triangle ceiling before the loader warns. A prop is a few thousand triangles; a hero rig tens of thousands.
-- `HeavyModelRecord` (interface): interface HeavyModelRecord — One over-budget model as {@link heavyModels} reports it: the URL the loader fetched, its triangle count, and the budget it exceeded.
-- `MissingModelRecord` (interface): interface MissingModelRecord — A model the loader could not load and replaced with a placeholder box.
-- `ModelLoaderConfig` (interface): interface ModelLoaderConfig — Where the Draco decoder and KTX2 (Basis) transcoder load from. Left out, each comes from the game's own build (`decoderFiles.ts`); a path is a folder holding three's decoder files.
-- `configureModelLoaders` (function): function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly<Required<ModelLoaderConfig>> — Configures shared Draco and KTX2 loaders. Repeated calls with the same paths are no-ops.
-- `detectKtx2Support` (function): function detectKtx2Support(renderer: THREE.WebGLRenderer): void — Detects GPU support for the configured KTX2 transcoder after a renderer exists.
-- `heavyModels` (function): function heavyModels(): readonly HeavyModelRecord[] — Every model the shared loader resolved whose triangle count exceeds the budget, in load order. A heavy prop is invisible in a screenshot and only shows up as a slow frame, so the loader measures each GLB as it lands and this exposes the verdict for `debug_snapshot` probes and smoke tests to assert against.
-- `modelLoadFallbacks` (function): function modelLoadFallbacks(): readonly MissingModelRecord[] — Every model the shared loader diagnosed as broken and replaced with a magenta placeholder, in load order.
-- `modelLoadIdleMs` (function): function modelLoadIdleMs(): number — How long the shared GLB loader has been idle, in ms — `0` while any model is still in flight. A capture host reads this to wait for streaming to finish instead of guessing a settle delay: models that pop in after the shot are why an establishing capture used to come back half-empty until someone hand-tuned `--settle`.
-- `modelLoadStarts` (function): function modelLoadStarts(): number — How many times the shared GLB loader has gone from idle to busy since boot. A capture host compares two readings around a rendered frame to tell whether that frame started new model streaming, which an idle reading alone cannot show.
-- `setModelTriangleBudget` (function): function setModelTriangleBudget(triangles: number): void — Retune the per-model triangle budget (a cinematic game may raise it; a mobile target lowers it). Non-finite or non-positive values restore the default.
-
-## @jgengine/core/model/modelLook
-
-- `modelForLook` (function): function modelForLook(model: ModelConfig, look: string | undefined): ModelConfig — The model one entity draws for its `look` (`SceneEntity.look`): that entry of `model.looks` laid over the model, so a look swaps the body while keeping the model's held, worn and attachment tables unless it names its own. No look, or a name the model lacks, returns the model itself.
-- `modelLooks` (function): function modelLooks(model: ModelConfig): ModelConfig[] — Every body a model can draw: itself, then each of its looks, for preloading or crowd batching.
-
-## @jgengine/core/model/modelRender.draw
-
-- `MaterialCache` (interface): interface MaterialCache — A model's standard materials and the seed color they were tinted from.
-- `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — Edge length in pixels of the canvas a model's paint layer draws into.
-- `PaintCanvas` (interface): interface PaintCanvas — The canvas, 2D context and texture behind a model's paint layer.
-- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode | undefined; surfaceDetail?: boolean | undefined }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
-- `disposeModelScene` (function): function disposeModelScene(root: THREE.Object3D): void — Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
-
-## @jgengine/core/model/modelWind.draw
-
-- `ResolvedModelWind` (interface): interface ResolvedModelWind — Resolved sway settings baked into one material.
-- `WindClock` (function): function WindClock(): null — Advances the shared gust clock once per frame; mount one per 3D world.
-- `applyModelWind` (function): function applyModelWind(material: THREE.MeshStandardMaterial, wind: ResolvedModelWind): THREE.MeshStandardMaterial — Compiles height-ramped wind sway into a standard material's vertex shader. Idempotent per material; the clock and direction are shared module uniforms, so the whole scene advances with one write per frame and no per-material bookkeeping.
-- `windClock` (const): const windClock: { value: number; } — Shared gust clock every foliage material reads; advanced once per frame by `WindClock`.
-- `windDirection` (const): const windDirection: Vector2 — Shared gust direction (XZ); a model may override it with its own authored direction.
-- `windGust` (const): const windGust: { value: number; } — Shared gust strength multiplier; the weather's wind raises it, so a storm bends every plant harder.
-
-## @jgengine/core/model/resolveModel
-
-- `ModelPick` (type): type ModelPick = { model?: string; fallbackModel?: string; style?: Omit<ModelConfig, "url" | "dims">; } — Preferred + optional fallback catalog ids for a single entity/object slot. Soft-resolves through the catalog: when neither id is live (pack not pulled/ reindexed yet), the mapping is omitted and the shell keeps its primitive. Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.
-- `ModelResolveContext` (interface): interface ModelResolveContext — Where a model id is being resolved (entity, object or scatter models) and under which key, for warnings.
-
-## @jgengine/core/model/rigNode.draw
-
-- `RigNodeDiagnostic` (interface): interface RigNodeDiagnostic — A missing or nonunique node reference that a rig author can repair.
-- `RigNodeResolution` (type): type RigNodeResolution = | { node: Object3D; matchedBy: "runtime" | "authored"; diagnostic?: undefined } | { node: undefined; matchedBy?: undefined; diagnostic: RigNodeDiagnostic } — A node on this model instance, or a diagnostic instead of an arbitrary attachment target.
-- `resolveRigNode` (function): function resolveRigNode(rig: Object3D, name: string): RigNodeResolution — Resolves a bone or attachment slot by its exact runtime name first, then by the original imported name preserved as `userData.name`. GLTFLoader sanitizes names such as `handslot.r` to `handslotr`; authored references remain usable without renaming the animated hierarchy. Both lookups require a unique target. Call on model load or slot changes, not each frame, and keep the result with that model instance rather than reusing a cached asset's node.
-
-## @jgengine/core/model/staticTransforms.draw
-
-- `freezeStaticTransforms` (function): function freezeStaticTransforms(root: THREE.Object3D): void — Bake a subtree's world matrices from its current pose and take it out of three's per-frame `updateMatrixWorld` pass. Three recomposes every node that keeps `matrixAutoUpdate` and then forces its whole subtree to rebuild the world matrix, so authored scenery — terrain, batched props, scatter, instanced ground — pays that cost every frame for a pose it never changes (#2038).
-- `refreshStaticTransforms` (function): function refreshStaticTransforms(root: THREE.Object3D): void — Re-bake a frozen subtree's world matrices from its current position, rotation and scale, and its parent's world matrix: the one-off update for static content something moved (a door swung, a placement edited). Nodes added under it since it froze freeze with it.
-- `thawStaticTransforms` (function): function thawStaticTransforms(root: THREE.Object3D): void — Put a subtree back on the per-frame matrix pass after {@link freezeStaticTransforms} — for the authored seam that moves on an event rather than every frame.
+Discover by intent with `bun run find <intent>` or [capabilities.md](capabilities.md); read source or `.d.ts` for signatures.
+
+- `@jgengine/assets`: `AssetAlias`, `AssetDownload`, `AssetImportKind`, `AssetImportSpec`, `AssetKind`, `AssetMatch`, `AssetPack`, `AssetProvenance`, `AssetProvenanceKind`, `AssetProvider`, `AssetReference`, `AssetSource`, `AssetSourceKind`, `AssetSpace`, `BuildCatalogOptions`, `BuildMaterialCatalogOptions`, `BuildSpriteCatalogOptions`, `CollisionMeshData`, `ExtractedMaterialMap`, `ExtractedSpriteFile`, `FindLibraryModelOptions`, `GeneratedModelOrigin`, `GlbMetrics`, `GlbTextureMetrics`, `ImportSpecValidation`, `IndexEntry`, `ItchDownload`, `LibraryGroup`, `LibraryMaterial`, `LibraryMaterialOptions`, `LibraryModelOptions`, `LibrarySurface`, `MATERIAL_LIBRARY`, `MATERIAL_MAP_FILES`, `MODEL_LIBRARY`, `MODEL_LIBRARY_GAPS`, `MODEL_LIBRARY_GENRES`, `MaterialCatalog`, `MaterialMapRole`, `MaterialMaps`, `MaterialRef`, `ModelDims`, `ModelLibraryEntry`, `ModelLibraryGap`, `ModelLibraryGenre`, `ModelLibraryMatch`, `ModelLibraryOrigin`, `ModelSnippetOptions`, `PinnedDownload`, `PolyHavenModelOrigin`, `PolyPizzaBundleDownload`, `RankAssetsOptions`, `RankedMatch`, `ReferenceValidation`, `RegistryCatalog`, `RegistryComponent`, `ReindexSpritesResult`, `ResolveProvenanceOptions`, `STARTER_ASSETS`, `STARTER_MODEL_PACKS`, `STARTER_PACKS`, `STARTER_PEOPLE`, `STARTER_SOURCE_PACKS`, `STARTER_THEMES`, `ScrapeDownload`, `SingleAsset`, `StarterAsset`, `StarterTheme`, `ValidateAssetReferencesOptions`, `ValidateAssetReferencesResult`, `VerifyResult`, `aliases`, `ambientcgSources`, `buildCatalog`, `buildMaterialCatalog`, `buildSpriteCatalog`, `classifyAssetFile`, `componentInstallUrl`, `componentWiringSnippet`, `createStarterCatalog`, `describeAssetMatch`, `entryForSpriteFile`, `entryUrl`, `extractMaterialMaps`, `filterLibraryMaterials`, `findLibraryMaterial`, `findLibraryModel`, `findLibraryModelByName`, `gameiconsSources`, `generatedBySource`, `generatedIndex`, `generatedPacks`, `generatedSpriteBySource`, `generatedSpriteIndex`, `iconWiringSnippet`, `importedPackNames`, `indexSpriteSourceDir`, `isScrapeDownload`, `kaykitSources`, `keyFromSpriteFile`, `libraryMaterialAsset`, `libraryMaterialMaps`, `libraryMaterialNames`, `libraryMaterialRoles`, `libraryModel`, `libraryModelCredits`, `libraryModelDir`, `libraryModelGap`, `libraryModelNames`, `materialAliases`, `materialSources`, `materialWiringSnippet`, `modelSources`, `modelWiringSnippet`, `packExportName`, `quaterniusSources`, `rankAssets`, `readGlbDims`, `readGlbMetrics`, `registryCatalog`, `reindexSprites`, `resolveProvenance`, `singles`, `sourceById`, `sources`, `spriteSources`, `spriteWiringSnippet`, `validateAssetReferences`, `validateImportSpec`, `verifyManifest`
+- `@jgengine/assets/aliases`: `aliases`
+- `@jgengine/assets/assetBudget`: `AssetBudget`, `AssetBudgetEntry`, `AssetBudgetReport`, `checkAssetBudget`, `createAssetBudgetReport`, `readGlbFileMetrics`
+- `@jgengine/assets/assetStore`: `ProvisionResult`, `PullJob`, `PullTarget`
+- `@jgengine/assets/catalogs/build`: `BuildCatalogOptions`, `CatalogExtra`, `buildCatalog`, `entryUrl`
+- `@jgengine/assets/catalogs/buildSprites`: `BuildSpriteCatalogOptions`, `buildSpriteCatalog`
+- `@jgengine/assets/catalogs/curatedPull`: `CuratedJob`, `CuratedKind`, `CuratedPullContext`
+- `@jgengine/assets/catalogs/entryFiles`: `LIBRARY_LISTS`, `LibraryList`
+- `@jgengine/assets/catalogs/fontLibrary`: `FONT_DIR`, `FONT_LIBRARY`, `FONT_LICENSE`, `FONT_PACKAGE_VERSION`, `FontEntry`, `FontId`, `FontRole`, `libraryFontPairing`
+- `@jgengine/assets/catalogs/fonts`: `FONT_LIBRARY`
+- `@jgengine/assets/catalogs/grades`: `LUT_GRADES`
+- `@jgengine/assets/catalogs/hdriLibrary`: `HDRI_DIR`, `HDRI_LIBRARY`, `HDRI_LICENSE`, `HDRI_RESOLUTION`, `HdriEntry`, `HdriId`, `hdriEnvironment`
+- `@jgengine/assets/catalogs/hdris`: `HDRI_LIBRARY`
+- `@jgengine/assets/catalogs/looksCredits`: `LooksUsed`, `creditsForLooks`
+- `@jgengine/assets/catalogs/lutGrades`: `LUT_GRADES`, `LUT_GRADE_DIR`, `LUT_GRADE_LICENSE`, `LUT_GRADE_SIZE`, `LutGrade`, `LutGradeId`, `LutGradeRecipe`, `lutGrade`
+- `@jgengine/assets/catalogs/materialLibrary`: `LibraryBuildingSurfaceOptions`, `LibraryGroup`, `LibraryMapRole`, `LibraryMaterial`, `LibraryMaterialOptions`, `LibrarySurface`, `LibraryTerrainDetail`, `LibraryTerrainOptions`, `LibraryTerrainSurfaceOptions`, `MATERIAL_LIBRARY`, `filterLibraryMaterials`, `findLibraryMaterial`, `libraryBuildingSurface`, `libraryMaterialAsset`, `libraryMaterialMaps`, `libraryMaterialNames`, `libraryMaterialRoles`, `librarySurfaceParameters`, `librarySurfaceScan`, `libraryTerrainMaterial`, `libraryTerrainSurface`
+- `@jgengine/assets/catalogs/materials`: `MATERIAL_LIBRARY`
+- `@jgengine/assets/catalogs/modelLibrary`: `AuthoredModelOrigin`, `FindLibraryModelOptions`, `GeneratedModelOrigin`, `KhronosModelOrigin`, `LibraryModelOptions`, `MODEL_LIBRARY`, `MODEL_LIBRARY_GAPS`, `MODEL_LIBRARY_GENRES`, `ModelLibraryEntry`, `ModelLibraryGap`, `ModelLibraryGenre`, `ModelLibraryMatch`, `ModelLibraryOrigin`, `PolyHavenModelOrigin`, `RocketboxClip`, `RocketboxModelOrigin`, `findLibraryModel`, `findLibraryModelByName`, `libraryModel`, `libraryModelCredits`, `libraryModelDir`, `libraryModelGap`, `libraryModelNames`
+- `@jgengine/assets/catalogs/modelLibraryEntries`: `MODEL_LIBRARY_ENTRIES`
+- `@jgengine/assets/catalogs/modelLibraryRiggedEntries`: `MODEL_LIBRARY_RIGGED_ENTRIES`
+- `@jgengine/assets/catalogs/starter`: `STARTER_MODEL_PACKS`, `createStarterCatalog`
+- `@jgengine/assets/cli/find`: `FindProvisionReport`, `FindRequest`
+- `@jgengine/assets/cli/githubToken`: `GITHUB_TOKEN_HOSTS`, `GhTokenReader`, `resolveGithubToken`, `wantsGithubToken`, `withGithubAuth`
+- `@jgengine/assets/cli/pull`: `cliFetch`, `fetchTimeoutMs`, `generatedDir`, `generatedSpritesDir`, `pullGithubToken`
+- `@jgengine/assets/clipRetarget`: `RetargetBone`, `RetargetOptions`, `retargetClipByRest`
+- `@jgengine/assets/collisionMeshAssets`: `COLLISION_MESH_ASSET_IDS`
+- `@jgengine/assets/credits`: `CreditsGrouping`, `allAssetSources`, `creditsForAssetIds`, `creditsForSourceIds`, `creditsForSources`, `sourcesForAssetIds`, `sourcesForSourceIds`
+- `@jgengine/assets/dims`: `ModelDims`, `readGlbClips`, `readGlbCollisionMesh`, `readGlbDims`
+- `@jgengine/assets/download`: `DEFAULT_RELEASE_BASE`, `DownloadPackOptions`, `DownloadPackResult`, `ExtractedGlb`, `ExtractedPack`, `ExtractedPackImage`, `ExtractedSpriteFile`, `FetchLike`, `MAX_ARCHIVE_COMPRESSION_RATIO`, `MAX_ARCHIVE_DOWNLOAD_BYTES`, `MAX_ARCHIVE_ENTRY_COUNT`, `MAX_ARCHIVE_UNCOMPRESSED_BYTES`, `mirrorOverrideBase`
+- `@jgengine/assets/findAssets`: `AssetFindResult`, `CONFIDENT_SCORE`, `ElsewhereSource`, `FindAssetsContext`, `FoundAsset`, `GameModelFile`, `findAssets`
+- `@jgengine/assets/generated`: `generatedBySource`, `generatedIndex`, `generatedPacks`
+- `@jgengine/assets/generated-sprites`: `generatedSpriteBySource`, `generatedSpriteIndex`
+- `@jgengine/assets/generated/pack/kaykit-adventurers`: `kaykitAdventurers`
+- `@jgengine/assets/generated/pack/kaykit-city-builder`: `kaykitCityBuilder`
+- `@jgengine/assets/generated/pack/kaykit-dungeon`: `kaykitDungeon`
+- `@jgengine/assets/generated/pack/kaykit-forest`: `kaykitForest`
+- `@jgengine/assets/generated/pack/kaykit-furniture`: `kaykitFurniture`
+- `@jgengine/assets/generated/pack/kaykit-medieval-hexagon`: `kaykitMedievalHexagon`
+- `@jgengine/assets/generated/pack/kaykit-skeletons`: `kaykitSkeletons`
+- `@jgengine/assets/generated/pack/kaykit-space-base`: `kaykitSpaceBase`
+- `@jgengine/assets/generated/pack/quaternius-5-low-poly-animals`: `quaternius5LowPolyAnimals`
+- `@jgengine/assets/generated/pack/quaternius-animated-animales-low-poly`: `quaterniusAnimatedAnimalesLowPoly`
+- `@jgengine/assets/generated/pack/quaternius-animated-animals`: `quaterniusAnimatedAnimals`
+- `@jgengine/assets/generated/pack/quaternius-animated-characters-pack`: `quaterniusAnimatedCharactersPack`
+- `@jgengine/assets/generated/pack/quaternius-animated-dinosaurs`: `quaterniusAnimatedDinosaurs`
+- `@jgengine/assets/generated/pack/quaternius-animated-fish`: `quaterniusAnimatedFish`
+- `@jgengine/assets/generated/pack/quaternius-animated-human-low-poly`: `quaterniusAnimatedHumanLowPoly`
+- `@jgengine/assets/generated/pack/quaternius-animated-lowpoly-robot`: `quaterniusAnimatedLowpolyRobot`
+- `@jgengine/assets/generated/pack/quaternius-animated-mech-pack`: `quaterniusAnimatedMechPack`
+- `@jgengine/assets/generated/pack/quaternius-fantasy-low-poly-trees-and-bushes`: `quaterniusFantasyLowPolyTreesAndBushes`
+- `@jgengine/assets/generated/pack/quaternius-fantasy-props`: `quaterniusFantasyProps`
+- `@jgengine/assets/generated/pack/quaternius-furniture-low-poly`: `quaterniusFurnitureLowPoly`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-animated-guns`: `quaterniusLowPolyAnimatedGuns`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-cars-0`: `quaterniusLowPolyCars0`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-desert-assets`: `quaterniusLowPolyDesertAssets`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-food-pack`: `quaterniusLowPolyFoodPack`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-furniture-1`: `quaterniusLowPolyFurniture1`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-guns`: `quaterniusLowPolyGuns`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-guns-pack`: `quaterniusLowPolyGunsPack`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-medieval-weapons`: `quaterniusLowPolyMedievalWeapons`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-nature-pack-1`: `quaterniusLowPolyNaturePack1`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-pirate-pack`: `quaterniusLowPolyPiratePack`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-rpg-pack`: `quaterniusLowPolyRpgPack`
+- `@jgengine/assets/generated/pack/quaternius-low-poly-space-assets`: `quaterniusLowPolySpaceAssets`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-animated-farm-animal-pack`: `quaterniusLowpolyAnimatedFarmAnimalPack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-animated-knight`: `quaterniusLowpolyAnimatedKnight`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-animated-monsters`: `quaterniusLowpolyAnimatedMonsters`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-buildings`: `quaterniusLowpolyBuildings`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-buildings-pack`: `quaterniusLowpolyBuildingsPack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-cars`: `quaterniusLowpolyCars`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-crops-pack`: `quaterniusLowpolyCropsPack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-house-interior-pack`: `quaterniusLowpolyHouseInteriorPack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-medieval-buildings`: `quaterniusLowpolyMedievalBuildings`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-medieval-village-pack`: `quaterniusLowpolyMedievalVillagePack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-medieval-weapons`: `quaterniusLowpolyMedievalWeapons`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-modular-dungeon-pack`: `quaterniusLowpolyModularDungeonPack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-modular-sci-fi-environments`: `quaterniusLowpolyModularSciFiEnvironments`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-modular-street-pack`: `quaterniusLowpolyModularStreetPack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-nature-pack`: `quaterniusLowpolyNaturePack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-posed-humans`: `quaterniusLowpolyPosedHumans`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-public-transport`: `quaterniusLowpolyPublicTransport`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-rpg`: `quaterniusLowpolyRpg`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-rpg-characters`: `quaterniusLowpolyRpgCharacters`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-ship-pack`: `quaterniusLowpolyShipPack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-spaceships-pack`: `quaterniusLowpolySpaceshipsPack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-steampunk-turrets`: `quaterniusLowpolySteampunkTurrets`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-survival-pack`: `quaterniusLowpolySurvivalPack`
+- `@jgengine/assets/generated/pack/quaternius-lowpoly-textured-trees`: `quaterniusLowpolyTexturedTrees`
+- `@jgengine/assets/generated/pack/quaternius-medieval-village`: `quaterniusMedievalVillage`
+- `@jgengine/assets/generated/pack/quaternius-modular-men`: `quaterniusModularMen`
+- `@jgengine/assets/generated/pack/quaternius-modular-scifi`: `quaterniusModularScifi`
+- `@jgengine/assets/generated/pack/quaternius-modular-women`: `quaterniusModularWomen`
+- `@jgengine/assets/generated/pack/quaternius-stylized-nature`: `quaterniusStylizedNature`
+- `@jgengine/assets/generated/pack/quaternius-textured-cute-monster-pack`: `quaterniusTexturedCuteMonsterPack`
+- `@jgengine/assets/generated/pack/quaternius-toon-shooter`: `quaterniusToonShooter`
+- `@jgengine/assets/generated/packs`: `kaykitAdventurers`, `kaykitCityBuilder`, `kaykitDungeon`, `kaykitForest`, `kaykitFurniture`, `kaykitMedievalHexagon`, `kaykitSkeletons`, `kaykitSpaceBase`, `quaternius5LowPolyAnimals`, `quaterniusAnimatedAnimalesLowPoly`, `quaterniusAnimatedAnimals`, `quaterniusAnimatedCharactersPack`, `quaterniusAnimatedDinosaurs`, `quaterniusAnimatedFish`, `quaterniusAnimatedHumanLowPoly`, `quaterniusAnimatedLowpolyRobot`, `quaterniusAnimatedMechPack`, `quaterniusFantasyLowPolyTreesAndBushes`, `quaterniusFantasyProps`, `quaterniusFurnitureLowPoly`, `quaterniusLowPolyAnimatedGuns`, `quaterniusLowPolyCars0`, `quaterniusLowPolyDesertAssets`, `quaterniusLowPolyFoodPack`, `quaterniusLowPolyFurniture1`, `quaterniusLowPolyGuns`, `quaterniusLowPolyGunsPack`, `quaterniusLowPolyMedievalWeapons`, `quaterniusLowPolyNaturePack1`, `quaterniusLowPolyPiratePack`, `quaterniusLowPolyRpgPack`, `quaterniusLowPolySpaceAssets`, `quaterniusLowpolyAnimatedFarmAnimalPack`, `quaterniusLowpolyAnimatedKnight`, `quaterniusLowpolyAnimatedMonsters`, `quaterniusLowpolyBuildings`, `quaterniusLowpolyBuildingsPack`, `quaterniusLowpolyCars`, `quaterniusLowpolyCropsPack`, `quaterniusLowpolyHouseInteriorPack`, `quaterniusLowpolyMedievalBuildings`, `quaterniusLowpolyMedievalVillagePack`, `quaterniusLowpolyMedievalWeapons`, `quaterniusLowpolyModularDungeonPack`, `quaterniusLowpolyModularSciFiEnvironments`, `quaterniusLowpolyModularStreetPack`, `quaterniusLowpolyNaturePack`, `quaterniusLowpolyPosedHumans`, `quaterniusLowpolyPublicTransport`, `quaterniusLowpolyRpg`, `quaterniusLowpolyRpgCharacters`, `quaterniusLowpolyShipPack`, `quaterniusLowpolySpaceshipsPack`, `quaterniusLowpolySteampunkTurrets`, `quaterniusLowpolySurvivalPack`, `quaterniusLowpolyTexturedTrees`, `quaterniusMedievalVillage`, `quaterniusModularMen`, `quaterniusModularScifi`, `quaterniusModularWomen`, `quaterniusStylizedNature`, `quaterniusTexturedCuteMonsterPack`, `quaterniusToonShooter`
+- `@jgengine/assets/glbMetrics`: `GlbMetrics`, `GlbTextureMetrics`, `readGlbMetrics`
+- `@jgengine/assets/gltfMaterials`: `GLTF_MATERIAL_EXTENSIONS`, `GltfImportedMaterial`, `GltfMaterialDiagnostic`, `GltfMaterialInspection`, `GltfMaterialSlot`, `GltfMaterialTexture`, `inspectGlbMaterials`, `inspectGltfMaterials`
+- `@jgengine/assets/imageCodec`: `RgbaImage`
+- `@jgengine/assets/importSpec`: `AssetImportKind`, `AssetImportSpec`, `ImportSpecValidation`, `classifyAssetFile`, `validateImportSpec`
+- `@jgengine/assets/indexGen`: `ReindexResult`, `entryForFile`, `indexSourceDir`, `keyFromFile`, `reindex`, `writeIndexBarrels`
+- `@jgengine/assets/library/assetLibrary`: `LibraryEntry`, `LibraryHit`, `LibraryIssue`, `LibraryRecord`, `LibraryRecordFile`, `LibrarySearchOptions`, `libraryCreditSections`, `libraryCredits`, `libraryLicenseLabel`, `libraryTagCounts`, `searchLibrary`, `validateLibrary`
+- `@jgengine/assets/library/generated`: `libraryRecordFiles`
+- `@jgengine/assets/library/libraryIcons`: `GAMEICONS_ARTISTS`, `GAMEICONS_CC0_ARTISTS`, `GAMEICONS_PACK`, `libraryIconCredits`, `libraryIconUrl`
+- `@jgengine/assets/library/libraryIndex`: `assetLibrary`
+- `@jgengine/assets/library/libraryIngest`: `IngestFetch`, `IngestOptions`, `KayKitTreePack`
+- `@jgengine/assets/library/libraryLicense`: `EXCLUDED_PROVIDERS`, `LIBRARY_LICENSES`, `LibraryLicense`, `licenseRequiresCredit`, `normalizeLibraryLicense`
+- `@jgengine/assets/library/libraryMakehuman`: `MAKEHUMAN_PRESETS`
+- `@jgengine/assets/library/libraryPull`: `LibraryPullContext`, `pullLibraryEntry`
+- `@jgengine/assets/library/libraryRocketbox`: `ROCKETBOX_CLIP_FOLDERS`
+- `@jgengine/assets/library/libraryServed`: `LibraryServedPath`, `libraryServedPath`
+- `@jgengine/assets/library/librarySources`: `ASSET_LIBRARY_SOURCES`, `GAMEICONS_REVISION`, `LIBRARY_KINDS`, `LibraryKind`, `LibrarySource`, `LibrarySourceId`, `MAKEHUMAN_REVISION`, `ROCKETBOX_REVISION`, `librarySource`
+- `@jgengine/assets/makehumanPull`: `MAKEHUMAN_COMMIT`, `MakeHumanEthnicity`, `MakeHumanPreset`, `PullMakeHumanOptions`, `PulledMakeHuman`, `pullMakeHumanCharacter`
+- `@jgengine/assets/manifest`: `AssetAlias`, `AssetDownload`, `AssetPack`, `AssetProvider`, `AssetSource`, `AssetSourceKind`, `AssetSpace`, `CollisionMeshData`, `IndexEntry`, `ItchDownload`, `ModelDims`, `PinnedDownload`, `PolyPizzaBundleDownload`, `ScrapeDownload`, `SingleAsset`, `importedPackNames`, `isScrapeDownload`, `packExportName`
+- `@jgengine/assets/materialMapFiles`: `MATERIAL_MAP_FILES`, `MaterialMapRole`
+- `@jgengine/assets/materials`: `BuildMaterialCatalogOptions`, `ExtractedMaterialMap`, `MATERIAL_MAP_FILES`, `MaterialCatalog`, `MaterialMapRole`, `MaterialMaps`, `MaterialRef`, `buildMaterialCatalog`, `extractMaterialMaps`, `materialAliases`
+- `@jgengine/assets/modelLibraryAuthored`: `AUTHORED_BUILDERS`, `BuiltAuthoredModel`, `buildAuthoredModel`
+- `@jgengine/assets/modelLibraryPull`: `KHRONOS_COMMIT`, `PullLibraryModelOptions`, `PulledLibraryModel`, `downscaleJpeg`, `pullLibraryModel`, `thinIslands`
+- `@jgengine/assets/modelLodBuild`: `BakedImpostorPixels`, `ImpostorBakePlan`, `ImpostorBaker`, `LodBuildPlan`, `LodLevelPlan`, `ModelLodBuildResult`, `SOURCE_MATERIAL_KEY`, `buildModelLods`
+- `@jgengine/assets/modelMirror`: `modelMirrorAssetName`, `modelMirrorUrls`, `pullMirroredModel`, `zipPulledModel`
+- `@jgengine/assets/packs/starter`: `STARTER_ASSETS`, `STARTER_PACKS`, `STARTER_PEOPLE`, `STARTER_SOURCE_PACKS`, `STARTER_THEMES`, `StarterAsset`, `StarterTheme`
+- `@jgengine/assets/polyPizzaArchive`: `PolyPizzaModel`
+- `@jgengine/assets/provisioning`: `AssetProvenance`, `AssetProvenanceKind`, `AssetReference`, `ReferenceValidation`, `ResolveProvenanceOptions`, `ValidateAssetReferencesOptions`, `ValidateAssetReferencesResult`, `resolveProvenance`, `validateAssetReferences`
+- `@jgengine/assets/rankAssets`: `AssetKind`, `AssetMatch`, `RankAssetsOptions`, `RankedMatch`, `describeAssetMatch`, `rankAssets`
+- `@jgengine/assets/registry`: `RegistryCatalog`, `RegistryComponent`, `componentInstallUrl`, `registryCatalog`
+- `@jgengine/assets/rocketboxPull`: `LoadedRocketboxClip`, `PullRocketboxClipOptions`, `PullRocketboxOptions`, `PulledRocketboxClip`, `PulledRocketboxModel`, `ROCKETBOX_COMMIT`, `pullRocketboxClip`, `pullRocketboxModel`
+- `@jgengine/assets/singles`: `singles`
+- `@jgengine/assets/snippet`: `ModelSnippetOptions`, `componentWiringSnippet`, `iconWiringSnippet`, `materialWiringSnippet`, `modelWiringSnippet`, `spriteWiringSnippet`
+- `@jgengine/assets/sources`: `ambientcgSources`, `gameiconsSources`, `kaykitSources`, `materialSources`, `modelSources`, `quaterniusSources`, `sourceById`, `sources`, `spriteSources`
+- `@jgengine/assets/sources/ambientcg`: `AMBIENTCG_PINNED_ASSET_IDS`, `AmbientcgPinnedMaterial`, `ambientcgAssetId`, `ambientcgSources`
+- `@jgengine/assets/sources/ambientcg`: `AMBIENTCG_PINNED`
+- `@jgengine/assets/sources/gameicons`: `gameiconsSources`
+- `@jgengine/assets/sources/kaykit`: `kaykitSources`
+- `@jgengine/assets/sources/quaternius`: `quaterniusSources`
+- `@jgengine/assets/spriteIndexGen`: `ReindexSpritesResult`, `entryForSpriteFile`, `indexSpriteSourceDir`, `keyFromSpriteFile`, `reindexSprites`
+- `@jgengine/assets/staticPrefabBake`: `StaticPrefabBakeReport`, `StaticPrefabBakeResult`, `StaticPrefabSource`, `StaticPrefabTextureSource`, `bakeStaticPrefab`
+- `@jgengine/assets/verify`: `VerifyInput`, `VerifyResult`, `verifyData`, `verifyManifest`
+- `@jgengine/core/material/appearanceSignals.draw`: `RenderMaterialAppearanceBaseline`, `applyMaterialAppearanceSignals`, `captureMaterialAppearanceBaseline`, `restoreMaterialAppearanceBaseline`
+- `@jgengine/core/material/authoredSurfaceMaterial.draw`: `AuthoredSurfaceConfig`, `SurfaceShape`
+- `@jgengine/core/material/hairCards`: `HAIR_CARD_STRAND_ROTATION`, `HairCardAuthoring`, `HairCardGuide`, `HairCardMesh`, `buildHairCards`, `validateHairCardAuthoring`
+- `@jgengine/core/material/hairCards.draw`: `HairCards`, `hairCardsDraw`
+- `@jgengine/core/material/materialAsset`: `FabricAppearance`, `HairAppearance`, `MATERIAL_SURFACE_CAPABILITIES`, `MATERIAL_TEXTURE_CAPABILITIES`, `MATERIAL_TEXTURE_SEMANTICS`, `MaterialAsset`, `MaterialAssignment`, `MaterialAssignmentValidationOptions`, `MaterialCapability`, `MaterialDiagnostic`, `MaterialFamily`, `MaterialProvenance`, `MaterialSelector`, `MaterialSurfaceParameters`, `MaterialTemplate`, `MaterialTextureChannel`, `MaterialTextureMetadata`, `MaterialTextureRole`, `createMaterialTemplate`, `matchesMaterialSelector`, `materialCapabilitiesForAsset`, `materialCapabilitiesForSurface`, `parseMaterialAssignments`, `validateMaterialAsset`, `validateMaterialAssignments`, `validateMaterialSurface`
+- `@jgengine/core/material/materialAsset.draw`: `MaterialAssetSurfaceOptions`, `MaterialAssignmentTargetOptions`, `ModelMaterialSlotInfo`, `applyMaterialAsset`, `applyMaterialAssignments`, `configureMaterialTexture`, `inspectModelMaterialSlots`, `leasedMaterialMeshDraw`, `materialAssetMaterial`, `materialAssetSurface`, `materialAssetSwatchDraw`, `materialResourceMetrics`, `setHairCardLightExposure`, `validateMaterialAssignmentTargets`
+- `@jgengine/core/material/materialOverride.draw`: `MaterialOverrideOptions`, `MaterialOverrideTextures`
+- `@jgengine/core/material/surfaceMaterialGenerator`: `SURFACE_MATERIAL_GENERATOR`, `SURFACE_MATERIAL_KINDS`, `SURFACE_MATERIAL_OUTPUT`, `SURFACE_MATERIAL_SCHEMA`, `SurfaceMaterialKind`, `SurfaceMaterialMaps`, `SurfaceMaterialParams`, `SurfaceMaterialSpec`, `bakeSurfaceMaterial`, `bakeSurfaceMaterialJob`, `isSurfaceMaterialMaps`, `surfaceMaterialMeta`
+- `@jgengine/core/material/surfaceMaterialPreview.draw`: `surfaceMaterialPreviewDraw`
+- `@jgengine/core/material/surfaceMaterialTextures.draw`: `SurfaceMaterialArrayTextures`, `SurfaceMaterialStandardMaps`, `bakeSurfaceMaterialShared`, `bakeSurfaceMaterialSharedJob`, `surfaceMaterialArrayTextures`, `surfaceMaterialStandardMaps`
+- `@jgengine/core/material/surfaceScanShader.draw`: `SURFACE_SCAN_PARS_GLSL`, `SurfaceScanBlend`, `SurfaceScanUniforms`
+- `@jgengine/core/material/surfaceScanTextures.draw`: `SurfaceScanLoader`, `SurfaceScanState`, `SurfaceScanTextures`, `SurfaceScanTrack`, `trackSurfaceScan`
+- `@jgengine/core/material/toonRamp`: `TOON_RAMP_TEXELS`, `ToonRamp`
+- `@jgengine/core/material/toonRamp.draw`: `toonRampMaterial`
+- `@jgengine/core/material/triplanarMaterial.draw`: `TriplanarProjectionOptions`, `triplanarAssetMaterial`
+- `@jgengine/core/model/SceneModels.draw`: `EntityModel`, `EntitySprite`, `IsolatedEntityModel`, `useEntityLookModel`
+- `@jgengine/core/model/entityModelDraw.draw`: `EntityModelDrawOptions`, `MeasureTarget`, `ModelTextureEntries`, `entityModelDraw`, `entitySpriteDraw`, `isolatedEntityModelDraw`, `isolatedModelUsesVariants`, `loadModelMaterialTextures`, `singleVariantModelDraw`
+- `@jgengine/core/model/measureBounds.draw`: `MEASURE_EXCLUDE_KEY`, `MeasuredBoundsGroup`, `MeasuredLocalBounds`, `measureLocalBounds`, `measuredBoundsDraw`, `reportMeasuredBounds`
+- `@jgengine/core/model/measureCollisionMesh.draw`: `MeasuredCollisionTriangles`, `measureLocalCollisionTriangles`, `reportMeasuredCollisionMesh`
+- `@jgengine/core/model/modelInstanceDraw.draw`: `ModelInstanceConfig`, `ModelInstanceDrawOptions`, `ModelInstanceOptions`, `ModelInstanceReady`, `modelInstanceDraw`
+- `@jgengine/core/model/modelLoad.draw`: `DEFAULT_MODEL_TRIANGLE_BUDGET`, `HeavyModelRecord`, `MissingModelRecord`, `ModelLoaderConfig`, `configureModelLoaders`, `detectKtx2Support`, `heavyModels`, `modelLoadFallbacks`, `modelLoadIdleMs`, `modelLoadStarts`, `setModelTriangleBudget`
+- `@jgengine/core/model/modelLook`: `modelForLook`, `modelLooks`
+- `@jgengine/core/model/modelRender.draw`: `MaterialCache`, `PAINT_TEXTURE_SIZE`, `PaintCanvas`, `cloneModelScene`, `disposeModelScene`
+- `@jgengine/core/model/modelWind.draw`: `ResolvedModelWind`, `WindClock`, `applyModelWind`, `windClock`, `windDirection`, `windGust`
+- `@jgengine/core/model/resolveModel`: `ModelPick`, `ModelResolveContext`
+- `@jgengine/core/model/rigNode.draw`: `RigNodeDiagnostic`, `RigNodeResolution`, `resolveRigNode`
+- `@jgengine/core/model/staticTransforms.draw`: `freezeStaticTransforms`, `refreshStaticTransforms`, `thawStaticTransforms`

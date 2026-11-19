@@ -1,6 +1,5 @@
 import type { HarvestableDef } from "@jgengine/core/harvest/scatterHarvest";
 
-/** How a scatter species is gathered: struck (left click, tool bias applies) or picked by hand (E). */
 export type GatherBy = "strike" | "pick";
 
 export interface Harvestable extends HarvestableDef {
@@ -34,7 +33,6 @@ const rock = (label: string, budget: number, radius: number): Harvestable => ({
   ],
 });
 
-/** A resource rock: struck for its ore plus stone. A pick gets more ore, a hatchet more stone. */
 const ore = (label: string, kind: string, budget: number, radius: number): Harvestable => ({
   by: "strike",
   label,
@@ -47,7 +45,6 @@ const ore = (label: string, kind: string, budget: number, radius: number): Harve
   ],
 });
 
-/** Plants picked by hand for fiber. */
 const weed = (label: string): Harvestable => ({ by: "pick", label, budget: 2, radius: 0.6, respawn: REGROW / 2, resources: [{ kind: "fiber", amount: [1, 3] }] });
 
 const bush = (label: string, berries: Record<string, number>): Harvestable => ({
@@ -63,7 +60,6 @@ const bush = (label: string, berries: Record<string, number>): Harvestable => ({
   ],
 });
 
-/** Scatter palette item → what it yields. Items not listed (grass) are scenery. */
 export const HARVESTABLES: Readonly<Record<string, Harvestable>> = {
   palm: tree("Tree", 30, 0.5),
   fanpalm: tree("Tree", 20, 0.4),
@@ -103,5 +99,4 @@ export const HARVESTABLES: Readonly<Record<string, Harvestable>> = {
   pebble: { by: "pick", label: "Stones", budget: 1, radius: 0.5, respawn: REGROW, resources: [{ kind: "stone", amount: 1 }, { kind: "flint", amount: [0, 1] }] },
 };
 
-/** Whether a species is gathered by `by`. */
 export const gatheredBy = (by: GatherBy) => (item: string): boolean => HARVESTABLES[item]?.by === by;

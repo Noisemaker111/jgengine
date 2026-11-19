@@ -25,10 +25,8 @@ export interface RewardRecipient {
   eligible?: boolean;
 }
 
-/** The distribution policies allocation ships — each a distinct answer to "who gets this result". */
 export type RewardPolicyKind = "instanced" | "shared" | "copy" | "roundRobin" | "assigned" | "claimed";
 
-/** A `{ result, count }` slice of a reward — the unit shared pools and grants are expressed in. */
 export interface RewardShare {
   result: string;
   count: number;
@@ -48,11 +46,6 @@ export interface RewardGrant {
   private: boolean;
 }
 
-/**
- * A serializable pool of results left open for later claiming — first-come contested drops or a
- * `reservedFor` personal reward. Tracks `eligible` claimants, optional `expiresAtMs`, and the
- * authoritative `claimedBy` winner so reconnect and duplicate-claim attempts resolve idempotently.
- */
 export interface ClaimablePool {
   id: string;
   via: RewardPolicyKind;
@@ -63,20 +56,12 @@ export interface ClaimablePool {
   claimedBy: string | null;
 }
 
-/** How a `claimed` allocation exposes its pool: open first-come (`first`) or `reserved` to one recipient. */
 export interface RewardClaimSpec {
   mode: "first" | "reserved";
   reservedFor?: string;
   expiresAtMs?: number;
 }
 
-/**
- * The inputs one allocation pass consumes. `allocationSeed` governs distribution decisions
- * (ordering, round-robin rotation, remainder splits, reservation) while the separate optional
- * `generationSeed` seeds per-recipient `instanced` generation — keeping join order from perturbing
- * other players' rolls. Provide `results` for pre-rolled policies, `generate` for `instanced`,
- * `assignment` for `assigned`, and `claim` for `claimed`.
- */
 export interface AllocationRequest {
   recipients: readonly RewardRecipient[];
   allocationSeed: string | number;
@@ -89,13 +74,11 @@ export interface AllocationRequest {
   private?: boolean;
 }
 
-/** The serializable result of an allocation pass — immediate `grants` plus any deferred `pools`. */
 export interface AllocationOutcome {
   grants: RewardGrant[];
   pools: ClaimablePool[];
 }
 
-/** The outcome of a claim attempt — the updated pool and the grants owed (empty when the claim is refused). */
 export interface ClaimOutcome {
   pool: ClaimablePool;
   grants: RewardGrant[];
@@ -135,7 +118,6 @@ function grant(
   return { recipient, result, count, via, private: isPrivate };
 }
 
-/** Per-recipient independent generation: each eligible recipient rolls its own results from a stable stream. */
 function allocateInstanced(request: AllocationRequest): AllocationOutcome {
   if (request.generate === undefined) {
     throw new Error('reward policy "instanced" requires a generate function');
@@ -153,7 +135,6 @@ function allocateInstanced(request: AllocationRequest): AllocationOutcome {
   return { grants, pools: [] };
 }
 
-/** Copy-to-all: every eligible recipient receives a full copy of every result. */
 function allocateCopy(request: AllocationRequest): AllocationOutcome {
   const results = requireResults(request, "copy");
   const isPrivate = request.private ?? false;
@@ -223,7 +204,6 @@ function allocateRoundRobin(request: AllocationRequest): AllocationOutcome {
   return { grants, pools: [] };
 }
 
-/** Caller-defined assignment: each recipient receives exactly the result ids the `assignment` map names. */
 function allocateAssigned(request: AllocationRequest): AllocationOutcome {
   const results = requireResults(request, "assigned");
   if (request.assignment === undefined) {

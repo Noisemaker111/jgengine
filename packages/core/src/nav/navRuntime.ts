@@ -10,25 +10,18 @@ import {
 } from "./navMesh";
 import type { AuthoredNavLink, NavLinkKind } from "./navAuthoring";
 
-/** An XZ box naming the authored area a scene edit touched, so routing state elsewhere is left alone. */
 export interface NavRegion {
   min: readonly [number, number];
   max: readonly [number, number];
 }
 
-/** How one {@link NavRuntime.applyMesh} exchange changed the mesh. */
 export interface NavRebuildStats {
-  /** Polygons in the new bake that have no predecessor. */
   added: number;
-  /** Older polygons the new bake no longer contains. */
   removed: number;
-  /** Older polygons the new bake still contains, matched by geometry — their routes stay valid. */
   kept: number;
-  /** Old polygon index → its index in the new mesh, or `-1` when that polygon is gone. */
   remap: Int32Array;
 }
 
-/** Serializable tuning and authored links of a {@link NavRuntime}; the baked geometry is replaced by `applyMesh`. */
 export interface NavRuntimeSnapshot {
   areaCosts: Record<number, number>;
   maxNodes: number;
@@ -37,15 +30,11 @@ export interface NavRuntimeSnapshot {
   linkSnapRadius: number;
 }
 
-/** Runtime seam over a baked {@link NavMeshData}: route, price areas, resolve authored links, rebuild in place. */
 export interface NavRuntime {
-  /** The mesh currently routed on — a bake plus the resolved links. */
   readonly mesh: NavMeshData;
-  /** Cheapest polygon corridor between two points, funnel-smoothed by the mesh query. */
   plan(from: Vec3, to: Vec3): NavMeshPath | null;
   findPolygon(point: Vec3): number | null;
   closestPoint(point: Vec3): Vec3 | null;
-  /** True when the straight segment stays on walkable, unblocked polygons. */
   raycast(from: Vec3, to: Vec3): boolean;
   /**
    * Exchange the bake for a newer one. The new geometry is authoritative; polygons that survive the
@@ -53,24 +42,17 @@ export interface NavRuntime {
    * routes crossing changed polygons need re-planning.
    */
   applyMesh(next: NavMeshData): NavRebuildStats;
-  /** Resolved links the router is using. */
   links(): readonly NavMeshLink[];
-  /** Authored ids whose ends no longer reach the mesh. */
   unresolvedLinks(): readonly string[];
-  /** How many times the mesh was exchanged. */
   rebuilds(): number;
   retune(patch: NavRuntimeOptions): void;
   snapshot(): NavRuntimeSnapshot;
   restore(next: NavRuntimeSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
-/** Options for {@link createNavRuntime}. */
 export interface NavRuntimeOptions extends NavMeshQueryOptions {
-  /** Authored off-mesh connections resolved onto the current mesh. */
   links?: readonly AuthoredNavLink[];
-  /** Price per link kind, in path-cost units; defaults `door` 0.5, `jump` 1.5, `ladder` 4, `link` 0. */
   linkCosts?: Partial<Record<NavLinkKind, number>>;
   /** How far an authored link end may sit from the mesh before the link is reported unresolved. Default 2. */
   linkSnapRadius?: number;
@@ -81,7 +63,6 @@ export interface NavRuntimeOptions extends NavMeshQueryOptions {
 const DEFAULT_LINK_COSTS: Record<NavLinkKind, number> = { door: 0.5, ladder: 4, jump: 1.5, link: 0 };
 const DEFAULT_SNAP_RADIUS = 2;
 
-/** A bake stored on an editor scene document, structurally compatible with `EditorBake`. */
 export interface SceneBake {
   kind: string;
   id: string;
@@ -102,13 +83,7 @@ function isPolygonList(value: unknown, vertexCount: number): value is number[][]
   );
 }
 
-/**
- * Read the named navigation bake an editor wrote onto a scene document. Returns `null` when the
- * document holds no such bake yet, and throws when the stored bake is not a valid nav mesh — a
- * corrupt bake should fail at load, not as agents walking through walls.
- *
- * @capability navmesh-from-scene read the editor's baked nav mesh off a scene document
- */
+/** @capability navmesh-from-scene read the editor's baked nav mesh off a scene document */
 export function navMeshFromBake(bakes: readonly SceneBake[] | undefined, id = "main"): NavMeshData | null {
   const bake = bakes?.find((entry) => entry.kind === "nav" && entry.id === id);
   if (bake === undefined) return null;
@@ -145,7 +120,6 @@ function vertexKey(x: number, y: number, z: number): string {
   return `${round(x)}|${round(y)}|${round(z)}`;
 }
 
-/** Order-independent handle for "the same polygon": its corner positions, rotated to a fixed start. */
 function polySignature(mesh: NavMeshData, ring: readonly number[]): string {
   if (ring.length === 0) return "";
   const keys: string[] = [];
@@ -183,13 +157,7 @@ function sameLinks(a: readonly NavMeshLink[], b: readonly NavMeshLink[]): boolea
   return true;
 }
 
-/**
- * Route agents over the nav mesh an editor baked. Wraps {@link createNavMeshQuery}, resolves authored
- * off-mesh links (doors, ladders, jumps) onto the current surface, and exchanges the mesh one scene
- * region at a time so untouched polygons keep their ids and the agents routing over them keep their paths.
- *
- * @capability nav-runtime route agents on an editor-baked nav mesh with authored links and re-bakes that keep polygon identity
- */
+/** @capability nav-runtime route agents on an editor-baked nav mesh with authored links and re-bakes that keep polygon identity */
 export function createNavRuntime(options: NavRuntimeOptions & { mesh: NavMeshData }): NavRuntime {
   let authored: AuthoredNavLink[] = (options.links ?? []).map((link) => ({ ...link }));
   let linkCosts: Partial<Record<NavLinkKind, number>> = { ...(options.linkCosts ?? {}) };

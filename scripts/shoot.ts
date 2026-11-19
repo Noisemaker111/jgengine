@@ -16,10 +16,8 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 
 /** One capture may take this long before the guard ends it. */
 export const SHOOT_GUARD_SECONDS = 420;
-/** A capture at another commit checks out, reinstalls when needed and restarts servers first. */
 export const AT_COMMIT_GUARD_SECONDS = 1200;
 
-/** A load run builds the site once and opens every game cold; the guard covers all of it. */
 export const LOAD_GUARD_SECONDS = 3600;
 
 /** Seconds one board run shoots for by default before it leaves the rest of the board to the next run. */
@@ -28,10 +26,6 @@ export const BOARD_BUDGET_SECONDS = 360;
 /** Laying out a full board's sheets and its comparison with an earlier board, after the last shot. */
 export const BOARD_SHEETS_SECONDS = 300;
 
-/**
- * The guard on one board run: its budget, the capture it started just inside the budget (each under
- * its own shoot guard), and the sheets. A run that outlasts this hung; a long board is many runs.
- */
 export function boardGuardSeconds(argv: readonly string[]): number {
   const at = argv.indexOf("--budget");
   const asked = at < 0 ? Number.NaN : Number(argv[at + 1]);
@@ -53,7 +47,6 @@ const SHOOT_USAGE = {
   example: "bun run shoot deepward --mode play",
 } as const;
 
-/** The command a shoot argv runs: the prove bundle, or one guarded capture. */
 export function shootCommand(argv: readonly string[]): string[] {
   if (argv[0] === "--prove") return ["games/scripts/prove.ts", ...argv.slice(1)];
   if (argv[0] === "--at") return ["scripts/guard.ts", String(AT_COMMIT_GUARD_SECONDS), "bun scripts/probe-commit.ts", ...argv.slice(1, 2), "--", ...argv.slice(2)];

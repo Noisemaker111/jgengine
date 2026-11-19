@@ -1,12 +1,5 @@
 import { resolveRng } from "../random/resolveRng";
 import { clamp01 } from "../math/scalar";
-/**
- * How a fresh application behaves when the target already carries the status.
- * - `refresh` — reset duration, hold the existing stack count.
- * - `stack` — add `add` stacks (default 1) up to `max`, and refresh duration.
- * - `replace` — overwrite duration and magnitude, stacks reset to 1.
- * - `ignore` — leave the existing instance untouched (first application wins).
- */
 export type StatusStackPolicy =
   | { kind: "refresh" }
   | { kind: "stack"; max?: number; add?: number }
@@ -20,32 +13,24 @@ export type StatusStackPolicy =
  * interprets `status` — it is a reference, not a built-in condition.
  */
 export interface StatusApplicationSpec {
-  /** Opaque status/effect id the game applies (`"burn"`, `"slow"`, `"amplify"`). */
   status: string;
   /** Base landing probability in `[0,1]` before matchup scaling; defaults to 1 (always). */
   chance?: number;
   /** Base duration in milliseconds. */
   durationMs?: number;
-  /** Base number of periodic ticks, when the status is periodic. */
   ticks?: number;
-  /** Base per-application magnitude (damage/heal per tick, buff strength). */
   magnitude?: number;
   /** Behaviour when the target already carries this status; defaults to `refresh`. */
   stack?: StatusStackPolicy;
 }
 
-/** A live status carried by a target — the serializable, replicable state a status application mutates. */
 export interface StatusInstance {
   status: string;
-  /** Current stack count (>= 1 while active). */
   stacks: number;
   /** Milliseconds of life remaining. */
   remainingMs: number;
-  /** Remaining periodic ticks, when tracked. */
   ticks: number;
-  /** Per-application magnitude in force. */
   magnitude: number;
-  /** Attribution: who/what applied (or last refreshed) the status. */
   source?: string;
 }
 
@@ -61,15 +46,11 @@ export interface StatusApplicationScale {
   duration?: number;
 }
 
-/** Everything `resolveStatusApplication` needs; all data plus an injected RNG for reproducibility. */
 export interface StatusApplicationInput {
   spec: StatusApplicationSpec;
-  /** Independent multipliers (typically from `resolveMatchup`). */
   scale?: StatusApplicationScale;
-  /** The target's existing instance of this status, or `null`/absent when unafflicted. */
   current?: StatusInstance | null;
   immunity?: StatusImmunity | null;
-  /** Attribution written onto the resulting instance. */
   source?: string;
   /** Deterministic RNG returning `[0,1)`. Omitting it falls back to `Math.random` and warns once — pass `ctx.rng` or a seeded stream. */
   rng?: () => number;
@@ -85,14 +66,11 @@ export type StatusApplicationOutcomeKind =
   | "missed"
   | "ignored";
 
-/** The result of one status application: the outcome, the resulting instance (if any), and the roll. */
 export interface StatusApplicationOutcome {
   kind: StatusApplicationOutcomeKind;
-  /** The instance after application, or `null` when the status did not land / was blocked. */
   instance: StatusInstance | null;
   /** Effective landing chance after scaling, clamped to `[0,1]`. */
   chance: number;
-  /** The RNG draw compared against `chance`; `null` when no roll was taken (immune/ignored). */
   roll: number | null;
 }
 

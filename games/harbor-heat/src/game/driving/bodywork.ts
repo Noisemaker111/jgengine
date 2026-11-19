@@ -104,7 +104,6 @@ export function crashVehicle(
   return transitions;
 }
 
-/** How a car's bodywork reads on a HUD: total accumulated impulse and the worst zone stage. */
 export function vehicleDamageReadout(
   ctx: GameContext,
   vehicleId: string,
@@ -119,14 +118,12 @@ export function vehicleDamageReadout(
   };
 }
 
-/** Every live car's bodywork, for the save document. */
 export function vehicleDamageSave(ctx: GameContext): Record<string, VehicleDamageState> {
   const out: Record<string, VehicleDamageState> = {};
   for (const [vehicleId, record] of bodyworkOf(ctx)) out[vehicleId] = record.damage.snapshot();
   return out;
 }
 
-/** Restore bodywork onto the cars a reload still has, re-baking their handling. */
 export function restoreVehicleDamage(
   ctx: GameContext,
   sections: Record<string, VehicleDamageState>,
@@ -144,7 +141,6 @@ export function restoreVehicleDamage(
   }
 }
 
-/** Swap a car's pre-dent handling (a mod was bought) and return what it drives like now, dents included. */
 export function rebaseVehicleDamage(ctx: GameContext, vehicleId: string, base: VehicleSpec): VehicleSpec {
   const record = bodyworkOf(ctx).get(vehicleId);
   if (record === undefined) return base;
@@ -152,7 +148,6 @@ export function rebaseVehicleDamage(ctx: GameContext, vehicleId: string, base: V
   return damagedSpec(base, record.damage.effect());
 }
 
-/** Forget one car's bodywork (it burned or was despawned). */
 export function forgetVehicleDamage(ctx: GameContext, vehicleId: string): void {
   const bodywork = bodyworkOf(ctx);
   bodywork.get(vehicleId)?.damage.dispose();

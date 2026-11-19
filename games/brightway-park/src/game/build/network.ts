@@ -4,14 +4,6 @@ import { BUILDABLES } from "../objects/catalog";
 import { LOT, sizeOf } from "../lot";
 import { cellCentre, levelAt } from "./terrain";
 
-/**
- * The park's footpaths as a network. Guests come in at the gate and can only reach what the paths
- * reach: a shop opens when a path from the gate runs past it, and a ride opens when it has an
- * entrance and an exit touching it, the entrance reached by a path or a queue line from the gate and
- * the exit back onto a path. Queue tiles chained from an entrance are the ride's line: guests stand
- * on them, and a proper line makes a long wait easier to bear.
- */
-
 export const WALK = "path_walk";
 export const QUEUE = "path_queue";
 export const ENTRANCE = "ride_entrance";
@@ -22,7 +14,6 @@ type Cell = readonly [number, number];
 const key = (col: number, row: number): string => `${col},${row}`;
 const NEIGHBOURS: readonly Cell[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
-/** Path cells at the gate: the bottom rows of the lot, by the turnstiles. */
 export function isGateCell(col: number, row: number): boolean {
   const [x, z] = cellCentre(col, row);
   return Math.abs(x) <= 8 && z >= 44;
@@ -34,22 +25,16 @@ export interface Access {
   reason: string | null;
   /** Where guests walk to: the tile in front of a ride's entrance, the shop itself otherwise. */
   door: [number, number] | null;
-  /** Where riders come out: the path tile in front of the exit. */
   exit: [number, number] | null;
-  /** The ride's queue line, front first, as world points. */
   line: [number, number][];
 }
 
 export interface Network {
-  /** Every path cell the gate reaches. */
   reached: Set<string>;
-  /** Each ride and shop's way in, by instance id. */
   access: Map<string, Access>;
-  /** Which ride each entrance or exit serves. */
   servedBy: Map<string, string>;
 }
 
-/** Read the paths, entrances and exits off the world and work out what guests can reach. */
 export function readNetwork(w: WorldModel): Network {
   const pathAt = new Map<string, string>();
   const footprintAt = new Map<string, string>();
@@ -177,7 +162,6 @@ export function readNetwork(w: WorldModel): Network {
   return { reached, access, servedBy };
 }
 
-/** Which ride each covered cell belongs to: a ride's own footprint, and every track piece for the coaster. */
 export function rideOwners(w: WorldModel): Map<string, string> {
   const owners = new Map<string, string>();
   const instances = w.instances();
@@ -193,7 +177,6 @@ export function rideOwners(w: WorldModel): Map<string, string> {
   return owners;
 }
 
-/** True when an entrance or exit at this cell would stand against a ride (or the coaster's track). */
 export function touchesRide(w: WorldModel, cell: Cell): boolean {
   const owners = rideOwners(w);
   return NEIGHBOURS.some(([dc, dr]) => owners.has(key(cell[0] + dc, cell[1] + dr)));
@@ -201,7 +184,6 @@ export function touchesRide(w: WorldModel, cell: Cell): boolean {
 
 const inLot = (c: number, r: number): boolean => c >= 1 && r >= 1 && c < LOT.cols - 1 && r < LOT.rows - 1;
 
-/** Free cells next to any of a body's cells, for laying an entrance, an exit or a path beside it. */
 export function freeCellsBeside(body: ReadonlySet<string>, taken: ReadonlySet<string>): [number, number][] {
   const out = new Map<string, [number, number]>();
   for (const k of body) {
@@ -215,7 +197,6 @@ export function freeCellsBeside(body: ReadonlySet<string>, taken: ReadonlySet<st
   return [...out.values()];
 }
 
-/** Every covered cell on the lot. */
 export function takenCells(w: WorldModel): Set<string> {
   const taken = new Set<string>();
   for (const instance of w.instances()) {
@@ -253,10 +234,8 @@ export function pathTo(w: WorldModel, from: Cell, reached: ReadonlySet<string>, 
   return null;
 }
 
-/** How many tiles of a laid connection next to an entrance become its queue line. */
 const QUEUE_RUN = 5;
 
-/** Put a piece down at a cell; the caller decides whether the till pays. Returns its id or null. */
 export type Lay = (kind: string, cell: [number, number]) => string | null;
 
 /**
@@ -283,7 +262,6 @@ export function autoConnect(w: WorldModel, lay: Lay, only?: string): string[] {
     }
     return true;
   };
-  /** The cheapest way to stand a door at one of `candidates` and join it to `to`. */
   const bestDoor = (candidates: [number, number][], to: ReadonlySet<string>): { door: [number, number]; path: [number, number][] } | null => {
     let best: { door: [number, number]; path: [number, number][] } | null = null;
     for (const door of candidates) {

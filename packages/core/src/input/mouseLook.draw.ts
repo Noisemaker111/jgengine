@@ -5,7 +5,6 @@ export interface MouseLookOptions {
   sensitivity?: number;
   /** Pitch clamp in radians; default `1.15`. */
   maxPitch?: number;
-  /** Request pointer lock on click (skipped on coarse-pointer/touch devices); default `true`. */
   pointerLock?: boolean;
   initialYaw?: number;
   initialPitch?: number;
@@ -22,11 +21,9 @@ export interface MouseLookAim {
  * Attach it to the canvas, read `state()` from `onTick`/`useFrame`, dispose on unmount; `setState` puts a saved aim back.
  */
 export interface MouseLookTracker {
-  /** The current aim. */
   state(): MouseLookAim;
   /** Put an aim back (a respawn facing, a restored save); pitch is clamped to `maxPitch`. */
   setState(aim: MouseLookAim): void;
-  /** True while pointer lock is held on the tracked element. */
   locked(): boolean;
   dispose(): void;
 }

@@ -26,13 +26,9 @@ export interface WindMode {
   readonly share: number;
 }
 
-/** Dune rules. All of them retune between sweeps. */
 export interface DuneParams {
-  /** The winds, taken in turn within each wind period by their shares. Default one wind toward the east. */
   wind: readonly WindMode[];
-  /** Sweeps per full cycle of the wind regime. Default 4. */
   windPeriod: number;
-  /** Cells a slab moves per hop over bare bed. Default 1. */
   hop: number;
   /** Chance a slab lands where there is sand. Default 0.6 (Werner 1995). */
   depositOnSand: number;
@@ -61,27 +57,22 @@ export interface DuneGrid {
   readonly reposeAngle?: number;
 }
 
-/** Starting sand: a mean thickness spread at random, or slab counts per cell. */
 export interface DuneInitial {
   /** Mean sand thickness in metres, dropped slab by slab on random cells. */
   readonly sand?: number;
-  /** Slab count per cell, row-major; overrides `sand`. */
   readonly slabs?: ArrayLike<number>;
 }
 
-/** Everything that defines a dune field at one moment, as plain JSON. */
 export interface DuneSnapshot {
   version: 1;
   grid: DuneGrid;
   params: DuneParams;
   seed: string;
-  /** Events run so far. */
   events: number;
   random: number;
   slabs: number[];
 }
 
-/** A running dune field. */
 export interface DuneField {
   readonly grid: DuneGrid;
   readonly seed: string;
@@ -89,9 +80,7 @@ export interface DuneField {
   readonly slabThickness: number;
   params(): DuneParams;
   retune(patch: Partial<DuneParams>): void;
-  /** Run whole sweeps (one event per cell each). */
   step(sweeps?: number): void;
-  /** Sweeps run so far, fractional while a step is inside a sweep. */
   sweeps(): number;
   /** Slab count per cell, row-major. Live; do not write. */
   slabs(): Int32Array;
@@ -100,11 +89,9 @@ export interface DuneField {
   snapshot(): DuneSnapshot;
   restore(snapshot: DuneSnapshot): void;
   reset(): void;
-  /** Hex hash of the slab field. */
   hash(): string;
 }
 
-/** Options for {@link createDuneField}. */
 export interface DuneFieldOptions {
   grid: DuneGrid;
   params?: Partial<DuneParams>;
@@ -149,10 +136,7 @@ function bearingSteps(toward: number, reach: number): Int32Array {
   return steps;
 }
 
-/**
- * Start a dune field.
- * @capability landform-dunes grow barchan, transverse, linear and star dunes from a wind regime and sand supply
- */
+/** @capability landform-dunes grow barchan, transverse, linear and star dunes from a wind regime and sand supply */
 export function createDuneField(options: DuneFieldOptions): DuneField {
   const { cols, rows, cellSize } = options.grid;
   if (!Number.isInteger(cols) || !Number.isInteger(rows) || cols < 3 || rows < 3) throw new Error(`dune grid must be at least 3×3 whole cells, got ${cols}×${rows}`);

@@ -10,16 +10,13 @@ import { detectHumanoidRig, SKELETON_SLOTS, type SkeletonSlot } from "../skeleto
  */
 export interface WearRegion {
   slots: readonly SkeletonSlot[];
-  /** Lowest height covered. Omit for no floor. */
   from?: number;
-  /** Highest height covered. Omit for no ceiling. */
   to?: number;
 }
 
 /** A body area a worn piece can name instead of spelling out its own {@link WearRegion}. */
 export type WearRegionName = "head" | "torso" | "legs" | "feet" | "hands";
 
-/** The engine's region for each body area: a cap over the crown, a long-sleeved top, trousers, boots to mid-shin, gloves. */
 export const WEAR_REGIONS: Readonly<Record<WearRegionName, WearRegion>> = {
   head: { slots: ["head"], from: 1.13 },
   torso: { slots: ["hips", "spine", "chest", "upperArm.l", "upperArm.r", "lowerArm.l", "lowerArm.r"], from: 0.52, to: 0.96 },
@@ -36,34 +33,28 @@ const DEFAULT_THICKNESS: Readonly<Record<WearRegionName, number>> = { head: 0.01
  * and pushed out a little, skinned to the same skeleton so it moves with every clip.
  */
 export interface WornLayer {
-  /** What it covers: a body area or a custom region. */
   region: WearRegionName | WearRegion;
-  /** Its surface: colour, roughness, a `scan` for cloth grain. Texture `maps` are not read. */
   material?: ModelMaterialOverride;
   /** How far it stands off the skin, as a share of the ankle-to-head span (0.005 is about 7 mm on an adult). Defaults per body area. */
   thickness?: number;
 }
 
-/** The region a worn layer covers. @internal */
+/** @internal */
 export function wornRegion(layer: WornLayer): WearRegion {
   return typeof layer.region === "string" ? WEAR_REGIONS[layer.region] : layer.region;
 }
 
-/** How far a worn layer stands off the skin, as a share of the ankle-to-head span. @internal */
+/** @internal */
 export function wornThickness(layer: WornLayer): number {
   return layer.thickness ?? (typeof layer.region === "string" ? DEFAULT_THICKNESS[layer.region] : 0.005);
 }
 
-/** One bone of a skin: its name and the index of its parent bone in the same list, or -1. */
 export interface SkinBone {
   name: string;
   parent: number;
 }
 
-/**
- * The standard slot each bone of a skin belongs to: its own when the humanoid standard maps it,
- * else its nearest mapped ancestor's. `null` throughout when the rig is not a humanoid. @internal
- */
+/** @internal */
 export function boneSlots(bones: readonly SkinBone[]): (SkeletonSlot | null)[] {
   const map = detectHumanoidRig(bones.map((bone) => bone.name));
   if (map === null) return bones.map(() => null);
@@ -85,14 +76,13 @@ export function boneSlots(bones: readonly SkinBone[]): (SkeletonSlot | null)[] {
   return bones.map((_, index) => resolve(index, 0));
 }
 
-/** Where the body stands in a skin's bind space: the point between the ankles, the unit up axis, and the ankle-to-head length. */
 export interface BodyFrame {
   origin: readonly [number, number, number];
   up: readonly [number, number, number];
   span: number;
 }
 
-/** The body frame from the bind-space positions of the head and both feet; `null` when they coincide. @internal */
+/** @internal */
 export function bodyFrame(head: readonly number[], footL: readonly number[], footR: readonly number[]): BodyFrame | null {
   const mid = (axis: number): number => ((footL[axis] ?? 0) + (footR[axis] ?? 0)) / 2;
   const origin: [number, number, number] = [mid(0), mid(1), mid(2)];
@@ -104,15 +94,10 @@ export function bodyFrame(head: readonly number[], footL: readonly number[], foo
   return { origin, up: [x / span, y / span, z / span], span };
 }
 
-/** A skinned mesh's data, read in the skin's bind space. */
 export interface SkinGeometry {
-  /** Bind-space positions, three per vertex. */
   positions: ArrayLike<number>;
-  /** Four bone indices per vertex. */
   skinIndex: ArrayLike<number>;
-  /** Four weights per vertex. */
   skinWeight: ArrayLike<number>;
-  /** Triangle corners, three per triangle; `null` for an unindexed mesh. */
   index: ArrayLike<number> | null;
 }
 

@@ -20,7 +20,6 @@ import { earn } from "./treasury";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
 import { grantResearch, RESEARCH_CONFIG, researchUnlocked, upgradeHave, upgradeRank, type UpgradeId } from "./upgrades";
 
-/** Each upgrade's rank, ranks under way and whether its requirement holds, for the command card. */
 function researchViews(): Record<UpgradeId, ResearchView> {
   const view = (id: UpgradeId): ResearchView => ({ rank: upgradeRank(id), have: upgradeHave(id), unlocked: researchUnlocked(id) });
   return { weapons: view("weapons"), armor: view("armor"), assault: view("assault"), bulwark: view("bulwark") };
@@ -33,7 +32,6 @@ function keepStat(ctx: GameContext, faction: "player" | "enemy"): { current: num
   return stat === null ? { current: 0, max: 1 } : { current: Math.max(0, Math.round(stat.current)), max: stat.max };
 }
 
-/** Spawn a freshly-trained unit at the Town Hall's muster point and walk it onto the field. */
 function spawnTrained(ctx: GameContext, unitId: string): void {
   const keepUnit = livingUnits("player", "building")[0];
   if (keepUnit === undefined) return;
@@ -61,7 +59,6 @@ function spawnTrained(ctx: GameContext, unitId: string): void {
   session.units.set(id, unit);
 }
 
-/** The RTS heartbeat: unit orders + auto-combat resolve every frame. */
 const aiSystem: SystemDefinition = defineSystem({
   id: "ember-command.ai",
   tick: { type: "frame", stage: "ai" },
@@ -70,7 +67,6 @@ const aiSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** The Marauder AI director: musters escalating reinforcement waves from the enemy Warcamp. */
 const enemyAiSystem: SystemDefinition = defineSystem({
   id: "ember-command.enemyAi",
   tick: { type: "frame", stage: "ai" },
@@ -80,7 +76,6 @@ const enemyAiSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** Keep the chosen formation: a member that drifted off its slot walks back while it is quiet. */
 const formationSystem: SystemDefinition = defineSystem({
   id: "ember-command.formation",
   tick: { type: "frame", stage: "ai" },
@@ -89,7 +84,6 @@ const formationSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** The Vanguard's eyes this tick: every living friendly unit and building, hero furthest. */
 function playerSightSources(ctx: GameContext): SightSource[] {
   const eyes: SightSource[] = [];
   for (const unit of session.units.values()) {
@@ -126,7 +120,6 @@ const fogSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** Hero upkeep: mana regen + ability cooldown. */
 const heroSystem: SystemDefinition = defineSystem({
   id: "ember-command.hero",
   tick: { type: "frame", stage: "combat" },
@@ -135,7 +128,6 @@ const heroSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** Advance the Town Hall training queue; each completed job spawns and musters a unit. */
 const productionSystem: SystemDefinition = defineSystem({
   id: "ember-command.production",
   tick: { type: "frame", stage: "combat" },
@@ -150,7 +142,6 @@ const productionSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** Raise a finished building at its placed spot; a Farm lifts the supply cap. */
 export function raiseBuilding(ctx: GameContext, spec: BuildSpec): void {
   const def = combatantDef(spec.type);
   if (def === null) return;
@@ -172,7 +163,6 @@ export function raiseBuilding(ctx: GameContext, spec: BuildSpec): void {
   if (supply !== undefined) session.supplyCap += supply;
 }
 
-/** Advance construction; each finished job raises its building. */
 const constructionSystem: SystemDefinition = defineSystem({
   id: "ember-command.construction",
   tick: { type: "frame", stage: "combat" },
@@ -187,7 +177,6 @@ const constructionSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** Advance the research queue; each finished job raises its upgrade's rank permanently. */
 const researchSystem: SystemDefinition = defineSystem({
   id: "ember-command.research",
   tick: { type: "frame", stage: "combat" },
@@ -201,7 +190,6 @@ const researchSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** Guard Towers auto-fire at the nearest hostile within range (shared pursuit + auto-target). */
 const towerSystem: SystemDefinition = defineSystem({
   id: "ember-command.towers",
   tick: { type: "frame", stage: "combat" },
@@ -220,7 +208,6 @@ const incomeSystem: SystemDefinition = defineSystem({
   },
 });
 
-/** The player's fielded combat units (non-hero, non-building), with live health, for the army row. */
 function armyRoster(ctx: GameContext): { id: string; kind: string; hp: number; max: number }[] {
   const out: { id: string; kind: string; hp: number; max: number }[] = [];
   for (const u of session.units.values()) {

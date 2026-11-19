@@ -36,7 +36,6 @@ export interface CozyEventSpawnInputs {
   hasUnresolvedEvent: boolean;
   lastEventSpawnAt: number;
   now: number;
-  /** Uniform draw in [0, 1) selecting which cozy event fires. */
   rngUnit: number;
   servingIncomePerHour: number;
 }

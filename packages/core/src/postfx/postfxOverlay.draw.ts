@@ -12,10 +12,7 @@ export const POSTFX_OVERLAY_USERDATA: { readonly jgPostfxOverlay: true } = {
   jgPostfxOverlay: true,
 };
 
-/**
- * True when the object opted out of postfx scene prepasses via {@link POSTFX_OVERLAY_USERDATA}.
- * @internal
- */
+/** @internal */
 export function isPostfxOverlay(object: { userData?: Record<string, unknown> }): boolean {
   return object.userData?.["jgPostfxOverlay"] === true;
 }
@@ -26,21 +23,21 @@ function isUnmodelledDrawable(object: THREE.Object3D): boolean {
   return drawable.isPoints === true || drawable.isLine === true || drawable.isLine2 === true;
 }
 
-/** Whether one node, and with it its whole subtree, stays out of a scene prepass. @internal */
+/** @internal */
 export type PrepassExclusion = (node: THREE.Object3D) => boolean;
 
-/** A depth or AO prepass leaves out marked overlays. @internal */
+/** @internal */
 export const excludesOverlays: PrepassExclusion = (node) => isPostfxOverlay(node);
 
 /** The AO normal prepass also leaves out points and lines, which three's GTAO pass cannot describe. @internal */
 export const excludesOverlaysAndUnmodelled: PrepassExclusion = (node) => isPostfxOverlay(node) || isUnmodelledDrawable(node);
 
-/** The renderer surface {@link drawPrepassExcluding} reads: three's render lists, which `WebGLRenderer` exposes. @internal */
+/** @internal */
 export interface PrepassListRenderer {
   renderLists: { get(scene: THREE.Object3D, renderCallDepth: number): PrepassRenderList };
 }
 
-/** What a prepass drops from three's render list for one scene render. @internal */
+/** @internal */
 export interface PrepassRenderList {
   opaque: { object: THREE.Object3D }[];
   transmissive: { object: THREE.Object3D }[];

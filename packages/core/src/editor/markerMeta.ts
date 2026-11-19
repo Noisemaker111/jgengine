@@ -4,7 +4,6 @@
  * instead of reaching the game as `NaN` or the text "undefined".
  */
 
-/** Any authored object that carries `meta`: a marker, volume, path or catalog entry. */
 export interface WithMeta {
   readonly id: string;
   readonly meta?: Readonly<Record<string, unknown>> | undefined;
@@ -32,7 +31,6 @@ export function metaNumber(item: WithMeta, key: string, fallback: number): numbe
   return number;
 }
 
-/** The text `meta[key]` holds, or `undefined` when the scene leaves the key out. A value that is not text fails. */
 export function metaText(item: WithMeta, key: string): string | undefined {
   const value = metaValue(item, key);
   if (value === undefined || typeof value === "string") return value;

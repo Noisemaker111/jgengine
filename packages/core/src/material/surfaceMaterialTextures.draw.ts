@@ -15,10 +15,7 @@ export function bakeSurfaceMaterialShared(spec: SurfaceMaterialSpec, detail = 1)
   return runToEnd(bakeSurfaceMaterialSharedJob(spec, detail));
 }
 
-/**
- * {@link bakeSurfaceMaterialShared} as a sliced job, for bakes that run at load under `runSliced`.
- * @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
- */
+/** @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow) */
 export function* bakeSurfaceMaterialSharedJob(spec: SurfaceMaterialSpec, detail = 1): SlicedJob<SurfaceMaterialMaps> {
   const key = `${detail}|${spec.preset ?? ""}|${spec.seed ?? ""}|${JSON.stringify(spec.params ?? {})}`;
   const hit = baked.get(key);
@@ -48,13 +45,10 @@ function configure<T extends THREE.Texture>(texture: T, srgb: boolean): T {
   return texture;
 }
 
-/** Baked surfaces stacked as array-texture layers, one layer per material, in the order given. */
 export interface SurfaceMaterialArrayTextures {
   /** sRGB albedo, height in alpha. */
   albedo: THREE.DataArrayTexture;
-  /** Normal x/y, roughness, AO. */
   surface: THREE.DataArrayTexture;
-  /** Each layer's mean linear albedo. */
   means: readonly THREE.Color[];
   dispose(): void;
 }
@@ -89,11 +83,9 @@ export function surfaceMaterialArrayTextures(layers: readonly SurfaceMaterialMap
   };
 }
 
-/** A baked surface as the maps a stock `MeshStandardMaterial` reads. */
 export interface SurfaceMaterialStandardMaps {
   /** sRGB albedo. */
   map: THREE.DataTexture;
-  /** Tangent-space normal map. */
   normalMap: THREE.DataTexture;
   /** glTF-style packed map: AO in red, roughness in green; set as both `aoMap` and `roughnessMap`. */
   ormMap: THREE.DataTexture;

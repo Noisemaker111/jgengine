@@ -1,7 +1,6 @@
 import type { EditorBridgeRequest } from "../session";
 import { buildInputSchema } from "./fieldSpec";
 
-/** One MCP tool descriptor — same verbs as the in-browser host RPC. */
 export interface EditorMcpTool {
   name: string;
   description: string;
@@ -125,7 +124,6 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "import_grid", description: "Import an ASCII/glyph map or CSV into a new grid layer (the ASCII/CSV is an import adapter, not the stored form)." },
 ];
 
-/** Full set of MCP tools an agent can call to drive the live scene editor. */
 export const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] = TOOL_DESCRIPTIONS.map(({ name, description }) => ({
   name,
   description,

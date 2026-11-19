@@ -7,11 +7,7 @@ import { localPlayers, type LocalPlayerSlot } from "@jgengine/core/runtime/local
 
 import { useSeatViewports } from "@jgengine/core/camera/Viewports.draw";
 
-/**
- * One absolutely-positioned HUD root per viewport, laid over the canvas: render each seat's own
- * health, prompts or score with `children(slot)`. Pass the same `viewports` config the game gave `defineGame`.
- * @capability split-screen-hud Per-seat HUD roots positioned over each split-screen viewport.
- */
+/** @capability split-screen-hud Per-seat HUD roots positioned over each split-screen viewport. */
 export function ViewportHuds({
   ctx,
   config,

@@ -13,18 +13,11 @@ const HEAT_BADGE: Record<RackHeatBand, [string, string]> = {
   hot: ["#ef4444cc", "#ffffff"],
 };
 
-/**
- * One GPU card face (or an empty bay): the product shot behind its name, speed and memory, with a
- * stack count and the card's temperature. Interaction comes from the `RuneAction` that wraps it.
- */
 export default function RackSlot({ hardwareModelId, count, temperatureC, slotNumber, width }: {
   /** When set, the slot holds this hardware; otherwise it shows an empty bay. */
   hardwareModelId?: HardwareModelId | undefined;
-  /** Stack count for inventory display (×2 and up). */
   count?: number | undefined;
-  /** Card temperature from rack thermal v3 (°C). */
   temperatureC?: number | undefined;
-  /** Slot number label for rack bays. */
   slotNumber?: number | undefined;
   width?: number | undefined;
 }) {

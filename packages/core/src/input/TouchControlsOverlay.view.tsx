@@ -29,7 +29,6 @@ import {
 } from "./touchClusterLayout";
 import { TouchGlyph, touchButtonFace } from "./touchIcons.view";
 
-
 const MOVEMENT_ZONE = { id: "control:movement", kind: "control", collisionPolicy: "forbid", collisionGroup: "touch-dock" } as const;
 const ACTIONS_ZONE = { id: "control:actions", kind: "control", collisionPolicy: "forbid", collisionGroup: "touch-dock" } as const;
 const UTILITY_ZONE = { id: "control:utility", kind: "control", collisionPolicy: "warn", collisionGroup: "touch-dock" } as const;
@@ -51,7 +50,6 @@ const LOOK_TAP_TUNING = { tapMoveThresholdPx: 12, tapMaxMs: 280, longPressMs: 45
 const RAIL_BUTTON_SIZE = DOCK_GEOMETRY.railButton;
 const DOCK_BASE_PADDING = DOCK_GEOMETRY.basePadding;
 
-/** width:height footprint of each silhouette; the longer side equals the button size. */
 const SHAPE_ASPECT: Record<TouchButtonShape, { w: number; h: number }> = {
   circle: { w: 1, h: 1 },
   square: { w: 1, h: 1 },
@@ -63,7 +61,6 @@ const SHAPE_ASPECT: Record<TouchButtonShape, { w: number; h: number }> = {
 };
 
 interface StyleTokens {
-  /** Main-button rim and glyph tint. */
   accent: string;
   restFill: string;
   restStroke: string;
@@ -164,7 +161,6 @@ const STYLE_TOKENS: Record<TouchStyle, StyleTokens> = {
 export interface TouchViewport {
   width: number;
   height: number;
-  /** `min(width, height)`: the cluster's buttons size from it. */
   shortSide: number;
 }
 
@@ -182,11 +178,7 @@ function readViewport(): TouchViewport {
   return { width, height, shortSide: Math.min(width, height) };
 }
 
-/**
- * The viewport size, kept current across resizes and rotation; the touch dock sizes and reserves space from it.
- *
- * @internal
- */
+/** @internal */
 export function useTouchViewport(): TouchViewport {
   const [viewport, setViewport] = useState(readViewport);
   useEffect(() => {
@@ -328,7 +320,6 @@ function joystickAnalogValues(joystick: TouchJoystick, nx: number, ny: number): 
   return values;
 }
 
-/** Shared drag state machine for both joystick variants: converts pointer travel around an origin into digital edge codes + analog magnitudes, and releases both on lift. */
 function useJoystickDrag(joystick: TouchJoystick, sink: TouchCodeSink) {
   const activeRef = useRef<Set<string>>(new Set());
 
@@ -621,7 +612,6 @@ function ButtonFace({ button, size, color }: { button: TouchButton; size: number
   );
 }
 
-/** Holds a touch code down while a pointer is on the element; shared by every pressable in the dock. */
 function usePressable(action: string, sink: TouchCodeSink) {
   const pointerIdRef = useRef<number | null>(null);
   const [pressed, setPressed] = useState(false);
@@ -661,7 +651,6 @@ function TouchActionButton({
   sink: TouchCodeSink;
   tokens: StyleTokens;
   size: number;
-  /** `box` centers the silhouette in a uniform square (thumb-arc); `natural` uses the shape's own footprint (rails). */
   fit: "box" | "natural";
   /** The cluster's big fire/attack button: accent rim, and a round plate instead of the trigger paddle. */
   main?: boolean;
@@ -715,7 +704,6 @@ function TouchActionButton({
   );
 }
 
-/** Small round icon chip for slots and menu-type actions. */
 function TouchChip({
   action,
   label,
@@ -784,10 +772,6 @@ function SlotStrip({ slots, sink, tokens, size, gap }: { slots: readonly string[
   );
 }
 
-/**
- * Menu-type actions (open skills, map, inventory…) as small icon chips; past
- * {@link UTILITY_INLINE_LIMIT} they fold behind one overflow chip that opens a short list.
- */
 function UtilityGroup({
   buttons,
   sink,
@@ -842,11 +826,6 @@ function UtilityGroup({
   );
 }
 
-/**
- * The right-thumb cluster: one big main button in the corner, secondaries on tight arcs around
- * it, and a small row above for slot chips and menu-type buttons. `side` mirrors it for a
- * bottom-left dock.
- */
 function ThumbArcCluster({
   buttons,
   slots,
@@ -901,7 +880,6 @@ function ThumbArcCluster({
   );
 }
 
-/** Vertical rail (`left`/`right`) or a wrapping row for the remaining anchors. */
 function StackCluster({
   buttons,
   utility,
@@ -996,7 +974,6 @@ function bucketByAnchor(buttons: readonly TouchButton[]): Map<TouchAnchor, Ancho
   return map;
 }
 
-/** Buttons a game pinned to one anchor; registered as a control region so HUD panels keep clear of them. */
 function AnchoredButtons({
   anchor,
   bucket,
@@ -1045,11 +1022,8 @@ export function TouchControlsDock({
 }: {
   scheme: TouchScheme;
   sink: TouchCodeSink;
-  /** Player-selected skin; falls back to the scheme's game default. */
   style?: TouchStyle;
-  /** Multiplies the joystick and side-rail buttons; the thumb cluster sizes from `shortSide`. */
   scale?: number;
-  /** Player-selected joystick behavior (Settings → Controls). Default `floating`. */
   joystickVariant?: TouchJoystickVariant;
   /** Viewport short side in CSS px the cluster sizes from; unset measures the window. */
   shortSide?: number;

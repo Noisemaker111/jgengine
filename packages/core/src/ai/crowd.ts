@@ -261,40 +261,29 @@ export function selectPoi(pois: readonly Poi[], from: NavPoint, options: SelectP
   return pickWeighted(() => roll, eligible, (c) => c.weight)?.poi ?? null;
 }
 
-/** A many-agent visitor's current step of the seek→travel→arrive→dwell→depart loop. */
 export type VisitorPhase = "seeking" | "traveling" | "dwelling" | "departing" | "done";
 
-/** One tick's result from a {@link VisitorLoop}: current phase, where to steer, and which POI it concerns. */
 export interface VisitorStep {
   phase: VisitorPhase;
-  /** Where to steer this tick (feed `scene.entity.moveToward`/`moveTowardCommit`), or `null` once `done` or stuck `seeking` with no eligible POI. */
   target: NavPoint | null;
   poiId: string | null;
 }
 
-/** Config for {@link createVisitorLoop}: the POI catalog, dwell duration, and exit point every agent shares. */
 export interface VisitorLoopOptions {
   pois: readonly Poi[];
   /** How long (ms, sim time) a visitor lingers once it arrives at a POI. */
   dwellMs: (poi: Poi) => number;
-  /** Where a visitor heads once its dwell ends — a fixed exit/despawn point, or one resolved per agent (multiple gates). */
   exitPoint: NavPoint | ((agentId: string) => NavPoint);
-  /** Distance under which "traveling"/"departing" counts as arrived. Default 1. */
   arriveRadius?: number;
   occupancy?: (poiId: string) => number;
   distanceBias?: number;
   distance?: (from: NavPoint, poi: Poi) => number;
-  /** Fires once, on the traveling→dwelling transition (e.g. `crowdField.enter(poi.point)`). */
   onArrive?: (agentId: string, poiId: string) => void;
-  /** Fires once, on the dwelling→departing transition (e.g. `crowdField.leave(poi.point)`). */
   onDepart?: (agentId: string, poiId: string) => void;
 }
 
-/** Handle returned by {@link createVisitorLoop}: per-agent seek/travel/dwell/depart state machine. */
 export interface VisitorLoop {
-  /** Registers `agentId` in the `"seeking"` phase; `tick` also auto-spawns on first call. */
   spawn(agentId: string): VisitorStep;
-  /** Advances one agent by `dtMs` from its current `position`; `roll()` feeds `selectPoi`'s weighted pick. */
   tick(agentId: string, position: NavPoint, dtMs: number, roll: () => number): VisitorStep;
   get(agentId: string): VisitorStep | null;
   remove(agentId: string): void;

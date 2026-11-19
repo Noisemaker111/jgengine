@@ -4,17 +4,13 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "@jgen
 
 import type { SequenceDirector, SequenceState } from "@jgengine/core/cutscene/sequenceDirector";
 
-/** The live playback state plus bound controls returned by {@link useSequenceDirector}. */
 export interface SequenceDirectorBinding extends SequenceState {
-  /** Start or resume playback. */
   play: () => void;
   /** Freeze the playhead. */
   pause: () => void;
-  /** Fast-forward to the end, emitting remaining cues. */
   skip: () => void;
   /** Jump the playhead to `ms`. */
   seek: (ms: number) => void;
-  /** Halt and rewind to the start. */
   stop: () => void;
 }
 
@@ -56,17 +52,12 @@ export function useSequenceDirector(director: SequenceDirector): SequenceDirecto
   };
 }
 
-/** Reskin tokens for {@link CutsceneLetterbox}. */
 export interface CutsceneLetterboxTheme {
-  /** Cinematic bar color. Default solid black. */
   barColor?: string;
   /** Height of each bar as a fraction of the viewport height, in `[0, 0.5]`. Default `0.12`. */
   barFraction?: number;
-  /** Caption panel background. */
   captionBackground?: string;
-  /** Caption text color. */
   captionText?: string;
-  /** Skip button accent. Default reads `--jg-accent`. */
   accent?: string;
 }
 
@@ -80,19 +71,13 @@ function resolveTheme(theme: CutsceneLetterboxTheme | undefined): Required<Cutsc
   };
 }
 
-/** Props for {@link CutsceneLetterbox}. */
 export interface CutsceneLetterboxProps {
-  /** When `true`, the cinematic bars are drawn in; when `false` they retract off-screen. */
   active: boolean;
-  /** Optional caption / dialogue node shown centered above the lower bar. */
   caption?: ReactNode;
-  /** Skip handler. When provided, a Skip button renders in the top bar. */
   onSkip?: () => void;
-  /** Skip button label. Default `"Skip"`. */
   skipLabel?: string;
   /** Elapsed fraction `[0, 1]` for the thin progress line under the caption; omit to hide it. */
   progress?: number;
-  /** Reskin tokens. */
   theme?: CutsceneLetterboxTheme;
   className?: string;
   style?: CSSProperties;

@@ -9,16 +9,11 @@ import { childFrameState } from "./engineLoop.draw";
  */
 const loads = new Map<string | symbol, Promise<unknown>>();
 
-/**
- * Drop every cached load (tests, scene teardown). Loads already handed to a
- * live draw keep their result; only the shared promise is forgotten.
- */
 export function clearLoadDrawCache(): void {
   loads.clear();
 }
 
 export interface LoadDrawOptions<T> {
-  /** Start (or join) the load. Called once per cache key. */
   load: () => Promise<T>;
   /**
    * Cache key sharing one load across draws. Defaults to a unique symbol per

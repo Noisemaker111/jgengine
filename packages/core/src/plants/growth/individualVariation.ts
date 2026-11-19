@@ -18,19 +18,12 @@ const INDIVIDUAL_SPREAD = {
    * only in how much of it they lose with age; a weaker seedling leader would fork at the ground.
    */
   apicalLeak: 0.3,
-  /** Log-scale spread of the vigour sent to horizontal shoots. */
   horizontalVigour: 0.35,
-  /** Log-scale spread of gravitropic pull. */
   gravity: 0.4,
-  /** Log-scale spread of internode length. */
   internode: 0.06,
 } as const;
 
-/**
- * The growth parameters of the individual a seed grows: the species record with each varying trait
- * drawn around it, the same for the same seed.
- * @internal
- */
+/** @internal */
 export function individualGrowth(growth: PlantSpecies["growth"], seed: RandomSeed): PlantSpecies["growth"] {
   let cursor = seed;
   const normal = (): number => {

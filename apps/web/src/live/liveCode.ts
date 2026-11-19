@@ -1,14 +1,9 @@
-/**
- * Shows a snippet with the demo's current settings written into it. The snippet file stays the
- * type-checked source; this only swaps the numbers and names a slider or toggle controls.
- */
 export type DialValue = number | boolean | string;
 export type DialSet = Readonly<Record<string, DialValue>>;
 
 export interface LiveCodeSpec {
   /** Dial key -> the property name in the code whose number it sets (defaults to the dial key). */
   values?: Readonly<Record<string, { prop?: string; format?: (value: number) => string }>>;
-  /** Text swaps: every `from` becomes `to(dials)`. Use for names (a style) and lines a toggle adds. */
   swaps?: readonly { from: string; to: (dials: DialSet) => string }[];
 }
 

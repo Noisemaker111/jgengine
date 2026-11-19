@@ -18,12 +18,10 @@ export interface LutCube {
   data: Uint8Array;
 }
 
-/** A grade's LUT: a strip PNG (one `size`-wide tile per blue slice), a `.cube` file URL or a baked cube. */
 export type GradeLut = { url: string; size?: number } | { cube: LutCube };
 
 /** UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive). */
 export interface BloomConfig {
-  /** Glow intensity. Default 0.32. */
   strength?: number;
   /** Glow spread radius, 0..1. Default 0.55. */
   radius?: number;
@@ -35,19 +33,14 @@ export interface BloomConfig {
   threshold?: number;
 }
 
-/** Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth. */
 export interface AoConfig {
-  /** Sample radius in world units. Default 1.8. */
   radius?: number;
-  /** Occlusion strength multiplier. Default 2.4. */
   intensity?: number;
-  /** Distance over which occlusion fades out, world units. Default 3.6. */
   distanceFalloff?: number;
   /** Blend the AO onto the beauty at this fraction, 0..1. Default 1. */
   blend?: number;
 }
 
-/** Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping. */
 export interface GradeConfig {
   /**
    * Colour LUT applied after the numeric grade, in display space. Either a strip PNG (one
@@ -57,31 +50,23 @@ export interface GradeConfig {
   lut?: GradeLut;
   /** Additive shadow tint (RGB, ~0..0.1). Default cool [0.012, 0.010, 0.018]. */
   lift?: readonly [number, number, number];
-  /** Multiplicative highlight tint (RGB, ~1). Default warm [1.05, 1.02, 0.98]. */
   gain?: readonly [number, number, number];
-  /** Output gamma. Default 0.96. */
   gamma?: number;
-  /** Saturation multiplier around luma. Default 1.12. */
   saturation?: number;
   /** Vignette darkening strength at the corners, 0..1. Default 0.2. */
   vignette?: number;
-  /** Animated film-grain amplitude. Default 0.012. */
   grain?: number;
   /** Chromatic-aberration RGB split, in fractions of the frame (~0..0.01), scaled toward the edges. Default 0 (off). */
   chromaticAberration?: number;
 }
 
-/** Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance. */
 export interface DofConfig {
-  /** Focus distance from the camera in world units. Default 18. */
   focus?: number;
-  /** Aperture — larger blurs a shallower slice more aggressively. Default 0.00025. */
   aperture?: number;
   /** Maximum blur radius, 0..1. Default 0.01. */
   maxBlur?: number;
 }
 
-/** Ink outlines traced from depth and surface-normal edges — silhouettes plus interior creases. */
 export interface OutlineConfig {
   /** Line colour (CSS). Default near-black "#101014". */
   color?: string;
@@ -89,11 +74,8 @@ export interface OutlineConfig {
   thickness?: number;
   /** Line opacity, 0..1. Default 1. */
   opacity?: number;
-  /** Relative depth jump that counts as a silhouette edge. Lower draws more lines. Default 0.08. */
   depthThreshold?: number;
-  /** Normal difference (1 − cos angle) that counts as a crease. Lower draws more lines. Default 0.35. */
   normalThreshold?: number;
-  /** Distance in world units at which lines have faded out, so far scenery stays clean. Default 160. */
   fadeDistance?: number;
 }
 
@@ -103,9 +85,7 @@ export interface OutlineConfig {
  * Runs after tone mapping, before the grade.
  */
 export interface StylizeConfig {
-  /** Ink outlines. Omitted or `false` draws none. */
   outline?: OutlineConfig | false;
-  /** Quantize brightness into this many cel-shading bands, keeping hue. 0 or omitted is off; 3–6 reads as cartoon. */
   bands?: number;
   /** Snap the frame to blocks of this many render pixels for a retro look. 0, 1 or omitted is off. */
   pixelSize?: number;
@@ -124,11 +104,8 @@ export type PostAaMode = "taa" | "smaa" | "msaa" | false;
 export interface ContactShadowConfig {
   /** How dark a contact shadow gets, 0..1. Default 0.6. */
   intensity?: number;
-  /** Ray length toward the sun in world units; longer reaches further from a contact. Default 0.45. */
   length?: number;
-  /** Depth an occluder is assumed to have, world units. Default 0.3. */
   thickness?: number;
-  /** Camera distance in world units where contact shadows have faded out. Default 70. */
   distance?: number;
 }
 
@@ -140,15 +117,11 @@ export interface ContactShadowConfig {
  * glow running so a sunless interior gets its air and its lit lamps.
  */
 export interface AtmosphereConfig {
-  /** Haze density per world unit at `fogHeight`; 0 turns the haze off. Default 0.0006. */
   fogDensity?: number;
-  /** How fast the haze thins with height, per world unit. Default 0.15. */
   fogFalloff?: number;
-  /** World height where the haze is densest. Default 0. */
   fogHeight?: number;
   /** Most the haze may cover a far surface, 0..1. Default 0.65. */
   fogMax?: number;
-  /** Light-shaft strength; 0 turns shafts off. Default 0.3. */
   shafts?: number;
   /**
    * How strongly the nearest point and spot lights (up to eight) glow in the haze; 0 turns the glow
@@ -162,19 +135,13 @@ export interface AtmosphereConfig {
    * a ceiling lamp throws a shaft onto the floor. Default 0.
    */
   beams?: number;
-  /**
-   * Run with no shadow-casting sun: the haze and the lamp glow stay on and only the shafts drop
-   * out. Default false, which skips the whole pass while there is no sun.
-   */
   indoor?: boolean;
-  /** Haze colour (CSS). Omitted, the haze takes the scene fog's colour, else the background's. */
   color?: string;
   /**
    * How patchy the haze is, 0..1: 0 is an even layer, 1 lets drifting banks thin to nothing and
    * thicken to twice the density. Default 0.
    */
   variation?: number;
-  /** Width of one haze bank in world units. Default 60. */
   patchSize?: number;
   /**
    * How fast the banks ride the shared wind (`windDirection`, `windGust`, `windClock` in
@@ -192,18 +159,14 @@ export interface AtmosphereConfig {
 export interface SsrConfig {
   /** How much of a hit replaces the surface colour at full Fresnel, 0..1. Default 0.5. */
   intensity?: number;
-  /** Reflectance looking straight down at the surface (Schlick F0). 0.04 is most dielectrics; 0.02 is water. Default 0.04. */
   reflectance?: number;
-  /** Longest reflected ray in world units. Default 24. */
   maxDistance?: number;
-  /** Depth a surface the ray passes behind is assumed to have, world units. Default 0.6. */
   thickness?: number;
   /**
    * Upward tilt a surface needs before it reflects: the world-space normal's y, -1..1. 0.6 keeps
    * floors, roads and water; -1 reflects walls too. Default 0.6.
    */
   minUp?: number;
-  /** Camera distance in world units where reflections have faded out. Default 120. */
   fadeDistance?: number;
   /**
    * Roughness below which a standard material reflects, fading in as it gets smoother; rough ground,
@@ -219,13 +182,10 @@ export interface SsrConfig {
  * entity is registered) blur along their own screen motion. Each part has its own strength.
  */
 export interface MotionBlurConfig {
-  /** Strength of the blur from camera movement; 0 turns it off, 1 is the shutter below. Default 1. */
   camera?: number;
-  /** Strength of the blur from moving bodies; 0 turns it off. Default 1. */
   objects?: number;
   /** Shutter open time as a fraction of a 60 Hz frame, so blur length is the same at any frame rate. Default 0.5. */
   shutter?: number;
-  /** Longest blur as a fraction of the frame's width. Default 0.05. */
   maxBlur?: number;
 }
 
@@ -237,9 +197,7 @@ export interface MotionBlurConfig {
  * three.js types leak into core.
  */
 export interface PostProcessingConfig {
-  /** Master switch; a config object with `enabled: false` mounts nothing. Default true. */
   enabled?: boolean;
-  /** Tone-mapping curve the output stage applies. Default "agx". */
   toneMapping?: ToneMappingMode;
   /**
    * Exposure multiplier applied before tone mapping. Default 1. With `autoExposure` on this is the
@@ -252,17 +210,8 @@ export interface PostProcessingConfig {
    * {@link import("./colorPipeline").DEFAULT_AUTO_EXPOSURE} on every tier; `false` pins `exposure`.
    */
   autoExposure?: AutoExposureConfig | false;
-  /**
-   * Antialiasing. Omitted lets the graphics tier choose: temporal AA on high and ultra, SMAA below.
-   * `"taa"` or `"smaa"` pins one on every tier, `"msaa"` keeps only the multisample resolve, and
-   * `false` turns antialiasing off.
-   */
   aa?: PostAaMode;
   bloom?: BloomConfig | false;
-  /**
-   * Ambient occlusion (contact shading). Omitted runs {@link DEFAULT_AO} on graphics tiers whose
-   * `postStages.ao` is on (medium and up); `false` turns it off everywhere.
-   */
   ao?: AoConfig | false;
   /**
    * Short screen-space shadows toward the sun, so feet, wheels, crates and props sit on the ground
@@ -270,32 +219,20 @@ export interface PostProcessingConfig {
    * medium and up; `false` turns it off. Needs the beauty depth, so an `aa: "msaa"` chain skips it.
    */
   contactShadows?: ContactShadowConfig | false;
-  /**
-   * Height haze and sun shafts ({@link AtmosphereConfig}). Omitted runs {@link DEFAULT_ATMOSPHERE},
-   * tuned per `mood`, on medium and up; `false` turns both off.
-   */
   atmosphere?: AtmosphereConfig | false;
   /**
    * Screen-space reflections ({@link SsrConfig}). Omitted or `false` builds none; runs on medium and
    * up while the player's `ssr` toggle is on.
    */
   ssr?: SsrConfig | false;
-  /**
-   * Camera and per-object motion blur ({@link MotionBlurConfig}). Omitted or `false` builds none;
-   * runs on medium and up while the player's `motionBlur` toggle is on.
-   */
   motionBlur?: MotionBlurConfig | false;
-  /** Depth-of-field / bokeh. Heavier stage — omit or `false` to skip. Default off (omitted). */
   dof?: DofConfig | false;
   grade?: GradeConfig | false;
-  /** Art-style stage: outlines, cel bands, pixelation. Default off (omitted). */
   stylize?: StylizeConfig | false;
 }
 
-/** Contact shading used when a post chain leaves `ao` unset: soft creases, no dark halos. */
 export const DEFAULT_AO: Readonly<AoConfig> = { radius: 1.3, intensity: 1.3, distanceFalloff: 2.8, blend: 1 };
 
-/** Contact shadows used when a post chain leaves `contactShadows` unset. */
 export const DEFAULT_CONTACT_SHADOWS: Readonly<Required<ContactShadowConfig>> = {
   intensity: 0.6,
   length: 0.45,
@@ -303,7 +240,6 @@ export const DEFAULT_CONTACT_SHADOWS: Readonly<Required<ContactShadowConfig>> = 
   distance: 70,
 };
 
-/** Height haze and light shafts used when a post chain leaves `atmosphere` unset. */
 export const DEFAULT_ATMOSPHERE: Readonly<Required<AtmosphereConfig>> = {
   fogDensity: 0.0006,
   fogFalloff: 0.15,

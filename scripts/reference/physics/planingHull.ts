@@ -14,10 +14,7 @@ export function savitskyLiftCoefficient(trimDeg: number, meanWettedLengthRatio: 
   return cl0 - 0.0065 * deadriseDeg * cl0 ** 0.6;
 }
 
-/**
- * The mean wetted length–beam ratio `λ` at which the surface carries `liftCoefficient` (bisection on Savitsky's lift).
- * @capability planing-hull Savitsky wetted length for a lift coefficient
- */
+/** @capability planing-hull Savitsky wetted length for a lift coefficient */
 export function savitskyWettedLength(trimDeg: number, liftCoefficient: number, speedCoefficient: number, deadriseDeg: number): number {
   let low = 1e-4;
   let high = 1;
@@ -30,72 +27,45 @@ export function savitskyWettedLength(trimDeg: number, liftCoefficient: number, s
   return 0.5 * (low + high);
 }
 
-/** A prismatic planing hull for Savitsky's method, SI units. */
 export interface PlaningHull {
   massKg: number;
-  /** Chine beam, m. */
   beam: number;
-  /** Deadrise, rad. */
   deadrise: number;
-  /** Centre of gravity forward of the transom, m. */
   lcg: number;
-  /** Centre of gravity above the keel, m. */
   vcg: number;
-  /** Thrust line inclination to the keel, rad (default `0`). */
   thrustAngle?: number;
-  /** Distance from the centre of gravity to the thrust line, normal to it, m; positive when the line passes below G (default `0`). */
   thrustOffset?: number;
-  /** Hull roughness allowance on the friction coefficient (default `0.0004`, Savitsky's full-scale figure). */
   roughnessAllowance?: number;
 }
 
-/** Fluid for a planing calculation. */
 export interface PlaningFluid {
   density?: number;
   viscosity?: number;
   gravity?: number;
 }
 
-/** A planing hull's running state at one speed and trim. */
 export interface PlaningState {
   speed: number;
-  /** Trim, rad. */
   trim: number;
-  /** `C_V = V/√(g·b)`. */
   speedCoefficient: number;
-  /** `C_Lβ = Δ / (½ρV²b²)`. */
   liftCoefficient: number;
-  /** Mean wetted length over beam. */
   wettedLengthRatio: number;
-  /** Wetted keel and chine lengths, m (the chine length is 0 once the chines run dry). */
   keelLength: number;
   chineLength: number;
-  /** Draught of the keel at the transom, m. */
   transomDraft: number;
   /** Mean velocity over the bottom, m/s. */
   bottomVelocity: number;
   reynolds: number;
   frictionCoefficient: number;
-  /** Viscous drag along the bottom, N. */
   friction: number;
-  /** Centre of pressure forward of the transom, m. */
   centreOfPressure: number;
-  /** Bottom pressure force normal to the keel, N. */
   normalForce: number;
-  /** Thrust needed along the thrust line, N. */
   thrust: number;
-  /** Horizontal resistance (thrust times the cosine of its angle to the water), N. */
   resistance: number;
-  /** Trimming moment about the centre of gravity, N·m (zero at equilibrium; positive trims bow up). */
   moment: number;
 }
 
-/**
- * Savitsky's planing equations at a given trim: wetted length from the lift fit, mean bottom velocity, Schoenherr
- * friction, the centre of pressure `l_p/(λb) = 0.75 − 1/(5.21·C_V²/λ² + 2.39)`, and the force and moment balance with the
- * thrust line.
- * @capability planing-hull Savitsky planing forces, wetted length and pitching moment at a trim
- */
+/** @capability planing-hull Savitsky planing forces, wetted length and pitching moment at a trim */
 export function planingAtTrim(hull: PlaningHull, speed: number, trim: number, fluid: PlaningFluid = {}): PlaningState {
   const rho = fluid.density ?? 1025;
   const nu = fluid.viscosity ?? SEA_WATER_VISCOSITY;
@@ -151,19 +121,12 @@ export function planingAtTrim(hull: PlaningHull, speed: number, trim: number, fl
   };
 }
 
-/** Planing equilibrium and its stability margin. */
 export interface PlaningEquilibrium extends PlaningState {
-  /** Savitsky's porpoising limit trim for this load and deadrise, rad. */
   porpoisingTrim: number;
-  /** True when the running trim exceeds the porpoising limit. */
   porpoising: boolean;
 }
 
-/**
- * The trim at which a planing hull runs: the trim where the bottom pressure, friction and thrust leave no pitching moment
- * about the centre of gravity (Savitsky's general equilibrium), with its resistance and porpoising margin.
- * @capability planing-hull Savitsky equilibrium running trim, resistance and porpoising check
- */
+/** @capability planing-hull Savitsky equilibrium running trim, resistance and porpoising check */
 export function planingEquilibrium(hull: PlaningHull, speed: number, fluid: PlaningFluid = {}): PlaningEquilibrium {
   let low = 0.3 * DEG;
   let high = 20 * DEG;
@@ -201,24 +164,14 @@ export function savitskyPorpoisingTrim(liftCoefficient: number, deadrise: number
 
 /** One run of a prismatic planing surface from NACA TN 2876 (Chambliss and Boyd, 1953), 20° deadrise, 4 in beam. */
 export interface PrismaticPlaningRun {
-  /** Trim, deg. */
   trim: number;
-  /** Load coefficient `C_Δ = Δ/(w·b³)`. */
   load: number;
-  /** Speed coefficient `C_V = V/√(g·b)`. */
   speed: number;
-  /** Resistance coefficient `C_R = R/(w·b³)`. */
   resistance: number;
-  /** Mean wetted length over beam. */
   meanWettedLength: number;
-  /** Centre of pressure forward of the trailing edge, beams. */
   centreOfPressure: number;
 }
 
-/**
- * Langley tank model 276 (NACA TN 2876, Table I, public domain): a 20° deadrise prismatic surface, 4 in beam, in fresh
- * water at 63.4 lb/ft³ and ν = 10.55·10⁻⁶ ft²/s. Rows with wetted chines, read from the table.
- */
 export const NACA_TN2876_RUNS: readonly PrismaticPlaningRun[] = [
   { trim: 2, load: 4.26, speed: 13.54, resistance: 2.17, meanWettedLength: 5.97, centreOfPressure: 3.39 },
   { trim: 2, load: 6.39, speed: 17.02, resistance: 3.32, meanWettedLength: 5.72, centreOfPressure: 4.05 },
@@ -233,7 +186,6 @@ export const NACA_TN2876_RUNS: readonly PrismaticPlaningRun[] = [
   { trim: 6, load: 10.65, speed: 11.04, resistance: 2.38, meanWettedLength: 5.0, centreOfPressure: 3.27 },
 ];
 
-/** Model 276's beam, m, and its tank water. */
 export const NACA_TN2876_MODEL = {
   beam: 4 * 0.0254,
   deadrise: 20 * DEG,

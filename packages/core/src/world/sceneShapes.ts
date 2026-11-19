@@ -5,7 +5,6 @@ export interface ScenePoint3 {
   z: number;
 }
 
-/** The minimal polyline shape {@link resolveScatterRegion} et al. read; any `EditorPath` satisfies it. */
 export interface ScenePathLike {
   id: string;
   kind: string;
@@ -14,7 +13,6 @@ export interface ScenePathLike {
   meta?: Record<string, unknown>;
 }
 
-/** The minimal point-object shape clearance reads from a document's markers; any `EditorMarker` satisfies it. */
 export interface SceneMarkerLike {
   id: string;
   kind: string;
@@ -22,14 +20,12 @@ export interface SceneMarkerLike {
   meta?: Record<string, unknown>;
 }
 
-/** The minimal volume shape vegetation/clearance/triggers read; any `EditorVolume` satisfies it. */
 export interface SceneVolumeLike {
   id: string;
   kind: string;
   shape: "sphere" | "cylinder" | "box";
   center: ScenePoint3;
   radius?: number;
-  /** Cylinder height (m); containment and editors use this when shape is `cylinder`. */
   height?: number;
   halfExtents?: ScenePoint3;
   meta?: Record<string, unknown>;
@@ -46,7 +42,6 @@ export interface SceneDocumentLike {
   paths: readonly ScenePathLike[];
 }
 
-/** A box volume's half size per axis when it has no `halfExtents`; a sphere's or cylinder's radius likewise. */
 export const DEFAULT_VOLUME_HALF_SIZE = 5;
 
 /**
@@ -64,10 +59,6 @@ export function volumeHalfSize(volume: Pick<SceneVolumeLike, "shape" | "radius" 
   return { x: radius, y: volume.shape === "cylinder" ? (volume.height ?? radius * 2) / 2 : radius, z: radius };
 }
 
-/**
- * The `center` that stands a box or cylinder on `ground`: raised by its half height, so its bottom
- * face is at `ground.y`. A sphere is centred on the point itself.
- */
 export function volumeCenterOnGround(
   volume: Pick<SceneVolumeLike, "shape" | "radius" | "height" | "halfExtents">,
   ground: ScenePoint3,

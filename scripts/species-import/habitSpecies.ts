@@ -6,10 +6,8 @@ import { FIT_PARAMETERS } from "./speciesFit";
 import type { TrialScore } from "./speciesScore";
 import { ALTERNATE, bark, broadleaf, SHADE_TOLERANCE, spring, type SpeciesTraits } from "./speciesTraits";
 
-/** Palms and tree ferns grow one unbranched stem (Corner's model, Hallé, Oldeman & Tomlinson 1978). */
 const CORNER = { model: "corner", phyllotaxis: "spiral", divergence: 137.5 } as const;
 
-/** Frond or fan leaves, one per metamer; evergreen when they outlive a year. */
 function frond(kind: "frond" | "fan", sizeCm: number, aspect: number, lobes: number, lobeDepth: number, petioleFraction: number, lifespanYears: number, summer: string, autumn = summer, sla = 8): SpeciesTraits["leaf"] {
   return {
     shape: { kind, lobes, lobeDepth, aspect, petioleFraction },
@@ -21,7 +19,6 @@ function frond(kind: "frond" | "fan", sizeCm: number, aspect: number, lobes: num
   };
 }
 
-/** Phenology of an evergreen: leaves all year, a spring flush on the usual forcing. */
 const EVERGREEN: SpeciesTraits["phenology"] = { forcingBaseC: 5, forcingSum: 150, chillingDays: 0, senescencePhotoperiodH: 0 };
 import type { Trial } from "./speciesTrial";
 
@@ -31,23 +28,15 @@ import type { Trial } from "./speciesTrial";
  */
 export interface HabitTraits extends Pick<SpeciesTraits, "id" | "exportName" | "scientific" | "common" | "usda" | "prior" | "architecture" | "lateralBudsPerNode" | "shade" | "tolerance" | "modulusGPa" | "leaf" | "bark" | "reproduction" | "phenology"> {
   habit: "shrub" | "palm" | "fern";
-  /** Stems a seedling sets at its collar. */
   basalStems: number;
-  /** Years a palm or fern frond stays on the shoot that grew it (growth.spurYears). */
   frondYears?: number;
-  /** Crown width over height the fit holds the plant to; unchecked when absent. */
   widthToHeight?: readonly [number, number];
   limits: { maxAgeYears: number; maxHeightM: number; maxDbhCm: number; maxCrownRadiusM: number };
   /** Basic wood density, dry kg per green m³. */
   densityKgM3: number;
-  /** Where the hand-entered traits come from, as ids into `PLANT_SOURCES`. */
   source: "usda-plant-guides";
 }
 
-/**
- * Highbush blueberry (NRCS plant guide: a multi-stemmed deciduous shrub of wet woods and bogs, 2–4 m
- * tall, white bell flowers in spring, blue berries in summer, red autumn leaves).
- */
 const VACCINIUM_CORYMBOSUM: HabitTraits = {
   id: "vaccinium-corymbosum",
   exportName: "VACCINIUM_CORYMBOSUM",
@@ -72,10 +61,6 @@ const VACCINIUM_CORYMBOSUM: HabitTraits = {
   source: "usda-plant-guides",
 };
 
-/**
- * Coconut palm (NRCS and Hawaii plant guides: a single grey stem to 25 m, a crown of 25 to 35 pinnate
- * fronds 4 to 6 m long with 200 or more leaflets, about one new frond a month).
- */
 const COCOS_NUCIFERA: HabitTraits = {
   id: "cocos-nucifera",
   exportName: "COCOS_NUCIFERA",
@@ -100,10 +85,6 @@ const COCOS_NUCIFERA: HabitTraits = {
   source: "usda-plant-guides",
 };
 
-/**
- * Cabbage palm (NRCS plant guide: a single stem to 27 m that stays a stemless rosette for its first
- * decade or more, and a round crown of costapalmate fan leaves on petioles as long as the blade).
- */
 const SABAL_PALMETTO: HabitTraits = {
   id: "sabal-palmetto",
   exportName: "SABAL_PALMETTO",
@@ -157,10 +138,6 @@ const CIBOTIUM_GLAUCUM: HabitTraits = {
   source: "usda-plant-guides",
 };
 
-/**
- * Bracken (PLANTS: a rhizomatous fern to 2 m; broad triangular fronds on stiff upright stipes, dying
- * back each autumn to brown).
- */
 const PTERIDIUM_AQUILINUM: HabitTraits = {
   id: "pteridium-aquilinum",
   exportName: "PTERIDIUM_AQUILINUM",
@@ -186,10 +163,6 @@ const PTERIDIUM_AQUILINUM: HabitTraits = {
   source: "usda-plant-guides",
 };
 
-/**
- * Western sword fern (PLANTS and NRCS plant guide: an evergreen clump to about 1 m of narrow, once
- * pinnate fronds that fountain out from one crown).
- */
 const POLYSTICHUM_MUNITUM: HabitTraits = {
   id: "polystichum-munitum",
   exportName: "POLYSTICHUM_MUNITUM",
@@ -215,16 +188,10 @@ const POLYSTICHUM_MUNITUM: HabitTraits = {
   source: "usda-plant-guides",
 };
 
-/** Every non-tree species the importer knows. */
 export const HABIT_TRAITS: readonly HabitTraits[] = [VACCINIUM_CORYMBOSUM, COCOS_NUCIFERA, SABAL_PALMETTO, CIBOTIUM_GLAUCUM, PTERIDIUM_AQUILINUM, POLYSTICHUM_MUNITUM];
 
-/** Growth and carbon a shrub fit searches: the tree parameters plus how long a stem lives. */
 export const HABIT_FIT_PARAMETERS: readonly FitParameter[] = [...FIT_PARAMETERS, { path: "growth.stemLifespanYears", lo: 4, hi: 30 }];
 
-/**
- * Growth and carbon a palm or fern fit searches: one unbranched stem, so only how fast it lays down
- * fronds and stem and the carbon that pays for them.
- */
 const SINGLE_STEM_FIT_PARAMETERS: readonly FitParameter[] = [
   { path: "growth.internodeMax", lo: 0.002, hi: 0.3, log: true },
   { path: "growth.maxMetamersPerShoot", lo: 2, hi: 40, integer: true },
@@ -241,7 +208,6 @@ const SINGLE_STEM_FIT_PARAMETERS: readonly FitParameter[] = [
   { path: "carbon.hydraulicHeightShare", lo: 0.4, hi: 1 },
 ];
 
-/** The parameters a habit species' fit searches. */
 export function habitFitParameters(traits: HabitTraits): readonly FitParameter[] {
   return traits.habit === "shrub" ? HABIT_FIT_PARAMETERS : SINGLE_STEM_FIT_PARAMETERS;
 }
@@ -254,7 +220,6 @@ export function startingHabitCarbon(traits: HabitTraits, prior: PlantSpecies["ca
   return traits.habit === "shrub" ? { ...prior } : { ...prior, respiration: 0.5 };
 }
 
-/** Growth a habit fit starts from when the species has no record yet. */
 export function startingHabitGrowth(traits: HabitTraits, prior: PlantSpecies["growth"]): PlantSpecies["growth"] {
   if (traits.habit === "shrub") return { ...prior, stemLifespanYears: 10 };
   return { ...prior, internodeMax: traits.habit === "palm" ? 0.05 : 0.01, maxMetamersPerShoot: 12, establishmentYears: 0, frondEstablishmentYears: traits.habit === "palm" ? 8 : 3, tropism: { ...prior.tropism } };
@@ -274,7 +239,6 @@ function plantsCharacteristics(usda: string, profileId: number): RawSource {
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
-/** Read a habit species' PLANTS profile and characteristics (cached in the asset store) into its reference. */
 export function importHabitReference(root: string, traits: HabitTraits): HabitReference {
   const profile: unknown = JSON.parse(readRaw(root, plantsProfile(traits.usda)));
   const profileId = isRecord(profile) && typeof profile["Id"] === "number" ? profile["Id"] : undefined;
@@ -305,7 +269,6 @@ export function importHabitReference(root: string, traits: HabitTraits): HabitRe
   };
 }
 
-/** TypeScript source of the habit reference table. */
 export function habitReferenceTableSource(references: readonly HabitReference[]): string {
   return `import type { HabitReference } from "./habitReference";
 
@@ -322,11 +285,6 @@ const sq = (x: number): number => x * x;
 const hinge = (x: number, lo: number, hi: number, scale: number): number => (x < lo ? sq((lo - x) / scale) : x > hi ? sq((x - hi) / scale) : 0);
 const logRatio = (a: number, b: number): number => Math.log(Math.max(1e-6, a) / Math.max(1e-6, b));
 
-/**
- * Misfit of a habit trial against PLANTS: height at 20 years (the mature height for a fern PLANTS
- * gives no 20-year height for), held under the mature height at 40, the species' crown shape inside
- * its crown limit, and (for a multi-stemmed shrub) a clump of live stems.
- */
 export function scoreHabitTrial(reference: HabitReference, traits: HabitTraits, trial: Trial): TrialScore {
   const maxCrownRadiusM = traits.limits.maxCrownRadiusM;
   const height20 = habitHeightAt20M(reference);
@@ -367,7 +325,6 @@ export function scoreHabitTrial(reference: HabitReference, traits: HabitTraits, 
   return { total: Number.isFinite(total) ? total : 1e6, parts };
 }
 
-/** A full record for a habit species from its traits and fitted growth and carbon, starting from `base`. */
 export function buildHabitRecord(traits: HabitTraits, growth: PlantSpecies["growth"], carbon: PlantSpecies["carbon"], fit: { score: number; against: string }, base: PlantSpecies, version: number): PlantSpecies {
   const fitted = { source: "habit-fit" as const, fitted: fit };
   return {

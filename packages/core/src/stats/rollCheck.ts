@@ -16,11 +16,7 @@ export interface CheckResult {
   critical: "success" | "failure" | null;
 }
 
-/**
- * Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
- *
- * @capability dice-check resolve a pass/fail roll against a target number with modifiers and crits
- */
+/** @capability dice-check resolve a pass/fail roll against a target number with modifiers and crits */
 export function rollCheck(input: CheckInput, rng?: () => number): CheckResult {
   const random = resolveRng(rng, "rollCheck");
   const sides = input.diceSides ?? 20;

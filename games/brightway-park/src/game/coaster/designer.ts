@@ -22,9 +22,7 @@ export const HEADINGS: readonly (readonly [number, number])[] = [
 export interface PieceSpec {
   label: string;
   icon: string;
-  /** The catalog kind the piece is built as (its model, cost and upkeep). */
   kind: string;
-  /** Levels the track climbs (+) or falls (-) across the piece. */
   climb: number;
   /** Quarter turns clockwise across the piece. */
   turn: -1 | 0 | 1;
@@ -48,16 +46,13 @@ export const PIECE_BY_KIND: Readonly<Record<string, PieceType>> = Object.fromEnt
 
 /** Metres a track level stands above the one below. */
 export const TRACK_LEVEL = 2;
-/** The highest a track may climb, in levels. */
 export const TRACK_MAX = 8;
 
-/** A coaster family: which pieces it may use, how tall it may go, and how it feels. */
 export interface CoasterStyle {
   label: string;
   blurb: string;
   allowed: ReadonlySet<PieceType>;
   maxLevel: number;
-  /** Multipliers on the test run's ratings. */
   excitement: number;
   intensity: number;
   nausea: number;
@@ -77,27 +72,19 @@ export function styleOf(id: string): CoasterStyle {
   return Object.hasOwn(STYLES, id) ? STYLES[id as StyleId] : STYLES.wooden;
 }
 
-/** Where the station stands and which way its trains leave. */
 export interface CoasterStation {
-  /** Corner cell of the station's footprint. */
   cell: readonly [number, number];
-  /** Cells a side. */
   size: number;
-  /** 0-3 into {@link HEADINGS}. */
   heading: number;
 }
 
-/** One laid piece, as the layout walk places it. */
 export interface LaidPiece {
   type: PieceType;
   cell: [number, number];
-  /** The level the piece starts at. */
   level: number;
-  /** The heading the train enters on. */
   heading: number;
 }
 
-/** The line of cells the station's platform runs along, back to front. */
 export function platformCells(station: CoasterStation): [number, number][] {
   const [dx, dz] = HEADINGS[station.heading]!;
   const [c, r] = station.cell;
@@ -107,7 +94,6 @@ export function platformCells(station: CoasterStation): [number, number][] {
   return Array.from({ length: n }, (_, i) => [start[0] + dx * i, start[1] + dz * i] as [number, number]);
 }
 
-/** The first cell past the station's front: where the first piece goes. */
 export function launchCell(station: CoasterStation): [number, number] {
   const cells = platformCells(station);
   const [dx, dz] = HEADINGS[station.heading]!;
@@ -115,7 +101,6 @@ export function launchCell(station: CoasterStation): [number, number] {
   return [front[0] + dx, front[1] + dz];
 }
 
-/** Lay the pieces out from the station: the cell, level and heading each one lands on. */
 export function walkLayout(station: CoasterStation, types: readonly PieceType[]): { pieces: LaidPiece[]; next: { cell: [number, number]; level: number; heading: number } } {
   let cell = launchCell(station);
   let level = 0;
@@ -132,7 +117,6 @@ export function walkLayout(station: CoasterStation, types: readonly PieceType[])
   return { pieces, next: { cell, level, heading } };
 }
 
-/** True when the track comes back into the station's back at ground level, facing the way it leaves. */
 export function isClosed(station: CoasterStation, types: readonly PieceType[]): boolean {
   if (types.length < 4) return false;
   const { next } = walkLayout(station, types);
@@ -159,9 +143,7 @@ export function canAppend(
   return null;
 }
 
-/** What a test run measured and what it means for riders. */
 export interface TestRun {
-  /** False when the train couldn't finish: it rolled back or the track is open. */
   ok: boolean;
   /** Why it failed, in words. */
   failure: string | null;
@@ -179,22 +161,17 @@ export interface TestRun {
   turns: number;
   /** Seconds of near-weightless crest after a climb. */
   airtime: number;
-  /** Peak sideways G in a turn, peak vertical G in a dip or loop. */
   lateralG: number;
   verticalG: number;
   excitement: number;
   intensity: number;
   nausea: number;
-  /** The train's speed at the start of each piece, for the readout. */
   speeds: number[];
 }
 
 const GRAVITY = 9.8;
-/** The station's tyres push the train out at this speed. */
 const LAUNCH_SPEED = 3;
-/** The chain hauls at least this fast. */
 const CHAIN_SPEED = 3;
-/** Speed a train needs entering a loop to get over the top. */
 export const LOOP_SPEED = 11;
 /** Radius of a turn and of a loop, metres. */
 const TURN_RADIUS = 8;
@@ -307,7 +284,6 @@ export function testRun(station: CoasterStation, types: readonly PieceType[], st
   };
 }
 
-/** Points along the track for the train to follow: through the station, then every piece, at height. */
 export function trainPath(station: CoasterStation, types: readonly PieceType[], cellCentre: (col: number, row: number) => [number, number]): [number, number, number][] {
   const points: [number, number, number][] = [];
   for (const cell of platformCells(station)) {

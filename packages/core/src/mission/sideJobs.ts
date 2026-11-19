@@ -2,7 +2,6 @@ import { pickUniform, pickWeighted } from "../random/pick";
 import { seededRng } from "../random/rng";
 import { createRaceState, everyoneFinishes, raceTrack, type RaceState } from "../game/race";
 
-/** A place a side job can start or end: a kerb, a shop counter, a start line. `tags` say which kinds use it. */
 export interface SideJobSpot {
   id: string;
   x: number;
@@ -38,11 +37,8 @@ export interface SideJobDeadlineDef {
   pickup?: number;
 }
 
-/** A tip paid on top of the fare, scaled by how comfortable the ride stayed (comfort 0–100). */
 export interface SideJobTipDef {
-  /** Tip as a fraction of the fare at comfort 100. */
   max: number;
-  /** Comfort below which no tip is paid (default `0`). */
   minComfort?: number;
 }
 
@@ -56,19 +52,16 @@ export interface SideJobStreakDef {
 /** A cash stake the player puts up to accept, paid back as `stake × payouts[place - 1]` (a race purse). */
 export interface SideJobWagerDef {
   stake: number;
-  /** Multiplier of the stake per finishing place; a place past the list pays nothing. */
   payouts: readonly number[];
 }
 
 /** Makes a kind a street race run on {@link RaceState}: the job's drops are the checkpoints, the last one the finish. */
 export interface SideJobRaceDef {
-  /** Rival racers; the game drives a body for each id the view names and reports its position. */
   rivals: number;
   /** Checkpoint half-extent in metres (default `10`). */
   gateRadius?: number;
 }
 
-/** What a game hands a kind's comfort rule each tick while a job is on board. */
 export interface SideJobComfortSample {
   dt: number;
   /** Player speed in metres per second. */
@@ -81,11 +74,8 @@ export interface SideJobComfortSample {
 export interface SideJobKindDef {
   id: string;
   label: string;
-  /** Spot tag pickups are drawn from (ignored when `routes` is set). */
   pickupTag?: string;
-  /** Spot tag drops are drawn from (ignored when `routes` is set). */
   dropTag?: string;
-  /** Drops per job (default `1`); more than one is a multi-drop route. */
   drops?: number;
   /** Fixed routes to draw from instead of spots. */
   routes?: readonly SideJobRoute[];
@@ -98,7 +88,6 @@ export interface SideJobKindDef {
   streak?: SideJobStreakDef;
   wager?: SideJobWagerDef;
   race?: SideJobRaceDef;
-  /** Comfort points lost this tick; the game's rule for crashes, hard driving or a chase. */
   comfortLoss?: (sample: SideJobComfortSample) => number;
   /** A job fails as `spoiled` once comfort reaches this (fragile cargo); omitted never fails on comfort. */
   failAtComfort?: number;
@@ -106,9 +95,7 @@ export interface SideJobKindDef {
   cooldown?: number;
   /** Seconds an offer stays open (default `60`). */
   offerTtl?: number;
-  /** Open offers of this kind at once (default `1`). */
   maxOffers?: number;
-  /** Relative weight when `generate` draws which kind to offer (default `1`). */
   weight?: number;
   /** Arrival radius in metres (default `8`). */
   radius?: number;
@@ -118,7 +105,6 @@ export interface SideJobKindDef {
   boardSeconds?: number;
 }
 
-/** A job on offer: where it starts, where it goes, and what it pays if run clean. */
 export interface SideJobOffer {
   id: string;
   kindId: string;
@@ -128,22 +114,18 @@ export interface SideJobOffer {
   drops: readonly SideJobSpot[];
   /** Metres from pickup through every drop. */
   distance: number;
-  /** The fare before time bonus, tip and streak. */
   fare: number;
   /** Seconds allowed from boarding to the final drop. */
   seconds: number;
   stake: number;
-  /** Clock time the offer lapses. */
   expiresAt: number;
 }
 
-/** Where an accepted job stands. */
 export type SideJobPhase = "pickup" | "en-route" | "paid" | "failed";
 
 /** Why a job failed: the clock ran out, cargo was spoiled, a race placed out of the money, or the game's own reason. */
 export type SideJobFailReason = "late" | "spoiled" | "placed" | (string & {});
 
-/** One resolved job's settlement, for a receipt or pager. */
 export interface SideJobReceipt {
   jobId: string;
   kindId: string;
@@ -154,34 +136,28 @@ export interface SideJobReceipt {
   timeBonus: number;
   tip: number;
   streakBonus: number;
-  /** What a wager returned (0 when lost or not a wager). */
   purse: number;
   /** Everything paid: fare, time bonus, tip, streak bonus and purse; `0` when failed unless a purse paid. */
   total: number;
   comfort: number;
-  /** The streak after this job settled. */
   streak: number;
   /** Finishing place in a race, else `null`. */
   place: number | null;
 }
 
-/** An accepted job's live state. */
 export interface SideJobActive {
   offer: SideJobOffer;
   phase: SideJobPhase;
-  /** Index of the next drop. */
   leg: number;
   /** Seconds left on the current clock, or `null` when none runs. */
   timeLeft: number | null;
   comfort: number;
   /** Seconds the player has been stopped at the current target. */
   dwell: number;
-  /** The streak this job would extend (count of prior consecutive paid jobs). */
   streak: number;
   racing: boolean;
 }
 
-/** Everything a side-job board stores as plain JSON. */
 export interface SideJobsState {
   clock: number;
   rng: number;
@@ -191,11 +167,9 @@ export interface SideJobsState {
   receipt: SideJobReceipt | null;
   streak: number;
   lastPaidAt: number | null;
-  /** Kind id → clock time it may offer again. */
   cooldowns: Record<string, number>;
 }
 
-/** What happened during one call, for cues, notices and audio. */
 export type SideJobEvent =
   | { type: "offered"; offer: SideJobOffer }
   | { type: "expired"; offerId: string }
@@ -206,9 +180,7 @@ export type SideJobEvent =
   | { type: "paid"; receipt: SideJobReceipt }
   | { type: "failed"; receipt: SideJobReceipt };
 
-/** The world as the game reports it each tick. */
 export interface SideJobTickInput {
-  /** Player position (x/z), or `null` while it has no body. */
   position: { x: number; z: number } | null;
   /** Player speed in metres per second. */
   speed?: number;
@@ -217,13 +189,11 @@ export interface SideJobTickInput {
   racers?: Readonly<Record<string, readonly [number, number, number]>>;
 }
 
-/** What a HUD shows for the job in hand. */
 export interface SideJobView {
   jobId: string;
   kindId: string;
   label: string;
   phase: SideJobPhase;
-  /** What the player is driving to. */
   target: SideJobSpot | null;
   targetRole: "pickup" | "dropoff" | "checkpoint" | "finish" | null;
   /** 1-based leg number among `legs` drops. */
@@ -233,7 +203,6 @@ export interface SideJobView {
   /** Metres from the last reported position to the target. */
   distance: number | null;
   fare: number;
-  /** Fare + time bonus + tip + streak bonus if the job ended clean now. */
   fareSoFar: number;
   comfort: number;
   streak: number;
@@ -244,13 +213,10 @@ export interface SideJobView {
   place: number | null;
 }
 
-/** Options for {@link SideJobs.generate}. */
 export interface SideJobGenerateOptions {
-  /** Only these kinds (default every kind). */
   kinds?: readonly string[];
   /** Only pickups within `radius` metres of `at`, and at least `min` away. */
   near?: { at: { x: number; z: number }; radius: number; min?: number };
-  /** Offers to try to add (default `1`). */
   count?: number;
 }
 
@@ -260,39 +226,28 @@ export interface SideJobsPersistence {
   save: (state: SideJobsState) => void;
 }
 
-/** Configuration for {@link createSideJobs}. */
 export interface SideJobsConfig {
   kinds: readonly SideJobKindDef[];
-  /** Spots offers are drawn from. */
   spots?: readonly SideJobSpot[];
-  /** Seed for offers (default `"side-jobs"`). */
   seed?: string | number;
   /** Racer id the player's position is filed under in a race (default `"player"`). */
   playerId?: string;
   persist?: SideJobsPersistence;
 }
 
-/** A side-job board: offers, the job in hand, the streak and the last receipt. */
 export interface SideJobs {
-  /** Draw new offers for kinds off cooldown and under their cap; same seed and calls, same offers. */
   generate(options?: SideJobGenerateOptions): SideJobEvent[];
   offers(): readonly SideJobOffer[];
-  /** Take an offer. Returns `null` when the id is unknown or a job is already in hand. The game charges any `stake`. */
   accept(offerId: string): SideJobEvent[] | null;
-  /** Advance the clock, expire offers and run the job in hand against the reported world. */
   tick(dt: number, input: SideJobTickInput): SideJobEvent[];
-  /** End the job in hand as failed with the game's reason (busted, left the car, wrecked). */
   fail(reason: SideJobFailReason): SideJobEvent[];
-  /** Drop every open offer (going off duty). */
   clearOffers(): void;
-  /** Clear the last receipt. */
   dismiss(): void;
   job(): SideJobActive | null;
   receipt(): SideJobReceipt | null;
   view(): SideJobView | null;
   streak(): number;
   kind(id: string): SideJobKindDef | undefined;
-  /** Change a kind's numbers during play; the id stays. */
   retune(kindId: string, patch: Partial<Omit<SideJobKindDef, "id">>): void;
   setSpots(spots: readonly SideJobSpot[]): void;
   snapshot(): SideJobsState;
@@ -312,13 +267,11 @@ export function sideJobDeadline(deadline: SideJobDeadlineDef, distance: number):
   return Math.ceil(Math.max(deadline.min ?? 0, (deadline.slack ?? 10) + Math.max(0, distance) / speed));
 }
 
-/** The tip for a fare at a comfort level (0–100). */
 export function sideJobTip(tip: SideJobTipDef | undefined, fare: number, comfort: number): number {
   if (tip === undefined || comfort < (tip.minComfort ?? 0)) return 0;
   return Math.round(fare * tip.max * Math.max(0, Math.min(100, comfort)) / 100);
 }
 
-/** The streak bonus a fare earns when `streak` jobs were paid back to back before it. */
 export function sideJobStreakBonus(streak: SideJobStreakDef | undefined, fare: number, count: number): number {
   if (streak === undefined || count <= 0) return 0;
   return Math.round(fare * Math.min(streak.max, streak.step * count));

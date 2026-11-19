@@ -1,9 +1,7 @@
 // `create --template 2d`: a board game with no 3D scene. The board is plain store data drawn by GameUI.
 
-/** Default board size in cells for `create --template 2d`; the game's `world.ts` owns it afterward. */
 export const BOARD_SIZE = { x: 10, y: 20 } as const;
 
-/** `src/world.ts` for a 2D board game. */
 export const boardWorldTs = (id: string) => `import { world as place } from "@jgengine/core/placement/place";
 
 /** Board size in cells — the one law of this place. */
@@ -16,7 +14,6 @@ export const world = place({
 });
 `;
 
-/** `src/game.config.ts` for a 2D board game. */
 export const boardGameConfigTs = (name: string) => `import { defineGame } from "@jgengine/shell/gameKit";
 
 import { GameUI } from "./game/ui/GameUI";
@@ -42,7 +39,6 @@ export const game = defineGame({
 });
 `;
 
-/** `src/loop.ts` for a 2D board game: one store slot, one command per input action. */
 export const boardLoopTs = `import { defineStore, defineSystem } from "@jgengine/shell/gameKit";
 
 import { createBoard, moveCursor, toggleCell, type BoardState } from "./game/board";
@@ -104,7 +100,6 @@ export function toggleCell(state: BoardState, value = "filled"): BoardState {
 }
 `;
 
-/** `src/game/board.test.ts`. */
 export const boardRulesTest = `import { describe, expect, test } from "bun:test";
 import { cellAt } from "@jgengine/core/puzzle/cellGrid";
 
@@ -126,7 +121,6 @@ describe("board rules", () => {
 });
 `;
 
-/** `src/game/ui/GameUI.tsx` for a 2D board game. */
 export const boardGameUiTsx = (name: string) => `import { useStore } from "@jgengine/ui/store";
 
 import { board } from "../../loop";

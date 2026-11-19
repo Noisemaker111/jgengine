@@ -8,7 +8,6 @@ type LiveDemo = {
   domain: string;
   title: string;
   blurb: string;
-  /** Credit for the open work this demo's look comes from. */
   credit?: { label: string; url: string };
 };
 
@@ -44,7 +43,6 @@ const LIVE_DEMOS: LiveDemo[] = [
   },
 ];
 
-/** Engine functions running live in the page, each above the code that drives it. */
 export function LiveDemos() {
   return (
     <section id="functions" aria-labelledby="functions-heading" className="scroll-mt-20 border-t border-line">

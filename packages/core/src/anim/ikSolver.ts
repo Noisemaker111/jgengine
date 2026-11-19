@@ -2,10 +2,8 @@ import type { Vec3 } from "../world/geometry";
 
 /** A mutable three-dimensional tuple used by allocation-aware solver outputs. */
 export type MutableVec3 = [number, number, number];
-/** A quaternion in `(x, y, z, w)` order. */
 export type Quat = readonly [number, number, number, number];
 
-/** Inputs for {@link solveTwoBone}. */
 export interface TwoBoneInput {
   root: Vec3;
   mid: Vec3;
@@ -14,13 +12,11 @@ export interface TwoBoneInput {
   pole: Vec3;
 }
 
-/** Reused output buffers filled by {@link solveTwoBone}. */
 export interface TwoBoneOutput {
   mid: MutableVec3;
   tip: MutableVec3;
 }
 
-/** Iteration budget and convergence threshold for {@link solveFabrik}. */
 export interface FabrikOptions {
   iterations?: number;
   tolerance?: number;
@@ -88,11 +84,7 @@ export function solveTwoBone(input: TwoBoneInput, out: TwoBoneOutput): TwoBoneOu
   return out;
 }
 
-/**
- * The product of two quaternions (`a` applied after `b`), both as `[x, y, z, w]`.
- *
- * @capability animation inverse kinematics compose two rotations
- */
+/** @capability animation inverse kinematics compose two rotations */
 export function multiplyQuaternions(a: Quat, b: Quat): Quat {
   return [
     a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
@@ -102,13 +94,7 @@ export function multiplyQuaternions(a: Quat, b: Quat): Quat {
   ];
 }
 
-/**
- * The shortest rotation taking one unit direction to another, as a quaternion. Parallel directions
- * give the identity; opposite directions give a half turn about a perpendicular axis. Returns the
- * identity for a zero-length input.
- *
- * @capability animation inverse kinematics the shortest rotation between two directions
- */
+/** @capability animation inverse kinematics the shortest rotation between two directions */
 export function quaternionFromUnitVectors(from: Vec3, to: Vec3): Quat {
   const a = normalize(from[0], from[1], from[2]);
   const b = normalize(to[0], to[1], to[2]);
@@ -125,12 +111,7 @@ export function quaternionFromUnitVectors(from: Vec3, to: Vec3): Quat {
   return [q[0] / length, q[1] / length, q[2] / length, q[3] / length];
 }
 
-/**
- * Solves a chain with the FABRIK forward-and-backward reaching algorithm.
- * Returned tuples are new values; the input chain is not modified.
- *
- * @capability animation inverse kinematics solve an arbitrary tuple chain toward a target
- */
+/** @capability animation inverse kinematics solve an arbitrary tuple chain toward a target */
 export function solveFabrik(chain: readonly Vec3[], target: Vec3, options: FabrikOptions = {}): MutableVec3[] {
   if (chain.length === 0) return [];
   if (chain.length === 1) return [[chain[0]![0], chain[0]![1], chain[0]![2]]];
@@ -180,10 +161,7 @@ function quaternionFromBasis(right: Vec3, up: Vec3, forward: Vec3): Quat {
   return [(right[2] + forward[0]) / s, (up[2] + forward[1]) / s, 0.25 * s, (right[1] - up[0]) / s];
 }
 
-/** Returns a quaternion that points a +Z bone from `from` toward `target`, with optional yaw and pitch limits.
- *
- * @capability animation inverse kinematics orient a bone toward a target with constrained yaw and pitch
- */
+/** @capability animation inverse kinematics orient a bone toward a target with constrained yaw and pitch */
 export function lookAt(input: LookAtInput): Quat {
   let direction = normalize(input.target[0] - input.from[0], input.target[1] - input.from[1], input.target[2] - input.from[2]);
   if (Math.hypot(...direction) <= EPSILON) return [0, 0, 0, 1];

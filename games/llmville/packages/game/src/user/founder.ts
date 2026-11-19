@@ -30,7 +30,6 @@ export function normalizeAvatarId(raw: string | undefined | null): CanonicalAvat
   return getDefaultAvatarId();
 }
 
-/** Magnitude for UI copy (e.g. 5 → “5%”). */
 export const FOUNDER_PERK_DISPLAY_PERCENT: Record<CanonicalAvatarId, number> = {
   sam_altman: 5,
   lee_rob: 5,
@@ -44,11 +43,8 @@ export type FounderMultipliers = {
   servingMoneyIncomeMultiplier: number;
   servingDataTokensIncomeMultiplier: number;
   servingThroughputMultiplier: number;
-  /** Multiply shop, upgrade, and license purchase prices (1 = full; 0.95 = 5% off). */
   shopPriceMultiplier: number;
-  /** Multiply electricity bill amounts (0.95 = 5% lower). */
   electricityBillMultiplier: number;
-  /** Multiply effective FP16 TFLOPs from racks for training/serving allocation. */
   trainingPowerFp16Multiplier: number;
 };
 

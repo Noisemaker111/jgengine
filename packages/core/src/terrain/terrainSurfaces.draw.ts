@@ -5,14 +5,12 @@ import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 
 import type { TerrainPaintSource } from "./terrainPaintColor.draw";
 
-/** Procedural ground response the terrain shader renders for a painted surface id. */
 export type TerrainSurfaceClass = "ground" | "grass" | "dirt" | "gravel" | "rock" | "sand" | "mud" | "snow" | "road";
 
 const CLASS_INDEX: Record<TerrainSurfaceClass, number> = {
   ground: 0, grass: 1, dirt: 2, gravel: 3, rock: 4, sand: 5, mud: 6, snow: 7, road: 8,
 };
 
-/** Authored-tiling neutral point per class: a layer's `tiling` divided by this scales the pattern. */
 const CLASS_TILING: Record<TerrainSurfaceClass, number> = {
   ground: 3, grass: 3, dirt: 2, gravel: 2, rock: 4, sand: 3, mud: 2, snow: 3, road: 2,
 };
@@ -32,10 +30,6 @@ const ALIASES: readonly (readonly [string, TerrainSurfaceClass])[] = [
   ["dirt", "dirt"], ["soil", "dirt"], ["earth", "dirt"], ["path", "dirt"], ["trail", "dirt"], ["ash", "dirt"],
 ];
 
-/**
- * Classifies a painted surface id (e.g. `"grass"`, `"dry-grass"`, `"cobble-stone"`) into the procedural
- * ground response the terrain shader draws for it; unknown ids get the generic `"ground"` response.
- */
 export function terrainSurfaceClass(surface: string): TerrainSurfaceClass {
   const id = surface.toLowerCase();
   for (const [key, cls] of ALIASES) if (id === key) return cls;
@@ -43,36 +37,28 @@ export function terrainSurfaceClass(surface: string): TerrainSurfaceClass {
   return "ground";
 }
 
-/** Shader index of a surface class (`jgSurface`'s `cls`); bit `1 << index` in a class mask. */
 export function terrainSurfaceClassIndex(cls: TerrainSurfaceClass): number {
   return CLASS_INDEX[cls];
 }
 
-/** Default roughness the terrain shades a surface class with. */
 export function terrainSurfaceRoughness(cls: TerrainSurfaceClass): number {
   return CLASS_ROUGHNESS[cls];
 }
 
-/** At most this many distinct paint layers reach the GPU; extra layers fold into the last slot. */
 export const MAX_TERRAIN_PAINT_LAYERS = 8;
 
-/** One GPU paint slot: authored hue plus the procedural response it renders with. */
 export interface TerrainPaintSlot {
   color: THREE.Color;
   surfaceClass: TerrainSurfaceClass;
   classIndex: number;
   roughness: number;
-  /** Pattern frequency multiplier from the layer's authored `tiling`. */
   scale: number;
   /** World metres per texture repeat for this layer's scan; 0 when the layer has none. */
   tileMetres: number;
-  /** Scanned PBR maps the slot draws from, if any. */
   scan?: TerrainMaterialMaps;
-  /** True when the scan switches to side projections on slopes (default); false keeps it top-down. */
   triplanar: boolean;
 }
 
-/** Per-cell paint coverage packed for the shader: two RGBA8 planes holding up to eight layer weights. */
 export interface TerrainPaintWeights {
   cols: number;
   rows: number;
@@ -97,11 +83,6 @@ function slotFor(surface: string, layer: TerrainMaterialLayer | undefined): Terr
   };
 }
 
-/**
- * Packs a terrain's authored paint (layer stack, blend weights or hard surface ids) into per-cell
- * coverage planes for the terrain surface shader. Returns `undefined` when the source exposes no
- * cell grid. Pass `into` to rewrite an existing buffer in place after a paint stroke.
- */
 export function packTerrainPaintWeights(source: TerrainPaintSource, into?: TerrainPaintWeights): TerrainPaintWeights | undefined {
   const { gridBounds, cols, rows } = source;
   if (gridBounds === undefined || cols === undefined || rows === undefined || cols < 1 || rows < 1) return undefined;
@@ -162,11 +143,8 @@ export function packTerrainPaintWeights(source: TerrainPaintSource, into?: Terra
   };
 }
 
-/** GPU-side paint coverage shared by the terrain surface material; `update` after each paint stroke. */
 export interface TerrainPaintTextures {
-  /** Shader uniforms (`uPaintA`, `uLayerColor`, …) to merge into the surface material. */
   readonly uniforms: Record<string, THREE.IUniform>;
-  /** Bit `1 << classIndex` per surface class the current slots use; shaders compile only these responses. */
   readonly classMask: number;
   /** Re-upload coverage and layer slots; reallocates only when the cell grid size changes. */
   update(weights: TerrainPaintWeights): void;
@@ -175,7 +153,6 @@ export interface TerrainPaintTextures {
   dispose(): void;
 }
 
-/** Edge warp, in cells: how far noise pushes a painted boundary off the cell grid. */
 const PAINT_EDGE_WARP = 1.5;
 
 function coverageTexture(data: Uint8Array, cols: number, rows: number): THREE.DataTexture {
@@ -189,10 +166,6 @@ function coverageTexture(data: Uint8Array, cols: number, rows: number): THREE.Da
   return texture;
 }
 
-/**
- * Uploads packed paint coverage ({@link packTerrainPaintWeights}) as two linear-filtered RGBA
- * textures plus per-slot hue, surface class, roughness and pattern scale for the terrain surface material.
- */
 export function createTerrainPaintTextures(weights: TerrainPaintWeights): TerrainPaintTextures {
   const colors = Array.from({ length: MAX_TERRAIN_PAINT_LAYERS }, () => new THREE.Color());
   const classes = new Float32Array(MAX_TERRAIN_PAINT_LAYERS);

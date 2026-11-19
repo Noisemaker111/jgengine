@@ -17,7 +17,6 @@ const onAccent = "var(--jg-on-accent, var(--jg-surface-deep, #0b0b0f))";
 const danger = "var(--jg-danger, #e0574e)";
 const fontDisplay = "var(--jg-font-display, inherit)";
 const fontBody = "var(--jg-font-body, inherit)";
-/** Above the HUD, captions (84), notices (85), the result screen (86) and a game's menus; below devtools (90). */
 const LAYER = 88;
 /** Hairlines and washes from the theme's own edge and text colours, so they show on a light theme too. */
 const hairline = "var(--jg-edge, rgba(255,255,255,0.1))";

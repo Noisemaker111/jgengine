@@ -24,7 +24,6 @@ function SkinCell({ title, skin }: { title: string; skin: HudSkin }) {
   </HudFrame></div>;
 }
 
-/** Procedural two-skin fixture for visual regression captures. */
 export function HudSkinPreview({ className }: { className?: string }) {
   const skins = useMemo(() => [{ title: "painted cartoon", skin: { frame: { image: painted("#ffd166", "#7b3f00"), slice: [8, 8, 8, 8], fill: true }, slot: { image: painted("#66e3ff", "#12354a"), slice: [8, 8, 8, 8] } } }, { title: "thin dark overlay", skin: { frame: { image: painted("#8d99ae", "#11151c"), slice: [4, 4, 4, 4] }, slot: { image: painted("#566070", "#090b10"), slice: [4, 4, 4, 4] } } }] as { title: string; skin: HudSkin }[], []);
   return <div className={className} data-hud-skin-preview style={{ display: "flex", gap: 18, flexWrap: "wrap", padding: 22, background: "#0e1216", color: "#f5f7fa" }}>{skins.map((item) => <SkinCell key={item.title} {...item} />)}</div>;

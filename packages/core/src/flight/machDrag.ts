@@ -1,19 +1,12 @@
 // @skill jgengine-world
 
-/**
- * The Mach drag effect: a body's drag coefficient by Mach number, so drag rises through the transonic hump the way a
- * rocket's axial-force coefficient or an airliner's drag-divergence curve does. It replaces the tuning's constant
- * `dragArea`.
- */
 export interface AircraftMachDrag {
   /**
    * Multiplier on the effect: `0` off (`dragArea` alone, the simple model), `1` as tabled (default), past `1` the
    * drag scales with the strength; sane over `0..4`.
    */
   strength?: number;
-  /** Reference area, m². */
   area: number;
-  /** `[Mach, drag coefficient]` points, linear between, held flat past the ends. */
   coefficient: readonly (readonly [number, number])[];
 }
 

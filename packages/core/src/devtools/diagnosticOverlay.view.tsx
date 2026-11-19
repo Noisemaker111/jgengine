@@ -54,7 +54,6 @@ function expandedReactError(message: string): string | null {
 
 const ISSUES_NEW_URL = "https://github.com/Noisemaker111/jgengine/issues/new";
 
-/** Standalone error footer text (page, browser, engine) shared by every error surface. */
 export function errorReportContext(): string {
   return [
     `Engine: ${VERSION}`,
@@ -63,7 +62,6 @@ export function errorReportContext(): string {
   ].join("\n");
 }
 
-/** "Copy error" + "File issue" buttons for any error surface. `report` is the full text to copy / prefill. */
 export function ErrorReportActions({ report, issueTitle }: { report: string; issueTitle: string }) {
   const [copied, setCopied] = useState(false);
   const issueBody =

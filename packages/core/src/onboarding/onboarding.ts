@@ -2,27 +2,17 @@
 import type { GameEventMap } from "../game/events";
 import type { QuestRewards, TrackedQuestView } from "../mission/quest";
 
-/**
- * How a game teaches: a separate `"tutorial-level"` it leaves when done (its `finish` hook moves
- * the player on), a `"teaching-area"` start that guides only inside its `area` and points back
- * when the player wanders off, or `"blended"` hints that sit quietly in stage one (no banners, no
- * locks).
- */
 export type OnboardingStyle = "tutorial-level" | "teaching-area" | "blended";
 
-/** World position `[x, y, z]`. */
 export type OnboardingPoint = readonly [number, number, number];
 
-/** What a step points at: one entity, the nearest thing of a kind, or a spot. */
 export type OnboardingTarget =
   | { entity: string }
   /** The nearest entity of this catalog name (or thing a `locate` hook finds) within `within` metres. Default 60. */
   | { kind: string; within?: number }
   | { at: OnboardingPoint };
 
-/** When a step is done. */
 export type OnboardingDone<C> =
-  /** A game event fired `count` times (default 1) while this step is current, its payload matching `match`. */
   | { event: keyof GameEventMap; match?: Readonly<Record<string, string | number | boolean>>; count?: number }
   /** A condition on the world becomes true. */
   | { when: (ctx: C, userId: string) => boolean }
@@ -31,30 +21,19 @@ export type OnboardingDone<C> =
   /** The player presses Next on the callout. */
   | { next: true };
 
-/** One onboarding step, declared as data. */
 export interface OnboardingStep<C> {
-  /** Stable id; the saved progress is keyed by it. */
   id: string;
-  /** What to do, as the tracker and callout say it. */
   text: string;
   /** A second line under the text. */
   detail?: string;
-  /** The thing in the world the step points at with an on-screen arrow. */
   target?: OnboardingTarget;
-  /** Show the target on the minimap. Default `true` when there is a target. */
   minimap?: boolean;
-  /** Show the on-screen arrow and waypoint to the target. Default `true` when there is a target. */
   pointer?: boolean;
-  /** CSS selector of a UI element the callout points at (`OnboardingCallout`); omit for a centred callout. */
   anchor?: string;
-  /** Side of `anchor` the callout sits on. Default `"bottom"`. */
   placement?: "top" | "bottom" | "left" | "right";
   done: OnboardingDone<C>;
-  /** `"teaching-area"`: `false` lets this step send the player past the area, so its pointer is not pulled back. Default `true`. */
   inArea?: boolean;
-  /** Command ids (and UI ids a HUD asks about) refused until this step is done. */
   locks?: readonly string[];
-  /** Given when this step is done: items, xp, currency, unlocks. */
   grants?: QuestRewards;
 }
 
@@ -65,70 +44,51 @@ export interface OnboardingArea {
   label?: string;
 }
 
-/**
- * The teaching area for one player: the config's own, or what its function gives for them.
- * @internal
- */
+/** @internal */
 export function onboardingAreaFor<C>(config: OnboardingConfig<C>, ctx: C, userId: string): OnboardingArea | undefined {
   return typeof config.area === "function" ? config.area(ctx, userId) : config.area;
 }
 
-/** A game's whole onboarding, declared as data. */
 export interface OnboardingConfig<C> {
   id: string;
-  /** Title over the steps in the quest tracker. */
   title: string;
   style: OnboardingStyle;
   steps: readonly OnboardingStep<C>[];
-  /** Whether the player may skip it. Default `true`. */
   skippable?: boolean;
   /**
    * `"teaching-area"`: the area the guidance lives in, centre XZ and radius in metres; a function
    * gives each player their own (around the start region they chose).
    */
   area?: OnboardingArea | ((ctx: C, userId: string) => OnboardingArea);
-  /** `"tutorial-level"`: move the player into the real game once every step is done or skipped. */
   finish?: (ctx: C, userId: string) => void;
-  /** Finders for `{ kind }` targets that are not entities (scatter rocks, resource nodes), by kind. */
   locate?: Readonly<Record<string, (ctx: C, from: OnboardingPoint, within: number) => OnboardingPoint | null>>;
 }
 
-/** The current step as the HUD reads it. */
 export interface OnboardingStepView<C> {
   step: OnboardingStep<C>;
   index: number;
   total: number;
-  /** Progress toward `count` (events seen or the measured amount). */
   progress: number;
   count: number;
 }
 
-/** One player's saved onboarding: finished step ids, partial progress, and whether it was skipped. */
 export interface OnboardingSnapshot {
   done: readonly string[];
   progress: Readonly<Record<string, number>>;
   skipped: boolean;
 }
 
-/** One player's run through an {@link OnboardingConfig}. */
 export interface Onboarding<C> {
   readonly config: OnboardingConfig<C>;
-  /** The first unfinished step, or `null` once finished or skipped. */
   current(): OnboardingStepView<C> | null;
-  /** Feed a game event; returns the step it completed, if any. */
   event(name: keyof GameEventMap, payload: unknown): OnboardingStep<C> | null;
-  /** Check the current step's condition (and the ones after it, while they hold); returns the steps completed. */
   evaluate(ctx: C, userId: string): OnboardingStep<C>[];
-  /** The player pressed Next: completes a `{ next: true }` step. */
   acknowledge(): OnboardingStep<C> | null;
-  /** Skip the rest. Returns false when the config is not skippable or nothing is left. */
   skip(): boolean;
-  /** The unfinished step that locks `id`, or `null` when `id` is free. */
   lockedBy(id: string): OnboardingStep<C> | null;
   isDone(stepId: string): boolean;
   isFinished(): boolean;
   isSkipped(): boolean;
-  /** The steps as a quest for `QuestTracker`. */
   tracked(): TrackedQuestView;
   subscribe(listener: () => void): () => void;
   snapshot(): OnboardingSnapshot;
@@ -167,13 +127,7 @@ function matches(payload: unknown, match: Readonly<Record<string, string | numbe
   return true;
 }
 
-/**
- * One player's onboarding: ordered steps, each done by a game event, a condition, a measured
- * amount or a Next press, with locks that hold until their step is done, grants handed back as
- * steps finish, skip, and save. Pure model; `createOnboardingSystem` wires it to a game.
- *
- * @internal
- */
+/** @internal */
 export function createOnboarding<C>(config: OnboardingConfig<C>): Onboarding<C> {
   validateOnboarding(config);
   const steps = config.steps;

@@ -21,11 +21,7 @@ export function renderWithCurrentMatrices<T>(scene: THREE.Object3D, render: () =
   }
 }
 
-/**
- * Reuse the beauty pass's shadow maps and world matrices while drawing a scene prepass, leaving out
- * what `excluded` matches (see {@link drawPrepassExcluding}).
- * @internal
- */
+/** @internal */
 export function renderShadowlessPrepass<T>(
   renderer: Pick<THREE.WebGLRenderer, "shadowMap"> & PrepassListRenderer,
   scene: THREE.Object3D,

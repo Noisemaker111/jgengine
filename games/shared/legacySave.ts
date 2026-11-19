@@ -1,6 +1,5 @@
 import type { LoadResult, PeekResult, SaveResult } from "@jgengine/core/save/saveStore";
 
-/** Translate historical persisted identifiers without mutating the saved source record. */
 export function migrateLegacySnapshot<T>(snapshot: T, ids: Readonly<Record<string, string>>): T {
   const rename = (value: string): string => ids[value] ?? value;
   const visit = (value: unknown): unknown => {
@@ -29,7 +28,6 @@ interface SaveStorage {
   write(key: string, value: string): Promise<void>;
 }
 
-/** Import through the current whole-world save controller, including private save-only modules. */
 export async function loadLegacySave(
   current: SaveController | undefined,
   backend: SaveStorage | undefined,

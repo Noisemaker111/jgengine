@@ -10,10 +10,8 @@ import { RainImpactField, type RainImpactFieldProps } from "./RainImpactField.dr
 import { SnowField, type SnowFieldProps } from "./SnowField.draw";
 import { WeatherUniformProvider, type WeatherVector, type WeatherParticleMetrics } from "./weatherUniforms.draw";
 
-/** `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`. */
 export type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust";
 
-/** Props for {@link WeatherLayer}: weather mode, intensity, wind, lightning and clock. */
 export interface WeatherLayerProps {
   mode?: WeatherLayerMode;
   intensity?: number;
@@ -21,15 +19,12 @@ export interface WeatherLayerProps {
   lightning?: number;
   timeScale?: number;
   timeSeconds?: number | (() => number);
-  /** Read authored conditions at the camera from the authoritative simulation clock. */
   sample?: (x: number, z: number) => AuthoredWeatherSample;
   shelters?: readonly EditorVolume[];
   metrics?: WeatherParticleMetrics | undefined;
   rain?: Omit<RainFieldProps, "wind" | "lightning" | "timeScale"> | false | undefined;
   snow?: Omit<SnowFieldProps, "wind" | "timeScale"> | false | undefined;
-  /** Airborne particulate. Drawn in `"dust"` mode, and alongside rain/snow whenever `dustAlways` is set. */
   dust?: Omit<DustFieldProps, "wind" | "timeScale"> | false | undefined;
-  /** Keep dust in the air in every mode — a world that is dusty whatever else the sky is doing. */
   dustAlways?: boolean;
   impacts?: RainImpactFieldProps | false;
   enabled?: boolean;
@@ -48,7 +43,6 @@ function resolveLayerDensity(value: number | undefined, fallback: number, intens
   return (value ?? fallback) * intensity;
 }
 
-/** Draw one weather mode (rain, snow, mixed or dust) with shared wind and clock uniforms. */
 export function WeatherLayer({
   mode = "clear",
   intensity = 1,

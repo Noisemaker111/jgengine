@@ -68,7 +68,7 @@ export interface FrameTiming {
   samples: number;
 }
 
-/** Summarize rAF deltas; the first frame after a screenshot is dropped, as it carries the capture. @internal */
+/** @internal */
 export function frameTiming(deltas: readonly number[]): FrameTiming {
   const kept = deltas.slice(1).filter((ms) => Number.isFinite(ms) && ms > 0).sort((a, b) => a - b);
   if (kept.length === 0) return { p50Ms: 0, p95Ms: 0, fps: 0, samples: 0 };
@@ -235,10 +235,6 @@ export function frameTable(results: readonly RendererDiffResult[]): string {
   return ["| game | WebGL p50 ms (before / after) | WebGPU p50 ms | WebGPU / WebGL | faster |", "| --- | --- | ---: | ---: | --- |", ...rows].join("\n");
 }
 
-/**
- * Several games run one process each: a game that hangs past the browser session's hard deadline is
- * killed with its process, and the games after it still run (one hang used to end the whole list).
- */
 function runEachGame(args: ReturnType<typeof parseRendererDiffArgs>): void {
   const failed: string[] = [];
   const results: RendererDiffResult[] = [];

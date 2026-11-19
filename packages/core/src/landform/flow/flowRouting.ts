@@ -14,35 +14,23 @@ import { createCellHeap, type CellHeap } from "./cellHeap";
 /** Rise per cell across filled flats, in metres; small next to any relief, large next to rounding. */
 export const FLAT_RISE = 1e-6;
 
-/**
- * Flow routing of one heightfield. Arrays are owned by the router and overwritten by the next
- * {@link FlowRouter.route}.
- */
 export interface FlowRouting {
-  /** Water surface per cell: the height a closed depression fills to, the sea where it is higher, else the ground. */
   readonly water: Float64Array;
-  /** Steepest-descent receiver per cell; a base-level cell is its own receiver. */
   readonly receiver: Int32Array;
   /** Distance to the receiver in metres (0 at base level). */
   readonly receiverDistance: Float64Array;
   /** Cells ordered so every receiver comes before its donors. */
   readonly stack: Int32Array;
-  /** Upstream catchment of each cell in m², weighted by rainfall when given. */
   readonly area: Float64Array;
-  /** The filled surface routing ran on: {@link FlowRouting.water} plus a tiny rise across flats. */
   readonly drain: Float64Array;
 }
 
-/** A reusable router for one grid: all buffers allocated once. @internal */
+/** @internal */
 export interface FlowRouter extends FlowRouting {
-  /**
-   * Route `height`. `seaLevel` floods base-level cells below it, and every depression joined to them.
-   * `rainfall`, when given, weights each cell's contribution to catchment area.
-   */
   route(height: Float64Array, seaLevel: number, rainfall?: ArrayLike<number>): void;
 }
 
-/** A router for a topology. @internal */
+/** @internal */
 export function createFlowRouter(topology: LandformTopology): FlowRouter {
   const { cells, neighbour, distance, base, cellArea } = topology;
   const water = new Float64Array(cells);
@@ -130,7 +118,6 @@ export function createFlowRouter(topology: LandformTopology): FlowRouter {
       donorCount[r] = (donorCount[r] ?? 0) + 1;
     }
     // Depth-first from every base-level cell. Cells still to visit wait at the tail of `stack`
-    // while visited ones fill its head; together they never number more than the grid.
     let written = 0;
     for (let root = 0; root < cells; root += 1) {
       if (receiver[root] !== root) continue;

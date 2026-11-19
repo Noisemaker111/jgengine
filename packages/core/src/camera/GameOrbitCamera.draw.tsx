@@ -50,36 +50,27 @@ export function orbitMouseButtons(pointerControls: boolean): { LEFT?: MOUSE; MID
     : { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
 }
 
-/** Callback that receives the orbit camera's follow state every frame. */
 export type CameraFollowListener = (state: CameraFollowState) => void;
 
-/** Props for GameOrbitCamera: yaw/pitch refs, orbit config patch, followed entity and follow-target overrides. */
 export interface GameOrbitCameraProps {
   yawRef: MutableRefObject<number>;
   /** Written each frame with the camera's look elevation (radians) for aim.pitch. */
   pitchRef?: MutableRefObject<number>;
   config?: Partial<OrbitCameraConfig> | undefined;
   followEntityId?: string | undefined;
-  /** Override orbit target derived from the followed entity. */
   resolveFollowTarget?: (entity: SceneEntity) => Xyz;
   onDragChange?: ((dragging: boolean) => void) | undefined;
   onCameraFollow?: CameraFollowListener | undefined;
-  /** Free the left mouse button for pointer verbs (marquee / click-to-move); orbit moves to the middle button. */
   pointerControls?: boolean | undefined;
 }
 
-/** Everything the orbit draw reads each frame, resolved by the UI wrapper. */
 export interface GameOrbitCameraDrawProps extends GameOrbitCameraProps {
   ctx: GameContext;
   userId: string;
   playerFov: PlayerFovState;
 }
 
-/**
- * Draw-side form of {@link GameOrbitCamera}: the follow/turn/collision math runs in `frame` at
- * orbit priority while three's `OrbitControls` owns drag, damped zoom and polar limits.
- * @internal
- */
+/** @internal */
 export function gameOrbitCameraDraw(getProps: () => GameOrbitCameraDrawProps): EngineDraw {
   let controls: OrbitControls | null = null;
   let unregisterControls: (() => void) | null = null;
@@ -276,7 +267,6 @@ export function gameOrbitCameraDraw(getProps: () => GameOrbitCameraDrawProps): E
   };
 }
 
-/** Third-person orbit camera that follows an entity, with drag-to-orbit, zoom limits and optional collision pull-in. */
 export function GameOrbitCamera(props: GameOrbitCameraProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
@@ -287,7 +277,6 @@ export function GameOrbitCamera(props: GameOrbitCameraProps) {
   return null;
 }
 
-/** Seed orbit target before controls mount (demo spawn at origin). */
 export function seedOrbitCameraTarget(camera: Camera, target: Vector3, distance: number, height: number): void {
   camera.position.set(target.x, height, target.z - distance);
   camera.lookAt(target);

@@ -80,10 +80,6 @@ async function payBill(
   return true;
 }
 
-/**
- * One collection pass: pay what the lab can afford, accrue late fees on the rest, sell storage to
- * cover an overdue bill, and only reset the world when the debt outruns every asset it owns.
- */
 export async function autoPayBillsForGame(
   ctx: MutationCtx,
   gameId: Id<"games">,
@@ -206,7 +202,6 @@ export const autoPayBillsBatch = internalMutation({
   },
 });
 
-/** Applies today's frontier_release jump once per UTC day. */
 export const applyDailyFrontierRelease = internalMutation({
   args: { nowMs: v.optional(v.number()) },
   returns: v.object({

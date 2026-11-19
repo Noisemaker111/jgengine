@@ -4,10 +4,8 @@ import { frictionLineCoefficient } from "./boatResistance";
 const DEG = Math.PI / 180;
 const KNOT = 1852 / 3600;
 
-/** The published hulls {@link boatFromReference} knows. */
 export type BoatReferenceId = "holtrop-mennen-1982" | "speedboat-6m" | "kvlcc2-l7";
 
-/** Every id {@link boatFromReference} accepts. */
 export const BOAT_REFERENCE_IDS: readonly BoatReferenceId[] = ["holtrop-mennen-1982", "speedboat-6m", "kvlcc2-l7"];
 
 /** Holtrop and Mennen's (1982) worked example: a 205 m single-screw ship with bulb, transom and a B-series screw. */

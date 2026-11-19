@@ -29,11 +29,7 @@ export interface Loadouts {
   applyLoadout(userId: string, loadoutId: string): { reason: string } | null;
 }
 
-/**
- * Save, name, and swap equipment loadouts.
- *
- * @capability loadouts save and swap named equipment loadouts
- */
+/** @capability loadouts save and swap named equipment loadouts */
 export function createLoadouts(deps: LoadoutDeps): Loadouts {
   const definitions = new Map<string, LoadoutDef>();
 

@@ -83,9 +83,7 @@ const TOP_INCLUSIVE = 25;
 
 /** One setting a run turns on before the game boots, echoed beside the numbers it produced. */
 export interface PerfSettingOverride {
-  /** The id written to settings storage: an engine setting, or the id the game declares. */
   id: string;
-  /** What `--set` named: the id or its last segment. */
   key: string;
   value: string;
   /**
@@ -96,7 +94,6 @@ export interface PerfSettingOverride {
   scope: "engine" | "game";
 }
 
-/** One setting a game declares beyond the engine's own, as the dev runner publishes it for the harness. */
 export interface DeclaredSetting {
   id: string;
   kind: "slider" | "toggle" | "select" | string;
@@ -105,7 +102,6 @@ export interface DeclaredSetting {
   max?: number;
 }
 
-/** Every persisted setting id the engine publishes, by the id and by its last segment. */
 const SETTING_IDS_BY_KEY: ReadonlyMap<string, string> = (() => {
   const byKey = new Map<string, string>();
   for (const id of [...Object.values(SETTING_IDS), ...Object.values(ACCESSIBILITY_SETTING_IDS)]) {
@@ -132,43 +128,32 @@ const KNOWN_SETTING_KEYS = [...SETTING_IDS_BY_KEY.keys()].filter((key) => !key.i
 const HARNESS_PARAMS: ReadonlySet<string> = new Set(["game", "capture", "device", "telemetry", "quality", "state"]);
 
 export interface PerfArgs {
-  /** The games to measure, in order, one after another in one browser. */
   games: string[];
-  /** The tier `--quality` pinned; undefined measures the game's own tier, which the record still names. */
   quality?: GraphicsTier;
-  /** `--draft`: the low-tier half-size iteration preset. */
   draft: boolean;
   profile: boolean;
   seconds: number;
-  /** In-page sampler on/off for the A/B frame-time overhead comparison. */
   telemetry: "on" | "off";
   /** Settings enabled before boot, so a measured cost names the setting that caused it. */
   settings: PerfSettingOverride[];
   /** The game's `capture.states` entry the run boots into, so two runs are the same scene. */
   state?: string;
-  /** Extra page params in the order given (`spawn=…`, `seed=…`), for a scene no state names. */
   params: [string, string][];
-  /** rAF clock the browser is launched on; `uncapped` is opt-in and marks the record. */
   frameClock: FrameClock;
   /** Show a real window (off-screen) instead of headless Chrome. */
   headed?: boolean;
   /** `--cold`: boot Chrome and Vite directly instead of reusing the warm daemon. */
   cold?: boolean;
-  /** How the run moves while measured: `walk` (default) holds forward and weaves, `still` stands. */
   path: PerfPath;
   /** Viewport in CSS pixels; 1920x1080 unless `--size` or `--draft` says otherwise. */
   size: { width: number; height: number };
-  /** Where the JSON record goes; the text summary goes to stdout. */
   out?: string;
-  /** A saved record to diff this run against, or a git ref whose cached run of each game is the before side. */
   compare?: string;
   /** Print the JSON record to stdout instead of the text summary. */
   json: boolean;
   /** `dev` (default for now): the Vite dev server. `--production`: the minified, bundled build players get. */
   build: PerfBuild;
-  /** `--tally <group>`: also record each game's scorecard in the local tally store under this group. */
   tally?: string;
-  /** `--cpu n`: how many times slower the slow-CPU window's CPU runs (default 4; 1 skips the window). */
   cpuRate: number;
 }
 
@@ -263,7 +248,6 @@ export function parseSettingSpec(spec: string): PerfSettingOverride {
   return { id, key, value, scope: "engine" };
 }
 
-/** The game's declared settings the dev runner published, or none when it published nothing usable. */
 export function parseDeclaredSettings(raw: string | null | undefined): DeclaredSetting[] {
   if (raw === null || raw === undefined || raw.trim().length === 0) return [];
   let parsed: unknown;
@@ -538,8 +522,6 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   return { kind: "run", args: { games, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, path, size, json, build, cpuRate, ...(tally === undefined ? {} : { tally }), ...(out === undefined ? {} : { out }), ...(compare === undefined ? {} : { compare }), ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
-
-
 export interface ProfileNode {
   id: number;
   callFrame: { functionName: string; url: string; lineNumber: number; columnNumber: number };
@@ -589,7 +571,6 @@ export function aggregateSelfTime(
   });
 }
 
-/** A browser built-in such as `getParameter` or `readPixels`: named, with no script of its own. */
 function isNativeCall(node: ProfileNode): boolean {
   return node.callFrame.url === "" && !node.callFrame.functionName.startsWith("(") && node.callFrame.functionName !== "";
 }
@@ -632,7 +613,6 @@ export interface HeapSampleNode {
   children?: HeapSampleNode[];
 }
 
-/** One function's share of what the window allocated, for `--profile`. */
 export interface AllocationEntry {
   fn: string;
   at: string;
@@ -686,7 +666,6 @@ function rank(totals: ReadonlyMap<string, number>, windowMs: number, top: number
 
 export type { FrameWindow } from "../packages/core/src/devtools/report";
 
-/** Frame timings from requestAnimationFrame deltas, the interval a player sees. */
 export function summarizeFrameDeltas(deltas: readonly number[]): FrameWindow {
   return summarizeFrameWindow(deltas);
 }
@@ -805,7 +784,6 @@ export const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
   };
 })();`;
 
-/** Whole-frame draw counts for one measured window, from the per-frame samples. */
 export interface FrameDraws {
   /** Frames the counter sampled; 0 means the page never registered a frame. */
   frames: number;
@@ -815,11 +793,6 @@ export interface FrameDraws {
   max: number;
 }
 
-/**
- * Reduce per-frame draw totals to the number a budget compares. The p95 is the gate's
- * figure: a shadow or prepass that runs on a cadence is counted, a single spike is not,
- * and it moved by under 2% between runs of the same build where the median moved 12%.
- */
 export function summarizeFrameDraws(frames: readonly number[]): FrameDraws {
   const kept = frames.filter((value) => Number.isFinite(value) && value >= 0);
   if (kept.length === 0) return { frames: 0, min: 0, p50: 0, p95: 0, max: 0 };
@@ -857,7 +830,6 @@ const RESOURCE_BUFFER_SCRIPT = `(() => {
   try { performance.setResourceTimingBufferSize(4000); } catch {}
 })();`;
 
-/** Window the blank-page probe samples: long enough for a few hundred uncapped ticks. */
 const CLOCK_PROBE_MS = 300;
 /** Probe samples one uncapped run may take before its clock reads as frozen. */
 const CLOCK_PROBE_ATTEMPTS = 3;
@@ -998,16 +970,10 @@ async function countInstances(
 
 /** Everything one measured window says about a game, as printed by `bun run perf`. */
 export interface PerfRecord extends Omit<PerfReport, "quality"> {
-  /**
-   * The graphics tier the window rendered at, as the page reported it, not `PerfReport`'s capture
-   * preset: `--draft` and `--quality low|medium|high|ultra` are different things and both print here.
-   */
   quality: string;
-  /** The settings this run enabled, `id=value` each, so its numbers carry their cause. */
   overrides: string[];
   /** The `capture.states` entry the run booted into, or null when it played the plain start. */
   state: string | null;
-  /** Extra page params the run pinned beside the state, `k=v` each. */
   params: string[];
   /**
    * The rAF clock the browser ran on. `capped` frame times are vsync multiples (16.7 ms steps) and
@@ -1016,11 +982,8 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   frameClock: FrameClock;
   /** Which engine the measured window rendered, so a saved record can be audited later. */
   engine?: EngineRecord;
-  /** Browser cache at launch and earlier games in this browser; absent in older records. */
   cache?: { browser: "cold" | "warm"; priorGames: number };
-  /** Server-reported checkout and boot revision compared with the measuring checkout. */
   servedSource?: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null };
-  /** How the run moved while measured. */
   path?: PerfPath;
   /** Player endpoints sampled across the measurement; absent when the bridge cannot report them. */
   movement?: { start: readonly number[] | null; end: readonly number[] | null; displacement: number | null; focus: readonly (string | null)[]; errors: string[] };
@@ -1040,7 +1003,6 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
    * below normal also measured whatever outranked it; absent in older records.
    */
   machine?: RunMachine;
-  /** What a player feels, on the build the run measured; absent in older records. */
   scorecard?: Scorecard;
 }
 
@@ -1050,12 +1012,10 @@ export interface RunMachine {
   launcherPriority: PriorityLabel;
 }
 
-/** This run's {@link RunMachine}, read when a record is built. */
 export function runMachine(): RunMachine {
   return { lockWaitSeconds: Math.round(perfLockWaitedMs() / 1000), chromePriority: sessionChromePriority() ?? "unknown", launcherPriority: currentPriority() };
 }
 
-/** The clause a summary line adds about the run's place on the machine, or "" for an older record. */
 export function machineClause(machine: RunMachine | undefined): string {
   if (machine === undefined) return "";
   return `, waited ${machine.lockWaitSeconds} s for the perf lock, Chrome at ${machine.chromePriority} priority (measured from ${machine.launcherPriority})`;
@@ -1111,14 +1071,12 @@ export function movementEvidence(start: { position: number[] | null; error: stri
   return { start: a, end: b, displacement, focus: [start.focus, end.focus], errors: [start.error, end.error].filter((error): error is string => error !== null) };
 }
 
-/** Whether endpoint evidence supports a matched walking route; intermediate paths remain unmeasured. */
 export function movementComparison(before: PerfRecord["movement"], after: PerfRecord["movement"]): "unavailable" | "unequal" | "endpoints match" {
   if (before?.start == null || before.end == null || after?.start == null || after.end == null) return "unavailable";
   const separated = (a: readonly number[], b: readonly number[]) => a.length !== b.length || a.some((value, index) => Math.abs(value - (b[index] ?? Infinity)) > 0.01);
   return separated(before.start, after.start) || separated(before.end, after.end) ? "unequal" : "endpoints match";
 }
 
-/** Compare the live server's identity, not just the measuring process's checkout. */
 export function compareServedSource(server: ServerIdentityReport | null, expectedRoot: string, expectedCommit: string | null): "matched" | "mismatch" | "unavailable" {
   if (server === null || server.head === undefined || expectedCommit === null) return "unavailable";
   const normalize = (path: string) => { const value = resolve(path).replaceAll("\\", "/"); return process.platform === "win32" ? value.toLowerCase() : value; };
@@ -1126,12 +1084,10 @@ export function compareServedSource(server: ServerIdentityReport | null, expecte
   return "matched";
 }
 
-/** Preserve the source check and original error when measurement fails. */
 export function perfFailureRecord(error: unknown, servedSource: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null; error?: string | null }) {
   return { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined, servedSource };
 }
 
-/** Log evidence that prevents a run from being reused as a clean baseline. */
 export function baselineLogProblem(logs: ReportLogs | null): string | null {
   if (logs === null) return "game logs unavailable";
   if (logs.dropped > 0) return "game logs incomplete";
@@ -1160,43 +1116,30 @@ export interface MeasureOptions {
   /** Dev-server base URL, e.g. `http://127.0.0.1:4601`. */
   base: string;
   game: string;
-  /** The graphics tier to pin; omitted measures whatever tier the game itself resolves. */
   quality?: GraphicsTier | undefined;
-  /** Half viewport at the low tier, for a quick smoke run. */
   draft?: boolean;
   seconds?: number;
   warmupMs?: number;
-  /** Run the CPU profiler pass afterwards; the budget gate does not need it. */
   profile?: boolean;
-  /** Also sample what the profiled window allocates, by function (`--profile`). */
   allocations?: boolean;
-  /** In-page report sampler: `off` loads the same build with `?telemetry=off` for an A/B run. */
   telemetry?: "on" | "off";
-  /** Settings seeded into the page's settings storage before it boots. */
   settings?: readonly PerfSettingOverride[];
   /** The game's `capture.states` entry to boot into, so two runs are the same scene. */
   state?: string | undefined;
-  /** Extra page params pinned beside the state (`spawn=…`, `seed=…`). */
   params?: readonly (readonly [string, string])[];
-  /** The rAF clock the caller launched the browser on, echoed into the record. */
   frameClock?: FrameClock;
-  /** Move through the game while measuring (`walk`), or stand (`still`, the default here). */
   path?: PerfPath;
   /** Viewport override in CSS pixels; the device default when omitted. */
   size?: { width: number; height: number };
-  /** CPU and call rows the breakdown keeps (default 15); a report that sums costs by group needs the tail too. */
   breakdownTop?: number;
   /** After the frame window, time every draw for a few seconds more and save it as `gpuWork`. */
   gpuWork?: boolean;
-  /** Which build `base` serves (default `dev`, what a caller's own dev server is); named in the scorecard. */
   build?: PerfBuild;
-  /** The production build's folder, whose source maps name a profile's minified frames by package. */
   buildDir?: string | undefined;
   /** How many times slower the CPU runs in the slow-CPU window after the profile (default 1: no window). */
   cpuRate?: number;
 }
 
-/** One window with the CPU profiler and the allocation sampler on: what ran, how many frames, what was allocated. */
 export interface ProfiledWindow {
   raw: RawProfile;
   ms: number;
@@ -1286,7 +1229,6 @@ export interface PerfMeasure {
   profileMs: number;
   /** Who allocated what over the profiled window, biggest first; null unless `allocations` was asked for. */
   allocators: AllocationEntry[] | null;
-  /** Blank-page rAF median the uncapped run proved its clock with, or null on the capped path. */
   clockProbeMs: number | null;
   /** Frame times of the measured window, for a caller that pools windows. */
   deltas: number[];
@@ -1342,7 +1284,6 @@ async function confirmSettings(session: CdpSession, settings: readonly PerfSetti
   }
 }
 
-/** Keep the measured inputs, breakdown and failures available after either perf command exits. */
 export function writePerfRecord(record: PerfRecord, path: string): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
@@ -1618,7 +1559,6 @@ async function main(): Promise<void> {
   const cards: Array<{ label: string; card: Scorecard }> = [];
   let pending = [...games];
 
-  /** Measure one game in the browser already running on `debugPort`, then write and print its record. */
   const measureOne = async (game: string, debugPort: number, base: string, cache: NonNullable<PerfRecord["cache"]>, servedSource: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null; error?: string | null }, buildDir: string | undefined): Promise<void> => {
     if (servedSource.status !== "matched") console.error(`perf: served source ${servedSource.status}; timings cannot be attributed to this checkout`);
     const session = await openPageSession(debugPort);
@@ -1757,10 +1697,6 @@ async function main(): Promise<void> {
 /** After the last record is written, closing the browser and dev server gets this long before the process exits anyway. */
 const EXIT_AFTER_RESULTS_MS = 10_000;
 
-/**
- * Exit once the results are out even if teardown stalls: a run once sat 7 minutes after its last
- * record. The exit hooks still kill the browser this run launched and delete its profile.
- */
 function armExitAfterResults(code: number): void {
   setTimeout(() => {
     console.error(`perf: results are written; teardown was still running after ${EXIT_AFTER_RESULTS_MS / 1000}s, so exiting without it`);
@@ -1768,10 +1704,6 @@ function armExitAfterResults(code: number): void {
   }, EXIT_AFTER_RESULTS_MS).unref();
 }
 
-/**
- * The before side of each game's comparison: a record file for a one-game run, or each game's
- * cached run at a git ref. Throws before anything is measured when one is missing.
- */
 function resolveBaselines(compare: string | undefined, games: readonly string[], conditions: string): Map<string, PerfRecord> {
   const baselines = new Map<string, PerfRecord>();
   if (compare === undefined) return baselines;
@@ -1800,7 +1732,6 @@ function resolveBaselines(compare: string | undefined, games: readonly string[],
   return baselines;
 }
 
-/** A record file's text as the record a comparison reads, refusing one without a breakdown. */
 function checkedBaseline(text: string, what: string): PerfRecord {
   const record = JSON.parse(text) as PerfRecord;
   if (record.breakdown === undefined || record.breakdown === null) {
@@ -1835,7 +1766,6 @@ export function perfBatchTable(rows: readonly PerfBatchRow[]): string {
   return lines.join("\n");
 }
 
-/** The text a person reads after a run: the breakdown, the run's conditions, and the diff when asked. */
 export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null): string {
   const conditions = `${record.viewport}, ${record.quality} tier, ${record.frameClock} clock, path ${record.path ?? "still"}, ${record.gpu}${machineClause(record.machine)}`;
   const lines: string[] = [];

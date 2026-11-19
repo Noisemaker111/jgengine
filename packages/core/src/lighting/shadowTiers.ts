@@ -1,9 +1,9 @@
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 
-/** Shadow map size when neither the game nor a profile names one. @internal */
+/** @internal */
 export const DEFAULT_SHADOW_MAP_SIZE = 1024;
 
-/** Cascades when neither the game nor a profile names a count. @internal */
+/** @internal */
 export const DEFAULT_CASCADES = 3;
 
 /**

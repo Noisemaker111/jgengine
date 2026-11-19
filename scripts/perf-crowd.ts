@@ -8,7 +8,6 @@ import { printHelpIfAsked } from "./script-help";
 
 /** Agents per square metre; the square world grows with the count so density stays fixed. */
 export const CROWD_DENSITY = 0.5;
-/** Neighbours closer than this push each other apart. */
 export const CROWD_RADIUS = 1.5;
 const BODY_RADIUS = 0.3;
 const MAX_SPEED = 1.5;
@@ -20,7 +19,6 @@ export interface Crowd {
   readonly count: number;
   readonly side: number;
   step(): void;
-  /** Every agent's x and z, in spawn order, for checks. */
   positions(): Float64Array;
 }
 
@@ -52,7 +50,6 @@ function boundsAt(x: number, z: number): RenderBounds {
   };
 }
 
-/** The crowd written the way game code writes it: ids, `store.get`, `index.querySphere`, `setPose`, `setVelocity`, `index.update`. */
 export function createEngineCrowd(count: number, seed = "crowd"): Crowd {
   const start = startState(count, seed);
   const { side } = start;
@@ -110,11 +107,6 @@ export function createEngineCrowd(count: number, seed = "crowd"): Crowd {
   };
 }
 
-/**
- * The same step through the store's fast path, the way an engine system steps many entities: ids resolve
- * to handles once, pose is read from `store.columns`, neighbours come from a point grid rebuilt over the
- * position column each tick, and writes go by handle (entity objects and notifications stay in step).
- */
 export function createColumnCrowd(count: number, seed = "crowd"): Crowd {
   const start = startState(count, seed);
   const { side } = start;
@@ -174,7 +166,6 @@ export function createColumnCrowd(count: number, seed = "crowd"): Crowd {
   };
 }
 
-/** The same step over Float32Array columns and a counting-sort grid rebuilt each tick: the floor the engine path is measured against. */
 export function createFlatCrowd(count: number, seed = "crowd"): Crowd {
   const start = startState(count, seed);
   const { side } = start;

@@ -20,7 +20,6 @@ import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
  * @capability entity-frames world-anchored overhead entity frames (nameplate/healthbar), data-first + caller-composed
  */
 
-/** A world position projected to screen space by the caller's camera. */
 export interface EntityScreenProjection {
   /** CSS px from the viewport's left edge. */
   x: number;
@@ -31,7 +30,6 @@ export interface EntityScreenProjection {
    * frames paint on top. Optional; defaults to 0 when the projection omits it.
    */
   depth?: number;
-  /** `true` when the point is behind the camera; such entries are culled. */
   behind?: boolean;
 }
 
@@ -52,18 +50,13 @@ export interface EntityFrameEntry {
   worldPosition: readonly [number, number, number];
 }
 
-/** One entry resolved to a screen placement, ready to render. */
 export interface EntityFramePlacement<E extends EntityFrameEntry> {
   entry: E;
-  /** Final screen x after `offsetX`. */
   x: number;
-  /** Final screen y after `offsetY`. */
   y: number;
-  /** Resolved depth (0 when the projection omitted one). */
   depth: number;
 }
 
-/** Anchoring, culling, and stacking options shared by the layout core and component. */
 export interface EntityFrameLayoutOptions {
   /** Screen px added to every projected x. Default 0. */
   offsetX?: number;
@@ -76,16 +69,9 @@ export interface EntityFrameLayoutOptions {
   viewport?: { width: number; height: number };
   /** Extra px beyond each viewport edge still treated as on-screen. Default 64. */
   margin?: number;
-  /** Cap the number of rendered frames, keeping the nearest. Omit for no cap. */
   maxCount?: number;
 }
 
-/**
- * Pure layout core: projects each entry, drops the ones behind the camera,
- * off-screen (when `viewport` is set), or beyond `maxCount`, and returns the
- * survivors sorted farthest-first so nearer frames render last (on top). Stable
- * for equal depths via `id`. No UI runtime, no DOM — unit-testable in isolation.
- */
 export function layoutEntityFrames<E extends EntityFrameEntry>(
   entries: readonly E[],
   project: ProjectEntity,
@@ -119,37 +105,16 @@ export function layoutEntityFrames<E extends EntityFrameEntry>(
   return placed;
 }
 
-/** Props for {@link EntityFrames}. */
 export interface EntityFramesProps<E extends EntityFrameEntry> extends EntityFrameLayoutOptions {
-  /** Caller-owned entities to anchor. Only `id` + `worldPosition` are read here. */
   entries: readonly E[];
-  /** World→screen projector; return `null` to cull. */
   project: ProjectEntity;
-  /**
-   * Renders one entity's frame — compose a `KitMeter` (`value`/`max`)
-   * and a name here, drawn by the active UI kit. The wrapper handles
-   * positioning; render your content anchored at bottom-center of the point.
-   */
   renderFrame: (entry: E, placement: EntityFramePlacement<E>) => ReactNode;
-  /** Class on the fullscreen overlay layer. */
   className?: string | undefined;
-  /** Style on the fullscreen overlay layer (merged over the absolute-fill default). */
   style?: CSSProperties;
-  /**
-   * CSS transform on each frame wrapper, controlling how content sits relative
-   * to the anchor point. Default `translate(-50%, -100%)` (centered, above).
-   */
   anchorTransform?: string | undefined;
 }
 
-/**
- * Absolutely-positioned overlay that renders a caller-composed frame over every
- * on-screen entry. Drop it inside `HudCanvas` (or any positioned ancestor) and
- * feed it fresh `entries`/`project` each frame. Every part carries `data-*`
- * hooks (`data-entity-frames`, `data-entity-frame="<id>"`) for tests and skins.
- *
- * @capability entity-frames overlay that renders caller-composed frames over on-screen entities
- */
+/** @capability entity-frames overlay that renders caller-composed frames over on-screen entities */
 export function EntityFrames<E extends EntityFrameEntry>({
   entries,
   project,

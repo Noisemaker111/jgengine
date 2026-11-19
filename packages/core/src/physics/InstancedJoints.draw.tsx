@@ -6,20 +6,12 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useRef } from "@jgengine/core/ui/jsx";
 
-/** Props for InstancedJoints: the physics world whose joints are drawn and the line color. */
 export interface InstancedJointsProps {
-  /** Physics world whose active joints are drawn as line segments between their world anchors. */
   world: PhysicsWorld;
-  /** Line color. Default warm yellow. */
   color?: THREE.ColorRepresentation;
 }
 
-/**
- * Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one
- * LineSegments batch. Endpoints are streamed each frame from `world.readJointSegments`; pair with
- * `InstancedBodies` to see the constraint structure over the bodies.
- * @capability physics-joint-lines Draw a physics world's joints as lines
- */
+/** @capability physics-joint-lines Draw a physics world's joints as lines */
 export function instancedJointsDraw(getProps: () => InstancedJointsProps): EngineDraw {
   const geometry = new THREE.BufferGeometry();
   const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial());
@@ -76,12 +68,7 @@ export function instancedJointsDraw(getProps: () => InstancedJointsProps): Engin
   };
 }
 
-/**
- * Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one
- * LineSegments batch. Endpoints are streamed each frame from `world.readJointSegments`; pair with
- * `InstancedBodies` to see the constraint structure over the bodies.
- * @capability physics-joint-lines Draw a physics world's joints as lines
- */
+/** @capability physics-joint-lines Draw a physics world's joints as lines */
 export function InstancedJoints(props: InstancedJointsProps) {
   const latest = useRef(props);
   latest.current = props;

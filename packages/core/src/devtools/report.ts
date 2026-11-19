@@ -10,13 +10,10 @@ import type { DevtoolsLogLevel, SystemProbeReading } from "./types";
 /** Frame duration above which a frame counts as a spike (~30 fps). */
 export const LONG_FRAME_MS = 33.4;
 
-/** Graphics tier the record was measured at. */
 export type PerfQuality = "full" | "draft";
 
-/** Where the scene-node count came from: the live scene graph, a heap walk, or nowhere. */
 export type SceneNodeSource = "scene-graph" | "heap-object3d" | "unavailable";
 
-/** Frame timings over the measured window, as the player sees them. */
 export interface FrameWindow {
   fps: number;
   avgMs: number;
@@ -26,13 +23,7 @@ export interface FrameWindow {
   longFrames: number;
 }
 
-/** Renderer-side counts for the measured window; `null` where the source could not read them. */
 export interface RenderReport {
-  /**
-   * The renderer's own draw counter as the devtools probe samples it. three accumulates this across
-   * every pass in a frame (the probe sets `info.autoReset = false`), but one sample is one frame, so
-   * two runs of the same build can differ by a pass that runs on a cadence.
-   */
   draws: number | null;
   /**
    * Every draw issued in a frame, all passes (shadow, main, postfx, AO, DOF), as the 95th percentile
@@ -40,7 +31,6 @@ export interface RenderReport {
    * draw calls, so the in-page sampler reports `null` here.
    */
   drawsFrame: number | null;
-  /** Frames the whole-frame count was taken over; 0 where nothing measured it. */
   drawsFrames: number;
   triangles: number | null;
   geometries: number | null;
@@ -50,7 +40,6 @@ export interface RenderReport {
   scenes: number;
 }
 
-/** GPU-object creation counts. `total` is since the page loaded, the named fields since warmup. */
 export interface GlReport {
   programsLinked: number;
   framebuffers: number;
@@ -64,24 +53,20 @@ export interface GlReport {
   attached: boolean;
 }
 
-/** One sampled stack frame reduced to a readable key and its self time. */
 export interface ProfileEntry {
   fn: string;
   at: string;
   selfMs: number;
   selfPct: number;
-  /** For a library function, the nearest engine or game function that called it most: where to look. */
   via?: string;
 }
 
-/** CPU profile summary; only the CDP harness can produce one. */
 export interface ProfileReport {
   samplingUs: number;
   seconds: number;
   top: readonly ProfileEntry[];
 }
 
-/** One log line as it appears in the report. */
 export interface ReportLogLine {
   at: number;
   level: DevtoolsLogLevel;
@@ -96,10 +81,8 @@ export interface ReportLogs {
   severe: readonly ReportLogLine[];
 }
 
-/** Who produced the report, and how much producing it cost. */
 export interface ReportTelemetry {
   source: "in-page" | "cdp";
-  /** True once the counters have a post-warmup baseline, which the link/framebuffer fields need. */
   warmedUp: boolean;
   /** Milliseconds since the sampler started. */
   ageMs: number;
@@ -116,14 +99,12 @@ export interface PerfReport {
   viewport: string;
   /** Length of the measured frame window in seconds. */
   seconds: number;
-  /** Wall-clock timestamp when the record was taken. */
   at: number;
   frame: FrameWindow;
   render: RenderReport;
   gl: GlReport;
   sim: { avgMs: number; outsideMs: number } | null;
   profile: ProfileReport | null;
-  /** Per-system probe readings, keyed by system id (`render/culling`, `needs`, …). */
   systems: Record<string, SystemProbeReading>;
   logs: ReportLogs | null;
   telemetry: ReportTelemetry | null;

@@ -2,11 +2,9 @@
 import type { GameSettingDef, SettingOption, SettingsStore } from "../settings/settingsModel";
 import type { I18n, Locale } from "./i18n";
 
-/** The persisted settings id of the player's locale. */
 export const LOCALE_SETTING_ID = "language.locale";
 
-/** The browser's preferred locales, most wanted first; empty outside a browser. * @internal
- */
+/** @internal */
 export function browserLocales(): readonly string[] {
   if (typeof navigator === "undefined") return [];
   const languages: readonly string[] | undefined = navigator.languages;
@@ -14,12 +12,7 @@ export function browserLocales(): readonly string[] {
   return typeof navigator.language !== "string" || navigator.language === "" ? [] : [navigator.language];
 }
 
-/**
- * The supported locale that best matches the requested tags: an exact tag, else the same language
- * (`"pt-BR"` asks for `"pt"`), else `base`.
- *
- * @capability match-locale pick the supported locale that best matches requested tags
- */
+/** @capability match-locale pick the supported locale that best matches requested tags */
 export function matchLocale(requested: readonly string[], supported: readonly Locale[], base: Locale): Locale {
   for (const tag of requested) {
     const wanted = tag.toLowerCase();
@@ -32,15 +25,13 @@ export function matchLocale(requested: readonly string[], supported: readonly Lo
   return base;
 }
 
-/** The locale the player has chosen, else the browser's best match, else `base`. */
 export function readLocale(store: SettingsStore, supported: readonly Locale[], base: Locale, requested: readonly string[] = browserLocales()): Locale {
   const stored = store.get(LOCALE_SETTING_ID, "");
   if (typeof stored === "string" && supported.includes(stored)) return stored;
   return matchLocale(requested, supported, base);
 }
 
-/** Each locale labelled in its own language ("Deutsch", "日本語"). * @internal
- */
+/** @internal */
 export function localeOptions(supported: readonly Locale[]): SettingOption[] {
   return supported.map((value) => {
     let label = value;
@@ -71,7 +62,6 @@ export function localeSettingDef(i18n: I18n, requested: readonly string[] = brow
   };
 }
 
-/** `extra` with the Language row added when the game has a translator with more than one locale. */
 export function withLocaleSetting(extra: readonly GameSettingDef[] | undefined, i18n: I18n | undefined): readonly GameSettingDef[] {
   const rows = extra ?? [];
   if (i18n === undefined || i18n.locales().length < 2 || rows.some((row) => row.id === LOCALE_SETTING_ID)) return rows;

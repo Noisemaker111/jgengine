@@ -33,7 +33,6 @@ export interface GameAssetBuildPlan {
   readonly impostors?: ImpostorBakePlan & { readonly include: readonly string[] };
 }
 
-/** Most worker threads the pipeline runs at once; the PC is shared. */
 export const MAX_ASSET_WORKERS = 4;
 
 /** Read `assetBuild` from a game's `jgengine.json`; null when it has none. */
@@ -46,7 +45,6 @@ export function readAssetBuildPlan(gameDir: string): GameAssetBuildPlan | null {
   return parseAssetBuildPlan(plan, path);
 }
 
-/** Validate an `assetBuild` value, naming the field that is wrong. */
 export function parseAssetBuildPlan(value: unknown, where = "assetBuild"): GameAssetBuildPlan {
   if (typeof value !== "object" || value === null) throw new Error(`${where}: assetBuild must be an object`);
   const lods: unknown = Reflect.get(value, "lods");
@@ -91,7 +89,6 @@ export function parseAssetBuildPlan(value: unknown, where = "assetBuild"): GameA
   return plan;
 }
 
-/** The files under `publicDir` the globs name, in a stable order. Links into the asset store are followed. */
 export function matchPublicFiles(publicDir: string, include: readonly string[], exclude: readonly string[] = []): string[] {
   const found = new Set<string>();
   const skip = exclude.map((pattern) => new Bun.Glob(pattern));
@@ -110,9 +107,7 @@ export interface GameAssetBuildOptions {
   log?: (line: string) => void;
   /** Encode KTX2 texture twins. Default true. */
   textures?: boolean;
-  /** Build simplified levels. Default true. */
   lods?: boolean;
-  /** Bake impostors in a headless browser. Default true. */
   impostors?: boolean;
   workers?: number;
 }
@@ -122,7 +117,6 @@ export interface GameAssetBuildSummary {
   readonly failed: readonly string[];
 }
 
-/** Run every step of a game's asset build; see {@link GameAssetBuildPlan}. */
 export async function buildGameAssets(gameDir: string, options: GameAssetBuildOptions = {}): Promise<GameAssetBuildSummary> {
   const log = options.log ?? console.log;
   const workers = Math.max(1, Math.min(MAX_ASSET_WORKERS, options.workers ?? MAX_ASSET_WORKERS, cpus().length));

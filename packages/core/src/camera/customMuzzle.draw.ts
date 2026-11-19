@@ -1,6 +1,5 @@
 import { Camera, Vector3 } from "three";
 
-/** Writes a live presentation muzzle in world space; false means this rig has no muzzle available. */
 export type FirstPersonMuzzleReader = (target: Vector3) => boolean;
 
 interface MuzzleEntry {

@@ -3,38 +3,27 @@ import type { NeedSet } from "../sim/needs";
 
 /** One need's say in the mood score; weights are relative, so they need no fixed total. */
 export interface MoodWeight {
-  /** Declared need id on the agent's need set; unknown ids are ignored. */
   readonly need: string;
   readonly weight: number;
 }
 
-/** One labelled band of the 0-100 mood score. */
 export interface MoodTier {
   readonly id: string;
   readonly label: string;
-  /** Lowest score that reads as this tier. */
   readonly at: number;
 }
 
-/** What the agent feels right now, on the caller's own tier labels. */
 export interface Mood {
-  /** 0 (nothing satisfied) . 100 (everything satisfied), plus any live source. */
   readonly score: number;
   readonly tier: string;
   readonly label: string;
 }
 
-/** Serializable mood state: the game-raised biases that sit on top of need satisfaction. */
 export interface MoodSnapshot {
   sources: Record<string, number>;
 }
 
-/**
- * The band a score reads as, from the caller's own tiers. A score below every tier reads as the
- * lowest tier in the list; an empty list throws `RangeError`.
- *
- * @capability mood a mood derived from how satisfied an agent's needs are
- */
+/** @capability mood a mood derived from how satisfied an agent's needs are */
 export function moodTierOf(score: number, tiers: readonly MoodTier[]): MoodTier {
   let lowest = tiers[0];
   if (lowest === undefined) throw new RangeError("A mood tier list needs at least one tier");
@@ -67,7 +56,6 @@ export function readMood(
   return { score, tier: tier.id, label: tier.label };
 }
 
-/** {@link readMood}'s 0-100 score alone. */
 function moodScore(
   needs: Pick<NeedSet, "ids" | "fraction">,
   weights: readonly MoodWeight[],
@@ -90,27 +78,16 @@ function moodScore(
 
 /** A mood reader that keeps the game-raised biases, so a queue or a litter patch moves mood too. */
 export interface MoodReader {
-  /** Current mood: need satisfaction plus every live source. */
   read(): Mood;
-  /** Raise (or lower, with a negative) one named bias; calling again replaces that source. */
   setSource(id: string, value: number): void;
-  /** Drop one bias - the queue emptied, the litter was cleaned. */
   clearSource(id: string): void;
-  /** Every live bias, for a debug line or a panel. */
   sources(): Readonly<Record<string, number>>;
-  /** Replace the weights and tiers in play, keeping the biases. */
   retune(patch: { readonly weights?: readonly MoodWeight[]; readonly tiers?: readonly MoodTier[] }): void;
   snapshot(): MoodSnapshot;
   restore(next: MoodSnapshot): void;
 }
 
-/**
- * Create the mood an agent carries. Needs are the agent's own (shared with its utility brain), the
- * tiers are the game's own bands, and every bias is named data the game can remove again - there is
- * no decaying hidden penalty.
- *
- * @capability mood a mood derived from how satisfied an agent's needs are
- */
+/** @capability mood a mood derived from how satisfied an agent's needs are */
 export function createMoodReader(config: {
   readonly needs: Pick<NeedSet, "ids" | "fraction">;
   readonly weights?: readonly MoodWeight[];

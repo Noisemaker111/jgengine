@@ -6,21 +6,16 @@ import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/core/model/modelLoad
 import { linkPmremBake } from "./pmremLink.draw";
 import { compileObjects, drawsHeld, linkAhead } from "@jgengine/core/render/shaderWarmup.draw";
 
-/** How often and how sharply the world reflection probe captures the scene. @internal */
+/** @internal */
 export interface WorldProbeSettings {
   /** Cube face size in pixels. */
   size: number;
   /** Seconds between recaptures while the camera stays put, so a day cycle reaches reflections. */
   interval: number;
-  /** Camera travel in world units that triggers a recapture early. */
   moveDistance: number;
 }
 
-/**
- * The probe each graphics tier runs. Low keeps the procedural sky probe alone; the tiers above
- * capture the real world around the camera, one cube face per frame.
- * @internal
- */
+/** @internal */
 export function worldProbeForQuality(quality: GraphicsQuality): WorldProbeSettings | null {
   if (quality === "low") return null;
   if (quality === "medium") return { size: 64, interval: 8, moveDistance: 40 };
@@ -55,7 +50,7 @@ export function probeDue(
 
 const FACES = 6;
 
-/** Model streaming as the probe sees it: how long the loader has been idle, and how many bursts it has started. @internal */
+/** @internal */
 export interface ProbeStreaming {
   idleMs(): number;
   starts(): number;
@@ -72,11 +67,7 @@ export const PROBE_SETTLE_MS = 500;
  */
 export const PROBE_FIRST_WAIT_FRAMES = 600;
 
-/**
- * Whether streaming is quiet enough to capture. A capture taken while models pop in bakes a
- * half-loaded world into every reflection, and the next one swaps it out: that swap is the flicker.
- * @internal
- */
+/** @internal */
 export function probeStreamingQuiet(idleMs: number, captured: boolean, framesWaiting: number): boolean {
   if (idleMs >= PROBE_SETTLE_MS) return true;
   return !captured && framesWaiting >= PROBE_FIRST_WAIT_FRAMES;
@@ -115,7 +106,6 @@ export class WorldReflectionProbe {
   /** Whether the filter's programs are linked; a capture waits for it rather than link on the spot. */
   private linked = false;
   private disposed = false;
-  /** Background compile of the reflecting programs for materials this capture reaches first. */
   private warming: Promise<void> | null = null;
   private readonly reflectingCopies = new Map<THREE.Material, THREE.Material>();
   private filtered = false;
@@ -217,7 +207,6 @@ export class WorldReflectionProbe {
     ).catch(() => {});
   }
 
-  /** Points every reflective material without its own map at the capture; the texture is reused across captures. */
   private assign(scene: THREE.Scene, texture: THREE.Texture): void {
     scene.traverse((object) => {
       const mesh = object as THREE.Mesh;

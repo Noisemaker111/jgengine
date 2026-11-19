@@ -5,7 +5,6 @@ export const SITE_TITLE = "jgengine — the game engine your coding agent builds
 export const SITE_DESCRIPTION =
   "An open-source TypeScript game engine on three.js, made for coding agents. Say “Make a game that … with jgengine” to your agent. Ten real games run on it, playable in the browser, and every decision behind it is written down with its numbers.";
 
-/** The only human interface outside this monorepo: say this to any coding agent. */
 export const ENTRY_PROMPT = "Make a game that ... with jgengine";
 
 export const PACKAGE_LAYERS: { label: string; note: string; packages: string[] }[] = [

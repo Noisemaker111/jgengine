@@ -13,7 +13,6 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 
 const LOOK_PERSIST_INTERVAL_MS = 1_000;
-/** The shell's first-person yaw faces +Z at 0; a three camera's Euler yaw faces -Z at 0. */
 const SHELL_YAW_FROM_CAMERA_YAW = Math.PI;
 
 const NEARBY_PLAYERS_KEY = "llmville.nearbyPlayers";
@@ -25,12 +24,10 @@ function isPositionList(value: unknown): value is readonly PlayerPosition[] {
   );
 }
 
-/** Other players' positions, which block the local player's step. */
 export function setNearbyPlayers(ctx: GameContext, positions: readonly PlayerPosition[]): void {
   ctx.game.store.set(NEARBY_PLAYERS_KEY, positions);
 }
 
-/** `controls.movement.beforeCommit`: LLMville's standing rule over the shell's walk. */
 export function stepAroundNearbyPlayers(frame: MovementCommitFrame): readonly [number, number, number] | undefined {
   const stored = frame.ctx.game.store.get(NEARBY_PLAYERS_KEY);
   return standingStep(frame.current, frame.next, isPositionList(stored) ? stored : []);
@@ -50,7 +47,6 @@ export function spawnLocalPlayer(ctx: GameContext, position: PlayerPosition, loo
   });
 }
 
-/** Personal speed upgrades retune the walk speed the shell moves the player at. */
 export function useLocalPlayerWalkSpeed(walkSpeedLevel: number): void {
   const ctx = useGameContext();
   useEffect(() => {
@@ -60,11 +56,6 @@ export function useLocalPlayerWalkSpeed(walkSpeedLevel: number): void {
   }, [ctx, walkSpeedLevel]);
 }
 
-/**
- * The shell walks the player entity; LLMville's rules read the position from its own state. Each
- * frame copies the walked position in, and a position the game sets (a presence seed, a teleport)
- * moves the entity. Equal positions are skipped both ways, so neither side echoes the other.
- */
 export function useLocalPlayerBridge(engine: GameEngine | null): void {
   const ctx = useGameContext();
   const host = useEngineHost();

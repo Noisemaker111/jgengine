@@ -1,6 +1,5 @@
 import { validateDialogueGraph, type DialogueGraph } from "../dialogue/dialogueGraph";
 
-/** Caller-reviewed facts for one authoring revision; event ids are in strict chronological order. */
 export interface NarrativeCanon {
   readonly revision: string;
   readonly characterIds: readonly string[];
@@ -15,7 +14,6 @@ export type NarrativeClaim = { readonly nodeId: string } & (
   | { readonly kind: "before"; readonly earlier: string; readonly later: string }
 );
 
-/** Authored dialogue with optional structured assertions against canon. */
 export interface NarrativeDialogue {
   readonly id: string;
   readonly graph: DialogueGraph;
@@ -28,17 +26,14 @@ export interface NarrativeBatch {
   readonly dialogues: readonly NarrativeDialogue[];
 }
 
-/** Caller budgets across the entire batch, including graph branches and explicit assertions. */
 export interface NarrativeBatchLimits {
   readonly maxDialogues: number;
   readonly maxNodes: number;
   readonly maxChoices: number;
   readonly maxClaims: number;
-  /** Sum of spoken lines and player choice text lengths (UTF-16 code units). */
   readonly maxTextCharacters: number;
 }
 
-/** A repair diagnostic with a JSON-pointer location in the candidate batch. */
 export interface NarrativeIssue {
   readonly code: string;
   readonly severity: "error" | "warning";

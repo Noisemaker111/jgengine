@@ -14,16 +14,10 @@ import { clamp } from "../math/scalar";
 import { resolveRng } from "../random/resolveRng";
 import type { ScenePoint3 } from "../world/sceneShapes";
 
-/** Where a mission is in its life. */
 export type MissionStatus = "active" | "completed" | "failed";
 
-/**
- * The primitive goals an objective can have. Escort, chase and defend are not kinds — they are
- * compositions of these plus fail conditions and timers (see `compositions.ts`).
- */
 export type MissionObjectiveKind = "reach" | "interact" | "survive" | "pursue" | "kill" | "collect";
 
-/** Objective kinds that are satisfied only by a counter — a mission made of these alone is a lint error. */
 export const MISSION_COUNTER_KINDS: readonly MissionObjectiveKind[] = ["kill", "collect"];
 
 /**
@@ -36,7 +30,6 @@ export function isCounterObjective(kind: MissionObjectiveKind): boolean {
   return kind === "kill" || kind === "collect";
 }
 
-/** What a reported world event is. */
 export type MissionWorldEventKind = "kill" | "collect" | "deliver";
 
 /**
@@ -48,13 +41,9 @@ export type MissionWorldEventKind = "kill" | "collect" | "deliver";
  */
 export interface MissionWorldEvent {
   kind: MissionWorldEventKind;
-  /** Target catalog id, item id or route id the event concerns. */
   target: string;
-  /** Actor that caused it. */
   by?: string;
-  /** Free-form tags the game attaches — weapon, element, route, `decoy`. */
   tags?: readonly string[];
-  /** How many the event is worth. Default 1. */
   count?: number;
 }
 
@@ -62,74 +51,47 @@ export interface MissionWorldEvent {
 export interface MissionEventFilter {
   /** Event kind; a `kill`/`collect` objective defaults to its own kind. */
   kind?: MissionWorldEventKind;
-  /** Exact target id. */
   target?: string;
-  /** Exact actor that caused it. */
   by?: string;
   /** Every one of these tags must be present. */
   tags?: readonly string[];
-  /** None of these may be present — how a decoy or a wrong-weapon kill is excluded. */
   withoutTags?: readonly string[];
 }
 
-/** A readable fact test a branch or a `fact` fail condition reads. All comparators are optional. */
 export interface MissionFactCondition {
-  /** Fact name, or `"score"` for the mission's running survival score. */
   fact: string;
-  /** Matches when the fact strictly equals this. */
   is?: string | number | boolean | undefined;
-  /** Matches when the numeric fact is at least this. */
   atLeast?: number | undefined;
-  /** Matches when the numeric fact is at most this. */
   atMost?: number | undefined;
-  /** Invert the whole test. */
   not?: boolean;
 }
 
-/**
- * A condition that fails the mission while the objective is active. `to` names a {@link MissionFailDef};
- * with no `to` the mission fails with the generic `"failed"` state.
- *
- * `actor-died`, `timer`, `fact` and `left-area` read world state every tick; `event` reacts to a world
- * event the game reported this tick.
- */
 export interface MissionFailCondition {
   kind: "actor-died" | "timer" | "fact" | "event" | "left-area";
-  /** `actor-died`: the tracked actor whose death fails the mission. `left-area`: the actor watched. */
   actor?: string;
   /** `timer`: seconds in the current objective before the mission fails. */
   seconds?: number;
-  /** `fact`: the fact and comparator that fail the mission. */
   fact?: string;
   is?: string | number | boolean;
   atLeast?: number;
   atMost?: number;
-  /** `event`: which events fail the mission. Omitted matches any event. */
   match?: MissionEventFilter;
   /** `left-area`: authored marker the watched actor must stay near. */
   marker?: string;
-  /** `left-area`: distance (m) past which the actor has left. Default {@link DEFAULT_REACH_RADIUS}. */
   radius?: number;
-  /** Named fail state id. */
   to?: string;
-  /** Human reason carried on the `failed` event. */
   message?: string;
 }
 
-/** One outgoing edge of an objective: the first branch whose `when` matches wins over `next`. */
 export interface MissionBranch {
-  /** Objective id, a {@link MissionFailDef} id, or `"done"` to complete the mission. */
   to: string;
   when: MissionFactCondition | readonly MissionFactCondition[];
-  /** Optional label carried on the `branch` event. */
   label?: string;
 }
 
-/** One objective. Every field is content; the machine reads only these. */
 export interface MissionObjectiveDef {
   id: string;
   kind: MissionObjectiveKind;
-  /** Human label for a HUD tracker; falls back to a derived label. */
   label?: string | undefined;
   /** Tracked actor for `reach` / `interact` / `survive` / the `pursue` target. */
   actor?: string | undefined;
@@ -137,7 +99,6 @@ export interface MissionObjectiveDef {
   pursuer?: string | undefined;
   /** Authored scene marker id the actor must reach or interact at. */
   marker?: string | undefined;
-  /** Proximity radius (m) for `reach` / `interact`. Default {@link DEFAULT_REACH_RADIUS}. */
   radius?: number | undefined;
   /** Seconds the actor must hold for `survive`. */
   duration?: number | undefined;
@@ -146,17 +107,13 @@ export interface MissionObjectiveDef {
    * police" is `until: { fact: "police_tier", atMost: 0 }`, not a game-side signal.
    */
   until?: MissionFactCondition | readonly MissionFactCondition[] | undefined;
-  /** Keep-close distance (m) for `pursue`. Default {@link DEFAULT_PURSUE_DISTANCE}. */
   distance?: number | undefined;
-  /** Distance (m) past which a pursuit counts as escaped. Default `distance * 3`. */
   escapeDistance?: number | undefined;
   /** Seconds beyond `escapeDistance` before the pursuit fails. Default `0` (instant). */
   escapeGrace?: number | undefined;
-  /** Fail state a pursuit escape lands in. Default `"failed"`. */
   escapeFail?: string | undefined;
   /** Counter key for `kill` / `collect`; defaults to the objective id. */
   counter?: string | undefined;
-  /** Counter target for `kill` / `collect`. */
   count?: number | undefined;
   /**
    * Count `kill` / `collect` objectives from reported world events instead of a bare counter, so only a
@@ -165,33 +122,25 @@ export interface MissionObjectiveDef {
   match?: MissionEventFilter | undefined;
   /** Survivors that must remain for `survive`; dropping below fails the mission. */
   minSurvivors?: number | undefined;
-  /** Fail state a `minSurvivors` breach lands in. Default `"failed"`. */
   minSurvivorsFail?: string | undefined;
   /** Seconds in this objective before it expires into `onTimeout`. */
   timeout?: number | undefined;
   /** Where expiry goes: an objective id, a fail state id, or `"done"`. Default: fail the mission. */
   onTimeout?: string | undefined;
-  /** Conditions that fail the mission while this objective is active. */
   failOn?: readonly MissionFailCondition[] | undefined;
-  /** Next objective (or `"done"`) when the goal is met and no branch matches. */
   next?: string | undefined;
-  /** Conditional edges, first match wins. */
   branches?: readonly MissionBranch[] | undefined;
 }
 
-/** A named fail state an objective, timer or branch can land in. */
 export interface MissionFailDef {
   id: string;
   message?: string;
 }
 
-/** What a mission pays. Economy/XP/items/unlocks flow through the quest appliers; loot names tables. */
 export interface MissionRewards extends QuestRewards {
-  /** Loot table ids the game rolls through its own loot registry (`createLootRegistry` / `rollLoot`). */
   loot?: string[];
 }
 
-/** A whole mission: the objective graph plus its fail states and rewards. */
 export interface MissionDef {
   id: string;
   title: string;
@@ -199,33 +148,24 @@ export interface MissionDef {
   /** Objective the mission starts on. Defaults to the first objective. */
   start?: string;
   objectives: readonly MissionObjectiveDef[];
-  /** Named fail states. */
   fail?: readonly MissionFailDef[];
-  /** Rewards paid on completion. */
   rewards?: MissionRewards | undefined;
-  /** Rewards paid the moment a named objective completes. */
   objectiveRewards?: Readonly<Record<string, MissionRewards>>;
   /** One named fact rolled from `options` at start with the injected RNG — deterministic variation. */
   rollout?: { fact: string; options: readonly (string | number)[] };
-  /** Follow-up mission started on completion — how a chain or campaign is authored. */
   next?: string | undefined;
 }
 
-/** A live actor the machine tracks: whether it is alive and, when needed, where it is. */
 export interface MissionActorFact {
   /** Defaults to alive. */
   alive?: boolean;
   position?: ScenePoint3;
 }
 
-/** Everything the machine reads for one tick. All optional; a mission only touches what it declares. */
 export interface MissionTickInput {
   actors?: Readonly<Record<string, MissionActorFact>>;
-  /** Cumulative counters for `kill` / `collect` objectives, by counter key. */
   counters?: Readonly<Record<string, number>>;
-  /** World events that happened this tick — what a `match` objective counts and an `event` fail reacts to. */
   events?: readonly MissionWorldEvent[];
-  /** Transient facts for branch and `fact` fail conditions. */
   facts?: Readonly<Record<string, string | number | boolean>>;
   /**
    * Read one transient fact by name, in place of `facts`: for a caller whose facts live in more than
@@ -233,39 +173,30 @@ export interface MissionTickInput {
    * of copying every table into one record.
    */
   readFact?: (name: string) => string | number | boolean | undefined;
-  /** Actor ids that interacted this frame, for `interact` objectives. */
   interact?: readonly string[];
   /** Survivors on the ground for a `survive` objective; defaults to the living actors in `actors`. */
   survivors?: number;
 }
 
-/** Serializable mission state — one active mission's position in its graph. */
 export interface MissionState {
   missionId: string;
   status: MissionStatus;
-  /** Current objective id, or null once the mission ended. */
   objective: string | null;
-  /** Objective ids entered in order — the branch path a test or journal reads. */
   path: string[];
   /** Seconds spent in the current objective. */
   objectiveElapsed: number;
   /** Seconds since the mission started. */
   elapsed: number;
-  /** Counter reads recorded for the current mission. */
   progress: Record<string, number>;
-  /** Facts the machine set (rollout result, …). */
   facts: Record<string, string | number | boolean>;
   /** Per-objective transient accumulators (pursuit escape seconds). */
   timers: Record<string, number>;
   /** Running survival score — survivors counted as `survive` objectives complete. */
   score: number;
-  /** Fail state id when failed, else null. */
   outcome: string | null;
-  /** Human reason for a failure. */
   reason: string | null;
 }
 
-/** Emitted as the machine advances. */
 export type MissionEvent =
   | { kind: "started"; missionId: string; mission: MissionDef }
   | { kind: "objective"; missionId: string; objectiveId: string; label: string }
@@ -276,7 +207,6 @@ export type MissionEvent =
   | { kind: "completed"; missionId: string; score: number; rewards: MissionRewards | null }
   | { kind: "chained"; missionId: string; nextMissionId: string };
 
-/** Pooled per-frame readout a HUD tracker renders. */
 export interface MissionView {
   missionId: string;
   title: string;
@@ -288,23 +218,16 @@ export interface MissionView {
   remaining: number | null;
   /** Counter fraction 0..1 for the current objective, or 0 when it is not a counter. */
   progress: number;
-  /** Counter value the current objective has reached. */
   counted: number;
-  /** Counter value the current objective needs, or 0 when it is not a counter. */
   count: number;
-  /** How many objectives the run has entered — a HUD shows this as "step N". */
   step: number;
-  /** Objectives the mission declares; a chain shows "of M". */
   steps: number;
   score: number;
-  /** Fail state id once the run failed, else null. */
   outcome: string | null;
-  /** Human failure reason, else null. */
   reason: string | null;
   path: readonly string[];
 }
 
-/** Counters a devtools probe or a test reads. */
 export interface MissionStats {
   missions: number;
   ticks: number;
@@ -317,7 +240,6 @@ export interface MissionStats {
   slowestTickMs: number;
 }
 
-/** Serializable runtime state for a save. */
 export interface MissionRuntimeSnapshot {
   state: MissionState | null;
   ticks: number;
@@ -328,37 +250,28 @@ export interface MissionRuntimeSnapshot {
   timeouts: number;
 }
 
-/** Appliers a mission reward routes through — the same shape quests use, plus a loot-table hook. */
 export interface MissionRewardAppliers {
   grantXp?(amount: number): void;
   grantEconomy?(currencyId: string, amount: number): void;
   grantItem?(inventoryId: string, itemId: string, count: number): { reason: string } | null | void;
   grantItems?(items: Readonly<NonNullable<QuestRewards["items"]>>): { reason: string } | null | void;
   grantUnlock?(unlockId: string): void;
-  /** Roll a named loot table through the game's loot registry. */
   grantLoot?(tableId: string): void;
 }
 
-/** Everything a mission runtime needs. */
 export interface MissionRuntimeConfig {
   readonly missions: readonly MissionDef[];
-  /** Marker positions resolved from the authored scene, by marker id. See `missionMarkers`. */
   readonly markers?: Readonly<Record<string, ScenePoint3>>;
-  /** How marker proximity is measured for `reach`, `interact` and `left-area`. Default horizontal. */
   readonly markerProximity?: MissionMarkerProximity;
   /** Actor id used for a `pursue` objective that names no `pursuer`. */
   readonly defaultPursuer?: string;
-  /** `[0,1)` source for a mission's `rollout`; pass `ctx.rng`. Only read when a mission declares one. */
   readonly rng?: () => number;
   /** Register a devtools probe under this name so the overlay shows the active mission. */
   readonly devtoolsName?: string;
-  /** Skip catalog validation at construction. Tooling and tests only. */
   readonly skipValidation?: boolean;
 }
 
-/** The mission state machine over one active mission. */
 export interface MissionRuntime {
-  /** Mission ids this runtime knows. */
   missionIds(): readonly string[];
   /** A mission definition, or null when unknown. */
   mission(id: string): MissionDef | null;
@@ -366,26 +279,20 @@ export interface MissionRuntime {
   start(missionId: string, facts?: Readonly<Record<string, string | number | boolean>>): MissionState | null;
   /** Advance the active mission by `dt` seconds against the world. Returns every event this tick. */
   tick(dt: number, input?: MissionTickInput): readonly MissionEvent[];
-  /** Force an objective complete — the authored-trigger path. */
   signal(missionId: string, objectiveId: string): readonly MissionEvent[];
-  /** Fail the active mission into a named fail state — the authored-trigger path. */
   fail(missionId: string, state: string, reason?: string): readonly MissionEvent[];
-  /** Abandon the active mission without completing or failing it. */
   abandon(): void;
   /** The active mission's live state, or null when none is running. */
   state(): MissionState | null;
   /** The pooled per-frame readout to render (do not retain). */
   view(): MissionView | null;
-  /** Observe changes (start, tick, signal, fail, abandon, restore). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
   stats(): MissionStats;
   snapshot(): MissionRuntimeSnapshot;
   restore(next: MissionRuntimeSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
-/** Which plane a marker proximity test compares in. */
 export type MissionMarkerPlane = "horizontal" | "spatial";
 
 /**
@@ -397,26 +304,19 @@ export type MissionMarkerPlane = "horizontal" | "spatial";
  * `"spatial"` is the plain 3D check, for a world whose stacked platforms must stay distinct.
  */
 export interface MissionMarkerProximity {
-  /** `"horizontal"` (default) or `"spatial"`. */
   plane?: MissionMarkerPlane;
-  /** Horizontal plane only: how far (m) the actor may sit above or below the marker. Default {@link DEFAULT_MARKER_TOLERANCE}. */
   tolerance?: number;
 }
 
-/** Default proximity radius (m) for a `reach` / `interact` objective. */
 export const DEFAULT_REACH_RADIUS = 2.5;
-/** Default vertical allowance (m) for a horizontal marker proximity test. */
 export const DEFAULT_MARKER_TOLERANCE = 8;
-/** Default keep-close distance (m) for a `pursue` objective. */
 export const DEFAULT_PURSUE_DISTANCE = 3;
-/** A pursuit escapes at this multiple of its keep-close distance when none is declared. */
 export const DEFAULT_ESCAPE_MULTIPLE = 3;
 
 function distance(a: ScenePoint3, b: ScenePoint3): number {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
-/** Whether `from` is inside the marker's reach radius under the configured plane — no allocation, no sqrt. */
 function markerWithin(
   from: ScenePoint3,
   to: ScenePoint3,
@@ -1005,7 +905,6 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
   };
 }
 
-/** A located mission-catalog problem; `path` is a JSON Pointer into the supplied catalog. */
 export interface MissionIssue {
   code:
     | "duplicate-mission"
@@ -1031,9 +930,7 @@ export interface MissionIssue {
   objectiveId?: string;
 }
 
-/** Declarations a mission catalog is validated against. */
 export interface MissionValidationOptions {
-  /** Authored marker ids the missions may reference; omitted means marker references are unchecked. */
   markerIds?: Iterable<string>;
 }
 

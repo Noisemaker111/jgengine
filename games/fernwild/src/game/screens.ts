@@ -1,7 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
-/** Which full-screen survivor panel is open: ARK's inventory (with crafting and stats), the engram list, the dossier of creatures and notes, a creature's inventory, a storage container's, or the Green Obelisk's terminal. */
 export type SurvivorScreen = "inventory" | "engrams" | "dossier" | "creature" | "storage" | "obelisk";
 
 const open = perContext((_ctx: GameContext) => ({ screen: null as SurvivorScreen | null }));
@@ -23,7 +22,6 @@ export function setScreen(ctx: GameContext, screen: SurvivorScreen | null): void
 
 const detail = perContext((_ctx: GameContext) => ({ on: false }));
 
-/** ARK's extended HUD (H): the numbers under each vital icon. */
 export function extendedHud(ctx: GameContext): boolean {
   return detail(ctx).on;
 }

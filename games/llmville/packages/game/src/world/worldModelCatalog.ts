@@ -18,7 +18,6 @@ export interface WorldModelAsset {
   modelPath?: string;
   category?: WorldModelCategory;
   footprint?: GridFootprint;
-  /** Spatial contract: forward axis, anchor, footprint fit. Prefer over baseRotation/baseScale. */
   frame?: AssetFrame;
   defaultScale?: number | [number, number, number];
   basePosition?: [number, number, number];

@@ -43,7 +43,6 @@ async function resumeCampaign(ctx: GameContext): Promise<void> {
   await refreshCampaignSlots(ctx);
 }
 
-/** Settles once the boot read of the live campaign slot has finished. */
 export function campaignReady(ctx: GameContext): Promise<void> {
   return booting(ctx).ready;
 }

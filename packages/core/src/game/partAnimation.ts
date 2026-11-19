@@ -9,16 +9,13 @@ import { clamp01 } from "../math/scalar";
  * when an `out` pose is reused.
  */
 
-/** Semantic motion role of one `ModelPart` in a part-composed character. */
 export type PartRole = "head" | "arm.l" | "arm.r" | "leg.l" | "leg.r" | "tail" | "wing.l" | "wing.r";
 
-/** Tuning for {@link samplePartPose}/{@link sampleBodyPose}; every field has a sensible default. */
 export interface PartMotionParams {
   /** Full stride cycles per second at walking speed. Default 1.6. */
   strideHz?: number;
   /** Limb swing amplitude in radians at full walk. Default 0.7. */
   swingRad?: number;
-  /** Body bob height in model units at full walk. Default 0.04. */
   bobAmp?: number;
   /** Idle sway/breathe amplitude in radians. Default 0.05. */
   swayRad?: number;
@@ -28,24 +25,16 @@ export interface PartMotionParams {
   flinchRad?: number;
   /** Sideways topple roll in radians at death = 1. Default PI / 2. */
   toppleRad?: number;
-  /**
-   * Squash-and-stretch amplitude for soft characters (blobs, slimes): footfall squash while
-   * walking, jelly breathe while idle, a squash pulse on flinch. Volume-conserving — the body
-   * bulges horizontally as it compresses. Default 0 (rigid; scale stays exactly 1).
-   */
   squashAmp?: number;
-  /** How death reads: `"topple"` rolls sideways (default, hard characters); `"splat"` flattens the body out — right for blobs. */
   deathStyle?: "topple" | "splat";
 }
 
-/** Sampled offsets to add onto a part's authored transform (or the character root). `scale` is multiplicative (1 = unchanged). */
 export interface PartPose {
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
 }
 
-/** Live signals a driver feeds the samplers each frame. All values are render-side only. */
 export interface PartMotionInput {
   /** Seconds since the driver started (any monotonic clock). */
   timeSec: number;
@@ -82,7 +71,6 @@ function zeroPose(out: PartPose): PartPose {
   return out;
 }
 
-/** Volume-conserving vertical squash: compress y by `amount`, bulge x/z by half of it. */
 function applySquash(out: PartPose, amount: number): void {
   out.scale[1] *= 1 - amount;
   const bulge = 1 + amount * 0.5;
@@ -90,7 +78,6 @@ function applySquash(out: PartPose, amount: number): void {
   out.scale[2] *= bulge;
 }
 
-/** A reusable identity pose (zero offsets, unit scale). */
 export function createPartPose(): PartPose {
   return { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] };
 }
@@ -105,15 +92,7 @@ export function partMotionPhase(id: string): number {
 
 const SPLAT_FLATTEN = 0.7;
 
-/**
- * Sample the character-root pose: walk bob, idle breathe/sway, backward hit flinch, and death —
- * a sideways topple by default, or a flatten-out splat with `deathStyle: "splat"`. With
- * `squashAmp > 0` the body also squashes and stretches (footfall squash, jelly idle breathe,
- * flinch squash pulse), volume-conserving. A driver applies this to the group wrapping the
- * whole composition (base model plus parts) — limbs ride along, as they would on a real torso.
- *
- * @capability part-motion sample the root bob/sway/squash/flinch/death pose for a rig-less part-composed character
- */
+/** @capability part-motion sample the root bob/sway/squash/flinch/death pose for a rig-less part-composed character */
 export function sampleBodyPose(
   input: PartMotionInput,
   params?: PartMotionParams,

@@ -1,8 +1,4 @@
 /// <reference lib="webworker" />
-/**
- * One model's simplified levels per message, off the pipeline's main thread: the meshoptimizer
- * simplifier is single-threaded, so `buildGameAssets.ts` runs a pool of these.
- */
 import { buildModelLods, type LodBuildPlan } from "../../packages/assets/src/modelLodBuild";
 
 declare const self: Worker;

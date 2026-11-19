@@ -22,7 +22,6 @@ const MODEL_PACKS = [
 
 export const ASSET_SOURCE_IDS: readonly string[] = MODEL_PACKS.map((pack) => pack.id);
 
-/** One studio, one proportion: Quaternius characters, village, buildings, props and stylized nature. */
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
   packs: MODEL_PACKS,

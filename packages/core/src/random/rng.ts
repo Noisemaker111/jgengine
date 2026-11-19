@@ -59,7 +59,6 @@ function hashSeed(seed: string | number): number {
  */
 export type RandomSeed = number & { readonly __randomSeed: unique symbol };
 
-/** Wraps an already-integer seed (e.g. a `config.seed`) as a {@link RandomSeed} — no hashing. */
 export function randomSeedFrom(seed: number): RandomSeed {
   return (seed | 0) as RandomSeed;
 }
@@ -77,10 +76,8 @@ export function stepRandomSeed(seed: RandomSeed): readonly [value: number, next:
   return [value, next as RandomSeed];
 }
 
-/** A {@link seededRng} stream: callable like any `() => number`, with its cursor readable and restorable for snapshots and replay. */
 export interface SeededRng {
   (): number;
-  /** The current cursor; feed it back to {@link restore} (or a fresh stream's `restore`) to resume the exact sequence. */
   state(): number;
   restore(cursor: number): void;
 }
@@ -104,13 +101,11 @@ export function seededRng(seed: string | number): SeededRng {
   return rng;
 }
 
-/** The cursor of a seeded stream, or `null` for a generator that carries no state (an injected closure, `Math.random`). */
 export function rngStateOf(rng: () => number): number | null {
   const candidate = rng as Partial<SeededRng>;
   return typeof candidate.state === "function" ? candidate.state() : null;
 }
 
-/** Restore a seeded stream's cursor; a no-op for generators that carry no state. */
 export function restoreRng(rng: () => number, cursor: number): void {
   const candidate = rng as Partial<SeededRng>;
   if (typeof candidate.restore === "function") candidate.restore(cursor);

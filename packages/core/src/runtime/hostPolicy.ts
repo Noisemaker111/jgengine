@@ -13,10 +13,8 @@ import type { GameServerStatus } from "./hostPersistence";
  */
 export const JG_MAX_MEMBERS_PER_SERVER = 256;
 
-/** Longest accepted client join/leave `sessionId`, in UTF-16 code units. */
 export const MAX_SESSION_ID_LENGTH = 128;
 
-/** Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold. */
 export function validateSlotsPerServer(
   slotsPerServer: number,
   topology: "rooms" | "shared" = "rooms",
@@ -45,7 +43,6 @@ export function validateSlotsPerServer(
  */
 export type MatchmakingMode = "auto" | "singleton";
 
-/** A row `selectJoinTarget` can choose between — the matchmaking-relevant fields of a server record. */
 export type JoinCandidate = {
   memberUserIds: readonly string[];
   slotsPerServer: number;
@@ -53,7 +50,6 @@ export type JoinCandidate = {
   createdAt: number;
 };
 
-/** What a join should do with the candidate rows it found. */
 export type JoinTarget<T extends JoinCandidate> =
   | { kind: "join"; row: T }
   | { kind: "create" }
@@ -70,7 +66,6 @@ export function selectJoinTarget<T extends JoinCandidate>(
   args: {
     userId: string;
     mode?: MatchmakingMode;
-    /** Capacity to judge rows against — the host's current option, when it supersedes the stored value. */
     slotsPerServer?: number;
   },
 ): JoinTarget<T> {
@@ -101,10 +96,7 @@ export function selectJoinTarget<T extends JoinCandidate>(
   return open === undefined ? { kind: "create" } : { kind: "join", row: open };
 }
 
-/**
- * True when a server's `visibility` should surface in public listings / browse results.
- * @capability host-listing-filter exclude private sessions from public browse results
- */
+/** @capability host-listing-filter exclude private sessions from public browse results */
 export function isListablePublicly(visibility: SessionVisibility | undefined): boolean {
   return (visibility ?? "public") !== "private";
 }
@@ -125,7 +117,6 @@ export function canJoinPrivateServer(args: {
   return normalizeJoinCode(args.suppliedCode) === normalizeJoinCode(args.joinCode);
 }
 
-/** Whether `userId` is already on the server's member roster. */
 export function isServerMember(memberUserIds: readonly string[], userId: string): boolean {
   return memberUserIds.includes(userId);
 }
@@ -165,17 +156,14 @@ export function isPrivateJoinBlocked(args: {
   });
 }
 
-/** Roster after a successful join: unchanged when already a member, else appended. */
 export function withJoinedMember(memberUserIds: readonly string[], userId: string): string[] {
   return memberUserIds.includes(userId) ? [...memberUserIds] : [...memberUserIds, userId];
 }
 
-/** Roster after a leave: `userId` removed; order of remaining members preserved. */
 export function withoutMember(memberUserIds: readonly string[], userId: string): string[] {
   return memberUserIds.filter((id) => id !== userId);
 }
 
-/** Status after a leave: empty rooms reopen; non-empty rooms keep their current status. */
 export function statusAfterLeave(
   remainingMemberCount: number,
   currentStatus: GameServerStatus,

@@ -4,7 +4,6 @@ import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.vie
 
 import { GAME_FONTS } from "../art/fonts/fonts";
 
-/** LLMville's warm-on-ink palette (docs/design/DESIGN.md §2): the one place its colours are written. */
 export const LLMVILLE_PALETTE = {
   cream: "#f4ecdd",
   creamDim: "#c7bca9",
@@ -21,7 +20,6 @@ export const LLMVILLE_PALETTE = {
 
 const P = LLMVILLE_PALETTE;
 
-/** Colours the native UI uses beyond the palette: translucent washes, paper and error text. */
 export const C = {
   ...P,
   faint: "#f4ecdd73",
@@ -39,7 +37,6 @@ export const FULL = { fraction: 1 } as const;
 export const DISPLAY = "Baloo 2";
 export const BODY = "Nunito";
 
-/** Baloo 2 for titles and numbers, Nunito for reading text; both bundled under OFL. */
 export const llmvilleTheme = {
   colors: { accent: P.coral, teal: P.teal, amber: P.amber, ink: P.cream, muted: C.muted, danger: P.destructive, track: C.line, ground: P.ink },
   text: {
@@ -67,7 +64,6 @@ export const llmvilleTheme = {
 } satisfies RuneTheme;
 
 let fontsRegistered = false;
-/** Hand the bundled font files to the native surface before it first mounts. */
 export function registerLlmvilleFonts(): void {
   if (fontsRegistered) return;
   fontsRegistered = true;

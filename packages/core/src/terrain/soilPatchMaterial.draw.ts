@@ -63,11 +63,8 @@ float jgSoilCrackMask(vec2 p, float scale){
 }
 `;
 
-/** Optional noise-eroded edge-fade config for {@link createSoilPatchMaterial} — the patch dissolves into the ground at its border. */
 export interface SoilPatchEdge {
-  /** Patch center on XZ, world units — with `halfSize`, drives the noise-eroded edge fade. */
   center: readonly [number, number];
-  /** Patch half extents on XZ, world units. */
   halfSize: readonly [number, number];
   /** Fade band width in meters from the patch border inward. Default 1.6. */
   fade?: number;

@@ -111,7 +111,6 @@ class Cdp {
   private readonly socket: WebSocket;
   private nextId = 1;
   private readonly pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
-  /** Uncaught page errors, in order (`Runtime.exceptionThrown`). */
   readonly exceptions: string[] = [];
 
   private constructor(socket: WebSocket) {
@@ -242,14 +241,11 @@ const READ_PAGE = `(() => {
 })()`;
 
 interface LivePage {
-  /** The shell stamped `data-jg-phase`: the game's chrome and its probes are mounted. */
   mounted?: boolean;
   framesSinceMount?: number;
   probes: Record<string, unknown> | null;
-  /** Every `window.__jgengine*` readout the page answers with, keyed by global name. */
   windows: Record<string, unknown>;
   error?: string;
-  /** The first uncaught page error, when the page threw before it mounted. */
   crash?: string;
 }
 
@@ -264,10 +260,6 @@ interface StartCommand {
   input?: unknown;
 }
 
-/**
- * The game's own start (`capture.play`), read from `src/game.config.ts` the way a headless flow reads it.
- * A game with none starts in play, and the probe judges it from mount.
- */
 async function startCommands(game: string): Promise<StartCommand[]> {
   try {
     const module: unknown = await import(pathToFileURL(join(root, game, "src", "game.config.ts")).href);
@@ -399,7 +391,6 @@ function capabilitiesForModule(adopts: string[], module: string): CapabilityEntr
   return ledger.capabilities.filter((entry) => entry.module === module && adopts.includes(entry.id));
 }
 
-/** The system-level slug a probe should name, not a helper tag like mission-validation. */
 function primaryCapability(capabilities: CapabilityEntry[]): string {
   const score = (id: string): number => (id.includes("runtime") ? 0 : id.includes("system") ? 1 : 2);
   return [...capabilities].sort((a, b) => score(a.id) - score(b.id) || a.id.length - b.id.length || (a.id < b.id ? -1 : 1))[0]?.id ?? "*";

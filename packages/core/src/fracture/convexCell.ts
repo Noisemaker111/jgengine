@@ -5,7 +5,6 @@
  * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
  */
 
-/** A point in a cell's space, m. */
 export type CellVec = readonly [number, number, number];
 
 /** One face: vertices counter-clockwise seen from outside; `fracture` marks a face made by a cut. */
@@ -19,7 +18,6 @@ export interface ConvexCell {
   faces: CellFace[];
 }
 
-/** The half-space n·x ≤ offset; `n` need not be unit length. */
 export interface CellPlane {
   normal: CellVec;
   offset: number;
@@ -39,10 +37,7 @@ function dot(a: CellVec, b: CellVec): number {
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-/**
- * An axis-aligned box cell from `min` to `max`.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function boxCell(min: CellVec, max: CellVec): ConvexCell {
   const [x0, y0, z0] = min;
   const [x1, y1, z1] = max;
@@ -59,11 +54,7 @@ export function boxCell(min: CellVec, max: CellVec): ConvexCell {
   };
 }
 
-/**
- * Keep the part of `cell` inside `plane`, closing the cut with one new face (marked `fracture` when `fracture` is true).
- * Returns an empty cell when nothing is left.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function clipCell(cell: ConvexCell, plane: CellPlane, fracture = true): ConvexCell {
   const scale = Math.hypot(plane.normal[0], plane.normal[1], plane.normal[2]);
   if (scale < EPSILON) return cell;
@@ -130,10 +121,7 @@ function orderedCap(points: readonly CellVec[], n: CellVec): CellVec[] {
     .map((entry) => entry.p);
 }
 
-/**
- * Volume and centroid of a cell, by the divergence theorem over fan triangles.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function cellVolume(cell: ConvexCell): { volume: number; centroid: [number, number, number] } {
   let volume = 0;
   let cx = 0;
@@ -157,10 +145,7 @@ export function cellVolume(cell: ConvexCell): { volume: number; centroid: [numbe
   return { volume, centroid: [cx / volume, cy / volume, cz / volume] };
 }
 
-/**
- * Whether `point` lies inside every face plane of `cell`.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function cellContains(cell: ConvexCell, point: CellVec): boolean {
   for (const face of cell.faces) {
     const [a, b, c] = face.vertices;
@@ -171,10 +156,7 @@ export function cellContains(cell: ConvexCell, point: CellVec): boolean {
   return true;
 }
 
-/**
- * The cell moved by `offset` and scaled by `scale` about `centre`.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function transformCell(cell: ConvexCell, centre: CellVec, scale: number, offset: CellVec = [0, 0, 0]): ConvexCell {
   return {
     faces: cell.faces.map((face) => ({

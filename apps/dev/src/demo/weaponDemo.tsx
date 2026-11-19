@@ -245,7 +245,5 @@ function makeGame(rig: "first" | "shoulder"): PlayableGame {
   };
 }
 
-/** Dev demo for `createWeaponHandling` + `createWeaponPresentation`: a rifle and a shotgun on a range. */
 export const weaponDemoGame: PlayableGame = makeGame("first");
-/** The same weapons over the shoulder: ADS and recoil come from the same handling frame. */
 export const weaponShoulderDemoGame: PlayableGame = makeGame("shoulder");

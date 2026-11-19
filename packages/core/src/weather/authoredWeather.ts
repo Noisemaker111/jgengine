@@ -19,12 +19,10 @@ export interface WeatherConditions {
   cloudCover?: number;
 }
 
-/** A named set of conditions referenced by the authored schedule. */
 export interface AuthoredWeatherProfile extends WeatherConditions {
   id: string;
 }
 
-/** An absolute simulation-time profile change with an optional continuous blend. */
 export interface AuthoredWeatherTransition {
   atSeconds: number;
   profileId: string;
@@ -39,13 +37,8 @@ export interface AuthoredWeatherZone {
   /** Blend distance outside the radius, in metres. */
   falloff?: number;
   weather?: WeatherConditions;
-  /**
-   * Whatever falls here falls as this: a snowy biome turns the schedule's rain to snow while the lowlands get the same
-   * storm as rain. Blends with the zone's falloff.
-   */
   precipitationAs?: "rain" | "snow";
   wind?: WindFieldConfig;
-  /** Local wind points outward from the center; it adds to ambient wind. */
   radial?: boolean;
 }
 
@@ -54,7 +47,6 @@ export interface AuthoredWeatherConfig {
   ambient?: WeatherConditions;
   profiles?: readonly AuthoredWeatherProfile[];
   initialProfileId?: string | undefined;
-  /** Ordered absolute times, relative to the simulation clock. */
   schedule?: readonly AuthoredWeatherTransition[] | undefined;
   /**
    * Loop the schedule every this many seconds, forever: a few days of weather authored once keep coming round. Each
@@ -62,14 +54,11 @@ export interface AuthoredWeatherConfig {
    */
   repeatSeconds?: number | undefined;
   wind?: WindFieldConfig;
-  /** Later weather zones blend over earlier ones; wind zones add to ambient wind. */
   zones?: readonly AuthoredWeatherZone[];
 }
 
-/** Resolved conditions and wind at a world point and absolute simulation time. */
 export interface AuthoredWeatherSample extends WeatherConditions {
   timeSeconds: number;
-  /** Sky cover here: the authored `cloudCover`, raised to at least the precipitation. */
   cloudCover: number;
   wind: WindVector;
   precipitation: number;
@@ -78,7 +67,6 @@ export interface AuthoredWeatherSample extends WeatherConditions {
   dust: number;
 }
 
-/** Pure spatial weather queries using the caller’s authoritative simulation clock. */
 export interface AuthoredWeather {
   sample(x: number, z: number, timeSeconds: number): AuthoredWeatherSample;
 }
@@ -132,9 +120,7 @@ function validateWind(value: WindFieldConfig | undefined): void {
   if (value.effects !== undefined) validateWindEffects(value.effects);
 }
 
-/** Validate authoring references and work bounds before persisting a weather document.
- * @capability authored-weather-validation Reject invalid weather profiles, schedules, zones and wind before authoring mutations.
- */
+/** @capability authored-weather-validation Reject invalid weather profiles, schedules, zones and wind before authoring mutations. */
 export function validateAuthoredWeather(config: AuthoredWeatherConfig): void {
   objectKeys(config, ["ambient", "profiles", "initialProfileId", "schedule", "repeatSeconds", "wind", "zones"], "weather");
   for (const list of [config.profiles, config.schedule, config.zones]) {
@@ -232,7 +218,6 @@ interface CompiledWeather {
   readonly ambientWind: WindField | null;
   readonly zones: readonly { readonly zone: AuthoredWeatherZone; readonly field: WindField | null }[];
   readonly transitions: readonly CompiledTransition[];
-  /** The loop length, and the schedule as it runs on later laps (starting from where a lap ends). */
   readonly repeat: number | null;
   readonly lapStart: Readonly<Blend>;
   readonly laps: readonly CompiledTransition[];
@@ -269,9 +254,7 @@ function compileWeather(source: AuthoredWeatherConfig): CompiledWeather {
   return Object.freeze({ initial, profiles, ambientWind, zones: Object.freeze(zones), transitions, repeat, lapStart, laps });
 }
 
-/** Pure authored weather sampling; the caller's simulation clock owns pause, replay and restore.
- * @capability authored-weather Sample scheduled precipitation and local wind from one authored document and simulation clock.
- */
+/** @capability authored-weather Sample scheduled precipitation and local wind from one authored document and simulation clock. */
 export function createAuthoredWeather(source: AuthoredWeatherConfig = {}): AuthoredWeather {
   const compiled = compileWeather(source);
   return {
@@ -330,12 +313,10 @@ export interface WeatherExposureConfig {
   meltRate?: number;
 }
 
-/** A stable surface id and world X,Z position with explicit sky exposure and temperature. */
 export interface WeatherExposureSurface {
   id: string;
   x: number;
   z: number;
-  /** Fraction of open sky; 0 means fully sheltered. */
   exposure?: number;
   /** Degrees above zero melt snow; omitted uses the weather temperature offset. */
   temperature?: number;
@@ -349,12 +330,10 @@ export interface WeatherExposureSample {
   exposure: number;
 }
 
-/** Detached accumulation values keyed by retained surface id. */
 export interface WeatherExposureSnapshot {
   surfaces: { id: string; value: WeatherExposureSample }[];
 }
 
-/** Injected persistence for detached surface accumulation snapshots. */
 export interface WeatherExposureStorage {
   read(): WeatherExposureSnapshot | undefined;
   write(snapshot: WeatherExposureSnapshot): void;
@@ -448,9 +427,7 @@ export function createWeatherExposure(config: WeatherExposureConfig = {}, storag
   };
 }
 
-/** Environment temperature, sunlight and shelter read the same authored precipitation as rendering.
- * @capability weather-environment-field Connect authored precipitation and temperature changes to spatial environment queries.
- */
+/** @capability weather-environment-field Connect authored precipitation and temperature changes to spatial environment queries. */
 export function createWeatherEnvironmentField(weather: AuthoredWeather, config: Omit<EnvironmentFieldConfig, "rain"> = {}): EnvironmentField {
   const base = createEnvironmentField({ ...config, rain: (x, z, time) => weather.sample(x, z, time).rain });
   const temperature = (x: number, z: number, time: number, y?: number): number => base.temperature(x, z, time, y) + (weather.sample(x, z, time).temperatureOffset ?? 0);

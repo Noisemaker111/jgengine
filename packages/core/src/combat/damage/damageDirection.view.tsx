@@ -40,7 +40,6 @@ export function useDamageDirection(tracker: DamageDirectionTracker): readonly Da
   return tracker.active();
 }
 
-/** Reskin tokens for {@link DamageDirectionOverlay}. */
 export interface DamageDirectionTheme {
   /** Fallback arc color when a `kind` isn't in {@link DamageDirectionOverlayProps.colors}. Default reads `--jg-health` (danger red). */
   color?: string;
@@ -54,15 +53,10 @@ export interface DamageDirectionTheme {
   flare?: number;
 }
 
-/** Props for {@link DamageDirectionOverlay}. */
 export interface DamageDirectionOverlayProps {
-  /** The tracker to visualize. */
   tracker: DamageDirectionTracker;
-  /** Per-`kind` arc colors, e.g. `{ fire: "#ff7a1a", crit: "#ffd23f" }`. Falls back to the theme color. */
   colors?: Record<string, string>;
-  /** Draw a small dot at screen center so bearings read against a fixed reference. Default `true`. */
   showReticle?: boolean;
-  /** Reskin tokens. */
   theme?: DamageDirectionTheme;
   className?: string;
   style?: CSSProperties;

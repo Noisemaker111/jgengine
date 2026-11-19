@@ -17,7 +17,6 @@ export interface ItemInstanceStorage<TDef> {
   replace(entries: Iterable<[string, TDef]>): void;
 }
 
-/** Inject storage and its saved allocator sequence when attaching an existing collection. */
 export interface ItemInstanceRegistryOptions<TDef> {
   storage?: ItemInstanceStorage<TDef>;
   /** Nonnegative safe integer; defaults to zero. Retain it across releases and storage reattachment. */
@@ -31,29 +30,19 @@ export interface ItemInstanceRegistryOptions<TDef> {
  * rolls never need a hand-rolled parallel registry (#536.1).
  */
 export interface ItemInstanceRegistry<TDef> {
-  /** Detached definitions and allocator state, including ids of released instances in the sequence. */
   state(): ItemInstanceRegistryState<TDef>;
-  /** Detached batches of at most `pageSize` entries; throws if the registry changes during iteration. Keep external storage and definitions unchanged until finished. */
   statePages(pageSize: number): IterableIterator<ItemInstanceRegistryState<TDef>>;
-  /** Replace the registry; returns false without mutation when the prefix or allocator is invalid. */
   restore(next: ItemInstanceRegistryState<TDef>): boolean;
   /** Stream detached pages through atomic storage replacement. All pages must share prefix and sequence; malformed pages or storage failures throw without changing state. Empty saves require one empty page. */
   restorePages(pages: Iterable<ItemInstanceRegistryState<TDef>>): boolean;
-  /** Stores `def` under a fresh generated id derived from `baseId`; returns that id. */
   register(baseId: string, def: TDef): string;
   get(id: string): TDef | undefined;
   has(id: string): boolean;
-  /** Drop a generated instance once nothing references it (consumed, destroyed, sold). */
   release(id: string): void;
   count(): number;
 }
 
-/**
- * Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per
- * registry instance.
- *
- * @capability item-instance-registry a runtime store for procedurally generated item instances
- */
+/** @capability item-instance-registry a runtime store for procedurally generated item instances */
 export function createItemInstanceRegistry<TDef>(
   prefix = "item",
   options: ItemInstanceRegistryOptions<TDef> = {},
@@ -166,12 +155,7 @@ export function createItemInstanceRegistry<TDef>(
   };
 }
 
-/**
- * Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair
- * and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
- *
- * @capability item-instance-registry roll and register a procedural item as a loot-table drop
- */
+/** @capability item-instance-registry roll and register a procedural item as a loot-table drop */
 export function proceduralLootEntry<TDef>(
   registry: ItemInstanceRegistry<TDef>,
   roll: (rng: () => number) => { baseId: string; def: TDef },

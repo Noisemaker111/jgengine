@@ -8,19 +8,11 @@ import type { Vec3 } from "@jgengine/core/world/geometry";
 
 import { CYCLE_SECONDS, RESIDENTS, residentStops, walkTime, type ResidentSpec } from "./residents";
 
-/**
- * Mainsail's residents as one agent system: what they need, what a day in the city offers them, and
- * the town's own words for how a resident feels. The loop is `@jgengine/core/agents/system`; the
- * content, the selector and the words are this game's.
- */
-
-/** What a resident carries through their day: hunger and rest, drained over the twelve-minute day. */
 export const RESIDENT_NEEDS: readonly NeedDefinition[] = [
   { id: "hunger", max: 100, rate: 0.09, start: 78 },
   { id: "rest", max: 100, rate: 0.07, start: 84 },
 ];
 
-/** What a resident can do here: eat, go home, work, or take the boulevard. */
 export const RESIDENT_OPTIONS: readonly UtilityOption[] = [
   { id: "meal", terms: [{ need: "hunger", curve: { kind: "linear", from: 0.2, to: 0.95 } }] },
   { id: "home", base: 0.05, terms: [{ need: "rest", curve: { kind: "linear", from: 0.2, to: 0.95 } }] },
@@ -36,7 +28,6 @@ export const RESIDENT_OPTIONS: readonly UtilityOption[] = [
   { id: "wander", base: 0.15 },
 ];
 
-/** The town's tone on the shared 0-100 mood scale. */
 export const RESIDENT_MOOD_TIERS: readonly MoodTier[] = [
   { at: 84, id: "bright", label: "Bright" },
   { at: 66, id: "steady", label: "Steady" },
@@ -45,7 +36,6 @@ export const RESIDENT_MOOD_TIERS: readonly MoodTier[] = [
   { at: 0, id: "worn", label: "Worn" },
 ];
 
-/** A resident's mood weights: an empty belly sours a day faster than a short night. */
 const MOOD_WEIGHTS = [
   { need: "hunger", weight: 2 },
   { need: "rest", weight: 1.5 },
@@ -56,16 +46,13 @@ const NO_OFFERS: AgentTarget[] = [];
 /** A point of score is about a minute and a bit of walking, so distance alone never wins. */
 const WALK_COST = 0.01;
 
-/** The one place everybody drifts to when nothing else pulls: the avenue's cafe corner. */
 export const WANDER_PLACE = "place_avenue_cafe";
 
-/** Saved resident agents, riding the whole-world save with the rest of the stores. */
 export const residentAgentStore = defineStore<AgentSystemState | undefined>("harbor.residentAgents", undefined);
 
 // Built on first use: `residents` imports this module, so RESIDENTS is not there yet when it loads.
 let specById: Map<string, ResidentSpec> | null = null;
 
-/** Authored resident by id. */
 function specOf(id: string): ResidentSpec | undefined {
   specById ??= new Map(RESIDENTS.map((spec) => [spec.id, spec]));
   return specById.get(id);
@@ -78,17 +65,12 @@ function walkCost(at: Vec3 | null, to: string, places: (id: string) => Vec3 | nu
   return (length2(at[0] - place[0], at[2] - place[2]) / 1.35) * WALK_COST;
 }
 
-/** One offer the selector refills in place; the agent system reads it within the member's update. */
 interface Offer {
   option: string;
   target: string;
   cost: number;
 }
 
-/**
- * Everything this town can offer one resident right now: a meal at the place its evening takes it, a
- * bed at home, its shift, and the avenue. Written once for the whole cast - not a callback per option.
- */
 export function residentOffers(
   spec: ResidentSpec,
   at: Vec3 | null,
@@ -111,7 +93,6 @@ function writeOffer(into: Offer[], index: number, option: string, target: string
 
 export interface ResidentAgentSystem {
   readonly system: AgentSystem;
-  /** Authored spec for a resident id. */
   spec(id: string): ResidentSpec | undefined;
 }
 

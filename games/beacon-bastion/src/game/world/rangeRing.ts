@@ -5,7 +5,6 @@ import {
   type RoadRibbon,
 } from "@jgengine/core/roads/roads";
 
-/** Painted width of the range band, in world units — a crisp outline, not a filled disc over the route. */
 export const RANGE_RING_WIDTH = 0.45;
 
 /** Longest centreline step along the circle before the band is draped; keeps the ring hugging relief. */
@@ -21,11 +20,8 @@ const RING_STEP = 1.2;
  * translucent disc across the road wherever the two crossed).
  */
 export function rangeRingBand(options: {
-  /** Ring centre in world XZ. */
   center: RoadPoint;
-  /** Firing radius in world units; the band is centred on this circle. */
   radius: number;
-  /** Terrain height under a world XZ point. */
   sampleHeight: (x: number, z: number) => number;
   /** Band width; defaults to {@link RANGE_RING_WIDTH}. */
   width?: number;

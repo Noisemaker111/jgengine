@@ -16,10 +16,6 @@ export function HudOverlay({ zIndex, children }: { zIndex: number; children: Rea
   );
 }
 
-/**
- * A world-anchored UI overlay projected to its anchor every frame. `distanceFactor` scales by
- * `distanceFactor / (2·tan(fov/2)·distance)`. Hidden when the anchor leaves the frustum.
- */
 export function AnchoredOverlay({
   position,
   anchor,
@@ -30,10 +26,8 @@ export function AnchoredOverlay({
 }: {
   /** World-space anchor. Mutually exclusive with `anchor`+`localPosition`. */
   position?: readonly [number, number, number] | undefined;
-  /** Scene object the overlay follows; `localPosition` is its local offset. */
   anchor?: Object3D | undefined;
   localPosition?: readonly [number, number, number] | undefined;
-  /** Scales the overlay with distance. Omit for constant screen size. */
   distanceFactor?: number | undefined;
   zIndex?: number | undefined;
   children: ReactNode;

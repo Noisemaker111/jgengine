@@ -7,10 +7,8 @@
 
 import type { AreaMembership } from "./areaEffectField";
 
-/** Reduce one receiver's overlapping memberships to the subset that applies under a stacking rule. */
 export type AreaStackPolicy<P> = (memberships: readonly AreaMembership<P>[]) => AreaMembership<P>[];
 
-/** Read a comparable magnitude from a membership (e.g. buff strength, damage per tick). */
 export type MagnitudeOf<P> = (membership: AreaMembership<P>) => number;
 
 function byMagnitudeDesc<P>(magnitudeOf: MagnitudeOf<P>): (a: AreaMembership<P>, b: AreaMembership<P>) => number {
@@ -31,12 +29,7 @@ function groupByStackKey<P>(memberships: readonly AreaMembership<P>[]): Map<stri
   return groups;
 }
 
-/**
- * Every overlapping membership applies independently (no deduplication) — the default for hazards,
- * fields, and lights where two sources genuinely stack.
- *
- * @capability area-stack-independent apply every overlapping area membership independently
- */
+/** @capability area-stack-independent apply every overlapping area membership independently */
 export function independentStacks<P>(): AreaStackPolicy<P> {
   return (memberships) => [...memberships];
 }
@@ -62,12 +55,7 @@ export function uniqueByStackKey<P>(magnitudeOf?: MagnitudeOf<P>): AreaStackPoli
   };
 }
 
-/**
- * Keep at most `limit` memberships per `stackKey` (the highest-magnitude ones when `magnitudeOf` is
- * given, else the first-seen). Models capped stacks — e.g. a poison that stacks up to 5 times.
- *
- * @capability area-stack-capped cap area memberships per stack key at a maximum count
- */
+/** @capability area-stack-capped cap area memberships per stack key at a maximum count */
 export function cappedStacks<P>(limit: number, magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> {
   const cap = Math.max(0, Math.floor(limit));
   return (memberships) => {
@@ -80,12 +68,7 @@ export function cappedStacks<P>(limit: number, magnitudeOf?: MagnitudeOf<P>): Ar
   };
 }
 
-/**
- * Reduce to the single strongest membership overall (`weakest = false` picks the weakest); ties broken
- * by `sourceId`. Use when only the best or worst overlapping source should apply.
- *
- * @capability area-stack-extremum keep only the strongest or weakest overlapping area membership
- */
+/** @capability area-stack-extremum keep only the strongest or weakest overlapping area membership */
 export function extremumStack<P>(magnitudeOf: MagnitudeOf<P>, weakest = false): AreaStackPolicy<P> {
   return (memberships) => {
     if (memberships.length === 0) return [];

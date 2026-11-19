@@ -1,11 +1,5 @@
 import { resolveObstacleStep, type CollisionObstacle } from "../movement/movementModel";
 
-/**
- * Veto or clamp a planar move before it commits — walls, closed gates, arena bounds. Given the attempted
- * `from`→`to` on the XZ plane, return the destination actually allowed; velocity is rederived from the
- * permitted displacement, so motion blocked on an axis stops on that axis. A result may carry `motion`, the
- * permitted XZ displacement before position recovery, when the endpoint also depenetrates the body.
- */
 export type VehicleMoveClamp = (
   from: readonly [number, number],
   to: readonly [number, number],
@@ -36,11 +30,8 @@ export function motionWithinAttempt(attemptedX: number, attemptedZ: number, allo
  * cue. Reported once, when a move is first vetoed, then consumed by {@link VehicleObstacleClamp.takeImpact}.
  */
 export interface VehicleImpact {
-  /** Speed (world units/s) the car was carrying *into* the obstacle at the moment the move was blocked. */
   closingSpeed: number;
-  /** Unit push-back direction — points from the struck surface back toward the car. */
   normal: readonly [number, number];
-  /** Index into the obstacle set passed for the blocking tick. */
   obstacleIndex: number;
 }
 
@@ -50,22 +41,13 @@ export interface VehicleImpact {
  * {@link takeImpact} once per tick for the crash it produced.
  */
 export interface VehicleObstacleClamp {
-  /** Resolve an attempted XZ move; recovery endpoints carry permitted world-unit displacement in `motion`. */
   clampMove: VehicleMoveClamp;
   /** Impact recorded since last take, consumed on read (null when none). Closing speed is the velocity component into the obstacle at block time, units/s. */
   takeImpact(): VehicleImpact | null;
 }
 
-/** Matches the unit-box default {@link resolveObstacleStep} applies to obstacles without explicit extents. */
 const DEFAULT_OBSTACLE_HALF_EXTENTS: readonly [number, number, number] = [0.5, 0.5, 0.5];
-/** Default vehicle body radius (units) inflating obstacle footprints; a compact hatchback-ish disc. */
 const DEFAULT_VEHICLE_RADIUS = 1.4;
-/**
- * Y the car body is pinned to when handing solids to {@link resolveObstacleStep}. That stepper gates
- * each obstacle by a 1.8-tall pedestrian span around `current[1]`; centring every pre-filtered solid
- * on this value makes the gate always admit them, so collision is purely horizontal and the car hits
- * world solids at any ground elevation (bridges, hills) even though the clamp only knows XZ.
- */
 const CAR_BODY_MID_Y = 0.9;
 /** Below this the returned step is treated as unblocked (float-noise slack), so no phantom impacts fire. */
 const BLOCK_EPSILON = 1e-6;
@@ -83,9 +65,7 @@ const BLOCK_EPSILON = 1e-6;
  * fires exactly once. The happy path (no solids near) is a zero-allocation passthrough returning `to`.
  */
 export function createVehicleObstacleClamp(options: {
-  /** Solids near the car this tick (already filtered to the relevant, solid set). */
   obstacles: () => readonly CollisionObstacle[];
-  /** Vehicle body radius (units). Default {@link DEFAULT_VEHICLE_RADIUS}. */
   radius?: number;
   /** Current tick dt (seconds) — the divisor turning shed displacement into closing speed. */
   dt: () => number;
@@ -137,7 +117,6 @@ export function createVehicleObstacleClamp(options: {
     return scratch;
   }
 
-  /** Obstacle the attempted endpoint penetrates deepest (its inflated footprint), else nearest centre. */
   function blockingIndex(source: readonly CollisionObstacle[], tx: number, tz: number): number {
     let bestIndex = -1;
     let bestDepth = -Number.POSITIVE_INFINITY;

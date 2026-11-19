@@ -6,45 +6,34 @@ import type { VehicleDynamics, VehicleDynamicsModifiers, VehicleDynamicsStep } f
 /** World-space `[x, y, z]` for a drivable vehicle's resolved pose. */
 export type DrivableVehiclePosition = readonly [number, number, number];
 
-/** Where a car's sliding tires leave their trace: skid marks on the ground and smoke in the air. */
 export interface DrivableTireEffects {
   /** Unique per car, so each wheel keeps its own strip (`ctx` entity id). */
   id: string;
-  /** Game time, s (`ctx.time.now()`). */
   time: number;
-  /** Skid-mark pool, usually `ctx.tireMarks`. */
   marks?: TireMarks;
-  /** Where tire smoke plays, usually `ctx.particles`. */
   particles?: { play(name: string, request?: { position?: readonly [number, number, number]; burst?: number }): void };
   /** Slip from which wheels mark the ground, `0..1` (default `0.4`). */
   markFrom?: number;
   /** Slip from which the tires smoke, `0..1` (default `0.6`). */
   smokeFrom?: number;
-  /** Soft ground every grounded wheel ruts under its static axle load; omit for hard ground. */
   soil?: DrivableSoil;
 }
 
-/** Soft ground a car's wheels rut, and the wheel size they press with. */
 export interface DrivableSoil {
   ground: SoftGround;
-  /** Wheel diameter, m (default `0.65`). */
   wheelDiameter?: number;
-  /** Tyre width, m (default the skid-mark width, from the track). */
   tyreWidth?: number;
 }
 
 const GRAVITY = 9.81;
 
-/** Options for {@link tickDrivableVehicle} — ground snapping, per-tick modifiers and tire effects. */
 export interface DrivableVehicleOptions {
   /** Resamples world-space Y each tick (terrain height, a ramp, a bridge deck); omit to keep the sim's own flat `y`. */
   groundHeight?: (x: number, z: number) => number;
   modifiers?: VehicleDynamicsModifiers | undefined;
-  /** Lay skid marks and tire smoke while the car slides; omit for none. */
   tires?: DrivableTireEffects;
 }
 
-/** A `setPose`-ready patch — spread straight into `entities.setPose(vehicleId, drive.pose)`. */
 export interface DrivableVehiclePose {
   position: DrivableVehiclePosition;
   rotationY: number;
@@ -53,7 +42,6 @@ export interface DrivableVehiclePose {
   dt: number;
 }
 
-/** {@link tickDrivableVehicle}'s result — the ready-to-apply pose patch plus the raw sim step for HUD/telemetry reads. */
 export interface DrivableVehicleStep {
   pose: DrivableVehiclePose;
   step: VehicleDynamicsStep;
@@ -62,15 +50,7 @@ export interface DrivableVehicleStep {
 const SMOKE_INTERVAL = 0.12;
 const lastSmoke = new WeakMap<VehicleDynamics, number>();
 
-/**
- * Connects an `AxisInput` sample straight through a `VehicleDynamics` car to a scene entity's pose for one
- * tick — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game needs. Ground-snaps
- * the result when `groundHeight` is given (terrain-following cars, not just flat racetracks), and with
- * `tires` lays skid marks and plays tire smoke while the car slides. Pair with `scene/vehicleSeat` for who
- * is allowed to drive and where the camera points.
- *
- * @capability drivable-vehicle drive a car from throttle/steer/handbrake input each tick: step the vehicle sim, pose its entity, mark and smoke its tires
- */
+/** @capability drivable-vehicle drive a car from throttle/steer/handbrake input each tick: step the vehicle sim, pose its entity, mark and smoke its tires */
 export function tickDrivableVehicle(
   vehicle: VehicleDynamics,
   dt: number,

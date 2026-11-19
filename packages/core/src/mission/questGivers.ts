@@ -1,8 +1,6 @@
 import type { QuestDef, QuestJournal } from "./quest";
 
-/** What a quest giver has for one player right now. */
 export type GiverOffer =
-  /** A finished quest this giver takes back. */
   | { kind: "turnIn"; questId: string }
   /** The next quest this giver hands out. */
   | { kind: "give"; questId: string }
@@ -10,25 +8,17 @@ export type GiverOffer =
   | { kind: "busy"; questId: string }
   | { kind: "none" };
 
-/** Options for {@link giverOffer}. */
 export interface GiverOfferOptions {
   /** A game rule on top of `requires`, such as a minimum level. Default: every quest is eligible. */
   eligible?(def: QuestDef): boolean;
 }
 
-/** The giver a quest is turned in to: its `turnIn`, else the giver that gave it.
- * @internal */
+/** @internal */
 export function questTurnInTo(def: QuestDef): string | undefined {
   return def.turnIn ?? def.giver;
 }
 
-/**
- * Ask a quest giver what it has for a player, one quest at a time: a finished quest to take back
- * first, then nothing new while one of its quests is under way, then the first quest in catalog
- * order whose giver it is and that the player can accept.
- *
- * @capability quest-giver an NPC that hands out its quests one at a time and takes them back when done
- */
+/** @capability quest-giver an NPC that hands out its quests one at a time and takes them back when done */
 export function giverOffer(
   journal: Pick<QuestJournal, "list" | "canAccept" | "canTurnIn">,
   userId: string,

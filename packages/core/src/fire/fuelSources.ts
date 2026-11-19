@@ -4,7 +4,6 @@ import type { PlantStructure } from "../plants/structure/plantStructure";
 import type { CanopyStand } from "./fireLandscape";
 import { standardFuelModel, type FuelModel } from "./fuelModels";
 
-/** The crown fuel one grown plant carries. */
 export interface PlantCanopyFuel {
   /** Dry foliage mass, kg. */
   foliageKg: number;
@@ -17,13 +16,7 @@ export interface PlantCanopyFuel {
   crownRadiusM: number;
 }
 
-/**
- * Read a grown plant's crown fuel without changing it: foliage mass is its leaf area (from
- * `PlantGrowth.stats().leafAreaM2`) over the species' specific leaf area; fine branchwood is the
- * skeleton segments thinner than `fineWoodRadiusM` times the species' wood density.
- *
- * @capability fire-plant-fuel crown fuel (foliage and fine branchwood mass, height, base, radius) of a grown plant
- */
+/** @capability fire-plant-fuel crown fuel (foliage and fine branchwood mass, height, base, radius) of a grown plant */
 export function plantCanopyFuel(structure: PlantStructure, species: PlantSpecies, leafAreaM2: number, options: { fineWoodRadiusM?: number } = {}): PlantCanopyFuel {
   const foliageKg = species.leaf.sla > 0 ? Math.max(0, leafAreaM2) / species.leaf.sla : 0;
   const limit = options.fineWoodRadiusM ?? 0.003175;
@@ -48,7 +41,6 @@ export function plantCanopyFuel(structure: PlantStructure, species: PlantSpecies
   };
 }
 
-/** Where a fire grid sits in the world. */
 export interface FireGridFrame {
   cols: number;
   rows: number;
@@ -57,14 +49,7 @@ export interface FireGridFrame {
   originZ?: number;
 }
 
-/**
- * Spread plants' crown fuel over a fire grid as canopy stands: each crown's available fuel is shared
- * between the cells its disc overlaps, by overlap area; a cell's cover is the crown area over it
- * (capped at 1), its height the tallest crown, its base the lowest, and its bulk density the load over
- * that crown depth.
- *
- * @capability fire-canopy-raster turn placed plants' crown fuel into per-cell canopy stands for a fire landscape
- */
+/** @capability fire-canopy-raster turn placed plants' crown fuel into per-cell canopy stands for a fire landscape */
 export function rasterizeCanopyFuel(
   frame: FireGridFrame,
   plants: readonly { x: number; z: number; fuel: PlantCanopyFuel }[],
@@ -141,13 +126,7 @@ export function rasterizeCanopyFuel(
   return { canopies, canopy };
 }
 
-/**
- * Build a fire grid's ground from samplers: elevation at each cell centre and a standard fuel model
- * code (Scott & Burgan `GR2`, Anderson `FM8`, non-burnable `NB9`, ...) for what covers the ground.
- * The game owns the mapping from its terrain, biomes or ground layers to fuel codes.
- *
- * @capability fire-terrain-fuel sample terrain height and ground-cover fuel codes into a fire landscape's elevation and fuel grids
- */
+/** @capability fire-terrain-fuel sample terrain height and ground-cover fuel codes into a fire landscape's elevation and fuel grids */
 export function sampleFireGround(
   frame: FireGridFrame,
   sample: { heightAt?: (x: number, z: number) => number; fuelAt: (x: number, z: number) => string },

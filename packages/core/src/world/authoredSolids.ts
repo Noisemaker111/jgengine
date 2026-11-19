@@ -5,7 +5,6 @@ import type { WorldSolid, WorldSolids } from "./worldSolids";
 
 type Vec3Like = { x: number; y: number; z: number };
 
-/** Minimal editor document shape {@link resolveAuthoredSolids} walks; any `EditorDocument` satisfies it. */
 export interface AuthoredSolidsDocumentLike {
   markers: readonly { id: string; kind: string; position: Vec3Like; rotationY?: number; meta?: Record<string, unknown> }[];
   volumes: readonly {
@@ -19,7 +18,6 @@ export interface AuthoredSolidsDocumentLike {
   paths: readonly { id: string; kind: string; points: readonly Vec3Like[]; meta?: Record<string, unknown> }[];
 }
 
-/** Layer prefix `syncAuthoredSolids` owns in `ctx.world.solids`; one layer per document object. */
 export const AUTHORED_SOLID_LAYER_PREFIX = "authored:";
 
 function kindObjects(document: AuthoredSolidsDocumentLike): SceneKindObject[] {
@@ -54,11 +52,7 @@ function kindObjects(document: AuthoredSolidsDocumentLike): SceneKindObject[] {
   return objects;
 }
 
-/**
- * Solids for every document object whose scene kind declares `solids`, keyed by object id. Objects
- * whose kind has no `solids` hook, or whose hook returns none, are left out.
- * @capability authored-solids collision for studio-authored world content such as city volumes
- */
+/** @capability authored-solids collision for studio-authored world content such as city volumes */
 export function resolveAuthoredSolids(
   document: AuthoredSolidsDocumentLike,
   sampleHeight?: (x: number, z: number) => number,
@@ -77,12 +71,7 @@ export function resolveAuthoredSolids(
   return out;
 }
 
-/**
- * Write a document's studio solids into `solids` (usually `ctx.world.solids`), one
- * `authored:<objectId>` layer per object, dropping authored layers the document no longer has.
- * Call again whenever the document changes.
- * @capability authored-solids collision for studio-authored world content such as city volumes
- */
+/** @capability authored-solids collision for studio-authored world content such as city volumes */
 export function syncAuthoredSolids(
   solids: WorldSolids,
   document: AuthoredSolidsDocumentLike,

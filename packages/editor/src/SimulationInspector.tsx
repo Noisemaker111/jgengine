@@ -16,9 +16,7 @@ function NumberInput({ label, value, onChange, min = 0, step = 0.1 }: { label: s
   return <label className="flex items-center justify-between gap-2"><span>{label}</span><input aria-label={label} className="w-24 rounded border border-neutral-700 bg-neutral-900 p-1" type="number" min={min} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
 }
 
-/** Production authoring controls share the same validated command and undo history as RPC.
- * @capability simulation-inspector author weather schedules, effects, fire, wind zones, forces and habitats with validated undoable controls
- */
+/** @capability simulation-inspector author weather schedules, effects, fire, wind zones, forces and habitats with validated undoable controls */
 export function SimulationInspector({ session, creatorPolicy }: { session: EditorSession; creatorPolicy?: CreatorPolicy | undefined }) {
   const simulation = useStoreSelector(session, (state) => state.document.simulation);
   const [error, setError] = useState<string | null>(null);

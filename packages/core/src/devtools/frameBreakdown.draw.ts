@@ -43,11 +43,6 @@ import { publishOnPage } from "../runtime/pageHandle";
  * Dev only: it installs where the frame telemetry does, and `window.__jg?.frames` reads it.
  */
 
-/**
- * Every visible light in a scene as `SpotLight (shadow) in Headlamp/Player`: its type, whether it casts
- * shadows, and its own name or the nearest named ancestors, which is how you find it in the code.
- * Position is left out: a light that moves is not a light that came or went.
- */
 function visibleLights(scene: object): string[] {
   const lights: string[] = [];
   const traverse: unknown = Reflect.get(scene, "traverseVisible");
@@ -81,9 +76,7 @@ const MAX_PENDING_DRAW_QUERIES = 16384;
 export const FRAME_RETENTION_LIMIT = 1024;
 /** Hitches a session keeps: an hour of one stall every two seconds. */
 const HITCH_LOG_LIMIT = 2000;
-/** Smooth frames whose first draws a stall also tells: the GPU process runs up to a couple behind. */
 const FIRST_DRAW_LAG_FRAMES = 2;
-/** Long animation frames kept to attribute hitches from. */
 const LONG_FRAME_LIMIT = 600;
 
 type Callable = (...args: unknown[]) => unknown;
@@ -93,14 +86,9 @@ interface TimerExt {
   GPU_DISJOINT_EXT: number;
 }
 
-
 let active: FrameBreakdown | null = null;
 let activePasses: ((composer: { passes: readonly object[] }) => void) | null = null;
 
-/**
- * Time each post pass of a composer by name, CPU and GPU. Cheap when no breakdown is installed; call
- * it each frame before `composer.render` so passes added later are timed too.
- */
 export function measureComposerPasses(composer: { passes: readonly object[] }): void {
   activePasses?.(composer);
 }
@@ -146,7 +134,6 @@ function labelOf(thing: unknown, fallback: string): string {
   return `${nameField(thing, "name") ?? nameField(thing, "type") ?? fallback}#${numberField(thing, "id") ?? "?"}`;
 }
 
-/** "Rock (InstancedMesh, DodecahedronGeometry) in Boulders#41": what a draw is, by its nearest named ancestor. */
 function objectLabel(object: unknown, geometry: unknown): string {
   if (typeof object !== "object" || object === null) return "object";
   const own = nameField(object, "name");
@@ -183,7 +170,7 @@ function gpuTimers(context: WebGLRenderingContext | WebGL2RenderingContext): { g
   return elapsed === undefined || disjoint === undefined ? null : { gl: context, ext: { TIME_ELAPSED_EXT: elapsed, GPU_DISJOINT_EXT: disjoint } };
 }
 
-/** Install the breakdown on a renderer; the engine loop's frame board supplies the callbacks. @internal */
+/** @internal */
 export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
   active?.dispose();
   const wrapped = new WeakSet<object>();

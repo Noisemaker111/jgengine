@@ -25,7 +25,6 @@ export interface CameraPose {
 const RTS_WASD_CODES: readonly string[] = ["KeyW", "KeyA", "KeyS", "KeyD"];
 const RTS_ROTATE_CODES: readonly string[] = ["KeyQ", "KeyE"];
 
-
 function bindsAny(input: ActionCodesMap | undefined, wanted: readonly string[]): boolean {
   if (input === undefined) return false;
   return Object.values(input).some((codes) => allActionCodes(codes).some((code) => wanted.includes(code)));
@@ -46,14 +45,11 @@ export function forwardVector(yaw: number): Xyz {
   return { x: Math.sin(yaw), y: 0, z: Math.cos(yaw) };
 }
 
-/** Screen-right of a yaw: `forward × up` with up = +Y.
- * @internal
- */
+/** @internal */
 export function rightVector(yaw: number): Xyz {
   return { x: -Math.cos(yaw), y: 0, z: Math.sin(yaw) };
 }
 
-/** Top-down rig config with defaults filled in. */
 export interface ResolvedTopDown {
   height: number;
   pitch: number;
@@ -119,10 +115,7 @@ export function rtsPanWorldDir(panX: number, panZ: number, yaw: number): Xyz {
   return { x: x / len, y: 0, z: z / len };
 }
 
-/**
- * Move an RTS pan center to a queued `ctx.camera.panTo` point (when any), then clamp it to the rig bounds.
- * @internal
- */
+/** @internal */
 export function applyRtsCenter(
   center: Xyz,
   jump: { x: number; z: number } | null,
@@ -137,14 +130,11 @@ export function applyRtsCenter(
   center.z = clamp(center.z, bounds.minZ ?? -Infinity, bounds.maxZ ?? Infinity);
 }
 
-/** Exponential spring-arm approach toward a desired point (frame-rate independent).
- * @internal
- */
+/** @internal */
 export function springArmStep(current: Xyz, desired: Xyz, damping: number, dt: number): Xyz {
   return lerpVec3(current, desired, smoothBlend(dt, damping));
 }
 
-/** Side-scroll rig config with defaults filled in. */
 export interface ResolvedSideScroll {
   axis: "x" | "z";
   distance: number;
@@ -171,12 +161,7 @@ export function sideScrollFollowBlend(followSmoothing: number, dt: number): numb
   return followSmoothing <= 0 ? 1 : smoothBlend(dt, followSmoothing);
 }
 
-/**
- * Fixed lateral 2.5D follow pose: the camera sits perpendicular to the travel
- * axis at `distance`, above the entity by `height`, and looks at the entity
- * raised by `lookHeight`. Axis "x" watches from +z; axis "z" watches from +x.
-  * @internal
-  */
+/** @internal */
 export function resolveSideScrollPose(entityPos: Xyz, resolved: ResolvedSideScroll, fov: number): CameraPose {
   const perpendicular: Xyz = resolved.axis === "x" ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
   return {
@@ -190,9 +175,7 @@ export function resolveSideScrollPose(entityPos: Xyz, resolved: ResolvedSideScro
   };
 }
 
-/** Speed→FOV curve: FOV climbs from base to max as speed rises to `speedForMax`.
- * @internal
- */
+/** @internal */
 export function speedToFov(
   speed: number,
   curve: { base?: number; max?: number; speedForMax?: number } | undefined,
@@ -204,16 +187,12 @@ export function speedToFov(
   return lerp(base, max, clamp(speed / speedForMax, 0, 1));
 }
 
-/** Yaw that points from `from` toward `to` on the XZ plane (matches shell forward = (sin, cos)).
- * @internal
- */
+/** @internal */
 export function yawTo(from: Xyz, to: Xyz): number {
   return Math.atan2(to.x - from.x, to.z - from.z);
 }
 
-/** Shortest signed angular delta from `a` to `b`, wrapped to (-PI, PI].
- * @internal
- */
+/** @internal */
 export function angleDelta(a: number, b: number): number {
   let delta = (b - a) % (Math.PI * 2);
   if (delta > Math.PI) delta -= Math.PI * 2;
@@ -221,14 +200,11 @@ export function angleDelta(a: number, b: number): number {
   return delta;
 }
 
-/** Exponential yaw smoothing that respects wrap-around.
- * @internal
- */
+/** @internal */
 export function smoothYaw(current: number, desired: number, speed: number, dt: number): number {
   return current + angleDelta(current, desired) * smoothBlend(dt, speed);
 }
 
-/** Shoulder rig config with defaults filled in. */
 export interface ResolvedShoulder {
   shoulderOffset: number;
   heightOffset: number;
@@ -269,12 +245,7 @@ export function blendShoulder(hip: ResolvedShoulder, ads: ResolvedShoulder, t: n
   };
 }
 
-/**
- * Over-the-shoulder camera pose. The boom sits behind the follow point along
- * `yaw`, raised by `heightOffset`, and pushed sideways by `shoulderOffset`
- * (sign set by `sideSign`: +1 right, -1 left). `pitch` tilts the look point.
-  * @internal
-  */
+/** @internal */
 export function shoulderPose(
   follow: Xyz,
   yaw: number,
@@ -334,7 +305,6 @@ export function lockOnPose(
   return { pose: { position, lookAt: focus, fov }, yaw };
 }
 
-/** Chase rig config with defaults filled in. */
 export interface ResolvedChase {
   distance: number;
   height: number;
@@ -350,18 +320,15 @@ export interface ResolvedChase {
   velocityYawBlend: number;
   /** Below this planar speed the drift-lag feature is fully off. */
   velocityYawMinSpeed: number;
-  /** Exponential smoothing rate toward the blended anchor yaw (1-exp(-response*dt)). */
   velocityYawResponse: number;
   /** Exponential smoothing rate the anchor yaw follows the body's facing with (#1370). `Infinity` restores the legacy rigid follow. */
   yawResponse: number;
   fovBase: number;
   fovMax: number;
   fovSpeedForMax: number;
-  /** Exponential FOV smoothing rate; `Infinity` applies the curve unsmoothed. */
   fovResponse: number;
   distanceExtra: number;
   distanceSpeedForMax: number;
-  /** Fraction of body pitch the boom follows; 0 keeps a level boom. */
   pitchBlend: number;
   pitchMax: number;
   pitchResponse: number;
@@ -458,7 +425,6 @@ export function bankRollStep(currentRoll: number, yaw: number, previousYaw: numb
   return currentRoll + (target - currentRoll) * Math.min(1, resolved.bankDamping * dt);
 }
 
-/** Observer rig config with defaults filled in. */
 export interface ResolvedObserver {
   distance: number;
   height: number;
@@ -492,17 +458,13 @@ export function observerPose(subject: Xyz, angle: number, resolved: ResolvedObse
   };
 }
 
-/** Desired chase-camera position behind a vehicle facing `yaw` (before spring smoothing). `pitch` (nose-up positive) tilts the boom around the vehicle's right axis.
- * @internal
- */
+/** @internal */
 export function chaseDesiredPosition(follow: Xyz, yaw: number, resolved: ResolvedChase, pitch = 0, distance = resolved.distance): Xyz {
   const offset = chaseBoomOffset(yaw, pitch, distance, resolved.height);
   return { x: follow.x + offset.x, y: follow.y + offset.y, z: follow.z + offset.z };
 }
 
-/** Camera offset from the follow point for a boom `distance` back and `height` up, tilted by `pitch` (nose-up positive).
- * @internal
- */
+/** @internal */
 export function chaseBoomOffset(yaw: number, pitch: number, distance: number, height: number): Xyz {
   const forward = forwardVector(yaw);
   const cos = Math.cos(pitch);
@@ -511,9 +473,7 @@ export function chaseBoomOffset(yaw: number, pitch: number, distance: number, he
   return { x: forward.x * along, y: -distance * sin + height * cos, z: forward.z * along };
 }
 
-/** Look point ahead of / above a chased vehicle, tilted by `pitch` like the boom.
- * @internal
- */
+/** @internal */
 export function chaseLookAt(follow: Xyz, yaw: number, resolved: ResolvedChase, pitch = 0): Xyz {
   const forward = forwardVector(yaw);
   const cos = Math.cos(pitch);
@@ -526,9 +486,7 @@ export function chaseLookAt(follow: Xyz, yaw: number, resolved: ResolvedChase, p
   };
 }
 
-/** Mutable per-rig chase state; {@link stepChase} advances it in place. */
 export interface ChaseRigState {
-  /** Smoothed camera offset from the led follow point; springing the offset, not the world position, keeps the boom length at any constant speed. */
   offset: Xyz | null;
   anchorYaw: number | null;
   lastYaw: number | null;
@@ -559,32 +517,27 @@ export function cutChase(state: ChaseRigState): void {
   state.roll = 0;
 }
 
-/** What the chase rig reads from its target each frame. */
 export interface ChaseSample {
   follow: Xyz;
   /** Body heading (radians). */
   yaw: number;
   /** Body `rotationX` (three.js convention: positive = nose down). */
   bodyPitch: number;
-  /** Sim velocity when the entity publishes one; `null` falls back to the frame-to-frame position delta. */
   velocity: Xyz | null;
   lookBack: boolean;
   /** FOV impulse (degrees) queued since the last frame. */
   fovKick: number;
 }
 
-/** One frame of chase output from {@link stepChase}. */
 export interface ChaseStepResult {
   pose: CameraPose;
   /** Camera roll to apply after the pose, radians. */
   roll: number;
-  /** Forward chase yaw to report to the shell; unaffected by look-back. */
   anchorYaw: number;
   /** Planar speed used for FOV, distance and shake. */
   speed: number;
 }
 
-/** Pulls a desired camera position in toward `pivot` when something blocks the boom. */
 export type ChaseBoomClamp = (pivot: Xyz, desired: Xyz) => Xyz;
 
 /**
@@ -730,9 +683,7 @@ export function seatPose(
   };
 }
 
-/** Linear cross-fade between two full camera poses (position, lookAt, fov).
- * @internal
- */
+/** @internal */
 export function crossfadePose(from: CameraPose, to: CameraPose, t: number): CameraPose {
   const blend = clamp(t, 0, 1);
   return {
@@ -742,21 +693,16 @@ export function crossfadePose(from: CameraPose, to: CameraPose, t: number): Came
   };
 }
 
-/** A CameraDirector's runtime overrides for the followed entity and cinematic. */
 export interface DirectorCameraValues {
-  /** `undefined` = no runtime override (fall back to static); `null` = explicitly follow nothing. */
   followEntityId?: string | null | undefined;
-  /** `null` = no runtime cinematic active (fall back to static). */
   cinematic?: CinematicCameraConfig | null | undefined;
 }
 
-/** The game's static follow entity and cinematic, used when no director override is active. */
 export interface StaticCameraValues {
   followEntityId?: string | null | undefined;
   cinematic?: CinematicCameraConfig | undefined;
 }
 
-/** Follow entity and cinematic after director overrides are merged over the static config. */
 export interface ResolvedDirectedCamera {
   followEntityId: string | null | undefined;
   cinematic: CinematicCameraConfig | undefined;
@@ -780,7 +726,6 @@ export function resolveDirectedCamera(
   return { followEntityId, cinematic };
 }
 
-/** One cinematic sample: the pose at that time and whether the path has finished. */
 export interface CinematicSample {
   pose: CameraPose;
   done: boolean;

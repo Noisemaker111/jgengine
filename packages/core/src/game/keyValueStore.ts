@@ -35,7 +35,6 @@ export interface KeyValueStoreConfig<T> {
   readonly deserialize?: (raw: string) => T;
 }
 
-/** A mutable local save cell through {@link KeyValueStorage}. A failed read, write or removal throws the storage's own error and leaves the cell as it was; `storage: null` deliberately uses memory only. */
 export function createKeyValueStore<T>(config: KeyValueStoreConfig<T>): KeyValueStore<T> {
   const storage =
     config.storage === undefined

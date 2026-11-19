@@ -1,8 +1,3 @@
-/**
- * Live demo: the engine's damage resolver. A turret shoots a plain grunt and an armored knight in turn;
- * each shot goes through `resolveDamageHit` with the armor matchup, and the result drains the target's
- * health pool through the same adapter as the health demo. Click a target to shoot it yourself.
- */
 import { resolveDamageHit } from "@jgengine/core/combat/damage/damageResolution";
 import { applyStatPoolDelta, createStatPool, type StatPool } from "@jgengine/core/stats/statPool";
 
@@ -22,7 +17,6 @@ export interface DamageSpecimen {
 interface Target {
   id: "grunt" | "knight";
   armored: boolean;
-  /** Fraction of the stage height. */
   y: number;
 }
 

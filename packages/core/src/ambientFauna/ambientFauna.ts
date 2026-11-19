@@ -13,28 +13,19 @@ export type FaunaArea =
   | { shape: "disc"; x: number; z: number; radius: number }
   | { shape: "box"; x: number; z: number; halfX: number; halfZ: number };
 
-/**
- * When a group is out. The sun height is -1 (deep night) to 1 (noon); the group fades in over `fade`
- * above `sunMin` and out over `fade` below `sunMax`. No sun in the scene leaves the group out.
- */
 export interface FaunaWindow {
   sunMin?: number;
   sunMax?: number;
-  /** Sun-height span of the fade. Default 0.08. */
   fade?: number;
 }
 
-/** One ambient group as data; the game supplies every species and number. */
 export interface FaunaGroup {
   id: string;
-  /** Key into the game's species table. */
   species: string;
   motion: FaunaMotion;
   area: FaunaArea;
   seed?: string | number;
-  /** Agents; wins over `density`. */
   count?: number;
-  /** Agents per 1000 m² of footprint. */
   density?: number;
   window?: FaunaWindow;
   /**
@@ -42,45 +33,33 @@ export interface FaunaGroup {
    * above the ground (default 0.4 to 3). `soar`: altitude above the ground (default 40 to 70).
    */
   band?: { min?: number; max?: number };
-  /** Water surface height for a school, when the world gives none. */
   surface?: number;
   /** Top speed in m/s. Default 2.5 for a school, 1.2 for a swarm, 0.6 for drift, 12 for a soarer. */
   speed?: number;
-  /** Flock steering overrides for `school` and `swarm`. */
   steering?: Partial<FlockConfig>;
   /** How far a `swarm` or `drift` agent wanders from the plant it keeps to. Default 3. */
   wander?: number;
-  /** Most agents drawn at once. Default every agent. */
   budget?: number;
   /** Distances in metres: a model up to `near`, a sprite to `far`, nothing beyond. Default 40 and 120. */
   lod?: { near: number; far: number };
 }
 
-/** What the world gives fauna to read. Everything is optional; groups degrade to their own numbers. */
 export interface FaunaWorld {
-  /** Water surface height at a point and time. */
   surfaceAt?(x: number, z: number, time: number): number;
-  /** Ground height at a point; the seabed for a school. */
   groundAt?(x: number, z: number): number;
   /** Ground height revision, or undefined when changes cannot be tracked. */
   groundRevision?(): number | undefined;
   /** True where a plant or grass grows, given the ground height there; swarms and drift spawn only there. */
   plantAt?(x: number, z: number, groundY: number): boolean;
-  /** Wind at a height: a `windField(...)` fits. */
   wind?: { atHeight(x: number, z: number, heightM: number, time: number): readonly [number, number] };
 }
 
-/** Limits and rates of one {@link createAmbientFauna}. */
 export interface AmbientFaunaOptions {
-  /** Most agents across every group; groups listed first fill it. Default 2000. */
   globalCap?: number;
-  /** Groups farther than this from the focus (plus their size) are not simulated. Default 400. */
   simulateRange?: number;
 }
 
-/** Hard bound on one group's agents. */
 export const FAUNA_GROUP_LIMIT = 4096;
-/** Default of {@link AmbientFaunaOptions.globalCap}. */
 export const FAUNA_GLOBAL_CAP = 2000;
 
 const DEFAULT_BAND: Record<FaunaMotion, { min: number; max: number }> = {
@@ -94,27 +73,13 @@ const SOAR_LOOP_POINTS = 24;
 const SEABED_CLEARANCE = 0.25;
 const MIN_WATER_COLUMN = 0.6;
 const WIND_REFRESH_SECONDS = 0.5;
-/**
- * An agent reuses the ground height it last read while it is within this distance of where it read
- * it and clear of every limit that height sets by more than the ground can have changed since. A
- * ground read in a sculpted world costs microseconds, and thousands of agents used to read it every
- * frame; reused, each reads it about once every 5 to 15 frames and lands where a read every frame
- * would put it, on ground up to the slope it assumes.
- */
 const GROUND_REUSE_M = 0.5;
-/**
- * The slope a reused height assumes: at least 1 (45°), and twice the steepest slope the agent has
- * met, measured between its reads and around its first one, so steep ground narrows its own reuse.
- */
 const GROUND_MIN_SLOPE = 1;
 const GROUND_SLOPE_SAFETY = 2;
-/** Reads closer together than this say nothing reliable about the slope. */
 const GROUND_SLOPE_BASE_M = 0.05;
-/** Floats per agent in `groundRead`: x, z, height, assumed slope. */
 const GROUND_READ_STRIDE = 4;
 const TWO_PI = Math.PI * 2;
 
-/** A group with every default filled in and its footprint measured. */
 export interface ResolvedFaunaGroup extends Required<Pick<FaunaGroup, "id" | "species" | "motion" | "area" | "wander">> {
   seed: string | number;
   window: FaunaWindow;
@@ -126,25 +91,19 @@ export interface ResolvedFaunaGroup extends Required<Pick<FaunaGroup, "id" | "sp
   surface: number | undefined;
 }
 
-/** The live state of one group; the arrays are read by the renderer. */
 export interface FaunaGroupState {
   readonly spec: ResolvedFaunaGroup;
-  /** Agents this group owns. */
   readonly count: number;
-  /** Agents out now: `count` scaled by how far into its window the group is. */
   readonly active: number;
-  /** x,y,z per agent. */
   readonly position: Float32Array;
   /** x,y,z per agent, metres per second. */
   readonly velocity: Float32Array;
 }
 
-/** Plain-JSON state of every group. */
 export interface AmbientFaunaState {
   groups: { id: string; position: number[]; velocity: number[] }[];
 }
 
-/** What {@link FaunaSimulation.update} reads each frame; the caller reuses one object. */
 export interface FaunaFrame {
   dt: number;
   /** Seconds on a clock that only grows. */
@@ -155,18 +114,13 @@ export interface FaunaFrame {
   focusZ: number;
 }
 
-/** Ambient groups moving by their motion kind, all state in preallocated typed arrays. */
 export interface FaunaSimulation {
   readonly groups: readonly FaunaGroupState[];
-  /** Agents owned by every group. */
   total(): number;
-  /** Agents out now across every group. */
   activeTotal(): number;
-  /** Advance every group in range by `frame.dt`. Allocates nothing. */
   update(frame: FaunaFrame): void;
   snapshot(): AmbientFaunaState;
   restore(state: AmbientFaunaState): void;
-  /** Place every agent again from its seed. */
   reset(): void;
 }
 
@@ -174,7 +128,7 @@ function clamp01(value: number): number {
   return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
-/** How far into its window a group is, 0 (out of it) to 1 (fully in), for `sunHeight`. @internal */
+/** @internal */
 export function windowPresence(window: FaunaWindow | undefined, sunHeight: number | null): number {
   if (window === undefined || (window.sunMin === undefined && window.sunMax === undefined)) return 1;
   if (sunHeight === null) return 0;
@@ -312,7 +266,6 @@ function surfaceOf(spec: ResolvedFaunaGroup, world: FaunaWorld, x: number, z: nu
   return world.surfaceAt?.(x, z, time) ?? spec.surface ?? 0;
 }
 
-/** The highest seabed under `surface` that still leaves a fish room to swim. */
 function deepestAllowedFloor(spec: ResolvedFaunaGroup, surface: number): number {
   return surface - spec.band.min - MIN_WATER_COLUMN;
 }
@@ -506,13 +459,7 @@ function stepSoar(g: GroupRuntime, world: FaunaWorld, time: number, dt: number):
   }
 }
 
-/**
- * Build ambient groups: fish schools below the water surface, swarms and drifting motes near plants,
- * and flyers soaring on the wind. Schools and swarms steer with the flock stepper, soarers ride a motion
- * track, every spawn point is a seeded spatial sample. Species, counts and areas are the caller's data.
- *
- * @capability ambient-fauna groups of fish, insects, motes and soaring flyers that stay in an area, below the water surface or near plants, out in a time-of-day window, with a global agent cap
- */
+/** @capability ambient-fauna groups of fish, insects, motes and soaring flyers that stay in an area, below the water surface or near plants, out in a time-of-day window, with a global agent cap */
 export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWorld = {}, options: AmbientFaunaOptions = {}): FaunaSimulation {
   const cap = Math.max(0, Math.floor(options.globalCap ?? FAUNA_GLOBAL_CAP));
   const range = options.simulateRange ?? 400;

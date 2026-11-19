@@ -2,16 +2,14 @@ import * as THREE from "three";
 
 import { DECAL_LOOKS, decalCorners, type DecalLook, type ImpactDecalPool } from "@jgengine/core/vfx/impactDecals";
 
-/** Atlas layout: a 4×2 grid of square cells, one look per cell in {@link DECAL_LOOKS} order. */
 const ATLAS_COLUMNS = 4;
 const ATLAS_ROWS = 2;
 const CELL = 64;
 /** Transparent border inside each cell so mipmaps never bleed one look into its neighbour. */
 const CELL_MARGIN = 3;
-/** A fading mark redraws at most this often: smoother than the eye reads, cheap for the pool. */
 const FADE_REFRESH_S = 0.1;
 
-/** Texture-space rectangle `[u0, v0, u1, v1]` of a look in the atlas. Exported for tests. @internal */
+/** @internal */
 export function decalLookRect(look: DecalLook): readonly [number, number, number, number] {
   const index = Math.max(0, DECAL_LOOKS.indexOf(look));
   const column = index % ATLAS_COLUMNS;
@@ -115,7 +113,6 @@ function buildDecalAtlas(): THREE.DataTexture {
   return texture;
 }
 
-/** The vertex arrays one decal mesh writes into: four vertices per mark. */
 export interface DecalBuffers {
   positions: Float32Array;
   normals: Float32Array;
@@ -123,7 +120,6 @@ export interface DecalBuffers {
   colors: Float32Array;
 }
 
-/** Vertex arrays sized for `capacity` marks. */
 export function createDecalBuffers(capacity: number): DecalBuffers {
   const vertices = Math.max(1, capacity) * 4;
   return {
@@ -147,12 +143,7 @@ function tintOf(hex: string | undefined): readonly [number, number, number] {
   return tint;
 }
 
-/**
- * Write the pool's live marks, oldest first, as quads into `buffers`: corners in the surface plane,
- * the normal on every vertex, the look's atlas cell as UVs, and the kind's tint with the fade as the
- * vertex colour's alpha. Fully faded marks are skipped. Returns how many marks were written. Exported
- * for tests. @internal
- */
+/** @internal */
 export function writeImpactDecalGeometry(pool: ImpactDecalPool, now: number, buffers: DecalBuffers): number {
   const max = Math.floor(buffers.positions.length / 12);
   let written = 0;
@@ -194,10 +185,8 @@ function quadIndex(capacity: number): THREE.BufferAttribute {
   return new THREE.BufferAttribute(index, 1);
 }
 
-/** One mesh that draws a whole decal pool. */
 export interface ImpactDecalLayer {
   readonly mesh: THREE.Mesh;
-  /** Rewrite the mesh when the pool changed or a mark is mid-fade. Prunes expired marks first. */
   sync(pool: ImpactDecalPool, now: number): void;
   dispose(): void;
 }

@@ -30,7 +30,6 @@ export function windowsCommandLineArg(value: string): string {
   return `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, "$1$1")}"`;
 }
 
-/** The command line WMI is given for `file args...`. */
 export function windowsCommandLine(file: string, args: readonly string[]): string {
   return [file, ...args].map(windowsCommandLineArg).join(" ");
 }
@@ -53,7 +52,6 @@ const WMI_CREATE =
   "if ($r.ReturnValue -ne 0) { [Console]::Error.Write(\"Win32_Process.Create returned $($r.ReturnValue)\"); exit 1 }; " +
   "[Console]::Out.Write($r.ProcessId)";
 
-/** Start `file args...` outside this process's tree and job; returns its pid. Throws when it could not start. */
 export function startOutsideCaller(file: string, args: readonly string[], options: StartOutsideCallerOptions): number {
   const env = options.env ?? process.env;
   if (process.platform !== "win32") {

@@ -17,25 +17,12 @@
  * behaviour `onUpdate`.
  */
 
-/**
- * Declaration-merging registry games and adapters augment for typed access to
- * world modules:
- *
- * ```ts
- * declare module "@jgengine/core/behaviour/behaviour" {
- *   interface JGEngineRegister {
- *     modules: { physics: PhysicsModule; director: DirectorModule };
- *   }
- * }
- * ```
- */
 export interface JGEngineRegister {}
 
 export type RegisterField<TKey extends string, TFallback = unknown> = TKey extends keyof JGEngineRegister
   ? JGEngineRegister[TKey]
   : TFallback;
 
-/** Resolves to the augmented module map when `JGEngineRegister` declares one. */
 export type BehaviourModules = RegisterField<"modules", Record<string, BehaviourModule>>;
 
 interface UpdateSubscriber {
@@ -57,11 +44,6 @@ interface BehaviourWorldInternal extends BehaviourWorld {
   _detachBehaviour(behaviour: Behaviour): void;
 }
 
-/**
- * Subclass and override the lifecycle hooks. A behaviour only joins the per-frame
- * update dispatch if it actually overrides `onUpdate` (prototype-identity check at
- * each activation), so hook-only behaviours cost nothing per frame.
- */
 export class Behaviour {
   /** @internal */ _world: BehaviourWorldInternal | null = null;
   /** @internal */ _nodeId: string | null = null;
@@ -86,12 +68,10 @@ export class Behaviour {
     return this.world.modules;
   }
 
-  /** Own enabled flag; effective activity also requires the node's hierarchy to be active. */
   get enabled(): boolean {
     return this._enabled;
   }
 
-  /** Whether the lifecycle is currently in the active span (`onEnable` fired, `onDisable` not yet). */
   get isActive(): boolean {
     return this._isActive;
   }
@@ -123,7 +103,6 @@ export class Behaviour {
     else this._deactivate();
   }
 
-  /** Detaches from the node and fires `onDisable` (if active) then `onDestroy`. */
   destroy(): void {
     if (this._world !== null) this._world._detachBehaviour(this);
     this._destroy();
@@ -167,12 +146,6 @@ export class Behaviour {
   }
 }
 
-/**
- * A world-lifetime service with typed sibling access via `this.modules`. Modules awake
- * and start before any behaviour during `world.start()`, subscribe to update dispatch
- * first (their `onUpdate` fires before every behaviour's), and have no disable/destroy —
- * they live as long as the world.
- */
 export class BehaviourModule {
   /** @internal */ _world: BehaviourWorldInternal | null = null;
 
@@ -199,38 +172,23 @@ export class BehaviourModule {
 }
 
 export interface BehaviourWorld {
-  /** Creates the node if missing (parented under `parentId` when given, else a root); reparents an existing node when `parentId` differs. */
   add(id: string, parentId?: string): void;
   has(id: string): boolean;
   parentOf(id: string): string | null;
   childrenOf(id: string): readonly string[];
-  /** Moves `id` (and subtree) under `parentId` (`null` = root), firing enable/disable cascades when effective activity changes. Throws on cycles. */
   setParent(id: string, parentId: string | null): void;
-  /** Attaches and immediately activates when the world has started, the node is effectively active, and the behaviour is enabled (deferred during bootstrap). */
   attach<T extends Behaviour>(nodeId: string, behaviour: T): T;
   behavioursOf(nodeId: string): readonly Behaviour[];
-  /**
-   * Sets the node's own flag and cascades activation/deactivation through the subtree,
-   * pruning at descendants whose own flag is false — so reactivating a parent restores
-   * exactly the per-child stored flags. A flip under an inactive ancestor changes only
-   * the flag.
-   */
   setActive(id: string, active: boolean): void;
-  /** The node's own flag; unknown ids count active. */
   isActiveSelf(id: string): boolean;
-  /** Own flag AND every ancestor's; unknown ids count active. */
   isActive(id: string): boolean;
-  /** Registers modules by key. Throws on duplicate keys or after `start()`. */
   addModules(modules: Partial<BehaviourModules>): void;
   readonly modules: BehaviourModules;
   /** Bootstraps: modules awake/start/subscribe, then all behaviours on effectively-active nodes awake, then enable+start+subscribe. Idempotent. */
   start(): void;
   started(): boolean;
-  /** Dispatches `onUpdate(dt)` to modules then behaviours, over a snapshot — subscribers added mid-dispatch first fire next update. */
   update(dt: number): void;
-  /** Destroys every behaviour in the subtree (parent-first) and removes the nodes. */
   destroyNode(id: string): boolean;
-  /** Destroys all nodes and behaviours and clears update dispatch. */
   destroy(): void;
 }
 

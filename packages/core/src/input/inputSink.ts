@@ -1,14 +1,11 @@
 import { INPUT_COMMAND, type InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import type { LiveGameBackend, TransportRunCommandResult } from "@jgengine/core/runtime/transport";
 
-/** Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`. */
 export interface InputSink {
   send(frame: InputFrame, options?: { urgent?: boolean; reset?: boolean }): void;
 }
 
-/** Discards input — the single-player / client-authoritative default, where the client integrates movement itself.
- * @internal
- */
+/** @internal */
 export function noopInputSink(): InputSink {
   return { send() {} };
 }

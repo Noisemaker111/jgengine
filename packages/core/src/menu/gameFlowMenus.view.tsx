@@ -21,31 +21,17 @@ export function startNewGame(ctx: GameContext): Promise<void> {
   return newGame(ctx, () => location.reload());
 }
 
-/** What the title and pause menus of {@link GameFlowUI} say: the game's words, keys and credits. */
 export interface GameFlowMenuContent {
-  /** Wordmark and accessible name. */
   name: string;
-  /** Small line above the wordmark. */
   tagline?: ReactNode;
-  /** One line under the wordmark. */
   pitch?: ReactNode;
-  /** `--jg-accent` for both menus. */
   accent?: string;
-  /** `--jg-menu-logo-size`. Default `clamp(40px, 6vw, 84px)`. */
   logoSize?: string;
-  /** Rows of the Controls pane: keys, then what they do. */
   controls: readonly (readonly [string, string])[];
-  /** The title's default pane: a numbered list of how a run goes. */
   briefing?: readonly string[];
-  /** The Credits pane: one line each, or a sectioned credits document. Omit to drop the Credits verb. */
   credits?: readonly string[] | CreditsDocument;
   /** The Settings verb on both menus, opening the engine settings surface. Default true; it shows only when the game has settings. */
   settings?: boolean;
-  /**
-   * A screen between New game and play (a character creator, a start-region choice), drawn in place
-   * of the title over the standing world. Call `begin()` once the choices are applied to start the
-   * run, or `back()` to return to the title. Omit to go straight into play.
-   */
   newGameSetup?: (begin: () => void, back: () => void) => ReactNode;
 }
 
@@ -117,7 +103,6 @@ function usePane(fallback: string): { focus: string; highlight: (id: string | nu
   return { focus: pane ?? rest ?? fallback, highlight };
 }
 
-/** Whether the Settings verb shows: the game has settings and did not turn the verb off. */
 function useSettingsVerb(content: GameFlowMenuContent): boolean {
   const has = useHasSettings();
   return has && content.settings !== false;
@@ -135,7 +120,6 @@ function CreditsLines({ lines }: { lines: readonly string[] }): ReactNode {
   );
 }
 
-/** Title screen over the standing world: Continue opens the save, New game starts clean, then Controls, Settings and Credits. */
 function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode {
   const ctx = useGameContext();
   const settings = useSettings();
@@ -202,7 +186,6 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
   );
 }
 
-/** Pause: resume, save, the controls, or back to the title (the save keeps the run). */
 function GameFlowPause({ content }: { content: GameFlowMenuContent }): ReactNode {
   const ctx = useGameContext();
   const settings = useSettings();
@@ -232,21 +215,12 @@ function GameFlowPause({ content }: { content: GameFlowMenuContent }): ReactNode
   );
 }
 
-/** Props for {@link GameFlowUI}. */
 export interface GameFlowUIProps {
-  /** The game's words, keys and credits for both menus. */
   menu: GameFlowMenuContent;
-  /** The play HUD, shown in every phase but the title. */
   hud: ReactNode;
 }
 
-/**
- * A game's whole UI over `createGameFlowSystem`: the title over the standing world, the HUD while
- * playing, and the pause menu over it. The game supplies its HUD and its menu words; the look comes
- * from the UI kit and `menu.accent`.
- *
- * @capability game-flow-ui title, HUD and pause menu wired to the game-flow system — the game passes its HUD and menu words
- */
+/** @capability game-flow-ui title, HUD and pause menu wired to the game-flow system — the game passes its HUD and menu words */
 export function GameFlowUI({ menu, hud }: GameFlowUIProps): ReactNode {
   const { phase } = useGamePhase();
   return (

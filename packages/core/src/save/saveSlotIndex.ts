@@ -8,7 +8,6 @@ import type { SaveSlotMeta, SaveSlots } from "./saveSlots";
  * real saves instead of hand-maintained metadata.
  */
 
-/** How one document becomes a menu slot. */
 export interface SaveSlotMetaOptions {
   /** Player-facing name for the slot. Defaults to the slot id. */
   nameOf?: (slot: string, document: GameSaveDocument) => string;
@@ -19,7 +18,6 @@ export interface SaveSlotMetaOptions {
   metaOf?: (slot: string, document: GameSaveDocument) => Record<string, string | number>;
 }
 
-/** "4h 12m" / "12m" / "< 1m" — the playtime chip every save menu wants. */
 export function formatSavePlaytime(seconds: number): string {
   const total = Math.max(0, Math.floor(seconds));
   const hours = Math.floor(total / 3600);
@@ -53,26 +51,17 @@ export function saveSlotMeta(
   };
 }
 
-/** The source a slot list is refreshed from — a `GameSave`, or a narrower reader. */
 export interface SaveSlotSource {
   slots(): Promise<string[]>;
   peek(slot: string): Promise<PeekResult<GameSaveDocument>>;
 }
 
-/**
- * The result of a refresh: what the menu should show now, or `failed` when the slot list itself
- * could not be read (storage blocked, a backend refused) and the index was left as it was.
- */
 export type SaveSlotsRefresh =
   | {
       readonly kind: "refreshed";
-      /** Written slots in the order the save store indexes them. */
       saved: string[];
-      /** Slot metadata for every written slot. */
       filled: SaveSlotMeta[];
-      /** Written slots the index could not hold (id not in it and the index is full). */
       skipped: string[];
-      /** Written slots whose document is damaged or could not be read — a menu shows them as such, not as empty. */
       unreadable: string[];
     }
   | { readonly kind: "failed"; readonly error: unknown };

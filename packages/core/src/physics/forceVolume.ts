@@ -6,13 +6,10 @@ export type ForceMode = "impulse" | "velocity" | "accelerate";
 export type ForceVector = readonly [number, number, number];
 const DEFAULT_FORCE_DIRECTION: ForceVector = [0, 0, -1];
 
-/** Renderer-free localized acceleration shared by physical actors and cosmetic particles. */
 export interface ForceFieldConfig {
   center: ForceVector;
   shape: { kind: "sphere"; radius: number } | { kind: "box"; halfExtents: ForceVector };
-  /** Positive attracts toward the center; negative repels. Units/s². */
   strength: number;
-  /** Edge-to-center falloff exponent; zero is uniform. Default 1. */
   attenuation?: number;
   /** Blend radial attraction with `direction`, from 0 to 1. */
   directionality?: number;
@@ -25,16 +22,11 @@ export interface ForceFieldConfig {
     /** Independent signed acceleration along the normalized axis, in units/s². */
     lift?: number;
   };
-  /** Affected target bits; omission affects every target. */
   mask?: number;
-  /** Cap the combined acceleration magnitude. */
   maxAcceleration?: number;
 }
 
-/** Validate force authoring once before sampling in a hot loop.
- * Coordinates stay within the safe integer range; acceleration magnitudes stay within 1e12 units/s².
- * @capability force-field-validation reject invalid localized force authoring before simulation
- */
+/** @capability force-field-validation reject invalid localized force authoring before simulation */
 export function validateForceField(config: ForceFieldConfig): void {
   const vector = (value: unknown) => Array.isArray(value) && value.length === 3 && value.every(component => typeof component === "number" && Number.isFinite(component) && Math.abs(component) <= Number.MAX_SAFE_INTEGER);
   const finite = (value: unknown, min = -1e12, max = 1e12) => typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
@@ -53,9 +45,7 @@ export function validateForceField(config: ForceFieldConfig): void {
   if (config.maxAcceleration !== undefined && !finite(config.maxAcceleration, 0)) throw new RangeError("Force acceleration cap must be finite and nonnegative");
 }
 
-/** Sample localized acceleration; `out` permits allocation-free integration.
- * @capability localized-forces sample signed attraction, directional force, vortex spin and axial lift with target masks and caps
- */
+/** @capability localized-forces sample signed attraction, directional force, vortex spin and axial lift with target masks and caps */
 export function sampleForceField(
   config: ForceFieldConfig,
   position: ForceVector,
@@ -113,9 +103,7 @@ export function sampleForceField(
 export interface ForceVolumeConfig {
   /** Region a body's center must be inside to be affected. */
   bounds: PhysicsBounds;
-  /** `impulse` adds to velocity, `velocity` sets it, `accelerate` adds force·dt each tick. */
   force: readonly [number, number, number];
-  /** Default `impulse`. */
   mode?: ForceMode;
   /** Fire only when a body first enters (boost pad) rather than every tick inside (fan/wind). Default false. */
   once?: boolean;
@@ -132,11 +120,6 @@ function inside(bounds: PhysicsBounds, x: number, y: number, z: number): boolean
   );
 }
 
-/**
- * A trigger region that pushes bodies passing through it — boost pads (`impulse` + `once`),
- * conveyors (`velocity`), fans/wind (`accelerate`). Call `apply` each tick; `once` mode fires only
- * on entry by tracking membership between ticks.
- */
 export class ForceVolume {
   readonly bounds: PhysicsBounds;
   readonly mode: ForceMode;
@@ -189,7 +172,6 @@ export class ForceVolume {
   }
 }
 
-/** One tick's force math for a body outside `PhysicsWorld` — apply the returned velocity in any custom integrator. */
 export function applyVolumeForce(
   velocity: readonly [number, number, number],
   force: readonly [number, number, number],
@@ -208,11 +190,8 @@ export interface VolumeTriggerConfig {
 }
 
 export interface VolumeTriggerStep<TId> {
-  /** Ids inside this tick that were outside last tick — the boost-pad edge. */
   entered: readonly TId[];
-  /** Every id inside this tick. */
   inside: readonly TId[];
-  /** Ids inside last tick that left. */
   exited: readonly TId[];
 }
 
@@ -256,15 +235,9 @@ export function createVolumeTrigger<TId = string>(config: VolumeTriggerConfig): 
 }
 
 export interface PlatformCarryConfig {
-  /** Vertical gap between a rider's base and the platform top counted as "standing on". Default 0.12. */
   contactTolerance?: number;
 }
 
-/**
- * Carries bodies standing on a moving platform by composing their transform with the platform's
- * per-`step` delta — moving/rotating lifts and conveyor floors (Fall Guys, Gang Beasts). The
- * platform is a body the game repositions each frame; riders are detected by overlap on its top face.
- */
 export class PlatformCarry {
   private readonly world: PhysicsWorld;
   private readonly platform: number;

@@ -171,7 +171,6 @@ export function runAssetsPull(targetDir: string): boolean {
   return result.status === 0;
 }
 
-/** The new game's `jgengine.json`: its template, and the engine packages the template put in package.json. */
 function writeProjectConfig(targetDir: string, game: { id: string; name: string; template: GameTemplate; editor: boolean }): void {
   const manifest = JSON.parse(readFileSync(join(targetDir, "package.json"), "utf8")) as { dependencies?: Record<string, string> };
   const engine = Object.keys(manifest.dependencies ?? {})

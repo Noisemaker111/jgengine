@@ -15,22 +15,16 @@ import { WorldReflectionProbe, type WorldProbeSettings } from "./reflectionProbe
 
 /** @internal Props for shell {@link EnvironmentLighting}. */
 export interface EnvironmentLightingProps {
-  /** Optional authored environment map; absent or `gradient` uses the procedural probe. */
   source?: EnvironmentSource | undefined;
-  /** IBL intensity. Default {@link DEFAULT_IBL_INTENSITY}. */
   intensity?: number;
-  /** Upper-hemisphere tint for the procedural sky probe. Default cool daylight. */
   skyColor?: string;
-  /** Ground / lower-hemisphere tint. Default soft earth. */
   groundColor?: string;
-  /** Tint the horizon band leans toward, usually the scene's ambient colour so IBL keeps its warmth. Default white. */
   horizonTint?: string | undefined;
   /**
    * Sun direction (world space, not normalized) baked into the probe as an HDR disc plus a broad
    * lobe, so metals glint and diffuse IBL has a lit side. Default {@link DEFAULT_PROBE_SUN}.
    */
   sunDirection?: readonly [number, number, number] | undefined;
-  /** Sun disc tint. Default warm white. */
   sunColor?: string;
   /**
    * Day-cycle scaling for the probe's brightness. Rebuilding a PMREM every frame is not free, so a
@@ -259,11 +253,7 @@ const PMREM_SCENE_SIZE = 256;
 /** @internal Fallback probe sun when no directional light is authored: high and off to one side. */
 export const DEFAULT_PROBE_SUN: readonly [number, number, number] = [-0.45, 0.8, 0.35];
 
-/**
- * @internal Procedural sky probe: zenith → brighter horizon → ground bounce, plus an HDR sun disc and
- * a wide glow lobe. After PMREM the lobe becomes a directional diffuse term, so the IBL alone gives
- * forms a lit and a shaded side instead of a uniform two-tone wash.
- */
+/** @internal Procedural sky probe: zenith → brighter horizon → ground bounce, plus an HDR sun disc and a wide glow lobe. After PMREM the lobe becomes a directional diffuse term, so the IBL alone gives forms a lit and a shaded side instead of a uniform two-tone wash. */
 export function buildSkyProbeScene(options: {
   skyColor: string;
   groundColor: string;

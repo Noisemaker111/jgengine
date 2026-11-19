@@ -3,19 +3,10 @@ import type { ImpactDecalsConfig } from "@jgengine/core/vfx/impactDecals";
 
 import { enemies } from "../entities/enemies/catalog";
 
-/**
- * Armoured bodies (loaders, crawlers, elite husks) bleed oil onto the ground under the shot; flesh
- * takes no mark, keeping Ferralon blood-free.
- */
 const OIL_BODIES: Readonly<Record<string, string>> = Object.fromEntries(
   enemies.filter((enemy) => enemy.surface === "armor").map((enemy) => [enemy.id, "oil"]),
 );
 
-/**
- * What a Scrap Signal round leaves in Ferralon: dust splashes in the wasteland dirt, bright dents in
- * the scrap that walls and wrecks are made of, pale chips in rock, splinter holes in wood and canvas,
- * oil under a hit robot, and a wide scorch where anything explosive lands.
- */
 export const SCRAP_DECALS: ImpactDecalsConfig = {
   kinds: {
     dust: { look: "splash", tint: "#8a6a48", size: 0.9, lifeSeconds: 18, fadeSeconds: 3 },

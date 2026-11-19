@@ -5,7 +5,6 @@ import type { RuneElement, RuneElementProps, RuneBoundFont } from "./element";
 
 let nextId = 0;
 
-/** A native host node; it has no browser element or computed style. */
 export class RuneNode implements RuneElement {
   readonly id = `n${++nextId}`;
   parent: RuneNode | null = null;
@@ -36,7 +35,6 @@ export class RuneNode implements RuneElement {
   scrollIntoView(): void { this.surface().onScroll?.(this); }
 }
 
-/** The small protocol a native host needs; a recorder can implement it without a browser. */
 export interface RuneTreeSink {
   setSpec(children: NativeWireNode[], modal: boolean): void;
   bindNumber(name: string, get: () => number): number;
@@ -45,7 +43,6 @@ export interface RuneTreeSink {
   bindProp?(id: string, field: string, get: () => unknown): unknown;
 }
 
-/** One native element in the wire protocol, using the same typed props as JSX. */
 export interface NativeWireNode {
   k: "native";
   id: string;
@@ -102,7 +99,6 @@ export function nativeSpec(root: RuneNode, sink: RuneTreeSink, sampleLive = fals
   return { children, modal: modal || root.props.modal === true };
 }
 
-/** Pure reconciler host. `flush` publishes only roots changed by a commit. */
 export function nativeTreeHost(changed: (root: RuneNode) => void): Host<RuneNode> {
   const dirty = (node: RuneNode) => { const root = node.surface(); root.dirty = true; changed(root); };
   return {
@@ -135,12 +131,10 @@ export function nativeTreeHost(changed: (root: RuneNode) => void): Host<RuneNode
   };
 }
 
-/** Current readable label for keyboard navigation, accessibility and test drivers. */
 export function nativeLabel(node: RuneNode): string {
   return node.props.label ?? (node.props.text === undefined ? node.text + node.children.map(nativeLabel).join("") : readLive(node.props.text));
 }
 
-/** Disabled containers disable their descendants for every input device. */
 export function nativeEnabled(node: RuneNode): boolean {
   for (let parent: RuneNode | null = node; parent !== null; parent = parent.parent) {
     if (readLive(parent.props.disabled ?? false) || readLive(parent.props.hidden ?? false)) return false;

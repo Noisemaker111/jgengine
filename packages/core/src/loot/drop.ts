@@ -6,20 +6,16 @@ export interface ItemDrop extends LootItem {
   id: string;
 }
 
-/** A per-stat delta from the equipped item to the candidate; positive `delta` means the candidate is larger. */
 export interface EquippedStatDelta extends LootStatDelta {
-  /** Whether this stat reads better on the candidate, following `lowerIsBetter`. */
   better: "candidate" | "equipped" | "equal";
 }
 
-/** What a HUD renders when a drop lands: per-stat deltas against the worn item and one verdict. */
 export interface EquippedComparison {
   candidateId: string;
   equippedId: string | null;
   deltas: readonly EquippedStatDelta[];
   scoreCandidate: number;
   scoreEquipped: number;
-  /** `scoreCandidate - scoreEquipped`. */
   scoreDelta: number;
   better: "candidate" | "equipped" | "equal";
 }
@@ -36,14 +32,7 @@ const NO_ITEM: LootItem = {
   mass: 0,
 };
 
-/**
- * Compare a dropped item against what is equipped, with one delta per stat and a weighted verdict.
- * The delta is `candidate - equipped`; `better` flips for stats the caller lists in
- * `lowerIsBetter`, so reload time improving does not read as worse. A missing equipped item
- * compares against zeros.
- *
- * @capability item-comparison show per-stat deltas and a weighted verdict for a drop against equipped gear
- */
+/** @capability item-comparison show per-stat deltas and a weighted verdict for a drop against equipped gear */
 export function compareToEquipped(
   candidate: ItemDrop,
   equipped: ItemDrop | null,

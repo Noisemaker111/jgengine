@@ -1,5 +1,4 @@
 export type Cell = readonly [number, number];
-/** The grid cells a shaped item covers, relative to its anchor. */
 export type CellFootprint = readonly Cell[];
 export type Rotation = 0 | 1 | 2 | 3;
 
@@ -126,10 +125,7 @@ function occupancyMap<T>(grid: ShapedGrid<T>, ignoreId?: string): Map<string, st
   return map;
 }
 
-/**
- * Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
- * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
- */
+/** @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement */
 export function canPlace<T>(
   grid: ShapedGrid<T>,
   footprint: CellFootprint,
@@ -149,27 +145,20 @@ export function canPlace<T>(
   return null;
 }
 
-/** Search policy: rotation order first, then rows and columns; the work budget counts candidate origins. */
 export interface ShapedPlacementSearchOptions {
   /** Defaults to `[0, 1, 2, 3]`; a game can prefer or forbid rotations. */
   rotations?: readonly Rotation[];
-  /** Ignore an existing placement while searching for its next position. */
   ignoreId?: string;
   /** Nonnegative integer candidate limit; defaults to 4096. */
   maxChecks?: number;
 }
 
-/** A detached placement, a completed no-fit search, or an incomplete search that reached its budget. */
 export type ShapedPlacementSearchResult =
   | { status: "found"; origin: Cell; rotation: Rotation; checks: number }
   | { status: "no-space"; checks: number }
   | { status: "budget-exceeded"; checks: number };
 
-/**
- * Find the first legal placement without mutating the board; occupancy is indexed once per search.
- *
- * @capability shaped-placement find a shaped inventory item's first fit with ordered rotations, row-major placement, and an explicit search budget
- */
+/** @capability shaped-placement find a shaped inventory item's first fit with ordered rotations, row-major placement, and an explicit search budget */
 export function findShapedPlacement<T>(
   grid: ShapedGrid<T>,
   footprint: CellFootprint,
@@ -197,10 +186,7 @@ export function findShapedPlacement<T>(
   return { status: "no-space", checks };
 }
 
-/**
- * Place a caller-defined item without mutating the source board; duplicate ids reject.
- * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
- */
+/** @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement */
 export function placeShaped<T>(
   grid: ShapedGrid<T>,
   item: ShapedItem<T>,
@@ -287,10 +273,7 @@ export function fitShapedItem<T>(
   return { status: "ok", grid: placed.grid, origin: fit.origin, rotation: fit.rotation, checks: fit.checks };
 }
 
-/**
- * Remove one placement without mutating the source board.
- * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
- */
+/** @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement */
 export function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T> {
   if (!grid.placements.some((p) => p.id === id)) {
     return { status: "rejected", reason: "unknown-id", detail: id };
@@ -298,10 +281,7 @@ export function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T
   return { status: "ok", grid: { ...grid, placements: grid.placements.filter((p) => p.id !== id) } };
 }
 
-/**
- * Move or rotate one placement, ignoring its current cells during overlap checks.
- * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
- */
+/** @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement */
 export function moveShaped<T>(
   grid: ShapedGrid<T>,
   id: string,

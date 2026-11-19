@@ -5,11 +5,6 @@ import { BUILDABLES } from "../objects/catalog";
 import { setLevel } from "./terrain";
 import { sessionOf } from "../session";
 
-/**
- * The builder's undo: the last few things the player did to the lot, newest last. Undoing a build
- * takes it away and pays its whole price back; undoing a demolish puts it back where it stood and
- * takes back the refund; undoing a land change puts the ground back and returns what it cost.
- */
 export type UndoStep =
   | { type: "place"; ids: string[]; cost: number }
   | { type: "remove"; kind: string; cell: [number, number]; rot: number; refund: number }

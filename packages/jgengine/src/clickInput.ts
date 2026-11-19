@@ -15,10 +15,6 @@ export function parseClickAt(spec: string, width: number, height: number): Click
   return { x, y };
 }
 
-/**
- * Dispatch a native click (left by default, `"right"` for RTS move/attack orders and context
- * actions), including pointer movement for canvas hover targets.
- */
 export async function dispatchClickAt(
   session: { send(method: string, params: Record<string, unknown>): Promise<unknown> },
   point: ClickPoint,

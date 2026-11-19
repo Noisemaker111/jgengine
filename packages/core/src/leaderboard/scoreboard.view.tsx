@@ -11,28 +11,18 @@ import {
 
 import { GameIcon, type GameIconName } from "../ui/icons/gameIcons.view";
 
-/** The medal tokens {@link medalFor} emits for the podium. */
 export type MedalToken = "gold" | "silver" | "bronze";
 
-/** Reskin tokens for {@link Scoreboard}. Every color/spacing value reads a `--jg-*` token first. */
 export interface ScoreboardTheme {
-  /** Panel background. Default reads `--jg-frame-bg`. */
   bg?: string;
-  /** Panel border. Default reads `--jg-frame-border`. */
   border?: string;
-  /** Panel corner radius. Default reads `--jg-frame-radius`. */
   radius?: string;
-  /** Row / header text color. */
   text?: string;
-  /** Muted text (rank column, header labels). */
   muted?: string;
   /** Accent used for the local-row highlight. Default reads `--jg-accent`. */
   accent?: string;
-  /** Background wash behind the local ("you") row. */
   localBg?: string;
-  /** Font family. */
   fontFamily?: string;
-  /** Podium medal colors keyed by token. */
   medals?: Record<MedalToken, string>;
 }
 
@@ -52,31 +42,23 @@ function resolveTheme(theme: ScoreboardTheme | undefined): Required<Omit<Scorebo
   };
 }
 
-/** Props for {@link Scoreboard}. Pass either `entries` (already ranked) or `rows` + `options`. */
 export interface ScoreboardProps {
-  /** Already-ranked entries from {@link rankLeaderboard}. Takes precedence over `rows`. */
   entries?: readonly RankedEntry[];
-  /** Raw rows to rank in-component. Ignored when `entries` is given. */
   rows?: readonly RankableRow[];
-  /** Ranking options applied to `rows`. Ignored when `entries` is given. */
   options?: RankLeaderboardOptions;
-  /** Optional heading rendered above the table (e.g. "TOP RUNNERS"). */
   title?: ReactNode;
-  /** Label for the score column header. Default `"Score"`. */
   scoreLabel?: string;
   /**
    * Map a `userId` to a display name. Falls back to the entry's `label`, then the
    * raw `userId`. The model never carries display names it does not own.
    */
   nameFor?: (entry: RankedEntry) => ReactNode;
-  /** Format a raw score for display. Default `String(value)`. */
   formatScore?: (value: number) => ReactNode;
   /**
    * Podium icon for a medal token. Default: a filled star tinted by the medal
    * color. Return `null` to render just the numeric rank.
    */
   medalIcon?: (medal: MedalToken) => GameIconName | null;
-  /** Reskin tokens. */
   theme?: ScoreboardTheme;
   className?: string;
   style?: CSSProperties;

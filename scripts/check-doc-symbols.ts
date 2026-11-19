@@ -45,7 +45,6 @@ function rel(path: string): string {
   return path.replace(root + "/", "").replaceAll("\\", "/");
 }
 
-// --- resolve a documented import path to its source file --------------------
 // `@jgengine/<pkg>/<sub>` -> packages/<pkg>/src/<sub>{.ts,.tsx,/index.ts}
 // mirroring how skillDocs.test.ts resolves documented subpaths.
 function fileFor(base: string): string | undefined {
@@ -65,7 +64,6 @@ function resolveModuleFile(importPath: string): string | undefined {
   return fileFor(sub === "" ? join(srcRoot, "index") : join(srcRoot, sub));
 }
 
-// --- syntactic export surface of a source file (follows `export *`) ---------
 const project = new Project({ skipAddingFilesFromTsConfig: true, useInMemoryFileSystem: false });
 const exportsCache = new Map<string, Set<string>>();
 
@@ -131,7 +129,6 @@ function exportsOfFile(file: string, visiting: Set<string> = new Set()): Set<str
   return names;
 }
 
-// --- collect the two documented sources ------------------------------------
 interface DocSource {
   file: string;
   text: string;
@@ -162,7 +159,6 @@ function docSources(): DocSource[] {
   return out;
 }
 
-// --- parse `import { ... } from "@jgengine/..."` (multi-line, type, alias) ---
 interface ImportedSymbol {
   symbol: string;
   importPath: string;
@@ -170,7 +166,6 @@ interface ImportedSymbol {
 }
 
 // Matches the named-import form, tolerating multi-line braces:
-//   import { A, type B, C as D } from "@jgengine/pkg/sub"
 // Namespace (`import * as X`), default, and side-effect imports carry no
 // per-symbol claim about the module surface and are intentionally ignored.
 const NAMED_IMPORT = /import\s*(?:type\s+)?\{([^}]*)\}\s*from\s*["'](@jgengine\/[^"']+)["']/g;
@@ -200,7 +195,6 @@ function extractImports(source: DocSource): ImportedSymbol[] {
   return found;
 }
 
-// --- run --------------------------------------------------------------------
 const sources = docSources();
 
 const problems: string[] = [];

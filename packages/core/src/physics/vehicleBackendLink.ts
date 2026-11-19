@@ -1,26 +1,19 @@
 import type { BodyHandle, PhysicsBackend, PhysicsQuat, PhysicsVec3, RayCastVehicle, RayCastWheelDesc, RayCastWheelState, RayHit } from "./physicsBackend";
 
-/** Options for {@link createVehicleBackendLink}. */
 export interface VehicleBackendLinkOptions {
-  /** Chassis collision box half extents, m (width/2, height/2, length/2), heading along +z. */
   halfExtents: PhysicsVec3;
   /** Gap kept between the box bottom and the car's base height, so the cast never scrapes the ground (default `0.1`). */
   clearance?: number;
-  /** Collision layer bitmask of the chassis body (default `1`). */
   layers?: number;
-  /** Layers the chassis body collides with and shoves in the solver (default all). */
   mask?: number;
   /** Layers that stop the car in `clampMove` (default all). Leave props off it so the car shoves them instead of stopping. */
   blockMask?: number;
   /** Contact normals steeper than this `y` count as ground, not walls, and never block (default `0.7`). */
   groundNormalY?: number;
-  /** Wheels to probe in the chassis frame (centre of the box, forward +z); {@link VehicleBackendLink.probeWheels} reports where each touches ground. */
   wheels?: readonly RayCastWheelDesc[];
-  /** Layers the wheel probes hit (default all). */
   wheelMask?: number;
 }
 
-/** The pose fields {@link VehicleBackendLink.sync} reads; a `VehicleDynamicsStep` fits. */
 export interface VehicleLinkPose {
   position: readonly [number, number, number];
   heading: number;
@@ -28,7 +21,6 @@ export interface VehicleLinkPose {
   bodyRoll?: number;
 }
 
-/** A link's serializable state: the pose its chassis last synced to. Wheel states are re-probed, not stored. */
 export interface VehicleBackendLinkState {
   position: [number, number, number];
   heading: number;
@@ -44,14 +36,11 @@ export interface VehicleLinkHit {
   blocked: number;
 }
 
-/** A vehicle sim's presence in a physics backend: a kinematic chassis that shoves props, and a wall-aware move clamp. */
 export interface VehicleBackendLink {
   readonly body: BodyHandle;
-  /** Pass as the sim's `clampMove` option: sweeps the chassis box and stops at walls, sliding along them. */
   clampMove(from: readonly [number, number], to: readonly [number, number]): readonly [number, number];
   /** Move the kinematic chassis to the sim's pose; call after each sim tick, before the backend steps. */
   sync(pose: VehicleLinkPose): void;
-  /** The wall the most recent `clampMove` hit, or `null`. */
   lastHit(): VehicleLinkHit | null;
   /**
    * Cast every configured wheel from the chassis' current pose; call after the backend steps. Uses the backend's own
@@ -59,12 +48,10 @@ export interface VehicleBackendLink {
    */
   probeWheels(dt: number): readonly RayCastWheelState[];
   snapshot(): VehicleBackendLinkState;
-  /** Put the chassis back at a saved pose (teleports it; the backend snapshot restores the body itself). */
   restore(state: VehicleBackendLinkState): void;
   dispose(): void;
 }
 
-/** Yaw about +y (heading), then pitch about the car's x, then roll about its z, as a quaternion. */
 function poseQuat(heading: number, pitch: number, roll: number): PhysicsQuat {
   const hy = heading / 2;
   const hp = pitch / 2;

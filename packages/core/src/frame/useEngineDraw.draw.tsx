@@ -13,13 +13,7 @@ export interface MountedChildDraw {
   leave: () => void;
 }
 
-/**
- * Mount `draw` as a child of `parent` under the root frame state — the imperative form of
- * {@link EngineDrawMount} for draws that compose children (a marker swapping its model for a
- * sprite). The child's `state.scene` is `parent`, so its objects and frame tasks inherit the
- * parent's transform exactly like JSX nesting did.
- * @internal
- */
+/** @internal */
 export function mountChildDraw(draw: EngineDraw, parent: THREE.Object3D, root: EngineFrameState): MountedChildDraw {
   const state = childFrameState(root, parent);
   const owner = root.frameOwner;
@@ -36,11 +30,10 @@ export function unmountChildDraw(mounted: MountedChildDraw): void {
   mounted.draw.dispose?.(mounted.state);
 }
 
-/** Rebuilds inside {@link CHURN_WINDOW_MS} that mean a draw's `deps` change identity every render. */
 const CHURN_REBUILDS = 30;
 const CHURN_WINDOW_MS = 1000;
 
-/** One mount's rebuild history for {@link noteDrawRebuild}. @internal */
+/** @internal */
 export interface DrawChurn {
   windowStart: number;
   rebuilds: number;
@@ -72,31 +65,20 @@ export function noteDrawRebuild(churn: DrawChurn, create: () => EngineDraw, now:
   return true;
 }
 
-/**
- * The nearest scene parent for draws mounted through the UI runtime: `null` means the
- * host scene root. Components that own a {@link THREE.Group} for custom
- * children provide it so nested {@link EngineDrawMount}s inherit the transform,
- * like JSX nesting did.
- * @internal
- */
+/** @internal */
 export const EngineSceneContext = createContext<THREE.Object3D | null>(null);
 
-/** Provide `parent` as the scene parent for descendant draw mounts. @internal */
+/** @internal */
 export function EngineSceneProvider({ parent, children }: { parent: THREE.Object3D; children?: ReactNode }) {
   return <EngineSceneContext.Provider value={parent}>{children}</EngineSceneContext.Provider>;
 }
 
-/**
- * Parents `children`'s draw mounts under `object` through {@link EngineSceneContext} —
- * how a draw that owns a {@link THREE.Group} gives UI-rendered custom content
- * that group's transform.
- * @internal
- */
+/** @internal */
 export function SceneObjectPortal({ object, children }: { object: THREE.Object3D; children?: ReactNode }) {
   return <EngineSceneContext.Provider value={object}>{children}</EngineSceneContext.Provider>;
 }
 
-/** Attach `object` to the scene under the engine loop; kept for callers that bracket mounts with it. @internal */
+/** @internal */
 export function sceneObjectAttachDraw(object: THREE.Object3D, attach: boolean): EngineDraw {
   return {
     mount(state: EngineFrameState) {
@@ -108,12 +90,7 @@ export function sceneObjectAttachDraw(object: THREE.Object3D, attach: boolean): 
   };
 }
 
-/**
- * Mount a caller-owned {@link THREE.Object3D} under the nearest
- * {@link EngineSceneContext} (or the scene root). The object keeps whatever
- * transform the caller writes onto it.
- * @internal
- */
+/** @internal */
 export function SceneObjectAttach({ object }: { object: THREE.Object3D }) {
   const sceneParent = useContext(EngineSceneContext);
   useEngineDraw(
@@ -171,12 +148,7 @@ export function useSceneObjectAttach(object: THREE.Object3D): void {
   }), [object, sceneParent]);
 }
 
-/**
- * A positioned {@link THREE.Group} parenting `children`'s draw mounts — the
- * draw-side form of `<group position={...}>`: a scene attachment plus an
- * {@link EngineSceneContext} for descendants.
- * @internal
- */
+/** @internal */
 export function SceneObjectGroup({
   position,
   rotation,
@@ -193,7 +165,6 @@ export function SceneObjectGroup({
   rotationY?: number | undefined;
   scale?: readonly [number, number, number] | undefined;
   visible?: boolean | undefined;
-  /** Tags the group for scene scans (postfx overlay exclusion, camera collision). */
   userData?: Record<string, unknown> | undefined;
   children?: ReactNode;
 }) {
@@ -249,7 +220,7 @@ export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; de
   return null;
 }
 
-/** Mount `draw` on the host's frame state itself — the scene-root form of {@link mountChildDraw}. @internal */
+/** @internal */
 function mountRootDraw(draw: EngineDraw, frame: EngineFrameState): MountedChildDraw {
   const owner = frame.frameOwner;
   withFrameOwner(owner, () => draw.mount?.(frame));
@@ -291,10 +262,6 @@ export function useEngineDraw(create: () => EngineDraw, deps: DependencyList): v
   });
 }
 
-/**
- * Transform fields shared by {@link meshDraw} and the `SceneObjectGroup` props:
- * position, XYZ euler rotation, scale and visibility.
- */
 export interface DrawTransform {
   position?: readonly [number, number, number] | undefined;
   /** Euler XYZ rotation in radians. */
@@ -312,7 +279,6 @@ export interface DrawAttachProps {
   position?: readonly [number, number, number] | THREE.Vector3 | undefined;
   /** Euler XYZ rotation in radians. */
   rotation?: readonly [number, number, number] | THREE.Euler | undefined;
-  /** XYZW quaternion â€” array form only, matching the apply helpers. */
   quaternion?: readonly [number, number, number, number] | undefined;
   scale?: readonly [number, number, number] | THREE.Vector3 | undefined;
   visible?: boolean | undefined;

@@ -39,17 +39,11 @@ export type KitMaterial = "steel" | "brass" | "hull" | "wood" | "stone" | "paper
  */
 export type KitCut = "box" | "chamfer" | "notch" | "slant" | "tab" | "banner" | "shield" | "ticket" | "torn" | "hex";
 
-/** Everything a material decides: its texture, base colour, lighting, text colour and default edge. */
 export interface KitMaterialLook {
-  /** Base colour under the texture; `tint` replaces it. */
   base: string;
-  /** Text drawn on the material. */
   ink: string;
-  /** Default rim colour. */
   edge: string;
-  /** CSS background layers above the base colour (texture, lighting, wear). */
   layers: string;
-  /** Blend for the layers over the base colour. */
   blend: string;
   /** Extra declarations a material needs. Never a `filter` or `backdrop-filter`: those re-render every frame over a live 3D scene. */
   extra?: CSSProperties;
@@ -60,7 +54,6 @@ const svg = (body: string, size = 256): string =>
     `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'>${body}</svg>`,
   ).replace(/'/g, "%27")}")`;
 
-/** Tileable noise: stitched turbulence mapped to one channel of grey with a chosen strength. */
 const noise = ({
   frequency,
   octaves = 3,
@@ -81,7 +74,6 @@ const noise = ({
     size,
   );
 
-/** Relief: turbulence lit from the top-left, for stone and leather pits. */
 const relief = ({ frequency, seed = 5, strength = 1.6, alpha = 0.55 }: { frequency: string; seed?: number; strength?: number; alpha?: number }): string =>
   svg(
     `<filter id='r' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='${frequency}' numOctaves='4' seed='${seed}' stitchTiles='stitch' result='t'/><feDiffuseLighting in='t' surfaceScale='${strength}' lighting-color='white' result='l'><feDistantLight azimuth='225' elevation='42'/></feDiffuseLighting><feColorMatrix in='l' values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 1.2 0 0 0 -0.6'/><feComponentTransfer><feFuncA type='linear' slope='${alpha}'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(#r)'/>`,
@@ -228,23 +220,16 @@ export function kitCutPath(cut: KitCut, depth = 14): string {
  * `KitPanel` or `KitButton` and it draws as that object instead of in the kit's own language.
  */
 export interface KitFrameLook {
-  /** What it is made of. */
   material: KitMaterial;
-  /** Silhouette. Default `chamfer`. */
   cut?: KitCut;
   /** Corner and notch size in px. Default 14. */
   depth?: number | undefined;
-  /** Replaces the material's base colour (e.g. a team or rarity colour). */
   tint?: string | undefined;
-  /** Rim colour; `"none"` draws no rim. Default the material's edge. */
   edge?: string | undefined;
   /** Rim thickness in px. Default 2. */
   edgeWidth?: number | undefined;
-  /** A hard cast shadow under the frame (a clipped plate, not a filter). Default true; a `glow` replaces it. */
   shadow?: boolean;
-  /** Outer ring colour for a selected or charged frame (a clipped plate 3px wide, not a blur). */
   glow?: string | undefined;
-  /** Inner padding. Default `12px 16px`. */
   padding?: CSSProperties["padding"] | undefined;
 }
 
@@ -321,7 +306,7 @@ export function kitFrameVars({
   return vars as CSSProperties;
 }
 
-/** Props of the material surface a material `KitPanel`/`KitButton` renders. @internal */
+/** @internal */
 export interface KitFrameProps extends KitFrameLook, Omit<HTMLAttributes<HTMLElement>, "color"> {
   as?: ElementType | undefined;
   pressable: boolean;
@@ -332,11 +317,7 @@ export interface KitFrameProps extends KitFrameLook, Omit<HTMLAttributes<HTMLEle
   children?: ReactNode | undefined;
 }
 
-/**
- * A material surface: a cut silhouette with a rim, a cast shadow or glow, and a generated texture.
- * Pressable ones lift on hover, sink on press, glow on keyboard focus and report UI cues.
- * @internal
- */
+/** @internal */
 export function KitFrame({
   material,
   cut = "chamfer",

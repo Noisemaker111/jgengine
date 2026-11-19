@@ -6,25 +6,12 @@
  * then input order: the same order a per-cell bucket walk gives.
  */
 export interface PointGrid {
-  /**
-   * Rebuild over points read from `positions` at stride 3 (x at `i * 3`, z at `i * 3 + 2`). `items` names
-   * which points: an array of indices (entity handles, say) with `count` used, or a number `n` for points
-   * `0..n-1`. Allocates nothing once its buffers have grown to the population.
-   */
   rebuild(positions: ArrayLike<number>, items: ArrayLike<number> | number, count?: number): void;
-  /**
-   * Write into `out` the indices of points in cells the XZ square of half-size `radius` around (x, z)
-   * touches, and return how many. Candidates only: test the distance yourself. Stops when `out` is full,
-   * so size it to the population (or the most neighbours you will visit).
-   */
   query(x: number, z: number, radius: number, out: Int32Array): number;
-  /** Points in the last rebuild. */
   size(): number;
 }
 
-/** Options for {@link createPointGrid}. */
 export interface PointGridOptions {
-  /** Cell edge in world units; a query of radius up to this visits at most 3x3 cells. */
   cellSize: number;
   /**
    * Most cells a rebuild may lay out, as a multiple of the point count (default 4). A population spread
@@ -33,11 +20,7 @@ export interface PointGridOptions {
   maxCellsPerPoint?: number;
 }
 
-/**
- * Build a {@link PointGrid}.
- *
- * @capability point-grid per-tick counting-sort neighbour grid over typed-array positions, allocation-free once warm
- */
+/** @capability point-grid per-tick counting-sort neighbour grid over typed-array positions, allocation-free once warm */
 export function createPointGrid(options: PointGridOptions): PointGrid {
   const baseCell = options.cellSize > 0 ? options.cellSize : 1;
   const cellsPerPoint = options.maxCellsPerPoint ?? 4;

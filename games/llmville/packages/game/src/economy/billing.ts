@@ -68,7 +68,6 @@ export type DailyBillsDecision =
   | { kind: "skip" }
   | { kind: "spawn"; gameDay: number; bills: DailyBillRow[] };
 
-/** Bill once per game day (24 game hours). Skips the creation day and already-billed days. */
 export function shouldSpawnDailyBills(args: {
   now: number;
   createdAt: number;
@@ -195,7 +194,6 @@ export function decideBillAutoPay(input: {
   return { kind: "insolvent", totalDue, lateFeeAccrued };
 }
 
-/** Oldest-first; unpayable bills are deferred with late fees, not fatal on their own. */
 export function orderBillsForAutoPay<T extends { paidAt?: number; createdAt: number }>(
   bills: readonly T[],
 ): T[] {

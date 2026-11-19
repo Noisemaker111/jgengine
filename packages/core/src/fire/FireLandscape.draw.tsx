@@ -9,18 +9,14 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { FireLandscape } from "./fireLandscape";
 import { seededRng } from "../random/rng";
 
-/** Props for {@link FireLandscapeView}. */
 export interface FireLandscapeViewProps {
   fire: FireLandscape;
   /** Ground height so the overlay, flames and smoke sit on terrain; flat y = 0 when omitted. */
   heightAt?: (x: number, z: number) => number;
   /** Wind the smoke drifts with, m/s in world x and z. */
   wind?: readonly [number, number];
-  /** Most flame billboards drawn at once. Default 2048. */
   maxFlames?: number;
-  /** Most smoke puffs alive at once. Default 1024. */
   maxSmoke?: number;
-  /** Ground cells repainted per frame besides the burning ones; bounds the overlay's cost. Default 4096. */
   overlayCellsPerFrame?: number;
 }
 

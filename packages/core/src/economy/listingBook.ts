@@ -1,6 +1,5 @@
 import type { ItemStack } from "../inventory/storageTier";
 
-/** One active post in a {@link ListingBook}: an item stack a seller offered at a fixed price until it expires. */
 export interface Listing {
   readonly id: string;
   readonly sellerId: string;
@@ -12,7 +11,6 @@ export interface Listing {
   readonly expiresAt: number;
 }
 
-/** Tunables for {@link createListingBook} — per-seller listing cap, expiry window, house cut, and optional price bounds. */
 export interface ListingBookConfig {
   maxListingsPerSeller: number;
   expirySeconds: number;
@@ -21,7 +19,6 @@ export interface ListingBookConfig {
   maxPrice?: number;
 }
 
-/** Input to {@link ListingBook.post} — the goods, asking price, and current game-time to stamp the listing with. */
 export interface PostListingInput {
   id?: string;
   sellerId: string;
@@ -41,24 +38,20 @@ export type PostListingReason =
   | "listing-cap-reached"
   | "duplicate-id";
 
-/** Result of {@link ListingBook.post}. */
 export type PostListingResult =
   | { status: "ok"; listing: Listing }
   | { status: "rejected"; reason: PostListingReason };
 
-/** Result of {@link ListingBook.cancel}. */
 export type CancelListingResult =
   | { status: "ok"; listing: Listing }
   | { status: "rejected"; reason: "not-found" | "not-owner" };
 
-/** The financial split of a completed sale: total price, the house's cut, and what the seller's collection box was credited. */
 export interface BuyListingOutcome {
   listing: Listing;
   houseCut: number;
   sellerProceeds: number;
 }
 
-/** Result of {@link ListingBook.buy}. */
 export type BuyListingResult =
   | { status: "ok"; outcome: BuyListingOutcome }
   | { status: "rejected"; reason: "not-found" | "expired" | "own-listing" };
@@ -69,7 +62,6 @@ export interface CollectionBoxSnapshot {
   items: readonly ItemStack[];
 }
 
-/** A player-driven marketplace of {@link Listing}s plus the per-seller collection boxes behind it. See {@link createListingBook}. */
 export interface ListingBook {
   post(input: PostListingInput): PostListingResult;
   cancel(listingId: string, sellerId: string): CancelListingResult;
@@ -89,15 +81,7 @@ interface CollectionBoxState {
   items: ItemStack[];
 }
 
-/**
- * A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on
- * every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller
- * collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and
- * inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only
- * the listing lifecycle and the escrowed collection-box bookkeeping behind it.
- *
- * @capability listing-book player-driven marketplace listings with a house cut, expiry sweep, and seller collection box
- */
+/** @capability listing-book player-driven marketplace listings with a house cut, expiry sweep, and seller collection box */
 export function createListingBook(config: ListingBookConfig): ListingBook {
   const listings = new Map<string, Listing>();
   const boxes = new Map<string, CollectionBoxState>();

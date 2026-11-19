@@ -6,62 +6,44 @@ import { devtools } from "../devtools/devtools";
  * simulation never accumulates float drift; the caller converts at the display boundary.
  */
 
-/** One traded good: its reference price, finite stock, demand and price-curve policy. */
 export interface MarketGoodDef {
-  /** Stable id, unique within a market. */
   id: string;
-  /** Price per unit at the reference stock, in integer minor units. */
   basePrice: number;
-  /** Units on hand; a non-negative integer. Finite by construction. */
   stock: number;
-  /** Units buyers want per period at `basePrice`; a non-negative finite number. */
   demand: number;
-  /** Periods of demand the market wants to hold in stock (default `4`). */
   coverPeriods?: number;
-  /** Curve exponent: how hard price reacts to a stock/demand gap (default `1`). */
   elasticity?: number;
-  /** Floor on the price as a fraction of `basePrice` (default `0.25`). */
   minFactor?: number;
-  /** Ceiling on the price as a fraction of `basePrice` (default `4`). */
   maxFactor?: number;
-  /** What one unit costs the caller from the market's supplier, in minor units (default `basePrice`). */
   restockCost?: number;
 }
 
-/** The mutable half of a good: what a save stores, with the definition kept as authored data. */
 export interface MarketGoodState {
   id: string;
   stock: number;
   demand: number;
 }
 
-/** Counters and stocks of a market, for a probe or a summary line. */
 export interface MarketStats {
   goods: number;
   unitsInStock: number;
-  /** Sum of `stock × price` over every good, in minor units. */
   stockValue: number;
   sales: number;
   unitsSold: number;
-  /** Gross takings, in minor units. */
   revenue: number;
-  /** Units buyers asked for that stock could not serve. */
   unmetUnits: number;
 }
 
-/** Everything a price curve reads: the good's resolved policy plus its live stock and demand. */
 export interface MarketPriceInput {
   basePrice: number;
   stock: number;
   demand: number;
-  /** `coverPeriods × demand` — the stock at which price is `basePrice`. */
   targetStock: number;
   elasticity: number;
   minFactor: number;
   maxFactor: number;
 }
 
-/** Serializable market state: the mutable half of every good plus the running counters. */
 export interface MarketSnapshot {
   goods: readonly MarketGoodState[];
   counters: {
@@ -72,26 +54,18 @@ export interface MarketSnapshot {
   };
 }
 
-/** Options for {@link createMarket}: the goods and the price/demand policy they share. */
 export interface MarketConfig {
   goods?: readonly MarketGoodDef[];
-  /** Periods of demand held in stock when a good does not name its own; default `4`. */
   coverPeriods?: number;
-  /** Curve exponent when a good does not name its own; default `1`. */
   elasticity?: number;
   minFactor?: number;
   maxFactor?: number;
-  /** Fraction of the gap between current and observed demand adopted per {@link Market.recordDemand} (default `0.5`). */
   demandSmoothing?: number;
-  /** Weight added to demand per unit buyers asked for and did not get (default `0.5`). */
   unmetDemandFactor?: number;
-  /** Replace the default price curve; receives the good's resolved inputs. */
   priceCurve?: (input: MarketPriceInput) => number;
-  /** Register a devtools probe under this name reporting {@link MarketStats}. */
   devtoolsName?: string;
 }
 
-/** A served sale: what the buyer paid per unit and in total, in minor units. */
 export interface MarketSale {
   ok: true;
   goodId: string;
@@ -104,60 +78,40 @@ export interface MarketSale {
 export interface MarketSaleRejection {
   ok: false;
   reason: "unknown-good" | "invalid-qty" | "out-of-stock";
-  /** Units the market could not cover; only present for `"out-of-stock"`. */
   shortfall?: number;
 }
 
 /** A sale outcome: the price the buyers paid, or why it could not be served. */
 export type MarketSaleResult = MarketSale | MarketSaleRejection;
 
-/** A non-mutating read of what a sale would cost and how it would move the price. */
 export interface MarketQuote {
   goodId: string;
   qty: number;
   unitPrice: number;
   total: number;
-  /** Units that could not be covered from stock. */
   shortfall: number;
   /** Unit price after the sale, from the curve — the supply term moving. */
   nextUnitPrice: number;
 }
 
-/** A live market: prices from supply and demand over finite stock, with serializable state. */
 export interface Market {
-  /** Unit price in integer minor units. */
   priceOf(goodId: string): number;
-  /** Price after `qty` more units left stock (a negative `qty` is a delivery), without mutating. */
   priceAfter(goodId: string, qty: number): number;
-  /** `coverPeriods × demand` — the stock the market wants on hand. */
   targetStockOf(goodId: string): number;
   stockOf(goodId: string): number;
   demandOf(goodId: string): number;
-  /** What one unit costs from the supplier, in minor units. */
   restockCostOf(goodId: string): number;
-  /** What a sale of `qty` would cost and do to the price; `null` for an unknown good. */
   quote(goodId: string, qty: number): MarketQuote | null;
-  /** Serve `qty` units to buyers: decrements finite stock and returns the price they paid. */
   sell(goodId: string, qty: number): MarketSaleResult;
-  /** Take delivery of `qty` units from the supplier, lowering the price. `false` for an unknown good or bad count. */
   restock(goodId: string, qty: number): boolean;
-  /**
-   * Fold one period of observed buying into demand: smooths it toward what sold and adds
-   * `unmetDemandFactor × unitsUnmet`. This is the demand term of the price curve moving.
-   */
   recordDemand(goodId: string, unitsSold: number, unitsUnmet?: number): void;
-  /** Set demand directly, e.g. from an authored scenario. */
   setDemand(goodId: string, demand: number): void;
-  /** Change a good's price policy in play. `false` for an unknown good or an unusable patch. */
   retune(goodId: string, patch: Partial<Omit<MarketGoodDef, "id" | "stock" | "demand">>): boolean;
-  /** Every good's mutable state, in insertion order. */
   list(): MarketGoodState[];
   snapshot(): MarketSnapshot;
-  /** Replace state; returns `false` without mutation when the snapshot is malformed or names an unknown good. */
   restore(next: MarketSnapshot): boolean;
   stats(): MarketStats;
   reset(): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -208,17 +162,7 @@ function defaultPrice(input: MarketPriceInput): number {
   return Math.round(Math.max(floor, Math.min(ceiling, raw)));
 }
 
-/**
- * A market whose price comes from supply and demand over finite stock, as plain serializable state.
- *
- * The stated curve is `price = clamp(basePrice × (coverPeriods × demand / max(stock, 1))^elasticity)`
- * between `basePrice × minFactor` and `basePrice × maxFactor`. Both terms are live: selling thins
- * stock and raises the price, restocking lowers it, and `recordDemand` moves demand from what
- * buyers actually took and could not take. `priceCurve` replaces the curve, and `retune` changes a
- * good's policy in play. Money is integer minor units throughout.
- *
- * @capability supply-demand-pricing price goods from finite stock and live demand on a stated curve
- */
+/** @capability supply-demand-pricing price goods from finite stock and live demand on a stated curve */
 export function createMarket(config: MarketConfig = {}): Market {
   const records = new Map<string, GoodRecord>();
   const seen = new Set<string>();

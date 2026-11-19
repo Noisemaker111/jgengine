@@ -2,7 +2,6 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 /** Live signal the driving loop feeds the engine/tyre audio each tick (#1051). */
 export interface DrivingAudioParams {
-  /** Car world position. */
   position: readonly [number, number, number];
   /** Throttle axis 0..1 — scales engine loop gain. */
   throttle: number;
@@ -10,18 +9,13 @@ export interface DrivingAudioParams {
   normRpm: number;
   /** How hard the tyres slide, 0..1 — drives the tyre squeal gain/pitch. */
   slip: number;
-  /** Friction budget exceeded on power this tick (launch chirp). */
   wheelspin: boolean;
-  /** |forward speed| world units/s. */
   speed: number;
-  /** One-based forward gear (0 reverse/neutral) — a change fires a shift click. */
   gear: number;
 }
 
 export interface DrivingAudio {
-  /** Update the retained engine/tyre loops and fire the gear click for one driving tick. */
   tick(ctx: GameContext, params: DrivingAudioParams): void;
-  /** Stop both loops (on vehicle exit / explosion) and reset gear state. */
   stop(ctx: GameContext): void;
 }
 

@@ -17,10 +17,6 @@ import { rideView } from "./rides";
 import { park, parkObjects, ridePrice, stallPrice, stockOf, type ParkObject } from "./park";
 import { sessionOf, type GuestState, type StaffState } from "./session";
 
-/**
- * The park's own content for the shared agent loop: what a visitor needs, what it can do, and the
- * words its mood reads as. The loop itself lives in `@jgengine/core/agents/agent`.
- */
 export const GUEST_NEEDS: readonly NeedDefinition[] = [
   { id: "hunger", max: 100, min: 0, rate: 0.3, start: 85 },
   { id: "thirst", max: 100, min: 0, rate: 0.4, start: 82 },
@@ -58,7 +54,6 @@ export const GUEST_OPTIONS = [
   { id: "wander", base: 0.15 },
 ];
 
-/** A seaside park's tone: the shared 0-100 score in the words the HUD and a guest card use. */
 export const GUEST_MOOD_TIERS: readonly MoodTier[] = [
   { at: 82, id: "delighted", label: "Delighted" },
   { at: 64, id: "content", label: "Content" },
@@ -67,20 +62,16 @@ export const GUEST_MOOD_TIERS: readonly MoodTier[] = [
   { at: 0, id: "miserable", label: "Miserable" },
 ];
 
-/** A point of score is about 125 s of walking, 45 s of queueing, or one dud ride. */
 const WALK_COST = 0.008;
 const QUEUE_COST = 0.02;
 const RIDE_GAP_COST = 0.3;
-/** A dollar of ride ticket weighs about as much as 25 s of walking. */
 const PRICE_COST = 0.04;
 
-/** What a guest tolerates, in the shared ride-choice shape, from its own audience card. */
 export function guestTaste(kind: string): RideTaste {
   const preference = guestRidePreference(kind);
   return { intensityComfort: preference.thrill, nauseaComfort: 6, queueTolerance: 70 };
 }
 
-/** The live agents of one park, by guest or staff id. */
 const agentsOf = perContext(() => new Map<string, Agent>());
 
 export function clearAgents(ctx: GameContext): void {
@@ -94,8 +85,6 @@ function trackAgent(ctx: GameContext, agent: Agent): Agent {
   return agent;
 }
 
-/** A new guest agent; its needs start inside a park-guest range from the world's seeded stream. */
-/** A new guest agent, tracked by `ctx`'s park; pass `null` for a plain one made outside a running world. */
 export function createGuestAgent(
   ctx: GameContext | null,
   id: string,
@@ -128,7 +117,6 @@ export function createGuestAgent(
   return ctx === null ? agent : trackAgent(ctx, agent);
 }
 
-/** The live agent for a guest, created from its saved state the first time it is asked for. */
 export function agentOf(ctx: GameContext, guest: GuestState, rng: () => number): Agent {
   const existing = agentsOf(ctx).get(guest.id);
   if (existing !== undefined) return existing;
@@ -197,7 +185,6 @@ export function guestTargets(
   return targets;
 }
 
-/** What a ride gives a guest in fun, from its live ratings and that guest's taste. */
 export function rideFun(ctx: GameContext, kind: string, obj: ParkObject): number {
   const view = rideView(ctx, obj.id);
   if (view === null) return 0;
@@ -209,7 +196,6 @@ export function liveAgent(ctx: GameContext, id: string): Agent | null {
   return agentsOf(ctx).get(id) ?? null;
 }
 
-/** The park's mood aggregate: the mean of every guest's own mood, which is what the rating reads. */
 export function parkMood(ctx: GameContext): number {
   const agents = agentsOf(ctx);
   if (sessionOf(ctx).guests.size === 0) return 55;
@@ -221,7 +207,6 @@ export function parkMood(ctx: GameContext): number {
   return total / sessionOf(ctx).guests.size;
 }
 
-/** Where a browsing guest walks to when it is not heading for an attraction. */
 export function midwayPoint(): [number, number, number] {
   return [0, 0, 18];
 }
@@ -236,7 +221,6 @@ const BEAT_LIMIT = 56;
 const STAFF_BEAT_STEPS = 8;
 const STAFF_POST_SECONDS = 6;
 
-/** The ring a janitor walks around its post - authored by the post, not by a route file. */
 export function staffBeat(post: ParkObject, radius = STAFF_BEAT_RADIUS): { place: string; x: number; z: number }[] {
   const points: { place: string; x: number; z: number }[] = [];
   for (let i = 0; i < STAFF_BEAT_STEPS; i += 1) {
@@ -301,10 +285,6 @@ export function staffAgentOf(ctx: GameContext, state: StaffState, post: ParkObje
   return agent;
 }
 
-/**
- * A saved-state agent made outside a running world: used to turn a v1 save's happy/hunger/thirst
- * numbers into the shared agent state, and by tests that need a plain snapshot.
- */
 export function guestAgentState(
   id: string,
   kind: string,
@@ -320,7 +300,6 @@ export function guestAgentState(
   return snapshot;
 }
 
-/** Write every live agent back into the session's plain state - called on save and before despawn. */
 export function syncAgentStates(ctx: GameContext): void {
   const agents = agentsOf(ctx);
   for (const guest of sessionOf(ctx).guests.values()) {

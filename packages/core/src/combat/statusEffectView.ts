@@ -10,19 +10,15 @@ import type { StatusInstance } from "./statusApplication";
 export interface StatusEffectView {
   /** Stable list key. Defaults to the status id; override when several instances share a status. */
   id: string;
-  /** The free-string status id (`"poison"`, `"haste"`, `"shield"`) — the game styles it. */
   kind: string;
   /** Milliseconds of life remaining (the numerator of the ring fraction). */
   remainingMs: number;
   /** The status's full (unelapsed) duration in ms (the ring denominator). */
   durationMs: number;
-  /** Current stack count (>= 1 while active). */
   stacks: number;
-  /** Per-application magnitude in force, when the source status tracks one. */
   magnitude?: number;
 }
 
-/** Options for {@link toStatusEffectView} / {@link toStatusEffectViews}. */
 export interface StatusEffectViewOptions {
   /**
    * The status's full (unelapsed) duration in ms — the countdown-ring denominator. A fixed number,
@@ -42,13 +38,7 @@ function resolveDurationMs(instance: StatusInstance, options: StatusEffectViewOp
   return Math.max(raw, instance.remainingMs);
 }
 
-/**
- * Map one live {@link StatusInstance} to a serializable {@link StatusEffectView} for a HUD row.
- * Pure: no clock, no allocation beyond the returned view. The `durationMs` option supplies the ring
- * denominator the instance does not carry; without it the ring reads full.
- *
- * @capability status-effect-view adapt one live status instance into a serializable timeline-HUD view (id, kind, remaining/duration, stacks)
- */
+/** @capability status-effect-view adapt one live status instance into a serializable timeline-HUD view (id, kind, remaining/duration, stacks) */
 export function toStatusEffectView(
   instance: StatusInstance,
   options?: StatusEffectViewOptions,

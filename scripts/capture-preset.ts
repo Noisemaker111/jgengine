@@ -14,13 +14,10 @@ export type CaptureTool = "shoot" | "drive";
 export const QUICK_WIDTH = 960;
 export const QUICK_HEIGHT = 540;
 
-/** Bound on drive's wait for a settled game view in quick mode; full drives wait up to 60s. */
 export const QUICK_DRIVE_WINDOW_MS = 2_000;
 
-/** The limits a quick frame carries, stated on the line the tool prints. */
 export const QUICK_NOTICE = "no 1600x900 pixel claim, no frame-time claim";
 
-/** Strip `--quick` from argv (the shared parser does not know it) and report whether it was there. */
 export function splitQuickFlag(tool: CaptureTool, argv: readonly string[]): { quick: boolean; argv: string[] } {
   const quick = argv.includes("--quick");
   return { quick, argv: argv.filter((arg) => arg !== "--quick") };
@@ -31,7 +28,6 @@ export function quickSuffix(quick: boolean): string {
   return quick ? "-quick" : "";
 }
 
-/** Viewport override the preset applies; undefined keys leave the device profile alone. */
 export function quickProfile(quick: boolean): { width?: number; height?: number } {
   return quick ? { width: QUICK_WIDTH, height: QUICK_HEIGHT } : {};
 }
@@ -39,7 +35,6 @@ export function quickProfile(quick: boolean): { width?: number; height?: number 
 export interface QuickRequest {
   tool: CaptureTool;
   quick: boolean;
-  /** Flags the command line asked for, whether or not the preset would override them. */
   width?: number | undefined;
   height?: number | undefined;
   size?: string | undefined;

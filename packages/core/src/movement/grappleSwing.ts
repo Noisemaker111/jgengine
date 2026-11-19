@@ -1,12 +1,9 @@
 export type SwingVec3 = readonly [number, number, number];
 
 export interface GrappleSwingConfig {
-  /** Rope shortens by this many units/s while `reeling`. Default `0` (fixed length). */
   reelSpeed?: number;
   minLength?: number;
-  /** Firing range: `fire` at an anchor farther than this misses and returns `false`. Default `Infinity`. */
   maxLength?: number;
-  /** Extra spring pull toward the anchor when the rope is taut (elastic feel); default `0` (hard constraint only). */
   stiffness?: number;
   /** Velocity damping per second while attached; default `0.1`. */
   damping?: number;
@@ -31,23 +28,15 @@ export interface GrappleSwingStep {
  * radial component, which is exactly a pendulum swing.
  */
 export interface GrappleSwing {
-  /** Attach to `anchor` from `from`; returns `false` (and stays detached) when the anchor is beyond `maxLength`. */
   fire(anchor: SwingVec3, from: SwingVec3): boolean;
-  /** Re-point the attached rope, keeping its length: a zipline glide or a grapple on a moving target. No-op when detached. */
   moveAnchor(anchor: SwingVec3): void;
   release(): void;
   state(): GrappleSwingState;
-  /** Puts a {@link GrappleSwing.state} back; `anchor: null` detaches. */
   restore(next: GrappleSwingState): void;
-  /** Constrain one frame. `reeling` shortens the rope; returns the corrected position/velocity. */
   step(position: SwingVec3, velocity: SwingVec3, dt: number, reeling?: boolean): GrappleSwingStep;
 }
 
-/**
- * Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
- *
- * @capability grapple-swing grappling-hook rope swing physics with reel-in
- */
+/** @capability grapple-swing grappling-hook rope swing physics with reel-in */
 export function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing {
   const reelSpeed = config.reelSpeed ?? 0;
   const minLength = config.minLength ?? 1;

@@ -12,7 +12,6 @@ export interface HiddenStateSource {
 export interface SensorProbeOptions {
   range: number;
   variableId: string;
-  /** How reading `strength` falls off with distance. Default "linear". */
   falloff?: "linear" | "none";
 }
 
@@ -20,7 +19,6 @@ export interface SensorReading {
   sourceId: string;
   variableId: string;
   value: HiddenStateValue;
-  /** 1 at the source, 0 at the edge of `range` ("none" falloff always reads 1 in range). */
   strength: number;
   distance: number;
 }
@@ -31,14 +29,7 @@ function strengthAt(distance: number, range: number, falloff: "linear" | "none")
   return Math.max(0, 1 - distance / range);
 }
 
-/**
- * A sensor verb: probe a hidden zone/entity state variable in range and surface
- * a reading (EMF reader, spirit box, thermometer, geiger counter). Unlike
- * `proximityPrompt` (a UI affordance), this reads world state the player has no
- * other way to see — the strongest in-range reading wins, mirroring how a real
- * handheld sensor needle settles on the loudest nearby source.
-  * @internal
-  */
+/** @internal */
 export function probeHiddenState(
   origin: EntityPosition,
   sources: readonly HiddenStateSource[],
@@ -48,9 +39,7 @@ export function probeHiddenState(
   return readings.length === 0 ? null : readings[0]!;
 }
 
-/** All in-range readings for `variableId`, strongest first.
- * @internal
- */
+/** @internal */
 export function probeHiddenStateAll(
   origin: EntityPosition,
   sources: readonly HiddenStateSource[],

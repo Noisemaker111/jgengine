@@ -79,13 +79,10 @@ export function WorldEntityBars({
   height?: number;
   roles?: readonly CatalogEntityRole[] | undefined;
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
-  /** Hide bars beyond this camera distance in world units. Unset derives the range from the camera and the target height. */
   maxDistance?: number;
-  /** Hide bars behind blocking geometry from the render camera. Default true; false explicitly reveals through walls. */
   occlude?: boolean;
   /** Minimum visibility/health refresh interval in ms; anchors reproject every frame. Default 80. */
   tickMs?: number;
-  /** Maximum overlays and occlusion rays per refresh. Default 64, capped at 256. */
   maxSamples?: number;
 }) {
   const ctx = useGameContext();
@@ -159,34 +156,26 @@ export function WorldEntityBars({
   );
 }
 
-/** Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks. */
 export interface WorldNameplatesProps {
   statId?: string;
   height?: number;
   roles?: readonly CatalogEntityRole[] | undefined;
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
-  /** Hide nameplates beyond this camera distance in world units. Unset derives the range from the camera and the plate height. */
   maxDistance?: number;
-  /** Hide plates behind blocking geometry from the render camera. Default true; false explicitly reveals through walls. */
   occlude?: boolean;
   /** Minimum ms between position/health refreshes — trades smoothness for fewer re-renders at scale. Default 120. */
   tickMs?: number;
-  /** Maximum overlays and occlusion rays per refresh. Default 64, capped at 256. */
   maxSamples?: number;
-  /** Authored display name. Return null to omit a plate; default suppresses machine identifiers. */
   resolveName?: (entity: SceneEntity) => string | null;
-  /** Draw the built-in HP bar under the name. Set `false` for a name-only plate when the game already draws its own health bar (its own HUD, or `worldHealthBars`). Default true. */
   showHealth?: boolean;
   className?: string;
   nameplateClassName?: string;
   nameClassName?: string;
   barClassName?: string;
   fillClassName?: string;
-  /** Full override for one nameplate's markup; receives the raw sample (name, percent, screen x/y). */
   renderNameplate?: (sample: NameplateSample) => ReactNode;
 }
 
-/** The same plates with the same names and health: a plate the camera moved needs no render. */
 function samePlates(previous: readonly NameplateSample[], next: readonly NameplateSample[]): boolean {
   if (previous.length !== next.length) return false;
   for (let index = 0; index < next.length; index += 1) {
@@ -355,11 +344,8 @@ export function WorldNameplates({
   );
 }
 
-/** Props for {@link WorldObjectHighlights}. */
 export interface WorldObjectHighlightsProps {
-  /** Ring tint. Default a construction-select amber. */
   color?: string;
-  /** Fixed ring radius; omitted derives one from the object's catalog `halfExtents` (falls back to 1.2). */
   radius?: number;
   /** Ground offset so the ring doesn't z-fight the object's base. Default 0.05. */
   y?: number;
@@ -381,7 +367,6 @@ export function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: W
   return <EngineDrawMount create={() => worldObjectHighlightsDraw(latest)} deps={[latest]} />;
 }
 
-/** Ground rings over every selected placed object — one draw reconciling ring meshes per id. */
 function worldObjectHighlightsDraw(latest: {
   current: {
     ids: readonly string[];
@@ -569,7 +554,6 @@ interface TelegraphDecalEntry {
   material: THREE.MeshBasicMaterial;
 }
 
-/** One draw owning every live telegraph decal — reconciles meshes as events arrive and expire. */
 function worldTelegraphsDraw(latest: { current: readonly ActiveTelegraph[] }): EngineDraw {
   const group = new THREE.Group();
   const decals = new Map<number, TelegraphDecalEntry>();
@@ -666,12 +650,6 @@ interface Tracer {
 const FIRST_PERSON_GUN = new THREE.Vector3(0.22, -0.2, -0.55);
 const scratchForward = new THREE.Vector3();
 
-/**
- * Where a shot's tracer visibly starts. The rule origin (eye or fixed muzzle offset) decides what is
- * hit; the line starts at the shooter's gun: a first-person viewmodel's registered muzzle, else the
- * bottom-right of the view where a held gun sits, and for anyone seen from outside, their registered
- * hand or barrel. Exported for tests.
- */
 export function startFromMuzzle(ctx: GameContext, from: string, camera: THREE.Camera, start: THREE.Vector3): void {
   const local = from === ctx.player.userId || from === ctx.player.possession.active(ctx.player.userId);
   if (local && readFirstPersonMuzzle(start, camera)) return;
@@ -689,7 +667,6 @@ interface TracerLine {
   material: THREE.LineBasicMaterial;
 }
 
-/** Tracer lines as one draw reconciling `THREE.Line` objects — the drei `<Line>` replacement. */
 function projectileTracersDraw(latest: { current: readonly Tracer[] }): EngineDraw {
   const group = new THREE.Group();
   const lines = new Map<number, TracerLine>();
@@ -743,7 +720,6 @@ export function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }) {
     const unsub = ctx.game.events.on("projectile.settled", (event) => {
       // fireProjectile is a generic seam (bullets, bolts, grenades, launchers). A straight
       // muzzle→impact line only reads as a real shot for direct-fire projectiles; drawing one
-      // for an arced/lobbed shot fakes a beam through a path it never flew, so skip those.
       if (event.ballistic) return;
       const id = nextId.current++;
       const start = new THREE.Vector3(event.origin[0], event.origin[1], event.origin[2]);

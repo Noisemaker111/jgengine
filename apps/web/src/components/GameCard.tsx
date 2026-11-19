@@ -27,7 +27,6 @@ function Cover({ id, eager }: { id: string; eager: boolean }) {
   );
 }
 
-/** A game tile: cover capture, README title and genre, the idea it started from, link to play. */
 export function GameCard({ id, eager = false, seed = true }: { id: string; eager?: boolean; seed?: boolean }) {
   const blurb = gameBlurb(id);
   const idea = seed ? gameSeed(id) : null;

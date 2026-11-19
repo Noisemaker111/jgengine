@@ -24,7 +24,6 @@ export interface ListedComputeUnit {
   vramGb: number;
 }
 
-/** Canonical listing: stable sort by creation time, position, then rack id. */
 export function listComputeUnitsFromRacks(
   racks: readonly RackLikeForComputeUnits[],
 ): ListedComputeUnit[] {
@@ -88,7 +87,6 @@ export const GPU_SPLOT_WORKLOAD = {
   serving: "serving",
 } as const satisfies Record<string, GpuSlotWorkload>;
 
-/** Each installed slot's workload is exactly its per-card dedication lane (undedicated → idle). */
 export function buildRackSlotGpuWorkloadMap(options: {
   racks: readonly PlacedRack[];
   computeAssignments?: ComputeAssignmentMap | null | undefined;

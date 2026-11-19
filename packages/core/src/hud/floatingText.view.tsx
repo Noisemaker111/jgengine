@@ -23,18 +23,15 @@ import type { EntityScreenProjection, ProjectEntity } from "./entityFrames.view"
  * @capability floating-text world-anchored floating combat text / damage numbers overlay, data-first + caller-projected + per-kind skinnable
  */
 
-/** One projected, on-screen floating-text entry ready to render. */
 export interface FloatingTextPlacement {
   view: FloatingTextView;
   /** Final screen x in CSS px after `offsetX`. */
   x: number;
   /** Final screen y in CSS px after `offsetY`. */
   y: number;
-  /** Projected depth (0 when the projection omitted one); larger = farther. */
   depth: number;
 }
 
-/** Anchoring and culling options shared by the layout core and the component. */
 export interface FloatingTextLayoutOptions {
   /** Screen px added to every projected x. Default 0. */
   offsetX?: number;
@@ -46,13 +43,7 @@ export interface FloatingTextLayoutOptions {
   margin?: number;
 }
 
-/**
- * Pure layout core: projects each view, drops the ones behind the camera or
- * (when `viewport` is set) off-screen, and returns the survivors sorted
- * farthest-first so nearer text paints on top. No UI runtime, no DOM — unit-testable.
- *
- * @capability floating-text pure world→screen layout for floating-text views (project, cull, depth-sort)
- */
+/** @capability floating-text pure world→screen layout for floating-text views (project, cull, depth-sort) */
 export function layoutFloatingText(
   views: readonly FloatingTextView[],
   project: ProjectEntity,
@@ -77,38 +68,19 @@ export function layoutFloatingText(
   return placed;
 }
 
-/** Props for {@link FloatingText}. */
 export interface FloatingTextProps extends FloatingTextLayoutOptions {
-  /** The field's live views (`field.active()`), refreshed each frame. */
   entries: readonly FloatingTextView[];
-  /** World→screen projector; return `null` to cull. Same shape `EntityFrames` takes. */
   project: ProjectEntity;
-  /**
-   * Per-`kind` art direction: return extra CSS (color, font, weight, shadow) for a
-   * view. Merged over the defaults, so returning `{}` keeps them. The default look
-   * uses `view.color` (or white), a bold sans stack, and a readable shadow.
-   */
   styleFor?: ((view: FloatingTextView) => CSSProperties) | undefined;
   /** Base font size in px at `size === 1`; scaled by each view's `size`. Default 20. */
   fontSizePx?: number | undefined;
-  /** Class on the fullscreen overlay layer. */
   className?: string | undefined;
-  /** Style on the fullscreen overlay layer (merged over the absolute-fill default). */
   style?: CSSProperties;
   /** Per-entry render override; return your own node instead of the default text chip. */
   renderEntry?: (placement: FloatingTextPlacement) => ReactNode;
 }
 
-/**
- * Absolutely-positioned overlay that renders every on-screen floating-text entry
- * as text with its color, current alpha, and pop-in scale. Drop it inside a
- * positioned ancestor (e.g. an `<Html fullscreen>` overlay or `HudCanvas`) and feed
- * it fresh `entries`/`project` each frame. Every part carries `data-*` hooks
- * (`data-floating-text`, `data-floating-text-entry="<id>"`, `data-kind="<kind>"`)
- * for tests and skins.
- *
- * @capability floating-text overlay that renders on-screen floating combat text with per-kind color, alpha, and pop-in scale
- */
+/** @capability floating-text overlay that renders on-screen floating combat text with per-kind color, alpha, and pop-in scale */
 export function FloatingText({
   entries,
   project,

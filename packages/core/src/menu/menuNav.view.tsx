@@ -15,7 +15,6 @@ import {
   type MenuNavRepeat,
 } from "@jgengine/core/menu/menuNav";
 
-/** Props a menu item needs so {@link useMenuNav} can focus it and track pointer/focus. */
 export interface MenuNavItemProps {
   "data-jg-menu-item": string;
   tabIndex: number;
@@ -25,41 +24,26 @@ export interface MenuNavItemProps {
   onFocus: () => void;
 }
 
-/** The container props that make a menu navigable. */
 export interface MenuNavContainerProps {
   "data-jg-menu-nav": "";
   onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => void;
 }
 
-/** The live navigation controller returned by {@link useMenuNav}. */
 export interface MenuNavController {
-  /** Id of the focused item, or `null` when the menu has no items. */
   activeId: string | null;
-  /** Focus an item by id (pointer hover or a game call). Does not steal DOM focus. */
   setActive: (id: string | null) => void;
-  /** Move focus by one direction. */
   move: (direction: MenuNavDirection) => void;
-  /** Props for one item — spread them onto the item's focusable element. */
   itemProps: (id: string) => MenuNavItemProps;
-  /** Props for the container that wraps the items. */
   containerProps: MenuNavContainerProps;
 }
 
-/** How {@link useMenuNav} is wired. */
 export interface UseMenuNavOptions {
-  /** Item ids in focus order. Changing the list keeps focus on the same id when it still exists. */
   ids: readonly string[];
-  /** Items per row (see {@link MenuNavLayout}). Default 1 — a vertical list. */
   columns?: number;
-  /** Wrap at the ends. Default true. */
   wrap?: boolean;
-  /** Ids that are skipped by navigation (disabled rows). */
   disabled?: readonly string[];
-  /** Item focused on mount. Default the first enabled item. */
   initialId?: string;
-  /** Turn keyboard/gamepad handling off (for example while a rebind capture is armed). */
   enabled?: boolean;
-  /** Confirm (Enter/Space/A). Called with the focused id. */
   onConfirm?: (id: string) => void;
   /**
    * Left/right (arrow keys, d-pad, left stick) change the focused item's value by one step instead of
@@ -67,11 +51,8 @@ export interface UseMenuNavOptions {
    * direction steps repeatedly. Up/down and confirm/back are unchanged.
    */
   onAdjust?: (id: string, delta: -1 | 1) => void;
-  /** Back (Escape/Backspace/B/Start). */
   onBack?: () => void;
-  /** Poll a connected gamepad for menu intents. Default true. */
   gamepad?: boolean;
-  /** Hold-to-repeat timing for d-pad/stick navigation. */
   repeat?: MenuNavRepeat;
 }
 
@@ -376,6 +357,5 @@ export function useMenuNav({
   return { activeId, setActive, move, itemProps, containerProps };
 }
 
-/** Render prop for a menu whose items come from {@link useMenuNav}. */
 export type MenuNavRender = (nav: MenuNavController) => ReactNode;
 

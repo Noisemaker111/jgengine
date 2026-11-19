@@ -3,12 +3,9 @@ import { game } from "../../src/game.config";
 
 type Probe = ReturnType<NonNullable<NonNullable<typeof game.capture>["probe"]>>;
 type Check = (p: Probe) => boolean;
-/** Things the survivor can see and walk to: the path's pointer, the nearest tree, flint rock, bush or easy prey, or a station it built. */
 type Sight = "point" | "tree" | "rock" | "bush" | "prey" | "campfire" | "mortar" | "floor" | "doorway" | "carcass" | "note" | "danger" | "phiomia";
 
-/** The number keys, by the hotbar key they take in hand (Digit0 is the tenth). */
 const DIGITS = ["Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"] as const;
-/** The number key for hotbar key `n` (1-9, and 10 is Digit0). */
 const digit = (n: number): (typeof DIGITS)[number] => DIGITS[n % 10] ?? "Digit0";
 
 /** Where the hut goes: flat beach sand a few metres from the spawn, x and z. */
@@ -29,12 +26,10 @@ const toSpot =
   (x: number, z: number): Bearing =>
   (p) => ({ yaw: Math.atan2(x - p.x, z - p.z), distance: Math.hypot(x - p.x, z - p.z) });
 
-/** A station the survivor built: walk to it by sight, or back to where it was built once it is out of sight. */
 const toBuilt =
   (what: Sight, at: [number, number]): Bearing =>
   (p) => (distOf(p, what) >= 0 ? toSight(what)(p) : toSpot(at[0], at[1])(p));
 
-/** Where a sight stands, as x and z, from the survivor's bearing and distance to it. */
 const spotOf = (p: Probe, what: Sight): [number, number] => [p.x + Math.sin(yawOf(p, what)) * distOf(p, what), p.z + Math.cos(yawOf(p, what)) * distOf(p, what)];
 /** The spot `metres` out in front of the hut's doorway, on the line from the floor's middle through it. */
 function outside(p: Probe, metres: number): [number, number] {
@@ -82,10 +77,6 @@ async function walkTo(f: Flow<Probe>, near: number, what: Sight | Bearing = "poi
   throw new Error(`never came within ${near} m of the ${typeof what === "function" ? "spot" : what}`);
 }
 
-/**
- * Work the nearest tree, rock or bush until `done`: strike it (left mouse) or pick it (E), moving on to
- * the next one in sight when one is spent.
- */
 async function gather(f: Flow<Probe>, what: "tree" | "rock" | "bush", done: Check, maxMs = 240_000): Promise<void> {
   let misses = 0;
   let health = (await f.probe()).health;
@@ -169,7 +160,6 @@ async function keepClear(f: Flow<Probe>, p: Probe, health: number): Promise<numb
   return 0;
 }
 
-/** Wait until `done` while staying alive: a tame takes minutes, and a hunter finds a survivor standing still. */
 async function guardUntil(f: Flow<Probe>, done: Check, note: string, maxMs: number): Promise<void> {
   let health = (await f.probe()).health;
   for (let spent = 0; spent < maxMs; ) {
@@ -202,7 +192,6 @@ const bare = (): number => 0;
 const pick = (p: Probe): number => p.pickKey;
 const hatchet = (p: Probe): number => p.hatchetKey;
 
-/** Craft a worn-out stone tool again: a pick from stone, a hatchet from flint, each with wood and thatch from a tree. */
 async function remake(f: Flow<Probe>, recipe: "stone_pick" | "stone_hatchet"): Promise<void> {
   const made = recipe === "stone_pick" ? (q: Probe) => q.pickKey > 0 : (q: Probe) => q.hatchetKey > 0;
   const p = await f.probe();
@@ -251,14 +240,12 @@ async function placePiece(f: Flow<Probe>, maxLift = 1.5, look: readonly number[]
   await f.waitFor((p) => p.structures === before + 1, { timeoutMs: 3000, note: "the piece is placed" });
 }
 
-/** Learn an engram in the Engrams tab, craft one and wait for it. */
 async function learnAndCraft(f: Flow<Probe>, id: string, made: Check, learn = true): Promise<void> {
   if (learn) await f.command("learn", { engramId: id });
   await f.command("craft", { recipeId: id });
   await f.waitFor(made, { timeoutMs: 30_000, note: `${id} is made` });
 }
 
-/** Run the pointed creature down and hit it, turning after it each swing, until it lies unconscious. */
 async function chaseDown(f: Flow<Probe>, maxMs = 150_000): Promise<void> {
   for (let spent = 0; spent < maxMs; ) {
     const p = await f.probe();
@@ -278,11 +265,6 @@ async function chaseDown(f: Flow<Probe>, maxMs = 150_000): Promise<void> {
   throw new Error("the creature never went down");
 }
 
-/**
- * Hunt the nearest easy prey until `done`: kill it with the spear once there is one, then carve the body
- * with the tool in hand when the hunt began (the pick for meat, the hatchet for hide). Keep clear of hunters,
- * and fight the one that closes in.
- */
 async function hunt(f: Flow<Probe>, done: Check, maxMs = 300_000): Promise<void> {
   // The carving tool is the one in hand, or the pick when the hands are empty.
   if ((await f.probe()).holding === 0) await hand(f, pick);
@@ -340,10 +322,6 @@ async function hunt(f: Flow<Probe>, done: Check, maxMs = 300_000): Promise<void>
   throw new Error(`the hunt never finished: ${done.toString()}`);
 }
 
-/**
- * The first loop: a new survivor punches a tree, makes a pick and a hatchet, eats, tames a dodo, builds a
- * fire and cooks the first meat. Returns the way back to the campfire for the hour that follows.
- */
 export async function firstLoop(f: Flow<Probe>): Promise<Bearing> {
     await f.waitFor((p) => p.health > 0, { timeoutMs: 60000 });
     await f.expect((p) => p.thatch === 0 && p.level === 1 && p.taught === 0 && p.itemsSeen === 0, "a new survivor: empty hands, level 1, nothing taught, nothing in the dossier");

@@ -3,58 +3,45 @@ import type { WeaponHandlingTuning } from "./weaponHandling";
 /** A world-space point or direction in metres. */
 export type WeaponVec3 = readonly [number, number, number];
 
-/** How a held or tapped trigger turns into shots. */
 export type WeaponFireMode = "single" | "auto" | "burst";
 
-/** Shots one trigger pull commits to. A burst finishes even if the trigger is released. */
 export interface WeaponBurstDef {
   /** Shots per pull, `1..64`. */
   count: number;
 }
 
-/** A ray resolved in the caller's world on the same tick it is fired. */
 export interface WeaponHitscanDef {
   kind: "hitscan";
   /** Longest ray the caller may return a contact within, m. Required so every shot is bounded. */
   maxRange: number;
 }
 
-/** A travelling pellet simulated by the runtime, resolved when it meets the caller's world. */
 export interface WeaponProjectileDef {
   kind: "projectile";
   /** Launch speed, m/s. */
   speed: number;
   /** Downward acceleration, m/s². `0` flies straight; `9.81` is Earth gravity for reference. */
   gravity?: number;
-  /** Linear velocity decay, 1/s. `0` keeps speed until it hits. */
   drag?: number;
   /** Seconds before an unspent projectile expires. Required so every pellet is bounded. */
   lifetime: number;
-  /** Optional hard distance cap, m, on top of `lifetime`. */
   maxRange?: number;
 }
 
-/** Loaded rounds, reload time, and where reloads draw from. */
 export interface WeaponMagazineDef {
   capacity: number;
   reloadMs: number;
-  /** Rounds available to reload from; omitted means an unlimited reserve. */
   reserve?: number;
 }
 
-/** What one pellet does when it reaches a registered damage target. */
 export interface WeaponDamageDef {
-  /** Damage type id in the caller's `DamageTableDef`. */
   type: string;
   /** Damage before the hit-zone multiplier, the table, armor, and falloff. */
   base: number;
-  /** Status ids the hit tries to apply; the damage runtime owns their chance and effects. */
   statuses?: readonly string[];
 }
 
-/** Linear damage falloff between two distances. */
 export interface WeaponFalloffDef {
-  /** Distance, m, where damage starts dropping. */
   start: number;
   /** Distance, m, where it reaches `endScale`; clamped beyond. */
   end: number;
@@ -68,7 +55,6 @@ export interface WeaponFalloffDef {
  */
 export interface WeaponDefinition {
   id: string;
-  /** Shots per minute at full cadence. */
   roundsPerMinute: number;
   fireMode: WeaponFireMode;
   /** Burst size; required for `"burst"` and ignored otherwise. */
@@ -78,27 +64,20 @@ export interface WeaponDefinition {
   pellets?: number;
   /** Discrete ammo; omit for a weapon that never runs dry or reloads. */
   magazine?: WeaponMagazineDef;
-  /** Recoil pattern, spread bloom and ADS time — exactly what `createWeaponHandling` consumes. */
   handling: WeaponHandlingTuning;
   damage: WeaponDamageDef;
-  /** Damage over distance, applied to both deliveries. Omit for no falloff. */
   falloff?: WeaponFalloffDef;
   /** Most pellets this weapon keeps live at once (default `32`, clamp `1..256`). */
   maxInFlight?: number;
-  /** Start a reload by itself when the trigger is pulled dry (default `true`). */
   autoReload?: boolean;
 }
 
-/** Cap on `WeaponDefinition.maxInFlight`; bounds per-tick projectile work. */
 export const MAX_WEAPON_PELLETS_IN_FLIGHT = 256;
 
-/** Default live-pellet cap for a weapon that does not name one. */
 export const DEFAULT_WEAPON_PELLETS_IN_FLIGHT = 32;
 
-/** Cap on `WeaponDefinition.pellets`; bounds rays and damage resolutions per shot. */
 export const MAX_WEAPON_PELLETS_PER_SHOT = 64;
 
-/** Cap on `WeaponBurstDef.count`. */
 export const MAX_WEAPON_BURST_COUNT = 64;
 
 function assertFinite(value: number, field: string, min: number, max?: number): void {
@@ -179,7 +158,6 @@ export function weaponIntervalMs(definition: WeaponDefinition): number {
   return 60_000 / definition.roundsPerMinute;
 }
 
-/** Damage multiplier at a distance: `1` before `falloff.start`, linearly down to `endScale` at `end`. */
 export function weaponDamageAt(definition: WeaponDefinition, distance: number): number {
   const falloff = definition.falloff;
   if (falloff === undefined || distance <= falloff.start) return 1;

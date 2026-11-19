@@ -56,7 +56,6 @@ function launchBroker(script: string): void {
 
 let unavailable: string | null = null;
 
-/** Forget that the broker could not be had, as a new run would; for tests. */
 export function forgetBrokerUnavailable(): void {
   unavailable = null;
 }
@@ -65,7 +64,6 @@ export function forgetBrokerUnavailable(): void {
  * The running broker, started when none answers. Returns null (and says why, once) when the broker
  * is off or cannot be had; callers then launch their own server as before.
  */
-/** The broker's pid from its state file while that process runs, else null. */
 export function runningBrokerPid(port: number, alive: (pid: number) => boolean = pidAlive): number | null {
   try {
     const state = JSON.parse(readFileSync(brokerStatePath(port), "utf8")) as { pid?: number };
@@ -143,7 +141,6 @@ export function treeFingerprint(root: string, gameDir: string | null): string {
   return parts.join("|");
 }
 
-/** What each lease this run holds is for ("the runner dev server", "the shared browser"), by lease id. */
 const leases = new Map<string, string>();
 let exitHookArmed = false;
 
@@ -162,7 +159,6 @@ export async function releaseLease(leaseId: string): Promise<void> {
   await localPostJson(`${brokerBase()}/v1/release`, { leaseId }, 3_000).catch(() => null);
 }
 
-/** How often a run holding a lease checks that its broker lives: `JG_BROKER_WATCH_MS`, 2 s by default. */
 export function brokerWatchMs(env: NodeJS.ProcessEnv = process.env): number {
   const ms = Number(env["JG_BROKER_WATCH_MS"]);
   return Number.isFinite(ms) && ms > 0 ? ms : 2_000;
@@ -205,14 +201,12 @@ export function watchBroker(
   watching = { pid: brokerPid, timer };
 }
 
-/** Stop watching the broker (every lease released, or it died). */
 export function stopWatchingBroker(): void {
   if (watching === null) return;
   clearInterval(watching.timer);
   watching = null;
 }
 
-/** Forget every lease and stop watching, as a new run would; for tests. */
 export function forgetLeases(): void {
   leases.clear();
   stopWatchingBroker();
@@ -291,10 +285,6 @@ export function captureWaitMs(env: NodeJS.ProcessEnv = process.env): number {
   return (Number.isFinite(minutes) && minutes > 0 ? minutes : 5) * 60_000;
 }
 
-/**
- * Wait for this run's turn in the shared browser. Resolves with a release function; the turn also
- * ends when this process exits. Throws, naming the holder, when the wait runs out.
- */
 export async function brokerCaptureTurn(
   cwd = process.cwd(),
   options: { waitMs?: number; log?: (line: string) => void; progressMs?: number } = {},
@@ -324,7 +314,6 @@ export async function brokerCaptureTurn(
   return { release: () => releaseLease(grant.leaseId), waitedMs: grant.waitedMs, chromePort: grant.chromePort };
 }
 
-/** Who holds the shared browser and who else waits, for a queued run's progress line. */
 export function captureQueueLine(status: Pick<BrokerStatus, "capture">): string {
   const held = status.capture.holders.length === 0 ? "nobody holds it yet (the browser may be starting)" : `held by ${status.capture.holders.join(", ")}`;
   return `${held}; ${status.capture.queued.length} in the queue`;

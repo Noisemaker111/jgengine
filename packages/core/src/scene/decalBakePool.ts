@@ -29,7 +29,6 @@ interface Pending {
   resolve: (baked: DecalTextureData) => void;
 }
 
-/** Most bake workers at once: a floor's decals in a third of the time, with cores left for the game. */
 function workerCount(): number {
   const cores = typeof navigator === "object" && typeof navigator.hardwareConcurrency === "number" ? navigator.hardwareConcurrency : 4;
   return Math.max(1, Math.min(3, cores - 2));
@@ -41,7 +40,6 @@ const idle: Worker[] = [];
 const inFlight = new Map<string, Promise<DecalTextureData>>();
 let alive = 0;
 let nextId = 1;
-/** Set when a worker could not start or failed: every later bake runs on the main thread, as before. */
 let broken = false;
 
 function bakeHere(pending: Pending): void {

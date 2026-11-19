@@ -1,12 +1,10 @@
 import type { AssetSpace } from "./assetSpace";
 import type { CollisionMeshData } from "./collisionMesh";
 
-/** Measured horizontal footprint, footprint center, and lowest Y of a model in model space. */
 export interface ModelDims {
   footprint: { w: number; d: number };
   center: { x: number; z: number };
   minY: number;
-  /** Highest Y in model space (pre-scale). `maxY - minY` is the measured model height; absent in indexes generated before it was measured. */
   maxY?: number;
 }
 
@@ -14,9 +12,7 @@ export interface ModelAssetRef {
   url: string;
   /** Preserve a composed prefab's authored local origin instead of recentering its measured bounds. */
   anchor?: "center" | "origin";
-  /** Measured at asset reindex: horizontal footprint, footprint center, and lowest Y in model space (pre-scale). Lets the shell auto-center and ground-snap corner-pivot kit models. */
   dims?: ModelDims;
-  /** Opt-in compact triangle mesh extracted at asset reindex (see {@link "scene/collisionMesh".CollisionMeshData}) — feeds mesh-accurate hitboxes for concave models. */
   collisionMesh?: CollisionMeshData;
   /** Authored asset-space metadata — canonical facing (degrees), source-unit scale, footprint, anchor, bounds, and rotation policy. The upstream owner of placement corrections; see {@link "scene/assetSpace".AssetSpace}. */
   space?: AssetSpace;
@@ -31,9 +27,7 @@ export interface ModelAssetRef {
  */
 export interface GeneratorAssetRef {
   kind: "generator";
-  /** Id of the registered generator this asset resolves through. */
   generatorId: string;
-  /** Default params stamped onto a fresh placement's meta. */
   defaults?: Record<string, unknown>;
   /** Authored asset-space metadata — canonical facing (degrees), footprint, anchor, bounds, and rotation policy; see {@link "scene/assetSpace".AssetSpace}. */
   space?: AssetSpace;

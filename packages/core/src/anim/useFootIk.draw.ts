@@ -28,7 +28,6 @@ interface PoseRecord {
   written: { q: THREE.Quaternion; p: THREE.Vector3 };
 }
 
-/** Bones resolved once per loaded scene for {@link applyFootIk}. */
 export interface FootIkRig {
   legs: IkLeg[];
   pelvis: THREE.Object3D | null;
@@ -43,7 +42,6 @@ export interface FootIkRig {
   poses: PoseRecord[];
 }
 
-/** Per-model state carried between frames: the faded weight and the smoothed pelvis drop. */
 export interface FootIkState {
   weight: number;
   pelvis: number;
@@ -111,11 +109,7 @@ function isAncestor(ancestor: THREE.Object3D, child: THREE.Object3D): boolean {
   return false;
 }
 
-/**
- * Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"`
- * and configs without `feet`. Returns `null` when no leg resolves.
- * @internal
- */
+/** @internal */
 export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig, quiet = false): FootIkRig | null {
   const options: ModelIkConfig = config === "auto" ? {} : config;
   const named = new Map<string, THREE.Object3D[]>();
@@ -419,7 +413,6 @@ export class FootIkDriver {
     };
   }
 
-  /** Whether the driver has a resolved rig, live context and entity. */
   get active(): boolean {
     return this.rig !== null && this.ctx !== null && this.instanceId !== undefined;
   }
@@ -471,7 +464,6 @@ export class FootIkDriver {
     if (rig.legs.length > 0) noteCharacterMotion(instanceId, "feet", this.state.weight > 0.01);
   }
 
-  /** Restore the animated pose and release the rig. */
   dispose(): void {
     const rig = this.rig;
     if (rig !== null) {

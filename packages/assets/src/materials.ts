@@ -47,9 +47,7 @@ export interface MaterialMaps {
   normal: string;
   roughness?: string;
   ao?: string;
-  /** Cut-out coverage map, present on foliage and decal-style scans. */
   opacity?: string;
-  /** Height map for callers that displace geometry; absent on archives published without one. */
   displacement?: string;
   ktx2?: string;
 }
@@ -64,7 +62,6 @@ export interface MaterialRef {
   maps: MaterialMaps;
 }
 
-/** Semantic keys onto the ambientCG catalog, mirroring the model alias layer. */
 export const materialAliases: readonly AssetAlias[] = [
   { key: "material/grass", target: "ambientcg-grass001" },
   { key: "material/dirt", target: "ambientcg-ground001" },
@@ -86,14 +83,11 @@ export const materialAliases: readonly AssetAlias[] = [
   { key: "material/marble", target: "ambientcg-marble001" },
 ];
 
-/** Options for `buildMaterialCatalog`. */
 export interface BuildMaterialCatalogOptions {
-  /** URL prefix where pulled material maps live (consumer's `public/materials`). */
   basePath?: string;
   includeAliases?: boolean;
 }
 
-/** Resolves material ids and `material/…` aliases to `MaterialRef`s. */
 export interface MaterialCatalog {
   resolve(idOrAlias: string): MaterialRef | null;
   ids(): readonly string[];

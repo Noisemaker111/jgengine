@@ -5,7 +5,6 @@ import type { EditableTerrain } from "@jgengine/core/terrain/terraform";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Props for {@link EditableGround}: the editable terrain, the bounds to mesh, resolution, a rebuild version and surface colours. */
 export interface EditableGroundProps {
   terrain: Pick<EditableTerrain, "sampleHeight" | "surfaceAt">;
   bounds: Aabb;
@@ -47,7 +46,6 @@ function editableGroundGeometry({ terrain, bounds, segments = 96, baseColor = "#
   return geo;
 }
 
-/** Mesh an editable terrain inside its bounds, coloured by each point's painted surface; bump `version` after an edit. */
 export function editableGroundDraw(props: EditableGroundProps): EngineDraw {
   const geometry = editableGroundGeometry(props);
   const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 });

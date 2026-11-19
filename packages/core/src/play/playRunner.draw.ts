@@ -13,15 +13,12 @@ import {
 } from "./script";
 import { playTimelineDigest, type PlayExpectationResult, type PlayRunResult, type PlayTimelineEntry } from "./timeline";
 
-/** Options for one scripted play run. */
 export interface PlayRunOptions {
-  /** Local player id the script acts as. Default `"player"`. */
   userId?: string;
   /** Override the script's fixed tick length, in seconds. */
   dt?: number;
   /** Stop recording world events after this many rows so a long run stays readable. Default 1000. */
   maxEvents?: number;
-  /** Called after `setup` and after every tick, for a script that wants to watch the run (progress bars, debug output). */
   onTick?: (tick: number, ctx: GameContext) => void;
 }
 

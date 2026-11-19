@@ -30,7 +30,6 @@ export interface BaseModelDefinition {
   name: string;
   creator: string;
   description: string;
-  /** Minimum data tokens to commit for open fine-tune; closed distill may use 0 with {@link distillPoolTokens}. */
   requiredDataTokens: number;
   /** Catalog copy only: card/detail hint seconds. Live job length uses data drain or distill pool vs TPS×TFLOPs (server). */
   trainingDurationMs: number;
@@ -39,36 +38,23 @@ export interface BaseModelDefinition {
   sourceType: BaseModelSourceType;
   trainingMethod: BaseModelTrainingMethod;
   availability: BaseModelAvailability;
-  /** Model size in billions of parameters; drives VRAM footprint and quantization tradeoffs. */
   paramsB: number;
-  /** $ earned per inference token (product-facing “money / token”). */
   moneyPerToken: number;
   /** Throughput per 1 TFLOP allocated (inference tokens / second @ 1 TFLOP). */
   tokensPerSecond: number;
-  /** Data tokens gained per inference token served (open path); closed distilling uses this vs distill pool. */
   tokensPerToken: number;
-  /** Marketing family (Llamma, Qwither, DeepSheik, …) for grouping + flavor. */
   family?: string;
-  /** Context window in thousands of tokens. */
   contextK?: number;
-  /** Headline benchmark score (~0–100); flavor now, demand signal later. */
   benchmarkScore?: number;
-  /** Reasoning / test-time-compute model (chain-of-thought). */
   isReasoning?: boolean;
-  /** MoE active params per token (billions); absent = dense. */
   activeParamsB?: number;
-  /** Flavor: teacher size for a closed model you distill down from. */
   teacherParamsB?: number;
-  /** Closed-source distilling: total pool size in inference-token units before reveal. */
   distillPoolTokens?: number;
-  /** Closed-source distilling: vendor access charged per in-game hour while the job runs. */
   vendorHourlyUsd?: number;
 
-  /** One-time data-token cost to unlock research_locked models. */
   researchUnlockDataTokens?: number;
 }
 
-/** Display label for training volume on base models; mechanics use {@link BaseModelDefinition.requiredDataTokens}. */
 export function formatBaseModelTrainingVolumeLabel(
   model: Pick<BaseModelDefinition, "requiredDataTokens" | "distillPoolTokens" | "trainingMethod">,
 ): string {

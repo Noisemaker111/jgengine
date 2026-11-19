@@ -27,10 +27,7 @@ export interface WindAxisState {
   altitude: number;
 }
 
-/**
- * Builds a reference state from wind-axis flight variables, still air.
- * @capability wind-axis-state build a reference aircraft state from airspeed, alpha, beta and Euler angles
- */
+/** @capability wind-axis-state build a reference aircraft state from airspeed, alpha, beta and Euler angles */
 export function referenceStateFromWindAxes(flight: WindAxisState, surfaces: ReferenceSurfaces, propulsion: readonly number[]): ReferenceAircraftState {
   const { airspeed, alpha, beta } = flight;
   return {
@@ -44,10 +41,7 @@ export function referenceStateFromWindAxes(flight: WindAxisState, surfaces: Refe
   };
 }
 
-/**
- * Wind-axis flight variables of a reference state, still air.
- * @capability wind-axis-state read airspeed, alpha, beta and Euler angles from a reference aircraft state
- */
+/** @capability wind-axis-state read airspeed, alpha, beta and Euler angles from a reference aircraft state */
 export function windAxesOf(state: ReferenceAircraftState): WindAxisState {
   const [u, v, w] = state.velocity;
   const airspeed = Math.hypot(u, v, w);
@@ -68,11 +62,7 @@ export function windAxesOf(state: ReferenceAircraftState): WindAxisState {
   };
 }
 
-/**
- * Time derivative of the wind-axis variables at a state: airspeed, α and β rates from the body accelerations, Euler
- * rates from the body rates, and the navigation rates. Still air.
- * @capability wind-axis-rates state rates in wind-axis variables for check cases and linearisation
- */
+/** @capability wind-axis-rates state rates in wind-axis variables for check cases and linearisation */
 export function windAxisRates(aircraft: ReferenceAircraft, state: ReferenceAircraftState, input: ReferencePilotInput): WindAxisState {
   const rate = aircraft.derivative(state, input);
   const [u, v, w] = state.velocity;
@@ -102,17 +92,13 @@ export function windAxisRates(aircraft: ReferenceAircraft, state: ReferenceAircr
   };
 }
 
-/** A steady flight condition to trim for. */
 export interface TrimCondition {
   /** True airspeed, m/s. */
   airspeed: number;
-  /** Geometric altitude, m. */
   altitude: number;
-  /** Flight path angle, rad (default `0`, level). */
   flightPathAngle?: number;
 }
 
-/** A trimmed steady flight point. */
 export interface TrimResult {
   alpha: number;
   beta: number;
@@ -126,10 +112,7 @@ export interface TrimResult {
   converged: boolean;
 }
 
-/**
- * Air data for a reference aircraft at rest in steady flight: no body rates, height above the ground at the origin.
- * @capability aircraft-trim air data for a steady flight condition, to settle propulsion or rotor states
- */
+/** @capability aircraft-trim air data for a steady flight condition, to settle propulsion or rotor states */
 export function steadyAirData(aircraft: ReferenceAircraft, altitude: number, airspeed: number, alpha: number, beta: number): ReferenceAirData {
   const air = aircraft.options.atmosphere(altitude);
   return {
@@ -226,21 +209,16 @@ export function trimReferenceAircraft(aircraft: ReferenceAircraft, condition: Tr
   };
 }
 
-/** One dynamic mode read from eigenvalues. */
 export interface FlightMode {
   name: "short period" | "phugoid" | "dutch roll" | "roll subsidence" | "spiral";
   eigenvalue: Eigenvalue;
   /** Natural frequency, rad/s. */
   frequency: number;
-  /** Damping ratio (`1` for a real root, negative when unstable). */
   damping: number;
 }
 
-/** Small-perturbation model about a trim point. */
 export interface FlightLinearization {
-  /** State matrix over `[airspeed, alpha, pitch, q]`. */
   longitudinal: number[][];
-  /** State matrix over `[beta, bank, p, r]`. */
   lateral: number[][];
   longitudinalEigenvalues: Eigenvalue[];
   lateralEigenvalues: Eigenvalue[];
@@ -252,12 +230,7 @@ function modeOf(name: FlightMode["name"], eigenvalue: Eigenvalue): FlightMode {
   return { name, eigenvalue, frequency, damping: frequency > 0 ? -eigenvalue.re / frequency : 1 };
 }
 
-/**
- * Linearizes a reference aircraft about a trim point by central differences of the wind-axis equations, with
- * propulsion and actuator states held, and names the classical modes: short period and phugoid from the
- * longitudinal matrix, dutch roll, roll subsidence and spiral from the lateral one.
- * @capability flight-modes linearize a trimmed reference aircraft and read short period, phugoid, dutch roll, roll and spiral modes
- */
+/** @capability flight-modes linearize a trimmed reference aircraft and read short period, phugoid, dutch roll, roll and spiral modes */
 export function linearizeReferenceAircraft(aircraft: ReferenceAircraft, trim: TrimResult): FlightLinearization {
   const base = windAxesOf(trim.state);
   const input: ReferencePilotInput = { throttle: trim.throttle, pitch: 0, roll: 0, yaw: 0 };

@@ -21,14 +21,8 @@ export type ClipRole =
   | "interact"
   | "cheer";
 
-/**
- * Keyword table driving {@link classifyClip}: lowercase keywords matched against a clip name's
- * tokens (exact token match beats prefix match). Extend or replace per game/pack — the table is
- * plain data, no genre assumptions.
- */
 export interface ClipRoleTable {
   readonly roles: Readonly<Partial<Record<ClipRole, readonly string[]>>>;
-  /** Tokens that disqualify a clip from classification entirely (e.g. `pose` for held-pose variants). */
   readonly exclude?: readonly string[];
 }
 
@@ -49,7 +43,6 @@ const ROLE_PRIORITY: readonly ClipRole[] = [
   "idle",
 ];
 
-/** Default vocabulary covering KayKit, Quaternius, and Mixamo-style clip naming. */
 export const DEFAULT_CLIP_ROLE_TABLE: ClipRoleTable = {
   roles: {
     idle: ["idle"],
@@ -69,7 +62,6 @@ export const DEFAULT_CLIP_ROLE_TABLE: ClipRoleTable = {
   exclude: ["pose"],
 };
 
-/** Lowercased tokens of a clip name: rig prefixes (`Armature|`, `mixamo.com|`) stripped, split on `_ - . space`. */
 function tokenize(name: string): string[] {
   const segments = name.split("|");
   const last = segments[segments.length - 1] ?? name;
@@ -130,13 +122,11 @@ export function rolesFromClips(
   return roles;
 }
 
-/** A role's variants as a one-shot binding: single name stays a string, several become a random-variant array. */
 function oneShotSpec(variants: string[] | undefined): string | string[] | undefined {
   if (variants === undefined || variants.length === 0) return undefined;
   return variants.length === 1 ? variants[0] : variants;
 }
 
-/** Which side a strafe clip covers, read from its own name; `undefined` when the name names no side. */
 function strafeSide(name: string): "left" | "right" | undefined {
   const lower = name.toLowerCase();
   if (lower.includes("left")) return "left";
@@ -211,10 +201,6 @@ export function resolveAnimationConfig(
   return { ...defaults, ...animation };
 }
 
-/**
- * The rig's idle clip alone, looping: what a rigged entity plays when its locomotion is switched off
- * (`characterMotion.locomotion: false`). `undefined` when no clip reads as idle.
- */
 export function idleOnlyAnimation(clips: readonly string[], table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE): ModelAnimationConfig | undefined {
   const idle = rolesFromClips(clips, table).idle?.[0];
   return idle === undefined ? undefined : { clip: idle };

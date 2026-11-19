@@ -11,12 +11,6 @@ import { recordScenarioWin, savePark } from "./persistence";
 import { connectPark, relinkPark } from "./build/links";
 import { groundAt } from "./build/terrain";
 
-/**
- * Where the park's declaration meets the screen: a built structure is placed in the scene, a removed
- * one leaves it, a landed action is heard, a breakdown sends the crew, a scenario's end stops play.
- * Everything here reacts to the world; none of it keeps state of its own.
- */
-
 export function spawnObject(ctx: GameContext, instance: WorldInstanceView): void {
   if (instance.position === null) return;
   const w = park.of(ctx);
@@ -36,7 +30,6 @@ export function spawnObject(ctx: GameContext, instance: WorldInstanceView): void
   }
 }
 
-/** Every structure the world holds goes on screen: after a load, a reset or a replicated world. */
 export function spawnAll(ctx: GameContext): void {
   const w = park.of(ctx);
   // A park laid out before rides needed entrances and exits gets them, free, the first time it opens.
@@ -48,7 +41,6 @@ export function spawnAll(ctx: GameContext): void {
   relinkPark(ctx);
 }
 
-/** The world removed a structure (`brightway.remove`, refund already in the till): it leaves the scene. */
 export function despawnObject(ctx: GameContext, id: string, refund = 0): void {
   ctx.scene.object.remove(id);
   rethemeRides(ctx);
@@ -67,7 +59,6 @@ export function despawnObject(ctx: GameContext, id: string, refund = 0): void {
   savePark(ctx);
 }
 
-/** A ride broke: mark it down in the world and send a mechanic if the park has one and the till can pay. */
 export function dispatchCrew(ctx: GameContext, w: WorldModel, rideId: string): void {
   const instance = w.instance(rideId);
   if (instance === null) return;
@@ -85,7 +76,6 @@ export function dispatchCrew(ctx: GameContext, w: WorldModel, rideId: string): v
   ctx.game.audio.play("denied");
 }
 
-/** A declared action landed: hear it, tell the ride sim when it is a repair or a service, and save. */
 export function landed(ctx: GameContext, action: string, target: string | null): void {
   const w = park.of(ctx);
   const decl = w.def.actions?.[action];
@@ -128,5 +118,4 @@ export function scenarioEnded(ctx: GameContext, event: WorldJobEvent): void {
   savePark(ctx);
 }
 
-/** A structure's refund when it is demolished, as the world will pay it (`refund: 0.5`). */
 export const refundOf = (kind: string): number => Math.round((BUILDABLES[kind]?.cost ?? 0) * 0.5);

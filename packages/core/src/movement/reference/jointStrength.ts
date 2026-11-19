@@ -1,19 +1,12 @@
-/** Maximum voluntary torque of one exertion (one joint, one direction). */
 export interface JointExertion {
   /** Peak isometric torque per body mass × stature, N·m/(kg·m). */
   isometric: number;
-  /** Joint angle of the peak, rad, in the joint's own convention (see {@link HumanJointStrength}). */
   optimalAngle: number;
-  /** Angle span over which the isometric torque falls to `e⁻¹` of its peak, rad. */
   angleWidth: number;
   /** Joint speed at which concentric torque reaches zero, rad/s. */
   maxVelocity: number;
 }
 
-/**
- * A torque generator per lower-limb joint and direction. Angles: hip = thigh relative to trunk (flexion positive),
- * knee = shank relative to thigh (flexion negative), ankle = foot relative to shank (dorsiflexion positive).
- */
 export interface HumanJointStrength {
   hipFlexion: JointExertion;
   hipExtension: JointExertion;
@@ -21,9 +14,7 @@ export interface HumanJointStrength {
   kneeExtension: JointExertion;
   ankleDorsiflexion: JointExertion;
   anklePlantarflexion: JointExertion;
-  /** Eccentric torque plateau over isometric (lengthening under load). */
   eccentricRatio: number;
-  /** Hill curvature `a/F₀` of the concentric torque–velocity hyperbola. */
   hillCurvature: number;
 }
 
@@ -49,7 +40,6 @@ export const YOUNG_MALE_STRENGTH: HumanJointStrength = {
   hillCurvature: 1,
 };
 
-/** Joints of the sagittal leg. */
 export type LegJoint = "hip" | "knee" | "ankle";
 
 function exertionFor(strength: HumanJointStrength, joint: LegJoint, positive: boolean): JointExertion {

@@ -4,42 +4,30 @@ export interface RagdollBoneSpec {
   name: string;
   position: readonly [number, number, number];
   halfExtents: readonly [number, number, number];
-  /** Default 1. */
   mass?: number;
 }
 
 export interface RagdollLinkSpec {
   a: string;
   b: string;
-  /** `hinge` pins the shared anchor; `distance` (default) holds the bones' current separation. */
   kind?: "hinge" | "distance";
   /** World point for a hinge pin. Defaults to the midpoint of the two bone centers. */
   anchor?: readonly [number, number, number];
 }
 
 export interface RagdollBalanceConfig {
-  /** Bone the motor keeps upright (torso/head). */
   root: string;
-  /** Target height of the root above the floor the motor drives toward. */
   targetHeight: number;
-  /** Corrective gain pulling the root back to `targetHeight`. Default 8. */
   strength?: number;
-  /** Locomotion push applied to the root from the move vector (active-ragdoll walking). Default 6. */
   moveForce?: number;
 }
 
 export interface RagdollConfig {
   bones: RagdollBoneSpec[];
   links: RagdollLinkSpec[];
-  /** Optional active-ragdoll balance motor; omit for a purely floppy ragdoll. */
   balance?: RagdollBalanceConfig;
 }
 
-/**
- * A jointed multi-body character — floppy by default, or active-ragdoll when a balance motor is
- * configured. Bones are `PhysicsWorld` bodies; links are joints on the joint API. `balance(dt, mx, mz)`
- * drives the root toward its target height (staying upright) and pushes it by the move vector.
- */
 export class Ragdoll {
   readonly bones: Record<string, number>;
   readonly links: number[];

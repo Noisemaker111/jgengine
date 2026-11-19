@@ -1,7 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** First person at noon: wade out of the south-beach shallows, cross the sand and walk into the jungle. */
 export default defineFlow(game, {
   browser: true,
   async run(f) {

@@ -1,39 +1,23 @@
 // @skill jgengine-world
-/**
- * Threshold landsliding: no slope stands steeper than its critical angle. Bare rock fails at the
- * angle its layer gives; loose regolith and debris rest at the angle of repose. Every cell is capped
- * at the lowest height its neighbours allow, min over j of (z_j + tan θ · d), found for the whole grid
- * at once by a Dijkstra sweep from the lowest cells up (the threshold-hillslope limit of Burbank et
- * al. 1996 and Montgomery & Brandon 2002). The failed rock falls as debris and comes to rest
- * downslope as a talus apron at the angle of repose.
- *
- * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
- */
+/** @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata */
 import { createCellHeap } from "../flow/cellHeap";
 import type { LandformTopology } from "../grid/landformGrid";
 
-/** What one landslide pass moved, in m³. @internal */
+/** @internal */
 export interface LandslideReport {
   failed: number;
   exported: number;
 }
 
-/** A reusable landslide solver for one grid. @internal */
+/** @internal */
 export interface Landslider {
-  /**
-   * Fail every slope steeper than it can stand and run the debris downslope to rest at `repose`
-   * (rise over run). Bedrock stands at `rockCritical` per cell; loose `sediment` over it at `repose`,
-   * and a loose-cover failure takes only the cover. Updates `height` and `sediment`, adds the debris
-   * thickness laid on each cell to `laid` and the thickness each cell lost to `failed`. Cells marked
-   * in `held` keep their cover, as ice holds the till beneath it.
-   */
   collapse(height: Float64Array, sediment: Float64Array, rockCritical: Float64Array, repose: number, laid: Float64Array, failed: Float64Array, held?: Uint8Array): LandslideReport;
 }
 
 const TOLERANCE = 1e-9;
 const PASSES = 4;
 
-/** A landslide solver for a topology. @internal */
+/** @internal */
 // stateless: scratch buffers every collapse refills before use; nothing carries between calls.
 export function createLandslider(topology: LandformTopology): Landslider {
   const { cells, neighbour, distance, base, cellArea } = topology;

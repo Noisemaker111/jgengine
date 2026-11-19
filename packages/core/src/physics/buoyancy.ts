@@ -16,9 +16,7 @@ export interface BuoyantBodyConfig {
   topSpeed?: number;
   turnRate?: number;
   turnSpeedRef?: number;
-  /** Water-current acceleration (units/s²) sampled at the hull each tick and applied while submerged — feed a `windZones`/`flowTube` sample or a fixed vector. */
   current?: (x: number, z: number, time: number) => readonly [number, number];
-  /** How much more current a broadside hull catches than a bow-on one (`1` = uniform, default; `2` = side-on drifts twice as hard). */
   currentBroadside?: number;
 }
 

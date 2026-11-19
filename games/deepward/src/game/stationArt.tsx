@@ -11,7 +11,6 @@ import { surfaceMaterialParams, type IndustrialSurface } from './industrialMater
 
 type StationPart = (typeof editorLayers.volumes)[number];
 
-/** Original station parts are editor-owned volumes; only their material/shape drives batching. */
 export function StationStructure({ place }: { place: Place }) {
  const batches = useMemo(() => {
   const replacements = stationModelReplacements(place);

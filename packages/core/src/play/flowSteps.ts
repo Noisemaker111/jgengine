@@ -1,4 +1,3 @@
-/** One step a flow ran, for the failure report. */
 export interface FlowStepRecord {
   index: number;
   label: string;
@@ -15,18 +14,14 @@ export interface FlowFailure {
 
 interface FlowRunBase {
   steps: readonly FlowStepRecord[];
-  /** `report(label)` lines, in order. */
   reports: readonly { label: string; probe: unknown }[];
   /** Wall-clock milliseconds the run took. */
   ms: number;
 }
 
-/** What a flow run produced: quiet on a pass, every step and the failing one on a failure. */
 export type FlowRunReport = (FlowRunBase & { ok: true }) | (FlowRunBase & { ok: false; failure: FlowFailure });
 
-/** A failure already located at a step; the runner reports it as it is.
- * @internal
- */
+/** @internal */
 export class FlowStepFailure extends Error {
   constructor(
     readonly index: number,
@@ -47,9 +42,7 @@ export interface FlowStepper {
   readonly records: readonly FlowStepRecord[];
 }
 
-/** A stepper whose failures carry the probe readings `readProbe` gives at that moment.
- * @internal shared by the headless and browser runners
- */
+/** @internal shared by the headless and browser runners */
 export function createFlowStepper(readProbe: () => Promise<unknown>, now: () => number = () => performance.now()): FlowStepper {
   const records: FlowStepRecord[] = [];
   let depth = 0;
@@ -83,9 +76,7 @@ export function createFlowStepper(readProbe: () => Promise<unknown>, now: () => 
   };
 }
 
-/** Finish a run: the report every runner prints from.
- * @internal
- */
+/** @internal */
 export async function runFlowReport(stepper: FlowStepper, reports: { label: string; probe: unknown }[], body: () => Promise<void>, now: () => number = () => performance.now()): Promise<FlowRunReport> {
   const started = now();
   try {
@@ -99,9 +90,7 @@ export async function runFlowReport(stepper: FlowStepper, reports: { label: stri
   }
 }
 
-/** The lines a run prints: one on a pass; the failing step, its probe and the steps before it on a failure.
- * @internal
- */
+/** @internal */
 export function describeFlowReport(name: string, report: FlowRunReport): string[] {
   const lines = report.reports.map((entry) => `${name}: ${entry.label} ${JSON.stringify(entry.probe)}`);
   if (report.ok) {

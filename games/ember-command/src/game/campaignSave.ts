@@ -15,14 +15,10 @@ import { heroPickStore } from "./heroPicks";
  * lumber the commander holds), the campaign track, the mission machine and Bram's kit.
  */
 export const CAMPAIGN_SAVE_KEY = "ember-command.campaign";
-/** The slot a battle fought before any campaign slot was chosen checkpoints into. */
 export const SKIRMISH_SLOT = "default";
-/** Where an older build kept every slot's card in one index; each slot lifts its own entry. */
 export const LEGACY_INDEX_KEY = "ember-command.campaigns.v1";
-/** Where an older build's whole-world save kept a slot (`<key>:<slot>`); its campaign stores lift out. */
 export const LEGACY_WORLD_KEY = "jgengine:save:ember-command";
 
-/** What a campaign record remembers between battles: the card, and the stores Continue opens with. */
 export interface CampaignRecord {
   name: string;
   mission: string;
@@ -36,7 +32,6 @@ export interface CampaignRecord {
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 const MODES: readonly CampaignMode[] = ["campaign", "skirmish"];
 
-/** A stored `record` section, field by field; `null` when it is not a record this build can show. */
 export function readCampaignRecord(value: unknown): CampaignRecord | null {
   if (!isRecord(value)) return null;
   const { name, mission, gold, lumber, playtime, savedAt, thumbnail } = value;
@@ -45,7 +40,6 @@ export function readCampaignRecord(value: unknown): CampaignRecord | null {
   return { name, mission, gold, lumber, playtime, savedAt, thumbnail: typeof thumbnail === "string" ? thumbnail : null };
 }
 
-/** A stored `campaign` section: the won missions, the mode and the banked stores; `null` when unreadable. */
 export function readCampaignProgress(value: unknown): CampaignProgress | null {
   if (!isRecord(value)) return null;
   const { won, mode, stores } = value;
@@ -54,16 +48,11 @@ export function readCampaignProgress(value: unknown): CampaignProgress | null {
   return { won: [...won] as string[], mode: mode as CampaignMode, stores: { gold: stores["gold"], lumber: stores["lumber"] } };
 }
 
-/** A stored `heroPicks` section: rank by pick id. Unknown picks are judged when the kit loads. */
 function readHeroPicks(value: unknown): Record<string, number> {
   if (!isRecord(value)) return {};
   return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, number] => finite(entry[1])));
 }
 
-/**
- * An older build's slot: its card from the shared index, and its campaign track, mission machine and
- * kit from the stores its whole-world save held. Either half may be missing; neither is unreadable.
- */
 function liftOldSlot(stored: Readonly<Record<string, string>>, slot: string): Record<string, unknown> {
   const sections: Record<string, unknown> = {};
   const index: unknown = JSON.parse(stored[LEGACY_INDEX_KEY] ?? "null");
@@ -80,7 +69,6 @@ function liftOldSlot(stored: Readonly<Record<string, string>>, slot: string): Re
   return sections;
 }
 
-/** One slot's document, the record its next write carries, and the read the next write waits for. */
 interface CampaignDocument {
   readonly save: GameSave;
   record: CampaignRecord | null;
@@ -140,15 +128,10 @@ function campaignDocument(ctx: GameContext, slot: string): CampaignDocument {
 
 const active = perContext(() => ({ slot: SKIRMISH_SLOT }));
 
-/** The slot the live campaign checkpoints into. */
 export function campaignSlot(ctx: GameContext): string {
   return active(ctx).slot;
 }
 
-/**
- * Make `slot` the live campaign and read its document into the campaign track, the mission machine
- * and the kit (an empty slot resets them). Resolves whether the slot held a campaign.
- */
 export async function openCampaignSlot(ctx: GameContext, slot: string): Promise<boolean> {
   active(ctx).slot = slot;
   const document = campaignDocument(ctx, slot);
@@ -159,18 +142,15 @@ export async function openCampaignSlot(ctx: GameContext, slot: string): Promise<
   return held;
 }
 
-/** Whether a slot holds a campaign (its document, or an older build's save of it). */
 export async function campaignHeld(ctx: GameContext, slot: string): Promise<boolean> {
   return (await campaignDocument(ctx, slot).save.peek(slot)) !== null;
 }
 
-/** A slot's campaign record, read without touching the live campaign. */
 export async function recordOfSlot(ctx: GameContext, slot: string): Promise<CampaignRecord | null> {
   const read = await campaignDocument(ctx, slot).save.peek(slot);
   return read.kind === "loaded" ? readCampaignRecord(read.value.systems["record"]) : null;
 }
 
-/** Write the live campaign into its slot's document; false when this browser could not keep it. */
 export async function saveCampaign(ctx: GameContext): Promise<boolean> {
   const document = campaignDocument(ctx, campaignSlot(ctx));
   // A write never lands before the slot's own read, so it cannot replace a stored campaign.
@@ -179,13 +159,11 @@ export async function saveCampaign(ctx: GameContext): Promise<boolean> {
   return document.save.status() === "saved";
 }
 
-/** Set the live slot's record and write the campaign with it. */
 export async function writeCampaignRecord(ctx: GameContext, record: CampaignRecord): Promise<boolean> {
   campaignDocument(ctx, campaignSlot(ctx)).record = record;
   return saveCampaign(ctx);
 }
 
-/** The state digest of the live slot's document, for a restore test or a diff. */
 export function campaignDigest(ctx: GameContext): string {
   return campaignDocument(ctx, campaignSlot(ctx)).save.digest();
 }

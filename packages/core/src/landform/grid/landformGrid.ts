@@ -1,13 +1,6 @@
 // @skill jgengine-world
-/**
- * The square-cell grid every landform process runs on: row-major cells, the eight D8 neighbours with
- * their distances, and which cells are base level (outlets held at a fixed height, where water and
- * sediment leave the map).
- *
- * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
- */
+/** @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata */
 
-/** Map edges that can be base level. */
 export type LandformEdge = "north" | "south" | "east" | "west";
 
 /** A landform grid: `cols` × `rows` square cells, `cellSize` metres a side, row 0 at the north edge. */
@@ -26,12 +19,10 @@ export interface LandformGrid {
 /** Largest grid side the model accepts, so one step's work stays bounded. */
 export const LANDFORM_MAX_SIDE = 2048;
 
-/** Column offsets of the D8 neighbours: east, south-east, south, south-west, west, north-west, north, north-east. */
 export const D8_DCOL: readonly number[] = [1, 1, 0, -1, -1, -1, 0, 1];
-/** Row offsets of the D8 neighbours, in {@link D8_DCOL} order. */
 export const D8_DROW: readonly number[] = [0, 1, 1, 1, 0, -1, -1, -1];
 
-/** A grid's cell count after validating its size. @internal */
+/** @internal */
 export function landformCellCount(grid: LandformGrid): number {
   const { cols, rows, cellSize } = grid;
   if (!Number.isInteger(cols) || !Number.isInteger(rows) || cols < 3 || rows < 3) throw new Error(`landform grid must be at least 3×3 whole cells, got ${cols}×${rows}`);
@@ -53,11 +44,10 @@ export interface LandformTopology {
   readonly cellArea: number;
   readonly neighbour: Int32Array;
   readonly distance: Float64Array;
-  /** 1 where a cell is base level. */
   readonly base: Uint8Array;
 }
 
-/** Build the neighbour tables and base-level mask of a grid. @internal */
+/** @internal */
 export function landformTopology(grid: LandformGrid): LandformTopology {
   const cells = landformCellCount(grid);
   const { cols, rows, cellSize } = grid;

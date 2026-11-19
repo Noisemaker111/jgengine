@@ -17,7 +17,6 @@ import { scorch, isFrozen } from "../combat/strike";
 import { tickAbilities } from "../combat/cast";
 import { tickHeldPay } from "./heldWavePay";
 
-/** How high a wraith floats over the road. */
 export const FLIGHT_HEIGHT = 2.4;
 
 /** What calling the next wave now would pay: the seconds it skips on the clock, at the council's rate. */
@@ -27,7 +26,6 @@ export function waveOverlapBonus(ctx: GameContext): number {
   return Math.round(session.countdown.bonusNow() * councilScale(ctx, "early_bonus"));
 }
 
-/** What the director sees about the player right now: keep health, waves cleared, time on the clock. */
 export function readPressure(ctx: GameContext): PressurePlan {
   const world = keep.of(ctx);
   const max = world.num("keep.lives_max");
@@ -39,7 +37,6 @@ export function readPressure(ctx: GameContext): PressurePlan {
   );
 }
 
-/** Whether the player may release the next wave right now. */
 export function canSendWave(ctx: GameContext): boolean {
   const world = keep.of(ctx);
   return world.fact("keep.wave_ready") === true && !runEnded(world) && !session.encounter.view().done;
@@ -74,7 +71,6 @@ export function registerWaveCommands(ctx: GameContext): void {
   });
 }
 
-/** Put one raider on a road, at its start or (for a split or a summons) where another one stands. */
 export function spawnRaider(ctx: GameContext, unit: string, route: string, from?: PathFollowState): string {
   const def = creepDef(unit);
   const difficulty = difficultyOf(ctx);
@@ -119,7 +115,6 @@ function leakCreep(ctx: GameContext, instanceId: string, catalogId: string): voi
   ctx.game.audio.play("leak", KEEP_POINT);
 }
 
-/** Read the boss's health and let its phase change its stance, raise its ward, call its escort. */
 function tickBoss(ctx: GameContext, dt: number): void {
   const boss = session.boss;
   if (boss === null) return;
@@ -154,7 +149,6 @@ function tickBoss(ctx: GameContext, dt: number): void {
   session.boss = { ...boss, state: step.state };
 }
 
-/** A shaman's mending: every raider in reach, itself included, takes back a share of its health. */
 function mend(ctx: GameContext, healer: CreepRuntime, dt: number): void {
   const heals = creepDef(healer.catalogId).heals;
   if (heals === undefined) return;
@@ -172,17 +166,12 @@ function mend(ctx: GameContext, healer: CreepRuntime, dt: number): void {
   ctx.scene.entity.vfx({ preset: "heal", to: healer.instanceId, radius: heals.radius, durationMs: 700 });
 }
 
-/** Burns tick through the wards and into health; conditions that ended leave nothing behind. */
 function tickConditions(ctx: GameContext, dt: number): void {
   for (const event of session.statuses.tick(dt)) {
     if (event.kind === "damage") scorch(ctx, event.source ?? "beacon", event.target, event.amount);
   }
 }
 
-/**
- * The clock between waves: arm it when a wave has arrived in full, release on its own when it runs
- * out, and hold while a boss walks.
- */
 function tickCountdown(ctx: GameContext, dt: number): void {
   const world = keep.of(ctx);
   const view = session.encounter.view();

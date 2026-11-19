@@ -1,21 +1,12 @@
 import { MARINE_GRAVITY, SEA_WATER_DENSITY, type HullWater } from "./hullHydrostatics";
 
-/** A sea spectrum by its significant height and peak period; `peakEnhancement` 1 is Pierson–Moskowitz, 3.3 the mean JONSWAP sea. */
 export interface SeaSpectrum {
-  /** Significant wave height `Hs = 4√m0`, m. */
   significantHeight: number;
-  /** Peak period `Tp`, s. */
   peakPeriod: number;
-  /** JONSWAP peak enhancement `γ` (default `1`, Pierson–Moskowitz). */
   peakEnhancement?: number;
 }
 
-/**
- * Spectral density `S(ω)`, m²·s, of a Pierson–Moskowitz (`γ = 1`) or JONSWAP sea in the DNV-RP-C205 form:
- * `S_PM = (5/16)·Hs²·ωp⁴·ω⁻⁵·exp(−1.25(ωp/ω)⁴)`, times `(1 − 0.287 ln γ)·γ^exp(−(ω−ωp)²/(2σ²ωp²))` with `σ` 0.07 below
- * the peak and 0.09 above it.
- * @capability ocean-waves Pierson–Moskowitz and JONSWAP wave spectra
- */
+/** @capability ocean-waves Pierson–Moskowitz and JONSWAP wave spectra */
 export function waveSpectrum(spectrum: SeaSpectrum, omega: number): number {
   if (omega <= 0) return 0;
   const wp = (2 * Math.PI) / spectrum.peakPeriod;
@@ -27,10 +18,7 @@ export function waveSpectrum(spectrum: SeaSpectrum, omega: number): number {
   return (1 - 0.287 * Math.log(gamma)) * pm * gamma ** Math.exp(-((omega - wp) ** 2) / (2 * sigma * sigma * wp * wp));
 }
 
-/**
- * Spectral moment `m_n = ∫ωⁿ·S(ω) dω`, by Simpson's rule from 0.2ωp to 6ωp.
- * @capability ocean-waves spectral moments of a sea spectrum
- */
+/** @capability ocean-waves spectral moments of a sea spectrum */
 export function spectralMoment(spectrum: SeaSpectrum, order: number, steps = 4000): number {
   const wp = (2 * Math.PI) / spectrum.peakPeriod;
   const low = 0.2 * wp;
@@ -45,43 +33,32 @@ export function spectralMoment(spectrum: SeaSpectrum, order: number, steps = 400
   return (sum * h) / 3;
 }
 
-/** One regular wave component: `η = a·cos(k(x cos θ + y sin θ) − ωt + φ)`. */
 export interface WaveComponent {
   amplitude: number;
   /** Circular frequency, rad/s. */
   frequency: number;
-  /** Wavenumber, rad/m. */
   wavenumber: number;
-  /** Heading the wave travels toward, rad from +x toward +y. */
   direction: number;
   phase: number;
 }
 
-/** A sea as a sum of regular components on deep water, plain data. */
 export interface OceanSea {
   components: readonly WaveComponent[];
   density: number;
   gravity: number;
 }
 
-/** How to sample a spectrum into components. */
 export interface IrregularSeaOptions {
   /** Uniform `0..1` draws (e.g. `seededRng(seed)`); every phase and frequency jitter comes from here. */
   random: () => number;
-  /** Component count (default `128`). */
   components?: number;
-  /** Mean heading the sea travels toward, rad (default `0`, along +x). */
   direction?: number;
-  /** Directional spreading exponent `s` of `cos^(2s)`; omit for long-crested waves. */
   spreading?: number;
   density?: number;
   gravity?: number;
 }
 
-/**
- * A single regular wave as an {@link OceanSea}: amplitude, m, period, s, travelling toward `direction`.
- * @capability ocean-waves regular deep-water wave
- */
+/** @capability ocean-waves regular deep-water wave */
 export function regularSea(amplitude: number, period: number, direction = 0, phase = 0, density = SEA_WATER_DENSITY, gravity = MARINE_GRAVITY): OceanSea {
   const frequency = (2 * Math.PI) / period;
   return { components: [{ amplitude, frequency, wavenumber: (frequency * frequency) / gravity, direction, phase }], density, gravity };
@@ -121,10 +98,7 @@ export function irregularSea(spectrum: SeaSpectrum, options: IrregularSeaOptions
   return { components, density: options.density ?? SEA_WATER_DENSITY, gravity };
 }
 
-/**
- * Surface elevation, m, at a point and time.
- * @capability ocean-waves sea surface elevation
- */
+/** @capability ocean-waves sea surface elevation */
 export function seaElevation(sea: OceanSea, x: number, y: number, time: number): number {
   let eta = 0;
   for (const c of sea.components) eta += c.amplitude * Math.cos(c.wavenumber * (x * Math.cos(c.direction) + y * Math.sin(c.direction)) - c.frequency * time + c.phase);

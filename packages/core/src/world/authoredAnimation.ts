@@ -7,14 +7,12 @@ export interface AuthoredAnimationDocumentLike {
   readonly markers: readonly { readonly id: string; readonly meta?: Readonly<Record<string, unknown>> }[];
 }
 
-/** Rejected saved animation data with a document location and a repair. */
 export interface AuthoredAnimationDiagnostic {
   readonly path: string;
   readonly message: string;
   readonly repair: string;
 }
 
-/** Resolved marker animation or the caller's unchanged default, with rejected-value diagnostics. */
 export interface AuthoredAnimationResult {
   readonly animation: AuthoredAnimation | undefined;
   readonly diagnostics: readonly AuthoredAnimationDiagnostic[];
@@ -24,12 +22,7 @@ function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/**
- * Resolves a caller-selected marker's animation. Authored configuration replaces game defaults;
- * omitted or malformed data retains the exact default. Partial roles remain available for editing.
- * Asset clip and rig compatibility is diagnosed by the animation renderer.
- * @capability authored-animation bind saved character animation without copying game-side validation
- */
+/** @capability authored-animation bind saved character animation without copying game-side validation */
 export function readAuthoredAnimation(
   document: AuthoredAnimationDocumentLike,
   markerId: string,
@@ -39,11 +32,7 @@ export function readAuthoredAnimation(
   return readAuthoredAnimationValue(document.markers[index]?.meta?.["animation"], `markers[${index}].meta.animation`, defaults);
 }
 
-/**
- * Validates one saved animation value at the caller's document path without scanning markers.
- * Omitted or malformed values retain the exact default; valid authored configuration replaces it whole.
- * @capability authored-animation validate a located animation override in a single-pass document resolver
- */
+/** @capability authored-animation validate a located animation override in a single-pass document resolver */
 export function readAuthoredAnimationValue(
   value: unknown,
   path: string,

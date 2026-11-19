@@ -8,13 +8,9 @@
  * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
  */
 
-/** Bekker pressure–sinkage parameters: p = (k_c / b + k_φ) zⁿ, b the smaller footprint dimension. */
 export interface BekkerSoil {
-  /** Sinkage exponent n. */
   n: number;
-  /** Cohesive modulus k_c, N/m^(n+1). */
   kc: number;
-  /** Frictional modulus k_φ, N/m^(n+2). */
   kphi: number;
 }
 
@@ -23,23 +19,14 @@ export interface GranularMaterial {
   id: string;
   /** Solid grain density, kg/m³. */
   grainDensity: number;
-  /** Solid fraction as poured or after flowing. */
   loosePacking: number;
-  /** Solid fraction once fully compacted. */
   densePacking: number;
-  /** δ₁: a thick layer stops flowing below this slope; the angle of repose of a heap. */
   stopAngle: number;
-  /** δ₂: the friction a very thin or very fast layer tends to. */
   flowAngle: number;
-  /** δ₃: a thick static layer starts to flow above this slope. */
   startAngle: number;
-  /** β of the flow rule Fr = β h / h_stop. */
   beta: number;
-  /** Depth scale L of the friction law, m: about 1.3 grain diameters. */
   depthScale: number;
-  /** Cohesion of the basal Mohr–Coulomb law, Pa: capillary or clay bonds that let a damp cut stand. */
   cohesion: number;
-  /** Pressure–sinkage response to a load, if measured. */
   bekker?: BekkerSoil;
 }
 
@@ -103,10 +90,7 @@ function tanDeg(degrees: number): number {
   return Math.tan((degrees * Math.PI) / 180);
 }
 
-/**
- * Basal friction μ_stop(h) of a layer `depth` m deep that is just stopping: tan δ₁ + (tan δ₂ − tan δ₁)/(h/L + 1).
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 export function stopFriction(material: GranularMaterial, depth: number): number {
   const t1 = tanDeg(material.stopAngle);
   return t1 + (tanDeg(material.flowAngle) - t1) / (depth / material.depthScale + 1);
@@ -157,29 +141,19 @@ export function culmannHeight(cohesion: number, unitWeight: number, slope: numbe
   return (4 * cohesion * Math.sin(slope) * Math.cos(friction)) / (unitWeight * (1 - Math.cos(slope - friction)));
 }
 
-/**
- * Bekker sinkage, m, of a flat plate pressing `pressure` Pa on soil, `width` m its smaller dimension: z = (p/(k_c/b + k_φ))^(1/n).
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 export function plateSinkage(soil: BekkerSoil, pressure: number, width: number): number {
   if (pressure <= 0) return 0;
   return (pressure / (soil.kc / width + soil.kphi)) ** (1 / soil.n);
 }
 
-/**
- * Pressure, Pa, that sinks a plate `width` m wide to `sinkage` m: the inverse of {@link plateSinkage}.
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 export function plateSinkagePressure(soil: BekkerSoil, sinkage: number, width: number): number {
   if (sinkage <= 0) return 0;
   return (soil.kc / width + soil.kphi) * sinkage ** soil.n;
 }
 
-/**
- * Static sinkage, m, of a rigid wheel of `diameter` and `width` m carrying `load` N, Bekker's closed form:
- * z₀ = (3W / ((3 − n)(k_c + b k_φ) √D))^(2/(2n+1)).
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 export function wheelSinkage(soil: BekkerSoil, load: number, width: number, diameter: number): number {
   if (load <= 0) return 0;
   return ((3 * load) / ((3 - soil.n) * (soil.kc + width * soil.kphi) * Math.sqrt(diameter))) ** (2 / (2 * soil.n + 1));

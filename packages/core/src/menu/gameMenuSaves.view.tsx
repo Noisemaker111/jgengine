@@ -15,7 +15,6 @@ import { relativeSavedAt, useSaveSlots } from "@jgengine/core/save/saveSlots.vie
  */
 export const SAVE_SLOT_THUMBNAIL_KEY = "thumbnail";
 
-/** The character name a save card shows first, when the game supplies one as its own meta key. */
 export const SAVE_SLOT_CHARACTER_KEY = "character";
 
 const cardSurface: CSSProperties = {
@@ -58,19 +57,14 @@ function playtimeOf(slot: SaveSlotMeta): string | null {
   return String(value);
 }
 
-/** Props for {@link SaveSlotCard}. */
 export interface SaveSlotCardProps {
-  /** The slot to render. An empty slot renders as an empty slot, not a hidden row. */
   slot: SaveSlotMeta;
   /** Clock (ms) for the relative "saved" line. */
   now?: () => number;
-  /** Highlight this slot as the one Continue would resume. */
   recent?: boolean;
-  /** Load this filled slot, or start a new game in this empty slot. */
   onSelect?: (slot: SaveSlotMeta) => void;
   /** Delete this slot. Only called after the player confirms. */
   onDelete?: (slot: SaveSlotMeta) => void;
-  /** Label of the primary action on a filled card. Default `"Load"`. */
   loadLabel?: string;
   className?: string;
   style?: CSSProperties;
@@ -380,23 +374,15 @@ export function SaveSlotCard({
   );
 }
 
-/** Props for {@link SaveSlotsPane}. */
 export interface SaveSlotsPaneProps {
-  /** The save-slot index to render. */
   model: SaveSlots;
-  /** Resume the most recent save. Continue targets `model.mostRecent()`. */
   onContinue?: (slot: SaveSlotMeta) => void;
-  /** Load a chosen filled slot. */
   onLoad?: (slot: SaveSlotMeta) => void;
-  /** Start a new game in a chosen empty slot. */
   onNew?: (slot: SaveSlotMeta) => void;
-  /** Delete a confirmed slot. */
   onDelete?: (slot: SaveSlotMeta) => void;
-  /** Heading over the grid. Default `"Save slots"`. */
   heading?: ReactNode;
   /** Clock (ms) for relative times. */
   now?: () => number;
-  /** Cards per row, or `"auto"` to fit as many as the pane allows (min 230px each). Default 2. */
   columns?: number | "auto";
   className?: string;
   style?: CSSProperties;
@@ -529,11 +515,8 @@ export function SaveSlotsPane({
   );
 }
 
-/** Props for {@link ContinuePane}. */
 export interface ContinuePaneProps {
-  /** The save Continue would resume. `null` when nothing is saved yet. */
   slot: SaveSlotMeta | null;
-  /** Resume it. */
   onContinue?: (slot: SaveSlotMeta) => void;
   /** Shown instead of the card when `slot` is null. */
   emptyMessage?: ReactNode;
@@ -543,12 +526,7 @@ export interface ContinuePaneProps {
   style?: CSSProperties;
 }
 
-/**
- * The Continue detail pane: the save being continued, read big — captured thumbnail, character, time
- * played, the game's progress summary, when it was saved, and the resume action.
- *
- * @capability continue-pane continue detail pane — the save being resumed with thumbnail, character, playtime and progress
- */
+/** @capability continue-pane continue detail pane — the save being resumed with thumbnail, character, playtime and progress */
 export function ContinuePane({
   slot,
   onContinue,
@@ -715,65 +693,44 @@ export function ContinuePane({
   );
 }
 
-/** One avatar/portrait choice in {@link NewCharacterPane}. */
 export interface GameMenuAvatar {
   id: string;
   label: string;
-  /** A glyph or small image. Falls back to the label's first letter. */
   glyph?: ReactNode;
 }
 
-/** One palette choice in {@link NewCharacterPane}. */
 export interface GameMenuPalette {
   id: string;
   label: string;
-  /** Two or more CSS colours; rendered as a swatch chip. */
   colors: readonly string[];
 }
 
-/** What {@link NewCharacterPane} reports when a run starts. */
 export interface NewCharacterChoice {
   name: string;
   paletteId: string | null;
   avatarId: string | null;
 }
 
-/** Props for {@link NewCharacterPane}. */
 export interface NewCharacterPaneProps {
-  /** Current name value. */
   name: string;
   onNameChange: (name: string) => void;
-  /** Palette choices the game offers. Omit to hide the row. */
   palettes?: readonly GameMenuPalette[];
   paletteId?: string | null;
   onPaletteChange?: (id: string) => void;
-  /** Avatar choices the game offers. Omit to hide the row. */
   avatars?: readonly GameMenuAvatar[];
   avatarId?: string | null;
   onAvatarChange?: (id: string) => void;
-  /** Start the run with the current choice. */
   onStart: (choice: NewCharacterChoice) => void;
-  /** Heading. Default `"New run"`. */
   heading?: ReactNode;
-  /** Name field label. Default `"Character name"`. */
   nameLabel?: string;
-  /** Name placeholder. */
   namePlaceholder?: string;
-  /** Longest accepted name. Default 24. */
   maxLength?: number;
-  /** Start button label. Default `"Begin"`. */
   startLabel?: string;
   className?: string;
   style?: CSSProperties;
 }
 
-/**
- * The New Game detail pane: a character name field, an optional palette and avatar choice, and the
- * action that starts the run. The name field is a real form field, so menu key handling leaves typing
- * alone (Enter inside the field starts the run).
- *
- * @capability new-character-pane character creation pane — name field, palette and avatar choice, start action
- */
+/** @capability new-character-pane character creation pane — name field, palette and avatar choice, start action */
 export function NewCharacterPane({
   name,
   onNameChange,
@@ -953,14 +910,9 @@ export function NewCharacterPane({
   );
 }
 
-
-/** Props for {@link CreditsPane}. */
 export interface CreditsPaneProps {
-  /** Sections, in order. */
   sections: readonly CreditsSection[];
-  /** Heading over the scroller. Default `"Credits"`. */
   heading?: ReactNode;
-  /** Closing line, usually the asset/attribution notice. */
   notice?: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -1053,24 +1005,4 @@ export function CreditsPane({ sections, heading = "Credits", notice, className, 
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

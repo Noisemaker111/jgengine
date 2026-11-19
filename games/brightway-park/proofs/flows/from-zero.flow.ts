@@ -1,15 +1,8 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
 
-/** A click on the lot at ground point (x, z), as the park's pointer command receives it from the canvas. */
 const click = (x: number, z: number) => ({ point: [x, 0, z], entity: null, object: null });
 
-/**
- * A new game from nothing, the first 10 minutes at 1x, through the palette keys and the commands the
- * HUD's own buttons dispatch: an empty lot and a shut gate, a path in, the carousel, "Connect it", the
- * gate, the lab, a mechanic, food and drink, then the lab kept busy while the first guests arrive.
- * Every wait is a player reading the hint or watching the park; nothing is staged, seeded or sped up.
- */
 export default defineFlow(game, {
   async run(f) {
     await f.expect((p) => p.guests === 0 && p.rides === 0 && p.unlocks === 0, "second 0: an empty lot, nobody inside, nothing researched");

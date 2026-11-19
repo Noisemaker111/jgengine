@@ -28,31 +28,25 @@ const DUCK_SMOOTH_TC = 0.03;
 
 const ZERO_VELOCITY: Xyz = { x: 0, y: 0, z: 0 };
 
-/** One-shot occlusion budget: at most this many line tests per window. */
 const ONE_SHOT_TESTS_PER_WINDOW = 6;
 const ONE_SHOT_WINDOW_MS = 100;
 
-/** Position and orientation for a spatial-audio listener. */
 export interface ListenerPose {
   position: Xyz;
   forward: Xyz;
   up: Xyz;
-  /** World velocity of the listener, for doppler on loops whose sound declares `doppler`. Default zero. */
   velocity?: Xyz;
 }
 
 export interface AudioSceneConfig {
   sounds?: Record<string, SoundDef>;
-  /** SFX playback/patch slots, including pending loads; individual synth oscillators share one slot. Default 64; zero disables SFX. */
   maxVoices?: number | undefined;
   /** Budget overflow policy. Default "steal-lowest"; lower priorities never steal higher ones. */
   voiceOverflow?: VoiceAllocatorConfig["overflow"] | undefined;
-  /** Dedicated caller-owned allocator for inspectable reservations and injected storage. Music has its own lifecycle. */
   voiceAllocator?: VoiceAllocator;
   buses?: Record<string, AudioBusDef> | undefined;
   /** Procedural music themes, crossfaded by {@link AudioEngine.playMusic}. Mixed through the `musicBus` (default "music") so the settings volume applies. */
   music?: Record<string, MusicTheme> | undefined;
-  /** Bus id the procedural music director mixes through. Default "music". */
   musicBus?: string | undefined;
   /** Bus whose level (with the master) sets spoken-line volume. Default: the music bus. */
   speechBus?: string | undefined;
@@ -60,34 +54,20 @@ export interface AudioSceneConfig {
   speech?: SpeechChannel;
   /** World-space ambience zones; each becomes one retained looping bed driven by the listener position. */
   zones?: readonly AmbienceZoneDef[] | undefined;
-  /** Geometry occlusion budget/policy for retained positional loops. Unset keeps the defaults; `false` keeps distance-only. */
   occlusion?: AudioOcclusionConfig | false | undefined;
-  /**
-   * Left/right placement for positioned sounds that declare no `spatial` block of their own: "hrtf"
-   * (default) places them around the head, "equalpower" is a cheaper plain stereo pan, "off" keeps
-   * them centred. Distance loudness still follows each sound's `falloff`.
-   */
   panning?: "hrtf" | "equalpower" | "off" | undefined;
-  /** World reverb on positioned sounds: authored zones, else the space the shell hears around the listener. `false` keeps them dry. */
   reverb?: AudioReverbConfig | false | undefined;
 }
 
-/** What the spatial mix did, cumulative since the engine was created, plus the space it rings in now. */
 export interface AudioSpatialStats {
-  /** Positioned cues and loops placed left/right by the engine's default panner. */
   panned: number;
-  /** Positioned cues and loops sent into the world reverb. */
   reverbSends: number;
-  /** One-shots that started behind geometry and were muffled. */
   occludedOneShots: number;
-  /** The space positioned sounds ring in now. */
   reverb: ReverbPreset;
-  /** Authored reverb zone holding the listener, or null. */
   reverbZone: string | null;
 }
 
 export interface AudioEmitterHandle {
-  /** Whether playback is reserved or playing; false after stop, stealing, failed load, or natural end. Optional for legacy hosts. */
   isPlaying?(): boolean;
   setPosition(position: Xyz): void;
   /** Live pitch of a retained loop: `rate` multiplies the authored playback rate (1 = authored), clamped to 0.25–4 and ramped ~20 ms to avoid zipper noise (#1051). */
@@ -100,12 +80,10 @@ export interface AudioEmitterHandle {
   setHighpass(hz: number): void;
   /** Emitter world velocity for doppler; ignored unless the sound declares `doppler`. */
   setVelocity(velocity: Xyz): void;
-  /** Geometry occlusion, 0 (clear line) to 1 (fully blocked): scales the loop's gain and darkens it, composed with the game's own gain and filter. */
   setOcclusion(amount: number): void;
   stop(): void;
 }
 
-/** How long and how far to duck buses for {@link AudioEngine.duck}. */
 export interface DuckOptions {
   /** How far to lower the buses, 0..1. Default 0.6. */
   amount?: number | undefined;
@@ -115,21 +93,16 @@ export interface DuckOptions {
   fadeSeconds?: number | undefined;
 }
 
-/** Measured geometry-occlusion work, cumulative since the engine was created. */
 export interface AudioOcclusionStats {
-  /** Geometry tests run. */
   tests: number;
-  /** Tests that found blocking geometry. */
   blocked: number;
   /** Total time spent inside the injected geometry test, milliseconds. */
   testMs: number;
   /** Mean milliseconds per test, or 0 before the first test. */
   perTestMs: number;
-  /** Endpoints and result of the newest test, for a probe explaining what the engine actually asked. */
   lastTest: { from: Xyz; to: Xyz; blocked: boolean } | null;
 }
 
-/** Current ambience mix, by zone id. */
 export interface AudioAmbienceState {
   /** Loudest zone (an `elsewhere` zone counts), or null when the listener is outside every zone. */
   zone: string | null;
@@ -140,7 +113,6 @@ export interface AudioAmbienceState {
   levels: readonly { id: string; level: number }[];
 }
 
-/** The player's mix an {@link AudioEngine} can hand out and take back (a settings save, a resumed session). */
 export interface AudioMixState {
   master: { gain: number; muted: boolean };
   buses: Record<string, { gain: number; muted: boolean }>;
@@ -149,9 +121,7 @@ export interface AudioMixState {
 }
 
 export interface AudioEngine {
-  /** Full listener orientation, or a legacy position using forward -Z and up +Y. */
   setListenerPose(pose: ListenerPose | Xyz): void;
-  /** Retune the SFX budget and optional admission policy, stopping the lowest-priority oldest voices first. */
   setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void;
   /**
    * One-call playback. Before a user gesture the browser keeps the context suspended, so the cue is
@@ -161,29 +131,23 @@ export interface AudioEngine {
   play(soundId: string, position?: Xyz): void;
   playOneShot(soundId: string, position?: Xyz): void;
   playLoop(soundId: string, position?: Xyz): AudioEmitterHandle | null;
-  /** Crossfade the procedural soundtrack to `themeId` (null fades out). No-op when no `music` catalog is configured. */
   playMusic(themeId: string | null, options?: CrossfadeOptions): void;
   /** Say a line on the speech channel at the speech bus's level; silently dropped with no system voice. */
   speak(text: string, options?: SpeakOptions): void;
-  /** Cancel the line being said and any queued ones. */
   stopSpeech(): void;
-  /** What the speech channel has done, for a probe or debug readout. */
   speechStats(): SpeechStats;
   /**
    * Install the scene's blocking-geometry test (`from` listener, `to` emitter), or null to stop
    * testing. The engine owns the per-tick budget; tests never run outside it.
    */
   setOcclusionSource(blocked: ((from: Xyz, to: Xyz) => boolean) | null): void;
-  /** Cumulative occlusion cost, for a capture probe or a perf readout. */
   occlusionStats(): AudioOcclusionStats;
   /**
    * The space the shell hears around the listener (from its walls and ceiling), used outside every
    * authored reverb zone; null falls back to the config's `fallback`.
    */
   setReverbEnvironment(preset: ReverbPreset | null): void;
-  /** Panning, reverb and one-shot occlusion counts, for a capture probe. */
   spatialStats(): AudioSpatialStats;
-  /** Current zone mix, for a capture probe or a HUD readout. */
   ambience(): AudioAmbienceState;
   /**
    * Live level multiplier (`0..1`, clamped; non-finite is silence) for ambience zone bed `zoneId`,
@@ -198,22 +162,13 @@ export interface AudioEngine {
    */
   duck(busId: string, options?: DuckOptions): () => void;
   setBusGain(busId: string, gain: number): void;
-  /** Mute one bus without losing its gain: unmuting restores exactly the volume the player set. */
   setBusMute(busId: string, muted: boolean): void;
   setMasterGain(gain: number): void;
   setMasterMute(muted: boolean): void;
-  /** The player's mix: master and per-bus volume and mute, and the heard space. */
   snapshot(): AudioMixState;
-  /** Put a {@link snapshot} back; buses it does not name keep their mix. */
   restore(next: AudioMixState): void;
-  /** Master gain after volume and mute compose (`gain × (muted ? 0 : 1)`). */
   masterLevel(): number;
-  /** Effective gain of `busId` after its authored gain, the player's volume and its mute compose. */
   busLevel(busId: string): number;
-  /**
-   * Peak and RMS of the master output sampled on the Web Audio render clock. Pools its buffers, so
-   * calling it every frame allocates nothing; a silent (or unsupported) engine reports `0`.
-   */
   measure(): AudioLevel;
   resume(): void;
   dispose(): void;
@@ -225,7 +180,6 @@ export interface AudioLevel {
   peak: number;
 }
 
-/** Cues held while the browser keeps the audio context suspended, before any user gesture. */
 export const MAX_PENDING_CUES = 16;
 
 function createNoopEngine(): AudioEngine {
@@ -374,7 +328,6 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     }
   }
 
-  /** The default panner for a positioned sound with no `spatial` block, or null. */
   function defaultPanner(sound: SoundDef, positioned: boolean, at: Xyz): PannerNode | null {
     if (!positioned || sound.positional === false || sound.spatial !== undefined || panningModel === "off") return null;
     try {
@@ -386,7 +339,6 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     }
   }
 
-  /** Feed a positioned voice's output into the world reverb as well as its bus. */
   function sendToReverb(node: AudioNode, sound: SoundDef, positioned: boolean): void {
     if (reverbRack === null || !positioned || sound.positional === false) return;
     try {
@@ -473,7 +425,6 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   }
   const duckHolds = new Map<string, Set<DuckHold>>();
 
-  /** Recompute the strongest hold on one bus; release restores the player's gain by construction. */
   function applyDuck(busId: string): void {
     const holds = duckHolds.get(busId);
     let amount = 0;
@@ -522,7 +473,6 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     return release;
   }
 
-  /** A cue's own `duck` policy: hold the named buses for its duration, then release. */
   function applyCueDuck(sound: SoundDef, durationSeconds: number): void {
     const policy = sound.duck;
     if (policy === undefined) return;
@@ -626,11 +576,6 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
   }
 
-  /**
-   * One budgeted test for one retained loop. Skipped while the loop is too close (the listener is
-   * inside its own engine hum), too far, or re-tested inside the interval; once the tick's budget
-   * is spent every other loop simply stays on distance-only attenuation.
-   */
   function requestOcclusionTest(target: OcclusionTarget): void {
     if (occlusionBlocked === null || occlusionConfig.maxTestsPerTick <= 0) {
       target.set(0);
@@ -702,7 +647,6 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     level: number;
   }
   const zoneBeds = new Map<string, ZoneBed>();
-  /** The game's live multiplier per zone id; a zone without one plays at 1. */
   const zoneLive = new Map<string, number>();
   const ambienceScratch: AmbienceWeight[] = [];
   let ambienceActive: string | null = null;
@@ -766,7 +710,6 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     applyBedLevels();
   }
 
-  /** Ramp every bed toward weight × gain × live level; a bed starts once its zone is first heard. */
   function applyBedLevels(): void {
     for (const zone of zones) {
       const weight = zoneWeight(zone.id);
@@ -817,7 +760,6 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     slot.z = position?.z ?? 0;
   }
 
-  /** Play what was held pre-gesture, oldest first, once the context can actually render it. */
   function flushPending(): void {
     while (pendingCount > 0) {
       const slot = pendingCues[pendingHead]!;
@@ -1057,7 +999,6 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       if (userGainNode !== null) userGainNode.gain.setTargetAtTime(gain, context.currentTime, LOOP_PARAM_SMOOTH_TC);
     }
 
-    /** Darkest of the game's own cutoff and the occlusion floor, blended by the blocked amount. */
     function effectiveLowpass(): number {
       if (currentOcclusion <= 0) return currentLowpass;
       const floor = Math.min(currentLowpass, occlusionConfig.lowpassHz);

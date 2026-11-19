@@ -4,22 +4,15 @@ import { createCmaEs, type CmaEsState } from "./cmaEs";
 import type { TrialScore } from "./speciesScore";
 import type { Trial } from "./speciesTrial";
 
-/** One fitted parameter: its path in the record and the range the search may move it in. */
 export interface FitParameter {
   path: string;
   lo: number;
   hi: number;
   integer?: boolean;
   log?: boolean;
-  /** Value a record without this optional field has. */
   absent?: number;
 }
 
-/**
- * The growth and carbon parameters a species fit searches (Stava et al. 2014 fit L-system parameters
- * to target trees the same way: a black-box search scoring grown plants against measurements). Every
- * other value is a measured trait.
- */
 export const FIT_PARAMETERS: readonly FitParameter[] = [
   { path: "growth.apicalControl", lo: 0.5, hi: 0.95 },
   { path: "growth.apicalControlMature", lo: 0.3, hi: 0.9 },
@@ -75,17 +68,12 @@ function fromUnit(p: FitParameter, u: number): number {
   return p.integer ? Math.round(value) : Number(value.toPrecision(4));
 }
 
-/** `base` with the fitted parameters set from a point of the unit cube. */
 export function speciesAt(base: PlantSpecies, point: readonly number[], parameters: readonly FitParameter[] = FIT_PARAMETERS): PlantSpecies {
   const species = structuredClone(base);
   parameters.forEach((p, i) => writePath(species, p.path, fromUnit(p, point[i] ?? 0.5)));
   return species;
 }
 
-/**
- * `base` with every fitted parameter taken from `donor` and everything else (its traits, leaf, wood,
- * buds per node) kept: a start for `base`'s search in the basin another species' fit reached.
- */
 export function withFittedParameters(base: PlantSpecies, donor: PlantSpecies, parameters: readonly FitParameter[] = FIT_PARAMETERS): PlantSpecies {
   const species = structuredClone(base);
   for (const p of parameters) {
@@ -96,7 +84,6 @@ export function withFittedParameters(base: PlantSpecies, donor: PlantSpecies, pa
   return species;
 }
 
-/** Grows a species and returns its trial; a worker pool in practice. */
 export type Evaluate = (species: PlantSpecies) => Promise<Trial | null>;
 
 export interface FitProgress {
@@ -106,17 +93,13 @@ export interface FitProgress {
   species: PlantSpecies;
 }
 
-/** One generation of a fit, as it ends. */
 export interface GenerationReport {
-  /** The search's generation count, continuing a resumed search's. */
   generation: number;
   /** The generation this run ends at unless `until` stops it first. */
   last: number;
   best: FitProgress;
   search: CmaEsState;
-  /** `until` was met: the fit stops here. */
   passed: boolean;
-  /** The one-line summary the fit logs. */
   line: string;
 }
 
@@ -136,11 +119,9 @@ export async function fitSpecies(
     sigma: number;
     seed: number;
     parameters?: readonly FitParameter[];
-    /** A saved search to carry on from; its generations count towards the log's numbering, not the budget. */
     resume?: CmaEsState | undefined;
     onBest: (best: FitProgress) => void;
     onGeneration?: (report: GenerationReport) => void;
-    /** Stop early once the best so far is good enough. */
     until?: (best: FitProgress) => boolean;
   },
 ): Promise<FitProgress & { passed: boolean }> {

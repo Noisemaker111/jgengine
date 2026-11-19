@@ -16,10 +16,8 @@ export const SCENE_READY_RANGE_MS: readonly [number, number] = [
   Math.max(...loads.map((game) => game.sceneReady ?? 0)),
 ];
 
-/** How many games the load guard measures. */
 export const MEASURED_GAME_COUNT = loads.length;
 
-/** The GPU the baseline was recorded on, short form ("RTX 3070"). */
 export const BASELINE_GPU = /GeForce\s+([^(]+?)\s*\(/.exec(loadBaseline.gpu)?.[1] ?? "a desktop GPU";
 
 /** `ms` as seconds rounded up to one decimal: 771 → "0.8 s". */

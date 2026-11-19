@@ -1,33 +1,16 @@
-/**
- * Headless view model for a multi-entity selection — the data layer behind an RTS selection panel, a
- * party frame, or a squad summary. It turns a caller-owned list of selected entity summaries into a
- * primary detail focus, an ordered member strip, and same-kind buckets for large selections, with
- * focus/hover and virtualization helpers. No rendering opinion: the UI renderers in
- * `@jgengine/core/hud/selectionHud.view` consume this and a game supplies the entity data from wherever it
- * lives (a `createSelectionSet`, a roster, a marquee query).
- */
-
-/** One vital bar on an entity summary (health/shield/energy): current/max plus optional label and tone. */
 export interface EntityVital {
   id: string;
   label?: string;
   current: number;
   max: number;
-  /** Colour-ramp hint the renderer maps to a palette (e.g. `"health" | "shield"`); caller-owned. */
   tone?: string;
 }
 
-/**
- * A caller-provided summary of one selectable entity — the DATA input. `kind` is the grouping key
- * used to bucket a large selection (unit type, catalog id); `icon` is a portrait id the renderer
- * resolves. Only `id` is required.
- */
 export interface EntitySummaryDef {
   id: string;
   name?: string;
   /** Type/catalog id a large selection is bucketed by; falls back to `"unit"` when omitted. */
   kind?: string;
-  /** Portrait id / glyph the caller maps to art. */
   icon?: string;
   vitals?: readonly EntityVital[];
   tags?: readonly string[];
@@ -35,7 +18,6 @@ export interface EntitySummaryDef {
   owner?: string;
 }
 
-/** A bucket of same-`kind` entities in a large selection — the RTS "12 Marines" control chip. */
 export interface SelectionGroup {
   kind: string;
   label: string;
@@ -44,12 +26,6 @@ export interface SelectionGroup {
   ids: readonly string[];
 }
 
-/**
- * A resolved multi-selection view model. `primary` is the focused entity's full detail; `members` is
- * the stable-order strip; `groups` buckets members by kind (count-desc, then label) for the
- * portrait-overflow case; `grouped` is the hint that the selection is large enough to prefer groups
- * over per-member portraits.
- */
 export interface SelectionView {
   count: number;
   primary: EntitySummaryDef | null;
@@ -59,13 +35,9 @@ export interface SelectionView {
   grouped: boolean;
 }
 
-/** Options for {@link summarizeSelection}. */
 export interface SummarizeSelectionOptions {
-  /** Id of the entity to treat as primary/focused. Wins over `focusIndex`; ignored when not present. */
   primaryId?: string;
-  /** Index of the primary/focused member when `primaryId` is absent (default 0). */
   focusIndex?: number;
-  /** Member count above which `grouped` flips true (default 12). */
   groupThreshold?: number;
   /** Map a `kind` to a display label for its group (default: the kind itself). */
   labelOf?: (kind: string) => string;
@@ -122,13 +94,8 @@ function groupSelection(
   return groups;
 }
 
-/** A 1-D focus move within the selection member strip. */
 export type SelectionFocusDirection = "next" | "prev" | "first" | "last";
 
-/**
- * Pure next-focus math for the selection strip: step the focus index by one member (wrapping), or
- * jump to an end. `-1` (no focus) steps to the first/last member. Returns `-1` for an empty selection.
- */
 export function moveSelectionFocus(count: number, current: number, dir: SelectionFocusDirection): number {
   if (count <= 0) return -1;
   if (dir === "first") return 0;
@@ -138,7 +105,6 @@ export function moveSelectionFocus(count: number, current: number, dir: Selectio
   return (current - 1 + count) % count;
 }
 
-/** A contiguous slice of members for virtualizing a large selection strip. */
 export interface SelectionWindow {
   start: number;
   end: number;

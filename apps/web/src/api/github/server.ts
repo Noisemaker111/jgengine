@@ -12,7 +12,6 @@ const RESPONSE_HEADERS = {
   "Cache-Control": "public, max-age=600",
 };
 
-/** Thrown by resolveContributions when the user does not exist (→ 404). */
 export class GitHubUserNotFoundError extends Error {}
 
 interface GraphQLDay {
@@ -125,15 +124,10 @@ async function fetchViaScrape(user: string): Promise<ContributionsWire> {
   };
 }
 
-/** Server-side: fetch a user's contribution calendar via GraphQL (with token) or HTML scrape. */
 export function resolveContributions(user: string, options: { token?: string | undefined } = {}): Promise<ContributionsWire> {
   return options.token ? fetchViaGraphQL(user, options.token) : fetchViaScrape(user);
 }
 
-/**
- * Turnkey proxy handler — mount at any route in any Web-`Response` server (Nitro,
- * workers, Deno). Reads `?user=`, validates, proxies GitHub, returns JSON + CORS.
- */
 export function githubContributionsHandler(options: { token?: string | undefined } = {}): (request: Request) => Promise<Response> {
   return async (request) => {
     const user = new URL(request.url).searchParams.get("user");
@@ -150,7 +144,6 @@ export function githubContributionsHandler(options: { token?: string | undefined
 }
 
 export interface GitHubProxyOptions {
-  /** Server-side token; forwarded as `Authorization: Bearer` so private/authed reads work. */
   token?: string | undefined;
   /**
    * REST path allowlist — return true to forward a `?path=` GET. Every path is

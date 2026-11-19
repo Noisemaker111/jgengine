@@ -48,13 +48,11 @@ import {
 import { placedObjectsNear } from "./worldObjects";
 import { activeTrainingSessionsForGame } from "./training";
 
-
 export const requireGameId = (val?: Id<"games">): Id<"games"> => {
   if (!val) throw new Error("Missing gameId on migrated record");
   return val;
 };
 
-// --- World lifecycle (game session create/delete/bootstrap) ---
 // Bootstrap: 0 data tokens + enough money for 2-slot rack + 2 cheapest GPUs + license for scraper model.
 // Allocate to scraping with the licensed cheap model → farm data tokens (uses TFLOPs + power).
 // Use tokens to serve your own closed/owned models → earn money.
@@ -131,7 +129,6 @@ async function createWorld(ctx: MutationCtx, externalId: string): Promise<Id<"ga
   return gameId;
 }
 
-/** Child rows per game; order does not matter for deletion. */
 const WORLD_GRAPH_TABLES = [
   "datacenterClaims",
   "models",
@@ -140,7 +137,6 @@ const WORLD_GRAPH_TABLES = [
   "hostedModels",
 ] as const;
 
-/** Pre-release: clear all gameplay rows (dev/prod resets). */
 export const wipeAllGameplayData = internalMutation({
   args: {},
   returns: v.object({ gamesDeleted: v.number() }),
@@ -295,10 +291,6 @@ function enqueueWorldGraphDelete(
 /** Child rows a reset world starts without; the game row itself survives so the player keeps their lab id. */
 const INSOLVENCY_RESET_TABLES = ["models", "events", "bills", "hostedModels"] as const;
 
-/**
- * Insolvency of last resort: everything the lab built is sold off and the world restarts from the
- * bootstrap state on the same game id.
- */
 export async function resetWorldForInsolvency(ctx: MutationCtx, gameId: Id<"games">): Promise<boolean> {
   const game = await ctx.db.get(gameId);
   if (!game?.createdBy) return false;
@@ -433,7 +425,6 @@ export const setTutorialProgress = mutation({
   },
 });
 
-// --- Events (mirroring real AI/LLM discourse) ---
 async function trySpawnCozyEventForWorld(ctx: MutationCtx, gameId: Id<"games">) {
   const game = await ctx.db.get(gameId);
   if (!game) return null;
@@ -512,7 +503,6 @@ export const resolveEvent = mutation({
   },
 });
 
-// --- Read-model (world state queries) ---
 export const state = query({
   args: { gameId: v.id("games") },
   handler: async (ctx, args) => {
@@ -595,7 +585,6 @@ export const scene = query({
   },
 });
 
-/** Every rack and placed build item in the chunks around the viewer, with its owning player. */
 export const worldScene = query({
   args: { x: v.number(), z: v.number(), radius: v.optional(v.number()) },
   handler: async (ctx, args) => {

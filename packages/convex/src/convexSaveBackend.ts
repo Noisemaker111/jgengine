@@ -12,7 +12,6 @@ export interface ConvexSaveFunctions {
   remove: FunctionReference<"mutation", "public", { key: string }, unknown>;
 }
 
-/** Default `saves.read` / `saves.keys` / `saves.write` / `saves.remove` refs for apps that follow the convention — pass your own `functions` to override. */
 export function defaultConvexSaveFunctions(): ConvexSaveFunctions {
   return (anyApi as unknown as { saves: ConvexSaveFunctions }).saves;
 }
@@ -22,7 +21,6 @@ export interface ConvexSaveBackendOptions {
   client: ConvexReactClient;
   /** The read/keys/write/remove function refs; defaults to the `saves.*` convention. */
   functions?: ConvexSaveFunctions;
-  /** Prefix every key so multiple games or users can share one `saves` table. */
   namespace?: string;
 }
 

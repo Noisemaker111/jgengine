@@ -8,7 +8,6 @@ const SOURCES = import.meta.glob("../../../../.claude/skills/*/capabilities.md",
 
 const skillOf = (path: string) => /skills\/([^/]+)\/capabilities\.md$/.exec(path)?.[1] ?? "unknown";
 
-/** Skill ids in reading order, each with a human label. */
 export const SKILL_DOMAINS: readonly { id: string; label: string; blurb: string }[] = [
   { id: "jgengine", label: "Foundation", blurb: "Game definition, runtime, stores, hosting." },
   { id: "jgengine-world", label: "World", blurb: "Terrain, cities, vehicles, AI, physics, cameras." },
@@ -25,14 +24,12 @@ const skillRank = (skill: string) => {
   return rank === -1 ? SKILL_DOMAINS.length : rank;
 };
 
-/** Every intent row across the shipped skills' generated capability indexes, in skill reading order. */
 export const CAPABILITIES: readonly Capability[] = Object.entries(SOURCES)
   .flatMap(([path, markdown]) => parseCapabilityIndex(markdown, skillOf(path)))
   .sort((a, b) => skillRank(a.skill) - skillRank(b.skill));
 
 const BY_REF = new Map(CAPABILITIES.map((row) => [`${row.skill}/${row.key}`, row]));
 
-/** Looks up a `skill/intent-key` reference; undefined only if the index drifted (the test catches that). */
 export function capability(ref: string): Capability | undefined {
   return BY_REF.get(ref);
 }

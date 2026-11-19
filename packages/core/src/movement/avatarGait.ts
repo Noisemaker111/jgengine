@@ -1,10 +1,8 @@
 // @skill jgengine-world
 export interface GaitTuning {
-  /** Stride cycles per world unit travelled — ties step cadence to actual speed. */
   stridesPerUnit: number;
   bobAmplitude: number;
   swayAmplitude: number;
-  /** Speed at which bob/sway reach full intensity. */
   fullIntensitySpeed: number;
 }
 
@@ -28,7 +26,6 @@ function gaitIntensity(speedUnitsPerSec: number, tuning: GaitTuning): number {
   return Math.min(1, Math.max(0, speedUnitsPerSec / tuning.fullIntensitySpeed));
 }
 
-/** Vertical hop per footfall — two peaks per stride cycle. */
 export function gaitBobOffset(
   phase: number,
   speedUnitsPerSec: number,
@@ -37,7 +34,6 @@ export function gaitBobOffset(
   return Math.abs(Math.sin(phase)) * tuning.bobAmplitude * gaitIntensity(speedUnitsPerSec, tuning);
 }
 
-/** Signed side-to-side lean alternating with each footfall. */
 export function gaitSwayAngle(
   phase: number,
   speedUnitsPerSec: number,

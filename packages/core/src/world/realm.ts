@@ -1,7 +1,6 @@
 import { createEnvironmentField, type EnvironmentField, type EnvironmentFieldConfig } from "./envField";
 import type { WeatherState } from "@jgengine/core/weather/weather";
 
-/** The recomposable environment parameters a realm card can override. */
 export interface RealmEnvironmentParams {
   baseTemperature: number;
   nightDrop: number;
@@ -23,7 +22,6 @@ export const DEFAULT_REALM_ENVIRONMENT: RealmEnvironmentParams = {
   ambientFloor: 0.05,
 };
 
-/** Spawn-table edits a card layers on: replace weights, add/scale, or remove ids. */
 export interface SpawnTableOverride {
   set?: Record<string, number>;
   add?: Record<string, number>;
@@ -33,13 +31,9 @@ export interface SpawnTableOverride {
 
 export interface RealmCard {
   id: string;
-  /** A major card sets the biome base; minors layer weather/day-length/aesthetic on top. */
   kind: "major" | "minor";
-  /** Environment param overrides (last write wins across the ordered deck). */
   environment?: Partial<RealmEnvironmentParams>;
-  /** Weather state overrides (kind/intensity/wind). */
   weather?: Partial<WeatherState>;
-  /** Spawn-table edits applied in deck order. */
   spawn?: SpawnTableOverride;
   /** Opaque aesthetic tag (skybox, palette) the renderer maps — engine never inspects it. */
   aesthetic?: string;
@@ -57,10 +51,6 @@ export interface ComposedRealm {
   spawnTable: Record<string, number>;
   aesthetics: readonly string[];
   cards: readonly RealmCard[];
-  /**
-   * Build an environment field (#91) from the composed params, wired to the composed
-   * weather's rain intensity. Extra config (terrain, occluders, heat sources) merges on top.
-   */
   environmentField(extra?: Omit<EnvironmentFieldConfig, "baseTemperature" | "nightDrop" | "altitudeLapse" | "dayLength" | "rain" | "ambientFloor">): EnvironmentField;
 }
 
@@ -72,14 +62,6 @@ function applySpawn(table: Record<string, number>, override: SpawnTableOverride 
   if (override.remove !== undefined) for (const id of override.remove) delete table[id];
 }
 
-/**
- * Assemble a played realm instance at runtime from a deck of modifier cards — the
- * Nightingale "realm card" model. A major card is the biome base; minor cards layer
- * weather, day length, and spawn edits. The result recomposes both the environment
- * (into a sampleable field via `environmentField()`) and the spawn table, and it depends
- * on the weather hooks in this group (#92) to turn its `weather` into gameplay modifiers.
- * Cards apply in array order; sort your deck (majors first) before composing.
- */
 export function composeRealm(base: RealmBase, cards: readonly RealmCard[]): ComposedRealm {
   const params: RealmEnvironmentParams = { ...DEFAULT_REALM_ENVIRONMENT, ...base.environment };
   let weather: WeatherState = base.weather ?? { kind: "clear", intensity: 0 };

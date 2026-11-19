@@ -63,7 +63,6 @@ export function earn(ctx: GameContext, amount: number, reason: CashReason, ref?:
   booksOf(ctx).track(reason, () => ctx.game.economy.grant(ctx.player.userId, CASH, amount), ref);
 }
 
-/** Spend cash if the wallet covers it, journaling the purchase. Returns false without moving anything. */
 export function spend(ctx: GameContext, amount: number, reason: CashReason, ref?: string): boolean {
   if (!Number.isFinite(amount) || amount <= 0) return true;
   return booksOf(ctx).track(reason, () => ctx.game.economy.charge(ctx.player.userId, CASH, amount) === null, ref);
@@ -99,7 +98,6 @@ export function ledgerState(ctx: GameContext): LedgerState {
   return booksOf(ctx).snapshot();
 }
 
-/** Restore a saved journal and square it to the wallet the world snapshot already restored. */
 export function restoreLedger(ctx: GameContext, state: LedgerState): void {
   booksOf(ctx).restore(state);
 }
@@ -113,7 +111,6 @@ export function openBooks(ctx: GameContext): void {
   booksOf(ctx).square();
 }
 
-/** How many journal entries the ledger holds - a test reads this to prove a movement posted. */
 export function ledgerEntryCount(ctx: GameContext): number {
   return booksOf(ctx).ledger.stats().entries;
 }

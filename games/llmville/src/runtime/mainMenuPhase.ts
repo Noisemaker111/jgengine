@@ -1,16 +1,9 @@
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 
-/** Minimal shape the main menu needs from `getUserWorld`. */
 export interface MenuWorld {
   _id: Id<"games">;
 }
 
-/**
- * The single source of truth for the main-menu primary action.
- *
- * Everything the menu renders derives from this one value, so there is no
- * juggling of separate "loading" / "has world" booleans in the component.
- */
 export const MAIN_MENU_KIND = {
   loading: "loading",
   new: "new",

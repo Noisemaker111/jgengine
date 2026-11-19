@@ -95,8 +95,6 @@ const RACE_ASPHALT = new THREE.Color("#1a1c20");
 const RACE_EDGE = new THREE.Color("#d8d4c8");
 const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a", courtyard: "#6a655c", buffer: "#63734a" } as const;
 const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
-/** Block-interior ground by zone band. A dense district keeps hard surface all the way to its rim;
- *  only a low-density (large-block) district lets the edge band go back to lawn. */
 const BLOCK_SURFACE_COLORS: Record<CityZoneBand, string> = { core: "#5b5850", mid: "#6c6456", edge: "#78765c" };
 const BLOCK_EDGE_GREEN = "#6a7f4a";
 /** Width (m) over which the developed ground fades out at its outer reach, so it has no stamped rim. */
@@ -126,14 +124,12 @@ const DRIVEWAY_LAYER = 0.34;
 const PARKING_LAYER = 0.35;
 const PLAZA_LAYER = 0.36;
 const CROP_LAYER = 0.42;
-/** Gravel footpaths across greens and courtyards (laid on the crop layer, above the park fill). */
 const PARK_PATH_COLOR = "#b9a984";
 const PARK_PATH_WIDTH = 2.4;
 const RACE_SURFACE_LAYER = 0.28;
 const RACE_PAINT_LAYER = 0.3;
 const BRIDGE_DECK_LIFT = 0.12;
 
-/** Ground meshes bottom layer first; the index is each mesh's `renderOrder`, so blended layers draw under the ones above. */
 const GROUND_LAYERS = [
   "urban",
   "asphalt",
@@ -151,17 +147,11 @@ const GROUND_LAYERS = [
 ] as const;
 type GroundLayer = (typeof GROUND_LAYERS)[number];
 
-/** Compact carriageway-union — same seam as StreetGeometryPreview and playground `cityScene`. */
 const JUNCTION_OPTS = { curbReturnRadius: 2, apronMargin: 0.25, filletSegments: 6, elevation: ROAD_LAYER, maxSegmentLength: 2 };
 
 const SPECIES_PROXY: Record<CityTreeSpecies, string> = { broadleaf: "oak", conifer: "pine", palm: "palm", cypress: "cypress" };
 const SPECIES_SCALE: Record<CityTreeSpecies, number> = { broadleaf: 2.7, conifer: 2.5, palm: 2.6, cypress: 2.3 };
 
-/**
- * Three boxes per parked vehicle: painted body, an inset dark glass volume, and a narrower roof cap
- * that gives the silhouette a taper. Sizes are `[across, up, along the heading]`; each `*Y` is the
- * box centre above the surface the vehicle stands on, each `*Along` its shift down the body.
- */
 interface VehicleShape {
   body: readonly [number, number, number];
   bodyY: number;
@@ -181,7 +171,6 @@ const VEHICLE_SHAPES: Record<CityVehicleKind, VehicleShape> = {
 
 type Sampler = (x: number, z: number) => number;
 
-/** Accumulates draped ribbons, patches, discs, and quads into one merged (optionally colored) buffer. */
 class MeshAccumulator {
   positions: number[] = [];
   indices: number[] = [];
@@ -214,7 +203,6 @@ class MeshAccumulator {
     this.pushColor(ribbon.positions.length / 3, color);
   }
 
-  /** A ground-draped rotated rectangle, grid-subdivided so large patches follow the relief. */
   addPatch(
     center: RoadPoint,
     size: readonly [number, number],
@@ -262,7 +250,6 @@ class MeshAccumulator {
     this.pushColor(segments + 2, color);
   }
 
-  /** A ground-draped polygon patch: ear-clipped, one terrain sample per ring vertex. */
   addPolygon(ring: readonly RoadPoint[], sample: Sampler, elevation: number, color: THREE.Color | null = null): void {
     const { positions, indices } = triangulatePolygon(ring);
     if (indices.length === 0) return;
@@ -272,7 +259,6 @@ class MeshAccumulator {
     this.pushColor(positions.length, color);
   }
 
-  /** A ground-draped band between two nested rings (curb outer, land inner) — the sidewalk. */
   addRingBand(outer: readonly RoadPoint[], inner: readonly RoadPoint[], sample: Sampler, elevation: number, color: THREE.Color | null = null): void {
     const { positions, indices } = triangulateRingBand(outer, inner);
     if (indices.length === 0) return;
@@ -282,7 +268,6 @@ class MeshAccumulator {
     this.pushColor(positions.length, color);
   }
 
-  /** A vertical skirt around a closed ring — the curb face between carriageway and sidewalk. */
   addRingWall(
     ring: readonly RoadPoint[],
     sample: Sampler,
@@ -314,7 +299,6 @@ class MeshAccumulator {
     return geometry;
   }
 
-  /** Flat draped quad in XZ, already lifted: corners in order around the face. */
   addQuad(corners: readonly (readonly [number, number, number])[], color: THREE.Color): void {
     if (this.colors === null) return;
     const base = this.positions.length / 3;
@@ -323,7 +307,6 @@ class MeshAccumulator {
     this.pushColor(4, color);
   }
 
-  /** Standing barrier brick: a box extruded along `across` and `forward`, striped by the caller. */
   addSealBlock(
     x: number,
     z: number,
@@ -364,7 +347,6 @@ class MeshAccumulator {
   }
 }
 
-/** Split a polyline into runs that keep `pad` clearance from every intersection disc. */
 function clipPolylineAtIntersections(
   points: readonly RoadPoint[],
   intersections: readonly CityIntersection[],
@@ -408,7 +390,6 @@ let unitGeometryCache: {
   dome: THREE.SphereGeometry;
 } | null = null;
 
-/** Unit hipped roof: a 1×1 base at y=0, its ridge along x at y=1 running half the length. */
 function unitHip(): THREE.BufferGeometry {
   const A = [-0.5, 0, 0.5];
   const B = [0.5, 0, 0.5];
@@ -423,7 +404,6 @@ function unitHip(): THREE.BufferGeometry {
   return geometry;
 }
 
-/** Unit massing primitives shared by every district: box, gable prism (ridge along X), cylinder, dome. */
 function unitGeometries() {
   if (unitGeometryCache !== null) return unitGeometryCache;
   const box = new THREE.BoxGeometry(1, 1, 1);
@@ -498,7 +478,6 @@ function DetailBuildings({
   return <InstancedBuildings buildings={placements} palette={detailPalette} {...(kit === undefined ? {} : { kit })} />;
 }
 
-/** The district pieces the merged ground/bridge/tunnel draw assembles; identities trigger rebuilds. */
 interface CityDistrictSnapshot {
   ground: Record<GroundLayer, THREE.BufferGeometry | null> | null;
   groundMaterials: Record<GroundLayer, THREE.MeshStandardMaterial>;
@@ -586,7 +565,6 @@ function cityDistrictDraw(getSnapshot: () => CityDistrictSnapshot): EngineDraw {
   };
 }
 
-/** One authored city volume → the full merged/instanced district. */
 function OneCity({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
   const field = context.field;
   const sample = useMemo(() => (x: number, z: number) => field.sampleHeight(x, z), [field]);
@@ -614,7 +592,6 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   );
   const palette = useMemo(() => resolveBuildingPalette(resolved?.rules.style ?? "generic"), [resolved]);
 
-  // --- Camera-coarse LOD cell: re-pick detail lots only when the camera crosses a 28 m cell. ---
   const [detailKey, setDetailKey] = useState("");
   const cameraRef = useRef<[number, number]>([0, 0]);
   const cellRef = useRef("");
@@ -681,7 +658,6 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     return { ids, buildings };
   }, [resolved, detailKey, sample]);
 
-  // --- Massing: five instanced primitive draws over every lot's pieces (minus detail-LOD lots). ---
   const massing = useMemo(() => {
     if (resolved === null || resolved.lots.length === 0) return null;
     const units = unitGeometries();
@@ -818,7 +794,6 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     [massing],
   );
 
-  // --- Ground network: roads by surface, sidewalks, medians, patches, markings, driveways, parks. ---
   const ground = useMemo(() => {
     if (resolved === null || resolved.streets.length === 0) return null;
     const asphalt = new MeshAccumulator(true);
@@ -1252,7 +1227,6 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     [ground],
   );
 
-  // --- Bridges: styled decks, railings/trusses, piers and abutments. ---
   const bridges = useMemo(() => {
     if (resolved === null || resolved.bridges.length === 0) return null;
     const decks = new MeshAccumulator();
@@ -1358,7 +1332,6 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   }, [resolved, sample]);
   useEffect(() => () => bridges?.deck?.dispose(), [bridges]);
 
-  // --- Tunnels: a bore roof over the road, side walls, and portal lintels at each mouth. ---
   const tunnels = useMemo(() => {
     if (resolved === null || resolved.tunnels.length === 0) return null;
     const roofs = new MeshAccumulator();
@@ -1405,7 +1378,6 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   }, [resolved, sample]);
   useEffect(() => () => tunnels?.roof?.dispose(), [tunnels]);
 
-  // --- Instanced furniture: trees per species, street lights, hedges, parked cars, junction signals. ---
   const furniture = useMemo(() => {
     if (resolved === null) return null;
     const meshes: THREE.Object3D[] = [];

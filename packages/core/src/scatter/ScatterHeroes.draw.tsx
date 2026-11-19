@@ -17,13 +17,11 @@ import { scatterPlacementVariant, type ScatterGeneratorItem } from "./scatterGen
 /** Seconds between hero picks; the camera moving this far (m) picks again sooner. */
 const PICK_INTERVAL_S = 0.25;
 const PICK_MOVE_M = 2;
-/** Hero meshes being grown at once; the rest wait their turn, nearest first. */
 const GROWING_AT_ONCE = 4;
 /** Seconds between hand-overs of the shown set to the stand-in field. */
 const SHOW_INTERVAL_S = 0.5;
 const SMALL_SHADOW_RADIUS = 0.6;
 
-/** A hero's world placement in the shared batches. Heroes name no scene object, so picking reports none. */
 interface HeroPlacement extends PooledPlacement {
   readonly matrix: THREE.Matrix4;
 }
@@ -32,11 +30,7 @@ const NO_PLACEMENTS: readonly HeroPlacement[] = [];
 const heroSlotOf = (): number => 0;
 const heroMatrixOf = (placement: HeroPlacement, out: THREE.Matrix4): THREE.Matrix4 => out.copy(placement.matrix);
 
-/**
- * One grown hero: the parts the shared static batches took, one instance each, and the parts they
- * could not (a see-through or custom-shader material) as meshes under `group`. Hidden until shown.
- * @internal
- */
+/** @internal */
 export interface HeroMesh {
   readonly group: THREE.Group;
   readonly slots: readonly StaticDrawSlot[];
@@ -78,25 +72,23 @@ export function placeHero(pool: StaticDrawPool, sources: readonly GeneratorMeshS
   return { group, slots, placement, geometries };
 }
 
-/** Show or hide a placed hero in every draw it is part of. @internal */
+/** @internal */
 export function showHero(hero: HeroMesh, shown: boolean): void {
   hero.group.visible = shown;
   for (const slot of hero.slots) slot.sync(shown ? [hero.placement] : NO_PLACEMENTS, heroSlotOf, heroMatrixOf);
 }
 
-/** Take a hero out of its batches and free the geometry it was grown with. @internal */
+/** @internal */
 export function dropHero(hero: HeroMesh): void {
   for (const slot of hero.slots) slot.release();
   hero.group.removeFromParent();
   for (const geometry of hero.geometries) geometry.dispose();
 }
 
-/** Props for {@link ScatterHeroes}. */
 export interface ScatterHeroesProps {
   item: string;
   definition: GeneratorDefinition;
   spec: ScatterGeneratorItem;
-  /** Every placement of the species, shown or not. */
   instances: readonly ScatterInstance[];
   /** Called with the placements drawn as their own mesh, so the field hides their stand-ins. */
   onShown: (shown: ReadonlySet<string>) => void;

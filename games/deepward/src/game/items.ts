@@ -6,7 +6,6 @@ import { validateLootItem, type LootBaseDef, type LootCatalog, type LootComparis
 import type { SalvageTable } from "@jgengine/core/loot/salvage";
 import { salvageValue } from "@jgengine/core/loot/salvage";
 
-/** A Deepward item is a rolled drop: its kind is its base, and its number is the level of the room it came from. */
 export type ItemKind = "wire" | "polymer" | "cells" | "ink" | "service-rifle";
 export interface ItemKindDef { name: string; maker: string; rarity: string; found: string; w: number; h: number; color: string; detail: string }
 /** How rare the kind of thing is to find at all; the roll's own rarity is the second axis. */
@@ -19,13 +18,11 @@ export const ITEMS: Record<ItemKind, ItemKindDef> = {
 };
 export type Item = ItemDrop;
 
-/** The kind behind a rolled item; every saved item's base is one of Deepward's five. */
 export function kindOf(item: Pick<LootItem, "baseId">): ItemKind {
   if (!Object.hasOwn(ITEMS, item.baseId)) throw new Error(`deepward: unknown item base "${item.baseId}"`);
   return item.baseId as ItemKind;
 }
 
-/** The five-tier ladder from the design; rarity owns how many affixes a roll carries. */
 export const RARITIES: readonly RarityTier[] = [
   { id: "common", at: 0, weight: 46, affixCount: 0 },
   { id: "uncommon", at: 1, weight: 30, affixCount: 1, statScale: 1.08, namePart: "Tuned" },
@@ -34,10 +31,6 @@ export const RARITIES: readonly RarityTier[] = [
   { id: "legendary", at: 4, weight: 2, affixCount: 4, statScale: 1.45, namePart: "Prime" },
 ];
 
-/**
- * Authored pools. Weight is the shared pick weight: a heavier affix lands more often, and a
- * manufacturer that favors a pool multiplies it. Every affix id is unique across the catalog.
- */
 const POOLS: readonly AffixPool[] = [
   {
     id: "supply",
@@ -72,7 +65,6 @@ const MANUFACTURERS: readonly LootManufacturerDef[] = [
   { id: "kessler", name: "Kessler", bases: ["service-rifle"], favoredPools: ["kessler"] },
 ];
 
-/** Every Deepward item roll reads this one table; {@link ITEM_LOOT} checks it at module load. */
 export const ITEM_CATALOG: LootCatalog = {
   bases: BASES,
   parts: [],
@@ -82,11 +74,9 @@ export const ITEM_CATALOG: LootCatalog = {
   levelScale: [[1, 1], [4, 1.28], [8, 1.55], [12, 1.9]],
 };
 
-/** Deepward's item rolls as a loot generator; a bad catalog entry throws here, at module load. */
 export const ITEM_LOOT = defineLootGenerator({ id: "deepward.items", label: "Deepward items", catalog: ITEM_CATALOG, defaults: { count: 1 } });
 registerGenerator(ITEM_LOOT);
 
-/** Item level is the depth of the room it was found in, and the same seed always rolls the same item. */
 export function rollItem(kind: ItemKind, level: number, seed: string, id: string): Item {
   const [item] = runGenerator(ITEM_LOOT, { seed, count: 1, level: Math.min(12, Math.max(1, Math.round(level))), base: kind }, { fallbackSeed: seed });
   if (item === undefined) throw new Error(`deepward: no item rolled for "${kind}"`);
@@ -112,14 +102,12 @@ export function weaponStats(item: Item): { damage: number; interval: number; ran
   };
 }
 
-/** How a candidate reads against the prepared rifle: damage, rate and counter value. */
 export const COMPARE_OPTIONS: LootComparisonOptions = { weights: { damage: 1, rate: 30, value: 0.02 } };
 
 export function compareToPrepared(candidate: Item, equipped: Item | null): EquippedComparison {
   return compareToEquipped(candidate, equipped, COMPARE_OPTIONS);
 }
 
-/** What the counter pays for breaking an item down: level × rate × rarity, floored. */
 export const BREAKDOWN: SalvageTable = {
   currency: "scrip",
   perLevel: 6,
@@ -137,7 +125,6 @@ export function itemIssues(item: LootItem): string[] {
   return validateLootItem(item, ITEM_CATALOG).map(issue => `${issue.code}: ${issue.detail}`);
 }
 
-/** The stat lines the counter and cache print, in a stable order. */
 export function statLines(item: Item): { stat: string; label: string; value: number; unit: string; digits: number }[] {
   const label: Record<string, { label: string; unit: string; digits: number }> = {
     damage: { label: "Damage", unit: "", digits: 0 },

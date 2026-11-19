@@ -18,7 +18,6 @@ import { npcDialogStore } from "../src/game/quests/givers";
 export const STATES = ["title", "credits", "hud", "paused", "settings", "talents", "vendor", "npc", "overdrive", "overdrive-run", "dead-air", "downed", "vault", "travel", "market"] as const;
 export type NativeFixture = (typeof STATES)[number];
 
-/** The real GameUI over a headless play of the real game, staged by its own capture commands. */
 export async function runeUiFixture(state: NativeFixture, width = 1280, height = 720) {
   const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   const memory = new Map<string, string>();

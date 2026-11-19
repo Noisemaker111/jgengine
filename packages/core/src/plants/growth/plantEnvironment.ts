@@ -5,13 +5,11 @@ export interface PlantEnvironment {
   latitude: number;
   /** Open-sky fraction reaching the plant, 0..1 (0.2 under a closed canopy). */
   light: number;
-  /** Plant-available soil water, 0 wilting point .. 1 field capacity. */
   soilWater: number;
   /** Soil fertility rating, 0..1. */
   nutrients: number;
   /** Added fertility, 0..1, on top of `nutrients`. */
   fertilizer: number;
-  /** Annual mean air temperature, °C. */
   temperatureC: number;
   /** Half the gap between the warmest and coldest month means, °C. Defaults to 13. */
   seasonalRangeC?: number;
@@ -29,17 +27,10 @@ export interface PlantEnvironment {
   sideLight?: number;
 }
 
-/** Closest spacing index a stand is grown at; closer than this a stand self-thins (Hart–Becking). */
 export const MIN_STAND_SPACING_INDEX = 0.15;
 
-/**
- * Share of an overcast sky's light that reaches a randomly oriented leaf from more than 45° off the
- * zenith: with sky radiance ∝ 1 + 2 cos θ (Moon & Spencer 1942, the CIE standard overcast sky) it is
- * (cos 45° + cos² 45°) / 2 ≈ 0.6. The shadow cone covers the light from within 45° of the zenith.
- */
 export const SIDE_LIGHT_SHARE = 0.6;
 
-/** A temperate, well-watered, fertile open site at 45° N: the site Carmean's curves describe. */
 export const OPEN_TEMPERATE_SITE: PlantEnvironment = {
   latitude: 45,
   light: 1,

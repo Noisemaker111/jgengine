@@ -80,7 +80,6 @@ function gameEntry(gameDir: string): string {
   return usage(`no game entry in ${gameDir} (expected package.json exports "." or src/index.tsx)`);
 }
 
-/** `@jgengine/<pkg>` and `@jgengine/<pkg>/<sub>` resolved to this checkout's TypeScript source. */
 function enginePaths(): Record<string, string[]> {
   const packagesDir = join(repoRoot, "packages");
   const packages = ["assets", "convex", "core", "editor", "navbake", "node", "rapier", "ui", "shell", "sql", "ws"];
@@ -95,7 +94,6 @@ function enginePaths(): Record<string, string[]> {
   return paths;
 }
 
-/** The game's own tsconfig `paths`, resolved against its baseUrl so `@/...` keeps working under the override. */
 function gamePaths(gameDir: string): { baseUrl: string; paths: Record<string, string[]> } {
   const configPath = join(gameDir, "tsconfig.json");
   if (!existsSync(configPath)) return { baseUrl: gameDir, paths: {} };
@@ -110,7 +108,6 @@ function gamePaths(gameDir: string): { baseUrl: string; paths: Record<string, st
   return { baseUrl, paths };
 }
 
-/** First process: build the merged tsconfig, re-run this script under it, and clean up. */
 function relaunchWithMergedTsconfig(gameDir: string): never {
   const { baseUrl, paths } = gamePaths(gameDir);
   const dir = mkdtempSync(join(tmpdir(), "jg-simulate-"));

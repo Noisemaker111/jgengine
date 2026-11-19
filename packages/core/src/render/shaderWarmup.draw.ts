@@ -27,9 +27,7 @@ import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
  */
 export interface ShaderWarmupState {
   phase: "waiting" | "compiling" | "ready" | "failed";
-  /** Compile rounds finished. One round covers one burst of streamed models. */
   rounds: number;
-  /** Shader programs the renderer has initialised, as of the last round. */
   programs: number;
   /** Drawables the first frame can reach; these are compiled before the first frame is shown. */
   planned: number;
@@ -40,32 +38,23 @@ export interface ShaderWarmupState {
   elapsedMs: number;
 }
 
-/** The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it. */
 export interface ShaderWarmupRenderer {
-  /** Links every mounted material's program; returns the materials it prepared. Lights come from `targetScene` when given. */
   compile(scene: Object3D, camera: Camera, targetScene?: Scene): unknown;
   /** Whether the shadow pass runs, which draws casters with depth materials the scene never holds. */
   readonly shadowMap?: { readonly enabled?: boolean; autoUpdate?: boolean | undefined; needsUpdate?: boolean | undefined };
-  /** Renderer program list; each entry answers `isReady()` once the driver finishes its link. */
   readonly info?: { readonly programs?: readonly unknown[] | null };
-  /** The render target currently bound, if any; three builds different programs for a target. */
   getRenderTarget?(): unknown;
-  /** Bind a render target, or `null` for the canvas. */
   setRenderTarget?(target: unknown | null): void;
-  /** The GL context, for the fence that tells when the GPU has run a batch's compiles. */
   getContext?(): unknown;
   /**
    * Draws a scene: the warmup draws each linked program once while covered, because some drivers
    * (ANGLE on Direct3D) finish a program only at its first draw, for that draw's vertex layout.
    */
   render?(scene: Object3D, camera: Camera): unknown;
-  /** Sends a texture to the GPU now, as its first draw would. */
   initTexture?(texture: never): void;
-  /** Three's per-material record; `currentProgram` is the program the material was last linked to. */
   readonly properties?: { get(material: object): unknown };
 }
 
-/** A renderer program's completion check, which three keeps off its public type. */
 interface ReadyProgram {
   isReady?(): boolean;
 }
@@ -78,11 +67,6 @@ function programReady(program: unknown): boolean {
   }
 }
 
-/**
- * Ask a linked program for its uniforms and attributes now. three does it at the program's first
- * draw with queries that wait for the GPU to work through everything queued before them, which
- * mid-load is texture uploads and other links; asked right after a fence, the queue is empty.
- */
 function firstUse(program: unknown): void {
   try {
     const known = program as { getUniforms?(): unknown; getAttributes?(): unknown };
@@ -93,7 +77,6 @@ function firstUse(program: unknown): void {
   }
 }
 
-/** A scene node that can be drawn: the renderer reads a material and geometry off it. */
 type Drawable = Object3D & {
   material?: unknown;
   geometry?: BufferGeometry;
@@ -126,10 +109,8 @@ export function firstUnlinkedDrawable(renderer: Pick<ShaderWarmupRenderer, "prop
   return found;
 }
 
-/** The kind of object a program is built for: plain, skinned, instanced, batched. */
 type Variant = number;
 
-/** What three records on a material about the object its current program was built for. */
 interface MaterialKind {
   skinning?: boolean;
   instancing?: boolean;
@@ -145,13 +126,11 @@ function variantOfProgram(properties: MaterialKind): Variant {
   return (properties.skinning === true ? 1 : 0) | (properties.instancing === true ? 2 : 0) | (properties.batching === true ? 4 : 0);
 }
 
-/** Whether a material is one a shadow pass draws with: a depth material, or a point light's distance one. */
 function isShadowMaterial(material: Material, only?: "distance"): boolean {
   const kind = material as { isMeshDepthMaterial?: boolean; isMeshDistanceMaterial?: boolean };
   return kind.isMeshDistanceMaterial === true || (only === undefined && kind.isMeshDepthMaterial === true);
 }
 
-/** Whether a drawable's programs are ready to draw, still building, or not started (`missing`). */
 function linkState(properties: { get(material: object): unknown }, object: Drawable): "linked" | "building" | "missing" {
   let state: "linked" | "building" | "missing" = "linked";
   for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
@@ -191,10 +170,8 @@ export function deferUnlinkedDraws(
   let at = 0;
   let leftOut = false;
   const missing = new Map<Material, Map<Drawable, Variant>>();
-  /** The object kinds each material has a ready program for, and links started but not yet ready. */
   const linkedKinds = new WeakMap<Material, Set<Variant>>();
   let linking: { material: Material; variant: Variant; program: unknown }[] = [];
-  /** The kinds of shadow pass the frames draw (directional or spot depth, point distance), read off their draws. */
   const shadowKinds = new Set<"z" | "d">();
   const shadowStandIns = new Map<string, Material>();
   let shadowTarget: WebGLRenderTarget | undefined;
@@ -222,11 +199,6 @@ export function deferUnlinkedDraws(
     if (kinds === undefined) linkedKinds.set(material, new Set([variant]));
     else kinds.add(variant);
   };
-  /**
-   * Whether `material` has a ready program for drawing `object`. One material serves objects of
-   * several kinds (the shadow pass draws plain, skinned and instanced casters with the same depth
-   * material), each its own program, and three keeps only the last one used as current.
-   */
   const drawState = (material: Material, object: Drawable): "linked" | "building" | "missing" => {
     const properties = renderer.properties.get(material) as (MaterialKind & { currentProgram?: unknown }) | undefined;
     const program = properties?.currentProgram;
@@ -239,7 +211,6 @@ export function deferUnlinkedDraws(
     }
     return linkedKinds.get(material)?.has(variant) === true ? "linked" : "missing";
   };
-  /** Whether this draw is of something still linking; such a draw is left out of the frame. */
   const leaveOut = (object: Object3D, material: Material | null): boolean => {
     // A pass's own full-screen quad is drawn without being in the scene; only the scene's drawables are deferred.
     if (object.parent === null || !isDrawable(object) || material == null || material.visible === false) return false;
@@ -334,7 +305,7 @@ export function deferUnlinkedDraws(
   };
 }
 
-/** Knobs for {@link planFirstFrame}; the defaults are what a normal load wants. @internal */
+/** @internal */
 export interface FirstFramePlanOptions {
   /** Bounding-sphere growth for the view test, so a prop just offscreen stays in the plan. */
   viewMargin?: number;
@@ -342,16 +313,9 @@ export interface FirstFramePlanOptions {
 
 /** Which drawables the first frame can reach, so the cover waits for those and no others. @internal */
 export interface FirstFramePlan {
-  /** Drawables the first frame shows: their own programs are compiled before it is shown. */
   objects: ReadonlySet<Object3D>;
-  /**
-   * Shadow casters outside the view: the first frame's shadow pass draws them, so their depth
-   * programs go with the first view's, and their lit programs follow with the rest.
-   */
   casters: ReadonlySet<Object3D>;
-  /** How many drawables the plan covers. */
   reachable: number;
-  /** Drawables outside the first frame's reach, for the background compile. */
   deferred: number;
 }
 
@@ -392,10 +356,6 @@ export function planFirstFrame(scene: Object3D, camera: Camera, options: FirstFr
   return { objects, casters, reachable: objects.size, deferred };
 }
 
-/**
- * The local sphere the renderer culls a drawable with: an instanced, batched or skinned mesh's
- * own sphere covers every instance or pose, where its geometry's covers only one.
- */
 function cullingSphere(object: Drawable): Sphere | null {
   const own = object as { boundingSphere?: Sphere | null; computeBoundingSphere?: () => void };
   if (own.boundingSphere !== undefined && typeof own.computeBoundingSphere === "function") {
@@ -528,7 +488,6 @@ export function drawSubset(renderer: ShaderWarmupRenderer, scene: Object3D, came
   }
 }
 
-/** The vertex layout a draw feeds a program: some drivers build a program per layout at its first draw. */
 function layoutKey(object: Drawable): string {
   const geometry = object.geometry;
   if (geometry === undefined) return "";
@@ -548,7 +507,6 @@ function programKey(object: Drawable): string {
   return `${materials}|${objectKey(object)}`;
 }
 
-/** The object-side switches of a drawable's program: kind, instancing, skinning, shadows, attributes. */
 function objectKey(object: Drawable): string {
   const flags = object as { isInstancedMesh?: boolean; isSkinnedMesh?: boolean; isPoints?: boolean; isLine?: boolean; isSprite?: boolean; isBatchedMesh?: boolean };
   const attributes = object.geometry?.attributes ?? {};
@@ -652,15 +610,11 @@ export async function gpuFence(gl: unknown, sleep: (ms: number) => Promise<void>
   }
 }
 
-/** A draw the hold swallowed: what it would have drawn, from where, into what, with what override. */
 export interface HeldDraw {
   object: Object3D;
   camera: Camera;
-  /** The render target bound at the call; `null` is the canvas. */
   target: unknown;
-  /** The scene's `overrideMaterial` at the call, which a pass such as an AO normal pass sets. */
   override: unknown;
-  /** The object's own material at the call; a full-screen quad swaps materials between passes. */
   material: unknown;
 }
 
@@ -703,19 +657,15 @@ function runDrawers(scene: Object3D): void {
   }
 }
 
-/** Options for {@link holdDraws}. */
 export interface HoldDrawsOptions {
-  /** Whether a call right now is held; default always. The gate holds only the frame loop's draws. */
   holding?: () => boolean;
   /** Told about every held draw, so the warmup can link what the frame would have drawn. */
   onHeld?: (draw: HeldDraw) => void;
 }
 
 type RenderMethod = (scene: never, camera: never) => unknown;
-/** three's per-draw call, `renderBufferDirect(camera, scene, geometry, material, object, group)`; every pass draws through it. */
 type DrawMethod = (camera: Camera, scene: Scene, geometry: BufferGeometry, material: Material, object: Object3D, group: unknown) => unknown;
 
-/** Every hold on a renderer still installed: holds nest (the warmup gate keeps one for the frame and one for a watched view). */
 const heldRenderers = new WeakMap<object, Set<() => boolean>>();
 
 /**
@@ -823,7 +773,6 @@ function uploadable(value: unknown): value is UploadableTexture {
   return image !== null && image !== undefined && image.complete !== false;
 }
 
-/** Every texture a material samples: its map slots and, for a shader material, its uniforms. */
 function materialTextures(material: unknown, found: (texture: UploadableTexture) => void): void {
   if (material === null || typeof material !== "object") return;
   for (const value of Object.values(material)) if (uploadable(value)) found(value);
@@ -831,10 +780,6 @@ function materialTextures(material: unknown, found: (texture: UploadableTexture)
   if (uniforms !== undefined) for (const uniform of Object.values(uniforms)) if (uploadable(uniform?.value)) found(uniform.value);
 }
 
-/**
- * The textures a shadow pass samples drawing a caster: the cut-out and displacement maps its depth
- * material copies, nothing it would light with.
- */
 function depthTextures(material: unknown, found: (texture: UploadableTexture) => void): void {
   if (material === null || typeof material !== "object") return;
   const source = material as ShadowSource & { alphaTest?: number; alphaHash?: boolean };
@@ -853,7 +798,6 @@ function materialVersions(material: unknown): string {
   return (Array.isArray(material) ? material : [material]).map((entry: { uuid?: string; version?: number } | undefined) => `${entry?.uuid}:${entry?.version}`).join(",");
 }
 
-/** Run `work` with `target` bound (`null` is the canvas), then put back what was bound. */
 function withRenderTarget(renderer: ShaderWarmupRenderer, target: unknown, work: () => void): void {
   const previous = renderer.getRenderTarget?.() ?? null;
   if (renderer.setRenderTarget === undefined || previous === target) {
@@ -903,14 +847,12 @@ export function withoutSelfSampling(material: unknown, target: unknown, work: ()
   }
 }
 
-/** What decides the programs a held draw runs: its object, the material it held, the override and canvas or target. */
 function heldDrawKey(draw: HeldDraw): string {
   const override = draw.override as { uuid?: string; version?: number } | null;
   const own = isDrawable(draw.object) ? materialVersions(draw.material) : "";
   return `${draw.object.uuid}|${own}|${override?.uuid ?? ""}:${override?.version ?? ""}|${draw.target === null ? "canvas" : "target"}`;
 }
 
-/** Link the programs a held draw runs. An override pass draws `objects` with the override material. */
 function compileHeldDraw(renderer: ShaderWarmupRenderer, scene: Object3D, objects: readonly Object3D[], draw: HeldDraw): void {
   const override = draw.override;
   withRenderTarget(renderer, draw.target, () => {
@@ -925,7 +867,6 @@ function compileHeldDraw(renderer: ShaderWarmupRenderer, scene: Object3D, object
   });
 }
 
-/** Draw a linked held draw once into `target`, for a driver that finishes a program at its first draw. */
 function drawHeldDraw(renderer: ShaderWarmupRenderer, scene: Object3D, objects: readonly Object3D[], draw: HeldDraw, target: unknown): void {
   const override = draw.override as Material | null;
   if (override !== null && draw.object === scene) {
@@ -959,10 +900,6 @@ type ShadowSource = Material & {
 
 const SHADOW_SIDE: Record<number, number> = { [FrontSide]: BackSide, [BackSide]: FrontSide, [DoubleSide]: DoubleSide };
 
-/**
- * Copy onto `depth` what three's shadow pass copies from the caster's `material` before each draw:
- * side, alpha test, maps and displacement, which all change the program.
- */
 function castFrom(depth: MeshDepthMaterial | MeshDistanceMaterial, material: ShadowSource): void {
   depth.side = (material.shadowSide ?? SHADOW_SIDE[material.side] ?? material.side) as Material["side"];
   depth.alphaTest = material.alphaToCoverage === true ? 0.5 : material.alphaTest;
@@ -999,11 +936,7 @@ function shadowMaterialFor(object: Object3D, material: ShadowSource, point: bool
 
 const warmupPreparers = new WeakMap<Object3D, Set<() => void>>();
 
-/**
- * Run `prepare` before each warmup round of the scene, for code that settles materials lazily at
- * draw time (a material patched on its first draw): the warmup then links the program that draw
- * will use, not the one it would replace. Returns the unregister. @internal
- */
+/** @internal */
 export function prepareBeforeWarmup(scene: Object3D, prepare: () => void): () => void {
   let preparers = warmupPreparers.get(scene);
   if (preparers === undefined) {
@@ -1099,7 +1032,7 @@ export function warmupWaitsFor(scene: Object3D, work: Promise<unknown>, label: s
   void tracked.then(() => holds.delete(tracked));
 }
 
-/** The labels of the work still holding `scene`'s warmup, one per hold. @internal */
+/** @internal */
 export function warmupHoldLabels(scene: Object3D): string[] {
   return [...(warmupHolds.get(scene)?.values() ?? [])];
 }
@@ -1198,7 +1131,6 @@ function markTimeline(name: string, detail: unknown): void {
   }
 }
 
-/** Defaults sized to cover one load: the covered wait is the driver's link time, not a guess. */
 export const SHADER_WARMUP_DEFAULTS = {
   /** Loader and program quiet time before the first frame is shown. */
   quietMs: 250,
@@ -1215,11 +1147,9 @@ export const SHADER_WARMUP_DEFAULTS = {
   stallMs: 30_000,
   /** Floor for one wait, so a driver that never reports completion cannot stall load. */
   planFloorMs: 1_500,
-  /** How often the covered loop looks for content that streamed in while it waited. */
   pollMs: 100,
   /** How long the background compile keeps looking for content that landed after the reveal. */
   backgroundMs: 2_000,
-  /** Gap between background rounds. A round only queues links; it does not wait on the driver. */
   backgroundEveryMs: 250,
   /**
    * Distinct programs linked per GPU flush. A driver with link workers runs a flush's links in
@@ -1243,7 +1173,6 @@ export const SHADER_WARMUP_DEFAULTS = {
   watchMs: 6_000,
 } as const;
 
-/** Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests. */
 export interface ShaderWarmupOptions {
   renderer: ShaderWarmupRenderer;
   scene: Scene;
@@ -1253,15 +1182,12 @@ export interface ShaderWarmupOptions {
   pollMs?: number;
   backgroundMs?: number;
   backgroundEveryMs?: number;
-  /** Distinct programs per GPU flush; see {@link SHADER_WARMUP_DEFAULTS}. */
   programsPerBatch?: number;
   /** Called on every state change, so the loading screen can show the phase. */
   onState?: (state: ShaderWarmupState) => void;
   now?: () => number;
   sleep?: (ms: number) => Promise<void>;
-  /** Whether the shared model loader has been quiet long enough. */
   loaderQuiet?: (quietMs: number) => boolean;
-  /** Changes whenever the shared loader starts a new burst of model loads. */
   loaderStarts?: () => number;
   /**
    * Whether the frame that follows the cover draws the scene into a render target instead of the
@@ -1297,7 +1223,7 @@ export interface ShaderWarmup {
 
 const sceneWarmups = new WeakMap<Object3D, ShaderWarmup>();
 
-/** Makes `warmup` the one {@link prepareSceneView} asks for `scene`, until the returned function runs. @internal */
+/** @internal */
 export function registerSceneWarmup(scene: Object3D, warmup: ShaderWarmup): () => void {
   sceneWarmups.set(scene, warmup);
   return () => {
@@ -1342,7 +1268,6 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
   const startedAt = now();
   let state: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
   let cancelled = false;
-  /** When the cover now up went up: the load, or the prepare that brought it back. */
   let coverSince = startedAt;
   let preparingView = false;
 
@@ -1403,37 +1328,23 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     }
   };
 
-  /** Programs whose uniforms were fetched ahead of their first draw. */
   const firstUsed = new WeakSet<object>();
   const programSet = (): Set<unknown> => new Set(options.renderer.info?.programs ?? []);
 
-  /**
-   * What a drawable's program was linked against, per drawable: its materials' versions (a define
-   * added after mount bumps one) and the scene state every program reads (lights, environment,
-   * fog). A drawable is linked again when that changes, since its old program no longer fits.
-   */
   const warmed = new WeakMap<Object3D, string>();
-  /** The same for the render-target programs a probe's draws need while the frame draws to the canvas. */
   const warmedForTarget = new WeakMap<Object3D, string>();
-  /** The same, per kind of shadow (depth, distance), for the casters' depth programs. */
   const shadowWarmed = { z: new WeakMap<Object3D, string>(), d: new WeakMap<Object3D, string>() };
   const shadowMaterials = new Map<string, Material>();
-  /** Held draws already linked, by what decides their programs. */
   const drawsWarmed = new Set<string>();
-  /** Held draws linked but not yet drawn once. */
   let heldToDraw: HeldDraw[] = [];
   /** Program and vertex layout pairs already drawn once, so a driver that builds per layout has built them. */
   const drawnLayouts = new Set<string>();
-  /** Drawables whose program and layout were drawn, against the context they were drawn in. */
   const drawn = new WeakMap<Object3D, string>();
-  /** Links queued and run while covered, for the bar. */
   let queued = 0;
   let linked = 0;
 
-  /** The scene state every lit program is built for; read once per round. */
   interface SceneContext {
     key: string;
-    /** The lights the frame's camera sees, which the shadow pass links its programs against. */
     lights: Object3D[];
     shadowKinds: Set<"z" | "d">;
   }
@@ -1459,14 +1370,8 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     return { key, lights, shadowKinds };
   };
 
-  /** One GPU flush: a compile that may queue a few program links. */
   type LinkJob = () => void | Promise<void>;
 
-  /**
-   * Run link jobs one flush at a time. Each flush that queued links is followed by a fence, so
-   * the next waits for the GPU without a blocking query and the main thread is free in between.
-   * Returns false when a compile threw.
-   */
   const runJobs = async (jobs: readonly LinkJob[], stop: () => boolean, fenceEvery = false): Promise<boolean> => {
     queued += jobs.length;
     for (const job of jobs) {
@@ -1484,17 +1389,12 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     return true;
   };
 
-  /**
-   * The targets the scene's programs are linked for: the frame's own, and a render target as well
-   * when something else draws the scene into one while the frame draws to the canvas.
-   */
   const variants = (): { target: WebGLRenderTarget | null; linked: WeakMap<Object3D, string> }[] => {
     const frame = frameTarget();
     const own = { target: frame, linked: warmed };
     return frame === null && (targetDrawers.get(options.scene) ?? 0) > 0 ? [own, { target: scratch(), linked: warmedForTarget }] : [own];
   };
 
-  /** A job per batch of the given drawables' own programs, per target the scene is drawn into. */
   const sceneJobs = (objects: Iterable<Object3D>, context: SceneContext): LinkJob[] => {
     const jobs: LinkJob[] = [];
     const list = [...objects];
@@ -1554,7 +1454,6 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
    * thread never waits on one first draw while the GPU builds another. Run after the links have
    * finished, so the draw's own link check returns at once.
    */
-  /** Textures already sent to the GPU, by the version that was sent. */
   const uploaded = new WeakMap<object, number>();
 
   /**
@@ -1563,10 +1462,6 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
    * upload (and build mips) on the first frame that draws them: seconds of stall on a game whose
    * props carry hundreds of large maps. The cover waits only for what the first view draws; the
    * rest goes up in the background after the reveal.
-   */
-  /**
-   * A job per few textures the given drawables sample, not yet sent. `casters` only reach the
-   * shadow pass, so only what their depth draw samples goes with them.
    */
   const textureJobs = (objects: Iterable<Object3D>, perJob: number, casters: Iterable<Object3D> = []): LinkJob[] => {
     const upload = options.renderer.initTexture;
@@ -1601,11 +1496,6 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
 
   /** Ids for the programs three linked, so draws are grouped by program rather than by material. */
   const programIds = new WeakMap<object, number>();
-  /**
-   * What a draw of the object runs: the programs its materials were last linked to (many materials
-   * share one program), with the object-side switches on top since a shared material links one
-   * program per kind of object. Falls back to the materials when the renderer keeps no record.
-   */
   const linkedKey = (drawable: Object3D): string => {
     const object = drawable as Drawable;
     const properties = options.renderer.properties;
@@ -1662,7 +1552,6 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     return jobs;
   };
 
-  /** Jobs for what the held frame drew outside the scene's own materials: post passes, overrides. */
   const heldJobs = (objects: readonly Object3D[]): LinkJob[] => {
     const jobs: LinkJob[] = [];
     for (const draw of options.takeHeldDraws?.() ?? []) {
@@ -1676,7 +1565,6 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     return jobs;
   };
 
-  /** When a covered round last added a program. */
   let grewAt = now();
 
   /**
@@ -1727,7 +1615,6 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     return "ok";
   };
 
-  /** Link content that has no program yet, a batch per flush, without waiting on the links. */
   const queueBackground = async (): Promise<void> => {
     const drawables: Object3D[] = [];
     options.scene.traverse((object) => {

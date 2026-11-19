@@ -1,25 +1,16 @@
 // @skill jgengine-world
 
-/** One axis of a {@link CoefficientTable}: strictly increasing breakpoints and what happens past the ends. */
 export interface CoefficientTableAxis {
   breakpoints: readonly number[];
-  /** `"linear"` extends the end cells (the Stevens & Lewis table convention); `"clamp"` holds the end values. Default `"clamp"`. */
   extrapolate?: "linear" | "clamp";
 }
 
-/** A gridded table over any number of axes with multilinear interpolation. */
 export interface CoefficientTable {
   readonly axes: readonly CoefficientTableAxis[];
-  /** Value at a point with one coordinate per axis, in axis order. */
   sample(point: readonly number[]): number;
 }
 
-/**
- * Creates a gridded {@link CoefficientTable}, the form aerodynamic data comes in (alpha by beta by Mach by deflection).
- * `values` is row-major: the last axis varies fastest. Interpolation is multilinear across all axes and allocates
- * nothing per sample.
- * @capability coefficient-table N-dimensional gridded data table with multilinear interpolation and per-axis extrapolation
- */
+/** @capability coefficient-table N-dimensional gridded data table with multilinear interpolation and per-axis extrapolation */
 // stateless: strides and breakpoints are built once from the axes and never written after the factory returns
 export function createCoefficientTable(axes: readonly CoefficientTableAxis[], values: readonly number[]): CoefficientTable {
   if (axes.length === 0) throw new Error("createCoefficientTable: at least one axis");
@@ -76,10 +67,7 @@ export function createCoefficientTable(axes: readonly CoefficientTableAxis[], va
   };
 }
 
-/**
- * Evenly spaced breakpoints from `start` to `end` inclusive.
- * @capability coefficient-table evenly spaced table breakpoints
- */
+/** @capability coefficient-table evenly spaced table breakpoints */
 export function evenBreakpoints(start: number, end: number, count: number): number[] {
   const points: number[] = [];
   for (let i = 0; i < count; i += 1) points.push(start + ((end - start) * i) / (count - 1));

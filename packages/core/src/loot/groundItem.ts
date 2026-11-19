@@ -16,9 +16,7 @@ export interface ScatterOptions {
 
 export const DEFAULT_SCATTER: ScatterOptions = { radius: 1.5, minRadius: 0.4, height: 0 };
 
-/** Random offset within an annulus `[minRadius, radius]` around the origin — the on-death scatter impulse.
- * @internal
- */
+/** @internal */
 export function scatterOffset(rng: () => number, options: ScatterOptions = DEFAULT_SCATTER): EntityPosition {
   const angle = rng() * Math.PI * 2;
   const min = options.minRadius ?? 0;
@@ -51,7 +49,6 @@ export interface WorldItemRecord {
 export interface WorldItemSpawnInput {
   itemId: string;
   position: EntityPosition;
-  /** Rarity id the game reads for beams and filters; omit to use the store's `defaultRarity`. */
   rarity?: string;
   baseType?: string;
   count?: number;
@@ -60,7 +57,6 @@ export interface WorldItemSpawnInput {
 }
 
 export interface WorldItemStoreDeps {
-  /** Rarity a spawn gets when the caller names none — the game's own baseline. A spawn with neither is rejected. */
   defaultRarity?: string;
   spawnEntity(position: EntityPosition): string;
   despawnEntity(instanceId: string): boolean;
@@ -77,15 +73,11 @@ export interface WorldItemStore {
     radius: number,
     filter?: (record: WorldItemRecord) => boolean,
   ): string | null;
-  /** Detaches the record for a pickup: caller is expected to grant its contents (e.g. `loot.grantToPlayer`) itself. */
   take(instanceId: string): WorldItemRecord | null;
-  /** Consumes/destroys the record with no grant implied (decay, an explosion, a cleanup sweep) — same despawn path as `take`, leaves no orphaned record. */
   remove(instanceId: string): WorldItemRecord | null;
 }
 
-/** Pure pickup-radius + nearest-item selection, usable without a live store (click-to-grab, proximity prompts).
- * @internal
- */
+/** @internal */
 export function selectNearestWorldItem(
   candidates: readonly { instanceId: string; position: EntityPosition }[],
   from: EntityPosition,
@@ -103,11 +95,7 @@ export function selectNearestWorldItem(
   return bestId;
 }
 
-/**
- * Spawn and track pickup-able items scattered in the world, including drops that scatter on death.
- *
-  * @internal
-  */
+/** @internal */
 export function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore {
   const records = new Map<string, WorldItemRecord>();
   const now = deps.now ?? Date.now;
@@ -179,13 +167,7 @@ export interface ResolvedDeathDrops {
   grants: Drop[];
 }
 
-/**
- * Splits rolled death drops between direct grants and scattered ground items.
- * `mode: "grant"` is the legacy behavior (loot straight to inventory); `mode:
- * "world"` routes item drops through a scatter impulse and leaves currency
- * drops granting directly (coins fly to the killer, gear hits the ground).
-  * @internal
-  */
+/** @internal */
 export function resolveDeathDrops(
   drops: readonly Drop[],
   options: ResolveDeathDropsOptions,
@@ -212,11 +194,7 @@ export function resolveDeathDrops(
   return { worldSpawns, grants };
 }
 
-/**
- * Per-rarity look of a dropped item: beam, color and label. Set via `defineGame({ worldItem: { rarityStyle } })`.
- *
- * @capability loot-beams rarity-colored loot beams and labels on dropped items via defineGame({ worldItem: { rarityStyle, beamHeight } })
- */
+/** @capability loot-beams rarity-colored loot beams and labels on dropped items via defineGame({ worldItem: { rarityStyle, beamHeight } }) */
 export interface RarityStyle {
   color?: string;
   beam?: boolean;
@@ -230,13 +208,7 @@ export interface WorldItemPresentation {
   label?: string;
 }
 
-/**
- * Composes the baseline rarity→beam/color/label render binding (#32, catalog
- * data the game supplies) with the loot-filter rule overrides (#33). A
- * matching rule wins field-by-field; unmatched fields fall back to the
- * rarity's baseline style.
-  * @internal
-  */
+/** @internal */
 export function resolveWorldItemPresentation(
   item: LootFilterItem,
   rarityStyle: Record<string, RarityStyle> | undefined,

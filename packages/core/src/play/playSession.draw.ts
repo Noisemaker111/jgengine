@@ -9,23 +9,16 @@ import type { ReplayRecorder } from "@jgengine/core/replay/replayRecording";
 import { dispatchBoundAction, RESERVED_INPUT_ACTIONS, shouldFireBoundAction } from "../input/boundActionDispatch";
 import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "../input/hotbarActions";
 
-/** Options for {@link createPlaySession}. */
 export interface PlaySessionOptions {
-  /** Local player id. Default `"player"`. */
   userId?: string;
-  /** Seed for `ctx.rng`. */
   seed?: string | number;
   /** Seconds per tick. Default 1/60. */
   dt?: number;
-  /** Called for every command the session runs (a bound action, a prompt, or {@link PlaySession.command}). */
   onCommand?: (entry: { name: string; input: unknown; label: string; result: ReturnType<GameContext["game"]["commands"]["run"]> }) => void;
-  /** Records every tick and every {@link PlaySession.command} call, for a replay. Bound-action commands replay from the input and are not recorded. */
   recorder?: ReplayRecorder;
-  /** Where the game's saves go; default the game's own. */
   save?: RuntimeSaveOptions;
 }
 
-/** A live headless play of one game, ticked by its caller. */
 export interface PlaySession {
   readonly runner: HeadlessRunner;
   readonly ctx: GameContext;
@@ -33,13 +26,7 @@ export interface PlaySession {
   readonly dt: number;
   /** Milliseconds of game time the session has run. */
   readonly clockMs: number;
-  /**
-   * One tick with these actions held, then the shell's action phase on it: a pressed (or repeating) bound
-   * action runs its command with the aim, `interact` runs the active proximity prompt, a hotbar press uses
-   * its slot.
-   */
   tick(held: readonly string[], dt?: number): void;
-  /** Run a command as the player would, reported through `onCommand`. */
   command(name: string, input?: unknown, label?: string): ReturnType<GameContext["game"]["commands"]["run"]>;
 }
 

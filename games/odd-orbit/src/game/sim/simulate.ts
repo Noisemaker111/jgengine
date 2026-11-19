@@ -49,7 +49,6 @@ export function hasRoom(state: HouseholdState, member: MemberState, obj: SceneOb
   return index >= 0 ? index < def.capacity : users.length < def.capacity;
 }
 
-/** True while the member is walking to a station whose places are all taken — they will stand and wait. */
 export function waitingForStation(state: HouseholdState, member: MemberState, objects: readonly SceneObject[]): boolean {
   const { action } = member;
   if (action.kind !== "seek") return false;
@@ -436,7 +435,6 @@ function companySpot(ctx: GameContext, state: HouseholdState, book: Relationship
   return spot;
 }
 
-/** The idle member `member` would most like to join: the warmest in the tick's book, less the walk. */
 function findIdleCompanion(ctx: GameContext, state: HouseholdState, member: MemberState, book: RelationshipBook): MemberState | null {
   const mine = positionOf(ctx, member.id);
   if (mine === null) return null;
@@ -509,8 +507,4 @@ export function activeGoalLabel(member: MemberState, companyName?: string): stri
 function goalWord(goal: NeedId): string {
   return ({ hunger: "Nourishing", energy: "Resting", social: "Bonding", fun: "Playing / tending" } as const)[goal];
 }
-
-
-
-
 

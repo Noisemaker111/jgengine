@@ -4,7 +4,6 @@ import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 import type { GizmoMode, PlacementTool, EditorSnapMode } from "../uiStore";
 import type { BottomDockTab } from "./layoutStore";
 
-/** One executable command-palette entry. */
 export interface PaletteCommand {
   id: string;
   title: string;
@@ -14,14 +13,12 @@ export interface PaletteCommand {
   run: () => void;
 }
 
-/** A scene object the palette can jump to by name/id. */
 export interface PaletteObjectTarget {
   id: string;
   label: string;
   kind: string;
 }
 
-/** Everything the palette can drive — thin callbacks over existing editor systems. */
 export interface PaletteContext {
   setGizmoMode(mode: GizmoMode): void;
   setTool(tool: "select" | "terrain"): void;
@@ -45,13 +42,10 @@ export interface PaletteContext {
   toggleRightDock(): void;
   toggleHelp(): void;
   resetLayout(): void;
-  /** Select + frame a document object by id (jump-to-object). */
   gotoObject?(id: string): void;
-  /** Live scene objects for object-search rows. */
   objects?: readonly PaletteObjectTarget[];
 }
 
-/** Builds the full palette command list from live editor capabilities — no dead entries. */
 export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
   const commands: PaletteCommand[] = [
     { id: "tool.select", title: "Select tool", group: "Tools", run: () => ctx.setTool("select") },
@@ -139,7 +133,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
 const RECENT_KEY = "jgeditor:palette-recent";
 const RECENT_LIMIT = 8;
 
-/** Loads recent command ids from localStorage (session-shared across games). @internal */
+/** @internal */
 export function loadRecentCommandIds(): string[] {
   try {
     const raw = localStorage.getItem(RECENT_KEY);
@@ -152,7 +146,7 @@ export function loadRecentCommandIds(): string[] {
   }
 }
 
-/** Records a command id at the front of the recent list (deduped, capped). @internal */
+/** @internal */
 export function pushRecentCommandId(id: string): string[] {
   // Object jump rows are scene-specific and flood the recent list — skip them.
   if (id.startsWith("goto.object.")) return loadRecentCommandIds();
@@ -165,11 +159,6 @@ export function pushRecentCommandId(id: string): string[] {
   return next;
 }
 
-/**
- * Case-insensitive filter over title, group, and keywords.
- * With an empty query, recent commands (that still exist) float to the top under a virtual order
- * — the caller groups them visually.
- */
 export function filterPaletteCommands(
   commands: readonly PaletteCommand[],
   query: string,

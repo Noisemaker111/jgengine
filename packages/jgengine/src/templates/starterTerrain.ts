@@ -1,4 +1,3 @@
-/** A `TerraformSnapshot`-shaped sculpt, written into a new scene's `terrain` field. */
 export interface StarterTerrain {
   bounds: { minX: number; minZ: number; maxX: number; maxZ: number };
   cellSize: number;
@@ -93,10 +92,6 @@ export function withStarterTerrain(sceneJson: string, seedText: string): string 
   return `${body},\n  "terrain": ${JSON.stringify(starterTerrain(seedText))}\n}\n`;
 }
 
-/**
- * Appends a `terrainGenerator` to a scene document's JSON text: the landform generator grows the named
- * start (one of its schema presets) from the game id on first load (`@jgengine/core/landform/generator/landformStart`), and the editor's first save keeps it.
- */
 export function withLandformStart(sceneJson: string, start: string, seedText: string): string {
   const body = sceneJson.replace(/\n}\n?$/, "");
   return `${body},\n  "terrainGenerator": ${JSON.stringify({ generator: "landform", params: { start, seed: seedText } })}\n}\n`;

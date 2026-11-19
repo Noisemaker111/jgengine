@@ -21,11 +21,9 @@ import {
 export interface RegenShieldPool {
   current(): number;
   max(): number;
-  /** Write the value back; implementations clamp to their own bounds. */
   set(value: number): void;
 }
 
-/** Tuning for `createRegenShield`: pool size, refill rate, and the post-damage grace period. */
 export interface RegenShieldConfig {
   max: number;
   /** Points restored per second once the post-damage grace period has elapsed. */
@@ -42,7 +40,6 @@ export interface RegenShieldConfig {
   pool?: RegenShieldPool;
 }
 
-/** Complete mutable shield state, including pending external damage detection. */
 export interface RegenShieldState {
   max: number;
   current: number;
@@ -58,9 +55,7 @@ export interface RegenShieldState {
  * regenerates once it elapses.
  */
 export interface RegenShield {
-  /** Detached pool value, bounds, and regen timing. */
   state(): RegenShieldState;
-  /** Restore state; returns false without mutation when an external pool's max differs. */
   restore(next: RegenShieldState): boolean;
   current(): number;
   max(): number;
@@ -68,11 +63,8 @@ export interface RegenShield {
   fraction(): number;
   isFull(): boolean;
   isBroken(): boolean;
-  /** True while the post-damage grace period is suppressing regen. */
   suppressed(): boolean;
-  /** Absorb `amount` and reset the regen grace timer; returns damage that got through (0 while the shield holds). */
   damage(amount: number): number;
-  /** Add `amount` without touching the regen timer (a pickup or scripted refill). */
   refill(amount: number): void;
   /** @deprecated Use `refill(amount)` for pickups; `restore(state)` loads persisted state. */
   restore(amount: number): void;
@@ -83,7 +75,6 @@ export interface RegenShield {
    * a game's own effect pipeline.
    */
   noteDamage(): void;
-  /** Advance time: count down the grace period, then regenerate once it has elapsed. */
   tick(dtSeconds: number, rates?: RegenShieldRates): void;
 }
 
@@ -97,11 +88,7 @@ export interface RegenShieldRates {
   regenDelayMs?: number;
 }
 
-/**
- * Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit.
- *
- * @capability regen-shield a rechargeable overshield that absorbs damage and refills after a lull
- */
+/** @capability regen-shield a rechargeable overshield that absorbs damage and refills after a lull */
 export function createRegenShield(config: RegenShieldConfig): RegenShield {
   const port = config.pool;
   const baseRegenPerSecond = Math.max(0, config.regenPerSecond);
@@ -126,7 +113,6 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
     return port === undefined ? ownPool.max : Math.max(0, port.max());
   }
 
-  /** Adopt a computed pool, writing through the port when the shield does not own the value. */
   function write(pool: StatPool): void {
     if (port === undefined) ownPool = pool;
     else port.set(pool.current);
@@ -138,7 +124,6 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
     if (port !== undefined) observed = readCurrent();
   }
 
-  /** Detect an external decrease in a pool-backed value and restart the grace period if one happened. */
   function syncExternal(): void {
     if (port === undefined) return;
     const live = readCurrent();

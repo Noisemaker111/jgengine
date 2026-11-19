@@ -99,7 +99,6 @@ const DNDR = createCoefficientTable([BETA_FULL, ALPHA], [
   -0.062, -0.034, -0.027, -0.028, -0.027, -0.027, -0.023, -0.023, -0.019, -0.009, -0.025, -0.01,
 ]);
 
-/** Damping derivatives by angle of attack: CXq, CYr, CYp, CZq, Clr, Clp, Cmq, Cnr, Cnp. */
 const DAMPING: readonly CoefficientTable[] = [
   [-0.267, -0.11, 0.308, 1.34, 2.08, 2.91, 2.76, 2.05, 1.5, 1.49, 1.83, 1.21],
   [0.882, 0.852, 0.876, 0.958, 0.962, 0.974, 0.819, 0.483, 0.59, 1.21, -0.493, -1.04],
@@ -159,10 +158,7 @@ function powerRate(power: number, command: number): number {
   return reciprocalTau(command - power) * (command - power);
 }
 
-/**
- * Installed thrust, N, at a power level (percent), altitude (m) and Mach: idle to military below 50%, military to full afterburner above.
- * @capability f16-reference F-16 engine thrust by power, altitude and Mach
- */
+/** @capability f16-reference F-16 engine thrust by power, altitude and Mach */
 export function f16Thrust(power: number, altitude: number, mach: number): number {
   const point = [mach, Math.max(0, altitude / FT)];
   const military = THRUST_MIL.sample(point);
@@ -202,10 +198,7 @@ const f16Propulsion: ReferencePropulsion = {
 
 let f100Engine: GasTurbineEngine | undefined;
 
-/**
- * The F100-PW-220 cycle engine the F-16 shares across instances (its operating-line tables fill in as it flies).
- * @capability f16-reference shared F100-PW-220 cycle engine with spool dynamics
- */
+/** @capability f16-reference shared F100-PW-220 cycle engine with spool dynamics */
 export function f16CycleEngine(): GasTurbineEngine {
   f100Engine ??= createGasTurbineEngine(createGasTurbineCycle(F100_PW_220), F100_PW_220_DYNAMICS);
   return f100Engine;
@@ -218,9 +211,7 @@ function f16CyclePropulsion(): ReferencePropulsion {
   });
 }
 
-/** Options for {@link createF16Model}. */
 export interface F16ModelOptions {
-  /** Centre of gravity, fraction of the mean aerodynamic chord (default `0.35`, the data's reference). */
   xcg?: number;
   /**
    * `"table"` (default): the Stevens & Lewis F100 thrust table and power lag. `"cycle"`: the F100-PW-220
@@ -230,10 +221,6 @@ export interface F16ModelOptions {
   engine?: "table" | "cycle";
 }
 
-/**
- * Landing gear from published F-16 dimensions (4.0 m wheelbase, 2.37 m track); the centre of gravity's height and its
- * position over the wheelbase are estimates, sized for about 11% of the weight on the nosewheel.
- */
 const F16_GEAR: readonly ReferenceGearLeg[] = [
   { name: "nose", at: [3.55, 0, 1.75], stiffness: 100000, damping: 12000, travel: 0.3, rollingFriction: 0.03, brakeFriction: 0, sideFriction: 0.8, corneringStiffness: 8, steering: 32 * DEG },
   { name: "left main", at: [-0.45, -1.18, 1.75], stiffness: 300000, damping: 30000, travel: 0.3, rollingFriction: 0.03, brakeFriction: 0.4, sideFriction: 0.8, corneringStiffness: 8, steering: 0 },

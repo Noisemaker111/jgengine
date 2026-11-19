@@ -2,10 +2,8 @@ import type { CameraRigKind, ChaseCameraConfig, ChaseView, CinematicCameraConfig
 import type { GameCameraFollowConfig } from "../camera/cameraConfig";
 import type { GameContext } from "./gameContext";
 
-/** Data overlay for an existing rig; callbacks and Canvas projection/preferences remain configured by the game. */
 export type CameraRigConfig = Omit<GameCameraConfig, "rig" | "lens" | "follow"> & { follow?: Omit<GameCameraFollowConfig, "weapon" | "onCameraFollow"> };
 
-/** Runtime rig selection and detached data overlay over the configured camera. */
 export interface CameraRigOverride {
   kind: CameraRigKind;
   config: CameraRigConfig;
@@ -21,7 +19,6 @@ export interface CameraDirectorState {
 
 type CameraSerialized<T> = T extends number ? number | { $cameraNumber: "Infinity" } :
   T extends object ? { [Key in keyof T]: CameraSerialized<T[Key]> } : T;
-/** JSON-safe camera policy; documented instant chase responses use an explicit Infinity marker. */
 export type CameraDirectorSnapshot = CameraSerialized<CameraDirectorState>;
 
 const RIG_KINDS: readonly CameraRigKind[] = ["orbit", "first", "topDown", "rts", "shoulder", "lockOn", "chase", "observer", "turntable", "sideScroll", "inspection", "none"];
@@ -158,32 +155,19 @@ export type ChaseCameraTuning = Partial<
   >
 >;
 
-/** Default order {@link nextChaseView} cycles through. */
 export const CHASE_VIEWS: readonly ChaseView[] = ["chase", "hood", "cockpit"];
 
-/**
- * The view after `current` in `views`, wrapping at the end; a view missing from the list starts the cycle over.
- * Pair with `setChaseTuning` to bind a "change camera" key:
- * `ctx.camera.setChaseTuning({ ...ctx.camera.chaseTuning(), view: nextChaseView(view) })`.
- *
- * @capability chase-view-cycle cycle a vehicle camera between chase, hood and cockpit views at runtime
- */
+/** @capability chase-view-cycle cycle a vehicle camera between chase, hood and cockpit views at runtime */
 export function nextChaseView(current: ChaseView, views: readonly ChaseView[] = CHASE_VIEWS): ChaseView {
   if (views.length === 0) return current;
   const index = views.indexOf(current);
   return views[(index + 1) % views.length]!;
 }
 
-/**
- * Runtime camera policy at `ctx.camera`: follow target, rig overlay, cinematic, chase tuning, FOV kicks and RTS pan jumps.
- *
- * @capability camera-director drive the camera at runtime (follow, rig swap, cinematic, chase tuning, FOV kick, RTS pan-to jump)
- */
+/** @capability camera-director drive the camera at runtime (follow, rig swap, cinematic, chase tuning, FOV kick, RTS pan-to jump) */
 export interface CameraDirector {
   follow(entityId: string | null): void;
-  /** `undefined` means no runtime override — the shell falls back to the static `playable.camera.followEntityId`. `null` means explicitly follow nothing. */
   followedEntityId(): string | null | undefined;
-  /** Replace the runtime rig overlay; `null` restores the game's configured rig/config. Existing chase tuning remains independent. */
   setRig(kind: CameraRigKind | null, config?: CameraRigConfig): void;
   rig(): CameraRigOverride | null;
   setCinematic(config: CinematicCameraConfig | null): void;
@@ -193,7 +177,6 @@ export interface CameraDirector {
   chaseTuning(): ChaseCameraTuning | null;
   /** Add a transient FOV impulse in degrees (a landing, a hit, a boost) that the chase rig layers on and decays per `camera.chase.fovKick`. Kicks from one frame sum. */
   kickFov(degrees: number): void;
-  /** Drain the FOV impulses queued since the last call; the shell's chase rig calls this once per frame. */
   takeFovKick(): number;
   /**
    * Queue a one-shot recentre of the panning rig (`rts`) on a ground point — minimap click-to-jump,
@@ -201,7 +184,6 @@ export interface CameraDirector {
    * a later call before that frame wins. Transient: not part of {@link CameraDirector.snapshot}.
    */
   panTo(point: { x: number; z: number }): void;
-  /** Drain the point queued by {@link CameraDirector.panTo}, or null; the shell's RTS rig calls this once per frame. */
   takePanTo(): { x: number; z: number } | null;
   /**
    * Queue a one-shot turn of the following camera (orbit, chase, shoulder, first person) onto a heading in
@@ -210,12 +192,9 @@ export interface CameraDirector {
    * @capability camera-turn-to point the player's camera along a heading once, e.g. after teleporting them
    */
   turnTo(yaw: number): void;
-  /** Drain the heading queued by {@link CameraDirector.turnTo}, or null; the mounted rig calls this once per frame. */
   takeTurnTo(): number | null;
   snapshot(): CameraDirectorSnapshot;
-  /** Invalid state throws before changing any camera field. */
   restore(state: CameraDirectorSnapshot): void;
-  /** Clear runtime policy, transient FOV kicks and a queued pan jump; configured camera data remains untouched. */
   reset(): void;
   subscribe(listener: () => void): () => void;
 }

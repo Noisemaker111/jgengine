@@ -73,11 +73,6 @@ export function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSam
   return best;
 }
 
-/**
- * Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`)
- * but portals a real HTML readout via drei's `Html fullscreen` — a photo-mode
- * "is this subject framed" HUD.
- */
 export function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }) {
   const sample = useFrustumSensor(props);
   return (

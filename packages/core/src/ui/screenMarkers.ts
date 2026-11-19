@@ -10,7 +10,6 @@ export interface ScreenProjection {
   x: number;
   /** CSS px from the viewport's top edge. */
   y: number;
-  /** Optional depth key (larger = farther); carried through untouched, unused by the math. */
   depth?: number;
   /**
    * `true` when the point is behind the camera. Such a projection's `x`/`y` are
@@ -26,7 +25,6 @@ export interface ScreenMarkerViewport {
   height: number;
 }
 
-/** Options for {@link layoutScreenMarker}. */
 export interface ScreenMarkerOptions {
   /**
    * Inset (px) from each viewport edge that an off-screen/behind marker is
@@ -41,7 +39,6 @@ export interface ScreenMarkerOptions {
   out?: ScreenMarkerLayout;
 }
 
-/** Where and how to draw one marker, from {@link layoutScreenMarker}. */
 export interface ScreenMarkerLayout {
   /**
    * `true` when the target projects inside the viewport in front of the camera —

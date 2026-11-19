@@ -7,9 +7,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 export interface FailureLine {
-  /** The failing file (with a line when the tool named one), or the step itself. */
   where: string;
-  /** The first error line that file produced. */
   first: string;
 }
 
@@ -25,7 +23,6 @@ function clip(text: string, width = 200): string {
   return flat.length > width ? `${flat.slice(0, width - 1)}…` : flat;
 }
 
-/** One line per failing file, in the order the output first named them. */
 export function failureDigest(output: string): FailureLine[] {
   const lines = output.replace(ANSI, "").split(/\r?\n/);
   const byWhere = new Map<string, string>();
@@ -80,7 +77,6 @@ export function failureDigest(output: string): FailureLine[] {
   return [...perFile.values()];
 }
 
-/** The lines a failed step prints: each failing file and its first error, then where the full log is. */
 export function digestLines(output: string, logPath: string | null, limit = 30): string[] {
   const digest = failureDigest(output);
   const lines: string[] = [];

@@ -9,12 +9,10 @@
  */
 import { generatorContext, type GeneratorDefinition, type GeneratorVariant } from "./generator";
 
-/** One output as a few short lines of text, most telling first. */
 export type GeneratorTextPreview = (output: unknown) => readonly string[];
 
 const textPreviews = new Map<string, GeneratorTextPreview>();
 
-/** Register the text preview for a generator output family (`"names"`, `"loot-items"`, …). Replaces an earlier one. */
 export function registerGeneratorText(output: string, preview: GeneratorTextPreview): void {
   textPreviews.set(output, preview);
 }

@@ -17,21 +17,15 @@ import {
 import { createFireCadence, type FireCadence } from "./weaponFire";
 import { SHOT_GRAVITY, resolveShotSpec, shotFalloffAt, shotSpecFromWeapon, type ResolvedShotSpec } from "./shotSpec";
 
-/** Where one pellet met the caller's world. */
 export interface WeaponContact {
-  /** Damage-runtime target id; omit for geometry that should stop the pellet without taking damage. */
   target?: string;
-  /** Hit-zone id from the caller's `HitZoneTable`; omitted uses the table default. */
   zone?: string;
   /** Contact point in world metres. */
   point: WeaponVec3;
 }
 
-/** Everything the runtime is allowed to reach: RNG, the damage model, the muzzle, and the world query. */
 export interface WeaponSystemDeps {
-  /** `[0,1)` stream for spread cones and recoil jitter. Required so shots stay replayable. */
   rng: () => number;
-  /** The B2.2 damage model; every hit, hitscan or projectile, is resolved through it. */
   damage: Pick<DamageRuntime, "hit">;
   /** Muzzle or eye position for the next shot, world metres — read once per shot. */
   origin: () => WeaponVec3;
@@ -45,11 +39,9 @@ export interface WeaponSystemDeps {
    * keeps one owner; ignored for a definition without a magazine.
    */
   magazineReserve?: MagazineReserve;
-  /** Replace the definition's damage mapping for one hit; `null` keeps the hit but skips damage. */
   damageFor?: (contact: WeaponContact, hit: WeaponImpactContext) => DamageRuntimeHitInput | null;
   /** Shots one tick may catch up on (default `4`, clamp `1..16`); bounds rays and sweeps per tick. */
   maxShotsPerTick?: number;
-  /** Register a one-line devtools probe under this name. */
   devtoolsName?: string;
 }
 
@@ -59,25 +51,19 @@ export interface WeaponImpactContext {
   pellet: number;
   /** Metres from the shot origin. */
   distance: number;
-  /** Damage multiplier at `distance` from the definition's falloff. */
   falloff: number;
 }
 
-/** One fired shot: the cone it fired into, the kick it took, and where each pellet went. */
 export interface WeaponShotRecord {
   /** Monotonic shot number for this weapon instance, starting at `1`. */
   shot: number;
-  /** Cone half-angle this shot fired into, rad, after stance and ADS. */
   spread: number;
-  /** Aim kick this shot applied, rad. */
   kickPitch: number;
   kickYaw: number;
   origin: WeaponVec3;
-  /** Unit direction of each pellet. */
   directions: readonly WeaponVec3[];
 }
 
-/** One resolved hit, with the damage runtime's full provenance. */
 export interface WeaponImpact {
   shot: number;
   pellet: number;
@@ -88,41 +74,33 @@ export interface WeaponImpact {
   resolution: DamageRuntimeResolution;
 }
 
-/** What one {@link WeaponSystem.tick} produced. Empty arrays on a quiet tick. */
 export interface WeaponTickResult {
   shots: readonly WeaponShotRecord[];
   impacts: readonly WeaponImpact[];
 }
 
-/** `idle`, `reloading`, or `interrupted` after `interruptReload()` kept the progress. */
 export type WeaponReloadState = "idle" | "reloading" | "interrupted";
 
-/** Ammo and cadence as a HUD or a test reads them. */
 export interface WeaponAmmo {
-  /** Loaded rounds, or `null` for a weapon without a magazine. */
   loaded: number | null;
   capacity: number | null;
   reserve: number | null;
   reload: WeaponReloadState;
   /** Reload progress in `[0, 1]`, retained while interrupted. */
   reloadFraction: number;
-  /** Shots left in the current burst; `0` outside one. */
   burstRemaining: number;
   /** Progress toward the next shot in `[0, 1]`. */
   cadenceFraction: number;
 }
 
-/** Lifetime ammo economy and resolution counters. */
 export interface WeaponCounters {
   shots: number;
-  /** Loaded rounds spent; `0` for a weapon without a magazine. */
   roundsSpent: number;
   pelletsFired: number;
   burstPulls: number;
   reloadsStarted: number;
   reloadsCompleted: number;
   reloadsInterrupted: number;
-  /** Trigger pulls that found an empty magazine. */
   dryPulls: number;
   projectilesSpawned: number;
   projectilesExpired: number;
@@ -132,7 +110,6 @@ export interface WeaponCounters {
   damage: number;
 }
 
-/** A pellet alive in flight, for presentation or prediction. */
 export interface WeaponProjectileView {
   shot: number;
   pellet: number;
@@ -143,7 +120,6 @@ export interface WeaponProjectileView {
   distance: number;
 }
 
-/** Serializable runtime state: aim, handling, ammo, trigger, pellets and counters. */
 export interface WeaponSystemState {
   aim: { yaw: number; pitch: number };
   handling: WeaponHandlingState;
@@ -157,56 +133,34 @@ export interface WeaponSystemState {
   pellets: WeaponProjectileView[];
 }
 
-/** Current aim with recoil applied. */
 export interface WeaponAim {
   yaw: number;
   pitch: number;
-  /** Unit direction of the centre of the shot cone. */
   direction: WeaponVec3;
 }
 
-/**
- * A weapon as the game drives it: base aim in, shots and resolved impacts out. Fire mode, cadence,
- * handling, delivery, magazine and damage all come from one {@link WeaponDefinition}; the game owns
- * input, the muzzle, and the world query.
- */
 export interface WeaponSystem {
-  /** Set the aim before recoil; call every frame from look input. */
   setAim(yaw: number, pitch: number): void;
-  /** Current aim, including recoil, and the direction the next shot would fly down. */
   aim(): WeaponAim;
   /** Press or release the trigger. A press survives until the next tick that can use it. */
   setTrigger(down: boolean): void;
   trigger(): boolean;
-  /** Advance the cadence clock, recoil, bloom, reload, pellets and the trigger by `dt`; returns what fired and what landed. */
   tick(dt: number, stance?: WeaponStance): WeaponTickResult;
-  /** True when a shot could leave right now: cadence ready, not reloading, ammo available. */
   canFire(): boolean;
-  /** Start a reload, or continue an interrupted one. */
   reload(): boolean;
-  /** Suspend an in-progress reload and keep its progress. */
   interruptReload(): boolean;
-  /** Continue an interrupted reload from where it stopped. */
   resumeReload(): boolean;
-  /** Abandon an in-progress reload, discarding progress. */
   cancelReload(): void;
-  /** Swap the definition live (attachments, upgrades) without losing ammo, aim or reload progress. */
   retune(next: WeaponDefinition): boolean;
-  /** The definition in force. */
   definition(): WeaponDefinition;
   ammo(): WeaponAmmo;
   stats(): WeaponCounters;
-  /** Live pellets, capped by the definition's `maxInFlight`. */
   pellets(): readonly WeaponProjectileView[];
-  /** Handling state for recoil presentation and `measureWeapon`. */
   handling(): WeaponHandling;
-  /** The magazine for reserve pickups and external reserve adapters, or `null`. */
   magazine(): Magazine | null;
   snapshot(): WeaponSystemState;
-  /** Restore decoded state; returns false without applying when the magazine reserve model differs. */
   restore(state: WeaponSystemState): boolean;
   reset(): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -254,7 +208,6 @@ function normalize(v: WeaponVec3): WeaponVec3 {
   return length === 0 ? [0, 0, 1] : [v[0] / length, v[1] / length, v[2] / length];
 }
 
-/** Unit direction inside the cone around `center`, uniform over solid angle from two RNG draws. */
 function coneDirection(center: WeaponVec3, halfAngle: number, rng: () => number): WeaponVec3 {
   const angle = Math.min(Math.max(halfAngle, 0), HALF_PI);
   if (angle <= 0) return center;
@@ -287,13 +240,7 @@ interface LivePellet {
   distance: number;
 }
 
-/**
- * Build a weapon from one {@link WeaponDefinition}. The game supplies aim, a muzzle, one world query,
- * the damage model and an RNG; the runtime owns fire modes, cadence, recoil, bloom, reload states,
- * ammo accounting, projectile ballistics and the damage call. State snapshots as plain data.
- *
- * @capability weapon-system run a data-defined weapon: fire modes, recoil and bloom, hitscan or ballistic projectiles, interrupted reloads and readable ammo, all resolving through the damage runtime
- */
+/** @capability weapon-system run a data-defined weapon: fire modes, recoil and bloom, hitscan or ballistic projectiles, interrupted reloads and readable ammo, all resolving through the damage runtime */
 export function createWeaponSystem(initial: WeaponDefinition, deps: WeaponSystemDeps): WeaponSystem {
   assertWeaponDefinition(initial);
   const rng = deps.rng;

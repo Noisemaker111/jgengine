@@ -26,24 +26,19 @@ const PARTS: Record<PartIconId, string> = {
 };
 const EMPTY_SOCKET = svg(`<rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="#5a5650" stroke-width="1.4" stroke-dasharray="3 3"/>`);
 
-/** A part's stamped icon, or the dashed empty socket. */
 export function partArtwork(id: PartIconId | null): string {
   return id === null ? EMPTY_SOCKET : PARTS[id];
 }
 
 const MEDAL_TINT: Record<MedalId, string> = { bronze: "#b8763d", silver: "#c9d0d4", gold: "#f2c230" };
-/** A hex-cut medal with a stamped star; an unearned medal is an empty steel socket. */
 export function medalArtwork(medal: MedalId, earned: boolean): string {
   const face = earned ? MEDAL_TINT[medal] : "#3a3f42", star = earned ? "#1b1407" : "#6c7175";
   return svg(`<path d="M12 1 L21.5 6.5 V17.5 L12 23 L2.5 17.5 V6.5 Z" fill="#0c0e0f"/><path d="M12 2.6 L20.1 7.3 V16.7 L12 21.4 L3.9 16.7 V7.3 Z" fill="${face}"/><path d="M12 6.2 L13.7 10 L17.6 10.3 L14.6 12.9 L15.6 16.8 L12 14.7 L8.4 16.8 L9.4 12.9 L6.4 10.3 L10.3 10 Z" fill="${star}"/>`);
 }
 
-/** The finish flag at the end of the route rule. */
 export const FLAG_ARTWORK = svg(`<rect x="4" y="3" width="2" height="19" fill="#f2c230"/><path d="M6 4 H20 L17 8.5 L20 13 H6 Z" fill="#f2c230"/>`);
 
-/** The dash rail's pause tab and settings gear, in hazard yellow. */
 export const PAUSE_ARTWORK = svg(`<rect x="6" y="5" width="4" height="14" fill="#f2c230"/><rect x="14" y="5" width="4" height="14" fill="#f2c230"/>`);
 export const GEAR_ARTWORK = svg(`${spokes(8, 45, `<rect x="10.5" y="2" width="3" height="5" fill="#f2c230" transform="rotate(ROT 12 12)"/>`)}<circle cx="12" cy="12" r="6.5" fill="#f2c230"/><circle cx="12" cy="12" r="2.6" fill="#1c2022"/>`);
-/** Touch pad arrows. */
 export const LEFT_ARTWORK = svg(`<path d="M15 4 L7 12 L15 20" fill="none" stroke="#f2c230" stroke-width="3.2"/>`);
 export const RIGHT_ARTWORK = svg(`<path d="M9 4 L17 12 L9 20" fill="none" stroke="#f2c230" stroke-width="3.2"/>`);

@@ -1,6 +1,5 @@
 import type { LiveRoadSource, RoadEnvironmentDescriptor, RoadSurfaceScans } from "../world/features";
 
-/** A {@link LiveRoadSource} whose carriageway surface can be swapped at runtime. */
 export interface SurfaceSwappableRoadSource extends LiveRoadSource {
   /** Pick the layers drawn over each road's own; `undefined` restores the roads as authored. Redraws only when the choice changes. */
   setSurface(layers: Partial<RoadSurfaceScans> | undefined): void;

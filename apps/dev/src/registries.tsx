@@ -1,10 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/**
- * Runner registries: the `import.meta.glob` discovery that turns every
- * `games/*` folder into lazy game/preview/editor loaders, the built-in demo
- * registry, and the camera-preset overlay. All loaders are lazy — importing
- * this module scans no game code until something is actually requested.
- */
 import type { ComponentType } from "@jgengine/core/ui/jsx";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -106,7 +100,6 @@ export function withCameraPreset(game: PlayableGame, markers?: LookMarkers): Pla
   return { ...game, camera: { ...game.camera, ...preset } };
 }
 
-/** The data half of a camera config, which is what an installed capture camera carries. */
 function rigConfigOf(config: GameCameraConfig): CameraRigConfig {
   const { rig: _rig, lens: _lens, follow, ...rest } = config;
   if (follow === undefined) return rest;
@@ -351,7 +344,4 @@ export const previewLoaders = {
     ? {}
     : { [servedGame.id]: () => servedModule<{ default: PreviewComponent; states?: Record<string, PreviewComponent> }>("src/preview.tsx") }),
 };
-
-
-
 

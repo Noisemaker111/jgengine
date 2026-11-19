@@ -17,7 +17,6 @@ import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
  * @capability hud-slots atomic themed equipment/weapon/armor/potion slot grids with painted icons
  */
 
-/** One slot's content — a `GameIcon` glyph (or custom node), school tint, count, keycap, active flag. */
 export interface SlotItem {
   icon?: GameIconName;
   glyph?: ReactNode;
@@ -25,13 +24,11 @@ export interface SlotItem {
   count?: number;
   keycap?: string;
   active?: boolean;
-  /** Accessible label / tooltip. */
   label?: string;
 }
 
 /** Props shared by every atomic slot grid. */
 export interface SlotGridProps {
-  /** Slots in order; `null` (or a slot with no icon/glyph) renders an empty placeholder. */
   items: readonly (SlotItem | null)[];
   /** Tile size in px. Default 44. */
   size?: number;
@@ -93,15 +90,12 @@ function SlotGrid({ category, items, size = 44, columns, gap = 6, className, sty
 export function EquipmentSlots(props: SlotGridProps) {
   return <SlotGrid category="equipment" {...props} />;
 }
-/** Weapon loadout slots. */
 export function WeaponSlots(props: SlotGridProps) {
   return <SlotGrid category="weapon" {...props} />;
 }
-/** Armor piece slots. */
 export function ArmorSlots(props: SlotGridProps) {
   return <SlotGrid category="armor" {...props} />;
 }
-/** Consumable (health/shield potion) slots. */
 export function PotionSlots(props: SlotGridProps) {
   return <SlotGrid category="potion" {...props} />;
 }

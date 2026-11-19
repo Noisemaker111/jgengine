@@ -80,10 +80,6 @@ function standardMaterial(material: THREE.Material): THREE.Material {
   return standard;
 }
 
-/**
- * One draw group per material: FBX meshes often hold dozens of groups alternating two materials,
- * and the exporter writes each group as its own primitive.
- */
 function mergeGroupsByMaterial(geometry: THREE.BufferGeometry): void {
   if (geometry.groups.length <= 1) return;
   const position = geometry.getAttribute("position");
@@ -162,7 +158,6 @@ async function toGlb(root: THREE.Object3D, animations: THREE.AnimationClip[], ma
   return io.writeBinary(document);
 }
 
-/** An MTL file with its texture lines removed: maps are attached from the archive after export. */
 function mtlWithoutMaps(text: string): { text: string; maps: Map<string, string> } {
   const maps = new Map<string, string>();
   let current = "";
@@ -190,7 +185,6 @@ function withWindowSize<T>(parse: () => T): T {
   }
 }
 
-/** Authoring cameras and lights are not part of a placeable model. */
 function dropCamerasAndLights(root: THREE.Object3D): void {
   const extra: THREE.Object3D[] = [];
   root.traverse((object) => {

@@ -10,13 +10,11 @@ export const SUN_ANGULAR_DIAMETER_DEG = 0.53;
 /** Metres between a typical caster and the ground it shadows, used when a light leaves it unset. */
 export const DEFAULT_OCCLUDER_DISTANCE = 4;
 
-/** What a soft shadow needs to know about one shadow map. */
 export interface SoftShadowInput {
   /** The light's angular diameter in degrees; 0.53 is the sun, larger reads as haze or an area light. */
   lightSize: number;
   /** Metres from caster to receiver the penumbra is sized for. */
   occluderDistance?: number | undefined;
-  /** Width the shadow map covers, world units. */
   frustumWidth: number;
   /** Shadow map texels along that width. */
   mapSize: number;

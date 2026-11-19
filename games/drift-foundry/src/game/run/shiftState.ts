@@ -3,15 +3,10 @@ import { createSessionLoop, type SessionLoop, type SessionLoopPersistence, type 
 import { RUN_SEED } from "./constants";
 import { SHIFT_TABLE, type ShiftEffect } from "./shifts";
 
-/**
- * Where an older build kept the career's run history (how many runs are behind it, and which shift
- * the next one drew); the yard document lifts it into its `run` section.
- */
 export const RUN_STATE_KEY = "drift-foundry.run.v1";
 
 const count = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 
-/** A stored `run` section, or `null` when it is missing, old or not numbers it can trust. */
 export function readRunState(value: unknown): SessionLoopState | null {
   if (value === null || typeof value !== "object") return null;
   const data = value as Partial<SessionLoopState> & { run?: unknown; completed?: unknown; haul?: unknown; changeId?: unknown };
@@ -25,10 +20,8 @@ export function readRunState(value: unknown): SessionLoopState | null {
   return { session, closed, carried, optionId };
 }
 
-/** How a run ended: what it carried reached the bank, or it was lost. */
 export type RunOutcome = "banked" | "lost";
 
-/** What one closed run banked or lost. */
 export interface RunBank {
   banked: number;
   lost: number;
@@ -36,11 +29,6 @@ export interface RunBank {
 
 export type ShiftLoop = SessionLoop<ShiftEffect, { outcome: RunOutcome; multiplier?: number }, RunBank>;
 
-/**
- * The yard's run loop: the engine session loop carries the salvage at risk and draws the shift the
- * next run opens with; this rule decides that an escape banks the haul scaled by the line and a wreck
- * loses all of it.
- */
 export function createShiftLoop(persist?: SessionLoopPersistence): ShiftLoop {
   return createSessionLoop<ShiftEffect, { outcome: RunOutcome; multiplier?: number }, RunBank>({
     kind: "run",

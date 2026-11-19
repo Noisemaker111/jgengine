@@ -11,27 +11,14 @@ export type AmbienceZoneShape =
   | { kind: "box"; min: readonly [number, number, number]; max: readonly [number, number, number] }
   | { kind: "elsewhere" };
 
-/** One ambience zone: a sound bed keyed to a volume of the scene.
- * @capability ambience-zones a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
- */
+/** @capability ambience-zones a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting. */
 export interface AmbienceZoneDef {
-  /** Stable id; the shell retains one looping bed per zone for the engine's lifetime. */
   id: string;
-  /** Sound id in the playable's `audio.sounds` catalog. The shell loops it regardless of the sound's `loop` flag. */
   sound: string;
   shape: AmbienceZoneShape;
-  /**
-   * World units over which the bed fades across the boundary, measured on both sides. Default 4.
-   * Two zones that share a boundary hand over their full level exactly across this band.
-   */
   crossfade?: number;
   /** Bed level multiplier, 0..1. Default 1. A game scales it live with `ctx.game.audio.zoneLevel`. */
   gain?: number;
-  /**
-   * Mix layer. Zones in one layer share the mix: their weights normalize together and an
-   * `elsewhere` zone fills that layer's remainder. Beds in different layers (wind under distant
-   * machinery) mix independently. Default `""`.
-   */
   layer?: string;
 }
 
@@ -43,10 +30,6 @@ export interface AmbienceWeight {
 
 const DEFAULT_CROSSFADE = 4;
 
-/**
- * Distance from a point to a zone boundary, positive inside and negative outside.
- * Spheres measure from the surface; boxes use the nearest face; `elsewhere` is everywhere.
- */
 export function zoneSignedDistance(shape: AmbienceZoneShape, x: number, y: number, z: number): number {
   if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return -Infinity;
   if (shape.kind === "elsewhere") return Infinity;

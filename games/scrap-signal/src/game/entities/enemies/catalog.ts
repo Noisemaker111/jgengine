@@ -27,9 +27,7 @@ export interface EnemyDef {
   xp: number;
   gunDropChance: number;
   gunLuck: number;
-  /** A local breed's base enemy, whose rig and weapon it wears (`variants.ts`). */
   look?: string;
-  /** A local breed's plate colour, over its base's. */
   plate?: string;
 }
 
@@ -379,10 +377,6 @@ function scaledAttack(attack: EnemyAttack, damage: number): EnemyAttack {
   return attack.kind === "melee" ? { ...attack, damage: Math.round(attack.damage * damage) } : attack;
 }
 
-/**
- * A local breed built from its base (a common enemy, or a breed listed before it): the base's rig,
- * attack and drops with the variant's body and numbers. `look` is always the common enemy at the root.
- */
 function breed(built: readonly EnemyDef[], variant: EnemyVariant): EnemyDef {
   const base = built.find((enemy) => enemy.id === variant.base);
   if (base === undefined) throw new Error(`enemy variant ${variant.id}: unknown base ${variant.base} (a base must come first)`);
@@ -436,7 +430,6 @@ export const enemies: readonly EnemyDef[] = ENEMY_VARIANTS.reduce<readonly Enemy
 
 const byId = new Map(enemies.map((enemy) => [enemy.id, enemy]));
 
-/** Whether killing a `catalogId` counts for a job against `target`: itself, or a local breed of it. */
 export function countsAsKillOf(catalogId: string, target: string): boolean {
   return catalogId === target || byId.get(catalogId)?.look === target;
 }

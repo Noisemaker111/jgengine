@@ -9,11 +9,7 @@ import { Icon } from "./icons";
 import { BORDER, FOCUS_RING } from "./theme";
 import { IconButton, ToolbarDivider } from "./ui";
 
-/**
- * Subscribe to the host runtime play-control (pause / pending steps) as an external store.
- * Shared by the play-mode chrome pieces so none of them hand-rolls a `setState` mirror.
- * @internal
- */
+/** @internal */
 export function usePlayControl(api: EditorHostApi): RuntimePlayControl {
   const store = useMemo(
     () => ({ getState: api.getPlayControl, subscribe: api.subscribePlayControl }),
@@ -22,12 +18,7 @@ export function usePlayControl(api: EditorHostApi): RuntimePlayControl {
   return useStoreSelector(store, (play) => play);
 }
 
-/**
- * Slim shell chrome for Play mode — same app-bar language as edit mode so switching modes
- * does not feel like an app swap. Pause / Resume / Step drive the existing runtime play
- * controls (`runtime_pause` / `runtime_resume` / `runtime_step`); Exit returns to edit.
- * @internal
- */
+/** @internal */
 export function PlayModeBar({
   gameId,
   api,

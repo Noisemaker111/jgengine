@@ -29,14 +29,12 @@ const ridesOf = perContext((): { system: RideSystem | null; key: string; refurb:
 /** A ride the sim never repairs on its own; the world's crew does. */
 const HELD_DOWN = 1e9;
 
-/** Every laid track piece as a point; the circuit orders them itself. */
 function trackPoints(objects: readonly ParkObject[]): TrackPoint[] {
   const points: TrackPoint[] = [];
   for (const obj of objects) if (obj.kind === "track_piece") points.push([obj.x, 0, obj.z]);
   return points;
 }
 
-/** The circuit the park's coaster runs, measured from the track it has laid. */
 export function coasterCircuit(ctx: GameContext): CoasterCircuit {
   const objects = parkObjects(ctx);
   const station = objects.find((obj) => obj.kind === "ride_coaster") ?? null;
@@ -47,13 +45,8 @@ export function trackPieces(ctx: GameContext): number {
   return parkObjects(ctx).filter((obj) => obj.kind === "track_piece").length;
 }
 
-/** Scenery in reach lifts a ride's excitement by up to this much at the theme cap. */
 const THEME_EXCITEMENT = 0.25;
 
-/**
- * A ride's three ratings on the 0-10 scale: a coaster's come from its circuit, a flat ride's from its
- * own data; the charm of scenery in reach (`<id>.theme`) lifts the excitement of either.
- */
 export function rideRatings(obj: ParkObject, circuit: CoasterCircuit, theme = 0): RideRatings {
   const ride = obj.def.ride;
   if (ride === undefined) return { excitement: 0, intensity: 0, nausea: 0 };
@@ -61,7 +54,6 @@ export function rideRatings(obj: ParkObject, circuit: CoasterCircuit, theme = 0)
   return { ...base, excitement: Math.round((base.excitement + theme * THEME_EXCITEMENT) * 10) / 10 };
 }
 
-/** A ride's refit as the sim reads it: scales on its seats, its boarding time and its wear (1 as built). */
 export interface RideScales {
   capacity: number;
   service: number;
@@ -70,7 +62,6 @@ export interface RideScales {
 
 const AS_BUILT: RideScales = { capacity: 1, service: 1, wear: 1 };
 
-/** One placed ride as the shared sim's data. */
 export function rideDefinition(obj: ParkObject, circuit: CoasterCircuit, theme = 0, scales: RideScales = AS_BUILT): RideDefinition {
   const ride = obj.def.ride;
   if (ride === undefined) throw new Error(`brightway-park: "${obj.kind}" is not a ride`);
@@ -135,7 +126,6 @@ export function syncRidePark(ctx: GameContext, rng: () => number = ctx.rng): voi
   ridesOf(ctx).key = key;
 }
 
-/** The live sim, created empty when the park has no rides yet. */
 export function rideSystem(ctx: GameContext): RideSystem {
   const rides = ridesOf(ctx);
   if (rides.system === null) {
@@ -157,10 +147,8 @@ export const rideView = (ctx: GameContext, rideId: string): RideView | null => r
 export const joinRide = (ctx: GameContext, rideId: string, guestId: string): boolean => rideSystem(ctx).join(rideId, guestId);
 export const leaveRide = (ctx: GameContext, rideId: string, guestId: string): boolean => rideSystem(ctx).leave(rideId, guestId);
 
-/** Clear a ride's wear; the world's `service_*` action already took the money. */
 export const serviceRide = (ctx: GameContext, rideId: string): RideServiceResult | null => rideSystem(ctx).service(rideId);
 
-/** The crew's order landed: the ride comes back up and boards its waiting line on the next tick. */
 export function fixRide(ctx: GameContext, rideId: string): void {
   const system = rideSystem(ctx);
   const snapshot = system.snapshot();
@@ -173,7 +161,6 @@ export function fixRide(ctx: GameContext, rideId: string): void {
   system.restore(snapshot);
 }
 
-/** Take `runs` of wear off each of these rides (a refurbishment's progress); a broken ride keeps its own. */
 export function easeWear(ctx: GameContext, rideIds: readonly string[], runs: number): void {
   if (rideIds.length === 0 || runs <= 0) return;
   const system = rideSystem(ctx);
@@ -187,7 +174,6 @@ export function easeWear(ctx: GameContext, rideIds: readonly string[], runs: num
   if (moved) system.restore(snapshot);
 }
 
-/** Take a ride down now (the drive's and the tests' way to see a breakdown without waiting on the dice). */
 export function breakRide(ctx: GameContext, rideId: string): boolean {
   const system = rideSystem(ctx);
   const snapshot = system.snapshot();
@@ -222,20 +208,17 @@ export interface RideBoard {
   riders: number;
 }
 
-/** What the park's dashboard says about its rides' lines. */
 export function rideBoard(ctx: GameContext): RideBoard {
   const stats = rideSystem(ctx).stats();
   return { rides: stats.rides, online: stats.rides - stats.broken, broken: stats.broken, queued: stats.queued, riders: stats.riders };
 }
 
-/** Advance every ride's own cycle by `dt`; the sink hears every boarding, alighting and breakdown. */
 export function tickRides(ctx: GameContext, dt: number, sink: RideTickSink): void {
   syncRidePark(ctx);
   rideSystem(ctx).tick(dt, sink);
   tickRefurbishment(ctx, dt);
 }
 
-/** Every {@link REFURB_SECONDS} of park time, each ride shut for refurbishment wears off one run. */
 function tickRefurbishment(ctx: GameContext, dt: number): void {
   ridesOf(ctx).refurb += dt;
   if (ridesOf(ctx).refurb < REFURB_SECONDS) return;

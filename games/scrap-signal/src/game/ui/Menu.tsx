@@ -22,7 +22,6 @@ function savedAgo(savedAt: number | undefined, now: number): string {
   return hours < 24 ? `Saved ${hours}h ago` : `Saved ${Math.floor(hours / 24)}d ago`;
 }
 
-/** The key codes a call sign accepts, as the characters they type. */
 export function callSignKey(code: string): string | null {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3);
   if (/^(Digit|Numpad)[0-9]$/.test(code)) return code.slice(-1);
@@ -30,20 +29,14 @@ export function callSignKey(code: string): string | null {
   if (code === "Minus" || code === "NumpadSubtract") return "-";
   return null;
 }
-/** Apply one key to a call sign: typed characters up to 24, Backspace removes the last one. */
 export function editCallSign(current: string, code: string): string {
   if (code === "Backspace") return current.slice(0, -1);
   const typed = callSignKey(code);
   return typed === null || current.length >= 24 ? current : current + typed;
 }
 
-/** Screens the boot can open on directly; proofs set this before mounting. */
 export const menuFocus: { screen: "main" | "credits" } = { screen: "main" };
 
-/**
- * Scrap Signal's front end, and the only surface a boot shows: the jammed broadcast. A kept run is a
- * signal to resume; tuning a reclaimer channel starts a new run in a free bay (or the oldest one).
- */
 export function ScrapMenu() {
   const ctx = useGameContext();
   const { commands } = useGame();
@@ -79,16 +72,11 @@ export function ScrapMenu() {
   </RuneLayers>;
 }
 
-/** The broadcast wordmark: Russo One split across the red and cyan guns of a bad tube. */
 function Wordmark({ size }: { size: number }) {
   const mark = (color: string, x?: number) => <RuneLabel value="SCRAP SIGNAL" family="Russo One" size={size} tracking={size / 14} color={color} {...(x === undefined ? {} : { pin: [x, 0, -x, null] as const })} />;
   return <RuneView>{mark("#ff3b2fcc", -3)}{mark("#3fd8ffcc", 3)}{mark(C.ink)}</RuneView>;
 }
 
-/**
- * The title as a jammed broadcast: the carrier is down and three reclaimer channels flicker on a
- * bank of salvaged monitors. Tuning one in starts a new run; a kept run shows as a signal to resume.
- */
 function Broadcast({ kept, onContinue, callSign, onCallSign, onPick, onCredits }: {
   kept: { name: string; detail: string } | null; onContinue: () => void; callSign: string; onCallSign: (next: string) => void; onPick: (id: string) => void; onCredits: () => void;
 }) {

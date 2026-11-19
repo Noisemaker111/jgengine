@@ -80,9 +80,7 @@ export interface FeatureDeps {
 /** @internal What a descriptor produces: the `ctx`-facing value plus its optional replication/save modules. */
 export interface FeatureBuild {
   value: unknown;
-  /** Registered into the host→client replication set when present (`ctx.snapshot`/`ctx.hydrate`). */
   replicate?: SnapshotModule;
-  /** Registered into the whole-world save-only set when present (`ctx.game.save`). */
   save?: SnapshotModule;
 }
 

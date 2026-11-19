@@ -1,24 +1,14 @@
 import { evaluatePredicate, type Predicate } from "../rules/predicate";
 
-/**
- * The roles one game's build plots use, from fewest build rights to most, and which role carries
- * which right. The ladder is the game's data: a plot can have any named roles.
- */
 export interface BuildRoleLadder<R extends string> {
-  /** Every role a plot can carry, fewest build rights first. The last role is the owner's. */
   ladder: readonly R[];
-  /** The lowest ladder role that may edit; it and every role above it can build. */
   editor: R;
-  /** The ladder role a guild joins at when `setGuild` names none. */
   guildDefault: R;
-  /** The ladder role anyone without a grant holds, e.g. a shared world every visitor may look at. Omit for none. */
   everyone?: R;
 }
 
-/** Looking needs any role at all. */
 const CAN_VIEW: Predicate = { has: "role" };
 
-/** Initial owner, guild and per-player roles for one build plot. */
 export interface PlotPermissionConfig<R extends string> extends BuildRoleLadder<R> {
   plotId: string;
   ownerId: string;
@@ -29,7 +19,6 @@ export interface PlotPermissionConfig<R extends string> extends BuildRoleLadder<
   banned?: readonly string[];
 }
 
-/** Serializable copy of a plot's owner, guild, roles and bans. */
 export interface PlotPermissionSnapshot<R extends string> {
   plotId: string;
   ownerId: string;
@@ -39,7 +28,6 @@ export interface PlotPermissionSnapshot<R extends string> {
   banned?: readonly string[];
 }
 
-/** The player asking to build, with their guild if any. */
 export interface BuildActor {
   userId: string;
   guildId?: string;
@@ -52,13 +40,11 @@ export interface PlotPermissions<R extends string> {
   canView(actor: BuildActor): boolean;
   grant(userId: string, role: R): void;
   revoke(userId: string): void;
-  /** Strip every role from a player until {@link unban}; banning the owner does nothing. */
   ban(userId: string): void;
   unban(userId: string): void;
   setGuild(guildId: string | null, role?: R): void;
   transferOwner(userId: string): void;
   snapshot(): PlotPermissionSnapshot<R>;
-  /** Replace owner, guild and grants from a {@link snapshot}; plot identity stays the config's. */
   restore(next: PlotPermissionSnapshot<R>): void;
 }
 
@@ -86,7 +72,6 @@ export function createPlotPermissions<R extends string>(
   if (everyone !== undefined && ladder.indexOf(everyone) < 0) {
     throw new RangeError(`everyone role "${everyone}" is not on the plot's role ladder`);
   }
-  /** Editing needs the `editor` rank or above. */
   const canEditRule: Predicate = { gte: ["rank", editorRank] };
 
   let ownerId = config.ownerId;
@@ -169,17 +154,14 @@ export function createPlotPermissions<R extends string>(
   };
 }
 
-/** Resource amounts a shared build needs, keyed by resource id. */
 export type ContributionGoal = Readonly<Record<string, number>>;
 
-/** What one contribution did: amount accepted, overflow returned and whether the goal is now met. */
 export interface ContributionResult {
   accepted: number;
   overflow: number;
   complete: boolean;
 }
 
-/** Shared resource pool players pay into until a build goal is met. */
 export interface ContributionPool {
   contribute(userId: string, resource: string, amount: number): ContributionResult;
   totals(): Readonly<Record<string, number>>;
@@ -191,10 +173,7 @@ export interface ContributionPool {
   restore(snapshot: Record<string, Record<string, number>>): void;
 }
 
-/**
- * Creates a shared contribution pool for a build goal.
- * @capability contribution-pool Players pool resources toward a shared build goal
- */
+/** @capability contribution-pool Players pool resources toward a shared build goal */
 export function createContributionPool(goal: ContributionGoal): ContributionPool {
   const perResource = new Map<string, Map<string, number>>();
 

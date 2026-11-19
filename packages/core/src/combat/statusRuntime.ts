@@ -26,21 +26,17 @@ export type StatusEffect =
 export interface StatusDef {
   /** Caller-owned id (`"burn"`, `"shock"`, `"slow"`, `"corrode"`) — the runtime never branches on it. */
   id: string;
-  /** Behaviour when the target already carries this status. */
   stack: StatusStackPolicy;
   /** Base lifetime in milliseconds. */
   durationMs: number;
   /** Milliseconds between ticks; defaults to `durationMs` (one tick as it expires). */
   intervalMs?: number;
-  /** Per-stack effect size: damage per tick, or a stat delta per stack. */
   magnitude?: number;
-  /** What each tick does. Omitted means a status with no periodic effect (HUD/predicate only). */
   effect?: StatusEffect;
   /** Landing chance in `[0,1]` before any application scale; default `1`. */
   chance?: number;
 }
 
-/** A damage tick, already routed through the caller's `applyDamage` when one was supplied. */
 export interface StatusDamageTick {
   kind: "damage";
   target: string;
@@ -49,13 +45,10 @@ export interface StatusDamageTick {
   channel: string;
   /** Raw `magnitude × stacks` before the caller's resistances and armor. */
   amount: number;
-  /** What the caller's pipeline reported as dealt; equals `amount` when no pipeline was supplied. */
   dealt: number;
-  /** Who applied the status that is ticking, when known — a burn names its arsonist. */
   source?: string;
 }
 
-/** A stat tick: a per-stack delta the caller reads while the status lives. */
 export interface StatusStatTick {
   kind: "stat";
   target: string;
@@ -65,7 +58,6 @@ export interface StatusStatTick {
   delta: number;
 }
 
-/** A status ended: remove its HUD row and any stat delta it was contributing. */
 export interface StatusExpiredTick {
   kind: "expired";
   target: string;
@@ -73,10 +65,8 @@ export interface StatusExpiredTick {
   stacks: number;
 }
 
-/** Everything one `tick` call produced, in target-then-status order. */
 export type StatusTickEvent = StatusDamageTick | StatusStatTick | StatusExpiredTick;
 
-/** Options for one application; scales compose with the definition's own base values. */
 export interface StatusApplyOptions {
   source?: string;
   chanceScale?: number;
@@ -84,13 +74,11 @@ export interface StatusApplyOptions {
   magnitudeScale?: number;
 }
 
-/** One live status plus its tick timer, as saved and restored. */
 export interface StatusRuntimeEntry {
   instance: StatusInstance;
   untilTickMs: number;
 }
 
-/** Serializable runtime state: carried statuses, tick timers, and the counters a probe reports. */
 export interface StatusRuntimeState {
   targets: Array<{ id: string; entries: StatusRuntimeEntry[] }>;
   ticks: number;
@@ -98,45 +86,30 @@ export interface StatusRuntimeState {
   expired: number;
 }
 
-/** Tunables a game can adjust at runtime without discarding carried statuses. */
 export interface StatusRuntimeOptions {
-  /** Status definitions; re-supply through {@link StatusRuntime.retune} when they change. */
   statuses: readonly StatusDef[];
-  /** Injected `[0,1)` stream for landing rolls. Omitting it falls back to `Math.random` and warns once. */
   rng?: () => number;
-  /** Route a damage tick through the caller's resistances/armor and return what it dealt. */
   applyDamage?: (tick: StatusDamageTick) => number;
   /** Most ticks one status emits per call; the remainder carries to the next call, never dropped. Default `8`. */
   maxTicksPerCall?: number;
-  /** Register a one-line devtools probe under this name. */
   devtoolsName?: string;
 }
 
-/** A pool of per-target statuses that applies stack rules, ticks effects, and hands its state out. */
 export interface StatusRuntime {
-  /** Try to apply one status to a target, folding into an existing instance per its declared stack rule. */
   apply(targetId: string, statusId: string, options?: StatusApplyOptions): StatusApplicationOutcome;
   statusesOf(targetId: string): readonly StatusInstance[];
   has(targetId: string, statusId: string): boolean;
-  /** Sum of `magnitude × stacks` for every live status whose effect is this stat. */
   statDelta(targetId: string, stat: string): number;
-  /** Advance every live status; returns each tick's effect and each expiry. */
   tick(dtSeconds: number): StatusTickEvent[];
-  /** Drop one status, or every status, from a target. */
   clear(targetId: string, statusId?: string): void;
   snapshot(): StatusRuntimeState;
   restore(next: StatusRuntimeState): void;
-  /** Swap the definitions (hot reload, tuning) while carried statuses keep running. */
   retune(statuses: readonly StatusDef[]): void;
-  /** Counters for a probe or a test. */
   stats(): { targets: number; active: number; ticks: number; applied: number; expired: number };
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
-/** Raised when a caller names a status id the runtime has no definition for.
- * @capability status-unknown reject a status id the runtime has no definition for
- */
+/** @capability status-unknown reject a status id the runtime has no definition for */
 export class UnknownStatusError extends Error {
   readonly status: string;
 

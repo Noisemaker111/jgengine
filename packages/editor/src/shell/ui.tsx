@@ -5,7 +5,6 @@ import type { KeyboardEvent, PointerEvent } from "@jgengine/core/ui/jsx/dom.view
 import { Icon, type IconName } from "./icons";
 import { CONTROL, CONTROL_ACTIVE, FOCUS_RING, MICRO_LABEL } from "./theme";
 
-/** Icon-only control with a mandatory accessible name (tooltip + aria-label). */
 export function IconButton({
   icon,
   label,
@@ -44,12 +43,10 @@ export function IconButton({
   );
 }
 
-/** Thin vertical divider between toolbar clusters. */
 export function ToolbarDivider() {
   return <div className="mx-1 h-5 w-px shrink-0 bg-white/[0.07]" aria-hidden="true" />;
 }
 
-/** Keyboard-shortcut chip rendered inside buttons and menus. */
 export function Kbd({ children }: { children: ReactNode }) {
   return (
     <kbd className="rounded-[3px] bg-white/[0.07] px-1 py-px font-sans text-[9px] leading-none text-neutral-400 ring-1 ring-inset ring-white/[0.08]">
@@ -58,18 +55,15 @@ export function Kbd({ children }: { children: ReactNode }) {
   );
 }
 
-/** One choice within a {@link Segmented} control. */
 export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
   icon?: IconName;
   /** Keyboard hint shown after the label. */
   kbd?: string;
-  /** Hide the text label and render icon-only (label becomes the tooltip). */
   iconOnly?: boolean;
 }
 
-/** Compact segmented control on the elevated-control surface with a cyan active segment. */
 export function Segmented<T extends string>({
   options,
   value,
@@ -117,7 +111,6 @@ export function Segmented<T extends string>({
   );
 }
 
-/** Horizontal tab strip for dock panels (bottom dock, inspector tabs). */
 export function PanelTabs<T extends string>({
   tabs,
   active,
@@ -161,7 +154,6 @@ export function PanelTabs<T extends string>({
   );
 }
 
-/** Collapsible component card for the inspector and side panels. */
 export function CollapsibleSection({
   title,
   icon,
@@ -177,7 +169,6 @@ export function CollapsibleSection({
   onToggle: () => void;
   children: ReactNode;
   trailing?: ReactNode;
-  /** Optional accent color for the title icon. */
   tone?: string;
 }) {
   return (
@@ -235,7 +226,6 @@ export function EmptyState({
   );
 }
 
-/** Micro uppercase heading used inside panels. */
 export function PanelHeading({ children, trailing }: { children: ReactNode; trailing?: ReactNode }) {
   return (
     <div className="flex items-center gap-2">
@@ -247,10 +237,6 @@ export function PanelHeading({ children, trailing }: { children: ReactNode; trai
 
 const RESIZE_KEY_STEP = 16;
 
-/**
- * Drag handle between shell regions. Pointer-drag resizes continuously; arrow keys resize in
- * 16px steps for keyboard access. `sign` maps a positive pointer delta to a size increase.
- */
 export function PanelResizer({
   orientation,
   label,

@@ -8,15 +8,10 @@ import { decalKey, knownDecal, type DecalPaint } from "./decalTexture";
 /** A decal texture plus its in-flight bake, owned by a draw instead of a hook. @internal */
 export interface DecalTextureLease {
   readonly texture: THREE.DataTexture;
-  /** Free the texture; a late bake landing after this is dropped. */
   dispose(): void;
 }
 
-/**
- * Draw-side form of {@link useDecalTexture}: the same clear-until-baked texture, the same worker
- * bake counted in the scene's covered warmup, and the same known-bake fast path.
- * @internal
- */
+/** @internal */
 export function acquireDecalTexture(
   style: DecalStyle,
   seed: string,

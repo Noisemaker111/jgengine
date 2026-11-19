@@ -9,7 +9,6 @@ const SUSPENSION_PREFIX = "__jg_control_suspension:";
 interface ControlState {
   stack: ActionContextStack;
   nextLease: number;
-  /** The player's rebinds, layered over the game's authored input before any context. */
   overrides: BindingOverrides;
   overridesVersion: number;
   listeners: Set<() => void>;
@@ -55,15 +54,10 @@ function contextsFor(ctx: GameContext): ActionContextStack {
   return controlState(ctx).stack;
 }
 
-/** The player's rebinds in this game context: action to the codes that now drive it. */
 export function bindingOverrides(ctx: GameContext): BindingOverrides {
   return controlState(ctx).overrides;
 }
 
-/**
- * Replace the player's rebinds (the shell seeds them from storage at boot). Live input picks them up through
- * {@link activeActionCodes}; listeners of {@link actionContextStack} hear the change.
- */
 export function setBindingOverrides(ctx: GameContext, overrides: BindingOverrides): void {
   const state = controlState(ctx);
   state.overrides = { ...overrides };
@@ -71,11 +65,7 @@ export function setBindingOverrides(ctx: GameContext, overrides: BindingOverride
   for (const listener of [...state.listeners]) listener();
 }
 
-/**
- * Bind an action to new codes, or back to the game's own with null. An action the game marks `locked` keeps its
- * codes whatever is stored.
- * @capability key-rebinding rebind a player action in the game itself, so menus, the shell and proofs all read the same keys
- */
+/** @capability key-rebinding rebind a player action in the game itself, so menus, the shell and proofs all read the same keys */
 export function rebindAction(ctx: GameContext, action: string, codes: ActionCodes | null): void {
   const next = { ...bindingOverrides(ctx) };
   if (codes === null) delete next[action];
@@ -83,17 +73,14 @@ export function rebindAction(ctx: GameContext, action: string, codes: ActionCode
   setBindingOverrides(ctx, next);
 }
 
-/** Returns the context stack associated with a game context. */
 export function actionContextStack(ctx: GameContext): ActionContextStack {
   return contextsFor(ctx);
 }
 
-/** The game's authored input with the player's rebinds over it: what each action is bound to, menus aside. */
 export function reboundActionCodes(ctx: GameContext, base: ActionCodesMap): ActionCodesMap {
   return applyBindingOverrides(base, bindingOverrides(ctx));
 }
 
-/** Applies the player's rebinds, then the active contexts, to a base action map for shell input tracking. */
 export function activeActionCodes(ctx: GameContext, base: ActionCodesMap): ActionCodesMap {
   const stack = contextsFor(ctx);
   if (stack.ids().some((id) => id.startsWith(SUSPENSION_PREFIX))) return {};

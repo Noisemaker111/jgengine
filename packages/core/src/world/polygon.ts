@@ -10,7 +10,6 @@ import type { Vec2 } from "./geometry";
  * @capability city-district polygon math for road-derived blocks, parcels, and buildable footprints
  */
 
-
 /** Signed area of a polygon ring (positive = counter-clockwise in XZ). */
 export function polygonSignedArea(ring: readonly Vec2[]): number {
   let sum = 0;
@@ -22,12 +21,10 @@ export function polygonSignedArea(ring: readonly Vec2[]): number {
   return sum / 2;
 }
 
-/** Absolute polygon area. */
 export function polygonArea(ring: readonly Vec2[]): number {
   return Math.abs(polygonSignedArea(ring));
 }
 
-/** Ring perimeter length. */
 export function polygonPerimeter(ring: readonly Vec2[]): number {
   let sum = 0;
   for (let i = 0; i < ring.length; i += 1) {
@@ -38,7 +35,6 @@ export function polygonPerimeter(ring: readonly Vec2[]): number {
   return sum;
 }
 
-/** Area centroid of a simple polygon (falls back to the vertex mean for degenerate rings). */
 export function polygonCentroid(ring: readonly Vec2[]): Vec2 {
   let area = 0;
   let cx = 0;
@@ -69,7 +65,6 @@ export function ensureCcw(ring: readonly Vec2[]): Vec2[] {
   return polygonSignedArea(ring) >= 0 ? ring.map((p) => p) : ring.map((p) => p).reverse();
 }
 
-/** Even-odd point-in-polygon test. */
 export function pointInPolygon(ring: readonly Vec2[], x: number, z: number): boolean {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
@@ -80,7 +75,6 @@ export function pointInPolygon(ring: readonly Vec2[], x: number, z: number): boo
   return inside;
 }
 
-/** Distance from a point to the nearest boundary segment of a ring. */
 export function distanceToRing(ring: readonly Vec2[], x: number, z: number): number {
   let best = Infinity;
   for (let i = 0; i < ring.length; i += 1) {
@@ -96,11 +90,6 @@ export function distanceToRing(ring: readonly Vec2[], x: number, z: number): num
   return best;
 }
 
-/**
- * Clip a polygon to the half-plane `dot(p, normal) <= limit` (Sutherland–Hodgman step). Returns
- * the surviving ring, possibly empty. The subject may be concave; the output of a single
- * half-plane clip of a simple ring is always a valid (possibly pinched) ring.
- */
 export function clipHalfPlane(ring: readonly Vec2[], normal: Vec2, limit: number): Vec2[] {
   const out: Vec2[] = [];
   const [nx, nz] = normal;
@@ -118,7 +107,6 @@ export function clipHalfPlane(ring: readonly Vec2[], normal: Vec2, limit: number
   return dedupeRing(out);
 }
 
-/** Split a polygon by the line `dot(p, normal) = limit` into the `<=` and `>=` sides. */
 export function splitByLine(ring: readonly Vec2[], normal: Vec2, limit: number): { below: Vec2[]; above: Vec2[] } {
   return {
     below: clipHalfPlane(ring, normal, limit),
@@ -150,7 +138,6 @@ export function dedupeRing(ring: readonly Vec2[], epsilon = 1e-6): Vec2[] {
  */
 const ON_LINE = 1e-7;
 
-/** Which side of line p→q point r lies on: 1 left, -1 right, 0 within {@link ON_LINE} of it. */
 function lineSide(p: Vec2, q: Vec2, r: Vec2): number {
   const qx = q[0] - p[0];
   const qz = q[1] - p[1];
@@ -160,12 +147,10 @@ function lineSide(p: Vec2, q: Vec2, r: Vec2): number {
   return cross > 0 ? 1 : -1;
 }
 
-/** True when segments ab and cd properly cross: each strictly straddles the other's line. */
 function segmentsCross(a: Vec2, b: Vec2, c: Vec2, d: Vec2): boolean {
   return lineSide(a, b, c) * lineSide(a, b, d) < 0 && lineSide(c, d, a) * lineSide(c, d, b) < 0;
 }
 
-/** True when any two non-adjacent edges of the ring properly cross. O(n²), fine for block-scale n. */
 export function ringSelfIntersects(ring: readonly Vec2[]): boolean {
   const n = ring.length;
   for (let i = 0; i < n; i += 1) {
@@ -307,7 +292,6 @@ export function insetRing(ring: readonly Vec2[], edgeDistances: readonly number[
   return cleaned;
 }
 
-/** Uniform-distance convenience over {@link insetRing}. */
 export function insetRingUniform(ring: readonly Vec2[], distance: number): Vec2[] {
   return insetRing(
     ring,
@@ -315,16 +299,11 @@ export function insetRingUniform(ring: readonly Vec2[], distance: number): Vec2[
   );
 }
 
-/**
- * Mean "width" proxy for sliver detection: the diameter of the largest inscribed strip is
- * approximated by 2·area / perimeter (exact for long rectangles, conservative elsewhere).
- */
 export function polygonMeanWidth(ring: readonly Vec2[]): number {
   const perimeter = polygonPerimeter(ring);
   return perimeter <= 1e-6 ? 0 : (2 * polygonArea(ring)) / perimeter;
 }
 
-/** All four corners of a rotated rect (center, half-extents, yaw in engine rotationY convention). */
 export function rectCorners(cx: number, cz: number, hw: number, hd: number, rotationY: number): Vec2[] {
   const c = Math.cos(rotationY);
   const s = Math.sin(rotationY);
@@ -340,7 +319,6 @@ export function rectCorners(cx: number, cz: number, hw: number, hd: number, rota
   return out;
 }
 
-/** A rotated rectangle: center, half-extents, and yaw in the engine rotationY convention. */
 export interface OrientedRect {
   x: number;
   z: number;
@@ -349,10 +327,7 @@ export interface OrientedRect {
   angle: number;
 }
 
-/**
- * Separating-axis test for two rotated rectangles: true when a gap exists (no overlap).
- * @capability city-district exact overlap test between two rotated rectangles (plots, lots, footprints)
- */
+/** @capability city-district exact overlap test between two rotated rectangles (plots, lots, footprints) */
 export function rectsSeparated(a: OrientedRect, b: OrientedRect): boolean {
   const axes: [number, number][] = [];
   for (const angle of [a.angle, b.angle]) {
@@ -380,7 +355,6 @@ export function rectsSeparated(a: OrientedRect, b: OrientedRect): boolean {
   return false;
 }
 
-/** True when a segment touches an axis-aligned box (separating-axis: x, z, and the segment normal). */
 function segmentTouchesAabb(
   ax: number,
   az: number,
@@ -404,12 +378,7 @@ function segmentTouchesAabb(
   return true;
 }
 
-/**
- * True when a rotated rect stays at least `clearance` away from every segment of a polyline —
- * the plot-contract test that keeps building plots off road corridors (pass the road half-width
- * as the clearance). Exact segment-vs-expanded-rect intersection, not corner sampling.
- * @capability city-district keep a rotated rect (plot/footprint) clear of a road corridor polyline
- */
+/** @capability city-district keep a rotated rect (plot/footprint) clear of a road corridor polyline */
 export function rectClearsPolyline(rect: OrientedRect, path: readonly Vec2[], clearance: number): boolean {
   if (path.length < 2) return true;
   const c = Math.cos(rect.angle);
@@ -442,7 +411,6 @@ export function rectClearsPolyline(rect: OrientedRect, path: readonly Vec2[], cl
   return true;
 }
 
-/** True when the whole rotated rect (corners + edge midpoints) sits inside the ring. */
 export function rectInsidePolygon(ring: readonly Vec2[], cx: number, cz: number, hw: number, hd: number, rotationY: number): boolean {
   const corners = rectCorners(cx, cz, hw, hd, rotationY);
   for (const [x, z] of corners) {
@@ -456,11 +424,6 @@ export function rectInsidePolygon(ring: readonly Vec2[], cx: number, cz: number,
   return true;
 }
 
-/**
- * Clearance (m) a fitted rect keeps from the polygon boundary. Callers often ask for exactly the
- * polygon's own extent, which puts the rect's corners ON the boundary: a test that libm's last bit
- * decides. Testing a hair outside makes "touches the boundary" fail the same way on every platform.
- */
 const FIT_TOLERANCE = 1e-6;
 
 /**
@@ -519,7 +482,6 @@ export function rayDistanceToRing(ring: readonly Vec2[], origin: Vec2, dir: Vec2
   return best;
 }
 
-/** Axis-aligned bounding box of a ring. */
 export function ringBounds(ring: readonly Vec2[]): { minX: number; minZ: number; maxX: number; maxZ: number } {
   let minX = Infinity;
   let minZ = Infinity;
@@ -645,7 +607,6 @@ export function triangulateRingBand(outer: readonly Vec2[], inner: readonly Vec2
   return { positions, indices };
 }
 
-/** Cumulative arc-length fractions for a closed ring: length n+1, [0]=0 … [n]=1 (the wrap). */
 function ringFractions(ring: readonly Vec2[]): number[] {
   const n = ring.length;
   const cum = [0];
@@ -661,7 +622,6 @@ function ringFractions(ring: readonly Vec2[]): number[] {
   return cum;
 }
 
-/** Conservative polygon-overlap test: any vertex of one strictly inside the other, or any edges crossing. */
 export function polygonsOverlap(a: readonly Vec2[], b: readonly Vec2[], shrink = 0.05): boolean {
   const inset = (ring: readonly Vec2[]): readonly Vec2[] => {
     if (shrink <= 0) return ring;

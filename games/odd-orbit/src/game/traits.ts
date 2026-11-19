@@ -2,11 +2,6 @@ import { hashString } from "@jgengine/core/random/rng";
 import type { NeedId } from "./needs/needs";
 import type { MemberState } from "./session/types";
 
-/**
- * Each being carries two traits from this book. A trait changes numbers the rest of the household
- * already runs on (how fast a need drains, how much stress a shift costs, how a harvest comes out,
- * how quickly a friendship grows) and opens or shuts choices when a transmission arrives.
- */
 export const TRAIT_IDS = [
   "hearty", "nightOwl", "industrious", "greenFingered", "gregarious",
   "loner", "anxious", "serene", "playful", "kind", "handy", "thrifty",
@@ -16,17 +11,11 @@ export type TraitId = (typeof TRAIT_IDS)[number];
 export interface TraitDef {
   id: TraitId;
   label: string;
-  /** One line the inspector shows: what the trait does, in numbers. */
   blurb: string;
-  /** Multipliers on the per-day drain of each need. */
   decay?: Partial<Record<NeedId, number>>;
-  /** Multiplier on stress gained from hunger, exhaustion, shifts and incidents. */
   stressGain?: number;
-  /** Multiplier on Yield pay. */
   yieldPay?: number;
-  /** Extra rations on every Bloom harvest. */
   harvestBonus?: number;
-  /** Multiplier on how fast conversation moves opinion. */
   bondRate?: number;
   /** Stress shed per second while playing, on top of the station's own. */
   playRelief?: number;
@@ -49,7 +38,6 @@ export const TRAITS: Record<TraitId, TraitDef> = {
   thrifty: { id: "thrifty", label: "Thrifty", blurb: "Can haggle a trader down; spots spoilage early." },
 };
 
-/** Two compatible traits for a being, fixed by its seed. */
 export function rollTraits(seed: string): TraitId[] {
   const first = TRAIT_IDS[hashString(`${seed}:t1`) % TRAIT_IDS.length]!;
   const blocked = new Set<TraitId>([first, ...(TRAITS[first].excludes ?? [])]);

@@ -12,19 +12,12 @@ export type SkyDirection = readonly [number, number, number];
  * @capability sky-light one per-frame record of sun, moon, sky colour and cloud cover that water, clouds and a game's own sky share
  */
 export interface SkyLight {
-  /** Unit vector toward the sun. Below the horizon (y < 0) the sun gives no light. */
   sunDirection: THREE.Vector3;
-  /** Sunlight reaching the ground: colour times intensity, as a directional light carries it. Black when set. */
   sun: THREE.Color;
-  /** Unit vector toward the moon. */
   moonDirection: THREE.Vector3;
-  /** Moonlight: colour times intensity. */
   moon: THREE.Color;
-  /** Light from the whole sky, as a hemisphere fill gives it. */
   ambient: THREE.Color;
-  /** The sky straight overhead, as drawn. */
   zenith: THREE.Color;
-  /** The sky at the horizon, as drawn; also the colour distant water and cloud fade into. */
   horizon: THREE.Color;
   /** How much of the sky cloud covers, 0..1, from the weather. */
   cloudCover: number;
@@ -35,7 +28,6 @@ export interface SkyLight {
   daylight: number;
 }
 
-/** A sky light at noon under a clear sky, for a scene whose sky has not published one yet. */
 export function createSkyLight(): SkyLight {
   return {
     sunDirection: new THREE.Vector3(0.45, 0.78, 0.35).normalize(),
@@ -52,16 +44,11 @@ export function createSkyLight(): SkyLight {
 
 const lights = new WeakMap<THREE.Scene, SkyLight>();
 
-/**
- * Record the sky's light for this frame on a scene. Publish one object and mutate it each frame; readers
- * keep the reference. A game drawing its own sky calls this from its `useFrame`.
- * @capability custom-sky-light a game's own sky lights the engine's water and clouds by publishing its sun, moon and sky colours
- */
+/** @capability custom-sky-light a game's own sky lights the engine's water and clouds by publishing its sun, moon and sky colours */
 export function publishSkyLight(scene: THREE.Scene, light: SkyLight): void {
   lights.set(scene, light);
 }
 
-/** The light the scene's sky published, or `undefined` when no sky has. */
 export function readSkyLight(scene: THREE.Scene): SkyLight | undefined {
   return lights.get(scene);
 }

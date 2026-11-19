@@ -1,11 +1,8 @@
 import { pickWeighted } from "../random/pick";
 
-/** Scalar values stored in a decision graph blackboard. */
 export type BlackboardValue = number | boolean | string;
-/** Named facts available to conditions, utilities, and actions. */
 export type Blackboard = Record<string, BlackboardValue>;
 
-/** Comparison operators supported by decision conditions. */
 export type DecisionOperator = "=" | "==" | "!=" | "<" | "<=" | ">" | ">=" | "eq" | "ne" | "lt" | "lte" | "gt" | "gte";
 
 /**
@@ -28,12 +25,9 @@ export type DecisionNode =
   | { kind: "wait"; seconds: number }
   | { kind: "random"; children: DecisionNode[]; weights?: number[] };
 
-/** Root node for a serializable AI decision graph. */
 export type DecisionGraph = DecisionNode;
-/** Outcome reported when a decision graph evaluates. */
 export type DecisionStatus = "running" | "done" | "failed";
 
-/** Callback implementation for an action node. */
 export type DecisionAction<Context = unknown> = (
   ctx: Context,
   params: Record<string, BlackboardValue> | undefined,
@@ -48,21 +42,18 @@ export type DecisionAbort<Context = unknown> = (
   blackboard: Blackboard,
 ) => void;
 
-/** Optional hooks and injected randomness for {@link createDecisionGraphRuntime}. */
 export interface DecisionGraphOptions<Context = unknown> {
   onAbort?: DecisionAbort<Context>;
   /** `[0, 1)` source for `random` nodes; pass `ctx.rng`. Required only when the graph has one. */
   rng?: () => number;
 }
 
-/** Progress of a memory composite, `random` choice, or `wait` timer, keyed by node id (depth-first order). */
 export interface DecisionNodeMemory {
   index: number;
   elapsed: number;
   tick: number;
 }
 
-/** Serializable state retained by an active decision graph. Fields besides `runningPath` are absent in older saves. */
 export interface DecisionGraphSnapshot {
   runningPath: number[] | null;
   tick?: number;
@@ -71,10 +62,8 @@ export interface DecisionGraphSnapshot {
   cooldowns?: Record<string, number>;
 }
 
-/** Stateful evaluator for a serializable decision graph. */
 export interface DecisionGraphRuntime<Context = unknown> {
   tick(ctx: Context, blackboard: Blackboard, dt: number): DecisionStatus;
-  /** Name of the action left running by the last tick, or null. */
   running(): string | null;
   /** Abort the compiled running action once, retaining graph memory/timers. Clears ownership before invoking user onAbort, even if it throws. */
   abort(ctx: Context, blackboard: Blackboard): void;

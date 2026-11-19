@@ -32,17 +32,11 @@ export function useInteractionPrompt(
   return registry.active();
 }
 
-/** Reskin tokens for {@link InteractionPrompt}. */
 export interface InteractionPromptTheme {
-  /** Accent for the key cap and glow. Default reads `--jg-accent`. */
   accent?: string;
-  /** Callout background. */
   background?: string;
-  /** Callout border color. */
   border?: string;
-  /** Label text color. */
   text?: string;
-  /** Font family. */
   fontFamily?: string;
 }
 
@@ -56,7 +50,6 @@ function resolveTheme(theme: InteractionPromptTheme | undefined): Required<Inter
   };
 }
 
-/** Where the callout sits over the scene. */
 export type InteractionPromptAnchor = "bottom-center" | "top-center" | "center";
 
 const ANCHOR_STYLE: Record<InteractionPromptAnchor, CSSProperties> = {
@@ -65,17 +58,9 @@ const ANCHOR_STYLE: Record<InteractionPromptAnchor, CSSProperties> = {
   center: { top: "50%", left: "50%", transform: "translate(-50%, -50%)" },
 };
 
-/** Props for {@link InteractionPrompt}. */
 export interface InteractionPromptProps {
-  /** The registry that owns the prompts and the active selection. */
   registry: PromptRegistry;
-  /**
-   * The player's ground position. When supplied the host drives `resolve` on
-   * every position change; omit it if the game already calls `registry.resolve`
-   * from its own tick (the host still subscribes and renders the active prompt).
-   */
   playerPosition?: PromptPoint;
-  /** Base reskin tokens. */
   theme?: InteractionPromptTheme;
   /**
    * Per-prompt accent chooser. The registry never interprets a prompt's meaning,
@@ -84,25 +69,18 @@ export interface InteractionPromptProps {
    * falls back to the theme accent.
    */
   accentFor?: (prompt: PositionedPrompt) => string | undefined;
-  /**
-   * Key glyph shown on the cap for a `keybind` prompt, chosen from the prompt's
-   * free-string `actionId`. Default `"E"`.
-   */
   keyFor?: (actionId: string) => string;
   /**
    * Hold progress `0..1` for a `gauge` prompt, by its free-string `gaugeId` —
    * fills the ring/bar as the player holds. Default `0`.
    */
   gaugeProgress?: (gaugeId: string) => number;
-  /** Where the callout sits. Default `"bottom-center"`. */
   anchor?: InteractionPromptAnchor;
-  /** Overlay `z-index`. Default `40`. */
   zIndex?: number;
   className?: string;
   style?: CSSProperties;
 }
 
-/** Bind to the registry either through the moving player, or passively on the active id. */
 function useActive(registry: PromptRegistry, playerPosition: PromptPoint | undefined): PositionedPrompt | null {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => registry.subscribe(bump), [registry]);

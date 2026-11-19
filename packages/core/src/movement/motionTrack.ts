@@ -1,41 +1,32 @@
 import type { Easing } from "../anim/easing";
 import type { Vec3 } from "../world/geometry";
 
-/** A path and its timing. Give exactly one of `duration` or `speed`. */
 export interface MotionTrackConfig {
-  /** At least two points; the thing moves through them in order, straight between each pair. */
   points: readonly Vec3[];
   /** Seconds from start to arrival. */
   duration?: number;
   /** Metres per second along the path; duration = path length / speed. */
   speed?: number;
-  /** Shapes progress over time. Default linear. */
   easing?: Easing;
   /** Caller-clock time (seconds) the motion starts. */
   startAt: number;
 }
 
-/** Plain JSON state of a motion track. */
 export interface MotionTrackState {
   startAt: number;
   arrivalReported: boolean;
 }
 
-/** A path and its timing that report where the thing is and when it arrives. */
 export interface MotionTrack {
   /** Writes the position at `now` into `out` without allocating; returns progress 0..1 (eased). Before startAt: first point; after arrival: last point. */
   sampleInto(now: number, out: [number, number, number]): number;
-  /** Time of arrival on the caller's clock. */
   arrivesAt(): number;
-  /** True exactly once: on the first call with now >= arrivesAt(). For landing effects. */
   justArrived(now: number): boolean;
   /** Total path length in metres. */
   length(): number;
-  /** Replace the path or timing; recomputes arrival. */
   retune(config: Partial<MotionTrackConfig>): void;
   snapshot(): MotionTrackState;
   restore(state: MotionTrackState): void;
-  /** Start again at startAt from the config, arrival not reported. */
   reset(): void;
 }
 
@@ -47,7 +38,6 @@ function constrain01(value: number): number {
 
 interface MeasuredPath {
   readonly points: readonly Vec3[];
-  /** Distance from the first point to each point; `distances[0] === 0`. */
   readonly distances: readonly number[];
   readonly length: number;
   readonly start: Vec3;
@@ -102,11 +92,7 @@ function durationOf(timing: Timing, pathLength: number): number {
   return timing.kind === "duration" ? timing.seconds : pathLength / timing.metresPerSecond;
 }
 
-/**
- * Moves a thing along a path of points over time and reports when it arrives.
- *
- * @capability motion-track move a thing along a path over time and report its arrival
- */
+/** @capability motion-track move a thing along a path over time and report its arrival */
 export function createMotionTrack(config: MotionTrackConfig): MotionTrack {
   checkPoints(config.points);
   let timing = resolveTiming(config.duration, config.speed);

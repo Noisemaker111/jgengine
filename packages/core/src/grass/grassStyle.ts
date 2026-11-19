@@ -14,7 +14,6 @@
 import { readUrlParam } from "@jgengine/core/devtools/urlFlags";
 import { defineParamSchema, parseParams, presetBackedMeta } from "@jgengine/core/generator/paramSchema";
 
-/** How a grass field is drawn. */
 export interface GrassStyle {
   /** 0..1: 0 cartoon, 0.5 animated film, 1 photoreal. Moves every slider below that nothing sets by hand. */
   realism: number;
@@ -47,19 +46,14 @@ export interface GrassStyle {
   outline: number;
 }
 
-/** The style sliders `realism` drives: every style knob but `realism` itself. */
 export type GrassStyleSlider = Exclude<keyof GrassStyle, "realism">;
 
-/** A species' own tuning of style sliders, as it would be drawn at the default realism. */
 export type GrassStyleTuning = Partial<Record<GrassStyleSlider, number>>;
 
-/** A style as authored: any sliders, plus an optional named preset (`cartoon`, `painterly`, `animated`, `realistic`) backing the ones left unset. */
 export type GrassStyleSettings = Partial<GrassStyle> & { preset?: string };
 
-/** The realism a scene that sets none draws at: the look grass had before styles. */
 export const GRASS_REALISM_DEFAULT = 0.5;
 
-/** Each slider's value at a realism, when nothing sets it by hand. Every curve passes through the pre-style look at 0.5. */
 export const GRASS_STYLE_CURVES: Readonly<Record<GrassStyleSlider, (realism: number) => number>> = {
   normalLift: (realism) => 0.85 - 0.5 * realism,
   detail: (realism) => realism,
@@ -74,17 +68,11 @@ export const GRASS_STYLE_CURVES: Readonly<Record<GrassStyleSlider, (realism: num
   outline: (realism) => Math.max(0, 1.2 * (0.5 - realism)),
 };
 
-/**
- * `shading` as the two blends the shader applies: `cel` toward flat bands and a rim light (1 at
- * shading 0, 0 from 0.5 up) and `sheen` toward a glossy, see-through blade (0 up to 0.5, 1 at 1).
- * Both are 0 at the default, where the blade lights exactly as before.
- */
 export function grassShadingAmounts(shading: number): { cel: number; sheen: number } {
   const value = Math.max(0, Math.min(1, shading));
   return { cel: Math.max(0, 1 - 2 * value), sheen: Math.max(0, 2 * value - 1) };
 }
 
-/** `saturation` or `contrast` as the factor the shader scales by: 1 at 0.5, 0.4 at 0, 1.6 at 1. */
 export function grassColourFactor(value: number): number {
   return 1 + (Math.max(0, Math.min(1, value)) - 0.5) * 1.2;
 }
@@ -99,7 +87,6 @@ export function grassDetailScale(detail: number): number {
   return centred >= 0 ? 6 ** centred : 2 ** centred;
 }
 
-/** `exaggeration` as -1 (natural) .. 0 (the species as it is) .. 1 (cartoon). */
 export function grassExaggerationAmount(exaggeration: number): number {
   return 2 * Math.max(0, Math.min(1, exaggeration)) - 1;
 }
@@ -122,7 +109,6 @@ function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-/** The grass style schema: the editor's grass style sections, their presets and every style parse. */
 export const GRASS_STYLE_SCHEMA = defineParamSchema({
   groups: [{ id: "shape", label: "Detail and shape", collapsed: true }, { id: "light", label: "Light", collapsed: true }, { id: "colour", label: "Colour and outline", collapsed: true }],
   presets: [
@@ -145,7 +131,6 @@ export const GRASS_STYLE_SCHEMA = defineParamSchema({
   ],
 });
 
-/** The style a scene that sets nothing draws with (a page's `?realism=` aside). */
 export const GRASS_STYLE_DEFAULTS: GrassStyle = {
   realism: GRASS_REALISM_DEFAULT,
   normalLift: GRASS_STYLE_CURVES.normalLift(GRASS_REALISM_DEFAULT),
@@ -168,13 +153,7 @@ function readStyle(settings: unknown): { has: (key: keyof GrassStyle) => boolean
   return { has: (key) => typeof backed?.[key] === "number" && Number.isFinite(backed[key]), values };
 }
 
-/**
- * The style a patch draws with. Realism comes from the page (`?realism=`, see
- * {@link grassRealismFromPage}), else the patch, else the world, else 0.5. Each slider comes from the
- * patch, else the world, else the species' own tuning carried along the slider's curve (so realism
- * still moves it), else the curve.
- * @internal
- */
+/** @internal */
 export function resolveGrassStyle(patch: unknown, world: unknown, species: GrassStyleTuning | undefined): GrassStyle {
   const own = readStyle(patch);
   const shared = readStyle(world);

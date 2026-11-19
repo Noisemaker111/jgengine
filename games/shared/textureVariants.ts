@@ -30,12 +30,10 @@ export interface ImageVariantRequest {
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg"]);
 const MODEL_EXTENSIONS = new Set([".gltf", ".glb"]);
 
-/** The folder holding every twin for one asset store. */
 export function textureVariantDir(storeRoot: string): string {
   return join(storeRoot, ".ktx2");
 }
 
-/** A map's role read from its file name: normal maps, colour maps, and everything else linear. */
 export function roleFromName(file: string): TextureRole {
   const name = basename(file).toLowerCase();
   if (/normal|(^|[^a-z])nrm([^a-z]|$)|_n\.(png|jpe?g)$/.test(name)) return "normal";
@@ -74,7 +72,6 @@ export function modelVariantName(key: string, extension: ".gltf" | ".glb"): stri
 
 const keys = new Map<string, { size: number; mtimeMs: number; key: string }>();
 
-/** {@link contentKey} of a file on disk, remembered until its size or mtime changes. */
 export function fileContentKey(file: string): string {
   const stat = statSync(file);
   const known = keys.get(file);

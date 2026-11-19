@@ -2,489 +2,125 @@
 
 # jgengine-combat — capability index
 
-Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
-
-## ability-bar — a bar of cooldown-gated abilities the player triggers by slot
-
-- `createAbilityKit` (function) · `import { createAbilityKit } from "@jgengine/core/combat"`
-
-## anti-one-shot — clamp a near-lethal hit to leave a health floor then grant recovery immunity
-
-- `createAntiOneShotPolicy` (function) · `import { createAntiOneShotPolicy } from "@jgengine/core/combat"`
-
-## armor-bypass — ask whether a damage type ignores armor points
-
-- `typeBypassesArmor` (function) · `import { typeBypassesArmor } from "@jgengine/core/combat"`
-
-## armor-mitigation — read the fraction of a hit armor removes at a given armor value
-
-- `armorMitigation` (function) · `import { armorMitigation } from "@jgengine/core/combat"`
-
-## capture-bonus-levels — convert wild level and capture effectiveness into bonus levels
-
-- `captureBonusLevels` (function) · `import { captureBonusLevels } from "@jgengine/core/stats/spawnLevelStats"`
-
-## capture-effectiveness-tame — apply capture effectiveness to grant and distribute bonus levels
-
-- `applyCaptureEffectiveness` (function) · `import { applyCaptureEffectiveness } from "@jgengine/core/stats/spawnLevelStats"`
-
-## cast-bar — run a channeled cast timer that movement or damage can interrupt
-
-- `createCastRunner` (function) · `import { createCastRunner } from "@jgengine/core/combat"`
-
-## charge-meter — fill a gauge toward named tier thresholds as a value accumulates
-
-- `createAccumulatorMeter` (function) · `import { createAccumulatorMeter } from "@jgengine/core/combat"`
-
-## combo-chain — advance a chained melee string from timed button inputs
-
-- `createComboRunner` (function) · `import { createComboRunner } from "@jgengine/core/combat"`
-
-## combo-meter — count-based combo/multiplier meter with a decay window, free-string tier thresholds, derived multiplier, peak tracking and snapshot/restore
-
-- `createComboMeter` (function) · `import { createComboMeter } from "@jgengine/core/combat"`
-
-## combo-points — build up and spend finisher/combo points
-
-- `createComboPoints` (function) · `import { createComboPoints } from "@jgengine/core/combat"`
-
-## cover-field — authored-geometry cover with a bounded nearest query and rebuild on edit
-
-- `createCoverField` (function) · `import { createCoverField } from "@jgengine/core/combat"`
-
-## cover-points-from-solids — derive stand-able cover positions from authored solid boxes
-
-- `coverPointsFromSolids` (function) · `import { coverPointsFromSolids } from "@jgengine/core/combat"`
-
-## cover-points-near — bounded nearest-cover query
-
-- `coverPointsNear` (function) · `import { coverPointsNear } from "@jgengine/core/combat"`
-
-## cover-score — threat-driven cover point scoring
-
-- `scoreCoverPoint` (function) · `import { scoreCoverPoint } from "@jgengine/core/combat"`
-
-## cover-select — select cover by threat, role range and flank angle
-
-- `selectCover` (function) · `import { selectCover } from "@jgengine/core/combat"`
-
-## damage-clamp — cap incoming damage per hit at a configured maximum
-
-- `createDamageClamp` (function) · `import { createDamageClamp } from "@jgengine/core/combat"`
-
-## damage-direction — serializable hit-from damage-direction indicator brain — pooled directional arcs that flare on `registerHit(angle, intensity)` and fade on an injected clock, with optional same-direction merging
-
-- `createDamageDirectionTracker` (function) · `import { createDamageDirectionTracker } from "@jgengine/core/combat/damage/damageDirection"`
-
-## damage-direction-overlay — drop-in hit-from damage-direction overlay — SVG arcs flaring around a center reticle toward each recent hit and fading over time, colored per `kind`/HudTheme, pointer-events none
-
-- `DamageDirectionOverlay` (function) · `import { DamageDirectionOverlay } from "@jgengine/core/combat/damage/damageDirection.view"`
-
-## damage-hit — resolve a full data-defined damage hit — matchup, impact, receiver modifiers, and status application — with provenance
-
-- `resolveDamageHit` (function) · `import { resolveDamageHit } from "@jgengine/core/combat"`
-
-## damage-interception — intercept a pending damage application before lethal resolution with ordered, inspectable stages
-
-- `resolveDamage` (function) · `import { resolveDamage } from "@jgengine/core/combat"`
-
-## damage-matchup — score a data-defined damage channel against a target's traits into independent typed multipliers
-
-- `resolveMatchup` (function) · `import { resolveMatchup } from "@jgengine/core/combat"`
-
-## damage-pipeline — install and remove ordered damage interceptors that transitions toggle at runtime
-
-- `createDamagePipeline` (function) · `import { createDamagePipeline } from "@jgengine/core/combat"`
-
-## damage-runtime — resolve hits through a damage table, hit zones, and armor, and tick data-defined statuses with declared stacking
-
-- `createDamageRuntime` (function) · `import { createDamageRuntime } from "@jgengine/core/combat"`
-
-## damage-table — score a data-defined damage type against a resistance class, with the outcome readable as a table
-
-- `typeMultiplier` (function) · `import { typeMultiplier } from "@jgengine/core/combat"`
-
-## damage-table-format — render damage-table rows as fixed-width lines for a probe, a CLI dump, or a test
-
-- `formatDamageTable` (function) · `import { formatDamageTable } from "@jgengine/core/combat"`
-
-## damage-table-read — read a damage table as rows of type × resistance × armor mitigation, with final damage per base
-
-- `readDamageTable` (function) · `import { readDamageTable } from "@jgengine/core/combat"`
-
-## damage-table-resolve — resolve a damage type against a resistance class and armor into a multiplier, mitigation, and final damage
-
-- `resolveTableDamage` (function) · `import { resolveTableDamage } from "@jgengine/core/combat"`
-
-## damage-table-validate — reject a damage table with duplicate types or non-finite multipliers before combat runs
-
-- `assertDamageTable` (function) · `import { assertDamageTable } from "@jgengine/core/combat"`
-
-## damage-target-unknown — reject a hit on a target with no registered resistance or armor profile
-
-- `UnknownTargetProfileError` (class) · `import { UnknownTargetProfileError } from "@jgengine/core/combat"`
-
-## damage-type-duplicate — reject a damage table that defines one type twice
-
-- `DuplicateDamageTypeError` (class) · `import { DuplicateDamageTypeError } from "@jgengine/core/combat"`
-
-## damage-type-unknown — reject a hit whose damage type the table does not define instead of dealing 1×
-
-- `UnknownDamageTypeError` (class) · `import { UnknownDamageTypeError } from "@jgengine/core/combat"`
-
-## death-system — resolve entity death and its on-death consequences
-
-- `createDeathSystem` (function) · `import { createDeathSystem } from "@jgengine/core/combat"`
-
-## dice-check — resolve a pass/fail roll against a target number with modifiers and crits
-
-- `rollCheck` (function) · `import { rollCheck } from "@jgengine/core/combat"`
-
-## domestic-level-spend — spend an earned post-capture level into a chosen stat under a cap
-
-- `spendDomesticLevel` (function) · `import { spendDomesticLevel } from "@jgengine/core/stats/spawnLevelStats"`
-
-## dose-table — per-receiver effects of each source (food, potion, dart, hit) as vital doses, with preference order
-
-- `createDoseTable` (function) · `import { createDoseTable } from "@jgengine/core/stats/doseTable"`
-
-## dot-field — track stacking damage-over-time effects and drain damage each frame
-
-- `createDotField` (function) · `import { createDotField } from "@jgengine/core/combat"`
-
-## downed-revive — a downed/bleed-out state teammates can revive before death
-
-- `createDownedState` (function) · `import { createDownedState } from "@jgengine/core/combat"`
-
-## encounter-active-phase — read the id of the phase an encounter is currently waiting on
-
-- `activePhaseId` (function) · `import { activePhaseId } from "@jgengine/core/combat"`
-
-## encounter-advance — step a hierarchical encounter, resolving predicate-gated completion, repeats, and nested advance with lifecycle events
-
-- `updateEncounter` (function) · `import { updateEncounter } from "@jgengine/core/combat"`
-
-## encounter-expand — turn an authored wave into a deterministic, pressure-adjusted list of timed spawn orders
-
-- `expandWave` (function) · `import { expandWave } from "@jgengine/core/waves/encounter"`
-
-## encounter-force-complete — externally complete an active encounter phase to drive scripted or failure-retry transitions
-
-- `forceCompletePhase` (function) · `import { forceCompletePhase } from "@jgengine/core/combat"`
-
-## encounter-inject-phase — dynamically insert a phase or branch into a running encounter, e.g. a boss on the final wave
-
-- `injectPhase` (function) · `import { injectPhase } from "@jgengine/core/combat"`
-
-## encounter-phase-status — read whether a specific encounter phase is pending, active, or complete
-
-- `phaseStatus` (function) · `import { phaseStatus } from "@jgengine/core/combat"`
-
-## encounter-predicates — gate encounter phase completion on timers, cleared spawns, metrics, events, or a quorum of conditions
-
-- `BUILTIN_COMPLETION_PREDICATES` (const) · `import { BUILTIN_COMPLETION_PREDICATES } from "@jgengine/core/combat"`
-
-## encounter-pressure — bounded difficulty tier read from player health, encounter progress and time
-
-- `evaluatePressure` (function) · `import { evaluatePressure } from "@jgengine/core/waves/pressure"`
-
-## encounter-progress — read completed-vs-total progress across a hierarchical encounter for HUD or objective display
-
-- `encounterProgress` (function) · `import { encounterProgress } from "@jgengine/core/combat"`
-
-## encounter-runner — open authored waves, emit their timed orders, and track wave progress through a save
-
-- `createEncounter` (function) · `import { createEncounter } from "@jgengine/core/waves/encounter"`
-
-## encounter-spawn-providers — turn an entered encounter phase into spawn requests from authored scene points or an inline list
-
-- `BUILTIN_SPAWN_PROVIDERS` (const) · `import { BUILTIN_SPAWN_PROVIDERS } from "@jgengine/core/combat"`
-
-## encounter-start — enter the first phase of a hierarchical encounter and emit its opening spawn events
-
-- `startEncounter` (function) · `import { startEncounter } from "@jgengine/core/combat"`
-
-## encounter-state — create the serializable starting state of a hierarchical encounter sequence
-
-- `createEncounterState` (function) · `import { createEncounterState } from "@jgengine/core/combat"`
-
-## event-meter — a heat/streak/alert gauge (wanted level, rage, combo) that builds from repeated events and cools down over time
-
-- `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/combat"`
-
-## fire-cadence — a serializable minimum-interval rate gate for repeated actions (weapon fire, ability spam)
-
-- `createFireCadence` (function) · `import { createFireCadence } from "@jgengine/core/combat"`
-
-## global-cooldown — share one cooldown across every ability slot (MMO global cooldown) with a cooldown group
-
-- `createAbilityKit` (function) · `import { createAbilityKit } from "@jgengine/core/combat"`
-
-## hit-marker-cue — Rune HUD hit marker that pops and fades over the crosshair, distinct for crits and kills
-
-- `HitMarkerCue` (function) · `import { HitMarkerCue } from "@jgengine/core/combat/HitMarkerCue.view"`
-
-## hit-marker-kind — decide whether a damage event earns a hit, crit or kill marker for the local player
-
-- `hitMarkerKindOf` (function) · `import { hitMarkerKindOf } from "@jgengine/core/combat/hitMarker"`
-
-## hit-markers — hit, crit and kill markers from damage events, with volley folding, pop and fade
-
-- `createHitMarkers` (function) · `import { createHitMarkers } from "@jgengine/core/combat/hitMarker"`
-
-## hit-zone — resolve a hit zone into one damage multiplier, crit by zone with an injected RNG
-
-- `resolveHitZone` (function) · `import { resolveHitZone } from "@jgengine/core/combat"`
-
-## hit-zone-multiplier — quote a zone's multiplier for a known crit outcome without rolling
-
-- `hitZoneMultiplier` (function) · `import { hitZoneMultiplier } from "@jgengine/core/combat"`
-
-## hit-zone-unknown — reject a hit zone table whose named default does not exist
-
-- `UnknownHitZoneError` (class) · `import { UnknownHitZoneError } from "@jgengine/core/combat"`
-
-## hit-zone-validate — reject a hit-zone table with duplicate zones or a missing default
-
-- `assertHitZoneTable` (function) · `import { assertHitZoneTable } from "@jgengine/core/combat"`
-
-## hitscan-shot — aim a hitscan shot (shoot a gun): resolve origin and direction from the eye or muzzle for a raycast
-
-- `resolveShot` (function) · `import { resolveShot } from "@jgengine/core/combat"`
-
-## immunity-window — reject damage during a per-target invulnerability window installed by transitions
-
-- `createImmunityWindow` (function) · `import { createImmunityWindow } from "@jgengine/core/combat"`
-
-## impact-feel — default impact sparks, surface marks and hit-stop per weapon or vehicle class
-
-- `IMPACT_PROFILES` (const) · `import { IMPACT_PROFILES } from "@jgengine/core/combat/impactProfile"`
-- `impactPresets` (const) · `import { impactPresets } from "@jgengine/core/combat"`
-- `resolveHitReaction` (function) · `import { resolveHitReaction } from "@jgengine/core/combat"`
-
-## land-area-damage — radius damage with falloff resolved through a damage chart per body
-
-- `landAreaDamage` (function) · `import { landAreaDamage } from "@jgengine/core/combat/damage/landDamage"`
-
-## land-damage — resolve a hit through a damage chart and apply it to the world as one damage effect
-
-- `landDamage` (function) · `import { landDamage } from "@jgengine/core/combat/damage/landDamage"`
-
-## magazine — a weapon magazine with capacity, timed reload, and reserve-pool interaction
-
-- `createMagazine` (function) · `import { createMagazine } from "@jgengine/core/combat"`
-
-## meter — create a ticking bounded value
-
-- `createMeter` (function) · `import { createMeter } from "@jgengine/core/stats/statPool"`
-
-## meter-change — drain or fill a ticking meter, restarting its regen delay on a drop
-
-- `changeMeter` (function) · `import { changeMeter } from "@jgengine/core/stats/statPool"`
-
-## meter-rates — tick a bounded value's regen, decay and their delays over time
-
-- `tickMeter` (function) · `import { tickMeter } from "@jgengine/core/stats/statPool"`
-
-## on-death-drops — make a killed enemy drop loot on the ground or into the killer's bag via catalog onDeath
-
-- `OnDeathSpec` (interface) · `import { OnDeathSpec } from "@jgengine/core/combat"`
-
-## parry-window — time a block/parry/i-frame defensive window against incoming hits
-
-- `createDefensiveWindow` (function) · `import { createDefensiveWindow } from "@jgengine/core/combat"`
-
-## portable-stat-pool — apply deterministic bounded resource changes through a caller-owned stat adapter
-
-- `applyStatPoolDelta` (function) · `import { applyStatPoolDelta } from "@jgengine/core/combat"`
-
-## projectile-models — render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup
-
-- `ProjectileModels` (function) · `import { ProjectileModels } from "@jgengine/core/combat/ProjectileModels.draw"`
-
-## projectiles — spawn and advance projectiles with travel and hit resolution
-
-- `createProjectileSystem` (function) · `import { createProjectileSystem } from "@jgengine/core/combat"`
-
-## received-damage — apply data-defined receiver-side damage modifiers (amplify, reduce, cap, convert, redirect, immunity) with typed predicates
-
-- `resolveReceivedDamage` (function) · `import { resolveReceivedDamage } from "@jgengine/core/combat"`
-
-## regen-shield — a rechargeable overshield that absorbs damage and refills after a lull
-
-- `createRegenShield` (function) · `import { createRegenShield } from "@jgengine/core/combat"`
-
-## resource-pool — a regenerating pool like mana or stamina that actions spend from
-
-- `createResourcePool` (function) · `import { createResourcePool } from "@jgengine/core/combat"`
-
-## reward-allocation — distribute reward results among multiplayer participants deterministically
-
-- `allocateRewards` (function) · `import { allocateRewards } from "@jgengine/core/combat"`
-- `filterOutcomeFor` (function) · `import { filterOutcomeFor } from "@jgengine/core/combat"`
-- `resolveClaim` (function) · `import { resolveClaim } from "@jgengine/core/combat"`
-
-## shot-spec — resolve one shot description into explicit travel and contact behaviour
-
-- `resolveShotSpec` (function) · `import { resolveShotSpec } from "@jgengine/core/combat"`
-
-## spawn-instance-restore — rehydrate a creature stat instance from decoded snapshot data
-
-- `restoreSpawnInstance` (function) · `import { restoreSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
-
-## spawn-instance-snapshot — deep-copy a creature stat instance into a serializable record
-
-- `snapshotSpawnInstance` (function) · `import { snapshotSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
-
-## spawn-level-roll — distribute a wild creature's spawn level into random per-stat points
-
-- `rollSpawnInstance` (function) · `import { rollSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
-
-## spawn-point-select — select a spawn location by its distance preference from avoided positions
-
-- `selectSpawnPoint` (function) · `import { selectSpawnPoint } from "@jgengine/core/waves/spawnPoint"`
-
-## spawn-stat-values — resolve a creature's per-stat values from its distributed points
-
-- `resolveSpawnStats` (function) · `import { resolveSpawnStats } from "@jgengine/core/stats/spawnLevelStats"`
-
-## squad-combat — threat-driven cover, flanking, suppression, retreat and role-driven fire discipline
-
-- `createSquadCombat` (function) · `import { createSquadCombat } from "@jgengine/core/combat"`
-
-## squad-roles — deterministic role assignment over a caller-authored composition
-
-- `assignSquadRoles` (function) · `import { assignSquadRoles } from "@jgengine/core/combat"`
-
-## stagger-meter — accumulate an ailment buildup (bleed, freeze) until it procs
-
-- `createBuildupMeter` (function) · `import { createBuildupMeter } from "@jgengine/core/combat"`
-- `createStaggerMeter` (function) · `import { createStaggerMeter } from "@jgengine/core/combat"`
-
-## stat-block — base stats with stacking, expiring buffs and debuffs applied on read
-
-- `createStats` (function) · `import { createStats } from "@jgengine/core/combat"`
-
-## stat-pool — create a serializable current/min/max pool for any caller-named resource
-
-- `createStatPool` (function) · `import { createStatPool } from "@jgengine/core/combat"`
-
-## stat-pool-change — immutably increase or decrease any named bounded resource with clamp evidence
-
-- `changeStatPool` (function) · `import { changeStatPool } from "@jgengine/core/combat"`
-
-## stat-pool-fraction — read any bounded resource as a fill fraction for a bar or gauge
-
-- `statPoolFraction` (function) · `import { statPoolFraction } from "@jgengine/core/stats/statPool"`
-
-## stat-pool-patch — immutably retune a bounded resource's current value or bounds
-
-- `patchStatPool` (function) · `import { patchStatPool } from "@jgengine/core/combat"`
-
-## stat-pool-reserve — draw a magazine's reloads, or a weapon's shots, from a shared ammo stat pool
-
-- `statPoolReserve` (function) · `import { statPoolReserve } from "@jgengine/core/combat"`
-
-## status-application — resolve a data-defined status application with chance, matchup scaling, and stacking policy
-
-- `resolveStatusApplication` (function) · `import { resolveStatusApplication } from "@jgengine/core/combat"`
-
-## status-effect-timeline — adapt live status instances into serializable timeline-HUD views (id, kind, remaining/duration, stacks) for a countdown-ring effect bar
-
-- `toStatusEffectViews` (function) · `import { toStatusEffectViews } from "@jgengine/core/combat"`
-
-## status-effect-view — adapt one live status instance into a serializable timeline-HUD view (id, kind, remaining/duration, stacks)
-
-- `toStatusEffectView` (function) · `import { toStatusEffectView } from "@jgengine/core/combat"`
-
-## status-effects — commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results
-
-- `createEffectSystem` (function) · `import { createEffectSystem } from "@jgengine/core/combat"`
-
-## status-runtime — tick data-defined statuses (burn, shock, slow, corrode) with declared stacking rules and per-tick effects
-
-- `createStatusRuntime` (function) · `import { createStatusRuntime } from "@jgengine/core/combat"`
-
-## status-unknown — reject a status id the runtime has no definition for
-
-- `UnknownStatusError` (class) · `import { UnknownStatusError } from "@jgengine/core/combat"`
-
-## survival-vitals — a body's linked meters — drain, delayed regen that costs other vitals, starvation links, knockout-style flags, and doses that land now or over time up to a cap
-
-- `createVitals` (function) · `import { createVitals } from "@jgengine/core/stats/vitals"`
-
-## telegraph-hit-test — test whether a point is inside a circle, ring, cone or line telegraph, to resolve a dodgeable attack
-
-- `pointInTelegraph` (function) · `import { pointInTelegraph } from "@jgengine/core/combat/telegraph"`
-
-## threats-from-memory — turn perception memory into a bounded, ranked threat list
-
-- `threatsFromMemory` (function) · `import { threatsFromMemory } from "@jgengine/core/combat"`
-
-## threshold-crossings — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy
-
-- `createThresholdTracker` (function) · `import { createThresholdTracker } from "@jgengine/core/combat"`
-
-## use-damage-direction — UI hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
-
-- `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/core/combat/damage/damageDirection.view"`
-
-## use-hit-markers — UI hook that feeds the local player's confirmed hits, crits and kills into a hit-marker model
-
-- `useHitMarkers` (function) · `import { useHitMarkers } from "@jgengine/core/combat/HitMarkerCue.view"`
-
-## vfx-preset-resolve — turn a named attack flavor into concrete vfx kind/color/duration with per-field overrides
-
-- `resolveVfxPreset` (function) · `import { resolveVfxPreset } from "@jgengine/core/combat"`
-
-## vfx-presets — render a named attack visual (arrow, fireball, lightning, web, slash, shield, heal, explosion) in one call
-
-- `vfxPresets` (const) · `import { vfxPresets } from "@jgengine/core/combat"`
-
-## wave-countdown — intermission clock between waves that releases the next one when it runs out and prices calling it early
-
-- `createWaveCountdown` (function) · `import { createWaveCountdown } from "@jgengine/core/waves/waveCountdown"`
-
-## wave-preview — summarize an authored wave before it opens: units by first arrival, trait counts and entries used
-
-- `summarizeWave` (function) · `import { summarizeWave } from "@jgengine/core/waves/wavePreview"`
-
-## wave-runner — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore
-
-- `createWaveRunner` (function) · `import { createWaveRunner } from "@jgengine/core/waves/waveRunner"`
-
-## weapon-cadence — convert a rounds-per-minute weapon rate into the interval a fire gate takes
-
-- `weaponIntervalMs` (function) · `import { weaponIntervalMs } from "@jgengine/core/combat"`
-
-## weapon-definition-validate — reject a malformed weapon definition at construction with the field named
-
-- `assertWeaponDefinition` (function) · `import { assertWeaponDefinition } from "@jgengine/core/combat"`
-
-## weapon-feedback — turn weapon shots, recoil kick and impacts into per-tick feedback-mixer signals for camera shake, audio and rumble
-
-- `createWeaponFeedbackSignals` (function) · `import { createWeaponFeedbackSignals } from "@jgengine/core/combat/weaponFeedback"`
-
-## weapon-handling — recoil patterns with camera kick and recovery, spread bloom, stance multipliers and ADS as serializable state
-
-- `createWeaponHandling` (function) · `import { createWeaponHandling } from "@jgengine/core/combat/weaponHandling"`
-
-## weapon-metrics — measure a weapon's feel as numbers — spread per shot, climb over a magazine, reset time, ADS time, time-to-kill at a range
-
-- `measureWeapon` (function) · `import { measureWeapon } from "@jgengine/core/combat/weaponHandling"`
-
-## weapon-presentation — per-weapon viewmodel offset, ADS pose, viewmodel FOV, sway, bob and recoil kick from a weapon handling frame
-
-- `createWeaponPresentation` (function) · `import { createWeaponPresentation } from "@jgengine/core/combat/weaponPresentation"`
-
-## weapon-runtime — compose cadence, magazine, a caller-owned raycast, and portable damage resolution into a fire controller
-
-- `createWeaponRuntime` (function) · `import { createWeaponRuntime } from "@jgengine/core/combat"`
-
-## weapon-system — run a data-defined weapon: fire modes, recoil and bloom, hitscan or ballistic projectiles, interrupted reloads and readable ammo, all resolving through the damage runtime
-
-- `createWeaponSystem` (function) · `import { createWeaponSystem } from "@jgengine/core/combat"`
-
-## weapon-triggers — gate shots per shooter and weapon on the game clock, spend ammo from a magazine or reserve pool, and present each shot through one listener seam
-
-- `createWeaponTriggers` (function) · `import { createWeaponTriggers } from "@jgengine/core/combat"`
+Discover with `bun run find <intent>` or `npx jgengine find <intent>`.
+
+- **ability-bar** — a bar of cooldown-gated abilities the player triggers by slot · `import { createAbilityKit } from "@jgengine/core/combat"`
+- **anti-one-shot** — clamp a near-lethal hit to leave a health floor then grant recovery immunity · `import { createAntiOneShotPolicy } from "@jgengine/core/combat"`
+- **armor-bypass** — ask whether a damage type ignores armor points · `import { typeBypassesArmor } from "@jgengine/core/combat"`
+- **armor-mitigation** — read the fraction of a hit armor removes at a given armor value · `import { armorMitigation } from "@jgengine/core/combat"`
+- **capture-bonus-levels** — convert wild level and capture effectiveness into bonus levels · `import { captureBonusLevels } from "@jgengine/core/stats/spawnLevelStats"`
+- **capture-effectiveness-tame** — apply capture effectiveness to grant and distribute bonus levels · `import { applyCaptureEffectiveness } from "@jgengine/core/stats/spawnLevelStats"`
+- **cast-bar** — run a channeled cast timer that movement or damage can interrupt · `import { createCastRunner } from "@jgengine/core/combat"`
+- **charge-meter** — fill a gauge toward named tier thresholds as a value accumulates · `import { createAccumulatorMeter } from "@jgengine/core/combat"`
+- **combo-chain** — advance a chained melee string from timed button inputs · `import { createComboRunner } from "@jgengine/core/combat"`
+- **combo-meter** — count-based combo/multiplier meter with a decay window, free-string tier thresholds, derived multiplier, peak tracking and snapshot/restore · `import { createComboMeter } from "@jgengine/core/combat"`
+- **combo-points** — build up and spend finisher/combo points · `import { createComboPoints } from "@jgengine/core/combat"`
+- **cover-field** — authored-geometry cover with a bounded nearest query and rebuild on edit · `import { createCoverField } from "@jgengine/core/combat"`
+- **cover-points-from-solids** — derive stand-able cover positions from authored solid boxes · `import { coverPointsFromSolids } from "@jgengine/core/combat"`
+- **cover-points-near** — bounded nearest-cover query · `import { coverPointsNear } from "@jgengine/core/combat"`
+- **cover-score** — threat-driven cover point scoring · `import { scoreCoverPoint } from "@jgengine/core/combat"`
+- **cover-select** — select cover by threat, role range and flank angle · `import { selectCover } from "@jgengine/core/combat"`
+- **damage-clamp** — cap incoming damage per hit at a configured maximum · `import { createDamageClamp } from "@jgengine/core/combat"`
+- **damage-direction** — serializable hit-from damage-direction indicator brain — pooled directional arcs that flare on `registerHit(angle, intensity)` and fade on an injected clock, with optional same-direction merging · `import { createDamageDirectionTracker } from "@jgengine/core/combat/damage/damageDirection"`
+- **damage-direction-overlay** — drop-in hit-from damage-direction overlay — SVG arcs flaring around a center reticle toward each recent hit and fading over time, colored per `kind`/HudTheme, pointer-events none · `import { DamageDirectionOverlay } from "@jgengine/core/combat/damage/damageDirection.view"`
+- **damage-hit** — resolve a full data-defined damage hit — matchup, impact, receiver modifiers, and status application — with provenance · `import { resolveDamageHit } from "@jgengine/core/combat"`
+- **damage-interception** — intercept a pending damage application before lethal resolution with ordered, inspectable stages · `import { resolveDamage } from "@jgengine/core/combat"`
+- **damage-matchup** — score a data-defined damage channel against a target's traits into independent typed multipliers · `import { resolveMatchup } from "@jgengine/core/combat"`
+- **damage-pipeline** — install and remove ordered damage interceptors that transitions toggle at runtime · `import { createDamagePipeline } from "@jgengine/core/combat"`
+- **damage-runtime** — resolve hits through a damage table, hit zones, and armor, and tick data-defined statuses with declared stacking · `import { createDamageRuntime } from "@jgengine/core/combat"`
+- **damage-table** — score a data-defined damage type against a resistance class, with the outcome readable as a table · `import { typeMultiplier } from "@jgengine/core/combat"`
+- **damage-table-format** — render damage-table rows as fixed-width lines for a probe, a CLI dump, or a test · `import { formatDamageTable } from "@jgengine/core/combat"`
+- **damage-table-read** — read a damage table as rows of type × resistance × armor mitigation, with final damage per base · `import { readDamageTable } from "@jgengine/core/combat"`
+- **damage-table-resolve** — resolve a damage type against a resistance class and armor into a multiplier, mitigation, and final damage · `import { resolveTableDamage } from "@jgengine/core/combat"`
+- **damage-table-validate** — reject a damage table with duplicate types or non-finite multipliers before combat runs · `import { assertDamageTable } from "@jgengine/core/combat"`
+- **damage-target-unknown** — reject a hit on a target with no registered resistance or armor profile · `import { UnknownTargetProfileError } from "@jgengine/core/combat"`
+- **damage-type-duplicate** — reject a damage table that defines one type twice · `import { DuplicateDamageTypeError } from "@jgengine/core/combat"`
+- **damage-type-unknown** — reject a hit whose damage type the table does not define instead of dealing 1× · `import { UnknownDamageTypeError } from "@jgengine/core/combat"`
+- **death-system** — resolve entity death and its on-death consequences · `import { createDeathSystem } from "@jgengine/core/combat"`
+- **dice-check** — resolve a pass/fail roll against a target number with modifiers and crits · `import { rollCheck } from "@jgengine/core/combat"`
+- **domestic-level-spend** — spend an earned post-capture level into a chosen stat under a cap · `import { spendDomesticLevel } from "@jgengine/core/stats/spawnLevelStats"`
+- **dose-table** — per-receiver effects of each source (food, potion, dart, hit) as vital doses, with preference order · `import { createDoseTable } from "@jgengine/core/stats/doseTable"`
+- **dot-field** — track stacking damage-over-time effects and drain damage each frame · `import { createDotField } from "@jgengine/core/combat"`
+- **downed-revive** — a downed/bleed-out state teammates can revive before death · `import { createDownedState } from "@jgengine/core/combat"`
+- **encounter-active-phase** — read the id of the phase an encounter is currently waiting on · `import { activePhaseId } from "@jgengine/core/combat"`
+- **encounter-advance** — step a hierarchical encounter, resolving predicate-gated completion, repeats, and nested advance with lifecycle events · `import { updateEncounter } from "@jgengine/core/combat"`
+- **encounter-expand** — turn an authored wave into a deterministic, pressure-adjusted list of timed spawn orders · `import { expandWave } from "@jgengine/core/waves/encounter"`
+- **encounter-force-complete** — externally complete an active encounter phase to drive scripted or failure-retry transitions · `import { forceCompletePhase } from "@jgengine/core/combat"`
+- **encounter-inject-phase** — dynamically insert a phase or branch into a running encounter, e.g. a boss on the final wave · `import { injectPhase } from "@jgengine/core/combat"`
+- **encounter-phase-status** — read whether a specific encounter phase is pending, active, or complete · `import { phaseStatus } from "@jgengine/core/combat"`
+- **encounter-predicates** — gate encounter phase completion on timers, cleared spawns, metrics, events, or a quorum of conditions · `import { BUILTIN_COMPLETION_PREDICATES } from "@jgengine/core/combat"`
+- **encounter-pressure** — bounded difficulty tier read from player health, encounter progress and time · `import { evaluatePressure } from "@jgengine/core/waves/pressure"`
+- **encounter-progress** — read completed-vs-total progress across a hierarchical encounter for HUD or objective display · `import { encounterProgress } from "@jgengine/core/combat"`
+- **encounter-runner** — open authored waves, emit their timed orders, and track wave progress through a save · `import { createEncounter } from "@jgengine/core/waves/encounter"`
+- **encounter-spawn-providers** — turn an entered encounter phase into spawn requests from authored scene points or an inline list · `import { BUILTIN_SPAWN_PROVIDERS } from "@jgengine/core/combat"`
+- **encounter-start** — enter the first phase of a hierarchical encounter and emit its opening spawn events · `import { startEncounter } from "@jgengine/core/combat"`
+- **encounter-state** — create the serializable starting state of a hierarchical encounter sequence · `import { createEncounterState } from "@jgengine/core/combat"`
+- **event-meter** — a heat/streak/alert gauge (wanted level, rage, combo) that builds from repeated events and cools down over time · `import { createEventMeter } from "@jgengine/core/combat"`
+- **fire-cadence** — a serializable minimum-interval rate gate for repeated actions (weapon fire, ability spam) · `import { createFireCadence } from "@jgengine/core/combat"`
+- **global-cooldown** — share one cooldown across every ability slot (MMO global cooldown) with a cooldown group · `import { createAbilityKit } from "@jgengine/core/combat"`
+- **hit-marker-cue** — Rune HUD hit marker that pops and fades over the crosshair, distinct for crits and kills · `import { HitMarkerCue } from "@jgengine/core/combat/HitMarkerCue.view"`
+- **hit-marker-kind** — decide whether a damage event earns a hit, crit or kill marker for the local player · `import { hitMarkerKindOf } from "@jgengine/core/combat/hitMarker"`
+- **hit-markers** — hit, crit and kill markers from damage events, with volley folding, pop and fade · `import { createHitMarkers } from "@jgengine/core/combat/hitMarker"`
+- **hit-zone** — resolve a hit zone into one damage multiplier, crit by zone with an injected RNG · `import { resolveHitZone } from "@jgengine/core/combat"`
+- **hit-zone-multiplier** — quote a zone's multiplier for a known crit outcome without rolling · `import { hitZoneMultiplier } from "@jgengine/core/combat"`
+- **hit-zone-unknown** — reject a hit zone table whose named default does not exist · `import { UnknownHitZoneError } from "@jgengine/core/combat"`
+- **hit-zone-validate** — reject a hit-zone table with duplicate zones or a missing default · `import { assertHitZoneTable } from "@jgengine/core/combat"`
+- **hitscan-shot** — aim a hitscan shot (shoot a gun): resolve origin and direction from the eye or muzzle for a raycast · `import { resolveShot } from "@jgengine/core/combat"`
+- **immunity-window** — reject damage during a per-target invulnerability window installed by transitions · `import { createImmunityWindow } from "@jgengine/core/combat"`
+- **impact-feel** — default impact sparks, surface marks and hit-stop per weapon or vehicle class · `import { impactPresets, resolveHitReaction } from "@jgengine/core/combat"` · `import { IMPACT_PROFILES } from "@jgengine/core/combat/impactProfile"`
+- **land-area-damage** — radius damage with falloff resolved through a damage chart per body · `import { landAreaDamage } from "@jgengine/core/combat/damage/landDamage"`
+- **land-damage** — resolve a hit through a damage chart and apply it to the world as one damage effect · `import { landDamage } from "@jgengine/core/combat/damage/landDamage"`
+- **magazine** — a weapon magazine with capacity, timed reload, and reserve-pool interaction · `import { createMagazine } from "@jgengine/core/combat"`
+- **meter** — create a ticking bounded value · `import { createMeter } from "@jgengine/core/stats/statPool"`
+- **meter-change** — drain or fill a ticking meter, restarting its regen delay on a drop · `import { changeMeter } from "@jgengine/core/stats/statPool"`
+- **meter-rates** — tick a bounded value's regen, decay and their delays over time · `import { tickMeter } from "@jgengine/core/stats/statPool"`
+- **on-death-drops** — make a killed enemy drop loot on the ground or into the killer's bag via catalog onDeath · `import { OnDeathSpec } from "@jgengine/core/combat"`
+- **parry-window** — time a block/parry/i-frame defensive window against incoming hits · `import { createDefensiveWindow } from "@jgengine/core/combat"`
+- **portable-stat-pool** — apply deterministic bounded resource changes through a caller-owned stat adapter · `import { applyStatPoolDelta } from "@jgengine/core/combat"`
+- **projectile-models** — render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup · `import { ProjectileModels } from "@jgengine/core/combat/ProjectileModels.draw"`
+- **projectiles** — spawn and advance projectiles with travel and hit resolution · `import { createProjectileSystem } from "@jgengine/core/combat"`
+- **received-damage** — apply data-defined receiver-side damage modifiers (amplify, reduce, cap, convert, redirect, immunity) with typed predicates · `import { resolveReceivedDamage } from "@jgengine/core/combat"`
+- **regen-shield** — a rechargeable overshield that absorbs damage and refills after a lull · `import { createRegenShield } from "@jgengine/core/combat"`
+- **resource-pool** — a regenerating pool like mana or stamina that actions spend from · `import { createResourcePool } from "@jgengine/core/combat"`
+- **reward-allocation** — distribute reward results among multiplayer participants deterministically · `import { allocateRewards, filterOutcomeFor, resolveClaim } from "@jgengine/core/combat"`
+- **shot-spec** — resolve one shot description into explicit travel and contact behaviour · `import { resolveShotSpec } from "@jgengine/core/combat"`
+- **spawn-instance-restore** — rehydrate a creature stat instance from decoded snapshot data · `import { restoreSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
+- **spawn-instance-snapshot** — deep-copy a creature stat instance into a serializable record · `import { snapshotSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
+- **spawn-level-roll** — distribute a wild creature's spawn level into random per-stat points · `import { rollSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
+- **spawn-point-select** — select a spawn location by its distance preference from avoided positions · `import { selectSpawnPoint } from "@jgengine/core/waves/spawnPoint"`
+- **spawn-stat-values** — resolve a creature's per-stat values from its distributed points · `import { resolveSpawnStats } from "@jgengine/core/stats/spawnLevelStats"`
+- **squad-combat** — threat-driven cover, flanking, suppression, retreat and role-driven fire discipline · `import { createSquadCombat } from "@jgengine/core/combat"`
+- **squad-roles** — deterministic role assignment over a caller-authored composition · `import { assignSquadRoles } from "@jgengine/core/combat"`
+- **stagger-meter** — accumulate an ailment buildup (bleed, freeze) until it procs · `import { createBuildupMeter, createStaggerMeter } from "@jgengine/core/combat"`
+- **stat-block** — base stats with stacking, expiring buffs and debuffs applied on read · `import { createStats } from "@jgengine/core/combat"`
+- **stat-pool** — create a serializable current/min/max pool for any caller-named resource · `import { createStatPool } from "@jgengine/core/combat"`
+- **stat-pool-change** — immutably increase or decrease any named bounded resource with clamp evidence · `import { changeStatPool } from "@jgengine/core/combat"`
+- **stat-pool-fraction** — read any bounded resource as a fill fraction for a bar or gauge · `import { statPoolFraction } from "@jgengine/core/stats/statPool"`
+- **stat-pool-patch** — immutably retune a bounded resource's current value or bounds · `import { patchStatPool } from "@jgengine/core/combat"`
+- **stat-pool-reserve** — draw a magazine's reloads, or a weapon's shots, from a shared ammo stat pool · `import { statPoolReserve } from "@jgengine/core/combat"`
+- **status-application** — resolve a data-defined status application with chance, matchup scaling, and stacking policy · `import { resolveStatusApplication } from "@jgengine/core/combat"`
+- **status-effect-timeline** — adapt live status instances into serializable timeline-HUD views (id, kind, remaining/duration, stacks) for a countdown-ring effect bar · `import { toStatusEffectViews } from "@jgengine/core/combat"`
+- **status-effect-view** — adapt one live status instance into a serializable timeline-HUD view (id, kind, remaining/duration, stacks) · `import { toStatusEffectView } from "@jgengine/core/combat"`
+- **status-effects** — commit direct or area effects through caller-owned stat pools with ordered spillover and lethal results · `import { createEffectSystem } from "@jgengine/core/combat"`
+- **status-runtime** — tick data-defined statuses (burn, shock, slow, corrode) with declared stacking rules and per-tick effects · `import { createStatusRuntime } from "@jgengine/core/combat"`
+- **status-unknown** — reject a status id the runtime has no definition for · `import { UnknownStatusError } from "@jgengine/core/combat"`
+- **survival-vitals** — a body's linked meters — drain, delayed regen that costs other vitals, starvation links, knockout-style flags, and doses that land now or over time up to a cap · `import { createVitals } from "@jgengine/core/stats/vitals"`
+- **telegraph-hit-test** — test whether a point is inside a circle, ring, cone or line telegraph, to resolve a dodgeable attack · `import { pointInTelegraph } from "@jgengine/core/combat/telegraph"`
+- **threats-from-memory** — turn perception memory into a bounded, ranked threat list · `import { threatsFromMemory } from "@jgengine/core/combat"`
+- **threshold-crossings** — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy · `import { createThresholdTracker } from "@jgengine/core/combat"`
+- **use-damage-direction** — UI hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators · `import { useDamageDirection } from "@jgengine/core/combat/damage/damageDirection.view"`
+- **use-hit-markers** — UI hook that feeds the local player's confirmed hits, crits and kills into a hit-marker model · `import { useHitMarkers } from "@jgengine/core/combat/HitMarkerCue.view"`
+- **vfx-preset-resolve** — turn a named attack flavor into concrete vfx kind/color/duration with per-field overrides · `import { resolveVfxPreset } from "@jgengine/core/combat"`
+- **vfx-presets** — render a named attack visual (arrow, fireball, lightning, web, slash, shield, heal, explosion) in one call · `import { vfxPresets } from "@jgengine/core/combat"`
+- **wave-countdown** — intermission clock between waves that releases the next one when it runs out and prices calling it early · `import { createWaveCountdown } from "@jgengine/core/waves/waveCountdown"`
+- **wave-preview** — summarize an authored wave before it opens: units by first arrival, trait counts and entries used · `import { summarizeWave } from "@jgengine/core/waves/wavePreview"`
+- **wave-runner** — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore · `import { createWaveRunner } from "@jgengine/core/waves/waveRunner"`
+- **weapon-cadence** — convert a rounds-per-minute weapon rate into the interval a fire gate takes · `import { weaponIntervalMs } from "@jgengine/core/combat"`
+- **weapon-definition-validate** — reject a malformed weapon definition at construction with the field named · `import { assertWeaponDefinition } from "@jgengine/core/combat"`
+- **weapon-feedback** — turn weapon shots, recoil kick and impacts into per-tick feedback-mixer signals for camera shake, audio and rumble · `import { createWeaponFeedbackSignals } from "@jgengine/core/combat/weaponFeedback"`
+- **weapon-handling** — recoil patterns with camera kick and recovery, spread bloom, stance multipliers and ADS as serializable state · `import { createWeaponHandling } from "@jgengine/core/combat/weaponHandling"`
+- **weapon-metrics** — measure a weapon's feel as numbers — spread per shot, climb over a magazine, reset time, ADS time, time-to-kill at a range · `import { measureWeapon } from "@jgengine/core/combat/weaponHandling"`
+- **weapon-presentation** — per-weapon viewmodel offset, ADS pose, viewmodel FOV, sway, bob and recoil kick from a weapon handling frame · `import { createWeaponPresentation } from "@jgengine/core/combat/weaponPresentation"`
+- **weapon-runtime** — compose cadence, magazine, a caller-owned raycast, and portable damage resolution into a fire controller · `import { createWeaponRuntime } from "@jgengine/core/combat"`
+- **weapon-system** — run a data-defined weapon: fire modes, recoil and bloom, hitscan or ballistic projectiles, interrupted reloads and readable ammo, all resolving through the damage runtime · `import { createWeaponSystem } from "@jgengine/core/combat"`
+- **weapon-triggers** — gate shots per shooter and weapon on the game clock, spend ammo from a magazine or reserve pool, and present each shot through one listener seam · `import { createWeaponTriggers } from "@jgengine/core/combat"`

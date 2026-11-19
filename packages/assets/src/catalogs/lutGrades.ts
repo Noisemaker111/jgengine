@@ -4,21 +4,13 @@ import type { GradeLut, LutCube } from "@jgengine/core/render/postProcessing";
 import { LUT_GRADES } from "./grades/index";
 type Rgb = readonly [number, number, number];
 
-/** The numeric recipe behind one grade. Every field is optional; an empty recipe is the identity. */
 export interface LutGradeRecipe {
-  /** Contrast around mid grey, 1 = unchanged. */
   contrast?: number;
-  /** Saturation around luma, 1 = unchanged. */
   saturation?: number;
-  /** Per-channel gain, 1 = unchanged. */
   gain?: Rgb;
-  /** Per-channel gamma exponent, 1 = unchanged (above 1 darkens mid tones). */
   gamma?: Rgb;
-  /** Tint added in shadows, scaled by (1 - luma). */
   shadowTint?: Rgb;
-  /** Tint added in highlights, scaled by luma. */
   highlightTint?: Rgb;
-  /** Lifts black to this level (faded blacks). */
   fade?: number;
   /** Blend toward the bleach-bypass overlay of luma onto colour, 0..1. */
   bleach?: number;
@@ -26,11 +18,9 @@ export interface LutGradeRecipe {
   sepia?: number;
 }
 
-/** One named, licensed colour grade. */
 export interface LutGrade {
   id: string;
   title: string;
-  /** What the grade does to the picture, in plain words. */
   look: string;
   recipe: LutGradeRecipe;
 }
@@ -40,21 +30,16 @@ const luma = (r: number, g: number, b: number): number => 0.2126 * r + 0.7152 * 
 
 export { LUT_GRADES };
 
-/** The id of one grade in {@link LUT_GRADES}. */
 export type LutGradeId = (typeof LUT_GRADES)[number]["id"];
 
-/** Edge length of every shipped cube. */
 export const LUT_GRADE_SIZE = 32;
 
-/** Where a game serves the grade files from, relative to `public/`. */
 export const LUT_GRADE_DIR = "lut";
 
-/** Licence of every grade: authored in this repository by `bakeLutGrade`. */
 export const LUT_GRADE_LICENSE = "CC0-1.0";
 
 const byId: ReadonlyMap<string, LutGrade> = new Map(LUT_GRADES.map((grade) => [grade.id, grade]));
 
-/** The grade record for `id`, or a thrown error naming the ids that exist. */
 /** @internal */
 export function lutGradeOf(id: string): LutGrade {
   const grade = byId.get(id);
@@ -100,7 +85,6 @@ export function applyLutRecipe(recipe: LutGradeRecipe, r: number, g: number, b: 
   return [clamp(fade + red * (1 - fade)), clamp(fade + green * (1 - fade)), clamp(fade + blue * (1 - fade))];
 }
 
-/** Bakes one grade into a `size³` display-space cube (red fastest), deterministically. */
 /** @internal */
 export function bakeLutGrade(id: string, size = LUT_GRADE_SIZE): LutCube {
   const { recipe } = lutGradeOf(id);
@@ -119,13 +103,11 @@ export function bakeLutGrade(id: string, size = LUT_GRADE_SIZE): LutCube {
   return { size, data };
 }
 
-/** The `.cube` text for one grade, as `scripts/gen-lut-grades.ts` writes it. */
 /** @internal */
 export function lutGradeFile(id: string): string {
   return formatCubeLut(bakeLutGrade(id), lutGradeOf(id).title);
 }
 
-/** Path of a grade under {@link LUT_GRADE_DIR}, one folder per id: `cold-teal/cold-teal.cube`. */
 /** @internal */
 export function lutGradeFileName(id: string): string {
   const { id: known } = lutGradeOf(id);

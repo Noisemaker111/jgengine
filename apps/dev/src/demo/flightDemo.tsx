@@ -51,13 +51,10 @@ interface Craft {
   kind: "plane" | "helicopter" | "rocket";
   tuning: RigidAircraftTuning;
   spawn: RigidAircraftOptions & { position: readonly [number, number, number] };
-  /** Starting lever position: throttle for the plane, collective for the helicopter. */
   lever: number;
-  /** Turns the stick sample and lever into sim input. */
   input(stick: StickSample, lever: number): RigidAircraftInput;
   /** Lever travel per second of a held key. */
   leverRate: number;
-  /** What T switches on; the craft starts without them. */
   assists?: AircraftAssistTuning;
   onSpawn?(aircraft: RigidAircraft): void;
   afterTick?(run: FlightRun, step: RigidAircraftStep): void;

@@ -38,11 +38,8 @@ export type PathHeightPolicy =
  * smoothly across `taper` above the threshold so it never steps on or off between adjacent samples.
  */
 export interface PathRetaining {
-  /** Crest height raised above the corridor edge on both shoulders (canyon walls, road berms, levee banks). */
   readonly wallHeight: number;
-  /** Minimum cut/fill (world units) between corridor and surrounding ground before a wall rises. Default 0 (wall the whole path). */
   readonly threshold?: number;
-  /** Cut/fill band above `threshold` over which the wall fades from none to full height. Default equal to `threshold`. */
   readonly taper?: number;
 }
 
@@ -56,25 +53,18 @@ export interface PathRetaining {
  * scene document and evaluates identically at author time and runtime.
  */
 export interface TerrainPathProfile {
-  /** Centerline vertices in world XZ; needs at least two points. Repeat the first point as the last for a closed loop. */
   readonly points: readonly Vec2[];
-  /** Full corridor width; the reshaped core extends `width / 2` either side of the centerline. */
   readonly width: number;
-  /** Blend-ring width outside the core where the corridor height smoothsteps back to the surrounding ground. Default `width * 0.5`. */
   readonly shoulder?: number;
-  /** Centerline target-height policy. Default `{ kind: "sample" }` (drape level across the base terrain). */
   readonly height?: PathHeightPolicy;
-  /** Carve depth below the target height, deepest at the centerline and easing to zero at the core edge (0 = flat corridor). Default 0. */
   readonly depth?: number;
   /** Never cut the ground more than this far below its base height. Omit for unlimited cut. */
   readonly maxCut?: number;
   /** Never fill the ground more than this far above its base height. Omit for unlimited fill. */
   readonly maxFill?: number;
-  /** Raise retaining walls along the shoulders where the corridor cuts/fills into the surrounding ground. */
   readonly retaining?: PathRetaining;
 }
 
-/** A centerline prepared for corridor sampling: points plus cumulative arc-length. */
 interface Corridor {
   readonly points: readonly Vec2[];
   readonly cumulative: readonly number[];
@@ -84,7 +74,6 @@ interface Corridor {
   readonly hit: PolylineIndexHit;
 }
 
-/** Nearest point on a corridor: unsigned lateral distance, arc-length position, and the projected point. */
 interface CorridorHit {
   readonly lateral: number;
   readonly along: number;

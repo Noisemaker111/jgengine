@@ -1,19 +1,8 @@
 import type { LightingConfig } from "../game/playableGame";
 import type { SkyEnvironmentConfig } from "../world/features";
 
-/**
- * Which half of a game's authored `lighting` a time-of-day sky takes over.
- *
- * A time-of-day sky has to move the sun or the whole world stays lit like noon after dark: the
- * dome turns black while the ground keeps its midday key light. So under a day cycle the first
- * directional light is the **sun**, and `ambient`/`hemisphere` are the **noon keyframes** of the
- * ambient fill — the same convention the sky already uses for `horizonColor`/`zenithColor`. Every
- * other light (fill directionals, point and spot lamps) stays exactly as authored.
- */
 export interface SkyOwnedLighting {
-  /** Sun + ambient terms the sky now drives from the day cycle; intensities read as noon values. */
   sky: LightingConfig;
-  /** Lights the sky does not own; mounted as authored. */
   rest: LightingConfig;
 }
 

@@ -13,15 +13,12 @@ import type { Xyz } from "@jgengine/core/math/xyz";
 
 const DEG_TO_RAD = Math.PI / 180;
 
-/** Axis-aligned bounds as produced by `editorDocumentBounds`. */
 export interface Bounds3 {
   min: Xyz;
   max: Xyz;
 }
 
-/** Inputs to {@link orbitCameraPosition}. */
 export interface OrbitFrameInput {
-  /** Point the camera orbits and looks at. */
   target: Xyz;
   /** Radial distance from target to camera, in world units. Clamped to a small positive minimum. */
   distance: number;
@@ -29,27 +26,17 @@ export interface OrbitFrameInput {
   pitchDeg: number;
   /** Azimuth around the target, degrees: 0 looks along +Z toward the target, increasing toward +X. */
   yawDeg?: number | undefined;
-  /**
-   * Explicit camera height above the target (world units). When set it overrides the pitch-derived
-   * height, letting a caller pin a fixed altitude while pitch still sets the horizontal pull-back.
-   */
   height?: number | undefined;
 }
 
 /** Smallest distance we will place the camera at, so `distance: 0` never collapses onto the target. */
 const MIN_DISTANCE = 0.01;
 
-/** Clamp a pitch to the horizon..straight-down range the orbit rig can express. */
 export function clampPitchDeg(pitchDeg: number): number {
   if (!Number.isFinite(pitchDeg)) return 45;
   return Math.max(0, Math.min(90, pitchDeg));
 }
 
-/**
- * Camera position for an orbit rig framing `target` at the given distance, pitch, and yaw. Pitch is
- * measured up from the horizon (90° = directly overhead); `height`, when provided, replaces the
- * pitch-derived vertical offset. Pure: same inputs always yield the same position.
- */
 export function orbitCameraPosition(input: OrbitFrameInput): Xyz {
   const distance = Math.max(MIN_DISTANCE, Number.isFinite(input.distance) ? input.distance : MIN_DISTANCE);
   const pitchRad = clampPitchDeg(input.pitchDeg) * DEG_TO_RAD;
@@ -64,7 +51,6 @@ export function orbitCameraPosition(input: OrbitFrameInput): Xyz {
   };
 }
 
-/** Center point of axis-aligned bounds. */
 export function boundsCenter(bounds: Bounds3): Xyz {
   return {
     x: (bounds.min.x + bounds.max.x) / 2,
@@ -73,11 +59,9 @@ export function boundsCenter(bounds: Bounds3): Xyz {
   };
 }
 
-/** Options for {@link frameDistanceForBounds}. */
 export interface FrameDistanceOptions {
   /** Vertical field of view of the camera, degrees. Default 50 (the shell's default perspective FOV). */
   fovDeg?: number;
-  /** Extra breathing room around the region as a multiplier on its radius. Default 1.25. */
   margin?: number;
 }
 

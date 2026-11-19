@@ -11,10 +11,8 @@ import { DAY_LENGTH } from "./catalog";
  */
 
 export interface ScenarioTarget {
-  /** The world fact the target reads. */
   fact: string;
   atLeast: number;
-  /** How the HUD names it: "guests in the park". */
   label: string;
 }
 
@@ -24,9 +22,7 @@ export interface ScenarioDef {
   blurb: string;
   /** What must be true by the deadline. */
   goal: string;
-  /** Money the park opens with. */
   cash: number;
-  /** Park months the scenario runs, from 1 March, Year 1. */
   months: number;
   targets: readonly ScenarioTarget[];
   /** The scenario a park must win before this one opens; none for the first. */
@@ -125,14 +121,12 @@ export const SCENARIOS: readonly ScenarioDef[] = [
   }),
 ];
 
-/** The first scenario: a new game starts here. */
 export const FIRST_SCENARIO = "brightway_beginnings";
 
 export function scenarioDef(id: string): ScenarioDef | null {
   return SCENARIOS.find((entry) => entry.id === id) ?? null;
 }
 
-/** A stored list of won scenario ids, in the order they were won; anything but an id list is none. */
 export function readScenariosWon(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];
 }

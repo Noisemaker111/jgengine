@@ -11,7 +11,6 @@ export interface TouchGestureTuning {
   /** A finger that moves less than this (px) and lifts quickly is a tap. */
   tapMoveThresholdPx: number;
   tapMaxMs: number;
-  /** Hold this long without moving to begin a hold gesture. */
   longPressMs: number;
 }
 
@@ -21,7 +20,6 @@ export interface TouchGestureTracker {
   begin(x: number, y: number, nowMs: number): void;
   /** Look-drag delta since the last move, or null when no gesture is active. */
   move(x: number, y: number): { dx: number; dy: number } | null;
-  /** Commit to a hold if the finger is still down and hasn't moved. */
   beginHold(): boolean;
   end(nowMs: number): TouchGestureEnd;
   cancel(): TouchGestureEnd;

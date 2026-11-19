@@ -26,7 +26,7 @@ function inside(root: string, target: string): boolean {
   return !isAbsolute(path) && path !== ".." && !path.startsWith(`..${sep}`);
 }
 
-/** Inspect the root and its declared workspaces' installed SDK identities, with fixed traversal budgets and explicit coverage gaps. @internal */
+/** @internal */
 export function inspectWorkspaceSdkInstall(directory: string, options: Partial<WorkspaceSdkReport["coverage"]["limits"]> = {}): WorkspaceSdkReport {
   const limits = { ...BUDGETS, ...options };
   for (const key of Object.keys(BUDGETS) as (keyof typeof BUDGETS)[]) {

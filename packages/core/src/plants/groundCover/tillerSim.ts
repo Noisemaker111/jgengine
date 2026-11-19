@@ -25,7 +25,6 @@ export interface TillerFieldOptions {
   sown?: readonly number[];
 }
 
-/** A rectangle of cells: its first column and row and its size in cells (1 × 1 when absent). */
 export interface CellArea {
   col: number;
   row: number;
@@ -33,35 +32,27 @@ export interface CellArea {
   rows?: number;
 }
 
-/** One species in one cell. */
 export interface TillerCohort {
   tillersPerM2: number;
   /** 0..1: tillers against the most the cohort's leaf height allows, the share of ground it holds. */
   cover: number;
   leafHeightM: number;
-  /** Share of tillers on flowering stems, and the stems' height. */
   floweringShare: number;
   stemHeightM: number;
-  /** The flowering stems have headed and show flowers. */
   inFlower: boolean;
-  /** The season's seed has ripened and the flowering tillers died. */
   seeded: boolean;
 }
 
-/** One cell: its cohorts in species order, plus totals. */
 export interface TillerCell {
   cohorts: TillerCohort[];
-  /** Tillers of every species summed; a moss's many small shoots dwarf a grass's count, so compare `cover`. */
   tillersPerM2: number;
   /** Tallest of the leaf canopy and any flowering stems, metres. */
   heightM: number;
-  /** Open-sky share reaching the cell. */
   light: number;
   /** 0..1 soil compaction from trampling. */
   compaction: number;
 }
 
-/** A tiller field's whole state as JSON-safe values. */
 export interface TillerFieldSnapshot {
   week: number;
   coldWeeks: number;
@@ -70,19 +61,14 @@ export interface TillerFieldSnapshot {
   compaction: number[];
 }
 
-/** A stateful grass field: step it by weeks, act on it, read it, snapshot and restore it. */
 export interface TillerField {
   step(weeks?: number): void;
-  /** Weeks since the field started on 1 January. */
   week(): number;
   dayOfYear(): number;
-  /** Cut every cohort's leaves and stems in the area down to `heightM`; flowering stems cut below their head die. */
   mow(area: CellArea, heightM: number): void;
   /** Feet over the area this week, 0..1 (1 is a busy path): kills tillers, flattens leaves, packs the soil. */
   trample(area: CellArea, intensity: number): void;
-  /** Animals eat `share` of the leaf height over the area, flowering stems too. */
   graze(area: CellArea, share: number): void;
-  /** Open-sky share reaching the ground over the area, from trees or buildings above. */
   setLight(area: CellArea, light: number): void;
   cell(col: number, row: number): TillerCell;
   snapshot(): TillerFieldSnapshot;
@@ -91,8 +77,6 @@ export interface TillerField {
   retune(site: Partial<PlantEnvironment>): void;
 }
 
-/** Values per cohort: tillers, leaf height, flowering share, stem height, thermal time since flowering began, phase. */
-/** Narrowest blade the look draws: a moss shoot with its spreading leaves is about this wide. */
 const MIN_BLADE_WIDTH_M = 0.004;
 const STRIDE = 6;
 const TILLERS = 0;
@@ -104,17 +88,12 @@ const PHASE = 5;
 const VEGETATIVE = 0;
 const FLOWERING = 1;
 const DONE = 2;
-/** The flowering stems were cut, broken or eaten before seed ripened. */
 const CUT = 3;
-/** Thermal time from a flowering stem's start to heading, and to ripe seed (°C·d above base). */
 const HEADING_TT = 450;
 const SEED_TT = 900;
 const START_LEAF_M = 0.08;
-/** Tiller deaths per new leaf in deep shade, scaled by how far light falls short of the species' tolerance. */
 const SHADE_DEATH = 0.15;
-/** A tiller's youngest leaf: the shortest a sward gets cut, eaten or worn down to. */
 const MIN_LEAF_M = 0.01;
-/** How much longer each successive leaf is than the last while the sheath tube lengthens. */
 const LEAF_STEP = 0.3;
 
 function weekTemperatureC(site: PlantEnvironment, week: number): number {
@@ -122,16 +101,11 @@ function weekTemperatureC(site: PlantEnvironment, week: number): number {
   return dailyTemperatureC(site, day);
 }
 
-/** Most tillers per m² at a leaf height (Matthew et al. 1995: tiller size ∝ density^-3/2), levelling off in a close-cut turf. */
 function maxTillers(species: GroundCoverSpecies, leafM: number): number {
   return species.densityConstant * plantPow(Math.max(0.03, leafM), -2 / 3);
 }
 
-/**
- * Create a grass field of tiller cohorts, sown on 1 January with every species' tillers at a short,
- * half-full sward.
- * @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
- */
+/** @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape */
 export function createTillerField(options: TillerFieldOptions): TillerField {
   const { species, cols, rows } = options;
   const speciesCount = species.length;
@@ -171,7 +145,6 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
     for (let r = r0; r < r1; r += 1) for (let c = c0; c < c1; c += 1) visit(r * cols + c);
   }
 
-  /** Take a cohort's flowering stems: cut below the head, broken or eaten. A grass tiller dies with its head. */
   function behead(base: number, kind: GroundCoverSpecies | undefined): void {
     if ((values[base + PHASE] ?? 0) !== FLOWERING) return;
     if (kind?.habit === "graminoid") values[base + TILLERS] = (values[base + TILLERS] ?? 0) * (1 - (values[base + SHARE] ?? 0));
@@ -281,7 +254,6 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
     week += 1;
   }
 
-  /** New tillers per m² that root in each of cell c's four neighbours, and in c itself when `home`. */
   function spread(c: number, s: number, amount: number, home: boolean): void {
     if (amount <= 0) return;
     const col = c % cols;
@@ -377,14 +349,7 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
   };
 }
 
-/**
- * The look of one ground-cover cell for the `grass/` renderer: density from each cohort's cover, blade
- * height and width from the species holding the most ground (the next drawn at its own height and
- * width), colours from the species holding the most ground and the
- * next, flowers in the colours of the two species most in flower (herbs before grasses), gold once a
- * grass has seeded and through autumn. Every other field keeps `base`.
- * @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
- */
+/** @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape */
 export function tillerCellLook(field: TillerField, species: readonly GroundCoverSpecies[], col: number, row: number, base: GrassLook): GrassLook {
   const cell = field.cell(col, row);
   const cohorts = cell.cohorts;
@@ -439,7 +404,6 @@ export function tillerCellLook(field: TillerField, species: readonly GroundCover
   };
 }
 
-/** Height of a cohort's leaves, or its flowering stems while it has them. */
 function cohortHeight(cohort: TillerCohort | undefined): number {
   return Math.max(0.01, cohort?.leafHeightM ?? 0, cohort?.stemHeightM ?? 0);
 }

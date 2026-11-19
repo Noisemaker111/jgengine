@@ -13,7 +13,6 @@ import type { AccessibilityState } from "@jgengine/core/ui/accessibility";
 
 import { useSettingsStore } from "./settings.view";
 
-/** Every accessibility value as one comparable string, read with the same fallbacks the hooks use. */
 function accessibilitySignature(store: SettingsStore): string {
   const { state, holdVsToggle } = readAccessibilitySettings(store);
   return JSON.stringify([
@@ -58,25 +57,14 @@ export function useAccessibilitySettings(): AccessibilityState {
   return useMemo(() => readAccessibilitySettings(store).state, [store, revision]);
 }
 
-/**
- * The live hold-versus-toggle preference for actions that support both (aim, sprint, crouch).
- * Pair it with `holdToggleActive` (`@jgengine/core/settings/accessibilitySettings`) per frame.
- *
- * @capability use-hold-vs-toggle live hold-or-toggle preference from the shared settings store
- */
+/** @capability use-hold-vs-toggle live hold-or-toggle preference from the shared settings store */
 export function useHoldVsToggle(): HoldVsToggle {
   const store = useSettingsStore();
   const revision = useSettingsRevision(store);
   return useMemo(() => readHoldVsToggle(store), [store, revision]);
 }
 
-/**
- * The accessibility rows backed by the shared settings store, for a settings screen the game lays
- * out itself: map them through `SettingsRowControl` (`@jgengine/core/settings/settingsBlocks.view`). The shell's
- * stock settings menu shows the same rows as its `accessibility` category.
- *
- * @capability use-accessibility-rows accessibility setting rows for a game-owned settings layout
- */
+/** @capability use-accessibility-rows accessibility setting rows for a game-owned settings layout */
 export function useAccessibilityRows(): AccessibilitySettingRow[] {
   const store = useSettingsStore();
   const revision = useSettingsRevision(store);

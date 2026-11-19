@@ -8,7 +8,6 @@ import {
 } from "../../packages/core/src/devtools/reportEndpoint";
 import type { PerfReport, ReportLogLine } from "../../packages/core/src/devtools/report";
 
-/** One report as the dev server holds it: which game, the record, and when it arrived. */
 export interface StoredReport {
   gameId: string;
   at: number;
@@ -20,13 +19,11 @@ const MAX_WAIT_MS = 5_000;
 const GAME_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 /** How many warning/error lines the route keeps per game across pushes. */
 const KEPT_SEVERE = 12;
-/** A kept line older than this stops being carried forward. */
 const SEVERE_MAX_AGE_MS = 5 * 60_000;
 
 export interface ReportStore {
   put(gameId: string, report: PerfReport, at?: number): StoredReport;
   get(gameId: string): StoredReport | null;
-  /** Resolve with the next report for `gameId`, or the current one after `timeoutMs`. */
   next(gameId: string, timeoutMs: number): Promise<StoredReport | null>;
   games(): readonly string[];
 }
@@ -100,7 +97,6 @@ export function createReportStore(now: () => number = Date.now): ReportStore {
   };
 }
 
-/** Validate and store one pushed report; returns the HTTP status and body to send. */
 export function handleReportPush(store: ReportStore, body: string): { status: number; body: object } {
   let parsed: ReportPushBody;
   try {

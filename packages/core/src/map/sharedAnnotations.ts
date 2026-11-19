@@ -2,10 +2,8 @@ import type { AnnotationLayer } from "./mapAnnotations";
 import type { MapLayerTone, MapZoneShape } from "./mapLayers";
 import type { WorldXZ } from "./minimap";
 
-/** Feed action shared drawings ride by default (pair with the party feed, like pings). */
 export const ANNOTATION_FEED_ACTION = "map.annotation";
 
-/** A serializable map-annotation edit broadcast to other players. */
 export type AnnotationBroadcast =
   | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number }
   | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string }
@@ -13,20 +11,14 @@ export type AnnotationBroadcast =
   | { op: "remove"; from: string; id: string }
   | { op: "clear"; from: string };
 
-/** The feed sink shared annotations push to — an alias of the ping/feed `push` seam. */
 export interface AnnotationFeedSink {
   push(action: string, entry: unknown): void;
 }
 
-/** Construction options for {@link createSharedAnnotations}. */
 export interface SharedAnnotationsDeps {
-  /** The local annotation layer edits apply to (and inbound edits mirror into). */
   layer: AnnotationLayer;
-  /** Feed to broadcast local edits on (typically `ctx.game.feed`). */
   feed: AnnotationFeedSink;
-  /** This player's id — stamped on broadcasts and used to drop our own echoes. */
   from: string;
-  /** Feed action to publish/consume. Default {@link ANNOTATION_FEED_ACTION}. */
   action?: string;
 }
 
@@ -41,7 +33,6 @@ export interface SharedAnnotations {
   addNote(position: WorldXZ, text: string, options?: { tone?: MapLayerTone }): string;
   remove(id: string): boolean;
   clear(): void;
-  /** Mirror an inbound broadcast from another player; own echoes (matching `from`) are ignored. */
   apply(payload: AnnotationBroadcast): void;
   feedAction: string;
 }

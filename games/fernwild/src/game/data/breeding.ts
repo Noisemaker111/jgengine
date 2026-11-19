@@ -10,9 +10,7 @@ function time(text: string): number {
   return Number(match[1] ?? 0) * 86_400 + Number(match[2]) * 3600 + Number(match[3]) * 60;
 }
 
-/** ARK's mating interval for every Island species here: 18 to 48 hours. */
 const COOLDOWN = [time("18:00"), time("48:00")] as const;
-/** ARK gives no mating time; about a minute of standing together is the in-game feel (approximate). */
 const MATE_SECONDS = 60;
 
 type Row = [incubation: readonly [number, number] | null, carry: string, maturation: string];
@@ -96,34 +94,27 @@ export function breedingOf(species: string, radius: number): BreedingSpecies | n
   };
 }
 
-/** ARK's baby stages as shares of the maturation time: a baby for 10%, a juvenile for 40%, an adolescent for the last 50%. */
 export const BREEDING_STAGES: readonly GrowthStage[] = [
   { id: "baby", share: 0.1 },
   { id: "juvenile", share: 0.4 },
   { id: "adolescent", share: 0.5 },
 ];
 
-/** Chance of twins and of triplets when a pair conceives (ARK). */
 export const MULTIPLES = { twins: 0.1, triplets: 0.02 } as const;
 
-/** ARK's odds for one pairing: one young, sometimes twins or triplets. */
 export function litterOf(rng: () => number): number {
   const single = 1 - MULTIPLES.twins - MULTIPLES.triplets;
   return pickWeighted(rng, [1, 2, 3], (count) => (count === 1 ? single : count === 2 ? MULTIPLES.twins : MULTIPLES.triplets)) ?? 1;
 }
 
-/** ARK's imprint interval: a baby asks for care every 8 hours. */
 export const CARE_INTERVAL = time("8:00");
 /** What a baby asks for. ARK asks for a cuddle, a walk or a kibble; Fernwild has no kibble, so it asks for its favourite food. */
 export const CARE_KINDS = ["cuddle", "walk", "feed"] as const;
 /** Metres a baby must follow you for a walk (approximate). */
 export const WALK_METRES = 30;
-/** Full imprint raises every stat but stamina, oxygen and speed by 20% (ARK). */
 export const IMPRINT_BONUS = 0.2;
 export const IMPRINTED_STATS: readonly TameStat[] = ["health", "food", "weight", "melee"];
 /** An egg out of its temperature survives this long (approximate: ARK drains an egg's health over minutes). */
 export const EGG_HEALTH_SECONDS = 600;
-/** ARK's mutations: three rolls at 2.5%, each two more levels in one stat. */
 export const MUTATIONS = { rolls: 3, chance: 0.025, amount: 2 } as const;
-/** How big a newborn is next to its parents; it grows to full size as it matures (approximate). */
 export const NEWBORN_SIZE = 0.25;

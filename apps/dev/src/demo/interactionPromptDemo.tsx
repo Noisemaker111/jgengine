@@ -89,7 +89,6 @@ function onNewPlayer(ctx: GameContext): void {
   ctx.scene.entity.spawn(HERO, { id: ctx.player.userId, position: [0, 0, 0], role: "player" });
 }
 
-/** Reads the live hero ground position and drives the registry's resolve as it moves. */
 function PromptLayer(): ReactNode {
   const position = useGameStore(
     (ctx) => {

@@ -18,7 +18,6 @@ import { clamp } from "../math/scalar";
  */
 export type NeedDefinition = DecayMeterConfig;
 
-/** One need's current satisfaction, worst-first ready: `fraction` is 0 (empty) … 1 (full). */
 export interface NeedReading {
   id: string;
   value: number;
@@ -27,11 +26,8 @@ export interface NeedReading {
 
 /** Serializable need state: values plus any in-play retuning, so a save keeps the dials. */
 export interface NeedSnapshot {
-  /** Satisfaction per need id; undeclared ids are ignored on restore. */
   values: Record<string, number>;
-  /** Base rates after `setRate`; absent entries keep the definition's rate. */
   rates: Record<string, number>;
-  /** Active per-need rate multipliers from `setRateModifier`. */
   modifiers: Record<string, number>;
 }
 
@@ -42,31 +38,20 @@ export interface NeedSnapshot {
  * never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
  */
 export interface NeedSet {
-  /** Drain every need by `rate * modifier * dt` in place. Call once per game tick. */
   tick(dt: number): void;
-  /** Declared ids in definition order. */
   ids(): readonly string[];
-  /** Stable index for a declared need, or `-1`. Resolve once, then use the `*At` readers. */
   indexOf(id: string): number;
-  /** Raw value at `indexOf(id)` — no allocation, no lookup. */
   valueAt(index: number): number;
   /** 0..1 fill at `indexOf(id)` — what response curves sample. */
   fractionAt(index: number): number;
   value(id: string): number;
   fraction(id: string): number;
-  /** One need's value, bounds and fill — a HUD bar. Throws on an unknown id. */
   state(id: string): DecayMeterState;
-  /** Every need's {@link NeedSet.state}, keyed by id — the display view; {@link NeedSet.snapshot} is the save. */
   states(): Record<string, DecayMeterState>;
-  /** Moodles for every crossed threshold, worst-first per need in declared order. */
   moodles(): Moodle[];
-  /** Consumable/action refill; negative drains. Throws on an unknown id. */
   refill(id: string, amount: number): void;
-  /** Overwrite one need's base rate (a harsher game mode). Throws on an unknown id. */
   setRate(id: string, rate: number): void;
-  /** Multiply one need's drain until cleared with `1`; `null` sets every need at once. */
   setRateModifier(id: string | null, multiplier: number): void;
-  /** Least-satisfied need by fraction, declared order breaking ties; `null` when none declared. */
   mostUrgent(): NeedReading | null;
   snapshot(): NeedSnapshot;
   restore(next: NeedSnapshot): void;

@@ -39,14 +39,12 @@ export const cityLayout = createCityLayout({
   },
 });
 
-/** Scanned asphalt, concrete paving and gutters; the sidewalk keeps its sand tone and takes the grain. */
 const STREET_SURFACES = {
   road: librarySurfaceScan("asphalt/dark-cracked"),
   sidewalk: librarySurfaceScan("concrete/smooth", { tint: 0 }),
   curb: librarySurfaceScan("concrete/smooth", { tint: 0 }),
 };
 
-/** The editor's road `level` meta picks the road class: avenues run north-south, streets cross them. */
 const ROAD_SPECS: readonly CityRoadSpec[] = ROADS.map((segment) => ({
   path: [segment.from, segment.to],
   roadClass: segment.level === "avenue" ? "avenue" : "street",
@@ -58,17 +56,13 @@ const ROAD_SPECS: readonly CityRoadSpec[] = ROADS.map((segment) => ({
   materials: STREET_SURFACES,
 }));
 
-/** The streets as the layout draws them right now; the shell re-renders them when a slider moves. */
 const layoutRoads = cityRoadSource(cityLayout, ROAD_SPECS);
 export const roadSource = withSwappableRoadSurface(layoutRoads);
 
-/** The streets at boot, for `environment({ roads })`. */
 export const initialRoads = layoutRoads.initial;
 
-/** The carriageway after dark: the same streets on the wet-asphalt scan, so lamps and neon pool on it. */
 export const WET_ROAD = { road: librarySurfaceScan("asphalt/wet") };
 
-/** Lot roads for `cityLots`: the same centrelines, with their class. */
 export const LOT_ROADS: readonly CityLotRoad[] = ROAD_SPECS.map((spec) => ({
   path: spec.path,
   roadClass: spec.roadClass,
@@ -80,7 +74,6 @@ export const LOT_ROADS: readonly CityLotRoad[] = ROAD_SPECS.map((spec) => ({
  */
 export const SEAFRONT_BUILD_LINE = SHORE_X + 24;
 
-/** Which layout zone a point is: downtown is the core, the docks are industrial, the hills residential. */
 export function zoneAt(x: number, z: number): CityZone | null {
   if (x < SEAFRONT_BUILD_LINE) return null;
   switch (districtAt(x, z)?.id) {

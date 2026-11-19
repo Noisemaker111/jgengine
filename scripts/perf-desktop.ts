@@ -24,7 +24,7 @@ import { parseRendererBackend, type RendererBackend } from "../packages/core/src
 
 interface Target { type?: string; url?: string; webSocketDebuggerUrl?: string }
 
-/** Bound one debugger read; the caller closes its session on timeout. @internal */
+/** @internal */
 export async function desktopDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
@@ -32,7 +32,7 @@ export async function desktopDeadline<T>(work: Promise<T>, ms: number): Promise<
   } finally { if (timer !== undefined) clearTimeout(timer); }
 }
 
-/** A local port nothing listens on now, from the OS. @internal */
+/** @internal */
 export function freePort(): number {
   const server = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
   const port = server.port;
@@ -40,7 +40,7 @@ export function freePort(): number {
   return port;
 }
 
-/** Whether a debugger already answers on `port`. @internal */
+/** @internal */
 export async function portAnswers(port: number): Promise<boolean> {
   try {
     await localGetJson<unknown>(`http://127.0.0.1:${port}/json/version`, 1_000);
@@ -50,7 +50,7 @@ export async function portAnswers(port: number): Promise<boolean> {
   }
 }
 
-/** Select only an explicitly diagnostic local desktop page. @internal */
+/** @internal */
 export function diagnosticDesktopTarget(targets: readonly Target[]): Target {
   const matching = targets.filter((target) => {
     if (target.type !== "page" || target.webSocketDebuggerUrl === undefined || target.url === undefined) return false;
@@ -62,10 +62,8 @@ export function diagnosticDesktopTarget(targets: readonly Target[]): Target {
 
 export interface LaunchArgs {
   exe: string;
-  /** Launch with the app's `--uncapped` flag; without it the app keeps the display's vsync. */
   uncapped: boolean;
   seconds: number;
-  /** The debugger port `--port` asked for; null picks a free one per launch. */
   port: number | null;
   out: string | null;
   /** The private source maps the build wrote: `<app folder>.private-maps` unless `--maps` names them. */
@@ -76,7 +74,6 @@ export interface LaunchArgs {
   flow: { game: string; name: string } | null;
   /** The GPU backends to measure, one launch each (`--renderer webgl|webgpu|both`, default webgl). */
   renderers: RendererBackend[];
-  /** `--trace`: with `--flow`, record a Chrome trace of every process and name what held each hitch. */
   trace: boolean;
   /** `--returning`: play the flow once first and measure a second session that has its shader caches. */
   returning: boolean;
@@ -138,11 +135,6 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   return { exe, uncapped, seconds, port, out, maps: maps ?? `${dirname(exe)}.private-maps`, size, flow, renderers, returning, trace };
 }
 
-/**
- * Run the game's `capture.play` through the agent bridge once its context is live, and return what
- * ran. A game with no `capture.play` starts in its scene already; any other refusal fails the run,
- * since its numbers would describe a menu.
- */
 async function startCaptureScene(session: CdpSession): Promise<string> {
   for (let attempt = 0; attempt < 120; attempt += 1) {
     const reply = await session.evaluate<{ ok: boolean; error?: string; ran?: { name: string; status: string; reason?: string }[] } | null>(
@@ -160,10 +152,6 @@ async function startCaptureScene(session: CdpSession): Promise<string> {
   throw new Error("the game context never came up for capture_run within 60 s");
 }
 
-/**
- * The running build's manifest and a reader that maps one of its scripts through the private source
- * maps `jgengine desktop --diagnostics` wrote beside the app, so frame callbacks name their source file.
- */
 async function privateMapReader(session: CdpSession, mapsDir: string): Promise<{ build: unknown; privateMap: (scriptId: string) => Promise<string> }> {
   const build = await session.evaluate<unknown>(`fetch('./jgengine-build.json').then(r => r.ok ? r.json() : ({ error: 'build manifest HTTP ' + r.status })).catch(e => ({ error: String(e) }))`, { awaitPromise: true });
   const digest = typeof build === "object" && build !== null ? Reflect.get(build, "privateMapsSha256") : undefined;
@@ -188,10 +176,8 @@ export function desktopOutFor(args: Pick<LaunchArgs, "out" | "renderers">, backe
   return out.endsWith(".json") ? `${out.slice(0, -5)}.${backend}.json` : `${out}.${backend}.json`;
 }
 
-/** The page a launched app is pointed at: its diagnostic telemetry, at the frame gate's tier. */
 const LAUNCH_URL = "index.html?telemetry=local&frameMembers=1&quality=high";
 
-/** What one launched run measured; `rafP50Ms`/`rafP99Ms` are the requestAnimationFrame intervals. */
 export interface DesktopRecord {
   at: number;
   exe: string;
@@ -209,7 +195,6 @@ export interface DesktopRecord {
   shadowCache: ShadowCacheStats | null;
 }
 
-/** How a launched app got into its scene, and the tier it reports. */
 interface LaunchedScene { tier: string; start: string }
 
 /**
@@ -295,7 +280,6 @@ export function unmeasuredSceneReason(drawsAvg: number | undefined, covered: boo
   return null;
 }
 
-/** Launch a diagnostic desktop build, walk at the frame gate's conditions, and print and return the frame rate it reaches. */
 export async function launchAndMeasure(args: LaunchArgs, backend: RendererBackend): Promise<DesktopRecord> {
   return withLaunchedScene(args, backend, null, async (session, { tier, start }) => {
     const release = await startPath(session, "walk");
@@ -352,7 +336,7 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
  */
 export const SHADER_CACHE_DIRS = ["EBWebView/GrShaderCache", "EBWebView/ShaderCache", "EBWebView/GPUPersistentCache", "EBWebView/GraphiteDawnCache", "EBWebView/Default/GPUCache", "EBWebView/Default/DawnGraphiteCache", "EBWebView/Default/DawnWebGPUCache", "EBWebView/Default/Code Cache"];
 
-/** Copy the shader caches of one profile into a new one; how many folders it found. @internal */
+/** @internal */
 export function carryShaderCaches(from: string, to: string): number {
   let carried = 0;
   for (const dir of SHADER_CACHE_DIRS) {
@@ -443,11 +427,9 @@ export interface AllArgs {
   games: string[];
   uncapped: boolean;
   seconds: number;
-  /** Each game's build, build log and record go in `<records>/<game>/`. */
   records: string;
   /** Measure the apps already built in `records` instead of building each game first. */
   skipBuild: boolean;
-  /** Reprint the table from the records already saved, measuring nothing. */
   reuse: boolean;
   markdown: boolean;
   /** The GPU backends each game is measured on, one launch each (`--renderer`, default webgl). */
@@ -521,14 +503,12 @@ export function renderAllTable(rows: readonly AllRow[], markdown: boolean): stri
   return [pad(header), ...body.map(pad), "", summary].join("\n");
 }
 
-/** The game executable `jgengine desktop --out <dir>` wrote: the one .exe that is not an installer. */
 function builtApp(dir: string): string | null {
   if (!existsSync(dir)) return null;
   const apps = readdirSync(dir).filter((name) => name.toLowerCase().endsWith(".exe") && !name.toLowerCase().endsWith("-setup.exe"));
   return apps.length === 1 && apps[0] !== undefined ? join(dir, apps[0]) : null;
 }
 
-/** Build one game's diagnostic desktop app (no installer) into `<records>/<game>/app`, logging to build.log. */
 function buildDesktopApp(game: string, records: string): string {
   const dir = join(records, game);
   mkdirSync(dir, { recursive: true });

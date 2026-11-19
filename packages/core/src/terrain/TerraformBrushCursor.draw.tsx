@@ -6,7 +6,6 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useRef } from "@jgengine/core/ui/jsx";
 
-/** Props for {@link TerraformBrushCursor}: brush centre (or null to hide), height, radius and terraform mode. */
 export interface TerraformBrushCursorProps {
   center: readonly [number, number] | null;
   y?: number;
@@ -24,7 +23,6 @@ const MODE_COLOR: Record<TerraformMode, string> = {
   paint: "#e879f9",
 };
 
-/** A ground ring showing where a terraform brush will act, coloured by its mode. */
 export function terraformBrushCursorDraw(getProps: () => TerraformBrushCursorProps): EngineDraw {
   let group: THREE.Group | null = null;
   let ring: THREE.Mesh | null = null;

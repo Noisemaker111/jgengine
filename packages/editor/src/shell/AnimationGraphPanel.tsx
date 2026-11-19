@@ -46,14 +46,7 @@ function stateClips(state: AnimState): string {
   return state.points.map((point) => `${point.clip}@${point.at[0]},${point.at[1]}`).join(" · ");
 }
 
-/**
- * Graph mode of the Animation dock: the selected placement's animation graph (layers, states,
- * transitions), a scrubbed preview driven by the headless graph runtime and shown on the rig in the
- * viewport, trigger buttons that record presses on the timeline, and crossfade editing that stores
- * the graph on the placement as an undoable edit.
- *
- * @internal
- */
+/** @internal */
 export function AnimationGraphPanel({
   session,
   ui,

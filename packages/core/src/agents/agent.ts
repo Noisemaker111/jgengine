@@ -17,17 +17,13 @@ import {
 } from "./mood";
 import { createAgentSchedule, type AgentSchedule, type AgentScheduleConfig, type AgentSchedulePhase } from "./schedule";
 
-/** Where an agent goes when the thing it wanted is gone: a named option and a named place. */
 export interface AgentFallback {
   readonly option: string;
   readonly target: string;
 }
 
-/** One reachable thing the agent could do this tick, as the game sees its own world. */
 export interface AgentTarget {
-  /** Option id declared in the agent's `options`; unknown ids are skipped. */
   readonly option: string;
-  /** Opaque place or object id the option would be done at. */
   readonly target: string;
   /** Effort the caller wants priced in: travel, queue seconds, price. */
   readonly cost?: number;
@@ -35,7 +31,6 @@ export interface AgentTarget {
   readonly fallback?: AgentFallback;
 }
 
-/** What the agent is doing. */
 export interface AgentAction {
   readonly option: string | null;
   readonly target: string | null;
@@ -50,7 +45,6 @@ export interface AgentAction {
 /** Why the action last changed. */
 export type AgentActionReason = UtilitySwitchReason | "fallback" | "schedule" | "cleared";
 
-/** One call per tick: the clock, and the targets the game's world currently offers. */
 export interface AgentUpdate {
   readonly dt: number;
   /** Absolute game-second from the world clock; the schedule reads it. */
@@ -58,45 +52,36 @@ export interface AgentUpdate {
   readonly targets?: readonly AgentTarget[];
 }
 
-/** What one update produced: the action, the feeling, and where the day plan puts the agent. */
 export interface AgentFrame {
   readonly action: AgentAction;
   readonly mood: Mood;
   readonly phase: AgentSchedulePhase | null;
-  /** Place the work beat posts the agent to now; `null` with no schedule or while travelling. */
   readonly post: string | null;
   readonly changed: boolean;
   readonly reason: AgentActionReason | null;
 }
 
-/** Everything an agent is made of. Policy is data; nothing about a game is compiled in. */
 export interface AgentConfig {
   readonly id: string;
   /** Decaying needs, in the survival meter shape (`sim/needs`). Order breaks ties. */
   readonly needs: readonly NeedDefinition[];
-  /** Scored actions, in the utility option shape (`ai/utilityBrain`). */
   readonly options: readonly UtilityOption[];
   readonly interrupts?: readonly UtilityInterrupt[];
-  /** The authored day plan, or omitted for an agent with no schedule. */
   readonly schedule?: AgentScheduleConfig;
-  /** Mood policy: the game's own weights and its own tier list. */
   readonly mood: { readonly weights?: readonly MoodWeight[]; readonly tiers: readonly MoodTier[] };
   readonly switchMargin?: number;
   readonly minHoldSeconds?: number;
   readonly costWeight?: number;
   readonly jitter?: number;
-  /** `[0,1)` source for `jitter`; pass `ctx.rng` so runs replay. */
   readonly rng?: () => number;
   readonly devtoolsName?: string;
 }
 
-/** Serializable whole agent: needs, feeling, held action, day-plan cursor and the far flag. */
 export interface AgentSnapshot {
   needs: NeedSnapshot;
   mood: MoodSnapshot;
   brain: UtilityBrainSnapshot;
   action: AgentAction;
-  /** True while the agent runs on its schedule alone, with no utility pass per tick. */
   far: boolean;
   /**
    * Identity of the schedule stop the needs were last refilled at (`stop@arrival`). Saved so a
@@ -115,24 +100,13 @@ export interface AgentSnapshot {
  */
 export interface Agent {
   readonly id: string;
-  /** The agent's own need set - the game refills it after a meal, a ride or a night's sleep. */
   readonly needs: NeedSet;
-  /** Current mood: weighted need satisfaction plus any source the game raised. */
   mood(): Mood;
-  /** The game-raised mood sources (a queue outside, litter underfoot). */
   readonly moodSources: MoodReader;
-  /** The resigned day plan, or `null` for an agent that only reacts to targets. */
   readonly schedule: AgentSchedule | null;
-  /** The held action. */
   action(): AgentAction;
-  /** Where the schedule puts the agent now; `null` without a schedule. */
   phaseAt(now: number): AgentSchedulePhase | null;
-  /** Run one tick: decay, day plan, decision. Returns the same frame object each call. */
   update(next: AgentUpdate): AgentFrame;
-  /**
-   * Put the agent off camera: it keeps decaying and follows its schedule, but takes no utility
-   * pass - the cheap state a far body should be. A far agent with no schedule holds its action.
-   */
   setFar(far: boolean): void;
   isFar(): boolean;
   retune(patch: {
@@ -143,7 +117,6 @@ export interface Agent {
   }): void;
   snapshot(): AgentSnapshot;
   restore(next: AgentSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -173,12 +146,7 @@ function firstOfOption(targets: readonly AgentTarget[], option: string | null): 
   return null;
 }
 
-/**
- * Create one agent. The same factory serves a park guest, a household being, a patrolling janitor
- * and a soldier: `options` is what it can choose between, `schedule` is where its day puts it.
- *
- * @capability agents a needs, thought, action and mood loop an agent runs on the world clock
- */
+/** @capability agents a needs, thought, action and mood loop an agent runs on the world clock */
 export function createAgent(config: AgentConfig): Agent {
   const needs = createNeedSet(config.needs);
   const brain = createUtilityBrain({

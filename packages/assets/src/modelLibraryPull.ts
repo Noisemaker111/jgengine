@@ -13,7 +13,6 @@ import { pullMirroredModel } from "./modelMirror";
 import { libraryModelDir, type KhronosModelOrigin, type ModelLibraryEntry } from "./catalogs/modelLibrary";
 import { decodePng, encodeJpeg, encodePng, fitRgba, gitBlobSha, hasAlpha, type RgbaImage } from "./imageCodec";
 
-/** Poly Haven's public asset API; files are served from its own CDN (`dl.polyhaven.org`). */
 const POLYHAVEN_API = "https://api.polyhaven.com";
 
 interface PolyHavenFile {
@@ -26,18 +25,14 @@ interface PolyHavenGltf extends PolyHavenFile {
   include: Record<string, PolyHavenFile>;
 }
 
-/** Where {@link pullLibraryModel} writes and how it fetches. */
 export interface PullLibraryModelOptions {
-  /** The models root (`<game>/public/models`); the entry lands in `<root>/library/<name>/`. */
   modelsRoot: string;
   fetchImpl?: typeof fetch;
   /** Longest texture edge kept, in pixels; larger maps are halved until they fit. Default 512. */
   maxTexture?: number;
-  /** A GitHub token for sources listed through the GitHub API (raises the anonymous rate limit). */
   githubToken?: string;
 }
 
-/** Halve a JPEG (2x2 box filter) until its longest edge fits `max`; smaller maps pass through untouched. */
 export function downscaleJpeg(bytes: Uint8Array, max: number): Uint8Array {
   const image = jpeg.decode(bytes, { useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 512 });
   let { width, height } = image;
@@ -72,7 +67,6 @@ export interface PulledLibraryModel {
   farTriangles: number;
   /** Real-world size `[width, height, depth]` in metres after grounding. */
   size: readonly [number, number, number];
-  /** Top-level node names the source file carried, before `keep` filtering. */
   roots: readonly string[];
 }
 
@@ -99,10 +93,6 @@ function triangles(document: Document): number {
   return Math.round(count);
 }
 
-/**
- * Re-root the scene under one node that puts the model's footprint centre on the origin and its
- * lowest point on y = 0, so `anchor: "origin"` places it standing on the ground.
- */
 function ground(document: Document): readonly [number, number, number] {
   const scene = document.getRoot().listScenes()[0]!;
   const { min, max } = getBounds(scene);
@@ -289,7 +279,6 @@ async function writeLevels(
 /** The commit of `KhronosGroup/glTF-Sample-Assets` every Khronos entry is read from. */
 export const KHRONOS_COMMIT = "8f492390ddc7a2ae221a1369ef560589cf8c70fb";
 
-/** Halve every texture to the budget; maps without transparency become JPEG. */
 function fitTextures(document: Document, max: number): void {
   for (const texture of document.getRoot().listTextures()) {
     const image = texture.getImage();
@@ -318,11 +307,6 @@ function imageKey(texture: Texture | null): string | null {
   return image === null || image === undefined ? null : createHash("md5").update(image).digest("hex");
 }
 
-/**
- * Remove what a sample's license excludes before anything is written: nodes matching `drop`, and
- * every texture slot anywhere that shows the same picture as a dropped node's textures (the
- * trademark plates Khronos samples carry), plus the explicit `scrub` slots.
- */
 /** A texture's average colour in linear RGB, so a scrubbed map leaves its overall tone behind. */
 function meanLinearColor(texture: Texture): [number, number, number] | null {
   const bytes = texture.getImage();
@@ -349,10 +333,6 @@ function clearBaseColor(material: Material): void {
   material.setBaseColorFactor([factor[0] * mean[0], factor[1] * mean[1], factor[2] * mean[2], factor[3]]);
 }
 
-/**
- * Real-time engines without a transmission pass draw `KHR_materials_transmission` glass as milky
- * white, so sample glass becomes thin tinted glass: blended, smooth and non-metallic.
- */
 function bakeTransmissionGlass(document: Document): void {
   for (const material of document.getRoot().listMaterials()) {
     if (material.getExtension("KHR_materials_transmission") === null) continue;

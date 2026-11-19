@@ -20,7 +20,6 @@ export function CaptionOverlay({
   zIndex = 84,
 }: {
   feed: CaptionFeed;
-  /** How many lines to show at once. Default 2. */
   max?: number;
   zIndex?: number;
 }): ReactNode {

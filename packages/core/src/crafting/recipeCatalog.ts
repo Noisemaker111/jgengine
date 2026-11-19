@@ -1,7 +1,6 @@
 import type { ContentIssue } from "../game/contentValidation";
 import type { RecipeDef } from "./recipe";
 
-/** Caller catalogs for native crafting references; omission leaves that namespace unchecked. */
 export interface RecipeCatalogValidationOptions {
   hasReference?(kind: "item" | "station" | "unlock", id: string): boolean;
 }

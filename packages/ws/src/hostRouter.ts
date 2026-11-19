@@ -66,7 +66,6 @@ export type HostRouterOptions = {
   limits?: CommandLimits;
   /** Per-command authorization hook; defaults to allow-all. */
   authorize?: CommandAuthorize;
-  /** Declared `runCommand` names and input validators. Omit (default) to pass every command through unchanged; set to reject unknown command names and validate declared ones. */
   validate?: CommandCatalog;
   now?: () => number;
   /** How long a disconnected membership remains reclaimable. Defaults to 15 seconds. */
@@ -90,7 +89,6 @@ export type HostRouterConnection = {
   close: () => void;
 };
 
-/** A player's interpolated position sampled from history at a past timestamp. */
 export type RewoundPosition = {
   userId: string;
   x: number;
@@ -110,7 +108,6 @@ export const DEFAULT_POSE_RULES: PoseSyncRules = DEFAULT_POSE_SYNC_RULES;
 
 /** Cap on frames queued behind a connection's in-flight message; beyond this a flood gets rejected instead of piling up unbounded promises. */
 export const MAX_QUEUED_MESSAGES = 64;
-/** Default reconnect grace period for hosted socket sessions. */
 export const DEFAULT_GRACE_MS = 15_000;
 
 type Connection = {
@@ -121,12 +118,10 @@ type Connection = {
   userId: string | null;
   subscriptions: Set<string>;
   joinedServers: Set<string>;
-  /** Live client session ids per joined server; the connection leaves once the last one does. */
   sessions: Map<string, Set<string>>;
   queue: Promise<void>;
   queuedMessages: number;
   worldRevisions: Map<string, number | null>;
-  /** Per-server cursor of what this connection's mirror holds, for hosts that narrow frames to the viewer's interest. */
   worldViews: Map<string, WorldViewState>;
   roles: Map<string, SnapshotViewer["role"]>;
   subscriptionPushes: Map<string, SubscriptionPush>;
@@ -159,10 +154,6 @@ function getOrCreate<K, V>(map: Map<K, V>, key: K, factory: () => V): V {
   return value;
 }
 
-/**
- * Remove `userId` from every visited `server|scope` bucket, drop buckets that empty out, and notify
- * per changed key. Backs both the disconnect-wide and per-server drops for presence and voice.
- */
 function dropUserFrom<V>(
   store: Map<string, Map<string, V>>,
   userId: string,
@@ -199,7 +190,6 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
   const sessionsByUserId = new Map<string, Connection>();
   const resumeTokens = new Map<string, string>();
-  /** Each pending leave's cancel, by user and server. */
   const pendingLeaves = new Map<string, () => void>();
   const ticketKey = (userId: string, serverId: string) => `${userId}|${serverId}`;
   const ticketFor = (userId: string, serverId: string): ResumeTicket => {
@@ -362,7 +352,6 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   const presenceWindows = new Map<string, { dirty: boolean; cancel: () => void }>();
   const presenceWindowMs = poseRules.minIntervalMs ?? DEFAULT_POSE_SYNC_RULES.minIntervalMs ?? 100;
 
-  /** Send the room's roster now and open its window if none is open. Joins and leaves call this directly. */
   const flushPresence = (serverId: string) => {
     if (closed) return;
     broadcastPresence(serverId);
@@ -380,7 +369,6 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }, presenceWindowMs);
   };
 
-  /** A move or appearance change goes out at once in a quiet room, else with the roster that closes the window. */
   const markPresenceMoved = (serverId: string) => {
     const window = presenceWindows.get(serverId);
     if (window === undefined) flushPresence(serverId);

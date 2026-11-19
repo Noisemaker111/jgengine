@@ -3,17 +3,10 @@ import { createPerception, type PerceptionService } from "@jgengine/core/sensor/
 import { FAUNA, lineOfSight, type Point } from "../world";
 import type { Stratum } from "./strata";
 
-/**
- * Bellwether's other prints. Each species is a temperament (the engine's passive / territorial /
- * predator decision), a set of senses (the shared perception service, tuned per species) and a body:
- * health, speeds and a strike. The vault's Fitter keeps its own scripted routine; everything else
- * that lives down here is one of these.
- */
 export type Species = "hand" | "courier" | "overrun";
 
 export interface SpeciesDef {
   name: string;
-  /** What the scanner's codex calls it, and what scanning it teaches. */
   codex: string;
   health: number;
   /** Metres a second idling or investigating, and when it commits (fleeing or charging). */
@@ -21,9 +14,7 @@ export interface SpeciesDef {
   run: number;
   temperament: TemperamentConfig;
   senses: { sight: number; cone: number; hearing: number; scent: number; memory: number };
-  /** Its strike: windup the diver can see coming, the reach it lands at and what it costs the suit. */
   strike: { damage: number; windup: number; reach: number; cooldown: number } | null;
-  /** Body size for the model and the shot test, m. */
   size: number;
 }
 
@@ -53,7 +44,6 @@ export const SPECIES: Record<Species, SpeciesDef> = {
 
 export function isSpecies(value: string): value is Species { return Object.hasOwn(SPECIES, value); }
 
-/** One creature as the dive saves it. */
 export interface Creature {
   id: string;
   species: Species;
@@ -71,7 +61,6 @@ export interface Creature {
   reason: string;
 }
 
-/** Every authored creature at its den, fresh for a new Life. */
 export function spawnFauna(): Record<string, Creature> {
   const out: Record<string, Creature> = {};
   for (const spawn of FAUNA) {
@@ -82,7 +71,6 @@ export function spawnFauna(): Record<string, Creature> {
   return out;
 }
 
-/** One perception service per species: the ranges differ, the station's wall test does not. */
 export function createSpeciesSenses(species: Species, place: () => Stratum): PerceptionService {
   const senses = SPECIES[species].senses;
   return createPerception({
@@ -93,12 +81,10 @@ export function createSpeciesSenses(species: Species, place: () => Stratum): Per
   });
 }
 
-/** How far the lamp carries the diver's silhouette, as a multiple of a creature's sight. */
 export function diverVisibility(lamp: boolean, ambient: number): number {
   return lamp ? 1.6 : Math.max(0.3, ambient * 1.1);
 }
 
-/** What a creature's temperament makes of what it remembers right now. */
 export function creatureIntent(creature: Creature, memories: Parameters<typeof decideTemperament>[1]["memories"], lightOf: (targetId: string) => number) {
   const def = SPECIES[creature.species];
   return decideTemperament(def.temperament, { position: creature.at, home: creature.home, health: creature.health / def.health, memories, lightOf });

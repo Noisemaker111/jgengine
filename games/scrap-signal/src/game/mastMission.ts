@@ -6,7 +6,6 @@ import type { MissionDef } from "@jgengine/core/mission/mission";
  * the mission marker inspector without loading the game's systems.
  */
 
-/** Authored sites the contract reads: the board the player accepts at and the mast it defends. */
 export const MAST_BOARD = "signal_mast_board";
 export const MAST_SITE = "signal_mast_rustflat";
 export const MAST_WATCH_ID = "mast_watch";

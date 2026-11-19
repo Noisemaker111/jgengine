@@ -8,7 +8,6 @@ import s_rocketbox from "./rocketbox.json" with { type: "json" };
 import s_sketchfab from "./sketchfab.json" with { type: "json" };
 import s_smithsonian from "./smithsonian.json" with { type: "json" };
 
-/** Every committed library ingest file, as untyped JSON; `readLibraryRecordFile` checks each one. */
 export const libraryRecordFiles: readonly unknown[] = [
   s_ambientcg,
   s_gameicons,

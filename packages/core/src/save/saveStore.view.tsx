@@ -3,14 +3,11 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "@jgengine/
 
 import type { SaveResult, SaveStatus, SaveStore } from "@jgengine/core/save/saveStore";
 
-/** The reactive slice of a {@link SaveStore} returned by {@link useSaveStore} — the live value plus bound save actions, all re-rendering on change. */
 export interface SaveStoreView<T> {
   value: T;
   status: SaveStatus;
   slot: string;
-  /** True while the initial `load()` is in flight — gate a loading screen on it. */
   loading: boolean;
-  /** True while a write is in flight — show a "Saving…" indicator. */
   saving: boolean;
   set: (value: T) => void;
   patch: (mutate: (previous: T) => T) => void;

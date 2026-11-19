@@ -1,7 +1,6 @@
 import { mergeCredits } from "@jgengine/core/menu/credits";
 import { lookCredits } from "../art/look";
 
-/** Deepward ships original procedural geometry and synthesized cues; the engine supplies the rest. */
 export const DEEPWARD_CREDITS = mergeCredits({
   title: "DEEPWARD",
   sections: [

@@ -77,7 +77,7 @@ function ScatterPreview(props: GeneratorPreviewProps) {
   return null;
 }
 
-/** Registers the scatter variant-tile preview: the sample plot's placements as proxy meshes. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerScatterPreview(): void {
   registerGeneratorPreview(SCATTER_OUTPUT, {
     Component: ScatterPreview,

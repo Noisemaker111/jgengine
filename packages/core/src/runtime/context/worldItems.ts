@@ -13,7 +13,6 @@ import type { WorldItemPickupResult } from "../gameContext";
 
 /** @internal What the ground-item surface needs from the live context: entity spawn/despawn, the event bus, loot granting, and change notification. */
 export interface WorldItemContextDeps {
-  /** Rarity a spawn gets when the caller names none — the game's content baseline. */
   defaultRarity?: string;
   entities: EntityStore;
   events: GameEvents;

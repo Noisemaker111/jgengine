@@ -40,7 +40,6 @@ for (const side of [-1, 1]) {
   }
 }
 
-/** Ground decals: twin tyre marks along the racing line and oil stains off it, plus the hazard apron at the launch. */
 let ground = 0;
 add(`d05-${++ground}-apron`, "decal", 0, 12, 0, { style: "hazard", size: 14, opacity: 0.75, seed: "launch-apron" });
 for (let z = 30; z < 470; z += 24) {

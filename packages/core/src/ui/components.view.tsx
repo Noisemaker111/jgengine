@@ -143,11 +143,6 @@ export function DialogueBox({
   );
 }
 
-/**
- * The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`.
- * The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and
- * renders {@link DialogueBox}, with no per-game open/close store.
- */
 export function useOpenDialogueId(): string | null {
   return useStore(dialogueSlot, (value) => value ?? null);
 }

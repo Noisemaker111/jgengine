@@ -6,7 +6,6 @@ import { isStratum, type Stratum } from "./game/strata";
 import { clutterFootprint, planFloorDressing, type FloorDressing, type FloorRect } from "./game/interiorPlan";
 
 export type Point = readonly [number, number, number];
-/** Marrow, or one stratum of Bellwether. Each is its own authored floor plan in the one scene. */
 export type Place = "home" | Stratum;
 export function isPlace(value: unknown): value is Place { return value === "home" || isStratum(value); }
 export interface Room { id: string; name: string; x: number; z: number; w: number; d: number; place: Place }
@@ -77,7 +76,6 @@ export const SALVAGE = editorLayers.markers.filter(entry => entry.kind === "deep
   return { id, kind, at: point(entry), label: entry.label ?? entry.id, place: placeOf(entry) };
 });
 if (new Set(SALVAGE.map(entry => entry.id)).size !== SALVAGE.length) throw new Error("Deepward loot source IDs must be unique");
-/** Bearing columns and cabinets are solid only where the editor says so. */
 export const STATION_SOLIDS = editorLayers.volumes.filter(entry => entry.kind === "deepward-structure" && entry.meta?.["solid"] === true).map(entry => ({ ...footprint(entry), place: entry.meta?.["place"] }));
 export const PROPS = editorLayers.volumes.filter(entry => entry.kind === "deepward-machine").map(footprint);
 
@@ -98,17 +96,14 @@ function unique<T extends { id: string }>(entries: readonly T[], what: string): 
   return entries;
 }
 
-/** A descent lift: where it stands, which stratum it serves and where it goes. */
 export interface Lift { id: string; place: Stratum; to: Stratum; at: Point; reach: number }
 export const LIFTS: readonly Lift[] = anchors("lift").map(entry => {
   const to = entry.meta?.["to"];
   if (!isStratum(to)) throw new Error(`Deepward lift goes nowhere: ${entry.id}`);
   return { id: entry.id, place: stratumOf(entry), to, at: point(entry), reach: reach(entry.id) };
 });
-/** Where the diver steps off a lift into each stratum below receiving. */
 export const STRATUM_SPAWNS: Readonly<Partial<Record<Stratum, Point>>> = Object.fromEntries(anchors("stratum-spawn").map(entry => [stratumOf(entry), point(entry)]));
 
-/** A harvestable seam, cable run or scrap heap: what it yields, how many times, and the tool it takes. */
 export type Tool = "hands" | "cutter" | "drill";
 export interface ResourceNode { id: string; place: Stratum; at: Point; yields: SalvageKind; tool: Tool; amount: number; label: string }
 export const NODES: readonly ResourceNode[] = unique(editorLayers.markers.filter(entry => entry.kind === "deepward-node").map(entry => {
@@ -117,7 +112,6 @@ export const NODES: readonly ResourceNode[] = unique(editorLayers.markers.filter
   return { id: idOf(entry, "nodeId"), place: stratumOf(entry), at: point(entry), yields, tool, amount, label: entry.label ?? entry.id };
 }), "node");
 
-/** Food and water on the shelves: onto the belt, eaten on the dive or carried home to Marrow's galley. */
 export type Supply = "ration" | "water";
 export interface SupplyCache { id: string; place: Stratum; at: Point; gives: Supply; amount: number; label: string }
 export const SUPPLIES: readonly SupplyCache[] = unique(editorLayers.markers.filter(entry => entry.kind === "deepward-supply").map(entry => {
@@ -126,19 +120,16 @@ export const SUPPLIES: readonly SupplyCache[] = unique(editorLayers.markers.filt
   return { id: idOf(entry, "supplyId"), place: stratumOf(entry), at: point(entry), gives, amount, label: entry.label ?? entry.id };
 }), "supply");
 
-/** Something the scanner reads: a wreck that teaches a fragment of a blueprint, or a log that tells the story. */
 export interface Scannable { id: string; place: Stratum; at: Point; entry: string; label: string }
 export const FRAGMENTS: readonly Scannable[] = unique(editorLayers.markers.filter(entry => entry.kind === "deepward-fragment").map(entry => ({
   id: idOf(entry, "fragmentId"), place: stratumOf(entry), at: point(entry), entry: idOf(entry, "entry"), label: entry.label ?? entry.id,
 })), "fragment");
 
-/** Where a creature dens, and which species it is. */
 export interface FaunaSpawn { id: string; place: Stratum; at: Point; species: string }
 export const FAUNA: readonly FaunaSpawn[] = unique(editorLayers.markers.filter(entry => entry.kind === "deepward-fauna").map(entry => ({
   id: idOf(entry, "creatureId"), place: stratumOf(entry), at: point(entry), species: idOf(entry, "species"),
 })), "creature");
 
-/** Steam, frost and ink: floor patches that cost the body something while you stand in them. */
 export type HazardKind = "steam" | "frost" | "ink";
 export interface Hazard { id: string; place: Stratum; hazard: HazardKind; x: number; z: number; w: number; d: number }
 export const HAZARDS: readonly Hazard[] = editorLayers.volumes.filter(entry => entry.kind === "deepward-hazard").map(entry => {
@@ -147,26 +138,18 @@ export const HAZARDS: readonly Hazard[] = editorLayers.volumes.filter(entry => e
   return { ...footprint(entry), place: stratumOf(entry), hazard };
 });
 
-/** Marrow's bays: the floor spots a base module can be built on. */
 export const BAYS: readonly { id: string; at: Point; turn: number }[] = anchors("bay").map(entry => ({ id: entry.id, at: point(entry), turn: entry.rotationY ?? 0 }));
 export const FABRICATOR = point(marker("fabricator-marrow"));
 export const FABRICATOR_REACH = reach("fabricator-marrow");
-/** Printer Zero's core at the bottom of the Choir: the end of the story. */
 export const PRINTER_ZERO = point(marker("printer-zero"));
 export const PRINTER_ZERO_REACH = reach("printer-zero");
 
-/** The floor and ceiling heights of a place's rooms, from their authored volumes. */
 export function placeElevation(place: Place): { floorY: number; ceilingY: number } {
   const volume = editorLayers.volumes.find(entry => entry.kind === "deepward-room" && entry.meta?.["place"] === place);
   if (volume?.shape !== "box" || !volume.halfExtents) throw new Error(`Deepward has no authored room elevation for ${place}`);
   return { floorY: volume.center.y - volume.halfExtents.y, ceilingY: volume.center.y + volume.halfExtents.y };
 }
 const dressings = new Map<Stratum, FloorDressing>();
-/**
- * A stratum's derived interior dressing: trims, pipes, cables, stains, wall lamps and clutter props
- * planned from the authored room footprints. Nothing covers a lift, pickup, spawn, hazard or
- * authored structure, and the plan is the same every run.
- */
 export function floorDressing(stratum: Stratum): FloorDressing {
   const known = dressings.get(stratum);
   if (known !== undefined) return known;
@@ -213,7 +196,6 @@ export function floorAt(x: number, z: number, place: Place): boolean {
   for (const r of ROOMS) if (r.place === place && inside(x, z, r)) return true;
   return false;
 }
-/** `inside` the footprint grown by `radius` on every side. */
 function insideGrown(x: number, z: number, r: { x: number; z: number; w: number; d: number }, radius: number): boolean {
   return Math.abs(x - r.x) < (r.w + radius * 2) / 2 && Math.abs(z - r.z) < (r.d + radius * 2) / 2;
 }
@@ -246,12 +228,10 @@ export function roomAt(p: Point, place: Place): string {
   }
   return "Rail threshold";
 }
-/** A room's authored depth ("01 / rail receiving" is 1). Item level reads this, so deeper loot rolls higher. */
 function roomDepth(room: Room): number {
   const match = /^(\d+)\s*\//.exec(room.name);
   return match === null ? 1 : Math.max(1, Number(match[1]));
 }
-/** How deep the room holding this point is; an unnumbered or unmapped spot counts as the entrance. */
 export function depthAt(p: Point, place: Place): number {
   const room = [...ROOMS].reverse().find(r => r.place === place && inside(p[0], p[2], r));
   return room === undefined ? 1 : roomDepth(room);

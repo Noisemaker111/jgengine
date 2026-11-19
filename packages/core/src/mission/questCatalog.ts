@@ -1,6 +1,5 @@
 import type { QuestDef, QuestObjective, QuestRewards } from "./quest";
 
-/** Readonly authoring input; mutable QuestDef catalogs also satisfy this shape. */
 export type QuestCatalogDefinition = Omit<Readonly<QuestDef>, "requires" | "objectives" | "rewards"> & {
   requires?: readonly string[];
   objectives: readonly Readonly<QuestObjective>[];
@@ -11,10 +10,8 @@ export type QuestCatalogDefinition = Omit<Readonly<QuestDef>, "requires" | "obje
   };
 };
 
-/** Caller-owned reference namespaces; objective kinds remain unconstrained. */
 export type QuestCatalogReferenceKind = "item" | "target" | "inventory" | "currency";
 
-/** A located structural issue; path is a JSON Pointer into the supplied catalog. */
 export interface QuestCatalogIssue {
   code: "duplicate-quest" | "duplicate-objective" | "missing-requirement" | "missing-follow-up"
     | "missing-external-start" | "unknown-reference" | "invalid-count" | "invalid-amount"
@@ -29,13 +26,9 @@ export interface QuestCatalogIssue {
   requirementIds?: string[];
 }
 
-/** Declarations and optional lookups for a game's own authoring rules. */
 export interface QuestCatalogValidationOptions {
-  /** Unlock ids that non-quest systems may grant, including ids shared with quests. */
   externalUnlocks?: Iterable<string>;
-  /** Quests game systems may grant active, bypassing their acceptance prerequisites. */
   externallyStartedQuests?: Iterable<string>;
-  /** Check present references against caller catalogs; omitted means unchecked. */
   hasReference?(kind: QuestCatalogReferenceKind, id: string, context: {
     quest: QuestCatalogDefinition;
     objective?: Readonly<QuestObjective> | undefined;

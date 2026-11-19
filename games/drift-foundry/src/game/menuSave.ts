@@ -9,13 +9,10 @@ import { runSessionStore } from "./run/session";
 
 /** The pit's one saved run. The corridor is one ladder, so the yard keeps one parked buggy. */
 export const YARD_SLOT = FOUNDRY_SLOT;
-/** The frame and time the pit left behind, for the card Continue opens. */
 export const pitFrame: PitFrame = { thumbnail: null, savedAt: 0 };
 
-/** The card list the menu shows; its one slot is read from the yard document's parked run. */
 export const foundrySlots = createSaveSlots({ capacity: 1, slots: [{ id: YARD_SLOT, empty: true, meta: {} }] });
 
-/** What the parked run is, in the yard's own words: where it stands, its clock, its build. */
 function cardOf(parked: ParkedRun, profile: FoundryProfile): { name: string; meta: Record<string, string | number>; savedAt: number } {
   const { pitFrame: frame, career, records } = profile;
   const metres = Math.floor(parkedRunMetres(parked));
@@ -37,7 +34,6 @@ function cardOf(parked: ParkedRun, profile: FoundryProfile): { name: string; met
   };
 }
 
-/** Keep the card in step with the parked run in the yard's document. */
 export async function refreshFoundrySlots(save: FoundrySave): Promise<void> {
   const profile = await save.peek();
   const parked = profile?.parked ?? null;
@@ -49,17 +45,12 @@ export async function refreshFoundrySlots(save: FoundrySave): Promise<void> {
   foundrySlots.write(YARD_SLOT, { name: card.name, meta: card.meta, savedAt: card.savedAt });
 }
 
-/**
- * Capture the frame the pit leaves behind. `requestSceneThumbnail` waits for the canvas binding and
- * its first painted frame itself, so there is no retry loop here.
- */
 export async function capturePitFrame(): Promise<string | null> {
   const shot = await requestSceneThumbnail({ width: 320, height: 180 });
   if (shot.ok) pitFrame.thumbnail = shot.thumbnail;
   return pitFrame.thumbnail;
 }
 
-/** Park the stopped buggy, then write the card's frame with the run it points at. */
 export async function saveParkedRunHere(ctx: GameContext): Promise<boolean> {
   const session = runSessionStore.peek(ctx);
   if (session === undefined) return false;
@@ -74,7 +65,6 @@ export async function saveParkedRunHere(ctx: GameContext): Promise<boolean> {
   return true;
 }
 
-/** The parked run Continue resumes, or `null` when the yard has none. */
 export function parkedRunCard(): { id: string } | null {
   const recent = foundrySlots.mostRecent();
   return recent === null ? null : { id: recent.id };

@@ -21,11 +21,6 @@ const ACTIONS = [
 ];
 const noop = () => undefined;
 
-/**
- * The shared HUD chrome under the shell's default root theme, from static values: a glass frame with
- * vitals and a counter, an action bar, a window, a confirm dialog, a pause menu, and the button
- * variants. Screenshots identically; the before/after evidence for theme and primitive changes.
- */
 export function HudChromePreview({ className }: { className?: string }) {
   return (
     <div

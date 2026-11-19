@@ -3,7 +3,6 @@ import type { ChaseCameraConfig, TopDownCameraConfig } from "../camera/cameraCon
 /** A screen region as fractions of the canvas, `[x, y, width, height]` in `0..1` with the origin at the top left. */
 export type ViewportRect = readonly [number, number, number, number];
 
-/** The follow camera an extra viewport runs; the primary seat keeps the game's main camera rig. */
 export interface ViewportCameraConfig {
   /** Default: `"topDown"` when the game's main rig is top-down, otherwise `"chase"`. */
   rig?: "chase" | "topDown";
@@ -11,21 +10,15 @@ export interface ViewportCameraConfig {
   topDown?: TopDownCameraConfig;
 }
 
-/** One viewport: which local seat it shows and where. */
 export interface ViewportDef {
-  /** Local seat id (`"slot:0"`, `"slot:1"`, …) from `localPlayers(ctx)`. */
   slot: string;
   rect: ViewportRect;
   camera?: ViewportCameraConfig;
 }
 
-/** `defineGame({ viewports })`: split-screen layout for local seats. */
 export interface ViewportsConfig {
-  /** `"auto"` (default) splits the screen evenly across the seats currently joined; a list pins explicit rects. */
   layout?: "auto" | readonly ViewportDef[];
-  /** Two-seat split: `"vertical"` puts them side by side (default), `"horizontal"` stacks them. */
   split?: "vertical" | "horizontal";
-  /** Follow camera for seats whose viewport has none. */
   camera?: ViewportCameraConfig;
 }
 
@@ -50,11 +43,7 @@ function gridRects(count: number): ViewportRect[] {
   return rects;
 }
 
-/**
- * Even split-screen rects for seats in order: one fills the screen, two split side by side (or stacked),
- * three put the first on a full-width top half, four make a 2×2 grid, more fill a grid row by row.
- * @capability split-screen Split the screen into one viewport per local seat, each with its own follow camera.
- */
+/** @capability split-screen Split the screen into one viewport per local seat, each with its own follow camera. */
 export function splitViewports(slots: readonly string[], split: "vertical" | "horizontal" = "vertical"): ViewportDef[] {
   const count = slots.length;
   let rects: ViewportRect[];
@@ -66,7 +55,6 @@ export function splitViewports(slots: readonly string[], split: "vertical" | "ho
   return slots.map((slot, index) => ({ slot, rect: rects[index]! }));
 }
 
-/** The viewports to draw for the seats currently joined: the explicit layout filtered to joined seats, or an even split. */
 export function resolveViewports(config: ViewportsConfig | undefined, slots: readonly string[]): ViewportDef[] {
   const layout = config?.layout ?? "auto";
   if (layout === "auto") return splitViewports(slots, config?.split);

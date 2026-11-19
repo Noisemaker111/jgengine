@@ -3,9 +3,7 @@
  * playback-rate/gain windows are one testable source of truth the audio engine reads.
  */
 
-/** Lowest live playback-rate multiplier (two octaves below authored pitch). */
 export const MIN_LOOP_RATE = 0.25;
-/** Highest live playback-rate multiplier (two octaves above authored pitch). */
 export const MAX_LOOP_RATE = 4;
 
 /**
@@ -44,7 +42,7 @@ export function clampLoopCutoff(hz: number, fallback: number, nyquist = MAX_LOOP
   return Math.min(max, Math.max(MIN_LOOP_CUTOFF, hz));
 }
 
-/** Smoothed listener velocity estimate from per-frame camera positions. @internal */
+/** @internal */
 export interface ListenerVelocityTrack {
   last: { x: number; y: number; z: number } | null;
   velocity: { x: number; y: number; z: number };
@@ -55,7 +53,6 @@ export function createListenerVelocityTrack(): ListenerVelocityTrack {
   return { last: null, velocity: { x: 0, y: 0, z: 0 } };
 }
 
-/** Camera jumps faster than this (world units/s) are cuts or teleports, not motion, and reset the estimate. */
 const MAX_LISTENER_SPEED = 400;
 
 /**

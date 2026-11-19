@@ -66,10 +66,6 @@ function snapshotWriter(ctx: MutationCtx, force: boolean) {
   };
 }
 
-/**
- * Starts (or resumes) the actor's row in the shared world at its lab's spawn and returns where that is.
- * A human calls it once on entering; a bot calls it before roaming.
- */
 export const ensureHumanPresence = mutation({
   args: { gameId: v.id("games"), externalId: v.optional(v.string()) },
   returns: v.union(v.object({ presenceId: v.string(), position: presencePositionValidator, rotationY: v.number() }), v.null()),
@@ -105,7 +101,6 @@ export const syncPlayerPosition = mutation({
     position: v.object({
       x: v.number(),
       z: v.number(),
-      /** Vertical jump offset above ground (world units). */
       y: v.optional(v.number()),
     }),
     rotationY: v.optional(v.number()),
@@ -146,7 +141,6 @@ function toWorldPresenceRow(ctx: QueryCtx, presence: WorldPresenceRecord): World
   };
 }
 
-/** Bot API: players and bots in the chunks around a viewer chunk key. */
 export const listOnlinePresences = query({
   args: { viewerChunkKey: v.optional(v.string()) },
   returns: v.array(worldPresenceValidator),

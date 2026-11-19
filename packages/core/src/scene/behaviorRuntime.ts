@@ -27,14 +27,10 @@ import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 const DEFAULT_WANDER_SPEED = 1.5;
 const WANDER_ARRIVAL = 0.6;
-/** Below this share of its intended step a wanderer counts as blocked and re-rolls its target. */
 const WANDER_BLOCKED_FRACTION = 0.25;
 
-/** Whether a behavior instance advances and writes pose (`active`), is temporarily suspended retaining
- * state (`paused`), or is held off until re-enabled (`disabled`). */
 export type BehaviorStatus = "active" | "paused" | "disabled";
 
-/** Context supplied to a registered decision graph action. */
 export interface BehaviorActionContext {
   ctx: GameContext;
   entityId: string;
@@ -44,7 +40,6 @@ export interface BehaviorActionContext {
 /** Callback used by a registered decision graph behavior action. */
 export type BehaviorAction = DecisionAction<BehaviorActionContext>;
 
-/** Optional hooks for a registered behavior action set. */
 export interface BehaviorActionOptions {
   /** Called when an action running last think is pre-empted by another branch, to stop movement or release claims. */
   onAbort?: DecisionAbort<BehaviorActionContext>;
@@ -75,8 +70,6 @@ export function registerBehaviorActions(id: string, actions: Record<string, Beha
  */
 export type BehaviorResumePolicy = "freeze" | "advance";
 
-/** Serializable snapshot of one behavior instance — round-trips exactly through
- * {@link BehaviorControl.serialize}/{@link BehaviorControl.restore}. */
 export type BehaviorSnapshot =
   | { readonly kind: "patrol"; readonly state: PathFollowState }
   | { readonly kind: "wander"; readonly origin: Waypoint; readonly target: Waypoint | null }
@@ -90,7 +83,6 @@ export type BehaviorSnapshot =
       readonly pending?: number;
     };
 
-/** Plain pursuit progress, including its original spawn home and scheduled elapsed time. */
 export interface PursueBehaviorSnapshot {
   readonly kind: "pursue";
   readonly home: Waypoint;
@@ -103,7 +95,6 @@ export interface PursueBehaviorSnapshot {
   readonly threat?: ThreatTableState;
 }
 
-/** Inspection readout for editor/debug tooling, from {@link BehaviorControl.inspect}/{@link BehaviorControl.list}. */
 export interface BehaviorInspection {
   id: string;
   kind: "patrol" | "wander" | "decisionGraph" | "pursue";
@@ -114,7 +105,6 @@ export interface BehaviorInspection {
 interface Lifecycle {
   status: BehaviorStatus;
   reason: string | null;
-  /** Real time elapsed while paused, for `advance` resume catch-up. */
   pausedElapsed: number;
 }
 
@@ -166,39 +156,22 @@ function thinkCadence(behavior: DecisionGraphBehavior): InterestSchedulerConfig 
   return { wakeRadius: Number.POSITIVE_INFINITY, activeInterval: Math.max(0, behavior.thinkInterval ?? 0) };
 }
 
-/**
- * Per-entity control surface for the behavior runtime — pause/resume/disable/enable an instance,
- * seek it to semantic progress, serialize/restore its state, and inspect it, all keyed by stable
- * entity id without a full-world scan. Obtain it with {@link behaviorControl}.
- */
 export interface BehaviorControl {
-  /** Current status of the instance, or `null` if the entity has no live behavior. */
   status(id: string): BehaviorStatus | null;
-  /** Human-readable reason attached to the last pause/disable, or `null`. */
   reason(id: string): string | null;
-  /** Suspend advancement and pose writes, retaining state. No-op (`false`) if not active. */
   pause(id: string, reason?: string): boolean;
   /** Resume a paused instance, applying the catch-up `policy` (default `freeze`). */
   resume(id: string, policy?: BehaviorResumePolicy): boolean;
-  /** Hold the instance off (no advance, no pose) until {@link enable}. Retains state. */
   disable(id: string, reason?: string): boolean;
-  /** Re-activate a disabled instance from its retained state (no catch-up). */
   enable(id: string): boolean;
-  /** Jump a patrol instance to semantic {@link PathProgress}. Returns `false` for non-patrol instances. */
   seek(id: string, progress: PathProgress): boolean;
-  /** Capture the instance's exact serializable state, or `null` if absent. */
   serialize(id: string): BehaviorSnapshot | null;
-  /** Restore an instance from a {@link BehaviorSnapshot} of the matching kind. */
   restore(id: string, snapshot: BehaviorSnapshot): boolean;
-  /** Inspect one instance, or `null` if absent. */
   inspect(id: string): BehaviorInspection | null;
   /** Inspect every live instance (bounded by spawned behavior entities). */
   list(): BehaviorInspection[];
-  /** The live, persistent blackboard of a decision graph instance for perception and game systems to write facts into, or `null`. */
   blackboard(id: string): Blackboard | null;
-  /** Optional pursuit threat table; explicit `setTarget` wins over taunt/threat and proximity. */
   threat(id: string): ThreatTable | null;
-  /** Clear pursuit target/cooldown/threat and reset its cadence, retaining the original home. */
   reset(id: string): boolean;
 }
 

@@ -7,25 +7,18 @@
 
 import type { WorldActionDecl, WorldChanges, WorldFactsDecl, WorldModel, WorldRefusal } from "./worldModel";
 
-/** One rung: what it is called, what it costs and what it changes on the instance. */
 export interface UpgradeStepDecl {
   label: string;
-  /** One line a panel shows under the label ("Hits three raiders at once"). */
   detail?: string;
-  /** Absolute changes paid (negative numbers spend), as on any world action. */
   cost: WorldChanges;
-  /** Changes on the instance, keyed without the subject; numbers add, strings and flags set. */
   effect?: WorldChanges;
   /** Seconds the step takes in the action queue; omitted lands at once. */
   takes?: number;
   queue?: string;
-  /** News-log line; `{target}` is the instance's label. */
   note?: string;
-  /** What a refusal says when the step is not open on that instance. */
   refuse?: string;
 }
 
-/** One exclusive branch: its own ladder, open once the trunk is climbed and no other branch is taken. */
 export interface UpgradeBranchDecl {
   id: string;
   label: string;
@@ -33,21 +26,14 @@ export interface UpgradeBranchDecl {
   steps: readonly UpgradeStepDecl[];
 }
 
-/** The fact names a ladder writes on each instance. */
 export interface UpgradePathFactNames {
-  /** Trunk steps taken (default `"tier"`). */
   tier: string;
-  /** The branch taken, `""` before one is (default `"branch"`). */
   branch: string;
-  /** Steps taken on that branch (default `"branch_tier"`). */
   branchTier: string;
 }
 
-/** A kind's whole ladder. */
 export interface UpgradePathsDecl {
-  /** Kind or tag the ladder belongs to; its actions are `on` it. */
   kind: string;
-  /** Steps every instance climbs first, in order. */
   trunk?: readonly UpgradeStepDecl[];
   /** Exclusive branches that open after the trunk; taking one closes the rest. */
   branches?: readonly UpgradeBranchDecl[];
@@ -57,25 +43,21 @@ export interface UpgradePathsDecl {
 /** One step an instance can take next, priced for it, with the refusal if it can't be taken now. */
 export interface UpgradeOption {
   action: string;
-  /** The branch this step belongs to, or null for a trunk step. */
   branch: string | null;
   branchLabel: string | null;
   /** 1-based position on its own ladder (trunk or branch). */
   step: number;
   label: string;
   detail: string | null;
-  /** What it costs right now (negative numbers spend), as the world prices it. */
   cost: WorldChanges;
   /** Null when it can be taken now; otherwise why not (usually the cost). */
   refusal: WorldRefusal | null;
 }
 
-/** Where one instance stands on its ladder. */
 export interface UpgradeProgress {
   tier: number;
   branch: string | null;
   branchTier: number;
-  /** Every step on the instance's route is taken: trunk done and its branch (or the lone ladder) topped out. */
   complete: boolean;
 }
 
@@ -92,10 +74,6 @@ export function upgradeStepAction(kind: string, branch: string | null, step: num
   return `${kind}:${branch ?? "trunk"}:${step}`;
 }
 
-/**
- * The facts a kind declares so its ladder can read them: no trunk steps, no branch. Spread them into
- * the kind's own `facts`.
- */
 export function upgradePathFacts(decl: UpgradePathsDecl): WorldFactsDecl {
   const fact = names(decl);
   return { [fact.tier]: 0, [fact.branch]: "", [fact.branchTier]: 0 };
@@ -121,13 +99,7 @@ function stepAction(
   };
 }
 
-/**
- * Compile a ladder into world actions, one per step. A trunk step opens when the instance has taken
- * the steps before it; a branch's first step opens once the trunk is done and no branch is taken, and
- * writes the branch's id, which closes every other branch.
- *
- * @capability upgrade-paths branching upgrade ladders for placed things: a shared trunk, then exclusive branches priced and refused by the world model
- */
+/** @capability upgrade-paths branching upgrade ladders for placed things: a shared trunk, then exclusive branches priced and refused by the world model */
 export function upgradePathActions(decl: UpgradePathsDecl): Record<string, WorldActionDecl> {
   const fact = names(decl);
   const trunk = decl.trunk ?? [];
@@ -167,7 +139,6 @@ export function upgradePathActions(decl: UpgradePathsDecl): Record<string, World
   return actions;
 }
 
-/** Where an instance stands on its ladder, read from the facts the ladder writes. */
 export function upgradeProgress(world: WorldModel, decl: UpgradePathsDecl, instanceId: string): UpgradeProgress {
   const fact = names(decl);
   const tier = world.num(`${instanceId}.${fact.tier}`);

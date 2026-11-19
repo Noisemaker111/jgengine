@@ -1,8 +1,3 @@
-/**
- * Live demo: the engine's car lapping a track, seen from above. `createVehicleDynamics` runs the real
- * tire model every frame and the sliders `retune` it mid-lap. A small autopilot works the same pedals a
- * player would (throttle, brake, steer, handbrake) until the visitor presses a key on it.
- */
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
 import { vehicleTuning, type VehicleSpecAids, type VehicleSpecBrakes, type VehicleSpecChassis, type VehicleSpecSteering } from "@jgengine/core/physics/vehicleSpec";

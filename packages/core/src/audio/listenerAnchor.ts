@@ -1,9 +1,7 @@
-/** Where the spatial-audio listener sits: at the camera, or where an overhead camera looks at the ground. @internal */
+/** @internal */
 export type ListenerAnchor = "camera" | "ground";
 
-/** Furthest the listener moves from an overhead camera along its view ray. */
 const MAX_FOCUS_DISTANCE = 400;
-/** Listener height above the ground focus, so ground emitters are not exactly coincident with it. */
 const FOCUS_LIFT = 2;
 
 type Point = { x: number; y: number; z: number };

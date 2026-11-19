@@ -3,13 +3,8 @@ import { pickWeighted } from "../random/pick";
 import { seededRng } from "../random/rng";
 import { publishReadout } from "../runtime/pageHandle";
 
-/** Where a session stands: not opened yet, in progress, or closed at its boundary. */
 export type SessionPhase = "idle" | "open" | "closed";
 
-/**
- * One option the next session may open with. `T` is the game's own payload (a tighter rival line, an
- * unlocked part, a shorter route) - the loop only draws and remembers which id was drawn.
- */
 export interface SessionOfferOption<T> {
   id: string;
   value: T;
@@ -19,7 +14,6 @@ export interface SessionOfferOption<T> {
   after?: number;
 }
 
-/** The option a session opens with, and which session it is. */
 export interface SessionOffer<T> {
   /** 1-based session number: `1` is the first session, before any boundary has closed. */
   session: number;
@@ -27,47 +21,32 @@ export interface SessionOffer<T> {
   option: T | null;
 }
 
-/** One option the next session could open with, in the shape a choice screen shows. */
 export interface SessionChoice<T> {
   id: string;
   value: T;
 }
 
-/** The session closing, handed to a game's own `settle`. */
 export interface SettlingSession<I = void> {
   /** 1-based number of the session closing. */
   session: number;
-  /** The quantity the session carried to its boundary; `0` when the game carries nothing. */
   carried: number;
-  /** The game's own reason for closing, passed to `settle`. */
   input: I;
 }
 
-/** What closing one session did, and what the next session opens with. */
 export interface SessionSettlement<R = void, T = never> {
-  /** The session that closed. */
   session: number;
-  /** The quantity it carried to its boundary. */
   carried: number;
-  /** Sessions closed so far. */
   closed: number;
-  /** What the game's `settle` returned. */
   result: R;
-  /** The option the next session opens with. */
   next: SessionOffer<T>;
 }
 
-/** What the loop reports about the session it is playing, for a capture or devtools read. */
 export interface SessionReadout {
-  /** The session in progress, or the last one started when none is open. */
   session: number;
   phase: SessionPhase;
-  /** What a session is in this game, or `null` when the game did not say. */
   kind: string | null;
-  /** What the session in progress carries. */
   carried: number;
   closed: number;
-  /** The option the session in progress opened with, or the one the next session is offered. */
   offered: string | null;
 }
 
@@ -76,15 +55,11 @@ export interface SessionProbe {
   read(): SessionReadout;
 }
 
-/** Everything a session loop stores as plain JSON. */
 export interface SessionLoopState {
   /** The session in progress, or the last one started; `0` before the first `start`. */
   session: number;
-  /** Sessions whose boundary has closed; also the number `after` gates are read against. */
   closed: number;
-  /** The quantity the session in progress carries. */
   carried: number;
-  /** The option the session in progress opened with, or the one the next session opens with. */
   optionId: string | null;
 }
 
@@ -94,28 +69,18 @@ export interface SessionLoopState {
  * a carried amount (`every` carries between writes, default every one) and every open, adopt or close.
  */
 export interface SessionLoopPersistence {
-  /** The state a previous boot wrote, or `null` when this is a new career. */
   load?: () => SessionLoopState | null;
   /** Write the loop's own state. A throw reaches the carry that asked for it, so a failed write is never mistaken for a kept one. */
   save: (state: SessionLoopState) => void;
-  /** Carries between writes (default `1`). Pass a higher number when a session carries every tick. */
   every?: number;
 }
 
-/** Configuration for {@link createSessionLoop}. */
 export interface SessionLoopConfig<T = never, I = void, R = void> {
-  /** What a session is, for the readout: `"day"`, `"shift"`, `"wave"`. */
   kind?: string;
-  /** Whether a session carries a quantity (default `true`); `false` makes {@link SessionLoop.carry} inert. */
   carries?: boolean;
-  /**
-   * What the boundary does with what the session carried: the game's own rule, so bank, lose, keep and
-   * nothing are all one callback. Omitted means closing a session only closes it.
-   */
   settle?: (session: SettlingSession<I>) => R;
   /** Authored options the next session may open with. Omitted means sessions never open with one. */
   offers?: readonly SessionOfferOption<T>[];
-  /** Seed for the option draw (default `"session"`): the same seed and history replay the same sequence. */
   seed?: string | number;
   /**
    * Keep the session's live state durable. Without it the loop only holds state in memory, and a
@@ -124,33 +89,18 @@ export interface SessionLoopConfig<T = never, I = void, R = void> {
   persist?: SessionLoopPersistence;
 }
 
-/**
- * One session's lifecycle: open it, carry a quantity, close it at its boundary, and optionally open
- * the next one with an option the game authored.
- */
 export interface SessionLoop<T = never, I = void, R = void> {
-  /** What a session is in this game, or `null` when the game did not say. */
   kind(): string | null;
-  /** Open the next session and hand back its offer. Calling it on an open session returns that session's offer and keeps what it carries. */
   start(): SessionOffer<T>;
-  /** Add to what the session in progress carries; negative or non-finite amounts are ignored. Returns what it carries. */
   carry(amount: number): number;
-  /** What the session in progress carries. */
   carried(): number;
-  /** Whether no session has opened, one is open, or the last one closed. */
   phase(): SessionPhase;
-  /** The open session's offer, or the offer the next `start` would open with. */
   offer(): SessionOffer<T>;
   /**
    * Up to `count` distinct options the next session could open with, drawn weighted and in draw order,
    * so a game can offer a choice instead of the single option {@link SessionOffer} names. `choose` takes one.
    */
   present(count: number): SessionChoice<T>[];
-  /**
-   * Open the next session around `optionId` (or around no option for `null`), which is how a presented
-   * choice becomes the option the session carries. Returns false for an id this loop's table does not
-   * carry, leaving the offer untouched.
-   */
   choose(optionId: string | null): boolean;
   /**
    * Close the session in progress and hand what it carried to the game's `settle` rule. Throws when no

@@ -46,7 +46,6 @@ export function storeSource<T>(ctx: GameContext, select: (ctx: GameContext) => r
 
 interface Cell { index: number; slot: InventorySlot | null }
 
-/** One inventory as a grid of slots: click sends an item across (`give` names where), drag reorders it or drops onto the other grid. */
 function SlotGrid({ inventoryId, columns, size, give }: { inventoryId: string; columns: number; size: number; give: Give }): ReactNode {
   const ctx = useGameContext();
   const source = useMemo(() => storeSource<Cell>(ctx, (c) => c.player.inventory.state(inventoryId).slots.map((slot, index) => ({ index, slot }))), [ctx, inventoryId]);
@@ -76,7 +75,6 @@ function SlotGrid({ inventoryId, columns, size, give }: { inventoryId: string; c
   );
 }
 
-/** Left: what you carry, ARK's grid with the hotbar row under it. Beside a creature or a container, a click puts the item in it. */
 function Carried({ give = null }: { give?: Give }): ReactNode {
   const ctx = useGameContext();
   const { width } = useRuneViewport();
@@ -123,7 +121,6 @@ function GearSlot({ slot }: { slot: { id: string; label: string; item: string | 
   );
 }
 
-/** Centre: ARK's survivor pane — armour slots round the body, insulation, the XP bar and the stats with their level-up buttons. */
 function Survivor(): ReactNode {
   const ctx = useGameContext();
   const { width } = useRuneViewport();
@@ -169,7 +166,6 @@ function Survivor(): ReactNode {
   );
 }
 
-/** Right: ARK's crafting panel — learned recipes, what they cost, and the queue. */
 function Crafting(): ReactNode {
   const ctx = useGameContext();
   const { width } = useRuneViewport();
@@ -210,7 +206,6 @@ function Crafting(): ReactNode {
   );
 }
 
-/** ARK's dossier and explorer notes: every species, met or still "???", which you have tamed, and the notes you have found. */
 function Dossier(): ReactNode {
   const { width } = useRuneViewport();
   const phone = width < 600;
@@ -248,7 +243,6 @@ function Dossier(): ReactNode {
 /** Engrams shown at once: a page of the level-ordered list keeps the grid bounded. */
 const ENGRAM_PAGE = 18;
 
-/** ARK's engram screen: everything by level, a page at a time, learn with engram points. */
 function Engrams(): ReactNode {
   const { width, height } = useRuneViewport();
   const phone = width < 600;
@@ -287,7 +281,6 @@ function Engrams(): ReactNode {
   );
 }
 
-/** ARK's remote inventory for a storage container: what it holds, slots used of its total. Take puts a stack back in your bag. */
 function StoragePanel(): ReactNode {
   const store = useGameStore(storeView, same);
   if (store === null) return null;
@@ -312,7 +305,6 @@ function StoragePanel(): ReactNode {
   );
 }
 
-/** The Green Obelisk's terminal: each difficulty's level and tribute against what you carry, and its rewards. */
 function ObeliskPanel(): ReactNode {
   const { width } = useRuneViewport();
   const phone = width < 600;
@@ -361,7 +353,6 @@ function Tabs({ tab }: { tab: SurvivorScreen }): ReactNode {
   );
 }
 
-/** ARK's full-screen survivor panels over the world; I or Esc closes them. */
 export function InventoryScreen({ tab }: { tab: SurvivorScreen }): ReactNode {
   const ctx = useGameContext();
   const { width, height } = useRuneViewport();

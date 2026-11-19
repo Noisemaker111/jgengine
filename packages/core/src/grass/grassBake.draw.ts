@@ -12,39 +12,28 @@ import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from 
 /** Side of one base grass cell in metres: the unit of seeded tuft generation. Coarser stream nodes cover power-of-two blocks of cells. */
 export const GRASS_CELL_SIZE = 8;
 
-/** A rectangle (patch-local XZ) the grass keeps clear — soil patches, water, plazas. */
 export interface GrassExclusion {
-  /** Rect center in patch-local coordinates. */
   center: readonly [x: number, z: number];
-  /** Rect half extents. */
   half: readonly [x: number, z: number];
-  /** Ramp width (m) outside the rect over which blades regrow to full height. Default 1.5. */
   feather?: number;
 }
 
-/** Inputs for {@link resolveGrassBake}: one patch's look, footprint and ground samplers. */
 export interface GrassBakeOptions {
   look: GrassLook;
   /** Footprint size in metres, centred on the patch origin. */
   area: TerrainArea;
-  /** Seed used when `look.seed` is empty. */
   seed?: TerrainSeed;
-  /** Blade segments at full detail. Default 4. */
   segments?: number;
   /** Metres of soft fringe at the patch border. Default scales with the patch, 1.5–4 m. */
   edgeFeather?: number;
   exclude?: readonly GrassExclusion[];
-  /** Patch-local ground height. */
   heightAt?: TerrainHeightSampler;
   /** Patch-local coverage, 0..1, composed with `exclude`. */
   coverageAt?: TerrainHeightSampler;
-  /** World height of the patch origin, so `look.growAbove` (a world height) can be read off `heightAt`. Default 0. */
   baseHeight?: number;
 }
 
-/** A patch ready to bake: the look plus every derived number the bake and stream share. */
 export interface ResolvedGrassBake {
-  /** The look as its style draws it (`drawnGrassLook`): blade width, tuft size and heights after `detail` and `exaggeration`. */
   look: GrassLook;
   width: number;
   depth: number;
@@ -54,21 +43,15 @@ export interface ResolvedGrassBake {
   exclude: readonly GrassExclusion[];
   heightAt: TerrainHeightSampler;
   coverageAt: TerrainHeightSampler;
-  /** `look.growAbove` in patch-local height. */
   growAbove: number;
-  /** Coverage of the turf mat: `coverageAt`, bare below `growAbove` like the blades. Pass `height` when the ground there is already sampled. */
   turfAt: (x: number, z: number, height?: number) => number;
-  /** Blades per m² at full detail. */
   bladesPerM2: number;
-  /** Tuft roots per m² at full detail. */
   tuftsPerM2: number;
-  /** Base cells per axis and the quadtree root level covering them. */
   columns: number;
   rows: number;
   rootLevel: number;
   /** Tallest blade any tuft can grow, metres. */
   maxHeight: number;
-  /** Seed of the clump grid the bake and the turf mat's cushion shading share. */
   clumpSeed: number;
 }
 
@@ -80,7 +63,6 @@ function bareCoverage(look: GrassLook, seed: string, coverageAt: TerrainHeightSa
     : (x, z) => coverageAt(x, z) * grassBareAt(look, seedNumber, x, z);
 }
 
-/** Resolve a patch's bake inputs once; the stream and every node bake read the result. */
 export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
   const size = resolveTerrainSize(options.area);
   const look = drawnGrassLook(options.look);
@@ -122,17 +104,13 @@ export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
  */
 export interface GrassTufts {
   count: number;
-  /** xyz root per tuft. */
   offsets: Float32Array;
-  /** yaw, height, width, bend per tuft. */
   shape: Float32Array;
   /** phase, colour roll, kind (1 second species, +2 flower), rank per tuft. */
   vary: Float32Array;
   /** 0..1 large-scale field tone per tuft (season and dryness patches). */
   tone: Float32Array;
-  /** Ascending ranks, mirroring `vary[i * 4 + 3]`. */
   ranks: Float32Array;
-  /** Box around every tuft root, patch-local. */
   roots: THREE.Box3;
   /** Furthest a blade reaches from its root, metres. */
   extent: number;
@@ -149,15 +127,12 @@ export interface GrassTufts {
 export interface GrassBakeResume {
   /** Where each cell's tufts end, in bake order (before the rank sort). */
   cellEnds: Int32Array;
-  /** Each cell's random stream cursor after its last tuft. */
   cellCursors: Int32Array;
-  /** Bake-order index to rank-order index; absent when the bake was not reordered. */
   rankIndex: Int32Array | undefined;
   /** Furthest any of these tufts reaches, before the tuft template's own reach is added. */
   reach: number;
 }
 
-/** Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`, written into `out` when given. */
 export function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number, out: [number, number, number, number] = [0, 0, 0, 0]): [number, number, number, number] {
   const span = GRASS_CELL_SIZE * 2 ** level;
   const x0 = -bake.width / 2 + ix * span;
@@ -174,7 +149,6 @@ function smoothstep(a: number, b: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
-/** Tufts a cell keeps at `share`, given its full count and its rank offset `u`. */
 function cellCount(full: number, u: number, share: number): number {
   if (full <= 0) return 0;
   return Math.max(0, Math.min(Math.ceil(full - u), Math.ceil(Math.min(1, share) * full - u)));
@@ -191,11 +165,7 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
   return step.value;
 }
 
-/**
- * Incremental form of {@link bakeGrassNode}; each step grows at most one tuft or processes one cell or
- * a chunk of copy and sort items. `from`, an earlier bake of this node and bake at a smaller share, is
- * kept: only the tufts it lacks are grown, and the result is the one a fresh bake gives. @internal
- */
+/** @internal */
 export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number, immediate = false, progress?: (tufts: GrassTufts) => void, from?: GrassTufts): Generator<"work" | "tuft", GrassTufts> {
   const { look } = bake;
   const span = 2 ** level;
@@ -251,7 +221,6 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
     const count = cell.count;
     // Roots follow a scrambled Sobol spread seeded per cell. Uniform random roots bunch into piles and
     // leave bare holes; this spreads them evenly, and every prefix is still even, so thinning by rank
-    // for a far camera never opens holes. (R2, used before, is even too, but its short prefixes are a
     // near-regular lattice, so a far field thinned to a few dozen tufts a cell drew rows like a
     // planted crop; jitter big enough to hide that left the field as uneven as random.)
     const scrambleX = Math.floor(random() * 4294967296), scrambleZ = Math.floor(random() * 4294967296);
@@ -369,10 +338,8 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
   return yield* sortByRank(tufts, cellEnds, resumeOut.rankIndex!, immediate);
 }
 
-/** Sort items moved between yields: one yield per item cost more than the moves themselves. */
 const SORT_CHUNK = 64;
 
-/** How much of a tuft an exclusion zone keeps: 0 inside its box, 1 past its feather. */
 function excludeKeep(zone: GrassExclusion, x: number, z: number): number {
   const dist = Math.max(Math.abs(x - zone.center[0]) - zone.half[0], Math.abs(z - zone.center[1]) - zone.half[1]);
   return Math.min(1, Math.max(0, dist / Math.max(0.001, zone.feather ?? 1.5)));
@@ -427,7 +394,6 @@ function* sortByRank(tufts: GrassTufts, runEnds: ArrayLike<number>, rankIndex: I
   return { ...tufts, offsets, shape, vary, tone };
 }
 
-/** Number of sorted tufts whose rank is below `share`. */
 export function grassTuftsBelow(ranks: Float32Array, share: number): number {
   let lo = 0, hi = ranks.length;
   while (lo < hi) {
@@ -442,10 +408,6 @@ const STRAW = new THREE.Color("#c9b27a");
 const GOLD = new THREE.Color("#c8a640");
 const RUST = new THREE.Color("#a5552c");
 
-/**
- * The look's colours after season and dryness, as the turf mat and far field show them. Mirrors the
- * blade shader's colour path at the field's average tone.
- */
 export function grassFieldColors(look: GrassLook): { base: THREE.Color; tip: THREE.Color } {
   const shift = (hex: string, tipWeight: number) => {
     const color = new THREE.Color(hex);

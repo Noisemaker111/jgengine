@@ -86,7 +86,6 @@ async function authenticatePlayer(
   return { ok: true, player };
 }
 
-/** Public play discovery manifest — GET /agent/api/v1 */
 export function buildAgentApiManifest() {
   const playbook = buildAgentPlaybook();
   return {
@@ -138,7 +137,6 @@ export const agentApiIndex = httpAction(async () => jsonResponse(buildAgentApiMa
 
 export const agentApiPlaybook = httpAction(async () => jsonResponse(buildAgentPlaybook()));
 
-/** GET /agent/api/v1/ping — verify a bot or owner token */
 export const agentApiPing = httpAction(async (ctx, request) => {
   const auth = await authenticatePlayer(ctx, request);
   if (!auth.ok) return auth.response;

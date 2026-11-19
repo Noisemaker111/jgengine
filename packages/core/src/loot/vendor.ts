@@ -2,34 +2,25 @@ import type { ShopStock, ShopStockEntry } from "../economy/shopStock";
 import type { LootItem } from "./lootGen";
 import type { ItemDrop } from "./drop";
 
-/** How a vendor price is derived from an item: a base, a per-level rate and a rarity multiplier. */
 export interface VendorPriceRule {
-  /** Wallet currency key the stock is priced in, e.g. `"credits"`. */
   currency: string;
   /** Price floor at level 1 before the rarity multiplier. */
   base: number;
-  /** Added per item level. */
   perLevel: number;
-  /** Multiplier per rarity id; omitted rarities use `1`. */
   rarityMultiplier?: Readonly<Record<string, number>>;
-  /** Buy-back fraction of the buy price; omitted means the vendor does not buy this stock back. */
   sellFactor?: number;
 }
 
-/** One stocked item and the shop entry that prices it. */
 export interface VendorOffer {
   item: ItemDrop;
   entry: ShopStockEntry;
 }
 
-/** What stocking a vendor reads: the rolled items and the pricing policy. */
 export interface StockVendorOptions {
   /** The shelf's items, in shelf order; roll them with a loot generator (`defineLootGenerator`) from a seed so the shelf is reproducible. */
   items: readonly LootItem[];
   price: VendorPriceRule;
-  /** Stable id prefix for this vendor, e.g. `"harbor.guns"`. */
   idPrefix: string;
-  /** Whole units on hand; `null` means unlimited (default `1`). */
   qty?: number | null;
 }
 
@@ -77,16 +68,12 @@ export function stockVendor(shop: ShopStock, options: StockVendorOptions): Vendo
   return offers;
 }
 
-/** Where a vendor shelf stands: the run number it was last stocked on. */
 export interface VendorRotationState {
   refreshedAt: number;
 }
 
-/** A run-count refresh rule; the game owns how many runs between restocks. */
 export interface VendorRotation {
-  /** True when `run` is at least `everyRuns` past the last refresh. */
   due(run: number): boolean;
-  /** Record that the shelf was stocked on `run`. */
   mark(run: number): void;
   state(): VendorRotationState;
   restore(next: VendorRotationState): boolean;

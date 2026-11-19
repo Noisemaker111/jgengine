@@ -1,22 +1,14 @@
 import type { DirectionalLightingConfig, LightingConfig } from "@jgengine/core/game/playableGame";
 
-/** Ambient multiplier applied under image-based light when `iblAmbientScale` is unset. */
 export const DEFAULT_IBL_AMBIENT_SCALE = 0.5;
 
-/** Soft key added when authored lighting has no directional light: high, off to one side, shadowless. */
 export const FALLBACK_KEY_LIGHT: Readonly<DirectionalLightingConfig> = {
   position: [-22, 40, 16],
   intensity: 0.6,
   castShadow: false,
 };
 
-/**
- * Rebalance authored lighting for a scene that also has image-based light: trim the flat ambient term
- * by `iblAmbientScale` (default 0.5) and, when no directional light is authored, add
- * {@link FALLBACK_KEY_LIGHT} tinted by the ambient colour so forms keep a lit and a shaded side.
- * Returns the input unchanged when there is nothing to adjust.
- * @capability balance-ibl-lighting trim flat ambient under IBL and add a key light to directionless lighting
- */
+/** @capability balance-ibl-lighting trim flat ambient under IBL and add a key light to directionless lighting */
 export function balanceLightingForIbl(lighting: LightingConfig | undefined): LightingConfig | undefined {
   if (lighting === undefined) return undefined;
   const scale = Math.max(0, lighting.iblAmbientScale ?? DEFAULT_IBL_AMBIENT_SCALE);

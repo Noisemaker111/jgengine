@@ -13,12 +13,7 @@ function newCollectionId(): string {
   return `col_${Date.now().toString(36)}_${Math.floor(Math.random() * 1296).toString(36)}`;
 }
 
-/**
- * Named selection sets / production groups: bookmark the current selection, restore it later,
- * add-to / remove-from membership, and toggle a collection's color/lock/visibility. Locking a
- * collection blocks move and delete on its members at the session level (see `isEditorObjectLocked`).
- * @internal — mounted by `EditorChrome` as a left-aside tab.
- */
+/** @internal — mounted by `EditorChrome` as a left-aside tab. */
 export function CollectionsPanel({ session }: { session: EditorSession }) {
   const document = useStoreSelector(session, (state) => state.document);
   const selection = useStoreSelector(session, (state) => state.selection, shallowArrayEqual);

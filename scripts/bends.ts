@@ -14,7 +14,6 @@ export type BendKind = "assertion removed" | "test skipped" | "check disabled";
 export interface Bend {
   kind: BendKind;
   file: string;
-  /** The line as the diff shows it, trimmed. */
   detail: string;
 }
 
@@ -31,7 +30,6 @@ interface FileDiff {
   added: string[];
 }
 
-/** Split a unified diff into per-file removed and added lines. */
 export function parseDiff(diff: string): FileDiff[] {
   const files: FileDiff[] = [];
   let current: FileDiff | null = null;
@@ -49,7 +47,6 @@ export function parseDiff(diff: string): FileDiff[] {
   return files;
 }
 
-/** Lines that were only moved (removed here, added there, same text) are not bends. */
 function unmoved(lines: readonly string[], other: readonly string[]): string[] {
   const pool = new Map<string, number>();
   for (const line of other) pool.set(line.trim(), (pool.get(line.trim()) ?? 0) + 1);
@@ -62,10 +59,6 @@ function unmoved(lines: readonly string[], other: readonly string[]): string[] {
   return kept;
 }
 
-/**
- * Whether a pattern's match sits inside a string or a regex literal: a rule written down (this
- * file, its test, a doc string) is not the rule applied.
- */
 export function inLiteral(line: string, pattern: RegExp): boolean {
   const match = pattern.exec(line);
   if (match === null) return false;
@@ -122,7 +115,6 @@ export function findBends(diff: string): Bend[] {
 
 export const BENDS_HEADING = "## Bends";
 
-/** The PR body section: one bullet per bend, or "" when the diff shows none. */
 export function bendsSection(bends: readonly Bend[], limit = 25): string {
   if (bends.length === 0) return "";
   const lines = [BENDS_HEADING, ""];
@@ -132,10 +124,6 @@ export function bendsSection(bends: readonly Bend[], limit = 25): string {
   return lines.join("\n");
 }
 
-/**
- * `body` with its Bends section replaced by `section`: appended when the body has none, removed
- * when `section` is "".
- */
 export function withBends(body: string, section: string): string {
   const lines = body.replace(/\r\n/g, "\n").split("\n");
   const start = lines.findIndex((line) => line.trim() === BENDS_HEADING);
@@ -147,7 +135,6 @@ export function withBends(body: string, section: string): string {
   return [...lines.slice(0, start), ...replacement, ...rest].join("\n").trimEnd() + "\n";
 }
 
-/** The diff `land` reads: everything this branch changed against `base`. */
 export function branchDiff(root: string, base: string): string {
   const run = spawnSync("git", ["diff", "--no-color", "-M", "-U0", `${base}...HEAD`], {
     cwd: root,

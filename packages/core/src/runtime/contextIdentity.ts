@@ -11,7 +11,6 @@ export function aliasContext(view: GameContext, ctx: GameContext): void {
   aliases.set(view, ctx);
 }
 
-/** The context `ctx` stands for: itself, or the context a wrapper of it was aliased to. */
 export function contextOf(ctx: GameContext): GameContext {
   return aliases.get(ctx) ?? ctx;
 }

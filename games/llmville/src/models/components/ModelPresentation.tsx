@@ -8,7 +8,6 @@ import { FULL, Icon, Row, Text } from "../../ui/kit";
 type ModelStatColor = "green" | "yellow" | "blue";
 const STAT_COLOR: Record<ModelStatColor, string> = { green: "#4ade80", yellow: "#facc15", blue: "#60a5fa" };
 
-/** Same row as the fine-tune control on `BaseModelCard`: ~duration + clock. */
 export function ModelTrainingDurationEstimate({ estimatedSeconds }: { estimatedSeconds: number }) {
   return <Row gap={6}>
     <Text family={DISPLAY} size={13} weight={800} tracking={1}>{`${Number.isFinite(estimatedSeconds) ? "~" : ""}${formatTrainingDurationLabel(estimatedSeconds).toUpperCase()}`}</Text>

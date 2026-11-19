@@ -7,9 +7,7 @@ import type { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Props for InstancedBodies: the physics world to draw and optional state tinting. */
 export interface InstancedBodiesProps {
-  /** Physics world whose SoA buffers are streamed straight into the instance matrix. */
   world: PhysicsWorld;
   /** When true, color each instance by simulation state (sleeping / awake / contact) instead of its base color. */
   debugTint?: boolean;

@@ -8,13 +8,10 @@ import type { CityZone } from "../../engine-local/city/cityLayout";
  */
 export interface BuildingSpec {
   id: string;
-  /** Material-library facade (`facade/*`) the walls take. */
   facade: string;
-  /** Wall paint from the art direction's palette; the scan's own colour fades in over it by `scanTint`. */
   paint: string;
   /** How much of the scan's own colour replaces `paint`, 0..1: low keeps the pastel, high shows the brick and windows. */
   scanTint: number;
-  /** City-layout zones this cast is drawn in. */
   zones: readonly CityZone[];
 }
 

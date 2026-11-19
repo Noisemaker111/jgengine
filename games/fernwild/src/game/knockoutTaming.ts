@@ -4,10 +4,8 @@ import { createVitals, type VitalDose, type Vitals, type VitalsState } from "@jg
 
 import { effectivenessOf, HIT_INEFFECTIVENESS, STARVE_LOSS, type TamingDef, tamingBody, TORPOR_DRAIN, WAKES_AT } from "./data/taming";
 
-/** What changed for one creature this tick. */
 export type TamingEvent = { type: "subdued" } | { type: "ate"; itemId: string } | { type: "released" } | { type: "won"; effectiveness: number };
 
-/** A tracked creature as the HUD and the rest of the game read it. */
 export interface TamingRead {
   subdued: boolean;
   torpor: number;
@@ -25,14 +23,12 @@ export interface TamingRead {
   awakeTame: boolean;
 }
 
-/** What handing an awake tame food came to. */
 export type OfferResult = { type: "ate"; itemId: string } | { type: "full"; seconds: number } | { type: "refuses" } | { type: "not-awake-tame" };
 
 interface Tracked {
   kind: string;
   level: number;
   down: boolean;
-  /** Tamed awake by feeding (its species' `awake`). */
   awake: boolean;
   body: Vitals;
 }
@@ -44,12 +40,6 @@ export interface TamingSave {
   body: VitalsState;
 }
 
-/**
- * Knockout taming for every creature the game tracks, each a body of vitals ({@link tamingBody}): hits
- * and doses fill torpor, the body raises `unconscious` when full and clears it when torpor wears off,
- * while out it eats the first food its diet likes from what it holds each time its belly empties, and
- * `tamed` rises when affinity fills. The diet is a dose table keyed by species.
- */
 export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) {
   const diet: DoseTable = createDoseTable(Object.fromEntries(Object.entries(defs).map(([kind, def]) => [kind, def.foods])));
   const tracked = new Map<string, Tracked>();
@@ -59,12 +49,10 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
     return def === undefined ? null : createVitals(tamingBody(def, level));
   };
 
-  /** Back to awake and untamed: torpor stays where it is, the tame so far is lost. */
   const loseTheTame = (entry: Tracked): void => {
     for (const vital of ["affinity", "ineffectiveness", "belly"]) entry.body.change(vital, -entry.body.value(vital));
   };
 
-  /** Torpor left to wear off, counting doses still landing (capped where they would overfill), over its drain. */
   const wakesIn = (entry: Tracked): number => {
     if (!entry.down) return 0;
     const drain = evalCurve(TORPOR_DRAIN, entry.level);
@@ -107,16 +95,10 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
       const entry = tracked.get(id);
       return entry === undefined ? null : read(entry);
     },
-    /** Foods its species eats, most preferred first. */
     foods: (kind: string): readonly string[] => diet.sources(kind),
-    /** The food it would eat next from `supply`, or null. */
     nextFood(kind: string, supply: DoseSupply): string | null {
       return diet.pick(kind, (itemId) => supply.count(itemId) > 0);
     },
-    /**
-     * An awake tame handed the first food it likes from `supply`: it eats only with its belly empty, and the
-     * meal fills affinity and the belly as a knocked-out one's would.
-     */
     offer(id: string, supply: DoseSupply): OfferResult {
       const entry = tracked.get(id);
       if (entry === undefined || !entry.awake || entry.down) return { type: "not-awake-tame" };
@@ -127,7 +109,6 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
       entry.body.dose(...(diet.of(entry.kind, itemId) ?? []));
       return { type: "ate", itemId };
     },
-    /** What a blow, an arrow or a bola doses into its body; true when this knocked it out. An awake tame hit is scared off its tame. */
     hit(id: string, doses: readonly VitalDose[]): boolean {
       const entry = tracked.get(id);
       if (entry === undefined) return false;
@@ -137,16 +118,13 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
       entry.down = true;
       return true;
     },
-    /** Damage taken while out, as a share of its max health: costs effectiveness. */
     hurt(id: string, share: number): void {
       const entry = tracked.get(id);
       if (entry?.down === true) entry.body.change("ineffectiveness", HIT_INEFFECTIVENESS * Math.max(0, share));
     },
-    /** Doses into its body: a narcotic's torpor over time, a stimulant's the other way. */
     dose(id: string, ...doses: readonly VitalDose[]): void {
       tracked.get(id)?.body.dose(...doses);
     },
-    /** Advance every tracked body; a downed one eats from `supplyOf` when its belly is empty. `pace` speeds digestion only. */
     tick(dt: number, supplyOf: (id: string) => DoseSupply | null, pace = 1): { id: string; event: TamingEvent }[] {
       const out: { id: string; event: TamingEvent }[] = [];
       for (const [id, entry] of tracked) {

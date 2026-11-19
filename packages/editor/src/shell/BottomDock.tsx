@@ -18,10 +18,6 @@ import type { PerfHistoryStore } from "./perfHistory";
 import { BORDER } from "./theme";
 import { IconButton, PanelTabs } from "./ui";
 
-/**
- * Tabbed bottom dock: Content Browser, Console, Profiler, Animation (path flythrough scrub),
- * and the AI Assistant. Only the active tab's panel mounts, so hidden tools cost nothing per frame.
- */
 export function BottomDock({
   tab,
   onSelectTab,

@@ -61,7 +61,6 @@ export function brokerStatePath(port = brokerPort(), dir = tmpdir()): string {
   return join(dir, `jgengine-broker-${port}.json`);
 }
 
-/** Every broker whose state file names a running process, whatever port it took. */
 export function liveBrokers(dir = tmpdir()): { pid: number; port: number }[] {
   const found: { pid: number; port: number }[] = [];
   for (const name of readdirSync(dir).filter((entry) => /^jgengine-broker-\d+\.json$/.test(entry))) {
@@ -81,7 +80,6 @@ export function brokerLogPath(dir = tmpdir()): string {
   return join(dir, "jgengine-broker.log");
 }
 
-/** What a broker's state file holds while it runs; it is removed when the broker ends announced. */
 export interface BrokerState {
   pid: number;
   port: number;
@@ -91,7 +89,6 @@ export interface BrokerState {
   aliveAt?: string;
 }
 
-/** How often a running broker refreshes `aliveAt` in its state file. */
 export const BROKER_ALIVE_EVERY_MS = 10_000;
 
 /**
@@ -114,7 +111,6 @@ export function unannouncedDeath(statePath: string, isAlive: (pid: number) => bo
   return `broker died unannounced: pid ${state.pid} (ready since ${state.startedAt ?? "an unknown time"}, last seen alive ${seen}) ended without a stop or crash line, so something outside it ended it (a kill it cannot catch, its job or session ending, or the runtime dying); every server it owned ended with it`;
 }
 
-/** The identity the dev server's own `/__jgengine/server` route reports for this root and game dir. */
 export function servedIdentity(root: string, gameDir: string | null): string {
   return gameDir === null ? root : `${root}|game-dir:${gameDir}`;
 }
@@ -152,7 +148,6 @@ export interface CaptureGrant {
 
 export interface LaunchedProcess {
   pid: number;
-  /** Resolves when the process exits, for whatever reason. */
   exited: Promise<void>;
   stop(): Promise<void>;
 }
@@ -169,13 +164,10 @@ export interface LaunchedChrome extends LaunchedProcess {
 export interface BrokerDeps {
   now(): number;
   isAlive(pid: number): boolean;
-  /** Start a server on `port` and resolve once it answers as `servedIdentity(root, gameDir)`. */
   startServer(request: ServerRequest, port: number): Promise<LaunchedServer>;
   startChrome(): Promise<LaunchedChrome>;
-  /** A free port, `preferred` when it is free and not in `taken`. */
   pickPort(preferred: number | undefined, taken: ReadonlySet<number>): Promise<number>;
   rootExists(path: string): boolean;
-  /** Close every page a finished capture left in the shared browser. */
   closeStrayPages(chromePort: number): Promise<number>;
   log(line: string): void;
   /** Drop the dep-optimizer cache a restarted server would otherwise reuse from the old tree. */
@@ -340,7 +332,6 @@ export class BrokerCore {
     return { entry, lease, reused, ...(stale === undefined ? {} : { stale }) };
   }
 
-  /** The shared browser's debug port, started on first use. The lease keeps it up. */
   async acquireChrome(clientPid: number, label: string): Promise<{ leaseId: string; chromePort: number; started: boolean }> {
     this.lastActivity = this.deps.now();
     const lease = this.addLease("chrome", clientPid, label);
@@ -354,7 +345,6 @@ export class BrokerCore {
     }
   }
 
-  /** Wait for a turn in the shared browser. Rejects after `waitMs` naming who holds it. */
   acquireCapture(clientPid: number, label: string, waitMs: number): { grant: Promise<CaptureGrant>; cancel(): void } {
     this.lastActivity = this.deps.now();
     const lease = this.addLease("capture", clientPid, label);
@@ -480,7 +470,6 @@ export class BrokerCore {
     };
   }
 
-  /** Stop everything this broker started, naming the live runs that lose their server or browser. */
   async shutdown(): Promise<void> {
     const cut = [...this.leases.values()].filter((lease) => this.deps.isAlive(lease.clientPid));
     if (cut.length > 0) this.deps.log(`broker stopping under ${cut.length} live run(s): ${cut.map((lease) => `${lease.label} (pid ${lease.clientPid})`).join("; ")}`);
@@ -570,7 +559,6 @@ export class BrokerCore {
     if (launched !== null) await launched.stop();
   }
 
-  /** Make room under `maxServers` by stopping the least recently used unleased server. */
   private async evictForRoom(): Promise<void> {
     if (this.servers.size < this.deps.maxServers) return;
     const idle = [...this.servers.values()]
@@ -586,7 +574,6 @@ export class BrokerCore {
   }
 }
 
-/** Environment a broker-owned server gets: the broker's own minus anything one client set for itself. */
 export function serverEnv(base: NodeJS.ProcessEnv, request: ServerRequest, port: number, idleMs: number, brokerPid: number): Record<string, string> {
   const env: Record<string, string> = {};
   for (const [key, value] of Object.entries(base)) {
@@ -776,7 +763,6 @@ async function startRealChrome(): Promise<LaunchedChrome> {
  */
 export const STEP_PAGE_PARAM = "jgStep";
 
-/** Whether a page in the shared browser is a kept `drive --step` page. */
 export function isStepPage(url: string): boolean {
   try {
     return new URL(url).searchParams.get(STEP_PAGE_PARAM) === "1";
@@ -829,7 +815,6 @@ function number(value: unknown, name: string): number {
   return value;
 }
 
-/** The broker's HTTP face. `onStop` runs after `/v1/stop` has answered, with who asked. */
 export function brokerHandler(core: BrokerCore, onStop: (reason: string) => void) {
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     try {
@@ -888,7 +873,6 @@ function writeLog(line: string): void {
   }
 }
 
-/** Run the broker in this process until it goes idle or is stopped. Exits 0 when another broker owns the port. */
 export async function serveBroker(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const idleMs = brokerIdleMs(env);
   const core = new BrokerCore({

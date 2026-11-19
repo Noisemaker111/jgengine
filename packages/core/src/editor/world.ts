@@ -16,10 +16,8 @@ import type { EditorDocument } from "./types";
  * `mergeEditorDocuments` / `extractEditorFragment` / `editorDocumentBounds`, not a new format.
  */
 
-/** The manifest `kind` discriminator — a world folder's `world.json`. */
 export const WORLD_MANIFEST_KIND = "world";
 
-/** Whether a shard is always loaded (terrain, always-resident hero content) or streamed by proximity. */
 export type WorldShardResidency = "always" | "streamed";
 
 /** A shard's XZ world-space footprint, `[minX, minZ]`..`[maxX, maxZ]`, used to route/stream loads. */
@@ -28,21 +26,15 @@ export interface WorldShardBounds {
   max: [number, number];
 }
 
-/** One entry in a world manifest: a shard document, its footprint, residency, and optional overlay. */
 export interface WorldManifestShard {
-  /** Stable shard id (also the merge/stream unit). */
   id: string;
-  /** Path to the shard's `EditorDocument` JSON, relative to the world folder. */
   file: string;
-  /** XZ footprint used to cull the shard against a streaming query; absent = always resident. */
   bounds?: WorldShardBounds;
   /** `"always"` keeps the shard resident regardless of the query; default `"streamed"` when bounded. */
   residency?: WorldShardResidency;
-  /** Path to a sparse overlay document applied on top of this shard (hand-tweaks over materialized content). */
   overlay?: string;
 }
 
-/** The world grid the shards partition space on. */
 export interface WorldGrid {
   /** Cell edge length in meters. */
   cellSize: number;
@@ -50,13 +42,10 @@ export interface WorldGrid {
 
 /** Proximity streaming radii, in meters. */
 export interface WorldStreamingConfig {
-  /** Load shards whose footprint is within this distance of the query center. */
   loadRadius: number;
-  /** Keep already-loaded shards resident until they fall outside this (larger) distance — hysteresis. */
   keepRadius: number;
 }
 
-/** A world manifest — the `world.json` at the root of a world folder. */
 export interface WorldManifest {
   kind: typeof WORLD_MANIFEST_KIND;
   /** Manifest schema version; defaults to 1 when absent. */
@@ -66,9 +55,7 @@ export interface WorldManifest {
   streaming?: WorldStreamingConfig;
 }
 
-/** A spatial query used to select which shards a neighborhood needs. */
 export interface WorldQuery {
-  /** Query center in world space (typically the camera/player position). */
   center: { x: number; z: number };
   /** Selection radius in meters; 0 (default) selects only shards whose footprint contains the center. */
   radius?: number;
@@ -77,12 +64,10 @@ export interface WorldQuery {
 /** Resolves a shard/overlay file path to a decoded document, or null when it cannot be read. */
 export type WorldShardResolver = (file: string) => EditorDocument | null;
 
-/** True when a shard is resident regardless of any spatial query (unbounded or explicitly `"always"`). */
 function isAlwaysResident(shard: WorldManifestShard): boolean {
   return shard.residency === "always" || shard.bounds === undefined;
 }
 
-/** Closest-point disc↔AABB overlap test on the XZ plane. */
 function discIntersectsBounds(cx: number, cz: number, radius: number, bounds: WorldShardBounds): boolean {
   const qx = Math.max(bounds.min[0], Math.min(cx, bounds.max[0]));
   const qz = Math.max(bounds.min[1], Math.min(cz, bounds.max[1]));
@@ -112,13 +97,7 @@ export function selectWorldShards(manifest: WorldManifest, query?: WorldQuery): 
   return manifest.shards.filter((shard) => shardMatchesQuery(shard, query));
 }
 
-/**
- * Loads the live neighborhood document for a query: reads each selected shard through `resolve`,
- * applies its overlay (if any) on top, then merges them into one {@link EditorDocument} downstream
- * consumers (`placeAuthoredObjects`, `collectAuthoredTriggers`, scatter, …) read unchanged. The
- * monolith becomes an internal detail of the loader; a one-shard world yields exactly that shard.
- * @capability world-shards merge the shards for a neighborhood into one live document
- */
+/** @capability world-shards merge the shards for a neighborhood into one live document */
 export function loadWorldDocument(
   manifest: WorldManifest,
   resolve: WorldShardResolver,
@@ -143,22 +122,17 @@ export function loadWorldDocument(
 /** The always-resident base shard id used by {@link splitEditorDocumentIntoShards}. */
 export const WORLD_BASE_SHARD_ID = "base";
 
-/** Options controlling how a monolithic document is partitioned into shards. */
 export interface SplitWorldOptions {
   /** Grid cell edge length in meters. Default 256. */
   cellSize?: number;
-  /** Directory prefix for generated shard files. Default `"shards"`. */
   shardDir?: string;
 }
 
-/** The result of splitting a document: a manifest plus the shard documents keyed by their file path. */
 export interface SplitWorldResult {
   manifest: WorldManifest;
-  /** Shard file path → document, for a caller to serialize into a world folder. */
   shards: Record<string, EditorDocument>;
 }
 
-/** Representative XZ point for an object, used to assign it to a grid cell. */
 function objectCell(x: number, z: number, cellSize: number): { gx: number; gz: number } {
   return { gx: Math.floor(x / cellSize), gz: Math.floor(z / cellSize) };
 }
@@ -262,13 +236,7 @@ export function splitEditorDocumentIntoShards(
   };
 }
 
-/**
- * The backward-compatible degenerate manifest: one always-resident shard pointing at a single scene
- * document file. `loadWorldDocument(singleShardWorldManifest(file), resolve)` returns exactly that
- * document — the migration path for a game that has one `editor.scene.json` and wants the world API
- * without sharding yet.
- * @capability world-shards wrap a single scene document as a one-shard world
- */
+/** @capability world-shards wrap a single scene document as a one-shard world */
 export function singleShardWorldManifest(file: string, shardId = WORLD_BASE_SHARD_ID): WorldManifest {
   return {
     kind: WORLD_MANIFEST_KIND,
@@ -277,7 +245,6 @@ export function singleShardWorldManifest(file: string, shardId = WORLD_BASE_SHAR
   };
 }
 
-/** Result of {@link decodeWorldManifest}: a typed manifest, or every diagnostic collected decoding it. */
 export type DecodeWorldManifestResult =
   | { ok: true; manifest: WorldManifest }
   | { ok: false; errors: EditorDocumentDiagnostic[] };
@@ -393,7 +360,6 @@ export function decodeWorldManifest(raw: unknown): DecodeWorldManifestResult {
   return { ok: true, manifest };
 }
 
-/** Serializes a world manifest to pretty JSON for writing `world.json`. */
 export function exportWorldManifestJson(manifest: WorldManifest, pretty = true): string {
   return JSON.stringify(manifest, null, pretty ? 2 : undefined);
 }

@@ -1,11 +1,6 @@
 import type { EditorVec3 } from "./types";
 
-/**
- * How a grid layer's columns and rows map onto world axes.
- * - `"xz"` (default): columns advance +X, rows advance +Z — a top-down floor plan / board.
- * - `"xy"`: columns advance +X, rows advance +Y — a vertical slice / side-view board.
- * @capability editor-grids Choose how grid columns/rows project onto world axes.
- */
+/** @capability editor-grids Choose how grid columns/rows project onto world axes. */
 export type EditorGridAxes = "xz" | "xy";
 
 /**
@@ -18,7 +13,6 @@ export type EditorGridAxes = "xz" | "xy";
 export interface EditorGridPaletteEntry {
   id: string;
   label?: string;
-  /** Single character this value maps to for ASCII/glyph import/export. */
   glyph?: string;
   color?: string;
   meta?: Record<string, unknown>;
@@ -38,42 +32,33 @@ export interface EditorGridLayer {
   id: string;
   kind: string;
   label?: string;
-  /** World position of cell (0, 0)'s center; `cellSize` and `axes` place every other cell. */
   origin: EditorVec3;
   /** Column/row → world-axis mapping; defaults to `"xz"` when absent. */
   axes?: EditorGridAxes;
-  /** World size of one cell along both grid axes. */
   cellSize: number;
   cols: number;
   rows: number;
-  /** Value id treated as empty/background; cells holding it are omitted from `cells`. Default `""`. */
   empty?: string;
-  /** Sparse cells keyed `"col,row"` → palette value id. Only non-empty, in-bounds cells appear. */
   cells: Record<string, string>;
   palette?: EditorGridPaletteEntry[];
   visible?: boolean;
-  /** Id of the object this layer is parented under (mirrors marker/volume/path parenting). */
   parentId?: string;
   meta?: Record<string, unknown>;
-  /** Cell-semantics schema version; {@link migrateGridLayer} normalizes older layers forward. */
   schemaVersion?: number;
 }
 
-/** One resolved cell of a grid layer — its column, row, and value id. */
 export interface EditorGridCell {
   col: number;
   row: number;
   value: string;
 }
 
-/** A single paint/erase edit: set cell `col,row` to `value` (the layer's empty value erases it). */
 export interface EditorGridCellEdit {
   col: number;
   row: number;
   value: string;
 }
 
-/** The grid-layer cell-schema version this build writes and migrates toward. */
 export const CURRENT_GRID_SCHEMA_VERSION = 1;
 
 /**
@@ -85,15 +70,12 @@ export function gridEmptyValue(layer: EditorGridLayer): string {
   return layer.empty ?? "";
 }
 
-/** Builds the sparse-map key for a cell. @internal */
+/** @internal */
 export function gridCellKey(col: number, row: number): string {
   return `${col},${row}`;
 }
 
-/**
- * Parses a `"col,row"` sparse-map key back into integer coordinates, or `null` when malformed.
- * @capability editor-grids Decode a grid layer's sparse cell key.
- */
+/** @capability editor-grids Decode a grid layer's sparse cell key. */
 export function parseGridCellKey(key: string): { col: number; row: number } | null {
   const comma = key.indexOf(",");
   if (comma <= 0) return null;
@@ -103,29 +85,18 @@ export function parseGridCellKey(key: string): { col: number; row: number } | nu
   return { col, row };
 }
 
-/**
- * True when `col,row` falls inside the layer's declared bounds.
- * @capability editor-grids Bounds-check a grid coordinate before reading or writing it.
- */
+/** @capability editor-grids Bounds-check a grid coordinate before reading or writing it. */
 export function inLayerBounds(layer: EditorGridLayer, col: number, row: number): boolean {
   return col >= 0 && row >= 0 && col < layer.cols && row < layer.rows;
 }
 
-/**
- * Reads the value id at `col,row`, returning the layer's empty value for any unset or
- * out-of-bounds cell. The one read path both gameplay and rendering share.
- * @capability editor-grids Read a grid cell's value id.
- */
+/** @capability editor-grids Read a grid cell's value id. */
 export function getGridCell(layer: EditorGridLayer, col: number, row: number): string {
   if (!inLayerBounds(layer, col, row)) return gridEmptyValue(layer);
   return layer.cells[gridCellKey(col, row)] ?? gridEmptyValue(layer);
 }
 
-/**
- * Samples the value id at `col,row` — the eyedropper. Identical to {@link getGridCell}, named for
- * the authoring op that picks up a cell's value to paint with.
- * @capability editor-grids Eyedrop (sample) a grid cell's value for painting.
- */
+/** @capability editor-grids Eyedrop (sample) a grid cell's value for painting. */
 export function eyedropGridCell(layer: EditorGridLayer, col: number, row: number): string {
   return getGridCell(layer, col, row);
 }
@@ -156,19 +127,12 @@ export function setGridCell(
   return { ...layer, cells };
 }
 
-/**
- * Erases `col,row` back to the layer's empty value — {@link setGridCell} with the empty value.
- * @capability editor-grids Erase a single grid cell (immutable).
- */
+/** @capability editor-grids Erase a single grid cell (immutable). */
 export function eraseGridCell(layer: EditorGridLayer, col: number, row: number): EditorGridLayer {
   return setGridCell(layer, col, row, gridEmptyValue(layer));
 }
 
-/**
- * Applies a batch of cell edits in one pass, returning the same layer when nothing changed. The
- * op the editor uses for a drag stroke, a paste, or any multi-cell paint/erase.
- * @capability editor-grids Paint or erase many grid cells in one immutable update.
- */
+/** @capability editor-grids Paint or erase many grid cells in one immutable update. */
 export function paintGridCells(
   layer: EditorGridLayer,
   edits: readonly EditorGridCellEdit[],
@@ -246,11 +210,7 @@ export function floodFillGrid(
   return paintGridCells(layer, edits);
 }
 
-/**
- * Resizes the layer's bounds to `cols`×`rows`, dropping any cells that fall outside the new extent
- * (values are anchored at the origin corner). Negative or fractional sizes are floored to `≥ 0`.
- * @capability editor-grids Resize a grid layer's bounds, trimming out-of-range cells (immutable).
- */
+/** @capability editor-grids Resize a grid layer's bounds, trimming out-of-range cells (immutable). */
 export function resizeGridLayer(layer: EditorGridLayer, cols: number, rows: number): EditorGridLayer {
   const nextCols = Math.max(0, Math.floor(cols));
   const nextRows = Math.max(0, Math.floor(rows));
@@ -263,10 +223,7 @@ export function resizeGridLayer(layer: EditorGridLayer, cols: number, rows: numb
   return { ...layer, cols: nextCols, rows: nextRows, cells };
 }
 
-/**
- * Every non-empty, in-bounds cell of a layer, sorted row-major (rendering-independent iteration).
- * @capability editor-grids Iterate a grid layer's non-empty cells, row-major.
- */
+/** @capability editor-grids Iterate a grid layer's non-empty cells, row-major. */
 export function gridCellEntries(layer: EditorGridLayer): EditorGridCell[] {
   const out: EditorGridCell[] = [];
   for (const [key, value] of Object.entries(layer.cells)) {
@@ -278,19 +235,12 @@ export function gridCellEntries(layer: EditorGridLayer): EditorGridCell[] {
   return out;
 }
 
-/**
- * Visits every non-empty cell of a layer row-major. Allocation-light convenience over
- * {@link gridCellEntries} for runtime scans that only need a callback.
- * @capability editor-grids Walk a grid layer's non-empty cells with a callback.
- */
+/** @capability editor-grids Walk a grid layer's non-empty cells with a callback. */
 export function forEachGridCell(layer: EditorGridLayer, visit: (cell: EditorGridCell) => void): void {
   for (const cell of gridCellEntries(layer)) visit(cell);
 }
 
-/**
- * Counts the non-empty, in-bounds cells of a layer.
- * @capability editor-grids Count a grid layer's non-empty cells.
- */
+/** @capability editor-grids Count a grid layer's non-empty cells. */
 export function gridCellCount(layer: EditorGridLayer): number {
   let count = 0;
   for (const [key, value] of Object.entries(layer.cells)) {
@@ -301,11 +251,7 @@ export function gridCellCount(layer: EditorGridLayer): number {
   return count;
 }
 
-/**
- * Every in-bounds cell holding `value`, sorted row-major — the query gameplay uses to find all
- * spawns, hazards, gates, etc. of one kind without touching a renderer.
- * @capability editor-grids Query all grid cells holding a given value.
- */
+/** @capability editor-grids Query all grid cells holding a given value. */
 export function gridCellsOfValue(layer: EditorGridLayer, value: string): EditorGridCell[] {
   return gridCellEntries(layer).filter((cell) => cell.value === value);
 }
@@ -324,11 +270,7 @@ export function gridCellToWorld(layer: EditorGridLayer, col: number, row: number
   return { x: layer.origin.x + primary, y: layer.origin.y, z: layer.origin.z + secondary };
 }
 
-/**
- * Inverse of {@link gridCellToWorld}: the nearest cell to a world point (may be out of bounds).
- * The shared world→cell map runtime uses to answer "which cell is the player standing on".
- * @capability editor-grids Map a world-space point to its nearest grid cell.
- */
+/** @capability editor-grids Map a world-space point to its nearest grid cell. */
 export function worldToGridCell(
   layer: EditorGridLayer,
   x: number,
@@ -342,20 +284,13 @@ export function worldToGridCell(
   return { col, row: Math.round((z - layer.origin.z) / layer.cellSize) };
 }
 
-/**
- * The value id at the grid cell nearest a world point — {@link worldToGridCell} then
- * {@link getGridCell}. Answers "what tile is here" straight from a world position.
- * @capability editor-grids Read the grid value at a world-space point.
- */
+/** @capability editor-grids Read the grid value at a world-space point. */
 export function getGridCellAtWorld(layer: EditorGridLayer, x: number, y: number, z: number): string {
   const { col, row } = worldToGridCell(layer, x, y, z);
   return getGridCell(layer, col, row);
 }
 
-/**
- * Looks up a palette entry by value id.
- * @capability editor-grids Find a grid palette entry by value id.
- */
+/** @capability editor-grids Find a grid palette entry by value id. */
 export function findGridPaletteEntry(
   layer: EditorGridLayer,
   value: string,
@@ -363,10 +298,7 @@ export function findGridPaletteEntry(
   return layer.palette?.find((entry) => entry.id === value);
 }
 
-/**
- * Builds the value-id → glyph map from a layer's palette, for ASCII/glyph export.
- * @capability editor-grids Derive a value→glyph legend from a grid layer's palette.
- */
+/** @capability editor-grids Derive a value→glyph legend from a grid layer's palette. */
 export function gridGlyphMap(layer: EditorGridLayer): Record<string, string> {
   const map: Record<string, string> = {};
   for (const entry of layer.palette ?? []) {
@@ -375,7 +307,6 @@ export function gridGlyphMap(layer: EditorGridLayer): Record<string, string> {
   return map;
 }
 
-/** Fields accepted when constructing a grid layer; sensible defaults fill the rest. */
 export interface CreateGridLayerInit {
   id: string;
   kind: string;

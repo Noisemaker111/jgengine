@@ -18,7 +18,6 @@ import { parseHomeRouteSearch } from "../settings/settings";
 import { loadAuthScreenModule } from "../user/authScreenPreload";
 import { matchScreenPath, navigate, useScreenLocation, type ScreenLocation, type ScreenTarget } from "./screenRouter";
 
-/** What a screen is handed: the params its path holds and the address's search values. */
 export interface ScreenProps {
   params: Record<string, string>;
   search: Record<string, unknown>;
@@ -27,16 +26,12 @@ export interface ScreenProps {
 type ScreenModule = { default: ComponentType<ScreenProps> };
 
 interface ScreenEntry {
-  /** A path pattern; `$name` segments become params. */
   path: string;
   /** Loads the screen's code. Each is its own chunk, so the menu never downloads the 3D world. */
   load?: () => Promise<ScreenModule>;
-  /** A path kept for old links: where it sends the player instead. */
   redirect?: (location: ScreenLocation) => ScreenTarget;
   head?: PageHead;
-  /** The label on the loading screen while the screen's code arrives. */
   loading?: string;
-  /** The screen mounts a game shell, which draws its own UI layer. */
   ownsUiLayer?: boolean;
 }
 
@@ -111,17 +106,14 @@ export function resolveScreen(pathname: string): { entry: ScreenEntry; params: R
   return null;
 }
 
-/** Download a screen's code ahead of the press that opens it. */
 export function preloadScreen(path: string): void {
   void SCREENS.find((entry) => entry.path === path)?.load?.().catch(() => undefined);
 }
 
-/** Where a screen draws. Menu pages draw on LLMville's one native surface; the game route's shell mounts its own. */
 function ScreenFrame({ entry, children }: { entry: ScreenEntry; children: ReactNode }) {
   return entry.ownsUiLayer === true ? children : <LlmRoot>{children}</LlmRoot>;
 }
 
-/** The loading screen while a screen's code arrives, on the surface that screen will draw on. */
 function ScreenLoading({ entry }: { entry: ScreenEntry }) {
   const screen = <RouteLoadingScreen {...(entry.loading === undefined ? {} : { label: entry.loading })} />;
   return entry.ownsUiLayer === true ? <LlmRoot>{screen}</LlmRoot> : screen;
@@ -138,7 +130,6 @@ function MissingScreen() {
   );
 }
 
-/** The screen on top of LLMville's stack, inside its kit, with its notices above it. */
 export function Screens() {
   const location = useScreenLocation();
   const match = resolveScreen(location.pathname);

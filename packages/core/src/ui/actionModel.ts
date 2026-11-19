@@ -13,7 +13,6 @@ import { clamp01 } from "../math/scalar";
 export interface ActionCost {
   resourceId: string;
   amount: number;
-  /** Current pool, when the caller knows it — drives {@link ActionCost.met}. Omit when unknown. */
   available?: number;
   /** True unless `available` is known and below `amount`. */
   met: boolean;
@@ -28,9 +27,7 @@ export interface ActionCooldown {
   ready: boolean;
 }
 
-/** A single blocking reason: a stable machine `code` plus caller-facing `message`. */
 export interface ActionReason {
-  /** Stable tag for styling/branching, e.g. `"cooldown" | "cost" | "range" | "disabled"`. */
   code: string;
   message: string;
 }
@@ -46,27 +43,17 @@ export interface ActionDef {
   description?: string;
   /** The quieter text drawn after the label: a cost line (`5 Wood + 2 Stone`), an unlock condition. */
   detail?: string;
-  /** Icon id / glyph the caller maps to a catalog; the model only carries it through. */
   icon?: string;
-  /** Human hotkey label (e.g. `"Q"`, `"1"`). Matched case-insensitively by {@link actionByHotkey}. */
   hotkey?: string;
-  /** Section id for grouping a large card into rows/tabs; caller-owned. */
   group?: string;
   cooldown?: ActionCooldown;
   costs?: readonly ActionCost[];
-  /** Toggle/stance state — a mode that is currently on. */
   active?: boolean;
-  /** Hard-disable regardless of cost/cooldown (not yet researched, no valid target). */
   disabled?: boolean;
   /** Extra caller reasons (out of range, needs tech). Merged after the derived cost/cooldown ones. */
   reasons?: readonly ActionReason[];
 }
 
-/**
- * A resolved action view model — availability computed once from cooldown, cost, `disabled`, and any
- * caller reasons. `enabled` is the single truth a renderer gates interaction on; `reasons` is the
- * ordered explanation (cooldown, then unmet costs, then caller reasons, then a generic disable).
- */
 export interface ResolvedAction {
   id: string;
   label: string;
@@ -120,10 +107,6 @@ export function actionCost(resourceId: string, amount: number, available?: numbe
   return cost;
 }
 
-/**
- * Resolve one {@link ActionDef} into a {@link ResolvedAction}: normalize label, compute `enabled`,
- * and order the blocking `reasons`. Pure — the same input always yields the same view model.
- */
 export function resolveAction(def: ActionDef): ResolvedAction {
   const costs = def.costs ?? [];
   const reasons: ActionReason[] = [];
@@ -156,7 +139,6 @@ export function resolveAction(def: ActionDef): ResolvedAction {
   return resolved;
 }
 
-/** Resolve an ordered list of actions, preserving input order. */
 export function resolveActionCollection(defs: readonly ActionDef[]): ResolvedAction[] {
   return defs.map(resolveAction);
 }
@@ -171,11 +153,6 @@ function costMessage(cost: ActionCost): string {
   return `Needs ${cost.amount} ${cost.resourceId}`;
 }
 
-/**
- * Find the action whose `hotkey` matches `key`, case-insensitively — the keyboard-shortcut router for
- * an action bar. Returns the first match's id, or null. Matching by hotkey does not consider
- * `enabled`; the caller decides whether to fire a disabled action's feedback.
- */
 export function actionByHotkey(actions: readonly ResolvedAction[], key: string): string | null {
   const needle = key.toLowerCase();
   for (const action of actions) {
@@ -184,10 +161,8 @@ export function actionByHotkey(actions: readonly ResolvedAction[], key: string):
   return null;
 }
 
-/** A focus move for keyboard/controller grid navigation over an action collection. */
 export type FocusDirection = "left" | "right" | "up" | "down" | "next" | "prev" | "first" | "last";
 
-/** Options for {@link moveGridFocus}. */
 export interface GridFocusOptions {
   /** Wrap around edges instead of clamping (default false). */
   wrap?: boolean;

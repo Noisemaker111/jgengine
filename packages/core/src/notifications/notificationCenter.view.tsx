@@ -4,11 +4,7 @@ import { useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgeng
 import type { NotificationEntry, NotificationStore } from "@jgengine/core/notifications/notificationCenter";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
-/**
- * Subscribe to a notification store's live list.
- *
- * @capability use-notifications read a notification store's live list in a game's own inbox view
- */
+/** @capability use-notifications read a notification store's live list in a game's own inbox view */
 export function useNotifications<TMeta = unknown>(store: NotificationStore<TMeta>): readonly NotificationEntry<TMeta>[] {
   return useSyncExternalStore(store.subscribe, store.list, store.list);
 }
@@ -34,7 +30,6 @@ function defaultRelativeTime(at: number, nowMs: number): string {
   return `${Math.round(hours / 24)}d ago`;
 }
 
-/** Props for {@link NotificationBell}. */
 export interface NotificationBellProps {
   store: NotificationStore;
   onClick?: () => void;
@@ -43,12 +38,7 @@ export interface NotificationBellProps {
   style?: CSSProperties;
 }
 
-/**
- * Notification bell — an icon button with an unread-count badge, bound to a
- * notification store. Toggle a {@link NotificationCenter} panel from its click.
- *
- * @capability notification-bell icon button with a live unread-count badge over a notification store
- */
+/** @capability notification-bell icon button with a live unread-count badge over a notification store */
 export function NotificationBell({ store, onClick, icon = "🔔", className, style }: NotificationBellProps): ReactNode {
   const list = useNotifications(store);
   const unread = list.reduce((count, entry) => (entry.read ? count : count + 1), 0);
@@ -99,13 +89,11 @@ export function NotificationBell({ store, onClick, icon = "🔔", className, sty
   );
 }
 
-/** Props for {@link NotificationCenter}. */
 export interface NotificationCenterProps {
   store: NotificationStore;
   title?: string;
   emptyLabel?: string;
   onClose?: () => void;
-  /** Format an entry's timestamp; default is a relative "2m ago" using the current time. */
   formatTime?: (at: number) => string;
   className?: string;
   style?: CSSProperties;

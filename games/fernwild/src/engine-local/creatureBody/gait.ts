@@ -6,30 +6,19 @@ type Quat = [number, number, number, number];
 /** A leg, arm or splayed bug leg that swings through a stride. */
 export interface GaitLimb {
   node: number;
-  /** Swing phase in turns. */
   phase: number;
-  /** Swing axis: X for an upright leg, Y for a splayed one. */
   axis: V3;
-  /** Share of the full swing (arms swing less than legs). */
   scale: number;
 }
 
-/** The moving parts of a creature rig, by node index, that {@link gaitClips} animates. */
 export interface GaitRig {
-  /** The trunk node; it bobs on the stride and falls over on death. */
   body: number;
-  /** The trunk's rest translation. */
   restBody: V3;
   limbs: readonly GaitLimb[];
-  /** Tail segments (or a serpent's body) that sway side to side, wave-delayed by `phase`. */
   swaying: readonly { node: number; phase: number; amp: number }[];
-  /** Left then right wing. */
   wings: readonly number[];
-  /** The neck (or head) that nods and lunges to bite. */
   nodder: number;
-  /** Standing height in model units, which scales the bob. */
   height: number;
-  /** How high the trunk's centre rests once the body lies on its side. */
   fallen: number;
 }
 

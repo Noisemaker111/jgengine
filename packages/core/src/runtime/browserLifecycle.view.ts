@@ -1,10 +1,8 @@
 import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 import { onPage } from "./pageHandle";
 
-/** Browser events that can interrupt active play. The caller decides whether to pause. */
 export type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost";
 
-/** Select suspension events; all are observed by default. No callback runs on attachment. */
 export interface BrowserSuspensionOptions {
   blur?: boolean | undefined;
   hidden?: boolean | undefined;
@@ -27,7 +25,6 @@ function captureHolds(): boolean {
   return onPage("captureHold") === true;
 }
 
-/** Event sources for a browser window, an iframe, or a test. */
 export interface BrowserSuspensionSources {
   window: Pick<EventTarget, "addEventListener" | "removeEventListener">;
   document: Pick<EventTarget, "addEventListener" | "removeEventListener"> & {
@@ -67,10 +64,7 @@ export function observeBrowserSuspension(
   };
 }
 
-/**
- * Observe browser interruptions while mounted, invoking the latest callback without replacing listeners.
- * @capability browser-suspension observe blur, hidden-page and pointer-lock loss while the game owns pause and input policy
- */
+/** @capability browser-suspension observe blur, hidden-page and pointer-lock loss while the game owns pause and input policy */
 export function useBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}): void {
   const callback = useRef(onSuspend);
   useEffect(() => { callback.current = onSuspend; }, [onSuspend]);

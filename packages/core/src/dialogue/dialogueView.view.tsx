@@ -7,12 +7,7 @@ import type {
   DialogueRun,
 } from "@jgengine/core/dialogue/dialogueGraph";
 
-/**
- * Subscribe to a {@link DialogueRun} and re-render on every advance / jump / reset,
- * returning the current node view (or `null` if the run's node id is unknown).
- *
- * @capability use-dialogue-run UI hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
- */
+/** @capability use-dialogue-run UI hook binding a branching dialogue run to a component — re-renders as the player advances the conversation */
 export function useDialogueRun(run: DialogueRun): DialogueGraphView | null {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => run.subscribe(bump), [run]);
@@ -21,23 +16,14 @@ export function useDialogueRun(run: DialogueRun): DialogueGraphView | null {
 
 /** Reskin tokens for {@link DialogueView}. Each defaults to a HudTheme `--jg-*` token. */
 export interface DialogueViewTheme {
-  /** Panel background. Default reads `--jg-frame-bg`. */
   background?: string;
-  /** Panel border. Default reads `--jg-frame-border`. */
   border?: string;
-  /** Panel corner radius (any CSS length). Default reads `--jg-frame-radius`. */
   radius?: string;
-  /** Panel outer glow / drop shadow. Default reads `--jg-frame-glow`. */
   glow?: string;
-  /** Body/line text color. Default reads `--jg-text`. */
   text?: string;
-  /** Accent for the speaker name and choice hover/focus. Default reads `--jg-accent`. */
   accent?: string;
-  /** Choice button background. Default reads `--jg-slot-bg`. */
   choiceBackground?: string;
-  /** Choice button border. Default reads `--jg-slot-border`. */
   choiceBorder?: string;
-  /** Choice button corner radius. Default reads `--jg-slot-radius`. */
   choiceRadius?: string;
 }
 
@@ -55,23 +41,12 @@ function resolveTheme(theme: DialogueViewTheme | undefined): Required<DialogueVi
   };
 }
 
-/** Props for {@link DialogueView}. */
 export interface DialogueViewProps {
-  /** The live branching-conversation run to render and advance. */
   run: DialogueRun;
-  /**
-   * Render a portrait for the current node. Given the node's opaque `portrait` key/URL and
-   * its `speakerKind`; return `null` to omit the portrait slot. Omit the prop for no portrait.
-   */
   renderPortrait?: (portrait: string | undefined, speakerKind: string | undefined) => ReactNode;
   /** Called when the player picks the choice at `index` (after the run advances). */
   onChoose?: (choice: DialogueGraphChoice, index: number) => void;
-  /**
-   * Called when the player advances a terminal node — a choice with no destination, or the
-   * Close control on a node with no choices. Wire this to `ctx.game.dialogue.close()`.
-   */
   onClose?: () => void;
-  /** Label for the Close control shown on a terminal node with no choices. Default `"Close"`. */
   closeLabel?: string;
   theme?: DialogueViewTheme;
   className?: string;

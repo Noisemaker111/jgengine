@@ -5,7 +5,6 @@ import { DEFAULT_STARTING_MONEY } from "@llmville/game/world/worldBootstrap";
 import { Button, C, FULL, Logo, Muted, Panel, Text } from "../../ui/kit";
 import { DISPLAY } from "../../ui/theme";
 
-/** The lab was liquidated: what happened and the one way on. */
 export function BankruptScreen({ isDismissing, onDismiss }: { isDismissing: boolean; onDismiss: () => void }) {
   return <RuneView anchor="fill" fill="#000000cc" modal label="Bankrupt">
     <RuneView anchor="center" width={448} responsive={{ phone: { width: 340 } }} items="center" gap={24}>

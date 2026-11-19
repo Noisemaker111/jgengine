@@ -11,22 +11,17 @@ import type { FactionRelation } from "../faction/factions";
  */
 export interface TribeRankDef extends ThresholdBoundary {
   name: string;
-  /** Capability slugs this rank grants; checked by {@link Tribe.can} and {@link Tribe.canAccess}. */
   permissions?: readonly string[];
-  /** Admin rank — bypasses all permission and hierarchy checks (like the founder). */
   bypass?: boolean;
 }
 
-/** Per-asset action gated by rank on group-owned assets. */
 export type AssetAction = "inventory" | "use" | "command";
 
-/** Opaque reference to a shared thing (structure, creature, container) by kind + id. */
 export interface TribeAssetRef {
   kind: string;
   id: string;
 }
 
-/** Who inside the group owns an asset: the group as a whole, or a specific member personally. */
 export type AssetOwnership = { scope: "group" } | { scope: "personal"; memberId: string };
 
 /** The kind of change recorded in a tribe's event log (membership, ownership, or alliance). */
@@ -46,25 +41,20 @@ export interface TribeEvent {
   seq: number;
   type: TribeEventType;
   at: number;
-  /** Member who performed the action, when applicable. */
   actor?: string;
-  /** Member the action targets (added/removed/re-ranked). */
   subject?: string;
-  /** Other tribe id, for alliance events. */
   tribeId?: string;
   rankId?: string;
   assetKind?: string;
   assetId?: string;
 }
 
-/** A member of a tribe and the rank id that governs their permissions. */
 export interface TribeMemberRecord {
   id: string;
   rankId: string;
   joinedAt: number;
 }
 
-/** An asset (structure/creature) owned within a tribe — group-shared or held by one member. */
 export interface TribeAssetRecord {
   kind: string;
   id: string;
@@ -72,7 +62,6 @@ export interface TribeAssetRecord {
   ownerId: string | null;
 }
 
-/** Full serializable state of one tribe — the save/replication baseline. */
 export interface TribeSnapshot {
   id: string;
   founderId: string;
@@ -87,23 +76,19 @@ export interface TribeSnapshot {
   eventSeq: number;
 }
 
-/** Construction options for {@link createTribe}: id, founder, rank ladder, and log cap. */
 export interface TribeConfig {
   id: string;
   founderId: string;
-  /** At least one rank. */
   ranks: readonly TribeRankDef[];
   /** Rank new members receive; defaults to the lowest-level rank. */
   defaultRankId?: string;
   /** Rank the founder holds; defaults to the highest-level rank. */
   founderRankId?: string;
-  /** Max events retained in the ring buffer (default 128). */
   logCap?: number;
   /** Injected clock for deterministic timestamps; defaults to `Date.now`. */
   now?: () => number;
 }
 
-/** Standard `{ reason }`-on-failure / `null`-on-success result for authorized mutations. */
 export type TribeResult = { reason: string } | null;
 
 const DEFAULT_LOG_CAP = 128;
@@ -120,9 +105,7 @@ export interface Tribe {
   hasMember(memberId: string): boolean;
   memberIds(): readonly string[];
   rankOf(memberId: string): TribeRankDef | null;
-  /** True if the member's rank grants `permission`, or they are the founder / an admin rank. */
   can(memberId: string, permission: string): boolean;
-  /** Founder or a `bypass` rank — skips every permission check. */
   isAdmin(memberId: string): boolean;
 
   addMember(actorId: string, memberId: string, rankId?: string): TribeResult;
@@ -134,7 +117,6 @@ export interface Tribe {
   registerAsset(actorId: string, ref: TribeAssetRef, ownership: AssetOwnership): TribeResult;
   unregisterAsset(actorId: string, ref: TribeAssetRef): TribeResult;
   ownerOfAsset(ref: TribeAssetRef): AssetOwnership | null;
-  /** Personal assets a member holds inside this group (they keep these on leaving). */
   assetsOf(memberId: string): readonly TribeAssetRef[];
   /** Resolve access to an asset: rank permission for group assets, ownership for personal ones. */
   canAccess(memberId: string, ref: TribeAssetRef, action: AssetAction): boolean;
@@ -472,28 +454,20 @@ export function createTribe(config: TribeConfig): Tribe {
   };
 }
 
-/** Injected dependencies for {@link createTribeRegistry} (e.g. a `now()` clock for event timestamps). */
 export interface TribeRegistryDeps {
   now?: () => number;
   defaultLogCap?: number;
 }
 
-/** Full serializable state of a tribe registry — every tribe's snapshot in one payload. */
 export interface TribeRegistrySnapshot {
   tribes: TribeSnapshot[];
 }
 
-/**
- * A collection of {@link Tribe tribes} with mutual alliance management and cross-member relation
- * lookups. Alliances are kept symmetric here (both sides updated together), and member-to-member
- * relations resolve through tribe membership + alliances, mirroring the `faction` graph vocabulary.
- */
 export interface TribeRegistry {
   create(config: TribeConfig): Tribe;
   get(id: string): Tribe | null;
   all(): readonly Tribe[];
   remove(id: string): void;
-  /** Form a mutual alliance, updating and logging both tribes. */
   formAlliance(tribeA: string, tribeB: string): TribeResult;
   /** Break a mutual alliance on both sides. */
   breakAlliance(tribeA: string, tribeB: string): void;
@@ -506,11 +480,7 @@ export interface TribeRegistry {
   hydrate(snapshot: TribeRegistrySnapshot): void;
 }
 
-/**
- * Create a registry that owns many tribes, keeps alliances mutual, and resolves member relations.
- *
- * @capability tribe-registry registry of tribes with mutual alliances and cross-tribe relation lookup
- */
+/** @capability tribe-registry registry of tribes with mutual alliances and cross-tribe relation lookup */
 export function createTribeRegistry(deps: TribeRegistryDeps = {}): TribeRegistry {
   const tribes = new Map<string, Tribe>();
 

@@ -71,9 +71,6 @@ const convoyFeedback = perContext((ctx: GameContext) => ({
   detach: attachWaveFeedback(convoyRunners(ctx), ctx.game.feedback),
 }));
 
-/**
- * Keep simulation and touch controls behind the title, pause, settings and result gates.
- */
 function syncPhase(ctx: GameContext): void {
   syncSession(ctx, startedStore.read(ctx) === true);
 }
@@ -114,7 +111,6 @@ function tickGangers(ctx: GameContext, dt: number): void {
   }
 }
 
-/** Peds near the player scatter while the block is scared, whatever the stars say. */
 function tickPedPanic(ctx: GameContext, dt: number): void {
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return;
@@ -170,7 +166,6 @@ function tickRaceEconomy(ctx: GameContext): void {
   if (ctx.time.now() >= mission(ctx).raceClearAt) raceStore.clear(ctx);
 }
 
-/** A cop on top of an on-foot wanted player for a sustained beat makes the arrest. */
 function tickBusted(ctx: GameContext, dt: number): void {
   const stars = streetPlayOf(ctx).wanted().stars;
   if (stars === 0 || streetPlayOf(ctx).drivingVehicleId() !== null) {

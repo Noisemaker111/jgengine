@@ -9,32 +9,22 @@ import { useEngineStyles } from "@jgengine/ui/engineStyles";
 import { useHudInteract, type HudInteractListener } from "./hudInteract.view";
 import { useMountPresence } from "@jgengine/core/ui/presence.view";
 
-/** Shadow height of a {@link HudSurface}. */
 export type HudSurfaceElevation = "raised" | "overlay" | "modal";
 
 /** Block elements a {@link HudSurface} can render as, so it can be a landmark. */
 export type HudSurfaceElement = "div" | "section" | "aside" | "nav" | "header" | "footer" | "article" | "main" | "form" | "dialog";
 
-/** Props for {@link HudSurface}. */
 export interface HudSurfaceProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
-  /** Element to render. Default `div`; `section`, `aside`, `nav` and the like make it a landmark. */
   as?: HudSurfaceElement;
-  /** Show or hide with an enter/exit transition. Unset renders a static panel with no transition. */
   open?: boolean;
-  /** Uppercase header label at the top-left. */
   title?: ReactNode;
-  /** Header content at the top-right, opposite `title`. */
   aside?: ReactNode;
-  /** Shadow height. Default `raised`. */
   elevation?: HudSurfaceElevation;
   /** Sets `--jg-panel-padding` (default 12px from the stylesheet), so a game class or media query still overrides it. */
   padding?: number | string;
   width?: number | string | undefined;
-  /** Accept pointer events. Default `true`. */
   interactive?: boolean;
-  /** Feedback cue name, rendered as `data-jg-cue` and passed to `onInteract`. */
   cue?: string;
-  /** Called with `open` and `close` as the panel shows and hides. */
   onInteract?: HudInteractListener;
 }
 

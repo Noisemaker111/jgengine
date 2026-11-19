@@ -7,7 +7,6 @@ export interface SwingPlayerInput {
   weapon: { speed: number };
 }
 
-/** The current target, or the fields the bar needs from it. */
 export interface SwingTargetInput {
   dead: boolean;
   /** Entity kind; an `"object"` target (a node/chest) never shows a swing bar. */
@@ -17,24 +16,18 @@ export interface SwingTargetInput {
 /** Whether the bar shows a "ready" label or the seconds-remaining countdown. */
 export type SwingLabelKind = "ready" | "seconds";
 
-/** One frame of swing-bar state plus the cursor (`nextPeriod`/`nextTimer`) the caller carries back into the next call. */
 export interface SwingTimerState {
-  /** Whether the bar should render at all. */
   visible: boolean;
   /** Fill 0..1, growing toward 1 as the next swing nears. */
   frac: number;
-  /** True the moment the swing is ready to land. */
   ready: boolean;
   labelKind: SwingLabelKind;
   /** Seconds remaining until the next swing (0 when ready). */
   seconds: number;
-  /** Recovered swing period this frame — pass back as `prevPeriod` next call. */
   nextPeriod: number;
-  /** This frame's timer — pass back as `prevTimer` next call to detect the reset edge. */
   nextTimer: number;
 }
 
-/** Threshold above which a timer jump is treated as a fresh swing (period reset). */
 export const SWING_EDGE_EPSILON = 1e-4;
 
 const HIDDEN: Omit<SwingTimerState, "nextPeriod" | "nextTimer"> = {

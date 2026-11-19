@@ -205,10 +205,6 @@ export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
   return args;
 }
 
-/**
- * The games a diff can change: a game's own folder changes that game; the engine, the dev runner or the
- * dependencies change every game. Scripts, docs and tests change none.
- */
 export function affectedGames(paths: readonly string[], games: readonly string[]): string[] {
   const hit = new Set<string>();
   for (const raw of paths) {
@@ -226,19 +222,12 @@ export type AbCall = "slower" | "faster" | "same" | "unclear";
 
 export interface AbVerdict {
   call: AbCall;
-  /** Blocks the verdict is over. */
   blocks: number;
-  /** Mean change of branch against base, in percent (positive: the branch's frames take longer). */
   changePct: number;
   lowPct: number;
   highPct: number;
 }
 
-/**
- * The verdict over paired log ratios ln(branch / base), one per block: the mean with its 99% interval.
- * `null` while the run should go on: fewer than `minBlocks`, or an interval that neither excludes no
- * change nor fits inside +-margin. At `maxBlocks` it always answers, `unclear` when still undecided.
- */
 export function abVerdict(logRatios: readonly number[], options: { minBlocks: number; maxBlocks: number; marginPct: number; floorPct?: number }): AbVerdict | null {
   const n = logRatios.length;
   if (n < Math.max(2, options.minBlocks)) return null;
@@ -255,12 +244,10 @@ export function abVerdict(logRatios: readonly number[], options: { minBlocks: nu
   return n >= options.maxBlocks ? verdict("unclear") : null;
 }
 
-/** The middle frame time of a window. */
 export function medianMs(deltas: readonly number[]): number {
   return percentileMs(deltas, 50);
 }
 
-/** The frame time `percentile` % of a window's frames are at or under, interpolated between ranks (50: the median). */
 export function percentileMs(deltas: readonly number[], percentile: number): number {
   const kept = deltas.filter((ms) => Number.isFinite(ms) && ms > 0).sort((a, b) => a - b);
   if (kept.length === 0) return Number.NaN;
@@ -286,7 +273,6 @@ function git(cwd: string, args: string[]): { ok: boolean; out: string } {
   return { ok: result.status === 0, out: `${result.stdout ?? ""}`.trim() };
 }
 
-/** Paths that differ between `commit` and this tree, committed or not, untracked included. */
 function changedPaths(dir: string, commit: string): string[] {
   const tracked = git(dir, ["diff", "--name-only", commit]).out;
   const untracked = git(dir, ["ls-files", "--others", "--exclude-standard"]).out;
@@ -298,12 +284,10 @@ function mainCheckout(): string {
   return dirname(common);
 }
 
-/** Directory name of the shared base worktree for a commit. */
 export function baseTreeName(commit: string): string {
   return `perf-base-${commit.slice(0, 10)}`;
 }
 
-/** File a base tree's every use touches; a tree unused this long is removed when another is made. */
 const BASE_USED_MARKER = ".perf-ab-used";
 export const BASE_TREE_KEEP_MS = 24 * 60 * 60 * 1000;
 
@@ -317,7 +301,6 @@ export function expiredBaseTrees(trees: Array<{ name: string; usedAtMs: number }
   return trees.filter((tree) => tree.name.startsWith("perf-base-") && tree.name !== current && nowMs - tree.usedAtMs > BASE_TREE_KEEP_MS).map((tree) => tree.name);
 }
 
-/** True when `dir` is the top of its own checkout, not a leftover folder git resolves to an outer one. */
 function isCheckoutRoot(dir: string): boolean {
   const top = git(dir, ["rev-parse", "--show-toplevel"]);
   return top.ok && resolve(top.out).toLowerCase() === resolve(dir).toLowerCase();
@@ -346,11 +329,6 @@ function removeBaseTree(main: string, dir: string): boolean {
   return !existsSync(dir);
 }
 
-/**
- * The checkout the base side is served from: a directory as given, or a detached worktree at the
- * commit under the main checkout's `.claude/worktrees/`, made once and reused by every thread that
- * measures against that commit. Other `perf-base-*` trees unused for a day are removed when a new one is made.
- */
 function baseCheckout(spec: string | null): { dir: string; commit: string; label: string } {
   if (spec !== null && existsSync(spec)) {
     const dir = resolve(spec);
@@ -398,7 +376,6 @@ export function plantScript(ms: number): string {
 
 type Side = "base" | "branch";
 
-/** The measured page, including the renderer/scene parameters recorded for its side. */
 export function abPageUrl(base: string, game: string, side: Side, args: AbArgs): URL {
   return perfPageUrl({ base, game, quality: "high", params: args.params[side] });
 }
@@ -413,16 +390,13 @@ export interface Home {
 interface SidePage {
   side: Side;
   session: CdpSession;
-  /** The side's own browser, for its process list. */
   browser: CdpSession;
   /** Where the player stood after warmup; every window's walk starts here, so windows replay one route. */
   home: Home | null;
   /** The game's teleport left its player where it was (a car body puts it back), so windows follow it on. */
   homeFailed: boolean;
   stopPath: () => Promise<void>;
-  /** Renderer pids suspended while the other side is timed. */
   frozen: number[];
-  /** What the page downloaded to become ready, and how long that took, from an empty cache. */
   load: LoadScore;
   /** Percent of the PC's cores busy just before the page loaded. */
   pcBusyPct: number;
@@ -432,18 +406,13 @@ export interface AbWindow {
   block: number;
   side: Side;
   medianMs: number;
-  /** The window's frame time at the run's `--stat` percentile: what the verdict compares (its median at p50). */
   statMs: number;
   frames: number;
-  /** CPU of the timed side's renderers over the window, % of one core. */
   timedCpu: number;
-  /** CPU of the other side's renderers over the window, % of one core: 0 while they are suspended. */
   idleCpu: number;
   /** The timed side's renderer and GPU processes that sat below normal priority before the window and were raised. */
   raised: string[];
-  /** Those still below normal when the window ended: Chrome lowered them again during it. */
   lowAfter: string[];
-  /** The player's position when the window started and ended, or null with no player: the route it walked. */
   route: { from: number[]; to: number[] } | null;
 }
 
@@ -454,7 +423,6 @@ export interface AbGameResult {
   branchMs: number;
   windows: AbWindow[];
   lockSeconds: number;
-  /** Each side's scorecard: every measured window's frames pooled, one profiled window, one slow-CPU window, the load. */
   cards: Record<Side, Scorecard>;
 }
 
@@ -497,7 +465,6 @@ async function openSide(side: Side, debugPort: number, browser: CdpSession, serv
   return { side, session, browser, home, homeFailed: false, stopPath: async () => {}, frozen: [], load: loaded, pcBusyPct };
 }
 
-/** The bridge request that puts the player back where the window's walk starts. */
 export function homeRequest(home: Home): string {
   return JSON.stringify({ method: "teleport", x: home.x, y: home.y, z: home.z, yaw: home.yaw });
 }
@@ -548,10 +515,8 @@ async function resume(page: SidePage, path: PerfPath): Promise<void> {
   await page.session.evaluate(`new Promise((r) => setTimeout(r, ${SETTLE_MS}))`, { awaitPromise: true });
 }
 
-/** How far a player may be from home and count as there. */
 const HOME_TOLERANCE_M = 1;
 
-/** Ground distance from home, 0 when the game has no pose. */
 export function awayFromHome(at: readonly number[] | null, home: Home): number {
   return at === null ? 0 : Math.hypot((at[0] ?? home.x) - home.x, (at[2] ?? home.z) - home.z);
 }
@@ -571,11 +536,6 @@ async function browserSession(port: number, side: Side): Promise<CdpSession> {
   return CdpSession.connect(version.webSocketDebuggerUrl, 10_000);
 }
 
-/**
- * Each side has a Chrome of its own with one page. Two pages in one Chrome were not equal: Chrome
- * kept the renderers of the page it treated as background at low priority, re-lowering them within a
- * window of being raised, and a same-code no-op read -35% (harbor-heat, 2026-11-09).
- */
 async function measurePair(game: string, serve: (side: Side) => Promise<string>, args: AbArgs, ports: Record<Side, number>, buildDir: (side: Side) => string | undefined): Promise<Omit<AbGameResult, "lockSeconds">> {
   for (const side of ["base", "branch"] as const) {
     const probe = await openPageSession(ports[side]);
@@ -713,11 +673,6 @@ export function routeSpread(windows: readonly Pick<AbWindow, "block" | "route">[
 /** A frozen side whose renderers use more than this share of a core over a window was not frozen. */
 const IDLE_CPU_MAX_PCT = 5;
 
-/**
- * The renderer and GPU processes below normal priority, named; with `raise`, each is put back to
- * normal. Chrome lowers renderers it treats as background, and a side timed at low priority on a busy
- * PC is timed against the PC.
- */
 function equalizePriorities(processes: ReadonlyMap<string, number>, raise: boolean): string[] {
   const lowered: string[] = [];
   for (const key of processes.keys()) {
@@ -739,7 +694,6 @@ async function processCpu(browser: CdpSession): Promise<Map<string, number>> {
   return new Map(list.map((process) => [`${process.type}:${process.id}`, process.cpuTime]));
 }
 
-/** Renderer CPU between two readings of one browser, as a percent of one core over `windowMs`. */
 export function rendererCpuPct(before: ReadonlyMap<string, number>, after: ReadonlyMap<string, number>, windowMs: number): number {
   let seconds = 0;
   for (const [key, cpu] of after) {
@@ -772,7 +726,6 @@ export function renderAbTable(results: readonly AbGameResult[], options: { markd
   return [line(head), ...rows.map(line)].join("\n");
 }
 
-/** Each game's two scorecards side by side, base then branch: what the report leads with. */
 export function renderAbScorecards(results: readonly Pick<AbGameResult, "game" | "cards">[], markdown: boolean): string {
   return results
     .map((result) => `${markdown ? `**${result.game}**` : result.game}\n${renderScorecard([{ label: "base", card: result.cards.base }, { label: "branch", card: result.cards.branch }], markdown)}`)

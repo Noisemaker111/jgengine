@@ -1,6 +1,5 @@
 import type { PlantStructure } from "../structure/plantStructure";
 
-/** The world box a set of silhouettes is drawn into, so masks of different plants line up. */
 export interface PlantSilhouetteFrame {
   /** Half the width of the box in metres, centred on the stem. */
   halfWidthM: number;
@@ -10,19 +9,12 @@ export interface PlantSilhouetteFrame {
   size?: number;
 }
 
-/** Silhouettes of one plant from several sides: one 0/1 mask per view, `size` × `size`, rows from the top. */
 export interface PlantSilhouettes {
   size: number;
   views: Uint8Array[];
 }
 
-/**
- * Side-on silhouettes of a plant from `views` directions spread evenly around it, drawn
- * orthographically into `frame`: wood as its segments at their radius, and each leaf row as a disc of
- * the area its leaves cover. Two plants drawn into one frame can be compared view by view with
- * {@link silhouetteIoU}.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export function plantSilhouettes(structure: PlantStructure, frame: PlantSilhouetteFrame, views = 8): PlantSilhouettes {
   const size = Math.max(8, Math.floor(frame.size ?? 48));
   const pixelM = frame.heightM / size;
@@ -76,11 +68,7 @@ function stampDisc(mask: Uint8Array, size: number, u: number, v: number, radius:
   }
 }
 
-/**
- * Intersection over union of two silhouette sets, view by view, averaged over the views; 1 when both
- * are empty.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export function silhouetteIoU(a: PlantSilhouettes, b: PlantSilhouettes): number {
   const views = Math.min(a.views.length, b.views.length);
   if (views === 0) return 1;
@@ -128,10 +116,7 @@ export function branchAzimuthHistogram(structure: PlantStructure, bins = 12): Fl
   return histogram;
 }
 
-/**
- * Total variation distance between two histograms: 0 when equal, 1 when they share nothing.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
+/** @capability plant-validation published crown allometry and crown-shape measures to check a growth model against */
 export function histogramDistance(a: Float64Array, b: Float64Array): number {
   let sum = 0;
   const bins = Math.max(a.length, b.length);

@@ -15,11 +15,9 @@ interface TweetNotificationProps {
   durationMs?: number;
   /** Draws the reply and like counts. Default a stream seeded by the tweet's id, so a tweet keeps its counts. */
   rng?: () => number;
-  /** The clock the drain bar reads. */
   now?: () => number;
 }
 
-/** A tweet's reply, repost and like counts, drawn once from `random`. */
 export function tweetStats(random: () => number): { replies: number; reposts: number; likes: number } {
   const reposts = Math.floor(random() * 200) + 10;
   const likes = Math.floor(random() * 1000) + 50;
@@ -30,7 +28,6 @@ function Count({ icon, value }: { icon: IconName; value: number }) {
   return <Row gap={6}><Icon name={icon} size={14} color="#64748b" strokeWidth={1.5} /><Text size={12} color="#64748b">{String(value)}</Text></Row>;
 }
 
-/** A news tweet: the toast leaves on its own after `durationMs`, or when dismissed. */
 export default function TweetNotification({ tweet, onDismiss, durationMs = TWEET_NOTIFICATION_DURATION_MS, rng, now = Date.now }: TweetNotificationProps) {
   const stats = useMemo(() => tweetStats(rng ?? seededRng(tweet.id)), [rng, tweet.id]);
   const dismissRef = useRef(onDismiss);

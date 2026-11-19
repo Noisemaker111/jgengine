@@ -21,10 +21,8 @@ import { inducedDragFactor } from "./wingGroundEffect";
 const DEFAULT_SUBSTEP = 1 / 240;
 const SEA_LEVEL_DENSITY = 1.225;
 
-/** Body-frame or world-frame vector, m or N. The body frame is `[left, up, forward]` about the centre of mass. */
 export type AircraftVector = readonly [number, number, number];
 
-/** Unit quaternion `[x, y, z, w]` taking body-frame vectors to world space. */
 export type AircraftQuaternion = readonly [number, number, number, number];
 
 /**
@@ -32,61 +30,37 @@ export type AircraftQuaternion = readonly [number, number, number, number];
  * roll and yaw the body come from where the surfaces sit, not from commanded rates.
  */
 export interface AircraftSurface {
-  /** Mount point relative to the centre of mass, body frame `[left, up, forward]`, m. */
   at: AircraftVector;
-  /** Direction positive lift pushes, body frame (default `[0, 1, 0]`, a horizontal surface; `[1, 0, 0]` is a fin). Kept perpendicular to the chord, which runs along body forward. */
   normal?: AircraftVector;
-  /** Planform area, m². */
   area: number;
-  /** Lift curve slope, per rad (default `5`; thin-airfoil theory gives `2π`, lower for short spans). */
   liftSlope?: number;
-  /** Angle of attack where the surface stalls, rad (default `0.28`). */
   stallAngle?: number;
   /** Lift kept past the stall as a share of peak lift, `0..1` (default `0.6`). */
   postStallLift?: number;
-  /** Fixed mounting angle added to the local angle of attack, rad (default `0`); trims the cruise attitude. */
   incidence?: number;
-  /** Zero-lift drag coefficient `CD0` of the drag polar `CD = CD0 + k·CL²` (default `0.02`). */
   cd0?: number;
-  /** Induced drag factor `k` of the drag polar (default `0.06`). */
   inducedDrag?: number;
-  /**
-   * Control authority: angle-of-attack change, rad, per rad of each channel's deflection. The sim signs it from the
-   * surface's lever arm, so positive input always gives nose-up pitch, right roll and nose-right yaw. A surface on the
-   * centreline has no roll arm, so its `roll` does nothing.
-   */
   control?: { pitch?: number; roll?: number; yaw?: number };
 }
 
-/** One control channel's actuator: how far the surfaces move and how fast. */
 export interface AircraftControlChannel {
-  /** Largest deflection, rad (default `0.35`). */
   maxDeflection?: number;
   /** Actuator slew rate, rad/s (default `2`). */
   rate?: number;
 }
 
-/** A thrust source fixed to the body. */
 export interface AircraftEngineTuning {
-  /** Thrust at full throttle, N. */
   maxThrust: number;
-  /** Engine spool response, 1/s: thrust follows the throttle with this first-order rate (default `1.5`; ~1.5 s to 90%). */
   spoolRate?: number;
-  /** Thrust line offset from the centre of mass, body frame m (default on the centre of mass). */
   at?: AircraftVector;
-  /** Thrust direction, body frame (default `[0, 0, 1]`, forward). */
   direction?: AircraftVector;
 }
 
-/** Wheels or skids: what the body rests on when it touches the ground. */
 export interface AircraftGearTuning {
-  /** Height of the centre of mass above the ground when resting on the gear, m. */
   height: number;
-  /** Rolling resistance coefficient (default `0.02`). */
   rollingResistance?: number;
   /** Deceleration at full `brake`, m/s² (default `4`). */
   brakeDecel?: number;
-  /** Sideways friction coefficient of the tyres or skids (default `0.8`). */
   sideGrip?: number;
   /** Largest nose-up attitude the gear allows before the tail strikes, rad (default `0.25`). */
   maxPitch?: number;
@@ -104,9 +78,7 @@ export interface AircraftMotorTuning {
   propellantKg: number;
   /** Propellant mass flow at the curve's peak thrust, kg/s; it scales with thrust (constant exhaust velocity). */
   massFlow: number;
-  /** Nozzle position relative to the centre of mass, body frame m (default `[0, 0, -1]`, behind it). */
   at?: AircraftVector;
-  /** Largest nozzle gimbal angle, rad (default `0`, fixed). Pitch and yaw inputs swing it through their actuators. */
   gimbal?: number;
 }
 
@@ -115,22 +87,17 @@ export interface AircraftMotorTuning {
  * the disc. Its drag torque yaws the body the other way unless a tail rotor, a second rotor or a pedal input cancels it.
  */
 export interface AircraftRotorTuning {
-  /** Thrust at full collective and full rotor speed, out of ground effect and in a hover, N. */
   maxThrust: number;
   /** Blade radius, m. Sets the disc area, so the induced velocity behind translational lift, and the ground-effect height. */
   radius: number;
-  /** Hub position relative to the centre of mass, body frame m (default `[0, 1.5, 0]`). A hub above the centre of mass turns disc tilt into pitch and roll moments. */
   at?: AircraftVector;
-  /** Rotor speed response to throttle, 1/s (default `0.5`): rotors spin up slowly. */
   spoolRate?: number;
   /**
    * Drag torque on the body at full collective and full rotor speed, N·m, scaling with collective and rotor speed².
    * Positive yaws the nose left (a rotor turning counter-clockwise seen from above); negative yaws it right.
    */
   torque: number;
-  /** Disc tilt at full cyclic, rad (default `0.15`); the pitch and roll actuators set how fast it gets there. */
   cyclic?: number;
-  /** Extra thrust once the rotor moves into clean air, as a share of thrust (default `0.2`): translational lift. */
   translationalLift?: number;
   /** Pitch and roll damping from the disc, N·m per rad/s (default `0`). */
   damping?: number;
@@ -144,7 +111,6 @@ export interface AircraftRotorTuning {
 
 /** What an assist sees each substep, derived from the integrator state so it replays deterministically. */
 export interface AircraftAssistContext {
-  /** Substep, s. */
   dt: number;
   airspeed: number;
   angleOfAttack: number;
@@ -160,10 +126,8 @@ export interface AircraftAssistContext {
   /** Horizontal velocity in the heading frame, m/s: `forward` along the nose, `right` to the right. */
   forward: number;
   right: number;
-  /** Load factor estimate from pitch rate and attitude, g. */
   gLoad: number;
   heightAboveGround: number;
-  /** The pilot's input this tick. */
   pilot: RigidAircraftInput;
 }
 
@@ -190,9 +154,7 @@ export interface AircraftAssistTuning {
   sasRate?: number;
   /** Hands-off, flies the wings level and the nose to the horizon, `0..1`. */
   autoLevel?: number;
-  /** Largest angle of attack the pitch command may ask for, rad. */
   maxAngleOfAttack?: number;
-  /** Largest load factor the pitch command may ask for, g. */
   maxG?: number;
   /** Hands-off cyclic flies the helicopter to a stop over the ground, `0..1`: velocity to attitude to rate. */
   hoverHold?: number;
@@ -200,11 +162,6 @@ export interface AircraftAssistTuning {
   policy?: (context: AircraftAssistContext, command: AircraftAssistCommand) => AircraftAssistCommand;
 }
 
-/**
- * A rigid aircraft in physical units. There is no aircraft type: a jet, a glider and a paper plane differ only in these
- * numbers. Rotation comes from surface forces acting on the inertia tensor, so loops, rolls, stalls and weathervaning
- * are outcomes, not special cases.
- */
 export interface RigidAircraftTuning {
   /** Mass, kg; with a `motor`, the mass without propellant. */
   massKg: number;
@@ -217,17 +174,13 @@ export interface RigidAircraftTuning {
   assists?: AircraftAssistTuning | undefined;
   /** Actuators per channel; each channel defaults to `{ maxDeflection: 0.35, rate: 2 }`. */
   controls?: { pitch?: AircraftControlChannel; roll?: AircraftControlChannel; yaw?: AircraftControlChannel };
-  /** Fuselage drag coefficient × frontal area, m² (default `0`). */
   dragArea?: number;
   /** Omit for a body that never touches the ground (it falls through). */
   gear?: AircraftGearTuning;
-  /** Integration substep, s (default `1/240`). */
   maxSubstep?: number;
-  /** Physical effects, each its own term with its own strength; an effect left out keeps the simple model's term. */
   effects?: AircraftEffects;
 }
 
-/** Pilot input for one tick. */
 export interface RigidAircraftInput {
   /** `0..1`. */
   throttle: number;
@@ -250,15 +203,12 @@ export interface RigidAircraftModifiers {
   dragScale?: number;
   /** Extra world-space force this tick, N — a tow, a gust, a tractor beam. */
   force?: AircraftVector;
-  /** Extra body-frame torque this tick, N·m `[about left, about up, about forward]`. */
   torque?: AircraftVector;
 }
 
-/** World hooks for one aircraft instance. */
 export interface RigidAircraftOptions {
   position?: AircraftVector;
   velocity?: AircraftVector;
-  /** Spawn heading, rad, with forward `[sin h, 0, cos h]`; ignored when `orientation` is set. */
   heading?: number;
   orientation?: AircraftQuaternion;
   /**
@@ -266,7 +216,6 @@ export interface RigidAircraftOptions {
    * `world/wind` (its `atPoint(x, z, time)` read at the aircraft's position and clock).
    */
   wind?: ((position: AircraftVector) => AircraftVector) | { atPoint(x: number, z: number, time: number): readonly [number, number] };
-  /** Terrain height under a point; the gear rests on it. Default `0`. */
   groundHeight?: (x: number, z: number) => number;
   /** Default uniform `9.81` m/s² down. */
   gravityField?: GravityField;
@@ -274,7 +223,6 @@ export interface RigidAircraftOptions {
   airDensity?: (altitude: number) => number;
 }
 
-/** Rigid-body pose and motion: position, velocity, orientation quaternion and body-frame angular velocity. */
 export interface RigidAircraftBody {
   x: number;
   y: number;
@@ -290,18 +238,15 @@ export interface RigidAircraftBody {
   wx: number;
   wy: number;
   wz: number;
-  /** Angle of attack at the last substep, rad, for the `α̇` derivatives. */
   previousAlpha: number;
 }
 
-/** Control-surface deflections after rate limiting, rad. */
 export interface RigidAircraftSurfaces {
   pitchDeflection: number;
   rollDeflection: number;
   yawDeflection: number;
 }
 
-/** Engine, rotor and motor state. */
 export interface RigidAircraftPowerplant {
   /** Engine output as a share of `maxThrust`, `0..1`. */
   spool: number;
@@ -315,15 +260,12 @@ export interface RigidAircraftPowerplant {
   afterburner: number;
   /** Propeller shaft speed, rad/s (the `propeller` effect). */
   shaftSpeed: number;
-  /** Rotor induced inflow ratio (the `rotorInflow` effect). */
   rotorInflow: number;
-  /** Rotor speed governor integral, rad (the `autorotation` effect). */
   governor: number;
 }
 
 /** Stability-assist memory: attitude hold, learned trim and hover drift. */
 export interface RigidAircraftAssist {
-  /** SAS hold per axis: body-angle change since that axis went hands-off, rad. */
   holdPitch: number;
   holdRoll: number;
   holdYaw: number;
@@ -336,7 +278,6 @@ export interface RigidAircraftAssist {
   driftZ: number;
 }
 
-/** Serializable integrator state: everything `restore` needs to resume bit-for-bit. */
 export interface RigidAircraftState {
   body: RigidAircraftBody;
   surfaces: RigidAircraftSurfaces;
@@ -345,7 +286,6 @@ export interface RigidAircraftState {
   time: number;
 }
 
-/** One aircraft tick: pose plus the telemetry HUDs, camera, sound and probes read. */
 export interface RigidAircraftStep {
   position: AircraftVector;
   velocity: AircraftVector;
@@ -362,60 +302,41 @@ export interface RigidAircraftStep {
   rollRate: number;
   /** Speed relative to the air, m/s. */
   airspeed: number;
-  /** Angle of attack at the centre of mass, rad. */
   angleOfAttack: number;
-  /** Sideslip, rad, positive when the body moves to its right. */
   sideslip: number;
-  /** Load factor along the body's up axis, g; `1` in level flight, `0` in free fall. */
   gLoad: number;
-  /** The largest surface is past its stall angle. */
   stalled: boolean;
   /** Share of surface area past its stall angle, `0..1`. */
   stallFraction: number;
-  /** Engine thrust this tick, N. */
   thrust: number;
-  /** Current actuator deflection per channel, rad. */
   deflection: { pitch: number; roll: number; yaw: number };
   grounded: boolean;
   /** Total mass including propellant, kg. */
   massKg: number;
   /** The command the actuators got after assists, `-1..1`; equals the pilot's input without assists. */
   command: AircraftAssistCommand;
-  /** The AoA or g limiter cut the pitch command this tick. */
   limited: boolean;
-  /** Mach number, airspeed over the local speed of sound. */
   mach: number;
   /** Air density at the aircraft, kg/m³. */
   airDensity: number;
-  /** Where the aircraft is on the planet; present with the `rotatingEarth` effect. */
   planet?: RotatingEarthFrame;
-  /** Motor telemetry; absent without a `motor` block. */
   motor?: {
-    /** Motor thrust this tick, N. */
     thrust: number;
     burnTime: number;
     propellantKg: number;
-    /** Out of propellant or past the end of the thrust curve. */
     burnedOut: boolean;
   };
-  /** Rotor telemetry; absent without a `rotor` block. */
   rotor?: {
     /** Rotor speed, share of rated, `0..1`. */
     speed: number;
-    /** Main rotor thrust, N. */
     thrust: number;
-    /** Drag torque on the body, N·m, positive nose left. */
     torque: number;
-    /** Torque the air takes from the rotor, N·m; with `autorotation` the body feels the engine's torque instead. */
     aerodynamicTorque: number;
-    /** Thrust multiplier from ground effect, `≥ 1`. */
     groundEffect: number;
-    /** Thrust multiplier from translational lift, `≥ 1`. */
     translationalLift: number;
   };
 }
 
-/** A force-and-torque aircraft on the same tick/snapshot/retune contract as `VehicleDynamics`. */
 export interface RigidAircraft {
   tick(dt: number, input: RigidAircraftInput, modifiers?: RigidAircraftModifiers): RigidAircraftStep;
   pose(): { position: AircraftVector; orientation: AircraftQuaternion };
@@ -451,7 +372,6 @@ interface PreparedSurface {
   kYaw: number;
 }
 
-/** Quaternion for a heading about world up, forward `[sin h, 0, cos h]`. */
 export function aircraftHeadingQuaternion(heading: number): AircraftQuaternion {
   return [0, Math.sin(heading / 2), 0, Math.cos(heading / 2)];
 }
@@ -518,7 +438,6 @@ function wrapAngle(angle: number): number {
   return angle;
 }
 
-/** Lift coefficient: linear to the stall, then a flat-plate `sin 2α` curve scaled to `postStall` of peak. */
 function liftCoefficient(alpha: number, slope: number, stall: number, postStall: number): { cl: number; stalled: number } {
   const magnitude = Math.abs(alpha);
   if (magnitude <= stall) return { cl: slope * alpha, stalled: 0 };
@@ -594,7 +513,6 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     state.time = next.time;
   }
 
-  /** Puts effect states at rest for a closed throttle: the propeller idling at the current airspeed. */
   function settleEffects(): void {
     const propeller = tuning.effects?.propeller;
     if (propeller !== undefined) {
@@ -1352,7 +1270,6 @@ function peakOf(curve: readonly (readonly [number, number])[]): number {
   for (const [, value] of curve) peak = Math.max(peak, value);
   return peak;
 }
-
 
 /** Heading, nose-up pitch and right bank of a body orientation (three.js `YXZ` Euler with `x = -pitch`). */
 function attitudeOf(q: { qx: number; qy: number; qz: number; qw: number }): { heading: number; pitch: number; bank: number } {

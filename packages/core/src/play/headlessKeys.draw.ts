@@ -5,12 +5,9 @@ import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
 import { flowKeyList, type FlowKeys } from "./flow";
 import type { PlaySession } from "./playSession.draw";
 
-/** Keys held against a headless {@link PlaySession}, mapped through the game's own bindings. */
 export interface HeadlessKeys {
-  /** Press these keys; a key the game (with the player's rebinds) binds nowhere throws. */
   down(keys: FlowKeys): void;
   up(keys: FlowKeys): void;
-  /** One tick with the held keys' actions, rebinding first when a menu context changed them. */
   tick(): void;
   /** Ticks that cover `ms` of game time, at least one. */
   ticksFor(ms: number): number;

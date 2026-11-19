@@ -1,17 +1,14 @@
 import type * as THREE from "three";
 import type { ModelVariantSelector } from "@jgengine/core/lod/modelLod";
 
-/** A scatter placement as the level pass reads it: a stable id and a world position. */
 export interface ScatterVariantMember {
   readonly id: string;
   readonly x: number;
   readonly y: number;
   readonly z: number;
-  /** Placement scale; read when the selector switches per unit of instance scale. Default 1. */
   readonly scale?: number;
 }
 
-/** A camera position the level pass measures from. */
 export interface ScatterVariantCamera {
   readonly x: number;
   readonly y: number;

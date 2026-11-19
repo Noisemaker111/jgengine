@@ -1,12 +1,6 @@
 // @skill jgengine-world
 import { SEA_LEVEL_AIR } from "./atmosphere";
 
-/**
- * The propeller effect: a piston engine turns a fixed-pitch propeller whose thrust and power coefficients follow the
- * advance ratio `J = V/nD` and tip Mach number, so static thrust is high and falls off with airspeed, and the shaft
- * speed settles where engine torque meets propeller torque. Engine torque lapses with air density (Gagg–Ferrar); the
- * shaft's torque reaction rolls the airframe and its spin adds gyroscopic moments.
- */
 export interface AircraftPropeller {
   /**
    * Multiplier on the effect: `0` off (the tuning's `maxThrust` times spool, the simple model), `1` as measured
@@ -14,33 +8,22 @@ export interface AircraftPropeller {
    * strength); sane over `0..4`.
    */
   strength?: number;
-  /** Propeller diameter, m (default `1.905`, the Cessna 172's McCauley 1C160). */
   diameter?: number;
-  /** Engine power at rated speed, sea level, full throttle, W (default 160 hp, the Lycoming O-320-H2AD). */
   ratedPower?: number;
-  /** Rated shaft speed, rev/min (default `2700`). */
   ratedRpm?: number;
   /** Crankshaft plus propeller polar inertia, kg·m² (default `1.9`). */
   inertia?: number;
-  /** Advance ratio breakpoints (default `0` to `1.2` every `0.1`). */
   advanceRatios?: readonly number[];
-  /** Tip Mach breakpoints (default `0.5`, `0.65`, `0.8`, `0.95`). */
   tipMachs?: readonly number[];
-  /** Thrust coefficient `T/ρn²D⁴`, row-major by advance ratio then tip Mach (default the 1C160 blade-element map). */
   thrust?: readonly number[];
-  /** Power coefficient `P/ρn³D⁵`, same grid (default the 1C160 blade-element map). */
   power?: readonly number[];
-  /** Gagg–Ferrar power lapse `P/P0 = a·σ − (a − 1)` (default `1.132`). */
   densityLapse?: number;
-  /** Manifold pressure share at closed throttle (default `0.08`). */
   idleManifold?: number;
-  /** Pumping loss at closed throttle, share of rated torque at rated speed (default `0.1`). */
   pumpingLoss?: number;
   /** Which way the propeller turns seen from the cockpit (default `1`, clockwise: the torque reaction rolls the airframe left). */
   rotation?: 1 | -1;
 }
 
-/** McCauley 1C160/DTM7553 thrust coefficients from the reference blade-element solver, by advance ratio then tip Mach. */
 export const C172_PROPELLER_THRUST: readonly number[] = [
   0.11814, 0.11358, 0.10058, 0.09301, 0.1226, 0.12408, 0.11929, 0.1088, 0.12079, 0.12437, 0.12874, 0.12672, 0.11352, 0.11754, 0.12281, 0.12602, 0.10087,
   0.10466, 0.10965, 0.11302, 0.08193, 0.08512, 0.08929, 0.09202, 0.06164, 0.06418, 0.06743, 0.06948, 0.04009, 0.04188, 0.04412, 0.04542, 0.01735, 0.01827,
@@ -48,7 +31,6 @@ export const C172_PROPELLER_THRUST: readonly number[] = [
   -0.08915, -0.09391, -0.09732,
 ];
 
-/** McCauley 1C160/DTM7553 power coefficients, same grid. */
 export const C172_PROPELLER_POWER: readonly number[] = [
   0.05694, 0.05721, 0.05508, 0.05561, 0.06021, 0.06253, 0.06223, 0.05972, 0.06228, 0.06531, 0.06922, 0.06938, 0.06273, 0.06585, 0.07001, 0.07283, 0.06083,
   0.06375, 0.06764, 0.07047, 0.05466, 0.05719, 0.06051, 0.06297, 0.04562, 0.04768, 0.05033, 0.05238, 0.03338, 0.03487, 0.03673, 0.03832, 0.01759, 0.01839,
@@ -81,13 +63,9 @@ function coefficient(effect: AircraftPropeller, table: readonly number[], advanc
   return low + (high - low) * j.t;
 }
 
-/** What the propeller does at one shaft speed. */
 export interface PropellerLoads {
-  /** Thrust along the shaft, N. */
   thrust: number;
-  /** Torque the propeller takes from the shaft, N·m. */
   torque: number;
-  /** Torque the engine gives, N·m. */
   engineTorque: number;
 }
 
@@ -114,11 +92,7 @@ export function propellerLoads(effect: AircraftPropeller, omega: number, axial: 
   return out;
 }
 
-/**
- * Delivered thrust at a strength: a blend from the simple thrust to the propeller's up to strength 1, then the
- * propeller's thrust times its ratio to the simple thrust raised to the extra strength.
- * @capability aircraft-propeller propeller thrust under a strength dial
- */
+/** @capability aircraft-propeller propeller thrust under a strength dial */
 export function propellerThrust(simple: number, physical: number, strength: number): number {
   if (strength <= 0) return simple;
   if (strength <= 1) return simple + (physical - simple) * strength;

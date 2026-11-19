@@ -7,19 +7,11 @@ import { evalCurve, type Curve } from "../progression/leveling";
  * two can never drift out of sync across a serialize/hydrate round-trip.
  */
 export interface UnlockPointsState {
-  /** Total points ever granted; unaffected by spending, refunds, or respec. */
   earned: number;
-  /** Committed unlocks as `unlockId → cost paid`. Sums to the currently spent total. */
   unlocked: Readonly<Record<string, number>>;
 }
 
-/** Options for {@link UnlockPoints.spend}. */
 export interface SpendOptions {
-  /**
-   * Injected prerequisite gate, checked before any points are deducted. Return `false` to
-   * reject with `"missing-prerequisites"`. Compose with `economy/techTree` without coupling —
-   * e.g. `{ requires: () => techTree.canUnlock(userId, id).ok }` — or any game-defined rule.
-   */
   requires?: () => boolean;
 }
 
@@ -30,10 +22,8 @@ export type SpendRejection =
   | "missing-prerequisites"
   | "insufficient-points";
 
-/** Result of {@link UnlockPoints.spend}: the new `available` balance on success, else a reason. */
 export type SpendResult = { ok: true; available: number } | { ok: false; reason: SpendRejection };
 
-/** Configuration for {@link createUnlockPoints}. */
 export interface UnlockPointsConfig {
   /**
    * Points granted for *reaching* a level, evaluated by {@link UnlockPoints.grantForLevel} and
@@ -41,46 +31,27 @@ export interface UnlockPointsConfig {
    * fine (front-loaded, milestone `steps`, etc.). Defaults to one point per level.
    */
   perLevel?: Curve;
-  /** Points banked before any leveling — a starting unlock budget. Default `0`. */
   start?: number;
-  /** Rehydrate from a prior {@link UnlockPoints.snapshot}. */
   state?: UnlockPointsState;
 }
 
-/**
- * A spendable unlock-point economy: a pool you earn (per level or by direct grant) and spend to
- * unlock nodes, with per-unlock refunds and a full respec.
- */
 export interface UnlockPoints {
-  /** Unspent points on hand (`earned − spent`). */
   available(): number;
   /** Lifetime points ever granted; never reduced by spending or respec. */
   earned(): number;
-  /** Points currently committed to unlocks (`Σ` of every unlock cost). */
   spent(): number;
-  /** Bank an arbitrary point grant (quest reward, difficulty bonus). Non-positive/non-finite is ignored. */
   grant(amount: number): void;
-  /** Bank the `perLevel` grant for reaching `level`; returns the amount actually added. */
   grantForLevel(level: number): number;
-  /** Bank grants for every level in `(fromLevel, toLevel]`; returns the total added. */
   grantOnLevelUp(fromLevel: number, toLevel: number): number;
-  /** True when `available() >= cost`. */
   canAfford(cost: number): boolean;
   /** Deduct `cost` and record `unlockId`, unless rejected (see {@link SpendResult}). */
   spend(unlockId: string, cost: number, opts?: SpendOptions): SpendResult;
-  /** True once `unlockId` has been spent on and not refunded. */
   isUnlocked(id: string): boolean;
-  /** Points paid for `id`, or `0` if it is not unlocked. */
   costOf(id: string): number;
-  /** Every currently unlocked id, in insertion order. */
   unlockedIds(): string[];
-  /** Refund a single unlock, returning its cost to `available`. Returns `false` if not unlocked. */
   refund(unlockId: string): boolean;
-  /** Mindwipe: refund every unlock and clear the recorded set, keeping `earned`. Returns points refunded. */
   respec(): number;
-  /** Plain serializable snapshot; safe to `JSON.stringify` and later {@link hydrate}. */
   snapshot(): UnlockPointsState;
-  /** Replace all state from a prior {@link snapshot}, discarding invalid entries. */
   hydrate(state: UnlockPointsState): void;
 }
 

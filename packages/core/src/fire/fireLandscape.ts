@@ -7,9 +7,7 @@ import { emberIgnitionProbability, surfaceFireSpotDistance, torchingTreeSpotDist
 import { ellipseEccentricity, flameLength, scorchHeight, surfaceFuelbed, surfaceSpread, type SurfaceFuelbed, type WindLimit } from "./surfaceFire";
 import { windAdjustmentFactor } from "./windAdjustment";
 
-/** A forest stand over a cell: the canopy that shelters the wind and can carry crown fire. */
 export interface CanopyStand extends CanopyFuel {
-  /** Canopy cover, fraction of ground under crowns. */
   cover: number;
 }
 
@@ -17,25 +15,18 @@ export interface CanopyStand extends CanopyFuel {
 export interface FireWeather {
   /** Open wind 6.1 m (20 ft) above the vegetation, m/s. */
   twentyFootWind: number;
-  /** Direction the wind blows towards. */
   windDirection: number;
-  /** Air temperature, °C. */
   airTemperatureC: number;
-  /** Fuel moisture everywhere a moisture field does not cover. */
   moisture: FuelMoisture;
   /** Temperature of sunlit fine fuel, °C, for ember ignition; defaults to the air temperature. */
   fuelTemperatureC?: number;
 }
 
-/** Per-cell fuel moisture that changes over time (a dead-fuel moisture model, irrigation, rain). */
 export interface FireMoistureField {
-  /** Bumped whenever any cell's moisture changes. */
   readonly version: number;
-  /** Moisture of one cell. */
   moistureAt(cell: number): FuelMoisture;
 }
 
-/** Live policy of a fire landscape; every value can change during play with `retune`. */
 export interface FireTuning {
   /** Neighbour stencil of the travel-time solver: 8, 16 or 32 directions (Finney 2002). */
   stencil: 8 | 16 | 32;
@@ -44,17 +35,13 @@ export interface FireTuning {
   crownFire: boolean;
   /** Let embers start spot fires ahead of the front (Albini 1979, 1983). */
   spotting: boolean;
-  /** Chance a torching or crowning cell lofts an ember. */
   crownEmberChance: number;
-  /** Chance a surface-burning cell lofts an ember. */
   surfaceEmberChance: number;
   /** Lateral scatter of ember landing directions around the wind, radians (full width). */
   emberScatter: number;
-  /** Tree species, DBH (m) and trees torching together, for torching-tree ember lofting. */
   emberSpecies: TorchingSpecies;
   emberDbhM: number;
   emberTrees: number;
-  /** Most ignition events processed per step; spread past it waits for the next step. */
   maxEventsPerStep: number;
 }
 
@@ -73,28 +60,20 @@ export const DEFAULT_FIRE_TUNING: FireTuning = {
   maxEventsPerStep: 200_000,
 };
 
-/** Size, terrain, fuel and canopy of a fire landscape. */
 export interface FireLandscapeConfig {
   cols: number;
   rows: number;
-  /** Cell edge, m. */
   cellSize: number;
-  /** World position of the grid's (0,0) corner. */
   originX?: number;
   originZ?: number;
-  /** Fuel model palette. */
   fuels: readonly FuelModel[];
-  /** Palette index of each cell, row-major (`row * cols + col`). */
   fuel: ArrayLike<number>;
   /** Ground elevation of each cell centre, m; flat when omitted. */
   elevation?: ArrayLike<number>;
-  /** Canopy palette and each cell's index into it (negative or out of range for none). */
   canopies?: readonly CanopyStand[];
   canopy?: ArrayLike<number>;
-  /** Seed for ember spotting. */
   seed: string | number;
   tuning?: Partial<FireTuning>;
-  /** Cell budget; construction throws past it. Default 1 048 576. */
   maxCells?: number;
 }
 
@@ -102,20 +81,15 @@ export interface FireLandscapeConfig {
 export type FireBurnState = "unburnt" | "flaming" | "smouldering" | "burnt";
 const STATES: readonly FireBurnState[] = ["unburnt", "flaming", "smouldering", "burnt"];
 
-/** How fire moved through a cell. */
 export type FireCellKind = "none" | "surface" | "torching" | "crowning";
 const KINDS: readonly FireCellKind[] = ["none", "surface", "torching", "crowning"];
 
-/** One cell's fire record, for game logic; renderers read the typed arrays of {@link FireLandscape.layers}. */
 export interface FireCellReading {
   state: FireBurnState;
   kind: FireCellKind;
-  /** Time the front reached the cell, s; Infinity if it has not. */
   arrival: number;
-  /** Byram fireline intensity of the front as it crossed, kW/m. */
   intensity: number;
   flameLength: number;
-  /** Van Wagner crown scorch height, m. */
   scorchHeight: number;
   /** Share of the surface fuel consumed, 0..1: how black the ground is. */
   char: number;
@@ -123,15 +97,11 @@ export interface FireCellReading {
   ash: number;
   /** Fuel still on the cell (surface and canopy), kg/m². */
   fuelLeft: number;
-  /** True if an ember lit the cell. */
   spotted: boolean;
 }
 
-/** Typed per-cell outputs for renderers, row-major, updated in place every step. */
 export interface FireLayers {
-  /** 0 unburnt, 1 flaming, 2 smouldering, 3 burnt. */
   state: Uint8Array;
-  /** 0 none, 1 surface, 2 torching, 3 crowning. */
   kind: Uint8Array;
   arrival: Float64Array;
   intensity: Float32Array;
@@ -142,7 +112,6 @@ export interface FireLayers {
   fuelLeft: Float32Array;
 }
 
-/** A landscape fire's whole state as JSON-safe values. */
 export interface FireLandscapeSnapshot {
   version: 1;
   time: number;
@@ -166,7 +135,6 @@ export interface FireLandscapeSnapshot {
   active: number[];
 }
 
-/** Counters from the last step. */
 export interface FireStepStats {
   ignitions: number;
   embersLofted: number;
@@ -175,35 +143,26 @@ export interface FireStepStats {
   budgetHit: boolean;
 }
 
-/** A fire growing over a landscape of fuel, terrain and canopy. */
 export interface FireLandscape {
   readonly cols: number;
   readonly rows: number;
   readonly cellSize: number;
-  /** World position of the grid's (0,0) corner. */
   readonly originX: number;
   readonly originZ: number;
-  /** Simulation clock, s. */
   readonly time: number;
   readonly layers: FireLayers;
   /** Advance the clock by `dt` seconds under `weather`. */
   step(dt: number, weather: FireWeather): FireStepStats;
-  /** Light a cell now (or at a later `time`). */
   ignite(col: number, row: number, time?: number): void;
-  /** Light the cell under a world position; false when it is off the grid. */
   igniteAt(x: number, z: number, time?: number): boolean;
   /** Put out a flaming or smouldering cell now; false when it is not burning. Fronts it already launched still
    * arrive unless the fuel ahead cannot burn (wet it through the moisture field first). */
   extinguish(col: number, row: number): boolean;
-  /** Change a cell's fuel (a dug line, a cleared yard, new growth). */
   setFuel(col: number, row: number, fuelIndex: number): void;
-  /** Feed fuel moisture per cell; `null` uses the weather's moisture everywhere. */
   setMoistureField(field: FireMoistureField | null): void;
   cell(col: number, row: number): FireCellReading;
   cellIndexAt(x: number, z: number): number;
-  /** Cells currently flaming or smouldering. */
   activeCells(): readonly number[];
-  /** Area burnt or burning, m². */
   burnedArea(): number;
   stats(): FireStepStats;
   snapshot(): FireLandscapeSnapshot;
@@ -227,7 +186,6 @@ const OFFSETS_32 = [
 
 /** Mineral content of wildland fuel (Albini 1976): the share of consumed mass left as ash. */
 const ASH_FRACTION = 0.0555;
-/** Anderson 1969 residence time, s, of fuel with surface-area-to-volume σ (1/m): 384/σ min with σ in 1/ft. */
 function burnoutSeconds(savrPerM: number): number {
   return savrPerM > 0 ? (384 / (savrPerM * 0.3048)) * 60 : 0;
 }
@@ -491,7 +449,6 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
     bKind[i] = k;
   }
 
-  /** Rate along a ray at world direction `phi` from the cell's ellipse focus, on the slope surface. */
   function rayRate(i: number, phi: number): number {
     behaviour(i);
     const head = bHead[i] ?? 0;
@@ -506,7 +463,6 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
     return tune.stencil === 8 ? OFFSETS_8 : tune.stencil === 16 ? OFFSETS_16 : OFFSETS_32;
   }
 
-  /** Travel time from cell (c,r) to (c+dx, r+dz): Finney's segment integration through crossed cells. */
   function travel(c: number, r: number, dx: number, dz: number): { time: number; rate: number } {
     const pieces = 2 * Math.max(Math.abs(dx), Math.abs(dz));
     const phi = Math.atan2(dz, dx);

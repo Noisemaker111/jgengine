@@ -6,7 +6,6 @@
 import { describeStep, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
 import { withStepDeadline } from "./hangReport";
 
-/** One step's outcome, the same shape `--log` writes as a JSONL line. */
 export interface DriveStepRecord {
   index: number;
   name: string;
@@ -17,15 +16,10 @@ export interface DriveStepRecord {
   detail: string;
 }
 
-/** What the loop needs from its host: the step work, its two output sinks and a clock. */
 export interface DriveStepRunnerDeps {
-  /** Do one step's work and return its timing detail ("before 18ms after 21ms"). */
   run(step: CaptureStep, index: number): Promise<string>;
-  /** Where a human reads the run: one line per step, then the summary. */
   line(text: string): void;
-  /** Where a later agent reads it without scrolling stdout: one row per step. */
   record?(entry: DriveStepRecord): void;
-  /** Wall clock; a lockstep recording also reports virtual time. */
   now(): number;
   virtualNow?(): number;
   /** The graphics tier the page resolved, so the summary states what the run measured. */
@@ -37,7 +31,6 @@ export interface DriveStepRunnerDeps {
   stepTimeoutMs?(step: CaptureStep, index: number): number;
 }
 
-/** Totals for the run, printed before a failure leaves the function. */
 export interface DriveStepSummary {
   passed: number;
   failed: number;
@@ -45,10 +38,6 @@ export interface DriveStepSummary {
   virtualMs: number;
 }
 
-/**
- * Run steps in order and stop at the first failure. A passing run prints one line; a failing run
- * prints each step it got through, the failure and the totals, from a `finally`.
- */
 export async function runDriveSteps(steps: readonly CaptureStep[], deps: DriveStepRunnerDeps): Promise<DriveStepSummary> {
   let passed = 0;
   let failed = 0;

@@ -13,7 +13,6 @@ export interface ResourcePoolConfig {
   decayPerSecond?: number;
 }
 
-/** Complete serializable state for a {@link ResourcePool}. */
 export interface ResourcePoolSnapshot {
   current: number;
   max: number;
@@ -21,7 +20,6 @@ export interface ResourcePoolSnapshot {
   decayPerSecond: number;
 }
 
-/** Runtime tuning patch for {@link ResourcePool.retune} — omitted fields keep their current value. */
 export interface ResourcePoolRetune {
   max?: number;
   regenPerSecond?: number;
@@ -40,19 +38,12 @@ export interface ResourcePool {
   tick(dtSeconds: number): void;
   isFull(): boolean;
   isEmpty(): boolean;
-  /** The whole pool as plain data — save it, ship it to a host, diff it in a test. */
   snapshot(): ResourcePoolSnapshot;
-  /** Adopt a snapshot, replacing current value and tuning. */
   restore(state: ResourcePoolSnapshot): void;
-  /** Change regen/decay/max mid-run (a buff, a difficulty change) without rebuilding the pool. */
   retune(patch: ResourcePoolRetune): void;
 }
 
-/**
- * A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
- *
- * @capability resource-pool a regenerating pool like mana or stamina that actions spend from
- */
+/** @capability resource-pool a regenerating pool like mana or stamina that actions spend from */
 export function createResourcePool(config: ResourcePoolConfig): ResourcePool {
   let regenPerSecond = Math.max(0, config.regenPerSecond ?? 0);
   let decayPerSecond = Math.max(0, config.decayPerSecond ?? 0);

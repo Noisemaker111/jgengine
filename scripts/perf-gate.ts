@@ -59,16 +59,13 @@ export const GATE_SIZE = { width: 1600, height: 900 } as const;
 
 export interface GateArgs {
   games: string[];
-  /** The tier every game is measured at; high by default, undefined for draft. */
   quality?: GraphicsTier;
-  /** Half viewport at the low tier, for a smoke pass over the gate itself. */
   draft: boolean;
   seconds: number;
   jobs: number;
   /** `dev` (default for now): the Vite dev server; `--production`: the build players get. */
   build: PerfBuild;
 }
-
 
 export function parseGateArgs(argv: readonly string[]): GateArgs {
   let games: string[] = [...FRAME_GAMES];
@@ -140,7 +137,6 @@ const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality l
 
 export interface GameOutcome {
   game: string;
-  /** Over the frame budget and listed as known; reported, not failed. */
   known?: string;
   /** The printed ok line, or null when the game failed or was not measured. */
   summary: string | null;

@@ -8,7 +8,6 @@ import { earn, spend } from "../cash";
 import { cityEvent, cityOf } from "../cityRuntime";
 import { streetPlayOf } from "../streetPlay";
 
-/** A business lot as the scene authors it: which city kind it becomes, its price and where it stands. */
 export interface FrontLot {
   slot: string;
   kind: string;
@@ -29,7 +28,6 @@ export const FRONT_LOTS: readonly FrontLot[] = editorLayers.markers
 
 /** How close the player must stand to a front to buy, collect or fix it, metres. */
 const FRONT_REACH = 6;
-/** Share of the price a wrecked front costs to reopen. */
 const REPAIR_SHARE = 0.3;
 const RAIDERS = 3;
 /** Metres from its front a raider stands when the raid starts. */
@@ -61,7 +59,6 @@ export function buyRefusal(ctx: GameContext, lot: FrontLot): string | null {
   return null;
 }
 
-/** What a wrecked front costs to reopen. */
 export const repairCost = (lot: FrontLot): number => Math.round(lot.price * REPAIR_SHARE);
 
 export function registerFronts(ctx: GameContext): void {
@@ -116,7 +113,6 @@ export function registerFronts(ctx: GameContext): void {
   });
 }
 
-/** One prompt per lot the player stands at: buy it, or collect and fix the one they own. */
 export function frontPrompts(ctx: GameContext, at: readonly [number, number, number]): PositionedPrompt[] {
   const out: PositionedPrompt[] = [];
   const world = cityOf(ctx);
@@ -136,7 +132,6 @@ export function frontPrompts(ctx: GameContext, at: readonly [number, number, num
   return out;
 }
 
-/** The label a front prompt shows. */
 export function frontPromptLabel(ctx: GameContext, id: string): string | null {
   const [, verb, slot] = id.split(":");
   const lot = slot === undefined ? undefined : lotBySlot(slot);
@@ -146,7 +141,6 @@ export function frontPromptLabel(ctx: GameContext, id: string): string | null {
   return `Collect takings · $${Math.floor(cityOf(ctx).num("fronts.takings")).toLocaleString()}`;
 }
 
-/** World hook: a raid started on a front; its crew turns up at the door. */
 export function raidStarted(ctx: GameContext, call: WorldHookCall): void {
   if (call.target === null) return;
   spawnRaiders(ctx, call.target);
@@ -156,7 +150,6 @@ export function raidStarted(ctx: GameContext, call: WorldHookCall): void {
   ctx.game.feedback.cue("deny", text);
 }
 
-/** World hook: a raid ran out its clock; the crew empties half the safe on the way out. */
 export function raidLost(ctx: GameContext, call: WorldHookCall): void {
   if (call.target === null) return;
   const world = cityOf(ctx);
@@ -167,7 +160,6 @@ export function raidLost(ctx: GameContext, call: WorldHookCall): void {
   ctx.game.notices.push({ text: `${lot?.label ?? "Your front"} got wrecked${stolen > 0 ? ` and $${stolen} walked out the door` : ""}. Pay to reopen it.`, tone: "warn" });
 }
 
-/** Raids whose crew is on the street this session; a raid restored from a save is not in it yet. */
 const raidsSpawned = perContext((): Set<string> => new Set());
 
 function spawnRaiders(ctx: GameContext, instanceId: string): void {
@@ -211,7 +203,6 @@ export function tickFronts(ctx: GameContext): void {
   }
 }
 
-/** Force a raid on the player's first standing front, for a job that is about defending one. */
 export function startRaidOnFirstFront(ctx: GameContext): boolean {
   const world = cityOf(ctx);
   const front = world.instances("front").find((entry) => world.fact(`${entry.id}.hit`) !== true && world.fact(`${entry.id}.raid`) !== true);
@@ -220,7 +211,6 @@ export function startRaidOnFirstFront(ctx: GameContext): boolean {
   return true;
 }
 
-/** What the HUD lists for each lot. */
 export interface FrontView {
   slot: string;
   label: string;

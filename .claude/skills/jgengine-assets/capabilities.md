@@ -2,298 +2,72 @@
 
 # jgengine-assets — capability index
 
-Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
-
-## asset-budgets — enforce game-owned per-model byte, triangle, and texture-dimension limits
-
-- `checkAssetBudget` (function) · `import { checkAssetBudget } from "@jgengine/assets/assetBudget"`
-- `createAssetBudgetReport` (function) · `import { createAssetBudgetReport } from "@jgengine/assets/assetBudget"`
-- `readGlbFileMetrics` (function) · `import { readGlbFileMetrics } from "@jgengine/assets/assetBudget"`
-- `readGlbMetrics` (function) · `import { readGlbMetrics } from "@jgengine/assets"`
-
-## asset-byte-classification — identify custom asset formats from bytes instead of filename extensions
-
-- `classifyAssetFile` (function) · `import { classifyAssetFile } from "@jgengine/assets"`
-
-## asset-import-validation — validate game-owned multi-file asset descriptions before ingest
-
-- `validateImportSpec` (function) · `import { validateImportSpec } from "@jgengine/assets"`
-
-## asset-library — thousands of licensed models, characters, materials, HDRIs and icons with credit data
-
-- `assetLibrary` (function) · `import { assetLibrary } from "@jgengine/assets/library/libraryIndex"`
-
-## asset-reference-integrity — validate asset references against the provisioning contract (dangling / committed / provisioned)
-
-- `validateAssetReferences` (function) · `import { validateAssetReferences } from "@jgengine/assets"`
-
-## clip-metadata — read a GLB's animation clip names for the asset index at reindex
-
-- `readGlbClips` (function) · `import { readGlbClips } from "@jgengine/assets/dims"`
-
-## clip-retarget — retarget a clip between differently built humanoid skeletons in an asset pipeline
-
-- `retargetClipByRest` (function) · `import { retargetClipByRest } from "@jgengine/assets/clipRetarget"`
-
-## credits-for-asset-ids — build a credits document from the asset ids a game ships
-
-- `creditsForAssetIds` (function) · `import { creditsForAssetIds } from "@jgengine/assets/credits"`
-
-## credits-for-source-ids — build a credits document from the asset source ids a game declares
-
-- `creditsForSourceIds` (function) · `import { creditsForSourceIds } from "@jgengine/assets/credits"`
-
-## credits-for-sources — generate credit sections from asset pack metadata, grouped by license or provider
-
-- `creditsForSources` (function) · `import { creditsForSources } from "@jgengine/assets/credits"`
-
-## describe-asset-match — print a ranked asset match as one readable line
-
-- `describeAssetMatch` (function) · `import { describeAssetMatch } from "@jgengine/assets"`
-
-## entity-look — pick one of a model's alternative bodies per entity, for character creators and skins
-
-- `modelForLook` (function) · `import { modelForLook } from "@jgengine/core/model/modelLook"`
-
-## find-assets — look up many asset names at once: licence, game path, on-disk state and where else to look
-
-- `findAssets` (function) · `import { findAssets } from "@jgengine/assets/findAssets"`
-
-## font-library — pick a display and a body font from the shipped OFL families by id
-
-- `libraryFontPairing` (function) · `import { libraryFontPairing } from "@jgengine/assets/catalogs/fontLibrary"`
-
-## gltf-material-inspection — inspect material slots and texture metadata directly from complete GLB bytes
-
-- `inspectGlbMaterials` (function) · `import { inspectGlbMaterials } from "@jgengine/assets/gltfMaterials"`
-- `inspectGltfMaterials` (function) · `import { inspectGltfMaterials } from "@jgengine/assets/gltfMaterials"`
-
-## hair-card-geometry — validate authored ribbon guides and their vertex allocation ceiling
-
-- `validateHairCardAuthoring` (function) · `import { validateHairCardAuthoring } from "@jgengine/core/material/hairCards"`
-
-## hdri-library — pick a shipped CC0 HDRI (noon, clear sky, golden hour, harbour sunset, industrial sunset, overcast, dusk, night city, industrial interior, forest, snow) by id
-
-- `hdriEnvironment` (function) · `import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary"`
-
-## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
-
-- `heavyModels` (function) · `import { heavyModels } from "@jgengine/core/model/modelLoad.draw"`
-
-## imported-rig-node — resolve original imported bone and slot names with ambiguity diagnostics
-
-- `resolveRigNode` (function) · `import { resolveRigNode } from "@jgengine/core/model/rigNode.draw"`
-
-## library-building-surface — paint a building part from a named library material
-
-- `libraryBuildingSurface` (function) · `import { libraryBuildingSurface } from "@jgengine/assets/catalogs/materialLibrary"`
-
-## library-credits — generate in-game credits from the library assets a game ships
-
-- `libraryCreditSections` (function) · `import { libraryCreditSections } from "@jgengine/assets/library/assetLibrary"`
-
-## library-credits-document — a ready credits document from the library assets a game ships
-
-- `libraryCredits` (function) · `import { libraryCredits } from "@jgengine/assets/library/assetLibrary"`
-
-## library-foliage-thinning — thin a foliage scan's leaf clusters for a lighter level while keeping canopy cover
-
-- `thinIslands` (function) · `import { thinIslands } from "@jgengine/assets/modelLibraryPull"`
-
-## library-icon-credits — credit game-icons.net icons per artist from the keys a game ships
-
-- `libraryIconCredits` (function) · `import { libraryIconCredits } from "@jgengine/assets/library/libraryIcons"`
-
-## library-icon-url — resolve a game-icons.net library key to the icon a game serves
-
-- `libraryIconUrl` (function) · `import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons"`
-
-## library-license-gate — refuse any asset licence outside CC0, public domain, MIT and CC BY
-
-- `normalizeLibraryLicense` (function) · `import { normalizeLibraryLicense } from "@jgengine/assets/library/libraryLicense"`
-
-## library-model — draw a realistic library model at real size with its near and far LOD
-
-- `libraryModel` (function) · `import { libraryModel } from "@jgengine/assets"`
-
-## library-pull — fetch one library asset (model, material, HDRI, icon pack) into the folder a game serves it from
-
-- `pullLibraryEntry` (function) · `import { pullLibraryEntry } from "@jgengine/assets/library/libraryPull"`
-
-## library-search — search thousands of licensed models, materials, HDRIs and icons by words and tags
-
-- `searchLibrary` (function) · `import { searchLibrary } from "@jgengine/assets/library/assetLibrary"`
-
-## library-served-path — the public folder and URL a pulled library asset is served from
-
-- `libraryServedPath` (function) · `import { libraryServedPath } from "@jgengine/assets/library/libraryServed"`
-
-## library-surface-parameters — carry a named library material's response into authored overrides
-
-- `librarySurfaceParameters` (function) · `import { librarySurfaceParameters } from "@jgengine/assets/catalogs/materialLibrary"`
-
-## library-surface-scan — put a named scanned material on roads, terrain or kit models in one call
-
-- `librarySurfaceScan` (function) · `import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary"`
-
-## library-terrain-material — put a named library material on terrain without faking optional maps
-
-- `libraryTerrainMaterial` (function) · `import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary"`
-
-## library-terrain-surface — scanned library ground for a terrain's ground, sand or rock role, with slope projection and height blending
-
-- `libraryTerrainSurface` (function) · `import { libraryTerrainSurface } from "@jgengine/assets/catalogs/materialLibrary"`
-
-## library-validate — check every library entry has an allowed licence and full credit fields
-
-- `validateLibrary` (function) · `import { validateLibrary } from "@jgengine/assets/library/assetLibrary"`
-
-## looks-credits — credit lines for the shipped HDRIs, colour grades and fonts a game uses
-
-- `creditsForLooks` (function) · `import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits"`
-
-## lut-grade-library — pick a shipped colour grade by id for a game's post-processing
-
-- `lutGrade` (function) · `import { lutGrade } from "@jgengine/assets/catalogs/lutGrades"`
-
-## makehuman-character — build a rigged, animated CC0 MakeHuman person from its base mesh and targets into one GLB
-
-- `pullMakeHumanCharacter` (function) · `import { pullMakeHumanCharacter } from "@jgengine/assets/makehumanPull"`
-
-## material-appearance-signals — update one owned material from wetness and local card exposure without global lighting edits
-
-- `applyMaterialAppearanceSignals` (function) · `import { applyMaterialAppearanceSignals } from "@jgengine/core/material/appearanceSignals.draw"`
-- `captureMaterialAppearanceBaseline` (function) · `import { captureMaterialAppearanceBaseline } from "@jgengine/core/material/appearanceSignals.draw"`
-- `restoreMaterialAppearanceBaseline` (function) · `import { restoreMaterialAppearanceBaseline } from "@jgengine/core/material/appearanceSignals.draw"`
-- `setHairCardLightExposure` (function) · `import { setHairCardLightExposure } from "@jgengine/core/material/materialAsset.draw"`
-
-## material-assets — clone and configure an imported PBR slot while retaining its omitted physical features and maps
-
-- `applyMaterialAsset` (function) · `import { applyMaterialAsset } from "@jgengine/core/material/materialAsset.draw"`
-- `applyMaterialAssignments` (function) · `import { applyMaterialAssignments } from "@jgengine/core/material/materialAsset.draw"`
-- `leasedMaterialMeshDraw` (function) · `import { leasedMaterialMeshDraw } from "@jgengine/core/material/materialAsset.draw"`
-- `materialAssetMaterial` (function) · `import { materialAssetMaterial } from "@jgengine/core/material/materialAsset.draw"`
-- `materialAssetSurface` (function) · `import { materialAssetSurface } from "@jgengine/core/material/materialAsset.draw"`
-- `materialAssetSwatchDraw` (function) · `import { materialAssetSwatchDraw } from "@jgengine/core/material/materialAsset.draw"`
-
-## material-feature-requirements — Declare material shader requirements when authors add maps or appearance adapters.
-
-- `materialCapabilitiesForAsset` (function) · `import { materialCapabilitiesForAsset } from "@jgengine/core/material/materialAsset"`
-
-## material-resource-metrics — inspect loaded texture byte bounds and physical, coverage and transmission participation
-
-- `materialResourceMetrics` (function) · `import { materialResourceMetrics } from "@jgengine/core/material/materialAsset.draw"`
-
-## material-slot-selection — match named meshes and imported material slots independently
-
-- `matchesMaterialSelector` (function) · `import { matchesMaterialSelector } from "@jgengine/core/material/materialAsset"`
-- `validateMaterialAssignmentTargets` (function) · `import { validateMaterialAssignmentTargets } from "@jgengine/core/material/materialAsset.draw"`
-- `validateMaterialAssignments` (function) · `import { validateMaterialAssignments } from "@jgengine/core/material/materialAsset"`
-
-## material-slots — discover exact imported mesh and material selectors with UV and tangent prerequisites
-
-- `inspectModelMaterialSlots` (function) · `import { inspectModelMaterialSlots } from "@jgengine/core/material/materialAsset.draw"`
-
-## material-surface-validation — diagnose unsupported or physically invalid sparse surface edits
-
-- `validateMaterialSurface` (function) · `import { validateMaterialSurface } from "@jgengine/core/material/materialAsset"`
-
-## material-texture-metadata — configure owned map views with semantic color space, packed channels, UV transforms and sampling
-
-- `configureMaterialTexture` (function) · `import { configureMaterialTexture } from "@jgengine/core/material/materialAsset.draw"`
-
-## material-triplanar — render a material asset on world geometry without UVs
-
-- `triplanarAssetMaterial` (function) · `import { triplanarAssetMaterial } from "@jgengine/core/material/triplanarMaterial.draw"`
-
-## model-fallbacks — models the loader replaced with a placeholder, for capture and smoke assertions
-
-- `modelLoadFallbacks` (function) · `import { modelLoadFallbacks } from "@jgengine/core/model/modelLoad.draw"`
-
-## model-instance — clone a loaded model for independent styling and animation
-
-- `cloneModelScene` (function) · `import { cloneModelScene } from "@jgengine/core/model/modelRender.draw"`
-- `disposeModelScene` (function) · `import { disposeModelScene } from "@jgengine/core/model/modelRender.draw"`
-
-## model-library — ask for a realistic licensed model by what it is ("street lamp", "office desk")
-
-- `findLibraryModel` (function) · `import { findLibraryModel } from "@jgengine/assets"`
-
-## model-library-authored — build an engine-authored library model (server rack, robot arm) without a download
-
-- `buildAuthoredModel` (function) · `import { buildAuthoredModel } from "@jgengine/assets/modelLibraryAuthored"`
-
-## model-library-rigged — pull a rigged, animated Microsoft Rocketbox human or animal into a game as one GLB
-
-- `pullRocketboxModel` (function) · `import { pullRocketboxModel } from "@jgengine/assets/rocketboxPull"`
-
-## model-load-idle — how long the shared GLB loader has been idle, for capture settle waits
-
-- `modelLoadIdleMs` (function) · `import { modelLoadIdleMs } from "@jgengine/core/model/modelLoad.draw"`
-
-## model-load-starts — count of model streaming bursts, for capture quiescence checks
-
-- `modelLoadStarts` (function) · `import { modelLoadStarts } from "@jgengine/core/model/modelLoad.draw"`
-
-## model-loader-paths — Point Draco and KTX2 decoding at self-hosted decoder files
-
-- `configureModelLoaders` (function) · `import { configureModelLoaders } from "@jgengine/core/model/modelLoad.draw"`
-
-## model-lod-build — write simplified mesh levels and a baked impostor atlas beside a model file
-
-- `buildModelLods` (function) · `import { buildModelLods } from "@jgengine/assets/modelLodBuild"`
-
-## model-triangle-budget — Raise or lower the per-model triangle budget
-
-- `setModelTriangleBudget` (function) · `import { setModelTriangleBudget } from "@jgengine/core/model/modelLoad.draw"`
-
-## model-wind — sway a foliage model in the shared gust field
-
-- `applyModelWind` (function) · `import { applyModelWind } from "@jgengine/core/model/modelWind.draw"`
-
-## rank-assets — find the model, pack, material, sprite, HUD component or icon for a word, best first
-
-- `rankAssets` (function) · `import { rankAssets } from "@jgengine/assets"`
-
-## rocketbox-clip — pull one Microsoft Rocketbox animation clip as a skeleton-only GLB that plays on any Rocketbox human
-
-- `pullRocketboxClip` (function) · `import { pullRocketboxClip } from "@jgengine/assets/rocketboxPull"`
-
-## sources-for-asset-ids — resolve the asset packs behind the ids a game actually ships
-
-- `sourcesForAssetIds` (function) · `import { sourcesForAssetIds } from "@jgengine/assets/credits"`
-
-## sources-for-source-ids — resolve the asset pack metadata behind the source ids a game declares
-
-- `sourcesForSourceIds` (function) · `import { sourcesForSourceIds } from "@jgengine/assets/credits"`
-
-## starter-packs — themed CC0 model ids (props/nature/urban) ready for objectModels
-
-- `StarterTheme` (type) · `import { StarterTheme } from "@jgengine/assets"`
-
-## static-prefab-export — export editable prefab compositions with source materials and collision metadata
-
-- `bakeStaticPrefab` (function) · `import { bakeStaticPrefab } from "@jgengine/assets/staticPrefabBake"`
-
-## static-transforms — static-transforms
-
-- `freezeStaticTransforms` (function) · `import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
-- `refreshStaticTransforms` (function) · `import { refreshStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
-- `thawStaticTransforms` (function) · `import { thawStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
-
-## surface-material-generator — seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
-
-- `SURFACE_MATERIAL_GENERATOR` (const) · `import { SURFACE_MATERIAL_GENERATOR } from "@jgengine/core/material/surfaceMaterialGenerator"`
-- `bakeSurfaceMaterial` (function) · `import { bakeSurfaceMaterial } from "@jgengine/core/material/surfaceMaterialGenerator"`
-- `bakeSurfaceMaterialJob` (function) · `import { bakeSurfaceMaterialJob } from "@jgengine/core/material/surfaceMaterialGenerator"`
-- `bakeSurfaceMaterialShared` (function) · `import { bakeSurfaceMaterialShared } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
-- `bakeSurfaceMaterialSharedJob` (function) · `import { bakeSurfaceMaterialSharedJob } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
-- `isSurfaceMaterialMaps` (function) · `import { isSurfaceMaterialMaps } from "@jgengine/core/material/surfaceMaterialGenerator"`
-- `surfaceMaterialArrayTextures` (function) · `import { surfaceMaterialArrayTextures } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
-- `surfaceMaterialMeta` (function) · `import { surfaceMaterialMeta } from "@jgengine/core/material/surfaceMaterialGenerator"`
-- `surfaceMaterialStandardMaps` (function) · `import { surfaceMaterialStandardMaps } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
-
-## toon-ramp — cel-shading ramp a toon material reads: flat light bands with an optional soft edge
-
-- `ToonRamp` (interface) · `import { ToonRamp } from "@jgengine/core/material/toonRamp"`
-- `toonRampMaterial` (function) · `import { toonRampMaterial } from "@jgengine/core/material/toonRamp.draw"`
+Discover with `bun run find <intent>` or `npx jgengine find <intent>`.
+
+- **asset-budgets** — enforce game-owned per-model byte, triangle, and texture-dimension limits · `import { readGlbMetrics } from "@jgengine/assets"` · `import { checkAssetBudget, createAssetBudgetReport, readGlbFileMetrics } from "@jgengine/assets/assetBudget"`
+- **asset-byte-classification** — identify custom asset formats from bytes instead of filename extensions · `import { classifyAssetFile } from "@jgengine/assets"`
+- **asset-import-validation** — validate game-owned multi-file asset descriptions before ingest · `import { validateImportSpec } from "@jgengine/assets"`
+- **asset-library** — thousands of licensed models, characters, materials, HDRIs and icons with credit data · `import { assetLibrary } from "@jgengine/assets/library/libraryIndex"`
+- **asset-reference-integrity** — validate asset references against the provisioning contract (dangling / committed / provisioned) · `import { validateAssetReferences } from "@jgengine/assets"`
+- **clip-metadata** — read a GLB's animation clip names for the asset index at reindex · `import { readGlbClips } from "@jgengine/assets/dims"`
+- **clip-retarget** — retarget a clip between differently built humanoid skeletons in an asset pipeline · `import { retargetClipByRest } from "@jgengine/assets/clipRetarget"`
+- **credits-for-asset-ids** — build a credits document from the asset ids a game ships · `import { creditsForAssetIds } from "@jgengine/assets/credits"`
+- **credits-for-source-ids** — build a credits document from the asset source ids a game declares · `import { creditsForSourceIds } from "@jgengine/assets/credits"`
+- **credits-for-sources** — generate credit sections from asset pack metadata, grouped by license or provider · `import { creditsForSources } from "@jgengine/assets/credits"`
+- **describe-asset-match** — print a ranked asset match as one readable line · `import { describeAssetMatch } from "@jgengine/assets"`
+- **entity-look** — pick one of a model's alternative bodies per entity, for character creators and skins · `import { modelForLook } from "@jgengine/core/model/modelLook"`
+- **find-assets** — look up many asset names at once: licence, game path, on-disk state and where else to look · `import { findAssets } from "@jgengine/assets/findAssets"`
+- **font-library** — pick a display and a body font from the shipped OFL families by id · `import { libraryFontPairing } from "@jgengine/assets/catalogs/fontLibrary"`
+- **gltf-material-inspection** — inspect material slots and texture metadata directly from complete GLB bytes · `import { inspectGlbMaterials, inspectGltfMaterials } from "@jgengine/assets/gltfMaterials"`
+- **hair-card-geometry** — validate authored ribbon guides and their vertex allocation ceiling · `import { validateHairCardAuthoring } from "@jgengine/core/material/hairCards"`
+- **hdri-library** — pick a shipped CC0 HDRI (noon, clear sky, golden hour, harbour sunset, industrial sunset, overcast, dusk, night city, industrial interior, forest, snow) by id · `import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary"`
+- **heavy-models** — models over the per-model triangle budget, for perf probes and smoke assertions · `import { heavyModels } from "@jgengine/core/model/modelLoad.draw"`
+- **imported-rig-node** — resolve original imported bone and slot names with ambiguity diagnostics · `import { resolveRigNode } from "@jgengine/core/model/rigNode.draw"`
+- **library-building-surface** — paint a building part from a named library material · `import { libraryBuildingSurface } from "@jgengine/assets/catalogs/materialLibrary"`
+- **library-credits** — generate in-game credits from the library assets a game ships · `import { libraryCreditSections } from "@jgengine/assets/library/assetLibrary"`
+- **library-credits-document** — a ready credits document from the library assets a game ships · `import { libraryCredits } from "@jgengine/assets/library/assetLibrary"`
+- **library-foliage-thinning** — thin a foliage scan's leaf clusters for a lighter level while keeping canopy cover · `import { thinIslands } from "@jgengine/assets/modelLibraryPull"`
+- **library-icon-credits** — credit game-icons.net icons per artist from the keys a game ships · `import { libraryIconCredits } from "@jgengine/assets/library/libraryIcons"`
+- **library-icon-url** — resolve a game-icons.net library key to the icon a game serves · `import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons"`
+- **library-license-gate** — refuse any asset licence outside CC0, public domain, MIT and CC BY · `import { normalizeLibraryLicense } from "@jgengine/assets/library/libraryLicense"`
+- **library-model** — draw a realistic library model at real size with its near and far LOD · `import { libraryModel } from "@jgengine/assets"`
+- **library-pull** — fetch one library asset (model, material, HDRI, icon pack) into the folder a game serves it from · `import { pullLibraryEntry } from "@jgengine/assets/library/libraryPull"`
+- **library-search** — search thousands of licensed models, materials, HDRIs and icons by words and tags · `import { searchLibrary } from "@jgengine/assets/library/assetLibrary"`
+- **library-served-path** — the public folder and URL a pulled library asset is served from · `import { libraryServedPath } from "@jgengine/assets/library/libraryServed"`
+- **library-surface-parameters** — carry a named library material's response into authored overrides · `import { librarySurfaceParameters } from "@jgengine/assets/catalogs/materialLibrary"`
+- **library-surface-scan** — put a named scanned material on roads, terrain or kit models in one call · `import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary"`
+- **library-terrain-material** — put a named library material on terrain without faking optional maps · `import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary"`
+- **library-terrain-surface** — scanned library ground for a terrain's ground, sand or rock role, with slope projection and height blending · `import { libraryTerrainSurface } from "@jgengine/assets/catalogs/materialLibrary"`
+- **library-validate** — check every library entry has an allowed licence and full credit fields · `import { validateLibrary } from "@jgengine/assets/library/assetLibrary"`
+- **looks-credits** — credit lines for the shipped HDRIs, colour grades and fonts a game uses · `import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits"`
+- **lut-grade-library** — pick a shipped colour grade by id for a game's post-processing · `import { lutGrade } from "@jgengine/assets/catalogs/lutGrades"`
+- **makehuman-character** — build a rigged, animated CC0 MakeHuman person from its base mesh and targets into one GLB · `import { pullMakeHumanCharacter } from "@jgengine/assets/makehumanPull"`
+- **material-appearance-signals** — update one owned material from wetness and local card exposure without global lighting edits · `import { applyMaterialAppearanceSignals, captureMaterialAppearanceBaseline, restoreMaterialAppearanceBaseline } from "@jgengine/core/material/appearanceSignals.draw"` · `import { setHairCardLightExposure } from "@jgengine/core/material/materialAsset.draw"`
+- **material-assets** — clone and configure an imported PBR slot while retaining its omitted physical features and maps · `import { applyMaterialAsset, applyMaterialAssignments, leasedMaterialMeshDraw, materialAssetMaterial, materialAssetSurface, materialAssetSwatchDraw } from "@jgengine/core/material/materialAsset.draw"`
+- **material-feature-requirements** — Declare material shader requirements when authors add maps or appearance adapters. · `import { materialCapabilitiesForAsset } from "@jgengine/core/material/materialAsset"`
+- **material-resource-metrics** — inspect loaded texture byte bounds and physical, coverage and transmission participation · `import { materialResourceMetrics } from "@jgengine/core/material/materialAsset.draw"`
+- **material-slot-selection** — match named meshes and imported material slots independently · `import { matchesMaterialSelector, validateMaterialAssignments } from "@jgengine/core/material/materialAsset"` · `import { validateMaterialAssignmentTargets } from "@jgengine/core/material/materialAsset.draw"`
+- **material-slots** — discover exact imported mesh and material selectors with UV and tangent prerequisites · `import { inspectModelMaterialSlots } from "@jgengine/core/material/materialAsset.draw"`
+- **material-surface-validation** — diagnose unsupported or physically invalid sparse surface edits · `import { validateMaterialSurface } from "@jgengine/core/material/materialAsset"`
+- **material-texture-metadata** — configure owned map views with semantic color space, packed channels, UV transforms and sampling · `import { configureMaterialTexture } from "@jgengine/core/material/materialAsset.draw"`
+- **material-triplanar** — render a material asset on world geometry without UVs · `import { triplanarAssetMaterial } from "@jgengine/core/material/triplanarMaterial.draw"`
+- **model-fallbacks** — models the loader replaced with a placeholder, for capture and smoke assertions · `import { modelLoadFallbacks } from "@jgengine/core/model/modelLoad.draw"`
+- **model-instance** — clone a loaded model for independent styling and animation · `import { cloneModelScene, disposeModelScene } from "@jgengine/core/model/modelRender.draw"`
+- **model-library** — ask for a realistic licensed model by what it is ("street lamp", "office desk") · `import { findLibraryModel } from "@jgengine/assets"`
+- **model-library-authored** — build an engine-authored library model (server rack, robot arm) without a download · `import { buildAuthoredModel } from "@jgengine/assets/modelLibraryAuthored"`
+- **model-library-rigged** — pull a rigged, animated Microsoft Rocketbox human or animal into a game as one GLB · `import { pullRocketboxModel } from "@jgengine/assets/rocketboxPull"`
+- **model-load-idle** — how long the shared GLB loader has been idle, for capture settle waits · `import { modelLoadIdleMs } from "@jgengine/core/model/modelLoad.draw"`
+- **model-load-starts** — count of model streaming bursts, for capture quiescence checks · `import { modelLoadStarts } from "@jgengine/core/model/modelLoad.draw"`
+- **model-loader-paths** — Point Draco and KTX2 decoding at self-hosted decoder files · `import { configureModelLoaders } from "@jgengine/core/model/modelLoad.draw"`
+- **model-lod-build** — write simplified mesh levels and a baked impostor atlas beside a model file · `import { buildModelLods } from "@jgengine/assets/modelLodBuild"`
+- **model-triangle-budget** — Raise or lower the per-model triangle budget · `import { setModelTriangleBudget } from "@jgengine/core/model/modelLoad.draw"`
+- **model-wind** — sway a foliage model in the shared gust field · `import { applyModelWind } from "@jgengine/core/model/modelWind.draw"`
+- **rank-assets** — find the model, pack, material, sprite, HUD component or icon for a word, best first · `import { rankAssets } from "@jgengine/assets"`
+- **rocketbox-clip** — pull one Microsoft Rocketbox animation clip as a skeleton-only GLB that plays on any Rocketbox human · `import { pullRocketboxClip } from "@jgengine/assets/rocketboxPull"`
+- **sources-for-asset-ids** — resolve the asset packs behind the ids a game actually ships · `import { sourcesForAssetIds } from "@jgengine/assets/credits"`
+- **sources-for-source-ids** — resolve the asset pack metadata behind the source ids a game declares · `import { sourcesForSourceIds } from "@jgengine/assets/credits"`
+- **starter-packs** — themed CC0 model ids (props/nature/urban) ready for objectModels · `import { StarterTheme } from "@jgengine/assets"`
+- **static-prefab-export** — export editable prefab compositions with source materials and collision metadata · `import { bakeStaticPrefab } from "@jgengine/assets/staticPrefabBake"`
+- **static-transforms** — static-transforms · `import { freezeStaticTransforms, refreshStaticTransforms, thawStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
+- **surface-material-generator** — seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow) · `import { SURFACE_MATERIAL_GENERATOR, bakeSurfaceMaterial, bakeSurfaceMaterialJob, isSurfaceMaterialMaps, surfaceMaterialMeta } from "@jgengine/core/material/surfaceMaterialGenerator"` · `import { bakeSurfaceMaterialShared, bakeSurfaceMaterialSharedJob, surfaceMaterialArrayTextures, surfaceMaterialStandardMaps } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
+- **toon-ramp** — cel-shading ramp a toon material reads: flat light bands with an optional soft edge · `import { ToonRamp } from "@jgengine/core/material/toonRamp"` · `import { toonRampMaterial } from "@jgengine/core/material/toonRamp.draw"`

@@ -1,6 +1,3 @@
-/**
- * Build feature: storage catalog, placement geometry, and prop presentation.
- */
 import {
   BUILD_CATALOG,
   computeBuildResaleValue,
@@ -25,9 +22,6 @@ import type {
 } from "@llmville/game/build/catalog";
 import type { RoomBounds, WorldPoint } from "@llmville/game/world/grid";
 
-// --- Domain identifiers ------------------------------------------------------
-
-/** Storage tabs: an "all" overview, the three build tabs, plus hardware. */
 export type BuildMenuTabId = "all" | BuildTabId | "hardware";
 
 export const BUILD_MENU_TAB_SEQUENCE: readonly BuildMenuTabId[] = [
@@ -48,10 +42,7 @@ export function getBuildTabLabel(tab: BuildMenuTabId): string {
   return BUILD_TAB_LABELS[tab] ?? tab;
 }
 
-// --- Storage items (build menu + hardware) ----------------------------------
-
 export interface BuildMenuItem extends BuildItemDefinition {
-  /** Display name (mirrors {@link BuildItemDefinition.label}). */
   name: string;
   kind: "build";
 }
@@ -97,8 +88,6 @@ export function estimateBuildResalePrice(price: number): number {
   return computeBuildResaleValue(price);
 }
 
-// --- Placed items ------------------------------------------------------------
-
 export interface CoreBuildPlacementDraft<TItemId extends string = string> {
   itemId: TItemId;
   direction: BuildDirection;
@@ -124,7 +113,6 @@ export interface BuildPlacementPreview {
   isValid: boolean;
 }
 
-/** Wrap any signed number into the canonical 0–3 build direction. */
 export function normalizeBuildDirection(value: number): BuildDirection {
   const wrapped = (((Math.round(value) % 4) + 4) % 4) as BuildDirection;
   return wrapped;
@@ -158,7 +146,6 @@ export function mapPlacedBuildItems(
   return mapped;
 }
 
-/** Count placed instances (racks + scene props) keyed by item id. */
 export function countPlacedBuildItems(
   racks: readonly { rackType: string }[],
   placedBuildItems: readonly { itemId: string }[],
@@ -173,8 +160,6 @@ export function countPlacedBuildItems(
   return counts;
 }
 
-// --- Placement geometry ------------------------------------------------------
-
 function rotatedFootprintHalfExtents(itemId: string, direction: BuildDirection) {
   const footprint = getBuildItemFootprint(itemId as BuildItemId);
   const rotated =
@@ -187,7 +172,6 @@ function rotatedFootprintHalfExtents(itemId: string, direction: BuildDirection) 
   };
 }
 
-/** Axis-aligned world bounds an item occupies at `point`. */
 export function getPlacementBounds(
   itemId: string,
   point: WorldPoint,
@@ -209,7 +193,6 @@ const BUILD_DIRECTIONS: readonly BuildDirection[] = [0, 1, 2, 3];
 
 const PLACEMENT_REACH_ORIGIN: WorldPoint = { x: 0, z: 0 };
 
-/** Greatest distance from an item's placement point to any edge of its bounds, over every direction. */
 export function buildPlacementReach(itemId: string): number {
   return Math.max(
     ...BUILD_DIRECTIONS.map((direction) => {
@@ -242,7 +225,6 @@ export interface PlacementPreviewContext {
   cellPolicy: PlacementCellPolicy;
 }
 
-/** Ray length from camera along look direction for placement targeting. */
 export function placementRayLengthFromCamera(
   cameraY: number,
   lookDirectionY: number,
@@ -279,7 +261,6 @@ export function isPlacementValidAt(
   return result.status === "ok";
 }
 
-/** Pure placement preview from camera pose — shared by scene preview and tests. */
 export function computePlacementPreview(
   cameraPosition: { x: number; y: number; z: number },
   lookDirection: { x: number; y: number; z: number },
@@ -298,8 +279,6 @@ export function computePlacementPreview(
     isValid: isPlacementValidAt(target, context),
   };
 }
-
-// --- Prop presentation -------------------------------------------------------
 
 export interface BuildPropMaterialPresentation {
   color: string;
@@ -320,7 +299,6 @@ const SOLID_PROP_PRESENTATION: BuildPropMaterialPresentation = {
 const GHOST_VALID_COLOR = "#34d399";
 const GHOST_INVALID_COLOR = "#fb7185";
 
-/** Material props spread onto a prop's meshes: solid when placed, tinted ghost while drafting. */
 export function getBuildPropMaterialPresentation(
   ghost: boolean,
   isValid: boolean,

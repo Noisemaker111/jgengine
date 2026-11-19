@@ -5,15 +5,7 @@ import type { PlantSpecies } from "../species/plantSpecies";
 import { crownWidthBandM, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../species/speciesReference";
 import { SPECIES_REFERENCE } from "../species/speciesReferenceTable";
 
-/**
- * A forest plot of individual trees competing for light, stepped a year at a time (Tier A of the
- * plant simulator: SORTIE-style stems and crowns, Pacala et al. 1996, not grown skeletons). Each tree
- * advances along its species' dominant-tree curves (FIA site trees, Carmean) by the light it gets, so
- * a tree in full sun grows like a site tree and a suppressed one waits. Seeds fall from mature trees
- * into a seedling bank per cell, and saplings that reach breast height join the plot as trees.
- */
 export interface StandOptions {
-  /** Species that may grow on the plot; their order is the species index. */
   species: readonly PlantSpecies[];
   /** Plot side, metres; the plot wraps at its edges so no tree sits at a border. */
   sizeM: number;
@@ -21,9 +13,7 @@ export interface StandOptions {
   seed: string;
   /** Seeds that drift in from outside the plot, per hectare per species per year. Default 200. */
   immigrationPerHa?: number;
-  /** Seeds fall and seedlings recruit; false for an even-aged plantation that only thins. Default true. */
   recruitment?: boolean;
-  /** Most live trees the plot holds; recruits beyond it wait in the seedling bank. Default 20 000. */
   maxTrees?: number;
   /** Reference curves by species id; defaults to the imported table. */
   references?: Readonly<Record<string, SpeciesReference>>;
@@ -35,7 +25,6 @@ export interface StandOptions {
   selfThinning?: number;
 }
 
-/** One tree to plant: species index, position on the plot and its age in years (0 for a seedling at breast height). */
 export interface StandPlanting {
   species: number;
   x: number;
@@ -43,9 +32,7 @@ export interface StandPlanting {
   ageYears?: number;
 }
 
-/** A live tree on the plot. */
 export interface StandTree {
-  /** Stable id: `${seed}:${serial}` is its own growth seed. */
   serial: number;
   species: number;
   x: number;
@@ -54,34 +41,27 @@ export interface StandTree {
   dbhCm: number;
   heightM: number;
   crownRadiusM: number;
-  /** Crown length over height. */
   crownRatio: number;
-  /** Open-sky share reaching its crown this year, and its mean over its life. */
   light: number;
   meanLight: number;
 }
 
-/** Plot totals per hectare. */
 export interface StandStats {
   year: number;
   /** Live trees per hectare at or above 1 cm DBH. */
   treesPerHa: number;
   /** Quadratic mean DBH, cm. */
   quadraticMeanDbhCm: number;
-  /** Basal area per species, m²/ha, in species order. */
   basalAreaM2PerHa: number[];
-  /** Seedlings below breast height per hectare, per species. */
   seedlingsPerHa: number[];
 }
 
-/** One tree's state in a {@link StandSnapshot}. */
 export interface StandTreeState {
   serial: number;
   species: number;
   x: number;
   z: number;
   ageYears: number;
-  /** Years advanced along the species' dominant-tree height and DBH curves. */
   progressYears: number;
   girthYears: number;
   crownRatio: number;
@@ -89,7 +69,6 @@ export interface StandTreeState {
   lightSum: number;
 }
 
-/** A stand's whole state as JSON-safe values. */
 export interface StandSnapshot {
   year: number;
   serial: number;
@@ -99,7 +78,6 @@ export interface StandSnapshot {
   bankProgress: number[];
 }
 
-/** A stateful forest plot: step it, read its trees, snapshot and restore it. */
 export interface Stand {
   step(years?: number): void;
   year(): number;
@@ -112,7 +90,6 @@ export interface Stand {
   retune(site: Partial<PlantEnvironment>): void;
 }
 
-/** What a single tree of a stand would be grown from at full detail (Tier B). */
 export interface StandTreeGrowth {
   species: PlantSpecies;
   env: PlantEnvironment;
@@ -125,15 +102,12 @@ const CELL_M = 5;
 /** Shadow cones widen by this many metres per metre of drop: sky light comes from within about 30° of the zenith. */
 const CONE = 0.6;
 const MAX_BANK_PER_M2 = 10;
-/** Saplings a cell can send up to the tree layer in one year. */
 const RECRUITS_PER_CELL = 2;
 
 interface SpeciesModel {
   species: PlantSpecies;
   reference: SpeciesReference;
-  /** Leaf area per m² of crown projection. */
   crownLai: number;
-  /** Light at which growth runs at half its full-sun rate relative to the hyperbola's ceiling. */
   halfLight: number;
   backgroundMortality: number;
   breastHeightYears: number;
@@ -168,18 +142,12 @@ function speciesModel(species: PlantSpecies, references: Readonly<Record<string,
   };
 }
 
-/** Growth share of the full-sun rate at `light` (a rectangular hyperbola reaching 1 in full sun). */
 function lightResponse(model: SpeciesModel, light: number): number {
   const h = model.halfLight;
   return (light * (1 + h)) / (light + h);
 }
 
-/**
- * Create a forest plot. Trees advance along their species' dominant-tree curves by
- * `site × lightResponse(light)` years per year; mortality follows suppression and age; seeds fall
- * from trees past first flowering into 5 m seedling-bank cells.
- * @capability plant-stand grow a forest plot of competing trees over centuries: succession, self-thinning and each tree's light history
- */
+/** @capability plant-stand grow a forest plot of competing trees over centuries: succession, self-thinning and each tree's light history */
 export function createStand(options: StandOptions): Stand {
   const references = options.references ?? SPECIES_REFERENCE;
   const selfThinning = options.selfThinning ?? 1;
@@ -208,7 +176,6 @@ export function createStand(options: StandOptions): Stand {
   const tX = new Float64Array(maxTrees);
   const tZ = new Float64Array(maxTrees);
   const tAge = new Float64Array(maxTrees);
-  /** Progress along the species' dominant-tree height and DBH curves, years. */
   const tProgress = new Float64Array(maxTrees);
   const tGirth = new Float64Array(maxTrees);
   const tDbh = new Float64Array(maxTrees);
@@ -578,11 +545,7 @@ export function createStand(options: StandOptions): Stand {
   };
 }
 
-/**
- * The full-detail growth inputs of one stand tree (Tier B): its species, its own seed, its age, and
- * a site whose open sky is the light it got over its life and whose spacing is its neighbours'.
- * @capability plant-stand grow a forest plot of competing trees over centuries: succession, self-thinning and each tree's light history
- */
+/** @capability plant-stand grow a forest plot of competing trees over centuries: succession, self-thinning and each tree's light history */
 export function standTreeGrowth(options: Pick<StandOptions, "species" | "seed" | "site">, tree: StandTree, treesPerHa: number): StandTreeGrowth {
   const species = options.species[tree.species];
   if (species === undefined) throw new Error(`no species at index ${tree.species}`);

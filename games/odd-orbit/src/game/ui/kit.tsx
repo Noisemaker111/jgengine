@@ -11,7 +11,6 @@ import type { Live } from "@jgengine/core/ui/liveValue";
 import type { AlienBodyPlan } from "../creatures/bodyPlan";
 import type { NeedId } from "../needs/needs";
 
-/** Plum ink: what a pastel magnet or a paper note is written in. */
 export const INK = "#3a2140";
 export const RIM = "#2a1733";
 export const CREAM_TEXT = "#fff0d5";
@@ -20,7 +19,6 @@ export const NIGHT_DIM = "#c9b6ce";
 export const WARN = "#c2402f";
 export const FULL = { fraction: 1 } as const;
 
-/** The household's enamel colours, sampled from the dusk habitat. */
 export const ENAMEL = {
   cream: "#fff0d6",
   pink: "#f6a6cf",
@@ -35,7 +33,6 @@ export type EnamelTone = keyof typeof ENAMEL;
 
 export const NEED_COLORS: Record<NeedId, string> = { hunger: "#ffb347", energy: "#7ec8ff", social: "#ff8fb0", fun: "#b98cff" };
 export const MOOD_COLORS: Record<string, string> = { radiant: "#2f9a62", content: "#4f8a2a", fine: "#9a7a12", glum: "#b0582a", low: "#c2402f" };
-/** The game icon for each need, used on magnets, rings and the furnishing catalogue. */
 export const NEED_ICON: Record<NeedId, GameIconName> = { hunger: "apple", energy: "feather", social: "heart", fun: "star" };
 
 /** Odd Orbit's one Rune theme: dusk-lilac habitat, pastel enamel, Comfortaa over Quicksand. */
@@ -56,7 +53,6 @@ export const orbitTheme = {
   motion: { duration: 160, distance: 10, bounce: 0.1 },
 } satisfies RuneTheme;
 
-/** The player's interface preferences applied to the one theme: calm stills motion, bolder darkens fine print and rims. */
 export function orbitThemeFor(prefs: { calm: boolean; contrast: boolean }): RuneTheme {
   const text = prefs.contrast ? { ...orbitTheme.text, fine: { ...orbitTheme.text.fine, color: INK }, label: { ...orbitTheme.text.label, color: INK } } : orbitTheme.text;
   const variants = prefs.contrast ? { ...orbitTheme.variants, paper: { ...orbitTheme.variants.paper, border: { width: 3, color: RIM } } } : orbitTheme.variants;
@@ -71,7 +67,6 @@ export function Heading(props: TextProps) { return <Text textStyle="heading" {..
 export function Row(props: RuneViewProps) { return <RuneView layout="row" gap={8} items="center" {...props} />; }
 export function Paper({ tint, ...props }: RuneViewProps & { tint?: string }) { return <RuneView variant="paper" {...(tint === undefined ? {} : { fill: tint })} {...props} />; }
 
-/** A rounded enamel plate: the household's pressable control. `on` marks the chosen one of a set. */
 export function Plate({ tone = "cream", tint, on = false, disabled, onPress, children, ...props }: RuneViewProps & { tone?: EnamelTone; tint?: string; on?: boolean; onPress?: () => void }) {
   const fill = tint ?? ENAMEL[tone];
   return <RuneAction variant="plate" layout="row" items="center" fill={fill} color={tone === "plum" ? CREAM_TEXT : INK} family="Quicksand" weight={700} size={15}
@@ -80,7 +75,6 @@ export function Plate({ tone = "cream", tint, on = false, disabled, onPress, chi
 }
 
 const ICON_ART = new Map<GameIconName, string>();
-/** A game icon as native artwork: the engine's own glyph set, tinted by `color`. */
 export function Icon({ name, size = 20, color = INK }: { name: GameIconName; size?: number; color?: string }) {
   let art = ICON_ART.get(name);
   if (art === undefined) {
@@ -100,7 +94,6 @@ export function hslHex(h: number, s: number, l: number): string {
 }
 export const planColor = (plan: AlienBodyPlan, lightness = 60): string => hslHex(plan.hue, 62, lightness);
 
-/** A being's portrait, drawn from its body plan: coloured disc, body, eyes and a smile. */
 export function Swatch({ plan, size = 40 }: { plan: AlienBodyPlan; size?: number }) {
   const tall = plan.shape === "tall", blob = plan.shape === "blob";
   const eyes = Math.max(1, Math.min(4, plan.eyeCount));
@@ -124,7 +117,6 @@ export function Meter({ label, value, color, width = 120, height = 8 }: { label?
 }
 const bindFraction = (value: () => number) => bind(() => ({ fraction: Math.max(0, Math.min(1, value() / 100)) }));
 
-/** A dimmed full-screen veil holding one centred sheet; Escape runs `close`. */
 export function Veil({ children, close, label }: { children: ReactNode; close?: () => void; label: string }) {
   const { width, height } = useRuneViewport();
   return <RuneView anchor="fill" fill="#1a1029b8" modal justify="center" items="center" {...(close === undefined ? {} : { onBack: close })}>

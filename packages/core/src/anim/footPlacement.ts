@@ -1,31 +1,22 @@
 import { clamp } from "../math/scalar";
 
-/** One foot's animated ankle height and the ground found under it, both in world units. */
 export interface FootGroundSample {
-  /** Animated ankle (foot bone) height this frame, before any correction. */
   ankleY: number;
-  /** Ground height under the foot, or `null` when the probe found nothing. */
   groundY: number | null;
 }
 
-/** Inputs for {@link placeFeet}. All heights are world units. */
 export interface FootPlacementInput {
   feet: readonly FootGroundSample[];
-  /** Height of the model origin, which the clips were authored to stand on. */
   originY: number;
   /** Ankle height above the sole in the rig's rest pose; the sole never ends below the ground. */
   ankleHeight: number;
-  /** Largest correction applied to a foot or the pelvis, up or down. */
   maxAdjust: number;
-  /** A lowest sole this far above its ground reads as airborne. */
   airborneGap: number;
 }
 
-/** Result of {@link placeFeet}: where each ankle should go and how far the pelvis drops. */
 export interface FootPlacement {
   /** Vertical pelvis shift, `<= 0`, so the lowest planted foot can reach its ground. */
   pelvisOffset: number;
-  /** Target ankle height per foot, or `null` when that foot has no ground or no correction. */
   ankleTargets: (number | null)[];
   /** `false` while the feet are clear of the ground, so callers fade the correction out. */
   grounded: boolean;
@@ -63,13 +54,11 @@ export function placeFeet(input: FootPlacementInput, out?: FootPlacement): FootP
   return result;
 }
 
-/** A bone as {@link inferLegChains} sees it: its name and its parent's name. */
 export interface RigBone {
   name: string;
   parent: string | null;
 }
 
-/** Thigh → shin → foot bone names for one leg. */
 export interface LegChain {
   root: string;
   mid: string;
@@ -79,13 +68,7 @@ export interface LegChain {
 const THIGH = /(upleg|upperleg|thigh|femur)/;
 const HELPER = /(ik|control|ctrl|twist|pole|target|roll)/;
 
-/**
- * Finds leg chains on a humanoid rig by bone name: a thigh-like bone (`UpLeg`, `UpperLeg`, `Thigh`)
- * with its first child and grandchild as shin and foot. Control, IK-target and twist bones are
- * skipped. Returns chains in rig order; an empty array means the rig has no recognizable legs.
- *
- * @capability animation find thigh, shin and foot bones on a humanoid rig for foot IK
- */
+/** @capability animation find thigh, shin and foot bones on a humanoid rig for foot IK */
 export function inferLegChains(bones: readonly RigBone[]): LegChain[] {
   const children = new Map<string, string[]>();
   for (const bone of bones) {

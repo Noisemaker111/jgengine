@@ -8,18 +8,11 @@ import { EngineDrawMount, SceneObjectGroup, meshDraw } from "@jgengine/core/fram
 import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
 import { librarySurface } from "./interiorLook";
 
-/**
- * Modelled station fixtures that used to be stacked primitives: the pressure suits on their service
- * stands and the shift lockers on receiving. Each one is a few merged meshes in scanned finishes, so
- * a fixture costs two to four draws however much detail it carries.
- */
-
 type Part = BufferGeometry;
 const at = (geometry: Part, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0): Part => {
   geometry.rotateX(rx); geometry.rotateY(ry); geometry.rotateZ(rz);
   return geometry.translate(x, y, z);
 };
-/** Merge parts that all share one finish; every part is flattened to non-indexed so lathe, tube and box can mix. */
 function merged(parts: Part[]): BufferGeometry {
   const ready = parts.map(part => {
     const geometry = part.index === null ? part : part.toNonIndexed();
@@ -40,7 +33,6 @@ function useGeometry(build: () => BufferGeometry, deps: unknown[]): BufferGeomet
   return geometry;
 }
 
-/** A merged-geometry mesh in an authored surface finish: the material leases draw-side like the old Suspense material did. */
 function surfaceMeshDraw(geometry: BufferGeometry, surface: AuthoredSurfaceConfig, shape: SurfaceShape, castShadow: boolean, receiveShadow: boolean): EngineDraw {
   return loadDraw({
     load: () => authoredSurfaceMaterial(surface, shape),
@@ -61,11 +53,6 @@ const SUIT_STEEL = librarySurface("metal/steel", "#59615f");
 const SUIT_BRASS = librarySurface("metal/chipped", "#b48a4e", { metalness: 0.75, roughness: 0.4 });
 const VISOR = { color: "#1c3236", roughness: 0.04, metalness: 0.55, emissive: "#0d2a2c", emissiveIntensity: 0.6 };
 
-/**
- * A heavy diving suit left hanging on its service stand: round steel foot plate and post, canvas suit
- * with stitched seams (torso, arms bent at the elbow, legs into weighted boots), brass collar and
- * three-port helmet, air tanks on the back.
- */
 export function SuitStand({ canvas }: { canvas: string }) {
   const cloth = useMemo(() => librarySurface("fabric/canvas", canvas), [canvas]);
   const suit = useGeometry(() => merged([

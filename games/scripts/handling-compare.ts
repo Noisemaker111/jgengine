@@ -55,7 +55,6 @@ function isSpec(value: Record<string, unknown>): value is Record<string, unknown
   );
 }
 
-/** Every car tuning inside `value`, labelled by its path and the nearest `id`/`label`/`name`. */
 function collect(value: unknown, label: string, out: { label: string; tuning: VehicleDynamicsTuning }[], depth = 0): void {
   if (!isRecord(value) || depth > 5) return;
   if (isTuning(value)) {

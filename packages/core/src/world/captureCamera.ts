@@ -31,12 +31,10 @@ export function installCaptureCamera(override: CaptureCameraOverride | null): vo
   installed = override;
 }
 
-/** Clear any installed capture camera. */
 export function clearCaptureCamera(): void {
   installed = null;
 }
 
-/** The installed capture camera, or `null` when the game's own camera should render. */
 export function readCaptureCamera(): CaptureCameraOverride | null {
   return installed;
 }

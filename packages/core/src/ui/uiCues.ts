@@ -1,21 +1,16 @@
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { NoticeTone } from "../notifications/notices";
 
-/** Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification. */
 export type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify";
 
-/** Every {@link UiCue}, in a stable order. */
 export const UI_CUES: readonly UiCue[] = ["click", "hover", "open", "close", "confirm", "deny", "notify"];
 
-/** Bus the default UI cues mix through; the settings menu shows its volume. */
 export const UI_CUE_BUS = "ui";
 
-/** Catalog id a cue plays under: `ui.click`, `ui.deny`, ... A game sound with that id replaces the default. */
 export function uiCueSoundId(cue: UiCue): string {
   return `ui.${cue}`;
 }
 
-/** The cue a notice of each tone plays when it appears. */
 export const NOTICE_TONE_CUES: Readonly<Record<NoticeTone, UiCue>> = {
   info: "notify",
   success: "confirm",
@@ -27,7 +22,6 @@ function uiSound(cue: UiCue, def: Omit<SoundDef, "id" | "bus" | "positional">): 
   return { id: uiCueSoundId(cue), bus: UI_CUE_BUS, positional: false, priority: 2, ...def };
 }
 
-/** Short, soft procedural patches: no samples to load, quiet enough to sit under game audio. */
 export const DEFAULT_UI_CUE_SOUNDS: Readonly<Record<UiCue, SoundDef>> = {
   click: uiSound("click", {
     gain: 0.5,
@@ -100,15 +94,9 @@ export const DEFAULT_UI_CUE_SOUNDS: Readonly<Record<UiCue, SoundDef>> = {
   }),
 };
 
-/** Per-cue override: a replacement sound, or `false` to silence that cue. `false` for the whole map silences all. */
 export type UiCueOverrides = false | Partial<Record<UiCue, SoundDef | false>>;
 
-/**
- * Merge the default UI cue patches into a game's sound catalog. A game sound already named `ui.<cue>` wins,
- * then `overrides`, then the default. Adds the `ui` bus (gain 0.8) when the game did not declare one.
- *
- * @capability ui-sound-cues default procedural click/hover/open/close/confirm/deny/notify cues on a "ui" bus, overridable per game
- */
+/** @capability ui-sound-cues default procedural click/hover/open/close/confirm/deny/notify cues on a "ui" bus, overridable per game */
 export function withUiCueSounds(
   sounds: Readonly<Record<string, SoundDef>> | undefined,
   buses: Readonly<Record<string, AudioBusDef>> | undefined,

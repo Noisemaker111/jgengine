@@ -7,15 +7,12 @@ import type { SaveEndpointRequest, SaveEndpointResponse } from "@jgengine/core/d
 import { splitTunablePath } from "@jgengine/core/devtools/tunableSchema";
 import { authoredEditorDocument, importEditorDocumentJson } from "@jgengine/core/editor/document";
 
-/** Route the dev save middleware answers on; matches `installSaveEndpoint` defaults. */
 export const SAVE_ENDPOINT_PATH = "/__jgengine/save";
 
-/** Filename editor scene documents are saved under inside a game's `src/`. */
 export const EDITOR_SCENE_FILENAME = "editor.scene.json";
 
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
 
-/** Maps a save request's game id to the game `src/` directory it writes into, or `null` for an unknown game. */
 export type SrcDirResolver = (gameId: string) => string | null;
 
 const GAME_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
@@ -120,7 +117,6 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-/** Applies one parsed save request against a resolved game `src/` directory. */
 export function handleSaveRequest(resolveSrcDir: SrcDirResolver, body: string): SaveEndpointResponse {
   const request = JSON.parse(body) as SaveEndpointRequest;
   const dir = resolveSrcDir(request.gameId);

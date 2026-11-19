@@ -1,7 +1,6 @@
 /** @internal */
 export interface ObservableKeyedStore<T> {
   set(key: string, value: T): void;
-  /** Notify a value update for `key`, whose stored value the caller has already changed in place; skips the map lookups `set` does. The caller guarantees the key is present. */
   touch(key: string): void;
   delete(key: string): void;
   get(key: string): T | undefined;
@@ -14,9 +13,7 @@ export interface ObservableKeyedStore<T> {
   arraySnapshot(): readonly T[];
   /** Stable-identity list of keys; identity changes only when membership changes, so a per-frame `set` on an existing key does not churn it. */
   keysSnapshot(): readonly string[];
-  /** Serializable `[key, value]` entries — the transport counterpart of {@link hydrate} for host→client mirroring. */
   snapshot(): readonly (readonly [string, T])[];
-  /** Replace all entries with `data` (clears keys absent from it), emitting once. */
   hydrate(data: readonly (readonly [string, T])[]): void;
 }
 

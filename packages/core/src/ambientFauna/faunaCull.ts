@@ -1,6 +1,5 @@
 import type { FaunaGroupState } from "./ambientFauna";
 
-/** The camera as the cull reads it: six frustum planes (nx,ny,nz,d each, normalised) and the eye. */
 export interface FaunaView {
   planes: Float32Array;
   x: number;
@@ -8,7 +7,7 @@ export interface FaunaView {
   z: number;
 }
 
-/** A fresh view with all planes open. @internal */
+/** @internal */
 export function createFaunaView(): FaunaView {
   return { planes: new Float32Array(24), x: 0, y: 0, z: 0 };
 }
@@ -39,7 +38,7 @@ export function writeFaunaView(view: FaunaView, viewProjection: ArrayLike<number
   view.z = eyeZ;
 }
 
-/** True when a sphere touches the frustum. @internal */
+/** @internal */
 export function sphereInView(view: FaunaView, x: number, y: number, z: number, radius: number): boolean {
   const planes = view.planes;
   for (let p = 0; p < 24; p += 4) {
@@ -48,18 +47,12 @@ export function sphereInView(view: FaunaView, x: number, y: number, z: number, r
   return true;
 }
 
-/** How many agents {@link selectVisible} put in each LOD list. */
 export interface FaunaSelection {
   near: number;
   far: number;
 }
 
-/**
- * Pick which of a group's out agents to draw: inside the frustum and within `lod.far`, at most
- * `limit`, each in the `near` list (model) up to `lod.near` or the `far` list (sprite) past it. Fills
- * the caller's index arrays and `out`; allocates nothing.
- * @internal
- */
+/** @internal */
 export function selectVisible(
   state: FaunaGroupState,
   view: FaunaView,

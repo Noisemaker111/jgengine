@@ -10,29 +10,21 @@ import {
 
 const TWO_PI = Math.PI * 2;
 
-/** One selectable entry on a radial/quick menu (weapon or emote wheel). */
 export interface RadialMenuOption {
   id: string;
   label?: string;
-  /** Glyph/icon node the game supplies. */
   icon?: ReactNode;
   disabled?: boolean;
-  /** Per-slice accent; falls back to the menu `accent`. */
   color?: string;
-  /** Keybind hint drawn on the slice (e.g. "1", "Q"). */
   hotkey?: string;
-  /** Count/quantity badge (ammo, stack size). */
   badge?: string | number;
   /** Cooldown remaining as `0..1` — dims the slice and shows the fraction. */
   cooldown?: number;
-  /** Draw a ► marker to signal the slice opens a submenu. */
   hasSubmenu?: boolean;
 }
 
-/** Props for {@link RadialMenu}. */
 export interface RadialMenuProps {
   options: readonly RadialMenuOption[];
-  /** Render nothing when false. Default true. */
   open?: boolean;
   onSelect: (id: string) => void;
   onClose?: (() => void) | undefined;
@@ -42,7 +34,6 @@ export interface RadialMenuProps {
   innerRadius?: number;
   /** Partial arc instead of a full wheel (e.g. a bottom half or quarter). */
   arc?: RadialArc;
-  /** Force a highlighted slice (also the initial hover) — for controllers/tests. */
   highlightIndex?: number | null;
   accent?: string;
   className?: string;
@@ -61,16 +52,7 @@ function wedgePath(cx: number, cy: number, innerR: number, outerR: number, cente
   return `M${x0},${y0} A${outerR},${outerR} 0 ${large} 1 ${x1},${y1} L${x2},${y2} A${innerR},${innerR} 0 ${large} 0 ${x3},${y3} Z`;
 }
 
-/**
- * Radial / quick menu (weapon or emote wheel) — a ring or partial `arc` of
- * selectable wedges the player points at with the mouse (or a stick). Pointer
- * angle drives the highlight via core `radialIndexFromVector`; click/confirm
- * fires `onSelect`, the neutral hub closes. Options carry optional hotkeys,
- * count badges, cooldowns, and submenu markers. The game supplies icons/labels
- * and skins it.
- *
- * @capability radial-menu pointer/stick-driven radial or arc quick menu (weapon/emote wheel) — angular slice selection with hotkeys, badges, cooldowns, and a neutral hub
- */
+/** @capability radial-menu pointer/stick-driven radial or arc quick menu (weapon/emote wheel) — angular slice selection with hotkeys, badges, cooldowns, and a neutral hub */
 export function RadialMenu({
   options,
   open = true,

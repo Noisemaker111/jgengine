@@ -88,7 +88,6 @@ function edgesPath(edges: readonly CellEdge[], toX: (cx: number) => number, toY:
   return path;
 }
 
-/** A city resident the map can point at. */
 export interface MapResident { presenceId: string; gameId: string; label?: string | null | undefined; position: { x: number; z: number } }
 
 export function MapApp(props: MapAppProps) {
@@ -96,10 +95,6 @@ export function MapApp(props: MapAppProps) {
   return <MapAppView {...props} residents={residents} />;
 }
 
-/**
- * The datacenter floor: your cells, neighbours' labs, walkways and columns around you. Drag pans (or,
- * in drag-claim mode, marks a run); a tap claims the cell under it; +/−/Me zoom and recenter.
- */
 export function MapAppView({ money, canEditGame, localGameId, claims, engine, onClaimCell, residents }: MapAppProps & { residents: readonly MapResident[] | undefined }) {
   const { width: viewportWidth } = useRuneViewport();
   const side = Math.max(200, Math.min(520, viewportWidth - 72));
@@ -244,7 +239,6 @@ export function MapAppView({ money, canEditGame, localGameId, claims, engine, on
     [canEditGame, claiming, localGameId, claims, money, onClaimCell],
   );
 
-  /** The surface's one gesture: pan or mark a run while dragging; a still tap claims its cell. */
   const onGesture = (gesture: { phase: "down" | "move" | "up"; x: number; y: number; cancelled: boolean }) => {
     const cell = pointToCell(gesture.x, gesture.y);
     if (gesture.phase === "down") {
@@ -367,7 +361,6 @@ export function MapAppView({ money, canEditGame, localGameId, claims, engine, on
 
 const escapeSvgText = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
-/** The floor as SVG artwork in the glyph's 24-unit box: grid, walkways, columns, claims, run, pins. */
 function mapArtwork({ size, cellPx, gridLines, geometry, okCells, badCells, toX, toY, destinationCell, playerX, playerY }: {
   size: { width: number; height: number }; cellPx: number;
   gridLines: readonly { x1: number; y1: number; x2: number; y2: number; seam: boolean }[];

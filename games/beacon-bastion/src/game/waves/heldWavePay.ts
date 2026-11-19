@@ -10,13 +10,10 @@ import { session } from "../session";
  * spending it all, and the clear road is the reason to hold a wave rather than call the next one early.
  */
 export const HELD_PAY_RULE = {
-  /** Wages for wave `n` are `base + perWave × n`. */
   wageBase: 10,
   wagePerWave: 2,
-  /** Share of the held purse paid as interest, and the most one pay may add. */
   interestRate: 0.1,
   interestMax: 20,
-  /** Paid when no raider broke through since the last pay. */
   flawless: 10,
 } as const;
 
@@ -27,7 +24,6 @@ export interface HeldPay {
   total: number;
 }
 
-/** The pay for waves `fromWave..toWave` (inclusive) held with `gold` in the purse and `leaks` lives lost. */
 export function heldPay(fromWave: number, toWave: number, gold: number, leaks: number): HeldPay {
   let wages = 0;
   for (let wave = Math.max(1, fromWave); wave <= toWave; wave += 1) wages += HELD_PAY_RULE.wageBase + HELD_PAY_RULE.wagePerWave * wave;
@@ -36,22 +32,16 @@ export function heldPay(fromWave: number, toWave: number, gold: number, leaks: n
   return { wages, interest, flawless, total: wages + interest + flawless };
 }
 
-/** The interest a purse of `gold` earns at the next pay. */
 export function interestOn(gold: number): number {
   return Math.min(HELD_PAY_RULE.interestMax, Math.floor(Math.max(0, gold) * HELD_PAY_RULE.interestRate));
 }
 
-/** One line for the notice a held wave raises. */
 export function heldPayLine(wave: number, pay: HeldPay): string {
   const parts = [`${pay.wages} wages`, `${pay.interest} interest`];
   if (pay.flawless > 0) parts.push(`${pay.flawless} for whole walls`);
   return `Wave ${wave} held: +${pay.total} gold (${parts.join(", ")})`;
 }
 
-/**
- * Keep the road's state on the keep and pay a held wave: `keep.field_clear` opens wall repairs, and the
- * first clear road after a wave arrives pays every wave since the last pay.
- */
 export function tickHeldPay(ctx: GameContext): void {
   const world = keep.of(ctx);
   if (runEnded(world)) return;

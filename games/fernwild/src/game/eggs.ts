@@ -12,7 +12,6 @@ import { EGG_LAY_SECONDS, EGGS_NEARBY_CAP, eggItem, eggSizeFor } from "./data/ki
 /** Metres an egg can be taken from, and the ground around a mother that counts as "her" eggs. */
 const TAKE_REACH = 2.2;
 const NEST_RADIUS = 8;
-/** An egg rots where it lies on the same clock as one in the bag. */
 const EGG_LASTS = SPOILS[eggItem("m")]?.seconds ?? 1800;
 
 export interface EggsSave {
@@ -20,10 +19,6 @@ export interface EggsSave {
   eggs: RemainsSnapshot;
 }
 
-/**
- * ARK's wild eggs: an egg-laying female drops an unfertilized egg every so often, beside her, up to a
- * couple lying around at once; they rot if nobody takes them. Live-bearers (mammals) lay none.
- */
 const eggsOf = perContext(() => ({
   field: createRemainsField({ lastsSeconds: EGG_LASTS }),
   next: new Map<string, number>(),
@@ -61,7 +56,6 @@ export function tickEggs(ctx: GameContext): void {
   for (const id of state.next.keys()) if (!seen.has(id)) state.next.delete(id);
 }
 
-/** Every egg on the ground: where, and which egg. */
 export function eggsOnGround(ctx: GameContext): { id: string; item: string; at: readonly [number, number, number] }[] {
   return eggsOf(ctx).field.list().flatMap((entry) => entry.contents.map((stack) => ({ id: entry.id, item: stack.item, at: entry.at })));
 }
@@ -71,7 +65,6 @@ function eggNear(ctx: GameContext) {
   return me === null ? null : eggsOf(ctx).field.nearest(me.position, TAKE_REACH);
 }
 
-/** E at an egg: into the bag. */
 export function takeEgg(ctx: GameContext): void {
   const entry = eggNear(ctx);
   if (entry === null) return;

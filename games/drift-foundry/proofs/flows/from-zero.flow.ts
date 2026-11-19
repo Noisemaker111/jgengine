@@ -13,11 +13,6 @@ const MAX_FRAMES = 3000;
 const WON = 2;
 const CRUSHED = 3;
 
-/**
- * A new driver's first run, on the keys: the pit wall's start button starts it, then the driver follows the
- * track's racing line with W, S, A and D (Space to hop, Shift to brace the plow) the way the dash and
- * the road read, until the run ends.
- */
 export default defineFlow(game, {
   // The pit wall with nothing staged: the driver presses its start button.
   state: "title",

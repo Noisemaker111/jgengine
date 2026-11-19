@@ -17,7 +17,6 @@ export interface PresenceSession<TGameId extends string = string> {
   viewerChunkKey?: string;
 }
 
-/** Resident identity used to suppress offline actors while their owner is online. */
 export interface PresenceResidentRow {
   actorExternalId: string;
   ownerActorId?: string | undefined;

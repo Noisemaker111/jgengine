@@ -1,17 +1,13 @@
-/** A live signal listener installed by {@link installShutdownHook}; call `remove()` to uninstall it (tests, embedders opting out). */
 export interface ShutdownHook {
   remove(): void;
 }
 
-/** Config for {@link installShutdownHook}. */
 export interface InstallShutdownHookOptions {
-  /** Signals to listen for; default `["SIGINT", "SIGTERM"]`. */
   signals?: readonly NodeJS.Signals[];
   /** Bound on how long `shutdown()` may run before the hook gives up and exits anyway; default 5000ms. */
   timeoutMs?: number;
   /** Called with `0` on a clean shutdown, `1` on error or timeout; default `process.exit`. Override in tests to avoid killing the test process. */
   exit?: (code: number) => void;
-  /** Called when `shutdown()` rejects or times out; default logs to `console.error`. */
   onError?: (error: unknown) => void;
 }
 

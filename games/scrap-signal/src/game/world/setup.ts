@@ -116,7 +116,6 @@ export function spawnQuestEnemy(ctx: GameContext, spawn: { catalogId: string; ma
   });
 }
 
-/** Stand an NPC at an editor marker: where a quest giver waits once the story moves on. */
 export function moveNpcTo(ctx: GameContext, entityId: string, markerId: string): void {
   const marker = findEditorMarker(authoredScene, markerId);
   if (marker === undefined) throw new Error(`editor.scene.json: missing NPC marker "${markerId}"`);
@@ -177,7 +176,6 @@ export function respawnClusters(ctx: GameContext): void {
 export const RED_CHESTS: readonly { x: number; z: number }[] = ZONES.flatMap((zone) =>
   zone.chests.filter((chest) => chest.kind === "red").map((chest) => ({ x: chest.x, z: chest.z })),
 );
-
 
 export function setupWorld(ctx: GameContext): void {
   const place = (catalogId: string, x: number, z: number, instanceId?: string, rotation?: number) => {

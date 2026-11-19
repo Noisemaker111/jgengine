@@ -16,12 +16,10 @@ export const modelSources: readonly AssetSource[] = sources.filter(
   (source) => (source.kind ?? "model") === "model",
 );
 
-/** Every `kind: "material"` source — one CC0 PBR material each, resolvable via `buildMaterialCatalog`. */
 export const materialSources: readonly AssetSource[] = sources.filter(
   (source) => source.kind === "material",
 );
 
-/** Every `kind: "sprite"` source — a pack of individual 2D icon/UI files, resolvable via `buildSpriteCatalog`. */
 export const spriteSources: readonly AssetSource[] = sources.filter(
   (source) => source.kind === "sprite",
 );

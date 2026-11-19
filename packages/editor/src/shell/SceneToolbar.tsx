@@ -19,7 +19,6 @@ import { Icon } from "./icons";
 import { BORDER, FOCUS_RING, MICRO_LABEL } from "./theme";
 import { IconButton, Segmented, ToolbarDivider } from "./ui";
 
-/** Volume placement entries offered by the Add menu. */
 export const ADD_VOLUME_ENTRIES: readonly { label: string; tool: PlacementTool }[] = [
   { label: "Zone (sphere)", tool: { tool: "volume", kind: "zone", shape: "sphere" } },
   { label: "Zone (box)", tool: { tool: "volume", kind: "zone", shape: "box" } },
@@ -85,7 +84,6 @@ function MenuShell({
 const MENU_ITEM =
   `block w-full rounded-[5px] px-2.5 py-1.5 text-left text-[12px] text-neutral-300 transition-colors hover:bg-cyan-500/15 hover:text-cyan-100 ${FOCUS_RING}`;
 
-/** Small preset chip inside the snap menu (grid sizes, rotation/scale increments). */
 function SnapChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
@@ -107,10 +105,6 @@ const PIVOT_LABEL: Record<GizmoPivot, string> = {
   median: "Median",
 };
 
-/**
- * Contextual scene toolbar under the app bar: tools, gizmo modes, gizmo space, pivot,
- * snapping, viewport overlays, framing, projection, and the Add menu.
- */
 export function SceneToolbar({
   tool,
   gizmoMode,

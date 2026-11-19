@@ -3,81 +3,42 @@ import { plantExp } from "./plantMath";
 const EXP_TABLE_STEPS = 256;
 const EXP_TABLE_SIZE = 40 * EXP_TABLE_STEPS;
 const THIRD = 1 / 3;
-/** Path through one cell of a side ray that climbs one cell for every two across, in cells. */
 const SIDE_RAY_PATH = Math.sqrt(1.25);
 
 /** Relative light (0..1 of open sky) and the least-shaded direction at a point. */
 export interface LightField {
-  /** Clear deposited leaf area and shadow; keeps the grid. */
   clear(): void;
-  /** Add leaf area (m²) at a point; returns the point's cell for {@link LightField.lightAtCell}. */
   deposit(x: number, y: number, z: number, leafAreaM2: number): number;
-  /**
-   * Propagate shadow downwards from every deposit, and with `side` the light reaching each cell from
-   * the side through the leaves in its own row. Call once after all deposits and {@link LightField.setPeriod}.
-   */
   propagate(lowestY: number, side?: SideLight): void;
-  /**
-   * Relative irradiance at a point: openSky · e^(-k · LAI above), the point's own half voxel excluded,
-   * with {@link SideLight.share} of it arriving from the side instead.
-   */
   lightAt(x: number, y: number, z: number, openSky: number, extinction: number): number;
-  /** {@link LightField.lightAt} at a cell {@link LightField.deposit} returned. */
   lightAtCell(cell: number, openSky: number, extinction: number): number;
-  /**
-   * Repeat the plant on a square grid `periodM` apart, as a stand of identical neighbours: light and
-   * the least-shaded direction then sum the shadow of every copy within two spacings, and space nearer
-   * a neighbour's stem than the plant's own gets no light. 0 is one plant.
-   */
   setPeriod(periodM: number): void;
-  /** Write the direction of least shadow at a point into `out` (zero when the field is flat there). */
   optimalDirection(x: number, y: number, z: number, out: Float64Array): void;
-  /** Copy of the deposited leaf area and propagated shadow, with the boxes they cover. */
   snapshot(): LightFieldSnapshot;
-  /** Put back a {@link snapshot} taken from a field of the same size. */
   restore(next: LightFieldSnapshot): void;
 }
 
-/**
- * Sky light arriving from the side. A shoot is lit through a cone of the crown above it and, for
- * `share` of its light, along the horizontal through the leaves of its own row, from four sides; in a
- * stand that row runs on into the neighbours' crowns.
- */
 export interface SideLight {
   /** Share of the light that comes from the side, 0..1; 0 lights every shoot from above only. */
   share: number;
-  /** Beer–Lambert extinction coefficient along the side rays. */
   extinction: number;
 }
 
-/** A light field's grids and the boxes they cover, as plain data. */
 export interface LightFieldSnapshot {
   leaf: Float32Array;
   shadow: Float32Array;
-  /** Leaf area along the side ray from every cell, per direction. */
   ray: Float32Array;
-  /** Leaf area along the side rays started just outside the crown's box. */
   rayEntry: Float32Array;
-  /**
-   * minX, maxX, minZ, maxZ, maxY, shadowMinY, shadowMaxY, shadowMinX, shadowMaxX, shadowMinZ, shadowMaxZ,
-   * then the side share, the side ray scale and the side box: minX, maxX, minZ, maxZ, minY, maxY.
-   */
   bounds: number[];
 }
 
-/**
- * Grid size and Palubicki shadow coupling for {@link createLightField}.
- * @internal
- */
+/** @internal */
 export interface LightFieldOptions {
   cellM: number;
   halfWidthM: number;
   heightM: number;
-  /** Leaf area per voxel to LAI coupling (1 conserves leaf area). */
   a: number;
-  /** Attenuation per voxel layer the shadow travels down (1 keeps full Beer–Lambert). */
   b: number;
-  /** Layers over which the shadow cone keeps widening. */
   depth: number;
 }
 
@@ -107,10 +68,8 @@ class ShadowVoxels implements LightField {
   private readonly depth: number;
   private readonly leaf: Float32Array;
   private readonly shadow: Float32Array;
-  /** Cells in the grid. */
   private readonly grid: number;
   private sideShare = 0;
-  /** Extinction times leaf area index per unit of leaf area crossed by a side ray. */
   private sideScale = 0;
   private sideMinX = 0;
   private sideMaxX = -1;
@@ -118,14 +77,11 @@ class ShadowVoxels implements LightField {
   private sideMaxZ = -1;
   private sideMinY = 0;
   private sideMaxY = -1;
-  /** Leaf area along the side ray from every cell, per direction (+x, -x, +z, -z). */
   private readonly ray: Float32Array;
-  /** Leaf area along each side ray started just outside the crown's box, per direction, layer and row. */
   private readonly rayEntry: Float32Array;
   private readonly rowBlur: Float32Array;
   private readonly lai: number;
   private readonly keep: number;
-  /** e^-x in linear steps, so Beer–Lambert needs only + - * / and stays the same on every engine. */
   private readonly expTable: Float64Array;
   private minX: number;
   private maxX = -1;
@@ -138,9 +94,7 @@ class ShadowVoxels implements LightField {
   private shadowMaxX = -1;
   private shadowMinZ = 0;
   private shadowMaxZ = -1;
-  /** Neighbour spacing in cells, 0 for a lone plant. */
   private period = 0;
-  /** Copies of the plant on each side that fall inside the grid, at most two. */
   private images = 0;
 
   constructor(options: LightFieldOptions) {
@@ -191,7 +145,6 @@ class ShadowVoxels implements LightField {
     return this.shadow[cy * this.layer + cz * this.nx + cx] ?? 0;
   }
 
-  /** Shadow at a cell from the plant and, in a stand, every neighbour copy in reach. */
   private shadowSum(cx: number, cy: number, cz: number): number {
     if (this.images === 0) return this.shadowAt(cx, cy, cz);
     const { period, images } = this;
@@ -221,7 +174,6 @@ class ShadowVoxels implements LightField {
     return openSky * ((1 - share) * fromAbove + share * this.sideAt(at));
   }
 
-  /** e^-x from the table; e^-40 is below 1e-17, full shade. */
   private expOf(x: number): number {
     const depth = x * EXP_TABLE_STEPS;
     if (depth >= EXP_TABLE_SIZE) return 0;
@@ -267,10 +219,6 @@ class ShadowVoxels implements LightField {
     return 0.25 * light;
   }
 
-  /**
-   * Leaf area along side ray `d` started at cell `c` of `row` in layer `y`, start cell included, from
-   * the crown box's tables; -1 once the ray first meets the box above the crown's top.
-   */
   private sidePath(d: number, y: number, c: number, row: number): number {
     const { layer, nx, grid, sideMinY: bottom, sideMaxY: top } = this;
     const along = d < 2;
@@ -299,11 +247,6 @@ class ShadowVoxels implements LightField {
     return (this.leaf[cell] ?? 0) + (this.ray[d * grid + cell] ?? 0);
   }
 
-  /**
-   * Leaf area along the side rays from each cell of the crown's box: rays that climb one cell for
-   * every two across (63° from the zenith, mid-way through the band beyond 45°), toward ±x and ±z,
-   * and the same rays started just outside the box, where a neighbour's ray enters it.
-   */
   private computeSide(bottom: number, side: SideLight): void {
     const { nx, nz, ny, layer, leaf, grid, ray, rayEntry } = this;
     this.sideScale = side.extinction * this.lai * SIDE_RAY_PATH;

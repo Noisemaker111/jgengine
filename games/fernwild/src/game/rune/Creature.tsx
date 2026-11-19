@@ -21,17 +21,12 @@ export function cardShape(card: CreatureCard): CreatureCard {
   return { ...card, health: zero, stamina: zero, weight: zero, taming: card.taming === null ? null : { ...card.taming, torpor: card.taming.torpor > 0 ? 1 : 0, progress: 0, wakesIn: 0, nextMeal: 0, effectiveness: 0 } };
 }
 
-/** Hours and minutes, the way ARK shows breeding timers. */
 function clock(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m ${Math.floor(seconds % 60)}s`;
 }
 
-/**
- * ARK's look-at readout: name and level, health, and while it is down its torpor and taming. `card` decides
- * which rows show; `read` feeds their changing numbers each frame.
- */
 export function CreatureReadout({ card, read }: { card: CreatureCard; read: () => CreatureCard | null }): ReactNode {
   const ctx = useGameContext();
   const live = () => read() ?? card;
@@ -60,7 +55,6 @@ export function CreatureReadout({ card, read }: { card: CreatureCard; read: () =
   );
 }
 
-/** ARK's tame stats: level and XP to the next, then each stat with a + while points are unspent. */
 function TameSheet({ growth }: { growth: NonNullable<CreatureCard["growth"]> }): ReactNode {
   return (
     <RuneView gap={3}>
@@ -81,7 +75,6 @@ function TameSheet({ growth }: { growth: NonNullable<CreatureCard["growth"]> }):
   );
 }
 
-/** A bred creature's lineage: each wild stat's levels and the parent they came from, a mutation marked. */
 function LineageSheet({ rows }: { rows: NonNullable<CreatureCard["lineage"]> }): ReactNode {
   return (
     <RuneView gap={2}>
@@ -97,7 +90,6 @@ function LineageSheet({ rows }: { rows: NonNullable<CreatureCard["lineage"]> }):
   );
 }
 
-/** Breeding on the creature screen: the mating switch, mating and pregnancy, or a baby's growing, food and imprint. */
 function BreedingPanel({ mating }: { mating: boolean }): ReactNode {
   const ctx = useGameContext();
   const card = useGameStore((c) => { const b = viewedBreeding(c); return b === null ? null : { baby: b.baby !== null, breeds: b.breeds, mode: b.mode, incubation: b.incubation, mating: b.mating !== null, pregnancy: b.pregnancy !== null, cooldown: b.cooldown > 0 }; }, same);
@@ -128,7 +120,6 @@ function BreedingPanel({ mating }: { mating: boolean }): ReactNode {
   );
 }
 
-/** Its favourite first (ARK's kibble tier), then the plain foods it also takes; the other kibble tiers go unsaid. */
 function hungryLine(foods: readonly string[]): string {
   const [best, ...rest] = foods;
   if (best === undefined) return "It eats nothing you can give it.";
@@ -138,7 +129,6 @@ function hungryLine(foods: readonly string[]): string {
 
 const STANCE_LINE = { passive: "Never fights", neutral: "Fights back, and joins your fights", aggressive: "Attacks anything near" } as const;
 
-/** ARK's remote inventory: the creature's own items, taming state, saddle and orders. Take puts an item back in your bag. */
 export function CreaturePanel(): ReactNode {
   const ctx = useGameContext();
   const card = useGameStore((c) => {

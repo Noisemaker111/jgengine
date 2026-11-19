@@ -1,5 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-/** The rack hardware menu (E near a rack): a modal sheet over the world; Escape or Back closes it. */
 import type { PlacedRack } from "../infrastructure";
 import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "../rackHardwareSession";
 import type { RackCoolingInventory, RackCoolingUnitId } from "@llmville/game/infrastructure/catalog";

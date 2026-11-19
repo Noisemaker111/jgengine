@@ -2,7 +2,6 @@ import type { GameContext } from "../runtime/gameContextTypes";
 import type { MotionIntents } from "../runtime/motionIntents";
 import type { Vec3 } from "./geometry";
 
-/** The game selects affected players, coupling, target bits and its acceleration limit. */
 export interface EnvironmentMotionTarget {
   entityId: string;
   motion: Pick<MotionIntents, "impulse" | "pushHorizontal">;
@@ -11,13 +10,10 @@ export interface EnvironmentMotionTarget {
   /** Maximum combined acceleration in metres/second²; supported range 0..1e12. */
   maxAcceleration: number;
   mask?: number;
-  /** Opt into authored shelter exposure scaling for wind and localized forces. */
   sheltered?: boolean;
 }
 
-/** Inject authoritative spatial forces before existing movement consumes its motion intents.
- * @capability environment-motion apply capped spatial wind and vortex forces to game-selected actors through shared motion intents
- */
+/** @capability environment-motion apply capped spatial wind and vortex forces to game-selected actors through shared motion intents */
 export function installEnvironmentMotion(ctx: GameContext, options: { targets: () => readonly EnvironmentMotionTarget[]; maxTargets?: number }): () => void {
   const limit = options.maxTargets ?? 64;
   if (!Number.isInteger(limit) || limit < 1 || limit > 4096) throw new Error("environment motion target budget must be an integer in 1..4096");

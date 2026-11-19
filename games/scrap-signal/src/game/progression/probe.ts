@@ -16,11 +16,9 @@ import { talentRanksStore } from "../stores";
 import { discoveryStore } from "./discovery";
 import { openWeaponSlots, unlockCount } from "./unlocks";
 
-/** Every gun model: each maker's take on each family, each named legendary, and each quest-reward unique. */
 export const GUN_MODEL_COUNT =
   MANUFACTURERS.length * FAMILY_BASES.length + Object.values(LEGENDARY_NAMES).flat().length + UNIQUE_GUNS.length;
 
-/** Every enemy type a zone camp, a side camp, a zone boss or a quest puts in the world. */
 export const ENEMY_TYPES: readonly string[] = [
   ...new Set([
     ...ZONES.flatMap((zone) => [...zone.clusters.map((cluster) => cluster.catalogId), ...(zone.boss === undefined ? [] : [zone.boss.catalogId])]),
@@ -29,16 +27,13 @@ export const ENEMY_TYPES: readonly string[] = [
   ]),
 ];
 
-/** `goalKind` in the probe is the marker kind's index here; -1 when there is no marker. */
 export const WAYPOINT_KINDS: readonly WaypointKind[] = ["npc", "chest", "loot", "enemy", "place"];
 
-/** How hard a gun hits per trigger pull: what a player reads off the card to compare two guns. */
 function hitPower(itemId: string): number {
   const gun = gunById(itemId);
   return gun === undefined ? 0 : gun.weapon.damage * (gun.weapon.pellets ?? 1);
 }
 
-/** Rounds the gun in hand can still fire. */
 function heldAmmo(ctx: GameContext): number {
   const held = ctx.player.inventory.state("hotbar").slots[session.selectedSlot()];
   const gun = held === null || held === undefined ? undefined : gunById(held.itemId);
@@ -52,7 +47,6 @@ function magFill(ctx: GameContext): number {
   return gun === undefined || gun.magSize <= 0 ? 0 : magLoaded(ctx, gun) / gun.magSize;
 }
 
-/** How many carried guns still have rounds: a player switches to one of those when the gun in hand runs dry. */
 function gunsWithAmmo(ctx: GameContext): number {
   return ctx.player.inventory.state("hotbar").slots.filter((slot) => {
     const gun = slot === null ? undefined : gunById(slot.itemId);
@@ -60,15 +54,9 @@ function gunsWithAmmo(ctx: GameContext): number {
   }).length;
 }
 
-/** Reach for loot the way a player would: guns on the ground near you worth taking. */
 const LOOT_REACH = 30;
-/** A player swaps the gun they know for one that hits clearly harder, not a point or two. */
 const CLEARLY_BETTER = 1.2;
 
-/**
- * The nearest drop worth walking to: a gun that fills an open slot or hits clearly harder than the gun in
- * hand, or ammo for a pool that is not full.
- */
 function nearestWorthTaking(ctx: GameContext, from: readonly [number, number, number]): { at: readonly [number, number, number]; gun: boolean } | null {
   const slots = ctx.player.inventory.state("hotbar").slots;
   const open = openWeaponSlots(ctx);

@@ -20,7 +20,6 @@ export const SKILL_TAG = /^\s*(?:\/\/|\/?\*+)\s*@skill\s+([a-z][\w-]*)\s*(?:\*\/
 
 const IMPORT = /(?:from|import)\s*\(?\s*["']([^"']+)["']/g;
 
-/** The core folders a source file imports: `../x/...`, `../../x/...` or `@jgengine/core/x...`. */
 export function importedFolders(source: string, depth: number): string[] {
   const found = new Set<string>();
   for (const match of source.matchAll(IMPORT)) {
@@ -39,23 +38,17 @@ export function importedFolders(source: string, depth: number): string[] {
   return [...found];
 }
 
-/** Lower-case words of three letters or more, with camelCase split: `lootTable` -> `loot`, `table`. */
 export function words(text: string): string[] {
   return text.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase().match(/[a-z]{3,}/g) ?? [];
 }
 
-/** What one folder is, as far as routing can read: its tag, its words and its imports. */
 export interface FolderProfile {
   name: string;
   /** Every distinct `@skill` tag in the folder; more than one is an error. */
   tags: string[];
-  /** The file and line a tag was found in, for messages. */
   taggedIn: string[];
-  /** Folder, file and exported names and doc comment words. */
   words: string[];
-  /** Other routed folders it imports. */
   imports: string[];
-  /** Where gen writes a tag for an untagged folder. */
   tagTarget: string;
 }
 
@@ -69,7 +62,6 @@ function sourceFiles(dir: string, depth: number): { path: string; depth: number 
   return out;
 }
 
-/** The file a new tag goes in: `<folder>/<folder>.ts(x)`, else `index.ts`, else the first file at the folder's root. */
 function tagTargetFor(dir: string, name: string, files: readonly { path: string; depth: number }[]): string {
   for (const candidate of [`${name}.ts`, `${name}.tsx`, "index.ts"]) {
     if (existsSync(join(dir, candidate))) return join(dir, candidate);
@@ -133,17 +125,9 @@ function cosine(a: Vector, b: Vector): number {
   return na === 0 || nb === 0 ? 0 : dot / Math.sqrt(na * nb);
 }
 
-/** How many of the most alike routed folders of one skill count toward its score. */
 const NEAREST = 3;
-/** Weight of the skill's own docs (SKILL.md and recipes) against its nearest folders. */
 const DOCS_WEIGHT = 3;
 
-/**
- * The skill an untagged folder most likely belongs to: for each skill, how alike its nearest routed
- * folders read (TF-IDF over names and doc comments), plus how alike the skill's own docs read. Measured
- * leave-one-out against the tagged folders, this picks the tagged skill about 7 times in 10; the tag it
- * writes is reviewed in the diff.
- */
 export function guessSkill(
   folder: FolderProfile,
   routed: ReadonlyMap<string, { profile: FolderProfile; skill: string }>,
@@ -173,7 +157,6 @@ export function guessSkill(
   return best.skill;
 }
 
-/** The words of each skill's own docs: its SKILL.md and recipes. */
 export function readSkillDocs(skillsDir: string, skills: readonly string[]): Map<string, string[]> {
   const docs = new Map<string, string[]>();
   for (const skill of skills) {
@@ -189,10 +172,6 @@ export function readSkillDocs(skillsDir: string, skills: readonly string[]): Map
   return docs;
 }
 
-/**
- * Route every profile from its tag; return the untagged ones with their guesses. Throws on a folder
- * with two different tags or a tag naming a skill that does not exist.
- */
 export function routeProfiles(
   profiles: readonly FolderProfile[],
   known: ReadonlySet<string>,

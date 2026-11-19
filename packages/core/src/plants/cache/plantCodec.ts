@@ -197,10 +197,7 @@ export function encodePlantStructure(structure: PlantStructure, hash: string): U
   return pack(meta, arrays);
 }
 
-/**
- * The structure and hash {@link encodePlantStructure} wrote.
- * @capability plant-cache cache grown plant structures and styled meshes in memory and injected storage
- */
+/** @capability plant-cache cache grown plant structures and styled meshes in memory and injected storage */
 export function decodePlantStructure(bytes: Uint8Array): { structure: PlantStructure; hash: string } {
   const data = new Unpacked(bytes);
   const meta = data.meta;
@@ -329,10 +326,7 @@ export function encodePlantMesh(mesh: PlantMesh): Uint8Array {
   return pack(meta, [...partArrays("bark", mesh.bark), ...partArrays("leaves", mesh.leaves), ["leafUvs", mesh.leafUvs]]);
 }
 
-/**
- * The mesh {@link encodePlantMesh} wrote.
- * @capability plant-cache cache grown plant structures and styled meshes in memory and injected storage
- */
+/** @capability plant-cache cache grown plant structures and styled meshes in memory and injected storage */
 export function decodePlantMesh(bytes: Uint8Array): PlantMesh {
   const data = new Unpacked(bytes);
   const meta = data.meta;

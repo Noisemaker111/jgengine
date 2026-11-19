@@ -36,7 +36,6 @@ function VariantPanel() {
   );
 }
 
-/** The nature generators' variant grid: one species, twenty live tiles, built from its schema alone. */
 export const natureVariantsGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "nature-variants" },

@@ -18,10 +18,8 @@
  */
 import { buildRouteCourse, MAIN_ROUTE, type CourseFix, type CourseSpanCycle, type CourseSpanSpec, type CourseVec2, type RouteCourse, type RouteCourseSpec } from "./routeCourse";
 
-/** What a slot holds. */
 export type CourseSlotKind = "hazard" | "gate" | "drop" | "zone" | "dressing";
 
-/** Every slot kind, in the order a layout lists them. */
 export const COURSE_SLOT_KINDS: readonly CourseSlotKind[] = ["hazard", "gate", "drop", "zone", "dressing"];
 
 /**
@@ -42,13 +40,10 @@ export const COURSE_SLOT_ROLES = {
   dressing: ["corner", "straight", "finish"],
 } as const satisfies Readonly<Record<CourseSlotKind, readonly string[]>>;
 
-/** One place on a course a game fills with content. */
 export interface CourseSlot {
   id: string;
   kind: CourseSlotKind;
-  /** What the slot is for (see {@link COURSE_SLOT_ROLES}). */
   role: string;
-  /** Route id; default the main line. */
   route?: string;
   /** Route-local metres: a point slot's place, a span slot's start. */
   at: number;
@@ -58,23 +53,14 @@ export interface CourseSlot {
   offset?: number;
   /** Lateral band `[min, max]` a hazard covers; default the whole width. */
   band?: readonly [number, number];
-  /**
-   * A fixed `[x, z]` for a slot that stands off the road (a landmark across the lake): world space in
-   * a layout, course-local in a `course` marker's meta (see `courseLayoutFromMeta`). `at` still names
-   * the stretch of road it belongs to.
-   */
   position?: CourseVec2;
-  /** A timed hazard's window. */
   cycle?: CourseSpanCycle;
-  /** Placed by hand over the generator's layout. */
   pinned?: boolean;
   /** Game content the slot carries (hazard kind, a label); the course never reads it. */
   data?: Readonly<Record<string, string | number | boolean>>;
 }
 
-/** A course and its slots: everything a game needs to lay the road and fill it. */
 export interface CourseLayout {
-  /** The main line and its branches. Spans for hazard and zone slots are added by {@link buildCourseLayout}. */
   spec: RouteCourseSpec;
   /** Main-line metres of the start line; behind it is the grid's run-up. */
   startLine: number;
@@ -83,7 +69,6 @@ export interface CourseLayout {
   slots: readonly CourseSlot[];
 }
 
-/** The spans a layout's hazard and zone slots become: tag = slot kind, `data.role` = the slot's role. */
 export function courseSlotSpans(slots: readonly CourseSlot[]): CourseSpanSpec[] {
   return slots
     .filter((slot) => (slot.kind === "hazard" || slot.kind === "zone") && slot.to !== undefined)
@@ -99,22 +84,15 @@ export function courseSlotSpans(slots: readonly CourseSlot[]): CourseSpanSpec[] 
     }));
 }
 
-/** Build a layout's course with its hazard and zone slots as spans. */
 export function buildCourseLayout(layout: CourseLayout): RouteCourse {
   return buildRouteCourse({ ...layout.spec, spans: [...(layout.spec.spans ?? []), ...courseSlotSpans(layout.slots)] });
 }
 
-/**
- * An authored change to a generated layout's slots: a pin whose `id` names a slot overrides that
- * slot's fields, its `data` merged over the slot's (or deletes it with `remove`); any other pin adds
- * a slot of its own (it then needs `kind`, `role` and `at`). Pinned slots carry `pinned: true`.
- */
 export interface CoursePin extends Partial<Omit<CourseSlot, "id">> {
   id: string;
   remove?: boolean;
 }
 
-/** Apply authored pins over a layout's slots. */
 export function applyCoursePins(layout: CourseLayout, pins: readonly CoursePin[]): CourseLayout {
   if (pins.length === 0) return layout;
   const byId = new Map(pins.map((pin) => [pin.id, pin]));
@@ -139,7 +117,6 @@ function pinned(slot: CourseSlot, pin: CoursePin): CourseSlot {
   return { ...slot, ...fields, ...data, pinned: true };
 }
 
-/** A point-mass kart for {@link courseDriveTime}: grip in corners, acceleration, braking, top speed. */
 export interface CourseVehicle {
   /** Lateral grip, m/s². Default 11. */
   grip?: number;
@@ -172,12 +149,10 @@ export function courseSlotRisk(slot: CourseSlot, options: { vehicle?: CourseVehi
   return 0;
 }
 
-/** Options for {@link courseDriveTime}. */
 export interface CourseDriveOptions {
   /** Main-line metres to start from (standing) and to finish at. */
   from: number;
   to: number;
-  /** Branch ids to take. */
   take?: readonly string[];
   vehicle?: CourseVehicle;
 }
@@ -234,19 +209,15 @@ function circumradius(a: CourseVec2, b: CourseVec2, c: CourseVec2): number {
   return cross < 1e-9 ? Number.POSITIVE_INFINITY : (ab * bc * ca) / (2 * cross);
 }
 
-/** Corner-piece tags the generator writes, which {@link measureCourse} counts. */
 export const COURSE_CORNER_TAGS = ["sweeper", "right-angle", "hairpin", "chicane", "detour"] as const;
-/** A corner family the generator lays. */
 export type CourseCornerKind = (typeof COURSE_CORNER_TAGS)[number];
 
-/** What a layout measures as: the numbers the generator's dials move. */
 export interface CourseMeasure {
   /** Main-line metres from the start line to the finish. */
   length: number;
   /** Turn pieces of 20° or more, and per km of `length`. */
   turns: number;
   turnsPerKm: number;
-  /** Turn pieces per corner tag (`hairpin`, `chicane`, …). */
   corners: Readonly<Record<string, number>>;
   /** Metres climbed and descended on the main line, and steep descents of 4 m or more. */
   climb: number;
@@ -255,12 +226,10 @@ export interface CourseMeasure {
   minRadius: number;
   maxGrade: number;
   branches: number;
-  /** Slots per kind, and per `kind:role`. */
   slots: Readonly<Record<string, number>>;
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
 }
 
-/** Measure a layout. Turn and climb figures need a piece-laid main line. */
 export function measureCourse(layout: CourseLayout, course: RouteCourse = buildCourseLayout(layout)): CourseMeasure {
   const corners: Record<string, number> = {};
   let turns = 0;
@@ -305,20 +274,17 @@ export function measureCourse(layout: CourseLayout, course: RouteCourse = buildC
   };
 }
 
-/** Options for {@link checkCoursePlayability}. */
 export interface CoursePlayabilityOptions {
   vehicle?: CourseVehicle;
   /** Seconds a barricade costs a kart that cannot clear it, on top of the stop (see {@link courseSlotRisk}). Default 2. */
   gatePenalty?: number;
   /** Least metres between the walls of two stretches of road that are not neighbours. Default 4. */
   wallGap?: number;
-  /** Steepest grade a piece may hold. Default 0.25. */
   maxGrade?: number;
   /** Shortest a timed hazard's off-window may be, seconds. Default 2. */
   minWindow?: number;
   /** Narrowest free lane a lane hazard may leave, metres. Default 3. */
   minLane?: number;
-  /** Require every shortcut to save time and carry a risk that can cost more than it saves. Default true. */
   shortcutRisk?: boolean;
 }
 
@@ -332,16 +298,13 @@ export interface CourseShortcutTrade {
   riskSlots: readonly string[];
 }
 
-/** One hazard and how a driver beats it. */
 export interface CourseHazardCheck {
   id: string;
-  /** `window` (wait out the cycle), `lane` (take the free lane), `through` (it only slows). */
   beat: "window" | "lane" | "through" | "none";
   /** Seconds of the worst wait, or metres of free lane. */
   margin: number;
 }
 
-/** What {@link checkCoursePlayability} found. */
 export interface CoursePlayability {
   ok: boolean;
   issues: readonly string[];
@@ -352,13 +315,6 @@ export interface CoursePlayability {
   hazards: readonly CourseHazardCheck[];
 }
 
-/**
- * Check a layout can be raced: it builds; no two stretches of road run into each other; corners
- * clear their width and slopes stay drivable; start, finish and every slot sit on their routes;
- * every hazard can be beaten (a window in its cycle, a free lane, or it only slows) and none stands
- * over a barricade or another timed hazard; and every shortcut saves sim time but carries a risk
- * that can cost more than it saves.
- */
 export function checkCoursePlayability(layout: CourseLayout, options: CoursePlayabilityOptions = {}): CoursePlayability {
   const issues: string[] = [];
   let course: RouteCourse;

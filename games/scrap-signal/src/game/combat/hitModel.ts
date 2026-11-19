@@ -12,13 +12,6 @@ import { enemyById } from "../entities/enemies/catalog";
 import { surfaceOverride } from "./surfaceOverride";
 import type { GunDef, GunElement, Surface } from "../handroll/guns";
 
-/**
- * Scrap's elemental chart, as data the shared damage model reads. The old local `ELEMENT_MATCHUP`
- * table is the same numbers, moved into the shape `combat/damage/damageRuntime` consumes: a damage type per
- * gun element scored against the three resistance classes a body here can present. A target with a
- * live shield presents `shield` and ignores its hull surface, which is the precedence the old
- * shielded-overrides-surface check encoded.
- */
 export const DAMAGE_TABLE: DamageTableDef = {
   types: [
     { id: "none" },
@@ -31,7 +24,6 @@ export const DAMAGE_TABLE: DamageTableDef = {
   defaultMultiplier: 1,
 };
 
-/** The flux debuff: a pure marker status. While carried, every non-flux channel is doubled. */
 export const FLUX_STATUS: StatusDef = { id: "flux", stack: { kind: "refresh" }, durationMs: 8000 };
 
 /**
@@ -45,7 +37,6 @@ export const combatRngOf = perContext(() => seededRng("scrap-combat-procs"));
 /** Flux doubles every channel except itself; it is the one received modifier the chart cannot carry. */
 export const FLUX_DAMAGE_MULT = 2;
 
-/** The number the chart scores before zone, type and armor: a gun's base, doubled while fluxed. */
 export function hitBase(gun: GunDef, fluxed: boolean): number {
   return fluxed && gun.element !== "flux" ? gun.weapon.damage * FLUX_DAMAGE_MULT : gun.weapon.damage;
 }
@@ -85,7 +76,6 @@ const combatOf = perContext((ctx: GameContext): Combat => {
   return { damage };
 });
 
-/** The body a target presents to the chart: a live shield first, then its authored surface. */
 export function resistanceOf(ctx: GameContext, targetId: string): string {
   const shield = ctx.scene.entity.stats.get(targetId, "shield");
   if (shield !== null && shield.current > 0) return "shield";
@@ -113,7 +103,6 @@ export function syncCombatTargets(ctx: GameContext): void {
   }
 }
 
-/** Forget a despawned target and any status it carried. */
 export function forgetCombatTarget(ctx: GameContext, targetId: string): void {
   combatOf(ctx).damage.removeTarget(targetId);
 }
@@ -130,7 +119,6 @@ export interface HitOutcome {
   multiplier: number;
 }
 
-/** Per-hit shaping a gun perk asks for: a damage multiplier on the base, and a guaranteed crit. */
 export interface GunHitMods {
   damageScale?: number;
   forceCrit?: boolean;
@@ -179,7 +167,6 @@ export function resolveGunHit(
   };
 }
 
-/** Advance carried statuses (flux expiry) on the shared model. */
 export function tickCombat(ctx: GameContext, dtSeconds: number): void {
   combatOf(ctx).damage.tick(dtSeconds);
 }

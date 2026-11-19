@@ -1,4 +1,3 @@
-/** What the shell needs from a `contextmenu` event to decide whether the browser's menu may open. */
 export interface ContextMenuEventLike {
   target: EventTarget | null;
   preventDefault(): void;

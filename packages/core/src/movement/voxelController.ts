@@ -24,13 +24,9 @@ import { MOVEMENT_TUNING, motionStepSeconds, type MovementIntent, type MovementT
 
 export type SolidQuery = (x: number, y: number, z: number) => boolean;
 
-/** Footprint + height of the player box, in world units. */
 export interface VoxelPlayerDims {
-  /** Half the box width on both horizontal axes. */
   halfWidth: number;
-  /** Box height measured up from the feet. */
   height: number;
-  /** Tallest ledge the player walks up without jumping. */
   stepHeight: number;
 }
 
@@ -40,7 +36,6 @@ export const DEFAULT_VOXEL_DIMS: VoxelPlayerDims = {
   stepHeight: 0.6,
 };
 
-/** Mutable kinematic state carried between frames by the voxel controller. */
 export interface VoxelPlayerBody {
   x: number;
   y: number;
@@ -67,7 +62,6 @@ function cellZ(worldZ: number): number {
   return Math.floor(worldZ + 0.5);
 }
 
-/** True if the player box centred at (x, y, z) overlaps any solid cell. */
 function overlapsSolid(
   x: number,
   y: number,
@@ -91,10 +85,8 @@ function overlapsSolid(
   return false;
 }
 
-/** Samples the terrain floor height at a point; unset means flat ground plays no part in support. */
 export type GroundHeightQuery = (x: number, z: number) => number;
 
-/** True if a solid cell sits directly beneath the feet, or terrain supports them (i.e. the player is supported). */
 function hasSupport(
   x: number,
   z: number,
@@ -186,11 +178,6 @@ function targetHorizontalVelocity(
   return { x: vx, z: vz };
 }
 
-/**
- * Move the body along one horizontal axis, resolving collisions. Returns the
- * component of the step that survived (0 when a wall stopped the move). When the
- * move is blocked but the obstacle is a short ledge, the body steps up onto it.
- */
 function moveAxis(
   body: VoxelPlayerBody,
   axis: "x" | "z",

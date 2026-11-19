@@ -32,7 +32,6 @@ export type SystemTick =
     }
   | { type: "manual" };
 
-/** Event name → handler. Payload is the engine event shape for that name. */
 export type SystemEventHandlers = {
   readonly [eventName: string]: (ctx: GameContext, event: unknown) => void;
 };
@@ -53,40 +52,20 @@ export interface SystemDefinition {
   tick?: SystemTick;
   /** Other system ids that must also be installed; validated when the schedule compiles. */
   dependsOn?: readonly string[];
-  /**
-   * Opt-in `ctx.game.*` feature(s) this system needs. Installing the system enables them — no
-   * separate `features: { quest: true }` flag required (you may still set flags for systems-free games).
-   */
   feature?: keyof GameFeatures | readonly (keyof GameFeatures)[];
-  /** Once per world boot, before {@link start}. */
   create?(ctx: GameContext): void;
-  /** Once per world boot, after every system's `create`. */
   start?(ctx: GameContext): void;
   /** Per schedule fire — `dt` is game-seconds for the step (fixed/frame/interval). */
   update?(ctx: GameContext, dt: number): void;
   events?: SystemEventHandlers;
-  /**
-   * Whole-world save contribution. A factory form runs after `create` so closures can close over
-   * system state. Registered into `ctx.game.save` coverage.
-   */
   save?: SnapshotModule | ((ctx: GameContext) => SnapshotModule | undefined);
-  /**
-   * Host→client replication contribution. Same factory form as {@link save}; registered into
-   * `ctx.snapshot` / `ctx.hydrate`.
-   */
   replicate?: SnapshotModule | ((ctx: GameContext) => SnapshotModule | undefined);
   /** Run on scenario/run reset — clear run-scoped state while meta may survive. */
   reset?(ctx: GameContext): void;
-  /** Run when the world is torn down (mode switch, unmount). */
   dispose?(ctx: GameContext): void;
 }
 
-/**
- * Declare a composable game system. Pure data + hooks — the engine compiles the schedule and
- * installs lifecycle when the game boots.
-  *
- * @capability define-system composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`
- */
+/** @capability define-system composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })` */
 export function defineSystem(definition: SystemDefinition): SystemDefinition {
   if (definition.id.trim().length === 0) {
     throw new Error("defineSystem: id must be non-empty");
@@ -100,8 +79,7 @@ export function defineSystem(definition: SystemDefinition): SystemDefinition {
   return definition;
 }
 
-/** Collect feature flags implied by a system list (OR-merge; installing a system activates its capability).
- * @internal */
+/** @internal */
 export function featuresFromSystems(systems: readonly SystemDefinition[] | undefined): GameFeatures {
   const out: GameFeatures = {};
   if (systems === undefined) return out;
@@ -113,8 +91,7 @@ export function featuresFromSystems(systems: readonly SystemDefinition[] | undef
   return out;
 }
 
-/** OR-merge explicit `features` with flags implied by installed systems.
- * @internal */
+/** @internal */
 export function mergeSystemFeatures(
   explicit: GameFeatures | undefined,
   systems: readonly SystemDefinition[] | undefined,

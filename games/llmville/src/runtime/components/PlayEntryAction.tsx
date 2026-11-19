@@ -3,7 +3,6 @@ import { Button } from "../../ui/kit";
 import type { MainMenuState } from "../mainMenu";
 import { MAIN_MENU_KIND } from "../mainMenuPhase";
 
-/** Start or continue a lab — sign-in and founder setup when needed. */
 export function PlayEntryAction({ menu, label }: { menu: MainMenuState; label: string }) {
   const continuing = menu.phase.kind === MAIN_MENU_KIND.continue;
   return <Button tone="primary" icon="play" busy={menu.isEnteringGame} busyLabel="Joining world…"

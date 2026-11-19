@@ -33,14 +33,12 @@ const USAGE: Usage = {
   example: "bun run perf server --players 16,32,64 --repeats 3",
 };
 
-/** The router's minimum pose interval: one pose per player per step. */
 export const STEP_MS = 100;
 /** Metres a player moves per step: 4 m/s, under the default 12 m/s speed cap. */
 const STEP_METRES = 0.4;
 const WARMUP_STEPS = 3;
 /** Most steps one run measures: 10 game seconds. */
 export const MAX_STEPS = 100;
-/** A run that has measured this many steps stops once it has measured for {@link MEASURE_MS}. */
 export const MIN_STEPS = 5;
 /** Wall ms of measuring after which a slow room stops early, so it costs seconds rather than minutes. */
 export const MEASURE_MS = 5000;
@@ -115,11 +113,6 @@ export function parseArgs(argv: readonly string[]): ServerBenchArgs {
   return args;
 }
 
-/**
- * Whether a run measures another step: up to {@link MAX_STEPS}, stopping early after
- * {@link MEASURE_MS} of measuring once {@link MIN_STEPS} are in, and stopping at the hard cap of
- * `maxSeconds` for the whole run. At least one step is always measured.
- */
 export function nextStep(
   measured: number,
   measuringMs: number,
@@ -147,7 +140,6 @@ const round = (value: number, places: number): number => {
   return Math.round(value * scale) / scale;
 };
 
-/** One row per room size: the median of each rate across the repeats. */
 export function summarize(players: number, samples: readonly RunSample[]): ServerBenchRow {
   const perGameSecond = (pick: (sample: RunSample) => number) =>
     median(samples.map((sample) => pick(sample) / ((sample.steps * STEP_MS) / 1000)));
@@ -170,7 +162,6 @@ export function summarize(players: number, samples: readonly RunSample[]): Serve
   };
 }
 
-/** The stderr notes a row earns: falling behind real time, or a run stopped at the wall cap. */
 export function rowNotes(row: ServerBenchRow, maxSeconds: number): string[] {
   const notes: string[] = [];
   if (!row.keepsUpInRealTime) {
@@ -189,7 +180,6 @@ const cpuMsNow = (): number => {
   return (usage.user + usage.system) / 1000;
 };
 
-/** One run: build a room of `players`, warm up, then time pose rounds until {@link nextStep} stops it. */
 export async function measureRoom(players: number, maxSeconds: number, maxSteps = MAX_STEPS): Promise<RunSample> {
   const runStart = performance.now();
   let clock = 1_700_000_000_000;

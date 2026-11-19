@@ -18,17 +18,12 @@ const DESERT = "quaternius-low-poly-desert-assets";
  */
 const HUMANOID_HEIGHT = 1.8;
 
-/**
- * Every gun a Toon Shooter character carries in its right hand. The pack ships them all on the rig;
- * a character shows one and hides the rest.
- */
 const TOON_GUNS = [
   "Revolver", "Revolver_Small", "Pistol", "GrenadeLauncher", "ShortCannon", "Shotgun", "Sniper_2",
   "Sniper", "SMG", "RocketLauncher", "Shovel", "AK", "Knife_1", "Knife_2",
 ] as const;
 type ToonGun = (typeof TOON_GUNS)[number];
 
-/** Hide every gun on a Toon Shooter rig but `gun`. */
 function holding(gun: ToonGun): string[] {
   return TOON_GUNS.filter((candidate) => candidate !== gun);
 }
@@ -37,11 +32,6 @@ type RigKind = "humanoid" | "beast" | "machine";
 
 const BASE_HEIGHT: Record<RigKind, number> = { humanoid: HUMANOID_HEIGHT, beast: 1.2, machine: 2.6 };
 
-/**
- * Enemy casting. Scrapjack crews are Quaternius Toon Shooter characters, each with the one gun that
- * tells its rank; beast-frames are the Quaternius sci-fi aliens; loaders and heavy frames are the
- * Quaternius Animated Mechs, which walk, punch and die on their own clips. One studio, one bevel.
- */
 const RIG_BY_ID: Record<string, { kind: RigKind; model: string; fallbackModel?: string; gun?: ToonGun }> = {
   husk: { kind: "humanoid", model: `${TOON}/Character_Enemy`, gun: "Pistol" },
   marauder: { kind: "humanoid", model: `${TOON}/Character_Hazmat`, gun: "Shovel" },
@@ -85,7 +75,6 @@ function enemyFinish(def: EnemyDef, kind: RigKind): ModelMaterialOverride {
   return { color: style.plate, metalness: 0.2, roughness: 0.75, rim };
 }
 
-/** A local breed wears its base's rig. */
 function rigOf(def: EnemyDef) {
   return RIG_BY_ID[def.look ?? def.id];
 }
@@ -104,7 +93,6 @@ function enemyPick(def: EnemyDef): ModelPick | null {
   };
 }
 
-/** The crew: the Toon Shooter cast in their own colours, each with the gun of their trade. */
 const NPCS: Record<string, { body: string; gun: ToonGun }> = {
   dr_sparx: { body: `${TOON}/Character_Hazmat`, gun: "Revolver_Small" },
   rigg: { body: `${TOON}/Character_Hazmat`, gun: "Shotgun" },
@@ -128,15 +116,10 @@ function buildEntityModels(): Record<string, ModelConfig> {
 
 export const entityModels: Record<string, ModelConfig> = buildEntityModels();
 
-/**
- * Rim tuning for the world's own scenery. Weaker and warmer than the hostiles' cool edge on purpose:
- * scenery has to gain form without competing with the read that says "that one can kill you".
- */
 const BARK_RIM = { color: "#e8b06a", strength: 0.55, power: 3 } as const;
 const BONE_RIM = { color: "#f2e3c4", strength: 0.7, power: 2.8 } as const;
 const ROCK_RIM = { color: "#e0b47f", strength: 0.3, power: 3.6 } as const;
 
-/** Industrial props get real riveted panel; scavenged and improvised ones get scratched plate. */
 const PANEL = { metalness: 0.72, roughness: 0.42, maps: PANEL_MAPS } as const;
 const SCRAP = { metalness: 0.55, roughness: 0.68, maps: SCRAP_METAL_MAPS } as const;
 

@@ -3,11 +3,8 @@ import { clamp01 } from "../../math/scalar";
 
 /** A per-frame camera shake offset: three positional axes plus three rotational axes (radians). */
 export interface CameraShakeOffset {
-  /** Positional kick along camera-space X. */
   x: number;
-  /** Positional kick along camera-space Y. */
   y: number;
-  /** Positional kick along camera-space Z. */
   z: number;
   /** Rotational kick about the pitch axis (radians). */
   pitch: number;
@@ -17,7 +14,6 @@ export interface CameraShakeOffset {
   roll: number;
 }
 
-/** Configuration for {@link createCameraShake}. Every field has a game-feel default. */
 export interface CameraShakeConfig {
   /** Trauma bled off per second while `update` runs. Default `1.6`. */
   decayPerSecond?: number;
@@ -27,7 +23,6 @@ export interface CameraShakeConfig {
    * "trauma squared" curve).
    */
   traumaExponent?: number;
-  /** Peak positional offset at full shake, per `[x, y, z]` axis (world units). Default `[0.6, 0.6, 0.4]`. */
   maxTranslation?: readonly [number, number, number];
   /** Peak rotational offset at full shake, per `[pitch, yaw, roll]` axis (radians). Default `[0.06, 0.06, 0.12]`. */
   maxRotation?: readonly [number, number, number];
@@ -39,9 +34,7 @@ export interface CameraShakeConfig {
   now?: () => number;
 }
 
-/** Camera-shake / trauma defaults (#28). Any rig reads the trauma channel; game systems feed it via `cameraShake()`. */
 export interface CameraRigShakeConfig {
-  /** Positional shake amplitude at full trauma (world units). Default 0.5. */
   maxOffset?: number;
   /** Rotational shake amplitude at full trauma (radians). Default 0.06. */
   maxRoll?: number;
@@ -59,13 +52,10 @@ export interface CameraShakeSnapshot {
   trauma: number;
   /** Advancing time cursor (seconds) the noise is sampled along. */
   time: number;
-  /** The base value-noise seed as a plain integer. */
   seed: number;
-  /** The last free-string `kind` label handed to `add`, or `null`. */
   kind: string | null;
 }
 
-/** A live, dt-driven, trauma-based camera shake controller. */
 export interface CameraShakeController {
   /**
    * Add trauma (clamped into `[0, 1]`). `kind` is a free string the model never
@@ -87,17 +77,11 @@ export interface CameraShakeController {
   offset(): CameraShakeOffset;
   /** Current trauma in `[0, 1]`. */
   trauma(): number;
-  /** The last free-string `kind` handed to `add`, or `undefined` if none yet. */
   kind(): string | undefined;
-  /** Patch the config in place (e.g. retune decay or amplitudes at runtime). */
   configure(patch: Partial<CameraShakeConfig>): void;
-  /** Reset trauma to 0 (keeps the seed and time cursor). */
   clear(): void;
-  /** Observe changes (add, update, configure, clear, restore). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): CameraShakeSnapshot;
-  /** Restore from a {@link CameraShakeSnapshot}. */
   restore(snapshot: CameraShakeSnapshot): void;
 }
 
@@ -268,10 +252,7 @@ export function rigShakeConfig(config?: CameraRigShakeConfig): CameraShakeConfig
  */
 export const defaultCameraShake: CameraShakeController = createCameraShake(rigShakeConfig());
 
-/**
- * Add camera trauma from anywhere. `decayPerSecond`, when given, retunes how fast it bleeds off.
- * @capability camera-shake add trauma to the active camera rig's shake from any game system
- */
+/** @capability camera-shake add trauma to the active camera rig's shake from any game system */
 export function cameraShake(amplitude: number, decayPerSecond?: number): void {
   if (decayPerSecond !== undefined) defaultCameraShake.configure({ decayPerSecond });
   defaultCameraShake.add(amplitude);

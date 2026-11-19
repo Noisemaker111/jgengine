@@ -1,23 +1,17 @@
 import type { HapticPulse } from "@jgengine/core/haptics/haptics";
 
-/** Where a pulse actually landed: a gamepad, the device's own motor, or nowhere. */
 export type HapticsSink = "gamepad" | "vibration" | "none";
 
 /** The browser reach of {@link createHapticsRoute}; injected so the route runs headless. */
 export interface HapticsRouteOptions {
-  /** Connected pads. Default `navigator.getGamepads`. */
   gamepads?(): ArrayLike<Gamepad | null>;
   /** Device vibration, called with the pulse length in ms. Default `navigator.vibrate`; `null` for a device without one. */
   vibrate?: ((ms: number) => void) | null;
-  /** Where `gamepadconnected`/`gamepaddisconnected` arrive. Default `window`; `null` reads pads per pulse. */
   events?: Pick<Window, "addEventListener" | "removeEventListener"> | null;
 }
 
-/** Route haptic pulses to whatever the player can feel them on. */
 export interface HapticsRoute {
-  /** Send one pulse: the gamepad if a pad is connected, else the phone's motor, else nothing. */
   deliver(pulse: HapticPulse): HapticsSink;
-  /** Drop the connection listeners. Safe twice. */
   dispose(): void;
 }
 

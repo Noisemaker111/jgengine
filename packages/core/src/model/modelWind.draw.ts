@@ -4,9 +4,7 @@ import type { ModelWindConfig } from "@jgengine/core/game/playableGame";
 import { batchSafeSignature, markBatchSafe } from "@jgengine/core/material/compileLayers.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
-/** Shared gust clock every foliage material reads; advanced once per frame by `WindClock`. */
 export const windClock = { value: 0 };
-/** Shared gust direction (XZ); a model may override it with its own authored direction. */
 export const windDirection = new THREE.Vector2(1, 0.35).normalize();
 /** Shared gust strength multiplier; the weather's wind raises it, so a storm bends every plant harder. */
 export const windGust = { value: 1 };
@@ -14,7 +12,6 @@ const sharedWindDirection = { value: windDirection };
 
 const WIND_KEY = "jgWind";
 
-/** Resolved sway settings baked into one material. */
 export interface ResolvedModelWind {
   strength: number;
   speed: number;
@@ -24,7 +21,7 @@ export interface ResolvedModelWind {
   sharedDirection: boolean;
 }
 
-/** Fully-defaulted sway settings for a model. @internal */
+/** @internal */
 export function resolveModelWind(wind: ModelWindConfig | false | undefined, fallbackHeight: number): ResolvedModelWind | null {
   if (wind === false || wind === undefined) return null;
   const strength = wind.strength ?? 0.35;
@@ -120,7 +117,7 @@ function namesAny(names: readonly string[], set: ReadonlySet<string>): boolean {
   return names.some((name) => words(name).some((word) => set.has(word)));
 }
 
-/** What sway an unconfigured model gets from its names: plants sway whole, cloth flutters alone. @internal */
+/** @internal */
 export function defaultWindKind(names: readonly string[]): "foliage" | "cloth" | null {
   if (namesAny(names, FOLIAGE_WORDS)) return "foliage";
   if (namesAny(names, CLOTH_WORDS)) return "cloth";
@@ -144,11 +141,7 @@ function swayMesh(mesh: THREE.Mesh, resolved: ResolvedModelWind): void {
   }
 }
 
-/**
- * Applies wind to every standard material under a cloned model. With `wind` omitted, a model whose
- * mesh or material names read as foliage sways whole (the trunk stays planted by the height ramp),
- * and cloth meshes (flags, banners, awnings) flutter on their own; `false` keeps it rigid. @internal
- */
+/** @internal */
 export function applyModelWindToScene(root: THREE.Object3D, wind: ModelWindConfig | false | undefined, fallbackHeight = 4): void {
   if (wind === undefined) {
     const names: string[] = [];
@@ -174,7 +167,6 @@ export function applyModelWindToScene(root: THREE.Object3D, wind: ModelWindConfi
   });
 }
 
-/** Advances the shared gust clock once per frame; mount one per 3D world. */
 export function WindClock(): null {
   useFrameTask(({ clock }) => {
     windClock.value = clock.getElapsedTime();

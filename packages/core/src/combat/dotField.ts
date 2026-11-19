@@ -1,8 +1,6 @@
 import type { BuildupProc } from "./breakMeters";
 
-/** A single damage-over-time instance: how hard, how often, and for how long. */
 export interface DotSpec {
-  /** Damage dealt at each interval. */
   damagePerTick: number;
   /** Milliseconds between damage ticks; clamped to a positive minimum. */
   intervalMs: number;
@@ -12,15 +10,10 @@ export interface DotSpec {
   status?: string;
 }
 
-/** One damage event (or expiry marker) emitted by `DotField.tick` for the game to route through its effects. */
 export interface DotTick {
-  /** The key the DoT was applied under. */
   id: string;
-  /** The DoT's `status` label, or its key when none was given. */
   status: string;
-  /** Damage to route through the game's effect pipeline this frame; 0 on a bare expiry marker. */
   damage: number;
-  /** True on the entry that ends the DoT — remove any HUD icon on it. */
   expired: boolean;
 }
 
@@ -31,15 +24,12 @@ export interface DotTick {
  * routes each through its own effect pipeline; a pure scheduler that never applies damage itself.
  */
 export interface DotField {
-  /** Start or refresh a DoT under `id`; reapplying the same key restarts its age and lifetime. */
   apply(id: string, spec: DotSpec): void;
-  /** Bridge a `breakMeters` buildup proc into recurring damage under `id`. */
   applyProc(id: string, proc: BuildupProc, damagePerTick: number, intervalMs: number): void;
   active(id: string): boolean;
   cancel(id: string): void;
   clear(): void;
   count(): number;
-  /** Advance every active DoT; returns the damage due this frame plus an `expired` marker per finished DoT. */
   tick(dtSeconds: number): DotTick[];
 }
 
@@ -52,11 +42,7 @@ interface ActiveDot {
   ticksEmitted: number;
 }
 
-/**
- * Builds an empty {@link DotField}; `apply` DoTs onto it and drain damage each frame with `tick`.
- *
- * @capability dot-field track stacking damage-over-time effects and drain damage each frame
- */
+/** @capability dot-field track stacking damage-over-time effects and drain damage each frame */
 export function createDotField(): DotField {
   const dots = new Map<string, ActiveDot>();
 

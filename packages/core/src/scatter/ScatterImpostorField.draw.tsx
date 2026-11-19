@@ -48,18 +48,12 @@ export function markFarPlacements(
 export interface ScatterImpostorFieldDrawOptions {
   cacheKey: string;
   sources: readonly ScatterModelSource[];
-  /** What the far card is baked from when it is not `sources` — variants of one species share one atlas. */
   farSources?: readonly ScatterModelSource[] | undefined;
   batches: readonly ScatterBatch[];
   radius: number;
 }
 
-/**
- * Draw-side form of {@link ScatterImpostorField}: near placements draw the real model per chunk and
- * far ones one camera-facing impostor card for the whole species. Batches are fixed for the draw's
- * life; terrain-quality changes re-acquire the impostor entry and rebuild the split.
- * @internal
- */
+/** @internal */
 export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOptions): EngineDraw {
   const { cacheKey, sources, farSources, batches, radius } = options;
   const bakeSources = farSources ?? sources;
@@ -83,7 +77,6 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
   let entry: ImpostorEntry | null = null;
   let entryLive = false;
   let far: THREE.InstancedMesh | null = null;
-  /** The far mesh the last split wrote: a card mesh that lands or drops re-splits without a camera move. */
   let splitFar: THREE.InstancedMesh | null = null;
   let releaseLanded = (): void => {};
   let state: EngineFrameState | null = null;

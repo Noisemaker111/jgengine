@@ -16,14 +16,11 @@
  */
 export interface MotionIntents {
   impulse(velocityY: number): void;
-  /** Adds a horizontal velocity kick (world units/s) that the walk controller integrates and decays. */
   pushHorizontal(velocityX: number, velocityZ: number): void;
   setVerticalVelocity(velocityY: number): void;
   setY(y: number): void;
   takePending(): MotionIntentBatch | null;
-  /** Non-draining copy of the pending intents for a whole-world save; unlike `takePending` it leaves the queue intact. */
   snapshot(): MotionIntentBatch;
-  /** Replace the pending intents from a {@link snapshot} payload on save load. */
   hydrate(batch: MotionIntentBatch): void;
 }
 
@@ -77,9 +74,7 @@ export function createMotionIntents(): MotionIntents {
   };
 }
 
-/** Fold a batch's vertical impulses into a controller's velocity, then apply an outright `setVerticalVelocity` override — the vertical counterpart of {@link applyHorizontalImpulses}.
- * @internal
- */
+/** @internal */
 export function applyMotionImpulses(currentVelocity: number, batch: MotionIntentBatch | null): number {
   if (batch === null) return currentVelocity;
   let velocity = currentVelocity;
@@ -88,9 +83,7 @@ export function applyMotionImpulses(currentVelocity: number, batch: MotionIntent
   return velocity;
 }
 
-/** Fold a batch's horizontal pushes into a controller's velocity pair — shared by the walk and voxel drivers.
- * @internal
- */
+/** @internal */
 export function applyHorizontalImpulses(
   velocityX: number,
   velocityZ: number,

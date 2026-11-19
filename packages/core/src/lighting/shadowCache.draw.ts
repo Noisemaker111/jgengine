@@ -12,7 +12,7 @@ import {
   type ShadowPassPlan,
 } from "./shadowCache";
 
-/** A caster unchanged for this long joins its lights' static layers. @internal */
+/** @internal */
 export const SHADOW_STATIC_AFTER_MS = 400;
 /** Settled casters join the layer at most this often, so casters settling one by one cost one rebuild a few times a second. */
 const PROMOTION_INTERVAL_MS = 300;
@@ -20,16 +20,13 @@ const PROMOTION_INTERVAL_MS = 300;
 const CHURN_AFTER_CHECKS = 4;
 /** Checks between compares of a churned caster, so one that settles is noticed without a full rate. */
 const CHURN_RECHECK_CHECKS = 20;
-/** A light not asked for a pass in this many frames gives its layer back. */
 const LIGHT_RETIRE_FRAMES = 240;
 
 type Drawable = THREE.Mesh | THREE.Line | THREE.Points;
 
-/** What one shared material or geometry reads like to a depth pass, and the stamp that moves when that changes. */
 interface SharedRecord {
   parts: unknown[];
   stamp: number;
-  /** The check that last described it; a record is described at most once per check. */
   pass: number;
 }
 
@@ -42,22 +39,16 @@ const enum CasterKind {
 
 class CasterEntry {
   readonly kind: CasterKind;
-  /** What a depth pass reads from the caster, as of its last change (see {@link describeCaster}). */
   snapshot: unknown[] = [];
   /** World bounding sphere as of the snapshot; null when three never culls the caster. */
   sphere: THREE.Sphere | null = null;
-  /** Reached by the last check (visible through its ancestors) and casting. */
   drawable = false;
   changedAt = 0;
   /** Drawn into the static layers instead of every frame. */
   isStatic = false;
-  /** Its depth can change with nothing the snapshot sees (skinning, morphs, custom depth shaders). */
   alwaysDynamic = false;
-  /** Checks in a row whose compare found a change; past {@link CHURN_AFTER_CHECKS} the compare is skipped. */
   churned = 0;
-  /** Checks left before a churned caster's snapshot is compared again. */
   churnSkip = 0;
-  /** The check that last reached it. */
   seen = -1;
   geometry: THREE.BufferGeometry | null = null;
   geometryRecord: SharedRecord | null = null;
@@ -66,7 +57,6 @@ class CasterEntry {
 
   constructor(
     readonly object: Drawable,
-    /** Reads `_visibilityChanged` writes on a `BatchedMesh`. */
     readonly batchEdits: { count: number; release: () => void } | null,
   ) {
     const mesh = object as Partial<THREE.InstancedMesh & THREE.BatchedMesh>;
@@ -74,7 +64,7 @@ class CasterEntry {
   }
 }
 
-/** What the cache did, for the devtools probe and perf scripts. @internal */
+/** @internal */
 export interface ShadowCacheStats {
   enabled: boolean;
   casters: number;
@@ -83,23 +73,16 @@ export interface ShadowCacheStats {
   dynamicCasters: number;
   /** Of those, the ones whose depth can never be cached (skinned, morphing, unstable depth). */
   alwaysDynamicCasters: number;
-  /** Caster checks run: one per shadow pass of the cache's scene that may serve a light from its layer. */
   checks: number;
-  /** Shadow passes the renderer asked for, cached or not. */
   invocations: number;
-  /** Shadow passes that reached planning (updates on); invocations minus the ones that drew nothing. */
   renders: number;
   /** Milliseconds the caster checks have cost since the last reset. */
   checkMs: number;
-  /** Triangles the changed casters submit when they draw over a layer, before frustum culling. */
   dynamicTris: number;
-  /** Of {@link dynamicTris}, what instanced meshes carry. */
   dynamicTrisInstanced: number;
-  /** Of {@link dynamicTris}, what batched meshes carry. */
   dynamicTrisBatched: number;
   /** Of {@link dynamicTris}, what never-cacheable casters (skinning, morphs, unstable depth) carry. */
   dynamicTrisAlways: number;
-  /** Triangles the static casters hold in the layers. */
   staticTris: number;
   /**
    * Milliseconds spent in the renderer's shadow step since the last reset, the cache's own checks
@@ -112,7 +95,6 @@ export interface ShadowCacheStats {
     maps: number;
     mismatchedMaps: number;
     mismatchedTexels: number;
-    /** Comparisons that did not run (the comparison shader wrote nothing, or its program would not link). */
     failed: number;
     /**
      * Cached passes left uncompared because {@link AUDIT_PENDING_MAX} comparisons were still waiting on
@@ -123,10 +105,9 @@ export interface ShadowCacheStats {
   };
 }
 
-/** The page handle perf and audit scripts drive (`window.__jg.shadowCache`). @internal */
+/** @internal */
 export interface ShadowCacheHandle {
   stats(): ShadowCacheStats;
-  /** Off draws every caster every pass, as three does; turning it back on starts every light over. */
   setEnabled(on: boolean): void;
   /** On: after every cached pass, also draw the full map and count texels whose depth bits differ. */
   setAudit(on: boolean): void;
@@ -139,7 +120,7 @@ declare module "../runtime/pageHandle" {
   }
 }
 
-/** Renderer surface the cache drives; a WebGLRenderer satisfies it. @internal */
+/** @internal */
 export interface ShadowCacheRenderer {
   shadowMap: { enabled: boolean; autoUpdate: boolean; needsUpdate: boolean; type: THREE.ShadowMapType; render: (lights: THREE.Light[], scene: THREE.Scene, camera: THREE.Camera) => void };
   clear: (...args: never[]) => void;
@@ -210,7 +191,6 @@ function putTexture(out: unknown[], at: number, texture: THREE.Texture | null | 
   return next;
 }
 
-/** Everything three copies from a caster's material into its depth material (WebGLShadowMap.getDepthMaterial). */
 function putMaterial(out: unknown[], at: number, material: THREE.Material): number {
   const m = material as THREE.Material & Partial<THREE.MeshStandardMaterial>;
   out[at] = material;
@@ -249,7 +229,6 @@ function putSphere(out: unknown[], at: number, sphere: THREE.Sphere | null | und
   return at + 5;
 }
 
-/** What a depth draw reads from a geometry: index, draw range, attribute buffers, culling bounds, groups. */
 function putGeometry(out: unknown[], at: number, geometry: THREE.BufferGeometry): number {
   const index = geometry.index;
   out[at++] = index;
@@ -315,7 +294,6 @@ class SharedStamps<T extends object> {
   }
 }
 
-/** The shared stamps a tracker's checks read, and the number of the check running. */
 interface CasterStamps {
   materials: SharedStamps<THREE.Material>;
   geometries: SharedStamps<THREE.BufferGeometry>;
@@ -331,12 +309,6 @@ function materialStamp(entry: CasterEntry, stamps: CasterStamps, index: number, 
   return stamps.materials.stamp(material, record, stamps.pass);
 }
 
-/**
- * Write what a depth pass reads from a caster that the check reached (so visible through every
- * ancestor) into `out`; returns the length written. Two equal descriptions draw the same depth:
- * casting, culling, layers, transform, instance buffers, and the stamps of its geometry and
- * materials (what three reads from each, described once per check however many casters share it).
- */
 function describeCaster(entry: CasterEntry, out: unknown[], stamps: CasterStamps): number {
   const object = entry.object;
   const mesh = object as THREE.Mesh & Partial<THREE.InstancedMesh & THREE.BatchedMesh>;
@@ -390,11 +362,6 @@ function sameSphere(snapshot: readonly unknown[], at: number, sphere: THREE.Sphe
     snapshot[at + 3] === sphere.center.z && snapshot[at + 4] === sphere.radius ? at + 5 : -1;
 }
 
-/**
- * Whether the caster still reads as its snapshot, field by field in {@link describeCaster}'s order,
- * stopping at the first difference: most casters stand still, and writing out a description only to
- * compare it was most of a check's cost.
- */
 function unchanged(entry: CasterEntry, stamps: CasterStamps): boolean {
   const object = entry.object;
   const s = entry.snapshot;
@@ -459,7 +426,6 @@ function worldSphere(object: Drawable, into: THREE.Sphere | null): THREE.Sphere 
   return (into ?? new THREE.Sphere()).copy(local).applyMatrix4(object.matrixWorld);
 }
 
-/** `BatchedMesh` sets `_visibilityChanged` on every instance or geometry edit; count those writes. */
 function watchBatchEdits(batch: THREE.BatchedMesh): { count: number; release: () => void } {
   const target = batch as unknown as { _visibilityChanged: boolean };
   let flag = target._visibilityChanged;
@@ -494,13 +460,9 @@ function watchBatchEdits(batch: THREE.BatchedMesh): { count: number; release: ()
  */
 export class ShadowCasterTracker {
   readonly entries = new Map<THREE.Object3D, CasterEntry>();
-  /** Changed casters with no changed caster above them: the dynamic pass draws these subtrees. */
   readonly dynamicRoots: THREE.Object3D[] = [];
-  /** Every caster not in the static layers, drawable or not. */
   private readonly dynamic = new Set<CasterEntry>();
-  /** Every changed caster that is visible and casting. */
   private readonly dynamicCasters: CasterEntry[] = [];
-  /** Casters the last check reached that cast: the ones that stop drawing if a check misses them. */
   private drawn: CasterEntry[] = [];
   private nextDrawn: CasterEntry[] = [];
   private readonly scratch: unknown[] = [];
@@ -510,7 +472,6 @@ export class ShadowCasterTracker {
 
   constructor(
     readonly scene: THREE.Object3D,
-    /** Called with a static caster's old or new bounds when what it draws changed (null: unbounded). */
     private readonly touch: (sphere: THREE.Sphere | null) => void,
     private readonly now: () => number,
   ) {}
@@ -529,7 +490,6 @@ export class ShadowCasterTracker {
     return entry;
   }
 
-  /** Drop a caster that left the scene; the check that missed it already stopped it drawing. */
   private untrack(entry: CasterEntry): void {
     this.entries.delete(entry.object);
     this.dynamic.delete(entry);
@@ -543,7 +503,6 @@ export class ShadowCasterTracker {
     return at !== null;
   }
 
-  /** A caster that changed what it draws: off the static layers if it was on them, stamped now. */
   private changed(entry: CasterEntry, now: number, oldSphere: THREE.Sphere | null, wasDrawn: boolean): void {
     entry.changedAt = now;
     if (!entry.isStatic) return;
@@ -553,13 +512,6 @@ export class ShadowCasterTracker {
     if (entry.drawable) this.touch(entry.sphere);
   }
 
-  /**
-   * Compare every caster three's shadow pass could reach with its snapshot: a hidden subtree is
-   * skipped as three skips it, and a caster that drew last check and was not reached now stopped
-   * drawing. A static caster whose own description changed leaves the layer (and stales the lights it
-   * reaches); one that only appeared or disappeared stays in it and stales them. Casters unchanged
-   * for {@link SHADOW_STATIC_AFTER_MS} join the layer.
-   */
   check(): void {
     const now = this.now();
     const scratch = this.scratch;
@@ -664,7 +616,6 @@ export class ShadowCasterTracker {
     }
   }
 
-  /** True when a changed caster would draw into a pass with this frustum and layer mask. */
   dynamicReaches(frustum: THREE.Frustum, layers: THREE.Layers): boolean {
     for (const entry of this.dynamicCasters) {
       const object = entry.object;
@@ -674,7 +625,6 @@ export class ShadowCasterTracker {
     return false;
   }
 
-  /** Turn off `castShadow` on every changed caster for a static pass; returns the restore. */
   hideDynamic(): () => void {
     const hidden: THREE.Object3D[] = [];
     for (const entry of this.dynamic) {
@@ -701,7 +651,6 @@ export class ShadowCasterTracker {
     return count;
   }
 
-  /** Triangles one caster submits per instance set: its geometry's index or position count over three, times instanced count. */
   private tris(entry: CasterEntry): number {
     const mesh = entry.object as THREE.Mesh & Partial<THREE.InstancedMesh>;
     const geometry = mesh.geometry as THREE.BufferGeometry | undefined;
@@ -713,7 +662,6 @@ export class ShadowCasterTracker {
     return Math.round((vertices / 3) * instances);
   }
 
-  /** Triangles the changed, drawable casters would submit if every light's dynamic pass drew them. */
   dynamicTris(): { total: number; instanced: number; batched: number; plain: number; always: number } {
     let total = 0;
     let instanced = 0;
@@ -731,7 +679,6 @@ export class ShadowCasterTracker {
     return { total, instanced, batched, plain, always };
   }
 
-  /** Triangles the static casters hold across the layers. */
   staticTris(): number {
     let total = 0;
     for (const entry of this.entries.values()) if (entry.isStatic && entry.drawable) total += this.tris(entry);
@@ -783,15 +730,10 @@ function managedShadow(light: THREE.Light): ManagedShadow | null {
   return shadow;
 }
 
-/** What three would use: the shadow camera's own layers when it sets any beyond 0, else the view camera's. */
 function passLayers(shadow: ManagedShadow, camera: THREE.Camera): THREE.Layers {
   return (shadow.camera.layers.mask & 0xfffffffe) !== 0 ? shadow.camera.layers : camera.layers;
 }
 
-/**
- * Bring the shadow camera to this frame's matrices exactly as three's pass does, then key the pass by
- * everything that decides its depth image apart from the casters.
- */
 function lightKey(light: THREE.Light, shadow: ManagedShadow, camera: THREE.Camera, reversed: boolean, type: number, out: number[]): number[] {
   (shadow.camera as THREE.Camera & { _reversedDepth?: boolean })._reversedDepth = reversed;
   shadow.updateMatrices(light, camera);
@@ -836,10 +778,8 @@ function disposeTarget(target: THREE.WebGLRenderTarget | null): void {
 /** Side of the square of texels one comparison fragment counts, so the readback is 1/256 of the map. */
 const AUDIT_BLOCK = 16;
 
-/** Comparisons still waiting on the GPU at most; while this many are, a cached pass goes uncompared (counted as skipped). */
 const AUDIT_PENDING_MAX = 16;
 
-/** One comparison's readback, waiting on its fence. */
 interface PendingComparison {
   sync: WebGLSync;
   buffer: WebGLBuffer;
@@ -865,7 +805,6 @@ class DepthComparer {
   private pending: PendingComparison[] = [];
   private spare: WebGLBuffer[] = [];
 
-  /** Whether {@link AUDIT_PENDING_MAX} comparisons are still waiting on their readback, after taking every one that landed. */
   busy(): boolean {
     this.poll();
     return this.pending.length >= AUDIT_PENDING_MAX;
@@ -932,7 +871,6 @@ class DepthComparer {
     return started;
   }
 
-  /** Hand every comparison whose readback has landed to its callback. */
   poll(): void {
     const gl = this.gl;
     if (gl === null || this.pending.length === 0) return;
@@ -1059,7 +997,6 @@ function linkProgram(gl: WebGL2RenderingContext, vertex: string, fragment: strin
   return null;
 }
 
-/** One renderer's cache: the wrapped shadow pass, its scene's casters and one record per light. */
 class ShadowCache {
   private readonly lights = new Map<THREE.Light, LightRecord>();
   private readonly tracker: ShadowCasterTracker;
@@ -1117,7 +1054,6 @@ class ShadowCache {
     this.original.call(this.renderer.shadowMap, lights, scene as THREE.Scene, camera);
   }
 
-  /** One sub-pass of a light that asked for a pass this frame; three clears the light's `needsUpdate` after each. */
   private passOf(light: THREE.Light, shadow: ManagedShadow, scene: THREE.Object3D, camera: THREE.Camera, needsUpdate: boolean): void {
     const single = this.single;
     single[0] = light;
@@ -1254,7 +1190,6 @@ class ShadowCache {
     this.drawDynamic(light, shadow, record.layer!, camera, needsUpdate);
   }
 
-  /** Draw every static caster, and nothing else, into the light's layer. */
   private drawStatic(light: THREE.Light, shadow: ManagedShadow, layer: THREE.WebGLRenderTarget, scene: THREE.Object3D, camera: THREE.Camera, needsUpdate: boolean): void {
     const map = shadow.map;
     const restoreDynamic = this.tracker.hideDynamic();
@@ -1267,7 +1202,6 @@ class ShadowCache {
     }
   }
 
-  /** Start the map as a copy of the layer, then draw the changed casters over it with the depth test on. */
   private drawDynamic(light: THREE.Light, shadow: ManagedShadow, layer: THREE.WebGLRenderTarget, camera: THREE.Camera, needsUpdate: boolean): void {
     const renderer = this.renderer;
     const map = shadow.map;
@@ -1378,7 +1312,6 @@ class ShadowCache {
     };
   }
 
-  /** A lost context takes every layer's memory with it. */
   contextRestored(): void {
     for (const record of this.lights.values()) {
       dropShadowLayer(record.state);

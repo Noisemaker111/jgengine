@@ -22,11 +22,7 @@ export interface UnlockCatalog {
   tree(categoryId: string): UnlockDef[];
 }
 
-/**
- * A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
- *
- * @capability unlockables gate content behind unlock conditions the player earns
- */
+/** @capability unlockables gate content behind unlock conditions the player earns */
 export function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog {
   const byId = new Map<string, UnlockDef>();
   for (const def of defs) byId.set(def.id, def);

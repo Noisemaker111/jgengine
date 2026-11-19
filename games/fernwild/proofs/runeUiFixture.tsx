@@ -16,7 +16,6 @@ import { titleRoute } from "../src/game/rune/Menu";
 export const FIXTURES = ["title", "controls", "settings", "credits", "creator", "hud", "detail", "inventory", "engrams", "dossier", "creature", "storage", "obelisk", "paused"] as const;
 export type NativeFixture = (typeof FIXTURES)[number];
 
-/** A headless Fernwild run staged at `state`, as a player would reach it. */
 function stageFixture(state: NativeFixture) {
   const session = createPlaySession(game, { seed: 1 });
   const { ctx } = session;
@@ -92,10 +91,6 @@ export async function runeUiFixture(state: NativeFixture, width = 1280, height =
   return spec;
 }
 
-/**
- * The real GameUI mounted live over a headless run: `press` activates a native control by its label as a click
- * does, `key` sends a key to the top key-capturing view, and `text` reads what the native tree shows.
- */
 export async function mountRuneUi(state: NativeFixture, width = 1280, height = 720) {
   const memory = new Map<string, string>();
   const storage = { getItem: (key: string) => memory.get(key) ?? null, removeItem: (key: string) => { memory.delete(key); }, setItem: (key: string, value: string) => { memory.set(key, value); }, clear: () => memory.clear(), key: () => null, length: 0 };

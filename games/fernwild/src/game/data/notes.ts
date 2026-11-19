@@ -1,16 +1,9 @@
-/**
- * Explorer notes, as ARK scatters them: pages left by survivors who came before, one at each of the
- * Island's landmarks (an `obelisk`, `cave` or `peak` in editor.scene.json, keyed by its id). Reading one
- * gives experience and a line in the dossier. The writers and their words are ours, not ARK's.
- */
 export interface NoteDef {
-  /** The landmark it lies at. */
   at: string;
   title: string;
   text: string;
 }
 
-/** Experience for reading a note the first time (ARK gives a few hundred at its scale; ours is levelled to the first hours). */
 export const NOTE_XP = 30;
 
 export const NOTES: readonly NoteDef[] = [

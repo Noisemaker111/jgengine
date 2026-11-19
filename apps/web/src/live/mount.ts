@@ -12,9 +12,7 @@ export interface LiveHandle {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
-  /** True when the user asked for reduced motion — render one settled frame and idle. */
   reducedMotion: boolean;
-  /** Force a render outside the RAF loop (used after one-shot updates in reduced motion). */
   invalidate(): void;
   dispose(): void;
 }
@@ -25,7 +23,6 @@ export interface MountOptions {
   fov?: number;
   near?: number;
   far?: number;
-  /** Extra teardown for scene-module resources (geometries, materials, observers). */
   onDispose?(): void;
 }
 
@@ -117,7 +114,6 @@ export function mountLive(container: HTMLElement, options: MountOptions): LiveHa
   };
 }
 
-/** Recursively free geometries, materials, and textures under a root object. */
 export function disposeObject(root: THREE.Object3D): void {
   root.traverse((object) => {
     const mesh = object as THREE.Mesh;

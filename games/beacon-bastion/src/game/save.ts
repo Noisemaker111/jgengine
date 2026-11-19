@@ -25,7 +25,6 @@ import { KEEP_POINT, ROUTES, SPAWN_POINT_KEY } from "./world/path";
 import { captureKeepThumb, keepProfile } from "./thumbs";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
-/** The keeps a player can hold. One document per keep, all inside the shared save document. */
 export const KEEP_SLOTS = ["keep", "ward", "beacon"] as const;
 export const KEEP_LABEL: Record<string, string> = { keep: "The Keep", ward: "The Ward", beacon: "The Beacon" };
 
@@ -42,10 +41,6 @@ interface PreWorldFields {
   victory?: boolean;
 }
 
-/**
- * The real-time half of a run as the save document stores it: the clock, the wave director, the
- * Warden and every raider mid-route. Gold, lives, plots, towers and builds are the `world` section.
- */
 export interface DefenseSave extends PreWorldFields {
   clock: ClockSnapshot;
   encounter: EncounterState;
@@ -54,9 +49,7 @@ export interface DefenseSave extends PreWorldFields {
   openingComposition: string[];
   creepSeq: number;
   creeps: { instanceId: string; catalogId: string; path: PathFollowState; route?: string; shield?: number; healIn?: number }[];
-  /** The clock to the next wave and what an early call would pay. */
   countdown?: WaveCountdownState;
-  /** Ability cooldowns. */
   abilities?: AbilityKitState;
 }
 
@@ -81,7 +74,6 @@ export function captureDefense(ctx: GameContext): DefenseSave {
   };
 }
 
-/** Whether this load restored a keep world, or a pre-world document left the keep fresh. */
 const worldLoaded = perContext(() => ({ restored: false }));
 
 /**
@@ -204,7 +196,6 @@ function resumableKeep(raw: string | null): boolean {
   } catch { return false; }
 }
 
-/** Whether this defense has a slot it may update automatically. */
 export function keepIsUnsaved(ctx: GameContext): boolean {
   return unsavedKeep.read(ctx);
 }
@@ -247,7 +238,6 @@ export async function withdrawKeep(ctx: GameContext): Promise<void> {
   await refreshBeaconSlots(ctx);
 }
 
-/** The keep's world as one save section: purse, walls, towers and their levels, builds under way. */
 export function worldSystem(ctx: GameContext): GameSaveSystem {
   const freshKeep = () => {
     resetKeep(ctx, openingKeep(ctx));
@@ -284,7 +274,6 @@ export function booksSystem(ctx: GameContext): GameSaveSystem {
   };
 }
 
-/** The run's real-time half, as one save section: the director, the raiders on the road and the Warden. */
 export function defenseSystem(ctx: GameContext): GameSaveSystem {
   return {
     name: "defense",
@@ -300,11 +289,6 @@ export function defenseSystem(ctx: GameContext): GameSaveSystem {
   };
 }
 
-/**
- * What the keep has banked, as its own section: a new defense clears the field but not what the last
- * one left behind, and an empty keep resets it to nothing banked.
- */
-/** The frame the keep was left in - a save card shows it. */
 export function profileSystem(): GameSaveSystem {
   return {
     name: "profile",
@@ -321,7 +305,6 @@ export function profileSystem(): GameSaveSystem {
   };
 }
 
-/** The keep's campaign: its difficulty, best stars and the war council's seats. */
 export function campaignSystem(ctx: GameContext): GameSaveSystem {
   return {
     name: "campaign",
@@ -344,7 +327,6 @@ export function legacySystem(ctx: GameContext): GameSaveSystem {
   };
 }
 
-/** The one save document for this run's world; the store keys it by context. */
 export function beaconSave(ctx: GameContext): GameSave {
   const slot = boundSave(ctx);
   if (slot.save !== null) return slot.save;
@@ -373,7 +355,6 @@ export function beaconSave(ctx: GameContext): GameSave {
   return save;
 }
 
-/** A non-empty text field of the saved profile system, or `null`. */
 function profileText(profile: unknown, key: "commander" | "thumbnail"): string | null {
   if (typeof profile !== "object" || profile === null || !(key in profile)) return null;
   const value: unknown = Reflect.get(profile, key);
@@ -386,7 +367,6 @@ export const beaconSlots: SaveSlots = createSaveSlots({
   slots: KEEP_SLOTS.map((id) => ({ id, empty: true, meta: {} })),
 });
 
-/** Re-read every keep's document into the menu index. `savedAt` and playtime come from the document. */
 export function refreshBeaconSlots(ctx: GameContext): Promise<SaveSlotsRefresh> {
   return refreshSaveSlots(gameSaveSlotSource(beaconSave(ctx)), beaconSlots, {
     nameOf: (slot, document) => {
@@ -415,7 +395,6 @@ export function refreshBeaconSlots(ctx: GameContext): Promise<SaveSlotsRefresh> 
   });
 }
 
-/** Keep a run under a specific keep: switch the document to it, then write the live state. */
 export async function saveToSlot(ctx: GameContext, slot: string): Promise<void> {
   await checkpoints(ctx).pending;
   const save = beaconSave(ctx);
@@ -431,7 +410,6 @@ export async function saveToSlot(ctx: GameContext, slot: string): Promise<void> 
   await refreshBeaconSlots(ctx);
 }
 
-/** Read a keep back into the live world without saving over it first. */
 export async function loadSlot(ctx: GameContext, slot: string): Promise<void> {
   await checkpoints(ctx).pending;
   const save = beaconSave(ctx);
@@ -453,7 +431,6 @@ export function firstEmptyKeep(): string | null {
   return empty?.id ?? null;
 }
 
-/** Where a new defense goes: an empty keep, or the oldest one when every keep is already held. */
 export function keepForNewRun(): string | null {
   const empty = firstEmptyKeep();
   if (empty !== null) return empty;
@@ -463,12 +440,10 @@ export function keepForNewRun(): string | null {
   return held[0]?.id ?? null;
 }
 
-/** The keep `Continue` resumes — the newest document, not a remembered flag. */
 export function newestKeep(): string | null {
   return beaconSlots.mostRecent()?.id ?? null;
 }
 
-/** Draft a fresh run into a keep: the run that follows is saved under that keep. */
 export async function prepareKeep(ctx: GameContext, slot: string): Promise<void> {
   await checkpoints(ctx).pending;
   const save = beaconSave(ctx);
@@ -483,5 +458,4 @@ export async function prepareKeep(ctx: GameContext, slot: string): Promise<void>
   state.failed = false;
   unsavedKeep.write(ctx, true);
 }
-
 

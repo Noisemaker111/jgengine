@@ -20,9 +20,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, s
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** The file at the top of an unpacked copy of beta's landing code. */
 export const LANDING_MARKER = ".jg-landing-code";
-/** The folder in the git common dir that holds one unpacked copy per beta commit. */
 export const LANDING_CACHE = "jg-landing";
 /**
  * An unpacked copy no run has started from for this long is removed. A run loads every module it
@@ -30,22 +28,16 @@ export const LANDING_CACHE = "jg-landing";
  */
 const KEEP_MS = 60 * 60 * 1000;
 
-/** The folder above `scripts/` for the module at `metaUrl`. */
 function codeDir(metaUrl: string): string {
   return fileURLToPath(new URL("..", metaUrl));
 }
 
-/** Whether the module at `metaUrl` runs from an unpacked copy of beta's landing code. */
 export function isLandingCopy(metaUrl: string): boolean {
   return existsSync(join(codeDir(metaUrl), LANDING_MARKER));
 }
 
 let cwdTop: string | undefined;
 
-/**
- * The checkout a landing script acts on: the repo its file sits in, or, for an unpacked copy of beta's
- * landing code, the checkout it was started in.
- */
 export function landingRoot(metaUrl: string): string {
   if (!isLandingCopy(metaUrl)) return codeDir(metaUrl);
   if (cwdTop === undefined) {
@@ -55,10 +47,6 @@ export function landingRoot(metaUrl: string): string {
   return cwdTop;
 }
 
-/**
- * How to start the landing script `name` (`land.ts`, `land-batch.ts`): `scripts/<name>` from the
- * checkout, or by its full path from the unpacked copy the caller runs from.
- */
 export function landingScript(metaUrl: string, name: string): string {
   return isLandingCopy(metaUrl) ? join(codeDir(metaUrl), "scripts", name).replace(/\\/g, "/") : `scripts/${name}`;
 }
@@ -143,7 +131,6 @@ function touch(path: string, now: number): void {
   }
 }
 
-/** Remove the copies of older versions that no run has started from for an hour. */
 function prune(cache: string, keep: string, now: number): void {
   let names: string[];
   try {
@@ -163,10 +150,8 @@ function prune(cache: string, keep: string, now: number): void {
   }
 }
 
-/** What a verify:fast receipt records and how lane:close finds the one that covers a tree (`ReuseKey`). */
 export const RECEIPT_MODULE = "scripts/verify-receipt.ts";
 
-/** The modules that decide how a lane lands; a lane that changes one lands with its own copy. */
 export const LANDING_MODULES = ["scripts/lane-close.ts", "scripts/land.ts", "scripts/landing-code.ts", "scripts/github.ts", RECEIPT_MODULE] as const;
 
 /**
@@ -190,11 +175,6 @@ export function receiptsBehind(metaUrl: string, laneRoot: string): string | null
   return `this lane's ${RECEIPT_MODULE} is older than beta's, so beta's landing code cannot read what its verify:fast records`;
 }
 
-/**
- * Where `lane:close` should run from: null to carry on here (this already is beta's landing code, beta
- * predates running from a copy, or this lane changes the landing code itself), else the copy of beta's
- * `lane-close.ts` to hand the run to.
- */
 export function betaLaneClose(
   metaUrl: string,
   checkout: string,
@@ -220,7 +200,6 @@ export function betaLaneClose(
   return { script: join(beta.dir, "scripts", "lane-close.ts") };
 }
 
-/** Run `git` in `cwd`, with extra environment variables. */
 export function gitIn(cwd: string): LandingGit {
   return (args, env) => {
     const ran = spawnSync("git", args, { cwd, encoding: "utf8", env: env === undefined ? process.env : { ...process.env, ...env } });

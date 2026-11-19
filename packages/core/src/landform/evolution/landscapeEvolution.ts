@@ -38,15 +38,8 @@ import { createLandslider } from "./landsliding";
 import { resolveStrata, tanDegrees, UNIFORM_ROCK, type LandformStrata, type ResolvedStrata } from "./rockStrata";
 import { incise } from "./streamPower";
 
-/** Glaciers: ice that flows and slides, and erodes its bed by sliding (see `glacial/glacierFlow`). */
 export interface GlacialParams {
-  /**
-   * Ice model. `"first-order"` solves the first-order Stokes equations (Blatter–Pattyn), so valley
-   * walls drag on the ice and carve U-shaped troughs; `"shallow-ice"` is several times cheaper and
-   * keeps V-shaped valleys closer to V. Default `"first-order"`.
-   */
   model?: GlacierModel;
-  /** First-order layers per ice column. Default 8. */
   layers?: number;
 
   /** Equilibrium line altitude in metres: ice grows above it and melts below. Needed unless `elaHistory` is given. */
@@ -55,21 +48,13 @@ export interface GlacialParams {
   elaHistory?: SnowlineHistory;
   /** Mass balance gradient in (m/yr of ice) per metre of altitude. Default 0.005. */
   balanceGradient?: number;
-  /** Largest accumulation in m/yr. Default 2. */
   maxAccumulation?: number;
-  /** Glen's flow rate factor A in Pa⁻³ yr⁻¹. Default 7.57·10⁻¹⁷, temperate ice. */
   flowRate?: number;
-  /** Sliding coefficient C of u_b = C·τ_b, in m yr⁻¹ Pa⁻¹. Default 5·10⁻⁴ (50 m/yr under 100 kPa). */
   sliding?: number;
-  /** Mean annual air temperature at the ELA in °C; colder freezes more thin ice to its bed, where it neither slides nor erodes (see `glacial/basalTemperature`). Default −2. */
   snowlineTemperature?: number;
-  /** Fall of air temperature with altitude in K/m. Default 0.0065. */
   lapseRate?: number;
-  /** Geothermal heat flux in W/m² warming the bed. Default 0.06. */
   geothermalFlux?: number;
-  /** Shallow-ice only: effective ice viscosity in Pa·yr through which neighbouring columns and valley walls drag on sliding ice. Default 10⁶ (about 3·10¹³ Pa·s). */
   lateralDrag?: number;
-  /** Share of the rock a glacier plucks that it drops as till where the ice ends; meltwater carries the rest away. Default 0.25. */
   tillShare?: number;
   /**
    * Depth in metres of the till that deforms under sliding ice and moves with it at half the sliding
@@ -85,60 +70,38 @@ export interface GlacialParams {
   erosion?: number;
   /** Exponent l of sliding speed in the erosion law. Default 1; abrasion theory (Hallet 1979) and Harbor (1992) use 2. */
   erosionExponent?: number;
-  /** Longest implicit ice step in years, and the shortest turn of ice flow and bed wear: ice and bed take turns, each wearing at most a tenth of a cell. Default 50. */
   iceStep?: number;
 }
 
-/** Waves on the coast: cliff retreat and platform wear (see `coastal/waveErosion`). Needs a `seaLevel`. */
 export interface CoastalParams {
-  /** Cliff retreat rate R₀ in m/yr under waves that arrive across deep water. */
   cliffRetreat: number;
   /** Distance W* in metres of shallow water over which waves lose a factor e of their energy. Default 200. */
   attenuation?: number;
   /** Wave base in metres: deeper water does not damp waves. Default 10. */
   waveBase?: number;
-  /** Lowering rate in m/yr of a platform at the waterline under full waves. Default 10⁻⁴. */
   platformErosion?: number;
   /** Depth in metres over which platform lowering falls by e. Default 2. */
   platformDepthScale?: number;
   /** Depth below sea level in metres that a retreating cliff is cut to. Default 1. */
   notchDepth?: number;
-  /** Share of the sand cut from a cliff that stays as beach; the rest drifts away along the shore. Default 0.5. */
   beachShare?: number;
-  /** Most wave sub-steps per step. Default 64. */
   maxSubsteps?: number;
 }
 
-/** Physical parameters of a landscape evolution run; every one can be retuned between steps. */
 export interface LandformParams {
-  /** Rock uplift rate in m/yr. */
   uplift: number;
-  /** Per-cell multiplier on uplift, row-major (a mountain belt, a tilted block). Default uniform. */
   upliftMap?: readonly number[];
-  /** Per-cell multiplier on rainfall, weighting each cell's share of river discharge. Default uniform. */
   rainfall?: readonly number[];
-  /** River erodibility K in m^(1−2m)/yr, before rock layers scale it. */
   erodibility: number;
-  /** Drainage-area exponent m of the stream-power law. */
   areaExponent: number;
-  /** Slope exponent n of the stream-power law. */
   slopeExponent: number;
-  /** Hillslope diffusivity D in m²/yr on land. */
   diffusivity: number;
-  /** Diffusivity in m²/yr under standing water, spreading deltas and lake floors. */
   marineDiffusivity: number;
-  /**
-   * Dimensionless deposition coefficient G of sand; gravel and silt scale it by their settling
-   * speed against sand's. 0 carries all sediment out, about 1 builds wide fans.
-   */
   deposition: number;
   /** Effective runoff in m/yr used as a bankfull discharge proxy for grain sorting. Default 1 m/yr, the runoff in Yuan et al. (2019)'s reference landscape. */
   bankfullRunoff?: number;
-  /** Strength of vertical grain concentration during deposition: 0 disables it; 1 uses the exponential profile. Default 1. */
   concentrationStrength?: number;
-  /** Multiplier on K where loose sediment covers the rock. */
   sedimentErodibility: number;
-  /** Soil production rate P₀ in m/yr from bare bedrock (Heimsath et al. 1997 measured 7.7·10⁻⁵). */
   soilProduction: number;
   /** Soil depth scale h₀ in metres over which production falls by e. */
   soilDepthScale: number;
@@ -148,13 +111,9 @@ export interface LandformParams {
   reposeAngle: number;
   /** Sea surface in metres; base-level cells below it, and land joined to them below it, are sea. Default none. */
   seaLevel?: number;
-  /** Default step length in years. */
   timeStep: number;
-  /** Rock layers. Default one uniform rock standing at 45°. */
   strata?: LandformStrata;
-  /** Glaciers. Default none. */
   glacial?: GlacialParams;
-  /** Waves on the coast, which need `seaLevel`. Default none. */
   coastal?: CoastalParams;
 }
 
@@ -177,7 +136,6 @@ export const DEFAULT_LANDFORM_PARAMS: LandformParams = {
   timeStep: 1e4,
 };
 
-/** Starting surface of a run. */
 export interface LandformInitial {
   /** Starting heights in metres, row-major. Default flat at 0. */
   heights?: ArrayLike<number>;
@@ -185,23 +143,15 @@ export interface LandformInitial {
   roughness?: number;
 }
 
-/** What one step did. Volumes in m³, rates in m/yr. */
 export interface LandformStepReport {
-  /** Rock and sediment volume rivers removed. */
   eroded: number;
-  /** Sediment volume laid down by rivers and in standing water. */
   deposited: number;
-  /** Net volume that left the map through outlets (negative if diffusion brings material in). */
   exported: number;
-  /** Volume that failed in landslides. */
   landslid: number;
-  /** Largest |∂z/∂t| over non-outlet cells; near 0 at steady state, when erosion balances uplift. */
   maxRate: number;
-  /** Mean |∂z/∂t| over non-outlet cells. */
   meanRate: number;
 }
 
-/** Plain-JSON state of a run, enough to resume it exactly. */
 export interface LandformSnapshot {
   version: 5;
   grid: LandformGrid;
@@ -213,17 +163,12 @@ export interface LandformSnapshot {
   sediment: readonly number[];
   exhumation: readonly number[];
   debris: readonly number[];
-  /** Cover thickness per cell and class, cell-major in `COVER_CLASSES` order. */
   cover: readonly number[];
   /** Ice thickness per cell in metres. */
   ice: readonly number[];
-  /** Per cell, first-order over shallow-ice flux through its east face from the last step (1 where there is no ice). */
   iceEastScale: readonly number[];
-  /** The same through each cell's south face. */
   iceSouthScale: readonly number[];
-  /** Glacier sliding speed per cell in m/yr from the last step, which sizes the next step's first turn. */
   iceSliding: readonly number[];
-  /** Length in years of the last full turn of ice flow and erosion. */
   iceTurn: number;
 }
 
@@ -235,7 +180,6 @@ export interface LandformFields {
   readonly sediment: Float64Array;
   /** Rock uplifted through each cell since the start, in metres; the rock now at height z formed at z − exhumation. */
   readonly exhumation: Float64Array;
-  /** Index into the strata's layers of the bedrock under each cell. */
   readonly layer: Uint8Array;
   /** Cumulative debris thickness laid by landslide runout, in metres. */
   readonly debris: Float64Array;
@@ -249,42 +193,26 @@ export interface LandformFields {
   readonly waveEnergy: Float64Array;
 }
 
-/** A running landscape. */
 export interface LandscapeEvolution {
   readonly grid: LandformGrid;
   readonly seed: string;
-  /** Current params. */
   params(): LandformParams;
-  /** Change params between steps; arrays are copied. */
   retune(patch: Partial<LandformParams>): void;
-  /** Advance one step of `dt` years (default the params' time step). */
   step(dt?: number): LandformStepReport;
-  /** Advance `years` in whole time steps (at most `maxSteps`, default 100 000); returns the last report. */
   run(years: number, maxSteps?: number): LandformStepReport;
-  /** Model years since the start. */
   time(): number;
-  /** Steps taken since the start. */
   steps(): number;
-  /** Live per-cell fields. */
   fields(): LandformFields;
-  /** Water routing of the current surface: lakes, receivers, drainage area. */
   routing(): FlowRouting;
-  /** Plain-JSON state. */
   snapshot(): LandformSnapshot;
-  /** Resume from a snapshot taken on a grid of the same size. */
   restore(snapshot: LandformSnapshot): void;
-  /** Back to the starting surface, time 0. */
   reset(): void;
-  /** A hash of the surface and sediment bits; equal hashes mean identical landscapes. */
   hash(): string;
 }
 
-/** Options for {@link createLandscapeEvolution}. */
 export interface LandscapeEvolutionOptions {
   grid: LandformGrid;
-  /** Params over {@link DEFAULT_LANDFORM_PARAMS}. */
   params?: Partial<LandformParams>;
-  /** Seed of the starting roughness. */
   seed: string;
   initial?: LandformInitial;
 }
@@ -319,10 +247,7 @@ function checkSortingParams(params: LandformParams): void {
   if (!Number.isFinite(strength) || strength < 0) throw new Error(`landform concentrationStrength must be nonnegative and finite, got ${strength}`);
 }
 
-/**
- * Hash of float arrays by their exact bits (FNV-1a over 32-bit words), as 8 hex digits per array.
- * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
- */
+/** @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata */
 export function hashLandformArrays(...arrays: readonly Float64Array[]): string {
   let out = "";
   for (const array of arrays) {
@@ -336,10 +261,7 @@ function settlingShares(sizes: GrainSizes): readonly number[] {
   return [settlingVelocity(sizes.gravel) / sand, 1, settlingVelocity(sizes.silt) / sand];
 }
 
-/**
- * Start a landscape evolution run on a grid.
- * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
- */
+/** @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata */
 export function createLandscapeEvolution(options: LandscapeEvolutionOptions): LandscapeEvolution {
   const grid: LandformGrid = { ...options.grid, ...(options.grid.outlets === undefined ? {} : { outlets: [...options.grid.outlets] }) };
   const topology = landformTopology(grid);

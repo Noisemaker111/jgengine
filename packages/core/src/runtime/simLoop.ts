@@ -1,4 +1,3 @@
-/** How the simulation is stepped: a fixed rate with a catch-up cap, or once per frame with the frame's dt. */
 export interface SimulationConfig {
   /**
    * Fixed simulation rate in steps per second, or `"variable"` to run one step per frame with the frame's
@@ -19,13 +18,10 @@ export interface SimLoopState {
   accumulator: number;
 }
 
-/** What one {@link SimLoop.advance} did. */
 export interface SimAdvanceResult {
-  /** Steps run this advance. */
   steps: number;
   /** Fraction of a step accumulated but not yet simulated, 0..1; always 1 on a variable loop. */
   alpha: number;
-  /** Tick count after this advance. */
   tick: number;
   /** Steps discarded because the catch-up cap was hit. */
   dropped: number;
@@ -33,7 +29,6 @@ export interface SimAdvanceResult {
   early: number;
 }
 
-/** The stepper handle: advance with real time, read the tick and interpolation alpha, retune the rate, snapshot and restore. */
 export interface SimLoop {
   /** Feed real elapsed seconds; runs `step(dt, tick)` zero or more times and returns what happened. */
   advance(realDt: number, step: (dt: number, tick: number) => void): SimAdvanceResult;
@@ -87,7 +82,6 @@ export function createSimLoop(initial?: SimulationConfig): SimLoop {
   // A step run early by stepAhead and not yet reached by real time.
   let ahead = false;
 
-  /** Count an early step as reached: the accumulator may go below zero, which the next frames repay. */
   function settleAhead(stepDt: number): void {
     if (!ahead) return;
     ahead = false;

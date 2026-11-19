@@ -4,25 +4,18 @@ import type { VehicleDynamicsTuning, VehicleEffectName, VehicleEffects } from ".
 
 const G = 9.81;
 const DEG = Math.PI / 180;
-/** The TNO tyre's friction scaled ×1.04 for a dry test track, set once from the MX-5's skidpad (as the reference cars run it). */
 const ROAD = { lmux: 1.04, lmuy: 1.04 };
 
-/** The published vehicles {@link carFromReference} knows: each has a multibody reference sim and published tests. */
 export type CarReferenceVehicleId = "mazda-mx5-nd" | "scion-frs-2013" | "suzuki-gsxr1000-k1";
 
-/** Vehicle classes: a published vehicle's measured effects carried to the class's typical size and drivetrain. */
 export type CarClassId = "sports-car" | "hatchback" | "truck" | "kart" | "motorcycle";
 
-/** Every id {@link carFromReference} accepts. */
 export type CarReferenceId = CarReferenceVehicleId | CarClassId;
 
-/** The published vehicles, each checked against its reference sim by `scripts/reference/physics/compareHandling.ts`. */
 export const CAR_REFERENCE_VEHICLE_IDS: readonly CarReferenceVehicleId[] = ["mazda-mx5-nd", "scion-frs-2013", "suzuki-gsxr1000-k1"];
 
-/** The vehicle classes. */
 export const CAR_CLASS_IDS: readonly CarClassId[] = ["sports-car", "hatchback", "truck", "kart", "motorcycle"];
 
-/** Every id {@link carFromReference} accepts: the published vehicles, then the classes. */
 export const CAR_REFERENCE_IDS: readonly CarReferenceId[] = [...CAR_REFERENCE_VEHICLE_IDS, ...CAR_CLASS_IDS];
 
 /**
@@ -217,7 +210,6 @@ function gsxr(): VehicleDynamicsTuning {
   };
 }
 
-/** A front-drive hatchback: the FR-S's measured effects on a typical 1.3 t, 61:39 front-driver with a turbo four (sizes are class estimates). */
 function hatchback(): VehicleDynamicsTuning {
   const base = frs();
   const curve: readonly (readonly [number, number])[] = [[1000, 150], [1500, 250], [3500, 250], [5000, 230], [6000, 190], [6500, 170]];
@@ -258,11 +250,6 @@ function hatchback(): VehicleDynamicsTuning {
   };
 }
 
-/**
- * A two-axle heavy truck carrying its full mass: 18 t, 5 m wheelbase, a 1.5 m high centre of mass, a 2000 N·m diesel
- * through twelve gears, truck tyres (the TNO tyre carried to a 30 kN nominal load and 0.52 m radius), beam axles and
- * drum brakes that fade. Sizes are class estimates; the effects are the reference car's terms.
- */
 function truck(): VehicleDynamicsTuning {
   const massKg = 18000;
   const comHeight = 1.5;

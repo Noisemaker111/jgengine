@@ -26,12 +26,9 @@ function readoutText(value: number, max: number, readout: KitMeterProps["readout
   return readout === false || readout === undefined ? null : readout;
 }
 
-/** Corner rivets: one dot in each corner of an enamel plate, as background layers. */
 const RIVET = "radial-gradient(circle, #eef2ef 0 1.6px, rgba(0, 0, 0, 0.4) 2px 2.8px, transparent 3.2px)";
 const RIVETS = `${RIVET} 4px 4px / 14px 14px no-repeat, ${RIVET} right 4px top 4px / 14px 14px no-repeat, ${RIVET} left 4px bottom 4px / 14px 14px no-repeat, ${RIVET} right 4px bottom 4px / 14px 14px no-repeat`;
-/** Enamel sheen: a soft light top and a darker lower edge. */
 const SHEEN = "linear-gradient(180deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0) 42%, rgba(0, 0, 0, 0.12))";
-/** Split-flap seam across the middle of a board. */
 const SEAM = "linear-gradient(180deg, transparent calc(50% - 1px), rgba(0, 0, 0, 0.45) 50%, transparent calc(50% + 1px))";
 
 const SHIELD = "polygon(0 0, 100% 0, 100% 58%, 50% 100%, 0 58%)";
@@ -369,12 +366,7 @@ button.${P}-prompt:focus-visible { outline: 3px solid var(--kit-accent); outline
 @keyframes ${P}-flip-out { from { opacity: 1; transform: perspective(260px) rotateX(0deg); } to { opacity: 0; transform: perspective(260px) rotateX(90deg); } }
 `;
 
-/**
- * Wayfinder: in-world signage. Enamel road-sign plates with keylines and rivets, arrow and blade signs,
- * route-marker shields, LED departure boards and lamp bulbs, with split-flap flips and clacks.
- *
- * @capability ui-kit-signal in-world signage UI kit — enamel plates, arrow and blade signs, route shields, LED departure boards, split-flap motion and clacks
- */
+/** @capability ui-kit-signal in-world signage UI kit — enamel plates, arrow and blade signs, route shields, LED departure boards, split-flap motion and clacks */
 export const signalKit: UiKit = {
   id: "signal",
   name: "Wayfinder",

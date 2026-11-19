@@ -16,10 +16,6 @@ export interface TrainDataCommitmentModalProps {
 
 const BRACKETS = [1, 2, 3, 4] as const;
 
-/**
- * Fine-tune only: pick 1×–4× the base required data tokens, capped by wallet.
- * The full track shows 1×–4×; segments past what you can afford are dimmed and locked.
- */
 export function TrainDataCommitmentModal({ model, dataTokens, estimateTrainingDurationSeconds, onConfirm, onCancel }: TrainDataCommitmentModalProps) {
   const required = model.requiredDataTokens;
   const maxAffordable = useMemo(() => required <= 0 ? 1 : Math.max(1, Math.min(BRACKETS.length, Math.floor(dataTokens / required))), [dataTokens, required]);

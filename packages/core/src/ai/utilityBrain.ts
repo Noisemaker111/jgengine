@@ -53,12 +53,9 @@ function rawLogistic(x: number, midpoint: number, steepness: number): number {
   return 1 / (1 + Math.exp(steepness * (x - midpoint)));
 }
 
-/** One need's contribution to an option's appeal. */
 export interface UtilityTerm {
-  /** Declared need id on the brain's need set; resolved once at construction. */
   readonly need: string;
   readonly curve: ResponseCurve;
-  /** Multiplier on the sampled appeal (negative pushes the option away). Default `1`. */
   readonly weight?: number;
   /** Sample `1 - satisfaction` — an option that wants a *full* meter rather than an empty one. */
   readonly invert?: boolean;
@@ -70,17 +67,13 @@ export interface UtilityTerm {
   readonly onlyWhenMostUrgent?: boolean;
 }
 
-/** A thing an agent can decide to do, scored against its needs. */
 export interface UtilityOption {
   readonly id: string;
-  /** Appeal regardless of needs — the option's standing preference. Default `0`. */
   readonly base?: number;
   readonly terms?: readonly UtilityTerm[];
 }
 
-/** One reachable instance of an option this tick; `cost` is the caller's own effort number. */
 export interface UtilityCandidate {
-  /** Option id. Unknown ids are skipped, so content can be removed at runtime. */
   readonly option: string;
   /**
    * Caller-computed effort — travel distance, queue seconds, price, risk. Scored as
@@ -89,56 +82,42 @@ export interface UtilityCandidate {
   readonly cost?: number;
 }
 
-/** A need level that overrides the sticky pick the moment it is crossed. */
 export interface UtilityInterrupt {
   readonly need: string;
-  /** Fraction that fires the interrupt. */
   readonly at: number;
-  /** Fire while the need is `below` (default, a starving agent) or `above` (panic, overheat). */
   readonly when?: "below" | "above";
-  /** Force this option when it is among the candidates; omit to just re-decide without stickiness. */
   readonly option?: string;
 }
 
 /** Why the brain's pick changed on the tick it changed. */
 export type UtilitySwitchReason = "initial" | "score" | "interrupt" | "unavailable";
 
-/** The outcome of one {@link UtilityBrain.decide}. Valid until the next `decide` call. */
 export interface UtilityDecision {
   readonly option: string | null;
-  /** Costed score of the chosen candidate. */
   readonly score: number;
-  /** The pick changed on this tick. */
   readonly changed: boolean;
   readonly reason: UtilitySwitchReason | null;
-  /** An interrupt fired this tick, whether or not it changed the pick. */
   readonly interrupted: boolean;
 }
 
-/** In-play dials that stay reachable through {@link UtilityBrain.retune}. */
 export interface UtilityTunables {
   /** Score margin a rival must beat the held pick by. Default `0.05`; `0` switches on any lead. */
   readonly switchMargin?: number | undefined;
   /** Seconds a pick is held before a non-interrupt rival may replace it. Default `0`. */
   readonly minHoldSeconds?: number | undefined;
-  /** Score points per candidate cost unit. Default `1`. */
   readonly costWeight?: number;
-  /** Symmetric score noise amplitude from the injected `rng`; default `0` (ties keep the held pick). */
   readonly jitter?: number;
 }
 
-/** Everything a utility brain needs: the shared need set, its scored options, and selection policy. */
 export interface UtilityBrainConfig extends UtilityTunables {
   readonly needs: NeedSet;
   readonly options: readonly UtilityOption[];
   readonly interrupts?: readonly UtilityInterrupt[];
-  /** `[0,1)` source for `jitter`; pass `ctx.rng`. Only read when `jitter > 0`. */
   readonly rng?: (() => number) | undefined;
   /** Register a devtools probe under this name so the perf overlay shows the live pick. */
   readonly devtoolsName?: string | undefined;
 }
 
-/** One option's need-driven score, ignoring candidate cost. */
 export interface UtilityScore {
   readonly option: string;
   readonly score: number;
@@ -156,7 +135,6 @@ export interface UtilityDebugSnapshot {
   readonly options: readonly UtilityScore[];
 }
 
-/** Serializable brain state: the held pick plus any in-play retuning. Needs save separately. */
 export interface UtilityBrainSnapshot {
   option: string | null;
   score: number;
@@ -184,15 +162,12 @@ export interface UtilityBrain {
    */
   decide(candidates: readonly UtilityCandidate[]): UtilityDecision;
   chosen(): string | null;
-  /** Need-driven score of one option right now, cost excluded. Throws on an unknown id. */
   scoreOf(optionId: string): number;
-  /** Every option's need-driven score in declared order. Allocates — debug and tests. */
   scores(): readonly UtilityScore[];
   retune(patch: UtilityTunables): void;
   debugSnapshot(): UtilityDebugSnapshot;
   snapshot(): UtilityBrainSnapshot;
   restore(next: UtilityBrainSnapshot): void;
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -279,7 +254,6 @@ export function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain {
 
   const needCount = needs.ids().length;
 
-  /** Index of the lowest-fill need; the first declared wins a tie, as `NeedSet.mostUrgent` does. */
   function mostUrgentIndex(): number {
     let worst = -1;
     let worstFraction = Infinity;
@@ -293,7 +267,6 @@ export function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain {
     return worst;
   }
 
-  /** `urgent` is the most urgent need's index when the caller already knows it; `-2` reads it on demand. */
   function scoreOption(compiled: CompiledOption, urgent = -2): number {
     let score = compiled.base;
     for (const term of compiled.terms) {

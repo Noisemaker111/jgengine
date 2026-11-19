@@ -12,7 +12,6 @@
  */
 export const WHITE_POINT = 1;
 
-/** Linear scene luminance of an 18% grey card — the auto-exposure metering target. */
 export const MID_GREY = 0.18;
 
 /**

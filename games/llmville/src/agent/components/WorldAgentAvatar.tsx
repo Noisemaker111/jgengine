@@ -30,7 +30,6 @@ function lerpAngle(from: number, to: number, alpha: number): number {
   return from + delta * alpha;
 }
 
-/** A positioned scene group attached to the engine loop. */
 function useAvatarGroup(initial?: { position: readonly [number, number, number]; rotationY: number }): Group {
   const group = useMemo(() => {
     const next = new Group();
@@ -45,7 +44,6 @@ function useAvatarGroup(initial?: { position: readonly [number, number, number];
   return group;
 }
 
-/** Registers this avatar's nameplate with the HUD and keeps it over the anchor's head every frame. */
 function Nameplate({ anchor, localY, displayName, online }: { anchor: Group; localY: number; displayName: string; online: boolean }) {
   const id = useMemo(() => `avatar:${Math.random().toString(36).slice(2)}`, []);
   useEffect(() => {

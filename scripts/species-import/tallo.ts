@@ -1,6 +1,5 @@
 import { csvNumber } from "./csv";
 
-/** A DBH class of measured trees: its middle and the 10th, 50th and 90th percentile crown width. */
 export interface CrownWidthClassRow {
   dbhCm: number;
   p10M: number;

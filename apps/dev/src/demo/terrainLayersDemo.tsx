@@ -10,10 +10,8 @@ import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 import { demoGame } from "./demoGame";
 
 const params = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
-/** `?procedural=1` drops the layer maps: the mask blend is still there, one procedural surface per layer. */
 const procedural = params.get("procedural") === "1";
 
-/** What `set_terrain_layers` writes: the authored library name plus the maps the editor resolved it to. */
 function layerMap(name: string): { material?: string; materialMaps?: TerrainMaterialMaps | undefined } {
   if (procedural) return {};
   return { material: name, materialMaps: librarySurfaceScan(name).maps };
@@ -46,7 +44,6 @@ const feature = environment({
   sculpt,
 });
 
-/** Terrain painted as two authored layers, each carrying its own scanned ambientCG map. */
 function TerrainLayers() {
   return (
     <>

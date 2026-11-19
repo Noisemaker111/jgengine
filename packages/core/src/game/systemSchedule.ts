@@ -1,6 +1,5 @@
 import type { SystemDefinition, SystemTick } from "./defineSystem";
 
-/** Default fixed-sim stage order — systems pick a stage; most need only this. */
 export const DEFAULT_FIXED_STAGES = [
   "input",
   "movement",
@@ -10,11 +9,6 @@ export const DEFAULT_FIXED_STAGES = [
   "cleanup",
 ] as const;
 
-/**
- * Default frame stage order. Gameplay stages mirror the fixed table so once-per-frame systems
- * (`type: "frame"`) can pick `combat`/`ai`/… without falling into the unknown-stage bucket;
- * presentation stages follow.
- */
 export const DEFAULT_FRAME_STAGES = [
   "input",
   "movement",
@@ -55,7 +49,6 @@ export interface StageBucket {
 export interface FixedRateGroup {
   readonly rate: number;
   readonly stages: readonly StageBucket[];
-  /** Flat ordered ids for this rate (all stages). */
   readonly order: readonly string[];
 }
 
@@ -70,11 +63,9 @@ export interface CompiledSystemSchedule {
   readonly fixed: readonly FixedRateGroup[];
   readonly frame: readonly StageBucket[];
   readonly frameOrder: readonly string[];
-  /** Interval systems — each keeps its own period; multi-subscribe is per-system. */
   readonly intervals: readonly ScheduledSystem[];
   readonly manual: readonly string[];
   readonly eventOnly: readonly string[];
-  /** All auto-ticking systems in a diagnostic flat order (fixed rates → frame → intervals). */
   readonly tickOrder: readonly string[];
 }
 

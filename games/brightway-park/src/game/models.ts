@@ -9,14 +9,12 @@ const original = (id: string): ModelConfig => ({
   anchor: "origin",
 });
 
-/** A model from the engine's asset library, grounded and scaled to the height the catalog asks for. */
 function library(id: string, height: number | undefined): ModelConfig {
   const ref = assets.resolve(id);
   if (ref === null) throw new Error(`brightway-park: the asset library has no "${id}"`);
   return { url: ref.url, ...(ref.dims === undefined ? {} : { dims: ref.dims }), anchor: "center", ...(height === undefined ? {} : { targetHeight: height }) };
 }
 
-/** Kinds that share another kind's authored mesh. */
 const AUTHORED_AS: Record<string, string> = { staff_mechanic: "staff_janitor", staff_entertainer: "staff_janitor", staff_security: "staff_janitor" };
 
 function objectModel(id: string): ModelConfig {
@@ -32,7 +30,6 @@ const PACK = "quaternius-animated-characters-pack";
 /** The pack's measured standing height in its own units; `person` scales it to metres. */
 const CHARACTER_HEIGHT = 3.3;
 
-/** A Quaternius character scaled to `height`, each named material slot painted from the park palette. */
 function person(model: string, height: number, paint: Readonly<Record<string, string>>): ModelConfig {
   const ref = assets.resolve(`${PACK}/${model}`);
   if (ref === null) throw new Error(`brightway-park: the asset library has no "${model}"`);
@@ -50,7 +47,6 @@ const SKIN = ["#f1c9a0", "#d9a578", "#a8704a", "#7a4b32", "#e8b88f"] as const;
 const HAIR = ["#3a2a22", "#6b4a2f", "#c98f3f", "#1f1b1a", "#8a4b2a"] as const;
 const PANTS = "#3f6e8c";
 
-/** Guests wear palette shirts: coral, sea, gold, lawn and paper over the same Casual bodies. */
 const GUEST_LOOKS: Record<string, ModelConfig> = {
   guest_a: person("Casual_Male", 1.9, { Skin: SKIN[0], Hair: HAIR[0], Shirt: "#ef7059", Pants: PANTS }),
   guest_b: person("Casual_Female", 1.8, { Skin: SKIN[1], Hair: HAIR[2], Shirt: "#77b8c8", Pants: "#6a5a8c" }),

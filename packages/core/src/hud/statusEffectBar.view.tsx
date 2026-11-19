@@ -21,9 +21,7 @@ import { hudType } from "./hudTokens";
 /** How a `kind` resolves to a glyph: a `GameIcon` name, an explicit node, or `null` for the fallback. */
 export type StatusIconResolver = (kind: string) => GameIconName | ReactNode | null;
 
-/** Props for {@link StatusEffectBar}. */
 export interface StatusEffectBarProps {
-  /** Live effect views from the status model (`toStatusEffectViews(...)`). Rendered in order. */
   effects: readonly StatusEffectView[];
   /** Icon face size in px. Default 44. */
   size?: number;
@@ -34,9 +32,7 @@ export interface StatusEffectBarProps {
    * Return a `GameIconName`, any `ReactNode`, or `null` to fall through to the default.
    */
   iconFor?: StatusIconResolver;
-  /** Ring color per `kind`. Default reads `--jg-accent`. Style debuffs red / buffs green here. */
   colorFor?: (kind: string) => string;
-  /** School gradient behind the glyph per `kind`. Default inferred from the `kind` keyword. */
   schoolFor?: (kind: string) => IconSchool;
   /** Tooltip/`aria-label` per effect. Default: the `kind`, with a `xN` suffix when stacked. */
   labelFor?: (effect: StatusEffectView) => string;
@@ -72,7 +68,6 @@ function remainingSeconds(remainingMs: number): string {
   return remainingMs > 0 ? "<1" : "0";
 }
 
-/** A single effect icon: painted face + stack badge, overlaid with its radial countdown ring. */
 function StatusEffectIcon({
   effect,
   size,

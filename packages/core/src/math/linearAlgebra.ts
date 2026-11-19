@@ -1,4 +1,3 @@
-/** One eigenvalue `re + i·im`, 1/s for a linearised plant. */
 export interface Eigenvalue {
   re: number;
   im: number;
@@ -81,7 +80,6 @@ function withSign(magnitude: number, sign: number): number {
   return sign >= 0 ? Math.abs(magnitude) : -Math.abs(magnitude);
 }
 
-/** Francis double-shift QR on an upper Hessenberg matrix (the EISPACK `hqr` scheme). */
 function hessenbergEigenvalues(a: Float64Array, n: number): Eigenvalue[] {
   const at = (i: number, j: number) => a[i * n + j] ?? 0;
   const set = (i: number, j: number, value: number) => {
@@ -217,13 +215,7 @@ function hessenbergEigenvalues(a: Float64Array, n: number): Eigenvalue[] {
   return out;
 }
 
-/**
- * Eigenvalues of a real square matrix (row-major, `n × n`): balancing, reduction to upper Hessenberg form by
- * stabilised elimination, then the Francis double-shift QR iteration (Wilkinson & Reinsch, *Handbook for Automatic
- * Computation* II, the EISPACK `balanc`/`elmhes`/`hqr` scheme). Complex pairs come out together. The input is not
- * modified. Sorted by real part, then imaginary part, descending.
- * @capability matrix-eigenvalues eigenvalues of a real matrix — stability modes of a linearised plant
- */
+/** @capability matrix-eigenvalues eigenvalues of a real matrix — stability modes of a linearised plant */
 export function matrixEigenvalues(matrix: ArrayLike<number>, n: number): Eigenvalue[] {
   if (n === 0) return [];
   const a = Float64Array.from({ length: n * n }, (_, k) => matrix[k] ?? 0);
@@ -232,11 +224,7 @@ export function matrixEigenvalues(matrix: ArrayLike<number>, n: number): Eigenva
   return hessenbergEigenvalues(a, n).sort((left, right) => right.re - left.re || right.im - left.im);
 }
 
-/**
- * Solve `m·x = b` in place (n×n, row-major; `m` is overwritten and `b` becomes `x`) by Gaussian elimination with
- * partial pivoting. A singular pivot leaves that unknown at `0`.
- * @capability linear-solve dense linear solve with partial pivoting for reference physics plants and constraints
- */
+/** @capability linear-solve dense linear solve with partial pivoting for reference physics plants and constraints */
 export function solveLinearSystem(m: Float64Array, b: Float64Array, n: number): void {
   for (let col = 0; col < n; col++) {
     let pivot = col;

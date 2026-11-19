@@ -1,4 +1,3 @@
-/** Rows of a CSV file as records keyed by its header, quoted fields and doubled quotes handled. */
 export function parseCsv(text: string): Record<string, string>[] {
   const rows = csvRows(text);
   const header = rows.shift() ?? [];

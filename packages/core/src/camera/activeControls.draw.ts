@@ -1,18 +1,13 @@
-/**
- * Camera control rigs a draw mounts (orbit, inspection, fly) register here so modal interactions —
- * the transform gizmo, a drag handle — can suspend them while they own the pointer. Replaces the
- * active camera-controls slot.
- * @internal
- */
+/** @internal */
 const active = new Set<{ enabled?: boolean }>();
 
-/** Register a controls object; returns its unregister. @internal */
+/** @internal */
 export function registerCameraControls<T extends { enabled?: boolean }>(controls: T): () => void {
   active.add(controls);
   return () => active.delete(controls);
 }
 
-/** Enable or disable every registered camera control rig. @internal */
+/** @internal */
 export function setCameraControlsEnabled(enabled: boolean): void {
   for (const controls of active) controls.enabled = enabled;
 }

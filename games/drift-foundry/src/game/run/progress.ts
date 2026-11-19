@@ -3,11 +3,9 @@ import { partById, type DriftFoundryPartDef } from "../parts/catalog";
 import { ROW_SIX_TRACK, SPAWN_RUN, trackById } from "../tracks/catalog";
 import { CORRIDOR_DRIVE_HALF_WIDTH } from "./constants";
 
-/** Where an older build kept the parked run; the yard document lifts it into its `parked` section. */
 export const PROGRESS_KEY = "drift-foundry.parked-run.v1";
 export interface ParkedRun {
   version: 1;
-  /** The track the run was parked on; runs parked before tracks existed are Row Six's. */
   track?: string;
   position: readonly [number, number, number];
   heading: number;

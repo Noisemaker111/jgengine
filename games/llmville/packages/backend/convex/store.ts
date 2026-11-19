@@ -101,8 +101,6 @@ export const catalog = query({
   },
 });
 
-// --- buy: dispatch by item kind --------------------------------------------
-
 async function buyHardwareSingle(
   ctx: MutationCtx,
   gameId: Id<"games">,
@@ -234,8 +232,6 @@ export const buy = mutation({
   },
 });
 
-// --- unlock: dispatch base model vs research ------------------------------
-
 async function unlockResearchInternal(
   ctx: MutationCtx,
   args: { gameId: Id<"games">; itemId: string; externalId?: string | undefined },
@@ -334,7 +330,6 @@ export const sell = mutation({
   },
 });
 
-/** Resale value of everything sitting in storage — what a lab could raise without touching its racks. */
 export async function storageLiquidationValue(ctx: MutationCtx, game: Doc<"games">): Promise<number> {
   const [hardware, cooling, build] = await Promise.all([
     readStock(ctx, game, STOCK_ID.hardware),
@@ -359,7 +354,6 @@ export async function storageLiquidationValue(ctx: MutationCtx, game: Doc<"games
   return total;
 }
 
-/** Sells every stored item at the resale rate and credits the proceeds. */
 export async function liquidateStorage(ctx: MutationCtx, game: Doc<"games">): Promise<number> {
   const proceeds = await storageLiquidationValue(ctx, game);
   if (proceeds <= 0) return 0;

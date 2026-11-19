@@ -58,7 +58,7 @@ function NaturePreview(props: GeneratorPreviewProps) {
   return null;
 }
 
-/** Registers the nature variant-tile preview and its instanced mesh builder. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** @internal */
 export function registerNatureDraw(): void {
   registerGeneratorMesh(NATURE_OUTPUT, (output) => (isNatureMesh(output) ? natureDraws(output) : null));
   registerGeneratorPreview(NATURE_OUTPUT, {

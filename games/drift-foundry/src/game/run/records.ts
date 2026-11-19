@@ -5,7 +5,6 @@ export interface RunRecords {
   farthest: number;
 }
 
-/** Where an older build kept the records; the yard document lifts them into its `records` section. */
 export const RECORDS_KEY = "drift-foundry.records.v1";
 export const EMPTY_RECORDS: RunRecords = { attempts: 0, escapes: 0, bestTime: null, farthest: 0 };
 
@@ -29,7 +28,6 @@ export function completeRun(records: RunRecords, run: CompletedRun): { records: 
   return { records: next, personalBest };
 }
 
-/** The stored `records` section, field by field; anything missing or bad reads as no record. */
 export function readRecords(value: unknown): RunRecords {
   if (!value || typeof value !== "object") return { ...EMPTY_RECORDS };
   const data = value as Partial<Record<keyof RunRecords, unknown>>;

@@ -6,12 +6,9 @@ import type { BaseBuilding, StructurePlan, StructureWorldBox } from "./baseBuild
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
-/** Props for {@link BaseStructures}. */
 export interface BaseStructuresProps {
   building: BaseBuilding;
-  /** Base colour of a piece, usually by tier. */
   colorOf: (pieceId: string) => string;
-  /** The build ghost to show this frame, read every frame. */
   ghost?: () => StructurePlan | null;
   validColor?: string;
   invalidColor?: string;
@@ -29,13 +26,7 @@ function boxMesh(box: StructureWorldBox, material: THREE.Material, solid = true)
   return mesh;
 }
 
-/**
- * The whole base-building model as one draw: placed pieces as their solid boxes, darkened as they
- * lose health, plus the build ghost tinted valid or invalid. Version and ghost polling run inside
- * `frame`, so neither ever costs a UI render.
- *
- * @capability base-structures-draw render placed base pieces and the snap build ghost
- */
+/** @capability base-structures-draw render placed base pieces and the snap build ghost */
 function baseStructuresDraw(getProps: () => BaseStructuresProps): EngineDraw {
   const group = new THREE.Group();
   const materials = new Map<string, THREE.MeshStandardMaterial>();

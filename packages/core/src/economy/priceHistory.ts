@@ -1,4 +1,3 @@
-/** One completed sale recorded into a {@link PriceHistory}. */
 export interface SaleRecord {
   readonly itemId: string;
   readonly count: number;
@@ -7,17 +6,11 @@ export interface SaleRecord {
   readonly at: number;
 }
 
-/**
- * Tunables for {@link createPriceHistory} — the per-item sample cap bounds memory; the optional
- * window drops samples older than `windowSeconds` whenever the history is written or read with a
- * newer timestamp.
- */
 export interface PriceHistoryConfig {
   maxSamplesPerItem: number;
   windowSeconds?: number;
 }
 
-/** Aggregated market stats for one item over the retained samples. */
 export interface PriceStats {
   readonly sampleCount: number;
   readonly volume: number;

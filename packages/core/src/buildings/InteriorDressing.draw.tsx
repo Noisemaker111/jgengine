@@ -14,23 +14,16 @@ import { hashUnit } from "@jgengine/core/random/rng";
 import { staticShapeInstancesDraw, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 
-/** The surface each dressing family wears. Any family left out falls back to a plain painted default. */
 export interface InteriorDressingSurfaces {
-  /** Skirting boards, chair rails, crown mouldings and wall ribs. */
   trim: AuthoredSurfaceConfig;
-  /** Wall-run and drop pipes. */
   pipe: AuthoredSurfaceConfig;
-  /** Pipe brackets and valve bodies. */
   fitting: AuthoredSurfaceConfig;
-  /** Lamp housings. */
   housing: AuthoredSurfaceConfig;
   /** Lamp lenses; give it an emissive colour so the lamp reads lit. */
   lens: AuthoredSurfaceConfig;
-  /** The lens of a dead lamp: no glow. */
   lensOff: AuthoredSurfaceConfig;
   /** Wainscot plates: a second finish that breaks a long wall up. */
   panel: AuthoredSurfaceConfig;
-  /** Access hatches. */
   hatch: AuthoredSurfaceConfig;
 }
 
@@ -120,7 +113,7 @@ const decalTurn = new THREE.Quaternion();
 const decalSpin = new THREE.Quaternion();
 const FORWARD = new THREE.Vector3(0, 0, 1);
 
-/** Write one style's decal transforms: a unit plane turned to face `normal`, spun in its plane, sized. @internal */
+/** @internal */
 export function writeInteriorDecals(mesh: THREE.InstancedMesh, decals: readonly InteriorDecal[]): void {
   const position = new THREE.Vector3();
   const scale = new THREE.Vector3();
@@ -143,7 +136,6 @@ export function writeInteriorDecals(mesh: THREE.InstancedMesh, decals: readonly 
   );
 }
 
-/** One stain style as a single instanced decal mesh, its texture baked on a worker. */
 function decalStyleBatchDraw({ style, decals, seed }: { style: InteriorDecalStyle; decals: readonly InteriorDecal[]; seed: string }): EngineDraw {
   let mesh: THREE.InstancedMesh | null = null;
   let geometry: THREE.PlaneGeometry | null = null;
@@ -187,7 +179,6 @@ function decalStyleBatchDraw({ style, decals, seed }: { style: InteriorDecalStyl
   };
 }
 
-/** Every cable as one mesh, or none when the plan has no cables. */
 function interiorCablesDraw(plan: InteriorDressingPlan, cableColor: THREE.ColorRepresentation): EngineDraw {
   const geometry = interiorCableGeometry(plan);
   const material = new THREE.MeshStandardMaterial({ color: cableColor, roughness: 0.75, metalness: 0 });
@@ -210,25 +201,16 @@ function interiorCablesDraw(plan: InteriorDressingPlan, cableColor: THREE.ColorR
   };
 }
 
-/** Props for {@link InteriorDressing}. */
 export interface InteriorDressingProps {
   plan: InteriorDressingPlan;
   surfaces?: Partial<InteriorDressingSurfaces>;
-  /** Cable sheath colour; default near-black rubber. */
   cableColor?: THREE.ColorRepresentation;
   /** Seed for the baked stain textures; defaults to one shared set. */
   decalSeed?: string;
-  /** Draw the stains; default true. */
   decals?: boolean;
 }
 
-/**
- * The drawn side of a planned interior as one draw: trims, pipes, fittings and lamp housings as
- * static instance batches, every cable as one merged tube, and every stain style as one instanced
- * decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with
- * {@link practicalLightsDraw} for the lamps' light.
- * @capability interior-dressing render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
- */
+/** @capability interior-dressing render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws */
 export function interiorDressingDraw(getProps: () => InteriorDressingProps): EngineDraw {
   let children: EngineDraw[] = [];
   let shapes: readonly StaticShapeInstance[] = [];
@@ -288,13 +270,7 @@ export function interiorDressingDraw(getProps: () => InteriorDressingProps): Eng
   };
 }
 
-/**
- * The drawn side of a planned interior: trims, pipes, fittings and lamp housings as static instance
- * batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A
- * whole floor costs a handful of draws however many pieces it has. Pair it with
- * {@link PracticalLights} for the lamps' light.
- * @capability interior-dressing render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
- */
+/** @capability interior-dressing render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws */
 export function InteriorDressing(props: InteriorDressingProps) {
   const latest = useRef(props);
   latest.current = props;
@@ -313,12 +289,10 @@ export function practicalFlicker(t: number, phase: number): number {
   return 0.92 + 0.08 * Math.sin(t * 47 + phase * 6.28);
 }
 
-/** Props for {@link PracticalLights}. */
 export interface PracticalLightsProps {
   fixtures: readonly InteriorFixture[];
   /** Lights in the pool; fixed for the component's life so shaders never recompile. Default 6. */
   count?: number;
-  /** How many of the nearest lights cast shadows; fixed like `count`. Default 0. */
   shadowed?: number;
   /**
    * How many of the pool may burn at once; the rest stay dark. Default `count`. One pool sized for
@@ -333,9 +307,7 @@ export interface PracticalLightsProps {
   /** Cone half-angle, radians. Default 1.05. */
   angle?: number;
   penumbra?: number;
-  /** Lamps further than this from the camera stay dark. Default 28 m. */
   reach?: number;
-  /** Frames between re-picking the nearest lamps. Default 8. */
   every?: number;
 }
 

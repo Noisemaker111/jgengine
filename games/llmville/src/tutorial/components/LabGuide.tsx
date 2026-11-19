@@ -10,7 +10,6 @@ import { Button, C, FULL, Icon, Row, Stack, Text } from "../../ui/kit";
 import { LabGuideCard } from "./LabGuideCard";
 export type { LabGoalSelection } from "../labGuide";
 
-/** The lab guide on the tablet's home: the HUD card, then the chapter goals once the tutorial is done. */
 export function LabGuide({ world, tutorial, selection }: { world: ReadyWorldViewModel; tutorial: TutorialViewModel; selection?: LabGoalSelection | undefined }) {
   const nav = useTabletNavContext();
   const [localGoal, setLocalGoal] = useState<string | null>(null);

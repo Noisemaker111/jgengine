@@ -22,53 +22,39 @@
  */
 import { culmannHeight, flowFriction, plateSinkage, plateSinkagePressure, startFriction, wheelSinkage, type GranularMaterial } from "./granularMaterial";
 
-/** Grid, starting ground and tuning for {@link createGranularLayer}. */
 export interface GranularLayerConfig {
-  /** Cells along x and z. Cell (gx, gz) sits at (gx · spacingX, gz · spacingZ). */
   cols: number;
   rows: number;
   spacingX: number;
   spacingZ?: number;
   materials: readonly GranularMaterial[];
-  /** Bedrock height per cell, row-major (`gz * cols + gx`), m. Default 0. */
   bed?: ArrayLike<number>;
-  /** Loose depth per cell as poured, m. Default 0. */
   depth?: ArrayLike<number>;
-  /** Material index per cell. Default 0. */
   material?: ArrayLike<number>;
   gravity?: number;
-  /** Courant number of the adaptive substep. Default 0.4. */
   courant?: number;
   /** Most substeps one {@link GranularLayer.step} takes; past it the flow runs slow rather than unstable. Default 48. */
   maxSubsteps?: number;
-  /** Still substeps before a cell sleeps. Default 12. */
   sleepSteps?: number;
   /** Start with every cell awake, so an unstable initial ground relaxes. Default true. */
   startAwake?: boolean;
 }
 
-/** What one {@link GranularLayer.step} did. */
 export interface GranularStepReport {
   substeps: number;
   /** Simulated seconds; less than asked when the substep budget ran out. */
   simulated: number;
   /** Awake cells after the step. */
   awake: number;
-  /** Solid volume that crossed a face, m³. */
   moved: number;
 }
 
-/** What a load did to the ground. */
 export interface GranularPressReport {
-  /** Mean sinkage over the footprint, m. */
   sinkage: number;
-  /** Footprint cells. */
   cells: number;
-  /** Solid volume pushed into the berm, m³. */
   displaced: number;
 }
 
-/** Plain JSON of a {@link GranularLayer}. */
 export interface GranularLayerSnapshot {
   cols: number;
   rows: number;
@@ -83,24 +69,19 @@ export interface GranularLayerSnapshot {
   idle: number[];
 }
 
-/** A granular layer. Cell arrays are row-major, `gz * cols + gx`. */
 export interface GranularLayer {
   readonly cols: number;
   readonly rows: number;
   readonly spacingX: number;
   readonly spacingZ: number;
   readonly bed: Float64Array;
-  /** Solid volume per unit area, m: loose depth × packing. */
   readonly solid: Float64Array;
   readonly packing: Float64Array;
-  /** Largest pressure each cell has carried, Pa. */
   readonly preload: Float64Array;
   readonly material: Uint8Array;
   materials: readonly GranularMaterial[];
   index(gx: number, gz: number): number;
-  /** Loose depth of a cell, m. */
   depth(cell: number): number;
-  /** Bed plus loose depth, m. */
   surface(cell: number): number;
   /** Flow velocity at a cell, m/s along x and z: the mean of its faces. Zero where the ground is still. */
   velocity(cell: number): [number, number];
@@ -108,29 +89,20 @@ export interface GranularLayer {
   step(dt: number): GranularStepReport;
   /** Wake every cell within `radius` m of (x, z) so it re-checks its stability. */
   wake(x: number, z: number, radius: number): void;
-  /** Scoop a bowl up to `depth` m deep and `radius` m wide. Returns the solid volume taken, m³. */
   dig(x: number, z: number, radius: number, depth: number): number;
-  /** Pour `volume` m³ of solid as a mound `radius` m wide. Returns the volume placed. */
   deposit(x: number, z: number, radius: number, volume: number, material?: number): number;
-  /** A flat round load of `load` N, `radius` m: a foot, a crate, a hoof. */
   press(x: number, z: number, radius: number, load: number): GranularPressReport;
-  /** A rigid wheel of `diameter` and `width` m carrying `load` N rolled from (x0, z0) to (x1, z1). */
   roll(x0: number, z0: number, x1: number, z1: number, width: number, diameter: number, load: number): GranularPressReport;
-  /** Cells whose surface changed since the last call, each once. */
   drainChanges(): number[];
   totalSolid(): number;
   snapshot(): GranularLayerSnapshot;
   restore(snapshot: GranularLayerSnapshot): void;
-  /** Back to the ground it was created with. */
   reset(): void;
 }
 
 const MIN_DEPTH = 1e-5;
 
-/**
- * Create a granular layer over a bedrock grid.
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 export function createGranularLayer(config: GranularLayerConfig): GranularLayer {
   const cols = Math.max(1, Math.floor(config.cols));
   const rows = Math.max(1, Math.floor(config.rows));

@@ -18,12 +18,10 @@ const urlParams = new URLSearchParams(typeof window === "undefined" ? "" : windo
 
 /** Explicit game only — bare `/` shows the picker so demo is never a silent surprise. */
 export const GAME_ID = urlParams.get("game") ?? (import.meta.env["VITE_GAME_ID"] as string | undefined) ?? null;
-/** Gameless scene editor — the site embeds this at /editor via /play/?editor=standalone. */
 export const EDITOR_STANDALONE = urlParams.get("editor") === "standalone";
 export const STATE_PARAM = urlParams.get("state");
 export const MODE = STATE_PARAM !== null ? "play" : (urlParams.get("mode") ?? "play");
 export const PREVIEW = urlParams.get("preview");
-/** `?fixture=<name>` mounts an engine preview fixture (real exported @jgengine/ui component). */
 export const FIXTURE = urlParams.get("fixture");
 export const STAGE = urlParams.get("stage") === "1";
 export const RUN = (urlParams.get("run") ?? "")
@@ -45,14 +43,9 @@ export const LOOK_FROM = urlParams.get("lookFrom");
  * spawn at the override without any mutation to `editor.scene.json`; absent/malformed → no override.
  */
 export const SPAWN = urlParams.get("spawn");
-/**
- * `?style=<look>` renders the game with another look preset, replacing its authored post chain, so
- * the same scene can be compared across art styles without editing the game.
- */
 export const STYLE = urlParams.get("style");
 /** `?effects=ssr,-fog,motionBlur,softShadows:2` forces render effects on or off for a before/after shot. */
 export const EFFECTS = urlParams.get("effects");
-/** `?view=<name>` replays a framing the game declares in `capture.views`. */
 export const VIEW = urlParams.get("view");
 installSpawnOverride(parseSpawnOverride(SPAWN));
 

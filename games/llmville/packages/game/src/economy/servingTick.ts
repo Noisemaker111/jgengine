@@ -74,7 +74,6 @@ export function nextServingTickAnchor(timing: ServingTickTiming): number {
   return timing.anchorTime + Math.floor(elapsedMs / MS_PER_SECOND) * MS_PER_SECOND;
 }
 
-/** Exact gain for the elapsed window; currency precision is applied at the wallet write boundary. */
 export function computeServingTickGain(
   servingGainPerSecond: number,
   elapsedSeconds: number,
@@ -94,13 +93,9 @@ export const computeServingStabilityFactor = (
   servingBonus;
 
 export interface ServingModelsSummary {
-  /** Sum of per-model effective TPS (each = tokensPerSecond × per-model serving TFLOPs). */
   totalEffectiveTps: number;
-  /** $/s from moneyPerToken × effective TPS (open serving path). */
   moneyPerSecond: number;
-  /** Data tokens/s from tokensPerToken × effective TPS. */
   dataTokensPerSecond: number;
-  /** Combined VRAM footprint of every serving model, including ones gated out by their cards' VRAM. */
   totalFootprintGb: number;
 }
 
@@ -120,7 +115,6 @@ export function summarizeServingModels(
   servingModels: readonly ServingModelSnapshot[],
   hostedModels: readonly HostedModelSnapshot[],
   assignmentStats: ComputeAssignmentStats,
-  /** founder compute buff × site energy throttle applied to each card's TFLOPs. */
   computeScale: number,
   frontierBenchmark: number,
   modifier: DailyMarketModifier,
@@ -226,7 +220,6 @@ export interface ServingSnapshot {
   hardwareStats: RackHardwareStats;
   assignmentStats: ComputeAssignmentStats;
   models: ServingModelsSummary;
-  /** Same as total effective TPS for product/debug readouts. */
   capacityTps: number;
   effectiveTps: number;
   servingGainPerSecond: number;

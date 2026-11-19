@@ -27,11 +27,7 @@ function metaValues(meta: unknown): Record<string, unknown> | undefined {
   return Object.keys(out).length === 0 ? undefined : out;
 }
 
-/**
- * Publishes live scene entities onto the editor reverse channel and gates `ctx.time` against the
- * host play-control (pause / step). Mount only in editor play mode.
- * @internal
- */
+/** @internal */
 export function RuntimePlayPublisher({ api }: { api: EditorHostApi }) {
   const ctx = useGameContext();
 
@@ -81,12 +77,7 @@ export function RuntimePlayPublisher({ api }: { api: EditorHostApi }) {
   return null;
 }
 
-/**
- * Play-mode chrome: slim shell app bar (Pause/Step/Exit via runtime play controls) plus a
- * compact reverse-channel entity inspector. Transform nudges go through `runtime_set`
- * (document write-back by default).
- * @internal
- */
+/** @internal */
 export function RuntimePlayInspectorChrome({
   gameId,
   api,

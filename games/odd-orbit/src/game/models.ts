@@ -5,7 +5,6 @@ import { assets } from "./assets";
 import type { CreatureBodyShape } from "./creatures/bodyPlan";
 import { DECOR, FURNITURE, STRUCTURE, type DecorDef, type FurnitureDef, type StructureDef } from "./objects/catalog";
 
-
 const MONSTERS = "quaternius-textured-cute-monster-pack";
 const NATURE = "quaternius-stylized-nature";
 const FURN = "kaykit-furniture";
@@ -54,7 +53,6 @@ const STRUCTURE_PLAN: Record<string, ModelPick> = {
   hab_gate: { model: `${SPACE}/basemodule_E`, fallbackModel: `${SPACE}/basemodule_garage` },
 };
 
-/** Uniform scale and pastel enamel per shell piece: tubes lengthen to the 3 m wall pitch, domes and the airlock stand a little taller than the tubes. */
 const STRUCTURE_LOOK: Record<StructureDef["kind"], { scale: number; color: string }> = {
   wall: { scale: 1.5, color: "#fff0d6" },
   wall_window: { scale: 1.5, color: "#ffeab0" },
@@ -126,7 +124,6 @@ function buildObjectModels(): Record<string, ModelConfig> {
 
 export const objectModels: Record<string, ModelConfig> = buildObjectModels();
 
-/** One cute monster per body shape; each keeps its one odd feature (one eye, tall neck, claws, no legs). */
 const ALIEN_MESH_BY_SHAPE: Record<CreatureBodyShape, string> = {
   tall: `${MONSTERS}/Alien_Tall`,
   round: `${MONSTERS}/Cyclops`,

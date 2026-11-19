@@ -2,7 +2,6 @@ import { defineProof } from "@jgengine/core/suite/suiteProof";
 
 import { game } from "../../src/game.config";
 
-/** At the Green Obelisk's terminal, as the boss phases proof stands. */
 const OBELISK = [669, 258, 0] as const;
 
 // Summon the Broodmother, beat her, and make what only her trophy makes. Setup brings a level-100 survivor, their

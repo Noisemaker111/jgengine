@@ -93,22 +93,18 @@ export function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): Shel
   return null;
 }
 
-/** Alternate peer factories for hosts that provide their own WebRTC implementation or transport pipe. */
 export interface PeerShellFactories {
   host(options: PeerHostOptions): PeerHost;
   guest(options: PeerGuestOptions): PeerGuest;
 }
 
-/** Peer bootstrap options; passing a playable hosts its authoritative GameContext world. */
 export interface ResolvePeerShellMultiplayerArgs {
   gameId: string;
   role: "host" | "join";
   room?: string;
   userId?: string;
   feedActions?: string[];
-  /** Requires an adapter with `authority: "server"`; joiners mount the same playable. */
   playable?: PlayableGame;
-  /** Maximum active players in the authoritative world, including the host player. */
   slotsPerServer?: number;
   /** Authoritative tick interval in milliseconds; defaults to {@link DEFAULT_HOST_TICK_MS} (20 Hz). */
   tickMs?: number;
@@ -119,15 +115,10 @@ export interface ResolvePeerShellMultiplayerArgs {
   /** Signaling ownership transfers to the returned session, which closes it on teardown. */
   signaling?: PeerSignaling;
   peers?: PeerShellFactories;
-  /** Inject host scheduling; the returned cancellation is called before transport teardown. */
   scheduleTicks?: (tick: () => void, intervalMs: number) => () => void;
 }
 
-/**
- * Opens a peer session. With `playable`, one host runs the game loop and guests mirror its shared world.
- * Await `close()` to finish authoritative persistence. Same-origin rooms use BroadcastChannel signaling.
- * @capability multiplayer-p2p bootstrap a playable authoritative world for browser peer co-op
- */
+/** @capability multiplayer-p2p bootstrap a playable authoritative world for browser peer co-op */
 export async function resolvePeerShellMultiplayer(
   args: ResolvePeerShellMultiplayerArgs,
 ): Promise<ShellMultiplayer & { close: () => Promise<void> }> {

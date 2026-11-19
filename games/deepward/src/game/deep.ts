@@ -16,12 +16,10 @@ export interface Deep {
   version: 1;
   body: NeedSnapshot;
   gear: Gear[];
-  /** Lures printed and waiting in Marrow; the next departure carries up to three. */
   lures: number;
   codex: CodexSnapshot;
   /** Wrecks, logs and species already scanned on this record, so one wreck teaches one fragment once. */
   scanned: string[];
-  /** Strata the diver has stood in; the crawler departs to the deepest. */
   charted: Stratum[];
   marrow: WorldModelState | null;
 }
@@ -46,7 +44,6 @@ export function readDeep(value: unknown): Deep {
 
 export function has(deep: Pick<Deep, "gear">, gear: Gear): boolean { return deep.gear.includes(gear); }
 export function sealMark(deep: Pick<Deep, "gear">): 1 | 2 | 3 { return has(deep, "seal3") ? 3 : has(deep, "seal2") ? 2 : 1; }
-/** Air the gear and the base add to every departure. */
 export function airBonus(deep: Pick<Deep, "gear">, world: WorldModel | null): number {
   const scrubbers = world === null || world.num("marrow.power") < 0 ? 0 : world.num("marrow.scrubbers");
   return (has(deep, "o2") ? 40 : 0) + Math.min(2, scrubbers) * 25;
@@ -56,7 +53,6 @@ export function deepestCharted(deep: Pick<Deep, "charted">): Stratum {
   return order.filter(stratum => deep.charted.includes(stratum)).at(-1) ?? "vault";
 }
 
-/** The story's next step, read off the record and Marrow's world: what the docket says to do. */
 export interface Goal { id: string; text: string; done: boolean }
 export function goals(deep: Deep, world: WorldModel | null): Goal[] {
   const fact = (key: string) => world?.fact(key) === true;

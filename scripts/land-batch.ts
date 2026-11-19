@@ -69,7 +69,6 @@ export interface BatchArgs {
   explain: boolean;
 }
 
-/** Positional branches, `--file`, `--base`, `--verify`, `--skill-api`, `--dry-run` and `--explain`. */
 export function parseArgs(argv: readonly string[]): BatchArgs {
   const args: BatchArgs = { base: "beta", branches: [], verify: "bun run verify:fast", skillApi: false, dryRun: false, explain: false };
   for (let i = 0; i < argv.length; i += 1) {
@@ -92,7 +91,6 @@ function value(argv: readonly string[], at: number, flag: string): string {
   return found;
 }
 
-/** Branch names from a list file: one per line, `#` and blank lines are notes, not branches. */
 export function readBranchList(text: string): string[] {
   return text
     .split(/\r?\n/)
@@ -100,7 +98,6 @@ export function readBranchList(text: string): string[] {
     .filter((line) => line.length > 0 && !line.startsWith("#"));
 }
 
-/** The list file's branches first, then the ones on the command line, each once, in order. */
 export function batchBranches(args: BatchArgs, read: (path: string) => string = (path) => readFileSync(path, "utf8")): string[] {
   const fromFile = args.file === undefined ? [] : readBranchList(read(args.file));
   const seen = new Set<string>();
@@ -113,15 +110,12 @@ export function batchBranches(args: BatchArgs, read: (path: string) => string = 
   return ordered;
 }
 
-/** One branch that reached the base, and the merge commit that carried it. */
 export interface BatchLanded {
   branch: string;
   commit: string;
   subject: string;
   pr?: number;
-  /** How many commits this branch added. */
   commits: number;
-  /** The branch's tip on origin when it merged: the commit that landed. */
   head: string;
 }
 
@@ -148,10 +142,8 @@ export interface BatchPr {
 }
 
 export interface BatchIo {
-  /** Runs in this checkout. */
   git: Git;
   github: GitHub;
-  /** Runs the verify command in this checkout; true when it passed. */
   verify: (command: string) => boolean;
   log: (line: string) => void;
   error: (line: string) => void;
@@ -198,11 +190,6 @@ export interface BatchRecord {
   entries: { branch: string; commit: string; subject: string; pr?: number }[];
 }
 
-/**
- * Land every branch in order: merge it onto the chain, verify the chain, keep it when the check
- * passes and skip it with the reason when it does not. The chain goes to `origin/<base>` in one
- * push, and nothing is ever force-pushed.
- */
 export function landBatch(args: BatchArgs, io: BatchIo): BatchOutcome {
   const startedAt = io.now();
   const outcome: BatchOutcome = { base: args.base, baseSha: "", landed: [], skipped: [], tip: null, pushed: false, code: EXIT_BATCH_LANDED };

@@ -9,7 +9,6 @@
 import type { Vec2 } from "../world/geometry";
 import { pointAtDistance, polyline, tangentAtDistance } from "../world/polyline";
 
-/** One placed transform along a path: grounded position, facing yaw, and its ordinal + arc distance. */
 export interface PathInstance {
   index: number;
   /** Arc-length distance from the path start, meters. */
@@ -19,21 +18,14 @@ export interface PathInstance {
   yaw: number;
 }
 
-/** Options for {@link placeAlongPath}. */
 export interface PlaceAlongPathOptions {
   /** Target meters between instances. The run is divided into equal spans nearest this spacing. */
   spacing: number;
-  /** Ground each instance to this height sampler (else y = 0). */
   sampleHeight?: (x: number, z: number) => number;
   /** Force at least this many instances regardless of length. Default 1 (endpoints only when short). */
   minCount?: number;
 }
 
-/**
- * Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole
- * number of equal spans closest to `spacing`, so instances always land on both endpoints and stay
- * evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
- */
 export function placeAlongPath(
   points: readonly { x: number; z: number }[],
   options: PlaceAlongPathOptions,

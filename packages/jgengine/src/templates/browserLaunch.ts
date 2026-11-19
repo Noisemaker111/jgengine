@@ -1,6 +1,4 @@
-/** Marks the generated launch block inside the scaffold's `scripts/browser.mjs`. */
 export const LAUNCH_BLOCK_START = "// jg-launch-block:start";
-/** Marks the end of the generated launch block. */
 export const LAUNCH_BLOCK_END = "// jg-launch-block:end";
 
 /**

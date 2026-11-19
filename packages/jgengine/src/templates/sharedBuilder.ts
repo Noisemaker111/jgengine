@@ -1,6 +1,5 @@
 import type { TemplateFile, TemplateOptions } from "./types";
 
-/** Add a connected shared-world composition to the standard editor-backed game scaffold. */
 export function sharedBuilderFiles(files: TemplateFile[], options: TemplateOptions): TemplateFile[] {
   const editorProp = options.editor === false ? "" : ' editor={() => import("@jgengine/editor")}';
   const packageFile = files.find(file => file.path === "package.json")!;

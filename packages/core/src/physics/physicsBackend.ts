@@ -1,17 +1,12 @@
-/** `[x, y, z]`. */
 export type PhysicsVec3 = readonly [number, number, number];
-/** Unit quaternion `[x, y, z, w]`; `[0, 0, 0, 1]` is identity. */
 export type PhysicsQuat = readonly [number, number, number, number];
 
 /** A writable `[x, y, z]` a backend fills in place, so a reused result object allocates nothing. */
 export type PhysicsVec3Out = [number, number, number];
-/** A writable `[x, y, z, w]` a backend fills in place. */
 export type PhysicsQuatOut = [number, number, number, number];
 
-/** The identity rotation. */
 export const IDENTITY_QUAT: PhysicsQuat = [0, 0, 0, 1];
 
-/** Collision shape of a body or a cast. Capsules stand along +Y; a trimesh or heightfield is static-only on every backend. */
 export type BodyShape =
   | { kind: "box"; halfExtents: PhysicsVec3 }
   | { kind: "sphere"; radius: number }
@@ -20,30 +15,23 @@ export type BodyShape =
   | { kind: "trimesh"; vertices: ArrayLike<number>; indices: ArrayLike<number> }
   | { kind: "heightfield"; rows: number; columns: number; heights: ArrayLike<number>; scale: PhysicsVec3 };
 
-/** Shape discriminator, as listed in {@link PhysicsCapabilities.shapes}. */
 export type BodyShapeKind = BodyShape["kind"];
 
 /** `dynamic` integrates under forces, `kinematic` moves only through {@link PhysicsBackend.setKinematicTarget}, `static` never moves. */
 export type BodyKind = "dynamic" | "kinematic" | "static";
 
-/** Everything a backend needs to create a body. Rotation-free backends ignore `rotation` and `angularVelocity` and say so in {@link PhysicsCapabilities}. */
 export interface BodyDesc {
   shape: BodyShape;
-  /** Default `dynamic`. */
   kind?: BodyKind;
   position: PhysicsVec3;
   rotation?: PhysicsQuat;
   velocity?: PhysicsVec3;
   angularVelocity?: PhysicsVec3;
-  /** Default 1; ignored for kinematic and static bodies. */
   mass?: number;
   friction?: number;
   restitution?: number;
-  /** Collision layer bitmask this body belongs to. Default `1`. */
   layers?: number;
-  /** Collision layer bitmask this body collides with. Default all bits. */
   mask?: number;
-  /** Continuous collision detection for fast small bodies (bullets, thrown props). */
   ccd?: boolean;
   /** Per-second linear velocity damping on this body (air drag, water); default `0`. */
   linearDamping?: number;
@@ -53,12 +41,9 @@ export interface BodyDesc {
   userData?: unknown;
 }
 
-/** Backend-issued body id; stable for the body's lifetime and across snapshot/restore. */
 export type BodyHandle = number;
-/** Backend-issued joint id. */
 export type JointHandle = number;
 
-/** A body's live pose and motion. Rotation-free backends report identity rotation and zero angular velocity. */
 export interface BodyState {
   position: PhysicsVec3Out;
   rotation: PhysicsQuatOut;
@@ -67,16 +52,12 @@ export interface BodyState {
   sleeping: boolean;
 }
 
-/** Joint between two bodies, or between `bodyA` and a world anchor when `bodyB` is omitted. */
 export interface JointDesc {
   kind: "fixed" | "hinge" | "ball" | "distance" | "spring";
   bodyA: BodyHandle;
   bodyB?: BodyHandle;
-  /** Anchor in A's local frame. Default origin. */
   anchorA?: PhysicsVec3;
-  /** Anchor in B's local frame, or the world point when B is omitted. Default origin. */
   anchorB?: PhysicsVec3;
-  /** Hinge axis in world space. */
   axis?: PhysicsVec3;
   /** Hinge angle limits in radians. */
   limits?: readonly [min: number, max: number];
@@ -85,18 +66,15 @@ export interface JointDesc {
   damping?: number;
 }
 
-/** A ray query. */
 export interface RayDesc {
   origin: PhysicsVec3;
   /** Need not be normalized. */
   direction: PhysicsVec3;
   maxDistance: number;
-  /** Only bodies whose `layers` intersect this mask are hit. Default all. */
   mask?: number;
   exclude?: BodyHandle;
 }
 
-/** Nearest surface a ray reached. */
 export interface RayHit {
   body: BodyHandle;
   point: PhysicsVec3Out;
@@ -104,7 +82,6 @@ export interface RayHit {
   distance: number;
 }
 
-/** Sweep `shape` from `position` along `motion` and report the first body it touches. */
 export interface ShapeCastDesc {
   shape: BodyShape;
   position: PhysicsVec3;
@@ -114,7 +91,6 @@ export interface ShapeCastDesc {
   exclude?: BodyHandle;
 }
 
-/** First contact of a shape sweep. */
 export interface ShapeCastHit {
   body: BodyHandle;
   /** Fraction of `motion` travelled at first contact, 0..1. */
@@ -124,7 +100,6 @@ export interface ShapeCastHit {
   distance: number;
 }
 
-/** Which bodies a shape placed at `position` intersects. */
 export interface OverlapDesc {
   shape: BodyShape;
   position: PhysicsVec3;
@@ -133,11 +108,9 @@ export interface OverlapDesc {
   exclude?: BodyHandle;
 }
 
-/** A contact reported during {@link PhysicsBackend.step}; the object is reused between calls, so copy what you keep. */
 export interface ContactEvent {
   a: BodyHandle;
   b: BodyHandle;
-  /** Contact normal pointing from `a` toward `b`. */
   normal: PhysicsVec3Out;
   approachSpeed: number;
   impulse: number;
@@ -151,31 +124,22 @@ export interface PhysicsCapabilities {
   joints: readonly JointDesc["kind"][];
 }
 
-/** Solver-wide knobs a backend accepts at creation and through `retune`. */
 export interface PhysicsBackendConfig {
   gravity?: PhysicsVec3;
-  /** Fixed substep length the backend integrates with; the caller's `step(dt)` is accumulated into it. */
   fixedDt?: number;
   maxSubsteps?: number;
 }
 
-/** Walk rules for a backend's own kinematic character mover ({@link PhysicsBackend.createCharacterMotion}). */
 export interface CharacterMotionDesc {
-  /** The character's collision shape, centred on the point passed to `move`. */
   shape: BodyShape;
-  /** Gap kept between the shape and every surface. */
   skinWidth: number;
   /** Steepest walkable slope in degrees. */
   maxSlopeDeg: number;
-  /** Ledge height climbed automatically; `0` turns stepping off. */
   stepHeight: number;
-  /** How far down a grounded character is pulled onto the ground; `0` turns snapping off. */
   snapDistance: number;
-  /** Layers the mover collides with. Default all. */
   mask?: number;
 }
 
-/** What one {@link CharacterMotion.move} resolved; the object passed in is filled and returned. */
 export interface CharacterMotionResult {
   moved: PhysicsVec3Out;
   grounded: boolean;
@@ -185,44 +149,33 @@ export interface CharacterMotionResult {
   hitCeiling: boolean;
 }
 
-/** A backend-native kinematic character mover: collide-and-slide, stepping, slopes and ground snap in the solver. */
 export interface CharacterMotion {
-  /** Resolve `desired` displacement for the shape centred at `center`, ignoring `exclude`; fills and returns `out`. */
   move(center: PhysicsVec3, desired: PhysicsVec3, out: CharacterMotionResult, exclude?: BodyHandle): CharacterMotionResult;
   retune(desc: Partial<CharacterMotionDesc>): void;
   dispose(): void;
 }
 
-/** One wheel of a {@link RayCastVehicle}, in the chassis frame (forward is +z, up is +y). */
 export interface RayCastWheelDesc {
-  /** Suspension mount point in the chassis frame. */
   connection: PhysicsVec3;
   radius: number;
-  /** Suspension length at rest, m. */
   restLength: number;
-  /** Suspension direction in the chassis frame. Default `[0, -1, 0]`. */
   direction?: PhysicsVec3;
-  /** Axle direction in the chassis frame. Default `[-1, 0, 0]`. */
   axle?: PhysicsVec3;
   maxTravel?: number;
   stiffness?: number;
   compression?: number;
   relaxation?: number;
   maxForce?: number;
-  /** Tyre friction coefficient. */
   frictionSlip?: number;
   sideFrictionStiffness?: number;
 }
 
-/** A ray-cast vehicle on an existing chassis body. */
 export interface RayCastVehicleDesc {
   chassis: BodyHandle;
   wheels: readonly RayCastWheelDesc[];
-  /** Layers the wheel rays hit. Default all. */
   mask?: number;
 }
 
-/** A wheel's last cast; the object passed to {@link RayCastVehicle.wheel} is filled and returned. */
 export interface RayCastWheelState {
   inContact: boolean;
   suspensionLength: number;
@@ -230,17 +183,13 @@ export interface RayCastWheelState {
   contactPoint: PhysicsVec3Out;
   contactNormal: PhysicsVec3Out;
   ground: BodyHandle | null;
-  /** Wheel spin angle, rad. */
   rotation: number;
 }
 
-/** A backend-native ray-cast vehicle: wheel rays, suspension and tyre impulses on a chassis body. */
 export interface RayCastVehicle {
   readonly wheelCount: number;
-  /** Drive inputs the next {@link update} applies to one wheel: engine force N, brake impulse, steering angle rad. */
   setWheelInput(index: number, engineForce: number, brake: number, steering: number): void;
   retuneWheel(index: number, desc: Partial<RayCastWheelDesc>): void;
-  /** Cast every wheel and apply suspension and tyre impulses to a dynamic chassis; call once per step before `step`. */
   update(dt: number): void;
   wheel(index: number, out: RayCastWheelState): RayCastWheelState;
   /** Chassis speed along its forward axis, m/s. */
@@ -261,7 +210,6 @@ export interface PhysicsBackend {
   addBody(desc: BodyDesc): BodyHandle;
   removeBody(handle: BodyHandle): void;
   hasBody(handle: BodyHandle): boolean;
-  /** Read a body's state into `out` (or a fresh object); `null` for an unknown handle. */
   body(handle: BodyHandle, out?: BodyState): BodyState | null;
   userDataOf(handle: BodyHandle): unknown;
   setPosition(handle: BodyHandle, position: PhysicsVec3): void;
@@ -283,24 +231,18 @@ export interface PhysicsBackend {
   addJoint(desc: JointDesc): JointHandle;
   removeJoint(handle: JointHandle): void;
   step(dt: number): void;
-  /** Nearest hit, written into `out` when given (a hot caller reuses one) or a fresh object. */
   raycast(desc: RayDesc, out?: RayHit): RayHit | null;
-  /** First contact of the sweep, written into `out` when given or a fresh object. */
   shapecast(desc: ShapeCastDesc, out?: ShapeCastHit): ShapeCastHit | null;
-  /** Bodies the shape intersects, written into `out` (cleared first) when given or a fresh array. */
   overlap(desc: OverlapDesc, out?: BodyHandle[]): BodyHandle[];
   onContact(listener: ((event: ContactEvent) => void) | null): void;
   retune(config: PhysicsBackendConfig): void;
   snapshot(): unknown;
   restore(state: unknown): void;
   dispose(): void;
-  /** Optional: the solver's own kinematic character mover; `createCharacterController({ backendMotion: true })` uses it. */
   createCharacterMotion?(desc: CharacterMotionDesc): CharacterMotion;
-  /** Optional: the solver's own ray-cast vehicle on a chassis body; `createVehicleBackendLink` uses it for wheel contacts. */
   createRayCastVehicle?(desc: RayCastVehicleDesc): RayCastVehicle;
 }
 
-/** Axis-aligned bounds of a shape at identity rotation, as half extents. */
 export function shapeHalfExtents(shape: BodyShape): [number, number, number] {
   switch (shape.kind) {
     case "box":
@@ -343,7 +285,6 @@ export function shapeHalfExtents(shape: BodyShape): [number, number, number] {
   }
 }
 
-/** True for an absent or identity rotation. */
 export function isIdentityQuat(q: PhysicsQuat | undefined): boolean {
   return q === undefined || (q[0] === 0 && q[1] === 0 && q[2] === 0 && Math.abs(q[3] - 1) < 1e-9);
 }

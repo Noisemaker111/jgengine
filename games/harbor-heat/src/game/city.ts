@@ -2,12 +2,6 @@ import type { MissionDef } from "@jgengine/core/mission/mission";
 import { defineTurfWar } from "@jgengine/core/worldModel/turfWar";
 import { calm, defineWorldModel, type WorldFactSpec } from "@jgengine/core/worldModel/worldModel";
 
-/**
- * Mainsail as one world: who lives here, who holds which block, what each job is and what it leaves
- * behind, and how a gunshot or a body spreads through the city. Map blips, the phone, dialogue,
- * "what next", mission facts and resident panic all read this; nothing else keeps its own copy.
- */
-
 const PLAYER = "harbor_player";
 
 const mission = (id: string, title: string, objectives: MissionDef["objectives"], cash: number, fail: MissionDef["fail"] = []): MissionDef => ({
@@ -20,27 +14,13 @@ const mission = (id: string, title: string, objectives: MissionDef["objectives"]
 
 const killed = (target: string) => ({ kind: "kill" as const, target });
 
-/**
- * Blocks the two crews hold at the start and the player can take: the Carmines run the docks, the
- * heights, Canal Row and the Marina; the Riptides, a smuggling crew out of the east side, run the
- * Saltworks Yards, the East Strand and the Low Flats airstrip. Each block has a grip: soldiers dying
- * there wear it down, and at zero it goes to whoever was pushing. The same fact then measures the new
- * owner's hold, which the other crews' pushes and lost raids wear down again.
- */
 export const TURF = ["port", "heights", "canal", "marina", "saltworks", "strand", "flats"] as const;
 export type TurfId = (typeof TURF)[number];
-/** The crews that hold turf, beside the player. */
 export const GANGS = ["carmine", "riptide"] as const;
 export type GangId = (typeof GANGS)[number];
 
-/** A block's hold drifts back toward 60 when nobody is fighting over it, whoever owns it. */
 const grip = (value: number): WorldFactSpec => calm(value, 0.08, { rest: 60, min: 0, max: 100 });
 
-/**
- * Who pushes where. The Carmines hit any block the player took (from anywhere: it was theirs). Once
- * Rising Tide starts the war, the Riptides push out from their corners into the Carmines' blocks and
- * the Carmines push back the same way; angry Riptides also push into the player's blocks next door.
- */
 export const turfWar = defineTurfWar({
   blocks: {
     port: { borders: ["strand", "flats"] },
@@ -102,7 +82,6 @@ export const turfWar = defineTurfWar({
   },
 });
 
-/** A front's facts: what it earns by day and on top at night, and whether a raid is on or has wrecked it. */
 const front = (label: string, income: number, night: number) => ({
   label,
   slot: "fronts",
@@ -486,12 +465,9 @@ export const city = defineWorldModel({
     "story.act": 0,
     "fronts.takings": { value: 0, min: 0 },
     "fronts.repelled": 0,
-    /** Whether the two crews are at war; Rising Tide starts it. */
     "war.on": false,
-    /** How hot the crew war runs: every clash adds to it, and it cools off between them. */
     "war.tension": calm(0, 0.1, { min: 0, max: 100 }),
   },
 });
 
-/** Mission actor id for the player, whichever body it is in. */
 export const CITY_PLAYER = PLAYER;

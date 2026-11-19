@@ -1,4 +1,3 @@
-/** Stored geometry and image inventory; triangles count mesh primitives once, regardless of scene instances. */
 export interface GlbMetrics {
   glbBytes: number;
   /** GLB plus unique external buffer/image bytes; shared files count once per model. */

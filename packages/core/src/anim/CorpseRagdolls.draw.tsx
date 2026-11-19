@@ -34,7 +34,7 @@ export function registerEntityBody(instanceId: string, scene: THREE.Object3D): (
 /** Fewest mapped bones a rig needs to fall as a body rather than a few loose boxes. */
 const MIN_RAGDOLL_SLOTS = 6;
 
-/** The standard bone map that fits this rig best across the known naming schemes, or null. Exported for tests. @internal */
+/** @internal */
 export function bestRigMap(scene: THREE.Object3D): SkeletonMap | null {
   const names: string[] = [];
   scene.traverse((object) => {
@@ -240,9 +240,7 @@ export function corpseRagdollsDraw(ctx: GameContext, getProps: () => CorpseRagdo
   };
 }
 
-/**
- * @capability animation turn a killed rigged character into a physics ragdoll on death
- */
+/** @capability animation turn a killed rigged character into a physics ragdoll on death */
 export function CorpseRagdolls({ max = 6, lifeS = 5, sinkS = 1.5 }: { max?: number; lifeS?: number; sinkS?: number }) {
   const ctx = useGameContext();
   const quality = useTerrainQuality();

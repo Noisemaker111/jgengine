@@ -11,9 +11,7 @@ import { stations } from "./base";
  * so these are approximate, set so the snow is freezing at night and the redwoods cool.
  */
 export const BIOME_C: Record<string, number> = { coast: 24, jungle: 25, swamp: 26, volcano: 27, redwood: 16, snow: -6 };
-/** Past this far from any biome's spawn marker, it is coast. */
 const BIOME_REACH = 200;
-/** A campfire's warmth at its heart, and how far it reaches (ARK: 800 units, about 8 m). The warmth is approximate. */
 const CAMPFIRE_C = 12;
 const CAMPFIRE_RANGE = 8;
 /**
@@ -23,18 +21,15 @@ const CAMPFIRE_RANGE = 8;
  */
 const INDOOR_HOLD = 0.5;
 const INDOOR_C = 20;
-/** Rain this heavy soaks a survivor under open sky. */
 const SOAKING_RAIN = 0.2;
 
 const WATER_LEVEL = 0;
 
-/** Where each biome is: the spawn zones carry their biome in their id (herd_snow_12, herd_redwood_65, …). */
 const BIOME_POINTS: readonly { x: number; z: number; biome: string }[] = markersOfKind(editorLayers, "creature_spawn").flatMap((marker) => {
   const biome = /^herd_([a-z]+)_\d+$/.exec(marker.id)?.[1];
   return biome !== undefined && biome in BIOME_C ? [{ x: marker.position.x, z: marker.position.z, biome }] : [];
 });
 
-/** The biome at a spot: the nearest biome marker's within reach, else the coast. */
 export function biomeAt(x: number, z: number): string {
   let best = "coast";
   let bestDistance = BIOME_REACH;
@@ -52,7 +47,6 @@ export function inWater(ctx: GameContext, position: readonly [number, number, nu
   return ctx.world.groundHeightAt(position[0], position[2]) < WATER_LEVEL + 0.3;
 }
 
-/** Warmth from lit campfires near a spot, stacking as ARK's do, fading to nothing at their range. */
 function campfireHeat(ctx: GameContext, position: readonly [number, number, number]): number {
   let heat = 0;
   for (const station of stations(ctx)) {
@@ -63,19 +57,14 @@ function campfireHeat(ctx: GameContext, position: readonly [number, number, numb
   return heat;
 }
 
-/** What the weather is doing to someone standing at a spot. */
 export interface ClimateHere {
   biome: string;
-  /** The weather that falls here: clear, rain, snow, or both at a zone's edge. */
   weather: "clear" | "rain" | "snow" | "mixed" | "dust";
   /** 0..1 how hard it falls. */
   precipitation: number;
-  /** A ceiling, roof or cave rock overhead. */
   covered: boolean;
-  /** Shut in a room, roof and walls all round: the air is held toward indoor warmth. */
   enclosed: boolean;
   wet: boolean;
-  /** Air temperature in °C. */
   temperature: number;
 }
 

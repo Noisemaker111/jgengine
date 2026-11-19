@@ -1,10 +1,3 @@
-/**
- * Room-facing directions on the build/map grid.
- *
- * North (+Z) is toward the tier front door. East is +X, South is -Z, West is -X.
- * Stored as 0–3 quarter-turns; 0 = North.
- */
-
 export const CARDINAL = {
   N: 0,
   E: 1,

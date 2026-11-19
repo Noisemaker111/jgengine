@@ -7,7 +7,6 @@ import { createWorldGameHost, type WorldGameHost } from "@jgengine/ws/worldHost"
 import { memoryWorldPersistence, type WorldPersistence } from "./persistence";
 import { createGameWsServer, type GameWsServer, type GameWsServerOptions } from "./wsServer";
 
-/** A game the world server can host — its authoritative {@link GameDefinition} and the content lookup a `GameContext` reads. */
 export interface HostedGameDefinition {
   game: GameDefinition<ModelAssetRef, unknown>;
   content: GameContextContent;
@@ -15,9 +14,7 @@ export interface HostedGameDefinition {
   models?: GameContextModels;
 }
 
-/** Config for {@link createWorldGameServer}: how to resolve a game by id, the tick cadence, and the underlying ws-server/router options (minus `host`, which the server builds). */
 export interface WorldGameServerOptions extends Omit<GameWsServerOptions, "host"> {
-  /** Resolve a game to host by id — `null` for an unknown id, which rejects the join. */
   resolveGame(gameId: string): HostedGameDefinition | null;
   /** Ticks per second for the real-clock loop {@link WorldGameServer.start} drives; default 30. Tests call {@link WorldGameServer.tick} manually instead. */
   tickHz?: number;
@@ -31,7 +28,6 @@ export interface WorldGameServerOptions extends Omit<GameWsServerOptions, "host"
 export interface WorldGameServer {
   host: WorldGameHost;
   ws: GameWsServer;
-  /** Advance every live world by `dtSeconds` — the manual/test drive point; {@link start} calls it on a real-clock interval. */
   tick(dtSeconds: number): void;
   /** Begin driving {@link tick} on a real-clock interval at `tickHz` (idempotent). */
   start(): void;
@@ -39,15 +35,12 @@ export interface WorldGameServer {
   stop(): void;
   /** Force-persist every live world's current state via the injected {@link WorldPersistence} (idempotent — safe to call repeatedly). */
   flush(): Promise<void>;
-  /** Permanently fence ticks and socket intake, drain accepted work, and stop/save the host. Repeated calls share completion, including final save failure. */
   close(): Promise<void>;
-  /** The bound ws port. */
   port(): number;
 }
 
 const DEFAULT_TICK_HZ = 30;
 
-/** Build a {@link WorldGameServer} — one process hosting authoritative GameContext worlds over ws, ready for two-client play once {@link WorldGameServer.start} runs. */
 export function createWorldGameServer(options: WorldGameServerOptions): WorldGameServer {
   const {
     resolveGame,

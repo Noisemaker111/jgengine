@@ -18,25 +18,15 @@ import { resolveAnimationConfig, rolesFromClips } from "@jgengine/core/game/clip
  * @internal
  */
 
-/** Locomotion state roles the speed-driven idle/walk/run crossfade reads. */
 export const LOCOMOTION_ROLES = ["idle", "walk", "run"] as const;
-/** Locomotion clip role a placement can override (idle/walk/run). */
 export type LocomotionRole = (typeof LOCOMOTION_ROLES)[number];
 
-/** Numeric locomotion tunings (`ModelAnimationStates`). */
 export const LOCOMOTION_NUMBERS = ["walkSpeed", "runSpeed", "fadeSec"] as const;
-/** Numeric locomotion tuning field on an authored animation config (walkSpeed/runSpeed/fadeSec). */
 export type LocomotionNumber = (typeof LOCOMOTION_NUMBERS)[number];
 
-/**
- * One-shot event slots offered in the inspector. `hit` / `death` auto-fire on this entity's
- * `combat.hitReaction` / `entity.died`; the rest fire when the game calls `playEntityAnimation`.
- */
 export const ONE_SHOT_EVENTS = ["attack", "hit", "death", "jump", "interact", "cheer"] as const;
-/** One-shot animation event a placement can bind a clip to (attack/hit/death/...). */
 export type OneShotEvent = (typeof ONE_SHOT_EVENTS)[number];
 
-/** Role->clip override map persisted inside an authored animation config. */
 export interface AuthoredAnimationStates {
   idle?: string;
   walk?: string;
@@ -46,7 +36,6 @@ export interface AuthoredAnimationStates {
   fadeSec?: number;
 }
 
-/** Structurally compatible with `ModelAnimationConfig`, but every field optional for authoring. */
 export interface AuthoredAnimationConfig {
   auto?: true;
   clock?: "real" | "game";
@@ -57,22 +46,18 @@ export interface AuthoredAnimationConfig {
   time?: number;
   states?: AuthoredAnimationStates;
   oneShots?: Record<string, string | readonly string[]>;
-  /** A stored animation graph; takes over from `states`/`oneShots` at play time. */
   graph?: AnimGraph;
 }
 
-/** The value stored at `meta.animation`. */
 export type AnimationSetting = AuthoredAnimationConfig | "auto" | "none";
 
-/** Which authoring mode a stored setting represents. `default` = no override key. */
 export type AnimationMode = "default" | "auto" | "none" | "custom";
 
-/** Reads a whole valid override, retaining authored fields; malformed values return undefined. */
 export function readAnimationSetting(meta: Record<string, unknown> | undefined): AnimationSetting | undefined {
   return readAnimationSettingResult({ markers: [meta === undefined ? { id: "animation" } : { id: "animation", meta }] }, "animation").setting;
 }
 
-/** Validates a placement's animation with its saved-document repair locations. @internal */
+/** @internal */
 export function readAnimationSettingResult(
   document: AuthoredAnimationDocumentLike,
   markerId: string,
@@ -81,7 +66,6 @@ export function readAnimationSettingResult(
   return { setting: result.animation as AnimationSetting | undefined, diagnostics: result.diagnostics };
 }
 
-/** The authoring mode a stored setting maps to. */
 export function animationMode(setting: AnimationSetting | undefined): AnimationMode {
   if (setting === undefined) return "default";
   if (setting === "auto") return "auto";
@@ -110,7 +94,6 @@ export function setAnimationMode(
   return defaultCustomConfig(clips);
 }
 
-/** A concrete custom config derived from a rigged asset's clip roles — the `custom` mode seed. */
 export function defaultCustomConfig(clips: readonly string[]): AuthoredAnimationConfig {
   const roles = rolesFromClips(clips);
   const states: AuthoredAnimationStates = {};
@@ -128,7 +111,6 @@ export function defaultCustomConfig(clips: readonly string[]): AuthoredAnimation
   return config;
 }
 
-/** Sets or clears (null) a locomotion state clip; forces the setting into `custom`. */
 export function setLocomotionClip(
   setting: AnimationSetting | undefined,
   role: LocomotionRole,
@@ -142,7 +124,6 @@ export function setLocomotionClip(
   return { ...config, ...(config.states !== undefined || Object.keys(states).length > 0 ? { states } : {}) };
 }
 
-/** Sets or clears (null) a numeric locomotion tuning. */
 export function setLocomotionNumber(
   setting: AnimationSetting | undefined,
   key: LocomotionNumber,
@@ -156,7 +137,6 @@ export function setLocomotionNumber(
   return { ...config, ...(config.states !== undefined || Object.keys(states).length > 0 ? { states } : {}) };
 }
 
-/** Binds or clears (null) a one-shot event's clip or variant list. */
 export function setOneShotClip(
   setting: AnimationSetting | undefined,
   event: string,
@@ -171,7 +151,7 @@ export function setOneShotClip(
   return next;
 }
 
-/** Sets a single playback clip, explicitly replacing speed-driven states and a stored graph. @internal */
+/** @internal */
 export function setPlaybackClip(setting: AnimationSetting | undefined, clip: string | null): AuthoredAnimationConfig {
   if (clip === null) {
     const { clip: _clip, ...config } = asConfig(setting);
@@ -181,7 +161,7 @@ export function setPlaybackClip(setting: AnimationSetting | undefined, clip: str
   return { ...config, clip };
 }
 
-/** Changes a playback scalar while preserving role mappings, variants and the stored graph. @internal */
+/** @internal */
 export function setPlaybackNumber(
   setting: AnimationSetting | undefined,
   key: "time" | "timeScale",
@@ -193,12 +173,12 @@ export function setPlaybackNumber(
   return config;
 }
 
-/** Chooses the playback clock without replacing mappings, graph, or other authored fields. @internal */
+/** @internal */
 export function setPlaybackClock(setting: AnimationSetting | undefined, clock: "real" | "game"): AuthoredAnimationConfig {
   return { ...(setting === "auto" ? { auto: true as const } : asConfig(setting)), clock };
 }
 
-/** Requests loaded-rig role inference, or removes that request, retaining explicit overrides whole. @internal */
+/** @internal */
 export function setAutomaticRoles(setting: AnimationSetting | undefined, derive: boolean): AuthoredAnimationConfig {
   const config = { ...asConfig(setting) };
   if (derive) config.auto = true;
@@ -206,7 +186,7 @@ export function setAutomaticRoles(setting: AnimationSetting | undefined, derive:
   return config;
 }
 
-/** Changes a playback toggle without replacing the remaining authored settings. @internal */
+/** @internal */
 export function setPlaybackBoolean(
   setting: AnimationSetting | undefined,
   key: "paused" | "loop",
@@ -223,14 +203,8 @@ export function animationMetaPatch(setting: AnimationSetting | undefined): { ani
   return { animation: setting };
 }
 
-/** Where the graph a placement plays comes from. */
 export type AnimGraphSource = "authored" | "locomotion" | "auto";
 
-/**
- * The graph a placement plays at run time: its stored `graph`, else the locomotion graph of its
- * custom `states`/`oneShots`, else the one clip roles derive for `"auto"` and no-override placements.
- * `null` for `"none"`, a single-clip config, or a rig whose clips have no idle.
- */
 export function effectiveAnimGraph(
   setting: AnimationSetting | undefined,
   clips: readonly string[],
@@ -256,12 +230,10 @@ export function effectiveAnimGraph(
   return graph === undefined ? null : { graph, source: "auto" };
 }
 
-/** Stores `graph` on the placement, keeping its other fields; the stored graph wins at play time. */
 export function storeAnimGraph(setting: AnimationSetting | undefined, graph: AnimGraph): AuthoredAnimationConfig {
   return { ...asConfig(setting), graph };
 }
 
-/** Removes a stored graph so `states`/`oneShots` (or clip roles) drive the placement again. */
 export function clearAnimGraph(setting: AnimationSetting | undefined): AnimationSetting | undefined {
   if (setting === undefined || setting === "auto" || setting === "none") return setting;
   const { graph: _graph, ...rest } = setting;

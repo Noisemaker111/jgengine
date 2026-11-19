@@ -8,7 +8,6 @@ import { ENGINE_DEMOS, engineDemoCode } from "./engineDemos";
 import { liveCode, type DialSet } from "./liveCode";
 import { createTrace } from "./trace";
 
-/** A demo that plays itself, with the code that drives it lighting up and changing as it runs. */
 export function TracedDemo({ demo, layout = "side" }: { demo: DemoKey; layout?: "stack" | "side" }) {
   const spec = ENGINE_DEMOS[demo];
   const trace = useMemo(() => createTrace(), []);

@@ -13,18 +13,14 @@ export interface LootWeaponStatMap {
   roundsPerMinute?: string;
   damage?: string;
   pellets?: string;
-  /** Requires the template to declare a magazine. */
   magazineCapacity?: string;
   reloadMs?: string;
   /** Spread half-angle in radians, clamped to `0..PI/2`. */
   spreadBase?: string;
-  /** Hitscan range, or a projectile's hard distance cap. */
   maxRange?: string;
-  /** Projectile launch speed. */
   projectileSpeed?: string;
 }
 
-/** A base weapon definition plus the stat map a rolled item overrides. */
 export interface LootWeaponProjection {
   template: WeaponDefinition;
   stats: LootWeaponStatMap;
@@ -40,13 +36,7 @@ function statOf(item: LootItem, statId: string | undefined): number | undefined 
   return value;
 }
 
-/**
- * Project a rolled item onto a plain weapon definition: copy the template, then write the mapped
- * stats into rate, damage, magazine, spread, range and projectile speed. The result is a
- * {@link WeaponDefinition}, so `assertWeaponDefinition` and `createWeaponSystem` accept it unchanged.
- *
- * @capability loot-weapon feed a rolled item into a weapon definition so generated gear fires through the weapon system
- */
+/** @capability loot-weapon feed a rolled item into a weapon definition so generated gear fires through the weapon system */
 export function lootWeaponDefinition(item: LootItem, projection: LootWeaponProjection): WeaponDefinition {
   const template = projection.template;
   const map = projection.stats;

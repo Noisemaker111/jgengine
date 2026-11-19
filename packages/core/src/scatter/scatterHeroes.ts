@@ -1,52 +1,32 @@
-/**
- * Which placements of a unique scatter species draw as their own grown mesh: the nearest few within
- * reach of the camera. Everything else draws as a shared stand-in variant and, far away, its impostor.
- * Hero meshes stay resident after a placement leaves the set, least recently used first out, so walking
- * back and forth regrows nothing.
- *
- * @capability scatter-generator grow a scatter palette item from a seeded generator's baked variants
- */
+/** @capability scatter-generator grow a scatter palette item from a seeded generator's baked variants */
 
-/** A placement the hero set can pick: its id and ground position. */
 export interface ScatterHeroMember {
   readonly id: string;
   readonly x: number;
   readonly z: number;
 }
 
-/** Options for {@link createScatterHeroSet}. */
 export interface ScatterHeroSetOptions {
-  /** Most heroes at once. Default 32. */
   heroes?: number;
-  /** A placement becomes a hero within this ground distance (m). Default 40. */
   distance?: number;
   /** A hero stays one until this many times `distance`, so the edge does not flicker. Default 1.2. */
   hysteresis?: number;
-  /** Most hero meshes kept resident, heroes included. Default twice `heroes`. */
   resident?: number;
 }
 
-/** What {@link ScatterHeroSet.update} changed. */
 export interface ScatterHeroUpdate {
-  /** Current heroes, nearest first. */
   heroes: readonly string[];
-  /** Resident meshes to drop: no longer heroes and least recently used past the resident cap. */
   evicted: readonly string[];
-  /** True when `heroes` differs from the last update. */
   changed: boolean;
 }
 
-/** The hero set's state: current heroes and resident ids, least recently used first. */
 export interface ScatterHeroSetState {
   heroes: string[];
   resident: string[];
 }
 
-/** A hero set: pick heroes near a camera from placements bucketed on a ground grid. */
 export interface ScatterHeroSet {
-  /** Replace the placements; current heroes and residents that are gone are evicted on the next update. */
   setMembers(members: readonly ScatterHeroMember[]): void;
-  /** Pick heroes around a ground position; reads only the grid cells within reach. */
   update(x: number, z: number): ScatterHeroUpdate;
   state(): ScatterHeroSetState;
   restore(state: ScatterHeroSetState): void;

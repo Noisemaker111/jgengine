@@ -7,15 +7,10 @@ import type { Drop, LootEntry, LootTableDef } from "./lootTable";
  * object is never mutated, so table definitions stay shared and reusable.
  */
 export interface LootPlanEntry {
-  /** The untouched source entry from the table this stage rolls. */
   entry: LootEntry;
-  /** Position of `entry` in the source table, carried through to provenance. */
   index: number;
-  /** Effective relative pick weight (weighted mode). Starts at the entry's declared weight. */
   weight: number;
-  /** Effective per-entry drop probability (independent mode). Starts at the entry's declared chance. */
   chance?: number;
-  /** When `false`, the entry is gated out of this roll — excluded from the weighted total or the independent pass. */
   eligible: boolean;
 }
 
@@ -24,13 +19,9 @@ export interface LootPlanEntry {
  * gating entries, reweighting them, or changing the roll count — instead of touching table defs.
  */
 export interface LootRollPlan {
-  /** Source table id (for provenance) or `null` when the stage rolled an inline, unnamed table. */
   tableId: string | null;
-  /** Weighted vs independent roll mode, inherited from the source table. */
   mode: "weighted" | "independent";
-  /** Number of rolls to perform; a quantity modifier can raise or lower this. */
   rolls: number;
-  /** The candidate entries with their live eligibility and effective weights/chances. */
   entries: LootPlanEntry[];
 }
 
@@ -41,9 +32,7 @@ export interface LootRollPlan {
  * in provenance so a resolved drop can be traced back to the policies that shaped it.
  */
 export interface LootModifier<TCtx = unknown> {
-  /** Stable identifier recorded in {@link LootDropProvenance.modifiers} and stage traces. */
   id: string;
-  /** Rewrite the roll plan (eligibility, effective weights, roll count). Return the plan to apply. */
   plan?: (plan: LootRollPlan, ctx: TCtx) => LootRollPlan;
   /** Post-process this stage's rolled drops (scale counts, dedupe, cap). Return the drops to keep. */
   drops?: (drops: Drop[], ctx: TCtx) => Drop[];
@@ -56,91 +45,57 @@ export interface LootModifier<TCtx = unknown> {
  */
 export type LootStageKind = "contribute" | "fallback" | "replace";
 
-/**
- * One ordered step in a {@link LootPipelineDef}: a source pool (a table id or inline table), an
- * optional context gate, a fold mode, and the modifiers that reshape its roll. Stages compose the
- * genre concepts — world pool, dedicated pool, luck, pity — without any of them living in core.
- */
 export interface LootStage<TCtx = unknown> {
-  /** Stable stage identifier recorded in provenance and traces. */
   id: string;
-  /** Source pool: a table id resolved against the pipeline's resolver, or an inline table definition. */
   table: string | LootTableDef;
   /** Fold mode; defaults to `"contribute"`. */
   kind?: LootStageKind;
-  /** Context gate — when it returns `false` the stage is skipped and traced with reason `"gate-false"`. */
   when?: (ctx: TCtx) => boolean;
   /** Modifiers applied in order to this stage's roll. */
   modifiers?: LootModifier<TCtx>[];
 }
 
-/**
- * A named, ordered loot-resolution pipeline: the stages to run plus result-shaping policy
- * (duplicate stacking, a total drop cap). Serializable except for its stage gate/modifier functions,
- * mirroring how {@link LootTableDef} entries may carry a `generate` function.
- */
 export interface LootPipelineDef<TCtx = unknown> {
   id: string;
   /** Stages run in array order — the deterministic resolution order. */
   stages: LootStage<TCtx>[];
-  /** When `true`, drops of the same item/currency are merged into one entry with summed counts. */
   stack?: boolean;
-  /** Optional hard cap on the number of resolved drops; extras are trimmed and the cap is traced. */
   maxDrops?: number;
 }
 
-/** The caller-owned context, injected RNG, and optional seed threaded through a single resolution. */
 export interface LootResolveContext<TCtx = unknown> {
-  /** Caller-owned, typed resolution context read by stage gates and modifiers. */
   ctx: TCtx;
   /** Injected randomness — seed it for deterministic, server-authoritative replay. */
   rng: () => number;
-  /** Optional seed value recorded verbatim in {@link LootResolution.seed} for replay bookkeeping. */
   seed?: number | string;
 }
 
 /** Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it. */
 export interface LootDropProvenance {
-  /** Stage that produced the drop. */
   stageId: string;
-  /** Source table id, or `null` for an inline table. */
   tableId: string | null;
-  /** Index of the winning entry in its source table. */
   entryIndex: number;
-  /** The granted item id, when the drop is an item. */
   item?: string;
-  /** The granted currency id, when the drop is currency. */
   currency?: string;
-  /** The entry's declared weight before modifiers (weighted mode). */
   originalWeight?: number;
-  /** The entry's effective weight after modifiers (weighted mode). */
   effectiveWeight?: number;
-  /** The entry's declared chance before modifiers (independent mode). */
   originalChance?: number;
-  /** The entry's effective chance after modifiers (independent mode). */
   effectiveChance?: number;
-  /** Ids of the modifiers that ran on the producing stage, in application order. */
   modifiers: string[];
 }
 
-/** The disposition of a stage after resolution — did it roll, get gated, fall through, override, or find nothing. */
 export type LootStageStatus = "rolled" | "skipped" | "empty" | "replaced" | "fell-through";
 
-/** Per-stage record of what happened during resolution, for debugging and replay auditing. */
 export interface LootStageTrace {
   stageId: string;
   tableId: string | null;
   kind: LootStageKind;
   status: LootStageStatus;
-  /** Human-readable reason for a non-`"rolled"` status (e.g. `"gate-false"`, `"empty-pool"`, `"prior-drops-present"`). */
   reason?: string;
-  /** Ids of modifiers applied on this stage. */
   modifiers: string[];
-  /** Drops this stage contributed to the final result. */
   dropCount: number;
 }
 
-/** The fully serializable outcome of a resolution: the drops, their provenance, per-stage traces, and the replay seed. */
 export interface LootResolution {
   drops: Drop[];
   provenance: LootDropProvenance[];
@@ -148,13 +103,11 @@ export interface LootResolution {
   seed?: number | string;
 }
 
-/** A resolved, reusable loot pipeline. Call {@link LootPipeline.resolve} with a per-drop context and RNG. */
 export interface LootPipeline<TCtx = unknown> {
   readonly id: string;
   resolve(context: LootResolveContext<TCtx>): LootResolution;
 }
 
-/** Dependencies a pipeline needs at build time — chiefly how to turn a table id into its definition. */
 export interface LootPipelineDeps {
   /** Resolve a table id to its definition. Required only when stages reference tables by id. */
   resolveTable?: (id: string) => LootTableDef | undefined;
@@ -193,7 +146,6 @@ interface RolledDrop {
   planEntry: LootPlanEntry;
 }
 
-/** Roll a prepared plan into drops, consuming `rng` in the same order as the base loot table primitive. */
 function rollPlan(plan: LootRollPlan, rng: () => number): RolledDrop[] {
   const rolled: RolledDrop[] = [];
   for (let roll = 0; roll < plan.rolls; roll += 1) {
@@ -247,11 +199,7 @@ function assertValidPipeline<TCtx>(def: LootPipelineDef<TCtx>): void {
   }
 }
 
-/**
- * Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
- *
- * @capability loot-pipeline validate a composable loot-resolution pipeline definition
- */
+/** @capability loot-pipeline validate a composable loot-resolution pipeline definition */
 export function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> {
   assertValidPipeline(def);
   return def;

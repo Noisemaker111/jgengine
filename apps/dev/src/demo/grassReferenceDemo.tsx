@@ -35,7 +35,6 @@ function GrassReferences() {
   );
 }
 
-/** One large patch per reference photo, each with a `ref-<id>` capture view framed like the photo. */
 export const grassReferenceGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "grass-reference" },

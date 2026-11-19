@@ -102,7 +102,6 @@ export interface WorldViewModel {
   servingGpus: number;
   totalVramGb: number;
   totalTrainingPowerFp16: number;
-  /** FP16 TFLOPs of GPUs dedicated to the Training lane (drives training speed + preview). */
   trainingLaneTflops: number;
   computeAssignments: ComputeAssignmentMap;
   activeScrapeTier: ScrapeTierId;
@@ -152,13 +151,10 @@ export interface WorldViewModel {
   launchCelebrationActive: boolean;
   tweetNotification: TweetNotification | null;
   spendPulse: WorldSpendPulse | null;
-  /** Every claim in the shared datacenter (all players). */
   claims: readonly DatacenterClaim[] | undefined;
-  /** The local game's claimed cells. */
   myClaims: readonly CellCoord[] | undefined;
   placementCellPolicy: PlacementCellPolicy;
   onClaimCell: (cell: CellCoord) => Promise<{ claimed: boolean; reason?: string }>;
-  /** Every player's racks/items in world coordinates, for the shared scene. */
   worldRacks: readonly PlacedRack[];
   worldPlacedBuildItems: readonly PlacedBuildItem[];
 }

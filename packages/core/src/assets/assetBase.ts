@@ -54,28 +54,15 @@ function withoutDotSegments(path: string): string {
   return out[0] === "" ? out.join("/") : `/${out.join("/")}`;
 }
 
-/**
- * Sets the app base URL (pass `import.meta.env.BASE_URL`). Bases that are not root-absolute (`/`,
- * `./`) reset to the pass-through default.
- */
 export function setAssetBase(base: string): void {
   const normalized = base.endsWith("/") ? base : `${base}/`;
   assetBase = normalized.startsWith("/") && !normalized.startsWith("//") ? normalized : "/";
 }
 
-/**
- * Names the running game's own public files and the folder under the app base that serves them, for
- * a host that serves many games from one origin (the website's `/play/` runner). A listed path loads
- * from `<base><folder><path>`; any other path loads from the shared base. `null` clears it.
- */
 export function setGameAssetFiles(folder: string | null, files: Iterable<string> = []): void {
   gameFiles = folder === null ? null : { folder: folder.replace(/^\/+|\/+$/g, ""), files: new Set(files) };
 }
 
-/**
- * Adds files to the running game's own list after it was set, such as an asset the editor pulled
- * while the game runs. A no-op when no game folder is set (a standalone game serves from its root).
- */
 export function addGameAssetFiles(files: Iterable<string>): void {
   if (gameFiles === null) return;
   gameFiles = { folder: gameFiles.folder, files: new Set([...gameFiles.files, ...files]) };

@@ -9,9 +9,7 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { resolveRigNode } from "@jgengine/core/model/rigNode.draw";
 
-/** What {@link useRagdoll} needs: the rig's bone names, the physics world and what arms it. */
 export interface RagdollOptions {
-  /** The rig's bone names by standard slot, from `mapRigToStandard` on the loaded scene's bones. */
   map: SkeletonMap;
   /**
    * The physics world the bodies live in. It is stepped by this draw, so give the ragdoll its own
@@ -19,7 +17,6 @@ export interface RagdollOptions {
    * bounds' lower Y is the floor the body lands on.
    */
   world: PhysicsWorld;
-  /** Arm the ragdoll. On the false → true edge the rig's current world poses become the bodies. */
   active: boolean;
   /** Character height in metres, so body shapes scale. Default 1.8. */
   height?: number;
@@ -151,9 +148,7 @@ export function ragdollDraw(scene: THREE.Object3D, getOptions: () => RagdollOpti
   };
 }
 
-/**
- * @capability animation turn a killed rigged character into a physics ragdoll on death
- */
+/** @capability animation turn a killed rigged character into a physics ragdoll on death */
 export function useRagdoll(scene: THREE.Object3D, options: RagdollOptions): void {
   const latest = useRef(options);
   latest.current = options;

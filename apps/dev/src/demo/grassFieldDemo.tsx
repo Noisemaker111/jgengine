@@ -13,7 +13,6 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 
 const SPECIES = GROUND_COVER_LIBRARY;
-/** Seed mix by species: ryegrass, timothy, bluegrass, clover, dandelion, oxeye daisy, moss. */
 const SOWN = [3, 2, 3, 1, 0.3, 1, 0.5];
 const ALL = { col: 0, row: 0 };
 const PATCH = 6;
@@ -23,7 +22,6 @@ const WEEKS = 52 + 26;
 
 interface Scene {
   label: string;
-  /** What happens to the field in a given week, before it grows. */
   care: (field: TillerField, week: number) => void;
   light?: number;
 }
@@ -76,7 +74,6 @@ function GrassFields() {
   );
 }
 
-/** Four ground-cover fields grown from the same tiller sim and seed mix, cared for four ways, read at midsummer. */
 export const grassFieldGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "grass-field" },

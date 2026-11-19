@@ -19,7 +19,6 @@ import { harborTheme, HH, registerHarborFonts } from "./theme";
 
 registerHarborFonts();
 
-/** Pickups speak through the notice feed, like every other notice. */
 function useLootNotices() {
   const ctx = useGameContext();
   useEffect(() => ctx.game.events.on("loot.granted", ({ userId, drops }) => {
@@ -65,7 +64,6 @@ function Hud() {
   );
 }
 
-/** Notices from the feed: loot, refusals, saves. Each expires on its own. */
 function Notices() {
   const ctx = useGameContext();
   const source = useMemo(() => ({ read: ctx.game.notices.list, subscribe: ctx.game.notices.subscribe }), [ctx]);

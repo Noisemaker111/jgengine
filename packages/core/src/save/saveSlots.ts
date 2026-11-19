@@ -8,11 +8,8 @@
  * `meta` keys are opaque to this model — it never reads or branches on them.
  */
 export interface SaveSlotMeta {
-  /** Stable slot id — pair it with the same slot in the game's `createSaveStore`. */
   id: string;
-  /** Player-facing label (character name, save title). `undefined` until named. */
   name?: string | undefined;
-  /** `true` when no save occupies this slot — the menu shows a "New Game" affordance. */
   empty: boolean;
   /** Clock time (ms) of the last {@link SaveSlots.write}, or `undefined` while empty. */
   savedAt?: number | undefined;
@@ -24,19 +21,16 @@ export interface SaveSlotMeta {
   meta: Record<string, string | number>;
 }
 
-/** A slot's text chip under `key`, or `null` when it is missing, empty or a number. */
 export function slotText(slot: SaveSlotMeta, key: string): string | null {
   const value = slot.meta[key];
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-/** A slot's number chip under `key`, or `null` when it is missing or text. */
 export function slotNumber(slot: SaveSlotMeta, key: string): number | null {
   const value = slot.meta[key];
   return typeof value === "number" ? value : null;
 }
 
-/** What a {@link SaveSlots.write} stamps onto a slot — a name and/or a fresh `meta` bag. */
 export interface SaveSlotWrite {
   /** Player-facing label for the slot. Omit to keep the existing name. */
   name?: string | undefined;
@@ -46,15 +40,9 @@ export interface SaveSlotWrite {
   savedAt?: number | undefined;
 }
 
-/** How a {@link createSaveSlots} index is wired. */
 export interface SaveSlotsConfig {
   /** Injected clock (ms) used to stamp `savedAt`. Default `Date.now`. */
   now?: () => number;
-  /**
-   * Initial slots, in menu order. Any slot omitting `empty` is treated as empty.
-   * When `capacity` is set and this is shorter, the list is padded with empty
-   * slots (`slot-1`, `slot-2`, …) up to `capacity`.
-   */
   slots?: SaveSlotMeta[];
   /**
    * Fixed number of slots the menu shows. When set, the index is padded with
@@ -64,43 +52,20 @@ export interface SaveSlotsConfig {
   capacity?: number;
 }
 
-/** Serializable state of a {@link SaveSlots} index, for save/restore. */
 export interface SaveSlotsSnapshot {
-  /** The slots in menu order. */
   slots: SaveSlotMeta[];
-  /** The fixed capacity, or `undefined` for an open-ended list. */
   capacity: number | undefined;
 }
 
-/**
- * A serializable, observable index of save/profile slot *metadata* that a
- * save-select menu renders. It complements `createSaveStore` (which owns the
- * actual save payload and named slots) by carrying the per-slot display fields
- * the store does not: name, empty flag, last-saved time, and a free-string
- * `meta` bag the game fills. Nothing here is genre-specific.
- */
 export interface SaveSlots {
-  /**
-   * Stamp a slot as written: sets `empty=false`, records `savedAt` via the
-   * injected clock, and applies the given `name`/`meta`. Creates the slot if it
-   * does not exist (subject to `capacity`). Returns the resulting slot record.
-   */
   write(id: string, write?: SaveSlotWrite): SaveSlotMeta;
-  /** Mark a slot empty, dropping its `name`, `savedAt`, and `meta`. Returns the cleared record, or `null` if the id is unknown. */
   clear(id: string): SaveSlotMeta | null;
-  /** Rename a slot without touching its `savedAt`/`meta`. Returns the updated record, or `null` if the id is unknown. */
   rename(id: string, name: string): SaveSlotMeta | null;
-  /** The slot with this id, or `null`. The returned record is a copy — mutating it does not affect the index. */
   get(id: string): SaveSlotMeta | null;
-  /** All slots in menu order (copies). Powers the save-select grid. */
   list(): SaveSlotMeta[];
-  /** The newest non-empty slot (highest `savedAt`), or `null` when every slot is empty — powers "Continue". */
   mostRecent(): SaveSlotMeta | null;
-  /** Observe any change (write/clear/rename/restore). Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Serializable state for a save. */
   snapshot(): SaveSlotsSnapshot;
-  /** Restore from a {@link SaveSlotsSnapshot}, replacing all slots. */
   restore(snapshot: SaveSlotsSnapshot): void;
 }
 

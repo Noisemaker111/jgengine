@@ -1,4 +1,3 @@
-/** What a floating number shows: its kind, hit type, element, crit flag and scale. */
 export interface FloatTextInfo {
   kind: string;
   hitType?: string;
@@ -7,7 +6,6 @@ export interface FloatTextInfo {
   scale?: number;
 }
 
-/** How a floating number draws: colour, font size, weight and glow. */
 export interface FloatTextStyle {
   color: string;
   fontSizePx: number;

@@ -12,7 +12,6 @@ import { LlmvilleSessionProvider, type LlmvilleSessionIdentity } from "../llmvil
 import { TabletNavProvider } from "../../tablet/components/tabletNav";
 import { useTabletNav } from "../../tablet/tablet";
 
-/** The shell joins the shared world (`runtime:*`) and carries poses on its presence lane (`presence:*`). */
 function useWorldMultiplayer(userId: string): ShellMultiplayer {
   const client = useConvex();
   return useMemo(

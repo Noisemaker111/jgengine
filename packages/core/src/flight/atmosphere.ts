@@ -1,25 +1,17 @@
 // @skill jgengine-world
 
-/** Sea-level standard air, SI units. */
 export const SEA_LEVEL_AIR: Readonly<AirSample> = { density: 1.225, pressure: 101325, temperature: 288.15, speedOfSound: 340.294 };
 
-/**
- * The standard atmosphere effect: air density, pressure and the speed of sound fall with altitude as the U.S. Standard
- * Atmosphere 1976 gives them, so wings, rotors and engines lose their grip on the air as the aircraft climbs.
- */
 export interface AircraftAtmosphere {
   /**
    * Multiplier on the effect: `0` off (sea-level air everywhere, the simple model), `1` the standard atmosphere
    * (default), past `1` the air thins faster with height (each ratio to sea level is raised to the strength); sane over `0..4`.
    */
   strength?: number;
-  /** Height of the world's `y = 0` above mean sea level, m (default `0`). */
   elevation?: number;
-  /** Sea-level temperature offset from standard, K (default `0`); hot days thin the air. */
   temperatureOffset?: number;
 }
 
-/** Air state at one altitude. */
 export interface AirSample {
   density: number;
   pressure: number;
@@ -77,12 +69,7 @@ export function standardAir(altitude: number, temperatureOffset = 0, out: AirSam
   return out;
 }
 
-/**
- * The air an aircraft at world height `y` flies in under an {@link AircraftAtmosphere} effect at its strength: each of
- * density, pressure and speed of sound is its sea-level value times its standard-atmosphere ratio raised to the
- * strength, so `0` is sea-level air and `1` the standard atmosphere.
- * @capability aircraft-atmosphere the air at an aircraft's height under the atmosphere effect's strength
- */
+/** @capability aircraft-atmosphere the air at an aircraft's height under the atmosphere effect's strength */
 export function atmosphereAt(effect: AircraftAtmosphere, strength: number, y: number, out: AirSample): AirSample {
   standardAir(y + (effect.elevation ?? 0), effect.temperatureOffset ?? 0, out);
   const s = Math.max(0, strength);

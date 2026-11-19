@@ -15,10 +15,8 @@ import { SKELETON_SLOTS, type SkeletonSlot } from "./skeletonStandard";
  * child's rotation is authored as if its parent stood still, and is carried by the parent.
  */
 
-/** Clip names the authored actions are added under; a rig that already has one keeps its own. */
 export const HUMANOID_ACTION_NAMES = ["Jump", "Swim", "Tread", "Punch", "Swing", "Gather", "Hurt", "Death"] as const;
 
-/** One authored action's clip name. */
 export type HumanoidActionName = (typeof HUMANOID_ACTION_NAMES)[number];
 
 /** Degrees about the model's X, Y and Z axes, composed in that order. */
@@ -28,13 +26,11 @@ export type HumanoidRotation = readonly [x: number, y: number, z: number];
 export interface HumanoidPoseKey {
   /** Seconds from the clip's start. */
   at: number;
-  /** Slot → rotation from the idle pose. A slot a key leaves out sits at the idle pose. */
   rotate?: Readonly<Partial<Record<SkeletonSlot, HumanoidRotation>>>;
   /** Hips translation from the idle pose, `[x, y, z]` in model metres. */
   hips?: readonly [number, number, number];
 }
 
-/** One authored action: its keys and whether it loops. */
 export interface HumanoidActionClip {
   name: HumanoidActionName;
   /** Seconds; the last key's `at`. */
@@ -43,7 +39,6 @@ export interface HumanoidActionClip {
   keys: readonly HumanoidPoseKey[];
 }
 
-/** Every slot an authored clip may turn. */
 export const HUMANOID_ACTION_SLOTS: readonly SkeletonSlot[] = [
   "hips",
   "spine",
@@ -65,11 +60,7 @@ export const HUMANOID_ACTION_SLOTS: readonly SkeletonSlot[] = [
 
 type Pose = Partial<Record<SkeletonSlot, HumanoidRotation>>;
 
-/**
- * The same pose on the other side: left and right slots swap, and turns about Y and Z reverse.
- *
- * @internal
- */
+/** @internal */
 export function mirrorHumanoidPose(pose: Readonly<Pose>): Pose {
   const out: Pose = {};
   for (const slot of SKELETON_SLOTS) {
@@ -98,15 +89,9 @@ const JUMP_REACH: Pose = {
  */
 export const HUMANOID_FIRST_PERSON_CARRY: Readonly<Pose> = both({ "upperArm.l": [-50, 0, -12], "lowerArm.l": [-75, 0, 0] });
 
-/** Prone body for the crawl: the hips tip the whole figure forward to lie along the surface. */
 const PRONE: Pose = { hips: [82, 0, 0], head: [-38, 0, 0], chest: [-6, 0, 0] };
 const SWIM_HIPS = [0, -1.05, -0.2] as const;
 
-/**
- * Crawl step `n` of six per stroke. In the standing frame the arm turns forward about X from hanging
- * (0) back and up through overhead (180); carried by the prone hips that is: along the body, up out of the
- * water, reaching ahead, then pulling down through the water back to the hip. Arms run half a stroke apart.
- */
 function crawlArm(sweep: number): Pose {
   const angle = ((sweep % 360) + 360) % 360;
   const recovering = angle > 0 && angle <= 180;
@@ -140,12 +125,7 @@ const TREAD_CLOSE: Pose = {
 
 const GUARD: Pose = { "upperArm.l": [-55, 0, 8], "lowerArm.l": [-115, 0, 0] };
 
-/**
- * The authored action set. Jump is held while airborne, Swim and Tread loop while swimming, and the
- * rest are one-shots that return to locomotion (Death holds its last key).
- *
- * @capability humanoid-actions engine-authored jump, swim, punch, swing, gather, hurt and death clips for any humanoid rig
- */
+/** @capability humanoid-actions engine-authored jump, swim, punch, swing, gather, hurt and death clips for any humanoid rig */
 export const HUMANOID_ACTIONS: Readonly<Record<HumanoidActionName, HumanoidActionClip>> = {
   Jump: {
     name: "Jump",
@@ -232,25 +212,15 @@ export const HUMANOID_ACTIONS: Readonly<Record<HumanoidActionName, HumanoidActio
   },
 };
 
-/** Locomotion clip names and speeds a humanoid body's own library supplies. */
 export interface HumanoidAnimationInput {
   idle: string;
   walk: string;
   run?: string;
-  /** Default 0.3. */
   walkSpeed?: number;
-  /** Default 3.2. */
   runSpeed?: number;
 }
 
-/**
- * The animation config for a humanoid body: its own idle, walk and run, plus the authored actions
- * as the airborne, swimming and one-shot states. One-shot keys: `attack` (Punch), `swing`, `gather`,
- * and the reserved `hit` (Hurt) and `death`, which fire from combat on their own; play the others
- * with `ctx.game.playEntityAnimation(id, "swing")`.
- *
- * @capability humanoid-actions the full locomotion, jump, swim and action animation config for a humanoid body
- */
+/** @capability humanoid-actions the full locomotion, jump, swim and action animation config for a humanoid body */
 export function humanoidAnimation(input: HumanoidAnimationInput): ModelAnimationConfig {
   return {
     humanoidActions: true,

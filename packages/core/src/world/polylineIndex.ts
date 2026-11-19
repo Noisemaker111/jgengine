@@ -9,19 +9,16 @@
  */
 import type { Vec2 } from "./geometry";
 
-/** Where the polyline comes closest to the query, within the query's bound. @internal */
+/** @internal */
 export interface PolylineIndexHit {
-  /** Index of the winning segment, i.e. the one from `points[segment]` to `points[segment + 1]`. */
   segment: number;
   /** Position along that segment, 0..1. */
   t: number;
-  /** Distance from the query to the projected point. */
   distance: number;
-  /** Projected point on the polyline. */
   point: Vec2;
 }
 
-/** A hit to pass as `out` to {@link PolylineIndex.nearest}, one per caller that reads it before its next query. @internal */
+/** @internal */
 export function createPolylineHit(): PolylineIndexHit {
   return { segment: 0, t: 0, distance: 0, point: [0, 0] };
 }
@@ -106,7 +103,6 @@ export function buildPolylineIndex(points: readonly Vec2[], reach = 0): Polyline
   let examined = 0;
   const found = createPolylineHit();
 
-  /** Writes the nearest hit within `limit` into `found`; false when there is none. */
   const search = (x: number, z: number, limit: number): boolean => {
     generation += 1;
     if (generation >= 2147483647) {
@@ -116,7 +112,6 @@ export function buildPolylineIndex(points: readonly Vec2[], reach = 0): Polyline
     examined = 0;
     // A segment closer than `r` passes through the box of half-size `r` round the query, so it is
     // registered in one of that box's cells. Start with a box a couple of cells wide and widen it only
-    // while the best hit so far lies outside it: a query beside the line (the common case) walks a few
     // cells instead of every cell of a long bound, and the answer is the one the full box gives.
     // Clamping to the polyline's own box keeps an infinite bound from walking an infinite grid.
     let bestSegment = -1;

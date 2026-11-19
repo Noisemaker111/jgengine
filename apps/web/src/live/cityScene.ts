@@ -24,14 +24,10 @@ import {
 import { seededStreams } from "@jgengine/core/random/rng";
 
 export interface CityPalette {
-  /** Street ribbon color per level. */
   streets: Record<StreetLevel, number>;
-  /** Additive centerline glow on boulevards/avenues. */
   glow: number;
-  /** Lit-window emissive tints. */
   windowWarm: number;
   windowCool: number;
-  /** Traffic head/tail light streams. */
   trafficA: number;
   trafficB: number;
   /** Junction accent point lights. */
@@ -63,7 +59,6 @@ export interface CityModel {
   group: THREE.Group;
   stats: CityStats;
   radius: number;
-  /** True once streets have swept in and every building has risen. */
   settled(): boolean;
   update(dt: number, elapsed: number): void;
   dispose(): void;
@@ -76,7 +71,6 @@ const WINDOW_H = 3.4;
 const TEX_CELLS = 8;
 const ROOF_U = 0.5 / TEX_CELLS;
 const ROOF_V = 0.5 / TEX_CELLS;
-/** Street hierarchy order, widest first, for a stable draw/sweep sequence. */
 const LEVEL_ORDER: StreetLevel[] = ["boulevard", "avenue", "street", "lane"];
 
 export interface CityRevealState {
@@ -88,7 +82,6 @@ export interface CityRevealState {
   dressingOpacity: number;
 }
 
-/** Pure timing contract shared by the renderer and animation-order tests. */
 export function cityRevealState(elapsed: number, instant = false): CityRevealState {
   const sweep = instant ? 1 : Math.max(0, Math.min(1, elapsed / BUILD_SWEEP_SECONDS));
   const ribbonProgress = 1 - (1 - sweep) * (1 - sweep);
@@ -123,7 +116,6 @@ interface ClassStyle {
 type AnyCityClass = CityLotClass | CityLandmarkClass;
 
 const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
-  // --- ordinary building classes -------------------------------------------------
   tower: {
     wall: 0x14223a, roof: 0x0c1424, trim: 0x3a5c84, accent: 0x22d3ee,
     windowTint: 0x6ec6ff, windowDensity: 0.6, windowIntensity: 1.55, storefront: false, flood: 0,
@@ -164,7 +156,6 @@ const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
     wall: 0x5e6266, roof: 0x3a3d40, trim: 0x8a8e92, accent: 0xd0a040,
     windowTint: 0xd8e4ff, windowDensity: 0.12, windowIntensity: 1.0, storefront: false, flood: 0,
   }, // corrugated grey shed, a few cold strip lights, amber dock canopy
-  // --- block-scale landmarks (flood-lit so they pop out of the skyline) ----------
   hall: {
     wall: 0x6c6672, roof: 0xb58a48, trim: 0xffcf70, accent: 0xffd27a,
     windowTint: 0xffd27a, windowDensity: 0.5, windowIntensity: 1.9, storefront: false, flood: 0x6e4a16,
@@ -191,8 +182,6 @@ const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
   }, // pale stone nave, slate roof, warm lancet windows
 };
 
-
-/** Append a core `RoadRibbon` (flat xyz + Uint32 indices) into the merged street buffers. */
 function appendRibbon(
   positions: number[],
   colors: number[],
@@ -254,15 +243,11 @@ interface BoxWriter {
   uvs: number[];
   colors: number[];
   grow: number[];
-  /** Per-vertex window emissive tint (rgb). */
   winTint: number[];
   /** Per-vertex lit-window share (0..1). */
   winDensity: number[];
-  /** Per-vertex lit-window emissive punch. */
   winIntensity: number[];
-  /** Per-vertex ground-floor storefront flag (0/1). */
   storefront: number[];
-  /** Per-vertex whole-body flood glow (rgb, 0 = off). */
   flood: number[];
   indices: number[];
 }
@@ -283,7 +268,6 @@ function makeWriter(): BoxWriter {
   };
 }
 
-/** Per-building window/flood parameters threaded into the geometry writers. */
 interface EmitStyle {
   winTint: THREE.Color;
   winDensity: number;
@@ -358,9 +342,6 @@ function pushBuildingBox(
   face([[-hw, y1, hd], [hw, y1, hd], [hw, y1, -hd], [-hw, y1, -hd]], [0, 0], 1, 1, true); // roof
 }
 
-// --- flat massing shapes (gable/cylinder/dome) into a DoubleSide, window-free writer ---
-
-/** Emit one triangle (local coords rotated by `ry` about the piece center) with a dark UV + flat color. */
 function emitTri(
   out: BoxWriter,
   cos: number,
@@ -412,7 +393,6 @@ function emitQuad(
   emitTri(out, cos, sin, cx, cz, a, c, d, nLocal, shade, grow, flood);
 }
 
-/** Triangular-prism gable roof; ridge along local x, base spanning local z. */
 function pushGable(
   out: BoxWriter,
   cx: number,
@@ -443,7 +423,6 @@ function pushGable(
   emitQuad(out, cos, sin, cx, cz, B, C, F, E, [0, hd, h], shade, grow, flood); // +z slope
 }
 
-/** Hipped roof; ridge along local x running half the length, all four sides sloping to the eaves. */
 function pushHip(
   out: BoxWriter,
   cx: number,
@@ -475,7 +454,6 @@ function pushHip(
   emitTri(out, cos, sin, cx, cz, F, A, D, [-h, hw - rw, 0], shade, grow, flood); // -x hip end
 }
 
-/** Low-segment elliptical cylinder with a top cap. */
 function pushCylinder(
   out: BoxWriter,
   cx: number,
@@ -513,7 +491,6 @@ function pushCylinder(
   }
 }
 
-/** Low-poly hemisphere dome. */
 function pushDome(
   out: BoxWriter,
   cx: number,
@@ -559,7 +536,6 @@ function pushDome(
 interface TrafficStream {
   points: readonly (readonly [number, number])[];
   lengths: number[];
-  /** Per-point ground height (from `Street.heights` when the network drapes, else the sampled field). */
   heights: number[];
   total: number;
   y: number;
@@ -595,7 +571,6 @@ function sampleStream(stream: TrafficStream, distance: number, out: THREE.Vector
   return Math.atan2(b[0] - a[0], b[1] - a[1]);
 }
 
-/** Role → flat tint resolver for non-banded massing pieces. */
 function roleColor(
   role: CityPieceRole,
   wall: THREE.Color,
@@ -617,10 +592,6 @@ function roleColor(
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-/**
- * Seeded hue/saturation/lightness jitter around a class base color, so buildings of one class read
- * as a family (a street of towers) yet no two are the identical box. Writes into `out`.
- */
 function jitterColor(
   out: THREE.Color,
   base: number,
@@ -640,7 +611,6 @@ function jitterColor(
   return out;
 }
 
-/** What the model draws: a street graph and the buildings standing on its blocks. */
 export interface CityModelSource {
   network: StreetNetwork;
   lots: readonly CityLot[];
@@ -656,33 +626,23 @@ export function buildCityModel(
     /** Shared terrain field the whole model drapes off. Falls back to the network's `elevationAt`,
      *  then to a flat plane. Streets, sidewalks, junction surfaces, buildings, traffic, glow, ground. */
     sampleHeight?: (x: number, z: number) => number;
-    /** Emit circuit dressing (corner kerbs + a checkered start/finish band) around the main loop. */
     trackDressing?: boolean;
     /** Draw a race lap lifted out of this city: racing surface, kerbs, start/finish, grid, and the
      *  barriers sealing every side street off the lap. */
     raceRoute?: CircuitRoute;
-    /** Render connected pedestrian bands around paved streets. Default true. */
     sidewalks?: boolean | undefined;
-    /** Pedestrian band width beyond each carriageway edge. Default 2.2. */
     sidewalkWidth?: number | undefined;
-    /** Render lane guidance and stop lines. Default true. */
     laneMarkings?: boolean | undefined;
-    /** Lane-paint ribbon width. Default 0.18. */
     laneMarkingWidth?: number | undefined;
-    /** Signed lateral marking offset from the authored centerline. Default 0. */
     laneMarkingOffset?: number | undefined;
-    /** Painted dash length. Reserved for shared marking style controls. */
     laneMarkingDash?: number | undefined;
-    /** Gap between painted dashes. Reserved for shared marking style controls. */
     laneMarkingGap?: number | undefined;
-    /** Decorative arterial glow independent of physical lane guidance. Default true. */
     centerlineGlow?: boolean;
     /**
      * Emit placeholder traffic instances. Default false — colored cuboids read as capture artifacts,
      * not vehicles. Enable only when a future path supplies unmistakable scaled vehicle meshes.
      */
     traffic?: boolean;
-    /** Extrude building lots. Default true; set false for unobstructed intersection close-ups. */
     buildings?: boolean;
   },
 ): CityModel {
@@ -704,7 +664,6 @@ export function buildCityModel(
   let radius = 40;
   for (const street of streets) for (const [x, z] of street.points) radius = Math.max(radius, Math.hypot(x, z));
 
-  // --- streets: welded, trimmed intersections (no z-fighting, no floating discs), draped over relief ---
   const sidewalkWidth = options.sidewalks === false ? 0 : Math.max(0, options.sidewalkWidth ?? 2.2);
   const markingWidth = Math.max(0.04, options.laneMarkingWidth ?? 0.18);
   const intersectionStreets: IntersectionStreet[] = streets.map((street) => ({
@@ -817,7 +776,6 @@ export function buildCityModel(
   const markingMesh = makeLayer("city-markings", markingLayer, -2);
   markingMesh.mesh.renderOrder = 1;
 
-  // --- boulevard/avenue centerline glow, additive, above markings with polygonOffset ---
   const glowPos: number[] = [];
   const glowCol: number[] = [];
   const glowIdx: number[] = [];
@@ -854,7 +812,6 @@ export function buildCityModel(
   glowMesh.renderOrder = 2;
   group.add(glowMesh);
 
-  // --- circuit dressing: red/white corner kerbs + a checkered start/finish band on the track ---
   let dressingMesh: THREE.Mesh | null = null;
   if (options.trackDressing === true) {
     const loop = streets.find((s) => s.loop) ?? streets[0];
@@ -864,11 +821,9 @@ export function buildCityModel(
     }
   }
 
-  // --- street race: the lap over the city streets it uses, and the barriers that instance it ---
   const raceMeshes = options.raceRoute === undefined ? [] : buildRaceDressing(options.raceRoute, sampleHeight);
   for (const mesh of raceMeshes) group.add(mesh);
 
-  // --- buildings (skippable for unobstructed intersection inspection) ---
   const boxWriter = makeWriter(); // windowed walls + flat boxes
   const shapeWriter = makeWriter(); // gable/cylinder/dome, DoubleSide, window-free
   const shades = rng("shades");
@@ -1039,7 +994,6 @@ export function buildCityModel(
   shapeMesh.material = shapeMat;
   group.add(shapeMesh);
 
-  // --- traffic: only when explicitly requested. Default off — BoxGeometry stand-ins look like
   // capture artifacts, not vehicles, and fail visual review for intersection evidence.
   const showTraffic = options.traffic === true;
   const streams = showTraffic
@@ -1082,7 +1036,6 @@ export function buildCityModel(
     vehicleMesh.count = 0;
   }
 
-  // --- accent lights on the two busiest junctions ---
   const junctions = [...city.network.junctions].sort((a, b) => b.arms.length - a.arms.length);
   const lightColors = [palette.lightA, palette.lightB];
   junctions.slice(0, 2).forEach((junction, i) => {
@@ -1164,7 +1117,6 @@ export function buildCityModel(
   };
 }
 
-/** Build an indexed BufferGeometry from a writer's flat arrays. */
 function buildMeshFromWriter(writer: BoxWriter): THREE.Mesh {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(writer.positions, 3));
@@ -1217,7 +1169,6 @@ function displacedDisc(radius: number, rings: number, segments: number, sampleHe
   return geo;
 }
 
-/** Faded emerald grid ground shared by the hero and playground worlds; drapes over `sampleHeight` when given. */
 export function buildGround(radius: number, gridColor: number, sampleHeight?: (x: number, z: number) => number): THREE.Group {
   const group = new THREE.Group();
   const rolling = sampleHeight !== undefined;
@@ -1269,19 +1220,13 @@ export function buildGround(radius: number, gridColor: number, sampleHeight?: (x
   return group;
 }
 
-// --- circuit dressing + shared terrain field ------------------------------------------------------
-
-/** One detected corner along a closed track loop: its apex point, fitted radius, and turn direction. */
 export interface TrackCorner {
-  /** Index of the apex (tightest) point in the loop's `points` array. */
   apexIndex: number;
-  /** First/last point index of the high-curvature run. */
   startIndex: number;
   endIndex: number;
   /** Fitted apex radius in world units (≈ meters). */
   radius: number;
   apex: readonly [number, number];
-  /** +1 left-hand corner, -1 right-hand. */
   turnSign: number;
 }
 
@@ -1516,8 +1461,6 @@ function buildTrackDressing(loop: Street, sampleHeight: (x: number, z: number) =
   return mesh;
 }
 
-// --- street race dressing: a lap lifted out of the city, and the barriers that instance it ---
-
 interface DressingBuffers {
   pos: number[];
   col: number[];
@@ -1537,7 +1480,6 @@ function pushDressingQuad(
   out.idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
 }
 
-/** One striped barrier block: a rotated box, top plus four sides, each face its own vertices. */
 function pushSealBlock(
   out: DressingBuffers,
   cx: number,

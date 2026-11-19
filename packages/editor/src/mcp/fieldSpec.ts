@@ -1,17 +1,13 @@
 import type { EditorBridgeRequest } from "../session";
 
-/** The value type a request field is expected to carry. */
 export type RpcFieldKind = "string" | "number" | "boolean" | "string[]" | "object" | "object[]" | "vec3" | "value";
 
-/** One field's expected shape in a request; `oneOf`/`nullable`/`required`/`of` refine the check. */
 export interface RpcFieldSpec {
   name: string;
   kind: RpcFieldKind;
   nullable?: boolean;
   oneOf?: readonly string[];
-  /** True when the field is mandatory — surfaced in the generated MCP `required` array. */
   required?: boolean;
-  /** For `object`/`object[]`: the element/object's own field specs, so nested schemas stay expressive. */
   of?: readonly RpcFieldSpec[];
 }
 
@@ -25,7 +21,6 @@ const o = (name: string): RpcFieldSpec => ({ name, kind: "object" });
 const oa = (name: string, of?: readonly RpcFieldSpec[]): RpcFieldSpec => (of === undefined ? { name, kind: "object[]" } : { name, kind: "object[]", of });
 const v3 = (name: string): RpcFieldSpec => ({ name, kind: "vec3" });
 const val = (name: string): RpcFieldSpec => ({ name, kind: "value" });
-/** Marks a field mandatory for MCP schema generation; presence itself is still checked by `handle`. */
 const req = (spec: RpcFieldSpec): RpcFieldSpec => ({ ...spec, required: true });
 
 const SHAPE = ["circle", "square"] as const;
@@ -157,10 +152,9 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   write_back_override: [req(s("id"))],
 };
 
-/** The set of known RPC method names — exported for meta/manifest tooling and tests. @internal */
+/** @internal */
 export const EDITOR_BRIDGE_METHOD_NAMES: readonly string[] = Object.keys(RPC_FIELD_SCHEMAS).sort();
 
-/** JSON-Schema fragment for one field spec (no `required` — that is aggregated by the object builder). */
 function fieldToJsonSchema(spec: RpcFieldSpec): Record<string, unknown> {
   switch (spec.kind) {
     case "string":
@@ -191,7 +185,6 @@ function fieldToJsonSchema(spec: RpcFieldSpec): Record<string, unknown> {
   }
 }
 
-/** Assembles a closed object schema (properties + required + additionalProperties:false) from field specs. */
 function objectSchema(specs: readonly RpcFieldSpec[]): Record<string, unknown> {
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
@@ -207,7 +200,6 @@ function objectSchema(specs: readonly RpcFieldSpec[]): Record<string, unknown> {
   };
 }
 
-/** Generates the MCP tool `inputSchema` for a method from its {@link RPC_FIELD_SCHEMAS} entry. */
 export function buildInputSchema(method: EditorBridgeRequest["method"]): Record<string, unknown> {
   return objectSchema(RPC_FIELD_SCHEMAS[method]);
 }

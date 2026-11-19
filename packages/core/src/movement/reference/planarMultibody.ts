@@ -1,11 +1,8 @@
-/** One rigid segment of a {@link PlanarMultibody}, given in the reference pose (every angle zero). */
 export interface PlanarSegment {
   name: string;
   /** Index of the parent segment; `-1` only for the root, which must come first. Parents come before children. */
   parent: number;
-  /** This segment's proximal joint relative to the parent's proximal joint (root: unused), m. */
   joint: readonly [number, number];
-  /** Centre of mass relative to this segment's proximal joint, m. */
   com: readonly [number, number];
   mass: number;
   /** Moment of inertia about the centre of mass, out of the plane, kg·m². */
@@ -20,31 +17,20 @@ export interface PlanarSegment {
  */
 export interface PlanarMultibody {
   readonly segments: readonly PlanarSegment[];
-  /** Number of coordinates, `2 + segments`. */
   readonly dofs: number;
   readonly totalMass: number;
-  /** World position of a point fixed on `segment`, given in that segment's reference-pose frame (relative to its proximal joint). */
   point(q: ArrayLike<number>, segment: number, local: readonly [number, number], out: Float64Array): Float64Array;
-  /** World velocity of that point. */
   pointVelocity(q: ArrayLike<number>, u: ArrayLike<number>, segment: number, local: readonly [number, number], out: Float64Array): Float64Array;
-  /** Whole-body centre of mass `[x, y]` and its velocity `[vx, vy]`. */
   centerOfMass(q: ArrayLike<number>, u: ArrayLike<number>, out: Float64Array): Float64Array;
-  /** Accelerations `q̈` for the generalized forces `Q` (gravity and velocity terms added here). `Q` is not modified. */
   accelerations(q: ArrayLike<number>, u: ArrayLike<number>, Q: ArrayLike<number>, gravity: number, out: Float64Array): Float64Array;
-  /** Add the generalized force of a world force `F` acting at a world point on `segment` into `Q`. */
   addPointForce(q: ArrayLike<number>, segment: number, point: ArrayLike<number>, force: ArrayLike<number>, Q: Float64Array): void;
   /** Add a joint torque between `segment` and its parent (on the segment, counter-clockwise positive; the parent gets the reaction). */
   addJointTorque(segment: number, torque: number, Q: Float64Array): void;
-  /** Kinetic energy, J. */
   kineticEnergy(q: ArrayLike<number>, u: ArrayLike<number>): number;
 }
 
 // stateless: only scratch buffers and an index of the segment tree; the body's state is the caller-held q and u.
-/**
- * Creates a {@link PlanarMultibody} from segments. Dynamics are Lagrange's equations in absolute coordinates:
- * `M(q)·q̈ = Q − Σ mᵢ Jᵢᵀ (J̇ᵢ q̇) + gravity`, with `M = Σ mᵢ JᵢᵀJᵢ + Iᵢ eᵢeᵢᵀ` solved by Cholesky.
- * @capability planar-multibody exact planar floating-base multibody dynamics for sagittal-plane biomechanics
- */
+/** @capability planar-multibody exact planar floating-base multibody dynamics for sagittal-plane biomechanics */
 export function createPlanarMultibody(segments: readonly PlanarSegment[]): PlanarMultibody {
   const n = segments.length;
   const root = segments[0];
@@ -89,7 +75,6 @@ export function createPlanarMultibody(segments: readonly PlanarSegment[]): Plana
   chainStart[n] = flat.length / 3;
   const chainData = Float64Array.from(flat);
 
-  /** Jacobian rows of a point on `segment` (local lever `lx, ly`) into `jx`, `jy`; with `u`, the bias acceleration into `bias`. */
   function jacobian(q: ArrayLike<number>, u: ArrayLike<number> | null, segment: number, lx: number, ly: number, bias: Float64Array): void {
     jx.fill(0);
     jy.fill(0);

@@ -4,39 +4,25 @@ import type { BladeSection } from "./propeller";
 
 /** A rotor's blades, hub and the section they are made of. A counter-clockwise rotor seen from above (the US and Bo-105 sense). */
 export interface RotorDesign {
-  /** Tip radius, m. */
   radius: number;
   blades: number;
-  /** Blade chord, m (constant along the span). */
   chord: number;
-  /** Linear twist from root to tip, rad; negative washes the tip out. */
   twist: number;
-  /** Inner edge of the lifting blade as a share of the radius. */
   rootCutout: number;
   /** Rated rotor speed, rad/s. */
   speed: number;
   section: BladeSection;
-  /**
-   * Blade flapping. A hingeless blade is modelled as a rigid blade on a spring at `hingeOffset`; absent, the blades do
-   * not flap (a stiff tail rotor).
-   */
   flap?: {
     /** Blade flap inertia about the hinge, kg·m². */
     inertia: number;
-    /** Flap spring at the hinge, N·m/rad. */
     stiffness: number;
-    /** Hinge offset as a share of the radius (default `0`). */
     hingeOffset?: number;
-    /** Built-in coning the spring holds at rest, rad (default `0`). */
     precone?: number;
   };
-  /** Radial blade stations (default `10`); each carries its own annulus of inflow. */
   stations?: number;
-  /** Azimuth positions averaged over a revolution (default `24`). */
   azimuths?: number;
 }
 
-/** What a rotor flies through, all in shaft axes: x forward in the disc, y right, z down the shaft. */
 export interface RotorFlow {
   /** Hub velocity through the air, m/s. */
   u: number;
@@ -47,32 +33,22 @@ export interface RotorFlow {
   q: number;
   density: number;
   speedOfSound: number;
-  /** Hub height above the ground, m; `Infinity` out of ground effect. */
   height: number;
 }
 
-/** Blade pitch, rad: `θ = collective + twist·(r/R − 0.75) + cosine·cos ψ + sine·sin ψ`, ψ from the tail in the direction of rotation. */
 export interface RotorPitch {
-  /** Collective at 75% radius. */
   collective: number;
   cosine: number;
   sine: number;
 }
 
-/** Loads one {@link evaluateRotor} call writes. Force and moment act on the hub, in shaft axes. */
 export interface RotorLoads {
   force: [number, number, number];
-  /** Hub roll and pitch moment from the flapping blades, N·m (positive right roll, nose up); yaw is `0`. */
   moment: [number, number, number];
-  /** Aerodynamic torque resisting rotation, N·m. */
   torque: number;
-  /** Shaft power the air takes, W. */
   power: number;
-  /** Thrust along the shaft, N (up positive). */
   thrust: number;
-  /** `T/(ρπR²(ΩR)²)`. */
   thrustCoefficient: number;
-  /** Induced velocity factor from the ground, `≤ 1`. */
   groundEffect: number;
   /** Rate of change of each rotor state, per second. */
   rates: number[];
@@ -83,18 +59,12 @@ const FLAP_RATE = 3;
 const HARMONIC = 6;
 const ANNULI = 8;
 
-/**
- * Number of states a rotor carries: three flap angles, their rates, two inflow harmonics and one inflow per station.
- * @capability rotor-bemt size a rotor state vector
- */
+/** @capability rotor-bemt size a rotor state vector */
 export function rotorStateCount(design: RotorDesign): number {
   return ANNULI + (design.stations ?? 10);
 }
 
-/**
- * Names of a rotor's states, in order.
- * @capability rotor-bemt name a rotor's states for telemetry and snapshots
- */
+/** @capability rotor-bemt name a rotor's states for telemetry and snapshots */
 export function rotorStateNames(design: RotorDesign, prefix: string): string[] {
   const names = ["coning", "flapCosine", "flapSine", "coningRate", "flapCosineRate", "flapSineRate", "inflowSine", "inflowCosine"];
   for (let i = 0; i < (design.stations ?? 10); i += 1) names.push(`inflow${i}`);
@@ -134,7 +104,6 @@ export function naca23012RotorSection(alpha: number, mach: number): { cl: number
   return { cl, cd };
 }
 
-/** Leishman's empirical induced velocity through the vortex ring state, `v/vh` against `Vc/vh` for −2 ≤ Vc/vh ≤ 0, over κ = 1.15. */
 function vortexRingInflow(climb: number): number {
   return 1 - 0.978 * climb - 1.193 * climb ** 2 - 1.494 * climb ** 3 - 0.57 * climb ** 4;
 }
@@ -333,10 +302,7 @@ export function evaluateRotor(design: RotorDesign, flow: RotorFlow, pitch: Rotor
   }
 }
 
-/**
- * Fresh output buffers for {@link evaluateRotor}.
- * @capability rotor-bemt allocate rotor load buffers once, outside the hot path
- */
+/** @capability rotor-bemt allocate rotor load buffers once, outside the hot path */
 export function createRotorLoads(design: RotorDesign): RotorLoads {
   return { force: [0, 0, 0], moment: [0, 0, 0], torque: 0, power: 0, thrust: 0, thrustCoefficient: 0, groundEffect: 1, rates: new Array<number>(rotorStateCount(design)).fill(0) };
 }
@@ -389,7 +355,6 @@ export function solveNewton(residual: (x: readonly number[]) => number[], start:
   return { x, norm: current };
 }
 
-/** A first guess at a rotor's steady states: momentum inflow for a blade-element thrust estimate, no flapping. */
 function initialRotorState(design: RotorDesign, flow: RotorFlow, pitch: RotorPitch, speed: number): number[] {
   const state = new Array<number>(rotorStateCount(design)).fill(0);
   const solidity = (design.blades * design.chord) / (Math.PI * design.radius);
@@ -436,29 +401,21 @@ export function settleRotor(design: RotorDesign, flow: RotorFlow, pitch: RotorPi
   return result.norm < 1e-8;
 }
 
-/** A wind-tunnel operating point for an isolated rotor. */
 export interface IsolatedRotorCondition {
-  /** `V/(ΩR)`. */
   advanceRatio: number;
-  /** Shaft angle, rad, positive tilted aft (the wind-tunnel convention). */
   shaftAngle: number;
-  /** Thrust coefficient over solidity, `CT/σ`, along the shaft. */
   thrustOverSolidity: number;
   density?: number;
   speedOfSound?: number;
 }
 
-/** An isolated rotor trimmed to a thrust with its first-harmonic flapping (so its hub moment) zeroed. */
 export interface IsolatedRotorTrim {
   collective: number;
   cosine: number;
   sine: number;
   coning: number;
-  /** `CP/σ = P/(ρ·bcR·(ΩR)³)`, the form wind-tunnel reports tabulate. */
   powerOverSolidity: number;
-  /** Shaft-axis propulsive (forward) force over solidity, `Fx/(ρ·bcR·(ΩR)²)`. */
   propulsiveOverSolidity: number;
-  /** Figure of merit `CT^1.5/(√2·CP)`. */
   figureOfMerit: number;
   state: number[];
   converged: boolean;

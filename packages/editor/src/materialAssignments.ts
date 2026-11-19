@@ -1,12 +1,5 @@
-/**
- * Document-wide material assignment inventory for the Materials workspace.
- * Reads real `meta.materialId` stamps from placeables — no thumbnails or faked previews.
- */
-
-/** Placeable families that carry `meta.materialId` under assign_material. */
 export type MaterialObjectKind = "marker" | "volume" | "path";
 
-/** One object row in the materials workspace browser. */
 export interface MaterialAssignmentRow {
   id: string;
   label: string;
@@ -16,14 +9,12 @@ export interface MaterialAssignmentRow {
   materialId: string | null;
 }
 
-/** Minimal document slice the materials inventory needs. */
 export interface MaterialDocumentSlice {
   markers: readonly { id: string; kind: string; label?: string; meta?: Record<string, unknown> }[];
   volumes: readonly { id: string; kind: string; label?: string; meta?: Record<string, unknown> }[];
   paths: readonly { id: string; kind: string; label?: string; meta?: Record<string, unknown> }[];
 }
 
-/** Filter for {@link filterMaterialAssignments}. */
 export type MaterialAssignmentFilter =
   | "all"
   | "assigned"
@@ -35,12 +26,7 @@ function readMaterialId(meta: Record<string, unknown> | undefined): string | nul
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-/**
- * Lists every marker/volume/path with its current material assignment (or null).
- * Order is document order: markers, then volumes, then paths.
- *
- * @internal
- */
+/** @internal */
 export function listMaterialAssignments(document: MaterialDocumentSlice): MaterialAssignmentRow[] {
   const rows: MaterialAssignmentRow[] = [];
   for (const marker of document.markers) {
@@ -73,12 +59,7 @@ export function listMaterialAssignments(document: MaterialDocumentSlice): Materi
   return rows;
 }
 
-/**
- * Filters material rows by text query (id/label/kind/materialId) and optional assignment filter.
- * Case-insensitive; empty query is a no-op on text.
- *
- * @internal
- */
+/** @internal */
 export function filterMaterialAssignments(
   rows: readonly MaterialAssignmentRow[],
   query: string,
@@ -99,11 +80,7 @@ export function filterMaterialAssignments(
   });
 }
 
-/**
- * Aggregates how many placeables use each material id (assigned only). Sorted by count desc, then id.
- *
- * @internal
- */
+/** @internal */
 export function summarizeMaterialUsage(
   rows: readonly MaterialAssignmentRow[],
 ): readonly { materialId: string; count: number }[] {

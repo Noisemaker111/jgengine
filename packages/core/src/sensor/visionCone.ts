@@ -1,6 +1,5 @@
 export type VisionPoint = readonly [number, number];
 
-/** Structurally matches `world/walls` `WallSegment` — pass those straight in as occluders. */
 export interface VisionWall {
   from: VisionPoint;
   to: VisionPoint;
@@ -44,9 +43,7 @@ export function segmentsIntersect(a1: VisionPoint, a2: VisionPoint, b1: VisionPo
   return false;
 }
 
-/** True when no wall segment crosses the sight line.
- * @internal
- */
+/** @internal */
 export function hasWallLineOfSight(from: VisionPoint, to: VisionPoint, walls: readonly VisionWall[]): boolean {
   for (const wall of walls) {
     if (segmentsIntersect(from, to, wall.from, wall.to)) return false;
@@ -74,11 +71,6 @@ export interface VisionTarget<TId extends string = string> {
   at: VisionPoint;
 }
 
-/**
- * The guard-sight primitive every stealth game hand-rolled: an angle+range cone on the XZ plane
- * whose sight lines are blocked by 2D wall segments (`world/walls` segments fit structurally).
- * Pure math — feed entity positions and heading each tick.
- */
 export interface VisionCone {
   canSee(origin: VisionPoint, heading: number, target: VisionPoint): boolean;
   visibleTargets<TId extends string>(

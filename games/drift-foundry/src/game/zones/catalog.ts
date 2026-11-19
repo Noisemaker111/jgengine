@@ -5,16 +5,12 @@ import { EXIT_Z, ZONE_A_END, ZONE_B_END } from "../run/constants";
 
 export type ZoneId = "canyons" | "flats" | "gantry";
 
-/** What the yard's own ground is made of: the grip the tires find on the paved strip. */
 export interface ZoneSurface {
   id: string;
-  /** Reads on the HUD and in test evidence: which surface the kart is actually on. */
   label: string;
-  /** Grip multiplier handed to the vehicle sim's `surfaceFriction` (1 = the reference surface). */
   grip: number;
 }
 
-/** One stretch of a track as the run reads it: what the radio calls it and the grip under the tires. */
 export interface TrackZone {
   id: string;
   label: string;
@@ -23,30 +19,20 @@ export interface TrackZone {
   start: number;
   end: number;
   wallColor: string;
-  /** Yard surface under the tires - oil, concrete or gravel decide how much grip the kart gets. */
   surface: ZoneSurface;
 }
 
-/** A Row Six zone: a track zone that also owns the corridor's generated building rows and terrain band. */
 export interface ZoneDef extends TrackZone {
   id: ZoneId;
   propIds: readonly string[];
   buildingStyle: BuildingStyle;
-  /** Shared-library material painting this zone's generated corridor facades and roofs. */
   facadeMaterial: string;
-  /** Facade colours for this zone's corridor walls — the per-zone read the minimap already promises. */
   palette: BuildingPaletteOverrides;
-  /** Ground palette for the zone's terrain band. */
   ground: TerrainColors;
   fog: BiomeFog;
   sky: BiomeSky;
 }
 
-/**
- * A bay face is one `bayWidth` × `floorHeight` slot (about 1.9 m × 2.8 m at this game's footprint),
- * so its repeat is that face over the material's own world tile. Roofs are one slab per building
- * spanning the whole footprint, hence the coarser repeat.
- */
 const WALL_REPEAT: [number, number] = [1.4, 2];
 const ROOF_REPEAT: [number, number] = [10, 7];
 

@@ -1,14 +1,11 @@
 import type { HumanValidationRow } from "./humanReferenceValidation";
 
-/** A legged animal's size for the dynamic-similarity equations. */
 export interface QuadrupedBody {
   /** Body mass, kg. */
   mass: number;
-  /** Height of the hip joint standing, m: the leg length of Alexander and Jayes's Froude number. */
   hipHeight: number;
 }
 
-/** A power law `a·Frᵇ` of the Froude number. */
 export interface FroudePowerLaw {
   a: number;
   b: number;
@@ -26,10 +23,6 @@ export const ALEXANDER_JAYES_CURSORIAL: { strideLength: FroudePowerLaw; dutyFact
   dutyFactorHind: { a: 0.52, b: -0.18 },
 };
 
-/**
- * Froude number of the walk–trot change: horses change at 0.30–0.37 (`√Fr` 0.55–0.61, as compiled by C. L. Shine et
- * al., "Grizzly bear locomotion: gaits and ground reaction forces", *J. Exp. Biol.* 218, 2015).
- */
 export const WALK_TROT_FROUDE = 0.35;
 
 /**
@@ -61,20 +54,15 @@ export function speedAtFroude(froude: number, hipHeight: number): number {
   return Math.sqrt(froude * G * hipHeight);
 }
 
-/** Symmetrical and asymmetrical gaits of a running quadruped. */
 export type QuadrupedGait = "walk" | "trot" | "gallop";
 
-/** A quadruped's stride at one speed. */
 export interface QuadrupedStride {
   gait: QuadrupedGait;
   froude: number;
-  /** Stride length, m. */
   strideLength: number;
   /** Strides per second. */
   strideFrequency: number;
-  /** Fraction of the stride each forefoot is down. */
   dutyFactorFore: number;
-  /** Fraction of the stride each hindfoot is down. */
   dutyFactorHind: number;
 }
 
@@ -118,23 +106,19 @@ export function quadrupedMassFromHeight(hipHeight: number): number {
   return 500 * (hipHeight / 1.05) ** 3;
 }
 
-/** A game creature's speeds and size for {@link compareQuadruped}. */
 export interface CreatureLocomotion {
   /** Walking speed, m/s. */
   walkSpeed: number;
   /** Fastest speed (run or sprint), m/s; omit when it only walks. */
   runSpeed?: number;
-  /** Hip height, m. */
   hipHeight: number;
   /** Body mass, kg (default {@link quadrupedMassFromHeight}). */
   mass?: number;
 }
 
-/** One creature against the quadruped reference of its size. */
 export interface QuadrupedComparison {
   mass: number;
   hipHeight: number;
-  /** Froude number and gait of the game's walk. */
   walkFroude: number;
   walkGait: QuadrupedGait;
   /** Fastest walk before trotting, m/s. */
@@ -146,15 +130,10 @@ export interface QuadrupedComparison {
   runGait: QuadrupedGait;
   /** Top speed for the mass, m/s. */
   referenceTopSpeed: number;
-  /** Game run (or walk) speed over the reference top speed. */
   topSpeedRatio: number;
 }
 
-/**
- * Compare a game creature's walk and run with a real quadruped of the same size: the gait each speed would be, the
- * walk–trot and trot–gallop speeds of its legs, and its top speed for its mass.
- * @capability quadruped-compare score a game creature's walk and run speeds against real animal gait transitions and top speed
- */
+/** @capability quadruped-compare score a game creature's walk and run speeds against real animal gait transitions and top speed */
 export function compareQuadruped(creature: CreatureLocomotion): QuadrupedComparison {
   const mass = creature.mass ?? quadrupedMassFromHeight(creature.hipHeight);
   const body = { mass, hipHeight: creature.hipHeight };
@@ -186,12 +165,7 @@ export const MAMMAL_TOP_SPEEDS: readonly { animal: string; mass: number; low: nu
   { animal: "Asian elephant", mass: 4000, low: 25, high: 26 },
 ];
 
-/**
- * Validate the quadruped reference against published animals: top speed by mass within the ±20% scatter of the Hirt
- * fit, and the duty factor at the trot–gallop transition, 0.41 ± 0.02 at any size from mice to horses
- * (A. A. Biewener, *J. Exp. Biol.* 105, 1983).
- * @capability quadruped-reference-validation check the quadruped reference against published animal top speeds and duty factors
- */
+/** @capability quadruped-reference-validation check the quadruped reference against published animal top speeds and duty factors */
 export function validateQuadrupedReference(): HumanValidationRow[] {
   const rows: HumanValidationRow[] = MAMMAL_TOP_SPEEDS.map(({ animal, mass, low, high }) => {
     const reference = animalTopSpeed(mass) * 3.6;

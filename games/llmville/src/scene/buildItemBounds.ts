@@ -29,7 +29,6 @@ function resolveMeasuredExtents(modelKey: string, modelPath?: string): MeasuredA
   };
 }
 
-/** Mesh-tight world bounds for a placed build decor item (cache → baked native extents). */
 export function resolveWebBuildItemPlacementBounds3d(
   itemId: string,
   point: WorldPoint,

@@ -3,7 +3,6 @@ import { kaykitCityBuilder, kaykitSpaceBase, quaternius5LowPolyAnimals } from "@
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 const MODEL_PACKS = [kaykitCityBuilder, kaykitSpaceBase, quaternius5LowPolyAnimals];
-/** Packed dirt on the yard and dark cracked asphalt on the racing line, named by the shared material library. */
 const GROUND_SOURCES = ["ambientcg-ground025", "ambientcg-asphalt012"] as const;
 /**
  * Scans behind the shared library's corridor facades (`metal/rust`, `concrete/rough`,

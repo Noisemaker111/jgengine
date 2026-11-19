@@ -23,19 +23,13 @@ export interface Cosmetics {
   get(userId: string): Readonly<Record<string, string>>;
   snapshot(userId: string): Record<string, string>;
   hydrate(userId: string, state: Record<string, string>): void;
-  /** Snapshot every user's equipped slots for a whole-world save. */
   snapshotAll(): Record<string, Record<string, string>>;
-  /** Restore every user's equipped slots from a {@link snapshotAll} payload. */
   hydrateAll(state: Record<string, Record<string, string>>): void;
 }
 
 const EMPTY_SLOTS: Readonly<Record<string, string>> = Object.freeze({});
 
-/**
- * Equip cosmetic skins and customizations by slot, independent of gameplay stats.
- *
- * @capability cosmetics equip cosmetic skins and customizations by slot
- */
+/** @capability cosmetics equip cosmetic skins and customizations by slot */
 export function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics {
   const definitions = new Map<string, CosmeticLoadoutDef>();
   const equipped = new Map<string, Record<string, string>>();

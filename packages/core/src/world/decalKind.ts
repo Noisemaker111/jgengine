@@ -10,7 +10,6 @@
 import { registerSceneKind, type SceneKindObject } from "../scene/sceneKinds";
 import { type ParamSchema } from "../generator/paramSchema";
 
-/** The editor marker kind marking a surface decal. */
 export const DECAL_KIND = "decal";
 
 /**
@@ -21,15 +20,12 @@ export const DECAL_KIND = "decal";
  * `stencil` the decal's `text` sprayed through a stencil in its `color`, and `chevrons` a band of arrowheads in `color` pointing up the decal.
  */
 export const DECAL_STYLES = ["dirt", "cracks", "paint", "blood", "grime", "leak", "rust", "wet", "paper", "scorch", "hazard", "stencil", "chevrons"] as const;
-/** One of the authored decal looks. */
 export type DecalStyle = (typeof DECAL_STYLES)[number];
 
-/** Fully-defaulted decal params parsed from a marker's `meta`. */
 export interface DecalRules {
   style: DecalStyle;
   /** Decal width/height in metres. */
   size: number;
-  /** 0 lies flat on the ground, 90 stands on a wall; 45 leans. */
   tilt: number;
   /** Vertical offset of the decal centre above the placed point, in metres. */
   lift: number;
@@ -39,13 +35,10 @@ export interface DecalRules {
   opacity: number;
   /** Deterministic shape seed. */
   seed: string;
-  /** Lettering a `stencil` decal paints: digits, A-Z, `-`, `/` and `.`. */
   text: string;
-  /** `#rrggbb` paint of a `stencil` or `chevrons` decal. */
   color: string;
 }
 
-/** Default decal rules: a small dirt smudge lying on the ground. */
 export const DECAL_DEFAULTS: DecalRules = {
   style: "dirt",
   size: 2.4,
@@ -58,7 +51,6 @@ export const DECAL_DEFAULTS: DecalRules = {
   color: "#e0b040",
 };
 
-/** The decal parameter schema — drives the inspector and the `meta` parse. */
 export const DECAL_SCHEMA: ParamSchema = {
   fields: [
     { type: "select", key: "style", label: "style", options: DECAL_STYLES.map((value) => ({ value })), default: DECAL_DEFAULTS.style },
@@ -83,7 +75,7 @@ function text(meta: Record<string, unknown> | undefined, key: string, fallback: 
   return typeof value === "string" ? value : fallback;
 }
 
-/** Parse a marker's `meta` into fully-defaulted decal rules. @internal */
+/** @internal */
 export function readDecalRules(meta: Record<string, unknown> | undefined): DecalRules {
   const style = text(meta, "style", DECAL_DEFAULTS.style) as DecalStyle;
   return {
@@ -99,14 +91,13 @@ export function readDecalRules(meta: Record<string, unknown> | undefined): Decal
   };
 }
 
-/** A resolved decal: its placed point/facing plus fully-defaulted rules. */
 export interface ResolvedDecal {
   position: readonly [number, number, number];
   rotationY: number;
   rules: DecalRules;
 }
 
-/** Resolve a decal marker into a placed, fully-defaulted decal; null without a position. @internal */
+/** @internal */
 export function resolveDecalObject(object: SceneKindObject): ResolvedDecal | null {
   const position = object.position ?? object.center;
   if (position === undefined) return null;
@@ -117,7 +108,7 @@ export function resolveDecalObject(object: SceneKindObject): ResolvedDecal | nul
   };
 }
 
-/** Registers the `decal` scene kind. Called by {@link registerBuiltinSceneKinds}. @internal */
+/** @internal */
 export function registerDecalKind(): void {
   registerSceneKind<ResolvedDecal | null>({
     kind: DECAL_KIND,

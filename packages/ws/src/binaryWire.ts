@@ -251,15 +251,11 @@ function readValue(input: Reader, depth: number): unknown {
   }
 }
 
-/** Quantisation applied to replicated poses on the binary wire, in decimal places. */
 export type WirePrecision = {
-  /** Decimal places kept for positions and velocities. Default 2 (centimetres). */
   position?: number | undefined;
-  /** Decimal places kept for rotations. Default 3 (about a milliradian). */
   angle?: number | undefined;
 };
 
-/** Default {@link WirePrecision}. */
 export const DEFAULT_WIRE_PRECISION = { position: 2, angle: 3 } as const;
 
 const MAX_DECIMALS = 6;
@@ -323,7 +319,6 @@ function quantise(v: number, scale: number): number {
   return Math.abs(q) <= MAX_SAFE_INT ? q : 0;
 }
 
-/** Equality fingerprint for one field; only ever compared with another fingerprint, so primitives skip JSON. */
 function fingerprint(item: unknown): string {
   if (typeof item === "string") return `s${item}`;
   if (typeof item === "number" || typeof item === "boolean") return `p${item}`;
@@ -435,23 +430,16 @@ function worldParts(message: unknown): {
   return null;
 }
 
-/** Stateful binary encoder for one connection's outgoing messages. */
 export type WireEncoder = { encode(message: unknown): Uint8Array<ArrayBuffer> };
 
-/** Stateful binary decoder for one connection's incoming messages. */
 export type WireDecoder = {
   /** The decoded message, `null` for a malformed frame, or `"desync"` when a world delta does not follow the last frame it saw (the receiver must resubscribe for a baseline). */
   decode(frame: Uint8Array): unknown;
 };
 
-/** Marks a binary frame the decoder could not apply to its state. */
 export const WIRE_DESYNC = "desync" as const;
 
-/**
- * Encoder for one connection. World frames (`update` on the `server` channel) go out as per-entity field
- * deltas against the previous world frame sent on that connection; everything else is a tagged value.
- * @internal
- */
+/** @internal */
 export function createWireEncoder(precision: WirePrecision = {}): WireEncoder {
   const position = resolveDecimals(precision.position, DEFAULT_WIRE_PRECISION.position, "position");
   const angle = resolveDecimals(precision.angle, DEFAULT_WIRE_PRECISION.angle, "angle");
@@ -556,7 +544,7 @@ export function createWireEncoder(precision: WirePrecision = {}): WireEncoder {
   };
 }
 
-/** Decoder for one connection; mirrors {@link createWireEncoder}'s per-stream state. @internal */
+/** @internal */
 export function createWireDecoder(): WireDecoder {
   const streams = new Map<string, ServerStream & { ids: Map<number, string> }>();
 
@@ -684,7 +672,7 @@ export function encodeWireValue(message: unknown): Uint8Array<ArrayBuffer> {
   return out.finish();
 }
 
-/** Decode a stateless tagged-value frame; `null` for anything else (world frames need a {@link WireDecoder}). @internal */
+/** @internal */
 export function decodeWireValue(frame: Uint8Array): unknown {
   try {
     const input = new Reader(frame);

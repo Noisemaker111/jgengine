@@ -41,7 +41,6 @@ export interface PolyPizzaBundleDownload {
   polyPizzaBundle: string;
 }
 
-/** A free itch.io download: the game page URL and the title of the upload to take. */
 export interface ItchDownload {
   itch: string;
   upload: string;
@@ -53,7 +52,7 @@ export function isScrapeDownload(download: AssetDownload): download is ScrapeDow
   return "scrape" in download;
 }
 
-/** Where a download comes from, for logs and errors. @internal */
+/** @internal */
 export function downloadLabel(download: AssetDownload): string {
   if ("scrape" in download) return download.scrape;
   if ("polyPizzaBundle" in download) return `https://poly.pizza/bundle/${download.polyPizzaBundle}`;
@@ -72,15 +71,9 @@ export interface AssetSource {
   categories: readonly string[];
   download: AssetDownload;
   homepage?: string;
-  /**
-   * How a sprite pack's files are laid out once pulled: `flat` (default) dedupes every file by its
-   * basename into one folder; `folders` keeps each file's path below the archive's root folder, for
-   * packs whose files share names across folders (game-icons.net's per-artist folders).
-   */
   spriteLayout?: "flat" | "folders";
   /** Map roles present in the pinned material archive, used by the catalog and checked during pull. */
   materialMaps?: readonly MaterialMapRole[];
-  /** Direct archive URL tried as a last resort when the primary provider path fails; see `downloadPackArchive`. */
   mirror?: string;
   /**
    * Why this model pack contributes nothing to the generated index yet. A model source with
@@ -102,7 +95,6 @@ export interface AssetPack {
   readonly entries: readonly IndexEntry[];
 }
 
-/** The name a pack is exported under in `generated/packs`: its source id in camelCase (`kaykit-dungeon` → `kaykitDungeon`). */
 export function packExportName(sourceId: string): string {
   const words = sourceId.split(/[^a-zA-Z0-9]+/).filter((word) => word.length > 0);
   const name = words.map((word, i) => (i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1))).join("");
@@ -110,7 +102,6 @@ export function packExportName(sourceId: string): string {
   return name;
 }
 
-/** The original export names imported from `generated/packs`, including imports renamed locally. */
 export function importedPackNames(text: string): ReadonlySet<string> {
   const found = new Set<string>();
   for (const match of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*["']@jgengine\/assets\/generated\/packs["']/g)) {
@@ -121,7 +112,6 @@ export function importedPackNames(text: string): ReadonlySet<string> {
   return found;
 }
 
-/** A source-owned model or sprite id, with optional offline model measurements. */
 export interface IndexEntry {
   id: string;
   source: string;
@@ -131,7 +121,6 @@ export interface IndexEntry {
   metrics?: GlbMetrics;
   /** Footprint/center/minY measured from the GLB at reindex; absent when the model could not be read. */
   dims?: ModelDims;
-  /** Opt-in compact triangle mesh extracted at reindex (see {@link "@jgengine/core/scene/collisionMesh".CollisionMeshData}); present only for ids in `COLLISION_MESH_ASSET_IDS` whose geometry extracted. */
   collisionMesh?: CollisionMeshData;
   /** Animation clip names read from the GLB at reindex; absent for unrigged/unreadable models. */
   clips?: readonly string[];

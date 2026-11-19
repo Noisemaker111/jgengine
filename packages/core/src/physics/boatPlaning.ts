@@ -2,46 +2,27 @@ import { frictionLineCoefficient, SEA_WATER_KINEMATIC_VISCOSITY, type BoatWater 
 
 const DEG = Math.PI / 180;
 
-/**
- * A prismatic planing bottom for Savitsky's method, the `planing` effect of `boatDynamics`: the hull carries its weight
- * on bottom pressure at a running trim set by the balance of that pressure's centre against the centre of gravity, and
- * drags friction along the wetted bottom. Below `C_V = 0.6` (the bottom of Savitsky's fits) the drag at `C_V = 0.6` is
- * scaled with speed squared and the trim eases to level at rest.
- */
 export interface PlaningBottom {
   /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
-  /** Deadrise, rad. */
   deadrise: number;
-  /** Centre of gravity forward of the transom, m. */
   lcg: number;
-  /** Centre of gravity above the keel, m. */
   vcg: number;
-  /** Chine beam, m (default the tuning's `beam`). */
   chineBeam?: number;
-  /** Thrust line inclination to the keel, rad (default `0`). */
   thrustAngle?: number;
-  /** Distance from G to the thrust line, normal to it, m; positive when the line passes below G (default `0`). */
   thrustOffset?: number;
-  /** Roughness allowance on the friction coefficient (default `0.0004`, Savitsky's full-scale figure). */
   roughnessAllowance?: number;
   /** Seconds the running trim takes to settle toward its balance (default `0.4`). */
   trimResponse?: number;
 }
 
-/** The planing bottom's forces at one speed and trim. */
 export interface PlaningForces {
-  /** `C_V = V/√(g·b)`. */
   speedCoefficient: number;
-  /** Mean wetted length over beam. */
   wettedLengthRatio: number;
-  /** Bottom pressure force normal to the keel, N. */
   normalForce: number;
-  /** Friction along the bottom, N. */
   friction: number;
   /** Horizontal drag the thrust must overcome, N. */
   resistance: number;
-  /** Trimming moment about G, N·m; zero at the running trim, positive pushes the bow down. */
   moment: number;
 }
 
@@ -97,10 +78,7 @@ export function planingForces(bottom: PlaningBottom, beam: number, massKg: numbe
   return { speedCoefficient: cv, wettedLengthRatio: lambda, normalForce, friction, resistance: thrust * ce, moment };
 }
 
-/**
- * The running trim where the planing bottom leaves no moment about G (bisection between 0.3° and 20°).
- * @capability boat-planing Savitsky equilibrium running trim
- */
+/** @capability boat-planing Savitsky equilibrium running trim */
 export function planingTrim(bottom: PlaningBottom, beam: number, massKg: number, speed: number, water: BoatWater = {}): number {
   let low = 0.3 * DEG;
   let high = 20 * DEG;

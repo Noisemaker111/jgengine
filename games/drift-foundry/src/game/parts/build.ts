@@ -18,10 +18,6 @@ export interface SwapResult {
   ejected: DriftFoundryPartDef | null;
 }
 
-/**
- * Swap a part into the kart: `withPart` owns slot uniqueness and keeps the install position stable, so
- * a mid-run upgrade composes the same numbers as the same build bolted on in the shop.
- */
 export function swapPart(installed: readonly DriftFoundryPartDef[], part: DriftFoundryPartDef): SwapResult {
   const previous = installed.find((entry) => entry.slot === part.slot) ?? null;
   return {
@@ -39,19 +35,13 @@ export interface KartTuning {
   jumpPower: number;
   hasPlow: boolean;
   armorCharges: number;
-  /** The composed feel spec, damage already baked in. */
   handling: VehicleSpec;
-  /** `handling` as the sim tuning `createVehicleDynamics`/`retune` take. */
   sim: VehicleDynamicsTuning;
-  /** The handling numbers behind that tuning - what the shop screen, the HUD and tests read. */
   feel: VehicleFeel;
 }
 
-/** Brake force as a multiple of engine accel - a kart stops harder than it launches. */
 const BRAKE_ACCEL_FACTOR = 1.3;
-/** Reverse tops out at this fraction of forward top speed. */
 const REVERSE_SPEED_FRACTION = 0.35;
-/** Downward acceleration on a hop, world units/s² - snappier than real gravity so airs stay short. */
 export const HOP_GRAVITY = 22;
 /** Baseline hop every kart gets before `jumpPower` from installed springs is added, m/s. */
 export const STUB_HOP_SPEED = 3.2;

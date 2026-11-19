@@ -11,7 +11,6 @@ import type { StreetVec2 } from "./streetGenerator";
 
 /** Car model for {@link simulateLap}. Defaults: a downforce racer (μ 1.7, 90 m/s, 9 m/s² drive, 30 m/s² braking). */
 export interface LapSimCar {
-  /** Lateral grip coefficient. */
   mu?: number;
   /** Top speed, m/s. */
   topSpeed?: number;
@@ -21,21 +20,16 @@ export interface LapSimCar {
   brake?: number;
 }
 
-/** One stretch where the car brakes: where it starts and ends, and the speeds either side. */
 export interface LapBrakingZone {
-  /** Sample index where braking starts. */
   from: number;
-  /** Sample index where braking ends (the slowest point of the zone). */
   to: number;
   entrySpeed: number;
   exitSpeed: number;
 }
 
-/** The simulated lap: speed and elapsed time per sample, the lap time and its braking zones. */
 export interface LapSimResult {
   /** Speed (m/s) at each sample. */
   speed: number[];
-  /** Elapsed time (s) at each sample, from sample 0. */
   time: number[];
   lapTime: number;
   /** Share of lap distance spent at full throttle (accelerating or at top speed), 0..1. */
@@ -125,7 +119,6 @@ export function simulateLap(
   return { speed: v, time, lapTime: elapsed, fullThrottle: total > 0 ? full / total : 0, brakingZones: zones };
 }
 
-/** Radius of the circle through three points; Infinity when they are collinear. */
 export function circumRadius(a: StreetVec2, b: StreetVec2, c: StreetVec2): number {
   const ab = Math.hypot(b[0] - a[0], b[1] - a[1]);
   const bc = Math.hypot(c[0] - b[0], c[1] - b[1]);
@@ -153,7 +146,6 @@ export function closedCurvature(points: readonly StreetVec2[], span: number): nu
   return out;
 }
 
-/** Arc distance from each sample of a closed polyline to the next. */
 export function closedSpacing(points: readonly StreetVec2[]): number[] {
   const n = points.length;
   const out = new Array<number>(n);

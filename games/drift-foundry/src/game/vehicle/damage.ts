@@ -28,7 +28,6 @@ export function impactImpulse(speedKmh: number): number {
   return Math.max(0, speedKmh) * IMPULSE_PER_KMH;
 }
 
-/** The barricade meets the nose corner the driver was steering into. */
 export function noseHitPoint(steer: number): readonly [number, number, number] {
   return [steer >= 0 ? 0.55 : -0.55, 0.3, 1.15];
 }

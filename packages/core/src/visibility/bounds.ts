@@ -1,6 +1,5 @@
 import type { Vec3 } from "../world/geometry";
 
-
 /**
  * World-space bounds a culler tests against. Kept as flat scalars (not tuples) so the
  * hot culling path reads them without allocating. Carries both a bounding sphere (cheap
@@ -78,9 +77,7 @@ function fillBounds(
   return out;
 }
 
-/** Resolve a spec + world position into concrete bounds. Writes into `out` when supplied (no allocation).
- * @internal
- */
+/** @internal */
 export function resolveBounds(
   spec: BoundsSpec,
   position: Vec3,

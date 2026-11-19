@@ -5,7 +5,6 @@ export interface FrustumCamera {
   lookAt: EntityPosition;
   /** Vertical field of view in degrees. Default 55. */
   fovDeg?: number;
-  /** Width / height. Default 16 / 9. */
   aspect?: number;
   near?: number;
   far?: number;
@@ -88,17 +87,12 @@ export function projectToView(camera: FrustumCamera, point: EntityPosition): Fru
 }
 
 export interface FramingConfig {
-  /** World-unit distance from camera that reads as "ideally framed" size. Default 6. */
   idealDistance?: number;
-  /** Weight of screen-center placement in the framing score. Default 0.6. */
   centerWeight?: number;
-  /** Weight of subject size (distance-to-ideal) in the framing score. Default 0.4. */
   sizeWeight?: number;
 }
 
-/** 0 (not framed) .. 1 (dead-center, ideal distance) framing quality for an in-view projection.
- * @internal
- */
+/** @internal */
 export function framingScore(projection: FrustumProjection, config?: FramingConfig): number {
   if (!projection.inView) return 0;
   const idealDistance = config?.idealDistance ?? 6;

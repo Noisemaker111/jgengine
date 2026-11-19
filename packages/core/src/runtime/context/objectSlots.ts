@@ -21,10 +21,8 @@ export type ObjectSlotRejection =
   | "invalid-slot"
   | "insufficient";
 
-/** Outcome of an object slot mutation: applied, or refused with a reason and no state change on either side. */
 export type ObjectSlotResult = { status: "ok" } | { status: "rejected"; reason: ObjectSlotRejection };
 
-/** Which player inventory a transfer moves between, and what it moves. */
 export interface ObjectSlotTransfer {
   instanceId: string;
   userId: string;
@@ -32,7 +30,6 @@ export interface ObjectSlotTransfer {
   itemId: string;
   /** Defaults to `1`. */
   count?: number;
-  /** Explicit slot index **on the object**; omit to auto-place (transfer in) or drain the object's matching stacks (transfer out). */
   slot?: number;
 }
 
@@ -46,19 +43,12 @@ export interface ObjectSlotTransfer {
  * @capability object-slot-inventory placed objects hold validated per-instance container contents that replicate and save with the placement
  */
 export interface SceneObjectSlots {
-  /** The catalog `slotInventory` layout for a placed instance, or `null` when its catalog entry declares none. */
   layout(instanceId: string): InventoryLayout | null;
-  /** Live contents, defaulting to the layout's empty slots. `null` when the instance is unplaced or has no `slotInventory`. */
   state(instanceId: string): InventoryState | null;
-  /** How many of `itemId` this object holds; `0` for an unplaced or slot-less instance. */
   count(instanceId: string, itemId: string): number;
-  /** Add items directly, bypassing any player inventory — world seeding, loot generation, admin tools. */
   put(instanceId: string, itemId: string, count?: number, options?: { slot?: number }): ObjectSlotResult;
-  /** Remove items directly, bypassing any player inventory. */
   take(instanceId: string, itemId: string, count?: number): ObjectSlotResult;
-  /** Move items from a player inventory into the object's slots; nothing is consumed if the object rejects them. */
   transferIn(transfer: ObjectSlotTransfer): ObjectSlotResult;
-  /** Move items from the object's slots into a player inventory; nothing leaves the object if the inventory rejects them. */
   transferOut(transfer: ObjectSlotTransfer): ObjectSlotResult;
 }
 
@@ -72,7 +62,6 @@ export interface ObjectSlotsDeps {
   notify: () => void;
 }
 
-/** Drain `count` of `itemId` from one explicit slot, so "pull the GPU out of rack slot 3" is expressible. */
 function takeFromSlot(state: InventoryState, slot: number, itemId: string, count: number): ObjectSlotResult & { state?: InventoryState } {
   if (!Number.isInteger(slot) || slot < 0 || slot >= state.slots.length) {
     return { status: "rejected", reason: "invalid-slot" };

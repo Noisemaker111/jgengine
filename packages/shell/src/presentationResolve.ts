@@ -3,7 +3,7 @@ import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import type { PresentationEffectsConfig } from "@jgengine/core/game/playableGame";
 import type { ImpactFeedbackOptions } from "@jgengine/core/combat/ImpactFeedback.draw";
 
-/** Resolved world-bar / nameplate config, or `null` when the feature is off. @internal */
+/** @internal */
 export interface ResolvedWorldOverlayBars {
   statId: string;
   roles?: readonly CatalogEntityRole[];
@@ -16,13 +16,7 @@ export interface ResolvedWorldOverlayBars {
   resolveName?: (entity: SceneEntity) => string | null;
 }
 
-/**
- * Normalize `worldHealthBars` / `nameplates` (`boolean | object | undefined`) into a
- * single resolved shape. `undefined` / `false` → `null` (off); `true` → default stat `"health"`;
- * object → explicit fields with `statId` defaulting to `"health"`. `showHealth` is nameplate-only
- * (ignored by `worldHealthBars`, which is itself a bar).
- * @internal
- */
+/** @internal */
 export function resolveWorldOverlayBars(
   config:
     | boolean
@@ -52,7 +46,7 @@ export function resolveWorldOverlayBars(
   };
 }
 
-/** Resolved combat presentation channels (each boolean is whether that stack piece mounts). @internal */
+/** @internal */
 export interface ResolvedPresentationEffects {
   telegraphs: boolean;
   vfx: boolean;
@@ -61,7 +55,6 @@ export interface ResolvedPresentationEffects {
   shake: boolean;
   hitMarkers: boolean;
   muzzleFlash: boolean;
-  /** The impact layer's options, or `null` when it is off. */
   impacts: ImpactFeedbackOptions | null;
 }
 

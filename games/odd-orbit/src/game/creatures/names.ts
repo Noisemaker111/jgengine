@@ -7,7 +7,6 @@ const SYLLABLES = {
   coda: ["x", "n", "th", "l", "sh", "rr", "k", "ph", ""],
 } as const;
 
-/** Odd Orbit's alien names: two or three syllables from the colony's own bank. */
 export const ALIEN_NAMES = defineNameGenerator({
   id: "odd-orbit.alien-names",
   label: "Odd Orbit alien names",
@@ -16,7 +15,6 @@ export const ALIEN_NAMES = defineNameGenerator({
 });
 registerGenerator(ALIEN_NAMES);
 
-/** The first `count` alien names a colony seed rolls; the same seed always names the same colony. */
 export function alienNames(seed: string, count: number): string[] {
   return runGenerator(ALIEN_NAMES, { seed, count }, { fallbackSeed: seed });
 }

@@ -43,12 +43,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-/** Every `defineGame({ movement })` field is optional, so any object is one; the probe reads only the fields it knows. */
 function isMovementConfig(value: unknown): value is PlayerMovementConfig {
   return isRecord(value);
 }
 
-/** Every `defineGame({ physics })` field is optional. */
 function isPhysicsConfig(value: unknown): value is PhysicsConfig {
   return isRecord(value);
 }
@@ -61,7 +59,6 @@ interface WalkingPlayer {
   physics?: PhysicsConfig;
 }
 
-/** Quoted identifiers in a game's source: candidates for its player's catalog id. */
 function quotedIds(game: string): Set<string> {
   const out = spawnSync("git", ["grep", "-h", "-o", "-E", `"[a-z][a-z0-9_]*"`, "--", `games/${game}/src`], { cwd: resolve(GAMES, ".."), encoding: "utf8" });
   return new Set(["player", ...out.stdout.split("\n").map((line) => line.slice(1, -1)).filter((id) => id.length > 0)]);
@@ -98,16 +95,12 @@ async function walkingPlayer(target: string): Promise<WalkingPlayer | string> {
   return named === undefined ? "no player entity; name it as <game>:<entity> if role is set at spawn" : `no entity "${named}"`;
 }
 
-/** Hip-joint height over a standing animal's overall height (head up): about 0.45 for a horse or a dog. */
 const HIP_OVER_HEIGHT = 0.45;
 
-/** Leg length over an insect's or spider's standing height: an estimate, legs splay out to about twice the height. */
 const ARTHROPOD_LEG_OVER_HEIGHT = 2;
 
-/** Hip-joint height over a theropod's standing height: about 0.75 for Tyrannosaurus (3.1 m leg, about 4 m tall). */
 const BIPED_HIP_OVER_HEIGHT = 0.75;
 
-/** Every record with numeric `walk` and `sprint` (a `CreatureBody`) and a string `id` inside `value`. */
 function collectCreatures(value: unknown, out: { id: string; walk: number; sprint: number }[], depth = 0): void {
   if (!isRecord(value) || depth > 4) return;
   const id = value["id"];

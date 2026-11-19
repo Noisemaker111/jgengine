@@ -13,9 +13,7 @@ export interface VehiclePose {
   rotationY: number;
 }
 
-/** Options for {@link VehicleSeats.enter}. */
 export interface EnterVehicleOptions {
-  /** Specific seat to board; omit to take the first free control seat, else the first free seat. */
   seatId?: string;
 }
 
@@ -24,36 +22,28 @@ export interface RiderMovementPatch {
   frozen: boolean;
 }
 
-/** Result of {@link VehicleSeats.enter} — the resolved seat plus the camera/drive/movement patches to apply. */
 export type EnterVehicleResult =
   | {
       ok: true;
       seat: MountSeat;
-      /** Feed straight into `ctx.camera.follow(...)` — the vehicle while a control seat is taken, else the rider's own id. */
       cameraTarget: string;
-      /** Entity this rider's axis input should now drive (`scene/mount`'s `driveTarget`); `null` for a passenger seat. */
       driveTarget: string | null;
       riderMovementPatch: RiderMovementPatch;
     }
   | { ok: false; reason: string };
 
-/** Result of {@link VehicleSeats.exit} — the side-door placement plus the camera/movement patches to apply. */
 export type ExitVehicleResult =
   | {
       ok: true;
       vehicleId: string;
-      /** Where to `setPose` the rider — alongside the vehicle's side door, facing its heading. */
       placement: VehiclePose;
       cameraTarget: string;
       riderMovementPatch: RiderMovementPatch;
     }
   | { ok: false; reason: "not_seated" | "invalid_pose" };
 
-/** Where {@link VehicleSeats.exit} steps the rider out, relative to the vehicle's heading. */
 export interface DismountOffset {
-  /** Lateral distance from the vehicle's centerline; default 2.2. */
   distance?: number;
-  /** Which side of the vehicle to step out on, relative to its heading; default `"right"`. */
   side?: "left" | "right";
 }
 
@@ -117,7 +107,6 @@ export class VehicleSeats {
     return this.controller.driver(vehicleId);
   }
 
-  /** The seated rider's controlled mount; `null` for passengers and unseated riders. */
   drivenBy(riderId: string): string | null {
     return this.isSeated(riderId) ? this.controller.driveTarget(riderId) : null;
   }
@@ -139,18 +128,12 @@ export class VehicleSeats {
   }
 }
 
-/**
- * Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
- *
- * @capability vehicle-seats enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots
- */
+/** @capability vehicle-seats enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots */
 export function createVehicleSeats(controller?: MountController): VehicleSeats {
   return new VehicleSeats(controller);
 }
 
-/** Seat selection and optional local camera policy for an explicit rider transition. */
 export interface BoardVehicleOptions extends EnterVehicleOptions {
-  /** Presentation policy; `false` applies only rider/occupancy patches for authoritative remote riders. */
   camera?: boolean;
   /** Omit to keep the current rig. `null` restores the configured rig. */
   rig?: CameraRigKind | null;
@@ -158,10 +141,8 @@ export interface BoardVehicleOptions extends EnterVehicleOptions {
   chase?: ChaseCameraTuning | null;
 }
 
-/** Exit placement and optional local camera restoration for an explicit rider. */
 export interface LeaveVehicleOptions extends DismountOffset {
   camera?: boolean;
-  /** Supply a last known vehicle pose when its entity has already been removed. */
   pose?: VehiclePose;
 }
 
@@ -173,9 +154,7 @@ function forgetRiderMovement(ctx: GameContext, riderId: string): void {
   }
 }
 
-/** Apply an existing seat transition to the explicitly named rider. Motor/input policy stays caller-owned.
- * @capability board-vehicle board a rideable, freeze/hide its rider and apply caller camera policy
- */
+/** @capability board-vehicle board a rideable, freeze/hide its rider and apply caller camera policy */
 export function boardVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, vehicleId: string, options: BoardVehicleOptions = {}): EnterVehicleResult {
   const rider = ctx.scene.entity.get(riderId);
   if (rider === null) return { ok: false, reason: "unknown_rider" };
@@ -195,9 +174,7 @@ export function boardVehicle(ctx: GameContext, seats: VehicleSeats, riderId: str
   return result;
 }
 
-/** Apply dismount placement, restore rider movement/visibility and the configured camera rig.
- * @capability leave-vehicle leave a rideable beside its current pose and restore on-foot camera/movement
- */
+/** @capability leave-vehicle leave a rideable beside its current pose and restore on-foot camera/movement */
 export function leaveVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, options: LeaveVehicleOptions = {}): ExitVehicleResult | { ok: false; reason: "unknown_rider" | "unknown_vehicle" } {
   const rider = ctx.scene.entity.get(riderId);
   if (rider === null) return { ok: false, reason: "unknown_rider" };

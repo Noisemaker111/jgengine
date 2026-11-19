@@ -1,6 +1,5 @@
 import * as THREE from "three";
 
-/** Options for {@link buildGroundCoverageMask}. */
 export interface GroundCoverageOptions {
   /** Metres inside the outer edge over which ground goes from clear to opaque. */
   width: number;
@@ -8,7 +7,6 @@ export interface GroundCoverageOptions {
   closeRadius?: number;
   /** Finest cell size in metres. Default 0.5. */
   cell?: number;
-  /** Upper bound on cells per axis; large districts get coarser cells. Default 640. */
   maxCells?: number;
 }
 
@@ -28,7 +26,6 @@ export interface GroundCoverageMask {
 
 const DIAGONAL = Math.SQRT2;
 
-/** Two-pass chamfer distance (in cells) from every cell to the nearest seed cell. */
 function chamfer(seed: Uint8Array, columns: number, rows: number): Float32Array {
   const d = new Float32Array(columns * rows);
   for (let i = 0; i < d.length; i += 1) d[i] = seed[i] === 1 ? 0 : Infinity;
@@ -61,13 +58,7 @@ function chamfer(seed: Uint8Array, columns: number, rows: number): Float32Array 
   return d;
 }
 
-/**
- * Rasterize the XZ footprint of ground meshes (roads, block land, parks…) into a
- * {@link GroundCoverageMask}. Small gaps between layers are closed first, so only the merged
- * footprint's outer edge fades: seams between layers inside it keep their full opacity. Vertical
- * faces (curbs) add nothing. Returns `null` when the meshes cover nothing.
- * @capability ground-edge-fade fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp
- */
+/** @capability ground-edge-fade fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp */
 export function buildGroundCoverageMask(
   geometries: readonly (THREE.BufferGeometry | null | undefined)[],
   options: GroundCoverageOptions,
@@ -157,11 +148,9 @@ export function buildGroundCoverageMask(
   return { data, columns, rows, originX, originZ, cell };
 }
 
-/** Shared uniforms for {@link applyGroundEdgeFade}; `setMask` retargets every material using them without a recompile. */
 export interface GroundEdgeFade {
   readonly uniforms: {
     uJgFadeMask: { value: THREE.Texture };
-    /** `(originX, originZ, columns * cell, rows * cell)`. */
     uJgFadeBounds: { value: THREE.Vector4 };
     /** Mask width in metres; scales the noise that breaks up the edge. */
     uJgFadeWidth: { value: number };
@@ -177,10 +166,7 @@ function opaqueTexture(): THREE.DataTexture {
   return texture;
 }
 
-/**
- * Uniforms for one faded footprint, shared by every ground material of one district. Starts fully opaque.
- * @capability ground-edge-fade fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp
- */
+/** @capability ground-edge-fade fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp */
 export function createGroundEdgeFade(): GroundEdgeFade {
   const uniforms = {
     uJgFadeMask: { value: opaqueTexture() as THREE.Texture },

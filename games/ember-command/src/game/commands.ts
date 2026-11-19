@@ -19,17 +19,14 @@ import { missionMarkers } from "@jgengine/core/mission/triggers";
 import { editorLayers } from "../editorLayers";
 
 export interface OrderInput {
-  /** Absent when the shell routes a right-click with nothing selected (`pointer.secondaryCommand`). */
   selection?: readonly string[];
   point: EntityPosition;
 }
 
-/** Field report for an order: a line in the engine notice feed. Deny notices play the `ui.deny` knock. */
 function notify(ctx: GameContext, text: string, tone: NoticeTone = "info"): void {
   ctx.game.notices.push({ text, tone });
 }
 
-/** "1 trooper" / "3 troops": the notice line reads a count, so pick the matching noun. */
 function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
@@ -38,7 +35,6 @@ function distToPoint(p: EntityPosition, x: number, z: number): number {
   return Math.hypot(p[0] - x, p[2] - z);
 }
 
-/** Nearest living hostile-to-the-player combatant near a clicked point (buildings get a wider grab). */
 function enemyNear(ctx: GameContext, x: number, z: number): string | null {
   let bestId: string | null = null;
   let best = Infinity;
@@ -92,8 +88,6 @@ export function canAffordBuilding(ctx: GameContext, type: string): boolean {
   return true;
 }
 
-/** A building may go on the player's half of the field, clear of gold/lumber nodes and other
- * buildings. Deliberately generous — this is a skirmish, not a city planner. */
 function canPlaceAt(ctx: GameContext, x: number, z: number): boolean {
   if (z < -6 || z > 44 || Math.abs(x) > 44) return false;
   for (const node of session.nodes.values()) {
@@ -125,8 +119,6 @@ function placeBuilding(ctx: GameContext, type: string, x: number, z: number): bo
   return true;
 }
 
-/** Right-click order: drop an armed building, else attack a hostile / send peasants to a node / move
- * the group into a box formation. */
 export function orderSelection(ctx: GameContext, input: OrderInput): GameContext {
   if (!matchRunning()) return ctx;
 
@@ -186,7 +178,6 @@ function armAttackMove(ctx: GameContext): GameContext {
   return ctx;
 }
 
-/** Can the player afford `unitId` and does supply allow it? Shared by the command and the HUD gate. */
 export function canTrain(ctx: GameContext, unitId: string): boolean {
   if (!matchRunning()) return false;
   if (livingUnits("player", "building").length === 0) return false;
@@ -237,9 +228,6 @@ function armBuild(ctx: GameContext, type: string): GameContext {
   return ctx;
 }
 
-/** Can the player start the next rank of `upgradeId`? One rank of an upgrade researches at a time;
- * it needs its requirement (a Barracks, and for a doctrine no rival doctrine), an unmet rank cap,
- * and the gold/lumber for the next rank. Shared by the command and the HUD gate. */
 export function canResearch(ctx: GameContext, upgradeId: string): boolean {
   if (!matchRunning()) return false;
   const up = upgradeDef(upgradeId);

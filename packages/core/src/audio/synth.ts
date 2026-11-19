@@ -1,23 +1,14 @@
-/** Oscillator waveform available to a pitched synth voice. */
 export type SynthWave = "sine" | "square" | "sawtooth" | "triangle";
 
-/** Biquad filter shape a noise voice is coloured through. */
 export type SynthFilter = "lowpass" | "highpass" | "bandpass";
 
-/**
- * A pitched oscillator voice: a 12ms linear attack to `gain`, then an
- * exponential decay to silence across `duration`, with an optional
- * exponential pitch slide from `freq` to `slideTo`.
- */
 export interface ToneVoice {
   kind: "tone";
   /** Start frequency in Hz. */
   freq: number;
   /** Total voice length in seconds (the decay spans this). */
   duration: number;
-  /** Peak gain before patch/bus scaling. Default 1. */
   gain?: number;
-  /** Oscillator waveform. Default "sine". */
   wave?: SynthWave;
   /** Start offset in seconds from the cue trigger. Default 0. */
   delay?: number;
@@ -34,22 +25,14 @@ export interface ToneVoice {
   sustain?: number;
 }
 
-/**
- * A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised
- * from a shared 1s noise buffer at a randomised playback rate and start offset,
- * decaying exponentially to silence at `duration * decay`.
- */
 export interface NoiseVoice {
   kind: "noise";
   /** Total voice length in seconds. */
   duration: number;
   /** Biquad cutoff/centre in Hz. */
   filterFreq: number;
-  /** Peak gain before patch/bus scaling. Default 1. */
   gain?: number;
-  /** Filter shape. Default "lowpass". */
   filterType?: SynthFilter;
-  /** Fraction of `duration` over which the burst decays to silence. Default 0.9. */
   decay?: number;
   /** Start offset in seconds from the cue trigger. Default 0. */
   delay?: number;
@@ -60,7 +43,6 @@ export interface NoiseVoice {
   sustain?: number;
 }
 
-/** One layered voice of a synth cue. */
 export type SynthVoice = ToneVoice | NoiseVoice;
 
 /**
@@ -70,7 +52,6 @@ export type SynthVoice = ToneVoice | NoiseVoice;
  */
 export interface SynthPatch {
   voices: readonly SynthVoice[];
-  /** Overall cue gain multiplier applied to every voice. Default 1. */
   gain?: number;
 }
 

@@ -25,20 +25,14 @@ import {
   type StatusTickEvent,
 } from "../statusRuntime";
 
-/** How many recent damage applications the runtime keeps for `recentDamage` and its probe line. */
 const RECENT_DAMAGE_LIMIT = 8;
-/** Most applications the probe line spells out; the ring keeps more than it prints. */
 const RECENT_DAMAGE_PROBE_LINES = 3;
 
-/** What a target presents to the table: one resistance class and its armor points. */
 export interface TargetProfile {
-  /** Resistance class (`"flesh"`, `"shield"`, `"armor"`) the target presents. */
   resistance: string;
-  /** Armor points before any carried armor-shred statuses. Default `0`. */
   armor?: number | undefined;
 }
 
-/** One status a hit tries to apply, scaled against that status's own base chance and values. */
 export interface DamageStatusRequest {
   id: string;
   chanceScale?: number;
@@ -46,17 +40,14 @@ export interface DamageStatusRequest {
   magnitudeScale?: number;
 }
 
-/** One incoming hit: what struck, how hard, where it landed, and what statuses it carries. */
 export interface DamageRuntimeHitInput {
   target: string;
   type: string;
   /** Damage before the zone multiplier, the table, and armor. */
   base: number;
-  /** Hit zone id; omitted uses the table's `defaultZone`. */
   zone?: string;
   source?: string;
   statuses?: readonly (string | DamageStatusRequest)[];
-  /** Where the blow landed, when the caller knows it; overridable per hit. */
   position?: readonly [number, number, number];
 }
 
@@ -66,28 +57,22 @@ export interface DamageRuntimeResolution {
   type: string;
   base: number;
   zone: HitZoneResolution;
-  /** Type × resistance multiplier before armor. */
   multiplier: number;
   /** Armor after carried shred statuses, never below zero. */
   armor: number;
-  /** Fraction of the hit armor removes at `armor`. */
   mitigation: number;
-  /** `base × zone.multiplier × multiplier × (1 − mitigation)`. */
   damage: number;
   statuses: StatusApplicationOutcome[];
 }
 
-/** A quoted time to kill for one fixed hit against one health pool. */
 export interface TimeToKill {
   damagePerShot: number;
-  /** Hits needed, or `Infinity` when the hit deals nothing. */
   shots: number;
   /** Seconds from the first hit to the last: `(shots - 1) × intervalSeconds`. */
   seconds: number;
   intervalSeconds: number;
 }
 
-/** Serialized model state: registered targets, carried statuses, and the probe counters. */
 export interface DamageRuntimeState {
   targets: Array<{ id: string } & TargetProfile>;
   statuses: StatusRuntimeState;
@@ -97,16 +82,12 @@ export interface DamageRuntimeState {
   last: { type: string; base: number; damage: number; zone: string; crit: boolean } | null;
 }
 
-/** Everything the model reads: the table, the zones, the status definitions, and the RNG. */
 export interface DamageRuntimeConfig {
   table: DamageTableDef;
   zones: HitZoneTable;
   statuses?: readonly StatusDef[];
-  /** Stat id carried armor-shred statuses reduce. Default `"armor"`. */
   armorStat?: string;
-  /** Injected `[0,1)` stream for crit rolls. Omitting it warns once and is not replayable. */
   rng?: () => number;
-  /** Bus every applied damage is announced on as `combat.damage`. Omitted, events reach only the probe. */
   events?: GameEvents;
   /**
    * A target's live health, read once per application before the caller applies it. The event's
@@ -120,11 +101,9 @@ export interface DamageRuntimeConfig {
    * carries no position and feedback stays centred.
    */
   positionOf?: (targetId: string) => readonly [number, number, number] | null | undefined;
-  /** Register a one-line devtools probe under this name. */
   devtoolsName?: string;
 }
 
-/** In-play dials, all retunable without discarding registered targets or carried statuses. */
 export interface DamageRuntimeRetune {
   table?: DamageTableDef;
   zones?: HitZoneTable;
@@ -138,29 +117,21 @@ export interface DamageRuntimeRetune {
  * `table` reads the whole chart. State is plain data, so a save, a replay, or a worker can move it.
  */
 export interface DamageRuntime {
-  /** Register or replace a target's resistance class and armor. */
   registerTarget(id: string, profile: TargetProfile): void;
   removeTarget(id: string): void;
   target(id: string): TargetProfile | null;
-  /** Resolve one hit and apply any statuses it carries. */
   hit(input: DamageRuntimeHitInput): DamageRuntimeResolution;
-  /** Apply one status directly (an ability, a hazard) without a damage hit. */
   applyStatus(target: string, statusId: string, options?: DamageStatusRequest & { source?: string }): StatusApplicationOutcome;
-  /** Advance carried statuses; damage ticks are resolved through this model's table and armor. */
   tick(dtSeconds: number): StatusTickEvent[];
   /** Quote a fixed hit against a health pool; pass `crit` explicitly so the number never depends on a roll. */
   timeToKill(input: { target: string; type: string; base: number; hp: number; intervalSeconds: number; zone?: string; crit?: boolean }): TimeToKill;
-  /** Read the whole table with armor mitigation, optionally at given armor values and base damage. */
   table(read?: Parameters<typeof readDamageTable>[1]): DamageTableRow[];
   retune(patch: DamageRuntimeRetune): void;
   snapshot(): DamageRuntimeState;
   restore(next: DamageRuntimeState): void;
-  /** Carried statuses, for a HUD or a test. */
   statusesOf(targetId: string): readonly StatusInstance[];
-  /** The last `limit` damage applications this model announced, oldest first. Default all it keeps. */
   recentDamage(limit?: number): readonly DamageAppliedEvent[];
   stats(): { targets: number; hits: number; crits: number; statusTicks: number; dealt: number };
-  /** Drop the devtools probe registered by `devtoolsName`. Safe to call twice. */
   dispose(): void;
 }
 
@@ -225,7 +196,6 @@ export function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime 
     return Math.max(0, (profile.armor ?? 0) + statusRuntime.statDelta(targetId, armorStat));
   }
 
-  /** Resolve a raw amount through the type table and the target's effective armor. */
   function scaleAt(targetId: string, type: string, base: number): DamageTableRow & { armor: number } {
     const profile = profileOf(targetId);
     const armor = armorOf(targetId, profile);

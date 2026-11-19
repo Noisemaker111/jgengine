@@ -15,7 +15,6 @@ import { parkFlags } from "./parkFlags";
 import { money } from "./ParkDashboard";
 import { BAD, Button, CORAL, CREAM, DISPLAY, GOLD, GOOD, Heading, INK, Row, Tag, Text } from "./look";
 
-/** A result screen is up: the scenario ended, the park went bankrupt, or the blue ribbon landed. */
 export function resultOpen(ctx: GameContext): boolean {
   const flags = parkFlags(park.of(ctx));
   return sessionOf(ctx).started && (flags.gameOver || flags.ribbon || scenarioView(ctx)?.result != null);
@@ -23,7 +22,6 @@ export function resultOpen(ctx: GameContext): boolean {
 
 const BANNER_MS = 3600;
 
-/** The park's moments: a banner when the gates open or close, and the end-of-run screens. Read from the world. */
 export function ParkFlow() {
   const { commands } = useGame();
   // Only what the banner and the result screens draw: the tally is read while a screen is up, not every tick.

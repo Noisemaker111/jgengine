@@ -27,11 +27,6 @@ function loadShared(maps: TerrainMaterialMaps, size: number): Promise<SurfaceMat
   return pending;
 }
 
-/**
- * The terrain's baked surface array: generated roles, scanned roles and the scans its paint layers
- * name, stacked once. Scans decode first (counted as scene loading); until they answer the terrain
- * draws the layers procedurally, and a scan that fails to load is logged and stays procedural.
- */
 export function useTerrainSurfaces(
   detailSurfaces: ResolvedTerrainSurfaces | undefined,
   paintSlots: readonly TerrainPaintSlot[] | undefined,

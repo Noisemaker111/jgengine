@@ -19,18 +19,12 @@ import { createFaunaView, selectVisible, writeFaunaView, type FaunaSelection, ty
 const DEFAULT_DRAW_CAP = 1200;
 const CULL_RADIUS = 2;
 
-/** Props of {@link AmbientFauna}. */
 export interface AmbientFaunaProps {
   config: AmbientFaunaConfig;
-  /** Groups placed by `ambient_fauna` zones in the editor scene; added to `config.groups`. */
   zones?: readonly FaunaGroup[] | undefined;
-  /** Resolves species given as catalog ids. */
   assets?: AssetCatalog | undefined;
-  /** Ground height under a point; the seabed for fish and the floor for swarms. */
   groundAt?: ((x: number, z: number) => number) | undefined;
-  /** Revision of ground height, when the field can track changes. */
   groundRevision?: (() => number | undefined) | undefined;
-  /** The low graphics tier halves the agents. */
   lowTier?: boolean | undefined;
 }
 
@@ -294,13 +288,7 @@ export function ambientFaunaDraw(getProps: () => AmbientFaunaProps): EngineDraw 
   };
 }
 
-/**
- * Ambient fauna: fish schools, insect swarms, drifting motes and soaring flyers, one instanced draw
- * per species part. Agents within a group's `lod.near` draw the species model, the rest to `lod.far`
- * a sprite; off-screen agents are skipped, each group draws at most its `budget`, all groups at most
- * `config.drawCap`. Groups come from `config.groups` and the `ambient_fauna` zones in the editor scene.
- * @capability ambient-fauna-render draw ambient fauna as instanced species models with distance LOD, frustum culling, a per-group budget and a global draw cap
- */
+/** @capability ambient-fauna-render draw ambient fauna as instanced species models with distance LOD, frustum culling, a per-group budget and a global draw cap */
 export function AmbientFauna(props: AmbientFaunaProps) {
   const latest = useRef(props);
   latest.current = props;

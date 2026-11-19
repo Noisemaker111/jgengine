@@ -1,21 +1,16 @@
 import type { AxisInput } from "../input/axisInput";
 import type { AircraftVector, RigidAircraft, RigidAircraftInput, RigidAircraftStep } from "../flight/aircraftDynamics";
 
-/** The slice of a vehicle sim {@link measureHandling} drives; `VehicleDynamics` fits. */
 export interface HandlingSubject {
   tick(dt: number, input: AxisInput): { motion: { forwardSpeed: number; lateralSpeed: number; yawRate: number } };
   velocity(): readonly [number, number];
 }
 
-/** Scenario settings for {@link measureHandling}; every field has a default. */
 export interface HandlingProbeOptions {
-  /** Fixed tick, s (default `1/60`). */
   dt?: number;
   /** Entry speed for the step-steer, lift-off and handbrake tests, m/s (default `25`). */
   cornerSpeed?: number;
-  /** Steer input for the step-steer test (default `1`: a held keyboard key, the harshest common case). */
   stepSteer?: number;
-  /** Steer input held through the lift-off test (default `0.3`). */
   liftOffSteer?: number;
 }
 
@@ -37,9 +32,7 @@ export interface HandlingReport {
   stepSteadyYawRate: number;
   /** Share of entry speed left after the 3 s step steer. */
   stepSpeedRetained: number;
-  /** The step steer ended with sideslip over 60°: the car spun. */
   spun: boolean;
-  /** Yaw rate 0.5 s after lifting off mid-corner divided by the yaw rate before: `>1` tucks in, `<1` pushes wide. */
   liftOffYawGain: number;
   /** Peak |sideslip| from a 0.6 s steer-plus-handbrake pull, degrees. */
   handbrakePeakSideslipDeg: number;
@@ -47,7 +40,6 @@ export interface HandlingReport {
   handbrakeRecoverySeconds: number;
   /** Peak |sideslip| holding full throttle and full steer for 2 s from 12 m/s — the keyboard player's corner, degrees. */
   powerSteerPeakSideslipDeg: number;
-  /** The full-throttle full-steer hold ended with sideslip over 60°. */
   powerSteerSpun: boolean;
 }
 
@@ -240,7 +232,6 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
   };
 }
 
-/** The slice of a sprung vehicle sim {@link measureRide} drives; a `VehicleDynamics` with `suspension` fits. */
 export interface RideSubject {
   tick(
     dt: number,
@@ -257,7 +248,6 @@ export interface RideSubject {
 export interface RideReport {
   /** Seconds after a 1 m/s upward kick until the body stays within 5 mm of its rest height. */
   settleSeconds: number;
-  /** Largest drop below rest height after that kick, divided by the largest rise above it. */
   heaveOvershoot: number;
   /** Peak nose-down pitch under full braking from 25 m/s, degrees. */
   brakeDiveDeg: number;
@@ -267,12 +257,7 @@ export interface RideReport {
   landingBounces: number;
 }
 
-/**
- * Drives fresh sprung vehicles from `create` through a vertical kick, a hard stop, a steady corner and a
- * launch-and-land, and reports how the body moves: how fast it settles, how much it dives and rolls, and
- * whether a landing bounces.
- * @capability ride-metrics measure a sprung vehicle's ride — settle time, dive, roll per g, landing bounce
- */
+/** @capability ride-metrics measure a sprung vehicle's ride — settle time, dive, roll per g, landing bounce */
 export function measureRide(create: () => RideSubject, options: { dt?: number } = {}): RideReport {
   const dt = options.dt ?? 1 / 60;
   const neutral = input(0, 0, 0);
@@ -337,7 +322,6 @@ export function measureRide(create: () => RideSubject, options: { dt?: number } 
   return { settleSeconds, heaveOvershoot, brakeDiveDeg, rollGradient, landingBounces };
 }
 
-/** The slice of a jumping vehicle sim {@link measureAir} drives; a `VehicleDynamics` with `suspension`, `jump` and `air` fits. */
 export interface AirSubject {
   tick(
     dt: number,
@@ -350,7 +334,6 @@ export interface AirSubject {
 
 /** Deterministic jump and air-control metrics. */
 export interface AirReport {
-  /** Peak height above the resting height after one standing jump, m. */
   jumpApexHeight: number;
   /** Seconds from the jump to that peak. */
   jumpApexTime: number;
@@ -362,11 +345,7 @@ export interface AirReport {
   airRollRate: number;
 }
 
-/**
- * Jumps a fresh vehicle from rest and holds full air input on each axis, reporting jump height and timing,
- * double-jump height, and how fast the body rotates in the air.
- * @capability air-metrics measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates
- */
+/** @capability air-metrics measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates */
 export function measureAir(create: () => AirSubject, options: { dt?: number } = {}): AirReport {
   const dt = options.dt ?? 1 / 60;
   const neutral = input(0, 0, 0);
@@ -415,7 +394,6 @@ export function measureAir(create: () => AirSubject, options: { dt?: number } = 
   };
 }
 
-/** A vehicle sim {@link measureCourse} can drive along a line: a {@link HandlingSubject} that also reports its pose and front-wheel angle. */
 export interface CourseSubject {
   tick(
     dt: number,
@@ -425,16 +403,11 @@ export interface CourseSubject {
   pose(): { position: readonly [number, number, number]; heading: number };
 }
 
-/** Settings for {@link measureCourse}; every field but `wheelbase` has a default. */
 export interface CourseProbeOptions {
-  /** Wheelbase, m — needed to separate geometric steer from understeer. */
   wheelbase: number;
   dt?: number;
-  /** Skidpad radius, m (default `30`). */
   skidpadRadius?: number;
-  /** Distance between slalom cones, m (default `18`). */
   slalomSpacing?: number;
-  /** How far the weaving line swings either side of the cones, m (default `3.5`). */
   slalomOffset?: number;
 }
 
@@ -445,7 +418,6 @@ export interface CourseReport {
    * ramp at 20 m/s between 0.1 and 0.4 g. Positive understeers, negative oversteers, near 0 is neutral.
    */
   understeerGradient: number;
-  /** Highest lateral acceleration held on a circle of `skidpadRadius`, g. */
   skidpadG: number;
   /**
    * Fastest entry speed at which a pure-pursuit driver weaves 8 centre-line cones, passing each on the
@@ -551,7 +523,6 @@ export function measureCourse(create: () => CourseSubject, options: CourseProbeO
   return { understeerGradient, skidpadG, slalomSpeed };
 }
 
-/** The slice of a single-track sim {@link measureLean} drives; a `VehicleDynamics` with a `lean` block fits. */
 export interface LeanSubject {
   tick(dt: number, input: AxisInput): { motion: { forwardSpeed: number }; body: { lean: number } };
 }
@@ -566,11 +537,7 @@ export interface LeanReport {
   counterLeanDeg: number;
 }
 
-/**
- * Brings a fresh bike to `speed` and holds full steer, reporting how far and how fast it leans and how much it
- * tips the other way first.
- * @capability lean-metrics measure a motorcycle's lean — steady lean, time to lean, countersteer tip-in
- */
+/** @capability lean-metrics measure a motorcycle's lean — steady lean, time to lean, countersteer tip-in */
 export function measureLean(create: () => LeanSubject, options: { dt?: number; speed?: number } = {}): LeanReport {
   const dt = options.dt ?? 1 / 60;
   const speed = options.speed ?? 20;
@@ -596,21 +563,16 @@ export function measureLean(create: () => LeanSubject, options: { dt?: number; s
   };
 }
 
-/** Where {@link measureFlight} spawns each fresh aircraft: level, heading `0` (forward `+z`). */
 export interface FlightSpawn {
   position: AircraftVector;
   velocity: AircraftVector;
 }
 
-/** Scenario settings for {@link measureFlight}. */
 export interface FlightProbeOptions {
-  /** Fixed tick, s (default `1/60`). */
   dt?: number;
   /** Entry airspeed for the fixed-wing tests, m/s (default `60`). */
   cruiseSpeed?: number;
-  /** Spawn altitude, m (default `1000`, or `50` for a rotorcraft). */
   altitude?: number;
-  /** Collective that hovers a rotorcraft (default weight over rotor `maxThrust`). */
   hoverCollective?: number;
 }
 
@@ -644,7 +606,6 @@ function wrapPi(angle: number): number {
   return a;
 }
 
-/** A PI loop on vertical speed toward a target altitude, with pitch-rate damping; returns the pitch command. */
 function createAltitudeHold(targetY: number): (step: RigidAircraftStep, dt: number) => number {
   let integral = 0;
   return (step, dt) => {

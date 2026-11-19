@@ -6,7 +6,6 @@ export interface BeatClockConfig {
 }
 
 export interface BeatSnapshot {
-  /** Fractional beat count since the clock started. */
   beat: number;
   beatIndex: number;
   bar: number;
@@ -80,9 +79,7 @@ export function nearestBeatDelta(nowSec: number, beatDurationSec: number): numbe
 export interface BeatAccuracyTier extends ThresholdBoundary {}
 
 export interface BeatJudgement {
-  /** The matched tier id, or `"miss"` beyond every tier. */
   tier: string;
-  /** Signed delta to the nearest beat — negative = early, positive = late. */
   deltaSec: number;
 }
 
@@ -91,9 +88,7 @@ export const DEFAULT_BEAT_TIERS: readonly BeatAccuracyTier[] = [
   { id: "good", at: 0.14 },
 ];
 
-/** Classify a press against the nearest beat into tiered judgements (perfect/good/miss by default). Tiers need not be ordered.
- * @internal
- */
+/** @internal */
 export function classifyBeatAccuracy(
   nowSec: number,
   beatDurationSec: number,
@@ -124,7 +119,6 @@ export function nextBeatTime(nowSec: number, beatDurationSec: number, epsilon = 
   return Math.ceil(beatIndex) * beatDurationSec;
 }
 
-/** An action queued on a beat buffer, with when it was pressed and the beat it fires on. */
 export interface BeatBufferedAction<T> {
   action: T;
   bufferedAtSec: number;
@@ -132,9 +126,7 @@ export interface BeatBufferedAction<T> {
 }
 
 export interface BeatInputBuffer<T> {
-  /** Buffer an action; it quantizes to fire on the next beat tick (or immediately if `nowSec` is already on a beat). Returns the resolved fire time. */
   buffer(action: T, nowSec: number): number;
-  /** Drain and return every action whose fire time has arrived, in the order they were buffered. */
   advance(nowSec: number): T[];
   pendingCount(): number;
   clear(): void;

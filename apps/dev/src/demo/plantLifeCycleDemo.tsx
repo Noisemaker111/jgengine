@@ -17,9 +17,7 @@ import { demoGame } from "./demoGame";
 const SPACING = 22;
 const ROW_GAP = 40;
 const DETAIL = 0.5;
-/** `?seed=forest-b` grows every plant here from another seed. */
 const SEED = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search).get("seed") ?? "life-cycle";
-/** One 40-year sugar maple through a year, the same tree standing dead and falling apart, then a blueberry clump. */
 const ROWS: { label: string; meta: Record<string, number | string> }[][] = [
   [
     { label: "Day 15 · bare", meta: { day: 15 } },
@@ -51,7 +49,6 @@ const ROWS: { label: string; meta: Record<string, number | string> }[][] = [
 const SHRUB_ROW = 2;
 const SHRUB_SPACING = 5;
 const SHRUB_X = 120;
-/** Palms and ferns stand off to the other side. */
 const PALM_ROW = 3;
 const PALM_SPACING = 9;
 const PALM_X = -120;
@@ -113,7 +110,6 @@ function LifeCycle() {
   );
 }
 
-/** A sugar maple through its year and then as a snag decaying, a blueberry clump growing, and palms and ferns, all from `plant.grown` params. */
 export const plantLifeCycleGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-life-cycle" },

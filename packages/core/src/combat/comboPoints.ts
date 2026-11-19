@@ -3,7 +3,6 @@ export interface ComboPointsConfig {
   expireAfterSeconds?: number;
 }
 
-/** Complete serializable state for {@link ComboPoints}; `remaining: null` means no expiry is running. */
 export interface ComboPointsSnapshot {
   points: number;
   remaining: number | null;
@@ -19,17 +18,11 @@ export interface ComboPoints {
   tick(dtSeconds: number): void;
   expiresIn(): number | null;
   clear(): void;
-  /** The whole builder as plain data — save it, ship it to a host, diff it in a test. */
   snapshot(): ComboPointsSnapshot;
-  /** Adopt a snapshot, replacing points, expiry, and tuning. */
   restore(state: ComboPointsSnapshot): void;
 }
 
-/**
- * Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
- *
- * @capability combo-points build up and spend finisher/combo points
- */
+/** @capability combo-points build up and spend finisher/combo points */
 export function createComboPoints(config: ComboPointsConfig): ComboPoints {
   let max = config.max;
   let expireAfterSeconds = config.expireAfterSeconds;

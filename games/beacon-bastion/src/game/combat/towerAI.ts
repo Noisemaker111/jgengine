@@ -16,20 +16,16 @@ import { pushProjectile } from "./pendingProjectiles";
 import { strike } from "./strike";
 
 const TOWER_ID = "__tower__";
-/** How far a storm bolt jumps to the next raider, and what each jump keeps. */
 const CHAIN = { reach: 4.5, falloff: 0.75 } as const;
-/** A boss shakes off ice and stuns this much faster than a raider. */
 const BOSS_HOLD = 0.3;
 
 export interface TargetCandidate {
   id: string;
   position: EntityPosition;
   progress: number;
-  /** Health left, for a tower aimed at the strongest. */
   health?: number;
 }
 
-/** Pick one raider in range by the tower's aim (first on the road, last, the strongest, the nearest). */
 export function chooseTarget(
   policy: AutoTargetPolicy,
   towerPosition: EntityPosition,
@@ -79,7 +75,6 @@ function hold(id: string, ms: number): void {
   session.statuses.apply(id, "freeze", { durationScale: (ms / 1000) * (isBoss(id) ? BOSS_HOLD : 1) });
 }
 
-/** Everything one shot does to the raider it lands on, beyond its damage. */
 function afflict(volley: Volley, targetId: string): void {
   const { def, stats, nowMs } = volley;
   const creep = session.creeps.get(targetId);
@@ -94,7 +89,6 @@ function afflict(volley: Volley, targetId: string): void {
   if (stats.burn > 0) session.statuses.apply(targetId, "burn", { magnitudeScale: stats.burn, source: volley.towerId });
 }
 
-/** One projectile: the hit, its splash, and the conditions it leaves. */
 function land(volley: Volley, targetId: string, damage: number): void {
   const { ctx, def, stats, towerId } = volley;
   const target = ctx.scene.entity.get(targetId);
@@ -118,7 +112,6 @@ function land(volley: Volley, targetId: string, damage: number): void {
   }
 }
 
-/** A storm bolt's jumps: each to the nearest raider it has not touched, weaker every time. */
 function chain(volley: Volley, firstId: string, pool: readonly TargetCandidate[]): void {
   const touched = new Set([firstId]);
   let from = volley.ctx.scene.entity.get(firstId)?.position ?? null;

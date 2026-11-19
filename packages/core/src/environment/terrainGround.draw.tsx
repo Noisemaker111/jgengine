@@ -22,13 +22,11 @@ import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengi
 
 import { carvedTerrainDraw, type CarvedTerrainProps } from "@jgengine/core/terrain/CarvedTerrain.draw";
 
-/** Props for {@link terrainGroundDraw}: the terrain descriptor, live field, optional island center and sculpt snapshot. */
 export interface TerrainGroundDrawProps {
   terrain: Omit<TerrainEnvironmentDescriptor, "kind">;
   field: TerrainField;
   center?: readonly [number, number] | undefined;
   sculpt?: TerraformSnapshot | undefined;
-  /** Reports a required (`missing === "fail"`) detail map load failure to the presentation retry flow. */
   onAssetFail?: ((error: unknown) => void) | undefined;
 }
 

@@ -6,14 +6,11 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "bun:test";
 
-/** Whether this run is CI, which has no models on disk. */
 export const inCi = (env: Readonly<Record<string, string | undefined>> = process.env): boolean =>
   env.CI !== undefined && env.CI !== "" && env.CI !== "false";
 
-/** `test` for a check that needs downloaded models: skipped in CI, run everywhere else. */
 export const assetTest: typeof test = inCi() ? (test.skip as typeof test) : test;
 
-/** The served URLs (`/models/...`) with no file under `publicRoot`, each with the fix. */
 export function missingServed(publicRoot: string, urls: readonly string[]): string[] {
   return urls
     .filter((url) => !existsSync(join(publicRoot, url)))

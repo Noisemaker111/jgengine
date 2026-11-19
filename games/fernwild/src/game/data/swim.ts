@@ -11,7 +11,6 @@ export const SWIMMERS: Readonly<Record<string, { speed: number }>> = {
   beelzebufo: { speed: 7 },
 };
 
-/** The share of its walking speed anything else keeps in water. */
 export const SWIM_SLOW = 0.6;
 
 /** Water deeper than this under a mount, metres, and it swims. */

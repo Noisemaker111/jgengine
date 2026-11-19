@@ -2,35 +2,28 @@ import type { PointerAxisState } from "../input/pointerAxis";
 import { type AxisBinding, type AxisRange, sampleAxisBindings } from "../input/axisInput";
 import { createHapticChannels, type HapticChannels } from "../haptics/haptics";
 
-/** One discrete press, identified across retransmitted live input frames. */
 export interface InputPress {
   action: string;
   seq: number;
 }
 
-/** One client's serializable held state and discrete edges for a simulation tick. */
 export interface InputFrame {
   held: readonly string[];
   pointer: PointerAxisState | null;
-  /** Discrete presses retained through release until the host accepts them. Each identity applies once, on its recorded simulation tick. */
   presses?: readonly InputPress[];
   /** Analog per-action magnitudes (0..1) for actions driven by a continuous source (virtual joystick, gamepad stick); absent/null means every held action is fully pressed. */
   analog?: Readonly<Record<string, number>> | null;
-  /** Simulation tick (`ctx.sim.tick()`) the frame was captured for; hosts and replay align inputs on it. Absent from senders that predate the fixed-step loop. */
   tick?: number;
 }
 
 export interface InputSnapshot {
-  /** Trigger controller vibration for a local user's gamepad when supported. */
   rumble(userId: string, options: { strong: number; weak: number; ms: number }): Promise<boolean>;
   /**
    * Continuous rumble channels for a local user (`engine`, `road`, `impact`, …): set levels each tick
    * and the shell mixes them by priority onto that user's pad. Local only — never in a snapshot or on the wire.
    */
   haptics(userId: string): HapticChannels;
-  /** Replaces held state without notifying subscribers. Supplying `edges` buffers short presses until `beginStep`, and an action held and released between two steps is the next step's press; `reset` discards the current owner's pending edges. Without `edges`, legacy publication-based edge detection is preserved. */
   publish(held: readonly string[], edges?: { pressed?: readonly string[]; reset?: boolean }): void;
-  /** Sample buffered input once before a simulation step. Zero-step render frames retain presses; subsequent steps retire the sampled edges. */
   beginStep(): void;
   /** Replaces the normalized pointer-position state for this frame (#293). Same no-notify contract as `publish`. */
   publishPointer(state: PointerAxisState | null): void;
@@ -39,7 +32,6 @@ export interface InputSnapshot {
   isDown(action: string): boolean;
   /** The held-action set for this frame — an owned, frozen array; the array {@link publish} was called with is never aliased or returned. */
   held(): readonly string[];
-  /** True on the sampled simulation step containing a press; legacy publishers use the last two held sets. */
   justPressed(action: string): boolean;
   /** True only on the frame `action` transitions from down to up (#671); mirrors {@link justPressed}. */
   justReleased(action: string): boolean;

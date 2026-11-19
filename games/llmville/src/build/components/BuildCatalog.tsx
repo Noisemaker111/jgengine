@@ -30,7 +30,6 @@ function rackFeatureBullets(itemId: string): string[] {
   return [`${rack.slotCapacity} GPU slots`, `${rack.allowedCoolantTypes.join(" / ")} cooling`];
 }
 
-/** A rack's front: four dark bays. */
 function RackThumb() {
   return <RuneView width={56} height={56} radius={4} fill="#3a3a3a" border={{ width: 1, color: "#ffffff33" }} justify="center" gap={3} padding={6}>
     {[0, 1, 2, 3].map((i) => <RuneView key={i} height={3} fill="#222222" width={FULL} />)}

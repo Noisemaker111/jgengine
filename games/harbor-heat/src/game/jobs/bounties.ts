@@ -10,11 +10,8 @@ export const BOUNTY_COOLDOWN_SEC = 45;
 export const BOUNTY_TARGET_PREFIX = "bounty_target_";
 
 export interface BountyState {
-  /** Lifetime contracts completed — drives payout escalation and spot rotation. */
   completed: number;
-  /** Instance id of the live target, or null between contracts. */
   targetId: string | null;
-  /** Spot the live target was staged at (`BOUNTY_SPOTS` id). */
   spotId: string | null;
   /** Game-time (sec) when the next contract may stage. */
   nextAt: number;
@@ -26,7 +23,6 @@ export function bountyPayout(completed: number): number {
   return 350 + Math.min(completed, 8) * 175;
 }
 
-/** Round-robin over the authored spots so consecutive contracts always move districts. */
 export function bountySpotIndex(completed: number, spotCount: number): number {
   return spotCount <= 0 ? 0 : completed % spotCount;
 }
@@ -70,7 +66,6 @@ export function tickBounties(ctx: GameContext): void {
   ctx.game.notices.push({ text: `Bounty posted: ${spot.label}, ${district}.`, tone: "info" });
 }
 
-/** Settle a kill if it was the live bounty target; returns false for unrelated deaths. */
 export function onBountyKilled(ctx: GameContext, instanceId: string): boolean {
   const state = bountyState(ctx);
   if (state.targetId === null || instanceId !== state.targetId) return false;

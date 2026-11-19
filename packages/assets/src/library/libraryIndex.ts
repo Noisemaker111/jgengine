@@ -14,12 +14,7 @@ function titleOf(stem: string): string {
     .join(" ");
 }
 
-/**
- * Library records for the KayKit and Quaternius packs the pack index already measured (`assets
- * reindex`), so their sizes, triangle counts and rigs come from the real files.
- *
- * @internal
- */
+/** @internal */
 export function packLibraryRecordFiles(): LibraryRecordFile[] {
   const bySource = new Map<LibrarySourceId, LibraryRecord[]>();
   for (const [packId, entries] of Object.entries(generatedBySource)) {
@@ -57,13 +52,7 @@ function round(value: number): number {
 
 let cached: readonly LibraryEntry[] | undefined;
 
-/**
- * Every entry in the shared asset library: the committed ingest files plus the measured packs. Built
- * once on first call. Import this module lazily from a browser (`await import(...)`): the index is a
- * few megabytes of metadata.
- *
- * @capability asset-library thousands of licensed models, characters, materials, HDRIs and icons with credit data
- */
+/** @capability asset-library thousands of licensed models, characters, materials, HDRIs and icons with credit data */
 export function assetLibrary(): readonly LibraryEntry[] {
   cached ??= expandLibraryFiles([...libraryRecordFiles.map(readLibraryRecordFile), ...packLibraryRecordFiles()]);
   return cached;

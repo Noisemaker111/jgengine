@@ -1,8 +1,3 @@
-/**
- * The playground's 3D viewer: the dials regenerate a resolved city (or a
- * closed circuit) and this module rebuilds the merged city model around an
- * orbit camera. First build grows in; slider drags rebuild instantly.
- */
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
@@ -41,7 +36,6 @@ export interface PlaygroundWorldHandle {
       route?: CircuitRoute;
       /** Elevation dial, 0..1 — scales the shared terrain field amplitude. */
       elevation?: number;
-      /** World half-size the field wavelength scales from. */
       extent?: number;
       /** Deterministic camera override: orbit target XZ, distance, and pitch (degrees). When set it
        *  wins over the automatic framing on every rebuild — the close-up inspection seam. */
@@ -55,7 +49,6 @@ export interface PlaygroundWorldHandle {
       laneMarkingGap?: number;
       /** Show building lots. Default true; false for unobstructed junction close-ups. */
       buildings?: boolean;
-      /** Placeholder cuboid traffic. Default false (not acceptable as visual evidence). */
       traffic?: boolean;
     },
   ): Promise<void>;
@@ -116,7 +109,6 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
       const mode = options.mode ?? "city";
       const circuit = mode === "circuit";
       // Shared terrain field: prefer the network's own `elevationAt` (once the core contract lands),
-      // else synthesize a smooth field from the elevation dial so the world still rolls. Circuits get
       // taller, tighter crests for a rolling lap; the city gets broad, gentle hills.
       const elevation = options.elevation ?? 0;
       const extent = options.extent ?? 260;

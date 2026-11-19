@@ -14,19 +14,14 @@ import { seededRng, type SeededRng } from "@jgengine/core/random/rng";
 import type { Vec3 } from "@jgengine/core/world/geometry";
 import { createDiscreteElements, type DemBondSpec, type DemMaterial, type DemWallShape, type DiscreteElements } from "./discreteElements";
 
-/** Measured properties of an intact rock. Representative laboratory values; each rock varies by quarry and test. */
 export interface RockProperties {
   id: string;
   /** Bulk density, kg/m³. */
   density: number;
-  /** Static Young's modulus, Pa. */
   youngsModulus: number;
   poissonRatio: number;
-  /** Brazilian (indirect) tensile strength, Pa. */
   tensileStrength: number;
-  /** Uniaxial compressive strength, Pa. */
   compressiveStrength: number;
-  /** Mode I fracture toughness K_IC, Pa √m. */
   fractureToughness: number;
 }
 
@@ -58,55 +53,35 @@ export const INDIANA_LIMESTONE: RockProperties = { id: "indiana-limestone", dens
  */
 export const BASALT: RockProperties = { id: "basalt", density: 2900, youngsModulus: 70e9, poissonRatio: 0.25, tensileStrength: 14e6, compressiveStrength: 250e6, fractureToughness: 2.0e6 };
 
-/**
- * The four rocks with measured properties.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export const ROCKS: readonly RockProperties[] = [WESTERLY_GRANITE, BEREA_SANDSTONE, INDIANA_LIMESTONE, BASALT];
 
-/** Micro-parameters of a bonded-particle rock. */
 export interface BondedRockModel {
   rock: RockProperties;
-  /** Bond Young's modulus Ē, Pa; grain contacts use the same modulus (E_c = Ē). */
   bondModulus: number;
-  /** Mean bond tensile strength σ̄_c, Pa; shear strength τ̄_c is `shearRatio` times it. */
   bondStrength: number;
-  /** Coefficient of variation of bond strength. Default 0.25 (Potyondy & Cundall 2004 used 0.23). */
   strengthSpread?: number;
-  /** τ̄_c / σ̄_c. Default 1. */
   shearRatio?: number;
-  /** k̄_n / k̄_s. Default 2.5. */
   stiffnessRatio?: number;
-  /** Grain friction. Default 0.5. */
   friction?: number;
-  /** Bond damping ratio. Default 0.05. */
   damping?: number;
 }
 
-/** A packed specimen: grain centres and radii, and the pairs to bond. */
 export interface GrainPacking {
   centres: [number, number, number][];
   radii: number[];
   bonds: [number, number][];
   /** Grain density that gives the specimen the rock's bulk density, kg/m³. */
   grainDensity: number;
-  /** Specimen volume, m³. */
   volume: number;
 }
 
-/** Shape of a specimen centred at the origin. */
 export type SpecimenShape =
   | { kind: "sphere"; diameter: number }
   /** A disc or cylinder, axis along `axis`. */
   | { kind: "cylinder"; diameter: number; length: number; axis: "y" | "z" };
 
-/**
- * Pack a specimen: a face-centred cubic lattice of `grainsAcross` grains per diameter, each point jittered by up to `jitter`
- * of the spacing, radii grown until grains touch their nearest neighbour (sizes vary about 1.6 to 1), and bonds between
- * every pair closer than 1.2 spacings. `flattenY` grinds the top and bottom flat, as a lab specimen's loaded faces are:
- * grains near them move until they touch the plane, shrinking where that would overlap a neighbour.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function packSpecimen(shape: SpecimenShape, options: { grainsAcross: number; density: number; seed: string; jitter?: number; flattenY?: boolean }): GrainPacking {
   const { grainsAcross, density } = options;
   const jitter = options.jitter ?? 0.1;
@@ -234,10 +209,8 @@ function gaussian(rng: SeededRng): number {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng());
 }
 
-/** Steel platens and anvils: E 200 GPa. */
 const STEEL: DemMaterial = { id: "steel", density: 7800, youngsModulus: 200e9, poissonRatio: 0.3, restitution: 0.5, friction: 0.3, rollingFriction: 0 };
 
-/** A bonded specimen ready to load. */
 export interface BondedSpecimen {
   dem: DiscreteElements;
   packing: GrainPacking;
@@ -245,11 +218,7 @@ export interface BondedSpecimen {
   mass: number;
 }
 
-/**
- * Build a bonded specimen in a DEM system with steel walls, material 1. Bond strengths are drawn per bond from a normal
- * distribution (truncated at a fifth of the mean); `strength` Infinity makes unbreakable bonds.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function bondedSpecimen(model: BondedRockModel, packing: GrainPacking, options: { walls?: readonly DemWallShape[]; offset?: Vec3; velocity?: Vec3; seed?: string; gravity?: Vec3; domain?: number } = {}): BondedSpecimen {
   const rock = model.rock;
   const grain: DemMaterial = { id: rock.id, density: packing.grainDensity, youngsModulus: model.bondModulus, poissonRatio: rock.poissonRatio, restitution: 0.5, friction: model.friction ?? 0.5, rollingFriction: 0 };
@@ -332,30 +301,20 @@ function waveSpeed(rock: RockProperties): number {
   return Math.sqrt(rock.youngsModulus / rock.density);
 }
 
-/** Options shared by the specimen tests. */
 export interface SpecimenTestOptions {
-  /** Grains across the specimen diameter. */
   grainsAcross?: number;
-  /** Specimen diameter, m. Default 0.05. */
   diameter?: number;
   seed?: string;
 }
 
-/** Result of {@link uniaxialModulus}. */
 export interface ModulusResult {
-  /** Young's modulus from the axial stress–strain slope, Pa. */
   modulus: number;
   grains: number;
-  /** Gauge strain and axial stress, Pa, at the end of loading. */
   finalStrain: number;
   finalStress: number;
 }
 
-/**
- * Young's modulus of a bonded cylinder (height twice its diameter) squeezed slowly between steel platens with unbreakable
- * bonds: the secant slope of axial stress against platen strain between 40% and 100% of 10⁻⁴ strain.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function uniaxialModulus(model: BondedRockModel, options: SpecimenTestOptions = {}): ModulusResult {
   const diameter = options.diameter ?? 0.05;
   const across = options.grainsAcross ?? 10;
@@ -430,13 +389,9 @@ export function uniaxialModulus(model: BondedRockModel, options: SpecimenTestOpt
   return { modulus: sxx > 0 ? sxy / sxx : 0, grains: packing.centres.length, finalStrain: strains[strains.length - 1] ?? 0, finalStress: final };
 }
 
-/** Result of {@link brazilianTest}. */
 export interface BrazilianResult {
-  /** Peak platen load, N. */
   peakLoad: number;
-  /** Indirect tensile strength 2P/(π D t), Pa. */
   tensileStrength: number;
-  /** Bonds broken by the end. */
   broken: number;
   grains: number;
 }
@@ -485,10 +440,8 @@ export function brazilianTest(model: BondedRockModel, options: SpecimenTestOptio
   return { peakLoad: peak, tensileStrength: (2 * peak) / (Math.PI * diameter * thickness), broken, grains: packing.centres.length };
 }
 
-/** Result of {@link calibrateBondedRock}. */
 export interface CalibrationResult {
   model: BondedRockModel;
-  /** Modulus and strength the calibrated model measures, Pa. */
   modulus: number;
   tensileStrength: number;
 }
@@ -510,31 +463,22 @@ export function calibrateBondedRock(rock: RockProperties, options: SpecimenTestO
   return { model, modulus, tensileStrength };
 }
 
-/** Options of {@link impactBreakage}. */
 export interface ImpactOptions extends SpecimenTestOptions {
-  /** Specific impact energy, kWh/t: the specimen hits the anvil at √(2 E). */
   energy: number;
 }
 
-/** Result of {@link impactBreakage}. */
 export interface ImpactResult {
   energy: number;
   speed: number;
   fragments: FragmentSizes & { grains: number[] };
-  /** Largest fragment over specimen mass. */
   largest: number;
-  /** Fragment count of more than one grain. */
   pieces: number;
   broken: number;
   bonds: number;
   grains: number;
 }
 
-/**
- * Single-impact breakage: a bonded sphere fired at a steel anvil at the speed that carries `energy` kWh/t, run until no
- * bond has broken for 20 P-wave transits and the specimen is rebounding.
- * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
- */
+/** @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws */
 export function impactBreakage(model: BondedRockModel, options: ImpactOptions): ImpactResult {
   const diameter = options.diameter ?? 0.05;
   const across = options.grainsAcross ?? 14;

@@ -77,7 +77,6 @@ import { installPlayFocusReclaim } from "@jgengine/core/input/surfaceFocus.view"
 
 const DEV_USER_ID = "dev-player";
 
-/** The query param that mirrors the devtools overlay into the URL — present = open. */
 const DEBUG_PARAM = "debug";
 /** The query param that pins the canvas cover, so a perf run can measure a covered frame. */
 const COVER_PARAM = "cover";
@@ -109,11 +108,7 @@ export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
 export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
 export { hasEnvironmentTerrain } from "@jgengine/core/terrain/terrain";
 
-/**
- * The shell body `GameHost` renders after resolving multiplayer. Hosts that resolve their own
- * sessions (the dev runner) render it directly; games mount through `GameHost`.
- * @internal
- */
+/** @internal */
 export function GamePlayerShell({
   playable,
   multiplayer: rawMultiplayer = null,
@@ -123,7 +118,6 @@ export function GamePlayerShell({
   playable: PlayableGame;
   multiplayer?: ShellMultiplayer | null;
   poster?: boolean;
-  /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots, tests, analytics. */
   onContextReady?: ((ctx: GameContext) => void) | undefined;
 }) {
   const multiplayer = useMemo(

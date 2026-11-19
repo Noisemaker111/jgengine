@@ -5,29 +5,22 @@
  * model that the engine's normal model pipeline loads, measures and animates like any imported GLB.
  */
 
-/** One triangle mesh part in its node's local space, drawn with one material. */
 export interface GlbPrimitive {
   positions: ArrayLike<number>;
   normals: ArrayLike<number>;
   indices: ArrayLike<number>;
   material: number;
-  /** Texture coordinates, two per vertex. */
   uvs?: ArrayLike<number>;
-  /** Linear RGBA vertex colours, four per vertex. */
   colors?: ArrayLike<number>;
-  /** Four joint slots per vertex (indices into the node's skin joints) and their weights. */
   skin?: { joints: ArrayLike<number>; weights: ArrayLike<number> };
 }
 
-/** A node of the model tree: its parent, rest transform and optional mesh parts. */
 export interface GlbNode {
   name: string;
-  /** Index of the parent node; -1 for a root. Parents come before children. */
   parent: number;
   translation: readonly [number, number, number];
   rotation?: readonly [number, number, number, number];
   primitives: GlbPrimitive[];
-  /** Index into {@link GlbModel.skins} that deforms this node's mesh. */
   skin?: number;
 }
 
@@ -39,11 +32,9 @@ export interface GlbMaterial {
   metalness?: number;
   emissive?: string;
   doubleSided?: boolean;
-  /** Index into {@link GlbModel.images} used as the base colour texture. */
   image?: number;
 }
 
-/** A skeleton: its joint nodes and each joint's inverse bind matrix (column-major, 16 numbers). */
 export interface GlbSkin {
   joints: number[];
   inverseBindMatrices: (readonly number[])[];
@@ -63,13 +54,11 @@ export interface GlbTrack {
   values: (readonly number[])[];
 }
 
-/** A named animation clip. */
 export interface GlbClip {
   name: string;
   tracks: GlbTrack[];
 }
 
-/** Everything a generated model holds. */
 export interface GlbModel {
   nodes: GlbNode[];
   materials: GlbMaterial[];

@@ -6,7 +6,6 @@ import type { GraphicsQuality } from "./settingsModel";
  */
 export type SurfaceDetailLevel = "off" | "lite" | "full";
 
-/** One switch per post stage a tier or the player can turn off. */
 export interface GraphicsPostStages {
   ao: boolean;
   bloom: boolean;
@@ -14,21 +13,16 @@ export interface GraphicsPostStages {
   smaa: boolean;
   /** Screen-space reflections. */
   ssr: boolean;
-  /** Volumetric fog: height haze, sun shafts and lamp glow. */
   fog: boolean;
-  /** Camera and per-object motion blur. */
   motionBlur: boolean;
 }
 
-/** Serializable renderer budget selected by the player's graphics tier. */
 export interface GraphicsProfile {
   renderScale: number;
   shadowMapSize: 512 | 1024 | 2048 | 4096;
   cascades: 1 | 2 | 3 | 4;
   drawDistance: number;
-  /** Largest pool one particle effect may allocate. */
   particleCap: number;
-  /** Live particles the whole scene may hold across every effect; the VFX library drops lowest-priority effects past it. */
   particleBudget: number;
   /** Anisotropic texture filtering samples; clamped to the GPU maximum. 1 is plain trilinear. */
   anisotropy: 1 | 2 | 4 | 8 | 16;
@@ -42,11 +36,9 @@ export interface GraphicsProfile {
   softShadows: boolean;
   /** Widest penumbra a soft shadow may filter, in shadow-map texels. */
   softShadowMaxRadius: number;
-  /** Default painted-surface shader on loaded models. */
   surfaceDetail: SurfaceDetailLevel;
 }
 
-/** Conservative defaults that preserve the existing high-quality shell behavior. */
 export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile> = {
   low: {
     renderScale: 1,
@@ -102,7 +94,6 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
   },
 };
 
-/** Resolve one tier and apply game-authored field and post-stage overrides. */
 export function resolveGraphicsProfile(
   quality: GraphicsQuality,
   overrides?: Partial<GraphicsProfile>,

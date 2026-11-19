@@ -34,7 +34,6 @@ export function accessOf(ctx: GameContext, id: string): Access | null {
   return parkNetwork(ctx).access.get(id) ?? null;
 }
 
-/** Write each ride and shop's `closed` fact from the network and whether the player shut it. */
 export function relinkPark(ctx: GameContext): void {
   const w = park.of(ctx);
   const net = parkNetwork(ctx);
@@ -60,7 +59,6 @@ export function connectPark(ctx: GameContext, options: { free?: boolean; only?: 
   return laid;
 }
 
-/** What it would cost to connect one ride or shop, read off a dry run on a copy of the world. */
 export function connectCost(ctx: GameContext, id: string): number {
   const w = park.of(ctx);
   let cost = 0;

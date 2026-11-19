@@ -1,13 +1,7 @@
 // @skill jgengine-world
 
-/** What an {@link AeroTable} is looked up by. Angles and control-surface deflections are rad. */
 export type AeroInput = "alpha" | "beta" | "absBeta" | "mach" | "pitch" | "roll" | "yaw";
 
-/**
- * What a coefficient term multiplies: `pHat`, `qHat` and `rHat` are the body rates made dimensionless
- * (`p·b/2V`, `q·c̄/2V`, `r·b/2V`), `alphaDotHat` is `α̇·c̄/2V`, `pitch`, `roll` and `yaw` are the surface deflections,
- * rad, and `signBeta` is the sign of the sideslip (for data tabled against `|β|`).
- */
 export type AeroFactor = "one" | "alpha" | "beta" | "signBeta" | "mach" | "pHat" | "qHat" | "rHat" | "alphaDotHat" | "pitch" | "roll" | "yaw";
 
 /**
@@ -21,13 +15,11 @@ export interface AeroTable {
   extrapolate?: "clamp" | "linear";
 }
 
-/** One term of a coefficient build-up: a constant or a table, times a factor (default `"one"`). */
 export interface AeroTerm {
   value: number | AeroTable;
   times?: AeroFactor;
 }
 
-/** The air data and controls the coefficient terms read. */
 export interface AeroState {
   alpha: number;
   beta: number;
@@ -51,10 +43,7 @@ function factorValue(state: AeroState, factor: AeroFactor | undefined): number {
   return state[factor];
 }
 
-/**
- * Samples an {@link AeroTable} at the current air data, multilinear across its inputs; allocates nothing.
- * @capability aircraft-aero-table sample a gridded aerodynamic coefficient table by angle of attack, sideslip, Mach or deflection
- */
+/** @capability aircraft-aero-table sample a gridded aerodynamic coefficient table by angle of attack, sideslip, Mach or deflection */
 export function sampleAeroTable(table: AeroTable, state: AeroState): number {
   const dims = table.inputs.length;
   let total = 0;
@@ -85,10 +74,7 @@ export function sampleAeroTable(table: AeroTable, state: AeroState): number {
   return total;
 }
 
-/**
- * Sums a coefficient build-up: each term's constant or table value times its factor.
- * @capability aircraft-aero-table sum a coefficient build-up of constants and tables times rates, angles and deflections
- */
+/** @capability aircraft-aero-table sum a coefficient build-up of constants and tables times rates, angles and deflections */
 export function sumAeroTerms(terms: readonly AeroTerm[] | undefined, state: AeroState): number {
   if (terms === undefined) return 0;
   let total = 0;
@@ -96,16 +82,12 @@ export function sumAeroTerms(terms: readonly AeroTerm[] | undefined, state: Aero
   return total;
 }
 
-/**
- * One term's contribution: its constant or table value times its factor.
- * @capability aircraft-aero-table evaluate one coefficient term
- */
+/** @capability aircraft-aero-table evaluate one coefficient term */
 export function aeroTermValue(term: AeroTerm, state: AeroState): number {
   const value = typeof term.value === "number" ? term.value : sampleAeroTable(term.value, state);
   return value * factorValue(state, term.times);
 }
 
-/** Where full pilot input puts a control surface, rad, at full positive (nose up, right roll, nose right) and full negative input. */
 export interface AeroSurfaceTravel {
   positive: number;
   negative: number;

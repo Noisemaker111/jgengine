@@ -24,7 +24,6 @@ import { sessionStore } from "./game/session";
 import { HARBOR_DECALS } from "./game/combat/impactLook";
 import { courierPrompts, courierStore, THIEF } from "./game/jobs/courier";
 
-/** The HUD's wanted mirror, read without creating the pursuit slice. */
 function wantedSnapshotOf(ctx: GameContext): { heat: number; stars: number } | null {
   const value = wantedStore.peek(ctx) as { heat?: unknown; stars?: unknown } | null | undefined;
   if (value == null || typeof value.heat !== "number" || typeof value.stars !== "number") return null;
@@ -292,7 +291,4 @@ export const game = defineGame({
   // and round through a bright noon (the `noon` capture state jumps there).
   time: { dayLength: 720, start: 500 },
 });
-
-
-
 

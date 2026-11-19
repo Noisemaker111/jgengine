@@ -24,11 +24,8 @@ const MODEL_PACKS = [
 const MATERIAL_SOURCES = {
   /** Ferralon's cracked desert floor — real grain so the flats stop reading as flat vertex colour. */
   ground: "ambientcg-ground031",
-  /** Rust-banded cliff rock for mesas, spires and boulders. */
   cliff: "ambientcg-rock035",
-  /** Warm scratched plate for scavenger chassis and improvised structures. */
   scrapMetal: "ambientcg-metal007",
-  /** Riveted panel for manufactured loader armour and industrial props. */
   panel: "ambientcg-metalplates001",
 } as const;
 
@@ -51,10 +48,8 @@ function maps(sourceId: string) {
   return material.maps;
 }
 
-/** The shared material catalog includes only maps supplied by each source. */
 export const GROUND_MAPS = maps(MATERIAL_SOURCES.ground);
 
-/** Models accept surface maps; terrain displacement remains a terrain-only input. */
 function modelMaps(sourceId: string) {
   const source = maps(sourceId);
   return Object.fromEntries(Object.entries(source).filter(([role]) =>
@@ -103,7 +98,6 @@ export const CHASSIS: Record<string, ChassisStyle> = {
   foundry_heart: { plate: MACHINE.joint, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
 };
 
-/** An enemy's finish: its own entry, else its base's (a local breed), with a breed's plate over it. */
 export function chassisOf(
   def: { id: string; look?: string; plate?: string },
   fallback: "husk" | "loader",

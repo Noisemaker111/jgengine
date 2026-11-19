@@ -22,9 +22,7 @@ const DEPLOY_SITE_USAGE = {
 
 export interface StepResult {
   status: number;
-  /** The last output lines, kept for the failure reason. */
   tail: string;
-  /** The standard output, for the one step whose answer is needed (a commit id). */
   stdout: string;
 }
 
@@ -42,7 +40,6 @@ export interface DeployResult {
  */
 export type SiteMode = "deploy" | "check";
 
-/** The commands a site deploy (or check) runs inside its worktree, in order. */
 export function deploySteps(mode: SiteMode = "deploy"): string[][] {
   return [
     ["bun", "scripts/ensure-ready.ts", "--install-only"],
@@ -126,10 +123,6 @@ function removeSiteWorktree(mainRoot: string, worktree: string, run: RunStep): b
   return !lexists(worktree);
 }
 
-/**
- * Publish, then deploy: the site goes out only after npm has the release, and a failed deploy fails
- * the release with its reason.
- */
 export async function publishThenDeploy(
   publish: () => Promise<{ code: number; line: string }>,
   deploy: () => DeployResult,
@@ -146,7 +139,6 @@ export async function publishThenDeploy(
   return deployed.ok ? 0 : 1;
 }
 
-/** Spawn a step with its output streamed and the tail kept for the failure line. */
 export const runStep: RunStep = (command, cwd) => {
   const [exe, ...args] = command;
   const result = spawnSync(exe!, args, { cwd, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, shell: process.platform === "win32" });

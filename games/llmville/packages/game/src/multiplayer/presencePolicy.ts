@@ -21,12 +21,10 @@ export function shouldPersistPresenceWorldSnapshot(
   return shouldPersistWorldSnapshot(lastSavedAtMs, nowMs, WORLD_SNAPSHOT_INTERVAL_MS);
 }
 
-/** Display-name preference: username, then display name, both trimmed; null if neither is set. */
 export function preferredPresenceLabel(
   profile: { username?: string; displayName?: string } | null | undefined,
 ): string | null {
   return profile?.username?.trim() || profile?.displayName?.trim() || null;
 }
 
-/** The shared world's one chat channel; migrated history and bot posts live here too. */
 export const WORLD_CHAT_CHANNEL = "global";

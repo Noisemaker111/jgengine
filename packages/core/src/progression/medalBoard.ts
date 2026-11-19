@@ -1,9 +1,7 @@
 import { crossThresholds, tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 
-/** Whether a smaller result (a lap time) or a larger one (a score) is the better run. */
 export type MedalDirection = "lower" | "higher";
 
-/** One medal grade. Listed lowest first; `points` is what holding it counts toward tiers. */
 export interface MedalDef {
   id: string;
   label?: string;
@@ -17,84 +15,61 @@ export interface MedalDef {
 export interface MedalEventDef {
   id: string;
   label?: string;
-  /** The tier this event sits in; it opens with that tier. Omitted means always open. */
   tier?: string;
   direction: MedalDirection;
   targets: Readonly<Record<string, number>>;
 }
 
-/** A group of events that opens once the board holds `requires` medal points. */
 export interface MedalTierDef {
   id: string;
   label?: string;
   requires: number;
 }
 
-/** Everything a medal board stores, as plain JSON: each event's best result. */
 export interface MedalBoardState {
   best: Record<string, number>;
 }
 
-/** Configuration for {@link createMedalBoard}. */
 export interface MedalBoardConfig {
-  /** Medal grades, lowest first (`bronze`, `silver`, `gold`). */
   medals: readonly MedalDef[];
   events: readonly MedalEventDef[];
   tiers?: readonly MedalTierDef[];
-  /** Rehydrate from a prior {@link MedalBoard.snapshot}. */
   state?: MedalBoardState;
 }
 
-/** What one submitted result did to the board. */
 export interface MedalSubmission {
   eventId: string;
   value: number;
-  /** The medal this result earns on its own, or `null`. */
   medal: string | null;
-  /** The event's medal before this result. */
   previous: string | null;
-  /** True when the result beat the event's stored best. */
   newBest: boolean;
-  /** Medals held on this event now and not before, lowest first - the first-time rewards to pay. */
   newlyEarned: readonly string[];
-  /** Tiers this result opened. */
   openedTiers: readonly string[];
 }
 
-/** The next medal an event offers and the result it needs, for a "beat 41.0 s for gold" line. */
 export interface MedalTarget {
   medal: string;
   value: number;
 }
 
-/** A tier and how far the board is from it. */
 export interface MedalTierStatus {
   tier: MedalTierDef;
   open: boolean;
-  /** Points still needed; `0` once open. */
   missing: number;
 }
 
-/** Per-event medals over a stored best, with tiers that open on the points those medals add up to. */
 export interface MedalBoard {
   medals(): readonly MedalDef[];
   events(): readonly MedalEventDef[];
   event(eventId: string): MedalEventDef | null;
-  /** The event's stored best, or `null` before any result. */
   best(eventId: string): number | null;
-  /** The best medal held on the event, or `null`. */
   medalOf(eventId: string): string | null;
-  /** The medal a result would earn on the event, without recording it. */
   grade(eventId: string, value: number): string | null;
-  /** The next medal the event offers above the one held, or `null` when the top medal is held. */
   next(eventId: string): MedalTarget | null;
-  /** Medal points held across the board. */
   points(): number;
-  /** How many events hold each medal grade or better. */
   count(medalId: string): number;
   tiers(): readonly MedalTierStatus[];
   isOpen(eventId: string): boolean;
-  /** Record a result; a closed event or a non-finite value records nothing and throws. */
   submit(eventId: string, value: number): MedalSubmission;
   snapshot(): MedalBoardState;
   restore(next: MedalBoardState): void;
@@ -107,7 +82,6 @@ function check(condition: boolean, message: string): void {
 const better = (direction: MedalDirection, a: number, b: number): boolean => (direction === "lower" ? a < b : a > b);
 const meets = (direction: MedalDirection, value: number, target: number): boolean => (direction === "lower" ? value <= target : value >= target);
 
-/** Check an authored board; throws `RangeError` naming the medal, event or tier at fault. */
 export function assertMedalBoard(config: MedalBoardConfig): void {
   check(config.medals.length > 0, "A medal board needs at least one medal");
   const medalIds = new Set<string>();

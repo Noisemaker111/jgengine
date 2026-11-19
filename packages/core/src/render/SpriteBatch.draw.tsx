@@ -5,11 +5,8 @@ import * as THREE from "three";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** One sprite in a batch: world position, size and atlas frame. */
 export interface SpriteBatchInstance {
-  /** World X position. */
   x: number;
-  /** World Y position. */
   y: number;
   /** World Z position. Defaults to 0. */
   z?: number;
@@ -21,9 +18,7 @@ export interface SpriteBatchInstance {
   rotation?: number;
 }
 
-/** Props for SpriteBatch: atlas URL and grid, and the sprites to draw. */
 export interface SpriteBatchProps {
-  /** Sprite sheet / atlas texture URL. */
   url: string;
   /** Atlas column count. Defaults to 1. */
   columns?: number;
@@ -31,7 +26,6 @@ export interface SpriteBatchProps {
   rows?: number;
   /** Max instances the InstancedMesh is allocated for. Defaults to 1024. */
   capacity?: number;
-  /** Per-frame instance source, called once inside the frame task. */
   instances: () => readonly SpriteBatchInstance[];
   /** Facing plane when not billboarding: "xy" faces +Z (side-scroll/ortho), "xz" lies flat facing +Y. Defaults to "xy". */
   plane?: "xy" | "xz";
@@ -210,11 +204,7 @@ uniform vec2 spriteUvScale;`,
   };
 }
 
-/**
- * Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole
- * batch. Thin UI bridge over {@link spriteBatchDraw}.
- * @capability sprite-batch Draw many atlas sprites in one instanced draw
- */
+/** @capability sprite-batch Draw many atlas sprites in one instanced draw */
 export function SpriteBatch(props: SpriteBatchProps) {
   const latest = useRef<SpriteBatchProps>(props);
   latest.current = props;

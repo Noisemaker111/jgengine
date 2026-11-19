@@ -2,7 +2,6 @@
 import type { WindVector } from "@jgengine/core/world/wind";
 import { lerp } from "../math/scalar";
 
-/** A weather kind's name, as a game's {@link WeatherModifierTable} keys it (`"rain"`, `"storm"`, ...). */
 export type WeatherKind = string;
 
 /** The weather now: its kind, intensity 0..1 and optional wind. */
@@ -12,7 +11,6 @@ export interface WeatherState {
   wind?: WindVector;
 }
 
-/** How one weather kind changes play at full intensity: grip, visibility, structure damage, chill, fire ignition and spread. */
 export interface WeatherModifier {
   grip?: number;
   visibility?: number;
@@ -22,13 +20,10 @@ export interface WeatherModifier {
   spread?: number;
 }
 
-/** A game's weather kinds, each with its {@link WeatherModifier}. */
 export type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier>;
 
-/** The kind names a {@link WeatherModifierTable} defines. */
 export type WeatherKindOf<TTable extends WeatherModifierTable> = Extract<keyof TTable, string>;
 
-/** Every {@link WeatherModifier} field for the current weather, scaled by its intensity. */
 export interface ResolvedWeather {
   grip: number;
   visibility: number;
@@ -38,7 +33,6 @@ export interface ResolvedWeather {
   spread: number;
 }
 
-/** Resolve the current weather against a game's modifier table; throws on a kind the table does not define. */
 export function resolveWeather<TTable extends WeatherModifierTable>(
   state: WeatherState,
   table: TTable,

@@ -3,7 +3,6 @@ import { createKeyValueStore, type KeyValueStorage } from "@jgengine/core/game/k
 /** Where this device keeps its per-world camera look and open-menu state. The world save itself is on Convex. */
 export const LOCAL_GAME_STATE_KEY = "llmville:local-game-state";
 
-/** Key prefix of the per-key layout this state used before it moved into one document. */
 export const LEGACY_LOCAL_KEY_PREFIX = "ai-game:";
 
 const LEGACY_CAMERA_LOOK = /^ai-game:camera-look:(.+):slot-(\d+)$/;
@@ -33,7 +32,6 @@ export interface StorageKeyList {
 export interface LocalGameState {
   readCameraLook(slot: number, gameId: string): CameraLook | null;
   writeCameraLook(slot: number, gameId: string, look: CameraLook): void;
-  /** The stored menu state for a world, unparsed: the tablet owns its shape. */
   readMenu(gameId: string): unknown;
   writeMenu(gameId: string, menu: unknown): void;
   snapshot(): LocalGameStateDocument;
@@ -53,7 +51,6 @@ function parseCameraLook(value: unknown): CameraLook | null {
   return { yaw: value.yaw, pitch: value.pitch };
 }
 
-/** Camera angles and menu state are this device's preferences, not progress: an unreadable document starts empty like a misshapen one. */
 function parseDocument(raw: string): LocalGameStateDocument {
   const parsed = parseJson(raw);
   if (typeof parsed !== "object" || parsed === null || !("version" in parsed) || parsed.version !== 1) return EMPTY_DOCUMENT;
@@ -82,10 +79,6 @@ function parseJson(raw: string | null): unknown {
   }
 }
 
-/**
- * Reads the old per-key layout (`ai-game:camera-look:<game>:slot-<n>`, `ai-game:game-ui-session:<game>`)
- * into one document and lists every `ai-game:` key to remove, including the account keys nothing reads.
- */
 export function readLegacyLocalGameState(
   storage: KeyValueStorage,
   keys: StorageKeyList,
@@ -121,10 +114,6 @@ export function readLegacyLocalGameState(
   return { document: { version: 1, worlds }, legacyKeys };
 }
 
-/**
- * This device's per-world camera look and menu state, as one document in an engine key-value
- * store on the injected storage. Passing `keys` moves the legacy per-key layout in once.
- */
 export function createLocalGameState(storage: KeyValueStorage | null, keys?: StorageKeyList): LocalGameState {
   const store = createKeyValueStore<LocalGameStateDocument>({
     key: LOCAL_GAME_STATE_KEY,
@@ -178,7 +167,6 @@ function browserStorage(): Storage | null {
   }
 }
 
-/** The browser-wired instance the game uses. */
 export function localGameState(): LocalGameState {
   if (shared === null) {
     const storage = browserStorage();
@@ -187,7 +175,6 @@ export function localGameState(): LocalGameState {
   return shared;
 }
 
-/** Forgets every world's local camera and menu state (a new or deleted world). */
 export function clearAllLocalGamePersistence(): void {
   localGameState().reset();
 }

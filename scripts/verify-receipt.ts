@@ -6,7 +6,6 @@ import { join } from "node:path";
 
 import type { ScheduledStep, StepResult } from "./stepScheduler";
 
-/** A separate receipt and raw failure output for each invocation. */
 export function createVerifyReceipt(root: string, data: Record<string, unknown>, steps: readonly ScheduledStep[], runDir?: string) {
   const dir = runDir ?? join(root, ".scratch", "verify-fast", "runs", `${Date.now()}-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
@@ -42,7 +41,6 @@ export function createVerifyReceipt(root: string, data: Record<string, unknown>,
       entries[result.name] = { ...entries[result.name], status: result.blockedBy !== undefined ? "blocked" : result.ok ? "passed" : "failed", endedAt: new Date().toISOString(), ms: result.ms, ...(result.blockedBy === undefined ? {} : { blockedBy: result.blockedBy }), ...(outputFile === undefined ? {} : { outputFile }) };
       save();
     },
-    /** Add top-level fields: the tree the run proves, or the receipt it reused. */
     note(data: Record<string, unknown>): void {
       Object.assign(receipt, data);
       save();
@@ -61,10 +59,6 @@ export function createVerifyReceipt(root: string, data: Record<string, unknown>,
   };
 }
 
-/**
- * How much a run proves: `--cheap` the type-checks and gates, a plain run those and the tests and
- * boots, `--landing` also the site build, `--full` what CI runs.
- */
 export type VerifyScope = "cheap" | "fast" | "landing" | "full";
 const SCOPE_RANK: Readonly<Record<VerifyScope, number>> = { cheap: 0, fast: 1, landing: 2, full: 3 };
 
@@ -72,14 +66,12 @@ const SCOPE_RANK: Readonly<Record<VerifyScope, number>> = { cheap: 0, fast: 1, l
 export interface ReuseKey {
   /** The working tree's id (`workingTree`): the same id is the same bytes. */
   tree: string;
-  /** The commit the diff is taken from: the same tree against another merge base is another plan. */
   mergeBase: string;
   runtime: string;
   scope: VerifyScope;
   skillApi: boolean;
 }
 
-/** The receipts this many newest runs left are read; an older pass is not looked for. */
 const REUSE_LOOKBACK = 40;
 
 /**

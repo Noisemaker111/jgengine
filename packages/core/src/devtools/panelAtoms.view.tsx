@@ -3,10 +3,7 @@ export function ms(value: number): string {
   return `${value.toFixed(1)}ms`;
 }
 
-/**
- * One name/value line in a devtools panel; `alert` paints the value red.
- * @internal devtools panels only
- */
+/** @internal devtools panels only */
 export function PanelStatRow({ name, value, alert }: { name: string; value: string; alert?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-3">

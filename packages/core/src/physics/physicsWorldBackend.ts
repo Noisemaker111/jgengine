@@ -18,7 +18,6 @@ import {
 } from "./physicsBackend";
 import { PhysicsWorld, type PhysicsBounds, type PhysicsPrecision } from "./physicsWorld";
 
-/** Exact touching is not overlap; account for the same few-ulp face rounding as shapecast. */
 function setVec(out: [number, number, number], x: number, y: number, z: number): void {
   out[0] = x;
   out[1] = y;
@@ -30,14 +29,12 @@ function axisOverlaps(center: number, bodyCenter: number, combinedHalf: number):
   return combinedHalf - Math.abs(bodyCenter - center) > tolerance;
 }
 
-/** Construction options: the `PhysicsWorld` capacity and bounds plus the shared backend config. */
 export interface PhysicsWorldBackendOptions extends PhysicsBackendConfig {
   capacity: number;
   bounds: PhysicsBounds;
   precision?: PhysicsPrecision;
   friction?: number;
   restitution?: number;
-  /** Warn (once) when a body asks for rotation or a shape this backend approximates. Default `true`. */
   warn?: boolean;
 }
 
@@ -74,7 +71,6 @@ interface SavedBody {
   linearDamping?: number;
 }
 
-/** Serializable backend state: every live body and joint, with handles preserved. */
 export interface PhysicsWorldBackendState {
   nextHandle: number;
   nextJoint: number;

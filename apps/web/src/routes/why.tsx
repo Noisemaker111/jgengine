@@ -383,14 +383,10 @@ function chase(dt) {
 type Comparison = {
   id: string;
   title: string;
-  /** What both versions do, then how each side gets there. */
   blurb: string;
   byHand: string;
-  /** The demo above the code; it runs by itself, and its jgengine code comes from the shared demo specs. */
   demo: DemoKey;
-  /** Which by-hand lines light up while the demo does each thing. */
   trace: TraceLines;
-  /** How the sliders rewrite the by-hand code. */
   live?: LiveCodeSpec;
 };
 
@@ -470,7 +466,6 @@ const COMPARISONS: Comparison[] = [
   },
 ];
 
-/** Lines that do something: no blanks, no comment-only lines. */
 function codeLines(code: string): number {
   return code.split("\n").filter((line) => {
     const t = line.trim();
@@ -512,7 +507,6 @@ const CONS = [
   },
 ];
 
-/** One comparison: a demo that runs by itself, then both versions of the code lighting up as it runs. */
 function ComparisonSection({ comparison: c }: { comparison: Comparison }) {
   const trace = useMemo(() => createTrace(), []);
   const [dials, setDials] = useState<DialSet>({});

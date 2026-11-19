@@ -3,7 +3,6 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 import { getEffectiveFrontierForGame } from "./dailyMarket";
 
-/** SOTA benchmark this world faces: baseline at creation, rising with the world's age plus release jumps. */
 export const getFrontierBenchmark = query({
   args: { gameId: v.id("games"), nowMs: v.optional(v.number()) },
   returns: v.number(),

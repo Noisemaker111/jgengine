@@ -1,20 +1,11 @@
-/**
- * Authored behavior triggers on editor volumes and markers — a small `on`/`action` meta vocabulary
- * so "when player enters this volume, spawn wave 2" is scene data, not game code. Games declare
- * actions (typed via ParamSchema); the editor inspector renders their fields; a pure runtime
- * watches membership and dispatches to handlers.
- */
-
 import { volumeHalfSize, type SceneDocumentLike, type SceneMarkerLike, type SceneVolumeLike } from "../world/sceneShapes";
 import { parseParams, type ParamSchema, type ParsedParams } from "../generator/paramSchema";
 
-/** Event edge that can fire an authored trigger. */
 export type TriggerEvent = "enter" | "exit" | "interact";
 
-/** Document collection a trigger source lives on. */
 export type TriggerSourceKind = "marker" | "volume";
 
-/** Reserved meta keys for the trigger vocabulary — action params use every other schema field. @internal */
+/** @internal */
 export const TRIGGER_ON_KEY = "on";
 /** @internal */
 export const TRIGGER_ACTION_KEY = "action";
@@ -25,26 +16,17 @@ export const TRIGGER_LIST_KEY = "triggers";
 
 const TRIGGER_EVENTS: readonly TriggerEvent[] = ["enter", "exit", "interact"];
 
-/** Default proximity radius (m) for marker enter/exit/interact when neither triggerRadius nor radius is set. @internal */
+/** @internal */
 export const DEFAULT_TRIGGER_RADIUS = 2.5;
 
-/**
- * A game-declared action the editor can assign to a volume/marker trigger. Schema drives the
- * inspector params; `targets`/`events` optionally narrow where it appears.
- */
 export interface TriggerActionDefinition {
   id: string;
-  /** Human label for the inspector action dropdown. */
   label: string;
-  /** Param surface for this action — fields land flat on the object's `meta` (alongside `on`/`action`). */
   schema: ParamSchema;
-  /** Which document collections accept this action. Default both. */
   targets?: readonly TriggerSourceKind[];
-  /** Which events this action accepts. Default all (`enter`/`exit`/`interact`). */
   events?: readonly TriggerEvent[];
 }
 
-/** One resolved trigger binding from a document object. */
 export interface AuthoredTrigger {
   sourceId: string;
   sourceKind: TriggerSourceKind;
@@ -52,11 +34,9 @@ export interface AuthoredTrigger {
   on: TriggerEvent;
   action: string;
   params: ParsedParams;
-  /** Proximity radius for marker sources; unused for volumes (shape owns containment). */
   radius: number;
 }
 
-/** Fired when a watched actor trips an authored trigger edge. */
 export interface TriggerDispatchEvent {
   on: TriggerEvent;
   action: string;
@@ -87,26 +67,18 @@ export function getTriggerAction(id: string): TriggerActionDefinition | undefine
   return actionRegistry.get(id);
 }
 
-/** Every registered action, optionally filtered by target collection. */
 export function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] {
   const all = [...actionRegistry.values()];
   if (target === undefined) return all;
   return all.filter((definition) => definition.targets === undefined || definition.targets.includes(target));
 }
 
-/** Clears the action registry — tests only. @internal */
+/** @internal */
 export function clearTriggerActions(): void {
   actionRegistry.clear();
 }
 
-/**
- * The engine's built-in trigger actions — the shared `announce` / `win` / `advance` vocabulary every
- * game gets for free, so "enter this zone → win" is authored entirely in the editor with no bespoke
- * action code. Their params land flat on the object's `meta` like any registered action; drive them
- * at runtime with the handlers from {@link createTriggerOutcome}.
- *
- * @capability authored-triggers built-in announce/win/advance actions authorable on any marker or volume
- */
+/** @capability authored-triggers built-in announce/win/advance actions authorable on any marker or volume */
 export const BUILTIN_TRIGGER_ACTIONS: readonly TriggerActionDefinition[] = [
   {
     id: "announce",
@@ -167,7 +139,7 @@ function metaNumber(meta: Record<string, unknown> | undefined, key: string): num
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
-/** Resolve the proximity radius for a marker trigger from meta. @internal */
+/** @internal */
 export function triggerRadiusOf(meta: Record<string, unknown> | undefined, fallback = DEFAULT_TRIGGER_RADIUS): number {
   const explicit = metaNumber(meta, TRIGGER_RADIUS_KEY) ?? metaNumber(meta, "radius");
   if (explicit === undefined) return fallback;
@@ -211,11 +183,7 @@ function resolveParams(actionId: string, paramsMeta: Record<string, unknown> | u
   return parseParams(definition.schema, paramsMeta);
 }
 
-/**
- * Read every valid `on`/`action` binding off a raw meta bag. Unknown events/actions are dropped;
- * params are schema-parsed when the action is registered, else empty.
- * @internal
- */
+/** @internal */
 export function readTriggerSpecs(meta: Record<string, unknown> | undefined): readonly {
   on: TriggerEvent;
   action: string;
@@ -228,12 +196,7 @@ export function readTriggerSpecs(meta: Record<string, unknown> | undefined): rea
   }));
 }
 
-/**
- * Collect every authored trigger on a document's markers and volumes. Pure — no runtime state.
- * Action params use the live {@link registerTriggerAction} registry when present.
- *
- * @capability authored-triggers schema'd on/action vocabulary on volumes and markers with runtime dispatch
- */
+/** @capability authored-triggers schema'd on/action vocabulary on volumes and markers with runtime dispatch */
 export function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTrigger[] {
   const out: AuthoredTrigger[] = [];
   for (const marker of document.markers) {
@@ -283,7 +246,7 @@ export function pointInVolume(
   return Math.hypot(dx, dy, dz) <= half.x;
 }
 
-/** True when `point` is within `radius` of a marker's position (sphere for enter/exit/interact). @internal */
+/** @internal */
 export function pointNearMarker(
   marker: SceneMarkerLike,
   point: { x: number; y: number; z: number },
@@ -308,24 +271,19 @@ export interface TriggerActor {
 /** @internal */
 export interface AuthoredTriggerStepInput {
   actors: readonly TriggerActor[];
-  /** Actor ids that pressed interact this frame — fires `on: "interact"` sources in range. */
   interact?: readonly string[];
 }
 
-/** Runtime handle that watches authored triggers against moving actors each tick. */
 export interface AuthoredTriggerRuntime {
-  /** Advance membership one tick; returns every edge fired and invokes handlers. */
   step(input: {
     actors: readonly {
       id: string;
       position: readonly [number, number, number] | { x: number; y: number; z: number };
     }[];
-    /** Actor ids that pressed interact this frame — fires `on: "interact"` sources in range. */
     interact?: readonly string[];
   }): readonly TriggerDispatchEvent[];
   /** Drop membership so the next step re-fires enters for still-inside actors. */
   reset(): void;
-  /** Snapshot of the triggers this runtime was built from. */
   triggers(): readonly AuthoredTrigger[];
 }
 
@@ -348,13 +306,7 @@ function insideSource(
   return marker !== undefined && pointNearMarker(marker, point, trigger.radius);
 }
 
-/**
- * Build a runtime that watches a document's authored triggers against moving actors and dispatches
- * to per-action handlers (and optional catch-all). Pure membership math; the game supplies actors
- * each tick from its own player/entity poses.
- *
- * @capability authored-triggers schema'd on/action vocabulary on volumes and markers with runtime dispatch
- */
+/** @capability authored-triggers schema'd on/action vocabulary on volumes and markers with runtime dispatch */
 export function createAuthoredTriggerRuntime(options: {
   document: SceneDocumentLike;
   handlers?: TriggerHandlers;
@@ -478,42 +430,24 @@ export function createAuthoredTriggerRuntime(options: {
   };
 }
 
-/** Serializable read-model the built-in trigger actions write — the HUD/game reads it each frame. */
 export interface TriggerOutcome {
-  /** True once a `win` action fired. */
   won: boolean;
-  /** Latest announce/win/advance message to surface, or null before any fires. */
   message: string | null;
-  /** Tone for the latest message: `"info" | "warn" | "good"`. */
   tone: string;
-  /** Current objective id from the latest `advance`, or null. */
   objective: string | null;
-  /** Bumped on every change — a cheap key for `useSyncExternalStore`. */
   revision: number;
 }
 
-/** Outcome store: the built-in action handlers plus a subscribable snapshot of what they produced. */
 export interface TriggerOutcomeStore {
-  /** Current outcome snapshot (stable reference until the next change). */
   get(): TriggerOutcome;
-  /** Subscribe to outcome changes; returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Handlers for `createAuthoredTriggerRuntime({ handlers })` — wires announce/win/advance. */
   handlers: TriggerHandlers;
-  /** Reset to the initial (un-won) outcome — new run / retry. */
   reset(): void;
 }
 
 const INITIAL_OUTCOME: TriggerOutcome = { won: false, message: null, tone: "info", objective: null, revision: 0 };
 
-/**
- * Default runtime for the built-in {@link BUILTIN_TRIGGER_ACTIONS}: a small serializable outcome the
- * HUD renders, with no engine-side UI. Pass {@link TriggerOutcomeStore.handlers} to
- * {@link createAuthoredTriggerRuntime} and read {@link TriggerOutcomeStore.get} from the HUD via
- * `useSyncExternalStore` — that is the whole zero-code "reach the zone to win" wiring.
- *
- * @capability authored-triggers headless win/announce/objective outcome for the built-in actions
- */
+/** @capability authored-triggers headless win/announce/objective outcome for the built-in actions */
 export function createTriggerOutcome(): TriggerOutcomeStore {
   let outcome: TriggerOutcome = INITIAL_OUTCOME;
   const listeners = new Set<() => void>();
@@ -581,7 +515,7 @@ export function triggerMetaPatch(
   };
 }
 
-/** Read the single flat trigger (`on`/`action`) from meta for the inspector, ignoring non-empty multi-lists. @internal */
+/** @internal */
 export function readFlatTrigger(meta: Record<string, unknown> | undefined): {
   on: TriggerEvent | "";
   action: string;

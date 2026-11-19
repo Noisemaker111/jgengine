@@ -9,7 +9,6 @@ import { useRef } from "@jgengine/core/ui/jsx";
 
 import { RELAY, relayStore, type RelayState } from "../relay";
 
-/** Original salvage antenna: copper coils, ceramic insulators, riveted feet and a split tuning fork. */
 export function salvageRelayDraw(ctx: GameContext, getState: () => RelayState): EngineDraw {
   const group = new THREE.Group();
   const y = ctx.world.groundHeightAt(RELAY.x, RELAY.z);

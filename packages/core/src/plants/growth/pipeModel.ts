@@ -12,11 +12,7 @@ export function hasCambium(species: PlantSpecies): boolean {
   return species.habit !== "palm" && species.habit !== "fern";
 }
 
-/**
- * Whether node `i` can still widen: always with a cambium, and for a palm or fern only while the
- * fronds of its own shoot are alive.
- * @internal
- */
+/** @internal */
 export function canWiden(state: GrowthState, species: PlantSpecies, cambium: boolean, i: number): boolean {
   return cambium || state.vitals.year - (state.nodes.born[i] ?? 0) <= species.growth.spurYears + 1;
 }
@@ -91,11 +87,7 @@ export function pipeDemand(
   return carbon;
 }
 
-/**
- * One node's yearly ring: retire a share of sapwood (and any above the pipe requirement) to heartwood,
- * then add `area` m² of new sapwood.
- * @internal
- */
+/** @internal */
 export function thickenNode(state: GrowthState, species: PlantSpecies, i: number, foliageAbove: number, area: number): void {
   if (!canWiden(state, species, hasCambium(species), i)) return;
   const { sapwoodPerFoliage, sapwoodTurnover } = species.carbon;
@@ -122,19 +114,11 @@ export function applyThickening(state: GrowthState, species: PlantSpecies, folia
   }
 }
 
-/** {@link StructureCost} rebuilt each year from the current foliage. */
 export interface PipeCost extends StructureCost {
-  /** Rebuild from this year's foliage; only `nodes[0..count)` and their ancestors may receive leaf area. */
   prepare(state: GrowthState, foliageAbove: Float64Array, nodes: Int32Array, count: number): void;
 }
 
-/**
- * The pipe-model cost of hanging extra leaf area on the tree, for the growth solve: every node below a
- * new shoot needs sapwood for the leaves above it, less what it already has. A node already short of
- * sapwood costs linearly in the leaf area added above it, so prepare folds those into one wood weight
- * per path node; each trial then walks only the path nodes with sapwood to spare.
- * @internal
- */
+/** @internal */
 export function createPipeCost(species: PlantSpecies, capacity: number): PipeCost {
   return new PipeCostWalk(species, capacity);
 }
@@ -146,9 +130,7 @@ class PipeCostWalk implements PipeCost {
   private readonly added: Float64Array;
   private readonly parent: Int32Array;
   private readonly slot: Int32Array;
-  /** Per path node: the nearest spare-sapwood node at or below it in the tree, as a walk slot. */
   private readonly spare: Int32Array;
-  /** Per path node: sapwood-per-foliage times the wood of every short node from it down to the root. */
   private readonly linearWood: Float64Array;
   private readonly sapwoodPerFoliage: number;
   private readonly sapwoodTurnover: number;

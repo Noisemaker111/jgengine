@@ -7,14 +7,12 @@ import type { SuiteProofResult } from "@jgengine/core/suite/gameSuite";
 import { runGameSuite } from "@jgengine/core/suite/runSuiteProof.draw";
 import { isSuiteProof } from "@jgengine/core/suite/suiteProof";
 
-/** What the suite test sends: the game, and one proof file (absolute path and its report name). */
 export interface SuiteProofJob {
   game: string;
   path: string;
   file: string;
 }
 
-/** What a worker answers: the proof's result, or the error that stopped it loading or running. */
 export type SuiteProofAnswer = { file: string; result: SuiteProofResult } | { file: string; error: string };
 
 declare const self: Worker;

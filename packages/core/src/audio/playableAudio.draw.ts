@@ -4,7 +4,7 @@ import { withUiCueSounds, type UiCueOverrides } from "@jgengine/core/ui/uiCues";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
 
-/** A playable's sound catalog and buses with the default UI and gameplay feedback cues merged in. @internal */
+/** @internal */
 export interface ResolvedPlayableAudio {
   sounds: Record<string, SoundDef>;
   buses: Record<string, AudioBusDef> | undefined;
@@ -12,7 +12,7 @@ export interface ResolvedPlayableAudio {
 
 const cache = new WeakMap<PlayableGame, ResolvedPlayableAudio>();
 
-/** The game's `audio.uiCues` over its UI kit's cue sounds: the kit sets the sound, the game still wins. @internal */
+/** @internal */
 export function kitCueOverrides(playable: PlayableGame): UiCueOverrides | undefined {
   const overrides = playable.audio?.uiCues;
   if (overrides === false || playable.uiKit === undefined) return overrides;

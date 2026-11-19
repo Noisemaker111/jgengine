@@ -1,8 +1,3 @@
-/**
- * The shape of a progression curve before rounding/clamping: a constant, a
- * linear ramp, a `power` or `geometric` growth, discrete `steps`, or a
- * `piecewise` interpolation between explicit points. Feed it to {@link evalCurve}.
- */
 export type CurveDef =
   | { kind: "const"; value: number }
   | { kind: "linear"; base: number; per: number }
@@ -11,14 +6,12 @@ export type CurveDef =
   | { kind: "steps"; values: number[] }
   | { kind: "piecewise"; points: [number, number][] };
 
-/** Post-evaluation adjustments applied to a curve's raw output: rounding mode and min/max clamp. */
 export interface CurveShape {
   round?: "floor" | "ceil" | "round";
   min?: number;
   max?: number;
 }
 
-/** A fully specified progression curve — a {@link CurveDef} growth shape plus optional {@link CurveShape} rounding/clamp. */
 export type Curve = CurveDef & CurveShape;
 
 function rawCurve(def: CurveDef, x: number): number {
@@ -82,12 +75,10 @@ export function evalCurve(spec: Curve, x: number): number {
   }
 }
 
-/** Bind a {@link Curve} into a reusable `(x) => value` evaluator — a partial application of {@link evalCurve}. */
 export function curve(spec: Curve): (x: number) => number {
   return (x) => evalCurve(spec, x);
 }
 
-/** Result of resolving a level+xp pair: the settled `level`, leftover `xp` into the current level, the `xpMax` threshold for the next level, and how many `levelsGained` this resolution produced. */
 export interface LevelProgress {
   level: number;
   xp: number;
@@ -95,12 +86,6 @@ export interface LevelProgress {
   levelsGained: number;
 }
 
-/**
- * Configuration for a {@link leveling} track: the `xpForLevel` {@link Curve}, the
- * `maxLevel` cap, and optional `startLevel`, stat ids (`xpStat`/`levelStat`,
- * default `"xp"`/`"level"`), and `thresholdMode` — `"perLevel"` (each level costs
- * its own curve value) or `"cumulative"` (curve gives the total xp to reach a level).
- */
 export interface LevelingConfig {
   xpForLevel: Curve;
   maxLevel: number;

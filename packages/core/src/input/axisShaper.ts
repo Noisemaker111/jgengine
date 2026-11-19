@@ -1,10 +1,6 @@
 import { clamp } from "../math/scalar";
 import type { AxisBinding, AxisRange } from "./axisInput";
 
-/**
- * How one axis responds to one kind of source. Keys want ramps (a held key should feel like a pedal
- * being pressed, not a switch); sticks want deadzone and curve but no lag.
- */
 export interface AxisShapeProfile {
   /** Inner deadzone `0..1`; the remaining travel is rescaled so output still starts at 0 (default `0`). */
   deadzone?: number;
@@ -12,15 +8,11 @@ export interface AxisShapeProfile {
   saturation?: number;
   /** Response exponent applied after the deadzone: `1` linear, `>1` finer near centre (default `1`). */
   curve?: number;
-  /** Units/s the output may move away from zero (default `Infinity`: no ramp). */
   riseRate?: number;
-  /** Units/s the output may move back toward zero while the input keeps its sign (default `riseRate`). */
   fallRate?: number;
-  /** Units/s the output moves when the input is released or reversed — self-centring (default `fallRate`). */
   returnRate?: number;
 }
 
-/** Shaping for one named axis. */
 export interface AxisShapeConfig {
   /** Profile for keys and buttons (default: pass through). */
   digital?: AxisShapeProfile;
@@ -28,46 +20,31 @@ export interface AxisShapeConfig {
   analog?: AxisShapeProfile;
   /** Output range (default `[-1, 1]`; use `{ min: 0, max: 1 }` for pedals). */
   range?: AxisRange;
-  /**
-   * Multiplier from a caller-supplied signal, applied to the target before ramping — speed-sensitive
-   * steering (`speed => 1 / (1 + speed / 30)`), weapon-sway-by-stamina, and similar. Default `1`.
-   */
   scale?: (signal: number) => number;
 }
 
-/** Config for {@link createAxisShaper}: one entry per axis. */
 export interface AxisShaperConfig<TAxes extends string> {
   axes: Record<TAxes, AxisShapeConfig>;
 }
 
-/** Per-sample options for {@link AxisShaper.shape}. */
 export interface AxisShapeSample<TAxes extends string> {
-  /** Axes whose raw value came from an analog source this frame; unlisted axes use the digital profile. */
   analog?: Partial<Record<TAxes, boolean>> | ReadonlySet<TAxes>;
-  /** Signal passed to each axis's `scale` callback (speed, stamina, zoom). */
   signal?: number;
 }
 
-/** Shaped axis output, one number per axis. */
 export type AxisValues<TAxes extends string> = Record<TAxes, number>;
 
-/** Stateful per-axis response shaping between raw input and a sim. */
 export interface AxisShaper<TAxes extends string> {
-  /** Shape one frame of raw axis values (as returned by `ctx.input.axis`) and return the shaped output. */
   shape(dt: number, raw: Readonly<Record<TAxes, number>>, sample?: AxisShapeSample<TAxes>): AxisValues<TAxes>;
-  /** The last shaped output. */
   value(): Readonly<AxisValues<TAxes>>;
-  /** Replace the shaping config (settings screen, per-vehicle feel) without resetting the current output. */
   retune(next: AxisShaperConfig<TAxes>): void;
   snapshot(): AxisValues<TAxes>;
   restore(state: Readonly<AxisValues<TAxes>>): void;
-  /** Zero every axis. */
   reset(): void;
 }
 
 const FULL_RANGE: AxisRange = { min: -1, max: 1 };
 
-/** Deadzone, saturation and curve applied to one raw value; sign is preserved. */
 export function shapeAxisValue(raw: number, profile: AxisShapeProfile | undefined): number {
   if (profile === undefined) return raw;
   const deadzone = Math.min(0.99, Math.max(0, profile.deadzone ?? 0));
@@ -147,10 +124,6 @@ export function createAxisShaper<TAxes extends string>(initial: AxisShaperConfig
   };
 }
 
-/**
- * Which axes an analog source is driving this frame: an axis counts as analog when any action bound to it
- * has a published analog magnitude (`ctx.input.analog()`). Feed the result to {@link AxisShaper.shape}.
- */
 export function analogAxes<TAxes extends string>(
   bindings: Readonly<Record<TAxes, AxisBinding>>,
   analog: Readonly<Record<string, number>> | null,

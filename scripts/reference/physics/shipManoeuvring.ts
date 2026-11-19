@@ -2,7 +2,6 @@ import { schoenherrFriction } from "./shipResistance";
 
 const DEG = Math.PI / 180;
 
-/** Hull force derivatives of the MMG standard method, non-dimensionalised by ½ρ·L·d·U² (forces) and ½ρ·L²·d·U² (moment). */
 export interface MmgHullDerivatives {
   Xvv: number;
   Xvr: number;
@@ -22,45 +21,28 @@ export interface MmgHullDerivatives {
   Nrrr: number;
 }
 
-/** Propeller of an MMG ship: open-water thrust `KT = k0 + k1·J + k2·J²` and its wake and thrust deduction. */
 export interface MmgPropeller {
   diameter: number;
-  /** `[k0, k1, k2]`. */
   thrust: readonly [number, number, number];
-  /** Effective wake fraction in straight running, `wP0`. */
   wake: number;
-  /** Thrust deduction `tP`. */
   thrustDeduction: number;
-  /** Longitudinal position `x'P` over `L`, from midship (negative aft). */
   position: number;
-  /** Wake change with inflow angle: `(1 − wP)/(1 − wP0) = 1 + (1 − e^(−C1·|βP|))(C2 − 1)`, `C2` set per sign of `βP`. */
   wakeChange: { c1: number; c2Positive: number; c2Negative: number };
 }
 
-/** Rudder of an MMG ship and its interaction with hull and propeller. */
 export interface MmgRudder {
-  /** Movable area, m². */
   area: number;
-  /** Span, m. */
   height: number;
-  /** Longitudinal position `x'R` over `L` (negative aft). */
   position: number;
-  /** Steering resistance deduction `tR`. */
   deduction: number;
-  /** Rudder force increase factor `aH`. */
   hullForceFactor: number;
-  /** Where the hull's extra side force acts, `x'H` over `L`. */
   hullForcePosition: number;
-  /** Flow straightening `γR` for `βR < 0` and `βR > 0`. */
   straighteningNegative: number;
   straighteningPositive: number;
-  /** Effective rudder lever `ℓ'R` in `βR = β − ℓ'R·r'`. */
   inflowLever: number;
-  /** Wake ratio rudder/propeller `ε`. */
   wakeRatio: number;
   /** Propeller race coefficient `κ`. */
   raceFactor: number;
-  /** Lift slope `fα`, per rad. */
   liftSlope: number;
 }
 
@@ -73,28 +55,20 @@ export interface MmgShip {
   length: number;
   beam: number;
   draft: number;
-  /** Displaced volume, m³. */
   displacement: number;
-  /** Centre of gravity forward of midship, m. */
   centreOfGravity: number;
-  /** Yaw radius of gyration about G, m. */
   yawRadius: number;
   density: number;
-  /** Straight-running resistance coefficient `R'0 = R/(½ρ·L·d·U²)`. */
   resistance: number;
   hull: MmgHullDerivatives;
-  /** Added mass `m'x`, `m'y` (over ½ρL²d) and added yaw inertia `J'z` (over ½ρL⁴d). */
   addedMass: { surge: number; sway: number; yaw: number };
   propeller: MmgPropeller;
-  /** Omit for a boat steered by swinging its thrust (outboard or waterjet nozzle). */
   rudder?: MmgRudder;
-  /** Largest steering angle, rad. */
   maxSteer: number;
   /** Steering rate, rad/s. */
   steerRate: number;
 }
 
-/** Ship state: earth position (x north, y east), heading, body velocities at midship and the steering angle. */
 export interface MmgState {
   x: number;
   y: number;
@@ -106,7 +80,6 @@ export interface MmgState {
   time: number;
 }
 
-/** Forces at midship, N and N·m, by module. */
 export interface MmgForces {
   X: number;
   Y: number;
@@ -114,7 +87,6 @@ export interface MmgForces {
   hull: readonly [number, number, number];
   propeller: number;
   steering: readonly [number, number, number];
-  /** Rudder normal force, N (`0` for vectored thrust). */
   rudderNormal: number;
   thrust: number;
 }
@@ -215,10 +187,7 @@ function openWaterThrust(propeller: MmgPropeller, advance: number): number {
   return k0 + k1 * advance + k2 * advance * advance;
 }
 
-/**
- * Propeller revolutions, rev/s, that hold `speed` in straight running: `(1 − tP)·T = R0`.
- * @capability ship-manoeuvring self-propulsion revolutions from resistance and open-water thrust
- */
+/** @capability ship-manoeuvring self-propulsion revolutions from resistance and open-water thrust */
 export function selfPropulsionRevs(ship: MmgShip, speed: number): number {
   const p = ship.propeller;
   const resistance = 0.5 * ship.density * ship.length * ship.draft * speed * speed * ship.resistance;
@@ -229,10 +198,7 @@ export function selfPropulsionRevs(ship: MmgShip, speed: number): number {
   return (-b + Math.sqrt(b * b - 4 * k0 * c)) / (2 * k0);
 }
 
-/**
- * Creates an {@link MmgState} running straight ahead at `speed` from the origin.
- * @capability ship-manoeuvring straight-running initial state
- */
+/** @capability ship-manoeuvring straight-running initial state */
 export function createMmgState(speed: number, heading = 0): MmgState {
   return { x: 0, y: 0, heading, u: speed, v: 0, r: 0, steer: 0, time: 0 };
 }
@@ -300,7 +266,6 @@ export function mmgForces(ship: MmgShip, state: MmgState, revs: number): MmgForc
   };
 }
 
-/** Body accelerations `[u̇, v̇, ṙ]` from the MMG equations of motion at midship with G at `xG`. */
 function accelerations(ship: MmgShip, state: MmgState, revs: number): [number, number, number] {
   const m = shipMass(ship);
   const half = 0.5 * ship.density * ship.length * ship.length * ship.draft;
@@ -321,11 +286,7 @@ function accelerations(ship: MmgShip, state: MmgState, revs: number): [number, n
   return [du, (y * iz - b * n) / det, (a * n - b * y) / det];
 }
 
-/**
- * Advances `state` by `dt` in place: the steering angle slews toward `steerTarget` at the ship's rate, then the
- * equations of motion are integrated by fourth-order Runge–Kutta with the angle held over the step.
- * @capability ship-manoeuvring time step of the MMG equations of motion
- */
+/** @capability ship-manoeuvring time step of the MMG equations of motion */
 export function stepMmg(ship: MmgShip, state: MmgState, steerTarget: number, revs: number, dt: number): MmgState {
   const target = Math.max(-ship.maxSteer, Math.min(ship.maxSteer, steerTarget));
   const slew = ship.steerRate * dt;
@@ -360,33 +321,22 @@ export function stepMmg(ship: MmgShip, state: MmgState, steerTarget: number, rev
   return state;
 }
 
-/** A turning-circle trial's indices, m (divide by `L` for the usual `A'D`, `D'T`). */
 export interface TurningCircle {
-  /** Forward travel of midship when the heading has turned 90°. */
   advance: number;
-  /** Sideways travel when the heading has turned 90°. */
   transfer: number;
-  /** Sideways travel when the heading has turned 180°. */
   tacticalDiameter: number;
-  /** Diameter of the settled circle. */
   steadyDiameter: number;
-  /** Settled speed over approach speed. */
   speedLoss: number;
   /** Seconds to turn 90° and 180°. */
   timeTo90: number;
   timeTo180: number;
 }
 
-/** Any boat that can run a trial: steer target in rad (positive to starboard), returns the earth pose after `dt`. */
 export interface ManoeuvringTrialBoat {
   step(steerTarget: number, dt: number): { x: number; y: number; heading: number; speed: number };
 }
 
-/**
- * Runs a turning-circle trial on any boat: full `rudder` from straight running at time 0, until the heading has turned
- * 360° beyond the 180° point or `maxTime` passes. Positions are earth x forward of the approach course, y to starboard.
- * @capability ship-manoeuvring turning-circle trial (advance, transfer, tactical and steady diameter)
- */
+/** @capability ship-manoeuvring turning-circle trial (advance, transfer, tactical and steady diameter) */
 export function runTurningCircle(boat: ManoeuvringTrialBoat, rudder: number, approachSpeed: number, dt: number, maxTime: number): TurningCircle {
   const sign = rudder >= 0 ? 1 : -1;
   let prev = { x: 0, y: 0, heading: 0, speed: approachSpeed };
@@ -432,18 +382,12 @@ export function runTurningCircle(boat: ManoeuvringTrialBoat, rudder: number, app
   return { advance, transfer, tacticalDiameter: tactical, steadyDiameter, speedLoss: speed / approachSpeed, timeTo90, timeTo180 };
 }
 
-/** A zig-zag trial's overshoot angles, rad, and the times the rudder was reversed. */
 export interface ZigZag {
   overshoots: number[];
   reversals: number[];
 }
 
-/**
- * Runs a `rudder`/`rudder` zig-zag (IMO 10/10 or 20/20; negative starts to port) on any boat: rudder over at time 0,
- * reversed each time the heading passes `±rudder` from the approach course, overshoot taken as the heading's peak past
- * the check angle. Stops after `overshoots` overshoots or `maxTime`.
- * @capability ship-manoeuvring zig-zag trial overshoot angles
- */
+/** @capability ship-manoeuvring zig-zag trial overshoot angles */
 export function runZigZag(boat: ManoeuvringTrialBoat, rudder: number, dt: number, maxTime: number, overshoots = 2): ZigZag {
   const check = Math.abs(rudder);
   let side = rudder >= 0 ? 1 : -1;

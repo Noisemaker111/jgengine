@@ -5,9 +5,7 @@
  */
 export function manualTimers(): {
   scheduleTimer: (run: () => void, ms: number) => () => void;
-  /** The delay of every timer still waiting, in the order they were set. */
   pending(): number[];
-  /** Run every timer still waiting. */
   fire(): void;
 } {
   const waiting = new Set<{ run: () => void; ms: number }>();

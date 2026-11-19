@@ -10,11 +10,6 @@ import { HH } from "./theme";
 
 const PIPS = 10;
 
-/**
- * The phone's Settings app: one page per category picked on the top line, then each setting as an LCD
- * line: volume as pips, switches as ON/OFF, choices as ◀ value ▶, keys as a bracketed keycap you press
- * to rebind. Arrows, pad and the phone's softkeys move line to line; left/right change the value.
- */
 export function PhoneSettings({ maxHeight }: { maxHeight: number }) {
   const settings = useSettings();
   const sound = useMenuSound();

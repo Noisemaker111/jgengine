@@ -7,11 +7,8 @@ import { lotScreen } from "./lotScreen";
  * from the gate, a carousel beside it, "Connect it" for its entrance and exit, then the gate opens
  * and the first guests walk in, ride and pay.
  */
-/** A page check: the onboarding card shows this step. */
 const step = (id: string) => `globalThis.__jg?.brightway.read().hint === '${id}'`;
-/** A page check: the hint's ring is on one of these controls (`ui/hintRing.ts` keys). */
 const pointed = (...keys: string[]) => `${JSON.stringify(keys)}.includes(globalThis.__jg?.brightway.read().pointed)`;
-/** The native page's visible text. */
 const shown = "window.__jg?.nativeUi.text()";
 
 export default defineFlow(game, {

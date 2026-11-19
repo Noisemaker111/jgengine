@@ -29,7 +29,6 @@ import { DEFAULT_HOST_TICK_MS, resolveHostTickMs } from "@jgengine/core/runtime/
 import { commitIfRevisionMatch } from "./occ";
 import { jgengineHostedTables, resolveActor, type JgAuthMode } from "./server";
 
-/** One game the hosted path can serve, bound per `gameId`: its definition plus content lookup. */
 export interface HostedGameConfig {
   definition: GameDefinition<ModelAssetRef, unknown>;
   content: GameContextContent;
@@ -37,10 +36,6 @@ export interface HostedGameConfig {
   models?: GameContextModels;
 }
 
-/**
- * Everything one stateless invocation reconstructs a hosted world from: the persisted record via `store`,
- * plus the member roster and held inputs the snapshot doesn't carry, and the op to apply to the fresh session.
- */
 export interface HostedWorldInvocation<T> {
   game: HostedGameConfig;
   store: HostedWorldStore | SyncHostedWorldStore;
@@ -50,7 +45,6 @@ export interface HostedWorldInvocation<T> {
   op: (session: HostedWorldSession) => T;
 }
 
-/** What one stateless invocation produced: the op's value, the resulting revision, whether the world changed (and was saved back), and the post-op roster. */
 export interface HostedWorldOutcome<T> {
   value: T;
   revision: number;

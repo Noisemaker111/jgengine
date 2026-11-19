@@ -4,7 +4,6 @@ import type { Live } from "../liveValue";
 
 /** Rune colours use hex RGB/RGBA values, never a CSS declaration. */
 export type RuneColor = string;
-/** Native layout sizes are points or a fraction of the parent. */
 export type RuneSize = number | { fraction: number };
 /** Direct Rune element methods. Numbers are points; angles are radians. */
 export interface RuneStyle {
@@ -51,7 +50,6 @@ export interface RuneFont {
   align?: "left" | "center" | "right";
 }
 
-/** Props shared by native elements and their optional DOM tooling host. */
 export type RuneBoundStyle = { [K in keyof RuneStyle]: Live<RuneStyle[K]> };
 export type RuneBoundFont = { [K in keyof RuneFont]: Live<RuneFont[K]> };
 
@@ -77,7 +75,6 @@ export interface RuneElementProps extends RuneBoundStyle, RuneBoundFont {
   onAdjust?: (delta: -1 | 1) => void;
   onKey?: (code: string) => void;
   onEdit?: (text: string) => void;
-  /** Native field: Enter (single line) submitted this text. */
   onSubmit?: (text: string) => void;
   /** Native field: the page replaced its text from outside Rune (the phone keyboard proxy). */
   onReplace?: (text: string) => void;
@@ -102,7 +99,6 @@ export interface RuneElementProps extends RuneBoundStyle, RuneBoundFont {
 /** Rich text ranges use UTF-8 byte offsets, like Rune's native Span API. */
 export interface RuneSpan { start: number; end: number; color?: RuneColor; weight?: number; size?: number; mono?: boolean; italic?: boolean; underline?: RuneColor; }
 
-/** Native pointer/touch gesture in element-local layout points. */
 export interface RuneGesture {
   phase: "down" | "move" | "up";
   x: number;
@@ -112,7 +108,6 @@ export interface RuneGesture {
   cancelled: boolean;
 }
 
-/** Host handle for native focus and scrolling; no DOM element is allocated. */
 export interface RuneElement {
   focus(): void;
   scrollIntoView(): void;

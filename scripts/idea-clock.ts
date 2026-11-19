@@ -24,7 +24,6 @@ function git(args: string[]): string {
   return run.status === 0 ? run.stdout.trim() : "";
 }
 
-/** The oldest commit that touches `path` (or, with `addedOnly`, that adds it) reachable from `ref`. */
 function firstCommit(ref: string, path: string, addedOnly: boolean): Stamp | null {
   const flags = addedOnly ? ["--diff-filter=A"] : [];
   const lines = git(["log", ref, ...flags, "--format=%H %aI", "--", path]).split("\n").filter((line) => line !== "");

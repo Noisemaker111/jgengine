@@ -9,47 +9,30 @@ import type { TalentNodeDef, TalentRequirement, TalentTree } from "./talents";
  */
 export type TalentNodeState = "locked" | "available" | "learned" | "maxed";
 
-/** One prerequisite edge into a node — the source node, the rank it demands, and whether that is met. */
 export interface TalentEdgeView {
-  /** Prerequisite node id (edge source). */
   from: string;
   /** Rank the prerequisite must reach for this edge to be satisfied. */
   rank: number;
-  /** Whether the prerequisite currently sits at or above the required rank. */
   met: boolean;
 }
 
-/** A per-node view for rendering: grid placement (tier/branch), rank, state, and inbound prerequisite edges. */
 export interface TalentNodeView {
-  /** Stable node id (matches the {@link TalentNodeDef}). */
   id: string;
-  /** Branch key the node belongs to (`""` when the def has none) — a free string the game styles/columns by. */
   branch: string;
   /** 0-based prerequisite depth: `0` for a root, else `1 + max(tier of prerequisites)`. Drives row/tier layout. */
   tier: number;
-  /** Points currently invested in the node. */
   rank: number;
-  /** Maximum points the node accepts. */
   maxRank: number;
-  /** Derived render state (see {@link TalentNodeState}). */
   state: TalentNodeState;
-  /** Whether a point can be spent on the node right now (mirrors `tree.canAllocate(id).ok`). */
   allocatable: boolean;
-  /** Inbound prerequisite edges, in definition order. */
   requires: readonly TalentEdgeView[];
 }
 
-/** A whole-tree render view: placed nodes plus branch/tier extents and point totals. */
 export interface TalentTreeView {
-  /** Every node, in definition order, with its render placement and state. */
   nodes: readonly TalentNodeView[];
-  /** Distinct branch keys, in first-seen (definition) order — the natural column order. */
   branches: readonly string[];
-  /** Number of tiers, i.e. `max(tier) + 1` (0 when the tree is empty). */
   tiers: number;
-  /** Points the player still has to spend. */
   pointsAvailable: number;
-  /** Points already invested across the tree. */
   pointsSpent: number;
 }
 
@@ -60,7 +43,6 @@ export interface TalentTreeView {
  * money-gated upgrade tree, or a condition-unlocked ability web without changing the renderer.
  */
 export interface TalentNodeStatus {
-  /** Points/levels invested in the node — `0` means "not taken yet"; a binary unlock uses `0`/`1`. */
   rank: number;
   /**
    * Whether the node can be taken right now under the game's own rule (enough points, enough cash,
@@ -70,11 +52,8 @@ export interface TalentNodeStatus {
   allocatable: boolean;
 }
 
-/** Optional overall point totals for the view header; omit (or 0) for trees that spend no point currency. */
 export interface TalentPointTotals {
-  /** Points the player still has to spend. Default `0`. */
   pointsAvailable?: number;
-  /** Points already invested across the tree. Default `0`. */
   pointsSpent?: number;
 }
 

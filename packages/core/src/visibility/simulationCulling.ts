@@ -10,7 +10,6 @@ import { createLodScheduler } from "../lod/lod";
  * skipping updates is provably safe.
  */
 export interface SimulationCullingOptions {
-  /** Off by default. */
   readonly enabled?: boolean;
   /** Distance bands → update interval (seconds). Nearer bands update every tick; far bands throttle. */
   readonly bands?: readonly LodBand[];
@@ -21,13 +20,11 @@ export interface SimulationCullingOptions {
 }
 
 export interface SimulationDecision {
-  /** Whether the entity should run its update this tick. */
   update: boolean;
   /** Seconds of accumulated time delivered when `update` is true (for catch-up integration). */
   elapsed: number;
 }
 
-/** Plain JSON state of a {@link SimulationCuller}: the enabled flag and each id's throttle accumulator. */
 export interface SimulationCullerState {
   enabled: boolean;
   scheduler: LodSchedulerState;
@@ -36,7 +33,6 @@ export interface SimulationCullerState {
 export interface SimulationCuller {
   enabled(): boolean;
   setEnabled(value: boolean): void;
-  /** Decide whether `id` at `distance` from the nearest camera updates this tick. */
   step(id: string, distance: number, dt: number): SimulationDecision;
   forget(id: string): void;
   clear(): void;

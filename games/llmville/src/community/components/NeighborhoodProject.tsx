@@ -11,7 +11,6 @@ export function NeighborhoodProject() {
   return progress === undefined ? null : <NeighborhoodProjectView launchedLabs={progress.launchedLabs} />;
 }
 
-/** The shared goal: how many neighbours have launched a first earning model. */
 export function NeighborhoodProjectView({ launchedLabs }: { launchedLabs: number }) {
   const milestone = communityMilestone(launchedLabs);
   return <Panel shell="inset" width={FULL} gap={8} label="Community project" fill="#e0a95c0d" border={{ width: 1, color: "#e0a95c40" }}>

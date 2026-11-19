@@ -2,20 +2,16 @@ import type { PlantSpecies } from "../../packages/core/src/plants/species/plantS
 import type { PlantSourceId } from "../../packages/core/src/plants/species/speciesSources";
 import { SHADE_TOLERANCE, type SpeciesTraits } from "./speciesTraits";
 
-/** Values the importer read from downloaded tables for one species. */
 export interface ImportedValues {
   /** Basic density from FIA wood specific gravity, dry kg per green m³. */
   densityKgM3?: number;
-  /** Green over dry mass from FIA green moisture content. */
   greenFactor?: number;
   /** BAAD median specific leaf area, m² per kg. */
   sla?: number;
-  /** Half of the Ek 1974 open-grown crown width at the species' largest DBH, m. */
   maxCrownRadiusM: number;
   maxCrownRadiusSource: PlantSourceId;
 }
 
-/** The growth and carbon parameters a fit found, with its score and what it was scored against. */
 export interface FittedParameters {
   growth: PlantSpecies["growth"];
   carbon: PlantSpecies["carbon"];
@@ -23,10 +19,6 @@ export interface FittedParameters {
   against: string;
 }
 
-/**
- * A full species record from its traits, the imported values and fitted growth and carbon, starting
- * from `base` (the prior species) for anything neither sets.
- */
 export function buildSpeciesRecord(traits: SpeciesTraits, imported: ImportedValues, fitted: FittedParameters, base: PlantSpecies, version: number): PlantSpecies {
   const fittedProvenance = { source: "crown-fit" as const, fitted: { score: Math.round(fitted.score * 100) / 100, against: fitted.against } };
   const provenance: PlantSpecies["provenance"] = {

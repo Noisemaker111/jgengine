@@ -19,17 +19,12 @@ function bodyPosition(shape: ColliderShape, position: EntityPosition, rotationY:
   );
 }
 
-/** Handle for synchronizing authored static world collision with a physics backend. */
 export interface WorldColliderSync {
-  /** Rebuild static terrain and object bodies from the current context. */
   sync(): void;
-  /** Remove all bodies owned by this synchronizer and stop reacting to scene changes. */
   dispose(): void;
 }
 
-/** Mirrors static scene-object physical colliders, `ctx.world.solids` and the context's ground field into a physics backend.
- * @capability world-physics-colliders Synchronize terrain and authored static colliders with a physics backend.
- */
+/** @capability world-physics-colliders Synchronize terrain and authored static colliders with a physics backend. */
 export function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): WorldColliderSync {
   const objectBodies = new Map<string, BodyHandle>();
   const solidBodies: BodyHandle[] = [];

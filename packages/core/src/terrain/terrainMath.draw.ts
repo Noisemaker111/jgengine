@@ -6,10 +6,8 @@ import { hashNoise2, type TerrainSeed } from "./terrainSeed";
 
 /** A square side length, or a `[width, depth]` pair, in metres. */
 export type TerrainArea = number | readonly [width: number, depth: number];
-/** Ground height at a world `x, z`. */
 export type TerrainHeightSampler = (x: number, z: number) => number;
 
-/** Seeded noise terrain settings: size, resolution, seed, height, mound scale, octaves, ridging and base offset. */
 export interface ProceduralTerrainConfig {
   size?: TerrainArea;
   segments?: number | readonly [x: number, z: number];
@@ -21,19 +19,16 @@ export interface ProceduralTerrainConfig {
   baseOffset?: number;
 }
 
-/** A {@link TerrainArea} as width and depth. */
 export interface ResolvedTerrainSize {
   width: number;
   depth: number;
 }
 
-/** Grid segment counts along x and z. */
 export interface ResolvedTerrainSegments {
   x: number;
   z: number;
 }
 
-/** Ground colours from low to high, plus an optional waterline colour and height. */
 export interface TerrainVertexColorOptions {
   low?: THREE.ColorRepresentation;
   high?: THREE.ColorRepresentation;
@@ -53,7 +48,6 @@ export interface TerrainSurfaceColorOptions {
   mottleStrength?: number;
   /** World-space frequency of the mottling lattice (cells per meter). Default 0.12. */
   mottleScale?: number;
-  /** Seed for the mottling hash. Same seed → identical mottling. Default 1. */
   seed?: TerrainSeed;
 }
 
@@ -81,7 +75,6 @@ function resolveSurfaceColor(surface: TerrainSurfaceColorOptions | undefined): R
   };
 }
 
-/** Smoothed value noise on the integer hash lattice — continuous, seamless, and a pure function of `x,z`. */
 function groundValueNoise(x: number, z: number, scale: number, seed: TerrainSeed): number {
   const sx = x * scale;
   const sz = z * scale;
@@ -166,10 +159,8 @@ export function createProceduralTerrainSampler(config: ProceduralTerrainConfig =
   return noiseField(toNoiseFieldConfig(config)).sampleHeight;
 }
 
-/** Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/terrain/terrain` returns exactly this shape. */
 export type TerrainPaletteSampler = (x: number, z: number) => { low: string; high: string; waterline?: string };
 
-/** How to mesh a terrain field: size, resolution, centre, colours, palette, surface shading and paint. */
 export interface FieldGroundOptions {
   size?: TerrainArea | undefined;
   segments?: number | readonly [x: number, z: number] | undefined;
@@ -178,18 +169,11 @@ export interface FieldGroundOptions {
   heightRange?: readonly [min: number, max: number] | undefined;
   /** Sampled per vertex when set; `colors` still supplies `waterlineHeight` and the fallback. */
   paletteAt?: TerrainPaletteSampler | undefined;
-  /** Slope/noise surface shading over the height lerp. Omit for the default terrain look; pass `{ slopeStrength: 0, mottleStrength: 0 }` for a flat gradient. */
   surface?: TerrainSurfaceColorOptions;
-  /** Authored paint overrides descriptor shading at painted vertices. */
   paintColorAt?: ((x: number, z: number, out: THREE.Color) => boolean) | undefined;
 }
 
-/**
- * Mesh any `TerrainField` — including a `CarvableField` with craters/mounds written into it — into a
- * vertex-coloured ground geometry. `sampleHeight` drives the vertices, so runtime carves show up as
- * real depressions the moment the field is re-sampled (bump the caller's rebuild key after a carve).
-  * @internal
-  */
+/** @internal */
 export function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry {
   return runToEnd(fieldGroundGeometryJob(field, options));
 }
@@ -203,7 +187,7 @@ export function fieldGroundGeometryJob(field: TerrainField, options: FieldGround
   return groundPatchJob(grid, wholeGroundWindow(grid));
 }
 
-/** Everything a ground mesh is sampled from: the grid over the world plus how its vertices are coloured. @internal */
+/** @internal */
 export interface GroundGrid {
   size: ResolvedTerrainSize;
   segments: ResolvedTerrainSegments;
@@ -216,11 +200,7 @@ export interface GroundGrid {
   paintColorAt?: ((x: number, z: number, out: THREE.Color) => boolean) | undefined;
 }
 
-/**
- * One rectangle of a {@link GroundGrid} meshed at a vertex stride: `cols`×`rows` grid cells from
- * (`col0`, `row0`), every `step`-th vertex, positioned relative to `origin`. A `skirt` drops a strip
- * that deep below each edge, hiding the cracks where a neighbour is meshed at another stride. @internal
- */
+/** @internal */
 export interface GroundWindow {
   col0: number;
   row0: number;
@@ -231,7 +211,7 @@ export interface GroundWindow {
   origin: readonly [number, number];
 }
 
-/** The grid {@link fieldGroundGeometryJob} meshes, for callers that mesh it in pieces. @internal */
+/** @internal */
 export function resolveFieldGroundGrid(field: TerrainField, options: FieldGroundOptions = {}): GroundGrid {
   return {
     size: resolveTerrainSize(options.size),
@@ -246,7 +226,7 @@ export function resolveFieldGroundGrid(field: TerrainField, options: FieldGround
   };
 }
 
-/** The whole grid as one window at full density, in world coordinates. @internal */
+/** @internal */
 export function wholeGroundWindow(grid: GroundGrid): GroundWindow {
   return { col0: 0, row0: 0, cols: grid.segments.x, rows: grid.segments.z, step: 1, skirt: 0, origin: [0, 0] };
 }
@@ -255,7 +235,6 @@ function buildGroundGeometry(grid: GroundGrid): THREE.BufferGeometry {
   return runToEnd(groundPatchJob(grid, wholeGroundWindow(grid)));
 }
 
-/** Grid indices a window samples along one axis: every `step`-th from `first`, always ending on `first + cells`. */
 function windowIndices(first: number, cells: number, step: number): number[] {
   const indices: number[] = [];
   for (let offset = 0; offset < cells; offset += step) indices.push(first + offset);

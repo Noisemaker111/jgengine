@@ -28,7 +28,6 @@ export type ParamOp =
   | { readonly kind: "clamp"; readonly min?: number; readonly max?: number }
   | { readonly kind: "curve"; readonly curve: Curve };
 
-/** Per-parameter ops contributed by one layer — a single op or an ordered list folded in sequence. */
 export type LayerOps = Readonly<Record<string, ParamOp | readonly ParamOp[]>>;
 
 /**
@@ -45,7 +44,6 @@ export interface ParamLayer {
   readonly ops: LayerOps;
 }
 
-/** One recorded fold step — which layer's op ran and the value before/after. Contribution provenance. */
 export interface ParamContribution {
   readonly layerId: string;
   readonly op: ParamOp;
@@ -53,24 +51,19 @@ export interface ParamContribution {
   readonly to: number;
 }
 
-/** A resolved effective-parameter snapshot: final `values` plus the ordered op trace per parameter. */
 export interface ParamSnapshot {
   readonly values: Readonly<Record<string, number>>;
   readonly contributions: Readonly<Record<string, readonly ParamContribution[]>>;
 }
 
-/** A serializable, ordered reference to layers by stable id — what a save file or session setup stores. */
 export type LayerSelection = readonly string[];
 
-/** A single conflict surfaced by {@link validateLayers}. */
 export interface LayerConflict {
   readonly kind: "duplicate-id" | "set-conflict";
-  /** The affected parameter, for `set-conflict`. */
   readonly param?: string;
   readonly layerIds: readonly string[];
 }
 
-/** One parameter's change between two value maps, for preview/diff surfaces. */
 export interface ParamDelta {
   readonly param: string;
   readonly from: number;
@@ -97,12 +90,7 @@ function applyOp(value: number, op: ParamOp): number {
   }
 }
 
-/**
- * Order layers into their well-defined application sequence: ascending `priority`, ties broken by the
- * layer's index in `layers` (a stable sort). Same input, same order, on every platform.
- *
- * @capability param-layers order active parameter layers into their deterministic application sequence
- */
+/** @capability param-layers order active parameter layers into their deterministic application sequence */
 export function orderLayers(layers: readonly ParamLayer[]): readonly ParamLayer[] {
   return layers
     .map((layer, index) => ({ layer, index }))
@@ -179,12 +167,7 @@ export function validateLayers(layers: readonly ParamLayer[]): readonly LayerCon
   return conflicts;
 }
 
-/**
- * Compute the per-parameter deltas between two value maps — the preview/diff of applying a change,
- * for showing a player what a difficulty tier or mutator will do before they commit.
- *
- * @capability param-layers diff two parameter value maps into per-parameter deltas for preview
- */
+/** @capability param-layers diff two parameter value maps into per-parameter deltas for preview */
 export function diffParams(
   before: Readonly<Record<string, number>>,
   after: Readonly<Record<string, number>>,
@@ -199,7 +182,6 @@ export function diffParams(
   return deltas;
 }
 
-/** Registered lookup of {@link ParamLayer}s by stable id, resolving serialized selections and unknowns. */
 export interface LayerRegistry {
   register(layer: ParamLayer): void;
   has(id: string): boolean;
@@ -245,13 +227,7 @@ export function createLayerRegistry(initial?: readonly ParamLayer[]): LayerRegis
   };
 }
 
-/**
- * Reproducible session setup in one call: resolve a saved {@link LayerSelection} through a registry,
- * fold the found layers over `base`, and return the snapshot alongside any unknown ids. The same
- * base + registry + selection always yields the same snapshot.
- *
- * @capability param-layers resolve a saved layer selection into an effective snapshot with unknown-id report
- */
+/** @capability param-layers resolve a saved layer selection into an effective snapshot with unknown-id report */
 export function resolveSelection(
   base: Readonly<Record<string, number>>,
   registry: LayerRegistry,

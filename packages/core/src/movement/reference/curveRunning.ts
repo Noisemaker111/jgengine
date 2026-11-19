@@ -1,12 +1,8 @@
-/** Straight-line sprint mechanics that bound running on a curve. */
 export interface SprintMechanics {
   /** Top speed on the straight, m/s. */
   topSpeed: number;
-  /** Ground contact time per step at top speed, s. */
   contactTime: number;
-  /** Aerial time per step, s (nearly constant across speeds). */
   aerialTime: number;
-  /** Shoe–ground friction coefficient. */
   friction: number;
   /** Gravity, m/s². */
   gravity?: number;
@@ -19,14 +15,7 @@ export interface SprintMechanics {
  */
 export const RECREATIONAL_SPRINTER: SprintMechanics = { topSpeed: 7.7, contactTime: 0.12, aerialTime: 0.12, friction: 0.9 };
 
-/**
- * Fastest speed a runner holds on a flat curve of `radius` (m). Two limits, after J. R. Usherwood and A. M. Wilson
- * ("Accounting for elite indoor 200 m sprint results", *Biol. Lett.* 2, 2006) and P. R. Greene (*J. Biomech.* 18,
- * 1985): the leg's peak mean contact force stays what it is at top speed on the straight, `mg·(t_a + t_c)/t_c`, while
- * a curve needs `m·√(g² + (v²/R)²)` averaged over the stride with the contact length `v_s·t_c` fixed; and the
- * resultant may not tilt past the friction cone, `v²/R ≤ μg`.
- * @capability curve-running fastest speed a human runner holds on a flat curve from leg force and friction
- */
+/** @capability curve-running fastest speed a human runner holds on a flat curve from leg force and friction */
 export function maxCurveSpeed(mechanics: SprintMechanics, radius: number): number {
   const g = mechanics.gravity ?? 9.81;
   const contactLength = mechanics.topSpeed * mechanics.contactTime;

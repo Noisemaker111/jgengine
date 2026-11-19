@@ -5,29 +5,23 @@ import { createTelemetry, type Telemetry, type TelemetrySink } from "./telemetry
 
 /** What a game supplies to turn on crash reports, telemetry and auto quality. Every part is off unless set. */
 export interface GameHealthConfig {
-  /** Build label stamped on every report and session event, e.g. a commit or version. */
   build?: string;
   /** Receives each crash report. */
   reporter?: CrashReporter;
-  /** Receives batched health events. */
   telemetry?: { sink: TelemetrySink; batchSize?: number; maxQueued?: number };
   /** Events kept per crash report. Default 20. */
   eventLimit?: number;
   /** Ms between frame-time percentile events. Default 30000. */
   percentilesEveryMs?: number;
-  /** Frames per percentile event. Default 600. */
   percentileWindowFrames?: number;
-  /** Pick the graphics tier from measured frame time; the player's own choice and every effect toggle win. */
   autoQuality?: AutoQualityConfig;
 }
 
-/** The running health parts for one session. */
 export interface RuntimeHealth {
   crash: CrashSeam;
   telemetry: Telemetry;
   /** Feed one frame's duration (ms); emits a percentile event each interval. */
   onFrame(frameMs: number): void;
-  /** Record a tier change as an event and a telemetry record. */
   tierChanged(from: string, to: string, reason: "auto" | "player"): void;
   /** Record a named load duration (ms). */
   loaded(name: string, ms: number): void;

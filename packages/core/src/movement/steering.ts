@@ -1,19 +1,9 @@
-/**
- * Yaw-frame steering math. The engine's heading convention is
- * `forward = (sin yaw, cos yaw)` on the XZ plane with +Y up, which makes a
- * positive yaw increment rotate counterclockwise seen from above — a turn to
- * the entity's LEFT on screen. Every hand-written `heading += steer * rate * dt`
- * therefore turns the wrong way; integrate steering through `steerYaw` instead.
- */
-
 export type YawVectorXZ = readonly [number, number];
 
-/** XZ forward direction of a yaw (`rotationY`): `(sin yaw, cos yaw)`. */
 export function yawForward(yaw: number): YawVectorXZ {
   return [Math.sin(yaw), Math.cos(yaw)];
 }
 
-/** XZ screen-right of a yaw — `forward × up` with up = +Y: `(-cos yaw, sin yaw)`. */
 export function yawRight(yaw: number): YawVectorXZ {
   return [-Math.cos(yaw), Math.sin(yaw)];
 }
@@ -47,13 +37,7 @@ export function steerToward(yaw: number, desiredYaw: number): number {
   return -delta;
 }
 
-/**
- * @internal Rotate `yaw` toward `targetYaw` by at most `turnRatePerSecond * dt`
- * radians, always along the shortest arc, snapping exactly onto the target once
- * within a single step so it converges without overshoot or jitter — the
- * smoothing behind a rendered body-turn (`PlayerMovementConfig.turnSpeed`). A
- * large enough rate (or `dt`) reaches the target in one call, matching a snap.
- */
+/** @internal Rotate `yaw` toward `targetYaw` by at most `turnRatePerSecond * dt` radians, always along the shortest arc, snapping exactly onto the target once within a single step so it converges without overshoot or jitter — the smoothing behind a rendered body-turn (`PlayerMovementConfig.turnSpeed`). A large enough rate (or `dt`) reaches the target in one call, matching a snap. */
 export function approachYaw(yaw: number, targetYaw: number, turnRatePerSecond: number, dt: number): number {
   let delta = (targetYaw - yaw) % TWO_PI;
   if (delta > Math.PI) delta -= TWO_PI;

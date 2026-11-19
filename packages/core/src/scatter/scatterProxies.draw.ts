@@ -142,10 +142,7 @@ function defaultProxy(): THREE.BufferGeometry {
   return mergeParts([{ geometry: cone(0.35, 1.2, 0), color: GRASS }]);
 }
 
-/**
- * Builds the merged proxy geometry for a scatter item id, memoized per builder call by the caller.
- * @internal — the geometry catalog behind the `InstancedScatter` renderer.
- */
+/** @internal — the geometry catalog behind the `InstancedScatter` renderer. */
 export function buildScatterProxy(item: string): THREE.BufferGeometry {
   const builder = BUILDERS[item];
   return builder === undefined ? defaultProxy() : builder();

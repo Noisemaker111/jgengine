@@ -7,7 +7,6 @@ import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLo
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { defaultSurfaceMaterial } from "@jgengine/core/material/defaultSurface.draw";
 
-/** Render extent (m) standing in for an `Infinity` flat-ground axis — far past the default fog. */
 const UNBOUNDED_RENDER_EXTENT = 2048;
 
 const GROUND_COLOR = "#5c6b52";

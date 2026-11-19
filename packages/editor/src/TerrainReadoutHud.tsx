@@ -11,11 +11,6 @@ function signed(value: number): string {
   return value > 0 ? `+${text}` : text;
 }
 
-/**
- * The measurable terrain-readability legend: cursor elevation and delta from the `y = 0` reference,
- * plus the region's min/max/mean relief and the active contour interval. Reads live measurements from
- * the readout store the {@link TerrainReadout} overlay publishes; renders nothing until shown.
- */
 export function TerrainReadoutHud({ readout }: { readout: TerrainReadoutStore }) {
   const cursor = useStoreSelector(readout, (s) => s.cursor);
   const summary = useStoreSelector(readout, (s) => s.summary);

@@ -7,9 +7,7 @@ import { markerAccess } from "@jgengine/core/map/map.view";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** Props for `MapMarkerBeacons`: the markers to raise as world beacons, kind styles and beacon height. */
 export interface MapMarkerBeaconsProps {
-  /** Static views, an external marker source, or a native JGengine MarkerSet. */
   markers: MarkerCollection;
   kindStyles?: Record<string, MarkerKindStyle>;
   height?: number;

@@ -1,22 +1,15 @@
 import type { Surface } from "../../handroll";
 import type { MACHINE } from "../../palette";
 
-/**
- * A zone's local breed of a common enemy: Borderlands' badass and elemental cousins. It borrows its
- * base's rig, attack and drops, and changes what a player reads off it: its body (the element chart),
- * a shield, how tough and quick it is, and the colour of its plate.
- */
 export interface EnemyVariant {
   id: string;
   name: string;
   base: string;
-  /** The zone it lives in: a breed joins that zone's camps (`squads`); a named one is put there by its quest. */
   zone: string;
   /** A named target: one of a kind, placed by the quest that hunts it rather than by a camp. */
   named?: true;
   surface?: Surface;
   elite?: boolean;
-  /** Shield points before level scaling; a shield answers to shock first. */
   shield?: number;
   health: number;
   damage: number;

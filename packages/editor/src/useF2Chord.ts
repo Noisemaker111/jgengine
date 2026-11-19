@@ -1,6 +1,5 @@
 import { useEffect } from "@jgengine/core/ui/jsx";
 
-/** Listens for the engine's F2+<key> chord family and fires on the given code (e.g. "KeyE"). */
 export function useF2Chord(code: string, onChord: () => void): void {
   useEffect(() => {
     let f2Held = false;

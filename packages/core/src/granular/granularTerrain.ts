@@ -1,50 +1,31 @@
 // @skill jgengine-world
-/**
- * A {@link GranularLayer} laid over an {@link EditableTerrain}: one granular cell per terrain vertex,
- * loose material on top of a bed the terrain's ground defines, and every change written back to the
- * terrain as a {@link TerraformDelta}, so undo, save and replication see sand moving like any other
- * sculpt. Loose depth and material come from callbacks; {@link landformLooseCover} reads them from a
- * landform simulation's cover.
- *
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 import type { LandformSurface, LandformSurfaceKind } from "../landform/materials/landformSurface";
 import type { EditableTerrain, TerraformDelta } from "../terrain/terraform";
 import { createGranularLayer, type GranularLayer, type GranularLayerConfig, type GranularPressReport, type GranularStepReport } from "./granularLayer";
 import type { GranularMaterial } from "./granularMaterial";
 
-/** Options for {@link createGranularTerrain}. */
 export interface GranularTerrainOptions {
   materials: readonly GranularMaterial[];
-  /** Loose depth over bedrock at a world point, m. Default 0: only what is deposited is loose. */
   looseDepth?: (x: number, z: number) => number;
-  /** Material index at a world point. Default 0. */
   materialAt?: (x: number, z: number) => number;
   layer?: Pick<GranularLayerConfig, "courant" | "maxSubsteps" | "sleepSteps" | "startAwake" | "gravity">;
 }
 
-/** A granular layer bound to a terrain; positions are world x/z. */
 export interface GranularTerrain {
   readonly layer: GranularLayer;
-  /** Advance the flow and write what moved into the terrain. */
   step(dt: number): GranularStepReport & { delta: TerraformDelta };
-  /** Solid volume taken, m³. */
   dig(x: number, z: number, radius: number, depth: number): number;
   deposit(x: number, z: number, radius: number, volume: number, material?: number): number;
   press(x: number, z: number, radius: number, load: number): GranularPressReport;
   roll(x0: number, z0: number, x1: number, z1: number, width: number, diameter: number, load: number): GranularPressReport;
-  /** Loose depth at the nearest vertex, m. */
   depthAt(x: number, z: number): number;
-  /** Write pending changes into the terrain and return them as one delta. */
   sync(): TerraformDelta;
   /** Re-read the ground after the terrain was edited by something else, keeping the loose material. */
   resync(): void;
 }
 
-/**
- * Bind a granular layer to a terrain's vertex grid.
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 export function createGranularTerrain(terrain: EditableTerrain, options: GranularTerrainOptions): GranularTerrain {
   const bounds = terrain.gridBounds;
   const cols = terrain.cols + 1;
@@ -143,19 +124,13 @@ export function createGranularTerrain(terrain: EditableTerrain, options: Granula
   };
 }
 
-/** Where a landform's cover grid sits in the world: cell (gx, gz) spans `origin + g · cellSize` to the next cell. */
 export interface LandformCoverPlacement {
   originX: number;
   originZ: number;
-  /** Granular material index for each loose surface kind; kinds left out count as bedrock. */
   materials: Partial<Record<LandformSurfaceKind, number>>;
 }
 
-/**
- * Loose depth and material callbacks for {@link createGranularTerrain} from a landform simulation's cover:
- * depth is the cover thickness, material the heaviest-weighted loose kind the placement maps.
- * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
- */
+/** @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield */
 export function landformLooseCover(surface: LandformSurface, placement: LandformCoverPlacement): Pick<GranularTerrainOptions, "looseDepth" | "materialAt"> {
   const kinds = surface.kinds.length;
   const cellOf = (x: number, z: number): number => {

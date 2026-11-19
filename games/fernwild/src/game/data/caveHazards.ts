@@ -6,7 +6,6 @@ import type { VitalLink } from "@jgengine/core/stats/vitals";
  */
 export interface CaveHazard {
   label: string;
-  /** The notice on walking in. */
   warning: string;
   /** Degrees added to the ambient temperature inside. */
   temperatureC?: number;
@@ -14,7 +13,6 @@ export interface CaveHazard {
   rates?: readonly VitalLink[];
 }
 
-/** The Island's hostile caves (ARK: the swamp cave's foul air, the lava cave's heat, the snow cave's cold; strengths approx). */
 export const CAVE_HAZARDS: Readonly<Record<string, CaveHazard>> = {
   cave_swamp_cave: {
     label: "Swamp gas",

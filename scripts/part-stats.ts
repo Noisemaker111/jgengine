@@ -28,7 +28,6 @@ export const RECORD = "scripts/part-stats.json";
 const CORE_SRC = "packages/core/src/";
 const CORE_PACKAGE = "@jgengine/core/";
 
-/** Part homes, relative to `packages/core/src`, without the extension. */
 export const PART_HOMES: readonly string[] = [
   "stats/statPool",
   "threshold/thresholds",
@@ -45,7 +44,6 @@ export const PART_HOMES: readonly string[] = [
   "movement/motionTrack",
 ];
 
-/** A repository file the counts read: its path from the repo root and its text. */
 export interface Source {
   path: string;
   text: string;
@@ -76,7 +74,6 @@ export function homeOf(specifier: string, from: string): string | null {
   return target.slice(CORE_SRC.length).replace(/\.tsx?$/, "");
 }
 
-/** Every part home a source file imports, each once. */
 export function importedHomes(source: Source): Set<string> {
   const homes = new Set<string>();
   for (const match of source.text.matchAll(SPECIFIER)) {
@@ -107,7 +104,6 @@ export function countImporters(sources: readonly Source[]): PartCount[] {
   return PART_HOMES.map((home) => ({ home, core: counts.get(home)?.core ?? 0, games: counts.get(home)?.games ?? 0 }));
 }
 
-/** How many `export function create` core source holds. */
 export function countCreates(sources: readonly Source[]): number {
   let total = 0;
   for (const source of sources) {
@@ -117,7 +113,6 @@ export function countCreates(sources: readonly Source[]): number {
   return total;
 }
 
-/** The top-level folders of core source: each folder a feature can own. */
 export function coreFolders(sources: readonly Source[]): string[] {
   const folders = new Set<string>();
   for (const source of sources) {
@@ -137,7 +132,6 @@ export function renderTable(counts: readonly PartCount[], creates: number, folde
   return lines.join("\n");
 }
 
-/** Repository paths `git` knows about (tracked, or untracked and not ignored) that the counts read. */
 export function trackedSourcePaths(root: string): string[] {
   const result = spawnSync("git", ["ls-files", "-co", "--exclude-standard", "--", "packages/core/src", "games"], {
     cwd: root,
@@ -155,7 +149,6 @@ export function readSources(root: string, paths: readonly string[]): Source[] {
   return paths.filter((path) => sourceLayer(path) !== null).map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
 }
 
-/** A private copy of a part that is still written by hand, with where it is. */
 export interface PrivateCopy {
   pattern: string;
   file: string;
@@ -170,7 +163,6 @@ const COUNTDOWN = /[\w.$\][]*(?:cooldown|timer)[\w.$\][]*\s*-=\s*dt\b/i;
 const LOCAL_CLAMP_LERP = /\b(?:function\s+(?:clamp|lerp)\b|const\s+(?:clamp|lerp)\s*=\s*\()/;
 const LIST_WINDOW = 4;
 
-/** The part each private-copy pattern replaces, named as the worklist heading. */
 export const PATTERN_NAMES = [
   "ordered threshold list (use threshold/thresholds)",
   "weight-subtract loop (use random/pick)",
@@ -178,7 +170,6 @@ export const PATTERN_NAMES = [
   "local clamp or lerp (use math/scalar)",
 ] as const;
 
-/** A part's own file is the part, not a private copy of it. */
 function isPartHome(path: string): boolean {
   return path.startsWith(CORE_SRC) && PART_HOMES.includes(path.slice(CORE_SRC.length).replace(/\.tsx?$/, ""));
 }
@@ -188,7 +179,6 @@ function importsAny(source: Source, homes: readonly string[]): boolean {
   return false;
 }
 
-/** Each private copy of a part in core and game source, one row per matching line. */
 export function privateCopies(sources: readonly Source[]): PrivateCopy[] {
   const found: PrivateCopy[] = [];
   for (const source of sources) {

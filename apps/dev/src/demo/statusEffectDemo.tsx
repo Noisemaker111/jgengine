@@ -14,7 +14,6 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";
 
-/** Sample timed effects — free-string `kind`s with a base duration and starting stack count. */
 const SAMPLE_EFFECTS: readonly { kind: string; durationMs: number; magnitude: number; stacks: number }[] = [
   { kind: "poison", durationMs: 8000, magnitude: 4, stacks: 3 },
   { kind: "haste", durationMs: 6000, magnitude: 15, stacks: 1 },
@@ -26,7 +25,6 @@ const DURATION_BY_KIND: Record<string, number> = Object.fromEntries(
   SAMPLE_EFFECTS.map((effect) => [effect.kind, effect.durationMs]),
 );
 
-/** Build a live status instance through the real status model, then age it to a partial remaining. */
 function seedInstance(effect: (typeof SAMPLE_EFFECTS)[number], elapsedFraction: number): StatusInstance {
   const outcome = resolveStatusApplication({
     spec: {
@@ -68,7 +66,6 @@ function ringColor(kind: string): string {
   }
 }
 
-/** Game-authored glyphs for its own statuses. */
 const iconFor: StatusIconResolver = (kind) => {
   switch (kind) {
     case "poison":

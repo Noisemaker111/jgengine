@@ -37,11 +37,7 @@ const LIGHT_SCHEMA: ParamSchema = {
 
 let registered = false;
 
-/**
- * Idempotently registers the engine's light built-in environment scene kinds + generators. The heavy
- * ones (city, forest stands, grown plants) load on demand (`ON_DEMAND_SCENE_KINDS`), or all at once
- * with `registerAllSceneKinds`. @internal
- */
+/** @internal */
 export function registerBuiltinSceneKinds(): void {
   if (registered) return;
   registered = true;

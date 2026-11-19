@@ -24,8 +24,6 @@ import { iconArtwork, MASCOT_ARTWORK, type IconName } from "./icons";
 
 export { C, FULL } from "./theme";
 
-// --- text --------------------------------------------------------------------------------------
-
 export function Text({ text, ...props }: RuneElementProps) {
   return <RuneLabel {...props} {...(text === undefined ? {} : { value: text })} />;
 }
@@ -33,8 +31,6 @@ export function Label(props: RuneElementProps) { return <Text {...llmvilleTheme.
 export function Heading(props: RuneElementProps) { return <Text {...llmvilleTheme.text.heading} {...props} />; }
 export function Muted(props: RuneElementProps) { return <Text size={13} color={C.muted} {...props} />; }
 export function ErrorText(props: RuneElementProps) { return <Text size={13} color={C.error} role="alert" {...props} />; }
-
-// --- layout --------------------------------------------------------------------------------------
 
 export function Row(props: RuneViewProps) { return <RuneView layout="row" gap={8} items="center" {...props} />; }
 export function Stack(props: RuneViewProps) { return <RuneView gap={10} {...props} />; }
@@ -44,12 +40,9 @@ export function Panel({ shell = "panel", ...props }: RuneViewProps & { shell?: P
   return <RuneView variant={shell} {...props} />;
 }
 
-/** Phones get the folded layouts: a narrow screen, in either orientation. */
 export function useCompact(): boolean {
   return useRuneViewport().width < 640;
 }
-
-// --- marks --------------------------------------------------------------------------------------
 
 export function Icon({ name, size = 18, color, strokeWidth }: { name: IconName; size?: number; color?: string; strokeWidth?: number }) {
   return <RuneGlyph artwork={iconArtwork(name, strokeWidth)} size={size} {...(color === undefined ? {} : { color })} />;
@@ -61,7 +54,6 @@ export function Mascot({ size = 40, color = C.cream }: { size?: number; color?: 
 
 const WORDMARK = { sm: 26, md: 40, lg: 64, xl: 80 } as const;
 const MARK = { sm: 28, md: 40, lg: 64, xl: 80 } as const;
-/** The logo lockup: mascot mark and wordmark, stacked for heroes, inline for chrome. */
 export function Logo({ stacked = false, size = "md", tagline = false }: { stacked?: boolean; size?: keyof typeof WORDMARK; tagline?: boolean }) {
   const compact = useCompact();
   const scale = compact && (size === "lg" || size === "xl") ? 0.75 : 1;
@@ -74,15 +66,9 @@ export function Logo({ stacked = false, size = "md", tagline = false }: { stacke
   </RuneView>;
 }
 
-// --- actions -------------------------------------------------------------------------------------
-
 export type ButtonTone = "primary" | "secondary" | "ghost" | "danger" | "link" | "chip";
 const BUTTON_INK: Record<ButtonTone, string> = { primary: C.ink, secondary: C.cream, ghost: C.cream, danger: C.coral, link: C.teal, chip: C.cream };
 
-/**
- * One LLMville action. `busy` swaps the label for a spinner line and disables it, the way every
- * menu button shows a request in flight.
- */
 export function Button({ tone = "secondary", icon, busy, busyLabel, onPress, children, disabled, label, ...props }: Omit<RuneViewProps, "children"> & {
   tone?: ButtonTone; icon?: IconName; busy?: boolean; busyLabel?: string; onPress?: () => void; children?: ReactNode; disabled?: boolean; label?: string;
 }) {
@@ -98,7 +84,6 @@ export function Button({ tone = "secondary", icon, busy, busyLabel, onPress, chi
   </RuneAction>;
 }
 
-/** A labelled native text field. */
 export function Field({ label, error, ...props }: RuneFieldProps & { label?: string; error?: string | null }) {
   return <RuneView gap={6} width={FULL}>
     {label === undefined ? null : <Label>{label}</Label>}
@@ -106,8 +91,6 @@ export function Field({ label, error, ...props }: RuneFieldProps & { label?: str
     {error === undefined || error === null || error === "" ? null : <ErrorText>{error}</ErrorText>}
   </RuneView>;
 }
-
-// --- progress ------------------------------------------------------------------------------------
 
 /**
  * A boot bar. A known `progress` (0..1, bound at the leaf) fills it; without one a third-width sweep
@@ -123,9 +106,6 @@ export function ProgressBar({ progress, width = 240 }: { progress?: () => number
   </RuneView>;
 }
 
-// --- surfaces ------------------------------------------------------------------------------------
-
-/** The warm ink backdrop behind LLMville's menu pages: amber glow up top, teal floor light. */
 export function Backdrop() {
   return <RuneView anchor="fill" fill={C.ink}
     radial={{ center: [0.5, -0.1], radius: [1.2, 0.9], stops: [[0, "#e0a95c40"], [0.5, "#e0a95c00"]] }}>
@@ -133,7 +113,6 @@ export function Backdrop() {
   </RuneView>;
 }
 
-/** A full-screen page on the backdrop: centred content, or a scrolling column. */
 export function Page({ centered = true, children, maxWidth = 460 }: { centered?: boolean; children: ReactNode; maxWidth?: number }) {
   const { width, height } = useRuneViewport();
   return <RuneView anchor="fill">
@@ -144,7 +123,6 @@ export function Page({ centered = true, children, maxWidth = 460 }: { centered?:
   </RuneView>;
 }
 
-/** A dimmed modal sheet: title row with a close action, scrolling body. Back closes it. */
 export function Sheet({ title, close, children, width: preferred = 640, height: tall }: { title: string; close: () => void; children: ReactNode; width?: number; height?: number }) {
   const { width, height } = useRuneViewport();
   const boxHeight = Math.min(tall ?? 720, height - 24);
@@ -160,7 +138,6 @@ export function Sheet({ title, close, children, width: preferred = 640, height: 
   </RuneView>;
 }
 
-/** Action results and denials from `actionNotices`, each its own small toast. */
 export function Notices() {
   const source = useMemo(() => ({ read: actionNotices.list, subscribe: actionNotices.subscribe }), []);
   return <RuneView anchor="top" safe inset={16} gap={6} items="center">
@@ -172,10 +149,6 @@ export function Notices() {
   </RuneView>;
 }
 
-/**
- * LLMville's one native surface: its theme and fonts, the action notices above everything, and
- * the world projection when the 3D view is up.
- */
 export function LlmRoot({ children, context, project }: { children: ReactNode; context?: GameContext | undefined; project?: RuneProjection | undefined }) {
   registerLlmvilleFonts();
   return <RuneRoot theme={llmvilleTheme} {...(context === undefined ? {} : { context })} {...(project === undefined ? {} : { project })}>

@@ -8,9 +8,7 @@ export type { RewoundPosition };
 
 /** Default per-message payload cap (bytes) — `ws` closes the socket with 1009 past this. */
 export const DEFAULT_MAX_PAYLOAD_BYTES = 1_048_576;
-/** Default max concurrent sockets this server accepts before rejecting new ones. */
 export const DEFAULT_MAX_CONNECTIONS = 10_000;
-/** Default ping/pong interval; a socket that misses one round-trip is terminated. */
 export const DEFAULT_HEARTBEAT_INTERVAL_MS = 30_000;
 
 export type GameWsServerOptions = HostRouterOptions & {
@@ -29,7 +27,6 @@ export type GameWsServer = {
   wss: WebSocketServer;
   port: () => number;
   rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[];
-  /** Fence new messages, drain accepted router work, and close sockets. Repeated calls share completion; host persistence remains caller-owned. */
   close: () => Promise<void>;
 };
 

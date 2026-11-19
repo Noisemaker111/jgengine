@@ -14,22 +14,15 @@ import { hudType } from "@jgengine/core/hud/hudTokens";
  * is baked in; {@link defaultEquipLayout} is a convenience arrangement the game can override wholesale.
  */
 
-/** Which flank of the paperdoll a slot sits on — `left`/`right` columns, or the `bottom` row under the portrait. */
 export type EquipSlotPosition = "left" | "right" | "bottom";
 
-/** One named equip slot: a stable `id`, a display `label`, its worn `item` (or `null` = empty), and where it sits. */
 export interface EquipSlot {
-  /** Stable slot id passed to `onSlotActivate` (e.g. `head`, `mainHand`, `ring1`). */
   id: string;
-  /** Human label shown under/beside the slot and used as its accessible name. */
   label: string;
-  /** The worn item, or `null` for an empty slot (renders the themed placeholder). */
   item: SlotItem | null;
-  /** Which flank the slot sits on. Default `left`. */
   position?: EquipSlotPosition;
 }
 
-/** An ordered set of equip slots that make up a paperdoll. Caller-supplied; see {@link defaultEquipLayout}. */
 export type EquipSlotLayout = readonly EquipSlot[];
 
 /** Slot ids used by {@link defaultEquipLayout}'s convenience arrangement. */
@@ -58,11 +51,6 @@ const DEFAULT_ARRANGEMENT: readonly { id: DefaultEquipSlotId; label: string; pos
   { id: "trinket", label: "Trinket", position: "right" },
 ];
 
-/**
- * A sensible default paperdoll arrangement — worn armor down the left flank, held gear and jewelry
- * down the right — that the game fills by passing worn items keyed by slot id. Every id is optional;
- * unfilled slots render empty. Games that need a different slot set pass their own {@link EquipSlotLayout}.
- */
 export function defaultEquipLayout(items: Partial<Record<DefaultEquipSlotId, SlotItem | null>> = {}): EquipSlot[] {
   return DEFAULT_ARRANGEMENT.map((slot) => ({
     id: slot.id,
@@ -72,15 +60,12 @@ export function defaultEquipLayout(items: Partial<Record<DefaultEquipSlotId, Slo
   }));
 }
 
-/** Props for {@link Paperdoll}. */
 export interface PaperdollProps {
-  /** The equip slots to arrange. Order within a flank is preserved. */
   slots: EquipSlotLayout;
   /** Center node — a portrait, 3D preview, or custom art. A silhouette placeholder is drawn when omitted. */
   portrait?: ReactNode;
   /** Slot tile size in px. Default 44. */
   slotSize?: number;
-  /** Fired with the slot `id` on click / Enter / Space — wire drag or an equip picker here. */
   onSlotActivate?: (id: string) => void;
   className?: string;
   style?: CSSProperties;
@@ -215,23 +200,16 @@ export function Paperdoll({ slots, portrait, slotSize = 44, onSlotActivate, clas
   );
 }
 
-/** One derived-stat row. `group` optionally buckets rows under a small header. */
 export interface StatRow {
-  /** Stable row id. */
   id: string;
-  /** Small-caps row label (e.g. `Armor`, `Crit`). */
   label: string;
-  /** The value to show — the game formats it (a number, `"12%"`, `"1.2/s"`). */
   value: string | number;
   /** Optional secondary hint shown dimmed after the value (e.g. a delta or source). */
   hint?: string;
-  /** Optional group header this row falls under; consecutive rows sharing a group render one header. */
   group?: string;
 }
 
-/** Props for {@link StatList}. */
 export interface StatListProps {
-  /** Derived stat rows, in display order. The game owns which stats matter. */
   stats: readonly StatRow[];
   className?: string;
   style?: CSSProperties;
@@ -256,14 +234,7 @@ function StatListRow({ row }: { row: StatRow }) {
   );
 }
 
-/**
- * Renders derived character stats as clean small-caps label→value rows, token-themed. Rows carrying a
- * `group` field are bucketed under a small uppercase header (consecutive same-group rows share one).
- * Pure and prop-driven — the game supplies the rows (from `useEntityStat`/derived values); the engine
- * ships no stat list of its own.
- *
- * @capability character-statlist derived-stat readout — grouped small-caps label→value rows, token-themed
- */
+/** @capability character-statlist derived-stat readout — grouped small-caps label→value rows, token-themed */
 export function StatList({ stats, className, style }: StatListProps): ReactNode {
   const groups: { name: string | undefined; rows: StatRow[] }[] = [];
   for (const row of stats) {
@@ -298,40 +269,23 @@ export function StatList({ stats, className, style }: StatListProps): ReactNode 
   );
 }
 
-/** Props for {@link CharacterSheet}. */
 export interface CharacterSheetProps {
-  /** Equip slots to arrange as the paperdoll (see {@link defaultEquipLayout}). */
   slots: EquipSlotLayout;
-  /** Derived stat rows for the {@link StatList}. */
   stats: readonly StatRow[];
-  /** Character name shown in the header. */
   name?: ReactNode;
-  /** Secondary header line — level, class, faction, etc. */
   subtitle?: ReactNode;
-  /** Portrait node passed through to the {@link Paperdoll} center. */
   portrait?: ReactNode;
-  /** Replace the whole header block (name/subtitle) with custom content. */
   header?: ReactNode;
-  /** Frame title label. Default `Character`. */
   title?: ReactNode;
-  /** {@link HudFrame} skin. Default `themed`. */
   variation?: HudFrameVariation;
   /** Slot tile size in px, forwarded to {@link Paperdoll}. */
   slotSize?: number;
-  /** Fired with the equip slot `id` on activate. */
   onSlotActivate?: (id: string) => void;
   className?: string;
   style?: CSSProperties;
 }
 
-/**
- * Drop-in character sheet: a {@link HudFrame} wrapping an optional name/subtitle/portrait header, the
- * equip-slot {@link Paperdoll}, and the derived-stat {@link StatList}. The game supplies slots, stats,
- * header content, and the activation callback, and owns the window that toggles it (this component does
- * not manage its own open/close). Pure composition over existing primitives and HudTheme tokens.
- *
- * @capability character-sheet drop-in paperdoll + derived-stat sheet in a HudFrame — game supplies slots/stats
- */
+/** @capability character-sheet drop-in paperdoll + derived-stat sheet in a HudFrame — game supplies slots/stats */
 export function CharacterSheet({
   slots,
   stats,

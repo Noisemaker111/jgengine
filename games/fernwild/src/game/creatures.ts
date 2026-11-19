@@ -34,26 +34,19 @@ import { AIRBORNE, FLYERS, LIFT_HANG, LIFT_REACH } from "./data/flight";
 import { SWIM_DEPTH, SWIM_SLOW, SWIMMERS } from "./data/swim";
 import { SEA_LEVEL } from "../world";
 
-/** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
 const CREATURE_SLOTS = 30;
 /** Seconds a body lies before it rots away. */
 const CARCASS_SECONDS = 300;
 /** Seconds before a killed or tamed creature's slot in its herd refills. */
 const RESPAWN_SECONDS = 240;
-/** How far a whistle carries to your tames. */
 const WHISTLE_RANGE = 30;
-/** How far an aggressive tame looks for a wild creature to pick a fight with (approx ARK's aggro radius). */
 const AGGRESSIVE_RANGE = 15;
-/** How far E and a swing reach a creature, past its body. */
 const USE_REACH = 3;
 /** A bola wraps nothing bigger than this body radius, metres (ARK: big creatures shrug it off; approx). */
 const BOLA_MAX_RADIUS = 1.6;
-/** Sea and shallows creatures will not walk into. */
 const SHORE = 0.4;
-/** A tame's carrying bands, as the survivor's: slowed from 85% of its weight stat, stuck at the limit. */
 const TAME_ENCUMBRANCE = { soft: 0.85, floor: 0.5 } as const;
 
-/** A creature as the world remembers it. */
 interface Creature {
   id: string;
   species: string;
@@ -65,26 +58,18 @@ interface Creature {
   dead: boolean;
   /** Seconds until a body rots away. */
   rot: number;
-  /** Who last hurt it, for the kill's XP. */
   lastHitBy: string | null;
-  /** Stamina left; a ridden sprint spends it. */
   stamina: number;
-  /** A tame's own levels; null while wild. */
   growth: TameGrowth | null;
   sex: "female" | "male";
-  /** Its levels past the first, stat by stat, as ARK hands them out wild and passes them to babies. */
   wild: Record<WildStat, number>;
-  /** Mutations in its line. */
   mutations: number;
-  /** A bred creature's lineage: which parent each wild stat came from, and which a mutation raised; null for one born wild. */
   lineage: Lineage | null;
-  /** A tame left to mate with tames of its kind nearby (ARK's Enable Mating). */
   mating: boolean;
   /** How much of its imprint it had as a baby, 0 to 1: every stat but stamina, oxygen and speed up to 20% more. */
   imprint: number;
 }
 
-/** ARK's tamed levelling: the level it was tamed at, levels gained since, XP into the next, points spent. */
 interface TameGrowth {
   tamedAt: number;
   gained: number;
@@ -92,16 +77,13 @@ interface TameGrowth {
   points: StatPointSheet<TameStat>;
 }
 
-/** A tame's points scale each stat from its value when tamed; melee and speed from 100%. */
 const TAME_POINTS = createStatPoints<TameStat>({
   stats: Object.fromEntries(TAME_STATS.map((stat) => [stat.id, { base: 1, perPoint: stat.perPoint, mode: "scale" as const }])) as Record<TameStat, { base: number; perPoint: number; mode: "scale" }>,
 });
-/** Levels gained after taming: the n-th costs 10 x n XP. */
 const TAME_TRACK = leveling({ xpForLevel: { kind: "linear", base: 0, per: TAME_LEVELS.xpStep }, maxLevel: TAME_LEVELS.max + 1 });
 /** Stamina a creature gets back each second, as a share of its max (approx). */
 const STAMINA_REGEN = 0.05;
 
-/** Things that happened this tick that the survivor's side reacts to (XP, notices). */
 export type CreatureEvent =
   | { type: "tamed"; id: string; label: string; level: number; effectiveness: number }
   | { type: "knockedOut"; id: string; label: string }
@@ -123,22 +105,15 @@ interface World {
   populated: boolean;
   /** Seconds since herds were last put to sleep or refilled; they are checked every {@link HERD_CHECK}. */
   sinceHerdCheck: number;
-  /** Where the survivor stood at that check: moving far from it (a teleport, a fast mount) checks at once. */
   herdCheckedAt: readonly [number, number, number] | null;
-  /** The creature in front of the survivor (or their mount), within reach. */
   aimed: string | null;
-  /** The creature whose inventory screen is open. */
   viewing: string | null;
   /** What the survivor last hit, so a following tame joins the fight. */
   lastTarget: { id: string; until: number } | null;
-  /** ARK's TamingSpeedMultiplier: meals come this much sooner. */
   tamingSpeed: number;
   mountReady: number;
-  /** The last tame's taming effectiveness and bonus levels, for the HUD and proofs. */
   lastTame: { effectiveness: number; bonus: number } | null;
-  /** The creature each flyer holds in its talons, by flyer. */
   carried: Map<string, string>;
-  /** The last creature a flyer lifted and where it was lifted from, for the HUD and proofs. */
   lastLift: { id: string; from: [number, number] } | null;
 }
 
@@ -147,16 +122,13 @@ const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, d
 /** Wild creatures farther than this from the survivor think in coarse steps of {@link FAR_STEP} seconds. */
 const NEAR_RANGE = 60;
 const FAR_STEP = 0.25;
-/** Herds wake when the survivor comes this close to their zone and sleep (wild ones vanish) past it. */
 const AWAKE_RANGE = 220;
 /** A herd never refills in plain view: only once the survivor is this many metres from the spawn point. */
 const REFILL_UNSEEN = 60;
 /** Herds wake, sleep and refill on this beat (seconds), not every frame: a big island queues hundreds of refills. */
 const HERD_CHECK = 0.5;
-/** ...or as soon as the survivor is this far (m) from where herds were last checked. */
 const HERD_CHECK_MOVE = 10;
 
-/** One species in a spawn zone: ARK's relative weight there. */
 interface ZoneSpecies {
   species: string;
   weight: number;
@@ -174,11 +146,6 @@ function shareOut(count: number, listed: readonly ZoneSpecies[]): { species: str
   return listed.map((entry, i) => ({ species: entry.species, weight: entry.weight, cap: caps[i]! }));
 }
 
-/**
- * Each creature_spawn marker in editor.scene.json is one of ARK's spawn zones: the species that live
- * there with their weights, how many at once, how far they roam. A zone holds what ARK puts there and
- * no more; a species with no stats would be left out (creatures.test checks none is).
- */
 function herds() {
   const start = markersOfKind(editorLayers, "player_spawn")[0];
   return markersOfKind(editorLayers, "creature_spawn").flatMap((marker) => {
@@ -238,9 +205,6 @@ function defOf(creature: Creature): SpeciesDef {
   return speciesDef(creature.species)!;
 }
 
-/**
- * A stat a creature has: from its wild levels in that stat, then a tame's points on top, then a bred tame's imprint.
- */
 function statOf(creature: Creature, stat: TameStat): number {
   const def = defOf(creature);
   const level = stat === "speed" ? 1 : 1 + creature.wild[stat];
@@ -249,7 +213,6 @@ function statOf(creature: Creature, stat: TameStat): number {
   return IMPRINTED_STATS.includes(stat) ? tamed * (1 + IMPRINT_BONUS * creature.imprint) : tamed;
 }
 
-/** What a creature carries against its weight stat: its specialty items weigh what it feels them at (`LIGHTER_LOADS`). */
 function loadOf(creature: Creature): EncumbranceState {
   const stacks = creature.inventory.slots.flatMap((slot) => (slot === null ? [] : [{ itemId: slot.itemId, quantity: slot.count }]));
   return resolveEncumbrance(totalLoad(stacks, (itemId) => (itemDef(itemId)?.weight ?? 0) * loadShare(creature.species, itemId)), statOf(creature, "weight"), TAME_ENCUMBRANCE);
@@ -268,8 +231,6 @@ function body(world: World, creature: Creature): CreatureBody {
     wander: { radius: world.regions.get(creature.region)?.radius ?? 16 },
   };
 }
-
-// --- spawning -----------------------------------------------------------------------------
 
 function rollLevel(ctx: GameContext, max: number): number {
   // Low levels are common and high ones rare, as on ARK's Island.
@@ -290,7 +251,6 @@ function openGround(ctx: GameContext, at: readonly [number, number], radius: num
   return null;
 }
 
-/** What a creature is born with: a wild one rolls it, a bred one inherits it. */
 export interface CreatureGenes {
   sex: "female" | "male";
   wild: Record<WildStat, number>;
@@ -298,22 +258,15 @@ export interface CreatureGenes {
   lineage: Lineage | null;
 }
 
-/** Which parent a bred creature's wild levels in one stat came from: "both" when they had the same. */
 export type StatSource = "mother" | "father" | "both";
 
-/** A bred creature's lineage, as ARK's stat screen shows it: its parents, each stat's parent, and each mutation's stat. */
 export interface Lineage {
   mother: string;
   father: string;
   from: Record<WildStat, StatSource>;
-  /** The stat each mutation raised, once per mutation (one stat can take two). */
   mutated: WildStat[];
 }
 
-/**
- * A bred creature's stats that match neither parent, its mutations taken off: 0 when it inherited every stat whole;
- * -1 for one born wild or whose parents are gone.
- */
 export function lineageStrays(ctx: GameContext, id: string): number {
   const creatures = worldOf(ctx).creatures;
   const lineage = creatures.get(id)?.lineage ?? null;
@@ -371,14 +324,12 @@ export function spawnCreature(
   return id;
 }
 
-/** Whether a herd's zone is near enough to the survivor to be awake. */
 function awake(world: World, region: string, at: readonly [number, number, number] | null): boolean {
   const zone = world.regions.get(region);
   if (zone === undefined || at === null) return false;
   return Math.hypot(zone.center[0] - at[0], zone.center[2] - at[2]) < AWAKE_RANGE + zone.radius;
 }
 
-/** Put far herds to sleep and refill the awake ones. */
 function tickHerds(ctx: GameContext, world: World, here: readonly [number, number, number] | null): void {
   const dt = world.sinceHerdCheck;
   world.sinceHerdCheck = 0;
@@ -395,7 +346,6 @@ function tickHerds(ctx: GameContext, world: World, here: readonly [number, numbe
   world.populated = true;
 }
 
-/** Wild creatures nobody has touched leave when their zone falls asleep; the zone refills when it wakes. */
 function sleepFarHerds(ctx: GameContext, world: World, at: readonly [number, number, number] | null): void {
   for (const creature of [...world.creatures.values()]) {
     if (creature.tamed || creature.dead || creature.region === "" || awake(world, creature.region, at)) continue;
@@ -415,7 +365,6 @@ function removeCreature(ctx: GameContext, world: World, creature: Creature, dela
   if (creature.region !== "") world.director.notifyRemoved(creature.region, creature.species, creature.id, { delay });
 }
 
-/** ARK's admin DestroyWildDinos: every living wild creature is gone; their zones refill as usual later. */
 export function destroyWild(ctx: GameContext): void {
   const world = worldOf(ctx);
   for (const creature of [...world.creatures.values()]) if (!creature.tamed && !creature.dead) removeCreature(ctx, world, creature, RESPAWN_SECONDS);
@@ -432,14 +381,10 @@ export function wildCountNear(ctx: GameContext, from: readonly [number, number, 
   return count;
 }
 
-// --- aiming, striking -----------------------------------------------------------------------
-
-/** The live entity that acts for the survivor: their mount when riding, else themselves. */
 function actor(ctx: GameContext): string {
   return ridingOf(ctx).mountOf(ctx.player.userId) ?? ctx.player.userId;
 }
 
-/** The creature in front of `fromId`, within `reach` of its body, nearest first. */
 function creatureInFront(ctx: GameContext, fromId: string, yaw: number, reach: number, accept: (creature: Creature) => boolean): Creature | null {
   const from = ctx.scene.entity.get(fromId);
   if (from === null) return null;
@@ -480,13 +425,10 @@ function creatureInFront(ctx: GameContext, fromId: string, yaw: number, reach: n
   return hit ?? near;
 }
 
-/** What a swing at a creature did. */
 export interface CreatureStrike {
   label: string;
-  /** Meat and hide cut from a body. */
   granted: readonly ResourceGrant[];
   killed: boolean;
-  /** ARK's kill XP when this strike killed it, else 0. */
   xp: number;
   knockedOut: boolean;
 }
@@ -538,18 +480,15 @@ function creatureAlongAim(ctx: GameContext, fromId: string, yaw: number, range: 
   return best;
 }
 
-/** A shot from a ranged weapon: the first wild creature along the aim takes the ammo's damage and doses. */
 export function shootCreature(ctx: GameContext, attackerId: string, yaw: number, range: number, shot: { damage: number; doses: readonly VitalDose[] }): CreatureStrike | null {
   const target = creatureAlongAim(ctx, attackerId, yaw, range);
   return target === null ? null : landHit(ctx, attackerId, target, shot.damage, shot.doses);
 }
 
-/** What a creature's body takes from a hit: no torpor for one immune to it, no hold for one too big for a bola. */
 function dosesFor(def: SpeciesDef, doses: readonly VitalDose[]): VitalDose[] {
   return doses.filter((dose) => !(dose.vital === "torpor" && def.torporImmune === true) && !(dose.vital === "held" && def.radius > BOLA_MAX_RADIUS));
 }
 
-/** One blow or shot on a live creature: damage, aggro, its doses (torpor knocking it out, a bola's hold), and death. */
 function landHit(ctx: GameContext, attackerId: string, target: Creature, damage: number, doses: readonly VitalDose[]): CreatureStrike {
   const world = worldOf(ctx);
   const def = defOf(target);
@@ -566,10 +505,6 @@ function landHit(ctx: GameContext, attackerId: string, target: Creature, damage:
   return { label: def.label, granted: [], killed, knockedOut, xp: killed ? killXp(def, target.level) : 0 };
 }
 
-/**
- * Left click on a mount: it turns to where the camera aims (`yaw`), as the survivor's swing does, and bites
- * what is in front: a creature, a body (meat for its rider), or a tree, rock or bush (into its own inventory).
- */
 export function mountBite(ctx: GameContext, yaw?: number): CreatureStrike | "riding" | null {
   const world = worldOf(ctx);
   const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
@@ -608,8 +543,6 @@ export function mountBite(ctx: GameContext, yaw?: number): CreatureStrike | "rid
   return "riding";
 }
 
-// --- knock out, wake, die, tame ---------------------------------------------------------------
-
 function lie(ctx: GameContext, id: string, down: boolean): void {
   const entity = ctx.scene.entity.get(id);
   if (entity === null) return;
@@ -647,7 +580,6 @@ function kill(ctx: GameContext, creature: Creature): void {
   if (killer?.growth != null && !killer.dead) grantTameXp(ctx, killer, killXp(defOf(creature), creature.level));
 }
 
-/** XP for a tame: ARK levels it on its own curve and gives a point per level to spend. */
 function grantTameXp(ctx: GameContext, creature: Creature, amount: number): void {
   const growth = creature.growth;
   if (growth === null || amount <= 0) return;
@@ -665,7 +597,6 @@ function heightAboveGround(ctx: GameContext, id: string): number {
   return entity === null ? 0 : entity.position[1] - ctx.world.groundHeightAt(entity.position[0], entity.position[2]);
 }
 
-/** Whether a creature stands in water deep enough to swim. */
 function inDeepWater(ctx: GameContext, id: string): boolean {
   const entity = ctx.scene.entity.get(id);
   return entity !== null && SEA_LEVEL - ctx.world.groundHeightAt(entity.position[0], entity.position[2]) > SWIM_DEPTH;
@@ -694,28 +625,24 @@ function tickTame(ctx: GameContext, creature: Creature, ridden: boolean, dt: num
   if (ridden && moved !== null && (Math.abs((moved.walkSpeed ?? 0) - walk) > 0.01 || moved.runMultiplier !== run)) ctx.scene.entity.update(creature.id, { movement: { ...moved, walkSpeed: walk, runMultiplier: run } });
 }
 
-/** Whether the survivor rides a flyer with the stamina to hold itself up: false drops it out of the sky. */
 export function mountCanFly(ctx: GameContext): boolean {
   const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
   const mount = mountId === null ? undefined : worldOf(ctx).creatures.get(mountId);
   return mount !== undefined && FLYERS[mount.species] !== undefined && mount.stamina > 1 && !loadOf(mount).immobile;
 }
 
-/** Whether the survivor rides through deep water, and whether their mount is one of the swimmers. */
 export function mountSwim(ctx: GameContext): { swimming: boolean; swimmer: boolean } {
   const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
   const mount = mountId === null ? undefined : worldOf(ctx).creatures.get(mountId);
   return { swimming: mount !== undefined && inDeepWater(ctx, mount.id), swimmer: mount !== undefined && SWIMMERS[mount.species] !== undefined };
 }
 
-/** Whether the mount under the survivor has the stamina to sprint; null on foot. */
 export function mountCanSprint(ctx: GameContext): boolean | null {
   const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
   const mount = mountId === null ? undefined : worldOf(ctx).creatures.get(mountId);
   return mount === undefined ? null : mount.stamina > 1;
 }
 
-/** Spend one of the viewed tame's points: its stat grows, and a pool's current value with it, as in ARK. */
 export function levelTame(ctx: GameContext, stat: TameStat): void {
   const creature = viewed(ctx);
   const growth = creature?.growth ?? null;
@@ -740,7 +667,6 @@ function tame(ctx: GameContext, creature: Creature, effectiveness: number, bonus
   ctx.game.notices.push({ text: `${defOf(creature).label} tamed! Level ${creature.level} (+${bonus} from ${Math.round(effectiveness * 100)}% taming effectiveness)`, tone: "success" });
 }
 
-/** A creature becomes the survivor's: its tame levels start, full health, and it waits where it stands. */
 function makeTame(ctx: GameContext, creature: Creature): void {
   const world = worldOf(ctx);
   creature.tamed = true;
@@ -758,14 +684,12 @@ function makeTame(ctx: GameContext, creature: Creature): void {
   creature.region = "";
 }
 
-/** A bred baby: hatched or born beside `at`, the survivor's from the first moment. Returns its id. */
 export function spawnBaby(ctx: GameContext, species: string, at: readonly [number, number], genes: CreatureGenes, size: number): string | null {
   const id = spawnCreature(ctx, species, at, { genes, size });
   if (id !== null) tameSummoned(ctx, id, false);
   return id;
 }
 
-/** ARK's GMSummon: the creature just spawned is the survivor's at once, mating on or off. */
 export function tameSummoned(ctx: GameContext, id: string, mating: boolean): void {
   const creature = worldOf(ctx).creatures.get(id);
   if (creature === undefined) return;
@@ -774,7 +698,6 @@ export function tameSummoned(ctx: GameContext, id: string, mating: boolean): voi
   creature.mating = mating;
 }
 
-/** Every living tame of the survivor's, for breeding: where it stands, its kind, sex and whether it may mate. */
 export function tames(ctx: GameContext): { id: string; species: string; sex: "female" | "male"; mating: boolean; at: readonly [number, number, number]; radius: number; following: boolean }[] {
   const world = worldOf(ctx);
   const out = [];
@@ -803,7 +726,6 @@ export function lastTame(ctx: GameContext): { effectiveness: number; bonus: numb
   return worldOf(ctx).lastTame;
 }
 
-/** For proofs and admins: put a wild creature straight to sleep, as if clubbed under. */
 export function knockOutNow(ctx: GameContext, id: string): boolean {
   const world = worldOf(ctx);
   const creature = world.creatures.get(id);
@@ -813,7 +735,6 @@ export function knockOutNow(ctx: GameContext, id: string): boolean {
   return true;
 }
 
-/** Wild females awake and alive, where they stand: the ones that lay eggs. */
 export function wildFemales(ctx: GameContext): { id: string; species: string; at: readonly [number, number, number]; radius: number }[] {
   const world = worldOf(ctx);
   const out = [];
@@ -831,7 +752,6 @@ export function genesOf(ctx: GameContext, id: string): CreatureGenes | null {
   return creature === undefined ? null : { sex: creature.sex, wild: { ...creature.wild }, mutations: creature.mutations, lineage: creature.lineage };
 }
 
-/** Set a bred tame's imprint: its imprinted stats grow, and its health with them. */
 export function setImprint(ctx: GameContext, id: string, imprint: number): void {
   const creature = worldOf(ctx).creatures.get(id);
   if (creature === undefined || creature.dead) return;
@@ -842,7 +762,6 @@ export function setImprint(ctx: GameContext, id: string, imprint: number): void 
   ctx.scene.entity.stats.set(id, "health", { max, current: Math.max(0, (health?.current ?? max) + max - before) });
 }
 
-/** The max food a creature holds (ARK's food stat). */
 export function foodMaxOf(ctx: GameContext, id: string): number {
   const creature = worldOf(ctx).creatures.get(id);
   return creature === undefined ? 0 : statOf(creature, "food");
@@ -854,7 +773,6 @@ export function creatureSupply(ctx: GameContext, id: string): DoseSupply | null 
   return creature === undefined ? null : feeder(creature);
 }
 
-/** Starving: it loses `share` of its max health, and dies when that runs out. */
 export function starveCreature(ctx: GameContext, id: string, share: number): void {
   const creature = worldOf(ctx).creatures.get(id);
   const health = ctx.scene.entity.stats.get(id, "health");
@@ -864,13 +782,11 @@ export function starveCreature(ctx: GameContext, id: string, share: number): voi
   if (current <= 0) kill(ctx, creature);
 }
 
-/** Whether a creature is alive. */
 export function creatureAlive(ctx: GameContext, id: string): boolean {
   const creature = worldOf(ctx).creatures.get(id);
   return creature !== undefined && !creature.dead;
 }
 
-/** Set a creature down at `at` (a portal took it): it stands there, and a tame told to stay now waits there. */
 export function moveCreature(ctx: GameContext, id: string, at: readonly [number, number]): void {
   const world = worldOf(ctx);
   const creature = world.creatures.get(id);
@@ -883,13 +799,11 @@ export function moveCreature(ctx: GameContext, id: string, at: readonly [number,
   world.steps.delete(id);
 }
 
-/** A creature dies where it stands (the tames left behind in a lost boss fight). */
 export function slayCreature(ctx: GameContext, id: string): void {
   const creature = worldOf(ctx).creatures.get(id);
   if (creature !== undefined) kill(ctx, creature);
 }
 
-/** A creature, alive or a body, is gone from the world at once (a boss lair clearing out). */
 export function removeCreatureNow(ctx: GameContext, id: string): void {
   const world = worldOf(ctx);
   const creature = world.creatures.get(id);
@@ -903,17 +817,14 @@ export function creatureHealth(ctx: GameContext, id: string): number | null {
   return health === null || health.max <= 0 ? null : Math.max(0, health.current / health.max);
 }
 
-/** The creature the survivor is aimed at, or null. */
 export function aimedCreature(ctx: GameContext): string | null {
   return worldOf(ctx).aimed;
 }
 
-/** The creature whose inventory screen is open, or null. */
 export function viewedCreature(ctx: GameContext): string | null {
   return viewed(ctx)?.id ?? null;
 }
 
-/** ARK's Enable Mating, on the tame whose inventory is open. */
 export function toggleMating(ctx: GameContext): void {
   const creature = viewed(ctx);
   if (creature === null || !creature.tamed) return;
@@ -932,8 +843,6 @@ function feeder(creature: Creature): DoseSupply {
     },
   };
 }
-
-// --- the tick ------------------------------------------------------------------------------
 
 /** Living wild creatures within `within` metres of `from`: what an aggressive tame picks fights with. */
 function wildAround(ctx: GameContext, world: World, from: readonly [number, number, number] | undefined, within: number): string[] {
@@ -1056,9 +965,6 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
   return events;
 }
 
-// --- E, orders, riding --------------------------------------------------------------------------
-
-/** E on a creature: dismount, ride a saddled tame, or open the inventory of a downed or tamed one. */
 export function useCreature(ctx: GameContext): void {
   const world = worldOf(ctx);
   const riding = ridingOf(ctx);
@@ -1095,7 +1001,6 @@ export function useCreature(ctx: GameContext): void {
   if (world.taming.state(creature.id)?.awakeTame === true) handFeed(ctx, creature);
 }
 
-/** The survivor's bag, then hotbar, as something to take food from. */
 function survivorSupply(ctx: GameContext): DoseSupply {
   const inv = ctx.player.inventory;
   return {
@@ -1104,7 +1009,6 @@ function survivorSupply(ctx: GameContext): DoseSupply {
   };
 }
 
-/** E on an awake tame: hand it a food it likes from the bag, if it is hungry. */
 function handFeed(ctx: GameContext, creature: Creature): void {
   const world = worldOf(ctx);
   const def = defOf(creature);
@@ -1146,8 +1050,6 @@ export function whistle(ctx: GameContext, order: CompanionCommand | CompanionSta
   ctx.game.notices.push({ text: heard === 0 ? "No tames in earshot" : `${heard} ${HEARD[order]}`, tone: heard === 0 ? "deny" : "success" });
 }
 
-/** The E prompt for creatures, outranking a bush behind them. */
-/** Whether the survivor is in a saddle. */
 export function isMounted(ctx: GameContext): boolean {
   return ridingOf(ctx).mountOf(ctx.player.userId) !== null;
 }
@@ -1187,17 +1089,11 @@ export function creaturePrompts(ctx: GameContext): PositionedPrompt[] {
   return [];
 }
 
-// --- a flyer's talons ----------------------------------------------------------------------------
-
 const labelOf = (world: World, id: string): string => {
   const creature = world.creatures.get(id);
   return creature === undefined ? "it" : defOf(creature).label;
 };
 
-/**
- * The creature a flyer can lift: the nearest living one under or beside its talons, not ridden or held;
- * "too big" when the nearest is heavier than it lifts, null with none in reach.
- */
 function liftable(ctx: GameContext, world: World, flyer: Creature, liftRadius: number): Creature | "too big" | null {
   const body = ctx.scene.entity.get(flyer.id);
   if (body === null) return null;
@@ -1222,10 +1118,6 @@ function holdStill(ctx: GameContext, id: string, frozen: boolean): void {
   ctx.scene.entity.setVelocity(id, [0, 0, 0]);
 }
 
-/**
- * F on a flyer (ARK's grab): lift the creature under or beside its talons, if it is small enough for this
- * flyer, or let go of the one it holds, which drops to the ground beneath and stays there.
- */
 export function airlift(ctx: GameContext): void {
   const world = worldOf(ctx);
   const flyerId = ridingOf(ctx).mountOf(ctx.player.userId);
@@ -1249,7 +1141,6 @@ export function airlift(ctx: GameContext): void {
   ctx.game.notices.push({ text: `Your ${defOf(flyer).label} lifts the ${defOf(target).label}`, tone: "success" });
 }
 
-/** A flyer lets go: what it held drops to the ground under it and takes that spot as home. */
 function letGo(ctx: GameContext, world: World, flyerId: string): void {
   const id = world.carried.get(flyerId);
   world.carried.delete(flyerId);
@@ -1262,7 +1153,6 @@ function letGo(ctx: GameContext, world: World, flyerId: string): void {
   if (world.roster.get(id) !== null) world.roster.setHome(id, position);
 }
 
-/** Hang each lifted creature under its flyer; a flyer left unridden, or gone, lets go. */
 function holdLifted(ctx: GameContext): void {
   const world = worldOf(ctx);
   for (const [flyerId, id] of [...world.carried]) {
@@ -1277,7 +1167,6 @@ function holdLifted(ctx: GameContext): void {
   }
 }
 
-/** The creature the survivor's flyer holds, its height above the ground, and how far the last lifted creature now is from where it was lifted. */
 export function airliftView(ctx: GameContext): { holding: string | null; heldAlt: number; liftMoved: number } {
   const world = worldOf(ctx);
   const flyerId = ridingOf(ctx).mountOf(ctx.player.userId);
@@ -1291,20 +1180,16 @@ export function airliftView(ctx: GameContext): { holding: string | null; heldAlt
   };
 }
 
-// --- the creature's inventory ---------------------------------------------------------------------
-
 function holdsItems(creature: Creature): boolean {
   return creature.inventory.slots.some((slot) => slot !== null);
 }
 
-/** The creature whose inventory is open: a live one, or a body with something left in it. */
 function viewed(ctx: GameContext): Creature | null {
   const world = worldOf(ctx);
   const creature = world.viewing === null ? undefined : world.creatures.get(world.viewing);
   return creature === undefined || (creature.dead && !holdsItems(creature)) ? null : creature;
 }
 
-/** Move a stack from the survivor's bag or hotbar into the creature; a matching saddle goes on its back. */
 export function giveToCreature(ctx: GameContext, from: string, slot: number): void {
   const creature = viewed(ctx);
   const stack = ctx.player.inventory.state(from).slots[slot] ?? null;
@@ -1330,7 +1215,6 @@ export function giveToCreature(ctx: GameContext, from: string, slot: number): vo
   creature.inventory = put.state;
 }
 
-/** Take a stack back out of the creature into the survivor's bag. */
 export function takeFromCreature(ctx: GameContext, slot: number): void {
   const creature = viewed(ctx);
   const stack = creature?.inventory.slots[slot] ?? null;
@@ -1343,7 +1227,6 @@ export function takeFromCreature(ctx: GameContext, slot: number): void {
   if (taken.status === "ok") creature.inventory = taken.state;
 }
 
-/** Take the saddle off, back into the bag. */
 export function unsaddle(ctx: GameContext): void {
   const creature = viewed(ctx);
   const def = creature === null ? null : defOf(creature);
@@ -1352,7 +1235,6 @@ export function unsaddle(ctx: GameContext): void {
   creature.saddled = false;
 }
 
-/** Force-feed one narcotic (or stimulant) the creature holds: ARK's "use" on a downed creature. */
 export function feedNarcotic(ctx: GameContext, itemId: string): void {
   const creature = viewed(ctx);
   const doses = NARCOTICS.of("any", itemId);
@@ -1363,12 +1245,10 @@ export function feedNarcotic(ctx: GameContext, itemId: string): void {
   worldOf(ctx).taming.dose(creature.id, ...doses);
 }
 
-/** Admin cheats as ARK's console has them, for proofs and testing: taming speed and a forced tame. */
 export function setTamingSpeed(ctx: GameContext, multiplier: number): void {
   worldOf(ctx).tamingSpeed = Math.max(0, multiplier);
 }
 
-/** ARK's `forcetame`: the wild creature in front is yours at once, at full effectiveness. */
 export function forceTame(ctx: GameContext): void {
   const world = worldOf(ctx);
   const creature = world.aimed === null ? undefined : world.creatures.get(world.aimed);
@@ -1377,7 +1257,6 @@ export function forceTame(ctx: GameContext): void {
   tame(ctx, creature, 1, 0);
 }
 
-/** ARK's dino XP cheat: XP for the mount under you, or else the tame whose inventory is open. */
 export function giveTameXp(ctx: GameContext, amount: number): void {
   const world = worldOf(ctx);
   const id = ridingOf(ctx).mountOf(ctx.player.userId) ?? world.viewing;
@@ -1385,7 +1264,6 @@ export function giveTameXp(ctx: GameContext, amount: number): void {
   if (creature !== undefined) grantTameXp(ctx, creature, amount);
 }
 
-/** Items straight into the mount under you or the tame whose inventory is open, for tests and proofs; as many as fit. */
 export function loadTame(ctx: GameContext, itemId: string, count: number): void {
   const world = worldOf(ctx);
   const id = ridingOf(ctx).mountOf(ctx.player.userId) ?? world.viewing;
@@ -1398,8 +1276,6 @@ export function loadTame(ctx: GameContext, itemId: string, count: number): void 
     creature.inventory = put.state;
   }
 }
-
-// --- what the HUD and screens read ------------------------------------------------------------------
 
 function tamingView(world: World, creature: Creature, state: TamingRead | null) {
   return state === null
@@ -1417,7 +1293,6 @@ function tamingView(world: World, creature: Creature, state: TamingRead | null) 
       };
 }
 
-/** ARK's tame stat sheet: level, XP to the next, points to spend, and each stat with what a point adds. */
 function growthView(creature: Creature) {
   const growth = creature.growth;
   if (growth === null) return null;
@@ -1501,7 +1376,6 @@ export function creaturesView(ctx: GameContext) {
 
 export type CreaturesView = ReturnType<typeof creaturesView>;
 
-/** Where each authored herd lives and who lives there: fixed by editor.scene.json, so shared by every run. */
 const HERD_HOMES: readonly { region: string; species: readonly string[]; center: readonly [number, number, number] }[] = herds().map((herd) => ({
   region: herd.region,
   species: herd.species.map((entry) => entry.species),
@@ -1533,7 +1407,6 @@ export function wildHurtNear(ctx: GameContext, from: readonly [number, number, n
   return hurt;
 }
 
-/** The stance of your nearest tame: 0 passive, 1 neutral, 2 aggressive; -1 with none. */
 export function nearestTameStance(ctx: GameContext, from: readonly [number, number, number]): number {
   const world = worldOf(ctx);
   let best = -1;
@@ -1599,7 +1472,6 @@ export function nearestWild(
   return home === null ? null : [home[0], ctx.world.groundHeightAt(home[0], home[2]), home[2]];
 }
 
-/** The nearest live tame of `species` the survivor owns, or null. */
 export function nearestTame(ctx: GameContext, from: readonly [number, number, number], species: string): [number, number, number] | null {
   let best: [number, number, number] | null = null;
   let bestDistance = Number.POSITIVE_INFINITY;
@@ -1649,8 +1521,6 @@ export function nearestThreat(ctx: GameContext, from: readonly [number, number, 
   }
   return best;
 }
-
-// --- save -----------------------------------------------------------------------------------------
 
 interface CreaturesSave {
   creatures: Creature[];
@@ -1722,5 +1592,4 @@ export function resetCreatures(ctx: GameContext): void {
   world.lastLift = null;
 }
 
-/** Hotbar too: ARK lets you drag from either. Exposed for the screen. */
 export const CREATURE_SOURCES = [BAG, HOTBAR] as const;

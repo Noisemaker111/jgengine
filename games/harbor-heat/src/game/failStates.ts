@@ -6,7 +6,6 @@ export function clinicFee(cash: number): number {
   return Math.min(cash, Math.max(150, Math.round(cash * 0.08)));
 }
 
-/** HHPD fine on arrest: $150 per star, capped by what the player holds. */
 export function bustedFine(cash: number, stars: number): number {
   if (cash <= 0 || stars <= 0) return 0;
   return Math.min(cash, stars * 150);
@@ -15,7 +14,6 @@ export function bustedFine(cash: number, stars: number): number {
 /** Seconds a cop must stay on top of an on-foot wanted player to make the arrest. */
 export const BUSTED_HOLD_SEC = 1.2;
 
-/** How close (m) a cop has to be for the arrest clock to run. */
 export const BUSTED_RADIUS = 2.6;
 
 /**
