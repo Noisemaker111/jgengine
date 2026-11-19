@@ -1350,10 +1350,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `bakeIrradianceVolume` (function) · `import { bakeIrradianceVolume } from "@jgengine/core/lighting/lightProbes"`
 
-## limb-health — per-body-part/region health tracked separately
-
-- `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
-
 ## linear-solve — dense linear solve with partial pivoting for reference physics plants and constraints
 
 - `solveLinearSystem` (function) · `import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra"`
@@ -1545,10 +1541,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## navmesh-tiles — build, store, rebuild and stream a nav mesh one tile at a time and route across tile borders
 
 - `createNavTiles` (function) · `import { createNavTiles } from "@jgengine/core/world"`
-
-## needs — decaying needs an agent reads by index to decide what it wants next
-
-- `createNeedSet` (function) · `import { createNeedSet } from "@jgengine/core/procedural"`
 
 ## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
 

@@ -59,7 +59,7 @@ describe("release cut", () => {
   });
 
   test("renames the block, prepends the lockstep bullet, keeps a fresh Unreleased", () => {
-    const next = cutChangelog(MARKDOWN, "0.18.0", lockstepBullet("0.18.0", "0.15.0", "0.5.0"));
+    const next = cutChangelog(MARKDOWN, "0.18.0", lockstepBullet("0.18.0", "0.15.0"));
     expect(next).toContain("## [Unreleased]");
     expect(next).toContain("## 0.18.0");
     expect(next).toContain("guidance");

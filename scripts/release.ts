@@ -107,11 +107,11 @@ export function plainText(text: string): string {
   return text.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
 }
 
-export function lockstepBullet(sdk: string, cli: string, github: string): string {
+export function lockstepBullet(sdk: string, cli: string): string {
   return (
     `**Bump lockstep SDK packages to \`^${sdk}\`:** ` +
     `\`@jgengine/{core,rapier,ui,ws,node,sql,convex,shell,editor,assets,navbake}\`. ` +
-    `CLI \`jgengine\` is \`${cli}\`; \`@jgengine/github\` is \`${github}\`.`
+    `CLI \`jgengine\` is \`${cli}\`.`
   );
 }
 
@@ -373,15 +373,14 @@ function main(): void {
 
   const sdk = dryRun ? nextReleaseVersion(version("core"), patchRelease) : version("core");
   const cli = dryRun ? nextReleaseVersion(version("jgengine"), patchRelease) : version("jgengine");
-  const github = dryRun ? nextReleaseVersion(version("github"), patchRelease) : version("github");
-  const lockstep = lockstepBullet(sdk, cli, github);
+  const lockstep = lockstepBullet(sdk, cli);
   sections.migrate.unshift(plainText(lockstep));
 
   const nextMarkdown = cutChangelog(markdown, sdk, lockstep);
   const nextMirror = mirrorEntry(read("packages/core/src/meta/changelog.ts"), sdk, sections);
 
   if (dryRun) {
-    console.log(`release --dry-run: would cut ${sdk} (CLI ${cli}, @jgengine/github ${github}), folding ${fragments.length} fragment(s)`);
+    console.log(`release --dry-run: would cut ${sdk} (CLI ${cli}), folding ${fragments.length} fragment(s)`);
     for (const key of ["migrate", "added", "changed", "removed"] as const) {
       console.log(`  ${key}: ${sections[key].length}`);
     }

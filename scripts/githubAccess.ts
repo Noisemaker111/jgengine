@@ -30,9 +30,8 @@ const OWN_GH_CALL = /\[\s*["']gh["']\s*,\s*["'][\w-]+["']|\[\s*["'](?:pr|api|iss
  * waiver is printed when the scan fails.
  */
 const GITHUB_PRODUCT: readonly { prefix: string; rules: readonly string[]; why: string }[] = [
-  { prefix: "packages/github/", rules: ["rest-host", "sdk", "token"], why: "the GitHub integration games ship to their players" },
   { prefix: "packages/assets/", rules: ["rest-host", "token"], why: "@jgengine/assets pulls public packs from GitHub for the people who install it" },
-  { prefix: "apps/web/src/api/github", rules: ["rest-host", "token"], why: "jgengine.com's GitHub panels, served to its visitors" },
+  { prefix: "apps/web/src/api/github", rules: ["rest-host", "sdk", "token"], why: "jgengine.com's GitHub panels, served to its visitors" },
 ];
 
 const SELF = "scripts/githubAccess.ts";

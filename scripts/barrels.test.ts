@@ -91,19 +91,9 @@ describe("core domain barrels", () => {
     });
   }
 
-  test("core package root stays VERSION/CHANGELOG only", () => {
+  test("core package root stays VERSION only", () => {
     const index = readFileSync(join(root, "packages/core/src/index.ts"), "utf8");
     expect(index).toMatch(/VERSION/);
     expect(index).not.toMatch(/from\s+["']\.\/(world|combat|gameplay|multiplayer|ui|procedural)["']/);
-  });
-
-  test("procedural barrel remains a static survival compatibility entrypoint", () => {
-    const src = readFileSync(join(root, "packages/core/src/procedural.ts"), "utf8");
-    expect(src).toMatch(/createNeedSet/);
-    expect(src).toMatch(/from\s+["']\.\/survival\//);
-    expect(pkg.exports["./procedural"]).toEqual({
-      types: "./dist/procedural.d.ts",
-      default: "./dist/procedural.js",
-    });
   });
 });

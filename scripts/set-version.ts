@@ -1,6 +1,6 @@
 // Bump published package versions and keep every internal reference in step:
 // packages/*/package.json versions, their `@jgengine/*` dependency ranges, and the
-// `VERSION` mirror in packages/core/src/meta/changelog.ts.
+// `VERSION` mirror in packages/core/src/meta/version.ts.
 //
 //   bun scripts/set-version.ts            # 0.14.0 -> 0.15.0-next.0, 0.15.0-next.0 -> 0.15.0-next.1
 //   bun scripts/set-version.ts --id rc # ...-rc.0
@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const PACKAGES = ["core", "rapier", "ws", "sql", "navbake", "ui", "convex", "node", "shell", "assets", "editor", "github", "jgengine"];
+const PACKAGES = ["core", "rapier", "ws", "sql", "navbake", "ui", "convex", "node", "shell", "assets", "editor", "jgengine"];
 const root = fileURLToPath(new URL("..", import.meta.url));
 const args = process.argv.slice(2);
 const check = args.includes("--check");
@@ -78,12 +78,12 @@ for (const [pkg, manifest] of manifests) {
   if (!check) writeFileSync(manifestPath(pkg), `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
-const mirrorPath = `${root}packages/core/src/meta/changelog.ts`;
+const mirrorPath = `${root}packages/core/src/meta/version.ts`;
 const mirror = readFileSync(mirrorPath, "utf8");
 const coreVersion = targets.get("core")!;
 const mirrored = mirror.replace(/export const VERSION = "[^"]+";/, `export const VERSION = "${coreVersion}";`);
 if (mirrored !== mirror) {
-  if (check) drift.push(`packages/core/src/meta/changelog.ts VERSION is not ${coreVersion}`);
+  if (check) drift.push(`packages/core/src/meta/version.ts VERSION is not ${coreVersion}`);
   else writeFileSync(mirrorPath, mirrored);
 }
 

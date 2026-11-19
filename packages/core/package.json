@@ -50,10 +50,6 @@
       "types": "./dist/ui.d.ts",
       "default": "./dist/ui.js"
     },
-    "./procedural": {
-      "types": "./dist/procedural.d.ts",
-      "default": "./dist/procedural.js"
-    },
     "./*": {
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"

@@ -37,8 +37,6 @@
       "@jgengine/core/*": ["../../packages/core/src/*"],
       "@jgengine/editor": ["../../packages/editor/src/index.ts"],
       "@jgengine/editor/*": ["../../packages/editor/src/*"],
-      "@jgengine/github": ["../../packages/github/src/index.ts"],
-      "@jgengine/github/*": ["../../packages/github/src/*"],
       "@jgengine/navbake": ["../../packages/navbake/src/index.ts"],
       "@jgengine/navbake/*": ["../../packages/navbake/src/*"],
       "@jgengine/node": ["../../packages/node/src/index.ts"],

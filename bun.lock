@@ -63,7 +63,6 @@
         "@fontsource-variable/inter": "^5.2.8",
         "@fontsource-variable/jetbrains-mono": "^5.2.8",
         "@jgengine/core": "workspace:*",
-        "@jgengine/github": "workspace:*",
         "three": "catalog:",
       },
       "devDependencies": {
@@ -482,10 +481,6 @@
         "three": ">=0.187.0",
       },
     },
-    "packages/github": {
-      "name": "@jgengine/github",
-      "version": "0.46.0",
-    },
     "packages/jgengine": {
       "name": "jgengine",
       "version": "0.56.0",
@@ -862,8 +857,6 @@
     "@jgengine/core": ["@jgengine/core@workspace:packages/core"],
 
     "@jgengine/editor": ["@jgengine/editor@workspace:packages/editor"],
-
-    "@jgengine/github": ["@jgengine/github@workspace:packages/github"],
 
     "@jgengine/navbake": ["@jgengine/navbake@workspace:packages/navbake"],
 

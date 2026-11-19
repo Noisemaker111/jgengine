@@ -18,14 +18,13 @@ export const publishedPackages = [
   "shell",
   "editor",
   "assets",
-  "github",
   "jgengine",
 ] as const;
 
 export type PublishedPackage = (typeof publishedPackages)[number];
 
 /** Published packages that release on their own cadence; every other one moves in lockstep with core. */
-export const separateCadencePackages: ReadonlySet<string> = new Set<PublishedPackage>(["jgengine", "github"]);
+export const separateCadencePackages: ReadonlySet<string> = new Set<PublishedPackage>(["jgengine"]);
 
 interface PackageJson {
   name: string;

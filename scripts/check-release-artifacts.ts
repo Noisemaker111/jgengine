@@ -347,7 +347,7 @@ function localPackages(only: ReadonlySet<string>): LocalPackage[] {
 
 /**
  * Check every published package at `version`. A package the checkout holds at another version
- * (`@jgengine/github` and the `jgengine` CLI release on their own cadence) is checked at the
+ * (the `jgengine` CLI releases on its own cadence) is checked at the
  * version the checkout actually ships, so the result is always "what a consumer can install".
  */
 export async function checkReleaseArtifacts(options: {

@@ -196,27 +196,6 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     }
   }, 180_000);
 
-  test("@jgengine/github resolves its public entry, wildcard rejects unknown subpaths", () => {
-    const { consumer } = installTarballs(["github"]);
-    try {
-      const script = [
-        "await import('@jgengine/github');",
-        "let blocked = false;",
-        "try { await import('@jgengine/github/testFixtures'); } catch { blocked = true; }",
-        "if (!blocked) throw new Error('unknown subpath resolved');",
-        "console.log('ok');",
-      ].join("\n");
-      const out = execFileSync("node", ["--input-type=module", "-e", script], {
-        cwd: consumer,
-        encoding: "utf8",
-        timeout: 60_000,
-      });
-      expect(out.trim()).toBe("ok");
-    } finally {
-      rmSync(join(consumer, ".."), { recursive: true, force: true });
-    }
-  }, 120_000);
-
   test("@jgengine/rapier resolves its public entry, wildcard rejects unknown subpaths", () => {
     // rapier declares @jgengine/core as a dependency and imports its shape helpers at runtime.
     const { consumer } = installTarballs(["core", "rapier"]);

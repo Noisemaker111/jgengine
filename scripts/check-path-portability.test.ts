@@ -169,7 +169,7 @@ describe("names Windows cannot check out", () => {
     const run = runGate(root);
     expect(run.code).toBe(1);
     expect(run.stderr).toContain("scripts/ship.ts:1 calls GitHub's API host directly");
-    expect(run.stderr).toContain("packages/github/ [rest-host, sdk, token]");
+    expect(run.stderr).toContain("apps/web/src/api/github [rest-host, sdk, token]");
   });
 
   test("this repository has no reserved name", () => {
