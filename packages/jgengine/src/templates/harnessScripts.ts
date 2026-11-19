@@ -335,7 +335,7 @@ export const HONESTY_EXPR =
   "(function(){var r=document.documentElement;var c=document.querySelector('canvas');" +
   "return {cap:r.dataset.jgCapture||null,err:r.dataset.jgCaptureError||null," +
   "hasCanvas:!!c,cw:c?c.clientWidth:0,ch:c?c.clientHeight:0,bw:c?c.width:0,bh:c?c.height:0," +
-  "loading:!!document.querySelector('[data-shell-code-loading]')};})()";
+  "loading:window.__jg?.loading!==undefined};})()";
 export const RAF_EXPR =
   "new Promise(function(res){requestAnimationFrame(function(){requestAnimationFrame(function(){res(1);});});})";
 

@@ -1,5 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
+import { useLayoutEffect, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
+import { showLoadingCover } from "@jgengine/core/boot/loadingCover";
+import type { RuneTheme } from "@jgengine/core/ui/rune/primitives";
+import { RuneRoot, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
 import type { BootStep } from "@jgengine/core/boot/bootSequence";
 import { BootLoadingScreen, useBootStep } from "@jgengine/core/boot/bootScreen.view";
@@ -216,14 +219,22 @@ export function SceneWarmupCoverLive({ store }: { store: SceneWarmupStore }) {
 export function SceneWarmupCover({ state, step = "loading" }: { state: ShaderWarmupState; step?: BootStep }) {
   if (!warmupCovering(state)) return null;
   if (step === "intro" || step === "menu" || step === "entering") {
-    return <div data-shell-code-loading data-shell-warmup aria-hidden="true" style={{ position: "absolute", inset: 0, background: "#0f172a" }} />;
+    return <WarmupBackdrop />;
   }
   const detail = state.deferred > 0
     ? `${state.deferred} more prepare after this`
     : state.phase === "compiling" && state.elapsedMs >= 1_000 ? `${(state.elapsedMs / 1000).toFixed(1)}s` : undefined;
+  return <BootLoadingScreen label={warmupLabel(state)} progress={warmupBarShare(state)} {...(detail === undefined ? {} : { detail })} />;
+}
+
+/** The scene's frames hidden under the game's own menu while its materials finish compiling. */
+function WarmupBackdrop() {
+  useLayoutEffect(() => showLoadingCover({ label: "Preparing the scene", progress: null }).hide, []);
   return (
-    <div data-shell-code-loading data-shell-warmup style={{ position: "absolute", inset: 0 }}>
-      <BootLoadingScreen label={warmupLabel(state)} progress={warmupBarShare(state)} {...(detail === undefined ? {} : { detail })} />
-    </div>
+    <RuneRoot theme={BACKDROP_THEME} layer={30}>
+      <RuneView anchor="fill" fill={BACKDROP_THEME.colors.backdrop} />
+    </RuneRoot>
   );
 }
+
+const BACKDROP_THEME = { colors: { backdrop: "#0f172a" }, text: {}, variants: {}, motion: { duration: 0, distance: 0, bounce: 0 } } satisfies RuneTheme;

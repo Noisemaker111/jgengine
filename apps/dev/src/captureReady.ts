@@ -180,7 +180,7 @@ function setCaptureStage(stage: string): void {
 function viewActivity(): ViewActivity {
   const activity = {
     modelLoadStarts: modelLoadStarts(),
-    viewLoading: document.querySelector("[data-shell-code-loading]") !== null,
+    viewLoading: window.__jg?.loading !== undefined,
     modelsIdle: modelLoadIdleMs() >= MODEL_IDLE_MS,
   };
   setCaptureStage(

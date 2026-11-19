@@ -2,47 +2,56 @@
 import { Suspense, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { pageBoot, type BootStep } from "@jgengine/core/boot/bootSequence";
+import { showLoadingCover } from "@jgengine/core/boot/loadingCover";
+import type { RuneTheme } from "@jgengine/core/ui/rune/primitives";
+import { RuneLabel, RuneRoot, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
 /** The boot screen showing now, re-rendered as the page's boot moves. */
 export function useBootStep(): BootStep {
   return useSyncExternalStore(pageBoot.subscribe, pageBoot.step, pageBoot.step);
 }
 
+const LOADING_THEME = {
+  colors: { backdrop: "#0f172a", track: "#1e293b", bar: "#38bdf8" },
+  text: { body: { size: 14, color: "#e2e8f0" }, detail: { size: 11, color: "#94a3b8" } },
+  variants: {},
+  motion: { duration: 120, distance: 0, bounce: 0 },
+} satisfies RuneTheme;
+
+/** Stacking: under a game's own UI (40) so a menu draws over it, or over everything once Play is pressed. */
+const UNDER_GAME_UI = 30;
+const OVER_GAME_UI = 200;
+
 /**
- * The jgengine loading screen: the only loading screen a game shows. Every loading surface draws
- * this same screen, so handing over from one to the next never flashes. It sits under the game's
- * own UI (a menu, the editor's panels) unless `over` lifts it above everything, as the entering
- * screen after Play does.
+ * The jgengine loading screen: the only loading screen a game shows, drawn on Rune like every screen.
+ * Every loading surface draws this same screen, so handing over from one to the next never flashes.
+ * It sits under the game's own UI (a menu) unless `over` lifts it above everything, as the entering
+ * screen after Play does. While it shows, the page carries `window.__jg.loading`.
  * @internal
  */
 export function BootLoadingScreen({ label = "Loading", progress = null, detail, over = false }: { label?: string | undefined; progress?: number | null | undefined; detail?: string | undefined; over?: boolean | undefined }) {
   const share = progress === null ? 0.05 : Math.max(0.05, Math.min(1, progress));
+  const cover = useRef<ReturnType<typeof showLoadingCover> | null>(null);
+  useLayoutEffect(() => {
+    const shown = showLoadingCover({ label, progress });
+    cover.current = shown;
+    return () => {
+      shown.hide();
+      cover.current = null;
+    };
+  }, []);
+  cover.current?.update({ label, progress });
   return (
-    <div
-      data-shell-code-loading
-      data-jg-boot-screen
-      role="status"
-      aria-live="polite"
-      style={{
-        position: "absolute",
-        inset: 0,
-        ...(over ? { zIndex: 200 } : {}),
-        display: "grid",
-        placeItems: "center",
-        minHeight: 160,
-        background: "#0f172a",
-        color: "#e2e8f0",
-        fontFamily: "ui-sans-serif, system-ui, sans-serif",
-      }}
-    >
-      <div style={{ display: "grid", gap: 10, justifyItems: "center", fontSize: 14 }}>
-        <span>{label}</span>
-        <div data-shell-warmup-bar aria-hidden="true" style={{ width: 160, height: 3, borderRadius: 2, background: "#1e293b", overflow: "hidden" }}>
-          <div style={{ width: `${Math.round(share * 100)}%`, height: "100%", background: "#38bdf8", transition: "width 120ms linear" }} />
-        </div>
-        {detail === undefined ? null : <span style={{ fontSize: 11, color: "#94a3b8" }}>{detail}</span>}
-      </div>
-    </div>
+    <RuneRoot theme={LOADING_THEME} layer={over ? OVER_GAME_UI : UNDER_GAME_UI}>
+      <RuneView anchor="fill" fill={LOADING_THEME.colors.backdrop} />
+      <RuneView anchor="center" gap={10} items="center">
+        <RuneLabel value={label} />
+        <RuneView width={160} height={3} radius={2} fill={LOADING_THEME.colors.track}>
+          <RuneView height={3} radius={2} width={{ fraction: share }} fill={LOADING_THEME.colors.bar} />
+        </RuneView>
+        {detail === undefined ? null : <RuneLabel textStyle="detail" value={detail} />}
+      </RuneView>
+    </RuneRoot>
   );
 }
 

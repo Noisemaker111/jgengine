@@ -197,7 +197,7 @@ export const PAGE_PROBE = `(() => {
     const now = epoch();
     findMenu();
     if (s.menuAt !== null && s.pressAt === null && last !== 0) s.menuStall = Math.max(s.menuStall, now - Math.max(last, s.menuAt));
-    const covered = document.querySelector("[data-shell-code-loading]") !== null || document.querySelector("canvas") === null;
+    const covered = (window as unknown as { __jg?: { loading?: unknown } }).__jg?.loading !== undefined || document.querySelector("canvas") === null;
     // A game's full-screen menu stops the world drawing under it: its frames time nothing and the
     // canvas holds whatever was last drawn, so the window and the scene read wait for it to lift.
     const hidden = window.__jg?.agent?.handle({ method: "canvas_cover" })?.covered === true;

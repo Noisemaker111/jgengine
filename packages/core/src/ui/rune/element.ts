@@ -57,6 +57,8 @@ export type RuneBoundFont = { [K in keyof RuneFont]: Live<RuneFont[K]> };
 
 export interface RuneElementProps extends RuneBoundStyle, RuneBoundFont {
   children?: UiNode;
+  /** On a surface: its stacking order among the page's Rune surfaces (default 40, a game's UI). */
+  layer?: number;
   ref?: Ref<RuneElement>;
   id?: string;
   label?: string;

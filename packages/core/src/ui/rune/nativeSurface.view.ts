@@ -5,6 +5,53 @@ import { RuneActivation, runeNextFocus } from "./activation";
 import { publishOnPage } from "../../runtime/pageHandle";
 
 const surfaces = new Map<RuneNode, NativeSurface>();
+
+/** The stacking order of a surface that names none: a game's UI. */
+const GAME_UI_LAYER = 40;
+type SurfaceReadout = { tree(): RuneNode; stats(): object; text(): string; point(label: string): { x: number; y: number } | null; has(label: string): boolean; press(label: string): void };
+const readouts: { readout: SurfaceReadout; layer: number }[] = [];
+let unpublishReadouts: (() => void) | null = null;
+
+/** Surfaces from the top of the page down: a higher layer first, then the later of two at one layer. */
+function topDown(): SurfaceReadout[] {
+  return readouts.map((entry, order) => ({ ...entry, order })).sort((a, b) => b.layer - a.layer || b.order - a.order).map((entry) => entry.readout);
+}
+
+/** The game's own UI when it is up (the latest surface at the game layer), else the top surface. */
+function primary(): SurfaceReadout | undefined {
+  return [...readouts].reverse().find((entry) => entry.layer === GAME_UI_LAYER)?.readout ?? topDown()[0];
+}
+
+const pageReadout = {
+  tree: () => primary()!.tree(),
+  stats: () => primary()?.stats() ?? {},
+  text: () => topDown().map((readout) => readout.text()).filter((text) => text !== "").join("\n"),
+  point: (label: string) => {
+    for (const readout of topDown()) {
+      const at = readout.point(label);
+      if (at !== null) return at;
+    }
+    return null;
+  },
+  press: (label: string) => {
+    const owner = topDown().find((readout) => readout.has(label));
+    if (owner === undefined) throw new Error(`Native UI control unavailable: ${label}`);
+    owner.press(label);
+  },
+};
+
+function addReadout(readout: SurfaceReadout, layer: number): () => void {
+  const entry = { readout, layer };
+  readouts.push(entry);
+  unpublishReadouts ??= publishOnPage("nativeUi", pageReadout);
+  return () => {
+    const at = readouts.indexOf(entry);
+    if (at >= 0) readouts.splice(at, 1);
+    if (readouts.length > 0) return;
+    unpublishReadouts?.();
+    unpublishReadouts = null;
+  };
+}
 const fontUrls = new Set<string>();
 let mounting: Promise<void> = Promise.resolve();
 
@@ -74,7 +121,8 @@ class NativeSurface {
   constructor(private readonly root: RuneNode) {
     mounting = mounting.then(async () => {
       if (this.dead) return;
-      const ui = await RuneUi.create({ fonts: [...fontUrls] });
+      const layer = this.root.props.layer;
+      const ui = await RuneUi.create({ fonts: [...fontUrls], ...(typeof layer === "number" ? { zIndex: layer } : {}) });
       if (this.dead) { ui.destroy(); return; }
       this.ui = ui;
       ui.on("*", event => this.event(event));
@@ -145,6 +193,7 @@ class NativeSurface {
         if (right <= left || bottom <= top) { node.scrollIntoView(); return null; }
         return { x: (left + right) / 2, y: (top + bottom) / 2 };
       },
+      has: (label: string) => this.visibleNodes().some(node => node.props.onPress !== undefined && nativeLabel(node) === label),
       press: (label: string) => {
         const node = this.visibleNodes().find(node => node.props.onPress !== undefined && nativeLabel(node) === label);
         if (node === undefined || !nativeEnabled(node)) throw new Error(`Native UI control unavailable: ${label}`);
@@ -152,7 +201,7 @@ class NativeSurface {
         node.props.onPress?.();
       },
     };
-    this.cleanups.push(publishOnPage("nativeUi", debug));
+    this.cleanups.push(addReadout(debug, typeof root.props.layer === "number" ? root.props.layer : GAME_UI_LAYER));
   }
 
   private readonly startTexts: () => void;

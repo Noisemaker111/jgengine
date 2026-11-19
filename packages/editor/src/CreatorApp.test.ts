@@ -35,7 +35,7 @@ test("production menu mounts the actual editor and repeats save/play/return/reop
       // The play surface paints a loading cover over the canvas until the scene's shaders compile.
       // The simulation clock ticks behind that cover, so screenshot before it clears captures one
       // flat colour and the pixel check below reads it as a dead 3D view.
-      await page.waitForFunction(() => document.querySelector("[data-shell-warmup], [data-shell-code-loading]") === null, undefined, { timeout: 20000 });
+      await page.waitForFunction(() => (window as unknown as { __jg?: { loading?: unknown } }).__jg?.loading === undefined, undefined, { timeout: 20000 });
       await mkdir(evidence, { recursive: true });
       const image = decodePng(await page.locator("canvas").screenshot({ path: `${evidence}/play.png` }));
       const pixels = computeShotMetrics(image.width, image.height, image.data, { region: { x: 0, y: 100, width: image.width, height: image.height - 100 } });

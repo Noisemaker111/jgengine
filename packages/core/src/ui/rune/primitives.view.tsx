@@ -10,6 +10,8 @@ export type RuneAnchor = "fill" | "center" | "top" | "bottom" | "left" | "right"
 export type RuneProjection = (target: { entity?: string; position?: readonly [number, number, number]; offset?: readonly [number, number, number] }) => { x: number; y: number; visible: boolean };
 export interface RuneRootProps {
   theme: RuneTheme;
+  /** Stacking order among the page's Rune surfaces: above 40 draws over a game's UI, below it under. */
+  layer?: number;
   context?: GameContext;
   safeArea?: readonly [number, number, number, number];
   project?: RuneProjection;
@@ -25,7 +27,7 @@ function useEnvironment() {
 
 /** One native game surface, with injected game state, look, projection and translation. */
 export function RuneRoot(props: RuneRootProps) {
-  return <Environment value={props}><RuneSurface><RuneBox pin={[0,0,0,0]} {...props.theme.text["body"]}>{props.children}</RuneBox></RuneSurface></Environment>;
+  return <Environment value={props}><RuneSurface {...(props.layer === undefined ? {} : { layer: props.layer })}><RuneBox pin={[0,0,0,0]} {...props.theme.text["body"]}>{props.children}</RuneBox></RuneSurface></Environment>;
 }
 
 export interface RuneViewProps extends RuneElementProps {

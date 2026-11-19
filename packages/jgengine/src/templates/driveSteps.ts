@@ -121,7 +121,7 @@ export async function sendDriveChord(session: DriveSession, chord: string, type:
 export async function awaitGameView(session: DriveSession, timeoutMs: number, deps: Pick<DriveInputDeps, "sleep" | "now">): Promise<void> {
   const deadline = deps.now() + timeoutMs;
   for (;;) {
-    const loading = await session.evaluate("document.querySelector(\"[data-shell-code-loading]\") !== null");
+    const loading = await session.evaluate("window.__jg?.loading !== undefined");
     if (loading !== true) return;
     if (deps.now() >= deadline) {
       throw new Error("the game view is still loading (\"Loading game view…\" on screen) after " + Math.round(timeoutMs / 1000) + "s; refusing to capture the loading panel");

@@ -124,8 +124,8 @@ async function switchTo(session: CdpSession, backend: "webgl" | "webgpu"): Promi
   const started = Date.now();
   // The old canvas leaves first; the new one is warm once its warmup cover is gone and it has drawn.
   const warmCheck = backend === "webgpu"
-    ? `!!globalThis.__jg?.webgpu && !globalThis.__jg?.webgpu.isContextLost() && document.querySelector("[data-shell-warmup]") === null && globalThis.__jg?.webgpu.stats.frames > 2`
-    : `(!globalThis.__jg?.webgpu || globalThis.__jg?.webgpu.isContextLost()) && document.querySelector("canvas") !== null && document.querySelector("[data-shell-warmup]") === null`;
+    ? `!!globalThis.__jg?.webgpu && !globalThis.__jg?.webgpu.isContextLost() && globalThis.__jg?.loading === undefined && globalThis.__jg?.webgpu.stats.frames > 2`
+    : `(!globalThis.__jg?.webgpu || globalThis.__jg?.webgpu.isContextLost()) && document.querySelector("canvas") !== null && globalThis.__jg?.loading === undefined`;
   let warm = false;
   // The remount and its warmup cover take a moment to start; checking at once would see the old canvas.
   await sleep(2000);
