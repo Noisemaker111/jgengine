@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { Component, useState, type ErrorInfo, type ReactNode } from "@jgengine/core/ui/jsx";
 
-import { VERSION } from "@jgengine/core/meta/changelog";
+import { VERSION } from "@jgengine/core/meta/version";
 
 export interface RuntimeDiagnostic {
   id: number;

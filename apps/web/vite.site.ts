@@ -10,14 +10,11 @@ import { parseGameReadme, parseGameSeed } from "./src/lib/gameReadme";
 import { DEMO_PARTS } from "./src/live/demoParts";
 
 const gamesDir = fileURLToPath(new URL("../../games", import.meta.url));
-const githubSrc = fileURLToPath(new URL("../../packages/github/src", import.meta.url));
 const coreSrc = fileURLToPath(new URL("../../packages/core/src", import.meta.url));
 const gameThumbsDir = fileURLToPath(new URL("./public/covers", import.meta.url));
 
-/** `@jgengine/github` and `@jgengine/core` resolve to source; CI's web-build job never builds package dist. */
+/** `@jgengine/core` resolves to source; CI's web-build job never builds package dist. */
 export const siteAliases: Alias[] = [
-  { find: /^@jgengine\/github$/, replacement: `${githubSrc}/index.ts` },
-  { find: /^@jgengine\/github\/(.*)$/, replacement: `${githubSrc}/$1` },
   { find: /^@jgengine\/core$/, replacement: `${coreSrc}/index.ts` },
   { find: /^@jgengine\/core\/(.*)$/, replacement: `${coreSrc}/$1` },
 ];

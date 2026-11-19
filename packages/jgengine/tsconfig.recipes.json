@@ -16,8 +16,6 @@
       "@jgengine/core/*": ["../core/src/*"],
       "@jgengine/editor": ["../editor/src/index.ts"],
       "@jgengine/editor/*": ["../editor/src/*"],
-      "@jgengine/github": ["../github/src/index.ts"],
-      "@jgengine/github/*": ["../github/src/*"],
       "@jgengine/navbake": ["../navbake/src/index.ts"],
       "@jgengine/navbake/*": ["../navbake/src/*"],
       "@jgengine/node": ["../node/src/index.ts"],

@@ -9,10 +9,10 @@ import { join } from "node:path";
 const root = join(import.meta.dir, "..");
 
 describe("CUTLIST surface diet", () => {
-  test("core package root only re-exports version/changelog surface", () => {
+  test("core package root only re-exports the version, not the 1 MB release notes", () => {
     const src = readFileSync(join(root, "packages/core/src/index.ts"), "utf8");
     expect(src).toMatch(/\bVERSION\b/);
-    expect(src).toMatch(/\bCHANGELOG\b/);
+    expect(src).not.toMatch(/meta\/changelog/);
     expect(src).not.toMatch(/createGameRuntime/);
     expect(src).not.toMatch(/createWorldMirror/);
     expect(src).not.toMatch(/hostedGameRunner/);
@@ -22,7 +22,7 @@ describe("CUTLIST surface diet", () => {
     if (existsSync(dist)) {
       const js = readFileSync(dist, "utf8");
       expect(js).not.toMatch(/createGameRuntime/);
-      expect(js).toMatch(/VERSION|CHANGELOG/);
+      expect(js).toMatch(/VERSION/);
     }
   });
 

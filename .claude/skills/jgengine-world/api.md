@@ -4837,17 +4837,6 @@
 
 - `MAX_GLOSSY_SURFACES` (const): const MAX_GLOSSY_SURFACES: 256 — Most glossy surfaces one frame masks; the nearest scan order keeps the first ones found.
 
-## @jgengine/core/procedural
-
-- `Moodle` (interface): interface Moodle — One survival moodle (status icon) — severity, source, and label for HUD chips.
-- `MoodleStack` (interface): interface MoodleStack — Ordered stack of active moodles derived from meters/ailments/buffs.
-- `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
-- `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, thirst, oxygen, warmth, energy, fun — with moodles at thresholds and rate modifiers an environment drives (cold → faster warmth loss). Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
-- `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
-- `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
-- `createNeedSet` (function): function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet — Create the needs an agent or a park guest carries. Decay reuses the survival meter formulas (`survival/decayMeter`), so moodle thresholds, clamping and rate modifiers behave exactly like every other meter; this set adds index-addressed reads and single-need retuning for hot AI loops. Score these needs into an action with `createUtilityBrain` (`@jgengine/core/world`).
-- `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
-
 ## @jgengine/core/roads/RoadJunctions.draw
 
 - `RoadJunctionsProps` (interface): interface RoadJunctionsProps — Props for {@link RoadJunctions}.

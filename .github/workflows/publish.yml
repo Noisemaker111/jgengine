@@ -61,7 +61,7 @@ jobs:
         # A release commit on beta landed through it; beta moving on since is not a stale cut.
         run: bun scripts/check-release-ancestor.ts --landed
       - name: Stage the lockstep changelog into each package
-        run: for p in core rapier ws sql navbake ui convex node shell assets editor github jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
+        run: for p in core rapier ws sql navbake ui convex node shell assets editor jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
       - name: Stage per-package skills
         run: bun scripts/stage-skills.ts
       - run: bun run check artifacts
@@ -77,7 +77,7 @@ jobs:
           # `npm view` reported success for a version whose tarball returned 404 (#2280), and a
           # re-run then skipped the broken package forever. Only a confirmed 404 is repaired: the
           # plan exits non-zero when the registry did not answer, and that stops the run here.
-          for p in core rapier ws sql navbake ui convex node shell assets editor github jgengine; do
+          for p in core rapier ws sql navbake ui convex node shell assets editor jgengine; do
             name=$(node -p "require('./packages/$p/package.json').name")
             version=$(node -p "require('./packages/$p/package.json').version")
             case "$version" in

@@ -74,7 +74,6 @@
     "plants": "jgengine-world",
     "play": "jgengine-ui",
     "postfx": "jgengine-world",
-    "procedural": "jgengine-world",
     "progression": "jgengine-gameplay",
     "puzzle": "jgengine-gameplay",
     "random": "jgengine-gameplay",

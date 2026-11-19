@@ -128,7 +128,7 @@ export function renderReleaseNotes(from: string, to: string, releases: ReleaseNo
   lines.push(
     "",
     "Next: install, rebuild, and do the Migrate steps oldest-first; then work the Adopt lists (`npx jgengine recipe` lists vetted compositions).",
-    'Typed access to the same notes: `import { VERSION, CHANGELOG } from "@jgengine/core/meta/changelog"`.',
+    'Typed access to the same notes: `import { CHANGELOG } from "@jgengine/core/meta/changelog"`, the installed version in `import { VERSION } from "@jgengine/core"`.',
   );
   return lines.join("\n");
 }

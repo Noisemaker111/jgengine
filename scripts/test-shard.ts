@@ -196,7 +196,6 @@ export const SHARDS: readonly Shard[] = [
       "packages/rapier",
       "packages/convex",
       "packages/navbake",
-      "packages/github",
       "packages/editor/src/CreatorApp.test.ts",
     ],
     needs: [],
