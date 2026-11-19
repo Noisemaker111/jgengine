@@ -92,27 +92,3 @@ describe("agent:bootstrap --check", () => {
     }
   });
 });
-
-describe("three preload", () => {
-  test("lets a checkout with nothing installed run bun, so `bun install` can start", () => {
-    const root = mkdtempSync(join(tmpdir(), "jg-preload-"));
-    try {
-      mkdirSync(join(root, "scripts"), { recursive: true });
-      mkdirSync(join(root, "packages", "core"), { recursive: true });
-      // An empty node_modules, as `bun install` leaves it before linking; without one Bun would auto-install three.
-      mkdirSync(join(root, "node_modules"), { recursive: true });
-      writeFileSync(join(root, "scripts", "three-preload.ts"), readFileSync(join(import.meta.dir, "three-preload.ts")));
-      const run = Bun.spawnSync({
-        cmd: [process.execPath, "--preload", "./scripts/three-preload.ts", "-e", "console.log('started')"],
-        cwd: root,
-        timeout: 60_000,
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      expect(run.stderr.toString()).not.toContain("Cannot find package");
-      expect(run.stdout.toString().trim()).toBe("started");
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
-  });
-});
