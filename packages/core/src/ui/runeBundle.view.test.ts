@@ -96,12 +96,15 @@ function browserArgs(disableWebGpu: boolean): string[] {
   ];
 }
 
-async function draws(disableWebGpu: boolean): Promise<{ errors: string[]; frames: number }> {
+async function draws(disableWebGpu: boolean, noAdapter = false): Promise<{ errors: string[]; frames: number }> {
   const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: browserArgs(disableWebGpu) });
   try {
     const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
     // No WebGPU is what older Safari, Firefox and blocklisted GPUs give a visitor.
     if (disableWebGpu) await page.addInitScript(() => { delete (Navigator.prototype as { gpu?: unknown }).gpu; });
+    // WebGPU that finds no adapter is what headless Linux CI's software WebGPU sometimes gives, and a
+    // visitor whose driver the browser refuses.
+    if (noAdapter) await page.addInitScript(() => { GPU.prototype.requestAdapter = () => Promise.resolve(null); });
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => { if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) errors.push(message.text()); });
@@ -137,6 +140,14 @@ test("without WebGPU the Rune bundle still draws, through WebGL2", async () => {
   const result = await draws(true);
   expect(result.errors).toEqual([]);
   expect(result.frames).toBeGreaterThan(0);
+});
+
+// The canvas keeps the first context it is asked for, so WebGPU must not take it before it has an
+// adapter, or the WebGL2 fallback finds the canvas "already in use" and nothing draws.
+test("WebGPU without an adapter leaves the canvas free, and the bundle draws through WebGL2", async () => {
+  const fallback = await draws(false, true);
+  expect(fallback.errors).toEqual([]);
+  expect(fallback.frames).toBeGreaterThan(0);
 });
 
 // On WebGL2, as a visitor without WebGPU draws: headless Linux CI's software WebGPU finds no adapter

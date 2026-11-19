@@ -72,7 +72,6 @@ export interface NavCrowdSnapshot {
     spread: number;
     waypointRadius: number;
     replanBudget: number;
-    replanMs: number;
     avoid: RvoTunables;
   };
   agents: {
@@ -110,12 +109,11 @@ export interface NavCrowdOptions {
   spread?: number;
   /** Distance to a waypoint that advances to the next one. Default 0.6. */
   waypointRadius?: number;
-  /** Most path searches one `tick` may run for queued agents. Default 8. */
+  /**
+   * Most path searches one `tick` may run for queued agents. Default 8. A count, never a time: a crowd
+   * that stopped planning when the machine was busy would walk differently on every replay.
+   */
   replanBudget?: number;
-  /** Milliseconds of path searching one `tick` may spend, whatever the budget. Default 1.5. */
-  replanMs?: number;
-  /** Milliseconds clock the `replanMs` cap reads. Default `performance.now`; a fixed clock leaves only `replanBudget`, so a replay is deterministic. */
-  clock?: (() => number) | undefined;
   /** Avoidance tuning for the internal {@link RvoCrowd}. */
   avoid?: Partial<RvoTunables>;
   /** Register a devtools probe under this name so the perf overlay shows crowd counters. */
@@ -207,8 +205,6 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
   let spread = Math.max(0, options.spread ?? 0);
   let waypointRadius = Math.max(0, options.waypointRadius ?? 0.6);
   let replanBudget = Math.max(1, Math.floor(options.replanBudget ?? 8));
-  let replanMs = Math.max(0, options.replanMs ?? 1.5);
-  const clock = options.clock ?? (() => performance.now());
   const agents: CrowdAgent[] = [];
   const agentOf = new Map<string, number>();
   const avoid: RvoCrowd = createRvoCrowd({ devtoolsName: undefined, ...options.avoid });
@@ -402,11 +398,9 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
       if (!(dt > 0) || agents.length === 0) return;
       const started = performance.now();
       let budget = replanBudget;
-      const replanDeadline = clock() + replanMs;
       for (const agent of agents) {
         if (!agent.waitingForPlan) continue;
         if (budget <= 0) break;
-        if (clock() > replanDeadline) break;
         budget -= 1;
         replan(agent);
       }
@@ -539,7 +533,6 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
       }
       if (patch.waypointRadius !== undefined) waypointRadius = Math.max(0, patch.waypointRadius);
       if (patch.replanBudget !== undefined) replanBudget = Math.max(1, Math.floor(patch.replanBudget));
-      if (patch.replanMs !== undefined) replanMs = Math.max(0, patch.replanMs);
       if (patch.avoid !== undefined) avoid.retune(patch.avoid);
       if (patch.onLink !== undefined) onLink = patch.onLink;
     },
@@ -553,7 +546,6 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
           spread,
           waypointRadius,
           replanBudget,
-          replanMs,
           avoid: { ...avoidState.tunables },
         },
         agents: agents.map((agent) => ({
@@ -585,7 +577,6 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
       spread = Math.max(0, next.tunables.spread ?? 0);
       waypointRadius = next.tunables.waypointRadius;
       replanBudget = next.tunables.replanBudget;
-      replanMs = next.tunables.replanMs ?? 1.5;
       avoid.restore({ tunables: { ...next.tunables.avoid }, agents: [] });
       for (const saved of next.agents) {
         const agent: CrowdAgent = {

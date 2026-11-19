@@ -7,7 +7,7 @@ import { world } from "../world";
 import { content } from "./content";
 import { itemTraits } from "./data/items";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
-import { nearestHarvestable, shuttle, survivorSave, survivorView, takeOff } from "./survivor";
+import { heldItem, nearestHarvestable, selectSlot, shuttle, survivorSave, survivorView, takeOff } from "./survivor";
 
 /** A survivor on the authored beach with the real island under them and the survivor system installed. */
 function survivorRunner(): HeadlessRunner {
@@ -192,4 +192,19 @@ test("double-clicked cloth is worn in its slot, insulates and weighs, swaps, com
   tick(after, 0.1);
   survivorSave(after.ctx).hydrate(saved);
   expect(survivorView(after.ctx).gear.filter((slot) => slot.item !== null).map((slot) => slot.id)).toEqual(["head", "torso"]);
+});
+
+test("a held slot that empties some other way leaves the hands empty, so the next number key still works", () => {
+  const runner = survivorRunner();
+  tick(runner, 0.1);
+  const inventory = runner.ctx.player.inventory;
+  inventory.put(HOTBAR, "stone_pick", 1);
+  const slot = inventory.state(HOTBAR).slots.findIndex((stack) => stack?.itemId === "stone_pick");
+  selectSlot(runner.ctx, slot);
+  expect(survivorView(runner.ctx).activeSlot).toBe(slot);
+  // Not the pick's own wear: a take from the hotbar, as building, feeding and crafting do.
+  inventory.take(HOTBAR, "stone_pick", 1);
+  tick(runner, 0.1);
+  expect(survivorView(runner.ctx).activeSlot).toBeNull();
+  expect(heldItem(runner.ctx)).toBeNull();
 });

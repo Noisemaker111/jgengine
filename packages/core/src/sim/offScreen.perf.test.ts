@@ -61,7 +61,7 @@ function scene(count: number, viewer: readonly [number, number, number]) {
       { id: "eat", terms: [{ need: "hunger", curve: { kind: "linear", from: 0.1, to: 0.9 } }] },
       { id: "rest", terms: [{ need: "energy", curve: { kind: "linear", from: 0.1, to: 0.9 } }] },
     ],
-    crowd: { speed: 3, radius: 0.4, goalRadius: 0.6, replanMs: 100 },
+    crowd: { speed: 3, radius: 0.4, goalRadius: 0.6 },
   });
   const residents = Array.from({ length: count }, (_, i) => ({
     id: `agent${i}`,

@@ -84,6 +84,11 @@ dilation stays on for such runs with font smoothing off (the web default).
 image pipeline before upload. Rune's minimal SVG decoder omits text because it has
 no font database; browser decoding preserves logo lettering and local system fonts.
 
+`crates/rune/src/platform/web.rs` — WebGPU asks for an adapter before it takes the canvas. A canvas keeps the
+first context type it is asked for, so a WebGPU that took the canvas and then found no adapter left the
+WebGL2 fallback with `canvas.getContext() returned null` and nothing drew (headless Linux CI's software
+WebGPU, and a visitor whose driver the browser refuses).
+
 ## Patches dropped on 2026-11-11
 
 The engine's CSS-to-Rune mirror is gone (the JSX host builds native Rune nodes), so

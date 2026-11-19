@@ -50,7 +50,7 @@ function build(options: {
     needs: NEEDS,
     options: [{ id: "eat", terms: [{ need: "hunger", curve: { kind: "linear", from: 0.1, to: 0.9 } }] }],
     candidates: (agent) => (agent.needs.values["hunger"]! < 50 ? [{ option: "eat", cost: 1 }] : []),
-    crowd: { speed: 4, radius: 0.4, goalRadius: 0.6, replanMs: 100 },
+    crowd: { speed: 4, radius: 0.4, goalRadius: 0.6 },
   });
   const world = createOffScreenWorld({
     places: (options.places ?? PLACES) as Record<string, readonly [number, number, number]>,

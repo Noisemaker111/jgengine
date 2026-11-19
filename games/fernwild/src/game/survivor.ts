@@ -640,6 +640,10 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   const id = ctx.player.userId;
   const me = ctx.scene.entity.get(id);
   if (me === null) return;
+  // Building, feeding, crafting, ammo and wear all take from the hotbar; whichever emptied the slot in
+  // hand, the hands are empty. A number key only reaches a filled slot, so an empty one held would
+  // never be put away.
+  if (survivor.activeSlot !== null && (ctx.player.inventory.state(HOTBAR).slots[survivor.activeSlot] ?? null) === null) survivor.activeSlot = null;
   const health = ctx.scene.entity.stats.get(id, "health");
   if (health !== null) survivor.vitals.change("health", health.current - survivor.vitals.value("health"));
   // A blow that empties health kills before this step's healing can paper over it.
