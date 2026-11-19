@@ -54,7 +54,7 @@ const IN_REPO_THIN_FILES = [
 ];
 
 /** Every scaffold carries its plan, perf budget, probe, kit and credits. */
-const PLAN_FILES = ["PLAN.md", "perf-budget.json", "src/game/probe.ts", "src/game/ui/kit.ts", "src/game/credits.ts"];
+const PLAN_FILES = ["PLAN.md", "perf-budget.json", "src/game/probe.ts", "src/game/credits.ts", "src/game/ui/theme.ts"];
 
 const thinFiles = (variant: "standalone" | "in-repo") => [...(variant === "in-repo" ? IN_REPO_THIN_FILES : [...IN_REPO_THIN_FILES, ...PROJECT_FILES]), ...PLAN_FILES];
 
@@ -337,8 +337,9 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       const config = fileOf(files, "src/game.config.ts");
       expect(config).toContain("createGameFlowSystem()");
       expect(config).toContain('capture: { play: ["start"], probe }');
-      expect(config).toContain("uiKit: kit");
-      expect(fileOf(files, "src/game/ui/GameUI.tsx")).toContain("<GameFlowUI");
+      expect(config).not.toContain("uiKit");
+      expect(fileOf(files, "src/game/ui/GameUI.tsx")).toContain("<RuneRoot");
+      expect(fileOf(files, "src/game/ui/theme.ts")).toContain("satisfies RuneTheme");
       expect(fileOf(files, "proofs/flows/from-zero.flow.ts")).toContain("export default defineFlow(game");
       expect(fileOf(files, "PLAN.md")).toContain("## Design brief\n\nPending:");
       expect(fileOf(files, "README.md")).toContain("Loop proof: from-zero");

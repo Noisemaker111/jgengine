@@ -471,7 +471,7 @@ export function planMd(options: StarterGameOptions): string {
   const brief = options.brief?.trim();
   const features = options.loop
     ? [
-        "- Main menu, pause, settings and credits — `@jgengine/core/menu/gameFlowMenus.view` (`GameFlowUI`), `@jgengine/core/game/gameFlow`",
+        "- Title and pause menus on Rune — `src/game/ui/GameUI.tsx` over `@jgengine/core/game/gameFlow`",
         "- Walk on authored terrain — `@jgengine/core/world/features`, `editor.scene.json`",
         "- Interact verb (gather) — `@jgengine/core/scene/authoredTriggers`, `@jgengine/core/interaction/proximityPrompt`",
         "- Energy meter — `@jgengine/core/stats/statPool`",
@@ -479,10 +479,10 @@ export function planMd(options: StarterGameOptions): string {
         "- Goal requirement — `@jgengine/core/rules/predicate`",
         "- Finds table — `@jgengine/core/random/pick`",
         "- Cache refills — `@jgengine/core/time/pacedSchedule`",
-        "- HUD — `@jgengine/core/hud/kitHud.view`, `@jgengine/core/hud/hudLayout.view` (`HudSlots`)",
+        "- HUD on Rune — `@jgengine/core/ui/rune/primitives.view`, look in `src/game/ui/theme.ts`",
       ]
     : [
-        "- Main menu, pause, settings and credits — `@jgengine/core/menu/gameFlowMenus.view` (`GameFlowUI`)",
+        "- Title and pause menus on Rune — `src/game/ui/GameUI.tsx`",
         options.template === "2d" ? "- Board — `src/game/board.ts`" : "- Walk in the world — `@jgengine/core/world/features`",
       ];
   return `# ${options.name} plan

@@ -732,7 +732,7 @@
 - `SaveSlotState` (type): type SaveSlotState = "loaded" | "empty" | "corrupt" | "failed" — What the active slot holds, for a title screen's Continue: `loaded` is the only one it can open.
 - `continueGame` (function): function continueGame(ctx: GameContext): Promise<boolean> — Load the save and play it; resolves `false` (and stays put, with a notice when the save was damaged or unreadable) when there is nothing to play.
 - `continueHint` (function): function continueHint(state: SaveSlotState): string — The Continue hint for each {@link SaveSlotState}, so a damaged save is never shown as no save.
-- `createGameFlowSystem` (function): function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefinition — Title, play, pause and checkpoints as one system. Boot stops the clock behind the title and defines the game-flow commands, each described where this file lists it, so a menu, a capture or a proof runs the same verbs (the `start` command skips the title). Pair it with `GameFlowUI` from `@jgengine/core/menu/gameFlowMenus.view`.
+- `createGameFlowSystem` (function): function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefinition — Title, play, pause and checkpoints as one system. Boot stops the clock behind the title and defines the game-flow commands, each described where this file lists it, so a menu, a capture or a proof runs the same verbs (the `start` command skips the title). The game draws its own title and pause screens on Rune over these verbs (a new game's template does).
 - `menuPane` (function): function menuPane(ctx: GameContext): MenuPane | null — The pane the title or pause menu shows, or null for its default (the briefing on the title, nothing on pause).
 - `newGame` (function): function newGame(ctx: GameContext, restart?: () => void): Promise<void> — A fresh run: clears the save, then plays. When a run already played in this world, `restart` is called instead so nothing carries over (the browser host passes a page reload).
 - `openTitle` (function): function openTitle(ctx: GameContext): void — Stop the clock and show the title (`"menu"` phase).
@@ -2491,7 +2491,7 @@
 
 - `ObjectiveBannerHost` (const): const ObjectiveBannerHost: NamedExoticComponent<ObjectiveBannerHostProps> — A full-screen overlay (or, with `placement: "inline"`, a block in a HUD slot) that renders an {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE COMPLETE" — flying in, holding, and fading out. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and maps the current banner's phase + progress to opacity/scale/translate. Reskin the base look with {@link ObjectiveBannerTheme} and color each variant via `kindThemes` keyed on the game-owned `kind`. Presentation only: all timing and queueing live in the core model, and `kind` is never interpreted here.
 - `ObjectiveBannerHostProps` (interface): interface ObjectiveBannerHostProps — Props for {@link ObjectiveBannerHost}.
-- `ObjectiveBannerTheme` (interface): interface ObjectiveBannerTheme { accent?: string; title?: string; subtitle?: string; fontFamily?: string; titleSize?: string; subtitleSize?: string } — ⚠ undocumented · used by `OnboardingBanner` (@jgengine/core/onboarding/onboarding.view): The step-done banner ("Gather stone" / "Next: Craft a Stone Pick") through `ObjectiveBannerHost`.
+- `ObjectiveBannerTheme` (interface): interface ObjectiveBannerTheme { accent?: string; title?: string; subtitle?: string; fontFamily?: string; titleSize?: string; subtitleSize?: string } — ⚠ undocumented
 - `useObjectiveBanner` (function): function useObjectiveBanner(controller: ObjectiveBannerController, animate = true): ObjectiveBannerView | null — Subscribe to a banner controller, drive its clock on an animation frame (unless the game already ticks it), and return the banner to draw right now — or `null` when idle. Re-renders when a banner or its phase changes; its motion is drawn per frame by the host.
 
 ## @jgengine/core/mission/objectives
@@ -2648,13 +2648,6 @@
 - `OnboardingStepView` (interface): interface OnboardingStepView<C> — The current step as the HUD reads it.
 - `OnboardingStyle` (type): type OnboardingStyle = "tutorial-level" | "teaching-area" | "blended" — How a game teaches: a separate `"tutorial-level"` it leaves when done (its `finish` hook moves the player on), a `"teaching-area"` start that guides only inside its `area` and points back when the player wanders off, or `"blended"` hints that sit quietly in stage one (no banners, no locks).
 - `OnboardingTarget` (type): type OnboardingTarget = | { entity: string } /** The nearest entity of this catalog name (or thing a `locate` hook finds) within `within` metres. Default 60. */ | { kind: string; within?: number } | { at: OnboardingPoint } — What a step points at: one entity, the nearest thing of a kind, or a spot.
-
-## @jgengine/core/onboarding/onboarding.view
-
-- `OnboardingBanner` (function): function OnboardingBanner({ theme, placement = "overlay" }: { theme?: ObjectiveBannerTheme; placement?: "overlay" | "inline" }): ReactNode — The step-done banner ("Gather stone" / "Next: Craft a Stone Pick") through `ObjectiveBannerHost`. By default it sits near the top of the screen; put it in the HUD's full-screen overlay. With `placement: "inline"` it lays out in its parent instead: put it in a `HudSlots` slot (usually `top`) so it stacks with that slot's other lines rather than over them.
-- `OnboardingHud` (function): function OnboardingHud({ accent, skipLabel = "Skip tutorial", nextLabel = "Next", ahead, style }: OnboardingHudProps): ReactNode — The onboarding's HUD: its steps as a quest in the existing `QuestTracker` (current step's detail under it), Next for a step the player acknowledges, and Skip when skippable. Put it in a `HudSlots` slot; it hides itself once finished.
-- `OnboardingHudProps` (interface): interface OnboardingHudProps — Props for {@link OnboardingHud}.
-- `useOnboarding` (function): function useOnboarding(): OnboardingRuntime | null — The running onboarding, or `null` when the game installed none. Compose its `markers` into the game's `Minimap` and its `waypoints` into a compass.
 
 ## @jgengine/core/onboarding/onboardingCallout.view
 
@@ -3123,10 +3116,6 @@
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean; pendingWinner: string | null } — ⚠ undocumented
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> { tick(dt: number): RoundEvent<TPhase>[]; concludeRound(winner: string): RoundEvent<TPhase>[]; evaluate(): RoundEvent<TPhase>[]; onPhaseEnd(hook: PhaseEndHook<TPhase>): () => void; phase(): TPhase; round(): number; timeLeft(): number; score… — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
-
-## @jgengine/core/session/useServerSession.view
-
-- `useServerSession` (function): function useServerSession(transport: GameRuntimeTransport, gameId: string, preferredServerId?: string): { retry: () => void; serverId: string | null; status: "joining" | "joined" | "failed"; failureReason: string | null; } — Joins a host and exposes a retryable blocking state until membership is confirmed.
 
 ## @jgengine/core/sim/nearAgents
 

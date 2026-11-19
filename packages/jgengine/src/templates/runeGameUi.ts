@@ -65,7 +65,7 @@ function Title() {
     <RuneView anchor="center" variant="panel" width={420} gap={14}>
       <RuneLabel textStyle="title" value=${JSON.stringify(options.name)} />
 ${options.pitch === undefined ? "" : `      <RuneLabel value=${JSON.stringify(options.pitch)} />\n`}      <RuneView gap={4}>
-        {CONTROLS.map(([key, what]) => <RuneView layout="row" gap={10}><RuneLabel textStyle="heading" width={70} value={key} /><RuneLabel textStyle="small" value={what} /></RuneView>)}
+        {CONTROLS.map(([key, what]) => <RuneView layout="row" gap={10} items="center"><RuneLabel textStyle="heading" width={70} value={key} /><RuneLabel textStyle="small" value={what} /></RuneView>)}
       </RuneView>
       <RuneView layout="row" gap={10}>
         <Button label="New game" run={() => void newGame(ctx, () => location.reload())} />
@@ -172,10 +172,10 @@ export function GameUI() {
     <RuneRoot context={ctx} theme={theme}>
       <RuneView anchor="fill" fill="#0b1020" />
       <RuneView anchor="center" gap={14} items="center">
-        <RuneView columns={grid.width} gap={1} padding={1} fill="#1e293b" radius={6}>
+        <RuneView layout="grid" columns={grid.width} gap={1} padding={1} fill="#0f172a" radius={6}>
           {grid.cells.map((value, index) => {
             const here = index === cursor.y * grid.width + cursor.x;
-            return <RuneView width={cell} height={cell} fill={value === null ? "#0f172a" : "#38bdf8"} {...(here ? { border: { width: 2, color: "#fcd34d" } } : {})} />;
+            return <RuneView width={cell} height={cell} fill={value === null ? "#243247" : "#38bdf8"} {...(here ? { border: { width: 2, color: "#fcd34d" } } : {})} />;
           })}
         </RuneView>
         <RuneLabel textStyle="small" value="Arrows or WASD move · Space places" />

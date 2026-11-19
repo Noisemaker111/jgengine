@@ -241,10 +241,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameCursor` (function) · `import { GameCursor } from "@jgengine/ui"`
 
-## game-flow-ui — title, HUD and pause menu wired to the game-flow system — the game passes its HUD and menu words
-
-- `GameFlowUI` (function) · `import { GameFlowUI } from "@jgengine/core/menu/gameFlowMenus.view"`
-
 ## game-font-stacks — display/body/numeric font stacks for a game's font pairing, with installed fallbacks
 
 - `gameFontStacks` (function) · `import { gameFontStacks } from "@jgengine/ui"`
@@ -837,10 +833,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## sprite-icon — draw a served one-colour icon (game-icons.net SVG) tinted to the HUD theme
 
 - `SpriteIcon` (const) · `import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view"`
-
-## start-new-game — start a fresh run from a menu or result screen; reloads the page when a run already played
-
-- `startNewGame` (function) · `import { startNewGame } from "@jgengine/core/menu/gameFlowMenus.view"`
 
 ## start-screen — headless title/attract overlay the game fills and skins
 

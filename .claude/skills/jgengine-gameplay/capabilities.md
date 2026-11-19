@@ -590,10 +590,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createOnboardingSystem` (function) · `import { createOnboardingSystem } from "@jgengine/core/onboarding/onboardingSystem"`
 
-## onboarding-banner — announces each finished onboarding step and the next one on the objective banner
-
-- `OnboardingBanner` (function) · `import { OnboardingBanner } from "@jgengine/core/onboarding/onboarding.view"`
-
 ## onboarding-callout — anchored or centred tutorial callouts with a spotlight, Next and Skip, driven by the onboarding steps
 
 - `OnboardingCallout` (function) · `import { OnboardingCallout } from "@jgengine/core/onboarding/onboardingCallout.view"`
@@ -601,10 +597,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## onboarding-callout-card — one onboarding step as a card with N of M, Next and Skip, theme-reskinnable
 
 - `OnboardingCalloutCard` (function) · `import { OnboardingCalloutCard } from "@jgengine/core/onboarding/onboardingCallout.view"`
-
-## onboarding-hud — onboarding steps in the quest tracker with Next and Skip
-
-- `OnboardingHud` (function) · `import { OnboardingHud } from "@jgengine/core/onboarding/onboarding.view"`
 
 ## onboarding-lock — which onboarding step still locks a command or UI id, so a HUD can grey it out
 
@@ -845,10 +837,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `hashUnit` (function) · `import { hashUnit } from "@jgengine/core/random/rng"`
 - `hashWords` (function) · `import { hashWords } from "@jgengine/core/random/rng"`
 - `seededRng` (function) · `import { seededRng } from "@jgengine/core/gameplay"`
-
-## server-session — join a multiplayer host with status, retry, and teardown
-
-- `useServerSession` (function) · `import { useServerSession } from "@jgengine/core/session/useServerSession.view"`
 
 ## session-loop — open and close a game session, settle the quantity it carried and optionally draw the next session's authored option
 
