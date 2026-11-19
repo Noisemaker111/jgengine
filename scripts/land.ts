@@ -808,19 +808,22 @@ function run(command: string, args: string[], timeout?: number): Run {
  */
 const MAX_OUTPUT = 64 * 1024 * 1024;
 
-export function runAt(cwd: string, command: string, args: string[], timeout?: number): Run {
+export function runAt(cwd: string, command: string, args: string[], timeout?: number, env?: NodeJS.ProcessEnv): Run {
   const result = spawnSync(command, args, {
     cwd,
     encoding: "utf8",
     maxBuffer: MAX_OUTPUT,
     stdio: ["ignore", "pipe", "pipe"],
     ...(timeout === undefined ? {} : { timeout }),
+    ...(env === undefined ? {} : { env }),
   });
   return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
 }
 
 function git(args: string[], timeout?: number): Run {
-  return runAt(root, "git", args, timeout);
+  // GIT_EDITOR in the caller's environment overrides `-c core.editor=true` on `rebase --continue`.
+  const env = args.includes("core.editor=true") ? { ...process.env, GIT_EDITOR: "true" } : undefined;
+  return runAt(root, "git", args, timeout, env);
 }
 
 /** Any git command in one checkout; the land test binds this to a throwaway remote. */

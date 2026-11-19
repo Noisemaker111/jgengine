@@ -360,9 +360,11 @@ afterEach(() => {
 });
 
 function gitIn(cwd: string, args: string[]): Run {
+  const env = args.includes("core.editor=true") ? { ...process.env, GIT_EDITOR: "true" } : process.env;
   const result = Bun.spawnSync({
     cmd: ["git", "-c", "user.email=land@example.test", "-c", "user.name=Land", ...args],
     cwd,
+    env,
     // A local push forks several git processes; at below-normal priority on a PC held at 100% by
     // normal-priority work, Windows runs each only every few seconds, and one push took 60 s
     // (2026-11-09). A real hang still ends here.

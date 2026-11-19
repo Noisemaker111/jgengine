@@ -230,7 +230,7 @@ export function gitHub(gh: GhRunner, repo: string, pause: (ms: number) => void =
       return done(call(["-X", "PATCH", `repos/${repo}/pulls/${number}`, ...fields]));
     },
     mergePull(number, headSha) {
-      const merged = call(["-X", "PUT", `repos/${repo}/pulls/${number}/merge`, "-f", "merge_method=merge", "-f", `sha=${headSha}`]);
+      const merged = call(["-X", "PUT", `repos/${repo}/pulls/${number}/merge`, "-f", "merge_method=squash", "-f", `sha=${headSha}`]);
       if (!merged.ok) return merged;
       const sha = text(record(merged.value)["sha"]);
       return sha.length > 0 ? { ok: true, value: { sha } } : { ok: false, error: "GitHub answered the merge without a commit sha" };

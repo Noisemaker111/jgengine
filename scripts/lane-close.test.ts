@@ -218,7 +218,7 @@ describe("lane:close end to end", () => {
     expect(fake.lines.out.at(-1)).toBe("lane:close: merged #2278 into beta as merge-2278");
     expect(fake.lines.err).toEqual([]);
     expect(fake.calls).toContain("run scripts/land.ts --commit");
-    expect(merges(fake).map((call) => call.fields)).toEqual([{ merge_method: "merge", sha: "head1" }]);
+    expect(merges(fake).map((call) => call.fields)).toEqual([{ merge_method: "squash", sha: "head1" }]);
   });
 
   test("a tree a hand-run verify:fast --landing already passed on skips preflight and verify, in one line", () => {
@@ -313,7 +313,7 @@ describe("lane:close end to end", () => {
     expect(fake.calls).toContain("run scripts/land.ts");
     expect(fake.calls.filter((call) => call === "run verify:fast --landing")).toHaveLength(2);
     expect(fake.lines.out.join("\n")).toContain("conflicts with beta now; rebasing");
-    expect(merges(fake).at(-1)?.fields).toEqual({ merge_method: "merge", sha: "head2" });
+    expect(merges(fake).at(-1)?.fields).toEqual({ merge_method: "squash", sha: "head2" });
     expect(fake.lines.out.at(-1)).toBe("lane:close: merged #2278 into beta as merge-2278");
   });
 

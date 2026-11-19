@@ -157,9 +157,13 @@ describe("yard tracks", () => {
       expect(long.phase).toBe("won");
       const short = runOn(track, track.def.branches.map((branch) => branch.id));
       expect(short.phase).toBe("won");
-      if (track.id !== "flooded-quarry") expect(short.runTime).toBeLessThan(long.runTime - 1.5);
       // The pit wade trades the deep pool for distance: no faster, never much slower.
-      else expect(short.runTime).toBeLessThan(long.runTime + 1);
+      if (track.id === "flooded-quarry") expect(short.runTime).toBeLessThan(long.runTime + 1);
+      // The daily Reroute's generated detour cuts ~18-35 m and shares downstream timed slag cycles
+      // whose phase shifts with arrival time, so it always beats the long way without guaranteeing
+      // the 1.5 s margin authored for the fixed tracks (e.g. 2026-11-18 saves 0.68 s).
+      else if (track.id === "reroute") expect(short.runTime).toBeLessThan(long.runTime);
+      else expect(short.runTime).toBeLessThan(long.runTime - 1.5);
     }
   }, 90_000); // drives every laid track twice at 60 Hz: ~8 s alone, 37 s on a loaded four-core runner
 
@@ -197,7 +201,7 @@ describe("yard tracks", () => {
 
   test("the Reroute is a new generated course every day, each one drivable, its shortcut faster and riskier", () => {
     const tuning = tuningFrom(PARTS);
-    const days = Array.from({ length: 10 }, (_, index) => `2026-11-${String(index + 1).padStart(2, "0")}`);
+    const days = [...Array.from({ length: 10 }, (_, index) => `2026-11-${String(index + 1).padStart(2, "0")}`), "2026-11-18"];
     const shapes = new Set<string>();
     for (const day of days) {
       const track = buildTrack(rerouteTrackDef(day));

@@ -4,7 +4,7 @@
 // it took every game on jgengine.com down with "RuntimeError: unreachable".
 import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { join, resolve } from "node:path";
-import { chromium, type Browser } from "playwright-core";
+import { chromium } from "playwright-core";
 import { chromeGraphicsArgs, findChromeExecutable } from "../../../../scripts/browser-lib";
 
 setDefaultTimeout(60_000);
@@ -24,11 +24,8 @@ const PAGE = `<!doctype html><html><body style="margin:0;background:#000">
 </script></body></html>`;
 
 let server: ReturnType<typeof Bun.serve>;
-let browser: Browser;
-/** Software GL, as a visitor without a WebGPU adapter has: on Windows hardware ANGLE, the first WebGL2 frame waits ~25s on D3D compiling Rune's shaders. */
-let softwareBrowser: Browser;
 
-beforeAll(async () => {
+beforeAll(() => {
   server = Bun.serve({
     port: 0,
     fetch(request) {
@@ -39,32 +36,65 @@ beforeAll(async () => {
       return file.size > 0 ? new Response(file) : new Response("missing", { status: 404 });
     },
   });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), args: ["--headless=new", ...chromeGraphicsArgs(), "--enable-unsafe-webgpu"] });
-  softwareBrowser = await chromium.launch({ executablePath: findChromeExecutable(), args: ["--headless=new", ...chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" })] });
 });
 
-afterAll(async () => {
-  await browser?.close();
-  await softwareBrowser?.close();
+afterAll(() => {
   server?.stop(true);
 });
 
+/**
+ * Software GL for the no-WebGPU test (on Windows hardware ANGLE the first WebGL2 frame waits ~25s
+ * on D3D compiling Rune's shaders), and an aligned Vulkan-SwiftShader stack for software WebGPU so
+ * Dawn and ANGLE do not split across mismatched GL/Vulkan SwiftShader surfaces or drop the GPU
+ * instance on headless Linux CI.
+ */
+function browserArgs(disableWebGpu: boolean): string[] {
+  const linux = process.platform === "linux";
+  const base = ["--headless=new", "--no-sandbox", ...(linux ? ["--disable-dev-shm-usage"] : [])];
+  if (disableWebGpu) return [...base, ...chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" })];
+  const graphics = chromeGraphicsArgs();
+  if (!graphics.includes("--use-angle=swiftshader")) return [...base, ...graphics, "--enable-unsafe-webgpu"];
+  return [
+    ...base,
+    ...(linux ? ["--use-angle=vulkan", "--disable-vulkan-surface"] : []),
+    "--use-vulkan=swiftshader",
+    "--enable-features=Vulkan",
+    "--use-webgpu-adapter=swiftshader",
+    "--enable-unsafe-swiftshader",
+    "--ignore-gpu-blocklist",
+    "--enable-unsafe-webgpu",
+  ];
+}
+
 async function draws(disableWebGpu: boolean): Promise<{ errors: string[]; frames: number }> {
-  const page = await (disableWebGpu ? softwareBrowser : browser).newPage({ viewport: { width: 640, height: 360 } });
-  // No WebGPU is what older Safari, Firefox and blocklisted GPUs give a visitor.
-  if (disableWebGpu) await page.addInitScript(() => { delete (Navigator.prototype as { gpu?: unknown }).gpu; });
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  page.on("console", (message) => { if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) errors.push(message.text()); });
-  page.on("response", (response) => { if (response.status() >= 400) errors.push(`HTTP ${response.status()} ${response.url()}`); });
-  await page.goto(`http://localhost:${server.port}/`);
-  let frames = 0;
-  for (let waited = 0; waited < 15_000 && frames === 0 && errors.length === 0; waited += 250) {
-    await page.waitForTimeout(250);
-    frames = await page.evaluate(() => (window as unknown as { __mod?: { frames_drawn(): number } }).__mod?.frames_drawn() ?? 0);
+  const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: browserArgs(disableWebGpu) });
+  try {
+    const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
+    // No WebGPU is what older Safari, Firefox and blocklisted GPUs give a visitor.
+    if (disableWebGpu) await page.addInitScript(() => { delete (Navigator.prototype as { gpu?: unknown }).gpu; });
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => { if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) errors.push(message.text()); });
+    page.on("response", (response) => { if (response.status() >= 400) errors.push(`HTTP ${response.status()} ${response.url()}`); });
+    await page.goto(`http://localhost:${server.port}/`);
+    let frames = 0;
+    for (let waited = 0; waited < 15_000 && frames === 0 && errors.length === 0; waited += 250) {
+      await page.waitForTimeout(250);
+      frames = await page.evaluate(() => (window as unknown as { __mod?: { frames_drawn(): number } }).__mod?.frames_drawn() ?? 0);
+    }
+    // Unmount Rune cleanly before closing the tab so its WebGPU device is destroyed with reason
+    // "destroyed" and the winit event loop exits instead of racing page teardown.
+    if (errors.length === 0) {
+      await page.evaluate(async () => {
+        (window as unknown as { __mod?: { unmount(): void } }).__mod?.unmount();
+        await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      });
+    }
+    await page.close();
+    return { errors, frames };
+  } finally {
+    await browser.close();
   }
-  await page.close();
-  return { errors, frames };
 }
 
 test("the Rune bundle mounts and draws a tree in the browser without panicking", async () => {
