@@ -65,7 +65,7 @@ describe("refreshSaveSlots", () => {
 
     const model = createSaveSlots({ now: () => clock, slots: [{ id: "default", empty: true }, { id: "slot-2", empty: true }, { id: "slot-3", empty: true }] });
     const result = await refreshSaveSlots(gameSaveSlotSource(save), model, { nameOf: (slot) => `Save ${slot}` });
-    expect(result.saved).toEqual(["default", "slot-2"]);
+    expect(result.kind === "refreshed" ? result.saved : result).toEqual(["default", "slot-2"]);
     expect(model.get("default")?.name).toBe("Save default");
     expect(model.get("default")?.meta.playtime).toBe("1h 6m");
     expect(model.get("slot-2")?.savedAt).toBe(clock);
@@ -82,8 +82,20 @@ describe("refreshSaveSlots", () => {
     expect(model.get("default")?.empty).toBe(false);
     await backend.remove("game-save:beacon-bastion:default");
     const after = await refreshSaveSlots(gameSaveSlotSource(save), model);
-    expect(after.filled).toEqual([]);
+    expect(after.kind === "refreshed" ? after.filled : after).toEqual([]);
     expect(model.get("default")?.empty).toBe(true);
+  });
+
+  test("a slot list the storage refuses fails the refresh and keeps the saves the menu showed", async () => {
+    const backend = memorySaveBackend();
+    const save = makeSave(() => 1_700_000_000_000, backend);
+    await save.save();
+    const model = createSaveSlots({ slots: [{ id: "default", empty: true }] });
+    await refreshSaveSlots(gameSaveSlotSource(save), model);
+    const refused = new Error("storage blocked");
+    const after = await refreshSaveSlots({ slots: () => Promise.reject(refused), peek: (slot) => save.peek(slot) }, model);
+    expect(after).toEqual({ kind: "failed", error: refused });
+    expect(model.get("default")?.empty).toBe(false);
   });
 
   test("refresh never re-fills a slot removed through deleteSlot", async () => {
@@ -104,6 +116,7 @@ describe("refreshSaveSlots", () => {
 
     expect(await save.deleteSlot("slot-2")).toBe(true);
     const after = await refreshSaveSlots(gameSaveSlotSource(save), model);
+    if (after.kind !== "refreshed") throw after.error;
     expect(after.saved).toEqual(["default"]);
     expect(after.filled.map((meta) => meta.id)).toEqual(["default"]);
     expect(model.get("slot-2")?.empty).toBe(true);
