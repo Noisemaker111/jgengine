@@ -103,10 +103,10 @@ describe("perf lock", () => {
 
   test("it is re-entrant within one process and freed by the outermost release", async () => {
     const path = lockPath();
-    const outer = await acquirePerfLock("perf native deepward", { path });
+    const outer = await acquirePerfLock("perf gate", { path });
     const inner = await acquirePerfLock("perf desktop deepward.exe", { path });
     inner();
-    expect(perfLockHolder(path)?.what).toBe("perf native deepward");
+    expect(perfLockHolder(path)?.what).toBe("perf gate");
     outer();
     expect(perfLockHolder(path)).toBeNull();
   });
@@ -173,7 +173,6 @@ test("every entry point that times frames takes the lock", () => {
     "perf-shadow-audit.ts": ["acquirePerfLock(`perf ${kind.name}"],
     "perf-network.ts": ["withPerfLock(`perf network", "acquirePerfLock(`perf network"],
     "perf-desktop.ts": ["withPerfLock(`perf desktop"],
-    "perf-native.ts": ["withPerfLock(`perf native"],
     "bench-cpu.ts": ["withPerfLock(\"perf timing\""],
     "drive-dev.ts": ["acquirePerfLock(`drive"],
   };

@@ -1,9 +1,4 @@
 target/
-# Local copies of exported programs for remote checks; regenerate with bun scripts/native-export.ts.
-testdata/
-
-# wasm-bindgen output for row D's web harness; build steps in README.md.
-web/pkg/
 # Keep experimental wasm builds local; jg-ui is the bundle every checkout serves.
 wasm/*
 !wasm/jg-ui/

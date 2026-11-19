@@ -14,7 +14,7 @@ import { beginPause, endPause, markStep } from "./hangReport";
  * never around builds or installs. The server check sits inside because a server obtained before a
  * 503 s wait was gone after it (the broker had been restarted; 2026-11-08). Who takes it: `measureGame` in perf-play (perf play, gate, fps-gap, shadow-audit;
  * `perf play` holds it across its one-browser batch), perf network, perf desktop from app launch to
- * close, perf native's timed rows, `renderer-diff --seconds`, and `drive --hitches` or `--trace`. Shoot and a plain drive time no frames,
+ * close, `renderer-diff --seconds`, and `drive --hitches` or `--trace`. Shoot and a plain drive time no frames,
  * and perf live only reads a page already open, so they do not wait for it. It is a mutex, not a
  * load check: a busy PC never stops a run, only another timed run does.
  *
@@ -234,7 +234,7 @@ function releaseFile(path: string, token: string): void {
 
 /**
  * Wait for the machine-wide perf lock and return its release. Re-entrant within one process, so a
- * timed step inside another (perf native's desktop row) does not wait for itself.
+ * timed step inside another does not wait for itself.
  */
 export async function acquirePerfLock(what: string, options: PerfLockOptions = {}): Promise<() => void> {
   const path = options.path ?? perfLockPath();
