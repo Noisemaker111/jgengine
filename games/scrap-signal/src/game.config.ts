@@ -324,7 +324,6 @@ export const game = defineGame({
   systems: [crashSite],
   GameUI,
   hudTheme: false,
-  uiRenderer: "rune",
   rendering: {
     // Ink outlines and cel bands over hard desert noon: short graphic shadows under a deep blue sky.
     look: "comic",

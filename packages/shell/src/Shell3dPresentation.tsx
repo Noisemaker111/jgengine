@@ -100,7 +100,6 @@ import { TouchControlsDock, TouchPlaySurface, useTouchViewport, type TouchCodeSi
 import { LocaleScope } from "@jgengine/core/i18n/i18n.view";
 import { withLocaleSetting } from "@jgengine/core/i18n/localeSetting";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
-import { SettingsChrome } from "@jgengine/core/settings/SettingsChrome.draw";
 import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
 import { AudioSettingsBridge, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
 import { TextureFiltering } from "@jgengine/core/material/TextureFiltering.draw";
@@ -749,7 +748,7 @@ export function Shell3dPresentation({
             tabIndex={0}
             data-jg-play-surface=""
             {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
-            style={playable.uiRenderer === "rune" ? { position: "fixed", inset: 0, width: "100%", height: "100%", background: "#05090a", outline: "none" } : { position: "relative", width: "100%", height: "100%" }}
+            style={{ position: "fixed", inset: 0, width: "100%", height: "100%", background: "#05090a", outline: "none" }}
             className="relative h-full w-full bg-neutral-950 outline-none"
             onKeyDown={keys.onKeyDown}
             onKeyUp={keys.onKeyUp}
@@ -1024,9 +1023,7 @@ export function Shell3dPresentation({
               ) : null}
               <ShellGameUiChrome
                 ctx={ctx}
-                playable={playable}
                 GameUI={GameUI}
-                uiScale={graphics.uiScale}
                 orientationGate={orientationGate}
                 onRuntimeError={reportRuntimeError}
                 audioEngine={audioEngine}
@@ -1065,7 +1062,6 @@ export function Shell3dPresentation({
                 hideDiagnostics={poster}
               />
               {poster || orthographic || settingsHostsFov ? null : <PlayerFovSlider />}
-              {poster || playable.uiRenderer === "rune" ? null : <SettingsChrome />}
             </GameViewportProvider>
           </div>
         </SettingsRuntime>

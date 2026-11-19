@@ -1453,6 +1453,7 @@
     "./ui/rune/nativeTree",
     "./ui/rune/primitives",
     "./ui/rune/primitives.view",
+    "./ui/rune/shellScreens.view",
     "./ui/rune/valueSlots",
     "./ui/runePassThrough",
     "./ui/runeUi.view",

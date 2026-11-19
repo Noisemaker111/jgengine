@@ -1,12 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { lazy, Suspense, useEffect, useState, type ComponentType, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
-import { HudOverlayHost, HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
-import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
 import { GameProvider } from "@jgengine/ui/provider";
-import { kitHudBridge, UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import {
   DiagnosticOverlay,
@@ -18,7 +14,6 @@ import { MissingModelsNotice } from "@jgengine/core/devtools/MissingModelsNotice
 import { FeedbackHost } from "@jgengine/core/audio/FeedbackHost.view";
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { GamePhaseStamp } from "./GamePhaseStamp";
-import { ShellNotices, ShellUiCues } from "@jgengine/core/notifications/ShellNotices.view";
 import { SettingsPlayControlGate } from "@jgengine/core/settings/SettingsRuntime.draw";
 import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "./registry";
@@ -27,72 +22,27 @@ const DevtoolsOverlay = lazy(() =>
   import("@jgengine/core/devtools/DevtoolsOverlay.draw").then((module) => ({ default: module.DevtoolsOverlay })),
 );
 
-/** Mounts the game's `uiKit` (with its bindings, for prompts) around the GameUI; no kit renders children as-is. @internal */
-export function ShellUiKit({ playable, children }: { playable: PlayableGame; children?: ReactNode }): ReactNode {
-  const kit = playable.uiKit ?? null;
-  // The overlay host lets the shell's settings dialog draw inside the HUD theme and the kit, so it takes
-  // the game's `hudTheme` colours, or the kit's colours and type, instead of the engine default.
-  const host = (style?: CSSProperties) => <HudOverlayHost {...(style === undefined ? {} : { style })} />;
-  if (kit === null) return <>{children}{host()}</>;
-  return (
-    <UiKitRoot kit={kit}>
-      {children}
-      {host(kitHudBridge("dialog"))}
-    </UiKitRoot>
-  );
-}
-
-/** Shared GameUI mount: error boundary → GameProvider → phase stamp → HudViewport → HUD theme root. @internal */
+/** Shared GameUI mount: error boundary → GameProvider → phase stamp → the game's Rune UI. @internal */
 export function ShellGameUiChrome({
   ctx,
-  playable,
   GameUI,
-  uiScale,
   orientationGate,
   onRuntimeError,
   audioEngine,
 }: {
   ctx: GameContext;
-  playable: PlayableGame;
   GameUI: ComponentType;
-  uiScale: number;
   orientationGate: boolean;
   onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void;
   audioEngine: AudioEngine;
 }) {
-  const accessibility = useAccessibilitySettings();
-  if (playable.uiRenderer === "rune") return (
+  return (
     <GameUiErrorBoundary onRuntimeError={onRuntimeError}>
       <GameProvider context={ctx}>
         <SettingsPlayControlGate ctx={ctx} />
         <GamePhaseStamp />
         {orientationGate ? null : <GameUI />}
         <FeedbackHost ctx={ctx} engine={audioEngine} />
-      </GameProvider>
-    </GameUiErrorBoundary>
-  );
-  return (
-    <GameUiErrorBoundary onRuntimeError={onRuntimeError}>
-      <GameProvider context={ctx}>
-        <SettingsPlayControlGate ctx={ctx} />
-        <GamePhaseStamp />
-        <HudViewportProvider
-          platforms={playable.controls?.platforms}
-          config={playable.controls?.hudFit}
-          userScale={uiScale}
-        >
-          {orientationGate ? null : (
-            <ShellUiCues ctx={ctx} enabled={playable.audio?.hudCues !== false}>
-              <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
-                <ShellUiKit playable={playable}>
-                  <GameUI />
-                  <ShellNotices ctx={ctx} config={playable.chrome?.notices} scale={uiScale} />
-                  <FeedbackHost ctx={ctx} engine={audioEngine} />
-                </ShellUiKit>
-              </HudThemeRoot>
-            </ShellUiCues>
-          )}
-        </HudViewportProvider>
       </GameProvider>
     </GameUiErrorBoundary>
   );

@@ -58,7 +58,6 @@ export const game = defineGame({
     pointer: { moveCommand: "park.pointer", secondaryCommand: "build.clear" },
   },
   hudTheme: false,
-  uiRenderer: "rune",
   rendering: {
     look: "cinematic",
     mood: { preset: "bright", sun: { azimuth: 135, elevation: 52, color: "#fff1d6" }, horizonColor: "#bfe0e6", fog: { near: 260, far: 900 } },

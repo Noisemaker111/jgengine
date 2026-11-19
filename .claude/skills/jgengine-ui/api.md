@@ -1997,7 +1997,7 @@
 
 ## @jgengine/core/ui/rotateDevice.view
 
-- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
+- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: string; /** Orientation the game needs; the phone is drawn hel… — Full-screen, non-dismissible gate shown when a game needs an orientation the device isn't in. It is drawn on Rune and takes every pointer and key, so nothing reaches the game beneath.
 
 ## @jgengine/core/ui/rune/activation
 
@@ -2079,6 +2079,10 @@
 - `RuneView` (function): function RuneView({ layout, anchor, safe, inset = 0, variant, responsive, ...props }: RuneViewProps): JSX.Element — Native layout, paint and responsive overrides. Anchors refer to the nearest positioned parent.
 - `RuneViewProps` (interface): interface RuneViewProps extends RuneElementProps { layout?: "stack" | "row" | "grid"; anchor?: RuneAnchor; safe?: boolean; inset?: number; variant?: string; responsive?: Partial<Record<RuneViewportClass, RuneBoundStyle & RuneBoundFont & {layout?: "stack" | "row" | "grid"}>> } — ⚠ undocumented · used by `RuneView`: Native layout, paint and responsive overrides.
 - `RuneWorldAnchor` (function): function RuneWorldAnchor({ entity, position, offset, children, ...props }: Parameters<RuneProjection>[0] & RuneViewProps): JSX.Element — A projected entity or point. Only the requested target is read; no world-wide scan.
+
+## @jgengine/core/ui/rune/shellScreens.view
+
+- `shellScreenTheme` (const): const shellScreenTheme: { colors: { scrim: string; panel: string; edge: string; text: string; dim: string; accent: string; ink: string; }; text: { body: { size: number; color: string; }; title: { size: number; weight: number; color: string; }; button: { size: number; weight: number; color: string; }… — The engine's own screens — joining a world, a view that failed, a lost display, turning the device — drawn on Rune like every game screen. One quiet look, so they read as the engine speaking, not a game.
 
 ## @jgengine/core/ui/runePassThrough
 
@@ -2606,7 +2610,7 @@
 - `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> { getState(): TState; subscribe(listener: (state: TState) => void): () => void } — ⚠ undocumented
 - `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
 - `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): JSX.Element — ⚠ undocumented
-- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
+- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: string; /** Orientation the game needs; the phone is drawn hel… — Full-screen, non-dismissible gate shown when a game needs an orientation the device isn't in. It is drawn on Rune and takes every pointer and key, so nothing reaches the game beneath.
 - `SAVE_SLOT_CHARACTER_KEY` (const): const SAVE_SLOT_CHARACTER_KEY: "character" — The character name a save card shows first, when the game supplies one as its own meta key.
 - `SAVE_SLOT_THUMBNAIL_KEY` (const): const SAVE_SLOT_THUMBNAIL_KEY: "thumbnail" — The save slot `meta` key a card reads as its thumbnail: a data URL or image URL captured when the save was written. Every other meta key is shown as a progress chip and never interpreted.
 - `SETTINGS_TRIGGER_CLASSNAME` (const): const SETTINGS_TRIGGER_CLASSNAME: "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[v… — Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button games re-authored seven times. Pass your own `className` only to override placement or brand chrome; the gear glyph already scales with `text-base` / `1em`.

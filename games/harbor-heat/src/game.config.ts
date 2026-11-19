@@ -144,7 +144,6 @@ export const game = defineGame({
   loop,
   GameUI,
   hudTheme: false,
-  uiRenderer: "rune",
   capture: {
     play: ["game.start"],
     // The dispatch poster is the first thing a player sees; a capture state keeps it reproducible.

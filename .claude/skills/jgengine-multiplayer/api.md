@@ -214,7 +214,7 @@
 
 ## @jgengine/core/multiplayer/JoinGate.view
 
-- `JoinGate` (function): function JoinGate({ status, failureReason, retry, joiningLabel = "Joining world…", failedLabel = "Unable to join", retryLabel = "Retry", className, children, renderJoining, renderFailure }: { status: "joining" | "joined" | "failed"; failureReason?: string | null; retry: () => void; joiningLabel?: Re… — Blocking join feedback; callers may supply their own copy and classes.
+- `JoinGate` (function): function JoinGate({ status, failureReason, retry, joiningLabel = "Joining world…", failedLabel = "Unable to join", retryLabel = "Retry", children, renderJoining, renderFailure }: { status: "joining" | "joined" | "failed"; failureReason?: string | null; retry: () => void; joiningLabel?: string; faile… — Blocking join feedback, drawn on Rune; callers may supply their own copy or their own screens.
 
 ## @jgengine/core/multiplayer/authoritativeSync
 

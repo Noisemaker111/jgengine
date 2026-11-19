@@ -42,7 +42,6 @@ export const game = defineGame({
   },
   // The keep's signage, menus and memorial draw natively through Rune from the game's own theme.
   hudTheme: false,
-  uiRenderer: "rune",
   controls: {
     // Every action already has a control on the HUD itself (the rack's plaques, the mason's tablet), so
   // the derived touch buttons would only repeat them over the field.

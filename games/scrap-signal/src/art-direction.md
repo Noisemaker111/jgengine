@@ -53,5 +53,5 @@ A sun-blasted desert planet drawn like a comic: ink outlines, hard cel shadows, 
 4. Rebuild the relay and the viewmodel gun as models.
 5. Dress the ground: Ground031 cracked desert, desert-pack rocks, cacti and ruins; no flat sand.
 6. Set the noon mood, the HDRI and the sun-bleached comic LUT.
-7. Draw the rig on Rune with the game's own theme (done: `uiRenderer: "rune"`).
+7. Draw the rig on Rune with the game's own theme (done).
 8. Ambient life: dust devils, scavenger birds, sparking wrecks, loot beams on the horizon.
