@@ -66,6 +66,11 @@ const defaultBranch =
 const remoteMain = `origin/${defaultBranch}`;
 if (git("merge-base", "--is-ancestor", "HEAD", remoteMain) !== null) process.exit(0);
 if (git("diff", "--quiet", `${remoteMain}...HEAD`) !== null) process.exit(0);
+// Lanes land as squash commits, so a landed branch is never an ancestor of beta; it has landed
+// when every file it changed already reads the same on beta.
+const base = git("merge-base", "HEAD", remoteMain);
+const changed = base === null ? null : gitRaw("diff", "--name-only", "-z", base, "HEAD")?.split("\0").filter(Boolean);
+if (changed && changed.length > 0 && git("diff", "--quiet", remoteMain, "HEAD", "--", ...changed) !== null) process.exit(0);
 
 const now = Date.now();
 const repoRoot = git("rev-parse", "--show-toplevel");
