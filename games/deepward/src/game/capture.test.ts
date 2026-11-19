@@ -3,7 +3,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 
 import { physics, world } from "../world";
-import { initialize, seatPlayer, stageMidDive, viewStore, whenReady } from "./controls";
+import { initialize, seatPlayer, stageMidDive, viewStore, whenReady, whenWritten } from "./controls";
 
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 
@@ -36,6 +36,8 @@ test("mid-dive stage departs through the garage and loads the cache by searching
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
     value: {
+      get length() { return memory.size; },
+      key: (index: number) => [...memory.keys()][index] ?? null,
       getItem: (key: string) => memory.get(key) ?? null,
       removeItem: (key: string) => { memory.delete(key); },
       setItem: (key: string, value: string) => { memory.set(key, value); },
@@ -57,6 +59,8 @@ test("mid-dive stage reproduces its pack from a fresh boot", async () => {
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
     value: {
+      get length() { return memory.size; },
+      key: (index: number) => [...memory.keys()][index] ?? null,
       getItem: (key: string) => memory.get(key) ?? null,
       removeItem: (key: string) => { memory.delete(key); },
       setItem: (key: string, value: string) => { memory.set(key, value); },
@@ -66,6 +70,8 @@ test("mid-dive stage reproduces its pack from a fresh boot", async () => {
     const first = await boot();
     await stageMidDive(first);
     const pack = packOf(first);
+    // The first boot's last write lands before its storage is wiped, or it would read as another window.
+    await whenWritten(first);
     memory.clear();
     const second = await boot();
     await stageMidDive(second);

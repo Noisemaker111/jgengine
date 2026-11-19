@@ -359,7 +359,9 @@ export function beaconSave(ctx: GameContext): GameSave {
         localStorage.setItem(key, value);
       },
       removeItem: key => localStorage.removeItem(key),
-    }, { errorMode: "throw" }),
+      get length() { return localStorage.length; },
+      key: index => localStorage.key(index),
+    }),
     game: "beacon-bastion",
     slot: KEEP_SLOTS[0],
     clock: () => ctx.time.now(),

@@ -294,7 +294,7 @@ function createParkSave(ctx: GameContext, backend: SaveBackend): GameSave {
 }
 
 const records = perContext((ctx: GameContext): ParkRecord => {
-  const backend = localSaveBackend(undefined, { errorMode: "throw" });
+  const backend = localSaveBackend();
   return { backend, save: createParkSave(ctx, backend), unreadable: false };
 });
 
@@ -316,7 +316,7 @@ interface ParkProfileRecord {
 const profiles = perContext((): ParkProfileRecord => {
   const state = { won: [] as string[], opened: Promise.resolve() as Promise<unknown> };
   const save = createGameSave({
-    backend: localSaveBackend(undefined, { errorMode: "throw" }),
+    backend: localSaveBackend(),
     game: "brightway-park",
     key: SAVE_KEY,
     slot: PROFILE_SLOT,
@@ -423,7 +423,8 @@ export async function restorePark(ctx: GameContext): Promise<boolean> {
   if (!storageReady()) return false;
   const record = records(ctx);
   try {
-    const document = await record.save.peek(PARK_SLOT);
+    const read = await record.save.peek(PARK_SLOT);
+    const document = read.kind === "loaded" ? read.value : null;
     if (session.started) return false;
     if (document === null || readParkSave(document.systems["park"]) === null) {
       if ((await heldBytes(record)) === null) return false;

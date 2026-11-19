@@ -126,7 +126,7 @@ function campaignDocument(ctx: GameContext, slot: string): CampaignDocument {
     },
   ];
   const save = createGameSave({
-    backend: localSaveBackend(undefined, { errorMode: "throw" }),
+    backend: localSaveBackend(),
     game: "ember-command",
     key: CAMPAIGN_SAVE_KEY,
     slot,
@@ -166,8 +166,8 @@ export async function campaignHeld(ctx: GameContext, slot: string): Promise<bool
 
 /** A slot's campaign record, read without touching the live campaign. */
 export async function recordOfSlot(ctx: GameContext, slot: string): Promise<CampaignRecord | null> {
-  const document = await campaignDocument(ctx, slot).save.peek(slot);
-  return document === null ? null : readCampaignRecord(document.systems["record"]);
+  const read = await campaignDocument(ctx, slot).save.peek(slot);
+  return read.kind === "loaded" ? readCampaignRecord(read.value.systems["record"]) : null;
 }
 
 /** Write the live campaign into its slot's document; false when this browser could not keep it. */

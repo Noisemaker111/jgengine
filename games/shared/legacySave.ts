@@ -1,3 +1,5 @@
+import type { LoadResult, PeekResult, SaveResult } from "@jgengine/core/save/saveStore";
+
 /** Translate historical persisted identifiers without mutating the saved source record. */
 export function migrateLegacySnapshot<T>(snapshot: T, ids: Readonly<Record<string, string>>): T {
   const rename = (value: string): string => ids[value] ?? value;
@@ -15,9 +17,10 @@ export function migrateLegacySnapshot<T>(snapshot: T, ids: Readonly<Record<strin
 }
 
 interface SaveController {
-  hasSave(): Promise<boolean>;
-  load(): Promise<boolean>;
-  save(): Promise<void>;
+  readonly backend: SaveStorage;
+  peek(slot: string): Promise<PeekResult<unknown>>;
+  load(): Promise<LoadResult<unknown>>;
+  save(): Promise<SaveResult>;
   slot(): string;
 }
 
@@ -29,14 +32,15 @@ interface SaveStorage {
 /** Import through the current whole-world save controller, including private save-only modules. */
 export async function loadLegacySave(
   current: SaveController | undefined,
-  backend: SaveStorage,
+  backend: SaveStorage | undefined,
   legacyKey: string,
   currentKey: string,
   ids: Readonly<Record<string, string>>,
 ): Promise<boolean> {
   if (current === undefined) return false;
-  if (await current.hasSave()) return current.load();
-  const raw = await backend.read(`${legacyKey}:${current.slot()}`);
+  if ((await current.peek(current.slot())).kind !== "empty") return (await current.load()).kind === "loaded";
+  const storage = backend ?? current.backend;
+  const raw = await storage.read(`${legacyKey}:${current.slot()}`);
   if (raw === null) return false;
   let parsed: unknown;
   try {
@@ -52,8 +56,7 @@ export async function loadLegacySave(
   const translated = Object.fromEntries(Object.entries(snapshot).map(([key, value]) => [key, migrateLegacySnapshot(value, ids)]));
   if (Object.keys(translated).length === 0) return false;
   const migrated = "value" in envelope ? { ...envelope, value: translated } : translated;
-  await backend.write(`${currentKey}:${current.slot()}`, JSON.stringify(migrated));
-  if (!(await current.load())) return false;
-  await current.save();
-  return true;
+  await storage.write(`${currentKey}:${current.slot()}`, JSON.stringify(migrated));
+  if ((await current.load()).kind !== "loaded") return false;
+  return (await current.save()).kind === "saved";
 }

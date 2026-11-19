@@ -119,7 +119,7 @@ export interface FoundrySave {
 
 /** The yard's save in this browser's storage, or a memory-only yard where there is none (headless, blocked). */
 export function browserFoundrySave(): FoundrySave {
-  return createFoundrySave(defaultKeyValueStorage() === null ? null : localSaveBackend(undefined, { errorMode: "throw" }));
+  return createFoundrySave(defaultKeyValueStorage() === null ? null : localSaveBackend());
 }
 
 /** This context's yard save: the one the run session, the pit card and the capture staging share. */
@@ -165,8 +165,8 @@ export function createFoundrySave(backend: SaveBackend | null, initial: Partial<
     },
     async peek() {
       if (backend === null) return null;
-      const document = await save.peek(FOUNDRY_SLOT);
-      return document === null ? null : readFoundryProfile(document.systems);
+      const read = await save.peek(FOUNDRY_SLOT);
+      return read.kind === "loaded" ? readFoundryProfile(read.value.systems) : null;
     },
     digest: () => save.digest(),
   };

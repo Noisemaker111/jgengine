@@ -95,7 +95,7 @@ export interface SessionLoopState {
 export interface SessionLoopPersistence {
   /** The state a previous boot wrote, or `null` when this is a new career. */
   load?: () => SessionLoopState | null;
-  /** Write the loop's own state; a throw is ignored so a full disk cannot stop play. */
+  /** Write the loop's own state. A throw reaches the carry that asked for it, so a failed write is never mistaken for a kept one. */
   save: (state: SessionLoopState) => void;
   /** Carries between writes (default `1`). Pass a higher number when a session carries every tick. */
   every?: number;
@@ -212,11 +212,7 @@ export function createSessionLoop<T = never, I = void, R = void>(
   function persistNow(): void {
     if (config.persist === undefined) return;
     carriesSinceWrite = 0;
-    try {
-      config.persist.save(stateNow());
-    } catch {
-      // A save that fails must not end the session; the next carry tries again.
-    }
+    config.persist.save(stateNow());
   }
 
   function poolFor(index: number, previous: string | null): SessionOfferOption<T>[] {

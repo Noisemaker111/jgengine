@@ -107,7 +107,7 @@ describe("refreshSaveSlots", () => {
     expect(after.saved).toEqual(["default"]);
     expect(after.filled.map((meta) => meta.id)).toEqual(["default"]);
     expect(model.get("slot-2")?.empty).toBe(true);
-    expect(await save.peek("slot-2")).toBeNull();
+    expect(await save.peek("slot-2")).toEqual({ kind: "empty" });
   });
 
   test("peek reads a slot without applying it", async () => {
@@ -116,7 +116,7 @@ describe("refreshSaveSlots", () => {
     save.register({ name: "keeper", snapshot: () => ({ level: 8 }), restore: (next) => void restoreCalls.push(next) });
     await save.save();
     const document = await save.peek("default");
-    expect(document?.systems.keeper).toEqual({ level: 8 });
+    expect(document.kind === "loaded" ? document.value.systems["keeper"] : null).toEqual({ level: 8 });
     expect(restoreCalls).toEqual([]);
   });
 });

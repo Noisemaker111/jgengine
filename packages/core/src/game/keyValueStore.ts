@@ -18,25 +18,6 @@ export function defaultKeyValueStorage(onError?: (error: unknown) => void): KeyV
   return null;
 }
 
-/** A failed storage operation, retaining the backend's original error and affected key. */
-export interface KeyValueStorageFailure {
-  operation: "read" | "write" | "remove";
-  key: string;
-  error: unknown;
-}
-
-/** Fallback keeps session state after a failed operation; throw exposes failure and preserves the previous cell value. Observers must not throw. */
-export interface KeyValueStorageErrorPolicy {
-  errorMode?: "fallback" | "throw";
-  onError?: (failure: KeyValueStorageFailure) => void;
-}
-
-/** @internal */
-export function reportStorageFailure(policy: KeyValueStorageErrorPolicy, failure: KeyValueStorageFailure): void {
-  policy.onError?.(failure);
-  if (policy.errorMode === "throw") throw failure.error;
-}
-
 /** A single persisted, mutable cell: read the current value, overwrite it, or read-modify-write with {@link KeyValueStore.update}. Unlike a record book it has no monotonic guard — the value goes wherever you set it. */
 export interface KeyValueStore<T> {
   get(): T;
@@ -46,7 +27,7 @@ export interface KeyValueStore<T> {
 }
 
 /** Config for {@link createKeyValueStore}: the storage `key`, the `initial` value used before anything is saved, an optional `storage` backend (defaults to `localStorage`, pass `null` for memory-only), and optional custom `serialize`/`deserialize` (default JSON). */
-export interface KeyValueStoreConfig<T> extends KeyValueStorageErrorPolicy {
+export interface KeyValueStoreConfig<T> {
   readonly key: string;
   readonly initial: T;
   readonly storage?: KeyValueStorage | null | undefined;
@@ -54,38 +35,28 @@ export interface KeyValueStoreConfig<T> extends KeyValueStorageErrorPolicy {
   readonly deserialize?: (raw: string) => T;
 }
 
-/** A mutable local save cell through {@link KeyValueStorage}. Default fallback keeps session state on failure; `errorMode: "throw"` exposes failed reads/writes/removals through the original error. `storage: null` deliberately uses memory only. */
+/** A mutable local save cell through {@link KeyValueStorage}. A failed read, write or removal throws the storage's own error and leaves the cell as it was; `storage: null` deliberately uses memory only. */
 export function createKeyValueStore<T>(config: KeyValueStoreConfig<T>): KeyValueStore<T> {
-  const fail = (operation: KeyValueStorageFailure["operation"], error: unknown): void =>
-    reportStorageFailure(config, { operation, key: config.key, error });
-  const storage = config.storage === undefined ? defaultKeyValueStorage((error) => fail("read", error)) : config.storage;
+  const storage =
+    config.storage === undefined
+      ? defaultKeyValueStorage((error) => {
+          throw error;
+        })
+      : config.storage;
+  if (storage === null && config.storage !== null) throw new Error("Local storage is unavailable");
   const serialize = config.serialize ?? ((value: T) => JSON.stringify(value));
   const deserialize = config.deserialize ?? ((raw: string) => JSON.parse(raw) as T);
 
   const read = (): T => {
-    if (storage === null) {
-      if (config.storage !== null && config.errorMode === "throw") fail("read", new Error("Local storage is unavailable"));
-      return config.initial;
-    }
-    try {
-      const raw = storage.getItem(config.key);
-      return raw === null ? config.initial : deserialize(raw);
-    } catch (error) {
-      fail("read", error);
-      return config.initial;
-    }
+    if (storage === null) return config.initial;
+    const raw = storage.getItem(config.key);
+    return raw === null ? config.initial : deserialize(raw);
   };
 
   let current = read();
 
   const write = (value: T): void => {
-    if (storage !== null) {
-      try {
-        storage.setItem(config.key, serialize(value));
-      } catch (error) {
-        fail("write", error);
-      }
-    }
+    storage?.setItem(config.key, serialize(value));
     current = value;
   };
 
@@ -98,13 +69,7 @@ export function createKeyValueStore<T>(config: KeyValueStoreConfig<T>): KeyValue
       return next;
     },
     clear: () => {
-      if (storage !== null) {
-        try {
-          storage.removeItem(config.key);
-        } catch (error) {
-          fail("remove", error);
-        }
-      }
+      storage?.removeItem(config.key);
       current = config.initial;
     },
   };

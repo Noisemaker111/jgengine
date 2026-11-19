@@ -50,7 +50,7 @@ export const preferences = perContext(() => {
   const listeners = new Set<() => void>();
   const notify = () => { for (const listener of listeners) listener(); };
   const save = createGameSave({
-    backend: localSaveBackend(undefined, { errorMode: "throw" }),
+    backend: localSaveBackend(),
     game: "ember-command",
     key: COMMANDER_SAVE_KEY,
     slot: COMMANDER_SLOT,

@@ -46,7 +46,7 @@ function boot(backend: SaveBackend): GameContext {
 async function bootLoaded(backend: SaveBackend): Promise<GameContext> {
   const ctx = boot(backend);
   await new Promise((resolve) => setTimeout(resolve, 0));
-  expect(await ctx.game.save!.load()).toBe(true);
+  expect((await ctx.game.save!.load())?.kind).toBe("loaded");
   expect(await loadHarborSave(ctx)).toBe(true);
   return ctx;
 }
@@ -105,7 +105,7 @@ describe("harbor-heat save document", () => {
     // Let the boot restore settle first: a boot that finds no document adopts the world snapshot's
     // legacy heat once, and this test is about the play loop's own tick, not that upgrade.
     await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(await harborSave(host).peek("default")).toBeNull();
+    expect(await harborSave(host).peek("default")).toEqual({ kind: "empty" });
 
     watch(host);
     streetPlayOf(host).addHeat(host, 130);
@@ -113,17 +113,16 @@ describe("harbor-heat save document", () => {
     const heat = streetPlayOf(host).wanted().heat;
     expect(heat).toBeGreaterThan(0);
 
-    expect(await harborSave(host).peek("default")).toBeNull();
+    expect(await harborSave(host).peek("default")).toEqual({ kind: "empty" });
 
     // What the play loop does every few seconds; no menu save, no explicit save().
     harborSave(host).touch();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const stored = (await harborSave(host).peek("default")) as {
-      systems: { wanted?: { alert?: { value?: number } }; convoy?: unknown };
-    } | null;
-    expect(stored).not.toBeNull();
-    expect(stored!.systems.wanted?.alert?.value).toBeCloseTo(heat, 6);
+    const read = await harborSave(host).peek("default");
+    expect(read.kind).toBe("loaded");
+    const stored = (read.kind === "loaded" ? read.value : null) as { systems: { wanted?: { alert?: { value?: number } } } } | null;
+    expect(stored?.systems.wanted?.alert?.value).toBeCloseTo(heat, 6);
   });
 
   test("the parcel and the mission flags survive a reload", async () => {

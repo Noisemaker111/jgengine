@@ -132,7 +132,7 @@ test("pause saves, quits to the title with Continue offered, and Continue loads 
   try {
     expect(ui.labels()).toContain("Quit to title");
     await ui.press("Save");
-    expect(await ui.ctx.game.save?.hasSave()).toBe(true);
+    expect((await ui.ctx.game.save!.peek(ui.ctx.game.save!.slot())).kind).toBe("loaded");
     await ui.press("Settings");
     expect(ui.text()).toContain("Master volume");
     await ui.press("Back");

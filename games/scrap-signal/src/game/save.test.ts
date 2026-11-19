@@ -93,7 +93,7 @@ describe("scrap-signal whole-world save", () => {
     expect(activeCharacter()).toBeNull();
 
     const reboot = bootContext(backend);
-    expect(await reboot.game.save!.load()).toBe(true);
+    expect((await reboot.game.save!.load())?.kind).toBe("loaded");
     expect(resumeBuild(reboot)).toBe(true);
 
     expect(activeCharacter()?.id).toBe("gunk");
@@ -106,7 +106,7 @@ describe("scrap-signal whole-world save", () => {
 
   test("an empty slot resumes to no build (character select)", async () => {
     const fresh = bootContext(memorySaveBackend());
-    expect(await fresh.game.save!.load()).toBe(false);
+    expect((await fresh.game.save!.load())?.kind).not.toBe("loaded");
     expect(resumeBuild(fresh)).toBe(false);
     expect(activeCharacter()).toBeNull();
   });
@@ -147,7 +147,7 @@ describe("scrap-signal mid-wave documents", () => {
 
     const save = createScrapSave(live, { backend, slot: "relay" });
     await save.save();
-    expect(await save.peek("relay")).not.toBeNull();
+    expect((await save.peek("relay")).kind).toBe("loaded");
 
     const reboot = bootContext(backend);
     const reloaded = createScrapSave(reboot, { backend, slot: "relay" });

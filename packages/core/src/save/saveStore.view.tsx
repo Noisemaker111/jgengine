@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
-import type { SaveStatus, SaveStore } from "@jgengine/core/save/saveStore";
+import type { SaveResult, SaveStatus, SaveStore } from "@jgengine/core/save/saveStore";
 
 /** The reactive slice of a {@link SaveStore} returned by {@link useSaveStore} — the live value plus bound save actions, all re-rendering on change. */
 export interface SaveStoreView<T> {
@@ -14,8 +14,8 @@ export interface SaveStoreView<T> {
   saving: boolean;
   set: (value: T) => void;
   patch: (mutate: (previous: T) => T) => void;
-  save: () => Promise<void>;
-  clear: () => Promise<void>;
+  save: () => Promise<SaveResult>;
+  clear: () => Promise<boolean>;
 }
 
 /**

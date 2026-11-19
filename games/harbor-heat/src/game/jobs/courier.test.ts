@@ -203,7 +203,7 @@ describe("Mainsail courier contract", () => {
     await ctx.game.save!.save();
     const restored = boot(backend);
     startedStore.clear(restored);
-    expect(await restored.game.save!.load()).toBe(true);
+    expect((await restored.game.save!.load())?.kind).toBe("loaded");
     normalizeAfterRestore(restored, false);
     setupCourierLandmarks(restored);
     expect(courierStore.read(restored).phase).toBe("running");

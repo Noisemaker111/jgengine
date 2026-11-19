@@ -256,23 +256,7 @@ export function createGameServerHost(options: GameServerHostOptions): GameServer
     const timestamp = now();
     const plan = planServerPersist(entry.record, entry.snapshot, entry.record.save, timestamp);
     const cleared = { ...plan, server: { ...plan.server, dirtyAt: undefined } };
-    if (persistence.savePlan) {
-      await persistence.savePlan(cleared);
-    } else {
-      if (cleared.leaderboard.length > 0) {
-        await persistence.applyLeaderboardIncrements(entry.record.gameId, cleared.leaderboard);
-      }
-      for (const profile of cleared.profiles) {
-        await persistence.saveProfile(profile);
-      }
-      if (cleared.chunks.length > 0) {
-        await persistence.saveChunks(entry.record.serverId, cleared.chunks);
-      }
-      if (cleared.deletedChunks.length > 0) {
-        await persistence.deleteChunks(entry.record.serverId, cleared.deletedChunks);
-      }
-      await persistence.saveServer(cleared.server);
-    }
+    await persistence.savePlan(cleared);
     entry.record = cleared.server;
     entry.snapshot = clearDirtyFlags({ ...entry.snapshot, server: cleared.server.serverState });
   };
@@ -670,25 +654,18 @@ export function memoryPersistence(now: () => number = Date.now): HostPersistence
       const record = profiles.get(`${gameId}|${userId}`);
       return record === undefined ? null : clone(record);
     },
-    async saveProfile(record) {
-      profiles.set(`${record.gameId}|${record.userId}`, clone(record));
-    },
     async loadChunks(serverId) {
       return [...(chunks.get(serverId)?.values() ?? [])].map(clone);
     },
-    async saveChunks(serverId, records) {
-      const byKey = chunks.get(serverId) ?? new Map();
-      for (const record of records) {
-        byKey.set(record.chunkKey, clone(record));
-      }
-      chunks.set(serverId, byKey);
-    },
-    async deleteChunks(serverId, chunkKeys) {
-      const byKey = chunks.get(serverId);
-      if (byKey === undefined) return;
-      for (const chunkKey of chunkKeys) {
-        byKey.delete(chunkKey);
-      }
+    async savePlan(plan) {
+      // Nothing here can fail part-way, so applying every part in one turn is all or nothing.
+      applyLeaderboardRows(leaderboard, plan.server.gameId, plan.leaderboard, now());
+      for (const profile of plan.profiles) profiles.set(`${profile.gameId}|${profile.userId}`, clone(profile));
+      const byKey = chunks.get(plan.server.serverId) ?? new Map<string, WorldChunkRecord>();
+      for (const chunk of plan.chunks) byKey.set(chunk.chunkKey, clone(chunk));
+      for (const chunkKey of plan.deletedChunks) byKey.delete(chunkKey);
+      chunks.set(plan.server.serverId, byKey);
+      servers.set(plan.server.serverId, clone(plan.server));
     },
     async loadFeed({ serverId, action }) {
       return clone(feeds.get(`${serverId}|${action}`) ?? []);
@@ -698,9 +675,6 @@ export function memoryPersistence(now: () => number = Date.now): HostPersistence
       const entries = trimFeedEntries([...(feeds.get(key) ?? []), clone(entry)]);
       feeds.set(key, entries);
       return clone(entries);
-    },
-    async applyLeaderboardIncrements(gameId, entries) {
-      applyLeaderboardRows(leaderboard, gameId, entries, now());
     },
     async getLeaderboardTop(args) {
       return topLeaderboardRows(leaderboard.values(), args);

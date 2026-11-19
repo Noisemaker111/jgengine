@@ -75,7 +75,7 @@ describe("harbor-heat whole-world save", () => {
 
     const reboot = bootContext(backend);
     reboot.scene.entity.spawn("street_runner", { id: "p1", position: [0, 0, 0], role: "player" });
-    expect(await reboot.game.save!.load()).toBe(true);
+    expect((await reboot.game.save!.load())?.kind).toBe("loaded");
 
     expect(reboot.game.economy.balance("p1", "cash")).toBe(1234 + 200);
     expect(reboot.scene.entity.stats.get("p1", "level")?.current).toBeGreaterThanOrEqual(2);
@@ -87,7 +87,7 @@ describe("harbor-heat whole-world save", () => {
 
   test("an empty slot loads nothing", async () => {
     const fresh = bootContext(memorySaveBackend());
-    expect(await fresh.game.save!.load()).toBe(false);
+    expect((await fresh.game.save!.load())?.kind).not.toBe("loaded");
   });
 
   test("a restore drops a fresh boot at the title screen", () => {

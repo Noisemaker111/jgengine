@@ -267,19 +267,19 @@ export function toOpenServerListings(
 }
 
 export type HostPersistence = {
-  savePlan?: (plan: ServerPersistPlan) => Promise<void>;
+  /**
+   * Write one flush all or nothing: leaderboard increments, profiles, chunks and the server row. A
+   * rejected plan has changed nothing, so the host retries it without adding points twice.
+   */
+  savePlan: (plan: ServerPersistPlan) => Promise<void>;
   resetScenario?: (reset: NormalizedScenarioReset) => Promise<void>;
   loadServer: (serverId: string) => Promise<GameServerRecord | null>;
   saveServer: (record: GameServerRecord) => Promise<void>;
   listServers: (gameId: string) => Promise<GameServerRecord[]>;
   loadProfile: (args: { userId: string; gameId: string }) => Promise<PlayerProfileRecord | null>;
-  saveProfile: (record: PlayerProfileRecord) => Promise<void>;
   loadChunks: (serverId: string) => Promise<WorldChunkRecord[]>;
-  saveChunks: (serverId: string, chunks: WorldChunkRecord[]) => Promise<void>;
-  deleteChunks: (serverId: string, chunkKeys: string[]) => Promise<void>;
   loadFeed: (args: { serverId: string; action: string }) => Promise<unknown[]>;
   appendFeed: (args: { serverId: string; action: string; entry: unknown }) => Promise<unknown[]>;
-  applyLeaderboardIncrements: (gameId: string, entries: LeaderboardIncrement[]) => Promise<void>;
   getLeaderboardTop: (args: {
     gameId: string;
     stat: string;

@@ -8,6 +8,30 @@ import type { RuntimePlayerRow } from "@jgengine/core/runtime/snapshot";
 import { createGameServerHost } from "./host";
 import { clearFilePersistence, filePersistence, memoryPersistence } from "./persistence";
 import { createChunkTestRuntime, createTestRuntime } from "./testFixtures";
+import type { GameServerRecord, ServerPersistPlan } from "@jgengine/core/runtime/hostPersistence";
+import { createEmptyServerRow } from "@jgengine/core/runtime/snapshot";
+
+/** One flush as the host writes it: the parts given, over `server`, everything else empty. */
+function planOf(server: GameServerRecord, parts: Partial<Omit<ServerPersistPlan, "server">>): ServerPersistPlan {
+  return {
+    server,
+    profiles: [],
+    chunks: [],
+    deletedChunks: [],
+    leaderboard: [],
+    changed: { serverState: true, sessionPlayers: true, revision: true, any: true },
+    ...parts,
+  };
+}
+
+function serverOf(serverId: string, gameId = "test-game"): GameServerRecord {
+  return {
+    serverId, gameId, status: "running", memberUserIds: [], slotsPerServer: 16,
+    save: { auto: "5s", scope: "player+chunks" }, serverState: createEmptyServerRow(), sessionPlayers: {},
+    revision: 1, tickAnchorMs: 0, createdAt: 0, updatedAt: 0,
+  };
+}
+
 
 test("join, command, flush, and restart round-trip through memory persistence", async () => {
   let t = 0;
@@ -199,11 +223,11 @@ test("filePersistence round-trips every tier and survives a host restart", async
 
 test("memory deleteChunks drops keys permanently", async () => {
   const persistence = memoryPersistence();
-  await persistence.saveChunks("srv-1", [
+  await persistence.savePlan(planOf((await persistence.loadServer("srv-1")) ?? serverOf("srv-1"), { chunks: [
     { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 1 },
     { serverId: "srv-1", chunkKey: "1,0", snapshot: { chunkKey: "1,0", objects: [], entities: [] }, updatedAt: 1 },
-  ]);
-  await persistence.deleteChunks("srv-1", ["0,0"]);
+  ] }));
+  await persistence.savePlan(planOf((await persistence.loadServer("srv-1")) ?? serverOf("srv-1"), { deletedChunks: ["0,0"] }));
   expect((await persistence.loadChunks("srv-1")).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
 });
 
@@ -211,11 +235,11 @@ test("file deleteChunks drops keys permanently across reopen", async () => {
   const dir = join(tmpdir(), `jg-node-chunks-${process.pid}-${Math.random().toString(36).slice(2)}`);
   try {
     const persistence = filePersistence(dir);
-    await persistence.saveChunks("srv-1", [
+    await persistence.savePlan(planOf((await persistence.loadServer("srv-1")) ?? serverOf("srv-1"), { chunks: [
       { serverId: "srv-1", chunkKey: "0,0", snapshot: { chunkKey: "0,0", objects: [], entities: [] }, updatedAt: 1 },
       { serverId: "srv-1", chunkKey: "1,0", snapshot: { chunkKey: "1,0", objects: [], entities: [] }, updatedAt: 1 },
-    ]);
-    await persistence.deleteChunks("srv-1", ["0,0"]);
+    ] }));
+    await persistence.savePlan(planOf((await persistence.loadServer("srv-1")) ?? serverOf("srv-1"), { deletedChunks: ["0,0"] }));
     expect((await persistence.loadChunks("srv-1")).map((chunk) => chunk.chunkKey)).toEqual(["1,0"]);
 
     const reopened = filePersistence(dir);
@@ -229,14 +253,14 @@ test("filePersistence sanitizes a \"..\" key so it cannot escape the base dir", 
   const dir = join(tmpdir(), `jg-node-traversal-${process.pid}-${Math.random().toString(36).slice(2)}`);
   try {
     const persistence = filePersistence(dir);
-    await persistence.applyLeaderboardIncrements("test-game", [
+    await persistence.savePlan(planOf(serverOf("srv-1", "test-game"), { leaderboard: [
       { userId: "alice", stat: "gold", scope: "profile", by: 8 },
-    ]);
+    ] }));
     const leaderboardBefore = await readFile(join(dir, "leaderboard.json"), "utf8");
 
-    await persistence.saveChunks("..", [
+    await persistence.savePlan(planOf((await persistence.loadServer("..")) ?? serverOf(".."), { chunks: [
       { serverId: "..", chunkKey: "leaderboard", snapshot: { chunkKey: "leaderboard", objects: [], entities: [] }, updatedAt: 1 },
-    ]);
+    ] }));
 
     const leaderboardAfter = await readFile(join(dir, "leaderboard.json"), "utf8");
     expect(leaderboardAfter).toBe(leaderboardBefore);

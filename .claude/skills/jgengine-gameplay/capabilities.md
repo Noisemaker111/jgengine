@@ -799,6 +799,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRuntimeSave` (function) · `import { createRuntimeSave } from "@jgengine/core/save/snapshotSave"`
 
+## save-backend-contract — the checks every save backend passes, for a backend's own test file
+
+- `saveBackendContract` (function) · `import { saveBackendContract } from "@jgengine/core/save/saveBackendContract"`
+
 ## save-envelope-upgrade — lift an older or pre-versioned save payload into the current document envelope
 
 - `upgradeSaveEnvelope` (function) · `import { upgradeSaveEnvelope } from "@jgengine/core/save/saveDocument"`

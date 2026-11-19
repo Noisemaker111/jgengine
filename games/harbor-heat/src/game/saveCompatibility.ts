@@ -1,4 +1,4 @@
-import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import type { SaveBackend } from "@jgengine/core/save/saveStore";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { loadLegacySave } from "../../../shared/legacySave";
 
@@ -32,6 +32,7 @@ const LEGACY_IDS: Readonly<Record<string, string>> = {
 };
 
 /** Prefer current saves; import an existing legacy slot once without changing its bytes. */
-export async function loadSavedProgress(ctx: GameContext, backend: SaveBackend = localSaveBackend()): Promise<boolean> {
+/** `backend` defaults to the one the world save writes through, where the older build kept its slot. */
+export async function loadSavedProgress(ctx: GameContext, backend?: SaveBackend): Promise<boolean> {
   return loadLegacySave(ctx.game.save, backend, "jgengine:save:vice-isle", "jgengine:save:harbor-heat", LEGACY_IDS);
 }

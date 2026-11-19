@@ -510,11 +510,8 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
 
   const restoreDraft = () => {
     if (pendingDraft === null) return;
-    try {
-      host.session.dispatch({ type: "importJson", json: pendingDraft });
-    } catch {
-      writeDraft(gameId, null);
-    }
+    // A draft that will not import stays stored, so the error is not also the end of the work.
+    host.session.dispatch({ type: "importJson", json: pendingDraft });
     setPendingDraft(null);
   };
   const discardDraft = () => {

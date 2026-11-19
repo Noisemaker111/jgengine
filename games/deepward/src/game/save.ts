@@ -1,5 +1,5 @@
 import { createGameSave, GAME_SAVE_VERSION, type GameSave, type GameSaveDocument, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
-import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { localSaveBackend, type PeekResult, type SaveBackend } from "@jgengine/core/save/saveStore";
 import { isRecord } from "@jgengine/core/data/untyped";
 import type { WeaponSystemState } from "@jgengine/core/combat/weaponSystem";
 import { createTransactionLedger, type LedgerState } from "@jgengine/core/economy/transactionLedger";
@@ -31,6 +31,8 @@ export interface StoragePort {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
   removeItem?(key: string): void;
+  readonly length: number;
+  key(index: number): string | null;
 }
 
 const UNREADABLE = "Marrow's save is unreadable. It has been preserved; restore it before diving.";
@@ -197,7 +199,7 @@ export interface RecordSession {
   /** The record this session currently reads and writes. */
   slot(): string;
   /** Read another record's document without applying it - the save-select pane's data source. */
-  peek(slot: string): Promise<GameSaveDocument | null>;
+  peek(slot: string): Promise<PeekResult<GameSaveDocument>>;
   /** Records already written on this profile. */
   slots(): Promise<string[]>;
   /** Open another record (an empty slot resets both sections to a fresh Marrow). */
@@ -274,7 +276,7 @@ export function openRecord(storage: StoragePort, run: RunHooks, initialSlot: str
     reset: () => { run.deep?.restore(newDeep()); },
   };
   const save: GameSave = createGameSave({
-    backend: backendOver(storage),
+    backend: recordBackend(storage),
     game: "deepward",
     key: RECORD_KEY,
     slot: initialSlot,
@@ -355,10 +357,13 @@ export function storedMarrow(storage: StoragePort): boolean {
   return RECORD_SLOTS.some(slot => storage.getItem(recordEntry(slot)) !== null) || storage.getItem(SAVE_KEY) !== null;
 }
 
-function backendOver(storage: StoragePort): SaveBackend {
+/** The save backend Marrow's records write through, over the game's storage port. */
+export function recordBackend(storage: StoragePort): SaveBackend {
   return localSaveBackend({
     getItem: key => storage.getItem(key),
     setItem: (key, value) => { storage.setItem(key, value); },
     removeItem: key => { storage.removeItem?.(key); },
-  }, { errorMode: "throw" });
+    get length() { return storage.length; },
+    key: index => storage.key(index),
+  });
 }

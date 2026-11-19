@@ -235,10 +235,9 @@ export function scrapSave(ctx: GameContext, initialSlot = "default"): GameSave {
  */
 export async function loadScrapSave(ctx: GameContext): Promise<boolean> {
   const save = scrapSave(ctx);
-  const document = await save.peek(save.slot());
-  if (document === null || document.systems["character"] === undefined) return false;
-  await save.load();
-  return true;
+  const read = await save.peek(save.slot());
+  if (read.kind === "empty" || (read.kind === "loaded" && read.value.systems["character"] === undefined)) return false;
+  return (await save.load()).kind === "loaded";
 }
 
 /** Write both halves of a checkpoint: the world snapshot stays the engine's, this one adds its systems. */

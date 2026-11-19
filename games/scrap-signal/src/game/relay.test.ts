@@ -98,7 +98,7 @@ test("three real combat ambushes pay once; whole-world reload retains earned rew
   ctx.game.commands.run("relay.start", {});
   await ctx.game.save!.checkpoint();
   const restored = boot(backend);
-  expect(await restored.game.save!.load()).toBe(true);
+  expect((await restored.game.save!.load())?.kind).toBe("loaded");
   expect(relayStore.read(restored).enemies).toEqual(relayStore.read(ctx).enemies);
   for (let wave = 1; wave <= 2; wave++) { clearWave(restored); tickRelay(restored, 6); }
   clearWave(restored);

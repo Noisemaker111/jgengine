@@ -42,6 +42,7 @@ const pretendCloud: SaveBackend = remoteSaveBackend({
   async read(key) { await wait(CLOUD_DELAY_MS); return cloudRows.get(key) ?? null; },
   async write(key, value) { await wait(CLOUD_DELAY_MS); cloudRows.set(key, value); },
   async remove(key) { await wait(CLOUD_DELAY_MS); cloudRows.delete(key); },
+  async keys(prefix) { await wait(CLOUD_DELAY_MS); return [...cloudRows.keys()].filter((key) => key.startsWith(prefix)); },
 });
 
 export function createSavesSpecimen(container: HTMLElement, trace: Trace): SavesSpecimen {
@@ -80,7 +81,7 @@ export function createSavesSpecimen(container: HTMLElement, trace: Trace): Saves
   };
   watch();
   void store.peek().then((saved) => {
-    if (saved !== null) savedPreview = { value: saved.value, at: performance.now() - (Date.now() - saved.savedAt) };
+    if (saved.kind === "loaded") savedPreview = { value: saved.value, at: performance.now() - (Date.now() - saved.savedAt) };
   });
 
   function quit() {

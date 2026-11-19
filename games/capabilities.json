@@ -9951,6 +9951,16 @@
       "intent": "reciprocal collision avoidance between many steering agents"
     },
     {
+      "id": "save-backend-contract",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/save/saveBackendContract",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the checks every save backend passes, for a backend's own test file"
+    },
+    {
       "id": "save-envelope-upgrade",
       "packages": [
         "@jgengine/core"

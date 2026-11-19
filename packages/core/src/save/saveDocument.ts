@@ -3,8 +3,11 @@ import { isRecord } from "../data/untyped";
 import { hashString, restoreRng, rngStateOf } from "../random/rng";
 import {
   createSaveStore,
+  type LoadResult,
+  type PeekResult,
   type SaveAutoConfig,
   type SaveBackend,
+  type SaveResult,
   type SaveStatus,
   type SaveTimers,
 } from "./saveStore";
@@ -142,20 +145,20 @@ export interface GameSave {
   /** Build the current document from every registered system. Does not write. */
   capture(): GameSaveDocument;
   /** Write the live state to the active slot now. */
-  save(): Promise<void>;
-  /** Read the active slot and apply every section to its system. */
-  load(): Promise<GameSaveDocument>;
+  save(): Promise<SaveResult>;
+  /** Read the active slot and apply every section to its system. An empty, damaged or unreadable slot says so; the first two reset the systems, the last leaves them as they were. */
+  load(): Promise<LoadResult<GameSaveDocument>>;
   /**
    * Switch the active slot and load it. By default the live state is flushed into the slot being
    * left first; pass `{ flush: false }` when opening a save from a menu, where the live state is
    * either empty or already the slot being opened and flushing would overwrite the save.
    */
-  switchSlot(slot: string, options?: { flush?: boolean }): Promise<GameSaveDocument>;
+  switchSlot(slot: string, options?: { flush?: boolean }): Promise<LoadResult<GameSaveDocument>>;
   /**
    * Read a slot's document without applying it to the live systems — the save-select menu's data
-   * source. Returns `null` for an empty slot.
+   * source. A damaged or unreadable slot is reported, never shown as empty.
    */
-  peek(slot: string): Promise<GameSaveDocument | null>;
+  peek(slot: string): Promise<PeekResult<GameSaveDocument>>;
   /** Slots this save has written. */
   slots(): Promise<string[]>;
   /**
@@ -247,6 +250,13 @@ export function upgradeSaveEnvelope(document: unknown, options: { readonly game:
   };
 }
 
+/** What reading a slot's pre-adoption keys found; a damaged one names the key its bytes still sit at. */
+type LegacyRead =
+  | { readonly kind: "loaded"; readonly value: GameSaveDocument; readonly savedAt: number }
+  | { readonly kind: "empty" }
+  | { readonly kind: "corrupt"; readonly error: unknown; readonly keptAt: string }
+  | { readonly kind: "failed"; readonly error: unknown };
+
 function emptyDocument(config: GameSaveConfig, version: number): GameSaveDocument {
   return {
     version,
@@ -330,35 +340,55 @@ export function createGameSave(config: GameSaveConfig): GameSave {
     },
   });
 
-  /** The slot's pre-adoption bytes as a document, or `null` when the slot has none (or they are unreadable). */
-  async function liftLegacy(slot: string): Promise<GameSaveDocument | null> {
+  /** The slot's pre-adoption bytes as a document. Unliftable bytes are `corrupt`; they stay at their old keys, which a document save never writes. */
+  async function liftLegacy(slot: string): Promise<LegacyRead> {
     const legacy = config.legacy;
-    if (legacy === undefined) return null;
+    if (legacy === undefined) return { kind: "empty" };
+    const stored: Record<string, string> = {};
     try {
-      const stored: Record<string, string> = {};
       for (const key of legacy.keys(slot)) {
         const raw = await config.backend.read(key);
         if (raw !== null) stored[key] = raw;
       }
-      if (Object.keys(stored).length === 0) return null;
-      return { ...emptyDocument(config, version), savedAt: 0, systems: legacy.lift(stored, slot) };
     } catch (error) {
       config.onError?.(error);
-      return null;
+      return { kind: "failed", error };
+    }
+    const found = Object.keys(stored);
+    if (found.length === 0) return { kind: "empty" };
+    try {
+      return { kind: "loaded", value: { ...emptyDocument(config, version), savedAt: 0, systems: legacy.lift(stored, slot) }, savedAt: 0 };
+    } catch (error) {
+      config.onError?.(error);
+      return { kind: "corrupt", error, keptAt: found[0]! };
     }
   }
 
   /** A slot the store read as empty takes its legacy bytes instead; the next save writes them as a document. */
-  async function orLegacy(document: GameSaveDocument): Promise<GameSaveDocument> {
-    if (document !== initial) return document;
+  async function orLegacy(result: LoadResult<GameSaveDocument>): Promise<LoadResult<GameSaveDocument>> {
+    if (result.kind !== "empty") return result;
     const lifted = await liftLegacy(store.slot());
-    if (lifted === null) return document;
-    store.set(lifted);
-    return lifted;
+    switch (lifted.kind) {
+      case "empty":
+        return result;
+      case "loaded":
+        store.set(lifted.value);
+        return { kind: "loaded", value: lifted.value, savedAt: 0 };
+      case "corrupt":
+        return { kind: "corrupt", value: result.value, error: lifted.error, keptAt: lifted.keptAt };
+      case "failed":
+        return { kind: "failed", value: result.value, error: lifted.error };
+    }
   }
 
-  /** Remove a slot's legacy keys with its document; true when any held bytes. */
-  async function removeLegacy(slot: string): Promise<boolean> {
+  /** Apply what a read found: a document or a fresh one; an unreadable slot leaves the systems alone. */
+  function applyResult(result: LoadResult<GameSaveDocument>): LoadResult<GameSaveDocument> {
+    if (result.kind !== "failed") apply(result.value);
+    return result;
+  }
+
+  /** Remove a slot's legacy keys with its document: whether any held bytes, or null when the backend refused. */
+  async function removeLegacy(slot: string): Promise<boolean | null> {
     const legacy = config.legacy;
     if (legacy === undefined) return false;
     let removed = false;
@@ -370,6 +400,7 @@ export function createGameSave(config: GameSaveConfig): GameSave {
       }
     } catch (error) {
       config.onError?.(error);
+      return null;
     }
     return removed;
   }
@@ -388,33 +419,33 @@ export function createGameSave(config: GameSaveConfig): GameSave {
       return () => systems.delete(system.name);
     },
     capture,
-    async save() {
+    save() {
       store.set(capture());
-      await store.save();
+      return store.save();
     },
     async load() {
-      const document = await orLegacy(await store.load());
-      apply(document);
-      return document;
+      return applyResult(await orLegacy(await store.load()));
     },
     async switchSlot(slot, options) {
       if (options?.flush !== false) store.set(capture());
-      const document = await orLegacy(await store.switchSlot(slot, options));
-      apply(document);
-      return document;
+      return applyResult(await orLegacy(await store.switchSlot(slot, options)));
     },
     async peek(slot) {
       const stored = await store.peek(slot);
-      if (stored === null) return liftLegacy(slot);
-      return stored.value;
+      if (stored.kind !== "empty") return stored;
+      const lifted = await liftLegacy(slot);
+      return lifted.kind === "corrupt" ? { kind: "corrupt", error: lifted.error } : lifted;
     },
     slots: () => store.slots(),
     async deleteSlot(slot) {
       const deleted = await store.deleteSlot(slot);
       const removedLegacy = await removeLegacy(slot);
-      if (!deleted && !removedLegacy) return false;
+      if (removedLegacy === null || (!deleted && !removedLegacy)) return false;
       // A slot that only held legacy bytes was lifted into the live value; reread it as empty.
-      if (slot === store.slot()) apply(removedLegacy ? await store.load() : store.value());
+      if (slot === store.slot()) {
+        if (removedLegacy) applyResult(await store.load());
+        else apply(store.value());
+      }
       return true;
     },
     slot: () => store.slot(),

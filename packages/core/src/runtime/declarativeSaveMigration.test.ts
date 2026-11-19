@@ -37,13 +37,13 @@ test("declarative persistence forwards old-envelope migration before world resto
     return { store: [["progress", { level: (data as { legacyLevel: number }).legacyLevel }]] };
   } });
   try {
-    expect(await ctx.game.save!.load()).toBe(true);
+    expect((await ctx.game.save!.load())?.kind).toBe("loaded");
     expect(calls).toBe(1);
     expect(ctx.game.store.get("progress")).toEqual({ level: 4 });
     expect(values.get(key)).toBe(raw);
     await ctx.game.save!.save();
     expect(JSON.parse(values.get(key)!).version).toBe(2);
-    expect(await ctx.game.save!.load()).toBe(true);
+    expect((await ctx.game.save!.load())?.kind).toBe("loaded");
     expect(calls).toBe(1);
   } finally { ctx.game.save!.dispose(); }
 }));
@@ -55,8 +55,8 @@ test("declarative rejection leaves initialized state and the stored legacy save 
   const ctx = boot({ mode: "manual", version: 2, migrate() { throw new Error("Missing legacy session state"); } });
   ctx.game.store.set("progress", { level: 1 });
   try {
-    expect(await ctx.game.save!.load()).toBe(false);
-    expect(ctx.game.save!.status()).toBe("idle");
+    expect((await ctx.game.save!.load()).kind).toBe("corrupt");
+    expect(ctx.game.save!.status()).toBe("error");
     expect(ctx.game.store.get("progress")).toEqual({ level: 1 });
     expect(values.get(key)).toBe(raw);
   } finally { ctx.game.save!.dispose(); }
@@ -67,7 +67,7 @@ test("omitting migration preserves the compatible version-mismatch behavior", as
   values.set("jgengine:save:declarative-migration:default", JSON.stringify({ version: 1, savedAt: 0, value: snapshot }));
   const ctx = boot({ mode: "manual", version: 2 });
   try {
-    expect(await ctx.game.save!.load()).toBe(true);
+    expect((await ctx.game.save!.load())?.kind).toBe("loaded");
     expect(ctx.game.store.get("progress")).toEqual({ level: 8 });
   } finally { ctx.game.save!.dispose(); }
 }));
@@ -79,7 +79,7 @@ test("raw declarative payloads migrate from version zero", async () => withStora
     return { store: [["progress", { level: (data as { legacyLevel: number }).legacyLevel }]] };
   } });
   try {
-    expect(await ctx.game.save!.load()).toBe(true);
+    expect((await ctx.game.save!.load())?.kind).toBe("loaded");
     expect(ctx.game.store.get("progress")).toEqual({ level: 6 });
   } finally { ctx.game.save!.dispose(); }
 }));
@@ -95,7 +95,7 @@ test("explicit save options override declarative migration", async () => {
       migrate: () => ({ store: [["progress", { level: 12 }]] }) },
   });
   try {
-    expect(await ctx.game.save!.load()).toBe(true);
+    expect((await ctx.game.save!.load())?.kind).toBe("loaded");
     expect(ctx.game.store.get("progress")).toEqual({ level: 12 });
   } finally { ctx.game.save!.dispose(); }
 });

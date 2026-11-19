@@ -380,11 +380,7 @@ export function createSideJobs(config: SideJobsConfig): SideJobs {
 
   function persist(): void {
     if (config.persist === undefined) return;
-    try {
-      config.persist.save(snapshot());
-    } catch {
-      // A failed write must not stop play.
-    }
+    config.persist.save(snapshot());
   }
 
   function snapshot(): SideJobsState {

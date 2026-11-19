@@ -5,7 +5,7 @@ import { kindOf, rollItem } from "./items";
 
 function memory(): StoragePort {
   const data = new Map<string, string>();
-  return { getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); }, removeItem: key => { data.delete(key); } };
+  return { get length() { return data.size; }, key: index => [...data.keys()][index] ?? null, getItem: key => data.get(key) ?? null, setItem: (key, value) => { data.set(key, value); }, removeItem: key => { data.delete(key); } };
 }
 function loot(source: string, kind: ItemKind, depth = 1) {
   const result = takeLoot(newDive(1), source, kind, depth);
@@ -146,7 +146,8 @@ describe("the one Marrow record", () => {
     await record.switchSlot("marrow");
     expect(record.restoredRun?.player).toEqual([0, 0, 4]);
     expect((await record.slots()).sort()).toEqual(["marrow", "marrow-2"]);
-    expect((await record.peek("marrow-2"))?.systems).toHaveProperty("marrow");
+    const second = await record.peek("marrow-2");
+    expect(second.kind === "loaded" ? second.value.systems : null).toHaveProperty("marrow");
   });
 
   test("a damaged record in another slot blocks opening it instead of starting a new Life", async () => {

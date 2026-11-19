@@ -1,8 +1,7 @@
-import type { KeyValueStorage } from "@jgengine/core/game/keyValueStore";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { createGameSave, type GameSave, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
-import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { localSaveBackend, type SaveBackend, type SaveStorage } from "@jgengine/core/save/saveStore";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { StatValueMap } from "@jgengine/core/scene/entityStats";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
@@ -307,21 +306,34 @@ function liftHousehold(stored: Readonly<Record<string, string>>, slot: string): 
 }
 
 /**
- * Open the household slots over a storage (`localStorage` when omitted). A write the browser cannot
- * keep, or one larger than the save limit, fails instead of writing part of a household.
+ * The backend households write through: the browser's storage, refusing a household larger than it
+ * keeps or a stored one too large to be one. `onUnavailable` hears every operation the storage refused.
  */
-export function createOrbitRecords(ctx: GameContext, storage?: KeyValueStorage | null): OrbitRecords {
-  const health = { damaged: false, unavailable: false };
-  const local = localSaveBackend(storage, { errorMode: "throw", onError: () => { health.unavailable = true; } });
-  const backend: SaveBackend = {
+export function orbitSaveBackend(storage: SaveStorage | null | undefined, onUnavailable: () => void): SaveBackend {
+  const local = localSaveBackend(storage);
+  const unavailable = <T>(operation: Promise<T>): Promise<T> => operation.catch((error: unknown) => {
+    onUnavailable();
+    throw error;
+  });
+  return {
     async read(key) {
-      const raw = await local.read(key);
+      const raw = await unavailable(local.read(key));
       if (raw !== null && raw.length > SAVE_LIMIT) throw new DamagedHousehold(`${key} is larger than a household can be`);
       return raw;
     },
-    write: (key, value) => value.length > SAVE_LIMIT ? Promise.reject(new Error("The household is larger than this browser keeps")) : local.write(key, value),
-    remove: key => local.remove(key),
+    write: (key, value) => value.length > SAVE_LIMIT ? Promise.reject(new Error("The household is larger than this browser keeps")) : unavailable(local.write(key, value)),
+    remove: key => unavailable(local.remove(key)),
+    keys: prefix => unavailable(local.keys(prefix)),
   };
+}
+
+/**
+ * Open the household slots over a storage (`localStorage` when omitted). A write the browser cannot
+ * keep, or one larger than the save limit, fails instead of writing part of a household.
+ */
+export function createOrbitRecords(ctx: GameContext, storage?: SaveStorage | null): OrbitRecords {
+  const health = { damaged: false, unavailable: false };
+  const backend = orbitSaveBackend(storage, () => { health.unavailable = true; });
   const household: GameSaveSystem<OrbitSave> = {
     name: "household",
     snapshot() {
@@ -349,10 +361,10 @@ export function createOrbitRecords(ctx: GameContext, storage?: KeyValueStorage |
   async function read(slot: string): Promise<OrbitRead> {
     health.damaged = false;
     health.unavailable = false;
-    const document = await slotSave(slot).peek(slot);
-    const section = document?.systems["household"];
-    if (document !== null && validOrbitSave(section)) return { save: section, damaged: false, unavailable: false };
-    return { save: null, damaged: !health.unavailable && (health.damaged || document !== null), unavailable: health.unavailable };
+    const read = await slotSave(slot).peek(slot);
+    const section = read.kind === "loaded" ? read.value.systems["household"] : undefined;
+    if (read.kind === "loaded" && validOrbitSave(section)) return { save: section, damaged: false, unavailable: false };
+    return { save: null, damaged: !health.unavailable && (health.damaged || read.kind !== "empty"), unavailable: health.unavailable };
   }
   return {
     read,

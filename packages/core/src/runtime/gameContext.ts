@@ -825,7 +825,7 @@ function resolveSaveOptions<TAssetRef extends ModelAssetRef, TMultiplayer>(
       config.storage === "memory"
         ? memorySaveBackend()
         : config.storage === undefined || config.storage === "local"
-          ? localSaveBackend(undefined, { errorMode: "throw" })
+          ? localSaveBackend()
           : config.storage,
     mode: config.mode,
     key: saveKey(definition.name),
