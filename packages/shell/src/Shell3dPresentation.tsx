@@ -748,7 +748,7 @@ export function Shell3dPresentation({
             tabIndex={0}
             data-jg-play-surface=""
             {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
-            style={{ position: "fixed", inset: 0, width: "100%", height: "100%", background: "#05090a", outline: "none" }}
+            style={{ position: "relative", width: "100%", height: "100%", background: "#05090a", outline: "none" }}
             className="relative h-full w-full bg-neutral-950 outline-none"
             onKeyDown={keys.onKeyDown}
             onKeyUp={keys.onKeyUp}

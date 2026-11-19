@@ -69,6 +69,6 @@ describe("the play surface", () => {
     const src = readFileSync(join(import.meta.dir, "Shell3dPresentation.tsx"), "utf8");
     const surface = src.slice(src.indexOf("data-jg-play-surface"));
     const tag = surface.slice(0, surface.indexOf("onKeyDown"));
-    expect(tag).toContain('position: "fixed", inset: 0, width: "100%", height: "100%"');
+    expect(tag).toContain('position: "relative", width: "100%", height: "100%"');
   });
 });

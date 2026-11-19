@@ -920,18 +920,6 @@
 - `RecordedPose` (interface): interface RecordedPose { position: EntityPosition; rotationY: number } — ⚠ undocumented · used by `useSessionRecorder`: Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
 - `useSessionRecorder` (function): function useSessionRecorder(entityId: string, options?: RecordingBufferOptions): RecordingBuffer<RecordedPose> — Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffer`, which a game can then `seek()` to scrub, drive an observer cam ghost, or export a kill-cam clip. Recording rides on `ctx.time.now()`, so pause/fast-forward scrub the recording exactly like the live sim.
 
-## @jgengine/core/settings/QuickControls.draw
-
-- `QuickControls` (function): function QuickControls({ controller }: { controller: SettingsController }): JSX.Element | null — ⚠ undocumented
-
-## @jgengine/core/settings/SettingsChrome.draw
-
-- `SettingsChrome` (function): function SettingsChrome(): JSX.Element | null — ⚠ undocumented
-
-## @jgengine/core/settings/SettingsMenu.draw
-
-- `SettingsMenu` (function): function SettingsMenu({ controller, onClose, initialTab, }: { controller: SettingsController; onClose: () => void; initialTab?: string; }): JSX.Element | null — ⚠ undocumented
-
 ## @jgengine/core/settings/SettingsRuntime.draw
 
 - `SettingsRuntime` (function): function SettingsRuntime({ variant, surface, actions, children, ...input }: SettingsRuntimeProps): JSX.Element — ⚠ undocumented

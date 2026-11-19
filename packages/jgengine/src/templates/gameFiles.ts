@@ -13,7 +13,7 @@ const indexHtml = (name: string) => `<!doctype html>
     <title>${escapeHtml(name)}</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" style="position:fixed;inset:0"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
