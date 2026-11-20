@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { readBuildEnv } from "./saveEndpoint";
 
-const PACKAGES = ["../../../core/src", "../../../shell/src"].map((relative) => join(import.meta.dir, relative));
+const PACKAGES = [join(import.meta.dir, "..")];
 
 function sourceFiles(dir: string, into: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
