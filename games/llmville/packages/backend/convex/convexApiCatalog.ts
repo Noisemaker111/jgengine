@@ -22,19 +22,19 @@ export const convexApiCatalog: Record<string, readonly ConvexApiMethod[]> = {
   ],
   presence: [
     {
-      path: "worldPresence:ensureHumanPresence",
+      path: "multiplayer/worldPresence:ensureHumanPresence",
       kind: "mutation",
       description: "Join the shared-datacenter avatar session",
       args: "{ gameId, externalId }",
     },
     {
-      path: "worldPresence:syncPlayerPosition",
+      path: "multiplayer/worldPresence:syncPlayerPosition",
       kind: "mutation",
       description: "Sync absolute world position while roaming the datacenter",
       args: "{ position: { x, z, y? }, rotationY?, rotationPitch?, externalId? }",
     },
     {
-      path: "worldPresence:listOnlinePresences",
+      path: "multiplayer/worldPresence:listOnlinePresences",
       kind: "query",
       description: "Live feed of players and bots in the chunks around a viewer chunk key",
       args: "{ viewerChunkKey? }",
@@ -42,13 +42,13 @@ export const convexApiCatalog: Record<string, readonly ConvexApiMethod[]> = {
   ],
   chat: [
     {
-      path: "worldChat:recent",
+      path: "multiplayer/worldChat:recent",
       kind: "query",
       description: "Last messages posted in the shared world chat, newest first",
       args: "{ limit? }",
     },
     {
-      path: "worldChat:send",
+      path: "multiplayer/worldChat:send",
       kind: "mutation",
       description: "Post a message to the shared world chat (240 chars, 1 per 2s)",
       args: "{ text, externalId? }",

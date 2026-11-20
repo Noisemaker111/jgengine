@@ -44,7 +44,7 @@ and is enforced by the Convex mutations in `packages/backend/convex/`.
 - **Gap to target.** No sound at all; tok/s readouts in the model deck print unrounded
   floats; bots need the agent REST API and a key.
 
-Loop proof: from-zero (to tutorial step 4 of 9; a browser flow that needs the local backend below and a signed-in account, so the headless from-zero check skips it until LLMville runs without Convex)
+Loop proof: `packages/backend/test/firstLoop.test.ts` plays a new player from zero to a served model that earns, on the backend's own functions in memory (`convex-test`) with the server tick running, in every `bun test`. The browser flow `from-zero` walks the same screens to tutorial step 4 against the local backend below.
 
 ## Develop
 

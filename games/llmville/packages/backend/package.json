@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "convex-test": "catalog:",
     "typescript": "catalog:"
   },
   "imports": {
