@@ -585,7 +585,7 @@ credited here and on the game's HUD.
 
 The port's committed 3D art is not upstream's: the `.glb` models under
 [`apps/dev/public/models/lantern-reach/`](apps/dev/public/models/lantern-reach) —
-player classes, weapons, creatures, and enemies — are CC0 **KayKit**
+now the creatures alone, which engine tests load — are CC0 **KayKit**
 (adventurer classes, weapons, skeletons) and **Quaternius** (animals, monsters)
 models, renamed to match the roles in upstream's visual manifest. See the
 KayKit and Quaternius sections above.
