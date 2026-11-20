@@ -143,6 +143,9 @@ const gameSourceModules = (hasViteGlob ? import.meta.glob<Record<string, unknown
   // that cleared the first one's nodes (`removeChild ... not a child of this node`).
   "!../../../games/*/src/**/main.tsx",
   "!../../../games/*/src/**/*.test.*",
+  // A worker entry (`new Worker(new URL("./xWorker.ts", ...))`) runs its own message loop at the top
+  // level: imported into the page it listens on window and outlives the game.
+  "!../../../games/*/src/**/*Worker.ts",
 ]) : {});
 
 export async function loadGameStyle(gameId: string): Promise<void> {
