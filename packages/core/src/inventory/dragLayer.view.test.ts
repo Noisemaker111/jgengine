@@ -3,6 +3,7 @@ import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type CDPSession, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 import { gotoFixture, installPublicPackages } from "../../../../scripts/browser-test-fixture";
 
 setDefaultTimeout(30_000);
@@ -63,7 +64,7 @@ beforeAll(async () => {
   server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: request => new URL(request.url).pathname === "/fixture.js"
     ? new Response(script, { headers: { "Content-Type": "text/javascript" } })
     : new Response('<meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0}</style><div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }) });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+  browser = await sharedChromium(["--no-sandbox"]);
 }, 60_000);
 
 beforeEach(async () => {

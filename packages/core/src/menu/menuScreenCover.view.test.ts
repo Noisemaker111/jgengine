@@ -3,6 +3,7 @@ import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 
 /**
  * A menu only stops the world drawing when it says it paints over the whole canvas. The default
@@ -58,7 +59,7 @@ beforeAll(async () => {
             headers: { "Content-Type": "text/html" },
           }),
   });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+  browser = await sharedChromium(["--no-sandbox"]);
   page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${server.port}`);
   await page.waitForFunction(() => typeof (window as unknown as { fixture?: unknown }).fixture !== "undefined");

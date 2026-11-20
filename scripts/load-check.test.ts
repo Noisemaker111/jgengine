@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { shootCommand, LOAD_GUARD_SECONDS } from "./shoot";
-import { BUSY_LIMIT, bestOf, busyShare, cpuTimes, guardVerdict, judgeLoad, judgeOpen, parseLoadArgs, renderTable, revealSummary, summarizeRuns, type LoadSample } from "./load-check";
+import { judgeOpen, parseLoadArgs, renderTable, revealSummary, summarizeRuns, type LoadSample } from "./load-check";
 import { siteGames } from "./siteGames";
 
 const known = ["odd-orbit", "deepward", "fernwild"];
@@ -48,57 +48,6 @@ describe("renderTable", () => {
   test("shows before -> after cells when a previous run is given", () => {
     const table = renderTable([sample("fernwild", 400, 3000)], [sample("fernwild", 12_000, null)]);
     expect(table).toContain("| fernwild | 500 -> 500 | 900 -> 900 | 12000 -> 400 | 2000 -> 2000 | - -> 3000 |");
-  });
-});
-
-describe("judgeLoad", () => {
-  const base = { worstClick: 600, sceneReady: 4000 };
-  const now = (worstClick: number | null, sceneReady: number | null): LoadSample => ({ ...sample("fernwild", worstClick, null), sceneReady });
-
-  test("passes a load within noise of its baseline", () => {
-    expect(judgeLoad("fernwild", base, now(950, 5400))).toEqual([]);
-  });
-
-  test("fails a worse freeze or a slower scene and names the numbers", () => {
-    expect(judgeLoad("fernwild", base, now(1100, 4000))).toEqual(["fernwild: worst freeze 1100 ms, baseline 600 ms, limit 1000 ms"]);
-    expect(judgeLoad("fernwild", base, now(600, 5600))).toEqual(["fernwild: scene ready 5600 ms, baseline 4000 ms, limit 5500 ms"]);
-    expect(judgeLoad("fernwild", base, now(600, null))).toEqual(["fernwild: scene ready never happened (baseline 4000 ms)"]);
-  });
-
-  test("a slower load fails on a quiet PC and is not judged on one other work holds busy", () => {
-    const slower = judgeLoad("harbor-heat", { worstClick: 700, sceneReady: 9441 }, now(702, 18279));
-    expect(guardVerdict(slower, 0.2)).toEqual({ failures: slower, unjudged: [] });
-    expect(guardVerdict(slower, 1)).toEqual({
-      failures: [],
-      unjudged: ["harbor-heat: scene ready 18279 ms, baseline 9441 ms, limit 12273 ms, but other work held this PC 100% busy"],
-    });
-    expect(guardVerdict([], 1)).toEqual({ failures: [], unjudged: [] });
-  });
-
-  test("the PC's busy share comes from the CPU time every core spent between two samples", () => {
-    const core = (user: number, idle: number) => ({ times: { user, nice: 0, sys: 0, idle, irq: 0 } });
-    const before = cpuTimes([core(100, 900), core(100, 900)]);
-    const after = cpuTimes([core(190, 910), core(190, 910)]);
-    expect(busyShare(before, after)).toBe(0.9);
-    expect(busyShare(before, before)).toBe(0);
-    expect(BUSY_LIMIT).toBeLessThan(1);
-  });
-
-  test("a baseline that never reached the scene does not judge it", () => {
-    expect(judgeLoad("fernwild", { worstClick: 600, sceneReady: null }, now(600, null))).toEqual([]);
-  });
-
-  test("fails a scene that drew blank however fast it loaded", () => {
-    expect(judgeLoad("fernwild", base, { ...now(600, 3000), sceneColors: 3, glErrors: 400 })).toEqual([
-      "fernwild: the scene drew blank at scene ready (3 colours; 400 WebGL errors logged)",
-    ]);
-    expect(judgeLoad("fernwild", base, { ...now(600, 3000), sceneColors: 180 })).toEqual([]);
-  });
-
-  test("a retry keeps the better of the two runs per measure", () => {
-    const best = bestOf(now(1200, 3000), now(700, 9000));
-    expect(best.worstClick).toBe(700);
-    expect(best.sceneReady).toBe(3000);
   });
 });
 

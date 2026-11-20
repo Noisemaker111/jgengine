@@ -2,8 +2,8 @@ import loadBaseline from "../../../../scripts/load-baseline.json";
 
 /**
  * Numbers the site quotes, read from the files that measure them so a claim cannot outlive its
- * measurement. The load baseline is what `bun run shoot --load --guard` (run by verify:fast) holds
- * every game to: a cold load in a fresh browser profile on the machine that recorded it.
+ * measurement. The load record is what `bun run shoot --load all --record` measured: a cold load
+ * of each game in a fresh browser profile on the machine that recorded it.
  */
 const loads = Object.values(loadBaseline.games as Record<string, { worstClick: number | null; sceneReady: number | null }>);
 
@@ -16,7 +16,7 @@ export const SCENE_READY_RANGE_MS: readonly [number, number] = [
   Math.max(...loads.map((game) => game.sceneReady ?? 0)),
 ];
 
-/** How many games the load guard measures. */
+/** How many games the load record holds. */
 export const MEASURED_GAME_COUNT = loads.length;
 
 /** The GPU the baseline was recorded on, short form ("RTX 3070"). */

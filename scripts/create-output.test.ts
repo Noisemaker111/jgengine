@@ -16,7 +16,7 @@ import { folderOfNpmName, npmNameOfFolder } from "./packageNames";
 /**
  * What a new developer gets from `jgengine create`, without booting it: every template opens to
  * something to see and play, its engine imports exist, and a game on the npm packages can start
- * Vite's dev server (`bun run shoot --load <game> --guard` covers the drawn pixels by hand).
+ * Vite's dev server (`bun run shoot --load <game>` measures the drawn scene by hand).
  */
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 

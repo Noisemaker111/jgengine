@@ -3,6 +3,7 @@ import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 
 /**
  * A place change must never freeze a frame: the new place (here 24 parts of 25 ms each, 600 ms in
@@ -74,7 +75,7 @@ beforeAll(async () => {
             headers: { "Content-Type": "text/html" },
           }),
   });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+  browser = await sharedChromium(["--no-sandbox"]);
   page = await browser.newPage();
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
