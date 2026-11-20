@@ -131,7 +131,7 @@
 
 - `CardPile` (interface): interface CardPile { state(): CardPileState; zones(): readonly ZoneName[]; count(zone: ZoneName): number; peek(zone: ZoneName, n?: number): readonly string[]; zoneOf(cardId: string): ZoneName | null; shuffle(zone: ZoneName | undefined, seed: string | number):… — ⚠ undocumented
 - `CardPileConfig` (interface): interface CardPileConfig { zones: readonly ZoneName[]; drawFrom?: ZoneName; discardTo?: ZoneName; handZone?: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; onChange?: () => void } — ⚠ undocumented
-- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/core/ui.view): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
+- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/core/cards/cards.view): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
 - `DrawResult` (interface): interface DrawResult { state: CardPileState; drawn: readonly string[]; reshuffled: boolean } — ⚠ undocumented
 - `PileMoveRejected` (interface): interface PileMoveRejected { status: "rejected"; reason: PileRejection; detail?: string } — ⚠ undocumented
 - `PileMoveResult` (interface): interface PileMoveResult { status: "ok"; state: CardPileState } — ⚠ undocumented
@@ -165,7 +165,7 @@
 - `ChatChannelDef` (interface): interface ChatChannelDef { id: string; kind: ChatChannelKind; radius?: number; historyLimit?: number; rateLimit?: ChatRateLimit } — ⚠ undocumented
 - `ChatChannelKind` (type): type ChatChannelKind = "global" | "party" | "proximity" — ⚠ undocumented
 - `ChatDeps` (interface): interface ChatDeps { events: GameEvents; now?: () => number; party?: {membersOf(userId: string): string[]}; proximity?: EmotesDeps; blockedBy?: (userId: string) => readonly string[]; maxBodyLength?: number; defaultRateLimit?: ChatRateLimit; filter?: ChatFilte… — ⚠ undocumented
-- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; fromLabel?: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/ui.view): Chat behavior over a game context or externally supplied server messages.
+- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; fromLabel?: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/chat/chat.view): Chat behavior over a game context or externally supplied server messages.
 - `ChatRateLimit` (interface): interface ChatRateLimit { count: number; perMs: number } — ⚠ undocumented
 - `ChatRateLimiter` (interface): interface ChatRateLimiter { allow(key: string, atMs: number): boolean; snapshot(): Record<string, number[]>; restore(state: Record<string, number[]>): void } — ⚠ undocumented
 - `ChatRecipients` (type): type ChatRecipients = readonly string[] | "all" — ⚠ undocumented
@@ -569,7 +569,7 @@
 
 ## @jgengine/core/feed/feed
 
-- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/core/ui.view): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
+- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/core/notifications/toastStack.view): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `GameFeed` (interface): interface GameFeed { bind<TName extends keyof GameEventMap>(action: TName, events: GameEvents): () => void; push(action: string, entry: unknown): void; recent(action: string, options?: {limit?: number}): FeedEntry[]; subscribe(action: string, listener: (entry… — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
 - `GameFeedOptions` (interface): interface GameFeedOptions { limit?: number } — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
@@ -1089,7 +1089,7 @@
 - `CancelResult` (type): type CancelResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve>; readonly refund: TReserve | null; } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link cancelJob}, carrying the removed job and its computed refund.
 - `CandidatePlacement` (interface): interface CandidatePlacement — A part proposed for a slot during generation, before it is committed to an identity. Used by the backtracking contract to test a placement in isolation.
 - `CardPile` (interface): interface CardPile { state(): CardPileState; zones(): readonly ZoneName[]; count(zone: ZoneName): number; peek(zone: ZoneName, n?: number): readonly string[]; zoneOf(cardId: string): ZoneName | null; shuffle(zone: ZoneName | undefined, seed: string | number):… — ⚠ undocumented
-- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/core/ui.view): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
+- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/core/cards/cards.view): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
 - `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented · used by `canPlace` (@jgengine/core/inventory/shapedGrid): Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `CellGrid` (interface): interface CellGrid<T> — A fixed-size 2D board of cells, row-major from the top-left; `null` is an empty cell. Plain data, so it serializes and restores as-is.
@@ -1099,7 +1099,7 @@
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
 - `ChaseMissionOptions` (interface): interface ChaseMissionOptions extends ComposedMissionOptions — Options for {@link chaseMission}: a target kept close until it is caught.
 - `Chat` (interface): interface Chat { register(def: ChatChannelDef): void; channels(): ChatChannelDef[]; send(fromUserId: string, body: string): ChatSendResult; send(fromUserId: string, channelId: string, body: string): ChatSendResult; recent(options?: {limit?: number; channe… — ⚠ undocumented
-- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; fromLabel?: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/ui.view): Chat behavior over a game context or externally supplied server messages.
+- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; fromLabel?: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/chat/chat.view): Chat behavior over a game context or externally supplied server messages.
 - `ChatRateLimit` (interface): interface ChatRateLimit { count: number; perMs: number } — ⚠ undocumented
 - `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
@@ -1175,7 +1175,7 @@
 - `ExpeditionHazard` (interface): interface ExpeditionHazard — One encounter's mechanical effects and optional caller-authored notices.
 - `ExpeditionState` (interface): interface ExpeditionState — Plain saveable expedition data. Persist this whole value, including the RNG cursor and tick frontier.
 - `ExpeditionSupplyRule` (interface): interface ExpeditionSupplyRule — Ordered auto-consumption rule: spends one finite supply only when its declared effect changes a vital.
-- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/core/ui.view): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
+- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/core/notifications/toastStack.view): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; body?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented

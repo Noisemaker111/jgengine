@@ -76,7 +76,7 @@ export function skillForModule(pkg: string, modulePath: string): string | null {
   // re-exported primitives inherit that skill's examples instead of orphaning under MAIN.
   if (!modulePath.includes("/")) {
     if (domain === "gameplay") return "jgengine-gameplay";
-    return CORE_DOMAIN_SKILLS[domain] ?? MAIN;
+    return CORE_BARREL_SKILLS[domain] ?? CORE_DOMAIN_SKILLS[domain] ?? MAIN;
   }
   // Host-side wire projection lives under runtime/ but is multiplayer surface.
   if (modulePath.startsWith("runtime/worldProjection")) return "jgengine-multiplayer";
