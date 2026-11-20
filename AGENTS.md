@@ -41,12 +41,13 @@ once CI is green; the tag publishes. No release branch or PR.
 - Existing game: its `PLAN.md` if it has one, else its `README.md`.
 - Other work: `.claude/skills/jgengine/SKILL.md` routes to the right skill.
 
-## Game changes improve the framework
+## Where code lives
 
 - World content lives in `editor.scene.json`; if the editor cannot express a change, file a feature
   issue before a code fallback.
-- Name the shared owner in `packages/` before editing a game. Compose small configurable parts, keep
-  game numbers in the game, fix every adopter together, no compatibility shims. A one-adopter
-  mechanism may stay local with an issue naming the seam; the second adopter moves it upstream.
+- A mechanic starts in the game that needs it. The second game that needs it moves it into
+  `packages/core` and both games use that copy. Check `bun run find` first so you don't write a
+  second copy of something core already has. Keep game numbers in the game, fix every adopter
+  together, no compatibility shims.
 - Feature model, view and draw live in `packages/core/src/<feature>/`; model code has no rendering,
   browser or backend dependencies.

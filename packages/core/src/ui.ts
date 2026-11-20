@@ -11,7 +11,6 @@ export {
   type ModalStackSnapshot,
 } from "./dialog/modalStack";
 export { formatDistance } from "./format/distance";
-export { formatDelta, formatDuration, formatOrdinal } from "./format/duration";
 export { formatSpeed } from "./format/speed";
 export {
   listHudPanelTypes,
@@ -214,7 +213,6 @@ export {
   type SelectionWindow,
   type SummarizeSelectionOptions,
 } from "./ui/selectionModel";
-export { swingTimerState, type SwingTargetInput } from "./ui/swingTimer";
 export {
   actionTooltip,
   placePopover,
