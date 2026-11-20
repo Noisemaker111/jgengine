@@ -3,6 +3,7 @@ import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 
 setDefaultTimeout(30_000);
 
@@ -313,7 +314,7 @@ beforeAll(async () => {
     if (path === "/knight.glb") return new Response(knight);
     return new Response('<div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } });
   } });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+  browser = await sharedChromium(["--no-sandbox"]);
 }, 60_000);
 
 test("explicit automatic playback diagnoses unsupported imported clips once while legacy automatic playback remains quiet", async () => {

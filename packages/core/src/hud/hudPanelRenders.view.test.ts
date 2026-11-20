@@ -3,6 +3,7 @@ import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 
 /*
  * A HUD panel whose text grows (a score gaining a digit, a longer objective) is measured again and the
@@ -61,7 +62,7 @@ beforeAll(async () => {
   `);
   const script = buildBrowserFixture(`${scratch}/fixture.tsx`);
   server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: request => new URL(request.url).pathname === "/fixture.js" ? new Response(script, { headers: { "Content-Type": "text/javascript" } }) : new Response('<style>body{margin:0}#root{position:fixed;inset:0}</style><div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }) });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+  browser = await sharedChromium(["--no-sandbox"]);
   page = await browser.newPage();
   await page.setViewportSize({ width: 1280, height: 720 });
   const errors: string[] = [];

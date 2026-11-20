@@ -3,6 +3,7 @@ import { mkdir, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../../scripts/sharedChromium";
 
 setDefaultTimeout(60_000);
 
@@ -71,7 +72,7 @@ beforeAll(async () => {
   script = buildBrowserFixture(`${scratch}/fixture.ts`);
   const check: { landformCheck: () => string } = await import(`${scratch}/check.ts`);
   bunResult = check.landformCheck();
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+  browser = await sharedChromium(["--no-sandbox"]);
 }, 60_000);
 afterAll(async () => {
   await browser?.close();

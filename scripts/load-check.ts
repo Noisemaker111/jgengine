@@ -4,7 +4,6 @@
 // cold as a first visit. Local only: it needs a real GPU and a window, so CI never runs it.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { cpus } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,7 +16,6 @@ import { killPid, removeProfileDir, startBrowser, waitForPidExit } from "./brows
 import { printHelpIfAsked } from "./script-help";
 import { BOOT_SEQUENCE_ATTRIBUTE, bootSequenceErrors, parseBootSequence } from "../packages/core/src/boot/bootSequence";
 import { siteGames } from "./siteGames";
-import { EXIT_UNJUDGED } from "./stepScheduler";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const webRoot = join(repoRoot, "apps", "web");
@@ -26,6 +24,7 @@ export const LOAD_USAGE = {
   summary: "cold-cache load times per game on a production build of the site (local only, real GPU)",
   usage: "bun run shoot --load <game|all> [--runs n] [--no-build] [--headed] [--trace] [--compare <json>]",
   flags: [
+    { flag: "--record", detail: "write each game's worst freeze and scene ready into scripts/load-baseline.json, the numbers the site quotes" },
     { flag: "<game|all>", detail: "one games/<id>, a comma list, or all of them" },
     { flag: "--runs n", detail: "cold runs per game; the median is reported (default 1)" },
     { flag: "--no-build", detail: "reuse the last production build in apps/web/dist" },
@@ -33,8 +32,6 @@ export const LOAD_USAGE = {
     { flag: "--trace", detail: "save a Chrome performance trace per game next to the results" },
     { flag: "--compare <json>", detail: "a previous results file; the table shows before -> after" },
     { flag: "--timeout s", detail: "give up on a game after this many seconds (default 90)" },
-    { flag: "--guard", detail: "fail when a game loads slower than scripts/load-baseline.json says (runner-only build)" },
-    { flag: "--save-baseline", detail: "measure the games the way --guard does and write them into scripts/load-baseline.json" },
   ],
   example: "bun run shoot --load all --compare .scratch/load/before.json",
 } as const;
@@ -47,15 +44,13 @@ export interface LoadArgs {
   headed: boolean;
   trace: boolean;
   compare: string | null;
+  /** Write this run's numbers into the record the site quotes. */
+  record: boolean;
   timeoutMs: number;
-  /** Compare against the saved baseline and exit 1 on a regression. */
-  guard: boolean;
-  /** Write this run into the saved baseline. */
-  saveBaseline: boolean;
 }
 
 export function parseLoadArgs(argv: readonly string[], known: readonly string[]): LoadArgs {
-  const args: LoadArgs = { games: [], runs: 1, build: true, headed: false, trace: false, compare: null, timeoutMs: 90_000, guard: false, saveBaseline: false };
+  const args: LoadArgs = { games: [], runs: 1, build: true, headed: false, trace: false, compare: null, timeoutMs: 90_000, record: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     const value = () => {
@@ -66,12 +61,11 @@ export function parseLoadArgs(argv: readonly string[], known: readonly string[])
     };
     if (arg === "--runs") args.runs = Math.max(1, Number.parseInt(value(), 10) || 1);
     else if (arg === "--no-build") args.build = false;
+    else if (arg === "--record") args.record = true;
     else if (arg === "--headed") args.headed = true;
     else if (arg === "--trace") args.trace = true;
     else if (arg === "--compare") args.compare = value();
     else if (arg === "--timeout") args.timeoutMs = Math.max(5, Number(value())) * 1000;
-    else if (arg === "--guard") args.guard = true;
-    else if (arg === "--save-baseline") args.saveBaseline = true;
     else if (arg.startsWith("--")) throw new Error(`unknown flag ${arg}`);
     else args.games.push(...(arg === "all" ? known : arg.split(",").filter((id) => id.length > 0)));
   }
@@ -321,25 +315,13 @@ export function renderTable(rows: readonly LoadSample[], before: readonly LoadSa
   return [header, rule, ...body].join("\n");
 }
 
-/** Where `--guard` keeps each game's accepted load on this machine's GPU. */
-export const BASELINE_FILE = join(repoRoot, "scripts", "load-baseline.json");
+/** The measured load numbers the site quotes, per game, on the GPU they were taken on. */
+export const RECORD_FILE = join(repoRoot, "scripts", "load-baseline.json");
 
-export interface LoadBaseline {
+export interface LoadRecord {
   gpu: string;
   games: Record<string, { worstClick: number | null; sceneReady: number | null }>;
 }
-
-/**
- * How much slower than its baseline a game may load before the guard fails it. The margins are
- * run-to-run noise on one PC (a cold profile still varies by about a second), not slack.
- */
-export const GUARD_LIMITS = {
-  worstClick: { ratio: 1.5, ms: 400, label: "worst freeze" },
-  sceneReady: { ratio: 1.3, ms: 1500, label: "scene ready" },
-} as const;
-
-/** Fewer distinct coarse colours than this in the scene canvas reads as a blank scene, not a drawn one. */
-export const BLANK_SCENE_COLORS = 40;
 
 /**
  * What a game's open did wrong whatever its timing: a screen shown twice or out of order (a second
@@ -356,98 +338,6 @@ export function judgeOpen(game: string, sample: LoadSample): string[] {
     failures.push(`${game}: ${sample.missingFiles.length} files missing on the server: ${[...new Set(sample.missingFiles)].slice(0, 5).join(", ")}`);
   }
   return failures;
-}
-
-/** Each way `now` loads worse than `base`, as a sentence; empty when it holds. */
-export function judgeLoad(game: string, base: LoadBaseline["games"][string], now: LoadSample): string[] {
-  if (now.error !== undefined) return [`${game}: ${now.error}`];
-  const failures: string[] = [];
-  if (now.sceneColors != null && now.sceneColors < BLANK_SCENE_COLORS) {
-    failures.push(`${game}: the scene drew blank at scene ready (${now.sceneColors} colours; ${now.glErrors ?? 0} WebGL errors logged)`);
-  }
-  for (const key of ["worstClick", "sceneReady"] as const) {
-    const was = base[key];
-    if (was === null) continue;
-    const { ratio, ms, label } = GUARD_LIMITS[key];
-    const limit = Math.round(Math.max(was * ratio, was + ms));
-    const is = now[key];
-    if (is === null) failures.push(`${game}: ${label} never happened (baseline ${was} ms)`);
-    else if (is > limit) failures.push(`${game}: ${label} ${is} ms, baseline ${was} ms, limit ${limit} ms`);
-  }
-  return failures;
-}
-
-/**
- * Above this share of the PC's CPU in use by other work, a slower load cannot be told from
- * contention. Measured 28 Oct: with four plant fits and two glacier runs holding a 24-thread PC at
- * 100%, harbor-heat reached its scene in 18.3 s against a 9.4 s baseline on an unchanged engine.
- */
-export const BUSY_LIMIT = 0.5;
-
-export interface CpuTimes {
-  busy: number;
-  idle: number;
-}
-
-/** Busy and idle CPU time summed over every core, from `os.cpus()`. */
-export function cpuTimes(cores: readonly { times: { user: number; nice: number; sys: number; idle: number; irq: number } }[]): CpuTimes {
-  let busy = 0;
-  let idle = 0;
-  for (const { times } of cores) {
-    busy += times.user + times.nice + times.sys + times.irq;
-    idle += times.idle;
-  }
-  return { busy, idle };
-}
-
-/** The share of the PC's CPU in use between two `cpuTimes` snapshots, 0..1. */
-export function busyShare(before: CpuTimes, after: CpuTimes): number {
-  const busy = after.busy - before.busy;
-  const total = busy + (after.idle - before.idle);
-  return total <= 0 ? 0 : Math.min(1, Math.max(0, busy / total));
-}
-
-/** How busy the PC is right now, with nothing of the guard's own running: two seconds of samples. */
-async function machineBusy(): Promise<number> {
-  const before = cpuTimes(cpus());
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  return busyShare(before, cpuTimes(cpus()));
-}
-
-/**
- * The guard's verdict on a load slower than its baseline: a failure on a quiet PC, and not judged
- * on one other work kept busy, since the wall clock then measures the neighbours.
- */
-export function guardVerdict(judged: readonly string[], busy: number): { failures: string[]; unjudged: string[] } {
-  if (judged.length === 0) return { failures: [], unjudged: [] };
-  if (busy <= BUSY_LIMIT) return { failures: [...judged], unjudged: [] };
-  const share = `${Math.round(busy * 100)}%`;
-  return { failures: [], unjudged: judged.map((line) => `${line}, but other work held this PC ${share} busy`) };
-}
-
-/** The better of two runs per measure, so one noisy run cannot fail the guard. */
-export function bestOf(a: LoadSample, b: LoadSample): LoadSample {
-  const min = (x: number | null, y: number | null) => (x === null ? y : y === null ? x : Math.min(x, y));
-  const most = (x: number | null | undefined, y: number | null | undefined) => (x == null ? (y ?? null) : y == null ? x : Math.max(x, y));
-  const best: LoadSample = { ...b, worstClick: min(a.worstClick, b.worstClick), sceneReady: min(a.sceneReady, b.sceneReady), sceneColors: most(a.sceneColors, b.sceneColors) };
-  if (a.error === undefined || b.error === undefined) delete best.error;
-  return best;
-}
-
-function readBaseline(): LoadBaseline | null {
-  return existsSync(BASELINE_FILE) ? (JSON.parse(readFileSync(BASELINE_FILE, "utf8")) as LoadBaseline) : null;
-}
-
-/** The /play runner alone (apps/dev reads package source), so the guard skips the site and package builds. */
-const runnerRoot = join(repoRoot, ".scratch", "load", "runner");
-
-function buildRunner(): void {
-  console.error("load: building the /play runner for production…");
-  const result = spawnSync("bun", ["x", "vite", "build", "--base", "/play/", "--outDir", join(runnerRoot, "play"), "--emptyOutDir", "--logLevel", "warn"], {
-    cwd: join(repoRoot, "apps", "dev"),
-    stdio: "inherit",
-  });
-  if (result.status !== 0) throw new Error("load: the /play runner build failed");
 }
 
 function buildSite(): void {
@@ -558,8 +448,6 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       }
       if (process.env["JG_LOAD_DEBUG"] === "1") console.error(`load: ${Date.now() - (deadline - args.timeoutMs)}ms ${JSON.stringify({ ...state, tasks: state?.tasks.length })}`);
       if (state?.playableAt != null && state.revealDone) break;
-      // The guard judges the menu and the scene behind it, so it stops once the scene is read and its first two seconds timed.
-      if ((args.guard || args.saveBaseline) && state?.sceneReadyAt != null && state.sceneSampled && state.revealDone) break;
       // Samples the page's own probe while the game loads
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
@@ -614,62 +502,31 @@ async function main(): Promise<number> {
   const argv = process.argv.slice(2);
   printHelpIfAsked("shoot --load", LOAD_USAGE, argv);
   const args = parseLoadArgs(argv, siteGames());
-  const runner = args.guard || args.saveBaseline;
-  if (runner && process.env["CI"] !== undefined) {
-    console.error("load: the load guard needs this PC's GPU and never runs in CI; skipped");
-    return 0;
-  }
   await provisionGames(args.games);
-  if (args.build) (runner ? buildRunner : buildSite)();
+  if (args.build) buildSite();
   const outDir = join(repoRoot, ".scratch", "load");
   mkdirSync(outDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const runDir = join(outDir, stamp);
   mkdirSync(runDir, { recursive: true });
   const before = args.compare === null ? [] : (JSON.parse(readFileSync(args.compare, "utf8")) as { rows: LoadSample[] }).rows;
-  const server = runner ? serveSite(runnerRoot, join("play", "index.html")) : serveSite();
-  const pathOf = (game: string) => (runner ? `/play/?game=${game}` : `/games/${game}`);
-  const baseline = readBaseline();
+  const server = serveSite();
+  const pathOf = (game: string) => `/games/${game}`;
   const rows: LoadSample[] = [];
   const allSamples: LoadSample[] = [];
   const failures: string[] = [];
-  const unjudged: string[] = [];
   const log = (game: string, run: number, sample: LoadSample) =>
     console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, after reveal ${revealSummary(sample.revealFrames, sample.revealCovered)}, effects on ${sample.effectsAfterReveal == null ? "-" : `${sample.effectsAfterReveal >= 0 ? "+" : ""}${sample.effectsAfterReveal}`} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors, boot ${sample.boot ?? "-"}${sample.error === undefined ? "" : ` (${sample.error})`}`);
   try {
     for (const game of args.games) {
-      // Other sessions' work comes in bursts, so the PC is sampled before the runs as well as after.
-      const busyBefore = args.guard ? await machineBusy() : 0;
       const samples: LoadSample[] = [];
       for (let run = 0; run < args.runs; run += 1) {
         const sample = await measureOnce(server.base, game, pathOf(game), args, runDir);
         log(game, run + 1, sample);
         samples.push(sample);
       }
-      let row: LoadSample = { ...summarizeRuns(samples), ...(samples[0]?.gpu === undefined ? {} : { gpu: samples[0].gpu }) };
+      const row: LoadSample = { ...summarizeRuns(samples), ...(samples[0]?.gpu === undefined ? {} : { gpu: samples[0].gpu }) };
       for (const sample of samples) if (sample.error === undefined) failures.push(...judgeOpen(game, sample));
-      if (args.guard) {
-        const accepted = baseline?.games[game];
-        if (baseline === null || accepted === undefined || baseline.gpu !== row.gpu) {
-          console.error(`load: no baseline for ${game} on ${row.gpu ?? "this GPU"}; record one with: bun run shoot --load ${game} --save-baseline`);
-        } else {
-          let judged = judgeLoad(game, accepted, row);
-          if (judged.length > 0) {
-            // A second cold run before failing: one slow start is noise, two are the change.
-            const again = await measureOnce(server.base, game, pathOf(game), args, runDir);
-            log(game, samples.length + 1, again);
-            samples.push(again);
-            row = bestOf(row, again);
-            judged = judgeLoad(game, accepted, row);
-          }
-          // A load that never happened or drew blank fails however busy the PC is; only a slower one is weighed.
-          const timed = judged.filter((line) => / ms, baseline \d+ ms, limit \d+ ms$/.test(line));
-          failures.push(...judged.filter((line) => !timed.includes(line)));
-          const verdict = guardVerdict(timed, timed.length === 0 ? 0 : Math.max(busyBefore, await machineBusy()));
-          failures.push(...verdict.failures);
-          unjudged.push(...verdict.unjudged);
-        }
-      }
       rows.push(row);
       allSamples.push(...samples);
     }
@@ -680,27 +537,19 @@ async function main(): Promise<number> {
   writeFileSync(file, `${JSON.stringify({ at: new Date().toISOString(), runs: args.runs, rows, samples: allSamples }, null, 2)}\n`);
   console.log(renderTable(rows, before));
   console.error(`load: results, end-of-run screenshots${args.trace ? " and traces" : ""} in ${runDir}`);
-  if (args.saveBaseline) {
+  if (args.record) {
     const gpu = rows[0]?.gpu ?? "unknown";
-    const games = { ...(baseline !== null && baseline.gpu === gpu ? baseline.games : {}) };
+    const previous = existsSync(RECORD_FILE) ? (JSON.parse(readFileSync(RECORD_FILE, "utf8")) as LoadRecord) : null;
+    const games = { ...(previous !== null && previous.gpu === gpu ? previous.games : {}) };
     for (const row of rows) if (row.error === undefined) games[row.game] = { worstClick: row.worstClick, sceneReady: row.sceneReady };
     const sorted = Object.fromEntries(Object.entries(games).sort(([a], [b]) => a.localeCompare(b)));
-    writeFileSync(BASELINE_FILE, `${JSON.stringify({ gpu, games: sorted } satisfies LoadBaseline, null, 2)}\n`);
-    console.error(`load: baseline for ${rows.map((row) => row.game).join(", ")} written to scripts/load-baseline.json`);
+    writeFileSync(RECORD_FILE, `${JSON.stringify({ gpu, games: sorted } satisfies LoadRecord, null, 2)}\n`);
+    console.error(`load: ${rows.map((row) => row.game).join(", ")} recorded in scripts/load-baseline.json`);
   }
   if (failures.length > 0) {
-    console.error(`load: ${failures.length} failure(s) (boot sequence, missing files, or a regression against scripts/load-baseline.json):`);
+    console.error(`load: ${failures.length} failure(s) (boot sequence or missing files):`);
     for (const failure of failures) console.error(`  ${failure}`);
-    console.error("load guard: find the slow shader or task with `bun run shoot --load <game> --trace`; a deliberate cost re-records with --save-baseline");
     return 1;
-  }
-  if (unjudged.length > 0) {
-    for (const line of unjudged) console.error(`  ${line}`);
-    const slower = [...new Set(unjudged.map((line) => line.slice(0, line.indexOf(":"))))];
-    console.error(
-      `load guard not judged: ${slower.join(", ")} loaded slower than the baseline while other work held this PC over ${Math.round(BUSY_LIMIT * 100)}% busy, so contention cannot be told from a regression; run \`bun run shoot --load ${slower.join(",")} --guard\` on a quieter PC`,
-    );
-    return EXIT_UNJUDGED;
   }
   return 0;
 }

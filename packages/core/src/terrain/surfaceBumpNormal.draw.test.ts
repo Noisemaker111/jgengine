@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { chromium, type Browser } from "playwright-core";
 import { chromeGraphicsArgs, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 import { SURFACE_BUMP_NORMAL_GLSL } from "./terrainSurfaceShader.draw";
 
 setDefaultTimeout(30_000);
@@ -42,7 +43,7 @@ window.run = (chunk) => {
 
 let browser: Browser;
 beforeAll(async () => {
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox", ...chromeGraphicsArgs()] });
+  browser = await sharedChromium(["--no-sandbox", ...chromeGraphicsArgs()]);
 }, 60_000);
 afterAll(async () => {
   await browser?.close();

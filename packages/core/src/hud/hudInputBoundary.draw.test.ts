@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 import { cleanupBrowserFixture } from "../../../../scripts/browser-fixture-cleanup";
 import { gotoFixture } from "../../../../scripts/browser-test-fixture";
 
@@ -70,7 +71,7 @@ beforeAll(async () => {
     `);
     const script = await setupStep("build public browser fixture", () => buildBrowserFixture(`${directory}/fixture.tsx`));
     server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: request => new URL(request.url).pathname === "/fixture.js" ? new Response(script, { headers: { "Content-Type": "text/javascript" } }) : new Response('<div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }) });
-    browser = await setupStep("launch Chromium", () => chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] }));
+    browser = await setupStep("launch Chromium", () => sharedChromium(["--no-sandbox"]));
   } catch (error) {
     try { await cleanup(); } catch (cleanupError) { console.error("[HUD input setup] cleanup failed", cleanupError); }
     throw error;

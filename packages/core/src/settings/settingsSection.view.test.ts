@@ -3,6 +3,7 @@ import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 
 setDefaultTimeout(30_000);
 
@@ -137,7 +138,7 @@ beforeAll(async () => {
         ? new Response(script, { headers: { "Content-Type": "text/javascript" } })
         : new Response('<div id="root"></div><script src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }),
   });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+  browser = await sharedChromium(["--no-sandbox"]);
   page = await browser.newPage();
 }, 60_000);
 

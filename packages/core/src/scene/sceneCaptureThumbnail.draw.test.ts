@@ -3,6 +3,7 @@ import { mkdir, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 
 /**
  * A save thumbnail must survive the canvas binding arriving after the save screen: the shared
@@ -73,7 +74,7 @@ beforeAll(async () => {
             headers: { "Content-Type": "text/html" },
           }),
   });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+  browser = await sharedChromium(["--no-sandbox"]);
   page = await browser.newPage({ viewport: { width: 800, height: 600 } });
   await page.goto(`http://127.0.0.1:${server.port}`);
   await page.waitForFunction(() => typeof (window as unknown as { fixture?: unknown }).fixture !== "undefined");

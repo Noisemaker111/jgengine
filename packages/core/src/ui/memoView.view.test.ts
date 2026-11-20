@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { createElement } from "@jgengine/core/ui/jsx";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { sharedChromium } from "../../../../scripts/sharedChromium";
 import { live } from "./liveValue";
 import { sameNode, samePartProps } from "./memoView.view";
 
@@ -102,7 +103,7 @@ beforeAll(async () => {
   server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: request => new URL(request.url).pathname === "/fixture.js"
     ? new Response(script, { headers: { "Content-Type": "text/javascript" } })
     : new Response('<div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } }) });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+  browser = await sharedChromium(["--no-sandbox"]);
   page = await browser.newPage();
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
