@@ -2060,13 +2060,11 @@
 - `RuneScrollValues` (type): type RuneScrollValues = readonly [number, number, number, number, number, number] — Scroll offset, viewport and content size in layout pixels.
 - `RuneUi` (class): class RuneUi — One z-ordered Rune UI layer hosted on the shared single-canvas Rune runtime. Games describe their trees with {@link RuneUi.setSpec} and bind live values with {@link RuneUi.bind}.
 - `RuneUiEvent` (interface): interface RuneUiEvent { id: string; kind: string; value?: number; text?: string; scroll?: RuneScrollValues } — ⚠ undocumented
-- `RuneUiFrame` (interface): interface RuneUiFrame { revision: number; revisions?: [number, number][]; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; nativeRects?: [string, [number, number, number, number]][] } — ⚠ undocumented
+- `RuneUiFrame` (interface): interface RuneUiFrame { revisions: [number, number][]; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; nativeRects?: [string, [number, number, number, number]][] } — ⚠ undocumented
 - `RuneUiNode` (interface): interface RuneUiNode { k: string; [key: string]: unknown } — ⚠ undocumented
 - `RuneUiOptions` (interface): interface RuneUiOptions { canvasId?: string; baseUrl?: string; fonts?: readonly string[]; sans?: string; mono?: string; zIndex?: number; signal?: AbortSignal } — ⚠ undocumented
 - `addRuneFonts` (function): function addRuneFonts(urls: readonly string[]): void — Register additional font URLs on any live Rune host so late-registered game fonts load dynamically.
-- `preloadRuneUi` (function): function preloadRuneUi(baseUrl?: string): void — Start fetching/compiling the shared Rune WASM bundle and warming WebGPU before a surface mounts.
 - `runeBundleUrl` (function): function runeBundleUrl(baseUrl: string = DEFAULT_BASE): string — The jg-ui module URL, under the app base installed with `setAssetBase`: a runner served from `/play/` loads `/play/jg-ui/jg_ui.js`, not the site root's `/jg-ui/` (which jgengine.com does not serve).
-- `whenRuneFirstFrame` (function): function whenRuneFirstFrame(): Promise<void> | null — If a Rune surface is actively booting and has not yet presented its first frame, returns a promise that resolves when that first frame fires (or if the host tears down/fails). Returns `null` when Rune is already live or no Rune surface is mounted, so callers take a synchronous fast path.
 
 ## @jgengine/core/ui/sceneSwap.view
 
