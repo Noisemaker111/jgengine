@@ -124,6 +124,7 @@
     "./boot/assetPrefetch",
     "./boot/bootScreen.view",
     "./boot/bootSequence",
+    "./boot/loadingCover",
     "./boot/prefetchTier",
     "./breeding/breeding",
     "./buildings/BuildingKitBatch.draw",

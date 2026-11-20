@@ -27,6 +27,12 @@
 - `BootStep` (type): type BootStep = (typeof BOOT_STEPS)[number] — One screen of the boot.
 - `pageBoot` (const): const pageBoot: BootSequence — The page's one boot. A page boots one game, and the runner, the shell and the game's menus all move it, so it is a page-level instance; `reset()` starts it over for a fresh mount.
 
+## @jgengine/core/boot/loadingCover
+
+- `LoadingCoverReading` (interface): interface LoadingCoverReading — What the page is covering while it loads: the screen's label, its progress (0-1) when known.
+- `loadingCovered` (function): function loadingCovered(): boolean — Whether any loading cover is up on this page.
+- `showLoadingCover` (function): function showLoadingCover(reading: LoadingCoverReading): { update(next: LoadingCoverReading): void; hide(): void } — Report a loading cover as shown until the returned function is called. The page carries `window.__jg.loading` while any cover is up and drops it when the last one goes, so a tool asks the page whether it is loading instead of looking for a DOM element a Rune screen does not have.
+
 ## @jgengine/core/boot/prefetchTier
 
 - `PrefetchItem` (interface): interface PrefetchItem — One file to fetch ahead: the root-absolute path the game asks for.
@@ -1970,7 +1976,7 @@
 - `RuneBoundStyle` (type): type RuneBoundStyle = { [K in keyof RuneStyle]: Live<RuneStyle[K]> } — Props shared by native elements and their optional DOM tooling host.
 - `RuneColor` (type): type RuneColor = string — Rune colours use hex RGB/RGBA values, never a CSS declaration.
 - `RuneElement` (interface): interface RuneElement — Host handle for native focus and scrolling; no DOM element is allocated.
-- `RuneElementProps` (interface): interface RuneElementProps extends RuneBoundStyle, RuneBoundFont { children?: UiNode; ref?: Ref<RuneElement>; id?: string; label?: string; role?: string; disabled?: Live<boolean>; hidden?: Live<boolean>; modal?: boolean; text?: Live<string>; direction?: "row" | "column"; scroll?: boolean; svg?: string; i… — ⚠ undocumented · used by `RuneBox` (@jgengine/core/ui/rune/elements.view): Native Rune column.
+- `RuneElementProps` (interface): interface RuneElementProps extends RuneBoundStyle, RuneBoundFont { children?: UiNode; layer?: number; ref?: Ref<RuneElement>; id?: string; label?: string; role?: string; disabled?: Live<boolean>; hidden?: Live<boolean>; modal?: boolean; text?: Live<string>; direction?: "row" | "column"; scroll?: boolean;… — ⚠ undocumented · used by `RuneBox` (@jgengine/core/ui/rune/elements.view): Native Rune column.
 - `RuneFont` (interface): interface RuneFont — Text styling maps to Rune's TextStyle; it never inherits a browser font.
 - `RuneGesture` (interface): interface RuneGesture — Native pointer/touch gesture in element-local layout points.
 - `RuneSize` (type): type RuneSize = number | { fraction: number } — Native layout sizes are points or a fraction of the parent.
@@ -2034,7 +2040,7 @@
 - `RuneLayers` (function): function RuneLayers({ flow, children, transition }: { flow: RuneFlow; children: (entry: FlowEntry) => ReactNode; transition?: { duration: number; distance: number } }): JSX.Element — Present a flow stack; route policy owns input/pause until the route leaves, including nested layers.
 - `RuneProjection` (type): type RuneProjection = (target: { entity?: string; position?: readonly [number, number, number]; offset?: readonly [number, number, number] }) => { x: number; y: number; visible: boolean } — ⚠ undocumented · used by `RuneWorldAnchor`: A projected entity or point.
 - `RuneRoot` (function): function RuneRoot(props: RuneRootProps): JSX.Element — One native game surface, with injected game state, look, projection and translation.
-- `RuneRootProps` (interface): interface RuneRootProps { theme: RuneTheme; context?: GameContext; safeArea?: readonly [number, number, number, number]; project?: RuneProjection; localise?: (key: string, params?: Readonly<Record<string, string | number>>) => string; children?: ReactNode } — ⚠ undocumented · used by `RuneRoot`: One native game surface, with injected game state, look, projection and translation.
+- `RuneRootProps` (interface): interface RuneRootProps { theme: RuneTheme; layer?: number; context?: GameContext; safeArea?: readonly [number, number, number, number]; project?: RuneProjection; localise?: (key: string, params?: Readonly<Record<string, string | number>>) => string; children?: Re… — ⚠ undocumented · used by `RuneRoot`: One native game surface, with injected game state, look, projection and translation.
 - `RuneTransient` (function): function RuneTransient<T extends { id: string; expiresAt: number }>({ source, expire, now = Date.now, children }: { source: RuneSource<T>; expire: () => void; now?: () => number; children: (item: T) => ReactNode; }): JSX.Element — Expiring collection presentation, with one deadline timer and game-authored message/popup contents.
 - `RuneView` (function): function RuneView({ layout, anchor, safe, inset = 0, variant, responsive, ...props }: RuneViewProps): JSX.Element — Native layout, paint and responsive overrides. Anchors refer to the nearest positioned parent.
 - `RuneViewProps` (interface): interface RuneViewProps extends RuneElementProps { layout?: "stack" | "row" | "grid"; anchor?: RuneAnchor; safe?: boolean; inset?: number; variant?: string; responsive?: Partial<Record<RuneViewportClass, RuneBoundStyle & RuneBoundFont & {layout?: "stack" | "row" | "grid"}>> } — ⚠ undocumented · used by `RuneView`: Native layout, paint and responsive overrides.

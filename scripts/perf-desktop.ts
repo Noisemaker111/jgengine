@@ -269,7 +269,7 @@ async function launchedScene<T>(args: LaunchArgs, backend: RendererBackend, prof
       // out the warmup (its own cap is 2.5 minutes), then the same settle the browser harness gives.
       let warming = true;
       for (let attempt = 0; attempt < 360 && warming; attempt += 1) {
-        warming = (await session.evaluate<boolean>(`document.querySelector("[data-shell-warmup]") !== null`).catch(() => true)) ?? true;
+        warming = (await session.evaluate<boolean>(`globalThis.__jg?.loading !== undefined`).catch(() => true)) ?? true;
         if (warming) await Bun.sleep(500);
       }
       if (warming) throw new Error("the scene's shader warmup did not finish within 3 minutes");
@@ -320,7 +320,7 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
     const dropped = gpuErrorLine(drew);
     if (dropped !== null) console.error(dropped);
     const frame = summarizeFrameDeltas(deltas);
-    const covered = (await session.evaluate<boolean>(`document.querySelector("[data-shell-warmup]") !== null`).catch(() => false)) ?? false;
+    const covered = (await session.evaluate<boolean>(`globalThis.__jg?.loading !== undefined`).catch(() => false)) ?? false;
     const unmeasured = unmeasuredSceneReason(breakdown?.counts.drawsAvg, covered);
     if (unmeasured !== null) {
       const page = await session.evaluate<string>(`location.href + " | " + document.querySelectorAll("canvas").length + " canvas, visibility " + document.visibilityState + ", focus " + document.hasFocus() + " | " + (document.body?.innerText ?? "").replace(/\\s+/g, " ").slice(0, 200)`).catch((error: unknown) => String(error));

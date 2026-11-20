@@ -2078,9 +2078,9 @@ function readinessWait(timeoutMs: number): {
  */
 export async function preparingCoverLabel(session: CdpSession): Promise<string | null> {
   const label = await session.evaluate<string | null>(`(() => {
-    const cover = document.querySelector("[data-shell-warmup], [data-shell-code-loading]");
-    if (cover === null) return null;
-    return (cover.textContent || "").trim().slice(0, 80) || "loading cover";
+    const covers = (window as unknown as { __jg?: { loading?: { covers(): { label: string }[] } } }).__jg?.loading?.covers();
+    if (covers === undefined || covers.length === 0) return null;
+    return covers.map((cover) => cover.label).join(", ").slice(0, 80) || "loading cover";
   })()`);
   return typeof label === "string" && label.length > 0 ? label : null;
 }
@@ -2366,7 +2366,7 @@ const CAPTURE_READINESS_EXPR = `(() => {
     error: document.documentElement.dataset.jgCaptureError ?? null,
     stage: document.documentElement.dataset.jgCaptureStage ?? null,
     sizedCanvas: canvas !== null && canvas.clientWidth > 10 && canvas.clientHeight > 10 && canvas.width > 10 && canvas.height > 10 &&
-      document.querySelector("[data-shell-code-loading]") === null
+      (window as unknown as { __jg?: { loading?: unknown } }).__jg?.loading === undefined
   };
 })()`;
 

@@ -7,7 +7,7 @@
 export interface ViewActivity {
   /** Times the shared model loader went busy since boot; a change means new streaming started. */
   modelLoadStarts: number;
-  /** The jgengine loading screen (`data-shell-code-loading`) is mounted. */
+  /** The jgengine loading screen or warmup cover is up (`window.__jg.loading`). */
   viewLoading: boolean;
   /** The model loader has been idle long enough that nothing is still streaming in. */
   modelsIdle: boolean;

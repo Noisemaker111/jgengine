@@ -7,17 +7,15 @@ import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 function render(state: Parameters<typeof SceneWarmupCover>[0]["state"], step?: Parameters<typeof SceneWarmupCover>[0]["step"]) {
   const element = SceneWarmupCover({ state, step });
-  if (element === null) return { markup: "", cover: null };
-  return { markup: renderToStaticMarkup(element), cover: element.props as Record<string, unknown> };
+  if (element === null) return { markup: "", cover: null, kind: null };
+  return { markup: renderToStaticMarkup(element), cover: element.props as Record<string, unknown>, kind: (element.type as { name?: string }).name };
 }
 
 describe("SceneWarmupCover", () => {
   test("covers the canvas from the first frame until the warmup finishes", () => {
-    const { markup, cover } = render(SCENE_WARMUP_PENDING);
-
-    expect(cover).not.toBeNull();
-    expect(cover?.["data-shell-code-loading"]).toBe(true);
-    expect(cover?.["data-shell-warmup"]).toBe(true);
+    const { markup, kind } = render(SCENE_WARMUP_PENDING);
+    // The page's one loading screen, which reports itself on window.__jg.loading while it shows.
+    expect(kind).toBe("BootLoadingScreen");
     expect(markup).toContain("Preparing scene.");
   });
 
@@ -32,8 +30,8 @@ describe("SceneWarmupCover", () => {
   });
 
   test("is a plain backdrop under the game's menu, never a second loading screen", () => {
-    const { markup, cover } = render(SCENE_WARMUP_PENDING, "menu");
-    expect(cover?.["data-shell-code-loading"]).toBe(true);
+    const { markup, kind } = render(SCENE_WARMUP_PENDING, "menu");
+    expect(kind).toBe("WarmupBackdrop");
     expect(markup).not.toContain("Preparing scene");
   });
 
