@@ -6,11 +6,11 @@ import type { AmbienceZoneDef } from "@jgengine/core/audio/ambience";
 import type { GameContext, GameContextEntityEntry, GameContextObjectEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import "@jgengine/core/audio/audioProbe.view";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 const MACHINE = "machine";

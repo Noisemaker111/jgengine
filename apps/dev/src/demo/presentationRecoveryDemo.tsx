@@ -8,9 +8,9 @@ import { decodeEditorDocument, requireEditorMarker } from "@jgengine/core/editor
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { environment, terrain } from "@jgengine/core/world/features";
-import { useGame, useGameContext, useGameStoreValue } from "@jgengine/ui";
+import { useGame, useGameContext, useGameStoreValue } from "@jgengine/core/ui.view";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { hostedAuthorityDemoGame } from "./hostedAuthorityDemo";
 import type { AuthorityView } from "./hostedAuthority";
 import authoredScene from "./presentationRecovery.scene.json";

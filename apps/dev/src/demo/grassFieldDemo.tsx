@@ -8,7 +8,7 @@ import { GRASS_DEFAULTS, type GrassLook } from "@jgengine/core/grass/grassKind";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import { GROUND_COVER_LIBRARY } from "@jgengine/core/plants/groundCover/groundCoverSpecies";
 import { createTillerField, tillerCellLook, type TillerField } from "@jgengine/core/plants/groundCover/tillerSim";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { demoGame } from "./demoGame";
 

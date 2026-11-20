@@ -15,7 +15,7 @@ import { materialAssetSwatchDraw } from "@jgengine/core/material/materialAsset.d
 import { HairCards } from "@jgengine/core/material/hairCards.draw";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { useLiveEditorDocument } from "@jgengine/core/scene/AuthoredScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import source from "./materialShowcase.scene.json";
 import { demoGame } from "./demoGame";
 

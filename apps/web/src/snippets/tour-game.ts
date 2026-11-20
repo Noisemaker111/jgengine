@@ -1,4 +1,4 @@
-import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
+import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/core/shell/gameKit.draw";
 
 import { GameUI } from "./tour-hud";
 import { gatherLoop } from "./tour-loop";

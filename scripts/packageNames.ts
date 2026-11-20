@@ -1,8 +1,8 @@
 /**
- * A package's repo folder and its npm name can differ (`packages/ui` published as `@jgengine/react`
- * until 0.57.0; it is `@jgengine/ui` again). Anything that turns a folder into an import path, an install location or a dependency goes
- * through here, so a folder name never leaks out as a package name npm does not have (0.56.0
- * published core depending on `@jgengine/ui`).
+ * A package's repo folder and its npm name can differ (the old UI package's folder was `ui` while it
+ * published as `@jgengine/react`). Anything that turns a folder into an import path, an install location
+ * or a dependency goes through here, so a folder name never leaks out as a package name npm does not have
+ * (0.56.0 published core depending on a UI package name npm had never seen).
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -23,14 +23,14 @@ function names(): Map<string, string> {
   return byFolder;
 }
 
-/** The npm name `packages/<folder>` publishes as, e.g. `ui` → `@jgengine/ui`. */
+/** The npm name `packages/<folder>` publishes as, e.g. `core` → `@jgengine/core`. */
 export function npmNameOfFolder(folder: string): string {
   const name = names().get(folder);
   if (name === undefined) throw new Error(`packages/${folder} has no package.json`);
   return name;
 }
 
-/** The repo folder under packages/ that publishes `npmName`, e.g. `@jgengine/ui` → `ui`. */
+/** The repo folder under packages/ that publishes `npmName`, e.g. `@jgengine/core` → `core`. */
 export function folderOfNpmName(npmName: string): string {
   for (const [folder, name] of names()) if (name === npmName) return folder;
   throw new Error(`no folder under packages/ publishes ${npmName}`);

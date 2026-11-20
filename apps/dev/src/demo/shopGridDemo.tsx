@@ -11,7 +11,7 @@ import { ShopGrid } from "@jgengine/core/inventory/shopGrid.view";
 import { hudThemeVars, HUD_THEME_PRESETS } from "@jgengine/core/hud/hudTheme.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 

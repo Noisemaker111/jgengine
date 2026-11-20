@@ -61,13 +61,13 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
     if (stdlib === undefined) throw new Error("three-stdlib is unavailable");
     await symlink(`${store}/${stdlib}/node_modules/three-stdlib`, `${scratch}/node_modules/three-stdlib`, "junction");
     await symlink(resolve(editorRoot, "../navbake/node_modules/recast-navigation"), `${scratch}/node_modules/recast-navigation`, "junction");
-    await installPublicPackages(scratch, ["core", "ui", "ws", "shell", "navbake", "editor"]);
+    await installPublicPackages(scratch, ["core", "ws", "navbake", "editor"]);
     step("linking the packages");
     await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState,useEffect} from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';
-    import {useGameContext} from '@jgengine/ui/provider';
-    import {GameHost} from '@jgengine/shell/GameHost';
-    import {defineGame} from '@jgengine/shell/defineGame';import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog';
+    import {useGameContext} from '@jgengine/core/ui/provider.view';
+    import {GameHost} from '@jgengine/core/shell/GameHost.draw';
+    import {defineGame} from '@jgengine/core/shell/defineGame.draw';import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog';
     import {normalizeEditorLayers} from '@jgengine/core/editor/document';import {createCreatorDocumentStorage} from '@jgengine/core/editor/creatorStorage';
     import {environment,terrain} from '@jgengine/core/world/features';
     const policy={maxDocuments:2,maxBytes:12000,maxObjects:4,maxPathPoints:16,maxGridCells:0,maxTerrainVertices:0,allowedKinds:['player_spawn','prop'],allowedAssets:[]};

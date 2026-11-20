@@ -1,68 +1,11 @@
-// Builds @jgengine/core, @jgengine/ui and @jgengine/shell as one program. A feature folder in core
-// holds its view (engine JSX runtime) and three.js draw files, so the three packages import each other and no
-// package-by-package order exists. Each package's tsconfig.build.json still names what it emits; this
-// compiles their union once and moves each package's slice into its own dist/.
+// Builds @jgengine/core: every layer (model, view, draw) in one compile into one dist/, then the files
+// the compiler does not emit (wasm loaded by URL, the engine stylesheet).
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { printHelpIfAsked } from "./script-help";
-
-/** The packages that compile together, in the order their dist/ folders are written. */
-export const ENGINE_PACKAGES = ["core", "ui", "shell"] as const;
-
-interface BuildConfig {
-  include?: string[];
-  exclude?: string[];
-}
-
-/** The one-program tsconfig: every engine package's include/exclude, rooted at `packages/`. */
-export function engineBuildConfig(root: string, outDir: string, configDir: string): object {
-  const include: string[] = [];
-  const exclude: string[] = [];
-  const rel = (path: string) => relative(configDir, join(root, path)).replace(/\\/g, "/");
-  for (const pkg of ENGINE_PACKAGES) {
-    const config = JSON.parse(readFileSync(join(root, "packages", pkg, "tsconfig.build.json"), "utf8")) as BuildConfig;
-    for (const pattern of config.include ?? ["src"]) include.push(rel(`packages/${pkg}/${pattern}`));
-    for (const pattern of config.exclude ?? []) exclude.push(rel(`packages/${pkg}/${pattern}`));
-  }
-  return {
-    extends: rel("tsconfig.base.json"),
-    compilerOptions: {
-      lib: ["ES2022", "DOM", "WebWorker"],
-      jsx: "react-jsx",
-      noEmit: false,
-      declaration: true,
-      outDir: relative(configDir, outDir).replace(/\\/g, "/"),
-      rootDir: rel("packages"),
-    },
-    include,
-    exclude,
-  };
-}
-
-function walk(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
-    const full = join(dir, name);
-    return statSync(full).isDirectory() ? walk(full) : [full];
-  });
-}
-
-/** Relative specifiers in a package's emitted files that climb out of that package. */
-export function escapingSpecifiers(distDir: string): string[] {
-  const pkgDir = dirname(distDir);
-  const found: string[] = [];
-  for (const file of walk(distDir)) {
-    if (!/\.(js|d\.ts)$/.test(file)) continue;
-    const text = readFileSync(file, "utf8");
-    for (const match of text.matchAll(/(?:from\s*|import\s*\(\s*)["'](\.\.?\/[^"']+)["']/g)) {
-      const target = resolve(dirname(file), match[1]!);
-      if (relative(pkgDir, target).startsWith("..")) found.push(`${relative(distDir, file)}: ${match[1]}`);
-    }
-  }
-  return found;
-}
 
 /** Files the source loads at runtime by URL (`new URL("./x.wasm", import.meta.url)`), which tsgo does not emit. */
 const RUNTIME_ASSET = /\.wasm$/;
@@ -96,38 +39,41 @@ function run(command: string[], cwd: string): void {
 
 function main(): void {
   const root = fileURLToPath(new URL("..", import.meta.url));
-  const work = join(root, ".scratch", "engine-build");
-  const out = join(work, "out");
-  rmSync(work, { recursive: true, force: true });
-  mkdirSync(work, { recursive: true });
-  const configPath = join(work, "tsconfig.json");
-  writeFileSync(configPath, `${JSON.stringify(engineBuildConfig(root, out, work), null, 2)}\n`);
-  run(["bun", "x", "tsgo", "-p", configPath], root);
-  for (const pkg of ENGINE_PACKAGES) {
-    const emitted = join(out, pkg, "src");
-    if (!existsSync(emitted)) {
-      console.error(`build-engine: nothing emitted for ${pkg}`);
-      process.exit(1);
-    }
-    const dist = join(root, "packages", pkg, "dist");
-    rmSync(dist, { recursive: true, force: true });
-    renameSync(emitted, dist);
-    const escaping = escapingSpecifiers(dist);
-    if (escaping.length > 0) {
-      console.error(`build-engine: ${pkg} dist imports outside itself (use @jgengine/<pkg>/… across packages):\n  ${escaping.join("\n  ")}`);
-      process.exit(1);
-    }
-    run(["bun", join(root, "scripts", "fix-extensions.ts"), dist], root);
-    copyAssets(join(root, "packages", pkg, "src"), dist);
+  const core = join(root, "packages", "core");
+  const dist = join(core, "dist");
+  const out = join(root, ".scratch", "core-build");
+  rmSync(out, { recursive: true, force: true });
+  rmSync(dist, { recursive: true, force: true });
+  // core and ws import each other (the multiplayer draw files run ws hosts; ws reads core models), so
+  // neither can build first from the other's dist: this one compile reads ws source and keeps core's half.
+  const config = join(root, ".scratch", "core-build.tsconfig.json");
+  mkdirSync(dirname(config), { recursive: true });
+  writeFileSync(config, `${JSON.stringify({
+    extends: relative(dirname(config), join(core, "tsconfig.build.json")).replace(/\\/g, "/"),
+    compilerOptions: { paths: {
+      "@jgengine/core": [relative(dirname(config), join(core, "src", "index.ts")).replace(/\\/g, "/")],
+      "@jgengine/core/*": [`${relative(dirname(config), join(core, "src")).replace(/\\/g, "/")}/*`],
+      "@jgengine/ws/*": [`${relative(dirname(config), join(root, "packages", "ws", "src")).replace(/\\/g, "/")}/*`],
+    } },
+  }, null, 2)}\n`);
+  run(["bun", "x", "tsgo", "-p", config], root);
+  rmSync(config, { force: true });
+  const emitted = join(out, "core", "src");
+  if (!existsSync(emitted)) {
+    console.error("build-engine: nothing emitted for core");
+    process.exit(1);
   }
-  run(["bun", join(root, "packages", "ui", "scripts", "styles.ts")], root);
-  rmSync(work, { recursive: true, force: true });
-  console.log(`build-engine: built ${ENGINE_PACKAGES.join(", ")}`);
+  renameSync(emitted, dist);
+  rmSync(out, { recursive: true, force: true });
+  run(["bun", join(root, "scripts", "fix-extensions.ts"), dist], root);
+  copyAssets(join(core, "src"), dist);
+  run(["bun", join(core, "scripts", "styles.ts")], root);
+  console.log("build-engine: built @jgengine/core");
 }
 
 if (import.meta.main) {
   const usage = {
-    summary: "build @jgengine/core, ui and shell as one program and write each package's dist/",
+    summary: "build @jgengine/core (model, view and draw files) into packages/core/dist",
     usage: "bun scripts/build-engine.ts",
     flags: [],
     example: "bun --cwd=packages/core run build",

@@ -13,7 +13,6 @@
     "@jgengine-examples/studios": "workspace:*",
     "@jgengine/rapier": "workspace:*",
     "@jgengine/convex": "workspace:*",
-    "@jgengine/shell": "workspace:*",
     "convex": "catalog:",
     "three": "catalog:"
   },

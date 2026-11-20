@@ -49,7 +49,7 @@ test("the engine JSX runtime, bridge, wasm and component callbacks have their ow
   for (const source of [
     "../../../packages/core/src/ui/jsx/reconciler.ts",
     "/@fs/C:/repo/packages/core/src/ui/rune/nativeSurface.view.ts",
-    "../../../packages/ui/src/hooks.ts",
+    "../../../packages/core/src/ui/hooks.view.ts",
     "../../node_modules/@jgengine/core/dist/ui/jsx/reconciler.js",
     "../../node_modules/@jgengine/ui/dist/hooks.js",
     "/jg-ui/jg_ui_bg.wasm",

@@ -49,12 +49,12 @@ export const CASES: readonly ProofCase[] = [
     timeoutSeconds: 540,
   },
   {
-    name: "check-layers-three-in-model",
+    name: "check-types-three-in-model",
     gate: "check",
     patch: "card-pile-imports-three.patch",
     breaks: "a core model file imports three.js, so the engine's core layer depends on rendering",
-    command: ["bun", "run", "check", "layers"],
-    expect: [/packages\/core\/src\/cards\/cardPile\.ts/, /three/],
+    command: ["bun", "--cwd=packages/core", "run", "check-types"],
+    expect: [/src\/cards\/cardPile\.ts.*TS2307.*'three'/],
     timeoutSeconds: 120,
   },
   {

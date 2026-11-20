@@ -220,7 +220,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { createPacedSchedule } from "@jgengine/core/time/pacedSchedule";
 import { authoredEntitySpawns } from "@jgengine/core/world/authoredEntities";
 import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
-import { defineStore, defineSystem } from "@jgengine/shell/gameKit";
+import { defineStore, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 import { editorLayers } from "./editorLayers";
 import { advanceRun, atBeacon, canSprint, gather, newRun, REFILL, teach, type RunState } from "./game/rules";

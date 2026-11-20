@@ -28,9 +28,9 @@ import {
 import { nextChaseView } from "@jgengine/core/runtime/cameraDirector";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { defineGame } from "@jgengine/shell/defineGame";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { handlingDemoBike, handlingDemoGround, handlingDemoRamp, handlingDemoTuning } from "./handlingTuning";
 

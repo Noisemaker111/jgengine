@@ -10,14 +10,9 @@ export const ENTRY_PROMPT = "Make a game that ... with jgengine";
 
 export const PACKAGE_LAYERS: { label: string; note: string; packages: string[] }[] = [
   {
-    label: "Render shell",
-    note: "three.js — the only package that renders",
-    packages: ["@jgengine/shell"],
-  },
-  {
     label: "Bindings & hosts",
-    note: "Game UI hooks · Convex adapters · Node host",
-    packages: ["@jgengine/ui", "@jgengine/convex", "@jgengine/node"],
+    note: "Convex adapters · Node host",
+    packages: ["@jgengine/convex", "@jgengine/node"],
   },
   {
     label: "Transport & persistence",
@@ -26,7 +21,7 @@ export const PACKAGE_LAYERS: { label: string; note: string; packages: string[] }
   },
   {
     label: "Foundation",
-    note: "feature folders; model files have zero dependencies",
+    note: "feature folders; model files have zero dependencies, UI and three.js files sit beside them",
     packages: ["@jgengine/core"],
   },
 ];
@@ -34,9 +29,7 @@ export const PACKAGE_LAYERS: { label: string; note: string; packages: string[] }
 export const ASSETS_PACKAGE_NAME = "@jgengine/assets";
 
 export const PACKAGES: { name: string; blurb: string }[] = [
-  { name: "@jgengine/core", blurb: "The engine SDK: runtime, state store, scene, combat, HUD, save, loot, quests, economy; model files have zero deps." },
-  { name: "@jgengine/ui", blurb: "Game UI on the engine's own JSX runtime (no React inside): GameProvider, hooks, primitives." },
-  { name: "@jgengine/shell", blurb: "Engine canvas, orbit + first-person camera, input, HUD mounting, GameUiPreview." },
+  { name: "@jgengine/core", blurb: "The engine SDK: runtime, state store, scene, combat, HUD, save, loot, quests, economy; model files have zero deps. Game UI is @jgengine/core/ui.view, the canvas and game player @jgengine/core/shell/*." },
   { name: "@jgengine/ws", blurb: "Browser-safe WebSocket client backend: protocol codec, createWsBackend." },
   { name: "@jgengine/node", blurb: "Standalone authoritative host: tick loop, snapshots, save cadence, WS server." },
   { name: "@jgengine/sql", blurb: "HostPersistence on Postgres through a structural pool interface." },

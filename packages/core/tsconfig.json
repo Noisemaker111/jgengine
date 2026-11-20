@@ -12,7 +12,31 @@
     "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "paths": {
+      "three": ["./layer-rules/three-js-is-for-draw-files-only"],
+      "three/*": ["./layer-rules/three-js-is-for-draw-files-only"],
+      "three-stdlib": ["./layer-rules/three-js-is-for-draw-files-only"],
+      "three-stdlib/*": ["./layer-rules/three-js-is-for-draw-files-only"],
+      "@jgengine/assets": ["../assets/src/index.ts"],
+      "@jgengine/assets/*": ["../assets/src/*"],
+      "@jgengine/convex": ["../convex/src/index.ts"],
+      "@jgengine/convex/*": ["../convex/src/*"],
+      "@jgengine/core": ["./src/index.ts"],
+      "@jgengine/core/*": ["./src/*"],
+      "@jgengine/editor": ["../editor/src/index.ts"],
+      "@jgengine/editor/*": ["../editor/src/*"],
+      "@jgengine/navbake": ["../navbake/src/index.ts"],
+      "@jgengine/navbake/*": ["../navbake/src/*"],
+      "@jgengine/node": ["../node/src/index.ts"],
+      "@jgengine/node/*": ["../node/src/*"],
+      "@jgengine/rapier": ["../rapier/src/index.ts"],
+      "@jgengine/rapier/*": ["../rapier/src/*"],
+      "@jgengine/sql": ["../sql/src/index.ts"],
+      "@jgengine/sql/*": ["../sql/src/*"],
+      "@jgengine/ws": ["../ws/src/index.ts"],
+      "@jgengine/ws/*": ["../ws/src/*"]
+    }
   },
   "include": [
     "src"

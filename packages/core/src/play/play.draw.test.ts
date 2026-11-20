@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { environment, terrain } from "@jgengine/core/world/features";
-import { defineGame } from "@jgengine/shell/defineGame";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { createPlayScript } from "./script";
 import { runPlayScript } from "./playRunner.draw";
 import { playTimelineDigest } from "./timeline";

@@ -6,7 +6,7 @@ import type { SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 import type { WorldInviteTarget } from "@jgengine/core/social/social";
 import { createLocalVoiceTransport } from "@jgengine/core/multiplayer/voiceContract";
 import { ChatPanel } from "@jgengine/core/chat/chat.view";
-import { usePlayer } from "@jgengine/ui/hooks";
+import { usePlayer } from "@jgengine/core/ui/hooks.view";
 import {
   AddFriendButton,
   EmoteWheel,
@@ -24,7 +24,7 @@ import {
 } from "@jgengine/core/social/social.view";
 import { MicToggle, PushToTalkButton, useVoice, VoiceRoster } from "@jgengine/core/multiplayer/voice.view";
 
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { demoGame } from "./demoGame";
 
 const FRIEND_RIN = "rin";

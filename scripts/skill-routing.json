@@ -90,6 +90,7 @@
     "sensor": "jgengine-world",
     "session": "jgengine-gameplay",
     "settings": "jgengine-ui",
+    "shell": "jgengine-ui",
     "sim": "jgengine-gameplay",
     "sky": "jgengine-world",
     "social": "jgengine-gameplay",

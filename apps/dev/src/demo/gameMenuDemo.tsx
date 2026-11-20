@@ -10,13 +10,13 @@ import { mergeCredits } from "@jgengine/core/menu/credits";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { ContinuePane, CreditsPane, GameMenu, PauseMenu, NewCharacterPane, SaveSlotsPane } from "@jgengine/ui";
+import { ContinuePane, CreditsPane, GameMenu, PauseMenu, NewCharacterPane, SaveSlotsPane } from "@jgengine/core/ui.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCaptureRequest.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3.2, frequency: 0.028, seed: "game-menu" }),

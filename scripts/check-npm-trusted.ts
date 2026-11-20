@@ -2,7 +2,7 @@
  * Every package a release publishes must already exist on npm and take trusted publishing (GitHub
  * Actions OIDC, no token or login). npm cannot create a package through trusted publishing, so a
  * renamed or new package stops the Publish workflow part-way: 0.56.0 published five packages, then
- * refused `@jgengine/ui`, which npm had never seen, and `latest` pointed at a core that depended on a
+ * refused `@jgengine/core/ui.view`, which npm had never seen, and `latest` pointed at a core that depended on a
  * package that did not exist. This runs before anything is cut or published and refuses the whole
  * release instead.
  *
@@ -12,7 +12,7 @@
  *
  * A new name is claimed once by hand with a `0.0.0-bootstrap.N` version (a short-lived token, then the
  * trusted publisher is added on npmjs.com and the token deleted); a package whose only versions are
- * bootstrap ones passes, because its first trusted publish is the release itself. `@jgengine/ui` was
+ * bootstrap ones passes, because its first trusted publish is the release itself. `@jgengine/core/ui.view` was
  * claimed this way on 2026-11-12. The registry cannot show whether the trusted publisher was added, so
  * add it before releasing.
  *

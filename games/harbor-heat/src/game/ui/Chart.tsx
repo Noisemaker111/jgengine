@@ -4,7 +4,7 @@ import { bind } from "@jgengine/core/ui/rune/primitives";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { headingToBearing, projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 import type { WorldBlip } from "@jgengine/core/worldModel/worldModel";
-import { useGameStore } from "@jgengine/ui/hooks";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
 import { cityOf } from "../cityRuntime";
 import { safehouseStore } from "../commands";
 import { drivingStore, raceStore, wantedStore } from "../streetPlay";

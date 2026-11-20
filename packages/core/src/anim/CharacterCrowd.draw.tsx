@@ -29,7 +29,7 @@ import {
 } from "./crowdRegistry.draw";
 import { applyMaterialOverrideToMaterial, overrideTargets, type MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
-import { useOptionalGameContext } from "@jgengine/ui/provider";
+import { useOptionalGameContext } from "@jgengine/core/ui/provider.view";
 import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { writeCrowdBatch, type CrowdPlayback } from "./crowdBatch.draw";
 import { loadModelMaterialTextures, preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";

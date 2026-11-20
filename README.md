@@ -50,7 +50,7 @@ them in the browser at [jgengine.com/games](https://jgengine.com/games).
   table, a schedule… Each can be turned off, swapped or retuned, and each works on its own in a game
   that doesn't use the rest of the engine.
 - **The file name says what it may import.** `name.ts` is model, `name.view.tsx` is UI, `name.draw.tsx`
-  is three.js. `bun run check layers` enforces it from the imports in under a second, so a server
+  is three.js. Core compiles each layer on its own (model with no DOM or three.js), so a wrong import is a type error and a server
   that imports model files never loads UI code or three.js.
 - **Agents can find, check, see and play what they build.** The skills ship inside the npm packages.
   The CLI answers an agent's questions: `jgengine find <words>` (where does this live), `has <feature>`
@@ -122,7 +122,7 @@ export const rankOf = (run: Run): string => tierAt(RANKS, run.gathered)?.id ?? "
 **2. State and systems.** A store slot holds the state; a system says when the rules run.
 
 ```ts
-import { defineStore, defineSystem } from "@jgengine/shell/gameKit";
+import { defineStore, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 import { drain, gather, newRun, type Run } from "./tour-rules";
 
@@ -148,8 +148,8 @@ export const gatherLoop = defineSystem({
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { bind, type RuneTheme } from "@jgengine/core/ui/rune/primitives";
 import { RuneLabel, RuneRoot, RuneView } from "@jgengine/core/ui/rune/primitives.view";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { run } from "./tour-loop";
 import { rankOf } from "./tour-rules";
@@ -184,7 +184,7 @@ export function GameUI() {
 **4. The game** is one `defineGame` call.
 
 ```ts
-import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
+import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/core/shell/gameKit.draw";
 
 import { GameUI } from "./tour-hud";
 import { gatherLoop } from "./tour-loop";
@@ -298,9 +298,7 @@ One game on its own: `bun run games:provision <id>` (links its asset packs), the
 | Package | What it is |
 | --- | --- |
 | [`jgengine`](packages/jgengine) | The CLI: `create`, `find`, `has`, `recipe`, `shoot`, `drive`, `desktop`, `editor`, `doctor` and more (`npx jgengine help`). |
-| [`@jgengine/core`](packages/core) | The engine: feature folders with model, view and draw files, `GameContext`, entities, combat, HUD, saves, inventory, world. No dependencies; three.js is an optional peer. |
-| [`@jgengine/shell`](packages/shell) | The game player: `defineGame`, the canvas on the engine frame loop, cameras, input, HUD mounting. |
-| [`@jgengine/ui`](packages/ui) | Game UI on the engine's JSX runtime: `GameProvider`, hooks, primitives. Replaces the deprecated `@jgengine/react`. |
+| [`@jgengine/core`](packages/core) | The engine: feature folders with model, view and draw files, `GameContext`, entities, combat, HUD, saves, inventory, world. Game UI on the engine's JSX runtime is `@jgengine/core/ui.view` (`GameProvider`, hooks, primitives); the game player (`defineGame`, the canvas on the frame loop, cameras, input, HUD mounting) is `@jgengine/core/shell/*`. No dependencies; three.js is an optional peer. |
 | [`@jgengine/editor`](packages/editor) | The scene, world and asset editor; `npx jgengine editor` on its own, `jgengine editor-mcp` for agents. |
 | [`@jgengine/rapier`](packages/rapier) | Rapier physics backend. |
 | [`@jgengine/ws`](packages/ws) · [`node`](packages/node) · [`sql`](packages/sql) · [`convex`](packages/convex) | Multiplayer client, Node host, Postgres persistence, Convex transports. |

@@ -11,7 +11,7 @@ import { CameraShakeMeter } from "@jgengine/core/camera/shake/cameraShake.view";
 
 import { defaultCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 

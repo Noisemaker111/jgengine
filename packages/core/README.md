@@ -1,6 +1,6 @@
 # @jgengine/core
 
-Genre-agnostic TypeScript game engine SDK — runtime, state store, entity scene, combat, movement, inventory, economy, quests, multiplayer primitives. Each feature is one folder: model files (`hudLayout.ts`) have zero dependencies, and the feature's view (`kitHud.view.tsx`, JSX on the engine's own runtime `@jgengine/core/ui/jsx`, not React) and three.js draw (`WorldHud.draw.tsx`) files sit beside them, needing the optional peers `three` and `@jgengine/ui`/`@jgengine/shell`.
+Genre-agnostic TypeScript game engine SDK — runtime, state store, entity scene, combat, movement, inventory, economy, quests, multiplayer primitives. Each feature is one folder: model files (`hudLayout.ts`) have zero dependencies, and the feature's view (`kitHud.view.tsx`, JSX on the engine's own runtime `@jgengine/core/ui/jsx`, not React) and three.js draw (`WorldHud.draw.tsx`) files sit beside them, needing the optional peer `three`. The UI provider and hooks are `@jgengine/core/ui.view` (and `@jgengine/core/ui/*`), the game player and shell `@jgengine/core/shell/*`; these were the `@jgengine/ui` and `@jgengine/shell` packages until 0.60.
 
 Import modules by path:
 

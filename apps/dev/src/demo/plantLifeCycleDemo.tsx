@@ -10,7 +10,7 @@ import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 import { PLANT_GROWN_GENERATOR } from "@jgengine/core/plants/grown/plantGrown";
 import { isPlantMesh, type PlantMesh } from "@jgengine/core/plants/mesh/plantMesh";
 import { plantMeshSources } from "@jgengine/core/plants/mesh/plantMesh.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { demoGame } from "./demoGame";
 

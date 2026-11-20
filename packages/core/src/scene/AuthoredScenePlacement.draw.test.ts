@@ -7,10 +7,10 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects";
 import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { GameProvider } from "@jgengine/ui/provider";
+import { GameProvider } from "@jgengine/core/ui/provider.view";
 import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
-import { defineGame } from "@jgengine/shell/defineGame";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 import { AuthoredObjects } from "./AuthoredScene.draw";
 import { resolveObjectModel } from "@jgengine/core/model/resolveModel";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";

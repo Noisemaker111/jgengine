@@ -44,8 +44,8 @@ import { useMemo } from "@jgengine/core/ui/jsx";
 import { continueGame, newGame } from "@jgengine/core/game/gameFlow";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { RuneAction, RuneLabel, RuneRoot, RuneTransient, RuneView } from "@jgengine/core/ui/rune/primitives.view";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 ${(options.hudImports ?? []).join("\n")}${options.hudImports === undefined || options.hudImports.length === 0 ? "" : "\n"}
 import { theme } from "./theme";
 
@@ -153,8 +153,8 @@ export const plainHud = `  // Add this game's HUD here: Rune views anchored on t
 export const runeBoardGameUiTsx = (name: string) => `/** @jsxImportSource @jgengine/core/ui/jsx */
 import { RuneLabel, RuneRoot, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
-import { useStore } from "@jgengine/ui/store";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useStore } from "@jgengine/core/ui/store.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { board } from "../../loop";
 import { theme } from "./theme";
@@ -189,8 +189,8 @@ export function GameUI() {
 export const runeChatGameUiTsx = `/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useState } from "@jgengine/core/ui/jsx";
 import { RuneField, RuneLabel, RuneRoot, RuneView } from "@jgengine/core/ui/rune/primitives.view";
-import { useChat } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useChat } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { theme } from "./theme";
 

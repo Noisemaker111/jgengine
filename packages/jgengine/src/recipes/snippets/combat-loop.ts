@@ -1,4 +1,4 @@
-import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 
 // The joint: damage goes through ctx.scene.entity.effect, never a raw stats.delta.

@@ -3,8 +3,8 @@ import { StandaloneChatPanel, type StandaloneChatPanelProps } from "./standalone
 import { useEffect, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 import type { ChatMessage, ChatSendResult } from "@jgengine/core/chat/chat";
-import { useGameContext } from "@jgengine/ui/provider";
-import { useChat } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
+import { useChat } from "@jgengine/core/ui/hooks.view";
 
 export function ChatLog({
   channelId,

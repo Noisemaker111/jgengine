@@ -4,7 +4,7 @@ import { useRef, useState, type CSSProperties } from "@jgengine/core/ui/jsx";
 import type { FloatingTextField, FloatingTextView } from "@jgengine/core/hud/floatingText";
 import { FloatingText, type FloatingTextLayoutOptions } from "@jgengine/core/hud/floatingText.view";
 
-import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { useWorldProjection } from "@jgengine/core/shell/world/WorldEntityFrames.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
@@ -32,7 +32,7 @@ export interface WorldFloatingTextProps extends FloatingTextLayoutOptions {
  * One-line drop-in for world-anchored floating text: mounts inside the scene,
  * (optionally) advances a core {@link FloatingTextField} each frame, samples the
  * live camera to project every live entry to the screen, and renders
- * `@jgengine/ui`'s {@link FloatingText} through a fullscreen `<Html>` overlay.
+ * `@jgengine/core/ui.view`'s {@link FloatingText} through a fullscreen `<Html>` overlay.
  * This is the turnkey way a game gets damage numbers / heal pops / XP gains
  * from its own field without wiring projection by hand — the camera binding,
  * viewport culling, and depth stacking come for free. Skin per `kind` with `styleFor`.

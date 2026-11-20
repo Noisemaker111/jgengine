@@ -1,4 +1,4 @@
-import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
+import type { UiPreviewScenario } from "@jgengine/core/shell/GameUiPreview.draw";
 import { streetPlayOf } from "./streetPlay";
 
 const TICK = 1 / 60;

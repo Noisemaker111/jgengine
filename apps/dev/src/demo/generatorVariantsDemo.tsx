@@ -5,7 +5,7 @@ import { generatorVariants, untypedGenerator, type GeneratorVariant } from "@jge
 import { GeneratorVariantGrid } from "@jgengine/core/generator/GeneratorVariantGrid.draw";
 import { GRASS_GENERATOR, GRASS_PRESETS } from "@jgengine/core/grass/grassKind";
 import { registerGrassPreview } from "@jgengine/core/grass/grassPreview.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { demoGame } from "./demoGame";
 

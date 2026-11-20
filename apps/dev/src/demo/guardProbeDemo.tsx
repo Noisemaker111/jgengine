@@ -9,7 +9,7 @@ import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { behaviorControl } from "@jgengine/core/scene/behaviorRuntime";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import {
   createGuardSenses,

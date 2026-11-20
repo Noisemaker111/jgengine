@@ -56,7 +56,7 @@ const ENGINE_PATHS = new Map([
     "",
     [
       { key: "@jgengine/core/*", targets: ["packages/core/src/*"] },
-      { key: "@jgengine/shell/*", targets: ["packages/shell/src/*"] },
+      { key: "@jgengine/shell/*", targets: ["packages/core/src/shell/*"] },
     ],
   ],
 ]);
@@ -149,7 +149,7 @@ describe("workspace mapping", () => {
 
   test("an engine change type-checks every package whose program imports it, not only the engine's own", () => {
     const graph = fixtureGraph({
-      "packages/shell/src/render/World.tsx": 'import { sample } from "@jgengine/core/world/terrain";',
+      "packages/core/src/shell/render/World.tsx": 'import { sample } from "@jgengine/core/world/terrain";',
       "packages/core/src/world/terrain.ts": "export const sample = 1;",
       "packages/core/src/game/loop.ts": "export const tick = 1;",
     });
@@ -191,17 +191,17 @@ describe("specifiers", () => {
 });
 
 describe("import resolution", () => {
-  const graph = buildImportGraph(root, ["packages/shell/src/x.ts", "scripts/x.ts", "packages/core/src/world.ts", "packages/core/src/index.ts", "packages/core/src/world/terrain.ts", "packages/core/src/world/terrain.test.ts"], {
+  const graph = buildImportGraph(root, ["packages/core/src/shell/x.ts", "scripts/x.ts", "packages/core/src/world.ts", "packages/core/src/index.ts", "packages/core/src/world/terrain.ts", "packages/core/src/world/terrain.test.ts"], {
     readText: (path) =>
       ({
-        "packages/shell/src/x.ts": 'import { world } from "@jgengine/core/world";\nimport view from "external-view-library";',
+        "packages/core/src/shell/x.ts": 'import { world } from "@jgengine/core/world";\nimport view from "external-view-library";',
         "scripts/x.ts": 'import * as core from "@jgengine/core";',
         "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";',
       })[path] ?? "",
   });
 
   test("resolves a package subpath through the repo's tsconfig paths", () => {
-    expect(graph.imports.get("packages/shell/src/x.ts")).toEqual(["packages/core/src/world.ts"]);
+    expect(graph.imports.get("packages/core/src/shell/x.ts")).toEqual(["packages/core/src/world.ts"]);
   });
 
   test("resolves a bare package name to its source entry", () => {
@@ -213,7 +213,7 @@ describe("import resolution", () => {
   });
 
   test("ignores a package that is not in the monorepo, and does not call it opaque", () => {
-    expect(graph.opaque.has("packages/shell/src/x.ts")).toBe(false);
+    expect(graph.opaque.has("packages/core/src/shell/x.ts")).toBe(false);
   });
 });
 
@@ -230,40 +230,40 @@ describe("test mapping", () => {
     expect(ownTests("scripts/land.test.ts", ["scripts/land.test.ts"])).toEqual(["scripts/land.test.ts"]);
   });
 
-  const tests = ["packages/core/src/world/terrain.test.ts", "packages/core/src/game/loop.test.ts", "packages/shell/src/render/World.test.ts"];
+  const tests = ["packages/core/src/world/terrain.test.ts", "packages/core/src/game/loop.test.ts", "packages/core/src/shell/render/World.test.ts"];
 
   test("a test whose imports reach the file runs, directly or through other modules; one that does not is left out", () => {
     const graph = fixtureGraph(
       {
         "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";',
         "packages/core/src/game/loop.test.ts": 'import { tick } from "./loop";',
-        "packages/shell/src/render/World.test.ts": 'import { World } from "./World";',
-        "packages/shell/src/render/World.tsx": 'import { heightAt } from "@jgengine/core/world/heights";',
+        "packages/core/src/shell/render/World.test.ts": 'import { World } from "./World";',
+        "packages/core/src/shell/render/World.tsx": 'import { heightAt } from "@jgengine/core/world/heights";',
         "packages/core/src/world/heights.ts": 'export { sample as heightAt } from "./terrain";',
         "packages/core/src/world/terrain.ts": "export const sample = 1;",
         "packages/core/src/game/loop.ts": "export const tick = 1;",
       },
     );
     const plan = verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
-    expect(plan.tests).toEqual(["packages/core/src/world/terrain.test.ts", "packages/shell/src/render/World.test.ts"]);
+    expect(plan.tests).toEqual(["packages/core/src/world/terrain.test.ts", "packages/core/src/shell/render/World.test.ts"]);
   });
 
   test("a type-only import is an edge: a changed type can break what imports it", () => {
     const graph = fixtureGraph({
-      "packages/shell/src/render/World.test.ts": 'import type { Terrain } from "@jgengine/core/terrain/terrain";',
+      "packages/core/src/shell/render/World.test.ts": 'import type { Terrain } from "@jgengine/core/terrain/terrain";',
       "packages/core/src/world/terrain.ts": "export interface Terrain {}",
     });
     const plan = verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
-    expect(plan.tests).toContain("packages/shell/src/render/World.test.ts");
+    expect(plan.tests).toContain("packages/core/src/shell/render/World.test.ts");
   });
 
   test("an import the graph cannot resolve runs its importer for any change in the scope it names", () => {
     const graph = fixtureGraph({
-      "packages/shell/src/render/World.test.ts": 'const mod = await import("@jgengine/core/world/" + name);\nimport { x } from "@jgengine/core/world/missing";',
+      "packages/core/src/shell/render/World.test.ts": 'const mod = await import("@jgengine/core/world/" + name);\nimport { x } from "@jgengine/core/world/missing";',
     });
-    expect(opaqueScopes("packages/shell/src/render/World.test.ts", ["@jgengine/core/world/missing", "./gone"], fakeWorkspaces)).toEqual(["packages/core/", "packages/shell/"]);
-    expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/shell/src/render/World.test.ts");
-    expect(verifyPlan({ changed: ["apps/dev/src/x.ts"], testFiles: [...tests, "apps/dev/src/x.test.ts"], workspaces: fakeWorkspaces, graph }).tests).not.toContain("packages/shell/src/render/World.test.ts");
+    expect(opaqueScopes("packages/core/src/shell/render/World.test.ts", ["@jgengine/core/world/missing", "./gone"], fakeWorkspaces)).toEqual(["packages/core/", "packages/shell/"]);
+    expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/core/src/shell/render/World.test.ts");
+    expect(verifyPlan({ changed: ["apps/dev/src/x.ts"], testFiles: [...tests, "apps/dev/src/x.test.ts"], workspaces: fakeWorkspaces, graph }).tests).not.toContain("packages/core/src/shell/render/World.test.ts");
   });
 
   test("a deleted file reaches whatever still imports it", () => {
@@ -346,14 +346,14 @@ describe("attribution fails loudly", () => {
   test("a package file no test names is covered by running its package's suite", () => {
     const plan = verifyPlan({
       changed: ["packages/core/src/world/terrain.ts", "packages/core/src/world/unreachable.ts"],
-      testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/other.test.ts", "packages/ui/src/a.test.ts"],
+      testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/other.test.ts", "packages/core/src/ui/a.test.ts"],
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
     expect(plan.unattributed).toEqual([]);
     expect(plan.suites).toEqual(["packages/core"]);
     expect(plan.tests).toContain("packages/core/src/other.test.ts");
-    expect(plan.tests).not.toContain("packages/ui/src/a.test.ts");
+    expect(plan.tests).not.toContain("packages/core/src/ui/a.test.ts");
   });
 
   test("a root script no test imports runs every scripts test, as CI does", () => {
@@ -406,7 +406,7 @@ describe("attribution fails loudly", () => {
     expect(rerunCommand({ name: "t", command: ["bun", "test", "--timeout", "20000", "--reporter=junit", "--reporter-outfile=.scratch/x/tests-1.xml", "a.test.ts", "b c.test.ts"] })).toBe(
       'bun test --timeout 20000 a.test.ts "b c.test.ts"',
     );
-    expect(rerunCommand({ name: "layers", command: ["bun", "scripts/check-layers.ts"] })).toBe("bun scripts/check-layers.ts");
+    expect(rerunCommand({ name: "hud-tokens", command: ["bun", "scripts/check-hud-tokens.ts"] })).toBe("bun scripts/check-hud-tokens.ts");
     const chunk = { name: "test 3 file(s)", command: ["bun", "test", "--timeout", "20000", "a.test.ts", "b.test.ts", "c.test.ts"] };
     expect(rerunFailing(chunk, "b.test.ts:\n(fail) x\n\n 1 fail")).toBe("bun test b.test.ts");
     expect(rerunFailing(chunk, "bun crashed")).toBe("bun test --timeout 20000 a.test.ts b.test.ts c.test.ts");
@@ -532,7 +532,7 @@ describe("static gates", () => {
 
   // A landing that ran a hand-picked subset of what CI runs met each missing check one CI run at a time.
   test("an engine landing runs every quick and types check CI runs, except the ones with a stated reason", () => {
-    const landing = landingGates(["packages/core/src/city/cityKind.ts", "packages/ui/src/a.ts", "games/fernwild/src/main.ts", "apps/web/src/a.ts", "registry/x.json"]);
+    const landing = landingGates(["packages/core/src/city/cityKind.ts", "packages/core/src/ui/a.ts", "games/fernwild/src/main.ts", "apps/web/src/a.ts", "registry/x.json"]);
     for (const check of [...jobChecks("quick"), ...jobChecks("types")]) {
       const reason = CI_ONLY_GATES[check.name];
       if (reason === undefined) expect(landing).toContain(check.name);
@@ -555,7 +555,7 @@ describe("static gates", () => {
   });
 
   test("a check script change reaches every gate, since the rule itself moved", () => {
-    expect(landingGates(["scripts/check-layers.ts"])).toContain("layers");
+    expect(landingGates(["scripts/check-hud-tokens.ts"])).toContain("hud-tokens");
   });
 
   test("a docs-only landing pays only the iteration gates", () => {
@@ -599,14 +599,14 @@ describe("static gates", () => {
 describe("commands", () => {
   test("the fast plan typechecks only the owning package and runs only its tests", () => {
     const plan = verifyPlan({
-      changed: ["packages/shell/src/world/WorldScene.tsx"],
-      testFiles: ["packages/shell/src/world/WorldScene.test.ts"],
+      changed: ["packages/core/src/shell/world/WorldScene.draw.tsx"],
+      testFiles: ["packages/core/src/shell/world/WorldScene.draw.test.ts"],
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
     const steps = fastSteps(plan);
     expect(steps[0]?.command).toEqual(["bun", "--cwd=packages/shell", "run", "check-types"]);
-    expect(steps[1]?.command).toEqual(["bun", "test", "--timeout", "20000", "packages/shell/src/world/WorldScene.test.ts"]);
+    expect(steps[1]?.command).toEqual(["bun", "test", "--timeout", "20000", "packages/core/src/shell/world/WorldScene.draw.test.ts"]);
     expect(steps.some((step) => step.command.includes("packages/core"))).toBe(false);
   });
 
@@ -673,26 +673,26 @@ describe("commands", () => {
   test("a unit's inputs are the files that decide it: its import closure, its workspace's data, the root configs; a repo script's test reads the whole tree", () => {
     const graph = fixtureGraph(
       {
-        "packages/shell/src/World.test.ts": 'import { World } from "./World";',
-        "packages/shell/src/World.tsx": 'import { sample } from "@jgengine/core/terrain";',
+        "packages/core/src/shell/World.test.ts": 'import { World } from "./World";',
+        "packages/core/src/shell/World.tsx": 'import { sample } from "@jgengine/core/terrain";',
         "packages/core/src/terrain.ts": "export const sample = 1;",
         "packages/core/src/loop.ts": "export const tick = 1;",
         "scripts/x.test.ts": 'import { tick } from "../packages/core/src/loop";',
       },
-      ["packages/shell/src/scene.json", "packages/core/src/data.json", "bun.lock"],
+      ["packages/core/src/shell/scene.json", "packages/core/src/data.json", "bun.lock"],
     );
     const plan = verifyPlan({
       changed: ["packages/core/src/terrain.ts", "packages/core/src/loop.ts"],
-      testFiles: ["packages/shell/src/World.test.ts", "scripts/x.test.ts"],
+      testFiles: ["packages/core/src/shell/World.test.ts", "scripts/x.test.ts"],
       workspaces: fakeWorkspaces,
       graph,
     });
-    expect(plan.inputs["test:packages/shell/src/World.test.ts"]).toEqual([
+    expect(plan.inputs["test:packages/core/src/shell/World.test.ts"]).toEqual([
       "bun.lock",
       "packages/core/src/terrain.ts",
-      "packages/shell/src/World.test.ts",
-      "packages/shell/src/World.tsx",
-      "packages/shell/src/scene.json",
+      "packages/core/src/shell/World.test.ts",
+      "packages/core/src/shell/World.tsx",
+      "packages/core/src/shell/scene.json",
     ]);
     expect(plan.inputs["typecheck:packages/core"]).toEqual(["bun.lock", "packages/core/src/data.json", "packages/core/src/loop.ts", "packages/core/src/terrain.ts"]);
     expect(plan.inputs["test:scripts/x.test.ts"]).toEqual(["*"]);
@@ -994,7 +994,7 @@ describe("local boots", () => {
     if (firstFrameGame === undefined) throw new Error("the boot fixture games must be registered");
     expect(bootsFor(changed, reaches("games/odd-orbit/src/main.tsx", "games/llmville/src/main.tsx"))).toEqual([firstFrameGame]);
     expect(bootsFor(changed, reaches("games/llmville/src/main.tsx"))).toEqual(["llmville"]);
-    expect(bootsFor(changed, reaches("packages/shell/src/other.ts", "games/scripts/check.ts"))).toEqual([]);
+    expect(bootsFor(changed, reaches("packages/core/src/shell/other.ts", "games/scripts/check.ts"))).toEqual([]);
     // A heavy path no import shows (a lockfile, a workflow) still boots the representative.
     expect(bootsFor(["bun.lock"], new Set(["bun.lock"]))).toEqual([REPRESENTATIVE_GAME]);
   });

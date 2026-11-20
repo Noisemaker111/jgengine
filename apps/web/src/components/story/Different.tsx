@@ -143,7 +143,7 @@ export function Different() {
           >
             <p>
               A feature's model, UI and drawing sit side by side in one folder, and the file suffix says which is which.{" "}
-              <code className="inline-code">bun run check layers</code> enforces it from the imports in under a second, so
+              core compiles each layer on its own, so a wrong import is a type error and
               multiplayer hosts run the same rules as the game without loading a renderer.
             </p>
           </Point>

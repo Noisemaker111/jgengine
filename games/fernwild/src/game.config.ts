@@ -27,7 +27,7 @@ import {
 import {
   DEFAULT_WALK_CODES,
   defineGame,
-} from "@jgengine/shell/gameKit";
+} from "@jgengine/core/shell/gameKit.draw";
 
 import {
   editorLayers,

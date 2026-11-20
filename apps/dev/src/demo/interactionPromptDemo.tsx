@@ -11,11 +11,11 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { useGameStore, localPlayerEntity } from "@jgengine/ui/hooks";
+import { useGameStore, localPlayerEntity } from "@jgengine/core/ui/hooks.view";
 import { InteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 const CHEST = "chest";

@@ -1,4 +1,4 @@
-import { defineSystem, type GameContext } from "@jgengine/shell/gameKit";
+import { defineSystem, type GameContext } from "@jgengine/core/shell/gameKit.draw";
 
 import { tickTowers } from "./combat/towerAI";
 import { keep, runEnded } from "./keep";

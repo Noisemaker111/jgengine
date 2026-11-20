@@ -220,7 +220,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
   }, 120_000);
 
   test("portable marker source and engine minimap resolve together from real tarballs", () => {
-    const { consumer } = installTarballs(["core", "ui"]);
+    const { consumer } = installTarballs(["core"]);
     try {
       const script = [
         "import { createMarkerSource } from '@jgengine/core/map/markers';",
@@ -243,12 +243,12 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
   }, 120_000);
 
   test("material assets, native inventory, slot rendering and authoring resolve from coordinated tarballs", () => {
-    const { consumer } = installTarballs(["core", "assets", "ui", "ws", "shell", "editor"]);
+    const { consumer } = installTarballs(["core", "assets", "ws", "editor"]);
     try {
       for (const peer of ["three"]) {
         const target = join(consumer, "node_modules", peer);
         mkdirSync(dirname(target), { recursive: true });
-        symlinkSync(join(packageDir("shell"), "node_modules", peer), target, "junction");
+        symlinkSync(join(packageDir("core"), "node_modules", peer), target, "junction");
       }
       const script = [
         "import * as THREE from 'three';",

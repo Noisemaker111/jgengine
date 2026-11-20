@@ -12,7 +12,7 @@ Games run package source from the same commit, not npm releases.
 
 - UI is JSX on the engine's own runtime (`@jgengine/core/ui/jsx`), not React: no `react` import, no
   React hooks. Every game draws through Rune (Rust in `native/`, wasm).
-  `@jgengine/ui` is the UI package; `@jgengine/react` is its deprecated old name.
+  UI and the game player are `@jgengine/core/ui.view` and `@jgengine/core/shell/*` (one package since 0.60).
 - 3D is plain three.js on the engine's frame loop (`packages/core/src/frame/`). WebGL is the default;
   WebGPU is a preview (`?renderer=webgpu`).
 

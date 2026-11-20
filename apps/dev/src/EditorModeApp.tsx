@@ -2,7 +2,7 @@
 import { useEffect, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { EditorAppProps } from "@jgengine/editor/EditorApp";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
 import { captureArmed, setCaptureStatus } from "./captureReady";

@@ -10,7 +10,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { Scoreboard, type ScoreboardTheme } from "@jgengine/core/leaderboard/scoreboard.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 const YOU = "you";

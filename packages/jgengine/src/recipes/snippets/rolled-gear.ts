@@ -1,4 +1,4 @@
-import { seededRng } from "@jgengine/shell/gameKit";
+import { seededRng } from "@jgengine/core/shell/gameKit.draw";
 import { createAffixRoller, type ItemBaseDef } from "@jgengine/core/item/affix";
 
 // The joint: one roller turns a base item into a rolled one. A weighted rarity tier

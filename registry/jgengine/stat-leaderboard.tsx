@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
-import { useLeaderboard } from "@jgengine/ui/hooks";
+import { useLeaderboard } from "@jgengine/core/ui/hooks.view";
 
 import { RankList, type RankEntry } from "@/components/ui/rank-list";
 

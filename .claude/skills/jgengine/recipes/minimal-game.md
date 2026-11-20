@@ -27,7 +27,7 @@ The file set is thin and already runs:
 
 ```ts
 // game.config.ts — everything below comes from the kit; deeper paths are for outgrowing it.
-import { defineGame } from "@jgengine/shell/gameKit";
+import { defineGame } from "@jgengine/core/shell/gameKit.draw";
 
 import { editorLayers } from "./editorLayers";
 import { GameUI } from "./game/ui/GameUI";
@@ -57,7 +57,7 @@ holds only the ground palette. Reshape the hills in the editor, not in code.
 
 ```ts
 // loop.ts — one store slot for run state, one system for the rules tick.
-import { defineStore, defineSystem, authoredSpawnPosition, type GameContext } from "@jgengine/shell/gameKit";
+import { defineStore, defineSystem, authoredSpawnPosition, type GameContext } from "@jgengine/core/shell/gameKit.draw";
 
 import { editorLayers } from "./editorLayers";
 

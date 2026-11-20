@@ -33,9 +33,7 @@
   "dependencies": {
     "@jgengine/assets": "^0.59.0",
     "@jgengine/core": "^0.59.0",
-    "@jgengine/navbake": "^0.59.0",
-    "@jgengine/ui": "^0.59.0",
-    "@jgengine/shell": "^0.59.0"
+    "@jgengine/navbake": "^0.59.0"
   },
   "peerDependencies": {
     "three": ">=0.187.0"

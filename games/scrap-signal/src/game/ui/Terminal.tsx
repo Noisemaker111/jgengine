@@ -7,9 +7,9 @@ import { useBrowserSuspension } from "@jgengine/core/runtime/browserLifecycle.vi
 import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.view";
 import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";
 import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
-import { useCurrency, useEntityStat, useGame, useGamePhase, useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
-import { useStore } from "@jgengine/ui/store";
+import { useCurrency, useEntityStat, useGame, useGamePhase, useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
+import { useStore } from "@jgengine/core/ui/store.view";
 import { CHARACTERS } from "../characters";
 import { RELAY, relayDistance, relayStore } from "../relay";
 import { riftStore } from "../rift/rift";

@@ -13,15 +13,15 @@ let browser: Browser, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules`, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../../../../packages/shell/node_modules/three"), `${scratch}/node_modules/three`, "junction");
+  await symlink(resolve(import.meta.dir, "../../node_modules/three"), `${scratch}/node_modules/three`, "junction");
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React from '@jgengine/core/ui/jsx';
     import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {EngineHostProvider} from '@jgengine/core/frame/engineHost.draw';
-    import {GameProvider} from '@jgengine/ui/provider';
+    import {GameProvider} from '@jgengine/core/ui/provider.view';
     import {useModelAnimation,diagnoseModelAnimation} from '@jgengine/core/anim/useModelAnimation.draw';
-    import {FrameDriver} from '@jgengine/shell/drivers/FrameDriver';
+    import {FrameDriver} from '@jgengine/core/shell/drivers/FrameDriver.draw';
     import {createActionStateTracker} from '@jgengine/core/input/actionBindings';
     import {locomotionGraph} from '@jgengine/core/anim/locomotionGraph';
     import {AnimationMixer} from 'three';

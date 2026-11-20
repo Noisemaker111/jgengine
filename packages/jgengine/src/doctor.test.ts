@@ -30,9 +30,9 @@ describe("diagnoseProject", () => {
     const core = join(root, "node_modules", "@jgengine", "core");
     mkdirSync(core, { recursive: true });
     writeFileSync(join(core, "package.json"), '{"version":"0.18.1"}');
-    writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/core": "catalog:", "@jgengine/ui": "catalog:" } }));
+    writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/core": "catalog:", "@jgengine/ws": "catalog:" } }));
     try {
-      const workspace = { packages: ["games/*"], catalog: { "@jgengine/core": "0.18.1", "@jgengine/ui": "0.18.0" } };
+      const workspace = { packages: ["games/*"], catalog: { "@jgengine/core": "0.18.1", "@jgengine/ws": "0.18.0" } };
       writeFileSync(manifest, JSON.stringify({ workspaces: workspace }));
       const findings = diagnoseProject(project);
       expect(findings.find(entry => entry.label === "@jgengine/* catalogs resolve")?.ok).toBe(true);
@@ -41,7 +41,7 @@ describe("diagnoseProject", () => {
       expect(alignment?.ok).toBe(false);
       expect(alignment?.fix).toContain("0.18.1, 0.18.0");
       expect(alignment?.fix).toContain("workspace catalog");
-      workspace.catalog["@jgengine/ui"] = "0.18.1";
+      workspace.catalog["@jgengine/ws"] = "0.18.1";
       writeFileSync(manifest, JSON.stringify({ workspaces: workspace }));
       expect(failingLabels(project)).not.toContain("@jgengine/* versions aligned");
       writeFileSync(manifest, JSON.stringify({ workspaces: { packages: ["games/*"], catalog: null } }));
@@ -74,7 +74,7 @@ describe("diagnoseProject", () => {
     const dir = scaffold();
     const pkgPath = join(dir, "package.json");
     const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { dependencies: Record<string, string> };
-    pkg.dependencies["@jgengine/ui"] = "^0.7.0";
+    pkg.dependencies["@jgengine/ws"] = "^0.7.0";
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
     expect(failingLabels(dir)).toContain("@jgengine/* versions aligned");
   });
@@ -83,7 +83,7 @@ describe("diagnoseProject", () => {
     const dir = scaffold();
     const cssPath = join(dir, "src", "index.css");
     writeFileSync(cssPath, readFileSync(cssPath, "utf8").replaceAll(/@source [^\n]+\n/g, ""));
-    expect(failingLabels(dir)).toContain("Tailwind @source covers @jgengine/ui and @jgengine/shell");
+    expect(failingLabels(dir)).toContain("Tailwind @source covers the engine UI and shell");
   });
 
   test("flags a silent game until it declares or plays audio cues", () => {
@@ -180,7 +180,7 @@ if (import.meta.env.DEV) installSaveEndpoint("/__jgengine/save", "probe-game");
     const dir = scaffold();
     writeFileSync(
       join(dir, "src", "game.config.ts"),
-      `import { defineGame } from "@jgengine/shell/defineGame";
+      `import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 export const game = defineGame({
   name: "Boxes",
   look: "flat",

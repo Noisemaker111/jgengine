@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@jgengine/core": "workspace:*",
-    "@jgengine/shell": "workspace:*",
     "three": "catalog:"
   },
   "devDependencies": {

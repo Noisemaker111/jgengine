@@ -5,7 +5,7 @@ import { filterLibraryMaterials, libraryMaterialAsset, type LibraryGroup, type L
 import { useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
 import { leasedMaterialMeshDraw, materialAssetMaterial } from "@jgengine/core/material/materialAsset.draw";

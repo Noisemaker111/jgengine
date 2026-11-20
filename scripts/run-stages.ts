@@ -89,12 +89,11 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "pack-texture-layout", script: "scripts/check-pack-texture-layout.ts", jobs: ["types"], reads: ["apps/"] },
   { name: "recipes", script: "scripts/check-recipes.ts", jobs: ["types"], reads: [".claude/", "games/"] },
   { name: "doc-symbols", script: "scripts/check-doc-symbols.ts", jobs: ["types"], reads: [".claude/", "apps/", "packages/"], skipsTests: true },
-  { name: "hud-tokens", script: "scripts/check-hud-tokens.ts", jobs: ["types"], reads: ["packages/ui/src/", "registry/"] },
+  { name: "hud-tokens", script: "scripts/check-hud-tokens.ts", jobs: ["types"], reads: ["packages/core/src/ui/", "registry/"] },
   { name: "source-paths", script: "scripts/sourcePaths.ts", args: ["--check"], jobs: ["types"], generated: true, reads: ["packages/", "apps/", "examples/", "registry/", "games/llmville/packages/"] },
   // Reads the whole tree: a file named `nul` anywhere breaks every Windows checkout.
   { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"] },
   { name: "types", script: "scripts/check-types-all.ts", jobs: ["types"] },
-  { name: "layers", script: "scripts/check-layers.ts", jobs: ["quick"], reads: ["packages/core/src/", "packages/ui/src/", "packages/shell/src/"] },
   { name: "react-free", script: "scripts/check-react-free.ts", jobs: ["quick"], reads: ["packages/", "games/", "apps/", "registry/", "examples/", "package.json"] },
   { name: "export-manifest", script: "scripts/gen-export-manifest.ts", args: ["--check"], jobs: ["quick"], needsBuild: true, generated: true, reads: ["packages/"], skipsTests: true },
   { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
@@ -356,7 +355,7 @@ const CHECK_USAGE: Usage = {
     { flag: "--sdk", detail: "the type-check job without the game checks (what the publish run checks)" },
     { flag: "--list", detail: "print every check, the CI job that runs it and its script, then exit" },
   ],
-  example: "bun run check layers path-portability",
+  example: "bun run check recipes path-portability",
   exits: ["0 every selected check passed", "1 a check failed or was skipped", "2 an unknown check name"],
 };
 

@@ -1,4 +1,4 @@
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { mergePostProcessing } from "@jgengine/core/render/lookPreset";
 import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing";
 

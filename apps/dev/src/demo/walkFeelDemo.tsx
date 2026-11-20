@@ -7,7 +7,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { measureMovement } from "@jgengine/core/movement/movementProbe";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { FLOATY_FEEL, WEIGHTY_FEEL, type WalkFeel } from "./walkFeelTuning";
 

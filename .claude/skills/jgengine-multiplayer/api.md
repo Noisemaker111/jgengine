@@ -171,7 +171,7 @@
 - `ChatSync` (interface): interface ChatSync — The seam for remote text chat, with no UI hooks so any runtime can hold it: subscribe delivers the channel's recent history now and on every change; send resolves with the host's verdict.
 - `EnsurePresenceResult` (interface): interface EnsurePresenceResult { presenceId: string; position: PresencePosition; rotationY: number } — ⚠ undocumented
 - `FeedWriteGate` (type): type FeedWriteGate = { allowedActions: readonly string[]; } — ⚠ undocumented
-- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/ui): Polls a host-supplied session fetcher (e.g.
+- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/core/ui.view): Polls a host-supplied session fetcher (e.g.
 - `PlayerIdentity` (interface): interface PlayerIdentity { userId: string; isNew: boolean } — ⚠ undocumented
 - `PlayerPose` (interface): interface PlayerPose { x: number; y: number; z: number; rotationY: number; rotationPitch: number; appearance?: Record<string, string> } — ⚠ undocumented
 - `PoseSyncRules` (interface): interface PoseSyncRules { maxSpeed: number; minIntervalMs?: number; maxVerticalOffset: number; floorY?: number; minElapsedSec: number; maxElapsedSec: number; keepAliveRefreshMs: number } — ⚠ undocumented · used by `DEFAULT_POSE_SYNC_RULES` (@jgengine/core/multiplayer/presenceModel): Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex).
@@ -180,7 +180,7 @@
 - `PushToTalkMode` (type): type PushToTalkMode = "hold" | "toggle" | "openMic" — ⚠ undocumented
 - `PushToTalkStatus` (type): type PushToTalkStatus = "idle" | "keyed" | "open" — ⚠ undocumented
 - `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
-- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string | undefined; mode?: string | undefined; joinCode?: string | undefined; tags?: readonly str… — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/ui): Polls a host-supplied session fetcher (e.g.
+- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string | undefined; mode?: string | undefined; joinCode?: string | undefined; tags?: readonly str… — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/core/ui.view): Polls a host-supplied session fetcher (e.g.
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented · used by `isAutoJoinCandidate` (@jgengine/core/runtime/hostPolicy): Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity.
 - `VoiceParticipant` (interface): interface VoiceParticipant { userId: string; streamId?: string | undefined } — ⚠ undocumented
 - `VoiceRoute` (interface): interface VoiceRoute { fromUserId: string; channelId: string; gain: number } — ⚠ undocumented
@@ -258,8 +258,8 @@
 ## @jgengine/core/multiplayer/matchmaking
 
 - `BrowseOptions` (interface): interface BrowseOptions { limit?: number | undefined } — ⚠ undocumented
-- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/ui): Polls a host-supplied session fetcher (e.g.
-- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string | undefined; mode?: string | undefined; joinCode?: string | undefined; tags?: readonly str… — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/ui): Polls a host-supplied session fetcher (e.g.
+- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/core/ui.view): Polls a host-supplied session fetcher (e.g.
+- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string | undefined; mode?: string | undefined; joinCode?: string | undefined; tags?: readonly str… — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/core/ui.view): Polls a host-supplied session fetcher (e.g.
 - `SessionStatus` (type): type SessionStatus = "open" | "running" | "closed" — ⚠ undocumented
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented · used by `isAutoJoinCandidate` (@jgengine/core/runtime/hostPolicy): Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity.
 - `browseSessions` (function): function browseSessions(listings: readonly SessionListing[], filter: MatchFilter = {}, options: BrowseOptions = {}): SessionListing[] — ⚠ undocumented
@@ -602,6 +602,15 @@
 - `WireEncoder` (type): type WireEncoder = { encode(message: unknown): Uint8Array<ArrayBuffer> } — Stateful binary encoder for one connection's outgoing messages.
 - `WirePrecision` (type): type WirePrecision = { /** Decimal places kept for positions and velocities. Default 2 (centimetres). */ position?: number | undefined; /** Decimal places kept for rotations. Default 3 (about a milliradian). */ angle?: number | undefined; } — Quantisation applied to replicated poses on the binary wire, in decimal places.
 
+## @jgengine/ws/binaryWire.d
+
+- `DEFAULT_WIRE_PRECISION` (const): const DEFAULT_WIRE_PRECISION: { readonly position: 2; readonly angle: 3; } — Default {@link WirePrecision}.
+- `WIRE_DESYNC` (const): const WIRE_DESYNC: "desync" — Marks a binary frame the decoder could not apply to its state.
+- `WIRE_MAGIC` (const): const WIRE_MAGIC: 177 — Binary wire format for the ws protocol. Every message is a JSON-shaped value, so one tagged value codec carries all of them; world frames add an entity-delta section that sends only the fields that changed against the last frame on that connection, with quantised poses and varint entity ids.
+- `WireDecoder` (type): type WireDecoder = { /** The decoded message, `null` for a malformed frame, or `"desync"` when a world delta does not follow the last frame it saw (the receiver must resubscribe for a baseline). */ decode(frame: Uint8Array): unknown; } — Stateful binary decoder for one connection's incoming messages.
+- `WireEncoder` (type): type WireEncoder = { encode(message: unknown): Uint8Array<ArrayBuffer>; } — Stateful binary encoder for one connection's outgoing messages.
+- `WirePrecision` (type): type WirePrecision = { /** Decimal places kept for positions and velocities. Default 2 (centimetres). */ position?: number | undefined; /** Decimal places kept for rotations. Default 3 (about a milliradian). */ angle?: number | undefined; } — Quantisation applied to replicated poses on the binary wire, in decimal places.
+
 ## @jgengine/ws/commandMiddleware
 
 - `CommandAuthorize` (type): type CommandAuthorize = (args: { userId: string; op: HostCommandOp; serverId?: string | undefined; command?: string | undefined; }) => boolean | Promise<boolean> — Per-command authorization hook: return `false` to reject. Defaults to allow-all when omitted.
@@ -620,6 +629,24 @@
 - `createCommandRateLimiter` (function): function createCommandRateLimiter(limits: CommandLimits): CommandRateLimiter — Creates a sliding-window rate limiter keyed by connection identity and op; ops absent from `limits` are always allowed.
 - `validateCommandInput` (function): function validateCommandInput(catalog: CommandCatalog | undefined, command: string, input: unknown): CommandRejection | null — Validates a `runCommand` input against a declared catalog. `undefined` catalog means "no declarations" — everything passes through unchanged.
 
+## @jgengine/ws/commandMiddleware.d
+
+- `CommandAuthorize` (type): type CommandAuthorize = (args: { userId: string; op: HostCommandOp; serverId?: string | undefined; command?: string | undefined; }) => boolean | Promise<boolean> — Per-command authorization hook: return `false` to reject. Defaults to allow-all when omitted.
+- `CommandCatalog` (type): type CommandCatalog = Record<string, CommandCatalogEntry> — Declared `runCommand` names and their input validators. When set, any `runCommand` name absent from this catalog is rejected as unknown.
+- `CommandCatalogEntry` (type): type CommandCatalogEntry = { validate?: (input: unknown) => CommandRejection | null; } — A declared `runCommand` name's input validator, run before the command reaches the game host.
+- `CommandGateArgs` (type): type CommandGateArgs = { connection: object; userId: string; op: HostCommandOp; atMs: number; serverId?: string | undefined; command?: string; input?: unknown; } — One op attempt to run through the middleware pipeline: which connection, which op, and (for `runCommand`) the command name/input.
+- `CommandGateDecision` (type): type CommandGateDecision = { allow: true; } | { allow: false; reason: string; } — The pipeline's verdict for one {@link CommandGateArgs}: allowed, or rejected with a client-facing reason.
+- `CommandLimits` (type): type CommandLimits = Partial<Record<HostCommandOp, CommandRateLimit>> — Per-op rate limits. An op with no entry (or an undefined `limits`) is unlimited.
+- `CommandMiddleware` (type): type CommandMiddleware = { check: (args: CommandGateArgs) => Promise<CommandGateDecision>; } — A composable rate-limit → validate → authorize pipeline the host router runs before dispatching pose/runCommand/join/browse/voice ops. Every stage defaults to a no-op, so an unconfigured router behaves exactly as before.
+- `CommandMiddlewareOptions` (type): type CommandMiddlewareOptions = { limits?: CommandLimits; authorize?: CommandAuthorize | undefined; validate?: CommandCatalog | undefined; } — Config for {@link createCommandMiddleware}: the same `limits`/`authorize`/`validate` fields accepted by `HostRouterOptions`.
+- `CommandRateLimit` (type): type CommandRateLimit = { count: number; perMs: number; } — A sliding-window rate limit: at most `count` calls per `perMs` window.
+- `CommandRateLimiter` (type): type CommandRateLimiter = { allow: (connection: object, op: HostCommandOp, atMs: number) => boolean; } — A composable per-connection/per-op sliding-window rate limiter.
+- `DEFAULT_COMMAND_LIMITS` (const): const DEFAULT_COMMAND_LIMITS: CommandLimits — Recommended per-op limits a host can opt into via `limits: DEFAULT_COMMAND_LIMITS`. Rate limiting is off unless `limits` is set.
+- `HostCommandOp` (type): type HostCommandOp = "pose" | "runCommand" | "join" | "browse" | "voice" — A host-side op the command middleware pipeline can gate: pose sync, `runCommand`, join/joinByCode, browse, or voice join/leave/publish.
+- `createCommandMiddleware` (function): function createCommandMiddleware(options: CommandMiddlewareOptions): CommandMiddleware — Builds the composed command middleware pipeline from game-intent config: `limits`, `validate`, `authorize`.
+- `createCommandRateLimiter` (function): function createCommandRateLimiter(limits: CommandLimits): CommandRateLimiter — Creates a sliding-window rate limiter keyed by connection identity and op; ops absent from `limits` are always allowed.
+- `validateCommandInput` (function): function validateCommandInput(catalog: CommandCatalog | undefined, command: string, input: unknown): CommandRejection | null — Validates a `runCommand` input against a declared catalog. `undefined` catalog means "no declarations" — everything passes through unchanged.
+
 ## @jgengine/ws/createWsBackend
 
 - `WsBackend` (type): type WsBackend = GameBackend & { rtt: { sampleMs: number; smoothedMs: number }; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { ga… — ⚠ undocumented
@@ -627,6 +654,15 @@
 - `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
 - `WsPresenceSync` (type): type WsPresenceSync = { subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void; /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */ syncPose: (serverId: string, pose: WsPose) => void; } — ⚠ undocumented
 - `WsVoiceSync` (type): type WsVoiceSync = { subscribe: ( serverId: string, channelId: string, onChange: (participants: WsVoiceParticipant[]) => void, ) => () => void; join: (serverId: string, channelId: string, streamId?: string) => Promise<void>; leave: (serverId: string, channelId: string) => Promise<void>; publish: (se… — ⚠ undocumented
+- `createWsBackend` (function): function createWsBackend(options: WsBackendOptions): WsBackend — ⚠ undocumented
+
+## @jgengine/ws/createWsBackend.d
+
+- `WsBackend` (type): type WsBackend = GameBackend & { rtt: { sampleMs: number; smoothedMs: number; }; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown; }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: {… — ⚠ undocumented
+- `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string | undefined; /** Wire codec: `binary` (default, per-entity deltas with quantised poses) or `json` text frames for debugging. */ codec?: WsCodecName; webSocketFactory?: (url: string) => WebSocket; reco… — ⚠ undocumented
+- `WsChatSync` (type): type WsChatSync = { subscribe: (serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
+- `WsPresenceSync` (type): type WsPresenceSync = { subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void; /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */ syncPose: (serverId: string, pose: WsPose) => void; } — ⚠ undocumented
+- `WsVoiceSync` (type): type WsVoiceSync = { subscribe: (serverId: string, channelId: string, onChange: (participants: WsVoiceParticipant[]) => void) => () => void; join: (serverId: string, channelId: string, streamId?: string) => Promise<void>; leave: (serverId: string, channelId: string) => Promise<void>; publish: (serve… — ⚠ undocumented
 - `createWsBackend` (function): function createWsBackend(options: WsBackendOptions): WsBackend — ⚠ undocumented
 
 ## @jgengine/ws/host
@@ -638,11 +674,34 @@
 - `createGameServerHost` (function): function createGameServerHost(options: GameServerHostOptions): GameServerHost — Creates a `GameServerHost` that runs game servers over the given persistence and runtimes.
 - `memoryPersistence` (function): function memoryPersistence(now: () => number = Date.now): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 
+## @jgengine/ws/host.d
+
+- `GameServerHost` (type): type GameServerHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string | undefined; attributes?: SessionAttributes | undefined; code?: string | undefined; role?: SnapshotViewer["role"] | undefined; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filte… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameServerHostOptions` (type): type GameServerHostOptions = { runtimes?: GameRuntime[] | undefined; persistence: HostPersistence; tickMs?: number | undefined; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameServerHost}, including persistence, tick rate, and game runtimes.
+- `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — A change notification emitted by a `GameServerHost` for a server, player, or feed mutation.
+- `OP_LEDGER_LIMIT` (const): const OP_LEDGER_LIMIT: 64 — Max recently-applied `runCommand` op IDs retained per (serverId, userId), oldest evicted first.
+- `createGameServerHost` (function): function createGameServerHost(options: GameServerHostOptions): GameServerHost — Creates a `GameServerHost` that runs game servers over the given persistence and runtimes.
+- `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
+
 ## @jgengine/ws/hostRouter
 
 - `DEFAULT_GRACE_MS` (const): const DEFAULT_GRACE_MS: 15000 — Default reconnect grace period for hosted socket sessions.
 - `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
 - `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; /** Wait for accepted message handlers and subscription reads to settle. Close first to prevent new work. */ drain: () =>… — ⚠ undocumented
+- `HostRouterAuthenticate` (type): type HostRouterAuthenticate = (args: { userId: string; token?: string | undefined; }) => Promise<string | null> | string | null — ⚠ undocumented
+- `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
+- `HostRouterOptions` (type): type HostRouterOptions = { host: GameServerHost; authenticate?: HostRouterAuthenticate; allowAnonymous?: boolean; singleSession?: boolean; poseRules?: PoseSyncRules; positionHistoryMs?: number; chatRateLimit?: ChatRateLimit; chatHistoryLimit?: number; chatMaxBodyLength?: number; /** Quantisation of … — ⚠ undocumented
+- `HostRouterTransport` (type): type HostRouterTransport = { send: (data: WsFrame) => void; close: () => void; } — ⚠ undocumented
+- `MAX_QUEUED_MESSAGES` (const): const MAX_QUEUED_MESSAGES: 64 — Cap on frames queued behind a connection's in-flight message; beyond this a flood gets rejected instead of piling up unbounded promises.
+- `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
+- `createHostRouter` (function): function createHostRouter(options: HostRouterOptions): HostRouter — ⚠ undocumented
+- `loopbackPipe` (function): function loopbackPipe(router: HostRouter): TransportPipeFactory — ⚠ undocumented
+
+## @jgengine/ws/hostRouter.d
+
+- `DEFAULT_GRACE_MS` (const): const DEFAULT_GRACE_MS: 15000 — Default reconnect grace period for hosted socket sessions.
+- `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
+- `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number; }) => RewoundPosition[]; close: () => void; /** Wait for accepted message handlers and subscription reads to settle. Close first to prevent new work. */ drain: () =… — ⚠ undocumented
 - `HostRouterAuthenticate` (type): type HostRouterAuthenticate = (args: { userId: string; token?: string | undefined; }) => Promise<string | null> | string | null — ⚠ undocumented
 - `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
 - `HostRouterOptions` (type): type HostRouterOptions = { host: GameServerHost; authenticate?: HostRouterAuthenticate; allowAnonymous?: boolean; singleSession?: boolean; poseRules?: PoseSyncRules; positionHistoryMs?: number; chatRateLimit?: ChatRateLimit; chatHistoryLimit?: number; chatMaxBodyLength?: number; /** Quantisation of … — ⚠ undocumented
@@ -675,6 +734,23 @@
 - `encodePeerSignal` (function): function encodePeerSignal(payload: PeerSignalPayload): string — ⚠ undocumented
 - `joinPeerSession` (function): function joinPeerSession(guest: PeerGuest, signaling: PeerSignaling): Promise<WsBackend> — ⚠ undocumented
 
+## @jgengine/ws/peer.d
+
+- `PeerGuest` (type): type PeerGuest = { backend: WsBackend; offer: () => Promise<string>; connect: (answerCode: string) => Promise<void>; close: () => void; } — ⚠ undocumented
+- `PeerGuestOptions` (type): type PeerGuestOptions = { userId: string; token?: string; rtc?: PeerRtcOptions; } — ⚠ undocumented
+- `PeerHost` (type): type PeerHost = { backend: WsBackend; host: GameServerHost; router: HostRouter; accept: (offerCode: string) => Promise<string>; close: () => void; } — ⚠ undocumented
+- `PeerHostOptions` (type): type PeerHostOptions = { userId: string; token?: string; host?: GameServerHost; runtimes?: GameRuntime[]; persistence?: HostPersistence; tickMs?: number; router?: Omit<HostRouterOptions, "host">; rtc?: PeerRtcOptions; } — ⚠ undocumented
+- `PeerRtcOptions` (type): type PeerRtcOptions = { configuration?: RTCConfiguration; iceGatherTimeoutMs?: number; } — ⚠ undocumented
+- `PeerSignalPayload` (type): type PeerSignalPayload = { type: "offer" | "answer"; sdp: string; } — ⚠ undocumented
+- `PeerSignaling` (type): type PeerSignaling = { publishOffer: (offerCode: string) => Promise<string>; onOffer: (answer: (offerCode: string) => Promise<string>) => () => void; close: () => void; } — ⚠ undocumented
+- `announcePeerHost` (function): function announcePeerHost(host: PeerHost, signaling: PeerSignaling): () => void — ⚠ undocumented
+- `broadcastChannelSignaling` (function): function broadcastChannelSignaling(room: string): PeerSignaling — ⚠ undocumented
+- `createPeerGuest` (function): function createPeerGuest(options: PeerGuestOptions): PeerGuest — ⚠ undocumented
+- `createPeerHost` (function): function createPeerHost(options: PeerHostOptions): PeerHost — ⚠ undocumented
+- `decodePeerSignal` (function): function decodePeerSignal(code: string): PeerSignalPayload | null — ⚠ undocumented
+- `encodePeerSignal` (function): function encodePeerSignal(payload: PeerSignalPayload): string — ⚠ undocumented
+- `joinPeerSession` (function): function joinPeerSession(guest: PeerGuest, signaling: PeerSignaling): Promise<WsBackend> — ⚠ undocumented
+
 ## @jgengine/ws/pipe
 
 - `TransportData` (type): type TransportData = string | Uint8Array<ArrayBuffer> — One transport message: JSON text, or bytes from the binary codec.
@@ -682,6 +758,14 @@
 - `TransportPipeFactory` (type): type TransportPipeFactory = (handlers: TransportPipeHandlers) => TransportPipe — ⚠ undocumented
 - `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string | Uint8Array) => void; onClose: () => void; } — ⚠ undocumented
 - `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
+
+## @jgengine/ws/pipe.d
+
+- `TransportData` (type): type TransportData = string | Uint8Array<ArrayBuffer> — One transport message: JSON text, or bytes from the binary codec.
+- `TransportPipe` (type): type TransportPipe = { send: (data: TransportData) => void; close: () => void; } — ⚠ undocumented
+- `TransportPipeFactory` (type): type TransportPipeFactory = (handlers: TransportPipeHandlers) => TransportPipe — ⚠ undocumented
+- `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string | Uint8Array) => void; onClose: () => void; } — ⚠ undocumented
+- `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory?: (url: string) => WebSocket): TransportPipeFactory — ⚠ undocumented
 
 ## @jgengine/ws/protocol
 
@@ -706,6 +790,31 @@
 - `WsRunCommandResult` (type): type WsRunCommandResult = TransportRunCommandResult — ⚠ undocumented
 - `WsServerMessage` (type): type WsServerMessage = | { v: 1; t: "pong"; id: number; at: number; serverAt: number } | { v: 1; t: "reply"; id: number; ok: true; result?: unknown } | { v: 1; t: "reply"; id: number; ok: false; reason: string } | WsUpdateMessage — ⚠ undocumented
 - `WsUpdateMessage` (type): type WsUpdateMessage = | { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null } | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null } | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unk… — ⚠ undocumented
+- `WsVoiceParticipant` (type): type WsVoiceParticipant = { userId: string; streamId?: string | undefined; } — ⚠ undocumented
+
+## @jgengine/ws/protocol.d
+
+- `MAX_APPEARANCE_ENTRIES` (const): const MAX_APPEARANCE_ENTRIES: 32 — Max number of keys in a pose `appearance` tag map.
+- `MAX_APPEARANCE_VALUE_LENGTH` (const): const MAX_APPEARANCE_VALUE_LENGTH: 256 — Max length of a single `appearance` tag string value, in UTF-16 code units.
+- `MAX_COMMAND_LENGTH` (const): const MAX_COMMAND_LENGTH: 4096 — Max length of a `runCommand` command name, in UTF-16 code units.
+- `MAX_FEED_ACTION_LENGTH` (const): const MAX_FEED_ACTION_LENGTH: 256 — Max length of a `pushFeed` action name, in UTF-16 code units.
+- `MAX_FEED_ENTRY_BYTES` (const): const MAX_FEED_ENTRY_BYTES: 65536 — Max serialized size of a `pushFeed` entry payload, in bytes.
+- `WS_PROTOCOL_VERSION` (const): const WS_PROTOCOL_VERSION: 1 — ⚠ undocumented
+- `WsAppearance` (type): type WsAppearance = Record<string, string | number | boolean> — Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only.
+- `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
+- `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
+- `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
+- `WsClientMessage` (type): type WsClientMessage = { v: 1; t: "ping"; id: number; at: number; } | { v: 1; t: "hello"; id: number; userId: string; token?: string | undefined; codec?: WsCodecName | undefined; } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string | undefined; attributes?: SessionAttributes | undefi… — ⚠ undocumented
+- `WsCodecName` (type): type WsCodecName = "json" | "binary" — Wire codec a client asks for in `hello`: `binary` (default for {@link createWsBackend}) or `json` for debugging.
+- `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number | undefined; } — ⚠ undocumented
+- `WsFrame` (type): type WsFrame = string | Uint8Array<ArrayBuffer> — One transport frame: JSON text, or a binary frame from {@link encodeWsFrame}.
+- `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
+- `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented
+- `WsPose` (type): type WsPose = PlayerPose & { appearance?: WsAppearance | undefined; } — ⚠ undocumented
+- `WsPresenceRow` (type): type WsPresenceRow = PresencePoseRow & { appearance?: WsAppearance | undefined; } — ⚠ undocumented
+- `WsRunCommandResult` (type): type WsRunCommandResult = TransportRunCommandResult — ⚠ undocumented
+- `WsServerMessage` (type): type WsServerMessage = { v: 1; t: "pong"; id: number; at: number; serverAt: number; } | { v: 1; t: "reply"; id: number; ok: true; result?: unknown; } | { v: 1; t: "reply"; id: number; ok: false; reason: string; } | WsUpdateMessage — ⚠ undocumented
+- `WsUpdateMessage` (type): type WsUpdateMessage = { v: 1; t: "update"; channel: "server"; serverId: string; data: GameRuntimeServerView | null; } | { v: 1; t: "update"; channel: "player"; serverId: string; data: GameRuntimePlayerView | null; } | { v: 1; t: "update"; channel: "feed"; serverId: string; action: string; data: unk… — ⚠ undocumented
 - `WsVoiceParticipant` (type): type WsVoiceParticipant = { userId: string; streamId?: string | undefined; } — ⚠ undocumented
 
 ## @jgengine/ws/readsHandler
@@ -734,6 +843,12 @@
 - `createVoiceChannelRouter` (function): function createVoiceChannelRouter(channels?: readonly VoiceChannelDef[]): VoiceChannelRouter — ⚠ undocumented
 
 ## @jgengine/ws/worldHost
+
+- `WorldGameHost` (interface): interface WorldGameHost extends GameServerHost — A {@link GameServerHost} backed by `HostedWorldSession`s; `tick` advances worlds and `unload` explicitly saves and releases idle world references.
+- `WorldGameHostOptions` (interface): interface WorldGameHostOptions — Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server.
+- `createWorldGameHost` (function): function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost — The GameContext-loop counterpart of the reducer `createGameServerHost`: a structural {@link GameServerHost} that serves each world's full `WorldSnapshot` as `serverState`, so the existing ws router, `createWsBackend`, and the shell's `attachWorldSync` carry host-authoritative GameContext worlds with zero changes to any of them. The harness owns the tick cadence (call {@link WorldGameHost.tick} on an interval); commands and joins broadcast immediately.
+
+## @jgengine/ws/worldHost.d
 
 - `WorldGameHost` (interface): interface WorldGameHost extends GameServerHost — A {@link GameServerHost} backed by `HostedWorldSession`s; `tick` advances worlds and `unload` explicitly saves and releases idle world references.
 - `WorldGameHostOptions` (interface): interface WorldGameHostOptions — Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server.

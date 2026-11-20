@@ -12,8 +12,8 @@ import { resolveTerrainField } from "@jgengine/core/terrain/terrain";
 import type { CameraRigConfig } from "@jgengine/core/runtime/cameraDirector";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import { applyStoredDevtoolsOverrides } from "@jgengine/core/devtools/DevtoolsOverlay.draw";
-import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
-import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
+import type { UiPreviewScenario } from "@jgengine/core/shell/GameUiPreview.draw";
+import type { GameRegistry, PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { CAM, resolvedLook, resolvedLookFrom } from "./appEnv";
 import { setCaptureStatus } from "./captureReady";

@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneRoot } from "@jgengine/core/ui/rune/primitives.view";
-import { useGamePhase, useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGamePhase, useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { openScreen } from "../screens";
 import { Hud, playFocus } from "./Hud";

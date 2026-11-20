@@ -30,7 +30,7 @@ import { EditableGround } from "@jgengine/core/terrain/EditableGround.draw";
 import { TerraformBrushCursor } from "@jgengine/core/terrain/TerraformBrushCursor.draw";
 import { PlacementGhost } from "@jgengine/core/placement/PlacementGhost.draw";
 import { TransformGizmo } from "@jgengine/core/placement/TransformGizmo.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const BOUNDS: Aabb = { minX: -20, minZ: -20, maxX: 20, maxZ: 20 };
 const FOOTPRINT = { w: 3, d: 3 };

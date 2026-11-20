@@ -318,7 +318,7 @@ function main(): void {
   const version = (pkg: string) => JSON.parse(read(`packages/${pkg}/package.json`)).version as string;
 
   // Every package must already take trusted publishing, or Publish stops part-way and `latest` points at
-  // a set that cannot install (0.56.0 published five packages, then npm had never heard of @jgengine/ui).
+  // a set that cannot install (0.56.0 published five packages, then npm had never heard of @jgengine/core/ui.view).
   const trusted = spawnSync("bun", ["scripts/check-npm-trusted.ts"], { cwd: root, stdio: "inherit" });
   if (trusted.status !== 0) {
     console.error("release: stopped before cutting; nothing was published.");

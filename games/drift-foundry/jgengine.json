@@ -6,8 +6,6 @@
     "assets",
     "core",
     "editor",
-    "ui",
-    "shell",
     "ws"
   ],
   "owns": [

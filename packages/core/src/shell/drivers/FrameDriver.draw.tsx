@@ -1,0 +1,480 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReplayRecorder } from "@jgengine/core/replay/replayRecording";
+import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
+
+import { RESERVED_INPUT_ACTIONS, dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "@jgengine/core/input/boundActionDispatch";
+import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "@jgengine/core/input/hotbarActions";
+import { pointerAimFor } from "@jgengine/core/input/shellPointer.draw";
+import { shellDrivesPlayerPose } from "@jgengine/core/movement/shellMovement";
+import type { Aim } from "@jgengine/core/scene/spatial";
+import { steerYaw } from "@jgengine/core/movement/steering";
+import { stepPlayerMovement, resolvePlayerMovementTuning } from "@jgengine/core/movement/playerMovement";
+import { localPlayers } from "@jgengine/core/runtime/localPlayers";
+import { seatCameraYaw } from "@jgengine/core/camera/Viewports.draw";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
+import { resolveCommandSink, type CommandSink } from "@jgengine/core/commands/commandSink";
+import { inputFramesEqual, resolveInputSink, type InputSink } from "@jgengine/core/input/inputSink";
+import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
+import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
+import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
+import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
+import { DEFAULT_PICKUP_RADIUS } from "@jgengine/core/loot/groundItem";
+import { playControlsActive } from "@jgengine/core/game/controlGate";
+import { devtools } from "@jgengine/core/devtools/devtools";
+import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
+
+import { collisionDebug } from "@jgengine/core/devtools/collisionDebug";
+import { createAimRecoil } from "@jgengine/core/camera/aimRecoil";
+import { registerSimStepper } from "@jgengine/core/sim/simStepper";
+import { createIdleTask, createRecordedTime, shouldStepAhead } from "@jgengine/core/runtime/simAhead";
+import { GAME_SIM_FRAME_PRIORITY } from "@jgengine/core/camera/orbitCameraMath";
+import { NO_ACTIONS } from "../shellConstants";
+import type { PointerService } from "@jgengine/core/input/pointerService.draw";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
+import type { PlayableGame } from "../registry.draw";
+import type { AuthoritativeFrameHandler } from "@jgengine/core/multiplayer/authoritativeSync";
+import { createPredictionBuffer } from "@jgengine/core/runtime/prediction";
+import type { EntityPosition } from "@jgengine/core/scene/entityStore";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+
+const TURN_SPEED = 2.4;
+
+export const POSTER_SETTLE_SECONDS = 1.6;
+
+export function FrameDriver({
+  ctx,
+  playable,
+  tracker,
+  yawRef,
+  pitchRef,
+  primaryClickRef,
+  pointerAxisRef,
+  analogRef,
+  gateRef,
+  onRuntimeError,
+  multiplayer,
+  serverIdRef,
+  pointerService,
+  pointerAim,
+  pingCommand,
+  poster,
+  onPosterSettled,
+  authoritativeFrameRef,
+  recorder,
+  onFrameMs,
+}: {
+  ctx: GameContext;
+  playable: PlayableGame;
+  tracker: ActionStateTracker<string>;
+  yawRef: { current: number };
+  pitchRef: { current: number };
+  primaryClickRef: { current: boolean };
+  pointerAxisRef: { current: PointerAxisState | null };
+  analogRef: { current: Readonly<Record<string, number>> | null };
+  gateRef: { current: boolean };
+  onRuntimeError: (error: unknown, phase: string) => void;
+  multiplayer: ShellMultiplayer | null;
+  serverIdRef: { current: string | null };
+  pointerService: PointerService;
+  pointerAim: boolean;
+  pingCommand: string | undefined;
+  poster: boolean;
+  onPosterSettled: () => void;
+  authoritativeFrameRef: { current: AuthoritativeFrameHandler | null };
+  /** Records each frame of play (time, held and pressed actions, look) for a deterministic replay. */
+  recorder?: ReplayRecorder | undefined;
+  /** Each rendered frame's duration in ms, for runtime health (auto quality, frame percentiles). */
+  onFrameMs?: ((frameMs: number) => void) | undefined;
+}) {
+  const posterElapsedRef = useRef(0);
+  const posterDoneRef = useRef(false);
+  const hasReportedTickError = useRef(false);
+  const recordedTime = useMemo(createRecordedTime, [recorder]);
+  const repeatFiredAtRef = useRef<Map<string, number>>(new Map());
+  const recoil = useMemo(createAimRecoil, []);
+  useEffect(() => {
+    let kicks = 0;
+    let peak = 0;
+    const off = ctx.game.events.on("combat.recoil", (event) => {
+      const local = event.from === ctx.player.userId || event.from === ctx.player.possession.active(ctx.player.userId);
+      if (!local) return;
+      recoil.kick(event.pitch, event.yaw, event.recover);
+      kicks += 1;
+    });
+    const offProbe = devtools.probes.registerSystem("input/recoil", {
+      counters: () => {
+        const climb = recoil.debt().pitch;
+        peak = Math.max(peak, climb);
+        return { kicks, climbMrad: Math.round(climb * 1000), peakMrad: Math.round(peak * 1000) };
+      },
+      state: () => `${kicks} kicks · climb ${(recoil.debt().pitch * 1000).toFixed(0)} mrad`,
+    });
+    return () => {
+      off();
+      offProbe();
+    };
+  }, [ctx, recoil]);
+  const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
+  const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
+  const movementTuning = useMemo(
+    () => ({ ...resolvePlayerMovementTuning({
+      collision: playable.controls?.collision,
+      movement: playable.controls?.movement,
+      physics: playable.game.physics,
+      world: playable.game.world,
+    }), authoritativeStep: true }),
+    [playable],
+  );
+  const autoPickupRadius = useMemo(() => {
+    const cfg = playable.scene?.worldItem?.autoPickup;
+    if (cfg === undefined || cfg === false) return null;
+    const fallback = playable.scene?.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
+    return cfg === true ? fallback : cfg.radius ?? fallback;
+  }, [playable]);
+  const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
+  const serverAuthoritative = useMemo(
+    () => isServerAuthoritative(playable.game.multiplayer) && multiplayer !== null,
+    [playable, multiplayer],
+  );
+  const commandSink = useMemo<CommandSink>(
+    () => ({
+      run: (name, input) =>
+        resolveCommandSink(ctx, {
+          serverAuthoritative,
+          backend: multiplayer?.backend ?? null,
+          serverId: serverIdRef.current,
+        }).run(name, input),
+    }),
+    [ctx, multiplayer, serverAuthoritative, serverIdRef],
+  );
+  const inputSink = useMemo<InputSink>(
+    () => ({
+      send: (frame) =>
+        resolveInputSink({
+          serverAuthoritative,
+          backend: multiplayer?.backend ?? null,
+          serverId: serverIdRef.current,
+        }).send(frame),
+    }),
+    [multiplayer, serverAuthoritative, serverIdRef],
+  );
+  const lastSentInputRef = useRef<InputFrame | null>(null);
+  const predictionRef = useRef(createPredictionBuffer<EntityPosition>({
+    initial: [0, 0, 0],
+    maxTicks: 120,
+    step: (state: EntityPosition) => state,
+    snapThreshold: 0.1,
+  }));
+  const predictionHandler = useMemo<AuthoritativeFrameHandler>(() => (_revision) => {
+    const playerId = ctx.player.possession.active(ctx.player.userId);
+    const player = ctx.scene.entity.get(playerId);
+    if (player === null) return;
+    const prediction = predictionRef.current;
+    const current = player.position;
+    const snapshot = prediction.snapshot();
+    const tick = snapshot.records.at(-1)?.tick ?? snapshot.confirmedTick;
+    const result = prediction.reconcile(tick, current);
+    if (result.snapped) ctx.scene.entity.setPose(playerId, { position: current });
+  }, [ctx]);
+  authoritativeFrameRef.current = serverAuthoritative ? predictionHandler : null;
+
+  // One fixed step of the simulation: movement, stages, onTick and behaviors. The frame's advance runs it,
+  // and so does the step run ahead between frames.
+  const runStep = (stepDt: number, gameDt: number, playerId: string): void => {
+    ctx.input.beginStep();
+    const movementDt = serverAuthoritative ? stepDt : gameDt;
+    if (!serverAuthoritative) ctx.sim.runStages("beforeMovement", stepDt);
+    const player = ctx.scene.entity.get(playerId);
+    // Server-authoritative sessions still run the deterministic local step as a prediction; the
+    // replicated pose is the confirmation that the transport reconciles on the next world diff.
+    if (player !== null && drivesPose && movementDt > 0) {
+      const endPose = devtools.profile.begin("pose");
+      stepPlayerMovement(
+        ctx,
+        ctx.player.userId,
+        { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() },
+        movementDt,
+        movementTuning,
+        yawRef.current,
+        pitchRef.current,
+      );
+      const predicted = ctx.scene.entity.get(playerId);
+      if (predicted !== null) {
+        predictionRef.current.record(
+          { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog(), tick: ctx.sim.tick() },
+          movementDt,
+          predicted.position,
+        );
+      }
+      endPose();
+    }
+    if (drivesPose && !serverAuthoritative && movementDt > 0) {
+      const table = localPlayers(ctx);
+      const seats = table.slots();
+      for (let index = 1; index < seats.length; index += 1) {
+        const seat = table.local(seats[index]!.slotId);
+        if (seat === null) continue;
+        stepPlayerMovement(
+          ctx,
+          seat.userId,
+          { held: seat.input.held(), pointer: null, analog: seat.input.analog() },
+          movementDt,
+          movementTuning,
+          seatCameraYaw(ctx, seat.userId),
+        );
+      }
+    }
+    if (!serverAuthoritative) ctx.sim.runStages("afterMovement", stepDt);
+
+    if (autoPickupRadius !== null && !serverAuthoritative) {
+      const endPickup = devtools.profile.begin("pickup");
+      const self = ctx.scene.entity.get(playerId);
+      if (self !== null) {
+        const nearest = ctx.scene.worldItem.nearestInRadius(self.position, autoPickupRadius);
+        if (nearest !== null) ctx.scene.worldItem.pickup(nearest, ctx.player.userId);
+      }
+      endPickup();
+    }
+
+    if (!serverAuthoritative) {
+      devtools.profile.measure("onTick", () => {
+        playable.loop.onTick(ctx, gameDt);
+      });
+      advanceBehaviors(ctx, gameDt);
+    }
+    if (!serverAuthoritative) ctx.sim.runStages("afterTick", stepDt);
+  };
+
+  // One frame of simulation — input, movement, onTick, behaviors, bound actions — shared by the
+  // render loop and the agent bridge's render-free `sim_advance`.
+  /** Returns false when play is gated (menu, pause) and nothing advanced. */
+  const simulate = (rawDt: number): boolean => {
+    const sendInput = () => {
+      if (!serverAuthoritative) return;
+      const frame: InputFrame = {
+        held: ctx.input.held(),
+        pointer: ctx.input.pointer(),
+        analog: ctx.input.analog(),
+        tick: ctx.sim.tick(),
+      };
+      const last = lastSentInputRef.current;
+      if (last !== null && inputFramesEqual(last, frame)) return;
+      lastSentInputRef.current = frame;
+      inputSink.send(frame);
+    };
+    if (gateRef.current || !playControlsActive(ctx)) {
+      ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS), { reset: true });
+      ctx.input.publishAnalog(null);
+      sendInput();
+      return false;
+    }
+    try {
+    let endPhase = devtools.profile.begin("time+input");
+    const dt = Math.min(rawDt, 0.05);
+    ctx.input.publish(heldActionsFor(tracker, tracker.actions()), {});
+    ctx.input.publishPointer(pointerAxisRef.current);
+    ctx.input.publishAnalog(analogRef.current);
+    sendInput();
+    const turnInput = (tracker.isDown("turnRight") ? 1 : 0) - (tracker.isDown("turnLeft") ? 1 : 0);
+    if (turnInput !== 0) yawRef.current = steerYaw(yawRef.current, turnInput, TURN_SPEED, dt);
+    if (recorder !== undefined && !recorder.full()) {
+      const actions = tracker.actions();
+      recorder.frame({
+        dt: recordedTime.frame(dt),
+        held: ctx.input.held(),
+        pressed: actions.filter((action) => tracker.wasPressed(action)),
+        yaw: yawRef.current,
+        pitch: pitchRef.current,
+      });
+    }
+    // Recoil moves the look only where the look is the aim; a free cursor aims on its own.
+    const kick = recoil.step(dt);
+    const cursorAims = pointerAim && (typeof document === "undefined" || document.pointerLockElement === null);
+    if (!cursorAims && (kick.pitch !== 0 || kick.yaw !== 0)) {
+      pitchRef.current = Math.max(-1.2, Math.min(1.2, pitchRef.current + kick.pitch));
+      yawRef.current += kick.yaw;
+    }
+    endPhase();
+
+    const playerId = ctx.player.possession.active(ctx.player.userId);
+    ctx.sim.advance(dt, (stepDt, _tick, gameDt) => runStep(stepDt, gameDt, playerId), { advanceTime: !serverAuthoritative });
+
+    endPhase = devtools.profile.begin("actions");
+    if (tracker.wasPressed("tabTarget")) {
+      if (ctx.game.commands.has("target.cycle")) commandSink.run("target.cycle", {});
+      else ctx.scene.entity.cycleTarget(playerId, { filter: "hostile" });
+    }
+    if (tracker.wasPressed("clearTarget")) {
+      if (ctx.game.commands.has("target.clear")) commandSink.run("target.clear", {});
+      else ctx.scene.entity.setTarget(playerId, null);
+    }
+    if (pingCommand !== undefined && tracker.wasPressed("ping")) {
+      const hit = pointerService.worldHit();
+      if (hit !== null && ctx.game.commands.has(pingCommand)) {
+        commandSink.run(pingCommand, {
+          point: hit.point,
+          entity: hit.entity,
+          object: hit.object,
+          normal: hit.normal,
+        });
+      }
+    }
+    // The cursor ray is a whole-scene raycast, so it runs only on a frame that fires something.
+    // A locked pointer (mouse-look) has no cursor to aim at; it keeps the crosshair aim.
+    let aimResolved = false;
+    let aimOverrideValue: Aim | undefined;
+    const aimOverrideNow = (): Aim | undefined => {
+      if (!aimResolved) {
+        aimResolved = true;
+        const locked = typeof document !== "undefined" && document.pointerLockElement !== null;
+        aimOverrideValue = pointerAim && !locked ? pointerAimFor(ctx, pointerService) : undefined;
+      }
+      return aimOverrideValue;
+    };
+    const commandAimNow = (): Aim => aimOverrideNow() ?? { yaw: yawRef.current, pitch: pitchRef.current };
+    if (collisionDebug.getState().layers.aimLaser) {
+      const aimFrom = ctx.player.possession.active(playerId) ?? playerId;
+      collisionDebug.setAimProbe({
+        from: aimFrom,
+        aim: commandAimNow(),
+        originPolicy: { kind: "converge" },
+        maxDistance: 100,
+      });
+    } else if (collisionDebug.getAimProbe() !== null) {
+      collisionDebug.setAimProbe(null);
+    }
+    const nowMs = performance.now();
+    for (const action of Object.keys(playable.game.input ?? {})) {
+      const pressed = tracker.wasPressed(action);
+      if (action === "ping" && pingCommand !== undefined) continue;
+      if (action === "interact") {
+        if (!pressed) continue;
+        const prompts = playable.controls?.prompts?.(ctx);
+        const focus = prompts === undefined ? null : ctx.scene.entity.get(playerId);
+        if (prompts !== undefined && focus !== null) {
+          const active = resolveActivePrompt({ x: focus.position[0], z: focus.position[2] }, prompts);
+          if (active !== null && active.prompt.invoke !== null) {
+            commandSink.run(active.prompt.invoke.name, active.prompt.invoke.input);
+          }
+        }
+        continue;
+      }
+      if (!shouldFireBoundAction(tracker, action, playable.game.input, repeatFiredAtRef.current, nowMs)) continue;
+      repeatFiredAtRef.current.set(action, nowMs);
+      dispatchBoundAction(ctx, action, yawRef.current, pitchRef.current, commandAimNow(), RESERVED_INPUT_ACTIONS, commandSink, !pressed);
+    }
+    if (hotbarId !== null) {
+      for (const { action, slot } of slotActions) {
+        if (!tracker.wasPressed(action)) continue;
+        const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current, aimOverrideNow());
+        if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
+      }
+      const usePrimary =
+        tracker.wasPressed("useAbility") || (primaryClickRef.current && hotbarId !== null);
+      if (usePrimary) {
+        primaryClickRef.current = false;
+        const slots = ctx.player.inventory.state(hotbarId).slots;
+        const preferred = playable.controls?.hotbarSelection?.() ?? -1;
+        const slot =
+          preferred >= 0 && slots[preferred] !== null && slots[preferred] !== undefined
+            ? preferred
+            : slots.findIndex((stack) => stack !== null);
+        if (slot >= 0) {
+          const result = executeHotbarSlot(ctx, playerId, hotbarId, slot, yawRef.current, pitchRef.current, aimOverrideNow());
+          if (!result.ok) console.warn(`[jgengine:item-use] ${result.error}`);
+        }
+      }
+    }
+    tracker.endFrame();
+    endPhase();
+
+    const serverId = serverIdRef.current;
+    if (multiplayer !== null && serverId !== null) {
+      endPhase = devtools.profile.begin("presence");
+      const focus = ctx.scene.entity.get(playerId);
+      if (focus !== null) {
+        multiplayer.backend.presenceSync.syncPose(serverId, {
+          x: focus.position[0],
+          y: focus.position[1],
+          z: focus.position[2],
+          rotationY: focus.rotationY,
+          rotationPitch: pitchRef.current,
+        });
+      }
+      endPhase();
+    }
+    } catch (error) {
+      if (!hasReportedTickError.current) {
+        hasReportedTickError.current = true;
+        onRuntimeError(error, "tick");
+      }
+    }
+    return true;
+  };
+  const simulateRef = useRef(simulate);
+  simulateRef.current = simulate;
+  useEffect(() => (poster ? undefined : registerSimStepper((rawDt) => ctx.batch(() => simulateRef.current(rawDt)))), [poster, ctx]);
+
+  // A frame without a step costs a sixth of one with it at 360 fps, so the step the next frame owes runs
+  // between frames instead, in the time the main thread waits for the GPU and compositor. Its phases are
+  // kept apart and handed to the next frame's record as `ahead`, so the frame's own sim time stays its own.
+  const stepsAhead = !poster && !serverAuthoritative;
+  const aheadPhasesRef = useRef<Record<string, number> | null>(null);
+  const stepAhead = () => {
+    if (gateRef.current || !playControlsActive(ctx)) return;
+    const until = ctx.sim.loop.untilStep();
+    if (until === null) return;
+    const framePhases = devtools.profile.current();
+    devtools.profile.reset();
+    const start = performance.now();
+    try {
+      const playerId = ctx.player.possession.active(ctx.player.userId);
+      const stepped = ctx.batch(() => ctx.sim.stepAhead((stepDt, _tick, gameDt) => runStep(stepDt, gameDt, playerId)));
+      // The replay gets the early step as a frame of its own, with the input it ran on and the time that
+      // makes it fall due, so playing the replay runs every step on the same input at the same point.
+      if (stepped && recorder !== undefined && !recorder.full()) {
+        recorder.frame({ dt: recordedTime.ahead(until), held: ctx.input.held(), pressed: [], yaw: yawRef.current, pitch: pitchRef.current });
+      }
+    } catch (error) {
+      if (!hasReportedTickError.current) {
+        hasReportedTickError.current = true;
+        onRuntimeError(error, "tick");
+      }
+    } finally {
+      const phases = devtools.profile.current();
+      let named = 0;
+      for (const ms of Object.values(phases)) named += ms;
+      const other = performance.now() - start - named;
+      if (other > 0) phases["other"] = other;
+      aheadPhasesRef.current = phases;
+      devtools.profile.reset();
+      for (const [name, ms] of Object.entries(framePhases)) devtools.profile.add(name, ms);
+    }
+  };
+  const stepAheadRef = useRef(stepAhead);
+  stepAheadRef.current = stepAhead;
+  const idleStep = useMemo(() => createIdleTask(() => stepAheadRef.current()), []);
+  useEffect(() => () => idleStep.dispose(), [idleStep]);
+
+  useFrameTask((_state, rawDt) => {
+    if (poster) {
+      if (posterDoneRef.current) return;
+      posterElapsedRef.current += Math.min(rawDt, 0.05);
+      if (posterElapsedRef.current >= POSTER_SETTLE_SECONDS) {
+        posterDoneRef.current = true;
+        onPosterSettled();
+        return;
+      }
+    }
+    onFrameMs?.(rawDt * 1000);
+    const simStart = performance.now();
+    if (!ctx.batch(() => simulate(rawDt))) return;
+    const simMs = performance.now() - simStart;
+    const ahead = aheadPhasesRef.current;
+    aheadPhasesRef.current = null;
+    devtools.frame.record(ahead === null ? { frameMs: rawDt * 1000, simMs } : { frameMs: rawDt * 1000, simMs, ahead });
+    if (stepsAhead && shouldStepAhead(ctx.sim.loop, Math.min(rawDt, 0.05))) idleStep.request();
+  }, GAME_SIM_FRAME_PRIORITY);
+  return null;
+}

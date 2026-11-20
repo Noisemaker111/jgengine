@@ -1,4 +1,4 @@
-import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import { hazardCycleAt, type HazardCycleConfig } from "@jgengine/core/combat/telegraph";
 
 // The joint: one authored hazard config drives BOTH the fairness contract (when it

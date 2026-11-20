@@ -7,7 +7,7 @@ import type { LiveGameBackend } from "@jgengine/core/runtime/transport";
 import { remoteCommandSink } from "@jgengine/core/commands/commandSink";
 import { attachShellNotices } from "./ShellNotices.view";
 import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 function gameCtx() {
   const ctx = createGameContext({

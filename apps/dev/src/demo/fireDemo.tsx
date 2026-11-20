@@ -5,7 +5,7 @@ import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { FireLandscapeView } from "@jgengine/core/fire/FireLandscape.draw";
 import { createFireLandscape, type FireLandscape, type FireWeather } from "@jgengine/core/fire/fireLandscape";
 import { createFuelMoistureModel, type MoistureWeather } from "@jgengine/core/fire/fuelMoisture";

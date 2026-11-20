@@ -57,7 +57,7 @@ export interface WaypointMarkersProps {
   /**
    * World→screen projector — caller-owned, so this seam never depends on a
    * specific camera. Games get one from `useWorldProjection` in
-   * `@jgengine/shell/world/WorldEntityFrames`; return `null` to skip a waypoint.
+   * `@jgengine/core/shell/world/WorldEntityFrames.draw`; return `null` to skip a waypoint.
    */
   project: ProjectEntity;
   /** Viewport size (CSS px) markers are laid out within. */

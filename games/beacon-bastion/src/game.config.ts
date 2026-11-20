@@ -1,6 +1,6 @@
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
-import { defineGame } from "@jgengine/shell/gameKit";
+import { defineGame } from "@jgengine/core/shell/gameKit.draw";
 
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";

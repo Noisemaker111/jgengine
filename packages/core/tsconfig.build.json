@@ -3,17 +3,29 @@
   "compilerOptions": {
     "noEmit": false,
     "declaration": true,
-    "outDir": "dist",
-    "rootDir": "src",
+    "outDir": "../../.scratch/core-build",
+    "rootDir": "..",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "WebWorker"
+    ],
     "paths": {
-      "@jgengine/core/*": ["./src/*"]
+      "@jgengine/core": [
+        "./src/index.ts"
+      ],
+      "@jgengine/core/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
     "src"
   ],
   "exclude": [
-    "src/**/*.test.ts", "src/**/*.test.tsx",
-    "src/testFixtures.ts", "src/**/testFixtures/**"
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/testFixtures.ts",
+    "src/**/testFixtures/**"
   ]
 }

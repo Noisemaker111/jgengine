@@ -5,7 +5,7 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import * as THREE from "three";
 
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { applyModelWind, resolveModelWind, windClock } from "@jgengine/core/model/modelWind.draw";
 
 import { demoGame } from "./demoGame";

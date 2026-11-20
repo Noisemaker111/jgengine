@@ -34,12 +34,12 @@ describe("pass cache", () => {
   });
 
   test("a rebase that only brings in other files leaves the unit fresh; one that edits its input does not", () => {
-    const { files, open } = fixture({ "packages/core/src/a.ts": "1", "packages/shell/src/b.ts": "1" });
+    const { files, open } = fixture({ "packages/core/src/a.ts": "1", "packages/core/src/shell/b.ts": "1" });
     const cache = open();
     cache.record("test:a.test.ts", ["packages/core/src/a.ts"]);
     cache.record("gate:check-artifacts", [WHOLE_TREE]);
     cache.save();
-    files["packages/shell/src/b.ts"] = "2";
+    files["packages/core/src/shell/b.ts"] = "2";
     expect(open().fresh("test:a.test.ts", ["packages/core/src/a.ts"])).toBe(true);
     // A gate reads the whole tree, so any moved file re-runs it.
     expect(open().fresh("gate:check-artifacts", [WHOLE_TREE])).toBe(false);

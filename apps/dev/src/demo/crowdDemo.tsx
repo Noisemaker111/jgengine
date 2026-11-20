@@ -5,8 +5,8 @@ import { seededRng } from "@jgengine/core/random/rng";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, terrain } from "@jgengine/core/world/features";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { useStore } from "@jgengine/ui/store";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useStore } from "@jgengine/core/ui/store.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
@@ -15,7 +15,7 @@ import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { SkinnedInstances, type CrowdInstance } from "@jgengine/core/anim/SkinnedInstances.draw";
 import { cloneModelScene, disposeModelScene } from "@jgengine/core/model/modelRender.draw";
 import { useModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";

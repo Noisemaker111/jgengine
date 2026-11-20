@@ -14,13 +14,11 @@ The seam is data-first and caller-owned: pass an array of
 ## Install
 
 ```sh
-bun add @jgengine/core @jgengine/ui
-# @jgengine/shell only for the scene projection convenience below
-bun add @jgengine/shell
+bun add @jgengine/core
 ```
 
 `@jgengine/core/hud/entityFrames.view` imports no Three.js and
-needs no `GameProvider`. The `@jgengine/shell` piece is a thin scene convenience.
+needs no `GameProvider`. The `@jgengine/core/shell` piece is a thin scene convenience.
 
 ## 3D game: one component from your own entity array
 
@@ -30,7 +28,7 @@ already have and a `renderFrame` that composes the kit's `KitMeter` plus a
 name. Projection, culling, and stacking come for free.
 
 ```tsx
-import { WorldEntityFrames } from "@jgengine/shell/world/WorldEntityFrames";
+import { WorldEntityFrames } from "@jgengine/core/shell/world/WorldEntityFrames.draw";
 import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 interface Enemy {

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createReplayRecorder, replayRecordingProblem } from "@jgengine/core/replay/replayRecording";
 import { environment, terrain } from "@jgengine/core/world/features";
-import { defineGame } from "@jgengine/shell/defineGame";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 
 import { playReplayRecording } from "./replayPlayback.draw";
 import { createPlaySession } from "@jgengine/core/play/playSession.draw";

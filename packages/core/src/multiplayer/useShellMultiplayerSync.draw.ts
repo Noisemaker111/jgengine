@@ -7,7 +7,7 @@ import { createTransportSessionId, type PresencePoseRow } from "@jgengine/core/r
 
 import { attachWorldSync, type AuthoritativeFrameHandler } from "./authoritativeSync";
 import type { ShellMultiplayer } from "./multiplayer.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 /** Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown. */
 export function useShellMultiplayerSync(

@@ -1,9 +1,9 @@
-import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 // The joint: `pointer.moveCommand` runs on every left-click with the clicked `entity`
 // (or null on open ground), so one command turns clicks into ctx.scene.entity.setTarget.
 // Tab cycles hostiles with cycleTarget. The HUD reads the same target:
-//   const target = useTarget(userId)   (@jgengine/ui)
+//   const target = useTarget(userId)   (@jgengine/core/ui.view)
 //   const hp = useEntityStat(target ?? "", "health")   then <KitMeter value={hp.current} max={hp.max} />
 const targeting = defineSystem({
   id: "targeting",

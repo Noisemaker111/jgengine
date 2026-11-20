@@ -6,7 +6,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## accessibility-provider — apply accessibility preferences to a subtree — text-scale CSS var and reduced-motion/high-contrast/colorblind/captions data attrs
 
-- `AccessibilityProvider` (function) · `import { AccessibilityProvider } from "@jgengine/ui"`
+- `AccessibilityProvider` (function) · `import { AccessibilityProvider } from "@jgengine/core/ui/accessibility.view"`
 
 ## accessibility-settings — read accessibility preferences and the hold-vs-toggle choice from the shared settings store
 
@@ -20,41 +20,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAccessibilityStore` (function) · `import { createAccessibilityStore } from "@jgengine/core/ui"`
 
-## achievement-gallery — responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header
-
-- `AchievementGallery` (function) · `import { AchievementGallery } from "@jgengine/ui"`
-
-## achievement-toast — unlock-moment banner (icon, heading, name, points) for an achievement toast queue
-
-- `AchievementToast` (function) · `import { AchievementToast } from "@jgengine/ui"`
-
 ## action-bar — the HUD action bar — abilities with cooldown slots or a kit build strip with costs, progress meters and the interact prompt, over one action model
 
-- `ActionBar` (function) · `import { ActionBar } from "@jgengine/ui"`
+- `ActionBar` (function) · `import { ActionBar } from "@jgengine/core/hud/actionHud.view"`
 
 ## action-bar-chrome — accessible grid/list toolbar renderer over an action-bar model with swappable item chrome
 
-- `ActionBarChrome` (function) · `import { ActionBarChrome } from "@jgengine/ui"`
+- `ActionBarChrome` (function) · `import { ActionBarChrome } from "@jgengine/core/hud/actionHud.view"`
 
 ## action-bar-model — headless action-collection model with focus, hover, keyboard, and hotkey routing
 
-- `useActionBar` (function) · `import { useActionBar } from "@jgengine/ui"`
+- `useActionBar` (function) · `import { useActionBar } from "@jgengine/core/hud/actionHud.view"`
 
 ## action-button — cooldown/cost/hotkey action button with complete interaction states
 
-- `ActionButton` (function) · `import { ActionButton } from "@jgengine/ui"`
+- `ActionButton` (function) · `import { ActionButton } from "@jgengine/core/hud/actionHud.view"`
 
 ## action-from-ability-slot — adapt a combat ability-kit snapshot into an action-bar action def
 
-- `actionFromAbilitySlot` (function) · `import { actionFromAbilitySlot } from "@jgengine/ui"`
-
-## action-glyph — the key, pad button or tap label for an action on the device in use
-
-- `actionGlyph` (function) · `import { actionGlyph } from "@jgengine/ui"`
+- `actionFromAbilitySlot` (function) · `import { actionFromAbilitySlot } from "@jgengine/core/hud/actionHud.view"`
 
 ## action-tooltip — structured action tooltip body (title, cost, cooldown, blocking notes)
 
-- `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/ui"`
+- `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/core/hud/actionHud.view"`
 
 ## adjust-setting-row — step a settings row value once, for keyboard and gamepad alike
 
@@ -62,52 +50,24 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 
-- `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/ui"`
-
-## browser-suspension — observe blur, hidden-page and pointer-lock loss while the game owns pause and input policy
-
-- `useBrowserSuspension` (function) · `import { useBrowserSuspension } from "@jgengine/ui"`
-
-## browser-suspension-observer — observe browser interruptions outside the UI runtime with caller-owned pause policy and event sources
-
-- `observeBrowserSuspension` (function) · `import { observeBrowserSuspension } from "@jgengine/ui"`
-
-## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
-
-- `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/ui"`
+- `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/core/ui/hooks.view"`
 
 ## canvas-cover — stop world rendering behind a full-screen surface while input, audio, the HUD and the menu keep running
 
-- `canvasCover` (const) · `import { canvasCover } from "@jgengine/ui"`
-
-## character-paperdoll — equip-slot paperdoll — flanking columns around a portrait, activatable slots
-
-- `Paperdoll` (function) · `import { Paperdoll } from "@jgengine/ui"`
-
-## character-sheet — drop-in paperdoll + derived-stat sheet in a HudFrame — game supplies slots/stats
-
-- `CharacterSheet` (function) · `import { CharacterSheet } from "@jgengine/ui"`
-
-## character-statlist — derived-stat readout — grouped small-caps label→value rows, token-themed
-
-- `StatList` (function) · `import { StatList } from "@jgengine/ui"`
+- `canvasCover` (const) · `import { canvasCover } from "@jgengine/core/ui/canvasCover.view"`
 
 ## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/ui"`
 
-## codex-gallery — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
-
-- `CodexPanel` (function) · `import { CodexPanel } from "@jgengine/ui"`
-
 ## colorblind-filters — SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
 
-- `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/ui"`
+- `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/core/ui/accessibility.view"`
 
 ## colorblind-frame — apply the player's colour-vision mode to the 3D frame alone, leaving HUD and menu text unfiltered
 
-- `ColorblindFrame` (function) · `import { ColorblindFrame } from "@jgengine/ui"`
+- `ColorblindFrame` (function) · `import { ColorblindFrame } from "@jgengine/core/ui/accessibility.view"`
 
 ## colorblind-frame-filter — resolve a colorblind mode to the CSS filter for the 3D frame alone
 
@@ -115,31 +75,31 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## colorblind-frame-mode — read the live colour-vision mode from the settings store that the settings rows write
 
-- `useColorblindMode` (function) · `import { useColorblindMode } from "@jgengine/ui"`
+- `useColorblindMode` (function) · `import { useColorblindMode } from "@jgengine/core/ui/accessibility.view"`
 
 ## combo-meter-hud — drop-in HUD for a core combo meter — big live count, free-string tier label, derived multiplier, and a draining decay-window bar, per-tier colored from a caller map and HudTheme-token skinnable
 
-- `ComboMeterHud` (function) · `import { ComboMeterHud } from "@jgengine/ui"`
+- `ComboMeterHud` (function) · `import { ComboMeterHud } from "@jgengine/core/hud/comboMeter.view"`
 
 ## confirm-dialog — generic themeable confirm/cancel dialog — title, body, two buttons, danger styling
 
-- `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/ui"`
+- `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/core/dialog/modals.view"`
 
 ## continue-pane — continue detail pane — the save being resumed with thumbnail, character, playtime and progress
 
-- `ContinuePane` (function) · `import { ContinuePane } from "@jgengine/ui"`
+- `ContinuePane` (function) · `import { ContinuePane } from "@jgengine/core/menu/gameMenuSaves.view"`
 
 ## controls-list — keybind-derived control legend that hides on touch
 
-- `ControlsList` (function) · `import { ControlsList } from "@jgengine/ui"`
+- `ControlsList` (function) · `import { ControlsList } from "@jgengine/core/menu/startScreen.view"`
 
 ## credits-pane — credits detail pane — sections scrolled inside the pane
 
-- `CreditsPane` (function) · `import { CreditsPane } from "@jgengine/ui"`
+- `CreditsPane` (function) · `import { CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view"`
 
 ## credits-panel — scrollable, navigable credits screen with a back affordance
 
-- `CreditsPanel` (function) · `import { CreditsPanel } from "@jgengine/ui"`
+- `CreditsPanel` (function) · `import { CreditsPanel } from "@jgengine/core/menu/creditsPanel.view"`
 
 ## credits-screen — drop-in credits view over a CreditsDocument — headed sections, optional links, HudTheme-skinned
 
@@ -147,19 +107,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## current-target — read the player's selected target (click or tab target) to drive a target frame
 
-- `useTarget` (function) · `import { useTarget } from "@jgengine/ui"`
-
-## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
-
-- `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/ui"`
-
-## damage-direction-overlay — drop-in hit-from damage-direction overlay — SVG arcs flaring around a center reticle toward each recent hit and fading over time, colored per `kind`/HudTheme, pointer-events none
-
-- `DamageDirectionOverlay` (function) · `import { DamageDirectionOverlay } from "@jgengine/ui"`
+- `useTarget` (function) · `import { useTarget } from "@jgengine/core/ui/hooks.view"`
 
 ## debounced-commit — bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring
 
-- `useDebouncedCommit` (function) · `import { useDebouncedCommit } from "@jgengine/ui"`
+- `useDebouncedCommit` (function) · `import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view"`
 
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
@@ -167,11 +119,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## dialog-behavior — controlled dialog focus and keyboard behavior without owning markup or screen state
 
-- `useDialogBehavior` (function) · `import { useDialogBehavior } from "@jgengine/ui"`
-
-## dialogue-view — drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun
-
-- `DialogueView` (function) · `import { DialogueView } from "@jgengine/ui"`
+- `useDialogBehavior` (function) · `import { useDialogBehavior } from "@jgengine/core/dialog/dialogBehavior.view"`
 
 ## disposable-resource — memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs
 
@@ -183,27 +131,23 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## dom-event — attach a window/document/element event listener with automatic cleanup and a stable handler ref — no hand-rolled addEventListener effects
 
-- `useDomEvent` (function) · `import { useDomEvent } from "@jgengine/ui"`
-
-## drag-layer — composable pointer-owned drag, drop targets and cancellation for custom cards and inventory UI
-
-- `useDragLayer` (function) · `import { useDragLayer } from "@jgengine/ui"`
+- `useDomEvent` (function) · `import { useDomEvent } from "@jgengine/core/ui/hooks.view"`
 
 ## engine-styles — inject the engine stylesheet (jg-* keyframes, interaction states, reduced motion) once
 
-- `useEngineStyles` (function) · `import { useEngineStyles } from "@jgengine/ui/engineStyles"`
+- `useEngineStyles` (function) · `import { useEngineStyles } from "@jgengine/core/ui/engineStyles.view"`
 
 ## entity-frames — overlay that renders caller-composed frames over on-screen entities
 
-- `EntityFrames` (function) · `import { EntityFrames } from "@jgengine/ui"`
-- `EntityScreenProjection` (interface) · `import { EntityScreenProjection } from "@jgengine/ui"`
-- `WorldEntityFrames` (function) · `import { WorldEntityFrames } from "@jgengine/shell/world/WorldEntityFrames"`
-- `projectWorldToScreen` (function) · `import { projectWorldToScreen } from "@jgengine/shell/world/WorldEntityFrames"`
-- `useWorldProjection` (function) · `import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames"`
+- `EntityFrames` (function) · `import { EntityFrames } from "@jgengine/core/hud/entityFrames.view"`
+- `EntityScreenProjection` (interface) · `import { EntityScreenProjection } from "@jgengine/core/hud/entityFrames.view"`
+- `WorldEntityFrames` (function) · `import { WorldEntityFrames } from "@jgengine/core/shell/world/WorldEntityFrames.draw"`
+- `projectWorldToScreen` (function) · `import { projectWorldToScreen } from "@jgengine/core/shell/world/WorldEntityFrames.draw"`
+- `useWorldProjection` (function) · `import { useWorldProjection } from "@jgengine/core/shell/world/WorldEntityFrames.draw"`
 
 ## entity-portrait — selectable entity portrait tile with vitals and selected/focus states
 
-- `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/ui"`
+- `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/core/hud/selectionHud.view"`
 
 ## entity-preview — live 3D entity portrait — nested EngineCanvas + context bridge + studio stage, driven by the game's own renderEntity
 
@@ -211,51 +155,43 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
-- `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/ui"`
-
-## fast-travel-menu — discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback
-
-- `FastTravelMenu` (function) · `import { FastTravelMenu } from "@jgengine/ui"`
+- `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/core/ui/hooks.view"`
 
 ## floating-text — overlay that renders on-screen floating combat text with per-kind color, alpha, and pop-in scale
 
-- `FloatingText` (function) · `import { FloatingText } from "@jgengine/ui"`
-- `FloatingTextPlacement` (interface) · `import { FloatingTextPlacement } from "@jgengine/ui"`
+- `FloatingText` (function) · `import { FloatingText } from "@jgengine/core/hud/floatingText.view"`
+- `FloatingTextPlacement` (interface) · `import { FloatingTextPlacement } from "@jgengine/core/hud/floatingText.view"`
 - `WorldFloatingText` (function) · `import { WorldFloatingText } from "@jgengine/core/hud/floatingTextWorld.draw"`
 - `createFloatingTextField` (function) · `import { createFloatingTextField } from "@jgengine/core/hud/floatingText"`
-- `layoutFloatingText` (function) · `import { layoutFloatingText } from "@jgengine/ui"`
+- `layoutFloatingText` (function) · `import { layoutFloatingText } from "@jgengine/core/hud/floatingText.view"`
 
 ## format-duration — a span of seconds as locale words (1h 2m 5s)
 
 - `formatLocaleDuration` (function) · `import { formatLocaleDuration } from "@jgengine/core/i18n/localeFormat"`
 
-## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
-
-- `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/ui"`
-
 ## game-context-bridge — re-provide the GameContext across a nested Canvas/reconciler boundary
 
-- `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/ui"`
+- `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/core/ui/provider.view"`
 
 ## game-cursor — console-style selection cursor (brackets, chevron, bar) that glides to the focused menu item
 
-- `GameCursor` (function) · `import { GameCursor } from "@jgengine/ui"`
+- `GameCursor` (function) · `import { GameCursor } from "@jgengine/core/ui/cursor.view"`
 
 ## game-font-stacks — display/body/numeric font stacks for a game's font pairing, with installed fallbacks
 
-- `gameFontStacks` (function) · `import { gameFontStacks } from "@jgengine/ui"`
+- `gameFontStacks` (function) · `import { gameFontStacks } from "@jgengine/core/ui/fonts.view"`
 
 ## game-fonts — load a game's bundled display and body fonts
 
-- `useGameFonts` (function) · `import { useGameFonts } from "@jgengine/ui"`
+- `useGameFonts` (function) · `import { useGameFonts } from "@jgengine/core/ui/fonts.view"`
 
 ## game-menu — full-bleed game menu — living background, token-sized logo, animated navigable verbs, detail pane, selection sound, pause variant, no page scrollbar
 
-- `GameMenu` (function) · `import { GameMenu } from "@jgengine/ui"`
+- `GameMenu` (function) · `import { GameMenu } from "@jgengine/core/menu/gameMenu.view"`
 
 ## game-slider — drawn game slider (groove or pips) with keyboard, drag and screen reader support, no browser range input
 
-- `GameSlider` (const) · `import { GameSlider } from "@jgengine/ui"`
+- `GameSlider` (const) · `import { GameSlider } from "@jgengine/core/ui/slider.view"`
 
 ## group-credits — turn a flat list of credited things into ordered credit sections
 
@@ -267,11 +203,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## host-mount — run a game inside a page built with any UI library by mounting the player into an element
 
-- `mountGamePlayer` (function) · `import { mountGamePlayer } from "@jgengine/shell/mountGamePlayer"`
+- `mountGamePlayer` (function) · `import { mountGamePlayer } from "@jgengine/core/shell/mountGamePlayer.draw"`
 
 ## hud-auto-layout — place HUD panels by anchor and priority so none overlap at any screen size
 
-- `arrangeHudPanels` (function) · `import { arrangeHudPanels } from "@jgengine/ui"`
+- `arrangeHudPanels` (function) · `import { arrangeHudPanels } from "@jgengine/core/hud/hudPanelLayout"`
 
 ## hud-auto-layout-preview — crowded HUD corners placed without overlap at any screen size
 
@@ -283,35 +219,35 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-canvas — the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
 
-- `HudCanvas` (const) · `import { HudCanvas } from "@jgengine/ui"`
+- `HudCanvas` (const) · `import { HudCanvas } from "@jgengine/core/hud/hudLayout.view"`
 
 ## hud-clock — in-game time-of-day readout bound to the sim clock
 
-- `Clock` (const) · `import { Clock } from "@jgengine/ui"`
+- `Clock` (const) · `import { Clock } from "@jgengine/core/hud/hudReadouts.view"`
 
 ## hud-coins — currency counter widget bound to a currency id
 
-- `Coins` (function) · `import { Coins } from "@jgengine/ui"`
+- `Coins` (function) · `import { Coins } from "@jgengine/core/hud/hudReadouts.view"`
 
 ## hud-fade — HUD group that fades when idle and returns when its values change
 
-- `HudFade` (const) · `import { HudFade } from "@jgengine/ui"`
+- `HudFade` (const) · `import { HudFade } from "@jgengine/core/hud/hudLayout.view"`
 
 ## hud-frame — optional framed panel skins (glass/plate/retro/themed) — games own product chrome
 
-- `HudFrame` (function) · `import { HudFrame } from "@jgengine/ui"`
+- `HudFrame` (function) · `import { HudFrame } from "@jgengine/core/hud/hudFrame.view"`
 
 ## hud-hotbar — optional inventory hotbar building block — games own slot chrome
 
-- `Hotbar` (const) · `import { Hotbar } from "@jgengine/ui"`
+- `Hotbar` (const) · `import { Hotbar } from "@jgengine/core/hud/hudReadouts.view"`
 
 ## hud-icons — painted-icon treatment for hotbar/action slots — glyph + gradient + count badge
 
-- `IconSchool` (type) · `import { IconSchool } from "@jgengine/ui"`
+- `IconSchool` (type) · `import { IconSchool } from "@jgengine/core/ui/icons/iconTreatment.view"`
 
 ## hud-idle — true while a HUD group's values are changing, false once they sit still
 
-- `useHudAwake` (function) · `import { useHudAwake } from "@jgengine/ui"`
+- `useHudAwake` (function) · `import { useHudAwake } from "@jgengine/core/hud/hudLayout.view"`
 
 ## hud-interact — one listener for hover/press/activate/open/close from every engine HUD primitive
 
@@ -319,24 +255,23 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-layout — persistent, live-editable HUD panel layout state for `HudCanvas`
 
-- `useHudLayout` (function) · `import { useHudLayout } from "@jgengine/ui"`
+- `useHudLayout` (function) · `import { useHudLayout } from "@jgengine/core/hud/hudLayout.view"`
 
 ## hud-layout-persist — inject a host callback so canvas HUD edits commit into the scene document
 
-- `HudLayoutPersistProvider` (function) · `import { HudLayoutPersistProvider } from "@jgengine/ui"`
+- `HudLayoutPersistProvider` (function) · `import { HudLayoutPersistProvider } from "@jgengine/core/hud/hudLayoutPersist.view"`
 
 ## hud-layout-persist-hook — read the host panel-commit port from a HUD layout widget
 
-- `useHudLayoutPersist` (function) · `import { useHudLayoutPersist } from "@jgengine/ui"`
+- `useHudLayoutPersist` (function) · `import { useHudLayoutPersist } from "@jgengine/core/hud/hudLayoutPersist.view"`
 
 ## hud-panel — anchored HUD slot — drop any widget in a named, player-movable panel
 
-- `HudPanel` (const) · `import { HudPanel } from "@jgengine/ui"`
+- `HudPanel` (const) · `import { HudPanel } from "@jgengine/core/hud/hudLayout.view"`
 
 ## hud-slots — a play HUD of edge-pinned, player-movable panels in one component
 
-- `HudSlots` (function) · `import { HudSlots } from "@jgengine/ui"`
-- `SlotItem` (interface) · `import { SlotItem } from "@jgengine/ui"`
+- `HudSlots` (function) · `import { HudSlots } from "@jgengine/core/hud/hudLayout.view"`
 
 ## hud-surface — themed panel frame with elevation, header slots, landmark element, and open/close transitions
 
@@ -344,15 +279,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-theme — game-authored token object covering bars, frames, slots, chrome, text, status colors, fonts, and rarity
 
-- `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/ui"`
+- `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/core/hud/hudTheme.view"`
 
 ## hud-theme-author — fill a full HudTheme from per-group partial overrides
 
-- `hudTheme` (function) · `import { hudTheme } from "@jgengine/ui"`
+- `hudTheme` (function) · `import { hudTheme } from "@jgengine/core/hud/hudTheme.view"`
 
 ## hud-theme-derive — build a full HudTheme from an accent + surface seed pair
 
-- `deriveHudTheme` (function) · `import { deriveHudTheme } from "@jgengine/ui"`
+- `deriveHudTheme` (function) · `import { deriveHudTheme } from "@jgengine/core/hud/hudTheme.view"`
 
 ## hud-theme-root — apply the default (or a game) HudTheme, the player's accessibility preferences and the engine stylesheet at the HUD root
 
@@ -360,7 +295,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-ticker — re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects
 
-- `useTicker` (function) · `import { useTicker } from "@jgengine/ui"`
+- `useTicker` (function) · `import { useTicker } from "@jgengine/core/ui/hooks.view"`
 
 ## hud-tokens — inline-style accessors for the HudTheme type scale, spacing, motion, elevation, and focus ring
 
@@ -370,49 +305,25 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createI18n` (function) · `import { createI18n } from "@jgengine/core/ui"`
 
-## input-device — which device the player last used (keyboard, gamepad, touch), live, for device-correct prompts
-
-- `useInputDevice` (function) · `import { useInputDevice } from "@jgengine/ui"`
-
-## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
-
-- `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/ui"`
-
-## inventory-transfer — drag or keyboard-move a stack between two inventory grids (bag to stash) with swap, merge remainder and refusal reasons
-
-- `useInventoryTransfer` (function) · `import { useInventoryTransfer } from "@jgengine/ui"`
-
-## key-hint — keyboard/mouse control hint that hides itself on touch
-
-- `KeyHint` (function) · `import { KeyHint } from "@jgengine/ui"`
-
 ## keybinding-menu — drop-in controls-settings surface over a rebind session — click-to-capture rows with key glyphs, conflict badges, per-row and reset-all, HudTheme-skinnable
 
-- `KeybindingMenu` (function) · `import { KeybindingMenu } from "@jgengine/ui"`
-
-## keycap — styled keyboard/mouse key cap for control hints
-
-- `Keycap` (function) · `import { Keycap } from "@jgengine/ui"`
-
-## kill-feed — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
-
-- `KillFeed` (const) · `import { KillFeed } from "@jgengine/ui"`
+- `KeybindingMenu` (function) · `import { KeybindingMenu } from "@jgengine/core/settings/keybindingMenu.view"`
 
 ## kit-action-glyph — the bound key, pad button or tap label for an action, live, for any kit part
 
-- `useActionGlyph` (function) · `import { useActionGlyph } from "@jgengine/ui"`
+- `useActionGlyph` (function) · `import { useActionGlyph } from "@jgengine/core/ui/kit/uiKitRoot.view"`
 
 ## kit-action-prompt — a device-correct "press X to do Y" prompt (keyboard key, pad button, tap) in the active UI kit
 
-- `KitActionPrompt` (const) · `import { KitActionPrompt } from "@jgengine/ui"`
+- `KitActionPrompt` (const) · `import { KitActionPrompt } from "@jgengine/core/ui/kit/uiKitRoot.view"`
 
 ## kit-banner — a phase-change banner (day, wave, run start) in the active UI kit, shown when its cue changes
 
-- `KitBanner` (const) · `import { KitBanner } from "@jgengine/ui"`
+- `KitBanner` (const) · `import { KitBanner } from "@jgengine/core/ui/kit/kitFlow.view"`
 
 ## kit-button — a button drawn by the active UI kit, or made of a material (steel, wood, enamel…), with UI cue sounds
 
-- `KitButton` (const) · `import { KitButton } from "@jgengine/ui"`
+- `KitButton` (const) · `import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view"`
 
 ## kit-count — a HUD resource readout — a number and its word, with an optional rate line
 
@@ -424,11 +335,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## kit-frame-cut — clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)
 
-- `kitCutPath` (function) · `import { kitCutPath } from "@jgengine/ui"`
+- `kitCutPath` (function) · `import { kitCutPath } from "@jgengine/core/ui/kit/kitFrame.view"`
 
 ## kit-frame-style — CSS variables for a material frame on an element the game already owns
 
-- `kitFrameVars` (function) · `import { kitFrameVars } from "@jgengine/ui"`
+- `kitFrameVars` (function) · `import { kitFrameVars } from "@jgengine/core/ui/kit/kitFrame.view"`
 
 ## kit-hint — a HUD hint strip for the current tool or problem, with the phase banner
 
@@ -436,31 +347,31 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## kit-menu — a verb list drawn by the active UI kit over shared menu navigation
 
-- `KitMenu` (const) · `import { KitMenu } from "@jgengine/ui"`
+- `KitMenu` (const) · `import { KitMenu } from "@jgengine/core/ui/kit/uiKitRoot.view"`
 
 ## kit-meter — a value meter (bar, segments, ring) drawn by the active UI kit, fed a plain or live value
 
-- `KitMeter` (const) · `import { KitMeter } from "@jgengine/ui"`
+- `KitMeter` (const) · `import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view"`
 
 ## kit-minimap-frame — a minimap or radar frame drawn by the active UI kit
 
-- `KitMinimapFrame` (const) · `import { KitMinimapFrame } from "@jgengine/ui"`
+- `KitMinimapFrame` (const) · `import { KitMinimapFrame } from "@jgengine/core/ui/kit/uiKitRoot.view"`
 
 ## kit-objective — first-minute guidance in the active UI kit — goal, distance and direction, checklist, countdown with urgency warnings, idle hint, next-action prompt
 
-- `KitObjective` (const) · `import { KitObjective } from "@jgengine/ui"`
+- `KitObjective` (const) · `import { KitObjective } from "@jgengine/core/ui/kit/kitFlow.view"`
 
 ## kit-panel — a content surface drawn by the active UI kit, or made of a material with a cut silhouette, with enter/exit motion
 
-- `KitPanel` (const) · `import { KitPanel } from "@jgengine/ui"`
+- `KitPanel` (const) · `import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view"`
 
 ## kit-result-screen — run/day/level result screen in the active UI kit — scrim, summary, tally, keyboard/gamepad/touch choices, kit motion
 
-- `KitResultScreen` (const) · `import { KitResultScreen } from "@jgengine/ui"`
+- `KitResultScreen` (const) · `import { KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view"`
 
 ## kit-toast — a short message drawn by the active UI kit, with its enter/exit motion
 
-- `KitToast` (const) · `import { KitToast } from "@jgengine/ui"`
+- `KitToast` (const) · `import { KitToast } from "@jgengine/core/ui/kit/uiKitRoot.view"`
 
 ## kit-vital-icons — survival pools as a column of glyphs that fill from the bottom, numbers on demand
 
@@ -501,7 +412,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## loading-screen — loading block with progress, rotating tips, a ready gate, and a scene backdrop
 
-- `LoadingScreen` (function) · `import { LoadingScreen } from "@jgengine/ui"`
+- `LoadingScreen` (function) · `import { LoadingScreen } from "@jgengine/core/menu/loadingScreen.view"`
 
 ## loading-tips — deterministic loading-screen tip rotation with a seeded shuffle and snapshot/restore
 
@@ -509,15 +420,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## locale-root — the player's locale setting drives the translator, `lang` and `dir`
 
-- `LocaleRoot` (function) · `import { LocaleRoot } from "@jgengine/ui"`
+- `LocaleRoot` (function) · `import { LocaleRoot } from "@jgengine/core/i18n/i18n.view"`
 
 ## locale-setting — a Language settings row defaulting from the browser and saved in the settings store
 
 - `localeSettingDef` (function) · `import { localeSettingDef } from "@jgengine/core/ui"`
-
-## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
-
-- `MapLegend` (function) · `import { MapLegend } from "@jgengine/ui"`
 
 ## match-locale — pick the supported locale that best matches requested tags
 
@@ -549,11 +456,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## menu-screen — animated enter/exit menu screen over a live scene, with translucent scrim, backdrop slot, reduced-motion support and exit unmount
 
-- `MenuScreen` (function) · `import { MenuScreen } from "@jgengine/ui"`
+- `MenuScreen` (function) · `import { MenuScreen } from "@jgengine/core/menu/menuScreen.view"`
 
 ## menu-sound — generated click for menu move/confirm/back, no audio asset
 
-- `createGameMenuSound` (function) · `import { createGameMenuSound } from "@jgengine/ui"`
+- `createGameMenuSound` (function) · `import { createGameMenuSound } from "@jgengine/core/menu/gameMenuSound.view"`
 
 ## menu-stack-reducer — pure push/back/replace/reset transitions for a menu screen stack
 
@@ -571,25 +478,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `mergePostProcessing` (function) · `import { mergePostProcessing } from "@jgengine/core/render/lookPreset"`
 
-## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
-
-- `Minimap` (function) · `import { Minimap } from "@jgengine/ui"`
-
-## minimap-chrome — ring frame plus edge-clamped, heading-aware marker dots to nest inside a game's own `<svg>`
-
-- `MinimapChrome` (function) · `import { MinimapChrome } from "@jgengine/ui"`
-
-## minimap-panel — circular minimap with zone label, clock, and compass composed together
-
-- `MinimapPanel` (function) · `import { MinimapPanel } from "@jgengine/ui"`
-
-## minimap-track-hud — horizontal linear track minimap (corridor/route progress) — colored zone spans and gate/player pips positioned by 0..1 fraction, sharing chrome with the radial Minimap
-
-- `MinimapTrack` (function) · `import { MinimapTrack } from "@jgengine/ui"`
-
 ## modal-host — full-screen modal/dialog host over a modal stack — dimmed backdrop, focus trap, Esc/backdrop-to-cancel, aria-modal dialog
 
-- `ModalHost` (function) · `import { ModalHost } from "@jgengine/ui"`
+- `ModalHost` (function) · `import { ModalHost } from "@jgengine/core/dialog/modals.view"`
 
 ## modal-stack — serializable, observable stack of opaque modal/dialog records — push/pop/resolve blocking overlays (pause menu, confirm dialog) with optional auto-dismiss; never interprets kind or result
 
@@ -601,35 +492,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## new-character-pane — character creation pane — name field, palette and avatar choice, start action
 
-- `NewCharacterPane` (function) · `import { NewCharacterPane } from "@jgengine/ui"`
-
-## notification-bell — icon button with a live unread-count badge over a notification store
-
-- `NotificationBell` (function) · `import { NotificationBell } from "@jgengine/ui"`
-
-## notification-center-panel — scrollable notification log with kind markers, read tracking, relative time, and mark-all-read/clear
-
-- `NotificationCenter` (function) · `import { NotificationCenter } from "@jgengine/ui"`
+- `NewCharacterPane` (function) · `import { NewCharacterPane } from "@jgengine/core/menu/gameMenuSaves.view"`
 
 ## objective-banner — serializable, clock-driven stage/objective banner queue — flies a big transient centered title + optional subtitle in, holds, and fades out one at a time, with phase + progress for animation, free-string kinds the game styles, and snapshot/restore
 
 - `createObjectiveBanner` (function) · `import { createObjectiveBanner } from "@jgengine/core/ui"`
 
-## objective-banner-host — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
-
-- `ObjectiveBannerHost` (const) · `import { ObjectiveBannerHost } from "@jgengine/ui"`
-
 ## offscreen-markers — pure edge-clamp + bearing math turning a projected point into an on-screen pin or an off-screen directional arrow clamped to the viewport edge
 
 - `layoutScreenMarker` (function) · `import { layoutScreenMarker } from "@jgengine/core/ui"`
-
-## onboarding-callout — anchored or centred tutorial callouts with a spotlight, Next and Skip, driven by the onboarding steps
-
-- `OnboardingCallout` (function) · `import { OnboardingCallout } from "@jgengine/ui"`
-
-## onboarding-callout-card — one onboarding step as a card with N of M, Next and Skip, theme-reskinnable
-
-- `OnboardingCalloutCard` (function) · `import { OnboardingCalloutCard } from "@jgengine/ui"`
 
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
@@ -649,7 +520,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## panel-host — render a manager's open windows as draggable, closable, z-stacked dialogs above the HUD
 
-- `PanelHost` (function) · `import { PanelHost } from "@jgengine/ui"`
+- `PanelHost` (function) · `import { PanelHost } from "@jgengine/core/ui/panels.view"`
 
 ## panel-hotkey — resolve a keybind (code or key) to the panel id it toggles
 
@@ -677,7 +548,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## pause-menu — pause menu from the shared game-menu system: game-filled verbs and detail pane, same navigation and surface as the title menu, sized down
 
-- `PauseMenu` (function) · `import { PauseMenu } from "@jgengine/ui"`
+- `PauseMenu` (function) · `import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view"`
 
 ## photo-mode — observable photo-mode state (active + hide-HUD) a game binds its screenshot/camera flow to
 
@@ -685,7 +556,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## photo-mode-controls — photo-mode toolbar (hide-HUD toggle, capture, exit) bound to a photo-mode store
 
-- `PhotoModeControls` (function) · `import { PhotoModeControls } from "@jgengine/ui"`
+- `PhotoModeControls` (function) · `import { PhotoModeControls } from "@jgengine/core/ui/photoMode.view"`
 
 ## play-script — write a game's behaviour as a tick-based script with declarative assertions instead of playing it in a browser
 
@@ -698,7 +569,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
-- `Popover` (function) · `import { Popover } from "@jgengine/ui"`
+- `Popover` (function) · `import { Popover } from "@jgengine/core/hud/actionHud.view"`
 
 ## presence — keep a closing element mounted through its exit transition
 
@@ -712,17 +583,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineFlow` (function) · `import { defineFlow } from "@jgengine/core/play/flow"`
 
-## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
-
-- `QuestTracker` (function) · `import { QuestTracker } from "@jgengine/ui"`
-
 ## quick-menu — multi-form quick menu (radial / arc / list / grid) over one item model with hotkeys, badges, cooldowns, sections, and nested submenus
 
-- `QuickMenu` (function) · `import { QuickMenu } from "@jgengine/ui"`
+- `QuickMenu` (function) · `import { QuickMenu } from "@jgengine/core/menu/quickMenu.view"`
 
 ## radial-menu — pointer/stick-driven radial or arc quick menu (weapon/emote wheel) — angular slice selection with hotkeys, badges, cooldowns, and a neutral hub
 
-- `RadialMenu` (function) · `import { RadialMenu } from "@jgengine/ui"`
+- `RadialMenu` (function) · `import { RadialMenu } from "@jgengine/core/menu/radialMenu.view"`
 
 ## radial-select — map a pointer/stick vector to a radial-menu slice index, with a neutral dead zone and optional arc bounds
 
@@ -730,7 +597,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## raf-loop — run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects
 
-- `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/ui"`
+- `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/core/ui/hooks.view"`
 
 ## replay-playback — play a recorded input-plus-seed session headless and reach the same state
 
@@ -750,15 +617,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## save-slot-card — save slot as a card — thumbnail, character, playtime, progress, timestamp, confirmed delete
 
-- `SaveSlotCard` (function) · `import { SaveSlotCard } from "@jgengine/ui"`
+- `SaveSlotCard` (function) · `import { SaveSlotCard } from "@jgengine/core/menu/gameMenuSaves.view"`
 
 ## save-slots-pane — slot grid pane for the game menu — Continue newest, per-slot cards, keyboard navigation
 
-- `SaveSlotsPane` (function) · `import { SaveSlotsPane } from "@jgengine/ui"`
+- `SaveSlotsPane` (function) · `import { SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view"`
 
 ## scaled-object-model — stretch one placement of a catalog model with visual.scale
 
-- `drawsScaledModel` (function) · `import { drawsScaledModel } from "@jgengine/shell/world/WorldScene"`
+- `drawsScaledModel` (function) · `import { drawsScaledModel } from "@jgengine/core/shell/world/WorldScene.draw"`
 
 ## scene-swap — change place without a frozen frame: build and compile the new place in the background behind a travel card
 
@@ -768,29 +635,25 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useSceneSwapping` (function) · `import { useSceneSwapping } from "@jgengine/core/ui/sceneSwap.view"`
 
-## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
-
-- `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/ui"`
-
 ## scroll-rail — reachable horizontal controls with visible overflow navigation and keyboard focus reveal
 
-- `ScrollRail` (function) · `import { ScrollRail } from "@jgengine/ui"`
+- `ScrollRail` (function) · `import { ScrollRail } from "@jgengine/core/ui/scrollRail.view"`
 
 ## selection-collection — accessible portrait-strip / group-chip renderer over a selection model
 
-- `SelectionCollectionChrome` (function) · `import { SelectionCollectionChrome } from "@jgengine/ui"`
+- `SelectionCollectionChrome` (function) · `import { SelectionCollectionChrome } from "@jgengine/core/hud/selectionHud.view"`
 
 ## selection-group-chip — same-kind selection chip (icon + count) for a grouped selection
 
-- `SelectionGroupChip` (function) · `import { SelectionGroupChip } from "@jgengine/ui"`
+- `SelectionGroupChip` (function) · `import { SelectionGroupChip } from "@jgengine/core/hud/selectionHud.view"`
 
 ## selection-model — headless multi-entity selection model with primary focus, grouping, and virtualization
 
-- `useSelectionView` (function) · `import { useSelectionView } from "@jgengine/ui"`
+- `useSelectionView` (function) · `import { useSelectionView } from "@jgengine/core/hud/selectionHud.view"`
 
 ## selection-panel — optional selection-panel composition: summary + portrait strip / group chips
 
-- `SelectionPanel` (function) · `import { SelectionPanel } from "@jgengine/ui"`
+- `SelectionPanel` (function) · `import { SelectionPanel } from "@jgengine/core/hud/selectionHud.view"`
 
 ## settings-keybind-row — one rebindable controls row — key glyph, armed state and reset
 
@@ -807,10 +670,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## settings-tabs — scrollable settings category tabs with pressed state
 
 - `SettingsTabs` (function) · `import { SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view"`
-
-## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
-
-- `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/ui"`
 
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 
@@ -836,35 +695,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## start-screen — headless title/attract overlay the game fills and skins
 
-- `StartScreen` (function) · `import { StartScreen } from "@jgengine/ui"`
+- `StartScreen` (function) · `import { StartScreen } from "@jgengine/core/menu/startScreen.view"`
 
 ## status-effect-bar — timeline HUD row of active statuses — icon + radial countdown ring + stack badge, driven off the status model, HudTheme-skinned
 
-- `StatusEffectBar` (function) · `import { StatusEffectBar } from "@jgengine/ui"`
-
-## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
-
-- `TalentTreePanel` (function) · `import { TalentTreePanel } from "@jgengine/ui"`
+- `StatusEffectBar` (function) · `import { StatusEffectBar } from "@jgengine/core/hud/statusEffectBar.view"`
 
 ## text-direction — left-to-right or right-to-left for a locale tag, from the platform's Intl data
 
 - `localeDirection` (function) · `import { localeDirection } from "@jgengine/core/ui"`
 
-## timer-readout — live digital mm:ss/m:ss.d timer readout bound to a TimerSet
-
-- `TimerReadout` (function) · `import { TimerReadout } from "@jgengine/ui"`
-
-## timer-readout-format — format milliseconds as digital timer text (mm:ss / m:ss.d / ss.d)
-
-- `formatTimerMs` (function) · `import { formatTimerMs } from "@jgengine/ui"`
-
-## timer-ring — radial SVG charge/cooldown ring bound to a TimerSet's progress
-
-- `TimerRing` (function) · `import { TimerRing } from "@jgengine/ui"`
-
 ## trans — inline translated-message component bound to the active locale
 
-- `Trans` (function) · `import { Trans } from "@jgengine/ui"`
+- `Trans` (function) · `import { Trans } from "@jgengine/core/i18n/i18n.view"`
 
 ## triangle-attribution — per-model triangle table with instance counts, for perf probes
 
@@ -872,47 +715,47 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## ui-kit-arcade — retro 8-bit arcade UI kit: stepped pixel frames, JRPG windows, depth buttons, hearts, score popups, chiptune cues
 
-- `arcadeKit` (const) · `import { arcadeKit } from "@jgengine/ui"`
+- `arcadeKit` (const) · `import { arcadeKit } from "@jgengine/core/ui/kit/uiKitArcade.view"`
 
 ## ui-kit-broadcast — sports broadcast UI kit — skewed slabs, score bugs, breaking-news bands, tote-board menus, shot-clock rings, wipe motion, whoosh and stinger sounds
 
-- `broadcastKit` (const) · `import { broadcastKit } from "@jgengine/ui"`
+- `broadcastKit` (const) · `import { broadcastKit } from "@jgengine/core/ui/kit/uiKitBroadcast.view"`
 
 ## ui-kit-customize — reshape a UI kit per game — tokens, swapped parts, extra CSS, motion and sounds — without losing any part
 
-- `customizeKit` (function) · `import { customizeKit } from "@jgengine/ui"`
+- `customizeKit` (function) · `import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view"`
 
 ## ui-kit-holo — sci-fi hologram UI kit — chamfered glass, bracket corners, hex tags, radar frames, projection motion and tone sweeps
 
-- `holoKit` (const) · `import { holoKit } from "@jgengine/ui"`
+- `holoKit` (const) · `import { holoKit } from "@jgengine/core/ui/kit/uiKitHolo.view"`
 
 ## ui-kit-ink — comic ink UI kit — outlines, halftone, caption tabs, speech balloons, pop motion, marker sounds
 
-- `inkKit` (const) · `import { inkKit } from "@jgengine/ui"`
+- `inkKit` (const) · `import { inkKit } from "@jgengine/core/ui/kit/uiKitInk.view"`
 
 ## ui-kit-paper — paper and sticker UI kit — taped notes, ticket buttons, sticker badges, ruler meters, tag toasts, place-and-peel motion
 
-- `paperKit` (const) · `import { paperKit } from "@jgengine/ui"`
+- `paperKit` (const) · `import { paperKit } from "@jgengine/core/ui/kit/uiKitPaper.view"`
 
 ## ui-kit-parchment — painterly fantasy parchment UI kit — stained paper, wax seals, scroll panels, vial meters, compass rims, unfurl motion, plucked-string sounds
 
-- `parchmentKit` (const) · `import { parchmentKit } from "@jgengine/ui"`
+- `parchmentKit` (const) · `import { parchmentKit } from "@jgengine/core/ui/kit/uiKitParchment.view"`
 
 ## ui-kit-root — one line picks a complete UI language (shapes, type, motion, sound) for every kit part below it
 
-- `UiKitRoot` (function) · `import { UiKitRoot } from "@jgengine/ui"`
+- `UiKitRoot` (function) · `import { UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view"`
 
 ## ui-kit-signal — in-world signage UI kit — enamel plates, arrow and blade signs, route shields, LED departure boards, split-flap motion and clacks
 
-- `signalKit` (const) · `import { signalKit } from "@jgengine/ui"`
+- `signalKit` (const) · `import { signalKit } from "@jgengine/core/ui/kit/uiKitSignal.view"`
 
 ## ui-kit-terminal — brutalist phosphor terminal UI kit: double rules, ASCII meters, log toasts, scanlines, stepped reveals, square-wave beeps
 
-- `terminalKit` (const) · `import { terminalKit } from "@jgengine/ui"`
+- `terminalKit` (const) · `import { terminalKit } from "@jgengine/core/ui/kit/uiKitTerminal.view"`
 
 ## ui-kits — eight complete built-in UI kits (ink, paper, parchment, terminal, holo, broadcast, arcade, signal) a game picks in one line
 
-- `UI_KITS` (const) · `import { UI_KITS } from "@jgengine/ui"`
+- `UI_KITS` (const) · `import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view"`
 
 ## ui-sound-cues — play click/hover/open/close/confirm/deny/notify UI sounds from any component
 
@@ -927,125 +770,49 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view"`
 
-## use-camera-shake — UI hook reading a camera-shake controller's live trauma and kind
-
-- `useCameraShakeReadout` (function) · `import { useCameraShakeReadout } from "@jgengine/ui"`
-
 ## use-combo-meter — UI hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view
 
-- `useComboMeter` (function) · `import { useComboMeter } from "@jgengine/ui"`
-
-## use-damage-direction — UI hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
-
-- `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/ui"`
-
-## use-dialogue-run — UI hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
-
-- `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/ui"`
-
-## use-event-ticker — UI hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
-
-- `useEventTicker` (function) · `import { useEventTicker } from "@jgengine/ui"`
-
-## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
-
-- `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/ui"`
-
-## use-fog — UI binding that returns a fog-of-war field's live cells
-
-- `useFog` (function) · `import { useFog } from "@jgengine/ui"`
+- `useComboMeter` (function) · `import { useComboMeter } from "@jgengine/core/hud/comboMeter.view"`
 
 ## use-hold-vs-toggle — live hold-or-toggle preference from the shared settings store
 
 - `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/core/settings/accessibilitySettings.view"`
 
-## use-interaction-prompt — UI hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
-
-- `useInteractionPrompt` (function) · `import { useInteractionPrompt } from "@jgengine/ui"`
-
 ## use-menu-nav — keyboard and gamepad focus navigation for a menu — roving focus order, confirm/back, disabled-item skipping, no focus trap
 
-- `useMenuNav` (function) · `import { useMenuNav } from "@jgengine/ui"`
+- `useMenuNav` (function) · `import { useMenuNav } from "@jgengine/core/menu/menuNav.view"`
 
 ## use-modal-stack — UI hook binding a modal stack to a component — re-renders on push/pop/resolve
 
-- `useModalStack` (function) · `import { useModalStack } from "@jgengine/ui"`
-
-## use-notifications — read a notification store's live list in a game's own inbox view
-
-- `useNotifications` (function) · `import { useNotifications } from "@jgengine/ui"`
-
-## use-objective-banner — UI hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
-
-- `useObjectiveBanner` (function) · `import { useObjectiveBanner } from "@jgengine/ui"`
+- `useModalStack` (function) · `import { useModalStack } from "@jgengine/core/dialog/modals.view"`
 
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
-- `usePanels` (function) · `import { usePanels } from "@jgengine/ui"`
+- `usePanels` (function) · `import { usePanels } from "@jgengine/core/ui/panels.view"`
 
 ## use-rebind-session — UI hook that re-renders a component whenever a rebind session changes
 
-- `useRebindSession` (function) · `import { useRebindSession } from "@jgengine/ui"`
-
-## use-save-slots — UI hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
-
-- `useSaveSlots` (function) · `import { useSaveSlots } from "@jgengine/ui"`
-
-## use-sequence-director — UI hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
-
-- `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/ui"`
-
-## use-shop-stock — UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list
-
-- `useShopStock` (function) · `import { useShopStock } from "@jgengine/ui"`
-
-## use-timer — UI hook binding one timer to a component with a per-frame re-read
-
-- `useTimerRead` (function) · `import { useTimerRead } from "@jgengine/ui"`
+- `useRebindSession` (function) · `import { useRebindSession } from "@jgengine/core/settings/keybindingMenu.view"`
 
 ## use-translate — live `t(key, params)` translator bound to the active locale, re-rendering on locale change
 
-- `useT` (function) · `import { useT } from "@jgengine/ui"`
+- `useT` (function) · `import { useT } from "@jgengine/core/i18n/i18n.view"`
 
 ## use-viewport-scroll-lock — count-aware document scroll lock for full-bleed surfaces
 
-- `useViewportScrollLock` (function) · `import { useViewportScrollLock } from "@jgengine/ui"`
+- `useViewportScrollLock` (function) · `import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view"`
 
 ## use-wave-runner — UI hook that subscribes to a wave runner and returns its pooled current-wave view
 
-- `useWaveRunner` (function) · `import { useWaveRunner } from "@jgengine/ui"`
-
-## use-waypoints — UI binding that returns a waypoint store's live list (or a passthrough array)
-
-- `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/ui"`
+- `useWaveRunner` (function) · `import { useWaveRunner } from "@jgengine/core/hud/waveHud.view"`
 
 ## wave-hud — drop-in wave/spawn HUD over a wave runner — big WAVE N label, wave-progress bar, spawned/total + budget + alert readouts, theme-skinnable
 
-- `WaveHud` (function) · `import { WaveHud } from "@jgengine/ui"`
-
-## waypoint-arrow — on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
-
-- `WaypointArrow` (function) · `import { WaypointArrow } from "@jgengine/ui"`
-
-## waypoint-markers — overlay rendering world waypoints as on-screen pins and off-screen edge-clamped directional arrows with distance, colored per game-owned kind
-
-- `WaypointMarkers` (function) · `import { WaypointMarkers } from "@jgengine/ui"`
+- `WaveHud` (function) · `import { WaveHud } from "@jgengine/core/hud/waveHud.view"`
 
 ## window — standalone draggable, closable window primitive over HudFrame — no manager required
 
-- `Window` (function) · `import { Window } from "@jgengine/ui"`
-
-## world-intersections — inspect turns and junction meshes in a deterministic preview fixture
-
-- `StreetGeometryPreview` (function) · `import { StreetGeometryPreview } from "@jgengine/ui"`
-
-## world-map — framed full-bounds world map panel with terrain background, fog, labelled markers and the player
-
-- `WorldMap` (function) · `import { WorldMap } from "@jgengine/ui"`
-
-## world-map-surface — bare top-down map svg with terrain background, fog, layers, labelled markers and player arrow under a viewport transform
-
-- `WorldMapSurface` (function) · `import { WorldMapSurface } from "@jgengine/ui"`
+- `Window` (function) · `import { Window } from "@jgengine/core/ui/panels.view"`
 
 ## world-object-highlights — ground-ring highlight over every selected placed object
 

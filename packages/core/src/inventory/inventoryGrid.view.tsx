@@ -9,7 +9,7 @@ import { DragGhost, DraggableCard, DropZone, useDragLayer, type DragLayer } from
 import { inventorySlotKey, parseInventorySlotKey, type InventorySlotRef } from "@jgengine/core/inventory/inventoryModel";
 import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
 import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
-import { useGame, useInventoryGrid } from "@jgengine/ui/hooks";
+import { useGame, useInventoryGrid } from "@jgengine/core/ui/hooks.view";
 
 /**
  * A drop-in NxN inventory grid bound to a live inventory: `<InventoryGrid inventoryId="bag" columns={4} />`

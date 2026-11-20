@@ -8,7 +8,7 @@ import type { InputBuffer } from "../input/inputBuffer";
  * integration. Keeping it framework-free means the kinematics controller,
  * the keyboard handler and the on-screen touch D-pad all speak the same
  * vocabulary, and the translation is unit testable without a renderer.
- * DOM capture lives in `@jgengine/shell`'s GamePlayerShell (keyboard and
+ * DOM capture lives in the shell's GamePlayerShell (`@jgengine/core/shell/GamePlayerShell.draw`) (keyboard and
  * touch controls) and its camera rigs (pointer lock, the per-frame look
  * channel).
  */

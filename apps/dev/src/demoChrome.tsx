@@ -6,8 +6,8 @@ import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
 import { ShellNotices, ShellUiCues } from "@jgengine/core/notifications/ShellNotices.view";
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { kitHudBridge, UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
-import { useGameContext } from "@jgengine/ui/provider";
+import type { GameRegistry, PlayableGame } from "@jgengine/core/shell/registry.draw";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 /**
  * The dev app's demos show the engine's DOM HUD parts, which read the HUD theme, the kit and the notice

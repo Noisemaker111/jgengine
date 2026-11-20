@@ -9,12 +9,12 @@ import { ACCESSIBILITY_SETTING_IDS } from "@jgengine/core/settings/accessibility
 import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/core/audio/busMix";
 import { attachWaveFeedback } from "@jgengine/core/audio/eventFeedback";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { useGame } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGame } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 import { useSettingsStore } from "@jgengine/core/settings/settings.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 const DUMMY = "dummy";

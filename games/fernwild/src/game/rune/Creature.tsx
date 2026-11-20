@@ -2,8 +2,8 @@
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { viewedBreeding } from "../breeding";
 import type { CreatureCard } from "../creatures";

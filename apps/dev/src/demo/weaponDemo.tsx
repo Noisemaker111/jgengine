@@ -16,8 +16,8 @@ import type { WeaponPresentationTuning } from "@jgengine/core/combat/weaponPrese
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { useGameStore } from "@jgengine/ui/hooks";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 const deg = (value: number) => (value * Math.PI) / 180;

@@ -1054,9 +1054,9 @@
     {
       "id": "auto-scroll",
       "packages": [
-        "@jgengine/ui"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/ui/hooks",
+      "module": "@jgengine/core/ui/hooks.view",
       "gameFacing": false,
       "probe": null,
       "intent": "pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects"
@@ -2504,9 +2504,9 @@
     {
       "id": "current-target",
       "packages": [
-        "@jgengine/ui"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/ui/hooks",
+      "module": "@jgengine/core/ui/hooks.view",
       "gameFacing": false,
       "probe": null,
       "intent": "read the player's selected target (click or tab target) to drive a target frame"
@@ -2828,9 +2828,9 @@
     {
       "id": "define-game",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/defineGame",
+      "module": "@jgengine/core/shell/defineGame.draw",
       "gameFacing": false,
       "probe": null,
       "intent": "single public game-authoring path — compose systems, world, presentation, and authored scene in one definition"
@@ -3048,9 +3048,9 @@
     {
       "id": "dom-event",
       "packages": [
-        "@jgengine/ui"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/ui/hooks",
+      "module": "@jgengine/core/ui/hooks.view",
       "gameFacing": false,
       "probe": null,
       "intent": "attach a window/document/element event listener with automatic cleanup and a stable handler ref — no hand-rolled addEventListener effects"
@@ -3428,9 +3428,9 @@
     {
       "id": "engine-styles",
       "packages": [
-        "@jgengine/ui"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/ui/engineStyles",
+      "module": "@jgengine/core/ui/engineStyles.view",
       "gameFacing": false,
       "probe": null,
       "intent": "inject the engine stylesheet (jg-"
@@ -3468,8 +3468,7 @@
     {
       "id": "entity-frames",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
       "module": "@jgengine/core/hud/entityFrames.view",
       "gameFacing": false,
@@ -3641,9 +3640,9 @@
     {
       "id": "event-meter-hud",
       "packages": [
-        "@jgengine/ui"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/ui/hooks",
+      "module": "@jgengine/core/ui/hooks.view",
       "gameFacing": false,
       "probe": null,
       "intent": "render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge"
@@ -4491,9 +4490,9 @@
     {
       "id": "game-context-bridge",
       "packages": [
-        "@jgengine/ui"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/ui/provider",
+      "module": "@jgengine/core/ui/provider.view",
       "gameFacing": false,
       "probe": null,
       "intent": "re-provide the GameContext across a nested Canvas/reconciler boundary"
@@ -4551,9 +4550,9 @@
     {
       "id": "game-kit",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/gameKit",
+      "module": "@jgengine/core/shell/gameKit.draw",
       "gameFacing": false,
       "probe": null,
       "intent": "one-stop happy-path import surface for authoring, mounting, state, systems, authored scenes, and HUD"
@@ -5095,9 +5094,9 @@
     {
       "id": "host-mount",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/mountGamePlayer",
+      "module": "@jgengine/core/shell/mountGamePlayer.draw",
       "gameFacing": false,
       "probe": null,
       "intent": "run a game inside a page built with any UI library by mounting the player into an element"
@@ -5366,9 +5365,9 @@
     {
       "id": "hud-ticker",
       "packages": [
-        "@jgengine/ui"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/ui/hooks",
+      "module": "@jgengine/core/ui/hooks.view",
       "gameFacing": false,
       "probe": null,
       "intent": "re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects"
@@ -7668,9 +7667,9 @@
     {
       "id": "mount-game",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/GameHost",
+      "module": "@jgengine/core/shell/GameHost.draw",
       "gameFacing": false,
       "probe": null,
       "intent": "mount a defined game in the browser — `<GameHost playable={game} editor={() => import(\"@jgengine/editor\")} />`"
@@ -9362,9 +9361,9 @@
     {
       "id": "raf-loop",
       "packages": [
-        "@jgengine/ui"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/ui/hooks",
+      "module": "@jgengine/core/ui/hooks.view",
       "gameFacing": false,
       "probe": null,
       "intent": "run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects"
@@ -10002,9 +10001,9 @@
     {
       "id": "scaled-object-model",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/world/WorldScene",
+      "module": "@jgengine/core/shell/world/WorldScene.draw",
       "gameFacing": false,
       "probe": null,
       "intent": "stretch one placement of a catalog model with visual.scale"

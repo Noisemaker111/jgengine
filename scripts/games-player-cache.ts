@@ -16,8 +16,6 @@ export const HASH_ROOTS = [
   "apps/dev/vite.config.ts",
   "apps/dev/package.json",
   "packages/core/src",
-  "packages/ui/src",
-  "packages/shell/src",
   "packages/convex/src",
   "packages/editor/src",
   "bun.lock",

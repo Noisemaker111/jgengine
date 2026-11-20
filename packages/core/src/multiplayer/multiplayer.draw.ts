@@ -4,7 +4,7 @@ import { DEFAULT_HOST_SAVE_INTERVAL_MS, resolveHostTickMs } from "@jgengine/core
 import type { MultiplayerSession } from "@jgengine/core/runtime/transport";
 import { createHostedWorldSession, createHostedWorldSessionAsync, type HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 import { createWorldGameHost } from "@jgengine/ws/worldHost";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { createWsBackend } from "@jgengine/ws/createWsBackend";
 import {
   announcePeerHost,

@@ -3,7 +3,7 @@ import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { SettingsStore } from "@jgengine/core/settings/settingsModel";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import {
   isHudAnchor,
   listActiveHudLayouts,

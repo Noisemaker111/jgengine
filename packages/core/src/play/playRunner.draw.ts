@@ -1,6 +1,6 @@
 // @skill jgengine-ui
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { createPlaySession } from "./playSession.draw";
 import {

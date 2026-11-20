@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, terrain } from "@jgengine/core/world/features";
-import { defineGame } from "@jgengine/shell/defineGame";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 
 import { runGameSuite, runSuiteProof } from "./runSuiteProof.draw";
 import { defineProof } from "./suiteProof";

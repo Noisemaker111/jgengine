@@ -6,7 +6,7 @@
 // Allowed, by name: the two example hosts (`examples/next-host`, `examples/tanstack-host`), which are
 // React apps that show the engine inside one. The website (`apps/web`) draws with the engine runtime too.
 // `packages/convex` may name React in its manifest because `convex/react`, which its hooks use, loads
-// it; its source uses the engine runtime. `@jgengine/ui` is the engine's own UI package (`packages/ui`),
+// it; its source uses the engine runtime. `@jgengine/core/ui.view` is the engine's own UI (in core),
 // not React, so it is allowed everywhere.
 // The root package.json keeps the catalog entries the framework hosts use.
 //

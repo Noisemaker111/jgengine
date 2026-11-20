@@ -6,7 +6,7 @@ import { createFloatingTextField, type FloatingTextView } from "@jgengine/core/h
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { WorldFloatingText } from "@jgengine/core/hud/floatingTextWorld.draw";
 
 const SCOUT = "scout";

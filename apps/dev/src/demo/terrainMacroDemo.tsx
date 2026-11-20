@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary";
 import { environment, terrain } from "@jgengine/core/world/features";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 
 import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";

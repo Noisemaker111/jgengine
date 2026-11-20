@@ -14,8 +14,6 @@
     "@jgengine/assets": "workspace:*",
     "@jgengine/core": "workspace:*",
     "@jgengine/editor": "workspace:*",
-    "@jgengine/ui": "workspace:*",
-    "@jgengine/shell": "workspace:*",
     "three": "catalog:"
   },
   "devDependencies": {

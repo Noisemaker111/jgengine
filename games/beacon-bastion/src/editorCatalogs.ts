@@ -1,4 +1,4 @@
-import type { EditorCatalogDefinition } from "@jgengine/shell/gameKit";
+import type { EditorCatalogDefinition } from "@jgengine/core/shell/gameKit.draw";
 import type { ParamSchema } from "@jgengine/core/generator/paramSchema";
 
 import { TOWER_CATALOG, TOWER_IDS } from "./game/entities/towers/catalog";

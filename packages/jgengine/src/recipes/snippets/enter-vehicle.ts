@@ -1,9 +1,9 @@
-import { DEFAULT_WALK_CODES, defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { DEFAULT_WALK_CODES, defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import { boardVehicle, createVehicleSeats, leaveVehicle, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
 import { createVehicleDynamics, type VehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
 import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
-import type { GameContext } from "@jgengine/shell/gameKit";
+import type { GameContext } from "@jgengine/core/shell/gameKit.draw";
 
 const TUNING = vehicleTuning({
   engine: { topSpeed: 28, accel: 9 },

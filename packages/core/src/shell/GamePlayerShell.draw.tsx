@@ -1,0 +1,598 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
+
+import {
+  createActionStateTracker,
+  toActionStateBindingMap,
+} from "@jgengine/core/input/actionBindings";
+import { RESERVED_INPUT_ACTIONS } from "@jgengine/core/input/boundActionDispatch";
+import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengine/core/input/touchScheme";
+import { activeTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
+import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
+import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { localPlayers } from "@jgengine/core/runtime/localPlayers";
+import { actionContextStack, activeActionCodes, bindingOverrides as gameBindingOverrides, rebindAction as rebindGameAction, setBindingOverrides as seedGameBindingOverrides } from "@jgengine/core/game/controlGate";
+import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
+import { useDisplayProfile } from "@jgengine/core/ui/display.view";
+import { RotateDeviceScreen } from "@jgengine/core/ui/rotateDevice.view";
+import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
+import { ActionBindingsProvider } from "@jgengine/core/input/actionBindings.view";
+import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
+import { parseGraphicsQuality, withGraphicsQualityOverride } from "@jgengine/core/settings/graphicsSettings";
+import { parseRendererBackend, withRendererBackendOverride } from "@jgengine/core/settings/rendererBackend";
+import {
+  applyBindingOverrides,
+  loadBindingOverrides,
+  saveBindingOverrides,
+  type BindingOverrides,
+} from "@jgengine/core/input/bindingOverrides";
+import {
+  orientationGateActive,
+  orientationHintActive,
+  resolveOrientationRequirement,
+  type LayoutOrientation,
+} from "@jgengine/core/ui/orientation";
+import { devtools } from "@jgengine/core/devtools/devtools";
+import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams";
+import { armTextureErrors } from "@jgengine/core/devtools/textureErrors";
+import { armMissingModelLabels } from "@jgengine/core/model/modelLoad.draw";
+import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
+
+import { createAudioEngine } from "@jgengine/core/audio/audioEngine.view";
+import { attachAudioEventWire } from "@jgengine/core/audio/audioWire.view";
+import { attachAdaptiveMusic, type AdaptiveMusicSource } from "@jgengine/core/audio/adaptiveMusicWire";
+import { ADAPTIVE_THEMES } from "@jgengine/core/audio/adaptiveMusic";
+import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
+import { installAgentBridge } from "@jgengine/core/devtools/agentBridge.draw";
+import { attachPlaytestProbe } from "@jgengine/core/devtools/playtestProbe";
+import { withDevtoolsLatency } from "@jgengine/core/devtools/latencyInstrumentation.draw";
+import { resolveRigKind } from "@jgengine/core/camera/rigResolve";
+import { contextModels } from "@jgengine/core/model/resolveModel";
+import { configureModelScan } from "@jgengine/core/model/modelScan.draw";
+import { configureModelSurface } from "@jgengine/core/model/modelSurface.draw";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
+import type { PlayableGame } from "./registry.draw";
+import { OrientationHint } from "@jgengine/core/input/OrientationHint.view";
+import { useTouchStyle, useTouchJoystickVariant, useGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
+import {
+  logRuntimeError,
+  type RuntimeDiagnostic,
+} from "@jgengine/core/devtools/diagnosticOverlay.view";
+import { EMPTY_RESERVED } from "./shellConstants";
+import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
+import { useShellMultiplayerSync } from "@jgengine/core/multiplayer/useShellMultiplayerSync.draw";
+import { ShellHudPresentation } from "@jgengine/core/hud/ShellHudPresentation.draw";
+import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
+import { playControlsActive } from "@jgengine/core/game/controlGate";
+import { resolveInputSink } from "@jgengine/core/input/inputSink";
+import { observableShellTracker, attachShellInputPublication } from "@jgengine/core/input/shellInputPublication";
+import { attachShellControlSuspension } from "@jgengine/core/input/shellControlSuspension";
+import { LazyShell3dPresentation } from "./lazyShell3dPresentation.draw";
+import { BootLoading } from "@jgengine/core/boot/bootScreen.view";
+import { BootDirector } from "@jgengine/core/boot/BootDirector.draw";
+import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, PresentationRecovery, type PresentationRecoveryEvent } from "./presentationRecovery.view";
+import type { CrashReport } from "@jgengine/core/health/crashSeam";
+import { useRuntimeHealth } from "./useRuntimeHealth.draw";
+import { installPlayFocusReclaim } from "@jgengine/core/input/surfaceFocus.view";
+
+const DEV_USER_ID = "dev-player";
+
+/** The query param that mirrors the devtools overlay into the URL — present = open. */
+const DEBUG_PARAM = "debug";
+/** The query param that pins the canvas cover, so a perf run can measure a covered frame. */
+const COVER_PARAM = "cover";
+
+const NO_SUBSCRIBE = () => () => undefined;
+const ZERO_VERSION = () => 0;
+
+function shellRootSnapshot(ctx: GameContext, userId: string): string {
+  return `${ctx.player.possession.active(userId)}|${activeTouchControlsMode(ctx) ?? ""}`;
+}
+
+/**
+ * Re-render the shell root only for the ctx slices it reads: the entity the local player possesses,
+ * and the active touch-control mode. Subscribing to the raw ctx version instead reconciled the
+ * canvas, the whole actor tree and the HUD on every per-frame pose and store write — the churn
+ * `subscribeMembership` and imperative `useFrame` pose reads exist to keep out of the UI runtime (#625).
+ * @internal
+ */
+export function useShellRootResubscribe(ctx: GameContext | null, userId: string): void {
+  useSyncExternalStore(
+    ctx?.subscribe ?? NO_SUBSCRIBE,
+    () => (ctx === null ? "" : shellRootSnapshot(ctx, userId)),
+    () => "",
+  );
+}
+
+export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
+export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
+export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
+export { hasEnvironmentTerrain } from "@jgengine/core/terrain/terrain";
+
+/**
+ * The shell body `GameHost` renders after resolving multiplayer. Hosts that resolve their own
+ * sessions (the dev runner) render it directly; games mount through `GameHost`.
+ * @internal
+ */
+export function GamePlayerShell({
+  playable,
+  multiplayer: rawMultiplayer = null,
+  poster = false,
+  onContextReady,
+}: {
+  playable: PlayableGame;
+  multiplayer?: ShellMultiplayer | null;
+  poster?: boolean;
+  /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots, tests, analytics. */
+  onContextReady?: ((ctx: GameContext) => void) | undefined;
+}) {
+  const multiplayer = useMemo(
+    () => (rawMultiplayer === null ? null : withDevtoolsLatency(rawMultiplayer)),
+    [rawMultiplayer],
+  );
+  const devtoolsEnabled = playable.chrome?.devtools !== false && !poster;
+  armFallbackSeams(devtoolsEnabled);
+  armTextureErrors(devtoolsEnabled);
+  armMissingModelLabels(devtoolsEnabled);
+  // `?debug` mirrors the devtools overlay into the URL: open with a link, strip the param to close.
+  const [devtoolsOpen, setDevtoolsOpen] = useState(() => devtoolsEnabled && readUrlFlag(DEBUG_PARAM));
+  const devtoolsOpenRef = useRef(false);
+  devtoolsOpenRef.current = devtoolsOpen;
+  useEffect(() => {
+    if (!devtoolsEnabled) return;
+    writeUrlParam(DEBUG_PARAM, devtoolsOpen ? "1" : null);
+  }, [devtoolsEnabled, devtoolsOpen]);
+  useEffect(() => {
+    if (!devtoolsEnabled) return;
+    return subscribeUrlChange(() => setDevtoolsOpen(readUrlFlag(DEBUG_PARAM)));
+  }, [devtoolsEnabled]);
+  // `?cover=1` holds the canvas cover for the page, so a perf run can measure a covered frame on
+  // any game without a menu. Games declare the same hold from their own covering surface.
+  const coverPinned = readUrlFlag(COVER_PARAM);
+  useEffect(() => (coverPinned ? canvasCover.hold() : undefined), [coverPinned]);
+  useEffect(
+    () =>
+      installAgentBridge({
+        playable,
+        devtoolsEnabled,
+        isDevtoolsOpen: () => devtoolsOpenRef.current,
+        setDevtoolsOpen,
+        getContext: () => ctxRef.current,
+        getSettings: () => settingsStore,
+      }),
+    [playable, devtoolsEnabled],
+  );
+  const [posterFrozen, setPosterFrozen] = useState(false);
+  const posterSettledRef = useRef(false);
+  const [ctx, setCtx] = useState<GameContext | null>(null);
+  const ctxRef = useRef<GameContext | null>(null);
+  ctxRef.current = ctx;
+  const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostic[]>([]);
+  const diagnosticSequence = useRef(0);
+  const presentationDiagnostics = useRef(createPresentationDiagnosticOwnership());
+  const [remotePlayers, setRemotePlayers] = useState<PresencePoseRow[]>([]);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  // A start/menu button that unmounts on click drops focus to <body>, where gameplay keys never arrive.
+  useEffect(() => (poster ? undefined : installPlayFocusReclaim(document, () => wrapperRef.current)), [poster]);
+  const recoveredFocus = useRef(createPlaySurfaceFocusOwnership<GameContext>());
+  const yawRef = useRef(0);
+  const pitchRef = useRef(0);
+  const serverIdRef = useRef<string | null>(null);
+  const cameraDraggingRef = useRef(false);
+  const primaryClickRef = useRef(false);
+  const pointerAxisRef = useRef<PointerAxisState | null>(null);
+  const f2HeldRef = useRef(false);
+  const settingsStore = useMemo(() => {
+    const store = createSettingsStore();
+    // `?quality=<tier>` pins the graphics tier for this page only (capture draft shots); never persisted.
+    // `?renderer=webgl|webgpu` pins the GPU backend the same way (perf runs and pixel diffs).
+    const search = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
+    const pinned = parseGraphicsQuality(search?.get("quality"));
+    const backend = parseRendererBackend(search?.get("renderer"));
+    const tiered = pinned === null ? store : withGraphicsQualityOverride(store, pinned, playable.rendering?.graphics);
+    return backend === null ? tiered : withRendererBackendOverride(tiered, backend);
+  }, []);
+  const [bindingOverrides, setBindingOverrides] = useState<BindingOverrides>(() =>
+    loadBindingOverrides(playable.game.name),
+  );
+  // Render-time reset (no stale-keybinds frame): reload persisted overrides once per playable change.
+  const [overridesPlayable, setOverridesPlayable] = useState(playable);
+  if (overridesPlayable !== playable) {
+    setOverridesPlayable(playable);
+    setBindingOverrides(loadBindingOverrides(playable.game.name));
+  }
+  const effectiveInput = useMemo(
+    () => applyBindingOverrides(playable.game.input ?? {}, bindingOverrides),
+    [playable, bindingOverrides],
+  );
+  // The game holds the live rebinds (its `settings.rebind` command and this shell's Controls settings both change
+  // them there); the shell seeds them from storage when a game boots and stores them whenever they change.
+  const rebindAction = useCallback(
+    (action: string, code: string) => {
+      if (ctx !== null) rebindGameAction(ctx, action, [code]);
+    },
+    [ctx],
+  );
+  const resetActionBinding = useCallback(
+    (action: string) => {
+      if (ctx !== null) rebindGameAction(ctx, action, null);
+    },
+    [ctx],
+  );
+  useLayoutEffect(() => {
+    if (ctx !== null) seedGameBindingOverrides(ctx, loadBindingOverrides(playable.game.name));
+  }, [ctx, playable]);
+  const contextStack = ctx === null ? null : actionContextStack(ctx);
+  const contextVersion = useSyncExternalStore(
+    contextStack?.subscribe ?? NO_SUBSCRIBE,
+    contextStack?.version ?? ZERO_VERSION,
+    contextStack?.version ?? ZERO_VERSION,
+  );
+  useEffect(() => {
+    if (ctx === null) return;
+    const live = gameBindingOverrides(ctx);
+    if (live === bindingOverrides) return;
+    setBindingOverrides(live);
+    saveBindingOverrides(playable.game.name, live);
+  }, [ctx, playable, contextVersion, bindingOverrides]);
+  const activeInput = useMemo(
+    () => (ctx === null ? effectiveInput : activeActionCodes(ctx, playable.game.input ?? {})),
+    // contextVersion re-derives the layered map when a context is pushed or popped mid-game.
+    [ctx, playable, effectiveInput, contextVersion],
+  );
+  const activeBindingMap = useMemo(() => toActionStateBindingMap(withTouchCodes(activeInput)), [activeInput]);
+  // One tracker per context, rebound in place so keys held across a context swap stay held.
+  const tracker = useMemo(() => observableShellTracker(createActionStateTracker<string>(activeBindingMap)), [ctx]);
+  const boundMapRef = useRef(activeBindingMap);
+  if (boundMapRef.current !== activeBindingMap) {
+    boundMapRef.current = activeBindingMap;
+    tracker.rebind(activeBindingMap);
+  }
+  const graphics = useGraphicsSettings(settingsStore, playable.rendering?.shadows ?? true, playable.rendering?.graphics);
+  const { health, onFrameMs } = useRuntimeHealth({ playable, settingsStore, quality: graphics.quality, overrides: playable.rendering?.graphics });
+  const [fatal, setFatal] = useState<{ report: CrashReport | null; phase: string } | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+  useLayoutEffect(() => configureModelSurface(playable.rendering?.surfaceDetail !== false, graphics.profile.surfaceDetail), [playable.rendering?.surfaceDetail, graphics.profile.surfaceDetail]);
+  useLayoutEffect(() => configureModelScan(graphics.profile.surfaceDetail === "full"), [graphics.profile.surfaceDetail]);
+  const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    if (rect === undefined) return;
+    pointerAxisRef.current = normalizePointerToAxis(event.clientX, event.clientY, rect);
+  };
+  const deactivatePointerAxis = () => {
+    const state = pointerAxisRef.current;
+    if (state !== null && state.active) {
+      pointerAxisRef.current = { ...state, active: false };
+      tracker.notify("discrete");
+    }
+  };
+  // Reads fresh every render: the ctx-version useSyncExternalStore below re-renders on store
+  // writes, so a gameplay setTouchControlsMode("car") swaps the visible control set that frame.
+  const touchMode = ctx === null ? null : activeTouchControlsMode(ctx);
+  const touchScheme = useMemo(
+    () =>
+      deriveTouchScheme(playable.game.input, {
+        reserved:
+          resolveRigKind(playable.camera) === "none" || playable.chrome?.presentation === "hud"
+            ? EMPTY_RESERVED
+            : RESERVED_INPUT_ACTIONS,
+        firstPerson: resolveRigKind(playable.camera) === "first",
+        config: playable.controls?.touch,
+        mode: touchMode,
+      }),
+    [playable, touchMode],
+  );
+  const touchStyle = useTouchStyle(settingsStore, touchScheme?.style ?? DEFAULT_TOUCH_STYLE);
+  const touchJoystickVariant = useTouchJoystickVariant(settingsStore);
+  const { coarsePointer, portrait, compact } = useDisplayProfile();
+  const analogRef = useRef<Readonly<Record<string, number>> | null>(null);
+  const touchSink = useMemo(
+    () => ({
+      onCodeDown: (code: string) => tracker.handleDown(code),
+      onCodeUp: (code: string) => tracker.handleUp(code),
+      onAnalog: (values: Readonly<Record<string, number>> | null) => {
+        analogRef.current = values;
+        tracker.notify("analog");
+      },
+    }),
+    [tracker],
+  );
+  useLayoutEffect(() => {
+    if (ctx === null) return;
+    return attachShellControlSuspension({
+      ctx, tracker, pointerAxisRef, analogRef, primaryClickRef, cameraDraggingRef, f2HeldRef,
+    });
+  }, [ctx, tracker]);
+  const gateRef = useRef(false);
+  useLayoutEffect(() => {
+    if (ctx === null || poster) return;
+    return attachShellInputPublication({
+      ctx, tracker,
+      active: () => !gateRef.current && playControlsActive(ctx),
+      analog: () => analogRef.current,
+      pointer: () => pointerAxisRef.current,
+      sink: () => resolveInputSink({
+        serverAuthoritative: isServerAuthoritative(playable.game.multiplayer) && multiplayer !== null,
+        backend: multiplayer?.backend ?? null, serverId: serverIdRef.current,
+      }),
+    });
+  }, [ctx, tracker, multiplayer, playable, poster]);
+  const orientationPlatform = coarsePointer ? "mobile" : "desktop";
+  const orientationRequirement = useMemo(
+    () => resolveOrientationRequirement(playable.controls?.orientation, orientationPlatform),
+    [playable, orientationPlatform],
+  );
+  const liveOrientation: LayoutOrientation = portrait ? "portrait" : "landscape";
+  const orientationGate = !poster && coarsePointer && orientationGateActive(orientationRequirement, liveOrientation);
+  const orientationHint = !poster && coarsePointer && orientationHintActive(orientationRequirement, liveOrientation);
+  gateRef.current = orientationGate;
+  const orientationGateEl = orientationGate ? (
+    <RotateDeviceScreen
+      requiredOrientation={orientationRequirement.required ?? "landscape"}
+      title={orientationRequirement.required === "portrait" ? "Turn your phone upright" : "Turn your phone sideways"}
+      description={`${playable.game.name} is built for ${orientationRequirement.required ?? "landscape"} play.`}
+    />
+  ) : orientationHint && orientationRequirement.preferred !== null ? (
+    <OrientationHint wanted={orientationRequirement.preferred} />
+  ) : null;
+  const audioEngine = useMemo(
+    () =>
+      createAudioEngine({
+        sounds: resolvePlayableAudio(playable).sounds,
+        maxVoices: playable.audio?.maxVoices,
+        voiceOverflow: playable.audio?.voiceOverflow,
+        buses: resolvePlayableAudio(playable).buses,
+        music: playable.audio?.adaptiveMusic === undefined || playable.audio.adaptiveMusic === false
+          ? playable.audio?.music
+          : { ...ADAPTIVE_THEMES, ...playable.audio.music },
+        musicBus: playable.audio?.musicBus,
+        speechBus: playable.audio?.speechBus,
+        zones: playable.audio?.zones,
+        occlusion: playable.audio?.occlusion,
+        panning: playable.audio?.panning,
+        reverb: playable.audio?.reverb,
+      }),
+    [playable],
+  );
+  useEffect(() => () => audioEngine.dispose(), [audioEngine]);
+  useEffect(() => {
+    if (ctx === null) return;
+    return attachAudioEventWire(ctx.game.events, audioEngine);
+  }, [ctx, audioEngine]);
+  useEffect(() => {
+    const adaptive = playable.audio?.adaptiveMusic;
+    if (ctx === null || adaptive === undefined || adaptive === false) return;
+    return attachAdaptiveMusic(
+      { on: ctx.game.events.on.bind(ctx.game.events) as AdaptiveMusicSource["on"], isLocal: (id) => id !== undefined && (id === ctx.player.userId || id === ctx.player.possession.active(ctx.player.userId)) },
+      (theme) => audioEngine.playMusic(theme),
+      adaptive === true ? {} : adaptive,
+    );
+  }, [ctx, audioEngine, playable]);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dataset["jgPresentation"] = playable.chrome?.presentation ?? "3d";
+    return () => {
+      delete document.documentElement.dataset["jgPresentation"];
+    };
+  }, [playable]);
+  // The tier the shell actually resolved, so a capture can prove which one it measured.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dataset["jgQuality"] = graphics.quality;
+    return () => {
+      delete document.documentElement.dataset["jgQuality"];
+    };
+  }, [graphics.quality]);
+  useEffect(() => {
+    if (ctx === null || typeof document === "undefined") return;
+    const hud = resolveRigKind(playable.camera) === "none" || playable.chrome?.presentation === "hud";
+    if (!hud) return;
+    const frame = requestAnimationFrame(() => {
+      document.documentElement.dataset["jgFrameReady"] = "1";
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      delete document.documentElement.dataset["jgFrameReady"];
+    };
+  }, [ctx, playable]);
+  const userId = multiplayer?.userId ?? DEV_USER_ID;
+  const reportRuntimeError = (error: unknown, phase: string, componentStack?: string) => {
+    const diagnostic = logRuntimeError(error, phase, componentStack);
+    const id = ++diagnosticSequence.current;
+    presentationDiagnostics.current.register(error, id, phase);
+    setDiagnostics((current) => [...current.slice(-4), { ...diagnostic, id }]);
+    const report = health?.crash.capture(error, phase, componentStack) ?? null;
+    if (playable.health?.errorScreen !== undefined && (phase === "ui-render" || phase === "tick")) setFatal({ report, phase });
+  };
+  const retryAfterError = () => {
+    setFatal(null);
+    setDiagnostics([]);
+    setRetryKey((key) => key + 1);
+  };
+  const ErrorScreen = playable.health?.errorScreen;
+  const errorScreen =
+    fatal !== null && ErrorScreen !== undefined ? (
+      <div style={{ position: "fixed", inset: 0, zIndex: 1000 }}>
+        <ErrorScreen report={fatal.report} phase={fatal.phase} retry={retryAfterError} />
+      </div>
+    ) : null;
+
+  const recoveryTrace = useRef<Array<Record<string, unknown>>>([]);
+  const traceRecovery = (event: PresentationRecoveryEvent | { phase: string }) => {
+    if (!devtoolsEnabled) return;
+    const wrapper = wrapperRef.current;
+    const active = document.activeElement;
+    const rect = wrapper?.getBoundingClientRect();
+    recoveryTrace.current.push({ ...event, at: performance.now(), connected: wrapper?.isConnected ?? false,
+      rects: wrapper?.getClientRects().length ?? 0, width: rect?.width ?? null, height: rect?.height ?? null,
+      display: wrapper === null ? null : getComputedStyle(wrapper).display,
+      active: active?.tagName ?? null, ownsFocus: active === wrapper, focusInside: wrapper?.contains(active) ?? false });
+  };
+  useEffect(() => {
+    recoveryTrace.current = [];
+    if (!devtoolsEnabled) return;
+    return devtools.probes.register("presentationRecovery", () => recoveryTrace.current);
+  }, [ctx, devtoolsEnabled]);
+
+  const revealRecoveredPresentation = () => {
+    if (ctx === null) return;
+    traceRecovery({ phase: "shell-reveal-layout" });
+    recoveredFocus.current.reveal(ctx, wrapperRef.current, document.activeElement, document.body);
+    traceRecovery({ phase: "shell-focus-result" });
+  };
+
+  const retireRecoveredPresentation = (error: unknown) => {
+    traceRecovery({ phase: "shell-recovered-callback" });
+    const owned = presentationDiagnostics.current.recovered(error);
+    setDiagnostics((current) => current.filter((diagnostic) => !owned.has(diagnostic.id)));
+    if (ctx !== null) recoveredFocus.current.request(ctx);
+    revealRecoveredPresentation();
+  };
+
+  useEffect(() => {
+    setDiagnostics([]);
+    let detachProbe = () => {};
+    let ownedContext: GameContext | null = null;
+    const disposeOwnedContext = () => {
+      const context = ownedContext;
+      ownedContext = null;
+      if (context === null) return;
+      try {
+        playable.loop.onDispose(context);
+      } catch (error) {
+        reportRuntimeError(error, "dispose");
+      }
+    };
+    try {
+      const models = contextModels(playable);
+      const context = createGameContext({
+        definition: playable.game,
+        content: playable.content,
+        player: { userId, isNew: true },
+        ...(models === undefined ? {} : { models }),
+      });
+      ownedContext = context;
+      if (playable.controls?.localPlayers !== undefined) localPlayers(context).retune(playable.controls?.localPlayers);
+      playable.loop.onInit(context);
+      playable.loop.onNewPlayer(context);
+      onContextReady?.(context);
+      const probe = playable.capture?.probe;
+      if (probe !== undefined && typeof window !== "undefined") {
+        detachProbe = attachPlaytestProbe(() => probe(context));
+      }
+      setCtx(context);
+    } catch (error) {
+      disposeOwnedContext();
+      reportRuntimeError(error, "init");
+      setCtx(null);
+    }
+    return () => {
+      try {
+        detachProbe();
+      } finally {
+        disposeOwnedContext();
+        setCtx(null);
+      }
+    };
+  }, [playable, userId]);
+
+  const authoritativeFrameRef = useRef<import("@jgengine/core/multiplayer/authoritativeSync").AuthoritativeFrameHandler | null>(null);
+  const join = useShellMultiplayerSync(ctx, multiplayer, playable, serverIdRef, setRemotePlayers, authoritativeFrameRef);
+
+  useEffect(() => {
+    wrapperRef.current?.focus();
+  }, [ctx]);
+
+  // The shell root re-renders only for the ctx slices it reads — see {@link useShellRootResubscribe}.
+  useShellRootResubscribe(ctx, userId);
+
+  if (ctx === null) return <div className="relative h-full w-full"><BootLoading reason="game start" /></div>;
+  if (join.status !== "joined") return <JoinGate {...join} />;
+
+  const cameraConfig =
+    playable.camera?.follow?.followEntityId !== undefined
+      ? playable.camera
+      : { ...playable.camera, followEntityId: ctx.player.possession.active(userId) };
+  const rigKind = resolveRigKind(cameraConfig);
+  const shared = {
+    playable,
+    ctx,
+    multiplayer,
+    tracker,
+    pointerAxisRef,
+    gateRef,
+    wrapperRef,
+    f2HeldRef,
+    yawRef,
+    pitchRef,
+    touchScheme,
+    touchSink,
+    touchJoystickVariant,
+    analogRef,
+    inputBindings: activeInput,
+    orientationGate,
+    orientationGateEl,
+    coarsePointer,
+    diagnostics,
+    devtoolsEnabled,
+    devtoolsOpen,
+    setDevtoolsOpen,
+    reportRuntimeError,
+    trackPointerAxis,
+    deactivatePointerAxis,
+  } as const;
+
+  if (rigKind === "none" || playable.chrome?.presentation === "hud") {
+    return (
+      <ActionBindingsProvider bindings={effectiveInput}>
+      <PresentationRecovery key={retryKey} ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
+        <ShellHudPresentation
+          {...shared}
+          serverIdRef={serverIdRef}
+          onPointerResumeAudio={() => audioEngine.resume()}
+          settingsStore={settingsStore}
+          bindingOverrides={bindingOverrides}
+          rebindAction={rebindAction}
+          resetActionBinding={resetActionBinding}
+          audioEngine={audioEngine}
+        />
+        {poster ? null : <BootDirector ctx={ctx} />}
+      </PresentationRecovery>
+      {errorScreen}
+      </ActionBindingsProvider>
+    );
+  }
+
+  return (
+    <ActionBindingsProvider bindings={effectiveInput}>
+    <PresentationRecovery key={retryKey} ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
+      <LazyShell3dPresentation
+        {...shared}
+        onPresentationReveal={revealRecoveredPresentation}
+        onFrameMs={onFrameMs}
+        primaryClickRef={primaryClickRef}
+        cameraDraggingRef={cameraDraggingRef}
+        serverIdRef={serverIdRef}
+        remotePlayers={remotePlayers}
+        touchStyle={touchStyle}
+        compact={compact}
+        graphics={graphics}
+        settingsStore={settingsStore}
+        bindingOverrides={bindingOverrides}
+        rebindAction={rebindAction}
+        resetActionBinding={resetActionBinding}
+        audioEngine={audioEngine}
+        poster={poster}
+        posterFrozen={posterFrozen}
+        onPosterSettled={() => {
+          if (posterSettledRef.current) return;
+          posterSettledRef.current = true;
+          setPosterFrozen(true);
+        }}
+        authoritativeFrameRef={authoritativeFrameRef}
+      />
+    </PresentationRecovery>
+    {errorScreen}
+    </ActionBindingsProvider>
+  );
+}

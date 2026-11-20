@@ -26,21 +26,20 @@ export const PACKAGE_SKILLS: Record<string, string> = {
   sql: "jgengine-multiplayer",
   convex: "jgengine-multiplayer",
   node: "jgengine-multiplayer",
-  ui: "jgengine-ui",
-  shell: "jgengine-ui",
   assets: "jgengine-assets",
   // github + jgengine CLI are tooling, not game-authoring surface — omit so they
   // leave generated game-authoring API docs (still published; agents use CLI help).
 };
 
-export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {
-  // The public authoring trio lives with the router skill so the minimal install
-  // (jgengine + editor + verify) already carries defineGame/gameKit/GameHost.
-  shell: { defineGame: MAIN, gameKit: MAIN, GameHost: MAIN },
-};
+export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {};
 
 /** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
 export const CORE_MODULE_OVERRIDES: Record<string, string> = {
+  // The public authoring trio lives with the router skill so the minimal install
+  // (jgengine + editor + verify) already carries defineGame/gameKit/GameHost.
+  "shell/defineGame.draw": MAIN,
+  "shell/gameKit.draw": MAIN,
+  "shell/GameHost.draw": MAIN,
   "material/appearanceSignals": "jgengine-world",
   "runtime/worldProjection": "jgengine-multiplayer",
   // The scene-ownership boundary is how the editor decides whether runtime world
@@ -58,6 +57,7 @@ export const CORE_BARREL_SKILLS: Record<string, string> = {
   gameplay: "jgengine-gameplay",
   multiplayer: "jgengine-multiplayer",
   ui: "jgengine-ui",
+  "ui.view": "jgengine-ui",
 };
 
 export const SKILL_DIRS = API_SKILL_DIRS;

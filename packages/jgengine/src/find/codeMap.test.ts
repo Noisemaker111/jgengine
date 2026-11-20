@@ -36,7 +36,7 @@ describe("reading exports", () => {
 test("places repository paths in their layer and leaves tests and fixtures out", () => {
   expect(layerOf("packages/core/src/camera/shake/cameraShake.ts")).toEqual({ layer: "core", path: "packages/core/src/camera/shake/cameraShake.ts", rel: "camera/shake/cameraShake.ts" });
   expect(layerOf("apps/dev/src/demo/hudDemo.tsx")?.layer).toBe("apps/dev");
-  expect(layerOf("scripts/check-layers.ts")?.layer).toBe("scripts");
+  expect(layerOf("scripts/check-hud-tokens.ts")?.layer).toBe("scripts");
   expect(layerOf("packages/core/src/camera/shake/cameraShake.test.ts")).toBeNull();
   expect(layerOf("packages/core/src/meta/changelog.json")).toBeNull();
   expect(layerOf("games/odd-orbit/src/world.ts")).toBeNull();
@@ -44,22 +44,22 @@ test("places repository paths in their layer and leaves tests and fixtures out",
 
 test("a concept folder wins its layer, files named for it elsewhere are listed, and an export that only mentions it is not a home", () => {
   const sources: Record<string, string> = {
-    "packages/ui/src/camera/shake/cameraShake.tsx": "/** Meter. */\nexport function CameraShakeMeter() {}\n",
-    "packages/ui/src/camera/shake/readout.ts": "export function useCameraShakeReadout() {}\n",
+    "packages/editor/src/camera/shake/cameraShake.tsx": "/** Meter. */\nexport function CameraShakeMeter() {}\n",
+    "packages/editor/src/camera/shake/readout.ts": "export function useCameraShakeReadout() {}\n",
     "packages/core/src/hud/hudFrame.view.tsx": "/** Mentions camera shake in passing. */\nexport function HudFrame() {}\n",
-    "packages/ui/src/cameraShakeLabel.tsx": "export function CameraShakeLabel() {}\n",
-    "packages/shell/src/water/ocean.ts": "export const MAX_CAMERA_SHAKE_WAVES = 4;\n",
+    "packages/editor/src/cameraShakeLabel.tsx": "export function CameraShakeLabel() {}\n",
+    "apps/dev/src/water/ocean.ts": "export const MAX_CAMERA_SHAKE_WAVES = 4;\n",
     "packages/core/src/world/notes.ts": "/** Shakes nothing about the camera. */\nexport const unrelated = 1;\n",
   };
   const files = Object.keys(sources).map((path) => layerOf(path)!);
   const homes = locate(files, (file: CodeFile) => sources[file.path]!, queryTokens("camera shake"));
-  expect(homes.map((home) => [home.layer, home.home])).toEqual([["ui", "packages/ui/src/camera/shake/"]]);
-  expect(homes[0]!.role).toBe("view");
-  expect(homes[0]!.files.map((hit) => hit.path)).toEqual(["packages/ui/src/camera/shake/cameraShake.tsx", "packages/ui/src/camera/shake/readout.ts"]);
-  expect(homes[0]!.elsewhere.map((hit) => hit.path)).toEqual(["packages/ui/src/cameraShakeLabel.tsx"]);
+  expect(homes.map((home) => [home.layer, home.home])).toEqual([["editor", "packages/editor/src/camera/shake/"]]);
+  expect(homes[0]!.role).toBe("author");
+  expect(homes[0]!.files.map((hit) => hit.path)).toEqual(["packages/editor/src/camera/shake/cameraShake.tsx", "packages/editor/src/camera/shake/readout.ts"]);
+  expect(homes[0]!.elsewhere.map((hit) => hit.path)).toEqual(["packages/editor/src/cameraShakeLabel.tsx"]);
   const text = renderLocations(homes).join("\n");
-  expect(text).toContain("ui (view)                   packages/ui/src/camera/shake/");
-  expect(text).toContain("also packages/ui/src/cameraShakeLabel.tsx  CameraShakeLabel");
+  expect(text).toContain("editor (author)             packages/editor/src/camera/shake/");
+  expect(text).toContain("also packages/editor/src/cameraShakeLabel.tsx  CameraShakeLabel");
 });
 
 describe("this checkout answers where a concept lives in one call", () => {
@@ -73,7 +73,6 @@ describe("this checkout answers where a concept lives in one call", () => {
     for (const folder of ["grass", "sky", "water", "weather", "terrain", "instancing", "scatter", "lod", "environment", "map", "roads", "city", "vfx", "postfx", "visibility", "lighting", "material", "placement", "camera", "model", "anim"]) {
       const homes = homeOf(folder);
       expect(homes.get("core")).toBe(`packages/core/src/${folder}/`);
-      expect(homes.get("shell") ?? "").not.toEndWith(`/${folder}/`);
     }
   });
 
@@ -110,8 +109,6 @@ describe("this checkout answers where a concept lives in one call", () => {
     for (const [query, folder] of features) {
       const homes = homeOf(query);
       expect(homes.get("core")).toBe(`packages/core/src/${folder}/`);
-      expect(homes.get("shell") ?? "").not.toEndWith(`/${folder}/`);
-      expect(homes.get("ui") ?? "").not.toEndWith(`/${folder}/`);
     }
   });
 
@@ -119,7 +116,6 @@ describe("this checkout answers where a concept lives in one call", () => {
     for (const query of ["waves"]) {
       const homes = homeOf(query);
       expect(homes.get("core")).toBe(`packages/core/src/${query}/`);
-      expect(homes.has("shell")).toBe(false);
     }
   });
 });

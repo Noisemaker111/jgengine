@@ -23,12 +23,12 @@ import { resolveTerrainField, type TerrainField } from "@jgengine/core/terrain/t
 import { createWaypointStore, type WaypointStore } from "@jgengine/core/map/waypoints";
 import { createAnnotationLayer, type AnnotationLayer } from "@jgengine/core/map/mapAnnotations";
 import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/core/map/map.view";
-import { usePlayer, useRafLoop, useSceneEntities, useFeed } from "@jgengine/ui/hooks";
+import { usePlayer, useRafLoop, useSceneEntities, useFeed } from "@jgengine/core/ui/hooks.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { bakeTerrainMap, type BakedMap } from "@jgengine/core/map/terrainMap.draw";
 import { MapMarkerBeacons } from "@jgengine/core/map/MapMarkerBeacons.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const SCOUT = "scout";
 const RAIDER = "raider";

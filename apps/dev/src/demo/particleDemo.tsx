@@ -6,7 +6,7 @@ import { createParticleSystem } from "@jgengine/core/vfx/particles";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { ParticleField } from "@jgengine/core/vfx/ParticleField.draw";
 
 const SCOUT = "scout";

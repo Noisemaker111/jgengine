@@ -3,15 +3,15 @@ import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { parseEffectsPreview, PREVIEW_EFFECTS, withEffectsPreview } from "./effectsPreview";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
-import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
+import { GamePlayerShell } from "@jgengine/core/shell/GamePlayerShell.draw";
+import { GameUiPreview, type UiPreviewScenario } from "@jgengine/core/shell/GameUiPreview.draw";
 import { resolveConvexMultiplayer } from "@jgengine/convex/resolveConvexMultiplayer";
 import {
   resolvePeerShellMultiplayer,
   resolveShellMultiplayer,
   type ShellMultiplayer,
 } from "@jgengine/core/multiplayer/multiplayer.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { LOOK_PRESETS, type LookPreset } from "@jgengine/core/render/lookPreset";
 import { BootLoading } from "@jgengine/core/boot/bootScreen.view";
 

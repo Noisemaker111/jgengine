@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import type { ChatMessage } from "@jgengine/core/chat/chat";
-import { useGameStore } from "@jgengine/ui/hooks";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
 
 export interface ChatBubble {
   id: string;

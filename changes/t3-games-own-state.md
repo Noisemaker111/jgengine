@@ -29,4 +29,4 @@ Engine seam: packages/core/src/audio/audioProbe.view.ts, packages/core/src/devto
 
 - `@jgengine/core/devtools/agentBridge.draw` no longer exports `CAPTURE_COMMAND_INPUT`.
 - `@jgengine/core/runtime/browserLifecycle.view` no longer exports `CAPTURE_HOLD_KEY`.
-- `@jgengine/ui` no longer exports `CAPTURE_HOLD_KEY`.
+- `@jgengine/core/ui.view` no longer exports `CAPTURE_HOLD_KEY`.

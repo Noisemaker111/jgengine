@@ -10,8 +10,8 @@ import {
   terrain,
   type EnvironmentWorldFeature,
 } from "@jgengine/core/world/features";
-import { defineGame } from "@jgengine/shell/defineGame";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import {
   importAssetToHost,

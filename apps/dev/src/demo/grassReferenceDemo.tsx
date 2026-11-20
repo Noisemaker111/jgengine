@@ -4,7 +4,7 @@ import { Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
 import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { readGrassLook } from "@jgengine/core/grass/grassKind";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 
 import { demoGame } from "./demoGame";

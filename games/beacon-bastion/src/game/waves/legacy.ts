@@ -3,7 +3,7 @@ import { createSessionLoop, type SessionLoop, type SessionLoopState, type Sessio
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { seededRng } from "@jgengine/shell/gameKit";
+import { seededRng } from "@jgengine/core/shell/gameKit.draw";
 
 import { STARTING_GOLD, STARTING_LIVES } from "../entities/base/catalog";
 import { campaign, councilAdd, difficultyOf, recordStars, starsFor } from "../campaign";

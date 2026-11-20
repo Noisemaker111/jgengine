@@ -1,5 +1,5 @@
 import { environment, grass, sky, terrain } from "@jgengine/core/world/features";
-import { defineGame } from "@jgengine/shell/gameKit";
+import { defineGame } from "@jgengine/core/shell/gameKit.draw";
 
 // The same meadow: 256 m of noise hills, sun and haze,
 // 200 × 200 m of grass that sits on the hills and sways.

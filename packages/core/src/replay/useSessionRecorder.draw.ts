@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { createRecordingBuffer, type RecordingBuffer, type RecordingBufferOptions } from "@jgengine/core/replay/recordingBuffer";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 export interface RecordedPose {
   position: EntityPosition;

@@ -1,4 +1,4 @@
-import { defineStore, defineSystem } from "@jgengine/shell/gameKit";
+import { defineStore, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 import { drain, gather, newRun, type Run } from "./tour-rules";
 
