@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { CapsuleGeometry, Group, MathUtils, MeshStandardMaterial, SphereGeometry, Vector3 } from "three";
 
-import { advanceGaitPhase, gaitBobOffset, gaitSwayAngle } from "@jgengine/core/movement/avatarGait";
+import { advanceGaitPhase, gaitBobOffset, gaitSwayAngle } from "@llmville/game/engine-local/movement/avatarGait";
 import {
   EngineDrawMount,
   SceneObjectPortal,

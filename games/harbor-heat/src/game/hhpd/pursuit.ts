@@ -5,7 +5,7 @@ import { createPacedSchedule, type PacedSchedule, type PacedScheduleState } from
 import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 import { annulusRegion, sampleBatch } from "@jgengine/core/world/spatialSample";
 import { createPerception, observeNearby, type PerceptionService } from "@jgengine/core/sensor/perception";
-import { createSearchBeat, searchBeatStep, type SearchBeatState, type SearchBeatTuning } from "@jgengine/core/ai/searchBeat";
+import { createSearchBeat, searchBeatStep, type SearchBeatState, type SearchBeatTuning } from "../../engine-local/ai/searchBeat";
 import { advancePursuit, armPursuit, createPursuitState, type PursuitState } from "@jgengine/core/ai/pursuit";
 import type { DifficultyProfile } from "@jgengine/core/ai/difficulty";
 import { createDriverState, driveStep, tailGoal, type DriverGoal, type DriverState, type DriverTuning, type TailTuning } from "@jgengine/core/ai/driver";

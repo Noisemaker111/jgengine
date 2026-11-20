@@ -1,4 +1,4 @@
-import type { BreedingSpecies, GrowthStage } from "@jgengine/core/breeding/breeding";
+import type { BreedingSpecies, GrowthStage } from "../../engine-local/breeding/breeding";
 import { pickWeighted } from "@jgengine/core/random/pick";
 
 import type { TameStat } from "./species";

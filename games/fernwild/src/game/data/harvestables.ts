@@ -1,4 +1,4 @@
-import type { HarvestableDef } from "@jgengine/core/harvest/scatterHarvest";
+import type { HarvestableDef } from "../../engine-local/harvest/scatterHarvest";
 
 /** How a scatter species is gathered: struck (left click, tool bias applies) or picked by hand (E). */
 export type GatherBy = "strike" | "pick";

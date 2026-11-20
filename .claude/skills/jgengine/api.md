@@ -9,45 +9,27 @@
 ## @jgengine/core/authoring
 
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim, held }`; `repeatMs` re-fires it while held (automatic weapons), with `held: true` on those re-fires so one binding can drive a single-shot pistol (ignore `held`) and an automatic rifle (accept it).
-- `AuthoredProvenance` (interface): interface AuthoredProvenance — A first-class entry in the scene document — the editor fully owns and persists it.
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.
 - `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets" | "lifecycle"> & { assets?: AssetCatalog<TAssetRef>; /** * The game's run-phase story — a {@link LifecycleConfig} or the `"always-live… — Input to {@link defineGameDefinition} — a `GameDefinition` with `scene` derived and `assets` optional.
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GameServerConfig` (type): type GameServerConfig = "persistent" | { mode: string; [key: string]: unknown } — Hosting mode for a game's multiplayer server: `"persistent"`, or a custom mode with its own options.
-- `GeneratedProvenance` (interface): interface GeneratedProvenance — An object derived from an authored document object — instances scattered from a painted layer, walls extruded from an authored footprint. Edits belong on the source object, not the generated instance.
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
 - `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
-- `OwnershipDecision` (type): type OwnershipDecision = "expose" | "bake" | "reject" — The boundary's resolution for one object.
-- `OwnershipDiagnostic` (interface): interface OwnershipDiagnostic — One boundary problem found while auditing a set of declarations.
-- `OwnershipVerdict` (interface): interface OwnershipVerdict — The full verdict for one object: its decision plus the flags and diagnostic the editor needs to act on it.
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
-- `ProviderCapabilities` (interface): interface ProviderCapabilities — What a provider lets the editor do with one of its objects. Absent flags default to `false`.
-- `RuntimeProvenance` (interface): interface RuntimeProvenance — An object owned entirely by runtime or procedural code with no document entry. Not authorable unless its provider can bake it into schema-valid authored data.
-- `SCENE_OWNERSHIP_MANIFEST_VERSION` (const): const SCENE_OWNERSHIP_MANIFEST_VERSION: 1 — Current {@link SceneOwnershipManifest} schema version.
-- `SceneOwnershipDeclaration` (interface): interface SceneOwnershipDeclaration — A provider's explicit ownership declaration for one editor-visible object.
-- `SceneOwnershipManifest` (interface): interface SceneOwnershipManifest — Serializable record of a world's ownership declarations — persisted next to the scene document or shipped by a game.
-- `SceneProvenance` (type): type SceneProvenance = | AuthoredProvenance | GeneratedProvenance | RuntimeProvenance | TransientProvenance — The provenance of one editor-visible object — authored, generated, runtime, or transient.
-- `SceneProvenanceKind` (type): type SceneProvenanceKind = "authored" | "generated" | "runtime" | "transient" — Scene ownership boundary — gives every editor-visible object an explicit provenance and a single verdict (expose / bake / reject) so the editor never presents unauthored content as broken authored content.
 - `SpawnPointBiasStrength` (type): type SpawnPointBiasStrength = "subtle" | "moderate" | "strong" — How strongly the distance preference weighs candidates — a named intent, not a weighting exponent.
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Which way a spawn's chance leans, relative to `avoid`: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
-- `TransientProvenance` (interface): interface TransientProvenance — An ephemeral simulation object — a spawned agent, projectile, or particle that never persists.
 - `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/placement/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
-- `auditManifest` (function): function auditManifest(manifest: SceneOwnershipManifest): OwnershipDiagnostic[] — Audit every declaration in a manifest, keying diagnostics by each object's provenance id. An empty result means the manifest declares all of its content cleanly — every object is authored, generated, bakeable, or a reasoned runtime/transient object.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style. Pass `along` to line road frontage instead of gridding around `position`.
-- `classifyOwnership` (function): function classifyOwnership(declaration: SceneOwnershipDeclaration): OwnershipVerdict — Resolve one declaration into a single boundary verdict.
-- `collectOwnershipDiagnostics` (function): function collectOwnershipDiagnostics(entries: Iterable<readonly [string, SceneOwnershipDeclaration]>): OwnershipDiagnostic[] — Audit a keyed set of declarations and return one diagnostic per object that breaks the boundary contract (a `reject` verdict carrying a `violation`). Deterministic: diagnostics come back in the iteration order of `entries`.
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `environment` (function): function environment(config: EnvironmentWorldConfig = {}): EnvironmentWorldFeature — Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
 - `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — the same blade field and knobs as an editor `grass_field` volume.
-- `isSceneOwnershipManifest` (function): function isSceneOwnershipManifest(value: unknown): value is SceneOwnershipManifest — Narrow unknown parsed JSON to a {@link SceneOwnershipManifest}. Structural only — verifies the version, the declarations array, and each declaration's provenance shape; it does not judge whether declarations satisfy the boundary (use {@link auditManifest} for that).
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 - `ocean` (function): function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDescriptor — Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
-- `ownershipKey` (function): function ownershipKey(provenance: SceneProvenance): string — Stable identity string for a provenance (e.g. `runtime:town/building-3`), suitable for keying an object in an editor tree or a diagnostics table.
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
 - `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
@@ -64,18 +46,6 @@
 - `DispatchedCommandResult` (type): type DispatchedCommandResult = CommandResult<GameContext> | Promise<CommandResult<GameContext>> — A UI command completes locally or after its authoritative host acknowledges it.
 - `bindCommandTransport` (function): function bindCommandTransport(ctx: GameContext, route: Route): () => void — Bind UI command dispatch to the host for this context. A missing join rejects; it never mutates the local replica.
 - `dispatchCommand` (function): function dispatchCommand(ctx: GameContext, name: string, input: unknown): DispatchedCommandResult — Dispatch a player's command through the bound host, or locally for an unbound offline context. Await the result before showing success.
-
-## @jgengine/core/commands/commandInput
-
-- `QuantityResult` (type): type QuantityResult = { ok: true; quantity: number } | { ok: false; reason: "invalid-quantity" } — Validated integer quantity or a stable input rejection.
-- `isInputRecord` (function): function isInputRecord(value: unknown): value is Record<string, unknown> — Narrow an untrusted value to a plain object, rejecting arrays and null.
-- `readInputArray` (function): function readInputArray<T>(value: unknown, readItem: (item: unknown) => T | null, options: { maxItems?: number } = {}): T[] | null — Read an array of at most `maxItems` entries, each accepted by `readItem`; any rejected entry rejects the whole array.
-- `readInputNumber` (function): function readInputNumber(value: unknown, options: { min?: number; max?: number; integer?: boolean } = {}): number | null — Read a finite number inside `[min, max]`, or `null`. `NaN` and `±Infinity` are always rejected, so a coordinate can never drive an unbounded loop; `integer` also rejects fractions instead of flooring them.
-- `readInputOneOf` (function): function readInputOneOf<const T extends string | number>(value: unknown, allowed: readonly T[]): T | null — Read one of a fixed set of values, or `null`.
-- `readInputPoint2` (function): function readInputPoint2(value: unknown, options: { maxAbs?: number } = {}): { x: number; z: number } | null — Read an `{ x, z }` ground point whose axes are finite and within `maxAbs`, or `null`.
-- `readInputPoint3` (function): function readInputPoint3(value: unknown, options: { maxAbs?: number } = {}): { x: number; y: number; z: number } | null — Read an `{ x, y, z }` point whose axes are finite and within `maxAbs`, or `null`.
-- `readInputString` (function): function readInputString(value: unknown, options: { maxLength?: number } = {}): string | null — Read a non-empty string of at most `maxLength` characters, or `null`.
-- `readQuantity` (function): function readQuantity(value: unknown, options: { min?: number; max?: number } = {}): QuantityResult — Read an untrusted whole-item quantity without coercion, truncation, or clamping.
 
 ## @jgengine/core/commands/commandRegistry
 
@@ -821,14 +791,6 @@
 - `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } /** `message` is the command's player-facing refusal text, when its `validate` gave one. */ | { ok: false; reason: string; message?: string } — ⚠ undocumented
 - `WorldSyncFrame` (type): type WorldSyncFrame = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; revision: number; diff: WorldDiff } — A revision-stamped world baseline or compact diff sent to a server-authoritative client.
 - `createTransportSessionId` (function): function createTransportSessionId(): string — Fresh id for one client session's join/leave pair (see {@link GameRuntimeTransport.joinServer}).
-
-## @jgengine/core/runtime/worldChannel
-
-- `WorldClientFrame` (type): type WorldClientFrame = | { t: "join"; isNew: boolean } | { t: "leave" } | { t: "command"; name: string; input: unknown } | { t: "input"; frame: InputFrame } — Client→host frame: a player's session verbs. What a transport marshals upstream.
-- `WorldClientLink` (interface): interface WorldClientLink — The client end of a {@link WorldHost} connection: applies server frames to a local `ctx`, sends session verbs upstream.
-- `WorldHost` (interface): interface WorldHost — The transport-agnostic host: fans one {@link HostedWorldSession} out to many connections, each tracking its own revision cursor so a joiner gets a baseline and everyone else gets diffs. A ws server, a Convex function, or an in-process loopback all drive the same shape — decode a frame → `connection.receive`; after `session.tick` → `broadcast`. No wire format is assumed; frames are plain data a transport serializes however it likes.
-- `WorldHostConnection` (interface): interface WorldHostConnection — One client's link on the host side: routes its upstream frames into the shared session, pushes it sync frames.
-- `WorldServerFrame` (type): type WorldServerFrame = | { t: "baseline"; revision: number; snapshot: WorldSnapshot } | { t: "diff"; diff: WorldDiff } — Host→client frame: the full baseline a joiner needs, then per-tick diffs. What a transport marshals downstream.
 
 ## @jgengine/core/runtime/worldChunks
 

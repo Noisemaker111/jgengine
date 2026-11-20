@@ -1,13 +1,13 @@
 import { canCraft, craftSeconds, stationSatisfied, type RecipeDef } from "@jgengine/core/crafting/recipe";
-import { createUnlockPoints, type UnlockPoints, type UnlockPointsState } from "@jgengine/core/economy/unlockPoints";
-import { createScatterHarvest, type ScatterHarvest, type ScatterHarvestState } from "@jgengine/core/harvest/scatterHarvest";
+import { createUnlockPoints, type UnlockPoints, type UnlockPointsState } from "../engine-local/economy/unlockPoints";
+import { createScatterHarvest, type ScatterHarvest, type ScatterHarvestState } from "../engine-local/harvest/scatterHarvest";
 import { resolveEncumbrance, totalLoad } from "@jgengine/core/inventory/encumbrance";
-import { createEquipment, type Equipment, type EquipmentState } from "@jgengine/core/inventory/equipment";
+import { createEquipment, type Equipment, type EquipmentState } from "../engine-local/inventory/equipment";
 import type { InventoryState } from "@jgengine/core/inventory/inventoryModel";
-import { createSpoilage, type Spoilage } from "@jgengine/core/inventory/spoilage";
+import { createSpoilage, type Spoilage } from "../engine-local/inventory/spoilage";
 import { applyWear, createDurability, isBroken, repairQuote, type DurabilityState } from "@jgengine/core/item/durability";
 import { leveling } from "@jgengine/core/progression/leveling";
-import { createStatPoints, type StatPointLine } from "@jgengine/core/progression/statPoints";
+import { createStatPoints, type StatPointLine } from "../engine-local/progression/statPoints";
 import { playerMovementTelemetry } from "@jgengine/core/movement/playerMovement";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";

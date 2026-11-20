@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import type { DoseSupply } from "@jgengine/core/stats/doseTable";
+import type { DoseSupply } from "../../engine-local/stats/doseTable";
 
 import { createKnockoutTaming, type TamingEvent } from "../knockoutTaming";
 import { SPECIES } from "./species";

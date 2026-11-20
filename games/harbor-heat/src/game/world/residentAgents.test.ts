@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { AgentSystemState, Vec3 } from "@jgengine/core/agents/system";
+import type { AgentSystemState, Vec3 } from "../../engine-local/agents/system";
 
 import { createResidentAgents, residentOffers } from "./residentAgents";
 import { RESIDENTS, RESIDENT_PLACES } from "./residents";

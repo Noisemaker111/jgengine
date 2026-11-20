@@ -1,5 +1,5 @@
 import { createRecordingBuffer, type RecordingBuffer } from "@jgengine/core/replay/recordingBuffer";
-import { interpolateRecordedPose } from "@jgengine/core/replay/replayLoop";
+import { interpolateRecordedPose } from "../../engine-local/replay/replayLoop";
 
 /**
  * The ghost of your best run on a timed event, Trackmania-style: the kart's pose is recorded ten

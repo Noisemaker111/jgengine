@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { GamePreviewProps } from "@jgengine/core/ui/preview";
-import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
+import { EntityPreview } from "./engine-local/render/EntityPreview.draw";
 
 import { entityModels } from "./game/world/models";
 

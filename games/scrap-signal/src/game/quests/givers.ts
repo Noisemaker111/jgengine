@@ -1,4 +1,4 @@
-import { giverOffer, type GiverOffer } from "@jgengine/core/mission/questGivers";
+import { giverOffer, type GiverOffer } from "../../engine-local/mission/questGivers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 

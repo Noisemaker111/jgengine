@@ -3,7 +3,7 @@ import type { AffixPool, RarityTier } from "@jgengine/core/item/affix";
 import { registerGenerator, runGenerator } from "@jgengine/core/generator/generator";
 import type { LootCatalog, LootItem } from "@jgengine/core/loot/lootGen";
 import { defineLootGenerator } from "@jgengine/core/loot/lootGenerator";
-import { stockVendor, type VendorPriceRule } from "@jgengine/core/loot/vendor";
+import { stockVendor, type VendorPriceRule } from "../../engine-local/loot/vendor";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { credLevel } from "../progression/cred";

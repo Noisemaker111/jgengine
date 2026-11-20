@@ -64,35 +64,6 @@
 - `AgentScheduleStop` (interface): interface AgentScheduleStop extends RoutineStopSpec — One authored stop in an agent's day. The shape is the routine owner's (`sim/routine`) plus a beat: the places a working stop walks in order, so a janitor on patrol is an agent with a route rather than a special case.
 - `createAgentSchedule` (function): function createAgentSchedule(config: AgentScheduleConfig): AgentSchedule — Resolve an authored day plan into a clock-driven schedule. Timing, travel and arrival slips come from `sim/routine`; this adds the work beat and the refills a stop carries, so an off-hours stop is just another authored stop and a patrol is not a second scheduler.
 
-## @jgengine/core/agents/system
-
-- `Agent` (interface): interface Agent — Needs, mood, schedule and a chosen action, in one object a game ticks.
-- `AgentAction` (interface): interface AgentAction — What the agent is doing.
-- `AgentFallback` (interface): interface AgentFallback — Where an agent goes when the thing it wanted is gone: a named option and a named place.
-- `AgentFrame` (interface): interface AgentFrame — What one update produced: the action, the feeling, and where the day plan puts the agent.
-- `AgentMemberSpec` (interface): interface AgentMemberSpec extends UtilityTunables — One member: an id, and only what differs from the system's defaults.
-- `AgentMemberState` (interface): interface AgentMemberState — One member's saved state: its agent snapshot plus the off-camera flag the snapshot does not carry.
-- `AgentMoodConfig` (interface): interface AgentMoodConfig — The mood policy a member runs on: which needs matter, and the game's own words for the bands.
-- `AgentScheduleConfig` (interface): interface AgentScheduleConfig — An agent's whole day as data: what it does, where, and when.
-- `AgentSchedulePhase` (interface): interface AgentSchedulePhase — Where a schedule puts an agent at one instant.
-- `AgentScheduleStop` (interface): interface AgentScheduleStop extends RoutineStopSpec — One authored stop in an agent's day. The shape is the routine owner's (`sim/routine`) plus a beat: the places a working stop walks in order, so a janitor on patrol is an agent with a route rather than a special case.
-- `AgentSelectView` (interface): interface AgentSelectView — What a selector is told about the member asking: who it is, its live agent, and where it stands. One record the system refills for each member, so read it during the call and keep none of it.
-- `AgentSelector` (type): type AgentSelector = (view: AgentSelectView) => readonly AgentTarget[] — Everything the member could do right now, as the game's world offers it. Declared once per system. The system reads the list within the member's update, so a selector may refill one list per call.
-- `AgentSnapshot` (interface): interface AgentSnapshot — Serializable whole agent: needs, feeling, held action, day-plan cursor and the far flag.
-- `AgentSystem` (interface): interface AgentSystem — A whole cast of agents behind one factory and one tick.
-- `AgentSystemConfig` (interface): interface AgentSystemConfig — The game's data, in one place: what its people need, what they can do, and how they feel.
-- `AgentSystemState` (interface): interface AgentSystemState — The whole system as plain JSON - drop it in a save, read it back with {@link AgentSystem.load}.
-- `AgentSystemStorage` (interface): interface AgentSystemStorage — Where a system keeps its save data: a key-value store, a save slot, or a test's map.
-- `AgentTarget` (interface): interface AgentTarget — One reachable thing the agent could do this tick, as the game sees its own world.
-- `Mood` (interface): interface Mood — What the agent feels right now, on the caller's own tier labels.
-- `MoodTier` (interface): interface MoodTier — One labelled band of the 0-100 mood score.
-- `MoodWeight` (interface): interface MoodWeight — One need's say in the mood score; weights are relative, so they need no fixed total.
-- `NeedDefinition` (type): type NeedDefinition = DecayMeterConfig — A decaying need is a survival decay meter (`max`/`min`/`start`/`rate`, optional moodle thresholds) whose satisfaction an agent brain reads to score actions. The meter owns the numbers; per-need appeal lives in the game's utility options.
-- `UtilityInterrupt` (interface): interface UtilityInterrupt — A need level that overrides the sticky pick the moment it is crossed.
-- `UtilityOption` (interface): interface UtilityOption — A thing an agent can decide to do, scored against its needs.
-- `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
-- `createAgentSystem` (function): function createAgentSystem(config: AgentSystemConfig): AgentSystem — One call for a whole cast: a game hands over its needs, options, mood weights, schedules and one target selector, and gets back a running system with a single `tick(dt)` and a save blob that goes into the game's own save.
-
 ## @jgengine/core/behaviour/behaviour
 
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.
@@ -102,30 +73,6 @@
 - `JGEngineRegister` (interface): interface JGEngineRegister — Unity-style behaviour lifecycle over a headless id-keyed node tree, ported from vladkrutenyuk/three-start (MIT) and adapted to run without three.js: nodes are plain string ids (use entity instance ids to pair with `entityStore`), and the shell binds render-side hooks separately.
 - `RegisterField` (type): type RegisterField<TKey extends string, TFallback = unknown> = TKey extends keyof JGEngineRegister ? JGEngineRegister[TKey] : TFallback — ⚠ undocumented
 - `createBehaviourWorld` (function): function createBehaviourWorld(): BehaviourWorld — ⚠ undocumented
-
-## @jgengine/core/behaviour/behaviour.draw
-
-- `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
-
-## @jgengine/core/behaviour/behaviourAttach.draw
-
-- `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
-
-## @jgengine/core/breeding/breeding
-
-- `BreedingEgg` (interface): interface BreedingEgg<P> — A fertilized egg lying where it was laid, carrying its young one's genes `P`; it progresses only inside its incubation band.
-- `BreedingEggSpec` (interface): interface BreedingEggSpec — An egg's incubation condition and the seconds it survives while the condition fails before it is lost.
-- `BreedingEvent` (type): type BreedingEvent<P> = | { type: "conceived"; mother: string; father: string; species: string; count: number } | { type: "laid"; egg: BreedingEgg<P> } | { type: "hatched"; egg: BreedingEgg<P> } | { type: "eggLost"; egg: BreedingEgg<P> } | { type: "born"; mother: string; species: string; offspring: … — What happened this tick.
-- `BreedingField` (interface): interface BreedingField<P> — The breeding of a world's creatures, made by {@link createBreedingField}.
-- `BreedingOffspring` (interface): interface BreedingOffspring — A young one growing up: its stage, how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks.
-- `BreedingOptions` (interface): interface BreedingOptions<P> — {@link createBreedingField} setup.
-- `BreedingPregnancy` (interface): interface BreedingPregnancy<P> — A mother carrying her young, with their genes `P` and how far along the carrying is (0-1).
-- `BreedingSnapshot` (interface): interface BreedingSnapshot<P> — Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, the growing young and speeds.
-- `BreedingSpecies` (interface): interface BreedingSpecies — How one species breeds.
-- `BreedingSpeeds` (interface): interface BreedingSpeeds — How much faster each part of breeding runs than its times say. All start at 1.
-- `GrowthStage` (interface): interface GrowthStage — One growth stage: its name and the share of a species' maturation time it lasts. Shares add up to 1.
-- `MateCandidate` (interface): interface MateCandidate — A creature offered for mating this tick.
-- `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — Pairs left together mate, a mother lays an egg that hatches only in its temperature band or carries her young to birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace through the game's stage list and ask for care on an interval; each answered request adds its share of the bond. Species times, care kinds, stages, the size of a litter and what a young one is all come from the game.
 
 ## @jgengine/core/cards/cardPile
 
@@ -287,64 +234,6 @@
 - `RecipeCatalogValidationOptions` (interface): interface RecipeCatalogValidationOptions — Caller catalogs for native crafting references; omission leaves that namespace unchecked.
 - `validateRecipeCatalog` (function): function validateRecipeCatalog(recipes: readonly RecipeDef[], options: RecipeCatalogValidationOptions = {}): ContentIssue[] — Validate native recipes before registration: ids, counts, timing and caller-catalog references. Empty outputs are valid for game-owned benefits; fractional and zero counts are allowed. Negative/nonfinite counts, durations and ranges reject. Duplicate input rows reject because the crafting input check does not aggregate them; consolidate their counts into one row. No price, scarcity, story or cycle policy is imposed. O(recipes + item rows + requirements).
 
-## @jgengine/core/data/DataObjects.draw
-
-- `DataObjects` (function): function DataObjects<T>(props: DataObjectsProps<T>): JSX.Element | null — Places one 3D object per data item: instanced boxes sized and colored from the item, or custom content per item.
-- `DataObjectsProps` (interface): interface DataObjectsProps<T> — Renders one placed 3D object per data item — a 3D bar chart, a heatmap, a city of buildings, a crowd. By default each item is an extruded box (all boxes share one `InstancedMesh`, so hundreds cost one draw call), sized and colored from the item; `renderItem` swaps the box for arbitrary content (a sprite, a GLB, a full entity). Genre-agnostic: the caller owns the data `T`, this owns the placement.
-- `dataObjectsDraw` (function): function dataObjectsDraw<T>(getProps: () => DataObjectsProps<T>, data: readonly T[]): EngineDraw — The instanced-box path as an {@link EngineDraw}; `renderItem` stays on the UI wrapper.
-
-## @jgengine/core/data/dataSource
-
-- `DataSource` (interface): interface DataSource<T> { getState(): DataSourceState<T>; subscribe(listener: (state: DataSourceState<T>) => void): () => void; refresh(options?: RefreshOptions): Promise<void>; startPolling(intervalMs?: number): void; stopPolling(): void; dispose(): void } — ⚠ undocumented
-- `DataSourceClock` (interface): interface DataSourceClock { setInterval(handler: () => void, intervalMs: number): unknown; clearInterval(handle: unknown): void } — ⚠ undocumented
-- `DataSourceOptions` (interface): interface DataSourceOptions { intervalMs?: number | undefined; clock?: DataSourceClock | undefined } — ⚠ undocumented
-- `DataSourceState` (interface): interface DataSourceState<T> { readonly status: DataSourceStatus; readonly data: T | undefined; readonly error: Error | undefined } — ⚠ undocumented
-- `DataSourceStatus` (type): type DataSourceStatus = "idle" | "loading" | "ready" | "error" — ⚠ undocumented
-- `RefreshOptions` (interface): interface RefreshOptions { force?: boolean } — ⚠ undocumented
-- `createDataSource` (function): function createDataSource<T>(load: (signal: AbortSignal) => Promise<T>, options: DataSourceOptions = {}): DataSource<T> — ⚠ undocumented
-
-## @jgengine/core/data/definedFields
-
-- `DefinedFields` (type): type DefinedFields<T> = { [K in keyof T]?: T[K] & ({} | null) } — Passing optional values on to something that takes optional fields. With exact optional property types, a field set to `undefined` is not the same as a field left out, so a value that may be missing has to be dropped rather than passed as `undefined`.
-- `definedFields` (function): function definedFields<T extends object>(fields: T): DefinedFields<T> — `fields` without the entries whose value is `undefined`, typed so the result spreads into props or options that take those fields as optional: `<mesh {...definedFields({ rotation, scale })} />`.
-
-## @jgengine/core/data/definedOnly
-
-- `DefinedOnly` (type): type DefinedOnly<T extends object> = { [K in keyof T as undefined extends T[K] ? never : K]: T[K]; } & { [K in keyof T as undefined extends T[K] ? K : never]?: Exclude<T[K], undefined>; } — `T` after dropping its undefined fields: a field that may be `undefined` becomes optional and never `undefined`; a field that is always defined stays required.
-- `definedOnly` (function): function definedOnly<T extends object>(value: T): DefinedOnly<T> — `value` without its undefined fields, so `{ ...defaults, ...definedOnly(overrides) }` never erases a default with an explicit `undefined`, and a record built from optional inputs can be written where an optional field must be absent rather than `undefined`.
-
-## @jgengine/core/data/devProxy
-
-- `DEFAULT_DEV_PROXY_PREFIX` (const): const DEFAULT_DEV_PROXY_PREFIX: "/proxy" — ⚠ undocumented
-- `DevProxyTable` (interface): interface DevProxyTable { readonly [routeName: string]: string } — ⚠ undocumented
-- `ProxiedUrlOptions` (interface): interface ProxiedUrlOptions { dev?: boolean; table?: DevProxyTable; prefix?: string } — ⚠ undocumented
-- `parseDevProxyTable` (function): function parseDevProxyTable(raw: string | undefined): DevProxyTable — ⚠ undocumented
-- `proxiedUrl` (function): function proxiedUrl(target: string, options: ProxiedUrlOptions = {}): string — ⚠ undocumented
-
-## @jgengine/core/data/fetchJson
-
-- `FetchImpl` (type): type FetchImpl = typeof fetch — ⚠ undocumented
-- `FetchJsonOptions` (interface): interface FetchJsonOptions { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal; fetchImpl?: FetchImpl } — ⚠ undocumented
-- `HttpStatusError` (class): class HttpStatusError extends Error — ⚠ undocumented
-- `JsonParseError` (class): class JsonParseError extends Error — ⚠ undocumented
-- `fetchJson` (function): function fetchJson<T>(url: string, options: FetchJsonOptions = {}): Promise<T> — ⚠ undocumented
-
-## @jgengine/core/data/jsonDataSource
-
-- `JsonDataSourceOptions` (type): type JsonDataSourceOptions = DataSourceOptions & Omit<FetchJsonOptions, "signal"> — ⚠ undocumented
-- `createJsonDataSource` (function): function createJsonDataSource<T>(url: string, options: JsonDataSourceOptions = {}): DataSource<T> — ⚠ undocumented
-
-## @jgengine/core/data/untyped
-
-- `isFiniteNumber` (function): function isFiniteNumber(value: unknown): value is number — True for a number that is not NaN or infinite.
-- `isRecord` (function): function isRecord(value: unknown): value is Readonly<Record<string, unknown>> — Reading a value whose shape is not known yet: parsed JSON, a save from an older build, a message off the wire. Narrow it with these instead of casting, read its fields with brackets, and build the typed value from the pieces that checked out.
-- `typedRecord` (function): function typedRecord<T>(value: unknown, entry: (item: unknown) => item is T): Record<string, T> | null — `value` as a map whose every entry passes `entry`, or `null` when it is not an object or any entry fails. A saved `{ id: score }` table reads back as `typedRecord(saved, isFiniteNumber)`.
-
-## @jgengine/core/data/withField
-
-- `OptionalKey` (type): type OptionalKey<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : never }[keyof T] — The keys of `T` that may be left out.
-- `withField` (function): function withField<T extends object, K extends OptionalKey<T>>(row: T, key: K, value: T[K] | undefined): T — A copy of `row` with the optional field `key` set to `value`, or left out when `value` is `undefined`. An editor that clears a field this way stores no `key: undefined`, so the saved document reads the same as one that never had the field.
-
 ## @jgengine/core/dialogue/dialogue
 
 - `DIALOGUE_STORE_KEY` (const): const DIALOGUE_STORE_KEY: "jg.dialogue" — Store slot holding the id of the dialogue currently open, or absent when none is showing.
@@ -484,12 +373,6 @@
 - `taxFraction` (function): function taxFraction(fraction: number, to?: string): ResourcePolicy — Take a fraction of the amount. With `to`, the taxed portion is split off into a second transaction toward that recipient (a transfer/tax); without it, the fraction is simply removed.
 - `thresholdScale` (function): function thresholdScale(read: PolicyRead, bands: readonly ThresholdBand[]): ResourcePolicy — Scale the amount by the highest {@link ThresholdBand} whose `min` the read value meets — a generic bracket modifier (progressive tax, tiered upkeep) over caller data, with no built-in currencies or brackets.
 
-## @jgengine/core/economy/sharedWallet
-
-- `BookChargeResult` (type): type BookChargeResult = | { status: "ok"; book: WalletBook } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
-- `WalletBook` (interface): interface WalletBook { scopes: Readonly<Record<string, WalletState>>; contributions: Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>> } — ⚠ undocumented
-- `WalletScope` (type): type WalletScope = | { kind: "user"; userId: string } | { kind: "group"; groupId: string } — ⚠ undocumented
-
 ## @jgengine/core/economy/shopStock
 
 - `ShopBuyRejection` (type): type ShopBuyRejection = "unknown-item" | "out-of-stock" | "insufficient-funds" — Why a {@link ShopStock.buy} was refused.
@@ -526,16 +409,6 @@
 - `TransactionLedger` (interface): interface TransactionLedger — The books: balances with a reason-tagged journal, and recurring charges on a cadence.
 - `TransactionLedgerOptions` (interface): interface TransactionLedgerOptions — Options for {@link createTransactionLedger}.
 - `createTransactionLedger` (function): function createTransactionLedger(options: TransactionLedgerOptions = {}): TransactionLedger — The books a business keeps: per-account, per-currency balances in integer minor units with a journal that records every movement, the balance it produced and the reason it happened. {@link TransactionLedger.post} is the one money path — sales, purchases, upkeep and loan payments all go through it, so nothing moves without a reason on the record. {@link TransactionLedger.chargeDue} settles recurring charges (upkeep, rent) on their own cadence, bounded per advance; a cycle with no funds is counted as missed instead of overdrawing. Journal memory is bounded by `maxEntries`, with `totals()` keeping the per-reason summary beyond it.
-
-## @jgengine/core/economy/unlockPoints
-
-- `SpendOptions` (interface): interface SpendOptions — Options for {@link UnlockPoints.spend}.
-- `SpendRejection` (type): type SpendRejection = | "invalid-cost" | "already-unlocked" | "missing-prerequisites" | "insufficient-points" — Why a {@link UnlockPoints.spend} was refused; the pool is left untouched on any rejection.
-- `SpendResult` (type): type SpendResult = { ok: true; available: number } | { ok: false; reason: SpendRejection } — Result of {@link UnlockPoints.spend}: the new `available` balance on success, else a reason.
-- `UnlockPoints` (interface): interface UnlockPoints — A spendable unlock-point economy: a pool you earn (per level or by direct grant) and spend to unlock nodes, with per-unlock refunds and a full respec.
-- `UnlockPointsConfig` (interface): interface UnlockPointsConfig — Configuration for {@link createUnlockPoints}.
-- `UnlockPointsState` (interface): interface UnlockPointsState — Plain, JSON-serializable snapshot of a point pool. `earned` is the lifetime total ever banked; every committed unlock lives in `unlocked` as `id → cost paid`. `spent` and `available` are always derived (`spent = Σ unlocked`, `available = earned − spent`) so the two can never drift out of sync across a serialize/hydrate round-trip.
-- `createUnlockPoints` (function): function createUnlockPoints(config: UnlockPointsConfig = {}): UnlockPoints — Spendable unlock-point economy — the seam between leveling and a tech tree. Points are earned per level (via a configurable, possibly non-uniform grant curve) or granted directly, then spent to unlock nodes; spending can defer prerequisite checks to an injected predicate so it composes with `economy/techTree` (or any gate) without depending on it. Individual unlocks refund, and `respec` fully refunds a build while preserving lifetime earned points. All state is plain and JSON round-trips.
 
 ## @jgengine/core/economy/wallet
 
@@ -974,12 +847,6 @@
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
 - `createRunModifierStack` (function): function createRunModifierStack<TStat extends string = string, TData = unknown>(offers: readonly RunModifierOffer<TStat, TData>[]): RunModifierStack<TStat, TData> — ⚠ undocumented
 
-## @jgengine/core/game/snapshotHistory
-
-- `HistoryStacks` (interface): interface HistoryStacks<T> — Bounded past/future snapshot stacks — a serializable undo/redo record for any state `T`.
-- `HistoryStep` (interface): interface HistoryStep<T> — The snapshot an undo/redo restores plus the advanced stacks.
-- `SnapshotHistory` (interface): interface SnapshotHistory<T> — Stateful undo/redo handle over {@link HistoryStacks}, holding the stacks in a closure.
-
 ## @jgengine/core/game/spawnPoints
 
 - `RespawnTarget` (interface): interface RespawnTarget { setPose(id: string, pose: EntityPose): boolean } — ⚠ undocumented
@@ -1009,26 +876,6 @@
 - `TradeSystem` (interface): interface TradeSystem { canBuy(itemId: string, shopId: string, count?: number): string | null; canSell(itemId: string, count?: number): string | null; buy(itemId: string, count: number | undefined, party: TradeParty): TradeRejection | null; sell(itemId: string, … — ⚠ undocumented
 - `TradeSystemDeps` (interface): interface TradeSystemDeps { resolveTrade(itemId: string): TradeField | null | undefined; wallet: TradeWallet; inventory: TradeInventory } — ⚠ undocumented
 - `TradeWallet` (interface): interface TradeWallet { canAfford(costs: Record<string, number>): string | null; charge(costs: Record<string, number>): void; grant(gains: Record<string, number>): void } — ⚠ undocumented
-
-## @jgengine/core/game/tribe
-
-- `AssetAction` (type): type AssetAction = "inventory" | "use" | "command" — Per-asset action gated by rank on group-owned assets.
-- `AssetOwnership` (type): type AssetOwnership = { scope: "group" } | { scope: "personal"; memberId: string } — Who inside the group owns an asset: the group as a whole, or a specific member personally.
-- `Tribe` (interface): interface Tribe — A shared-ownership group — a tribe, guild, clan, or company — as one first-class aggregate. Unifies ranked membership, group-vs-personal asset ownership, mutual alliances, and a bounded event log that otherwise have to be hand-assembled from parties, factions, build permissions, and per-owner rosters.
-- `TribeAssetRecord` (interface): interface TribeAssetRecord — An asset (structure/creature) owned within a tribe — group-shared or held by one member.
-- `TribeAssetRef` (interface): interface TribeAssetRef — Opaque reference to a shared thing (structure, creature, container) by kind + id.
-- `TribeConfig` (interface): interface TribeConfig — Construction options for {@link createTribe}: id, founder, rank ladder, and log cap.
-- `TribeEvent` (interface): interface TribeEvent — One entry in a tribe's bounded event log. Optional fields present only when meaningful.
-- `TribeEventType` (type): type TribeEventType = | "member-added" | "member-removed" | "member-left" | "rank-changed" | "founder-transferred" | "asset-registered" | "asset-unregistered" | "alliance-formed" | "alliance-broken" — The kind of change recorded in a tribe's event log (membership, ownership, or alliance).
-- `TribeMemberRecord` (interface): interface TribeMemberRecord — A member of a tribe and the rank id that governs their permissions.
-- `TribeRankDef` (interface): interface TribeRankDef extends ThresholdBoundary — A rank within a group's hierarchy, a Ladder step: higher `at` means more authority: a member can only manage (kick, re-rank) members strictly below their own `at`, and cannot promote anyone to a `at` at or above their own. `permissions` are opaque, genre-agnostic capability slugs the game checks with {@link Tribe.can} (e.g. `"build"`, `"demolish"`, `"invite"`, `"kick"`, `"manage-ranks"`, plus the {@link AssetAction} slugs `"inventory"`, `"use"`, `"command"` for group-owned assets). A `bypass` rank (an admin) skips every permission check, exactly like the founder.
-- `TribeRegistry` (interface): interface TribeRegistry — A collection of {@link Tribe tribes} with mutual alliance management and cross-member relation lookups. Alliances are kept symmetric here (both sides updated together), and member-to-member relations resolve through tribe membership + alliances, mirroring the `faction` graph vocabulary.
-- `TribeRegistryDeps` (interface): interface TribeRegistryDeps — Injected dependencies for {@link createTribeRegistry} (e.g. a `now()` clock for event timestamps).
-- `TribeRegistrySnapshot` (interface): interface TribeRegistrySnapshot — Full serializable state of a tribe registry — every tribe's snapshot in one payload.
-- `TribeResult` (type): type TribeResult = { reason: string } | null — Standard `{ reason }`-on-failure / `null`-on-success result for authorized mutations.
-- `TribeSnapshot` (interface): interface TribeSnapshot — Full serializable state of one tribe — the save/replication baseline.
-- `createTribe` (function): function createTribe(config: TribeConfig): Tribe — Create a shared-ownership group aggregate (tribe / guild / clan / company). Members hold a {@link TribeRankDef rank} whose configurable permission slugs gate management actions and access to group-owned assets, while personally-owned assets stay with their member — and follow them out when they leave. Group↔group {@link Tribe.addAlly alliances} resolve allied tribes as friendly, and every membership / ownership / alliance change lands in a bounded ring-buffer {@link Tribe.events log}. All state is plain JSON via {@link Tribe.snapshot}/{@link Tribe.hydrate}; timestamps come from an injected clock for determinism. Compose many tribes with {@link createTribeRegistry} for mutual alliances and cross-member relation lookups.
-- `createTribeRegistry` (function): function createTribeRegistry(deps: TribeRegistryDeps = {}): TribeRegistry — Create a registry that owns many tribes, keeps alliances mutual, and resolves member relations.
 
 ## @jgengine/core/game/unlocks
 
@@ -1927,26 +1774,6 @@
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
 
-## @jgengine/core/harvest/scatterHarvest
-
-- `HarvestHit` (interface): interface HarvestHit — What a swing took.
-- `HarvestPlacement` (interface): interface HarvestPlacement — A placement the harvest can strike: a resolved scatter instance or anything with an id, a species and a spot.
-- `HarvestStrike` (interface): interface HarvestStrike — One swing: where from, which way, how far and with what.
-- `HarvestableDef` (interface): interface HarvestableDef extends Omit<ResourceNodeDef, "id"> — What one scatter species yields when struck: a resource node definition without its id, plus its trunk radius.
-- `ScatterHarvest` (interface): interface ScatterHarvest — Strikeable scatter: trees, rocks and bushes the player hits for resources, which vanish when spent and regrow.
-- `ScatterHarvestConfig` (interface): interface ScatterHarvestConfig — Construction options for {@link createScatterHarvest}.
-- `ScatterHarvestState` (interface): interface ScatterHarvestState — Plain save data: the touched nodes only.
-- `createScatterHarvest` (function): function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarvest — Turn scatter into resources: every placed tree, rock or bush of a listed species is a depletable, respawning node (backed by {@link createResourceNodeField} resolved on first hit, so ten thousand trees cost nothing until someone swings). A strike picks the nearest standing placement inside reach and a facing cone, applies the tool's biases (a hatchet favours wood, a pick favours stone, a fist gets thatch), and a spent node is hidden through {@link ScatterClearing} until it regrows.
-
-## @jgengine/core/inheritance/inheritance
-
-- `InheritMutation` (interface): interface InheritMutation<K extends string> — Rare extra changes after inheritance: `rolls` tries, each with `chance`, adding `amount` to one random field of `fields`.
-- `InheritOptions` (interface): interface InheritOptions<K extends string> — How a child's values come from two parents.
-- `InheritRule` (type): type InheritRule = | { pick: "either"; higherChance?: number } /** a*weight + b*(1-weight) (weight default 0.5), plus a uniform random offset in ±spread (default 0). */ | { pick: "blend"; weight?: number; spread?: number } — How one field passes from parents to child.
-- `Inherited` (interface): interface Inherited<K extends string> — The child's values and the fields that mutated, in roll order.
-- `inheritValues` (function): function inheritValues<K extends string>(a: Readonly<Record<K, number>>, b: Readonly<Record<K, number>>, rng: () => number, options: InheritOptions<K> = {}): Inherited<K> — A child's values from two parents, field by field: each field picked whole from one parent or blended between them, then a few rare mutation rolls adding to random fields.
-- `scatterPoints` (function): function scatterPoints<K extends string>(points: number, fields: readonly K[], rng: () => number): Record<K, number> — Spread `points` one at a time over `fields` at random, so two with the same total differ.
-
 ## @jgengine/core/inventory/carryLoad
 
 - `CharacterLoad` (interface): interface CharacterLoad extends EncumbranceState — A carrier's load: the encumbrance state, how it splits into carried and worn, and capacity left.
@@ -1992,21 +1819,6 @@
 - `encumbranceMoveMultiplier` (function): function encumbranceMoveMultiplier(fraction: number, config: EncumbranceConfig): number — Progressive move-speed multiplier for a raw load fraction: 1 while at/below `soft`, a linear decay from 1 down toward `floor` across the `soft..1` band, and 0 once at/over capacity. Pure and side-effect free — the curve `resolveEncumbrance` reads for `moveMultiplier`.
 - `resolveEncumbrance` (function): function resolveEncumbrance(mass: number, capacity: number, config: EncumbranceConfig): EncumbranceState — Resolve carried mass against carrying capacity into a serializable encumbrance state: load fraction, tier, and the movement consequences (`canSprint`/`canJump`/`immobile` gates plus a progressive `moveMultiplier`). Below `soft` the carrier is unencumbered and unhindered; from `soft` up to capacity it is encumbered — no sprint or jump, and speed decays from 1 toward `floor`; at or above capacity it is immobile (multiplier 0). Deterministic and allocation-light; pair with {@link totalLoad} to derive `mass` from an inventory and a mass table. A capacity of 0 or less pins any positive load as immobile (`fraction` 1) so the state stays finite/serializable.
 - `totalLoad` (function): function totalLoad(entries: readonly LoadEntry[], massOf: MassResolver): number — Sum the mass of every carried stack using an injected per-unit mass resolver. Bounded by the number of entries; allocates nothing. Missing or negative unit masses are treated as 0.
-
-## @jgengine/core/inventory/equipment
-
-- `EquipItemDef` (interface): interface EquipItemDef — The gear facts the equip rules read from an item. A rolled item resolves its runtime id through the instance registry to its base and answers from that base's data — this is not a second item type.
-- `EquipItemLookup` (type): type EquipItemLookup = (itemId: string) => EquipItemDef | null | undefined — Item lookup the rules read; returns nothing for an unknown id.
-- `EquipRejection` (type): type EquipRejection = "unknown-slot" | "not-equippable" | "wrong-slot" | "already-equipped" | "blocked" — Why an equip attempt was refused; `detail` names the item and slots involved.
-- `EquipResult` (type): type EquipResult = | { status: "ok"; state: EquipmentState; slotId: string; replaced: string | null } | { status: "rejected"; reason: EquipRejection; detail: string } — An equip attempt: the new worn set plus the replaced item, or the refusal with its reason and detail.
-- `EquipSlotDef` (interface): interface EquipSlotDef — One body slot: the item kinds it accepts and the slots it occupies while filled.
-- `Equipment` (interface): interface Equipment — A worn-gear set: one item per slot, rules from slot and item data, state out and back in.
-- `EquipmentOptions` (interface): interface EquipmentOptions — Options for {@link createEquipment}.
-- `EquipmentProbeReading` (interface): interface EquipmentProbeReading — What the debug overlay reads about a worn set.
-- `EquipmentState` (interface): interface EquipmentState — Serializable equip state: the filled slots as `[slotId, itemId]` pairs.
-- `UnequipResult` (type): type UnequipResult = | { status: "ok"; state: EquipmentState; itemId: string } | { status: "rejected"; reason: "unknown-slot" | "empty-slot"; detail: string } — An unequip attempt: the new worn set plus the item taken off, or the refusal with its detail.
-- `WornEntry` (interface): interface WornEntry — One worn item and the slot holding it.
-- `createEquipment` (function): function createEquipment(slotDefs: readonly EquipSlotDef[], lookup: EquipItemLookup, options: EquipmentOptions = {}): Equipment — A worn-gear set over caller slot and item data.
 
 ## @jgengine/core/inventory/inventoryGrid.view
 
@@ -2087,14 +1899,6 @@
 - `SlotGridProps` (interface): interface SlotGridProps — Props shared by every atomic slot grid.
 - `SlotItem` (interface): interface SlotItem — Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`, `WeaponSlots`, `ArmorSlots`, `PotionSlots` — for paperdoll / equip layouts where each grid holds a single gear category. A full multi-category backpack that binds to a live inventory with drag/swap/stack/split is a different, supported shape: reach for `<InventoryGrid>` (`inventoryGrid.tsx`) there, and use these atomic grids for the equip slots around it. Each renders a grid of painted {@link IconTreatment} tiles (glyph + gradient + count badge) for filled slots and a themed placeholder for empty ones, all reading the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034). Composition stays the game's; the engine ships the grid.
 - `WeaponSlots` (function): function WeaponSlots(props: SlotGridProps): JSX.Element — Weapon loadout slots.
-
-## @jgengine/core/inventory/spoilage
-
-- `SpoilRule` (interface): interface SpoilRule — How one item goes off: a unit spoils every `seconds` it is carried, turning into `into` (or nothing).
-- `Spoilage` (interface): interface Spoilage — The spoil timers of every perishable stack carried, advanced together; `snapshot`/`restore` keep them across a save.
-- `SpoiledUnits` (interface): interface SpoiledUnits — Units of one stack that went off this tick: take `count` of `itemId` from `key`, give `count` of `into`.
-- `SpoilingStack` (interface): interface SpoilingStack — One carried stack, keyed by where it sits (e.g. `"bag:3"`), so a timer follows its slot.
-- `createSpoilage` (function): function createSpoilage(rules: Readonly<Record<string, SpoilRule>>): Spoilage — Perishables in an inventory, as ARK keeps them: each stack runs one timer, and every time it runs out one unit spoils and the timer starts again, so a big stack lasts longer than a small one. A slot that changes item starts a fresh timer.
 
 ## @jgengine/core/inventory/storageTier
 
@@ -2401,30 +2205,6 @@
 - `LootWeaponStatMap` (interface): interface LootWeaponStatMap — Which rolled stat feeds which part of a {@link WeaponDefinition}. Every field is a stat id from the item; an omitted field keeps the template's value, so a catalog only maps what it rolls.
 - `lootWeaponDefinition` (function): function lootWeaponDefinition(item: LootItem, projection: LootWeaponProjection): WeaponDefinition — Project a rolled item onto a plain weapon definition: copy the template, then write the mapped stats into rate, damage, magazine, spread, range and projectile speed. The result is a {@link WeaponDefinition}, so `assertWeaponDefinition` and `createWeaponSystem` accept it unchanged.
 
-## @jgengine/core/loot/salvage
-
-- `ItemDropLike` (interface): interface ItemDropLike — The fields salvage reads; an `ItemDrop` from `./drop` satisfies it.
-- `ItemLedger` (interface): interface ItemLedger — One record of what happened to rolled item instances. Every path that removes an item - salvage, sale, granting a duplicate - claims it here first, so a second claim returns false and the item cannot be equipped, sold or broken down twice.
-- `ItemLedgerState` (type): type ItemLedgerState = Readonly<Record<string, Exclude<ItemLifecycle, "owned">>> — Items that have left play, keyed by instance id; anything absent is still `owned`.
-- `ItemLifecycle` (type): type ItemLifecycle = "owned" | "salvaged" | "sold" — Where an item instance stands: still usable, broken down, or sold.
-- `SalvageResult` (type): type SalvageResult = | { ok: true; id: string; yield: SalvageYield } | { ok: false; reason: "already-spent" | "invalid-item" } — Salvage outcome: the yield, or the reason the instance could not be broken down.
-- `SalvageTable` (interface): interface SalvageTable — What a broken-down item is worth: a game-authored currency, rate and per-rarity multiplier.
-- `SalvageYield` (interface): interface SalvageYield — The currency and amount one salvage yields. `currency` is the game's key, never interpreted.
-- `createItemLedger` (function): function createItemLedger(initial: ItemLedgerState = {}): ItemLedger — Build an item ledger. Ids are consumed once: the first successful {@link ItemLedger.spend} wins, every later call fails, which is what makes salvage and sale mutually exclusive.
-- `salvageItem` (function): function salvageItem(item: ItemDropLike, table: SalvageTable, ledger: ItemLedger): SalvageResult — Break one item down through its ledger. The ledger is claimed before the yield is computed, so a salvaged item cannot be salvaged, equipped or sold again; pass the game's own wallet update from `yield`.
-- `salvageValue` (function): function salvageValue(item: Pick<ItemDropLike, "level" | "rarity">, table: SalvageTable): SalvageYield — The yield an item of this level and rarity breaks down into. The formula is `round(perLevel x level x rarityMultiplier)`, floored by `minimum`, so the same item always yields the same amount and a higher level never yields less.
-
-## @jgengine/core/loot/vendor
-
-- `StockVendorOptions` (interface): interface StockVendorOptions — What stocking a vendor reads: the rolled items and the pricing policy.
-- `VendorOffer` (interface): interface VendorOffer — One stocked item and the shop entry that prices it.
-- `VendorPriceRule` (interface): interface VendorPriceRule — How a vendor price is derived from an item: a base, a per-level rate and a rarity multiplier.
-- `VendorRotation` (interface): interface VendorRotation — A run-count refresh rule; the game owns how many runs between restocks.
-- `VendorRotationState` (interface): interface VendorRotationState — Where a vendor shelf stands: the run number it was last stocked on.
-- `createVendorRotation` (function): function createVendorRotation(everyRuns: number, start = 0): VendorRotation — A restock rule the game authors as "every N runs". It only answers when a refresh is due; the game calls {@link stockVendor} and then `mark`. No timer, so a paused or reloaded save keeps the same shelf until the run count moves.
-- `itemPrice` (function): function itemPrice(item: Pick<LootItem, "level" | "rarity">, rule: VendorPriceRule): { buy: number; sell: number | null } — The price of one item under a `VendorPriceRule`: `round(base + perLevel x level)` times the rarity multiplier, never below 1. Sell-back is `floor(price x sellFactor)` when the rule sets one.
-- `stockVendor` (function): function stockVendor(shop: ShopStock, options: StockVendorOptions): VendorOffer[] — Price a vendor's rolled shelf and add it to an existing {@link ShopStock}; item `i` gets the id `<idPrefix>:<i>`. Entries added by a previous call with the same `idPrefix` are removed first, so a refresh replaces the shelf instead of throwing on duplicate ids. Buying, selling and wallet charging stay in the economy owner.
-
 ## @jgengine/core/mission/compositions
 
 - `ChaseMissionOptions` (interface): interface ChaseMissionOptions extends ComposedMissionOptions — Options for {@link chaseMission}: a target kept close until it is caught.
@@ -2530,47 +2310,10 @@
 - `QuestCatalogValidationOptions` (interface): interface QuestCatalogValidationOptions — Declarations and optional lookups for a game's own authoring rules.
 - `validateQuestCatalog` (function): function validateQuestCatalog(catalog: readonly QuestCatalogDefinition[] | Readonly<Record<string, QuestCatalogDefinition>>, options: QuestCatalogValidationOptions = {}): QuestCatalogIssue[] — Validate catalog ids, references, quantities, and potential prerequisite progression without mutation. Requirements are completed quest ids OR unlock ids; all requirements of a quest must be met. Any eligible quest may be accepted directly. External unlocks and granted quest starts are possible entry points, not claims about their timing. Blocked progression/cycles are warnings: game systems can bypass prerequisites. Topology uses the last duplicate, matching journal registration. Traversal is iterative and linear in definitions, requirements, and their producer edges. Objective and item counts may be fractional or zero; negative/nonfinite counts are invalid. This assumes objectives can be completed and does not evaluate narrative, chronology, or balance.
 
-## @jgengine/core/mission/questGivers
-
-- `GiverOffer` (type): type GiverOffer = | { kind: "turnIn"; questId: string } /** The next quest this giver hands out. */ | { kind: "give"; questId: string } /** One of this giver's quests is still under way, so the giver offers nothing new. */ | { kind: "busy"; questId: string } | { kind: "none" } — What a quest giver has for one player right now.
-- `GiverOfferOptions` (interface): interface GiverOfferOptions — Options for {@link giverOffer}.
-- `giverOffer` (function): function giverOffer(journal: Pick<QuestJournal, "list" | "canAccept" | "canTurnIn">, userId: string, giverId: string, catalog: readonly QuestDef[], options: GiverOfferOptions = {}): GiverOffer — Ask a quest giver what it has for a player, one quest at a time: a finished quest to take back first, then nothing new while one of its quests is under way, then the first quest in catalog order whose giver it is and that the player can accept.
-
 ## @jgengine/core/mission/questTracker.view
 
 - `QuestTracker` (function): function QuestTracker({ quests, title = "Quests", emptyLabel = "No active quests.", maxObjectives, accent = "var(--jg-accent, #facc15)", className, style, }: QuestTrackerProps): ReactNode — Quest / objective tracker HUD — a compact panel of active quests with a title and labelled, progress-barred objectives (checked + struck when complete). Presentation-only over `describeTrackedQuest(def, instance)` views, so it stays decoupled from the `QuestJournal` runtime.
 - `QuestTrackerProps` (interface): interface QuestTrackerProps — Props for {@link QuestTracker}.
-
-## @jgengine/core/mission/sideJobs
-
-- `SideJobActive` (interface): interface SideJobActive — An accepted job's live state.
-- `SideJobComfortSample` (interface): interface SideJobComfortSample — What a game hands a kind's comfort rule each tick while a job is on board.
-- `SideJobDeadlineDef` (interface): interface SideJobDeadlineDef — How long a job allows: `slack + distance / speed` seconds, never below `min`.
-- `SideJobEvent` (type): type SideJobEvent = | { type: "offered"; offer: SideJobOffer } | { type: "expired"; offerId: string } | { type: "accepted"; jobId: string } | { type: "boarded"; jobId: string } | { type: "race-started"; jobId: string; rivals: readonly string[] } | { type: "leg"; jobId: string; leg: number; of: numbe… — What happened during one call, for cues, notices and audio.
-- `SideJobFailReason` (type): type SideJobFailReason = "late" | "spoiled" | "placed" | (string & {}) — Why a job failed: the clock ran out, cargo was spoiled, a race placed out of the money, or the game's own reason.
-- `SideJobFareDef` (interface): interface SideJobFareDef — How a kind prices a job: `base + perMetre × distance`, clamped, plus `perSecondLeft` for each unused second.
-- `SideJobGenerateOptions` (interface): interface SideJobGenerateOptions — Options for {@link SideJobs.generate}.
-- `SideJobKindDef` (interface): interface SideJobKindDef — One kind of side job declared as data: taxi fare, delivery, tow, ambulance run, street race.
-- `SideJobOffer` (interface): interface SideJobOffer — A job on offer: where it starts, where it goes, and what it pays if run clean.
-- `SideJobPhase` (type): type SideJobPhase = "pickup" | "en-route" | "paid" | "failed" — Where an accepted job stands.
-- `SideJobRaceDef` (interface): interface SideJobRaceDef — Makes a kind a street race run on {@link RaceState}: the job's drops are the checkpoints, the last one the finish.
-- `SideJobReceipt` (interface): interface SideJobReceipt — One resolved job's settlement, for a receipt or pager.
-- `SideJobRoute` (interface): interface SideJobRoute — An authored, ordered route a kind can run instead of drawing spots: the first point is the pickup or start line.
-- `SideJobSpot` (interface): interface SideJobSpot — A place a side job can start or end: a kerb, a shop counter, a start line. `tags` say which kinds use it.
-- `SideJobStreakDef` (interface): interface SideJobStreakDef — Back-to-back jobs raise a bonus: `step × streak` of the fare, capped at `max`, if the next job is accepted within `window` seconds of the last payout.
-- `SideJobTickInput` (interface): interface SideJobTickInput — The world as the game reports it each tick.
-- `SideJobTipDef` (interface): interface SideJobTipDef — A tip paid on top of the fare, scaled by how comfortable the ride stayed (comfort 0–100).
-- `SideJobView` (interface): interface SideJobView — What a HUD shows for the job in hand.
-- `SideJobWagerDef` (interface): interface SideJobWagerDef — A cash stake the player puts up to accept, paid back as `stake × payouts[place - 1]` (a race purse).
-- `SideJobs` (interface): interface SideJobs — A side-job board: offers, the job in hand, the streak and the last receipt.
-- `SideJobsConfig` (interface): interface SideJobsConfig — Configuration for {@link createSideJobs}.
-- `SideJobsPersistence` (interface): interface SideJobsPersistence — Durable home for the board's state; `save` runs on each change a player can see, never per tick.
-- `SideJobsState` (interface): interface SideJobsState — Everything a side-job board stores as plain JSON.
-- `createSideJobs` (function): function createSideJobs(config: SideJobsConfig): SideJobs — Side jobs any open-world game runs between story work: taxi fares, deliveries, tows, ambulance runs and street races, each a kind declared as data. Offers are drawn from game-supplied spots (or authored routes) with a seeded stream, so the same seed and calls replay the same board. An accepted job walks pickup → each drop → paid or failed, against a clock of `slack + distance / speed`; arrival means inside `radius` and stopped. The fare is `base + perMetre × distance` plus a bonus per second left, a comfort-scaled tip (the game's `comfortLoss` rule says what a crash or a chase costs) and a streak bonus for back-to-back jobs. A kind with `race` runs its drops as checkpoints on {@link RaceState} against rivals whose positions the game reports, and a `wager` pays the stake back by place. The board keeps its own clock, so pausing the game pauses every deadline.
-- `sideJobDeadline` (function): function sideJobDeadline(deadline: SideJobDeadlineDef, distance: number): number — Seconds a kind allows for `distance` metres.
-- `sideJobFare` (function): function sideJobFare(fare: SideJobFareDef, distance: number): number — The fare a kind charges for `distance` metres, before time bonus, tip and streak.
-- `sideJobStreakBonus` (function): function sideJobStreakBonus(streak: SideJobStreakDef | undefined, fare: number, count: number): number — The streak bonus a fare earns when `streak` jobs were paid back to back before it.
-- `sideJobTip` (function): function sideJobTip(tip: SideJobTipDef | undefined, fare: number, comfort: number): number — The tip for a fare at a comfort level (0–100).
 
 ## @jgengine/core/mission/triggers
 
@@ -2628,10 +2371,6 @@
 ## @jgengine/core/notifications/toastStack.view
 
 - `ToastStack` (const): const ToastStack: NamedExoticComponent<{ action: string; limit?: number | undefined; className?: string | undefined; renderToast?: ((entry: FeedEntry<unknown>, index: number) => UiNode) | undefined; }> — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
-
-## @jgengine/core/onboarding/OnboardingPointer.draw
-
-- `OnboardingPointer` (function): function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: WaypointMarkerTheme }): ReactNode — The onboarding's on-screen pointer, mounted in a game's `WorldOverlay`: a pin over the current step's target while it is in view, an edge arrow pointing the way with the distance while it is not (`WaypointMarkers` over the onboarding's waypoint).
 
 ## @jgengine/core/onboarding/onboarding
 
@@ -2768,14 +2507,6 @@
 - `foldStatContributions` (function): function foldStatContributions(base: number, contributions: Iterable<StatContribution>): number — Fold contributions onto `base` in the order given, with no reordering — the stack a caller applies to one number (a damage roll, a move speed, a loot weight) without building a graph. A stat graph sorts its sources by op first; an ordered stack keeps the caller's sequence.
 - `statModifierContributions` (function): function statModifierContributions<TStat extends string>(source: string, set: StatModifierSet<TStat>): Record<string, StatContribution[]> — Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked talent tree or gear roll feeds the graph as one named source instead of a parallel store.
 
-## @jgengine/core/progression/statPoints
-
-- `StatPointLine` (interface): interface StatPointLine — Stat points: each level earns points the player puts into stats, and each point adds a fixed amount (a survivor's +10 health) or scales the stat by a fraction of itself (a tame's +5.4% health). Sheets are plain `{ stat: points }` records, so they save as they are.
-- `StatPointSheet` (type): type StatPointSheet<S extends string> = Record<S, number> — Points spent per stat. Plain data, JSON round-trips.
-- `StatPoints` (interface): interface StatPoints<S extends string> — Reads and spends stat points on plain sheets.
-- `StatPointsConfig` (interface): interface StatPointsConfig<S extends string> — Knobs: the stats, and how many points any one stat may hold (default unlimited).
-- `createStatPoints` (function): function createStatPoints<S extends string>(config: StatPointsConfig<S>): StatPoints<S> — Create a stat-point sheet reader for a set of stats.
-
 ## @jgengine/core/progression/upgrades
 
 - `UpgradeBuy` (type): type UpgradeBuy = { ok: true; nodeId: string; rank: number; cost: number } | { ok: false; reason: UpgradeRejection } — Result of {@link UpgradeTree.buy}: the rank reached and what it cost, or why it was refused.
@@ -2809,25 +2540,6 @@
 - `inGridBounds` (function): function inGridBounds<T>(grid: CellGrid<T>, x: number, y: number): boolean — Whether `(x, y)` lies on the board.
 - `withCell` (function): function withCell<T>(grid: CellGrid<T>, x: number, y: number, value: T | null): CellGrid<T> — A copy with `(x, y)` set to `value`; off-board writes return the grid unchanged.
 - `withCells` (function): function withCells<T>(grid: CellGrid<T>, entries: readonly { readonly x: number; readonly y: number; readonly value: T | null }[]): CellGrid<T> — A copy with every in-bounds entry written; one allocation for a whole piece or stamp.
-
-## @jgengine/core/puzzle/fallingGrid
-
-- `CLASSIC_LINE_SCORE` (const): const CLASSIC_LINE_SCORE: readonly number[] — Classic line-clear points for 0-4 rows at level 0.
-- `FallingGrid` (interface): interface FallingGrid<TCell> { readonly cols: number; readonly rows: number; occupied(col: number, row: number): boolean; cellAt(col: number, row: number): TCell | null; setCell(col: number, row: number, value: TCell): void; clearCell(col: number, row: number): void; c… — ⚠ undocumented
-- `FallingGridCell` (type): type FallingGridCell = readonly [number, number] — ⚠ undocumented
-- `FallingGridConfig` (interface): interface FallingGridConfig { cols: number; rows: number; lockDelayMs?: number } — ⚠ undocumented
-- `FallingGridSnapshot` (interface): interface FallingGridSnapshot<TCell> { cols: number; rows: number; cells: readonly (TCell | null)[] } — ⚠ undocumented
-- `FallingPiece` (interface): interface FallingPiece<TShape extends string = string> — A falling piece: a shape id from a {@link ShapeTable}, its rotation index and its board offset.
-- `GravityIntervalConfig` (interface): interface GravityIntervalConfig { baseMs?: number; perLevel?: number; minMs?: number } — ⚠ undocumented
-- `LockState` (interface): interface LockState — Elapsed grounded time for the lock-delay state machine. `null` means airborne / not timing.
-- `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record<TShape, readonly (readonly FallingGridCell[])[]> — Rotation states per shape: each state is the footprint cells relative to the piece offset.
-
-## @jgengine/core/puzzle/nonogram
-
-- `NonogramCell` (type): type NonogramCell = "unknown" | "filled" | "empty" — A cell in a nonogram line: not yet determined, painted, or ruled out.
-- `NonogramClue` (type): type NonogramClue = readonly number[] — A line clue — the lengths of its consecutive filled runs, in order.
-- `NonogramSolution` (type): type NonogramSolution = readonly (readonly boolean[])[] — A solved grid, row-major; `true` is a filled cell.
-- `NonogramSolveResult` (interface): interface NonogramSolveResult — Outcome of {@link solveNonogram}: the deduced board and whether propagation fully determined it.
 
 ## @jgengine/core/random/fairChance
 
@@ -2876,15 +2588,6 @@
 ## @jgengine/core/random/scrambledSobol
 
 - `scrambledSobol2` (function): function scrambledSobol2(index: number, seedX: number, seedY: number): [number, number] — Point `index` (0, 1, 2, ...) of a 2D Sobol sequence Owen-scrambled by two 32-bit seeds, in [0, 1)². Every prefix is spread evenly (each first 2^m points fill every 1/2^m-area box of a net once), so thinning a field to its first n points never opens holes; unlike R2 or another rank-1 lattice, no prefix lines up in rows, because the scramble breaks the sequence's digit structure. One seed pair per field or cell gives that field its own independent spread (Burley 2020, "Practical Hash-based Owen Scrambling").
-
-## @jgengine/core/random/seedLink
-
-- `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
-
-## @jgengine/core/random/seedSweep
-
-- `SeedSweep` (interface): interface SeedSweep — How a scenario did across many seeds.
-- `acrossSeeds` (function): function acrossSeeds(count: number, scenario: (seed: string) => boolean, prefix = "sweep"): SeedSweep — Run a seeded scenario once per seed (`sweep:0`, `sweep:1`, …) and report the share it held for. A test of anything random asserts this rate instead of one seed's outcome, so it can't pass on one lucky run or fail on one unlucky one: `expect(acrossSeeds(40, (seed) => carminesRetake(seed)).rate).toBeGreaterThan(0.8)`.
 
 ## @jgengine/core/relation/keyedValues
 
@@ -3063,27 +2766,6 @@
 - `RuntimeSaveOptions` (type): type RuntimeSaveOptions = Omit<RuntimeSaveConfig, "target"> — {@link RuntimeSaveConfig} without `target` — what a host (`createGameContext`) accepts to build `ctx.game.save` and bind it to the context itself.
 - `RuntimeSaveTarget` (interface): interface RuntimeSaveTarget — The narrow slice of a live `GameContext` a runtime save reads and writes — a `GameContext` satisfies it directly (`ctx.state`/`ctx.restore`/`ctx.subscribe`). Depending on this instead of the full context keeps the save controller a deep, decoupled module: it captures and restores the *whole* opted-in world without knowing any subsystem.
 - `createRuntimeSave` (function): function createRuntimeSave(config: RuntimeSaveConfig): RuntimeSave — Bridge a live world to a pluggable save backend: whole-state capture/restore with autosave, save points, named slots, and versioned migration — the same call for offline (localStorage) and cloud (Convex), only the `backend` differs. The game keeps control of *when* it saves (the `mode` plus explicit `checkpoint()` calls from quests/areas) and *when* it restores (`load()` on boot), so any save mechanic — continuous autosave, manual save points, checkpoint triggers — is expressible without new engine code.
-
-## @jgengine/core/session/contestedChannel
-
-- `ContestReaction` (type): type ContestReaction = "pause" | "decay" — ⚠ undocumented
-- `ContestedChannel` (interface): interface ContestedChannel { start(team: string): ContestedEvent | null; tick(dt: number, occupants?: Record<string, number>): ContestedEvent[]; damage(reason?: string): ContestedEvent | null; reset(): void; progress(): number; phase(): ContestedPhase; owner(): strin… — ⚠ undocumented
-- `ContestedChannelConfig` (interface): interface ContestedChannelConfig { duration: number; interruptOnDamage?: boolean; resetOnInterrupt?: boolean; favorability?: Record<string, number> | undefined; ratePerOccupant?: boolean; contested?: ContestReaction; decayRate?: number } — ⚠ undocumented
-- `ContestedEvent` (interface): interface ContestedEvent { kind: ContestedEventKind; owner: string | null; progress: number; reason?: string } — ⚠ undocumented
-- `ContestedEventKind` (type): type ContestedEventKind = "start" | "tick" | "contested" | "paused" | "complete" | "interrupted" — ⚠ undocumented
-- `ContestedPhase` (type): type ContestedPhase = "idle" | "active" | "paused" | "contested" | "complete" | "interrupted" — ⚠ undocumented
-- `ContestedSnapshot` (interface): interface ContestedSnapshot { phase: ContestedPhase; progress: number; owner: string | null; remaining: number } — ⚠ undocumented
-
-## @jgengine/core/session/extraction
-
-- `DeathResult` (interface): interface DeathResult { userId: string; kept: readonly ItemStack[]; lost: readonly ItemStack[]; scheduled: DeliveryEntry | null; consolationLoadoutId: string | null } — ⚠ undocumented
-- `ExtractPoint` (interface): interface ExtractPoint { id: string; center: RingPoint; radius: number; holdSeconds: number; favorability?: Record<string, number>; interruptOnDamage?: boolean } — ⚠ undocumented
-- `ExtractionAttempt` (interface): interface ExtractionAttempt { extractId: string; channel: ContestedChannel } — ⚠ undocumented
-- `ExtractionResult` (interface): interface ExtractionResult { userId: string; extractId: string; banked: readonly ItemStack[] } — ⚠ undocumented
-- `RaidPlayerSnapshot` (interface): interface RaidPlayerSnapshot { status: RaidStatus; extractId: string | null; progress: number; remaining: number } — ⚠ undocumented
-- `RaidSession` (interface): interface RaidSession { beginExtract(userId: string, extractId: string, position: RingPoint, team?: string): ContestedEvent | null; tickExtract(userId: string, dt: number, occupants?: Record<string, number>): ContestedEvent[]; damage(userId: string, reason?: str… — ⚠ undocumented
-- `RaidSessionConfig` (interface): interface RaidSessionConfig { extracts: readonly ExtractPoint[]; insurance?: InsurancePolicy; consolation?: ConsolationPolicy } — ⚠ undocumented
-- `RaidStatus` (type): type RaidStatus = "in-raid" | "extracting" | "extracted" | "dead" — ⚠ undocumented
 
 ## @jgengine/core/session/ring
 
@@ -3516,13 +3198,6 @@
 - `UnitTrainingSpec` (interface): interface UnitTrainingSpec — What the caller asks the queue to build.
 - `unitTrainingConfig` (function): function unitTrainingConfig(options: UnitTrainingOptions): WorkQueueConfig<UnitTrainingSpec, UnitReservation, UnitSpawnOrder> — Build a {@link WorkQueueConfig} for training units from a catalog. Reservation is the unit's cost + population; duration is its train time; completion output is a {@link UnitSpawnOrder} for the caller to route to its spawn primitive.
 
-## @jgengine/core/worldModel/buildTool
-
-- `BuildPiece` (interface): interface BuildPiece — One piece a build key can place: its world-model kind and the name a notice says.
-- `PlacePieceOptions` (interface): interface PlacePieceOptions — How {@link placePiece} reports.
-- `defineBuildKeys` (function): function defineBuildKeys<TPiece extends BuildPiece>(ctx: GameContext, pieces: readonly TPiece[], use: (ctx: GameContext, piece: TPiece) => void): void — Define one `build1`..`buildN` command per piece, in order, so each binds to its number key; the command runs `use` with the piece (arm it, or place it straight away).
-- `placePiece` (function): function placePiece(ctx: GameContext, world: Pick<WorldModel, "canPlace" | "place">, piece: BuildPiece, at: WorldPlacement | string, options: PlacePieceOptions = {}): boolean — Put one piece into a world model where the player asked, saying why when it cannot go: `at` is the placement, or the refusal text when the player pointed somewhere nothing can stand (outside the grounds, no free pad). The model's own refusal (cost, taken cell, locked kind) is said as-is. Returns whether the piece was placed.
-
 ## @jgengine/core/worldModel/gameSpec
 
 - `GameSpec` (interface): interface GameSpec — A running game spec: its checked world, the system to install, and the live world per context.
@@ -3531,17 +3206,6 @@
 - `GameSpecPlaceInput` (interface): interface GameSpecPlaceInput — Input of the `<id>.place` command.
 - `GameSpecShow` (interface): interface GameSpecShow — How a placed kind appears in the scene: one entity per built instance, with the instance's id.
 - `defineGameSpec` (function): function defineGameSpec(spec: GameSpecDecl): GameSpec — Turn a game declaration into an installable engine system with commands `<id>.place`, `<id>.remove`, `<id>.act`, `<id>.cancel` and `<id>.job.start`.
-
-## @jgengine/core/worldModel/turfWar
-
-- `TurfBlockDecl` (interface): interface TurfBlockDecl — One contested block: a declared place whose `owner` and `grip` facts the war moves.
-- `TurfBlockView` (interface): interface TurfBlockView — A block as a map, the phone or the news reads it.
-- `TurfFrontDecl` (interface): interface TurfFrontDecl — One side's standing campaign: where it pushes, how often and how hard.
-- `TurfHandover` (interface): interface TurfHandover — A block changing hands, read back from a fired trigger id.
-- `TurfWar` (interface): interface TurfWar — The war expanded into world-model declarations, plus readers over the live world.
-- `TurfWarDecl` (interface): interface TurfWarDecl — A turf war between any number of sides over a set of blocks.
-- `TurfWorldReader` (interface): interface TurfWorldReader — The part of a world model the readers need.
-- `defineTurfWar` (function): function defineTurfWar(decl: TurfWarDecl): TurfWar — Expand a turf war into the world model's own declarations: blocks change hands when a side's pushes wear the grip to zero, each side's front pushes on its own clock from the blocks it holds, and the world's log, ripples and hooks carry every push. Spread `triggers`, `ripples`, `schedule` and `facts` into `defineWorldModel`; a game event (a soldier dropped on a corner) pushes by setting the block's `attacker` along with its grip change.
 
 ## @jgengine/core/worldModel/upgradePaths
 

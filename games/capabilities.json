@@ -1322,16 +1322,6 @@
       "intent": "brake force that fades as the discs heat up under repeated hard stops and recovers as they cool"
     },
     {
-      "id": "breeding",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/breeding/breeding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care"
-    },
-    {
       "id": "browser-suspension",
       "packages": [
         "@jgengine/core"
@@ -1372,26 +1362,6 @@
       "intent": "grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)"
     },
     {
-      "id": "build-keys",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/worldModel/buildTool",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "one numbered build command per build piece"
-    },
-    {
-      "id": "build-requirements",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/buildOrder",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "list the unmet prerequisites of an RTS building, unit or research"
-    },
-    {
       "id": "build-socket-catalog",
       "packages": [
         "@jgengine/core"
@@ -1400,16 +1370,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "data-driven named-socket snap catalog for modular base building"
-    },
-    {
-      "id": "build-tech-path",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/buildOrder",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "resolve an RTS want into the first missing prerequisite to make instead"
     },
     {
       "id": "building-generator",
@@ -1440,16 +1400,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "derive street-facing building lots from road frontage"
-    },
-    {
-      "id": "calendar-clock-hook",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/time/calendarClock.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "live in-world date and time for a HUD, aligned to the server clock"
     },
     {
       "id": "camera-clearance",
@@ -1572,16 +1522,6 @@
       "intent": "render a framed capture camera over a game that owns its camera"
     },
     {
-      "id": "capture-bonus-levels",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/stats/spawnLevelStats",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "convert wild level and capture effectiveness into bonus levels"
-    },
-    {
       "id": "capture-canvas",
       "packages": [
         "@jgengine/core"
@@ -1590,16 +1530,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Read the frame an engine canvas just rendered to a PNG data URL"
-    },
-    {
-      "id": "capture-effectiveness-tame",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/stats/spawnLevelStats",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "apply capture effectiveness to grant and distribute bonus levels"
     },
     {
       "id": "career-bank",
@@ -1862,16 +1792,6 @@
       "intent": "map a rigged asset's pack-specific clip name to its semantic animation role"
     },
     {
-      "id": "clock-format",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/format/duration",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "render seconds as m:ss / m:ss.ff / h:mm:ss for timers and race HUDs"
-    },
-    {
       "id": "cma-es",
       "packages": [
         "@jgengine/core"
@@ -2002,16 +1922,6 @@
       "intent": "build up and spend finisher/combo points"
     },
     {
-      "id": "command-number",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/commands/commandInput",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "validate finite, bounded numbers and integers at command boundaries"
-    },
-    {
       "id": "command-parse",
       "packages": [
         "@jgengine/core"
@@ -2020,36 +1930,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "parse untrusted command input once so every command stage sees typed, bounded values"
-    },
-    {
-      "id": "command-quantity",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/commands/commandInput",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "validate bounded whole-item counts at command boundaries"
-    },
-    {
-      "id": "companion-intent",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/scene/companion",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent"
-    },
-    {
-      "id": "companion-roster",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/scene/companion",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "manage tamed companions — allegiance, commands, per-companion stats/leveling, and mobBrain-shaped intent"
     },
     {
       "id": "compose-game-loop",
@@ -2360,16 +2240,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "save and reopen named versioned player creations through injected durable storage"
-    },
-    {
-      "id": "creature-driver",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/creatureDriver",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "wild creatures that graze, flee, defend and hunt by temperament, and tamed ones that follow, stay and fight on order"
     },
     {
       "id": "creature-temperament",
@@ -2716,16 +2586,6 @@
       "intent": "reject a hit whose damage type the table does not define instead of dealing 1×"
     },
     {
-      "id": "dash-move",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/movement/dash",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a dash/dodge burst with i-frames and cooldown"
-    },
-    {
       "id": "day-night-cycle",
       "packages": [
         "@jgengine/core"
@@ -2844,16 +2704,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`"
-    },
-    {
-      "id": "defined-fields",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/data/definedFields",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "pass maybe-missing values on as optional fields, leaving out the ones that are undefined"
     },
     {
       "id": "describe-asset-match",
@@ -3056,16 +2906,6 @@
       "intent": "attach a window/document/element event listener with automatic cleanup and a stable handler ref — no hand-rolled addEventListener effects"
     },
     {
-      "id": "domestic-level-spend",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/stats/spawnLevelStats",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "spend an earned post-capture level into a chosen stat under a cap"
-    },
-    {
       "id": "doppler-pitch",
       "packages": [
         "@jgengine/core"
@@ -3074,16 +2914,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "pitch a moving sound up as it approaches and down as it passes, from listener and emitter velocity"
-    },
-    {
-      "id": "dose-table",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/stats/doseTable",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "per-receiver effects of each source (food, potion, dart, hit) as vital doses, with preference order"
     },
     {
       "id": "dot-field",
@@ -3224,16 +3054,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "read a placed object's authored meta as a typed number or text, failing on a wrong value"
-    },
-    {
-      "id": "editor-movement",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/editor/movementCatalog",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "author game-chosen character movement controls through ordinary catalog rows"
     },
     {
       "id": "editor-runtime-inspector",
@@ -3526,16 +3346,6 @@
       "intent": "selectable entity portrait tile with vitals and selected/focus states"
     },
     {
-      "id": "entity-preview",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/render/EntityPreview.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "live 3D entity portrait — nested EngineCanvas + context bridge + studio stage, driven by the game's own renderEntity"
-    },
-    {
       "id": "entity-render-cues",
       "packages": [
         "@jgengine/core"
@@ -3574,28 +3384,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "show the clothing an entity wears on its body"
-    },
-    {
-      "id": "environment-motion",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/world/environmentForces",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "apply capped spatial wind and vortex forces to game-selected actors through shared motion intents"
-    },
-    {
-      "id": "equipment-slot-inventory",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/inventory/equipment",
-      "gameFacing": true,
-      "probe": {
-        "kind": "devtools"
-      },
-      "intent": "wear gear by slot with item-kind rules, two-handed blocking and replace-on-equip"
     },
     {
       "id": "event-bus",
@@ -5743,16 +5531,6 @@
       "intent": "deterministic per-id cadence phase that spreads sibling gate ticks across frames"
     },
     {
-      "id": "interior-dressing",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/world/interiorDressing",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "derive trims, pipes, cables, decals, practical lamps and clutter slots from room footprints"
-    },
-    {
       "id": "inventory-grid",
       "packages": [
         "@jgengine/core"
@@ -5843,16 +5621,6 @@
       "intent": "a runtime store for procedurally generated item instances"
     },
     {
-      "id": "item-ledger",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/loot/salvage",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "track which rolled item instances are still owned, salvaged or sold"
-    },
-    {
       "id": "item-run-haul",
       "packages": [
         "@jgengine/core"
@@ -5863,26 +5631,6 @@
       "intent": "carry loot with a weight gate, bank it into a persistent stash, or lose it when the run fails"
     },
     {
-      "id": "item-salvage",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/loot/salvage",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "break an item down for the currency its level and rarity say, once"
-    },
-    {
-      "id": "item-salvage-value",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/loot/salvage",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "compute the currency an item of a level and rarity breaks down into"
-    },
-    {
       "id": "item-use-composition",
       "packages": [
         "@jgengine/core"
@@ -5891,36 +5639,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "compose pluggable, ordered item use-behaviors from serializable references"
-    },
-    {
-      "id": "item-vendor",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/loot/vendor",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "stock a vendor with rolled items priced through the shared economy"
-    },
-    {
-      "id": "item-vendor-price",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/loot/vendor",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "price an item from its level and rarity through the economy's currency"
-    },
-    {
-      "id": "item-vendor-rotation",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/loot/vendor",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "decide when a vendor's shelf is due for a restock"
     },
     {
       "id": "item-weight",
@@ -6563,16 +6281,6 @@
       "intent": "declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions"
     },
     {
-      "id": "light-beam",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/map/LightBeam.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a tall glowing column marking a spot so it can be found from far away"
-    },
-    {
       "id": "light-probes",
       "packages": [
         "@jgengine/core"
@@ -6631,16 +6339,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "hand an engine UI part a value that moves every frame (a meter, a distance, a countdown) so only its own node updates"
-    },
-    {
-      "id": "live-road-surface",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/roads/liveRoadSurface",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "swap a road source's asphalt, sidewalk or kerb scan at runtime (wet at night, snow in winter)"
     },
     {
       "id": "live-text",
@@ -7031,10 +6729,10 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/material/appearanceSignals",
+      "module": "@jgengine/core/material/materialAsset.draw",
       "gameFacing": false,
       "probe": null,
-      "intent": "adapt selected surface response to sampled wetness and local card exposure"
+      "intent": "apply sampled local exposure to the hair-card backlight approximation without global lighting edits"
     },
     {
       "id": "material-assets",
@@ -7207,16 +6905,6 @@
       "intent": "resolve a standard gamepad button to a menu intent"
     },
     {
-      "id": "menu-router",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/menu/menuRouter.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back"
-    },
-    {
       "id": "menu-screen",
       "packages": [
         "@jgengine/core"
@@ -7235,16 +6923,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "generated click for menu move/confirm/back, no audio asset"
-    },
-    {
-      "id": "menu-stack-reducer",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/menu/menuRouter.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "pure push/back/replace/reset transitions for a menu screen stack"
     },
     {
       "id": "menu-transition",
@@ -7385,16 +7063,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "circular minimap with zone label, clock, and compass composed together"
-    },
-    {
-      "id": "minimap-track",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/map/minimapTrack",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "project a world point to a 0..1 fraction along a linear track axis"
     },
     {
       "id": "minimap-track-hud",
@@ -8135,16 +7803,6 @@
       "intent": "which onboarding step still locks a command or UI id, so a HUD can grey it out"
     },
     {
-      "id": "onboarding-pointer",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/onboarding/OnboardingPointer.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "on-screen pin or edge arrow with distance to the current onboarding step's target"
-    },
-    {
       "id": "online-player-batches",
       "packages": [
         "@jgengine/convex"
@@ -8173,16 +7831,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "register order verbs (move/attack/custom) as data so engine code never branches on a verb"
-    },
-    {
-      "id": "ordinal-format",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/format/duration",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "format a placement number as 1st/2nd/3rd for HUD ranks"
     },
     {
       "id": "paced-schedule",
@@ -8579,26 +8227,6 @@
       "intent": "the shared test contract a physics adapter runs to prove it matches the seam"
     },
     {
-      "id": "physics-body-instances",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/InstancedBodies.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "Draw every physics body as one instanced mesh"
-    },
-    {
-      "id": "physics-joint-lines",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/InstancedJoints.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "Draw a physics world's joints as lines"
-    },
-    {
       "id": "physics-world-backend",
       "packages": [
         "@jgengine/core"
@@ -8647,16 +8275,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "resolve a placement commit into a shared asset placement payload"
-    },
-    {
-      "id": "place-piece",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/worldModel/buildTool",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "place a build piece in a world model with on-screen refusals"
     },
     {
       "id": "placed-object-rehydrate",
@@ -8989,16 +8607,6 @@
       "intent": "viewport-flipping, viewport-clamped anchored popover/tooltip shell"
     },
     {
-      "id": "population-director",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/populationDirector",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "ambient per-region creature population manager with timed weighted respawns and caps"
-    },
-    {
       "id": "portable-marker-source",
       "packages": [
         "@jgengine/core"
@@ -9029,16 +8637,6 @@
       "intent": "render entity poses between fixed simulation steps without stutter"
     },
     {
-      "id": "practical-lights",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/buildings/InteriorDressing.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool"
-    },
-    {
       "id": "presence",
       "packages": [
         "@jgengine/core"
@@ -9059,16 +8657,6 @@
       "intent": "rolling per-item sale records aggregated into market price stats"
     },
     {
-      "id": "procedural-ground",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/terrain/ProceduralGround.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes"
-    },
-    {
       "id": "production-building",
       "packages": [
         "@jgengine/core"
@@ -9087,26 +8675,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "evaluate a level/rank curve (const, linear, power, geometric, steps, piecewise) at a point"
-    },
-    {
-      "id": "projected-overdraw",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/render/projectedOverdraw.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "sample actual mesh/camera fragment overlap with native coverage and explicit depth/blending/transmission limits"
-    },
-    {
-      "id": "projectile-models",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/combat/ProjectileModels.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup"
     },
     {
       "id": "projectiles",
@@ -9217,16 +8785,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "diagnose authored quest ids, prerequisite and reward references, quantities, and blocked dependencies with caller-declared external unlocks"
-    },
-    {
-      "id": "quest-giver",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/mission/questGivers",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "an NPC that hands out its quests one at a time and takes them back when done"
     },
     {
       "id": "quest-log",
@@ -9529,16 +9087,6 @@
       "intent": "Enable/disable the dev-only placeholder-fallback probe."
     },
     {
-      "id": "replay-playback",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/replay/replayPlayback",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "play a recorded input-plus-seed session headless and reach the same state"
-    },
-    {
       "id": "replay-recording",
       "packages": [
         "@jgengine/core"
@@ -9745,16 +9293,6 @@
       "intent": "rides with capacity, cycles, queues, ratings, breakdowns and maintenance"
     },
     {
-      "id": "riding",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/scene/riding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "ride a tamed creature or vehicle: controls and camera follow the mount, the rider sits on its seat, dismount sets them down beside it"
-    },
-    {
       "id": "rigid-aircraft",
       "packages": [
         "@jgengine/core"
@@ -9843,26 +9381,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "authored daily routines (home, work, meal) resolved against the world clock"
-    },
-    {
-      "id": "rts-attack-clock",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/buildOrder",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "decide when an RTS AI launches growing attack waves, with a max-wait fallback"
-    },
-    {
-      "id": "rts-build-planner",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/buildOrder",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "AI build order, tech path, supply and army composition for an RTS opponent economy"
     },
     {
       "id": "rts-control-groups",
@@ -10039,26 +9557,6 @@
       "intent": "grow a scatter palette item from a seeded generator's baked variants"
     },
     {
-      "id": "scatter-harvest",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/harvest/scatterHarvest",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow"
-    },
-    {
-      "id": "scatter-points",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/inheritance/inheritance",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "spread points over fields at random so equal totals differ"
-    },
-    {
       "id": "scatter-region-generator",
       "packages": [
         "@jgengine/core"
@@ -10097,26 +9595,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "expose the live renderer to outside-canvas HUD (photo mode, save thumbnails)"
-    },
-    {
-      "id": "scene-ownership",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/scene/sceneOwnership",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "classify an editor-visible object as expose/bake/reject with a diagnostic"
-    },
-    {
-      "id": "scene-swap",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/render/sceneSwap.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "change place without a frozen frame: build and compile the new place in the background behind a travel card"
     },
     {
       "id": "scene-swap-card",
@@ -10187,26 +9665,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Pierson–Moskowitz and JONSWAP wave spectra"
-    },
-    {
-      "id": "search-beat",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/searchBeat",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "walk waypoints around a search circle so searchers sweep it instead of standing on its centre"
-    },
-    {
-      "id": "seed-sweep",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/random/seedSweep",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "test a random system by its odds across many seeds, not one lucky run"
     },
     {
       "id": "seeded-random",
@@ -10392,16 +9850,6 @@
       "intent": "broadcast local map-drawing edits over the party feed and mirror inbound edits — collaborative annotations over any replicated feed"
     },
     {
-      "id": "shared-wallet",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/economy/sharedWallet",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "shared/group currency pools tracking per-member contributions"
-    },
-    {
       "id": "shop-grid",
       "packages": [
         "@jgengine/core"
@@ -10450,16 +9898,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "downscale a captured frame to a save-card thumbnail data URL"
-    },
-    {
-      "id": "side-jobs",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/mission/sideJobs",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "offer and run repeatable side jobs (fares, deliveries, races) with fare math, deadlines, tips, streaks and wagers"
     },
     {
       "id": "sight-line",
@@ -10604,16 +10042,6 @@
       "intent": "editor-authorable terrain crack/moss material variation"
     },
     {
-      "id": "solid-enclosure",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/world/overhead",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "measure how enclosed a point is by a roof and walls, from the world's solids"
-    },
-    {
       "id": "solid-obstacles",
       "packages": [
         "@jgengine/core"
@@ -10622,16 +10050,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "the one blocking-geometry query the player resolver and NPC movers share"
-    },
-    {
-      "id": "solid-overhead",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/world/overhead",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "test whether a roof, ceiling or rock overhangs a point, from the world's solids"
     },
     {
       "id": "solid-route",
@@ -10804,36 +10222,6 @@
       "intent": "evenly cover an area with one jittered point per grid cell, deterministic"
     },
     {
-      "id": "spawn-instance-restore",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/stats/spawnLevelStats",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "rehydrate a creature stat instance from decoded snapshot data"
-    },
-    {
-      "id": "spawn-instance-snapshot",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/stats/spawnLevelStats",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "deep-copy a creature stat instance into a serializable record"
-    },
-    {
-      "id": "spawn-level-roll",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/stats/spawnLevelStats",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "distribute a wild creature's spawn level into random per-stat points"
-    },
-    {
       "id": "spawn-point-select",
       "packages": [
         "@jgengine/core"
@@ -10852,26 +10240,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "register spawn locations and pick where entities respawn"
-    },
-    {
-      "id": "spawn-stat-values",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/stats/spawnLevelStats",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "resolve a creature's per-stat values from its distributed points"
-    },
-    {
-      "id": "speed-format",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/format/speed",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs"
     },
     {
       "id": "split-footprint-regions",
@@ -10942,16 +10310,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "animate a sprite atlas clip from headless or rendered game code"
-    },
-    {
-      "id": "sprite-batch",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/render/SpriteBatch.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "Draw many atlas sprites in one instanced draw"
     },
     {
       "id": "sprite-icon",
@@ -11084,16 +10442,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "feed an existing StatModifierSet into a stat-graph source"
-    },
-    {
-      "id": "stat-points",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/progression/statPoints",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap"
     },
     {
       "id": "stat-pool",
@@ -11472,26 +10820,6 @@
       "intent": "compile fixed/frame/interval system ticks into deterministic ordered stages"
     },
     {
-      "id": "tactical-cover-points",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/tacticalQueries",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "derive cover candidates from navigation-mesh boundaries"
-    },
-    {
-      "id": "tactical-position-score",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/tacticalQueries",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "rank bounded tactical positions with caller-defined weights"
-    },
-    {
       "id": "talent-tree",
       "packages": [
         "@jgengine/core"
@@ -11670,16 +10998,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Persist dirty ownership chunks and profiles without rewriting the shared server."
-    },
-    {
-      "id": "territory-overlay",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/placement/TerritoryOverlay.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "show footprint ownership, claim cost, and affordability"
     },
     {
       "id": "territory-owner-query",
@@ -11896,26 +11214,6 @@
       "intent": "per-model triangle table with instance counts, for perf probes"
     },
     {
-      "id": "tribe-group",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/game/tribe",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "shared-ownership group (tribe/guild/clan) with ranked permissions, group vs personal assets, alliances, and a bounded event log"
-    },
-    {
-      "id": "tribe-registry",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/game/tribe",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "registry of tribes with mutual alliances and cross-tribe relation lookup"
-    },
-    {
       "id": "triggered-rules",
       "packages": [
         "@jgengine/core"
@@ -11944,16 +11242,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "find a Tune panel field by its control name (drive --fill, screen readers)"
-    },
-    {
-      "id": "turf-war",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/worldModel/turfWar",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "blocks that change hands between any number of sides, with fronts that push on their own clock"
     },
     {
       "id": "tween-number",
@@ -12144,16 +11432,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "milestones gated by standing or money, validated against the content they grant"
-    },
-    {
-      "id": "unlock-points",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/economy/unlockPoints",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "spendable point pool earned per level and spent to unlock nodes, with refund and respec"
     },
     {
       "id": "unlockables",
@@ -12508,16 +11786,6 @@
       "intent": "diagnose authored weather, effect, fire, force and habitat documents before publication"
     },
     {
-      "id": "value-inheritance",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/inheritance/inheritance",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a child's values from two parents per field, picked or blended, with rare mutations"
-    },
-    {
       "id": "vehicle-aligning-torque",
       "packages": [
         "@jgengine/core"
@@ -12794,16 +12062,6 @@
       "intent": "drop-in wave/spawn HUD over a wave runner — big WAVE N label, wave-progress bar, spawned/total + budget + alert readouts, theme-skinnable"
     },
     {
-      "id": "wave-preview",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/waves/wavePreview",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "summarize an authored wave before it opens: units by first arrival, trait counts and entries used"
-    },
-    {
       "id": "wave-runner",
       "packages": [
         "@jgengine/core"
@@ -12862,16 +12120,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "reject a malformed weapon definition at construction with the field named"
-    },
-    {
-      "id": "weapon-feedback",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/combat/weaponFeedback",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "turn weapon shots, recoil kick and impacts into per-tick feedback-mixer signals for camera shake, audio and rumble"
     },
     {
       "id": "weapon-handling",

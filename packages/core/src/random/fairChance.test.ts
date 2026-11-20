@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 
 import { fairChance, longestStreak } from "./fairChance";
 import { hashUnit, seededRng } from "./rng";
-import { acrossSeeds } from "./seedSweep";
 
 const rolls = (key: string, chance: number, count: number, bag?: number) =>
   Array.from({ length: count }, (_, index) => fairChance(key, index, chance, bag === undefined ? {} : { bag }));
@@ -66,18 +65,11 @@ describe("the shared hash has no streaks of its own", () => {
   });
 
   test("a seeded stream's coin flips run no longer than fair coins do", () => {
-    const sweep = acrossSeeds(200, (seed) => {
-      const rng = seededRng(seed);
-      return longestStreak(Array.from({ length: 100 }, () => rng() < 0.5)).length <= 12;
-    });
-    expect(sweep.rate).toBeGreaterThan(0.97);
-  });
-});
-
-describe("acrossSeeds", () => {
-  test("reports the share of seeds a scenario held for and names the ones it failed", () => {
-    const sweep = acrossSeeds(10, (seed) => !seed.endsWith(":3") && !seed.endsWith(":7"));
-    expect(sweep.rate).toBe(0.8);
-    expect(sweep.failed).toEqual(["sweep:3", "sweep:7"]);
+    let held = 0;
+    for (let i = 0; i < 200; i += 1) {
+      const rng = seededRng(`sweep:${i}`);
+      if (longestStreak(Array.from({ length: 100 }, () => rng() < 0.5)).length <= 12) held += 1;
+    }
+    expect(held / 200).toBeGreaterThan(0.97);
   });
 });

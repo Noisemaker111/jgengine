@@ -6,7 +6,7 @@ import {
   buildSpriteSheetManifest,
   sanitizeAssetName,
   type SpriteSheetGridConfig,
-} from "@jgengine/core/assets/spriteSheet";
+} from "@llmville/game/engine-local/assets/spriteSheet";
 import sharp from "sharp";
 
 type BackgroundMode = "none" | "corner" | "edge" | "checker";

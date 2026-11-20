@@ -1,5 +1,5 @@
 import type { MissionDef } from "@jgengine/core/mission/mission";
-import { defineTurfWar } from "@jgengine/core/worldModel/turfWar";
+import { defineTurfWar } from "../engine-local/worldModel/turfWar";
 import { calm, defineWorldModel, type WorldFactSpec } from "@jgengine/core/worldModel/worldModel";
 
 /**

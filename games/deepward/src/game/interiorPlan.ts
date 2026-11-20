@@ -1,4 +1,4 @@
-import { planInteriorDressing, type InteriorClearance, type InteriorClutterSlot, type InteriorDebrisSlot, type InteriorDressingOptions, type InteriorDressingPlan } from "@jgengine/core/world/interiorDressing";
+import { planInteriorDressing, type InteriorClearance, type InteriorClutterSlot, type InteriorDebrisSlot, type InteriorDressingOptions, type InteriorDressingPlan } from "../engine-local/world/interiorDressing";
 
 import type { Stratum } from "./strata";
 

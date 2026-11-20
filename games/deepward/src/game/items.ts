@@ -3,8 +3,8 @@ import { registerGenerator, runGenerator } from "@jgengine/core/generator/genera
 import { compareToEquipped, itemMass, type EquippedComparison, type ItemDrop } from "@jgengine/core/loot/drop";
 import { defineLootGenerator } from "@jgengine/core/loot/lootGenerator";
 import { validateLootItem, type LootBaseDef, type LootCatalog, type LootComparisonOptions, type LootItem, type LootManufacturerDef } from "@jgengine/core/loot/lootGen";
-import type { SalvageTable } from "@jgengine/core/loot/salvage";
-import { salvageValue } from "@jgengine/core/loot/salvage";
+import type { SalvageTable } from "../engine-local/loot/salvage";
+import { salvageValue } from "../engine-local/loot/salvage";
 
 /** A Deepward item is a rolled drop: its kind is its base, and its number is the level of the room it came from. */
 export type ItemKind = "wire" | "polymer" | "cells" | "ink" | "service-rifle";

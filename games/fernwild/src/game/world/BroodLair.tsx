@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
-import { LightBeam } from "@jgengine/core/map/LightBeam.draw";
+import { LightBeam } from "../../engine-local/map/LightBeam.draw";
 import { EngineDrawMount, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useGameStore } from "@jgengine/core/ui/hooks.view";

@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 

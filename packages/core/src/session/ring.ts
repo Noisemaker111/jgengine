@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { lerp } from "../math/scalar";
 
 export type RingPoint = [number, number];

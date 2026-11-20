@@ -11,7 +11,6 @@ export {
   type ModalStackSnapshot,
 } from "./dialog/modalStack";
 export { formatDistance } from "./format/distance";
-export { formatSpeed } from "./format/speed";
 export {
   listHudPanelTypes,
   registerHudPanelType,

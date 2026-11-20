@@ -98,13 +98,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `metaNumber` (function) · `import { metaNumber } from "@jgengine/core/editor/markerMeta"`
 
-## editor-movement — bind live character tuning while preserving distinctive game policy
-
-- `bindAuthoredMovement` (function) · `import { bindAuthoredMovement } from "@jgengine/core/editor/movementCatalog"`
-- `createAuthoredMovementReader` (function) · `import { createAuthoredMovementReader } from "@jgengine/core/editor/movementCatalog"`
-- `createMovementSchema` (function) · `import { createMovementSchema } from "@jgengine/core/editor/movementCatalog"`
-- `readAuthoredMovement` (function) · `import { readAuthoredMovement } from "@jgengine/core/editor/movementCatalog"`
-
 ## editor-runtime-inspector — read one live runtime entity field or tunable
 
 - `getRuntimeInspectorValue` (function) · `import { getRuntimeInspectorValue } from "@jgengine/core/editor"`
@@ -132,14 +125,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## player-creator — create, edit, save, playtest and reopen bounded player scenes through the production editor
 
 - `CreatorApp` (function) · `import { CreatorApp } from "@jgengine/editor"`
-
-## scene-ownership — audit a whole ownership manifest for boundary violations
-
-- `auditManifest` (function) · `import { auditManifest } from "@jgengine/core/scene/sceneOwnership"`
-- `classifyOwnership` (function) · `import { classifyOwnership } from "@jgengine/core/scene/sceneOwnership"`
-- `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/scene/sceneOwnership"`
-- `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership"`
-- `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/scene/sceneOwnership"`
 
 ## simulation-inspector — author weather schedules, effects, fire, wind zones, forces and habitats with validated undoable controls
 

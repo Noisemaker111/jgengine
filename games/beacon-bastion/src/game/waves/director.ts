@@ -4,7 +4,7 @@ import type { EncounterOrder } from "@jgengine/core/waves/encounter";
 import { advancePhase, createPhaseClock } from "@jgengine/core/ai/phaseLadder";
 import { evaluatePressure, type PressurePlan } from "@jgengine/core/waves/pressure";
 import { advancePathFollow, createPathFollow, type PathFollowState } from "@jgengine/core/nav/pathFollow";
-import { vec3 } from "@jgengine/core/world/vec3";
+import { vec3 } from "../../engine-local/world/vec3";
 
 import { councilScale, difficultyOf } from "../campaign";
 import { creepDef } from "../entities/enemies/catalog";

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createItemLedger, salvageItem } from "@jgengine/core/loot/salvage";
+import { createItemLedger, salvageItem } from "../engine-local/loot/salvage";
 import { compareToEquipped } from "@jgengine/core/loot/drop";
 import { getGenerator, runGenerator } from "@jgengine/core/generator/generator";
 import { BREAKDOWN, COMPARE_OPTIONS, ITEM_CATALOG, ITEM_LOOT, RARITIES, breakdownValue, compareToPrepared, itemValue, itemWeight, kindOf, rollItem, weaponStats } from "./items";

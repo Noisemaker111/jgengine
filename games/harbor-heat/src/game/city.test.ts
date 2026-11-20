@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { validateMissionCatalog } from "@jgengine/core/mission/mission";
 import { missionMarkers } from "@jgengine/core/mission/triggers";
-import { acrossSeeds } from "@jgengine/core/random/seedSweep";
+import { acrossSeeds } from "../engine-local/random/seedSweep";
 import { createWorldModel } from "@jgengine/core/worldModel/worldModel";
 import { editorLayers } from "../editorLayers";
 import { city, turfWar } from "./city";

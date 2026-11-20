@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import type { AnchorHTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
-import { menuStackReducer } from "@jgengine/core/menu/menuRouter.view";
+import { menuStackReducer } from "../engine-local/menu/menuRouter.view";
 
 /** Where a screen change goes: a path pattern (`/game/$gameId`), its params and its search values. */
 export interface ScreenTarget {

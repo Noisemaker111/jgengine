@@ -1,5 +1,5 @@
 import type { CommandDef, CommandScope } from "@jgengine/core/commands/commandRunner";
-import { definedFields } from "@jgengine/core/data/definedFields";
+import { definedFields } from "../../engine-local/data/definedFields";
 import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 import {
   findPlacedObject,

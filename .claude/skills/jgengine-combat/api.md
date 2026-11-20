@@ -360,12 +360,6 @@
 - `ImpactFeedbackDrawProps` (interface): interface ImpactFeedbackDrawProps extends ImpactFeedbackOptions — Props the impact draw reads; resolved by the UI wrapper each commit.
 - `ImpactFeedbackOptions` (interface): interface ImpactFeedbackOptions — What {@link ImpactFeedback} reacts with; every field defaults on.
 
-## @jgengine/core/combat/ProjectileModels.draw
-
-- `ProjectileModels` (function): function ProjectileModels(props: ProjectileModelsProps): null — Mount caller-owned models at authoritative projectile positions. Flight ids determine lifetime; each frame only updates transforms, and settlement removes the model. Optional shaft/head geometry is enabled only by the caller.
-- `ProjectileModelsProps` (interface): interface ProjectileModelsProps — Render simulated flights without owning their travel or settlement.
-- `ProjectileShaft` (interface): interface ProjectileShaft — Explicit opt-in shaft/head geometry when a game has no projectile model.
-
 ## @jgengine/core/combat/ShotFeedback.draw
 
 - `HitMarkersDrawProps` (interface): interface HitMarkersDrawProps { ctx: GameContext; lifeMs?: number } — ⚠ undocumented
@@ -922,13 +916,6 @@
 - `weaponIntervalMs` (function): function weaponIntervalMs(definition: WeaponDefinition): number — Milliseconds between shots at full cadence: `60_000 / roundsPerMinute`.
 - `weaponMaxInFlight` (function): function weaponMaxInFlight(definition: WeaponDefinition): number — Live pellets one definition may keep, clamped to a bounded range.
 
-## @jgengine/core/combat/weaponFeedback
-
-- `WeaponFeedbackSignal` (type): type WeaponFeedbackSignal = "shot" | "kick" | "impact" | "recoil" | "cameraKick" | "spread" | "ads" — Signals {@link createWeaponFeedbackSignals} reports each tick, named for `createFeedbackMixer` routes. `shot`, `kick` and `impact` are pulses that read non-zero only on the tick they happened; the rest follow the handling frame.
-- `WeaponFeedbackSignals` (interface): interface WeaponFeedbackSignals — Collects weapon events between presentation ticks and hands them to a feedback mixer as one signal record.
-- `WeaponFeedbackState` (interface): interface WeaponFeedbackState — Serializable pending pulses, so a snapshot taken between a shot and the next read loses nothing.
-- `createWeaponFeedbackSignals` (function): function createWeaponFeedbackSignals(): WeaponFeedbackSignals — Creates {@link WeaponFeedbackSignals}: the bridge from shots, recoil kick and impacts to `createFeedbackMixer` routes (camera shake, audio, rumble). Route `kick` with no smoothing into camera-shake trauma, `impact` with a `release` into rumble, and `ads`/`spread` into continuous audio or FOV targets. Deterministic and allocation-free per read.
-
 ## @jgengine/core/combat/weaponFire
 
 - `FireCadence` (interface): interface FireCadence — A minimal minimum-interval rate gate for a repeated action — weapon fire, ability spam, any "no faster than N per second" rule. Deterministic and serializable: its whole state is the elapsed time since the last action, exposed via {@link FireCadence.elapsedMs}.
@@ -1007,16 +994,6 @@
 - `MeterTier` (interface): interface MeterTier { id: string; at: number } — ⚠ undocumented
 - `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
 
-## @jgengine/core/stats/doseTable
-
-- `DoseSupply` (interface): interface DoseSupply — What a body can eat or drink from: how many of a source it holds, and taking one. An inventory, a trough, a fridge.
-- `DoseTable` (interface): interface DoseTable — What each source does to each kind of receiver. Pure data; `retune` swaps the rows.
-- `DoseTableOptions` (interface): interface DoseTableOptions { fallback?: string } — ⚠ undocumented · used by `createDoseTable`: What each source does to each kind of receiver, as {@link VitalDose}s: a raptor's foods and how much taming, food and ineffectiveness each g…
-- `DoseTableRows` (type): type DoseTableRows = Readonly<Record<string, Readonly<Record<string, readonly VitalDose[]>>>> — Rows of a {@link DoseTable}: per kind of receiver, each source it takes and the doses that source gives it, listed in the receiver's order of preference. A `fallback` row answers for receivers with no row.
-- `createDoseTable` (function): function createDoseTable(rows: DoseTableRows, options: DoseTableOptions = {}): DoseTable — What each source does to each kind of receiver, as {@link VitalDose}s: a raptor's foods and how much taming, food and ineffectiveness each gives, a sim's meals and the needs they fill, a shooter's potions and the shield each pours in up to its cap, a dart's torpor by the body it lands in. Sources are listed in the receiver's order of preference, so "eats the first food it likes that it holds" is one `pick`.
-- `eatWhileRoom` (function): function eatWhileRoom(body: Pick<Vitals, "value" | "max" | "dose">, table: DoseTable, receiver: string, supply: DoseSupply, vital: string, limit = 64): string[] — Eat from `supply` while there is room: each time, the receiver's most preferred source it holds whose gain to `vital` fits under the max is taken and its doses go into `body`. A tame eating from its own inventory, a sim at the fridge, a baby fed what it is given. Returns the sources eaten, in order.
-- `hasRoomFor` (function): function hasRoomFor(vitals: Pick<Vitals, "value" | "max">, doses: readonly VitalDose[], vital: string): boolean — Whether `vitals` has room for every gain the doses put into `vital` (a creature eats once its food has room for the meal).
-
 ## @jgengine/core/stats/eventMeter
 
 - `EventMeter` (interface): interface EventMeter { state(): EventMeterState; restore(next: EventMeterState): void; value(): number; fraction(): number; tier(): string | null; ready(): boolean; feed(tag: string, scale?: number): EventMeterFeedResult; consume(): boolean; drain(amount: numbe… — ⚠ undocumented · used by `createEventMeter`: A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shoot…
@@ -1032,19 +1009,6 @@
 - `CheckInput` (interface): interface CheckInput { modifier: number; dc: number; advantage?: CheckAdvantage; diceSides?: number } — ⚠ undocumented · used by `rollCheck`: Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 - `CheckResult` (interface): interface CheckResult { rolls: readonly number[]; roll: number; total: number; success: boolean; critical: "success" | "failure" | null } — ⚠ undocumented · used by `rollCheck`: Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 - `rollCheck` (function): function rollCheck(input: CheckInput, rng?: () => number): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
-
-## @jgengine/core/stats/spawnLevelStats
-
-- `CreatureStatInstance` (interface): interface CreatureStatInstance<TStat extends string> — A single creature's serializable stat record — a reference to its species (`speciesId`), the current `level`, the per-stat count of distributed points, and how many post-capture domestic levels have been spent. Plain data: round-trips through JSON, save/load, and multiplayer sync. Resolve display values with {@link resolveSpawnStats}.
-- `SpawnSpeciesDef` (type): type SpawnSpeciesDef<TStat extends string> = Record<TStat, SpawnStatDef> — A species' stat table: every stat the creature owns keyed to its {@link SpawnStatDef}. The key order is the deterministic order random points are distributed over, so a serialized species definition reproduces the same rolls under the same rng sequence.
-- `SpawnStatDef` (interface): interface SpawnStatDef — Per-stat growth definition for one species. `base` is the level-1 value of the stat; `growth` is how much a single distributed point adds, expressed as a fraction of `base` — so a point on a `growth: 0.1` stat is worth +10% of base. The resolved value is `base * (1 + points * growth)`.
-- `applyCaptureEffectiveness` (function): function applyCaptureEffectiveness<TStat extends string>(species: SpawnSpeciesDef<TStat>, instance: CreatureStatInstance<TStat>, effectiveness: number, rng: () => number): CaptureResult<TStat> — Apply a capture at the given effectiveness: compute bonus levels via {@link captureBonusLevels}, distribute those extra points randomly with the injected rng, and return the post-capture instance (level raised to the tamed total) alongside the granted bonus levels and tamed level. The input instance is not mutated.
-- `captureBonusLevels` (function): function captureBonusLevels(level: number, effectiveness: number): number — Bonus levels granted by a capture at the given effectiveness: `floor(level * clamp01(effectiveness) / 2)`. A perfect (1.0) capture grants half the wild level; a botched (0) capture grants none. Effectiveness outside `[0,1]` clamps.
-- `resolveSpawnStats` (function): function resolveSpawnStats<TStat extends string>(species: SpawnSpeciesDef<TStat>, instance: CreatureStatInstance<TStat>): Record<TStat, number> — Resolve an instance's live stat values from its distributed points: `value = base * (1 + points * growth)` per stat. Stats with zero points return their base.
-- `restoreSpawnInstance` (function): function restoreSpawnInstance<TStat extends string>(data: CreatureStatInstance<TStat>): CreatureStatInstance<TStat> — Rehydrate a creature stat instance from decoded data (e.g. `JSON.parse` output), returning a fresh deep copy the caller owns. Inverse of {@link snapshotSpawnInstance}.
-- `rollSpawnInstance` (function): function rollSpawnInstance<TStat extends string>(speciesId: string, species: SpawnSpeciesDef<TStat>, level: number, rng: () => number): CreatureStatInstance<TStat> — Roll a fresh wild creature at `level`: distribute `(level - 1)` points randomly across the species' stats using the injected rng and return a serializable {@link CreatureStatInstance}. Deterministic — the same rng sequence yields the same point spread. Levels below 1 clamp to 1 (no points). Use `seededRng` from `../random/rng` for a persisted, reproducible stream.
-- `snapshotSpawnInstance` (function): function snapshotSpawnInstance<TStat extends string>(instance: CreatureStatInstance<TStat>): CreatureStatInstance<TStat> — Deep-copy an instance into a detached, serializable record — the transport/save counterpart of {@link restoreSpawnInstance}. Copies the points map so later edits don't leak into the snapshot.
-- `spendDomesticLevel` (function): function spendDomesticLevel<TStat extends string>(instance: CreatureStatInstance<TStat>, stat: TStat, options?: SpendLevelOptions): SpendLevelResult<TStat> — Spend one earned post-capture level into `stat`, adding a single growth increment (one point) and raising both `level` and `domesticLevels`. When `maxDomesticLevels` is set and already reached, the spend is refused (`spent: false`) and the instance is returned untouched. Pure: returns a new instance rather than mutating the input.
 
 ## @jgengine/core/stats/statModifiers
 
@@ -1168,13 +1132,6 @@
 - `WaveCountdownState` (interface): interface WaveCountdownState — Serializable clock state.
 - `WaveCountdownView` (interface): interface WaveCountdownView extends WaveCountdownState — The clock as a HUD reads it.
 - `createWaveCountdown` (function): function createWaveCountdown(config: WaveCountdownConfig): WaveCountdown — Build the clock between waves.
-
-## @jgengine/core/waves/wavePreview
-
-- `WavePreview` (interface): interface WavePreview — One authored wave summarized for a preview card.
-- `WavePreviewOptions` (interface): interface WavePreviewOptions — How {@link summarizeWave} reads traits and elite groups.
-- `WavePreviewUnit` (interface): interface WavePreviewUnit — One unit in a wave, totalled across its groups.
-- `summarizeWave` (function): function summarizeWave(wave: EncounterWave, options: WavePreviewOptions = {}): WavePreview — Summarize one authored wave for a preview.
 
 ## @jgengine/core/waves/waveRunner
 

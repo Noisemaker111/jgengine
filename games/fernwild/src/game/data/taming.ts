@@ -1,5 +1,5 @@
 import { evalCurve, type Curve } from "@jgengine/core/progression/leveling";
-import { createDoseTable } from "@jgengine/core/stats/doseTable";
+import { createDoseTable } from "../../engine-local/stats/doseTable";
 import type { VitalDef, VitalDose } from "@jgengine/core/stats/vitals";
 
 /**

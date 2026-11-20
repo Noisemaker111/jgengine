@@ -2,7 +2,7 @@
 import { useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { readDecalRules } from "@jgengine/core/world/decalKind";
-import { acquireDecalTexture, type DecalTextureLease } from "@jgengine/core/scene/useDecalTexture.draw";
+import { acquireDecalTexture, type DecalTextureLease } from "../engine-local/scene/useDecalTexture.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { editorLayers, type Place } from "../world";

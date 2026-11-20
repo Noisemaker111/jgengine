@@ -1,4 +1,4 @@
-import { createDoseTable } from "@jgengine/core/stats/doseTable";
+import { createDoseTable } from "../../engine-local/stats/doseTable";
 import type { VitalDose } from "@jgengine/core/stats/vitals";
 
 const burns = (seconds: number): readonly VitalDose[] => [{ vital: "fuel", amount: seconds }];

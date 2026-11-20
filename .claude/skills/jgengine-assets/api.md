@@ -1014,13 +1014,6 @@
 - `verifyData` (function): function verifyData(input: VerifyInput): VerifyResult — ⚠ undocumented
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
 
-## @jgengine/core/material/appearanceSignals.draw
-
-- `RenderMaterialAppearanceBaseline` (interface): interface RenderMaterialAppearanceBaseline extends MaterialAppearanceBaseline — Immutable resolved baseline for one caller-owned assigned material, including its original card exposure.
-- `applyMaterialAppearanceSignals` (function): function applyMaterialAppearanceSignals(material: THREE.MeshStandardMaterial, baseline: MaterialAppearanceBaseline, sample: EnvironmentSample, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Apply one sample to an already owned material. Imported/cache materials must be cloned before use. Allocates no textures or materials; clearcoat/sheen require an existing physical material and opt-in policy.
-- `captureMaterialAppearanceBaseline` (function): function captureMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial): RenderMaterialAppearanceBaseline — Capture once after assignment; recapture after an authored change. Never capture an already wet material.
-- `restoreMaterialAppearanceBaseline` (function): function restoreMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial, baseline: RenderMaterialAppearanceBaseline): void — Restore the dry baseline when removing an appearance binding; maps and unrelated imported features remain borrowed.
-
 ## @jgengine/core/material/authoredSurfaceMaterial.draw
 
 - `AuthoredSurfaceConfig` (interface): interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> — Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract.

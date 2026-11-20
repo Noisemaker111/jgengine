@@ -1,5 +1,5 @@
-import { createBreedingField, type BreedingField, type BreedingSnapshot, type BreedingSpeeds } from "@jgengine/core/breeding/breeding";
-import { inheritValues, type Inherited } from "@jgengine/core/inheritance/inheritance";
+import { createBreedingField, type BreedingField, type BreedingSnapshot, type BreedingSpeeds } from "../engine-local/breeding/breeding";
+import { inheritValues, type Inherited } from "../engine-local/inheritance/inheritance";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";

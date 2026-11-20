@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /**
  * Local collision avoidance: nudge a set of circular agents apart so they stop
  * overlapping, kept deliberately separate from route planning so a game can

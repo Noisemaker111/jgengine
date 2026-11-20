@@ -1,4 +1,4 @@
-import { definedFields } from "@jgengine/core/data/definedFields";
+import { definedFields } from "@llmville/game/engine-local/data/definedFields";
 
 export type GameErrorKind = "connection" | "bootstrap" | "runtime" | "chunk";
 

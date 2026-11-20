@@ -1,5 +1,5 @@
 import { createMusicState, resolveMusicState, type MusicStateConfig } from "@jgengine/core/audio/musicState";
-import { advanceStepCadence, createStepCadenceState, type StepCadenceConfig } from "@jgengine/core/audio/stepCadence";
+import { advanceStepCadence, createStepCadenceState, type StepCadenceConfig } from "../../engine-local/audio/stepCadence";
 import { length2 } from "@jgengine/core/math/scalar";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";

@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import type { EditorDocument, EditorMarker, EditorPath } from "../editor/types";
 import type { Waypoint } from "./pathFollow";
 

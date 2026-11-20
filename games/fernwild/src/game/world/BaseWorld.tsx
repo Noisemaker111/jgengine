@@ -2,7 +2,7 @@
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { BaseStructures } from "../../engine-local/basebuilding/BaseStructures.draw";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
-import { OnboardingPointer } from "@jgengine/core/onboarding/OnboardingPointer.draw";
+import { OnboardingPointer } from "../../engine-local/onboarding/OnboardingPointer.draw";
 
 import { baseBuilding, baseGhost, structureColor } from "../base";
 import { Bodies } from "./Bodies";

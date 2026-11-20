@@ -160,11 +160,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `pullMakeHumanCharacter` (function) · `import { pullMakeHumanCharacter } from "@jgengine/assets/makehumanPull"`
 
-## material-appearance-signals — update one owned material from wetness and local card exposure without global lighting edits
+## material-appearance-signals — apply sampled local exposure to the hair-card backlight approximation without global lighting edits
 
-- `applyMaterialAppearanceSignals` (function) · `import { applyMaterialAppearanceSignals } from "@jgengine/core/material/appearanceSignals.draw"`
-- `captureMaterialAppearanceBaseline` (function) · `import { captureMaterialAppearanceBaseline } from "@jgengine/core/material/appearanceSignals.draw"`
-- `restoreMaterialAppearanceBaseline` (function) · `import { restoreMaterialAppearanceBaseline } from "@jgengine/core/material/appearanceSignals.draw"`
 - `setHairCardLightExposure` (function) · `import { setHairCardLightExposure } from "@jgengine/core/material/materialAsset.draw"`
 
 ## material-assets — clone and configure an imported PBR slot while retaining its omitted physical features and maps

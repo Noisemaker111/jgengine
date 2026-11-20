@@ -1,4 +1,4 @@
-import { createAgentSystem, type AgentSystem, type AgentSystemState, type AgentTarget } from "@jgengine/core/agents/system";
+import { createAgentSystem, type AgentSystem, type AgentSystemState, type AgentTarget } from "../../engine-local/agents/system";
 import type { MoodTier } from "@jgengine/core/agents/mood";
 import type { UtilityOption } from "@jgengine/core/ai/utilityBrain";
 import type { NeedDefinition } from "@jgengine/core/sim/needs";

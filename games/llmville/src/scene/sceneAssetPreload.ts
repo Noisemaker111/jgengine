@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createSceneAssetPreloader } from "@jgengine/core/scene/assetPreload";
+import { createSceneAssetPreloader } from "@llmville/game/engine-local/scene/assetPreload";
 
 const originalOnError = THREE.DefaultLoadingManager.onError;
 THREE.DefaultLoadingManager.onError = (url: string) => {
