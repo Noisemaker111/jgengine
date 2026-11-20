@@ -170,3 +170,4 @@ Each milestone keeps the game playing, deletes the private code it replaces in t
 - [ ] 7. **Production deploys from this repo.**
   - Point llmville.com and Convex prod `adorable-oriole-506` at this repo, with the same env vars and schema, after milestone 6 plays against a Convex dev deployment.
   - Owner-approved. Done when the live site serves this repo's build and existing worlds still load.
+  - Ready: `.github/workflows/deploy-llmville.yml` deploys Convex, then builds and deploys the Worker, run by hand only. It needs the `llmville-production` environment with the `LLMVILLE_CONVEX_DEPLOY_KEY` and `CLOUDFLARE_API_TOKEN` secrets and the `LLMVILLE_CONVEX_URL`, `LLMVILLE_CONVEX_SITE_URL` and `CLOUDFLARE_ACCOUNT_ID` variables. Then the old `Noisemaker111/LLMville` repo's push-to-deploy goes and the repo is archived.
