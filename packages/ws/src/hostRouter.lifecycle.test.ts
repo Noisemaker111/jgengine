@@ -154,6 +154,14 @@ for (const kind of ["world", "reducer"] as const) {
       if (args.serverId === stack.otherId) { otherStarted.resolve(); await otherReleased.promise; }
       return join(args);
     };
+    // The departed world's leave runs after its admission settles; wait on the leave itself, not a guessed delay.
+    const departedLeft = deferred();
+    const leave = stack.host.leaveServer;
+    stack.host.leaveServer = async args => {
+      const result = await leave(args);
+      if (args.serverId === stack.serverId) departedLeft.resolve();
+      return result;
+    };
     const router = createHostRouter({ host: stack.host, allowAnonymous: true, graceMs: 0 });
     const original = router.connect({ send() {}, close() {} });
     original.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 1, userId: "traveler" }));
@@ -168,7 +176,7 @@ for (const kind of ["world", "reducer"] as const) {
     fresh.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 3, userId: "traveler" }));
     fresh.handleRaw(JSON.stringify({ v: 1, t: "join", id: 4, gameId: "world", serverId: stack.otherId }));
     await otherStarted.promise;
-    stack.released.resolve(); await Bun.sleep(10);
+    stack.released.resolve(); await departedLeft.promise;
     try {
       expect(await stack.host.isMember({ userId: "traveler", serverId: stack.serverId })).toBe(false);
       otherReleased.resolve(); await router.drain();

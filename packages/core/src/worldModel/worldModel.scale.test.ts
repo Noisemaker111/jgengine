@@ -62,6 +62,12 @@ describe("world model reads scale with the question, not the world", () => {
     expect(world.num("crew.worth")).toBe((199 * 200) / 2);
     world.set("t0.value", 1_000);
     expect(world.num("crew.worth")).toBe((199 * 200) / 2 + 1_000);
+    // A write the totals don't read keeps them; the next write they do read moves them again.
+    world.set("crew.cash", 5);
+    world.change({ "crew.cash": 1 });
+    expect(world.num("crew.worth")).toBe((199 * 200) / 2 + 1_000);
+    world.change({ "t1.value": 10 });
+    expect(world.num("crew.worth")).toBe((199 * 200) / 2 + 1_010);
     expect(world.facts()["crew.crates"]).toBe(200);
     expect(world.facts()["clock.hour"]).toBe(12);
   });

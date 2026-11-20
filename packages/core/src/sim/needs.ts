@@ -46,6 +46,8 @@ export interface NeedSet {
   tick(dt: number): void;
   /** Declared ids in definition order. */
   ids(): readonly string[];
+  /** A count that moves whenever any value may have changed (tick, refill, restore), so a reader can keep what it worked out from the last one. */
+  version(): number;
   /** Stable index for a declared need, or `-1`. Resolve once, then use the `*At` readers. */
   indexOf(id: string): number;
   /** Raw value at `indexOf(id)` — no allocation, no lookup. */
@@ -94,6 +96,7 @@ export function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet {
 
   let values: DecayMeterValues = initDecayMeters(defs);
   let modifiers: Record<string, number> = {};
+  let version = 0;
   const lookup = (id: string): number => {
     const at = index.get(id);
     if (at === undefined) throw new Error(`unknown need "${id}"`);
@@ -111,9 +114,13 @@ export function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet {
   return {
     tick(dt) {
       // In place: `values` never leaves this set (reads, states and snapshots copy out of it).
-      if (dt > 0) decayMetersInPlace(values, defs, dt, modifiers);
+      if (dt > 0) {
+        decayMetersInPlace(values, defs, dt, modifiers);
+        version += 1;
+      }
     },
     ids: () => ids,
+    version: () => version,
     indexOf: (id) => index.get(id) ?? -1,
     valueAt: (at) => (at >= 0 && at < defs.length ? readValue(at) : 0),
     fractionAt: (at) => (at >= 0 && at < defs.length ? readFraction(at) : 0),
@@ -130,6 +137,7 @@ export function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet {
       const def = defs[at]!;
       const min = def.min ?? 0;
       values = { ...values, [id]: clamp(readValue(at) + amount, min, def.max) };
+      version += 1;
     },
     setRate(id, rate) {
       defs[lookup(id)]!.rate = rate;
@@ -178,6 +186,7 @@ export function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet {
         if (rate !== undefined && Number.isFinite(rate)) def.rate = rate;
       }
       values = restored;
+      version += 1;
       modifiers = { ...next.modifiers };
     },
   };

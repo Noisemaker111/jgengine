@@ -112,7 +112,7 @@ export interface MoodReader {
  * @capability mood a mood derived from how satisfied an agent's needs are
  */
 export function createMoodReader(config: {
-  readonly needs: Pick<NeedSet, "ids" | "fraction">;
+  readonly needs: Pick<NeedSet, "ids" | "fraction" | "version">;
   readonly weights?: readonly MoodWeight[];
   readonly tiers: readonly MoodTier[];
 }): MoodReader {
@@ -124,10 +124,18 @@ export function createMoodReader(config: {
   // A read that lands on the same score and tier as the last one returns that same record: an agent
   // reads its mood every tick, and it moves far more slowly than that.
   let last: Mood | null = null;
+  // A guest's mood is read by its brain, the park average and its leave check in one tick; the score
+  // is worked out once per change of needs, biases or weights.
+  let scoredAt = { version: -1, sources, weights };
+  let score = 0;
 
   return {
     read() {
-      const score = moodScore(config.needs, weights, sources);
+      const version = config.needs.version();
+      if (scoredAt.version !== version || scoredAt.sources !== sources || scoredAt.weights !== weights) {
+        score = moodScore(config.needs, weights, sources);
+        scoredAt = { version, sources, weights };
+      }
       const tier = moodTierOf(score, tiers);
       if (last === null || last.score !== score || last.tier !== tier.id || last.label !== tier.label) {
         last = { score, tier: tier.id, label: tier.label };
@@ -136,10 +144,12 @@ export function createMoodReader(config: {
     },
     setSource(id, value) {
       if (!Number.isFinite(value) || value === 0) {
+        if (!(id in sources)) return;
         const { [id]: _dropped, ...rest } = sources;
         sources = rest;
         return;
       }
+      if (sources[id] === value) return;
       sources = { ...sources, [id]: value };
     },
     clearSource(id) {
