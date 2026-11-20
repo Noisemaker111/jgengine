@@ -11,9 +11,7 @@
     "directory": "packages/assets"
   },
   "files": [
-    "dist",
-    "CHANGELOG.md",
-    "skills"
+    "dist"
   ],
   "bin": {
     "assets": "dist/cli/pull.js"

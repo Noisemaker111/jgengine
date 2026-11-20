@@ -11,9 +11,7 @@
     "directory": "packages/sql"
   },
   "files": [
-    "dist",
-    "CHANGELOG.md",
-    "skills"
+    "dist"
   ],
   "exports": {
     ".": {

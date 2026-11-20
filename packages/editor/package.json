@@ -11,9 +11,7 @@
     "directory": "packages/editor"
   },
   "files": [
-    "dist",
-    "CHANGELOG.md",
-    "skills"
+    "dist"
   ],
   "exports": {
     ".": {

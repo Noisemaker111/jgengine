@@ -9,7 +9,7 @@ description: Compose targeting, stats, damage, effects, abilities, and rewards.
 
 This skill owns combat resolution: target policy, combat stats, teams/factions as combat inputs, effects, damage/healing, projectiles, abilities, cooldowns, death/downed state, encounters, and reward/loot resolution. Movement and perception live in `jgengine-world`; inventory/economy state lives in `jgengine-gameplay`.
 
-Search [capabilities.md](capabilities.md), then use [api.md](api.md) for signatures and [reference.md](reference.md) for complete pipelines.
+Search [capabilities.md](capabilities.md), then grep `api.md` for a signature (never open it whole) and [reference.md](reference.md) for complete pipelines.
 
 Existing projects keep their resource state and follow the
 [portable stat-pool recipe](recipes/portable-stat-pools.md). Adapt the caller's

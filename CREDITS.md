@@ -605,8 +605,7 @@ genre-homage line rather than crediting a named individual creator.
 
 ## First-party generated assets
 
-The fantasy sprite sheets under `apps/dev/public/game-assets/wow/` and
-`apps/desktop/public/game-assets/wow/` (character portraits, ability and item
+The fantasy sprite sheets under `apps/dev/public/game-assets/wow/` (character portraits, ability and item
 icons, plus their slicing manifests) were AI-generated for this repository and
 sliced into sheets by its own tooling. They are first-party assets — no
 third-party artwork, asset pack, or outside artist is involved.

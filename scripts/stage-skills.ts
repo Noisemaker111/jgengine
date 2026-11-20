@@ -5,19 +5,9 @@ import { fileURLToPath } from "node:url";
 
 import { GAME_SKILLS } from "../packages/jgengine/src/skills";
 
+// The CLI installs skills into a project (`jgengine skills`, `create`), so it is the one package that
+// ships them; every other package carries code only.
 const PACKAGE_SKILLS: Record<string, readonly string[]> = {
-  // ce-handoff is staged on every package skill tarball so monorepo and packaged
-  // agent installs can create/resume session handoffs without a separate install step.
-  core: ["jgengine", "game-design", "jgengine-gameplay", "jgengine-combat", "jgengine-world", "ce-handoff"],
-  ws: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
-  sql: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
-  convex: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
-  node: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
-  ui: ["jgengine", "jgengine-ui", "ce-handoff"],
-  shell: ["jgengine", "game-design", "level-design", "jgengine-ui", "jgengine-world", "ce-handoff"],
-  assets: ["jgengine", "jgengine-assets", "ce-handoff"],
-  github: ["jgengine", "ce-handoff"],
-  editor: ["jgengine", "level-design", "jgengine-editor", "ce-handoff"],
   jgengine: GAME_SKILLS,
 };
 
