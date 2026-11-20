@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createWaveField, regularWaveField } from "../water/seaState";
+import { createWaveField, regularWaveField } from "@jgengine/core/water/seaState";
 import { createBoatDynamics, type BoatTuning } from "./boatDynamics";
 import { boatFromReference, type BoatOverrides } from "./boatReferences";
 

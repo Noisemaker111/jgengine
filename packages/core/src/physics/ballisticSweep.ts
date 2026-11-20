@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import type { PhysicsWorld } from "./physicsWorld";
 import { intersectAabb } from "../scene/objectQuery";
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { regularWaveField } from "../water/seaState";
+import { regularWaveField } from "@jgengine/core/water/seaState";
 import { prepareSeakeeping, seakeepingExcitation, seakeepingForces, sectionRadiation, wigleyOffsets } from "./boatSeakeeping";
 
 describe("boatSeakeeping", () => {

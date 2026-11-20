@@ -1,8 +1,8 @@
 // @skill jgengine-world
 import type { ComparisonTable } from "../flight/flightComparison";
-import { createBoatDynamics, type BoatTuning } from "@jgengine/core/physics/boatDynamics";
-import { prepareOpenWater, propellerPoint } from "@jgengine/core/physics/boatPropeller";
-import { boatFromReference } from "@jgengine/core/physics/boatReferences";
+import { createBoatDynamics, type BoatTuning } from "@jgengine/simulations/physics/boatDynamics";
+import { prepareOpenWater, propellerPoint } from "@jgengine/simulations/physics/boatPropeller";
+import { boatFromReference } from "@jgengine/simulations/physics/boatReferences";
 import { regularWaveField } from "@jgengine/core/water/seaState";
 import { bSeriesOpenWater, bSeriesShipOpenWater, type BSeriesPropeller } from "./marinePropeller";
 import { wigleyHull } from "./hullForm";

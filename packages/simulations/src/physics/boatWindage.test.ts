@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { windField } from "../world/wind";
+import { windField } from "@jgengine/core/world/wind";
 import { createBoatDynamics, type BoatTuning } from "./boatDynamics";
 import { boatWindageForce } from "./boatWindage";
 

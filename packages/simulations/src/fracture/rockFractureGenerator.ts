@@ -7,11 +7,11 @@
  * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
  */
 
-import { defineGenerator, registerGenerator, untypedGenerator, type GeneratorDefinition } from "../generator/generator";
-import { defineParamSchema } from "../generator/paramSchema";
-import { NatureMeshBuilder, hexRgb, type NatureMesh, type NatureRgb } from "../nature/natureMesh";
-import { NATURE_OUTPUT } from "../nature/natureGenerators";
-import type { SeededRng } from "../random/rng";
+import { defineGenerator, registerGenerator, untypedGenerator, type GeneratorDefinition } from "@jgengine/core/generator/generator";
+import { defineParamSchema } from "@jgengine/core/generator/paramSchema";
+import { NatureMeshBuilder, hexRgb, type NatureMesh, type NatureRgb } from "@jgengine/core/nature/natureMesh";
+import { NATURE_OUTPUT } from "@jgengine/core/nature/natureGenerators";
+import type { SeededRng } from "@jgengine/core/random/rng";
 import { boxCell, cellVolume, clipCell, type CellVec, type ConvexCell } from "./convexCell";
 import { KWH_PER_TONNE } from "./fragmentSize";
 import { ROCK_BREAKAGE, fractureRock, type RockFragment } from "./rockFracture";

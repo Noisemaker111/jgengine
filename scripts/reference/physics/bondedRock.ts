@@ -9,7 +9,7 @@
  * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
  */
 
-import { KWH_PER_TONNE, type FragmentSizes } from "@jgengine/core/fracture/fragmentSize";
+import { KWH_PER_TONNE, type FragmentSizes } from "@jgengine/simulations/fracture/fragmentSize";
 import { seededRng, type SeededRng } from "@jgengine/core/random/rng";
 import type { Vec3 } from "@jgengine/core/world/geometry";
 import { createDiscreteElements, type DemBondSpec, type DemMaterial, type DemWallShape, type DiscreteElements } from "./discreteElements";

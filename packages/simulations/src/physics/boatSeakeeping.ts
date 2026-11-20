@@ -1,5 +1,5 @@
-import { solveLinearSystem } from "../math/linearAlgebra";
-import type { WaveField } from "../water/seaState";
+import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra";
+import type { WaveField } from "@jgengine/core/water/seaState";
 import type { BoatWater } from "./boatResistance";
 
 type Complex = readonly [number, number];

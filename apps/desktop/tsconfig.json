@@ -35,6 +35,7 @@
       "@jgengine/node/*": ["../../packages/node/src/*"],
       "@jgengine/rapier": ["../../packages/rapier/src/index.ts"],
       "@jgengine/rapier/*": ["../../packages/rapier/src/*"],
+      "@jgengine/simulations/*": ["../../packages/simulations/src/*"],
       "@jgengine/sql": ["../../packages/sql/src/index.ts"],
       "@jgengine/sql/*": ["../../packages/sql/src/*"],
       "@jgengine/ws": ["../../packages/ws/src/index.ts"],

@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import type { AxisInput } from "../input/axisInput";
-import { createWaveField, regularWaveField } from "../water/seaState";
+import type { AxisInput } from "@jgengine/core/input/axisInput";
+import { createWaveField, regularWaveField } from "@jgengine/core/water/seaState";
 import { createBoatDynamics, type BoatTuning } from "./boatDynamics";
 import { BOAT_REFERENCE_IDS, boatFromReference } from "./boatReferences";
-import { tickDrivableVehicle } from "./drivableVehicle";
-import { measureHandling } from "./handlingProbe";
+import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
+import { measureHandling } from "@jgengine/core/physics/handlingProbe";
 
 const DT = 1 / 60;
 

@@ -12,10 +12,10 @@
 import { boxCell, cellVolume } from "./convexCell";
 import { KWH_PER_TONNE, jkT10, t10 } from "./fragmentSize";
 import { GRANITE_BREAKAGE, fractureRock } from "./rockFracture";
-import { seededRng } from "../random/rng";
-import { toDebrisBodies, type SupportPiece } from "../world/support";
-import { PhysicsWorld } from "../physics/physicsWorld";
-import { StructureGraph } from "../physics/structure";
+import { seededRng } from "@jgengine/core/random/rng";
+import { toDebrisBodies, type SupportPiece } from "@jgengine/core/world/support";
+import { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
+import { StructureGraph } from "@jgengine/core/physics/structure";
 
 /** One subject at one energy. */
 export interface FractureComparisonRow {

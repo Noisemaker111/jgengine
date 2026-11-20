@@ -9,10 +9,10 @@
  * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
  */
 
-import type { SeededRng } from "../random/rng";
+import type { SeededRng } from "@jgengine/core/random/rng";
 import { cellContains, cellVolume, clipCell, transformCell, type CellVec, type ConvexCell } from "./convexCell";
 import { KWH_PER_TONNE, breakageProbability, jkT10 } from "./fragmentSize";
-import { lerp } from "../math/scalar";
+import { lerp } from "@jgengine/core/math/scalar";
 
 /** How a rock breaks by impact. */
 export interface RockBreakage {
