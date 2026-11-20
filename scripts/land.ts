@@ -188,6 +188,15 @@ export function diffPaths(base: string, git: Git = (args) => run("git", args)): 
   return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
 }
 
+/**
+ * Paths this branch adds against `origin/<base>`. A note is this PR's only when the branch adds it: a
+ * branch that edits other lanes' notes (a repo-wide rename) must not take their title and body.
+ */
+export function addedOnBranch(base: string, git: Git = (args) => run("git", args)): string[] {
+  const result = git(["diff", "--name-only", "--diff-filter=A", `origin/${base}...HEAD`]);
+  return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
+}
+
 /** Git trailers a commit carries for git, never for a reader of the note. */
 const TRAILER = /^(?:co-authored-by|signed-off-by|reviewed-by|change-id):/i;
 
@@ -265,7 +274,7 @@ export function landBody(options: {
   if ((bodyFile?.trim() ?? "").length > 0) return { text: chooseBody({ bodyFile, summary }), explicit: true };
 
   const files = (options.files ?? (() => fragmentFiles()))();
-  const added = (options.added ?? (() => diffPaths(args.base)))();
+  const added = (options.added ?? (() => addedOnBranch(args.base)))();
   const { own, ignored } = ownFragments(files, added);
   // Other lanes' notes sit in the shared directory on every branch; naming them is detail.
   for (const file of isVerbose() ? ignored : []) {
@@ -478,7 +487,8 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
   const commits = branchCommits(base, runGit);
   const summary = firstLine(commits[0] ?? "");
   const changed = [...new Set([...diffPaths(base, runGit), ...stagedPaths].map(normalizePath))];
-  const candidates = new Set(changed.map((path) => basename(path)));
+  const added = [...new Set([...addedOnBranch(base, runGit), ...addedPaths].map(normalizePath))];
+  const candidates = new Set(added.map((path) => basename(path)));
   const files = options.files ?? (() => fragmentFiles());
   const own = files().filter((file) => candidates.has(basename(file.path)));
   const existing = pickFragment(own, branch);
@@ -1130,7 +1140,7 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
     args,
     branch,
     summary,
-    added: () => diffPaths(args.base, io.git),
+    added: () => addedOnBranch(args.base, io.git),
     commits: () => branchCommits(args.base, io.git),
     log: io.log,
   });
