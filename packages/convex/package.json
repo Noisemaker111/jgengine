@@ -11,9 +11,7 @@
     "directory": "packages/convex"
   },
   "files": [
-    "dist",
-    "CHANGELOG.md",
-    "skills"
+    "dist"
   ],
   "exports": {
     ".": {

@@ -60,9 +60,10 @@ jobs:
       - name: Refuse to publish a commit that is not on beta
         # A release commit on beta landed through it; beta moving on since is not a stale cut.
         run: bun scripts/check-release-ancestor.ts --landed
-      - name: Stage the lockstep changelog into each package
-        run: for p in core rapier ws sql navbake convex node assets editor jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
-      - name: Stage per-package skills
+      # One copy of the changelog (core) and of the skills (the CLI, which installs them), not one per package.
+      - name: Stage the changelog into core
+        run: cp CHANGELOG.md packages/core/CHANGELOG.md
+      - name: Stage the skills into the CLI
         run: bun scripts/stage-skills.ts
       - run: bun run check artifacts
       - run: bun run check release-set

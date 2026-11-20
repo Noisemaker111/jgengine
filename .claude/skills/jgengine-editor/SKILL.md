@@ -45,7 +45,7 @@ Scaffolded games start editor-wired: `npx jgengine create` (in-repo too: `bun ru
 
 Layers a game builds from code (AI ranges from a spawn table, markers from a catalog) go in through `withDerivedEditorLayers(scene, { volumes })` in `editorLayers.ts`: they show in the editor, and every save (Ctrl+S, `save_scene`, CLI `--save`) leaves them out of `editor.scene.json`. Never merge them in by hand, or each save writes them into the scene.
 
-Use `capabilities.md` to discover editor/runtime imports and `api.md` for signatures. Open [reference.md](reference.md) for RPC/CLI operations, embedded-agent behavior, scene schema details, and troubleshooting. Use [live-sync reconnect](references/live-sync.md) when a client resumes beyond retained patch or runtime-delta history.
+Use `capabilities.md` to discover editor/runtime imports and grep `api.md` for a signature (never open it whole). Open [reference.md](reference.md) for RPC/CLI operations, embedded-agent behavior, scene schema details, and troubleshooting. Use [live-sync reconnect](references/live-sync.md) when a client resumes beyond retained patch or runtime-delta history.
 
 ### Player creation and durable playtests
 

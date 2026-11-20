@@ -142,5 +142,5 @@ Do not retain DOM panels inside a native subtree to cover those gaps.
 For visual direction use [reference.md](reference.md); gameplay state remains with
 the owning systems. Existing DOM games retain the migration-era recipes in
 [reference-primitives.md](reference-primitives.md) until their own conversion.
-Search [api.md](api.md) and [capabilities.md](capabilities.md) for other shared parts.
+Search [capabilities.md](capabilities.md) for other shared parts, then grep `api.md` for the exact export (never open it whole).
 Use [jgengine-verify](../jgengine-verify/SKILL.md) for real-game behavior and captures.

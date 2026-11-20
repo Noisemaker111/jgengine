@@ -11,8 +11,7 @@
     "directory": "packages/rapier"
   },
   "files": [
-    "dist",
-    "CHANGELOG.md"
+    "dist"
   ],
   "exports": {
     ".": {

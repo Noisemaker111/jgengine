@@ -9,7 +9,7 @@ description: Compose serializable game state, systems, progression, and non-comb
 
 This skill owns non-combat rules and state: systems, catalogs, inventory/items, crafting, economy, quests, dialogue, social state, puzzles, survival, turns, tactics, sessions, and saveable game models. Combat math belongs to `jgengine-combat`; host persistence adapters belong to `jgengine-multiplayer`.
 
-Use [capabilities.md](capabilities.md) for intent discovery, [api.md](api.md) for signatures, and [reference-systems.md](reference-systems.md) for scheduling details before hand-rolling a subsystem.
+Use [capabilities.md](capabilities.md) for intent discovery, grep `api.md` for a signature (never open it whole), and [reference-systems.md](reference-systems.md) for scheduling details before hand-rolling a subsystem.
 
 For multi-cell inventory items, use `createShapedGrid`, `canPlace`, and
 `findShapedPlacement` (`inventory/shapedGrid`). The caller owns item footprints,
