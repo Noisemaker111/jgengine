@@ -41,6 +41,7 @@ const REJECTION_LABEL: Record<ClaimRejection, string> = {
   already_claimed: "Already claimed",
   too_close_to_other_claim: "Inside a 4-cell walkway around another lab",
   insufficient_funds: "Not enough money",
+  commons: "The Commons is shared; no lab can claim it",
 };
 
 const MIN_CELL_PX = 6;

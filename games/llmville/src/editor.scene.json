@@ -1,7 +1,478 @@
 {
   "version": 1,
-  "markers": [],
-  "volumes": [],
+  "markers": [
+    {
+      "id": "commons-banner",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 33.5,
+        "y": 0,
+        "z": 22.5
+      },
+      "rotationY": 0,
+      "label": "LLMville banner",
+      "meta": {
+        "itemId": "llmville_banner",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-neon",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 28.5,
+        "y": 0,
+        "z": 22.5
+      },
+      "rotationY": 0,
+      "label": "Neon sign",
+      "meta": {
+        "itemId": "neon_sign",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-holo",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 38.5,
+        "y": 0,
+        "z": 22.5
+      },
+      "rotationY": 0,
+      "label": "Holo poster",
+      "meta": {
+        "itemId": "holo_poster",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-coffee",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 40.5,
+        "y": 0,
+        "z": 26.5
+      },
+      "rotationY": 4.71238898038469,
+      "label": "Coffee cart",
+      "meta": {
+        "itemId": "coffee_cart",
+        "direction": 3
+      }
+    },
+    {
+      "id": "commons-fridge",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 42.5,
+        "y": 0,
+        "z": 26.5
+      },
+      "rotationY": 4.71238898038469,
+      "label": "Snack fridge",
+      "meta": {
+        "itemId": "snack_fridge",
+        "direction": 3
+      }
+    },
+    {
+      "id": "commons-drinks",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 42.5,
+        "y": 0,
+        "z": 28.5
+      },
+      "rotationY": 4.71238898038469,
+      "label": "Energy drinks",
+      "meta": {
+        "itemId": "energy_drink_crate",
+        "direction": 3
+      }
+    },
+    {
+      "id": "commons-yoga",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 41.5,
+        "y": 0,
+        "z": 22.5
+      },
+      "rotationY": 0,
+      "label": "Yoga corner",
+      "meta": {
+        "itemId": "yoga_mat_corner",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-rug",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 27.5,
+        "y": 0,
+        "z": 38.5
+      },
+      "rotationY": 0,
+      "label": "Lounge rug",
+      "meta": {
+        "itemId": "rug_corner",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-beanbag-a",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 38.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "Beanbag",
+      "meta": {
+        "itemId": "beanbag_corner",
+        "direction": 1
+      }
+    },
+    {
+      "id": "commons-beanbag-b",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 27.5,
+        "y": 0,
+        "z": 40.5
+      },
+      "rotationY": 3.141592653589793,
+      "label": "Beanbag",
+      "meta": {
+        "itemId": "beanbag_corner",
+        "direction": 2
+      }
+    },
+    {
+      "id": "commons-table",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 27.5,
+        "y": 0,
+        "z": 36.5
+      },
+      "rotationY": 0,
+      "label": "Side table",
+      "meta": {
+        "itemId": "side_table",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-plushie",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 29.5,
+        "y": 0,
+        "z": 36.5
+      },
+      "rotationY": 0,
+      "label": "Server plushie",
+      "meta": {
+        "itemId": "server_plushie",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-lamp",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 25.5,
+        "y": 0,
+        "z": 36.5
+      },
+      "rotationY": 0,
+      "label": "Desk lamp",
+      "meta": {
+        "itemId": "desk_lamp",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-whiteboard",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 39.5,
+        "y": 0,
+        "z": 42.5
+      },
+      "rotationY": 3.141592653589793,
+      "label": "Whiteboard",
+      "meta": {
+        "itemId": "whiteboard_wall",
+        "direction": 2
+      }
+    },
+    {
+      "id": "commons-chair-a",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 38.5,
+        "y": 0,
+        "z": 39.5
+      },
+      "rotationY": 0,
+      "label": "Folding chair",
+      "meta": {
+        "itemId": "folding_chair",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-chair-b",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 40.5,
+        "y": 0,
+        "z": 39.5
+      },
+      "rotationY": 0,
+      "label": "Folding chair",
+      "meta": {
+        "itemId": "folding_chair",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-monitor",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 42.5,
+        "y": 0,
+        "z": 40.5
+      },
+      "rotationY": 4.71238898038469,
+      "label": "Monitor stand",
+      "meta": {
+        "itemId": "monitor_stand",
+        "direction": 3
+      }
+    },
+    {
+      "id": "commons-bookshelf",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 22.5,
+        "y": 0,
+        "z": 29.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "Bookshelf",
+      "meta": {
+        "itemId": "bookshelf_unit",
+        "direction": 1
+      }
+    },
+    {
+      "id": "commons-trophies",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 22.5,
+        "y": 0,
+        "z": 32.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "Trophy shelf",
+      "meta": {
+        "itemId": "trophy_shelf",
+        "direction": 1
+      }
+    },
+    {
+      "id": "commons-poster",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 22.5,
+        "y": 0,
+        "z": 35.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "Motivational poster",
+      "meta": {
+        "itemId": "motivational_poster",
+        "direction": 1
+      }
+    },
+    {
+      "id": "commons-art",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 22.5,
+        "y": 0,
+        "z": 26.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "Ethernet art",
+      "meta": {
+        "itemId": "ethernet_art_display",
+        "direction": 1
+      }
+    },
+    {
+      "id": "commons-tree",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 35.5,
+        "y": 0,
+        "z": 35.5
+      },
+      "rotationY": 0,
+      "label": "Fiber-optic tree",
+      "meta": {
+        "itemId": "fiber_optic_tree",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-bin",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 30.5,
+        "y": 0,
+        "z": 30.5
+      },
+      "rotationY": 0,
+      "label": "Cable tidy",
+      "meta": {
+        "itemId": "cable_tidy_bin",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-plant-nw",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 22.5,
+        "y": 0,
+        "z": 22.5
+      },
+      "rotationY": 0,
+      "label": "Office plant",
+      "meta": {
+        "itemId": "office_plant_large",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-plant-ne",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 43.5,
+        "y": 0,
+        "z": 22.5
+      },
+      "rotationY": 0,
+      "label": "Office plant",
+      "meta": {
+        "itemId": "office_plant_large",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-plant-sw",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 22.5,
+        "y": 0,
+        "z": 43.5
+      },
+      "rotationY": 0,
+      "label": "Office plant",
+      "meta": {
+        "itemId": "office_plant_large",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-plant-se",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 43.5,
+        "y": 0,
+        "z": 43.5
+      },
+      "rotationY": 0,
+      "label": "Office plant",
+      "meta": {
+        "itemId": "office_plant_large",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-pot-n",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 35.5,
+        "y": 0,
+        "z": 22.5
+      },
+      "rotationY": 0,
+      "label": "Potted plant",
+      "meta": {
+        "itemId": "potted_plant",
+        "direction": 0
+      }
+    },
+    {
+      "id": "commons-pot-s",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 33.5,
+        "y": 0,
+        "z": 43.5
+      },
+      "rotationY": 3.141592653589793,
+      "label": "Potted plant",
+      "meta": {
+        "itemId": "potted_plant",
+        "direction": 2
+      }
+    },
+    {
+      "id": "commons-clock",
+      "kind": "llmville-decor",
+      "position": {
+        "x": 30.5,
+        "y": 0,
+        "z": 22.5
+      },
+      "rotationY": 0,
+      "label": "Wall clock",
+      "meta": {
+        "itemId": "wall_clock",
+        "direction": 0
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "id": "commons",
+      "kind": "llmville-commons",
+      "shape": "box",
+      "center": {
+        "x": 33,
+        "y": 3,
+        "z": 33
+      },
+      "halfExtents": {
+        "x": 12,
+        "y": 3,
+        "z": 12
+      },
+      "label": "The Commons",
+      "meta": {
+        "role": "shared-lounge"
+      }
+    }
+  ],
   "paths": [],
   "annotations": [],
   "prefabs": [],

@@ -13,7 +13,7 @@ import { LlmvilleGameUI } from "./runtime/components/LlmvilleGameUI";
 import { stepAroundNearbyPlayers } from "./runtime/localPlayerEntity";
 import { LlmvilleDatacenter, LlmvilleWorld } from "./scene/components/GameScene";
 import { DEFAULT_APP_KEYBINDS, keybindToCodes } from "./settings/keybinds";
-import sceneJson from "./editor.scene.json";
+import { editorLayers } from "./editorLayers";
 
 /** The shell drives these from LLMville's keybinds; every other key stays with the game's own input. */
 const WALK_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump", "sprint", "crouch"] as const;
@@ -38,7 +38,7 @@ export const game = defineGame({
   },
   GameUI: LlmvilleGameUI,
   hudTheme: false,
-  scene: { WorldOverlay: LlmvilleWorld, RemotePlayers: LlmvilleRemotePlayers, environment: LlmvilleDatacenter, editorLayers: normalizeEditorLayers(sceneJson) },
+  scene: { WorldOverlay: LlmvilleWorld, RemotePlayers: LlmvilleRemotePlayers, environment: LlmvilleDatacenter, editorLayers },
   scenePlacement: false,
   camera: {
     perspective: "first",

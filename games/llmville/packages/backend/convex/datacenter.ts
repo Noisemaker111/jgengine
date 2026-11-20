@@ -4,6 +4,7 @@ import { claimTerritory, createTerritory, territoryChunkKeys, territoryChunkKey 
 import { loadTerritoryState, persistTerritoryState } from "@jgengine/convex/territory";
 import type { RuntimeChunkRow, RuntimePlayerRow } from "@jgengine/core/runtime/snapshot";
 import { TERRITORY_POLICY, type DatacenterClaim } from "@llmville/game/datacenter/claims";
+import { isCommonsCell } from "@llmville/game/datacenter/layout";
 import { type CellCoord } from "@llmville/game/datacenter/grid";
 import { MAX_WORLD_CHUNK_QUERY_RADIUS, clampWorldChunkQueryRadius, worldChunkKeysInRadius } from "@llmville/game/datacenter/worldChunks";
 import { LLMVILLE_GAME_ID } from "@llmville/game/game/runtime/definition";
@@ -104,6 +105,7 @@ async function prepareClaims(ctx: MutationCtx, userId: string, keys: readonly st
   }
 }
 export async function grantTerritoryCells(ctx: MutationCtx, userId: string, cells: readonly CellCoord[], free = false) {
+  if (cells.some(isCommonsCell)) return { ok: false as const, reason: "territory.blocked" as const };
   const server = await helpers.ensureServer(ctx, LLMVILLE_GAME_ID), converted = cells.map(cell => ({ x: cell.cx, z: cell.cz }));
   const keys = territoryChunkKeys(converted, TERRITORY_POLICY);
   await prepareClaims(ctx, userId, keys);

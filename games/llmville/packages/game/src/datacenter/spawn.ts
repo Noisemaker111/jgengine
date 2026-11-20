@@ -1,6 +1,6 @@
 import type { DatacenterClaim } from "@llmville/game/datacenter/claims";
 import { cellKey, cellToWorldCenter, type CellCoord } from "@llmville/game/datacenter/grid";
-import { isStructuralColumnCell } from "@llmville/game/datacenter/layout";
+import { isCommonsCell, isStructuralColumnCell } from "@llmville/game/datacenter/layout";
 import { mulberry32 } from "@llmville/game/world/cityHash";
 
 export const SPAWN_SEARCH_RADIUS_CELLS = 60;
@@ -10,7 +10,7 @@ const MAX_RINGS = 16;
 
 export function pickDatacenterSpawn(seed: number, claims: readonly DatacenterClaim[]): { x: number; z: number } {
   const claimed = new Set(claims.map((claim) => cellKey({ cx: claim.cx, cz: claim.cz })));
-  const isFree = (cell: CellCoord) => !claimed.has(cellKey(cell)) && !isStructuralColumnCell(cell);
+  const isFree = (cell: CellCoord) => !claimed.has(cellKey(cell)) && !isStructuralColumnCell(cell) && !isCommonsCell(cell);
   const rng = mulberry32(seed);
 
   for (let ring = 1; ring <= MAX_RINGS; ring++) {
