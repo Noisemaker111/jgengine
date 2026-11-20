@@ -79,11 +79,11 @@ export function buildAgentPlaybookContent<TApi, THowToCall>(
         id: "bootstrap",
         goal: "Stand up a starter lab",
         calls: [
-          "mutation worldPresence:ensureHumanPresence { gameId, externalId }",
+          "mutation multiplayer/worldPresence:ensureHumanPresence { gameId, externalId }",
           "mutation store:buy { gameId, externalId, itemId: \"starter_rack\" }",
           "mutation build:place { gameId, externalId, itemId: \"starter_rack\", x, z }",
           "mutation store:buy { gameId, externalId, itemId: \"gpu_1\", quantity: 2 }",
-          "mutation rack:install { gameId, externalId, rackId, hardwareModelId: \"gpu_1\", slotIndex }",
+          "mutation rack:moveHardware { gameId, externalId, rackId, from: { kind: \"stock\", hardwareId: \"gpu_1\" }, to: { kind: \"slot\", slot } }",
         ],
       },
       {
@@ -91,11 +91,12 @@ export function buildAgentPlaybookContent<TApi, THowToCall>(
         goal: "Farm data tokens by allocating GPUs to scraping with any unlocked model",
         calls: [
           "mutation store:unlock { gameId, externalId, itemId: \"alpaca_1\" }",
-          "mutation inference:setScrapeTier { gameId, externalId, tier: \"books\" }",
           "mutation inference:assignCard { gameId, externalId, rackId, slotIndex: 0, lane: \"scraping\" }",
+          "mutation inference:setScrapeTier { gameId, externalId, tier: \"books\" }",
         ],
         hints: [
           "Free bases like llamma_3 can scrape without a paid license.",
+          "A tier opens only once a card is on scraping, so assign the card before setting the tier.",
           "Poll query world:state until game.dataTokens rises before training.",
         ],
       },
@@ -103,6 +104,7 @@ export function buildAgentPlaybookContent<TApi, THowToCall>(
         id: "train",
         goal: "Fine-tune your own model (costs data tokens)",
         calls: [
+          "mutation inference:assignCard { gameId, externalId, rackId, slotIndex: 1, lane: \"training\" }",
           "mutation models:train { gameId, externalId, baseModelId: \"llamma_3\" }",
           "Poll query world:scene until activeTrainingSessions is empty",
         ],
@@ -122,7 +124,6 @@ export function buildAgentPlaybookContent<TApi, THowToCall>(
         calls: [
           "mutation bills:pay { gameId, externalId, billId }",
           "mutation world:resolveEvent { gameId, externalId, eventId }",
-          "mutation world:upgrade { gameId, externalId, targetTier: \"house\" }",
           "mutation store:unlock { gameId, externalId, itemId: researchItemId }",
           "mutation store:buy { gameId, externalId, itemId: coolerId }",
           "mutation rack:cool { gameId, externalId, rackId, coolingUnitId }",
@@ -130,16 +131,15 @@ export function buildAgentPlaybookContent<TApi, THowToCall>(
       },
       {
         id: "explore",
-        goal: "Roam the shared street and visit neighboring labs",
+        goal: "Roam the shared datacenter and look at neighboring labs",
         calls: [
-          "mutation worldPresence:syncPlayerPosition { position: { x, z }, externalId }",
-          "query world:listCityPlots  (visit plots where isOpen is true)",
-          "mutation world:moveToInteriorFromLobby { homeGameId, plotIndex, externalId }",
+          "mutation multiplayer/worldPresence:syncPlayerPosition { position: { x, z }, externalId }",
+          "query world:worldScene { x, z, radius }  (every lab's racks and placed items around you)",
+          "query datacenter:listClaims { x, z, radius }  (who owns the floor cells around you)",
         ],
         hints: [
-          "You walk the shared city street like any signed-in player and may enter any open plot.",
-          "Visiting is read-only — you can view a neighbor's lab but can't build, buy, or train there.",
-          "Entry is rejected when the plot is closed (owner offline), when its owner has banned you, or for guests.",
+          "Every lab stands in one shared datacenter; you walk it like any signed-in player.",
+          "Neighbors' labs are read-only to you: you build, buy and train only on your own claimed cells.",
         ],
       },
     ],

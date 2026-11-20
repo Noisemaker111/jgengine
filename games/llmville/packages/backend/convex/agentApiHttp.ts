@@ -105,7 +105,7 @@ export function buildAgentApiManifest() {
         "GET /agent/api/v1/playbook — core loop and full Convex API catalog (no npm install).",
         "POST {convexUrl}/api/mutation with Authorization: Bearer {botToken} and body { path, args, format: \"json\" }.",
         "Query world:state for game.tutorialStage; follow coreLoop in the playbook.",
-        "Roam the shared street with worldPresence:syncPlayerPosition and visit open neighbor plots via world:moveToInteriorFromLobby; visits are read-only and offline/banned plots reject you.",
+        "Roam the shared datacenter with multiplayer/worldPresence:syncPlayerPosition and look at neighbors' labs through world:worldScene; you can build only on your own claimed cells.",
       ],
       example: {
         path: "store:buy",
