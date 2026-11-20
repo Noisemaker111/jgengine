@@ -101,6 +101,15 @@ function browserArgs(disableWebGpu: boolean): string[] {
   ];
 }
 
+/**
+ * Rune's own notice that the browser took its GPU device away (reason "unknown": Chrome's software
+ * GPU process restarting under a loaded CI runner, run 44802931142). Rune handled it as designed, and
+ * this file proves Rune does not panic; the frames it drew first still have to be there.
+ */
+function browserLostDevice(text: string): boolean {
+  return text.startsWith("The GPU device was lost (unknown:");
+}
+
 async function draws(disableWebGpu: boolean, noAdapter = false): Promise<{ errors: string[]; frames: number }> {
   const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: browserArgs(disableWebGpu) });
   try {
@@ -112,7 +121,7 @@ async function draws(disableWebGpu: boolean, noAdapter = false): Promise<{ error
     if (noAdapter) await page.addInitScript(() => { GPU.prototype.requestAdapter = () => Promise.resolve(null); });
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    page.on("console", (message) => { if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) errors.push(message.text()); });
+    page.on("console", (message) => { if (message.type() === "error" && !message.text().startsWith("Failed to load resource") && !browserLostDevice(message.text())) errors.push(message.text()); });
     page.on("response", (response) => { if (response.status() >= 400) errors.push(`HTTP ${response.status()} ${response.url()}`); });
     await page.goto(`http://localhost:${server.port}/`);
     let frames = 0;
