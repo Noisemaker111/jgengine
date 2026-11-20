@@ -85,7 +85,9 @@ export function playSteady(minutes: number, log: (line: string) => void = () => 
   let lastSpent = w.num("park.spent_today");
   let lastAdmits = w.num("park.guests_today");
   log("min  cash   d.cash  takings/min  running/min admits guests rating rides built");
+  let played = 0;
   for (let m = 1; m <= minutes; m += 1) {
+    played = m;
     let takingsThisMinute = 0;
     let spentThisMinute = 0;
     let admitsThisMinute = 0;
@@ -105,12 +107,13 @@ export function playSteady(minutes: number, log: (line: string) => void = () => 
     const cash = w.num("park.cash");
     log(`${String(m).padStart(3)} ${String(Math.round(cash)).padStart(6)} ${String(Math.round(cash - lastCash)).padStart(7)} ${String(Math.round(takingsThisMinute)).padStart(11)} ${String(Math.round(spentThisMinute)).padStart(11)} ${String(admitsThisMinute).padStart(6)} ${String(sessionOf(runner.ctx).guests.size).padStart(7)} ${String(Math.round(w.num("park.rating"))).padStart(6)} ${String(w.num("n.ride_carousel") >= 0 ? Object.values(w.instances()).filter((i) => BUILDABLES[i.kind]?.ride).length : 0).padStart(5)} ${String(built).padStart(5)}`);
     lastCash = cash;
+    if (w.fact("scenario.result") !== "") break;
   }
   const end = w.num("park.cash");
   log(`\nstart $${Math.round(start)}  end $${Math.round(end)}  built ${built} ($${spentOnBuilds})`);
-  log(`till change per minute: $${Math.round((end - start) / minutes)}`);
-  log(`operating cash per minute (till change + build spend): $${Math.round((end - start + spentOnBuilds) / minutes)}`);
-  log(`takings per minute: $${Math.round(takings / minutes)}`);
+  log(`till change per minute: $${Math.round((end - start) / played)}`);
+  log(`operating cash per minute (till change + build spend): $${Math.round((end - start + spentOnBuilds) / played)}`);
+  log(`takings per minute: $${Math.round(takings / played)}`);
   const result = w.fact("scenario.result");
   log(`scenario: ${result === "" ? "running" : String(result)}; most guests in the park ${peakGuests}; best rating ${Math.round(w.num("park.peak"))}; loan owed $${w.num("park.loan_owed")}`);
 

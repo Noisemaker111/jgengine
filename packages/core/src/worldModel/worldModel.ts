@@ -886,9 +886,11 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       cause = null;
     }
   };
-  const write = (next: WorldModelState) => {
+  const write = (next: WorldModelState, touched?: readonly string[]) => {
     const watch = options.watch;
-    const before = watch === undefined ? null : (storage.read() ?? fresh()).facts;
+    const previous = storage.read();
+    if (touched !== undefined && previous !== null && totalsFrom === previous && previous.instances === next.instances && !touched.some(readByTotals)) totalsFrom = next;
+    const before = watch === undefined ? null : (previous ?? fresh()).facts;
     restoredFrom = next.mission;
     liveInstances = next.instances ?? {};
     storage.write(next);
@@ -969,8 +971,17 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     return true;
   };
   const numberOf = (value: WorldFactValue | undefined): number => (typeof value === "number" ? value : 0);
+  // The per-member fact names any total sums, maxes or filters on, as key endings.
+  const totalFields = [...new Set(Object.values(def.totals ?? {}).flatMap((total) => [
+    ...(total.sum === undefined ? [] : [total.sum]),
+    ...(total.max === undefined ? [] : [total.max]),
+    ...Object.keys(total.where ?? {}),
+  ]))].map((field) => `.${field}`);
+  const readByTotals = (key: string): boolean => totalFields.some((field) => key.endsWith(field));
   // A total is worked out when it is read, at most once per state, so every read of one state sees
-  // the same number and a read of any other fact never pays for the totals.
+  // the same number and a read of any other fact never pays for the totals. A write that names the
+  // facts it touched carries the totals over when none of them is one a total reads (see `write`),
+  // so a park writing its mood and rating every tick does not recount every total each tick.
   let totalsFrom: WorldModelState | null = null;
   const totalValues = new Map<string, number>();
   const totalOf = (key: string, total: WorldTotalDecl, current: WorldModelState): number => {
@@ -1408,21 +1419,21 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       const current = state();
       const facts = { ...current.facts };
       changeAll(facts, "", changes, scale);
-      write({ ...current, facts });
+      write({ ...current, facts }, Object.keys(changes));
     },
     spend(changes) {
       const current = state();
       if (shortfall(changes, 1, current) !== null) return false;
       const facts = { ...current.facts };
       changeAll(facts, "", changes, 1);
-      write({ ...current, facts });
+      write({ ...current, facts }, Object.keys(changes));
       return true;
     },
     set(key, value) {
       const current = state();
       // Setting a fact to what it already holds changes nothing: no copy of the table, no new revision.
       if (Object.hasOwn(current.facts, key) && Object.is(current.facts[key], value)) return;
-      write({ ...current, facts: { ...current.facts, [key]: value } });
+      write({ ...current, facts: { ...current.facts, [key]: value } }, [key]);
     },
     test: (conditions) => test(conditions),
     placeAt,

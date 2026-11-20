@@ -8,4 +8,4 @@ import { playSteady } from "../../scripts/balance";
 test("a steady player wins the first scenario", () => {
   const run = playSteady(60);
   expect(run.result, `scenario ${run.result}: most guests ${run.peakGuests}, best rating ${run.bestRating}, cash $${run.endCash}`).toBe("won");
-}, 300_000); // 60 game minutes of the full park sim: about two minutes on this PC
+}, 300_000); // up to 60 game minutes of the full park sim, stopping once the scenario is decided: under two minutes on this PC
