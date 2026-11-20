@@ -33,6 +33,7 @@ import {
   syncOntoBase,
   retryServerErrors,
   deleteLandedBranch,
+  addedOnBranch,
 } from "./land";
 import type { FragmentFile, LandIo, LockWait, Run } from "./land";
 import { attemptsOf, judgeChecks } from "./ci-status";
@@ -1321,4 +1322,16 @@ test("a git command GitHub answers with a server error runs again; any other fai
   const refused = answers([rejected]);
   expect(retryServerErrors(refused.git, () => {})(["push"])).toEqual(rejected);
   expect(refused.calls.length).toBe(1);
+});
+
+// #3250 merged under another lane's title: a repo-wide rename edited that lane's note, and the
+// note this branch "changed" was taken as its own. Only a note the branch adds is its own.
+test("a branch's own notes are the ones it adds, not other lanes' notes it edits", () => {
+  const asked: string[][] = [];
+  const git = (args: string[]) => {
+    asked.push(args);
+    return { status: 0, stdout: "changes/mine.md\n", stderr: "" };
+  };
+  expect(addedOnBranch("beta", git)).toEqual(["changes/mine.md"]);
+  expect(asked[0]).toEqual(["diff", "--name-only", "--diff-filter=A", "origin/beta...HEAD"]);
 });

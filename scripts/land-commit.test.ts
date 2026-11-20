@@ -361,6 +361,7 @@ function scriptedGit(options: {
     }
     if (joined.startsWith("log -1")) return { status: 0, stdout: `${options.summary ?? "the summary"}\n`, stderr: "" };
     if (joined.startsWith("diff --name-only origin/beta...HEAD")) return { status: 0, stdout: options.diff ?? "", stderr: "" };
+    if (joined.startsWith("diff --name-only --diff-filter=A origin/beta...HEAD")) return { status: 0, stdout: options.diff ?? "", stderr: "" };
     if (joined.startsWith("diff --name-only --cached")) {
       return { status: 0, stdout: (options.staged ?? []).map((path) => `${path}\n`).join(""), stderr: "" };
     }
