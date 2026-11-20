@@ -26,8 +26,11 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.60.0
+
 ### Migrate
 
+- **Bump lockstep SDK packages to `^0.60.0`:** `@jgengine/{core,rapier,ws,node,sql,convex,editor,assets,navbake}`. CLI `jgengine` is `0.57.0`.
 - **Rock fracture, boats, flow corridors and the granular experiments left core** for the new `@jgengine/simulations` package (not on npm yet), keeping their paths: `@jgengine/core/fracture/*` → `@jgengine/simulations/fracture/*`, `@jgengine/core/physics/boat*` → `@jgengine/simulations/physics/boat*`, `@jgengine/core/physics/flowTube` → `@jgengine/simulations/physics/flowTube`, `@jgengine/core/granular/granularExperiments` → `@jgengine/simulations/granular/granularExperiments`. No game uses them; the reference comparisons in `scripts/reference/` do.
 
 - **Core keeps what games and the engine use.** Modules no game, app, editor, CLI or engine package imports are deleted: `ai/buildOrder`, `ai/groupAssist`, `ai/laneSelect`, `ai/mobBrainGraph`, `ai/tacticalQueries`, `anim/actionLayer`, `anim/oscillator`, `behaviour/behaviour.draw`, `behaviour/behaviourAttach.draw`, `behaviour/behaviourDriver`, `buildings/massing`, `combat/ProjectileModels.draw`, `combat/weaponFeedback`, `data/DataObjects.draw`, `data/dataSource`, `data/fetchJson`, `data/jsonDataSource`, `economy/sharedWallet`, `editor/movementCatalog`, `format/duration`, `game/snapshotHistory`, `game/tribe`, `input/lookChannel`, `input/mouseLook.view`, `map/minimapTrack`, `material/appearanceSignals.draw`, `material/appearanceSignals`, `movement/cameraRig`, `movement/dash`, `multiplayer/combatSnapshot`, `multiplayer/simultaneousCommit`, `nav/corridors`, `nav/railGraph`, `nav/timetable`, `physics/InstancedBodies.draw`, `physics/InstancedJoints.draw`, `physics/radialImpulse`, `puzzle/fallingGrid`, `puzzle/nonogram`, `random/seedLink`, `render/SpriteBatch.draw`, `render/projectedOverdraw.draw`, `render/useSharedFrame.draw`, `replay/replayPlayback`, `roads/circuitCourse`, `runtime/worldChannel`, `scene/captureCheck`, `session/contestedChannel`, `session/extraction`, `stats/spawnLevelStats`, `terrain/ProceduralGround.draw`, `time/beatClock`, `ui/swingTimer`, `visibility/assetStreaming`, `visibility/simulationCulling`, `weather/LightningStrike.draw`, `world/cellStates`, `world/environmentForces`, `world/interiors`, `world/segment`, `world/windZones`, `worldModel/buildTool`. Modules exactly one game used moved into that game's `src/engine-local/` (LLMville's model files into `@llmville/game/engine-local/`): `agents/system`, `ai/creatureDriver`, `ai/mobBrain`, `ai/populationDirector`, `ai/searchBeat`, `assets/spriteSheet`, `audio/stepCadence`, `breeding/breeding`, `buildings/InteriorDressing.draw`, `commands/commandInput`, `data/definedFields`, `economy/unlockPoints`, `format/speed`, `harvest/scatterHarvest`, `inheritance/inheritance`, `inventory/equipment`, `inventory/spoilage`, `loot/salvage`, `loot/vendor`, `map/LightBeam.draw`, `menu/menuRouter.view`, `mission/questGivers`, `mission/sideJobs`, `movement/avatarGait`, `movement/movementSpeed`, `onboarding/OnboardingPointer.draw`, `placement/TerritoryOverlay.view`, `progression/statPoints`, `random/seedSweep`, `render/EntityPreview.draw`, `render/sceneSwap.draw`, `replay/replayLoop`, `roads/liveRoadSurface`, `scene/assetPreload`, `scene/companion`, `scene/decalBakePool`, `scene/decalBakeWorker`, `scene/riding`, `scene/sceneOwnership`, `scene/useDecalTexture.draw`, `stats/doseTable`, `time/calendarClock`, `time/calendarClock.view`, `time/serverTick`, `waves/wavePreview`, `world/interiorDressing`, `world/overhead`, `world/vec3`, `worldModel/turfWar`. A game on npm that imported one copies it from the repo at 0.59.0.
@@ -38,10 +41,344 @@ At publish, rename this heading to the new version and mirror the entries into
   - Tailwind: replace the `@source` lines for `@jgengine/ui/dist` and `@jgengine/shell/dist` with `@jgengine/core/dist/ui` and `@jgengine/core/dist/shell`.
   - `jgengine.json`: remove `"ui"` and `"shell"` from `engine`.
 - Draw files that never touched three.js take their real layer: `anim/characterMotion`, `camera/PlayerFov`, `generator/generatorPreview`, `hud/barSamples`, `input/mouseLook`, `map/terrainMap`, `material/stableTextureSet`, `play/headlessFlow`, `postfx/ScreenEffectsOverlay`, `render/presentationLook`, `render/useDisposable`, `run/nextFrame`, `scene/sceneKindRenderers`, `settings/appliedSettings`, `suite/runSuiteProof`, `terrain/terrainQuality` and `terrain/terrainScanMaps` end in `.view` instead of `.draw`; `camera/activeControls`, `frame/afterRenderBoard`, `play/headlessKeys`, `play/playSession` and `replay/replayPlayback` lose the suffix.
+- createNavCrowd drops replanMs and clock, and createSquadCombat drops clock; replanBudget is the only re-plan limit, so a crowd replays the same on any machine
+- ChatTransport, ChatActions, chatTransportFromSync and createConvexChatTransport are gone; use ChatSync (createLocalChatTransport is now createLocalChatSync)
+- PresenceTransport, createConvexPresenceTransport, createLocalPresenceTransport and createConvexBackend's presence option are gone; presence is presenceSync
+- window.__jgengineAgent, __jgengineAudio, __jgProbe, __jgengineRun, __jgFrameBreakdown, __jgNativeUi, __JG.report and the other __jg* globals are window.__jg.agent, .audio, .probe, .run, .frames, .nativeUi, .report; a capture host sets window.__jg.captureHold
+- attachPlaytestProbe(read) takes no host; installRenderCounter writes scope.__jg.renders; CAPTURE_HOLD_KEY is gone
+- data-shell-code-loading and data-shell-warmup are gone; read window.__jg.loading. A Rune root takes layer to stack above or below a game's UI
+- save(), load(), switchSlot() and peek() on save stores, game saves and ctx.game.save return what happened ({ kind: saved | failed } and { kind: loaded | empty | corrupt | failed }); hasSave() is peek(slot()).kind === "loaded"
+- SaveBackend gains keys(prefix); localSaveBackend takes a storage with length and key(i) and has no errorMode; createKeyValueStore throws on failure; Convex save functions need a saves.keys query
+- HostPersistence.savePlan is required and saveProfile, saveChunks, deleteChunks and applyLeaderboardIncrements are gone from it
+- import CHANGELOG from @jgengine/core/meta/changelog; the package root exports VERSION only
+- @jgengine/core/procedural is gone; import from sim/needs, survival/moodle and survival/regionHealth
+- uiRenderer is gone (Rune is the only game UI path); GameFlowUI, SettingsChrome, SettingsMenu, QuickControls, onboarding.view and useServerSession.view are removed
+- the JSX runtime drops PureComponent, cloneElement, createRef, forwardRef, startTransition, useDebugValue and useTransition
+- a game page's root fills the window from index.html (style=position:fixed;inset:0); the shell's play surface stays in flow
+
+### Added
+
+- createConvexGameChatSync turns a game's own Convex chat functions into a ChatSync with no UI hooks
+- `createConvexGameChatSync` (`@jgengine/convex`): A game's own Convex chat functions on the engine's {@link ChatSync}: one live query per subscribed channel (its recent history, newest last) and one send mutation, through the client's `watchQuery` and `mutation`.
+- `createConvexGameChatSync` (`@jgengine/convex/convexChatSync`): A game's own Convex chat functions on the engine's {@link ChatSync}: one live query per subscribed channel (its recent history, newest last) and one send mutation, through the client's `watchQuery` and `mutation`. Also `ConvexChatFunctions`.
+- `createLocalChatSync` (`@jgengine/core/chat/chatContract`): Chat kept in this process: one ChatSync with a bounded history per channel, for offline play and tests.
+- ctx.wallClock(), the epoch clock a context was made with; game saves, away time and the save list's 'minutes ago' read it instead of Date.now()
+- JG_TEST_DATE runs the test suite as if the machine's clock said that day (dates, file times and child processes together); bun scripts/test-dates.ts runs the whole suite on three days and names any result that moved: none does
+- window.__jg, one object holding everything a running game publishes for agents, captures and devtools (agent, audio, probe, run, frames, nativeUi, report and the rest); it goes away when the game closes
+- the landing gate opens, closes and reopens every game a change reaches (games/scripts/reopen.ts), next to the boot probe; games/scripts/contextIsolation.test.ts checks all ten games share nothing across contexts
+- onContextDispose, disposeContext and publishForContext (core/runtime/contextDisposal), and publishOnPage/publishReadout (core/runtime/pageHandle)
+- `RenderSink` (`@jgengine/core/devtools/renderCounter`): Where the UI runtime reports each render and commit.
+- `CAPTURE_COMMAND_INPUT` (`@jgengine/core/game/captureCommand`): The input a capture command named by a bare string runs with: a neutral look, so a command that reads an aim or heading gets one. Also `CaptureCommandEntry`, `captureCommand`.
+- `disposeContext` (`@jgengine/core/runtime/contextDisposal`): Close `ctx`: every cleanup registered on it runs, newest first, once. Also `onContextDispose`, `publishForContext`.
+- `onPage` (`@jgengine/core/runtime/pageHandle`): What the page holds at `window.__jg[key]`, if anything. Also `JgPage`, `publishOnPage`, `publishReadout`.
+- `CharacterMotionContext` (`@jgengine/core/anim/characterMotion.view`): The game's own character-motion layer (`scene.characterMotion`); the shell provides it. Also `drawCharacterMotion`, `noteGameCharacterMotion`, `useCharacterMotion`.
+- `PlayerFovProvider` (`@jgengine/core/camera/PlayerFov.view`): Provides the player's saved FOV preference to the camera rigs and settings UI below it. Also `PlayerFovSlider`, `PlayerFovState`, `usePlayerFov`.
+- `flushAfterRenderTasks` (`@jgengine/core/frame/afterRenderBoard`): Run every task joined with {@link joinAfterRenderTask}, in join order. Also `flushBeforeRenderTasks`, `joinAfterRenderTask`, `joinBeforeRenderTask`.
+- `getGeneratorPreview` (`@jgengine/core/generator/generatorPreview.view`): The preview registered for an output family, or undefined when that family has none. Also `GeneratorPreview`, `GeneratorPreviewFrame`, `GeneratorPreviewProps`, `registerGeneratorPreview`.
+- `NameplateSample` (`@jgengine/core/hud/barSamples.view`): Projected nameplate with optional health and distance from the render camera. Also `Projectable`, `WorldBarSample`, `WorldOverlayCamera`, `WorldOverlaySampleOptions`.
+- `createMouseLookTracker` (`@jgengine/core/input/mouseLook.view`): ⚠ undocumented Also `MouseLookAim`, `MouseLookOptions`, `MouseLookTracker`.
+- `bakeTerrainMap` (`@jgengine/core/map/terrainMap.view`): Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background. Also `BakeTerrainMapOptions`, `BakedMap`, `MapBakeBounds`.
+- `runFlowHeadless` (`@jgengine/core/play/headlessFlow.view`): ⚠ undocumented Also `HeadlessFlowOptions`.
+- `HeadlessKeys` (`@jgengine/core/play/headlessKeys`): Keys held against a headless {@link PlaySession}, mapped through the game's own bindings.
+- `createPlaySession` (`@jgengine/core/play/playSession`): Boot a `PlayableGame` through the headless runner and tick it the way the shell does: movement from held actions, then the per-frame action phase (bound commands, prompts, hotbar). Also `PlaySession`, `PlaySessionOptions`.
+- `ScreenEffectsOverlay` (`@jgengine/core/postfx/ScreenEffectsOverlay.view`): A DOM overlay that renders a {@link ScreenEffectsController} as full-screen color-grade layers over the game canvas — damage vignettes, heal flashes, a sustained low-health pulse — through the shell's postfx overlay layer, so a game gets screen feedback without hand-rolling shader or overlay timing. Also `ScreenEffectsOverlayProps`.
+- `useDisposable` (`@jgengine/core/render/useDisposable.view`): Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts. Also `Disposable`.
+- `playReplayRecording` (`@jgengine/core/replay/replayPlayback`): Play an {@link ReplayRecording} headless against a new world from the same game and seed: boot a new game (unless `boot: false`), then each frame's commands, look and held actions at the frame's own time. Also `ReplayPlayback`.
+- `nextFrame` (`@jgengine/core/run/nextFrame.view`): Resolves on the next animation frame, or a zero-delay timer in tests and SSR.
+- `registerSceneKindRenderer` (`@jgengine/core/scene/sceneKindRenderers.view`): Register the runtime renderer for a scene kind — the shell half of the #809 seam. Also `SceneKindRenderContext`, `SceneKindRenderer`.
+- `AudioSettingsBridge` (`@jgengine/core/settings/appliedSettings.view`): ⚠ undocumented Also `AppliedGraphicsSettings`, `TOUCH_STYLE_AUTO`, `useGraphicsSettings`, `useSettingsRevision`.
+- `defineGame` (`@jgengine/core/shell/defineGame.draw`): The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, authored scene) into a `PlayableGame` ready for `GameHost`. Also `GameConfig`.
+- `FrameDriver` (`@jgengine/core/shell/drivers/FrameDriver.draw`): ⚠ undocumented Also `POSTER_SETTLE_SECONDS`.
+- `GameHost` (`@jgengine/core/shell/GameHost.draw`): The one documented mount: resolves multiplayer for the playable and renders the shell. Also `EditorSummonModule`, `GameHostProps`.
+- `Clock` (`@jgengine/core/shell/gameKit.draw`): A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. Also `Coins`, `DEFAULT_DRIVE_CODES`, `DEFAULT_WALK_CODES`, `EditorCatalogDefinition`, `EditorDocument`, `EditorSummonModule`, `GameCameraConfig`, `GameConfig` and 25 more.
+- `GamePhaseStamp` (`@jgengine/core/shell/GamePhaseStamp.view`): ⚠ undocumented
+- `GamePlayerProps` (`@jgengine/core/shell/GamePlayer.draw`): ⚠ undocumented
+- `resolvePhysicsTuning` (`@jgengine/core/shell/GamePlayerShell.draw`): Maps a game's declared `physics` onto the movement controllers' tuning.
+- `GameUiPreview` (`@jgengine/core/shell/GameUiPreview.draw`): ⚠ undocumented Also `UiPreviewScenario`, `defaultUiScenario`.
+- `mountGamePlayer` (`@jgengine/core/shell/mountGamePlayer.draw`): Run a game inside any page: mounts the registry-driven player into `container` and returns the function that takes it down. Also `MountGamePlayerOptions`.
+- `resolveGameLoader` (`@jgengine/core/shell/registry.draw`): ⚠ undocumented Also `GameErrorScreenProps`, `GameHealth`, `GameRegistry`, `PlayableGame`, `RenderEntity`, `RenderObject`.
+- `EMPTY_RESERVED` (`@jgengine/core/shell/shellConstants`): No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. Also `NO_ACTIONS`.
+- `useRuntimeHealth` (`@jgengine/core/shell/useRuntimeHealth.draw`): Wire the game's `health` config for one session: the crash seam (with window error and unhandled-rejection handlers), the telemetry queue, and auto quality.
+- `GridWorldScene` (`@jgengine/core/shell/world/GridWorldScene.draw`): Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, uploaded through the shared instance upload. Also `GridWorldSceneProps`.
+- `WorldEntityFrames` (`@jgengine/core/shell/world/WorldEntityFrames.draw`): Mounts inside the scene, samples the live camera each frame (throttled by `tickMs`), and renders `@jgengine/core/ui.view`'s {@link EntityFrames} through a fullscreen UI overlay. Also `WorldEntityFramesProps`, `projectWorldToScreen`, `useWorldProjection`.
+- `RemotePlayers` (`@jgengine/core/shell/world/WorldScene.draw`): ⚠ undocumented Also `WorldView`, `drawsScaledModel`.
+- `runGameSuite` (`@jgengine/core/suite/runSuiteProof.view`): Run a game's whole suite: every proof, then the content check. Also `LoadedSuiteProof`, `SuiteProofRun`, `SuiteProofRunOptions`, `runSuiteProof`.
+- `TerrainQualityContext` (`@jgengine/core/terrain/terrainQuality.view`): The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one. Also `noteTerrainQuality`, `terrainQuality`, `useTerrainQuality`.
+- `TERRAIN_SCAN_SIZE` (`@jgengine/core/terrain/terrainScanMaps.view`): Largest edge a scan is packed at; ambientCG 1K archives are 1024 square. Also `TerrainScanPixels`.
+- `AccessibilityProvider` (`@jgengine/core/ui.view`): Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, and sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to. Also `AbilitySlotBindingOptions`, `AchievementGallery`, `AchievementGalleryProps`, `AchievementToast`, `AchievementToastProps`, `ActionBar`, `ActionBarChrome`, `ActionBarKeyResult` and 625 more.
+- `EventfulEngineStore` (`@jgengine/core/ui/engineStore.view`): ⚠ undocumented Also `ReadableEngineStore`.
+- `ENGINE_STYLESHEET` (`@jgengine/core/ui/engineStyles.view`): The engine stylesheet: every `jg-*` keyframe the shared blocks and registry components animate with, the `[data-jg-*]` interaction-state rules behind {@link HudButton} / {@link HudSurface}, the quiet hover/press/focus defaults for plain buttons inside the HUD root, and reduced-motion handling (`prefers-reduced-motion` or `[data-reduced-motion="true"]` zero `--jg-motion-scale`). Also `ensureEngineStyles`, `useEngineStyles`.
+- `PerFrameRenderError` (`@jgengine/core/ui/hooks.view`): The error a component that re-renders every frame or tick from the store fails with in a dev build or test. Also `AbilitySlotBindingOptions`, `DomEventTarget`, `EventMeterView`, `GameClockControls`, `InventoryGridBinding`, `UseAxisChannelResult`, `WorldBrowserState`, `abilityKitNeedsHeartbeat` and 46 more.
+- `GamePreviewComponent` (`@jgengine/core/ui/preview`): ⚠ undocumented Also `GamePreviewProps`, `GamePreviewStates`.
+- `PREVIEW_FIXTURES` (`@jgengine/core/ui/previewFixtures.view`): Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/core/ui.view` components (`HudThemePreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game. Also `PreviewFixture`, `previewFixtureNames`, `resolvePreviewFixture`.
+- `GameContextBridge` (`@jgengine/core/ui/provider.view`): Re-provide a captured {@link GameContext} across a nested UI reconciler boundary. Also `GameProvider`, `useGameContext`, `useOptionalGameContext`.
+- `selectionEqual` (`@jgengine/core/ui/selectSnapshot.view`): Whether two selections show the same thing: the same value, or arrays and plain objects whose entries are the same all the way down (a record or class instance compares by identity). Also `HotSelectionPace`, `SelectCache`.
+- `useKeyedStore` (`@jgengine/core/ui/store.view`): Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Also `useStore`.
+- `MENU_THEME_STYLE` (`@jgengine/core/ui/testFixtures.view`): Menu theme tokens passed through the `style` prop with no cast.
+- `loadingCovered` (`@jgengine/core/boot/loadingCover`): Whether any loading cover is up on this page. Also `LoadingCoverReading`, `showLoadingCover`.
+- `addRuneFonts` (`@jgengine/core/ui/runeUi.view`): Register additional font URLs on any live Rune host so late-registered game fonts load dynamically.
+- saveBackendContract, the checks every save backend passes (local, memory, Convex, Deepward, Odd Orbit run it)
+- `continueHint` (`@jgengine/core/game/gameFlow`): The Continue hint for each {@link SaveSlotState}, so a damaged save is never shown as no save. Also `SaveSlotState`, `readSaveSlotState`.
+- `saveBackendContract` (`@jgengine/core/save/saveBackendContract`): The checks every {@link SaveBackend} passes, run against the save store a game uses: a refused write never reads as saved, a refused read is not an empty slot, damaged bytes are kept, two stores on one backend never drop each other's slot, and a slot switch never discards unsaved progress. Also `SaveBackendCheck`, `SaveBackendHarness`, `storageHarness`.
+- `damagedSaveKey` (`@jgengine/core/save/saveStore`): The backend key a damaged payload is copied to before the slot can be written again. Also `LoadResult`, `PeekResult`, `SaveResult`, `SaveStorage`.
+- `VERSION` (`@jgengine/core/meta/version`): Installed `@jgengine/core` semver - compare against `CHANGELOG` keys (`@jgengine/core/meta/changelog`) when migrating.
+- `shellScreenTheme` (`@jgengine/core/ui/rune/shellScreens.view`): The engine's own screens — joining a world, a view that failed, a lost display, turning the device — drawn on Rune like every game screen.
 
 ### Changed
 
 - Core type-checks each layer as its own program: model files with no DOM and no three.js, view files with the DOM and no three.js, draw files with both. A three.js or editor import in the wrong layer is a type error.
+- Agent rules say why they stay small
+- Beta CI green again; lanes land as one commit
+- Unpushed-work check knows squash landings
+- Core keeps only what games use; one-game code moves into its game
+- Every game's from-zero flow runs headless in its tests (9 of 10; LLMville is browser-only until step 6)
+- README code samples compile as written
+- The perf gate reports inside, over and not judged, and names the build
+- jgengine has says gap instead of the nearest wrong match
+- Brightway Park: guests arrive faster and scenario one asks for 250 rating, so a steady player wins it
+- A PR's note is one its branch adds, never another lane's note it edits
+- Every game's from-zero flow runs headless in its tests (9 of 10; LLMville is browser-only until step 6)
+- README code samples compile as written
+- The perf gate reports inside, over and not judged, and names the build
+- jgengine has says gap instead of the nearest wrong match
+- Brightway Park: guests arrive faster and scenario one asks for 250 rating, so a steady player wins it
+- The compiler checks each layer; ui and shell are in core
+- One Chromium per test process; the load guard and an orphan check go
+- LLMville's Commons: a shared lounge authored in the editor scene that no lab can claim
+- LLMville's first loop to a served model is proven
+- LLMville deploys from this repo
+- The loading screen draws on Rune; window.__jg.loading tells tools when a page is loading
+- Each package carries its own code, and each binary is stored once where nothing needs the copy
+- Brightway's park sim does less work per tick
+- Every Rune screen on a page (loading cover, shader warm-up, game UI) draws as a layer on one shared wasm instance and one GPU canvas, and Rune's first frame shows about twice as fast (878 ms to 414 ms in a production build)
+- The Rune bundle test fails on a panic, not on a GPU device the browser took away
+- Rock fracture, boats, flow corridors and granular experiments move to @jgengine/simulations
+- Every game and new game draws its UI on Rune; the shell's join, view-error, lost-display and rotate screens draw on Rune
+- Brightway's park simulation runs about twice as fast with the same numbers; world models gain revision()
+
+### Fixed
+
+- Fernwild frees the hands when the slot in hand is emptied by building, feeding or crafting
+- the game UI draws through WebGL2 when the browser has WebGPU but no usable adapter
+- Fernwild's from-zero proof plays to the end of its first loop; first-hour plays the rest of its first 19 minutes
+- core never calls Math.random: audio noise and particle scatter draw from fixed seeded streams, ids use crypto.randomUUID, and the editor names a new prefab instance from the document (the same edit always gets the same id)
+- three heavy tests (100 generated trees, a stand of trees, the walking validation table) declare their time instead of timing out at 5 s beside the other test lanes
+- closing a game and opening it again in the same page works; it used to stop with "Rune supports one native surface per page"
+- a closed game leaves no window listener, animation-frame loop, page global or WebGL context behind (all ten games, checked in a real browser)
+- two game contexts in one process no longer share state: defineStore's starting value, Brightway Park's guests, staff, rides, bank, crowd, undo and menu state are per game
+- the frame loop clears its redraw request before draws run, so a draw that asks for the next frame gets it
+- a title screen whose save list storage refuses no longer throws an unhandled rejection; the refresh returns the failure
+- Ember Command's Continue on a fresh slot sets up the skirmish
+- Ember Command's Continue on a fresh slot sets up the skirmish
+- drive tools find Rune controls on every surface, not only the last one mounted
+- a release stops with "registry did not answer, run again" instead of unpublishing a healthy version when npm answers anything but a confirmed 404
+- the full test suite runs on Windows without symlink rights, and the scatter placement check gives the same answer on Windows and Linux
+- beta CI is green again: the Rune reopen test reopens on a fresh canvas, as the engine does, instead of reusing the closed game's canvas, and a reopen that never draws prints the page's log (#3227)
+- beta CI is green again: the Rune reopen test draws on WebGL2, where Linux CI's software GPU can reopen; CI's software WebGPU finds no adapter for a third device once one was destroyed (#3227)
+- a save the browser or server refused reports failed and posts "Save failed", never "saved"; Scrap Signal and Harbor Heat get the same guarantee as every other game
+- a damaged save loads as corrupt, its bytes are copied aside before anything can overwrite them, and the title screen says the save was damaged instead of offering a new game as if there were none
+- switching save slot after a failed write, or to a slot that cannot be read, stays on the old slot with its progress
+- two tabs or two stores on one backend can no longer drop each other's slot from the slot list
+- a host flush that fails part-way never adds leaderboard points twice when it retries; the file backend writes each flush all or nothing
+- a damaged editor scene file errors instead of opening as an empty scene, and a draft that fails to restore is kept
+
+### Removed
+
+- `@jgengine/convex` no longer exports `ConvexPresenceFunctions`, `createConvexChatTransport`, `createConvexPresenceTransport`.
+- `@jgengine/convex/convexChatTransport` no longer exports `ConvexChatFunctions`, `createConvexChatTransport`.
+- `@jgengine/convex/convexPresenceTransport` no longer exports `ConvexPresenceFunctions`, `createConvexPresenceTransport`.
+- `@jgengine/core/chat/chat.view` no longer exports `chatTransportFromSync`.
+- `@jgengine/core/chat/chatContract` no longer exports `ChatActions`, `ChatTransport`, `createLocalChatTransport`.
+- `@jgengine/core/multiplayer` no longer exports `ChatActions`, `ChatTransport`, `PresenceActions`, `PresenceFeeds`, `PresenceSession`, `PresenceTransport`.
+- `@jgengine/core/multiplayer/presenceContract` no longer exports `PresenceActions`, `PresenceFeeds`, `PresenceSession`, `PresenceTransport`, `createLocalPresenceTransport`.
+- `@jgengine/core/ui.view` no longer exports `chatTransportFromSync`.
+- `@jgengine/core/agents/system` no longer exports `Agent`, `AgentAction`, `AgentFallback`, `AgentFrame`, `AgentMemberSpec`, `AgentMemberState`, `AgentMoodConfig`, `AgentScheduleConfig` and 18 more.
+- `@jgengine/core/ai/buildOrder` no longer exports `AttackClock`, `AttackClockConfig`, `AttackClockInput`, `AttackClockState`, `AttackDecision`, `BuildCatalog`, `BuildCatalogEntry`, `BuildDecision` and 15 more.
+- `@jgengine/core/ai/creatureDriver` no longer exports `CreatureBody`, `CreatureDriver`, `CreatureDriverConfig`, `CreatureDriverState`, `CreatureMind`, `CreatureStep`, `createCreatureDriver`.
+- `@jgengine/core/ai/groupAssist` no longer exports `AssistMember`, `AssistNetwork`, `AssistNetworkConfig`, `AssistNetworkState`.
+- `@jgengine/core/ai/laneSelect` no longer exports `LaneCandidate`, `PickLaneOptions`.
+- `@jgengine/core/ai/mobBrain` no longer exports `MobBrain`, `MobBrainConfig`, `MobBrainDeps`, `MobBrainMode`, `MobBrainStep`, `MobVec3`, `MobWanderConfig`.
+- `@jgengine/core/ai/mobBrainGraph` no longer exports `mobBrainGraph`.
+- `@jgengine/core/ai/populationDirector` no longer exports `PopulationCensus`, `PopulationDirector`, `PopulationDirectorConfig`, `PopulationDirectorState`, `PopulationRegionConfig`, `PopulationSpawnRequest`, `PopulationSpeciesEntry`, `PopulationTickContext` and 1 more.
+- `@jgengine/core/ai/searchBeat` no longer exports `SearchBeatArea`, `SearchBeatState`, `SearchBeatTuning`, `createSearchBeat`, `searchBeatStep`.
+- `@jgengine/core/ai/tacticalQueries` no longer exports `ScoredPosition`, `TacticalPositionEvaluators`, `TacticalPositionWeights`, `coverPoints`, `scorePositions`.
+- `@jgengine/core/anim/actionLayer` no longer exports `ACTION_REST_STATE`, `ActionLayerInput`, `actionLayer`, `withActionLayers`.
+- `@jgengine/core/audio/stepCadence` no longer exports `StepCadenceConfig`, `StepCadenceInput`, `StepCadenceResult`, `StepCadenceState`, `advanceStepCadence`, `createStepCadenceState`.
+- `@jgengine/core/authoring` no longer exports `AuthoredProvenance`, `GeneratedProvenance`, `OwnershipDecision`, `OwnershipDiagnostic`, `OwnershipVerdict`, `ProviderCapabilities`, `RuntimeProvenance`, `SCENE_OWNERSHIP_MANIFEST_VERSION` and 10 more.
+- `@jgengine/core/behaviour/behaviour.draw` no longer exports `attachObject3D`.
+- `@jgengine/core/behaviour/behaviourAttach.draw` no longer exports `attachObject3D`.
+- `@jgengine/core/breeding/breeding` no longer exports `BreedingEgg`, `BreedingEggSpec`, `BreedingEvent`, `BreedingField`, `BreedingOffspring`, `BreedingOptions`, `BreedingPregnancy`, `BreedingSnapshot` and 5 more.
+- `@jgengine/core/buildings/InteriorDressing.draw` no longer exports `DEFAULT_INTERIOR_SURFACES`, `InteriorDressing`, `InteriorDressingProps`, `InteriorDressingSurfaces`, `PracticalLights`, `PracticalLightsProps`, `interiorDressingDraw`, `practicalLightsDraw`.
+- `@jgengine/core/buildings/massing` no longer exports `MASSING_COMPOSITIONS`, `MASSING_PROFILES`, `MassingBody`, `MassingBodyRole`, `MassingComposition`, `MassingProfile`, `MassingSpec`, `composeMassing` and 3 more.
+- `@jgengine/core/combat/ProjectileModels.draw` no longer exports `ProjectileModels`, `ProjectileModelsProps`, `ProjectileShaft`.
+- `@jgengine/core/combat/weaponFeedback` no longer exports `WeaponFeedbackSignal`, `WeaponFeedbackSignals`, `WeaponFeedbackState`, `createWeaponFeedbackSignals`.
+- `@jgengine/core/commands/commandInput` no longer exports `QuantityResult`, `isInputRecord`, `readInputArray`, `readInputNumber`, `readInputOneOf`, `readInputPoint2`, `readInputPoint3`, `readInputString` and 1 more.
+- `@jgengine/core/data/DataObjects.draw` no longer exports `DataObjects`, `DataObjectsProps`, `dataObjectsDraw`.
+- `@jgengine/core/data/dataSource` no longer exports `DataSource`, `DataSourceClock`, `DataSourceOptions`, `DataSourceState`, `DataSourceStatus`, `RefreshOptions`, `createDataSource`.
+- `@jgengine/core/data/definedFields` no longer exports `DefinedFields`, `definedFields`.
+- `@jgengine/core/data/fetchJson` no longer exports `FetchImpl`, `FetchJsonOptions`, `HttpStatusError`, `JsonParseError`, `fetchJson`.
+- `@jgengine/core/data/jsonDataSource` no longer exports `JsonDataSourceOptions`, `createJsonDataSource`.
+- `@jgengine/core/economy/sharedWallet` no longer exports `BookChargeResult`, `WalletBook`, `WalletScope`.
+- `@jgengine/core/economy/unlockPoints` no longer exports `SpendOptions`, `SpendRejection`, `SpendResult`, `UnlockPoints`, `UnlockPointsConfig`, `UnlockPointsState`, `createUnlockPoints`.
+- `@jgengine/core/editor/movementCatalog` no longer exports `AuthoredMovementBinding`, `AuthoredMovementConfig`, `AuthoredMovementDefaults`, `AuthoredMovementDiagnostic`, `AuthoredMovementResult`, `AuthoredMovementValues`, `MovementCatalogDocumentLike`, `bindAuthoredMovement` and 3 more.
+- `@jgengine/core/format/duration` no longer exports `DurationFormat`, `formatDelta`, `formatDuration`, `formatOrdinal`, `padNumber`.
+- `@jgengine/core/format/speed` no longer exports `SpeedFormat`, `SpeedUnit`, `formatSpeed`.
+- `@jgengine/core/game/snapshotHistory` no longer exports `HistoryStacks`, `HistoryStep`, `SnapshotHistory`.
+- `@jgengine/core/game/tribe` no longer exports `AssetAction`, `AssetOwnership`, `Tribe`, `TribeAssetRecord`, `TribeAssetRef`, `TribeConfig`, `TribeEvent`, `TribeEventType` and 9 more.
+- `@jgengine/core/harvest/scatterHarvest` no longer exports `HarvestHit`, `HarvestPlacement`, `HarvestStrike`, `HarvestableDef`, `ScatterHarvest`, `ScatterHarvestConfig`, `ScatterHarvestState`, `createScatterHarvest`.
+- `@jgengine/core/inheritance/inheritance` no longer exports `InheritMutation`, `InheritOptions`, `InheritRule`, `Inherited`, `inheritValues`, `scatterPoints`.
+- `@jgengine/core/input/lookChannel` no longer exports `LookChannel`, `LookChannelOptions`, `LookChannelState`, `LookDeltas`, `createLookChannel`.
+- `@jgengine/core/input/mouseLook.view` no longer exports `MouseLookAim`, `MouseLookOptions`, `MouseLookTracker`, `createMouseLookTracker`.
+- `@jgengine/core/inventory/equipment` no longer exports `EquipItemDef`, `EquipItemLookup`, `EquipRejection`, `EquipResult`, `EquipSlotDef`, `Equipment`, `EquipmentOptions`, `EquipmentProbeReading` and 4 more.
+- `@jgengine/core/inventory/spoilage` no longer exports `SpoilRule`, `Spoilage`, `SpoiledUnits`, `SpoilingStack`, `createSpoilage`.
+- `@jgengine/core/loot/salvage` no longer exports `ItemDropLike`, `ItemLedger`, `ItemLedgerState`, `ItemLifecycle`, `SalvageResult`, `SalvageTable`, `SalvageYield`, `createItemLedger` and 2 more.
+- `@jgengine/core/loot/vendor` no longer exports `StockVendorOptions`, `VendorOffer`, `VendorPriceRule`, `VendorRotation`, `VendorRotationState`, `createVendorRotation`, `itemPrice`, `stockVendor`.
+- `@jgengine/core/map/LightBeam.draw` no longer exports `LightBeam`, `LightBeamProps`, `lightBeamDraw`.
+- `@jgengine/core/map/minimapTrack` no longer exports `TrackAxis`, `trackFraction`.
+- `@jgengine/core/material/appearanceSignals` no longer exports `MaterialAppearanceBaseline`, `MaterialAppearancePolicy`, `MaterialAppearanceResponse`, `MaterialAppearanceTarget`, `MaterialWetnessPolicy`, `resolveMaterialAppearance`, `sampleMaterialAppearance`.
+- `@jgengine/core/material/appearanceSignals.draw` no longer exports `RenderMaterialAppearanceBaseline`, `applyMaterialAppearanceSignals`, `captureMaterialAppearanceBaseline`, `restoreMaterialAppearanceBaseline`.
+- `@jgengine/core/menu/menuRouter.view` no longer exports `MenuRouter`, `MenuStackAction`, `menuStackReducer`, `useMenuRouter`.
+- `@jgengine/core/mission/questGivers` no longer exports `GiverOffer`, `GiverOfferOptions`, `giverOffer`.
+- `@jgengine/core/mission/sideJobs` no longer exports `SideJobActive`, `SideJobComfortSample`, `SideJobDeadlineDef`, `SideJobEvent`, `SideJobFailReason`, `SideJobFareDef`, `SideJobGenerateOptions`, `SideJobKindDef` and 20 more.
+- `@jgengine/core/movement/avatarGait` no longer exports `DEFAULT_GAIT_TUNING`, `GaitTuning`, `advanceGaitPhase`, `gaitBobOffset`, `gaitSwayAngle`.
+- `@jgengine/core/movement/cameraRig` no longer exports `CAMERA_PITCH_LIMIT`.
+- `@jgengine/core/movement/dash` no longer exports `DashBurst`, `DashConfig`, `DashDirection`, `DashRejection`, `DashState`.
+- `@jgengine/core/movement/movementSpeed` no longer exports `MovementSpeedConfig`, `MovementSpeedDeps`, `MovementSpeedModifiers`, `applyStatDrivenSpeed`, `deriveWalkSpeed`.
+- `@jgengine/core/multiplayer` no longer exports `BoardSnapshot`.
+- `@jgengine/core/multiplayer/combatSnapshot` no longer exports `BoardSnapshot`, `CombatRules`, `CombatSide`, `ReplayBlow`, `ReplayResult`, `SerializeBoardArgs`, `SnapshotUnit`.
+- `@jgengine/core/multiplayer/simultaneousCommit` no longer exports `CommitPhase`, `CommitRoundConfig`, `SealResult`, `SealedCommit`.
+- `@jgengine/core/nav/corridors` no longer exports `CorridorEdge`, `CorridorField`, `CorridorPoint`, `CorridorSample`, `createCorridorField`.
+- `@jgengine/core/nav/railGraph` no longer exports `RailEdge`, `RailGraph`, `RailGraphConfig`, `RailNode`, `RailRider`, `RailRiderConfig`, `RailRiderPose`, `ResolvedRailEdge` and 2 more.
+- `@jgengine/core/nav/timetable` no longer exports `RouteTimetable`, `RouteTimetableConfig`, `TimetablePose`, `TimetableStop`, `createRouteTimetable`.
+- `@jgengine/core/onboarding/OnboardingPointer.draw` no longer exports `OnboardingPointer`.
+- `@jgengine/core/physics/InstancedBodies.draw` no longer exports `InstancedBodies`, `InstancedBodiesProps`.
+- `@jgengine/core/physics/InstancedJoints.draw` no longer exports `InstancedJoints`, `InstancedJointsProps`, `instancedJointsDraw`.
+- `@jgengine/core/physics/radialImpulse` no longer exports `RadialFalloff`, `RadialImpulse`, `RadialImpulseOptions`, `radialImpulse`.
+- `@jgengine/core/placement/TerritoryOverlay.view` no longer exports `TerritoryOverlay`, `TerritoryPreviewCell`.
+- `@jgengine/core/progression/statPoints` no longer exports `StatPointLine`, `StatPointSheet`, `StatPoints`, `StatPointsConfig`, `createStatPoints`.
+- `@jgengine/core/puzzle/fallingGrid` no longer exports `CLASSIC_LINE_SCORE`, `FallingGrid`, `FallingGridCell`, `FallingGridConfig`, `FallingGridSnapshot`, `FallingPiece`, `GravityIntervalConfig`, `LockState` and 1 more.
+- `@jgengine/core/puzzle/nonogram` no longer exports `NonogramCell`, `NonogramClue`, `NonogramSolution`, `NonogramSolveResult`.
+- `@jgengine/core/random/seedLink` no longer exports `DEFAULT_SEED_PARAM`.
+- `@jgengine/core/random/seedSweep` no longer exports `SeedSweep`, `acrossSeeds`.
+- `@jgengine/core/render/EntityPreview.draw` no longer exports `EntityPreview`, `EntityPreviewProps`.
+- `@jgengine/core/render/projectedOverdraw.draw` no longer exports `ProjectedOverdrawOptions`, `ProjectedOverdrawReport`, `measureProjectedOverdraw`.
+- `@jgengine/core/render/sceneSwap.draw` no longer exports `useSceneSwap`.
+- `@jgengine/core/render/SpriteBatch.draw` no longer exports `SpriteBatch`, `SpriteBatchInstance`, `SpriteBatchProps`, `spriteBatchDraw`.
+- `@jgengine/core/replay/replayLoop` no longer exports `RecordedPoseLike`, `ReplayEntityDeps`, `ReplayLoop`, `ReplayLoopOptions`.
+- `@jgengine/core/replay/replayPlayback` no longer exports `ReplayPlayback`, `playReplayRecording`.
+- `@jgengine/core/roads/circuitCourse` no longer exports `CIRCUIT_CORNER_TAG`, `CIRCUIT_SECTOR_TAG`, `CircuitCourse`, `CircuitCourseOptions`, `courseFromCircuit`.
+- `@jgengine/core/roads/liveRoadSurface` no longer exports `SurfaceSwappableRoadSource`, `withSwappableRoadSurface`.
+- `@jgengine/core/runtime/worldChannel` no longer exports `WorldClientFrame`, `WorldClientLink`, `WorldHost`, `WorldHostConnection`, `WorldServerFrame`.
+- `@jgengine/core/scene/assetPreload` no longer exports `SceneAssetFetcher`, `createSceneAssetPreloader`.
+- `@jgengine/core/scene/captureCheck` no longer exports `CaptureCheckInput`, `captureChance`, `rollCapture`.
+- `@jgengine/core/scene/companion` no longer exports `CompanionAdoptOptions`, `CompanionCommand`, `CompanionConfig`, `CompanionIntent`, `CompanionIntentContext`, `CompanionRecord`, `CompanionRoster`, `CompanionSpendResult` and 4 more.
+- `@jgengine/core/scene/riding` no longer exports `RideResult`, `Riding`, `SeatOffset`, `ridingOf`.
+- `@jgengine/core/scene/sceneOwnership` no longer exports `AuthoredProvenance`, `GeneratedProvenance`, `OwnershipDecision`, `OwnershipDiagnostic`, `OwnershipVerdict`, `ProviderCapabilities`, `RuntimeProvenance`, `SCENE_OWNERSHIP_MANIFEST_VERSION` and 10 more.
+- `@jgengine/core/session/contestedChannel` no longer exports `ContestReaction`, `ContestedChannel`, `ContestedChannelConfig`, `ContestedEvent`, `ContestedEventKind`, `ContestedPhase`, `ContestedSnapshot`.
+- `@jgengine/core/session/extraction` no longer exports `DeathResult`, `ExtractPoint`, `ExtractionAttempt`, `ExtractionResult`, `RaidPlayerSnapshot`, `RaidSession`, `RaidSessionConfig`, `RaidStatus`.
+- `@jgengine/core/stats/doseTable` no longer exports `DoseSupply`, `DoseTable`, `DoseTableOptions`, `DoseTableRows`, `createDoseTable`, `eatWhileRoom`, `hasRoomFor`.
+- `@jgengine/core/stats/spawnLevelStats` no longer exports `CreatureStatInstance`, `SpawnSpeciesDef`, `SpawnStatDef`, `applyCaptureEffectiveness`, `captureBonusLevels`, `resolveSpawnStats`, `restoreSpawnInstance`, `rollSpawnInstance` and 2 more.
+- `@jgengine/core/terrain/ProceduralGround.draw` no longer exports `ProceduralGround`, `ProceduralGroundProps`, `proceduralGroundDraw`.
+- `@jgengine/core/time/beatClock` no longer exports `BeatAccuracyTier`, `BeatBufferedAction`, `BeatClock`, `BeatClockConfig`, `BeatInputBuffer`, `BeatJudgement`, `BeatSnapshot`, `DEFAULT_BEAT_TIERS`.
+- `@jgengine/core/time/calendarClock` no longer exports `GameTime`.
+- `@jgengine/core/time/calendarClock.view` no longer exports `CalendarClockOptions`, `useCalendarClock`.
+- `@jgengine/core/time/serverTick` no longer exports `PlanServerTickOptions`, `ServerTickPlan`, `TickAnchors`, `TickSystemDefinition`, `TickSystemRun`, `planServerTick`, `tickRunCount`.
+- `@jgengine/core/ui` no longer exports `SwingTargetInput`, `formatDelta`, `formatDuration`, `formatOrdinal`, `formatSpeed`, `swingTimerState`.
+- `@jgengine/core/ui/swingTimer` no longer exports `SWING_EDGE_EPSILON`, `SwingLabelKind`, `SwingPlayerInput`, `SwingTargetInput`, `SwingTimerState`, `swingTimerState`.
+- `@jgengine/core/visibility/assetStreaming` no longer exports `AssetLoadResult`, `AssetLoadState`, `AssetRecord`, `AssetStreamingOptions`, `AssetStreamingSystem`, `CancelSignal`, `StreamingStats`, `createAssetStreamingSystem`.
+- `@jgengine/core/visibility/simulationCulling` no longer exports `SimulationCuller`, `SimulationCullerState`, `SimulationCullingOptions`, `SimulationDecision`, `createSimulationCuller`.
+- `@jgengine/core/waves/wavePreview` no longer exports `WavePreview`, `WavePreviewOptions`, `WavePreviewUnit`, `summarizeWave`.
+- `@jgengine/core/weather/LightningStrike.draw` no longer exports `LightningStrike`, `LightningStrikeProps`.
+- `@jgengine/core/world/cellStates` no longer exports `CellRef`, `CellStateGrid`, `CellStateGridConfig`, `createCellStateGrid`.
+- `@jgengine/core/world/environmentForces` no longer exports `EnvironmentMotionTarget`, `installEnvironmentMotion`.
+- `@jgengine/core/world/interiorDressing` no longer exports `InteriorBox`, `InteriorCable`, `InteriorClearance`, `InteriorClutterSlot`, `InteriorDebrisSlot`, `InteriorDecal`, `InteriorDecalStyle`, `InteriorDressingOptions` and 9 more.
+- `@jgengine/core/world/interiors` no longer exports `EntityLocation`, `Exterior`, `Interior`, `Interiors`, `InteriorsConfig`, `SpaceRef`, `createInteriors`.
+- `@jgengine/core/world/overhead` no longer exports `EnclosureOptions`, `OverheadOptions`, `solidEnclosure`, `solidOverhead`.
+- `@jgengine/core/world/segment` no longer exports `CircleSegmentHit`, `ClosestOnSegment`, `circleVsSegment`, `closestPointOnSegment`.
+- `@jgengine/core/world/windZones` no longer exports `WindShiftForecast`, `WindZoneConfig`, `WindZoneState`, `WindZones`, `WindZonesConfig`, `createWindZones`.
+- `@jgengine/core/worldModel/buildTool` no longer exports `BuildPiece`, `PlacePieceOptions`, `defineBuildKeys`, `placePiece`.
+- `@jgengine/core/worldModel/turfWar` no longer exports `TurfBlockDecl`, `TurfBlockView`, `TurfFrontDecl`, `TurfHandover`, `TurfWar`, `TurfWarDecl`, `TurfWorldReader`, `defineTurfWar`.
+- `@jgengine/core/devtools/agentBridge.draw` no longer exports `CAPTURE_COMMAND_INPUT`.
+- `@jgengine/core/runtime/browserLifecycle.view` no longer exports `CAPTURE_HOLD_KEY`.
+- `@jgengine/core/ui.view` no longer exports `CAPTURE_HOLD_KEY`.
+- `@jgengine/core/anim/characterMotion.draw` no longer exports `CharacterMotionContext`, `drawCharacterMotion`, `noteGameCharacterMotion`, `useCharacterMotion`.
+- `@jgengine/core/camera/PlayerFov.draw` no longer exports `PlayerFovProvider`, `PlayerFovSlider`, `PlayerFovState`, `usePlayerFov`.
+- `@jgengine/core/frame/afterRenderBoard.draw` no longer exports `flushAfterRenderTasks`, `flushBeforeRenderTasks`, `joinAfterRenderTask`, `joinBeforeRenderTask`.
+- `@jgengine/core/generator/generatorPreview.draw` no longer exports `GeneratorPreview`, `GeneratorPreviewFrame`, `GeneratorPreviewProps`, `getGeneratorPreview`, `registerGeneratorPreview`.
+- `@jgengine/core/hud/barSamples.draw` no longer exports `NameplateSample`, `Projectable`, `WorldBarSample`, `WorldOverlayCamera`, `WorldOverlaySampleOptions`.
+- `@jgengine/core/input/mouseLook.draw` no longer exports `MouseLookAim`, `MouseLookOptions`, `MouseLookTracker`, `createMouseLookTracker`.
+- `@jgengine/core/map/terrainMap.draw` no longer exports `BakeTerrainMapOptions`, `BakedMap`, `MapBakeBounds`, `bakeTerrainMap`.
+- `@jgengine/core/play/headlessFlow.draw` no longer exports `HeadlessFlowOptions`, `runFlowHeadless`.
+- `@jgengine/core/play/headlessKeys.draw` no longer exports `HeadlessKeys`.
+- `@jgengine/core/play/playSession.draw` no longer exports `PlaySession`, `PlaySessionOptions`, `createPlaySession`.
+- `@jgengine/core/postfx/ScreenEffectsOverlay.draw` no longer exports `ScreenEffectsOverlay`, `ScreenEffectsOverlayProps`.
+- `@jgengine/core/render/useDisposable.draw` no longer exports `Disposable`, `useDisposable`.
+- `@jgengine/core/replay/replayPlayback.draw` no longer exports `ReplayPlayback`, `playReplayRecording`.
+- `@jgengine/core/run/nextFrame.draw` no longer exports `nextFrame`.
+- `@jgengine/core/scene/sceneKindRenderers.draw` no longer exports `SceneKindRenderContext`, `SceneKindRenderer`, `registerSceneKindRenderer`.
+- `@jgengine/core/settings/appliedSettings.draw` no longer exports `AppliedGraphicsSettings`, `AudioSettingsBridge`, `TOUCH_STYLE_AUTO`, `useGraphicsSettings`, `useSettingsRevision`.
+- `@jgengine/core/suite/runSuiteProof.draw` no longer exports `LoadedSuiteProof`, `SuiteProofRun`, `SuiteProofRunOptions`, `runGameSuite`, `runSuiteProof`.
+- `@jgengine/core/terrain/terrainQuality.draw` no longer exports `TerrainQualityContext`, `noteTerrainQuality`, `terrainQuality`, `useTerrainQuality`.
+- `@jgengine/core/terrain/terrainScanMaps.draw` no longer exports `TERRAIN_SCAN_SIZE`, `TerrainScanPixels`.
+- `@jgengine/shell/defineGame` no longer exports `GameConfig`, `defineGame`.
+- `@jgengine/shell/drivers/FrameDriver` no longer exports `FrameDriver`, `POSTER_SETTLE_SECONDS`.
+- `@jgengine/shell/GameHost` no longer exports `EditorSummonModule`, `GameHost`, `GameHostProps`.
+- `@jgengine/shell/gameKit` no longer exports `Clock`, `Coins`, `DEFAULT_DRIVE_CODES`, `DEFAULT_WALK_CODES`, `EditorCatalogDefinition`, `EditorDocument`, `EditorSummonModule`, `GameCameraConfig` and 26 more.
+- `@jgengine/shell/GamePhaseStamp` no longer exports `GamePhaseStamp`.
+- `@jgengine/shell/GamePlayer` no longer exports `GamePlayerProps`.
+- `@jgengine/shell/GamePlayerShell` no longer exports `resolvePhysicsTuning`.
+- `@jgengine/shell/GameUiPreview` no longer exports `GameUiPreview`, `UiPreviewScenario`, `defaultUiScenario`.
+- `@jgengine/shell/mountGamePlayer` no longer exports `MountGamePlayerOptions`, `mountGamePlayer`.
+- `@jgengine/shell/registry` no longer exports `GameErrorScreenProps`, `GameHealth`, `GameRegistry`, `PlayableGame`, `RenderEntity`, `RenderObject`, `resolveGameLoader`.
+- `@jgengine/shell/shellConstants` no longer exports `EMPTY_RESERVED`, `NO_ACTIONS`.
+- `@jgengine/shell/useRuntimeHealth` no longer exports `useRuntimeHealth`.
+- `@jgengine/shell/world/GridWorldScene` no longer exports `GridWorldScene`, `GridWorldSceneProps`.
+- `@jgengine/shell/world/WorldEntityFrames` no longer exports `WorldEntityFrames`, `WorldEntityFramesProps`, `projectWorldToScreen`, `useWorldProjection`.
+- `@jgengine/shell/world/WorldScene` no longer exports `RemotePlayers`, `WorldView`, `drawsScaledModel`.
+- `@jgengine/ui` no longer exports `AbilitySlotBindingOptions`, `AccessibilityProvider`, `AchievementGallery`, `AchievementGalleryProps`, `AchievementToast`, `AchievementToastProps`, `ActionBar`, `ActionBarChrome` and 626 more.
+- `@jgengine/ui/engineStore` no longer exports `EventfulEngineStore`, `ReadableEngineStore`.
+- `@jgengine/ui/engineStyles` no longer exports `ENGINE_STYLESHEET`, `ensureEngineStyles`, `useEngineStyles`.
+- `@jgengine/ui/hooks` no longer exports `AbilitySlotBindingOptions`, `DomEventTarget`, `EventMeterView`, `GameClockControls`, `InventoryGridBinding`, `PerFrameRenderError`, `UseAxisChannelResult`, `WorldBrowserState` and 47 more.
+- `@jgengine/ui/preview` no longer exports `GamePreviewComponent`, `GamePreviewProps`, `GamePreviewStates`.
+- `@jgengine/ui/previewFixtures` no longer exports `PREVIEW_FIXTURES`, `PreviewFixture`, `previewFixtureNames`, `resolvePreviewFixture`.
+- `@jgengine/ui/provider` no longer exports `GameContextBridge`, `GameProvider`, `useGameContext`, `useOptionalGameContext`.
+- `@jgengine/ui/selectSnapshot` no longer exports `HotSelectionPace`, `SelectCache`, `selectionEqual`.
+- `@jgengine/ui/store` no longer exports `useKeyedStore`, `useStore`.
+- `@jgengine/ui/testFixtures` no longer exports `MENU_THEME_STYLE`.
+- the native Rust renderer experiment crates and bun run perf native; the Rune UI and shader translator crates stay
+- the three.js preload every bun run and test loaded for react-three-fiber
+- the check that guarded against react-three-fiber and drei
+- the PR-video workflow and the GitHub account login it held; post the clip link that `bun run pr:shots` prints
+- `@jgengine/core/game/keyValueStore` no longer exports `KeyValueStorageErrorPolicy`, `KeyValueStorageFailure`.
+- `@jgengine/core/save/snapshotSave` no longer exports `RuntimeSaveSlot`.
+- `@jgengine/core/fracture/convexCell` no longer exports `CellFace`, `CellPlane`, `CellVec`, `ConvexCell`, `boxCell`, `cellContains`, `cellVolume`, `clipCell` and 1 more.
+- `@jgengine/core/fracture/fractureComparison` no longer exports `FractureComparisonRow`, `compareFracture`, `formatFractureComparison`.
+- `@jgengine/core/fracture/fragmentSize` no longer exports `FragmentSizes`, `GaudinSchuhmannFit`, `KWH_PER_TONNE`, `RosinRammlerFit`, `SizeFit`, `T10Fit`, `breakageProbability`, `fitGaudinSchuhmann` and 7 more.
+- `@jgengine/core/fracture/rockFracture` no longer exports `BASALT_BREAKAGE`, `FractureOptions`, `FractureResult`, `GRANITE_BREAKAGE`, `LIMESTONE_BREAKAGE`, `ROCK_BREAKAGE`, `RockBreakage`, `RockFragment` and 4 more.
+- `@jgengine/core/fracture/rockFractureGenerator` no longer exports `FRACTURE_GENERATORS`, `ROCK_FRACTURE_GENERATOR`, `ROCK_FRACTURE_SCHEMA`, `fragmentMesh`, `rockCell`.
+- `@jgengine/core/granular/granularExperiments` no longer exports `ContinuumCollapse`, `FlumeFlow`, `PouredHeap`, `continuumCollapse`, `inclinedFlume`, `pouredHeap`.
+- `@jgengine/core/physics/boatDynamics` no longer exports `BoatAddedMass`, `BoatDynamics`, `BoatEffects`, `BoatOptions`, `BoatState`, `BoatSteering`, `BoatStep`, `BoatTuning` and 2 more.
+- `@jgengine/core/physics/boatManoeuvring` no longer exports `HullManoeuvring`, `ManoeuvringDerivatives`, `ManoeuvringLoads`, `ManoeuvringRudder`, `RudderInflow`, `hullManoeuvringForces`, `rudderForces`.
+- `@jgengine/core/physics/boatPlaning` no longer exports `PlaningBottom`, `PlaningForces`, `planingForces`, `planingTrim`.
+- `@jgengine/core/physics/boatPropeller` no longer exports `BoatEngine`, `BoatPropeller`, `PreparedOpenWater`, `PropellerOpenWater`, `PropellerPoint`, `prepareOpenWater`, `propellerPoint`.
+- `@jgengine/core/physics/boatReferences` no longer exports `BOAT_REFERENCE_IDS`, `BoatOverrides`, `BoatReferenceId`, `boatFromReference`.
+- `@jgengine/core/physics/boatResistance` no longer exports `BoatWater`, `FrictionLine`, `HullResistance`, `SEA_WATER_KINEMATIC_VISCOSITY`, `frictionLineCoefficient`, `prepareHullResistance`.
+- `@jgengine/core/physics/boatSeakeeping` no longer exports `HullOffsetTable`, `HullSeakeeping`, `PreparedSeakeeping`, `SeakeepingExcitation`, `SeakeepingLoads`, `SectionRadiation`, `prepareSeakeeping`, `seakeepingExcitation` and 4 more.
+- `@jgengine/core/physics/boatWindage` no longer exports `AIR_DENSITY`, `BoatWind`, `boatWindageForce`.
+- `@jgengine/core/physics/flowTube` no longer exports `FlowTube`, `FlowTubeConfig`, `FlowVec3`, `combineFlowVelocity`, `createFlowTube`.
+- @jgengine/github; the site's GitHub endpoints live in the site
+- `@jgengine/core` no longer exports `CHANGELOG`, `ChangelogEntry`.
+- `@jgengine/core/meta/changelog` no longer exports `VERSION`.
+- `@jgengine/core/procedural` no longer exports `Moodle`, `MoodleStack`, `MultiRegionHealth`, `NeedSet`, `createMoodleStack`, `createMultiRegionHealth`, `createNeedSet`, `stackMoodles`.
+- `@jgengine/core/menu/gameFlowMenus.view` no longer exports `GameFlowMenuContent`, `GameFlowUI`, `GameFlowUIProps`, `startNewGame`.
+- `@jgengine/core/onboarding/onboarding.view` no longer exports `OnboardingBanner`, `OnboardingHud`, `OnboardingHudProps`, `useOnboarding`.
+- `@jgengine/core/session/useServerSession.view` no longer exports `useServerSession`.
+- `@jgengine/core/settings/QuickControls.draw` no longer exports `QuickControls`.
+- `@jgengine/core/settings/SettingsChrome.draw` no longer exports `SettingsChrome`.
+- `@jgengine/core/settings/SettingsMenu.draw` no longer exports `SettingsMenu`.
+- `@jgengine/core/ui/jsx` no longer exports `PureComponent`, `cloneElement`, `createRef`, `forwardRef`, `startTransition`, `useDebugValue`, `useTransition`.
+- `@jgengine/core/ui/jsx/element` no longer exports `cloneElement`, `createRef`, `forwardRef`.
+- `@jgengine/core/ui/jsx/reconciler` no longer exports `PureComponent`, `startTransition`, `useDebugValue`, `useTransition`.
 
 ## 0.59.0
 

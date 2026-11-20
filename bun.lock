@@ -373,7 +373,7 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.59.0",
+      "version": "0.60.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
@@ -397,7 +397,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.59.0",
+      "version": "0.60.0",
       "dependencies": {
         "@jgengine/core": "^0.59.0",
       },
@@ -413,7 +413,7 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.59.0",
+      "version": "0.60.0",
       "devDependencies": {
         "@jgengine/simulations": "workspace:*",
         "@types/three": "catalog:",
@@ -433,7 +433,7 @@
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.59.0",
+      "version": "0.60.0",
       "dependencies": {
         "@jgengine/assets": "^0.59.0",
         "@jgengine/core": "^0.59.0",
@@ -450,7 +450,7 @@
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.56.0",
+      "version": "0.57.0",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
@@ -463,7 +463,7 @@
     },
     "packages/navbake": {
       "name": "@jgengine/navbake",
-      "version": "0.59.0",
+      "version": "0.60.0",
       "dependencies": {
         "@jgengine/core": "^0.59.0",
         "recast-navigation": "^0.34.0",
@@ -471,7 +471,7 @@
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.59.0",
+      "version": "0.60.0",
       "dependencies": {
         "@jgengine/core": "^0.59.0",
         "@jgengine/ws": "^0.59.0",
@@ -487,7 +487,7 @@
     },
     "packages/rapier": {
       "name": "@jgengine/rapier",
-      "version": "0.59.0",
+      "version": "0.60.0",
       "dependencies": {
         "@dimforge/rapier3d-compat": "0.19.3",
         "@jgengine/core": "^0.59.0",
@@ -502,7 +502,7 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.59.0",
+      "version": "0.60.0",
       "dependencies": {
         "@jgengine/core": "^0.59.0",
       },
@@ -512,7 +512,7 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.59.0",
+      "version": "0.60.0",
       "dependencies": {
         "@jgengine/core": "^0.59.0",
       },
@@ -1653,6 +1653,8 @@
     "@cspotcode/source-map-support/@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.9", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.0.3", "@jridgewell/sourcemap-codec": "^1.4.10" } }, "sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ=="],
 
     "@games/llmville/@types/node": ["@types/node@22.20.5", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-U2+DNr+wSjpsTS/wZGYHq7GcwfuSmKiKvoPvK22zwTlRhU91yOniN4qRR5KhIjvif7ysw/dz/hKmfDH0Ris4aA=="],
+
+    "@jgengine/simulations/@jgengine/core": ["@jgengine/core@0.59.0", "", { "peerDependencies": { "@jgengine/shell": "^0.59.0", "@jgengine/ui": "^0.59.0", "three": ">=0.187.0", "three-stdlib": "^2.0.0" }, "optionalPeers": ["@jgengine/shell", "@jgengine/ui", "three", "three-stdlib"] }, "sha512-ouaHB+SyfzFunuGcETMMV3rQ2KHZUkOrZLv42sCFKXoSvXme9NsuWetaCVPfWGLb02/usU+gjgLwD07ivuhi/w=="],
 
     "@rolldown/binding-wasm32-wasi/@emnapi/runtime": ["@emnapi/runtime@1.11.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw=="],
 

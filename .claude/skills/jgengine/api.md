@@ -4,7 +4,7 @@
 
 ## @jgengine/core
 
-- `VERSION` (const): const VERSION: "0.59.0" — Installed `@jgengine/core` semver - compare against `CHANGELOG` keys (`@jgengine/core/meta/changelog`) when migrating.
+- `VERSION` (const): const VERSION: "0.60.0" — Installed `@jgengine/core` semver - compare against `CHANGELOG` keys (`@jgengine/core/meta/changelog`) when migrating.
 
 ## @jgengine/core/authoring
 
@@ -435,7 +435,7 @@
 
 ## @jgengine/core/meta/version
 
-- `VERSION` (const): const VERSION: "0.59.0" — Installed `@jgengine/core` semver - compare against `CHANGELOG` keys (`@jgengine/core/meta/changelog`) when migrating.
+- `VERSION` (const): const VERSION: "0.60.0" — Installed `@jgengine/core` semver - compare against `CHANGELOG` keys (`@jgengine/core/meta/changelog`) when migrating.
 
 ## @jgengine/core/runtime/adapter
 
