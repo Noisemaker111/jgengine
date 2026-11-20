@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { seededRng } from "../random/rng";
+import { seededRng } from "@jgengine/core/random/rng";
 import { boxCell, cellContains, cellVolume, clipCell } from "./convexCell";
 import { KWH_PER_TONNE, t10 } from "./fragmentSize";
 import { BASALT_BREAKAGE, GRANITE_BREAKAGE, ROCK_BREAKAGE, SANDSTONE_BREAKAGE, fractureRock } from "./rockFracture";

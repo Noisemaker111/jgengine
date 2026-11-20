@@ -1204,9 +1204,9 @@
     {
       "id": "boat-dynamics",
       "packages": [
-        "@jgengine/core"
+        "@jgengine/simulations"
       ],
-      "module": "@jgengine/core/physics/boatDynamics",
+      "module": "@jgengine/simulations/physics/boatDynamics",
       "gameFacing": false,
       "probe": null,
       "intent": "surge added mass of a hull from Lamb's prolate-spheroid coefficient"
@@ -1214,9 +1214,9 @@
     {
       "id": "boat-manoeuvring",
       "packages": [
-        "@jgengine/core"
+        "@jgengine/simulations"
       ],
-      "module": "@jgengine/core/physics/boatManoeuvring",
+      "module": "@jgengine/simulations/physics/boatManoeuvring",
       "gameFacing": false,
       "probe": null,
       "intent": "MMG hull manoeuvring forces from hull derivatives"
@@ -1224,9 +1224,9 @@
     {
       "id": "boat-planing",
       "packages": [
-        "@jgengine/core"
+        "@jgengine/simulations"
       ],
-      "module": "@jgengine/core/physics/boatPlaning",
+      "module": "@jgengine/simulations/physics/boatPlaning",
       "gameFacing": false,
       "probe": null,
       "intent": "Savitsky planing lift, friction, resistance and trimming moment at a trim"
@@ -1234,9 +1234,9 @@
     {
       "id": "boat-propeller",
       "packages": [
-        "@jgengine/core"
+        "@jgengine/simulations"
       ],
-      "module": "@jgengine/core/physics/boatPropeller",
+      "module": "@jgengine/simulations/physics/boatPropeller",
       "gameFacing": false,
       "probe": null,
       "intent": "Wageningen B-series and polynomial open-water curves (K_T, K_Q against advance ratio)"
@@ -1244,9 +1244,9 @@
     {
       "id": "boat-resistance",
       "packages": [
-        "@jgengine/core"
+        "@jgengine/simulations"
       ],
-      "module": "@jgengine/core/physics/boatResistance",
+      "module": "@jgengine/simulations/physics/boatResistance",
       "gameFacing": false,
       "probe": null,
       "intent": "ITTC-1957 and Schoenherr friction lines"
@@ -1254,9 +1254,9 @@
     {
       "id": "boat-seakeeping",
       "packages": [
-        "@jgengine/core"
+        "@jgengine/simulations"
       ],
-      "module": "@jgengine/core/physics/boatSeakeeping",
+      "module": "@jgengine/simulations/physics/boatSeakeeping",
       "gameFacing": false,
       "probe": null,
       "intent": "2-D heave added mass and radiation damping of a hull section (Frank close-fit)"
@@ -1264,9 +1264,9 @@
     {
       "id": "boat-windage",
       "packages": [
-        "@jgengine/core"
+        "@jgengine/simulations"
       ],
-      "module": "@jgengine/core/physics/boatWindage",
+      "module": "@jgengine/simulations/physics/boatWindage",
       "gameFacing": false,
       "probe": null,
       "intent": "push a hull with the shared wind field on its above-water areas, its own 0-upward strength dial"
@@ -4522,7 +4522,8 @@
     {
       "id": "granular-flow",
       "packages": [
-        "@jgengine/core"
+        "@jgengine/core",
+        "@jgengine/simulations"
       ],
       "module": "@jgengine/core/granular/granularLayer",
       "gameFacing": false,
@@ -9335,9 +9336,9 @@
     {
       "id": "rock-fracture",
       "packages": [
-        "@jgengine/core"
+        "@jgengine/simulations"
       ],
-      "module": "@jgengine/core/fracture/convexCell",
+      "module": "@jgengine/simulations/fracture/convexCell",
       "gameFacing": false,
       "probe": null,
       "intent": "rock that breaks by impact into fragments sized by measured comminution laws"

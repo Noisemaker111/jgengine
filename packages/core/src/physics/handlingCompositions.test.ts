@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createBoatDynamics, type BoatTuning } from "./boatDynamics";
+import { createBoatDynamics, type BoatTuning } from "@jgengine/simulations/physics/boatDynamics";
 import { measureHandling, measureLean, measureRide, type HandlingReport } from "./handlingProbe";
 import { createVehicleDynamics, type VehicleDynamicsTuning, type VehicleEffects, type VehicleGearboxTuning } from "./vehicleDynamics";
 

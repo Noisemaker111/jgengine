@@ -83,7 +83,8 @@
   "devDependencies": {
     "@types/three": "catalog:",
     "three": "catalog:",
-    "three-stdlib": "catalog:"
+    "three-stdlib": "catalog:",
+    "@jgengine/simulations": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

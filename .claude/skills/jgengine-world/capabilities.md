@@ -386,45 +386,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `boardVehicle` (function) · `import { boardVehicle } from "@jgengine/core/world"`
 
-## boat-dynamics — a published hull class (6 m speedboat, KVLCC2 tanker model, Holtrop–Mennen ship) with every effect at full strength, plus per-boat overrides
-
-- `boatFromReference` (function) · `import { boatFromReference } from "@jgengine/core/physics/boatReferences"`
-- `createBoatDynamics` (function) · `import { createBoatDynamics } from "@jgengine/core/physics/boatDynamics"`
-- `hullSurgeAddedMass` (function) · `import { hullSurgeAddedMass } from "@jgengine/core/physics/boatDynamics"`
-
-## boat-manoeuvring — MMG hull manoeuvring forces from hull derivatives
-
-- `hullManoeuvringForces` (function) · `import { hullManoeuvringForces } from "@jgengine/core/physics/boatManoeuvring"`
-- `rudderForces` (function) · `import { rudderForces } from "@jgengine/core/physics/boatManoeuvring"`
-
-## boat-planing — Savitsky planing lift, friction, resistance and trimming moment at a trim
-
-- `planingForces` (function) · `import { planingForces } from "@jgengine/core/physics/boatPlaning"`
-- `planingTrim` (function) · `import { planingTrim } from "@jgengine/core/physics/boatPlaning"`
-
-## boat-propeller — Wageningen B-series and polynomial open-water curves (K_T, K_Q against advance ratio)
-
-- `prepareOpenWater` (function) · `import { prepareOpenWater } from "@jgengine/core/physics/boatPropeller"`
-- `propellerPoint` (function) · `import { propellerPoint } from "@jgengine/core/physics/boatPropeller"`
-
-## boat-resistance — ITTC-1957 and Schoenherr friction lines
-
-- `frictionLineCoefficient` (function) · `import { frictionLineCoefficient } from "@jgengine/core/physics/boatResistance"`
-- `prepareHullResistance` (function) · `import { prepareHullResistance } from "@jgengine/core/physics/boatResistance"`
-
-## boat-seakeeping — strip-theory heave, pitch and roll coefficients of a hull
-
-- `prepareSeakeeping` (function) · `import { prepareSeakeeping } from "@jgengine/core/physics/boatSeakeeping"`
-- `seakeepingExcitation` (function) · `import { seakeepingExcitation } from "@jgengine/core/physics/boatSeakeeping"`
-- `seakeepingForces` (function) · `import { seakeepingForces } from "@jgengine/core/physics/boatSeakeeping"`
-- `seakeepingForcesFromHeight` (function) · `import { seakeepingForcesFromHeight } from "@jgengine/core/physics/boatSeakeeping"`
-- `sectionRadiation` (function) · `import { sectionRadiation } from "@jgengine/core/physics/boatSeakeeping"`
-- `wigleyOffsets` (function) · `import { wigleyOffsets } from "@jgengine/core/physics/boatSeakeeping"`
-
-## boat-windage — push a hull with the shared wind field on its above-water areas, its own 0-upward strength dial
-
-- `boatWindageForce` (function) · `import { boatWindageForce } from "@jgengine/core/physics/boatWindage"`
-
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
@@ -1027,16 +988,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `GLASS_BEADS` (const) · `import { GLASS_BEADS } from "@jgengine/core/granular/granularMaterial"`
 - `GRAVEL` (const) · `import { GRAVEL } from "@jgengine/core/granular/granularMaterial"`
 - `SANDY_LOAM` (const) · `import { SANDY_LOAM } from "@jgengine/core/granular/granularMaterial"`
-- `continuumCollapse` (function) · `import { continuumCollapse } from "@jgengine/core/granular/granularExperiments"`
 - `createGranularLayer` (function) · `import { createGranularLayer } from "@jgengine/core/granular/granularLayer"`
 - `createGranularTerrain` (function) · `import { createGranularTerrain } from "@jgengine/core/granular/granularTerrain"`
 - `culmannHeight` (function) · `import { culmannHeight } from "@jgengine/core/granular/granularMaterial"`
 - `flowFriction` (function) · `import { flowFriction } from "@jgengine/core/granular/granularMaterial"`
-- `inclinedFlume` (function) · `import { inclinedFlume } from "@jgengine/core/granular/granularExperiments"`
 - `landformLooseCover` (function) · `import { landformLooseCover } from "@jgengine/core/granular/granularTerrain"`
 - `plateSinkage` (function) · `import { plateSinkage } from "@jgengine/core/granular/granularMaterial"`
 - `plateSinkagePressure` (function) · `import { plateSinkagePressure } from "@jgengine/core/granular/granularMaterial"`
-- `pouredHeap` (function) · `import { pouredHeap } from "@jgengine/core/granular/granularExperiments"`
 - `startFriction` (function) · `import { startFriction } from "@jgengine/core/granular/granularMaterial"`
 - `stopFriction` (function) · `import { stopFriction } from "@jgengine/core/granular/granularMaterial"`
 - `stoppingDepth` (function) · `import { stoppingDepth } from "@jgengine/core/granular/granularMaterial"`
@@ -1852,38 +1810,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## road-ribbons — draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
 
 - `roadRibbonsDraw` (function) · `import { roadRibbonsDraw } from "@jgengine/core/roads/RoadRibbons.draw"`
-
-## rock-fracture — rock that breaks by impact into fragments sized by measured comminution laws
-
-- `BASALT_BREAKAGE` (const) · `import { BASALT_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
-- `CellVec` (type) · `import { CellVec } from "@jgengine/core/fracture/convexCell"`
-- `FragmentSizes` (interface) · `import { FragmentSizes } from "@jgengine/core/fracture/fragmentSize"`
-- `GRANITE_BREAKAGE` (const) · `import { GRANITE_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
-- `LIMESTONE_BREAKAGE` (const) · `import { LIMESTONE_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
-- `ROCK_BREAKAGE` (const) · `import { ROCK_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
-- `ROCK_FRACTURE_GENERATOR` (const) · `import { ROCK_FRACTURE_GENERATOR } from "@jgengine/core/fracture/rockFractureGenerator"`
-- `SANDSTONE_BREAKAGE` (const) · `import { SANDSTONE_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
-- `boxCell` (function) · `import { boxCell } from "@jgengine/core/fracture/convexCell"`
-- `breakageProbability` (function) · `import { breakageProbability } from "@jgengine/core/fracture/fragmentSize"`
-- `cellContains` (function) · `import { cellContains } from "@jgengine/core/fracture/convexCell"`
-- `cellVolume` (function) · `import { cellVolume } from "@jgengine/core/fracture/convexCell"`
-- `clipCell` (function) · `import { clipCell } from "@jgengine/core/fracture/convexCell"`
-- `compareFracture` (function) · `import { compareFracture } from "@jgengine/core/fracture/fractureComparison"`
-- `convexCellBounds` (function) · `import { convexCellBounds } from "@jgengine/core/fracture/rockFracture"`
-- `fitGaudinSchuhmann` (function) · `import { fitGaudinSchuhmann } from "@jgengine/core/fracture/fragmentSize"`
-- `fitRosinRammler` (function) · `import { fitRosinRammler } from "@jgengine/core/fracture/fragmentSize"`
-- `fitT10` (function) · `import { fitT10 } from "@jgengine/core/fracture/fragmentSize"`
-- `formatFractureComparison` (function) · `import { formatFractureComparison } from "@jgengine/core/fracture/fractureComparison"`
-- `fractureRock` (function) · `import { fractureRock } from "@jgengine/core/fracture/rockFracture"`
-- `fragmentMesh` (function) · `import { fragmentMesh } from "@jgengine/core/fracture/rockFractureGenerator"`
-- `fragmentSizes` (function) · `import { fragmentSizes } from "@jgengine/core/fracture/rockFracture"`
-- `gaudinSchuhmann` (function) · `import { gaudinSchuhmann } from "@jgengine/core/fracture/fragmentSize"`
-- `jkT10` (function) · `import { jkT10 } from "@jgengine/core/fracture/fragmentSize"`
-- `passingFraction` (function) · `import { passingFraction } from "@jgengine/core/fracture/fragmentSize"`
-- `rockCell` (function) · `import { rockCell } from "@jgengine/core/fracture/rockFractureGenerator"`
-- `rosinRammler` (function) · `import { rosinRammler } from "@jgengine/core/fracture/fragmentSize"`
-- `t10` (function) · `import { t10 } from "@jgengine/core/fracture/fragmentSize"`
-- `transformCell` (function) · `import { transformCell } from "@jgengine/core/fracture/convexCell"`
 
 ## route-course — build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
 

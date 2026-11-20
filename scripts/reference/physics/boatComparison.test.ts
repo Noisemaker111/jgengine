@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BoatTuning } from "@jgengine/core/physics/boatDynamics";
+import type { BoatTuning } from "@jgengine/simulations/physics/boatDynamics";
 import { compareBoat, holtropExampleSubject, kvlcc2Subject, referenceSubjectFor, speedboatSubject, surgeAddedMass, type BoatComparisonSubject } from "./boatComparison";
 
 function failures(subject: BoatComparisonSubject): string[] {

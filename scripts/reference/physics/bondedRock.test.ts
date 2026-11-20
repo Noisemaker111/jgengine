@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { fitT10, t10 } from "@jgengine/core/fracture/fragmentSize";
+import { fitT10, t10 } from "@jgengine/simulations/fracture/fragmentSize";
 import { BASALT, BEREA_SANDSTONE, INDIANA_LIMESTONE, ROCKS, WESTERLY_GRANITE, brazilianTest, calibrateBondedRock, impactBreakage, type BondedRockModel } from "./bondedRock";
 import { createDiscreteElements, type DemMaterial } from "./discreteElements";
 

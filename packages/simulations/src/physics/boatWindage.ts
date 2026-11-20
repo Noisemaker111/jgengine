@@ -6,7 +6,7 @@
  *
  * @capability boat-windage push a hull with the shared wind field on its above-water areas, its own 0-upward strength dial
  */
-import type { WindField } from "../world/wind";
+import type { WindField } from "@jgengine/core/world/wind";
 
 /** Sea-level air density, kg/m³ (ISA). */
 export const AIR_DENSITY = 1.225;

@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 
 import { formatFlightComparison } from "./reference/flight/flightComparison";
 import { compareBoat, referenceBoatSubjects, referenceSubjectFor } from "./reference/physics/boatComparison";
-import type { BoatTuning } from "../packages/core/src/physics/boatDynamics";
+import type { BoatTuning } from "../packages/simulations/src/physics/boatDynamics";
 import { printHelpIfAsked } from "./script-help";
 
 if (

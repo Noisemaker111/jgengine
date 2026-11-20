@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { combineFlowVelocity, createFlowTube } from "@jgengine/core/physics/flowTube";
+import { combineFlowVelocity, createFlowTube } from "@jgengine/simulations/physics/flowTube";
 
 const tube = () =>
   createFlowTube({ from: [0, 0, 0], to: [0, 0, 20], radius: 4, strength: 10 });

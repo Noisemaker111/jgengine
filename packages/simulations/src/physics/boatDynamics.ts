@@ -1,7 +1,7 @@
 import { boatWindageForce, type BoatWind } from "./boatWindage";
-import type { AxisInput } from "../input/axisInput";
-import type { VehicleStepAir, VehicleStepBody, VehicleStepEngine, VehicleStepMotion, VehicleStepSteering } from "./vehicleDynamics";
-import { waveFieldHeight, type WaveField } from "../water/seaState";
+import type { AxisInput } from "@jgengine/core/input/axisInput";
+import type { VehicleStepAir, VehicleStepBody, VehicleStepEngine, VehicleStepMotion, VehicleStepSteering } from "@jgengine/core/physics/vehicleDynamics";
+import { waveFieldHeight, type WaveField } from "@jgengine/core/water/seaState";
 import { hullManoeuvringForces, rudderForces, type HullManoeuvring, type ManoeuvringLoads } from "./boatManoeuvring";
 import { planingForces, planingTrim, type PlaningBottom } from "./boatPlaning";
 import { prepareOpenWater, propellerPoint, type BoatPropeller, type PreparedOpenWater } from "./boatPropeller";

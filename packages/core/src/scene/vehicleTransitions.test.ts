@@ -5,7 +5,7 @@ import { createGameContext } from "../runtime/gameContext";
 import { boardVehicle, createVehicleSeats, leaveVehicle } from "./vehicleSeat";
 import { createVehicleDynamics } from "../physics/vehicleDynamics";
 import { vehicleTuning } from "../physics/vehicleSpec";
-import { createBoatDynamics } from "../physics/boatDynamics";
+import { createBoatDynamics } from "@jgengine/simulations/physics/boatDynamics";
 import { tickDrivableVehicle, type DrivableSimStep } from "../physics/drivableVehicle";
 import { resolvePlayerMovementTuning, snapshotPlayerMovement, stepPlayerMovement } from "../movement/playerMovement";
 import { createMountController } from "./mount";

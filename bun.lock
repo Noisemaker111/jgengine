@@ -415,6 +415,7 @@
       "name": "@jgengine/core",
       "version": "0.59.0",
       "devDependencies": {
+        "@jgengine/simulations": "workspace:*",
         "@types/three": "catalog:",
         "three": "catalog:",
         "three-stdlib": "catalog:",
@@ -489,6 +490,13 @@
       "version": "0.59.0",
       "dependencies": {
         "@dimforge/rapier3d-compat": "0.19.3",
+        "@jgengine/core": "^0.59.0",
+      },
+    },
+    "packages/simulations": {
+      "name": "@jgengine/simulations",
+      "version": "0.59.0",
+      "dependencies": {
         "@jgengine/core": "^0.59.0",
       },
     },
@@ -803,6 +811,8 @@
     "@jgengine/node": ["@jgengine/node@workspace:packages/node"],
 
     "@jgengine/rapier": ["@jgengine/rapier@workspace:packages/rapier"],
+
+    "@jgengine/simulations": ["@jgengine/simulations@workspace:packages/simulations"],
 
     "@jgengine/sql": ["@jgengine/sql@workspace:packages/sql"],
 

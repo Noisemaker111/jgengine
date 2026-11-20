@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { BUILDING_GENERATOR } from "../buildings/buildingGenerator";
 import { CITY_GENERATOR, resolveCityObject } from "../city/cityKind";
-import { ROCK_FRACTURE_GENERATOR } from "../fracture/rockFractureGenerator";
+import { ROCK_FRACTURE_GENERATOR } from "@jgengine/simulations/fracture/rockFractureGenerator";
 import { GRASS_GENERATOR } from "../grass/grassKind";
 import { DRIFTWOOD_GENERATOR, ROCK_GENERATOR } from "../nature/natureGenerators";
 import { roundedFingerprint, withOtherLibm } from "../random/testFixtures/otherLibm";

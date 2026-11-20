@@ -22,6 +22,7 @@
       "@jgengine/node/*": ["../node/src/*"],
       "@jgengine/rapier": ["../rapier/src/index.ts"],
       "@jgengine/rapier/*": ["../rapier/src/*"],
+      "@jgengine/simulations/*": ["../simulations/src/*"],
       "@jgengine/sql": ["../sql/src/index.ts"],
       "@jgengine/sql/*": ["../sql/src/*"],
       "@jgengine/ws": ["../ws/src/index.ts"],

@@ -7,8 +7,8 @@
  *
  * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
  */
-import { createGranularLayer } from "./granularLayer";
-import type { GranularMaterial } from "./granularMaterial";
+import { createGranularLayer } from "@jgengine/core/granular/granularLayer";
+import type { GranularMaterial } from "@jgengine/core/granular/granularMaterial";
 
 /** Where a released column of the continuum came to rest. */
 export interface ContinuumCollapse {

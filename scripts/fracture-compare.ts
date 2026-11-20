@@ -1,5 +1,5 @@
 // `bun run perf fracture`: break a granite block with every engine fracture path and score each against the comminution laws.
-import { compareFracture, formatFractureComparison } from "../packages/core/src/fracture/fractureComparison";
+import { compareFracture, formatFractureComparison } from "../packages/simulations/src/fracture/fractureComparison";
 import { printHelpIfAsked } from "./script-help";
 
 if (

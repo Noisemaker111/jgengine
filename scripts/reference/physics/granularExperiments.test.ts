@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { DEM_SAND, collapsedColumn } from "./discreteElementExperiments";
-import { continuumCollapse, inclinedFlume, pouredHeap } from "@jgengine/core/granular/granularExperiments";
+import { continuumCollapse, inclinedFlume, pouredHeap } from "@jgengine/simulations/granular/granularExperiments";
 import { DAMP_SAND, DRY_SAND, GLASS_BEADS, stoppingDepth } from "@jgengine/core/granular/granularMaterial";
 
 const lube = (a: number): number => (a < 1.7 ? 1 + 1.24 * a : 1 + 1.6 * Math.sqrt(a));
