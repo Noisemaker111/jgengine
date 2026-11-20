@@ -19,6 +19,7 @@ import type { PlacedRack } from "../../infrastructure/infrastructure";
 import type { GpuSlotWorkload } from "../../infrastructure/computeUnits";
 
 import BuildProp from "./BuildProp";
+import { Commons } from "./Commons";
 import { ClaimedCellOverlay, EndlessDatacenter } from "../../world/components/EndlessDatacenter";
 import Rack from "../../infrastructure/components/Rack";
 import { SceneAxesHelper, useShowSceneAxes } from "./SceneAxesHelper";
@@ -158,6 +159,7 @@ function GameWorldContent({
 
 
       <ClaimedCellOverlay claims={claims} localGameId={gameId} playerPosition={playerPosition} />
+      <Commons claims={claims} />
 
       {worldRacks.map((rack) => (
         <Rack

@@ -1,3 +1,4 @@
+import { isCommonsCell } from "@llmville/game/datacenter/layout";
 import { createEmptyPlayerRow, createRuntimeSnapshot, type GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 import { planFootprintClaims as planTerritory, territoryChunkKey, type TerritoryPolicy } from "@jgengine/core/world/territory";
 import { CLAIM_GAP_CELLS, CELL_SIZE, cellKey, type CellCoord } from "@llmville/game/datacenter/grid";
@@ -25,7 +26,7 @@ export function cellRentForCount(count: number): number {
   return count * CELL_RENT_PER_GAME_DAY;
 }
 
-export type ClaimRejection = "already_claimed" | "too_close_to_other_claim" | "insufficient_funds";
+export type ClaimRejection = "already_claimed" | "too_close_to_other_claim" | "insufficient_funds" | "commons";
 
 export const TERRITORY_POLICY: TerritoryPolicy = { cellSize: CELL_SIZE, chunkSize: 64, gapCells: CLAIM_GAP_CELLS, price: claimCost, currency: "money", starterBlock: 3 };
 
@@ -75,6 +76,7 @@ export function planDatacenterClaims(args: {
   cells: readonly CellCoord[]; ownerGameId: string; claims: readonly DatacenterClaim[]; money: number;
 }): FootprintClaimResult {
   const cells = [...args.cells].sort((a, b) => a.cx - b.cx || a.cz - b.cz);
+  if (cells.some(isCommonsCell)) return { ok: false, reason: "commons" };
   const result = planTerritory(claimsSnapshot(args.claims, args.ownerGameId, args.money), args.ownerGameId, cells.map(cell => ({ x: cell.cx, z: cell.cz })), TERRITORY_POLICY);
   if (result.ok) return { ok: true, newCells: result.cells.map(cell => ({ cx: cell.x, cz: cell.z })), totalCost: result.cost };
   if (result.reason === "territory.unaffordable") return { ok: false, reason: "insufficient_funds" };

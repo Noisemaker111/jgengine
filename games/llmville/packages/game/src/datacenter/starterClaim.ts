@@ -5,7 +5,7 @@ import {
   chebyshevCellDistance,
   type CellCoord,
 } from "@llmville/game/datacenter/grid";
-import { isStructuralColumnCell } from "@llmville/game/datacenter/layout";
+import { isCommonsCell, isStructuralColumnCell } from "@llmville/game/datacenter/layout";
 import { SPAWN_SEARCH_RADIUS_CELLS } from "@llmville/game/datacenter/spawn";
 import { mulberry32 } from "@llmville/game/world/cityHash";
 
@@ -38,6 +38,7 @@ export function isStarterClaimBlockPlaceable(
   return cells.every(
     (cell) =>
       !isStructuralColumnCell(cell)
+      && !isCommonsCell(cell)
       && claims.every((claim) => chebyshevCellDistance(cell, claim) > CLAIM_GAP_CELLS),
   );
 }
