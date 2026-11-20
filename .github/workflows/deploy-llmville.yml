@@ -1,0 +1,44 @@
+name: Deploy LLMville
+
+# LLMville lives and deploys here (decision D in #3220). Run by hand only: production moves when the
+# owner starts it, never on a push. Convex goes first so the Worker's build never calls a function
+# the backend doesn't have yet.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-llmville
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: llmville-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - name: Deploy the Convex backend
+        working-directory: games/llmville/packages/backend
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.LLMVILLE_CONVEX_DEPLOY_KEY }}
+        run: bunx convex deploy -y
+      - name: Build the web client
+        working-directory: games/llmville
+        env:
+          VITE_CONVEX_URL: ${{ vars.LLMVILLE_CONVEX_URL }}
+          VITE_CONVEX_SITE_URL: ${{ vars.LLMVILLE_CONVEX_SITE_URL }}
+        run: bun run build
+      - name: Deploy the Worker
+        working-directory: games/llmville
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        # The same wrangler the site deploys with (apps/web).
+        run: bunx wrangler@4.127.1 deploy
