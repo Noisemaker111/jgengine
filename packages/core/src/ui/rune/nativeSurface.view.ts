@@ -1,4 +1,4 @@
-import { RuneUi, type RuneUiEvent } from "../runeUi.view";
+import { RuneUi, addRuneFonts, type RuneUiEvent } from "../runeUi.view";
 import { RuneNode, nativeEnabled, nativeLabel, nativeSpec, visibleNativeNodes, type RuneTreeSink } from "./nativeTree";
 import { menuIntentForKey, menuIntentForPadButton, menuIntentForPadAxis, menuNavMove, shouldRepeatMenuNav, type MenuIntent } from "../../menu/menuNav";
 import { RuneActivation, runeNextFocus } from "./activation";
@@ -53,10 +53,13 @@ function addReadout(readout: SurfaceReadout, layer: number): () => void {
   };
 }
 const fontUrls = new Set<string>();
-let mounting: Promise<void> = Promise.resolve();
 
-/** Register native font bytes before the first surface mounts. */
-export function registerNativeRuneFont(url: string): void { fontUrls.add(url); }
+/** Register native font bytes before or after the first surface mounts. */
+export function registerNativeRuneFont(url: string): void {
+  if (fontUrls.has(url)) return;
+  fontUrls.add(url);
+  addRuneFonts([url]);
+}
 
 /** Called by the JSX host once per commit; it never observes or measures DOM. @internal */
 export function syncNativeSurface(root: RuneNode): void {
@@ -99,6 +102,7 @@ export function removeNativeSurface(root: RuneNode): void {
 class NativeSurface {
   private ui: RuneUi | null = null;
   private dead = false;
+  private readonly abort = new AbortController();
   private readonly bound = new Set<string>();
   private readonly texts = new Map<string, () => string>();
   private readonly props = new Map<string, { id: string; field: string; read: () => unknown; last: string | undefined }>();
@@ -119,10 +123,8 @@ class NativeSurface {
   private proxy: HTMLInputElement | HTMLTextAreaElement | null = null;
 
   constructor(private readonly root: RuneNode) {
-    mounting = mounting.then(async () => {
-      if (this.dead) return;
-      const layer = this.root.props.layer;
-      const ui = await RuneUi.create({ fonts: [...fontUrls], ...(typeof layer === "number" ? { zIndex: layer } : {}) });
+    const layer = this.root.props.layer;
+    void RuneUi.create({ fonts: [...fontUrls], signal: this.abort.signal, ...(typeof layer === "number" ? { zIndex: layer } : {}) }).then((ui) => {
       if (this.dead) { ui.destroy(); return; }
       this.ui = ui;
       ui.on("*", event => this.event(event));
@@ -140,6 +142,7 @@ class NativeSurface {
       root.onScroll = node => ui.scrollNativeIntoView(node.id);
       this.sync();
     }).catch((error: unknown) => {
+      if (this.dead) return;
       console.error("degraded: native Rune UI could not start", error);
       window.dispatchEvent(new ErrorEvent("error", { message: `Native Rune UI: ${String(error)}`, error }));
     });
@@ -436,15 +439,18 @@ class NativeSurface {
   }
 
   destroy(): void {
+    if (this.dead) return;
     this.dead = true;
+    this.abort.abort();
     this.proxy?.remove();
     this.proxy = null;
     cancelAnimationFrame(this.raf);
     cancelAnimationFrame(this.padFrame);
-    for (const cleanup of this.cleanups) cleanup();
+    for (const cleanup of this.cleanups.splice(0)) cleanup();
     this.root.onFocus = null;
     this.root.onScroll = null;
     this.ui?.destroy();
+    this.ui = null;
   }
 }
 

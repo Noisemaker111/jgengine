@@ -167,6 +167,8 @@ pub struct TextSystem {
     language_epoch: u64,
     /// Whether it swapped in the full faces a web app fetches (see `full_faces`).
     full_faces: bool,
+    /// How many dynamically fetched web fonts from `full_faces::EXTRA_FONTS` this text system registered.
+    extra_fonts: usize,
     pub sans: String,
     pub mono: String,
     symbol_families: Vec<&'static str>,
@@ -321,6 +323,7 @@ impl TextSystem {
             language: None,
             language_epoch: 0,
             full_faces: false,
+            extra_fonts: 0,
             sans, mono,
             symbol_families,
             emoji,
@@ -356,6 +359,7 @@ impl TextSystem {
         text.load_installed(families.0);
         text.load_installed(families.1);
         text.follow_full_faces();
+        text.follow_extra_fonts();
         text
     }
 

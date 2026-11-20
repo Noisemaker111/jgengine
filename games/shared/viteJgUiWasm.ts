@@ -30,10 +30,20 @@ function resolveFile(urlPath: string): string | null {
  * the Rune UI layer.
  */
 export function viteJgUiWasm(): Plugin {
+  let base = "/";
   return {
     name: "jgengine:jg-ui-wasm",
     config() {
       return { oxc: { jsx: { runtime: "automatic", importSource: "@jgengine/core/ui/jsx" } } };
+    },
+    configResolved(config) {
+      base = config.base.endsWith("/") ? config.base : `${config.base}/`;
+    },
+    transformIndexHtml() {
+      return [
+        { tag: "link", attrs: { rel: "modulepreload", href: `${base}jg-ui/jg_ui.js` }, injectTo: "head-prepend" },
+        { tag: "link", attrs: { rel: "preload", href: `${base}jg-ui/jg_ui_bg.wasm`, as: "fetch", crossorigin: "" }, injectTo: "head-prepend" },
+      ];
     },
     configureServer(server) {
       server.middlewares.use("/jg-ui", (req, res, next) => {

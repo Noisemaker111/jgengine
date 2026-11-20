@@ -1,4 +1,4 @@
-//! The tree TypeScript sends as JSON (`set_spec`): native Rune nodes from the engine's JSX
+//! The tree TypeScript sends as JSON (`set_layer_spec`): native Rune nodes from the engine's JSX
 //! host (`{ k: "native", ... }`, see `native.rs`). Per-frame numbers never travel in the spec:
 //! a node names a slot in the shared value buffer and the view reads it while building.
 

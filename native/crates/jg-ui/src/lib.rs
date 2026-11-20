@@ -1,12 +1,11 @@
 //! jg-ui: the engine's Rune UI layer.
 //!
-//! TypeScript describes the UI as a tree of native Rune nodes (`set_spec`, `native.rs`),
-//! per-frame values arrive through one shared typed-array buffer in wasm linear
-//! memory (`values_ptr`/`values_len`, written by JS once per frame, never one call
-//! per value), and events plus interactive hit regions go back to JS once per
-//! frame through the callback `mount` was given (`emit_frame`). Rune draws into a transparent
-//! WebGPU canvas over the game's three.js canvas; JS uses the hit regions to let
-//! pointer input on empty UI space reach the game.
+//! One shared WASM instance and one transparent GPU canvas composite multiple z-ordered UI layers
+//! (`set_layer_spec` / `remove_layer`). Per-frame values arrive through one shared typed-array
+//! buffer in wasm linear memory (`values_ptr`/`values_len`, written by JS once per frame, never one
+//! call per value), and events plus interactive hit regions go back to JS once per frame through
+//! the callback `mount` was given (`emit_frame`). JS uses the hit regions to let pointer input on
+//! empty UI space reach the game canvas underneath.
 
 // The wasm exports are the only entry points; on host targets (cargo check,
 // tests) everything below them is unreachable by construction.
@@ -18,7 +17,7 @@ mod native;
 mod widgets;
 
 use std::cell::{Cell, RefCell, UnsafeCell};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use rune::{AppHandle, Color, Compositor, Cx, El, Frame, TextEdit};
 #[cfg(target_arch = "wasm32")]
@@ -33,8 +32,7 @@ pub fn native_png(json: &str, path: &std::path::Path, width: u32, height: u32, f
     let spec = spec::parse_spec(json)?;
     if !spec.children.iter().all(|node| matches!(node, Node::Native(_))) { return Err("native PNG accepts only native JSX elements".into()); }
     let mut state = Ui::default();
-    state.root = spec.children;
-    sync_fields(&mut state);
+    state.set_layer(0, 40, spec.children, spec.modal, 0);
     let mut runtime = rune::Runtime::with_text(state, build::view, (width as f32,height as f32), rune::Env::new(true,1.0), rune::text::TextSystem::new(fonts,("Inter","IBM Plex Mono")));
     runtime.set_srgb_blend(true);
     runtime.frame(0.0);
@@ -55,8 +53,7 @@ pub fn native_png(json: &str, path: &std::path::Path, width: u32, height: u32, f
 // ---------------------------------------------------------------------------
 // Shared per-frame value buffer: plain f32 slots in wasm linear memory. JS gets
 // a Float32Array over `values_ptr()`/`values_len()` and writes once per frame.
-// Widgets read slots by index while building the view. Rust may also write a
-// slot (e.g. a dragged slider) so the next frame is already correct.
+// Widgets read slots by index while building the view.
 // ---------------------------------------------------------------------------
 
 const VALUES_LEN: usize = 8192;
@@ -79,7 +76,6 @@ static VALUES: SharedValues = SharedValues(UnsafeCell::new([0.0; VALUES_LEN]));
 pub(crate) fn val(slot: usize) -> f32 {
     unsafe { *(*VALUES.0.get()).get_unchecked(slot.min(VALUES_LEN - 1)) }
 }
-
 
 // ---------------------------------------------------------------------------
 // Events: pushed by widget handlers, drained once per frame by the compositor
@@ -117,7 +113,7 @@ pub(crate) fn emit(id: &str, kind: &'static str, value: Option<f32>, text: Optio
     wake();
 }
 
-/// Ask for one more frame from outside a handler (an image finished decoding).
+/// Ask for one more frame from outside a handler (an image or font finished decoding).
 pub(crate) fn wake() {
     #[cfg(target_arch = "wasm32")]
     HANDLE.with(|h| {
@@ -128,29 +124,85 @@ pub(crate) fn wake() {
 }
 
 // ---------------------------------------------------------------------------
-// App state
+// App state: z-ordered native layers composited on one shared Rune canvas
 // ---------------------------------------------------------------------------
+
+pub(crate) struct Layer {
+    pub(crate) id: u32,
+    pub(crate) z: i32,
+    /// Monotonic insertion order to break ties when two layers share one `z` (later draws on top).
+    order: u64,
+    pub(crate) root: Vec<Node>,
+    pub(crate) page_revision: u32,
+    pub(crate) rendered_page_revision: Cell<u32>,
+    pub(crate) modal: bool,
+}
 
 #[derive(Default)]
 pub struct Ui {
-    root: Vec<Node>,
+    pub(crate) layers: Vec<Layer>,
+    next_layer_order: u64,
     revision: u64,
-    page_revision: u32,
     rendered_revision: Cell<u64>,
-    rendered_page_revision: Cell<u32>,
     native_rects_dirty: Cell<bool>,
     /// Whether the view has built once, so the first build sweeps the image cache.
     built: Cell<bool>,
-    /// While true the bridge treats the UI as modal: game input is suspended
-    /// and the pointer is shown.
-    modal: bool,
-    /// TextEdit per Field node id, created when the spec is parsed and kept
-    /// across rebuilds while the id survives.
+    /// TextEdit per Field node id across all layers, kept across rebuilds while the id survives.
     edits: HashMap<String, TextEdit>,
     /// Borrow fallback for a field whose edit is somehow missing.
     empty_edit: TextEdit,
     /// Last page-side revision applied per native field; a new one replaces the field's text.
     edit_rev: HashMap<String, u32>,
+}
+
+impl Ui {
+    pub(crate) fn set_layer(&mut self, id: u32, z: i32, children: Vec<Node>, modal: bool, page_revision: u32) {
+        if let Some(existing) = self.layers.iter_mut().find(|layer| layer.id == id) {
+            existing.z = z;
+            existing.root = children;
+            existing.modal = modal;
+            existing.page_revision = page_revision;
+        } else {
+            let order = self.next_layer_order;
+            self.next_layer_order = self.next_layer_order.wrapping_add(1);
+            self.layers.push(Layer {
+                id,
+                z,
+                order,
+                root: children,
+                page_revision,
+                rendered_page_revision: Cell::new(0),
+                modal,
+            });
+        }
+        self.layers.sort_by_key(|layer| (layer.z, layer.order));
+        sync_fields(self);
+    }
+
+    pub(crate) fn remove_layer(&mut self, id: u32) -> bool {
+        let before = self.layers.len();
+        self.layers.retain(|layer| layer.id != id);
+        if self.layers.len() == before {
+            return false;
+        }
+        self.native_rects_dirty.set(true);
+        sync_fields(self);
+        true
+    }
+
+    pub(crate) fn is_modal(&self) -> bool {
+        self.layers.iter().any(|layer| layer.modal)
+    }
+
+    pub(crate) fn patch_layer(&mut self, id: u32, patches: &[native::PropertyPatch]) -> Result<bool, String> {
+        let Some(layer) = self.layers.iter_mut().find(|layer| layer.id == id) else {
+            return Ok(false);
+        };
+        native::patch(&mut layer.root, patches)?;
+        self.native_rects_dirty.set(true);
+        Ok(true)
+    }
+
 }
 
 /// `#rgb`/`#rrggbb`/`#rrggbbaa` to a Rune colour; anything else is opaque black.
@@ -164,9 +216,8 @@ fn view(s: &Ui, cx: &mut Cx<Ui>) -> El {
 
 // ---------------------------------------------------------------------------
 // Compositor: default Rune draw + one emit per frame with events, the
-// interactive hit regions JS needs for pointer pass-through, and the modal
-// flag. animating() keeps the display link running so the HUD redraws every
-// frame like the game.
+// interactive hit regions JS needs for pointer pass-through, per-layer
+// revisions, and the modal flag.
 // ---------------------------------------------------------------------------
 
 struct UiCompositor {
@@ -204,7 +255,7 @@ impl Compositor<Ui> for UiCompositor {
         self.focus_last.retain(|id, _| f.rt.state.edits.contains_key(id));
         let events: Vec<UiEvent> = EVENTS.with(|e| std::mem::take(&mut *e.borrow_mut()));
         let regions: Vec<[f32; 4]> = f.rt.hit_regions().to_vec();
-        let modal = f.rt.state.modal;
+        let modal = f.rt.state.is_modal();
         let revision_changed = !self.shipped || self.last_revision != f.rt.state.rendered_revision.get();
         if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !f.rt.state.native_rects_dirty.get() && !revision_changed {
             return;
@@ -214,8 +265,9 @@ impl Compositor<Ui> for UiCompositor {
         self.last_revision = f.rt.state.rendered_revision.get();
         self.last_regions = regions.clone();
         f.rt.state.native_rects_dirty.set(false);
+        let revisions: Vec<(u32, u32)> = f.rt.state.layers.iter().map(|layer| (layer.id, layer.rendered_page_revision.get())).collect();
         let payload = serde_json::json!({
-            "revision": f.rt.state.rendered_page_revision.get(),
+            "revisions": revisions,
             "events": events,
             "regions": regions,
             "modal": modal,
@@ -235,7 +287,6 @@ impl Compositor<Ui> for UiCompositor {
     }
 }
 
-// The mount's own frame callback: each game's UI loads its own wasm instance, so this is per game, not per page.
 #[cfg(target_arch = "wasm32")]
 thread_local! {
     static ON_FRAME: RefCell<Option<js_sys::Function>> = const { RefCell::new(None) };
@@ -270,12 +321,14 @@ pub fn values_len() -> u32 {
     VALUES_LEN as u32
 }
 
-/// Mount options: `{"fonts": ["/fonts/x.ttf", ...], "sans": "Family", "mono": "Family"}`.
-/// Font files must be TrueType/OpenType (not WOFF); they are fetched relative to
-/// the page while the GPU starts.
+/// Mount options: `{"fonts": ["/fonts/x.woff2", ...], "sans": "Family", "mono": "Family"}`.
+/// Fonts download in parallel without blocking the first frame.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn mount(canvas_id: &str, options_json: &str, on_frame: js_sys::Function) {
+    DRAW_COUNT.set(0);
+    EVENTS.with(|e| e.borrow_mut().clear());
+    widgets::clear_images();
     ON_FRAME.with(|f| *f.borrow_mut() = Some(on_frame));
     #[derive(serde::Deserialize, Default)]
     struct Opts {
@@ -317,11 +370,10 @@ pub fn mount(canvas_id: &str, options_json: &str, on_frame: js_sys::Function) {
     app.run();
 }
 
-/// Replace the whole widget tree. Rare: structure changes, not per-frame values.
-/// Field edits for ids that survive are kept.
+/// Replace one z-ordered layer's widget tree. Lower `z` draws first, higher `z` composites on top.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
-pub fn set_spec(json: &str, revision: u32) {
+pub fn set_layer_spec(layer_id: u32, z: i32, json: &str, revision: u32) {
     let parsed = spec::parse_spec(json);
     let (children, modal) = match parsed {
         Ok(p) => (p.children, p.modal),
@@ -336,19 +388,40 @@ pub fn set_spec(json: &str, revision: u32) {
                 // The page decides what moves: a box it adds or removes is there or gone in this frame,
                 // as in the DOM, not faded by Rune's default entrance and exit.
                 tx.instant();
-                s.root = children;
-                s.page_revision = revision;
-                s.modal = modal;
-                sync_fields(s);
+                s.set_layer(layer_id, z, children, modal, revision);
             });
         }
     });
 }
 
-/// Patch native leaf properties without replacing the tree or invalidating sibling memo entries.
+/// Remove one mounted layer without disturbing sibling layers on the shared canvas.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
-pub fn patch_native(json: &str) {
+pub fn remove_layer(layer_id: u32) {
+    HANDLE.with(|h| {
+        if let Some(handle) = h.borrow().as_ref() {
+            handle.update(move |s: &mut Ui, tx: &mut Tx| {
+                tx.instant();
+                s.remove_layer(layer_id);
+            });
+        }
+    });
+}
+
+/// Fetch and register additional font URLs on a live Rune instance without blocking or remounting.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn add_fonts(urls_json: &str) {
+    let Ok(urls) = serde_json::from_str::<Vec<String>>(urls_json) else { return };
+    for url in urls {
+        rune::load_web_font_url(&url, wake);
+    }
+}
+
+/// Patch native leaf properties on a specific layer; silently ignored if that layer has unmounted.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn patch_layer_native(layer_id: u32, json: &str) {
     let patches: Vec<native::PropertyPatch> = match serde_json::from_str(json) {
         Ok(value) => value,
         Err(error) => { emit("__native__", "error", None, Some(error.to_string())); return; }
@@ -357,25 +430,29 @@ pub fn patch_native(json: &str) {
         if let Some(handle) = handle.borrow().as_ref() {
             handle.update(move |state: &mut Ui, tx: &mut Tx| {
                 tx.instant();
-                match native::patch(&mut state.root, &patches) {
-                    Ok(()) => state.native_rects_dirty.set(true),
-                    Err(error) => emit("__native__", "error", None, Some(error)),
+                if let Err(error) = state.patch_layer(layer_id, &patches) {
+                    emit("__native__", "error", None, Some(error));
                 }
             });
         }
     });
 }
 
-/// Bring the edit store in line with the tree's fields: drop edits whose field is gone, make
+/// Bring the edit store in line with all layers' fields: drop edits whose field is gone, make
 /// one for each new field, and take the page's text where it set a field itself.
 fn sync_fields(s: &mut Ui) {
     s.revision = s.revision.wrapping_add(1);
-    let ids = spec::field_ids(&s.root);
-    s.edits.retain(|id, _| ids.contains(id));
+    let mut ids = HashSet::new();
     let mut taken: Vec<(String, u32, String)> = Vec::new();
-    let mut natives = Vec::new();
-    native::fields(&s.root, &mut natives);
-    taken.extend(natives.into_iter().map(|(id, p)| (id.to_owned(), p.rev, p.value.clone().unwrap_or_default())));
+    for layer in &s.layers {
+        let mut natives = Vec::new();
+        native::fields(&layer.root, &mut natives);
+        for (id, p) in natives {
+            ids.insert(id.to_owned());
+            taken.push((id.to_owned(), p.rev, p.value.clone().unwrap_or_default()));
+        }
+    }
+    s.edits.retain(|id, _| ids.contains(id));
     for (key, rev, text) in taken {
         let known = s.edit_rev.get(&key).copied();
         if known != Some(rev) || !s.edits.contains_key(&key) {
@@ -441,9 +518,81 @@ pub fn values_changed() {
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn unmount() {
     ON_FRAME.with(|f| *f.borrow_mut() = None);
+    EVENTS.with(|e| e.borrow_mut().clear());
+    widgets::clear_images();
     HANDLE.with(|h| {
-        if let Some(handle) = h.borrow().as_ref() {
+        if let Some(handle) = h.borrow_mut().take() {
             handle.quit();
         }
     });
+}
+
+#[cfg(test)]
+mod layer_tests {
+    use super::*;
+
+    fn box_node(id: &str, width: f32, height: f32) -> Vec<Node> {
+        vec![Node::Native(serde_json::from_str(&format!(
+            r##"{{"id":"{id}","kind":"box","props":{{"width":{width},"height":{height},"fill":"#204060"}}}}"##
+        )).unwrap())]
+    }
+
+    fn field_node(id: &str, value: &str) -> Vec<Node> {
+        vec![Node::Native(serde_json::from_str(&format!(
+            r#"{{"id":"{id}","kind":"field","props":{{"value":"{value}","rev":0,"width":160,"height":32}}}}"#
+        )).unwrap())]
+    }
+
+    #[test]
+    fn layers_sort_by_z_and_insertion_order_and_remove_cleanly() {
+        let mut ui = Ui::default();
+        ui.set_layer(1, 200, box_node("over", 100.0, 40.0), false, 1);
+        ui.set_layer(2, 30, box_node("under", 100.0, 40.0), false, 1);
+        ui.set_layer(3, 40, box_node("game-a", 100.0, 40.0), true, 1);
+        ui.set_layer(4, 40, box_node("game-b", 100.0, 40.0), false, 2);
+
+        let order: Vec<(u32, i32)> = ui.layers.iter().map(|l| (l.id, l.z)).collect();
+        assert_eq!(order, vec![(2, 30), (3, 40), (4, 40), (1, 200)]);
+        assert!(ui.is_modal());
+
+        // Removing the modal layer leaves siblings intact and clears modal state.
+        assert!(ui.remove_layer(3));
+        assert!(!ui.is_modal());
+        let order_after: Vec<(u32, i32)> = ui.layers.iter().map(|l| (l.id, l.z)).collect();
+        assert_eq!(order_after, vec![(2, 30), (4, 40), (1, 200)]);
+
+        // Removing an absent layer is a safe no-op.
+        assert!(!ui.remove_layer(999));
+    }
+
+    #[test]
+    fn removing_one_layer_drops_only_its_fields_and_ignores_stale_patches() {
+        let mut ui = Ui::default();
+        ui.set_layer(1, 30, field_node("f1", "alpha"), false, 1);
+        ui.set_layer(2, 40, field_node("f2", "beta"), false, 1);
+        assert_eq!(ui.edits.get("f1").map(|e| e.text.as_str()), Some("alpha"));
+        assert_eq!(ui.edits.get("f2").map(|e| e.text.as_str()), Some("beta"));
+
+        assert!(ui.remove_layer(1));
+        assert!(ui.edits.get("f1").is_none());
+        assert_eq!(ui.edits.get("f2").map(|e| e.text.as_str()), Some("beta"));
+
+        // A stale patch for an unmounted layer returns Ok(false) rather than erroring.
+        let patches: Vec<native::PropertyPatch> = serde_json::from_str(r#"[{"id":"f1","field":"width","value":80}]"#).unwrap();
+        assert_eq!(ui.patch_layer(1, &patches).unwrap(), false);
+    }
+
+    #[test]
+    fn multiple_layers_layout_on_one_runtime_and_report_all_native_rects() {
+        let mut ui = Ui::default();
+        ui.set_layer(1, 30, box_node("n1", 320.0, 180.0), false, 1);
+        ui.set_layer(2, 40, box_node("n2", 120.0, 48.0), false, 3);
+        let mut rt = rune::Runtime::new(ui, build::view, (320.0, 180.0), rune::Env::new(true, 1.0));
+        rt.frame(0.0);
+        let rects: HashMap<&str, [f32; 4]> = rt.layout_rects().collect();
+        assert_eq!(rects.get("n1").map(|r| (r[2], r[3])), Some((320.0, 180.0)));
+        assert_eq!(rects.get("n2").map(|r| (r[2], r[3])), Some((120.0, 48.0)));
+        assert_eq!(rt.state.layers[0].rendered_page_revision.get(), 1);
+        assert_eq!(rt.state.layers[1].rendered_page_revision.get(), 3);
+    }
 }

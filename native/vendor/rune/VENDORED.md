@@ -89,6 +89,11 @@ first context type it is asked for, so a WebGPU that took the canvas and then fo
 WebGL2 fallback with `canvas.getContext() returned null` and nothing drew (headless Linux CI's software
 WebGPU, and a visitor whose driver the browser refuses).
 
+`crates/rune/src/platform/web.rs`, `text/full_faces.rs`, `text.rs`, `runtime/font_families.rs` —
+non-blocking and dynamic web font loading (`load_web_font_url`). Web font fetches start in parallel
+with GPU init without blocking `Wake::Ready` / frame 1, dedupe by URL across layers and reopens, and
+allow late-registered fonts (`add_fonts`) to register on a live runtime and trigger a redraw.
+
 ## Patches dropped on 2026-11-11
 
 The engine's CSS-to-Rune mirror is gone (the JSX host builds native Rune nodes), so

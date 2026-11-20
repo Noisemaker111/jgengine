@@ -72,6 +72,8 @@ pub use a11y::AccessibilityLink;
 pub use accesskit;
 pub use app::App;
 pub use app::AppHandle;
+#[cfg(target_arch = "wasm32")]
+pub use platform::web::load_web_font_url;
 pub use clipboard::ClipboardContent;
 pub use clipboard::ClipboardImage;
 pub use clipboard::ClipboardWrite;

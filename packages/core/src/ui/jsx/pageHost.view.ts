@@ -5,12 +5,13 @@ import { syncNativeSurface, removeNativeSurface } from "../rune/nativeSurface.vi
 
 type PageNode = Node | RuneNode;
 const dirty = new Set<RuneNode>();
+const removed = new Set<RuneNode>();
 const native = nativeTreeHost(root => dirty.add(root));
 
 function releaseSurface(node: RuneNode): void {
   node.connected = false;
   dirty.delete(node);
-  removeNativeSurface(node);
+  removed.add(node);
 }
 
 /** One JSX tree can contain native surfaces and ordinary page tooling, sharing all providers. */
@@ -47,7 +48,21 @@ export const pageHost: Host<PageNode> = {
   released(node) { if (node instanceof RuneNode && node.tag === "rune-surface") releaseSurface(node); },
   childrenPlaced(parent) { if (!(parent instanceof RuneNode)) domHost.childrenPlaced?.(parent); },
   commitDone() {
-    for (const node of dirty) syncNativeSurface(node.surface());
-    dirty.clear();
+    // Sync incoming/updated surfaces before detaching outgoing ones so a same-commit screen swap
+    // hands off inside the single shared Rune canvas without tearing down and remounting WebGPU.
+    if (dirty.size > 0) {
+      const pending = [...dirty];
+      dirty.clear();
+      for (const node of pending) {
+        const root = node.surface();
+        removed.delete(root);
+        syncNativeSurface(root);
+      }
+    }
+    if (removed.size > 0) {
+      const leaving = [...removed];
+      removed.clear();
+      for (const node of leaving) removeNativeSurface(node);
+    }
   },
 };

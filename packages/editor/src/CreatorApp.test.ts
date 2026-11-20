@@ -15,8 +15,9 @@ beforeAll(async () => {
 
 afterAll(() => fixture.stop());
 
-// The game's 3D view; Rune draws the UI and loading screens on canvases of its own.
+// The game's 3D view; Rune composites all UI and loading layers onto one shared canvas.
 const VIEW = "canvas:not([data-rune-live])";
+const RUNE_CANVAS = "canvas[data-rune-live]";
 
 test("production menu mounts the actual editor and repeats save/play/return/reopen across reload", async () => {
   const { page, evidence } = session;
@@ -33,6 +34,8 @@ test("production menu mounts the actual editor and repeats save/play/return/reop
     await page.getByRole("button", { name: "Play", exact: true }).click();
     await page.getByRole("button", { name: "Return to editor", exact: true }).waitFor();
     expect(await page.locator(VIEW).count()).toBe(1);
+    expect(await page.locator(RUNE_CANVAS).count()).toBeLessThanOrEqual(1);
+    expect(await page.locator("canvas").count()).toBeLessThanOrEqual(2);
     if (iteration === 0) {
       await page.waitForFunction(() => Number(document.querySelector('[aria-label="Simulation seconds"]')?.textContent) > 0.1);
       // The play surface paints a loading cover over the canvas until the scene's shaders compile.
@@ -57,6 +60,8 @@ test("production menu mounts the actual editor and repeats save/play/return/reop
   await page.getByRole("treeitem").filter({ hasText: "Saved start 1" }).waitFor();
   expect(await page.evaluate(() => window.__jg?.editorHost !== undefined)).toBe(false);
   await page.locator(VIEW).waitFor({ state: "visible" });
+  expect(await page.locator(VIEW).count()).toBe(1);
+  expect(await page.locator(RUNE_CANVAS).count()).toBeLessThanOrEqual(1);
   await mkdir(evidence, { recursive: true });
   await page.screenshot({ path: `${evidence}/editor.png` });
   expect(session.errors).toEqual([]);

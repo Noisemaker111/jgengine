@@ -298,7 +298,7 @@ fn native_family(name: &str) -> rune::tok::Family {
 }
 
 #[derive(Deserialize)]
-pub struct PropertyPatch { id: String, field: String, value: serde_json::Value }
+pub struct PropertyPatch { pub id: String, field: String, value: serde_json::Value }
 
 pub fn patch(nodes: &mut [crate::spec::Node], patches: &[PropertyPatch]) -> Result<(), String> {
     fn prepare(node: &Element, patches: &[PropertyPatch], prepared: &mut std::collections::HashMap<String, Props>) -> Result<(), String> {
@@ -348,7 +348,7 @@ mod tests {
     #[test]
     fn native_ui_settles_without_commits_motion_or_wakes_and_a_leaf_patch_wakes_it() {
         let mut state = Ui::default();
-        state.root = tree(r##"{"id":"fill","kind":"box","props":{"width":{"fraction":0.5},"height":10,"fill":"#123456"}}"##);
+        state.set_layer(0, 40, tree(r##"{"id":"fill","kind":"box","props":{"width":{"fraction":0.5},"height":10,"fill":"#123456"}}"##), false, 0);
         let mut rt = rune::Runtime::new(state,crate::build::view,(200.0,100.0),rune::Env::new(true,1.0));
         rt.frame(0.0);
         for _ in 0..120 { rt.frame(1.0/60.0); }
@@ -361,7 +361,7 @@ mod tests {
             assert_eq!(rt.wake_deadline(),None);
         }
         let edits = serde_json::from_str::<Vec<PropertyPatch>>(r##"[{"id":"fill","field":"width","value":{"fraction":0.75}}]"##).unwrap();
-        rt.update(|s,_| patch(&mut s.root,&edits).unwrap());
+        rt.update(|s,_| { s.patch_layer(0, &edits).unwrap(); });
         rt.frame(0.0);
         assert!(rt.stats.commits > commits);
         let bounds = rt.layout_rects().find(|(key,_)| *key == "fill").unwrap().1;
@@ -374,7 +374,7 @@ mod tests {
     fn start_alignment_preserves_the_heights_of_siblings() {
         let element: Element = serde_json::from_str(r#"{"id":"row","kind":"box","props":{"direction":"row","items":"start"},"children":[{"k":"native","id":"short","kind":"box","props":{"width":50},"children":[{"k":"native","id":"content","kind":"box","props":{"height":20}}]},{"k":"native","id":"tall","kind":"box","props":{"width":50,"height":100}}]}"#).unwrap();
         let mut state = Ui::default();
-        state.root = vec![crate::spec::Node::Native(element)];
+        state.set_layer(0, 40, vec![crate::spec::Node::Native(element)], false, 0);
         let mut rt = rune::Runtime::new(state, crate::build::view, (200.0,200.0), rune::Env::new(true,1.0));
         rt.frame(0.0);
         let short = rt.layout_rects().find(|(key,_)| *key == "short").unwrap().1;
@@ -386,7 +386,7 @@ mod tests {
         crate::EVENTS.with(|events| events.borrow_mut().clear());
         let element: Element = serde_json::from_str(r#"{"id":"volume","kind":"box","props":{"width":200,"height":28,"drag":true,"interactive":true}}"#).unwrap();
         let mut state = Ui::default();
-        state.root = vec![crate::spec::Node::Native(element)];
+        state.set_layer(0, 40, vec![crate::spec::Node::Native(element)], false, 0);
         let mut rt = rune::Runtime::new(state, crate::build::view, (200.0,100.0), rune::Env::new(true,1.0));
         rt.frame(0.0);
         rt.pointer_down(40.0,14.0);
@@ -407,24 +407,20 @@ mod tests {
     #[test]
     fn native_field_seeds_keeps_live_text_across_rebuilds_and_takes_a_new_rev() {
         let mut state = Ui::default();
-        state.root = field_tree("hi", 0);
-        crate::sync_fields(&mut state);
+        state.set_layer(0, 40, field_tree("hi", 0), false, 0);
         assert_eq!(state.edits.get("chat").map(|e| e.text.as_str()), Some("hi"));
         state.edits.get_mut("chat").unwrap().text = "hi there".into();
         // A rebuild with the same rev (the page re-rendered for some other reason) keeps what was typed.
-        state.root = field_tree("hi", 0);
-        crate::sync_fields(&mut state);
+        state.set_layer(0, 40, field_tree("hi", 0), false, 1);
         assert_eq!(state.edits.get("chat").map(|e| e.text.as_str()), Some("hi there"));
         // A new rev is the page replacing the text: clearing chat after a send.
         state.edits.get_mut("chat").unwrap().focused = true;
-        state.root = field_tree("", 1);
-        crate::sync_fields(&mut state);
+        state.set_layer(0, 40, field_tree("", 1), false, 2);
         let edit = state.edits.get("chat").unwrap();
         assert_eq!(edit.text, "");
         assert!(edit.focused, "a page-side replacement keeps focus");
         // A removed field drops its edit.
-        state.root = tree(r#"{"id":"box","kind":"box","props":{}}"#);
-        crate::sync_fields(&mut state);
+        state.set_layer(0, 40, tree(r#"{"id":"box","kind":"box","props":{}}"#), false, 3);
         assert!(state.edits.get("chat").is_none());
     }
 
@@ -432,8 +428,7 @@ mod tests {
     fn native_field_types_and_submits_its_text() {
         crate::EVENTS.with(|events| events.borrow_mut().clear());
         let mut state = Ui::default();
-        state.root = field_tree("", 0);
-        crate::sync_fields(&mut state);
+        state.set_layer(0, 40, field_tree("", 0), false, 0);
         let mut rt = rune::Runtime::new(state, crate::build::view, (300.0,100.0), rune::Env::new(true,1.0));
         rt.frame(0.0);
         let rect = rt.layout_rects().find(|(key,_)| *key == "chat").unwrap().1;
