@@ -17,39 +17,44 @@ const PAGE = `<!doctype html><html><body style="margin:0;background:#000">
   const mod = await import("/jg_ui.js");
   await mod.default();
   mod.mount("jg-ui", "{}", (payload) => window.__frames.push(payload));
-  mod.set_spec(JSON.stringify({ children: [{ k: "native", id: "root", kind: "box", props: { fill: "#204060", width: 200, height: 80 },
+  mod.set_layer_spec(1, 40, JSON.stringify({ children: [{ k: "native", id: "root", kind: "box", props: { fill: "#204060", width: 200, height: 80 },
     children: [{ k: "native", id: "label", kind: "text", props: { text: "Play" } }] }] }), 1);
   window.__mod = mod;
 </script></body></html>`;
 
-// Two games on one page, each with its own wasm instance and frame callback, then the first closed and
-// opened again: what a page that swaps games, or a test that boots twice, does.
-const TWO_GAMES = `<!doctype html><html><body style="margin:0;background:#000">
-<canvas id="a" style="position:fixed;left:0;top:0;width:50%;height:100%"></canvas>
-<canvas id="b" style="position:fixed;right:0;top:0;width:50%;height:100%"></canvas>
+// Two z-ordered layers on ONE shared wasm instance and ONE canvas, removing one layer cleanly,
+// then full unmount and reopen on the same wasm instance: what a game with loading cover + UI,
+// or a page that closes and reopens a game, does.
+const MULTI_LAYER_AND_REOPEN = `<!doctype html><html><body style="margin:0;background:#000">
+<canvas id="shared" style="position:fixed;inset:0;width:100%;height:100%"></canvas>
 <script type="module">
-  const tree = (fill) => JSON.stringify({ children: [{ k: "native", id: "root", kind: "box", props: { fill, width: 120, height: 60 } }] });
-  window.__frames = { a: 0, b: 0 };
-  const a = await import("/jg_ui.js?instance=1");
-  const b = await import("/jg_ui.js?instance=2");
-  await a.default();
-  await b.default();
-  a.mount("a", "{}", () => { window.__frames.a += 1; });
-  b.mount("b", "{}", () => { window.__frames.b += 1; });
-  a.set_spec(tree("#204060"), 1);
-  b.set_spec(tree("#602040"), 1);
-  // As RuneUi does: the closed game's canvas goes, and the reopened one gets a fresh canvas.
+  const tree = (id, fill, w, h) => JSON.stringify({ children: [{ k: "native", id, kind: "box", props: { fill, width: w, height: h } }] });
+  window.__state = { frames: 0, lastRects: [] };
+  const mod = await import("/jg_ui.js");
+  await mod.default();
+  const onFrame = (payload) => {
+    window.__state.frames += 1;
+    try { window.__state.lastRects = JSON.parse(payload).nativeRects ?? []; } catch {}
+  };
+  mod.mount("shared", "{}", onFrame);
+  mod.set_layer_spec(1, 30, tree("n1", "#204060", 300, 120), 1);
+  mod.set_layer_spec(2, 40, tree("n2", "#602040", 120, 60), 1);
+  window.__removeLayer1 = () => {
+    mod.remove_layer(1);
+  };
+  // Full teardown + reopen on the same wasm instance with a fresh canvas.
   window.__reopen = () => {
-    a.unmount();
-    const old = document.getElementById("a");
+    mod.unmount();
+    const old = document.getElementById("shared");
     const fresh = old.cloneNode(false);
     old.remove();
     document.body.appendChild(fresh);
-    window.__frames.a = 0;
-    a.mount("a", "{}", () => { window.__frames.a += 1; });
-    a.set_spec(tree("#206040"), 2);
+    window.__state.frames = 0;
+    window.__state.lastRects = [];
+    mod.mount("shared", "{}", onFrame);
+    mod.set_layer_spec(3, 40, tree("n3", "#206040", 180, 90), 1);
   };
-  window.__mods = { a, b };
+  window.__mod = mod;
 </script></body></html>`;
 
 let server: ReturnType<typeof Bun.serve>;
@@ -60,7 +65,7 @@ beforeAll(() => {
     fetch(request) {
       const path = new URL(request.url).pathname;
       if (path === "/") return new Response(PAGE, { headers: { "content-type": "text/html" } });
-      if (path === "/two") return new Response(TWO_GAMES, { headers: { "content-type": "text/html" } });
+      if (path === "/two") return new Response(MULTI_LAYER_AND_REOPEN, { headers: { "content-type": "text/html" } });
       if (path === "/favicon.ico") return new Response(null, { status: 204 });
       const file = Bun.file(join(bundle, ...path.split("/").filter((part) => part !== "" && part !== "..")));
       return file.size > 0 ? new Response(file) : new Response("missing", { status: 404 });
@@ -151,9 +156,9 @@ test("WebGPU without an adapter leaves the canvas free, and the bundle draws thr
 });
 
 // On WebGL2, as a visitor without WebGPU draws: headless Linux CI's software WebGPU finds no adapter
-// for a third device in one page once one was destroyed (run 44536132147), which says nothing
+// for a reopened device in one page once one was destroyed (run 44536132147), which says nothing
 // about Rune's reopen, and a hardware GPU reopens on WebGPU (checked on Windows).
-test("two Rune instances draw side by side, and one closes and reopens", async () => {
+test("one shared Rune instance composites multiple z-ordered layers, removes one cleanly, and tears down + reopens", async () => {
   const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: browserArgs(true) });
   const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
   await page.addInitScript(() => { delete (Navigator.prototype as { gpu?: unknown }).gpu; });
@@ -165,17 +170,30 @@ test("two Rune instances draw side by side, and one closes and reopens", async (
     if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) errors.push(message.text());
   });
   await page.goto(`http://localhost:${server.port}/two`);
-  const frames = () => (window as unknown as { __frames?: { a: number; b: number } }).__frames;
-  await page.waitForFunction(() => { const f = (window as unknown as { __frames?: { a: number; b: number } }).__frames; return f !== undefined && f.a > 0 && f.b > 0; });
-  const before = await page.evaluate(frames);
+  const readState = () => (window as unknown as { __state?: { frames: number; lastRects: [string, number[]][] } }).__state;
+  await page.waitForFunction(() => {
+    const s = (window as unknown as { __state?: { frames: number; lastRects: [string, number[]][] } }).__state;
+    return s !== undefined && s.frames > 0 && s.lastRects.some(([id]) => id === "n1") && s.lastRects.some(([id]) => id === "n2");
+  });
+  const bothLayers = await page.evaluate(readState);
+  expect(await page.locator("canvas").count()).toBe(1);
+
+  await page.evaluate(() => (window as unknown as { __removeLayer1(): void }).__removeLayer1());
+  await page.waitForFunction(() => {
+    const s = (window as unknown as { __state?: { lastRects: [string, number[]][] } }).__state;
+    return s !== undefined && !s.lastRects.some(([id]) => id === "n1") && s.lastRects.some(([id]) => id === "n2");
+  });
+
   await page.evaluate(() => (window as unknown as { __reopen(): void }).__reopen());
   // A reopen that never draws says what the page printed, not only that the wait ran out.
-  const drew = await page.waitForFunction(() => ((window as unknown as { __frames: { a: number } }).__frames.a) > 0).then(() => true, () => false);
-  const after = await page.evaluate(frames);
+  const drew = await page.waitForFunction(() => {
+    const s = (window as unknown as { __state?: { frames: number; lastRects: [string, number[]][] } }).__state;
+    return s !== undefined && s.frames > 0 && s.lastRects.some(([id]) => id === "n3");
+  }).then(() => true, () => false);
+  const after = await page.evaluate(readState);
   await browser.close();
   expect(errors).toEqual([]);
   expect(drew, `the reopened instance never drew; the page printed:\n${log.join("\n")}`).toBe(true);
-  expect(before!.a).toBeGreaterThan(0);
-  expect(before!.b).toBeGreaterThan(0);
-  expect(after!.a).toBeGreaterThan(0);
+  expect(bothLayers!.frames).toBeGreaterThan(0);
+  expect(after!.frames).toBeGreaterThan(0);
 });

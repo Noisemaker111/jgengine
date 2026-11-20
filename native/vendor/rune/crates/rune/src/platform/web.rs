@@ -22,6 +22,45 @@ thread_local! {
     /// The largest viewport's height in CSS points (`100lvh`): a page's band is sized from it so
     /// a phone's toolbar coming and going never changes the band.
     static LARGE_VIEWPORT: std::cell::Cell<f32> = const { std::cell::Cell::new(0.0) };
+    /// Font URLs already fetched (or in flight) for this wasm instance, so repeated layers or reopens never re-fetch them.
+    static FETCHED_FONTS: RefCell<std::collections::HashSet<String>> = RefCell::new(std::collections::HashSet::new());
+}
+
+/// Fetch a TrueType/OpenType/WOFF/WOFF2 font URL asynchronously without blocking the first frame.
+/// Once decoded, registers it into the thread's font store and calls `wake` so live runtimes redraw.
+pub fn load_web_font_url(url: &str, wake: impl FnOnce() + 'static) {
+    let inserted = FETCHED_FONTS.with(|set| set.borrow_mut().insert(url.to_owned()));
+    if !inserted {
+        return;
+    }
+    let url = url.to_owned();
+    let promise = platform::fetch_bytes(&url);
+    wasm_bindgen_futures::spawn_local(async move {
+        match wasm_bindgen_futures::JsFuture::from(promise).await {
+            Ok(bytes) => {
+                // jgengine patch: web fonts ship compressed; the text stack reads sfnt only.
+                let raw = js_sys::Uint8Array::new(&bytes).to_vec();
+                let sfnt = if raw.starts_with(b"wOF2") {
+                    wuff::decompress_woff2(&raw).ok()
+                } else if raw.starts_with(b"wOFF") {
+                    wuff::decompress_woff1(&raw).ok()
+                } else {
+                    Some(raw)
+                };
+                match sfnt {
+                    Some(font) => {
+                        crate::text::full_faces::add_extra_font(font);
+                        wake();
+                    }
+                    None => web_sys::console::warn_1(&format!("rune: font {url} could not be decompressed").into()),
+                }
+            }
+            Err(e) => {
+                FETCHED_FONTS.with(|set| { set.borrow_mut().remove(&url); });
+                web_sys::console::warn_2(&format!("rune: font {url} did not load:").into(), &e);
+            }
+        }
+    });
 }
 
 pub(crate) fn safe_area() -> [f32; 4] { INSETS.get() }
@@ -92,8 +131,8 @@ struct Browser<S: 'static> {
     /// Rune made the canvas (no `App::canvas_id`), so it removes it when the app ends.
     owns_canvas: bool,
     borrowed: page::Borrowed,
-    /// The GPU, and the bytes of `App::font_url`'s fonts that loaded.
-    pending: Rc<RefCell<Option<(Result<(Gpu, wgpu::Surface<'static>), String>, Vec<Vec<u8>>)>>>,
+    /// The GPU once `gpu()` resolves (fonts load independently without blocking the first frame).
+    pending: Rc<RefCell<Option<Result<(Gpu, wgpu::Surface<'static>), String>>>>,
     running: Rc<RefCell<Option<Running<S>>>>,
     /// Why the browser lost the GPU device, until the app ends for it.
     lost: Rc<RefCell<Option<String>>>,
@@ -381,38 +420,25 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
         let features = app.compositor.as_ref().map_or(wgpu::Features::empty(), |c| c.features());
         let pending = self.pending.clone();
         let proxy = self.proxy.clone();
-        // The fonts download while the GPU starts.
-        let fonts: Vec<_> = app.font_urls.iter().map(|url| (url.clone(), platform::fetch_bytes(url))).collect();
+        let shared = self.shared.clone();
+        // Start font fetches in parallel with GPU init without blocking Wake::Ready / frame 1:
+        // fast fetches finish before GPU init and land in frame 1; slow ones redraw on arrival.
+        for url in &app.font_urls {
+            let wake_proxy = self.proxy.clone();
+            load_web_font_url(url, move || { let _ = wake_proxy.send_event(Wake::App); });
+        }
         self.window = Some(window);
         wasm_bindgen_futures::spawn_local(async move {
             let result = gpu(canvas, features).await;
-            let mut loaded = Vec::new();
-            for (url, font) in fonts {
-                match wasm_bindgen_futures::JsFuture::from(font).await {
-                    Ok(bytes) => {
-                        // jgengine patch: web fonts ship compressed; the text stack reads sfnt only.
-                        let raw = js_sys::Uint8Array::new(&bytes).to_vec();
-                        let sfnt = if raw.starts_with(b"wOF2") {
-                            wuff::decompress_woff2(&raw).ok()
-                        } else if raw.starts_with(b"wOFF") {
-                            wuff::decompress_woff1(&raw).ok()
-                        } else {
-                            Some(raw)
-                        };
-                        match sfnt {
-                            Some(font) => loaded.push(font),
-                            None => web_sys::console::warn_1(&format!("rune: font {url} could not be decompressed").into()),
-                        }
-                    }
-                    Err(e) => web_sys::console::warn_2(&format!("rune: font {url} did not load:").into(), &e),
-                }
-            }
-            // A loop that has closed was quit while the GPU started.
-            if proxy.send_event(Wake::Ready).is_err() {
+            if shared.quitting.load(Ordering::Acquire) {
                 if let Ok((gpu, _)) = result { gpu.device.destroy(); }
                 return;
             }
-            *pending.borrow_mut() = Some((result, loaded));
+            *pending.borrow_mut() = Some(result);
+            // A loop that has closed was quit while the GPU started.
+            if proxy.send_event(Wake::Ready).is_err() {
+                if let Some(Ok((gpu, _))) = pending.borrow_mut().take() { gpu.device.destroy(); }
+            }
         });
     }
 
@@ -421,7 +447,7 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
         if self.ended_by_lost_device(event_loop) { return; }
         let Some(window) = self.window.as_ref() else { return };
         if matches!(event, Wake::Ready) {
-            let Some((result, fonts)) = self.pending.borrow_mut().take() else { return };
+            let Some(result) = self.pending.borrow_mut().take() else { return };
             let (gpu, surface) = match result {
                 Ok(gpu) => gpu,
                 Err(e) => {
@@ -430,7 +456,6 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
                 }
             };
             let mut app = self.app.take().expect("one canvas initialization");
-            for bytes in fonts { app.spec.fonts = crate::app::with_font(app.spec.fonts, bytes); }
             let compositor = app.compositor.take();
             let (on_focus, modifier_keys, srgb_blend) = (app.on_focus, app.modifier_keys, app.srgb_blend);
             let on_mods = app.on_mods;
@@ -669,7 +694,7 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
         self.shared.quitting.store(true, Ordering::Release);
         let running = self.running.borrow_mut().take();
         if let Some(r) = running { r.close(); }
-        if let Some((Ok((gpu, _)), _)) = self.pending.borrow_mut().take() { gpu.device.destroy(); }
+        if let Some(Ok((gpu, _))) = self.pending.borrow_mut().take() { gpu.device.destroy(); }
         if let Some(window) = self.window.take() && self.owns_canvas && let Some(canvas) = window.canvas() { canvas.remove(); }
         std::mem::take(&mut self.borrowed).give_back();
         INSETS.set([0.0; 4]);

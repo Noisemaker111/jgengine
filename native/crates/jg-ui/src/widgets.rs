@@ -77,3 +77,8 @@ pub fn begin_images() {
 pub fn finish_images() {
     USED.with(|used| HELD.with(|held| held.borrow_mut().retain(|key, _| used.borrow().contains(key))));
 }
+
+pub fn clear_images() {
+    USED.with(|used| used.borrow_mut().clear());
+    HELD.with(|held| held.borrow_mut().clear());
+}

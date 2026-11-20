@@ -40,7 +40,9 @@ export function BootLoadingScreen({ label = "Loading", progress = null, detail, 
       cover.current = null;
     };
   }, []);
-  cover.current?.update({ label, progress });
+  useLayoutEffect(() => {
+    cover.current?.update({ label, progress });
+  }, [label, progress]);
   return (
     <RuneRoot theme={LOADING_THEME} layer={over ? OVER_GAME_UI : UNDER_GAME_UI}>
       <RuneView anchor="fill" fill={LOADING_THEME.colors.backdrop} />

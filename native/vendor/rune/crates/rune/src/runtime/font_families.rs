@@ -29,7 +29,9 @@ impl<S: 'static> Runtime<S> {
     /// when the next frame must build.
     pub(crate) fn follow_font_families(&mut self) -> bool {
         let chosen = self.text.follow_chosen();
-        if !(self.text.follow_full_faces() || chosen) {
+        let full = self.text.follow_full_faces();
+        let extra = self.text.follow_extra_fonts();
+        if !(full || extra || chosen) {
             return false;
         }
         self.memo.clear();
