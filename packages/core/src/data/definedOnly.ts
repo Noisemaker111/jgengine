@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /**
  * `T` after dropping its undefined fields: a field that may be `undefined` becomes optional and never
  * `undefined`; a field that is always defined stays required.

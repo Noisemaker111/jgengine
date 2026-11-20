@@ -9,7 +9,7 @@ import {
   type SideJobSpot,
   type SideJobsState,
   type SideJobView,
-} from "@jgengine/core/mission/sideJobs";
+} from "../../engine-local/mission/sideJobs";
 import { advancePathFollow, createPathFollow, type PathFollowConfig, type PathFollowState } from "@jgengine/core/nav/pathFollow";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";

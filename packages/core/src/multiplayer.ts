@@ -1,5 +1,4 @@
 export { type ChatSendOutcome, type ChatSync } from "./chat/chatContract";
-export { type BoardSnapshot } from "./multiplayer/combatSnapshot";
 export { createFeedWriteGate, validateFeedWrite, type FeedWriteGate } from "./multiplayer/feedWriteGate";
 export { resolveGuestSession, sessionPlayer, type AuthSession, type PlayerIdentity } from "./multiplayer/identity";
 export {

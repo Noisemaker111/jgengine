@@ -2,7 +2,7 @@ import { createBaseBuilding, type BaseBuilding, type BaseBuildingState, type Bas
 import type { StationInstance } from "@jgengine/core/crafting/recipe";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { createEmptyInventory, putItem, takeItem, type InventoryState } from "@jgengine/core/inventory/inventoryModel";
-import { createSpoilage, type Spoilage } from "@jgengine/core/inventory/spoilage";
+import { createSpoilage, type Spoilage } from "../engine-local/inventory/spoilage";
 import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";

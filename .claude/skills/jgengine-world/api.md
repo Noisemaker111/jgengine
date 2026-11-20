@@ -24,42 +24,6 @@
 - `alertSearchArea` (function): function alertSearchArea<Tier>(step: Pick<AlertStep<Tier>, "tier" | "anchor" | "outOfSightSeconds">, tuning: AlertSearchTuning<Tier>): AlertSearchArea | null — The circle a search should work this tick: centred on the step's anchor, the tier's radius grown by the seconds out of sight, capped. `null` with no tier or no sighting yet.
 - `createAlertLevel` (function): function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLevel<Tier> — An alert level any stealth, heist or pursuit game can use, over the meter and ladder parts: reports raise a bounded value only while an observer holds the target in view, the value bleeds on the caller's curve once the target has been out of every observer's sight, labelled cut points decide what the alert resolves to, and a stand-down countdown tells the caller when to call its units off. The value, its rates, the cut points and every label are caller policy; sight facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 
-## @jgengine/core/ai/buildOrder
-
-- `AttackClock` (interface): interface AttackClock — A running attack clock.
-- `AttackClockConfig` (interface): interface AttackClockConfig — When attack waves launch and how they grow.
-- `AttackClockInput` (interface): interface AttackClockInput — What the game reports to the attack clock.
-- `AttackClockState` (interface): interface AttackClockState — Serializable attack-clock state.
-- `AttackDecision` (interface): interface AttackDecision — Whether to launch now, the wave number (1-based) being gathered, and the army it needs.
-- `BuildCatalog` (type): type BuildCatalog = Readonly<Record<string, BuildCatalogEntry>> — Everything the AI can make, keyed by id.
-- `BuildCatalogEntry` (interface): interface BuildCatalogEntry — One thing the AI can make.
-- `BuildDecision` (type): type BuildDecision = | { kind: "make"; id: string; reason: BuildMakeReason } | { kind: "wait"; reason: BuildWaitReason; id?: string } — One decision: make `id`, or wait (naming what it waits on when there is one).
-- `BuildKind` (type): type BuildKind = "building" | "unit" | "research" — What a catalog entry is: a structure, a trained unit, or a one-time research.
-- `BuildMakeReason` (type): type BuildMakeReason = "order" | "requirement" | "supply" | "workers" | "composition" — Why the planner chose to make something.
-- `BuildPlanConfig` (interface): interface BuildPlanConfig — The plan: catalog, opening order and sustain policy. Change it mid-game with `retune`.
-- `BuildPlanner` (interface): interface BuildPlanner — A running build planner.
-- `BuildPlannerOptions` (interface): interface BuildPlannerOptions — Options for {@link createBuildPlanner}.
-- `BuildPlannerState` (interface): interface BuildPlannerState — Serializable planner state.
-- `BuildPlannerTuning` (interface): interface BuildPlannerTuning — The planner's derived pacing, for a HUD or debug readout.
-- `BuildPlannerView` (interface): interface BuildPlannerView — What the game reports to the planner each decision.
-- `BuildStep` (interface): interface BuildStep — One build-order line: hold `count` (default 1) of `make`, owned plus pending.
-- `BuildWaitReason` (type): type BuildWaitReason = "afford" | "supply" | "producer" | "requirement" | "think" | "done" — Why the planner is not making anything this decision.
-- `TechPathStep` (type): type TechPathStep = | { status: "ready"; id: string } | { status: "pending"; id: string } | { status: "blocked"; id: string } — Where a tech path leads: something makeable now, a prerequisite already in progress, or nothing.
-- `createAttackClock` (function): function createAttackClock(config: AttackClockConfig, initial?: AttackClockState): AttackClock — Attack-wave timing for an RTS opponent: nothing before `firstAt`, then a wave launches when the army reaches `minArmy + growPerWave × waves launched`, or after `maxWait` seconds with whatever army exists. Waves are spaced by `minGap`.
-- `createBuildPlanner` (function): function createBuildPlanner(config: BuildPlanConfig, options: BuildPlannerOptions = {}): BuildPlanner — An RTS economy planner: follows `config.steps` in order, inserting the tech path for any unmet requirement, then sustains workers and an army `composition`, building supply ahead of a block. The {@link DifficultyProfile} sets how often it decides (`reactionSeconds` × `intervalPerReaction`), how often a composition pick is worse than the best (`decisionNoise`), and whether it saves for unaffordable wants. Returns a decision per call; the game executes it.
-- `missingRequirements` (function): function missingRequirements(catalog: BuildCatalog, id: string, view: Pick<BuildPlannerView, "owned">): string[] — Requirement ids of `id` (its `requires` plus its `producer`) that the view does not own complete. Unknown ids return an empty list.
-- `resolveTechPath` (function): function resolveTechPath(catalog: BuildCatalog, id: string, view: Pick<BuildPlannerView, "owned" | "pending">): TechPathStep — Walk the tech path toward `id`: `ready` names the first thing makeable now (the id itself when nothing is missing, else the deepest unmet prerequisite), `pending` names a prerequisite already queued that the path waits on, `blocked` means an unknown id or a requirement cycle. A prerequisite in progress is skipped in favour of another missing one, so "make 4 knights" builds the stables and the smithy side by side. Cycle-safe.
-
-## @jgengine/core/ai/creatureDriver
-
-- `CreatureBody` (interface): interface CreatureBody — How a creature's body moves and strikes. Speeds are metres per second.
-- `CreatureDriver` (interface): interface CreatureDriver — The legs and teeth under a creature's mind. Wild creatures sense what is near with their own perception, decide with `ai/temperament` (oblivious, skittish, territorial, docile, aggressive are all tunings of it) and graze around home when nothing is happening; tamed ones take a `scene/companion` intent and follow, hold, or fight their owner's fight. The driver then walks, runs, faces and strikes on the scene entity, ground-snapped and slid against solids.
-- `CreatureDriverConfig` (interface): interface CreatureDriverConfig — Knobs for a creature driver: how far creatures see, how long they remember, and what blocks them.
-- `CreatureDriverState` (interface): interface CreatureDriverState — Per-creature runtime: where home is, where it is grazing toward, strike cooldown. Plain data.
-- `CreatureMind` (type): type CreatureMind = | { kind: "wild"; temperament: TemperamentConfig } | { kind: "tamed"; intent: CompanionIntent } | { kind: "still" } — What drives a creature this tick: its own temperament (wild), its owner's standing order (tamed, from `scene/companion`), or nothing at all (knocked out, ridden, dead).
-- `CreatureStep` (interface): interface CreatureStep — What the creature decided and did this tick, for a HUD line, an animation or a debug overlay.
-- `createCreatureDriver` (function): function createCreatureDriver(config: CreatureDriverConfig = {}): CreatureDriver — Drive wild and tamed creatures each tick: temperament for wild ones, follow and stay for tames, bites within body reach, veering around obstacles.
-
 ## @jgengine/core/ai/crowd
 
 - `CrowdField` (interface): interface CrowdField { enter(point: NavPoint): void; leave(point: NavPoint): void; count(point: NavPoint): number; cellCount(col: number, row: number): number; penalty(weight?: number): (col: number, row: number) => number; reset(): void } — ⚠ undocumented
@@ -159,13 +123,6 @@
 - `FlockStepperState` (interface): interface FlockStepperState — Sizing of a {@link FlockStepper}.
 - `FlockVec3` (type): type FlockVec3 = readonly [number, number, number] — ⚠ undocumented
 
-## @jgengine/core/ai/groupAssist
-
-- `AssistMember` (interface): interface AssistMember { id: string; groupId: string; table: ThreatTable } — ⚠ undocumented
-- `AssistNetwork` (interface): interface AssistNetwork { register(member: AssistMember): void; remove(memberId: string): void; memberIds(groupId?: string): string[]; assistersOf(memberId: string): string[]; addThreat(memberId: string, sourceId: string, amount: number): string[]; snapshot(): Ass… — ⚠ undocumented
-- `AssistNetworkConfig` (interface): interface AssistNetworkConfig { radius?: number; shareFraction?: number; distanceBetween?: (a: string, b: string) => number } — ⚠ undocumented
-- `AssistNetworkState` (interface): interface AssistNetworkState — Plain JSON membership of an {@link AssistNetwork}, in registration order; threat lives in each member's own table.
-
 ## @jgengine/core/ai/interestScheduler
 
 - `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
@@ -191,25 +148,6 @@
 - `StationJob` (interface): interface StationJob — A unit of work at a station that a worker walks to and works off.
 - `WorkerState` (interface): interface WorkerState { jobId: string | null; phase: JobPhase; worked: number; cycles: number } — ⚠ undocumented
 
-## @jgengine/core/ai/laneSelect
-
-- `LaneCandidate` (interface): interface LaneCandidate<TId extends string = string> { id: TId; cost: number } — ⚠ undocumented
-- `PickLaneOptions` (interface): interface PickLaneOptions<TId extends string = string> { current?: TId | null; stickiness?: number; tieEpsilon?: number; rng?: () => number } — ⚠ undocumented
-
-## @jgengine/core/ai/mobBrain
-
-- `MobBrain` (interface): interface MobBrain — The wander → aggro → chase → engage → leash-evade loop every MMO-shaped game hand-rolls, composed over `ai/threat`. The brain decides intent; the game executes it (`moveToward`, ground-snap, facing, swings) and routes damage into `addThreat`. Pack aggro is game-side: call `addThreat` on nearby packmates' brains when one aggros.
-- `MobBrainConfig` (interface): interface MobBrainConfig { aggroRadius: number; attackRange: number; leashDistance: number; wander?: MobWanderConfig | false; evadeSpeedScale?: number; stickiness?: number; homeArriveRadius?: number; threat?: ThreatTableConfig } — ⚠ undocumented
-- `MobBrainDeps` (interface): interface MobBrainDeps { home: MobVec3; position(): MobVec3 | null; targetPosition(targetId: string): MobVec3 | null; candidates(): readonly string[]; rng?: () => number } — ⚠ undocumented
-- `MobBrainMode` (type): type MobBrainMode = "idle" | "wander" | "chase" | "engage" | "evade" — ⚠ undocumented
-- `MobBrainStep` (interface): interface MobBrainStep { mode: MobBrainMode; targetId: string | null; moveTo: MobVec3 | null; speedScale: number; inAttackRange: boolean; arrivedHome: boolean } — ⚠ undocumented
-- `MobVec3` (type): type MobVec3 = readonly [number, number, number] — ⚠ undocumented
-- `MobWanderConfig` (interface): interface MobWanderConfig { radius: number; intervalSeconds?: number; speedScale?: number; arriveRadius?: number } — ⚠ undocumented
-
-## @jgengine/core/ai/mobBrainGraph
-
-- `mobBrainGraph` (const): const mobBrainGraph: DecisionGraph — Graph-shaped description of the mob brain's idle, wander, chase, engage, and evade decisions.
-
 ## @jgengine/core/ai/phaseLadder
 
 - `PhaseClockState` (interface): interface PhaseClockState — Serializable phase clock: which phase holds, how long it has held, and the tell still on screen.
@@ -218,18 +156,6 @@
 - `PhaseTell` (interface): interface PhaseTell — The warning a phase change gives, and how long it stays up.
 - `advancePhase` (function): function advancePhase<P extends PhaseLike>(phases: readonly P[], clock: PhaseClockState, fraction: number, dt: number): PhaseStep<P> — Advance the phase clock by `dt` at a fraction of the ladder's value and return the phase in effect.
 - `createPhaseClock` (function): function createPhaseClock(phases: readonly PhaseLike[]): PhaseClockState — Fresh phase clock for a phase list, opening in phase 0 with no tell showing.
-
-## @jgengine/core/ai/populationDirector
-
-- `PopulationCensus` (type): type PopulationCensus = Record<string, Record<string, number>> — Live census of alive counts keyed `region -> species -> count`, used to reconcile the director to reality.
-- `PopulationDirector` (interface): interface PopulationDirector — Stateful ambient population manager for one world; drive it with `tick` and lifecycle notifications.
-- `PopulationDirectorConfig` (interface): interface PopulationDirectorConfig — Full ambient-population configuration: per-region species budgets plus global refill limits and PRNG seed.
-- `PopulationDirectorState` (interface): interface PopulationDirectorState — Opaque, JSON-serializable persistence for a {@link PopulationDirector}. Round-trip it through `snapshot`/`hydrate`; never read or mutate the fields directly.
-- `PopulationRegionConfig` (interface): interface PopulationRegionConfig — Ambient population budget for a single region: its species ceilings, refill timing, and spawn geometry.
-- `PopulationSpawnRequest` (interface): interface PopulationSpawnRequest — A single ambient spawn the game should realise, refilling a region toward its species caps.
-- `PopulationSpeciesEntry` (interface): interface PopulationSpeciesEntry — One species that ambiently populates a region: how heavily it is favoured and its alive ceiling.
-- `PopulationTickContext` (interface): interface PopulationTickContext — Per-call spawn-point selection hook, letting a game apply bias (distance from players, etc.) at tick time.
-- `createPopulationDirector` (function): function createPopulationDirector(config: PopulationDirectorConfig): PopulationDirector — Ambient open-world population director. Holds a target creature population per region and refills it over time, distinct from wave/horde spawning: instead of a budget draining down a wave, each region has per-species caps and a timed respawn queue. Removing a creature frees a slot; after a respawn delay `tick` emits weighted spawn requests (bounded per tick) that refill toward the caps without ever exceeding them. Species are chosen through a persisted, serializable {@link RandomSeed} cursor, so the same seed and the same lifecycle events always yield the same requests. Regions are independent, spawn points are optional, and the whole state round-trips through `snapshot`/`hydrate`.
 
 ## @jgengine/core/ai/pursuit
 
@@ -249,22 +175,6 @@
 - `RvoSnapshot` (interface): interface RvoSnapshot — Serializable crowd state: tuning plus every agent's position, velocity and footprint.
 - `RvoTunables` (interface): interface RvoTunables — Serializable avoidance tuning, retunable in play through {@link RvoCrowd.retune}.
 - `createRvoCrowd` (function): function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd — Reciprocal velocity obstacle avoidance over circular agents. Each nearby pair contributes one or two half-plane constraints on the agent's velocity, and a small linear program picks the velocity closest to the preferred one that satisfies them all. The neighbour search is a uniform grid capped at `maxNeighbors`, so a tick costs the same for 50 agents and 5,000.
-
-## @jgengine/core/ai/searchBeat
-
-- `SearchBeatArea` (interface): interface SearchBeatArea — The circle being searched. `AlertSearchArea` from `ai/alertLevel` fits.
-- `SearchBeatState` (interface): interface SearchBeatState — A searcher's place on its beat; one serializable number, `null` until the first step picks one.
-- `SearchBeatTuning` (interface): interface SearchBeatTuning — How a searcher walks its beat.
-- `createSearchBeat` (function): function createSearchBeat(): SearchBeatState — A fresh beat; the first step picks a random bearing.
-- `searchBeatStep` (function): function searchBeatStep(state: SearchBeatState, position: readonly [number, number], area: SearchBeatArea, tuning: SearchBeatTuning, rng: () => number): readonly [number, number] | null — One step of walking a beat inside a search circle instead of standing on its centre: returns the XZ waypoint to move toward, or `null` on the step the searcher reaches it and turns to the next. Mutates `state`; draws only from the injected `rng`.
-
-## @jgengine/core/ai/tacticalQueries
-
-- `ScoredPosition` (interface): interface ScoredPosition — A candidate position with its deterministic weighted tactical score.
-- `TacticalPositionEvaluators` (interface): interface TacticalPositionEvaluators — Functions that score one candidate position; higher values are preferred.
-- `TacticalPositionWeights` (interface): interface TacticalPositionWeights — Weights and a hard bound for tactical candidate scoring.
-- `coverPoints` (function): function coverPoints(mesh: NavMeshData, threatPos: Vec3, losBlocked: (a: Vec3, b: Vec3) => boolean): Vec3[] — Returns boundary locations that are hidden from a threat.
-- `scorePositions` (function): function scorePositions(points: readonly Vec3[], evaluators: TacticalPositionEvaluators, weights: TacticalPositionWeights = {}): ScoredPosition[] — Score positions and retain at most `maxCandidates`, ordered highest score first.
 
 ## @jgengine/core/ai/targetAcquisition
 
@@ -371,13 +281,6 @@
 - `SkinnedInstances` (function): function SkinnedInstances(props: SkinnedInstancesProps): JSX.Element — Renders many animated copies of one rigged model in a single instanced draw per material: the rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs blending, IK or attachments stays an entity model.
 - `SkinnedInstancesProps` (interface): interface SkinnedInstancesProps — Props for {@link SkinnedInstances}.
 - `skinnedInstancesDraw` (function): function skinnedInstancesDraw(getProps: () => SkinnedInstancesProps): EngineDraw — Draw-side form of {@link SkinnedInstances}: loads the rig through the shared per-url GLTF cache, bakes its clips to the bone texture once per (url, clips, once, fps) signature, and rebuilds the instanced mesh when capacity changes or rewrites its buffers when the instance list does — the same boundaries the old memos and layout effect had.
-
-## @jgengine/core/anim/actionLayer
-
-- `ACTION_REST_STATE` (const): const ACTION_REST_STATE: "rest" — State id of an action layer's resting state.
-- `ActionLayerInput` (interface): interface ActionLayerInput — A masked, optionally additive overlay layer: a resting clip plus one one-shot state per action.
-- `actionLayer` (function): function actionLayer(input: ActionLayerInput): AnimLayer — One overlay layer from plain data: a resting state plus a one-shot state per action, each joined to the rest by a consumed-trigger transition and returning on `exitTime`. Aim, reload, wave and hit reactions are the same shape, so they are one builder instead of a hand-written state machine per game. The layer is masked by bone prefix, and `additive: true` makes it a recoil/breathing overlay on top of the base pose rather than a replacement.
-- `withActionLayers` (function): function withActionLayers(graph: AnimGraph, layers: readonly ActionLayerInput[]): AnimGraph — A graph plus overlay layers: the base layers keep their ids and order, and each overlay is appended. Duplicate layer ids are rejected rather than silently shadowing, because the shell keys its mixer actions by layer id.
 
 ## @jgengine/core/anim/animGraph
 
@@ -877,15 +780,6 @@
 - `createSpeechChannel` (function): function createSpeechChannel(backend: { synth: SpeechSynthesisLike; Utterance: UtteranceCtor } | null = resolveSynth()): SpeechChannel — Speech for radio DJs, callers and announcers. Lines queue on the synthesiser; `stop` cancels the queue. Without a synthesiser or a single voice (headless Chrome, tests, some Linux browsers) a line is counted as dropped and nothing throws, so the game's on-screen text is the fallback.
 - `pickSpeechVoice` (function): function pickSpeechVoice(voices: readonly SpeechVoiceLike[], options: SpeakOptions = {}): SpeechVoiceLike | null — Pick a system voice: a name hint wins, else the voice key hashes to a stable choice among the language's voices.
 
-## @jgengine/core/audio/stepCadence
-
-- `StepCadenceConfig` (interface): interface StepCadenceConfig — Distance-driven footstep cadence. Pure state-in/state-out: feed it how far a mover travelled this frame and it tells you how many steps landed, so foley stays locked to ground distance instead of a wall-clock timer that desyncs when speed changes.
-- `StepCadenceInput` (interface): interface StepCadenceInput — What the mover did this advance: ground distance covered, whether feet are planting, and the stride multiplier.
-- `StepCadenceResult` (interface): interface StepCadenceResult — Outcome of one advance: the next state plus how many steps landed and which foot led.
-- `StepCadenceState` (interface): interface StepCadenceState — Cadence bookkeeping between advances — banked distance, last moving state, and the step count whose parity is the foot.
-- `advanceStepCadence` (function): function advanceStepCadence(state: StepCadenceState, input: StepCadenceInput, config: StepCadenceConfig): StepCadenceResult — Bank this advance's distance and report the steps it completed. Pure — same state and input always give the same result, so footstep timing is testable headless and replays identically.
-- `createStepCadenceState` (function): function createStepCadenceState(): StepCadenceState — Fresh cadence state for a mover that is standing still.
-
 ## @jgengine/core/audio/synth
 
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
@@ -928,17 +822,6 @@
 - `InstancedBuildings` (function): function InstancedBuildings(props: InstancedBuildingsProps): JSX.Element — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented · used by `instancedBuildingsDraw`: The draw-side form of {@link InstancedBuildings}: buckets the placements once per prop-identity change, then mounts one draw per box family …
 - `instancedBuildingsDraw` (function): function instancedBuildingsDraw(getProps: () => InstancedBuildingsProps): EngineDraw — The draw-side form of {@link InstancedBuildings}: buckets the placements once per prop-identity change, then mounts one draw per box family and per kit model URL. Children hang under an owned identity group so the scoped parent's transform applies exactly like the old `<group>` did.
-
-## @jgengine/core/buildings/InteriorDressing.draw
-
-- `DEFAULT_INTERIOR_SURFACES` (const): const DEFAULT_INTERIOR_SURFACES: InteriorDressingSurfaces — Plain defaults: grey paint, dull steel, a warm lens.
-- `InteriorDressing` (function): function InteriorDressing(props: InteriorDressingProps): JSX.Element — The drawn side of a planned interior: trims, pipes, fittings and lamp housings as static instance batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with {@link PracticalLights} for the lamps' light.
-- `InteriorDressingProps` (interface): interface InteriorDressingProps — Props for {@link InteriorDressing}.
-- `InteriorDressingSurfaces` (interface): interface InteriorDressingSurfaces — The surface each dressing family wears. Any family left out falls back to a plain painted default.
-- `PracticalLights` (function): function PracticalLights(props: PracticalLightsProps): JSX.Element — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
-- `PracticalLightsProps` (interface): interface PracticalLightsProps — Props for {@link PracticalLights}.
-- `interiorDressingDraw` (function): function interiorDressingDraw(getProps: () => InteriorDressingProps): EngineDraw — The drawn side of a planned interior as one draw: trims, pipes, fittings and lamp housings as static instance batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with {@link practicalLightsDraw} for the lamps' light.
-- `practicalLightsDraw` (function): function practicalLightsDraw(getProps: () => PracticalLightsProps): EngineDraw — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
 
 ## @jgengine/core/buildings/buildingGenerator
 
@@ -1017,20 +900,6 @@
 - `generateBuilding` (function): function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding — Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorative part rolled from `probabilities` and every part tagged with a `kit` slot the renderer binds to a model (see `world/buildingKit`). Deterministic from `seed`.
 - `resolveBuildingProbabilities` (function): function resolveBuildingProbabilities(style: BuildingStyle = DEFAULT_BUILDING_STYLE, overrides?: Partial<BuildingProbabilities>): Partial<BuildingProbabilities> — Style facade probabilities with explicit overrides applied on top.
 - `resolveBuildingSurface` (function): function resolveBuildingSurface(surface: BuildingSurface): BuildingSurfaceMaterial — Normalises a surface to its material form so a renderer reads one shape.
-
-## @jgengine/core/buildings/massing
-
-- `MASSING_COMPOSITIONS` (const): const MASSING_COMPOSITIONS: readonly MassingComposition[] — ⚠ undocumented
-- `MASSING_PROFILES` (const): const MASSING_PROFILES: readonly MassingProfile[] — ⚠ undocumented
-- `MassingBody` (type): type MassingBody = { x: number; y: number; z: number; w: number; h: number; d: number; ry?: number; facade?: boolean; kind?: "box" | "capsule"; role?: MassingBodyRole; branch?: boolean; crown?: boolean; } — ⚠ undocumented
-- `MassingBodyRole` (type): type MassingBodyRole = "mass" | "core" | "transfer" — ⚠ undocumented
-- `MassingComposition` (type): type MassingComposition = | "bar" | "split" | "cluster" | "stack" | "court" | "bridge" | "ring" | "capsule" | "megastructure" — ⚠ undocumented
-- `MassingProfile` (type): type MassingProfile = "straight" | "stepped" | "tapered" | "top-heavy" | "offset" | "twisted" — ⚠ undocumented
-- `MassingSpec` (type): type MassingSpec = { seed: string; width: number; height: number; depth: number; floorHeight: number; baySpacing: number; pilotis: number; podiumHeight: number; cores: number; terraces: number; cantilever: number; voids: number; taper: number; articulation: number; crown: number; moduleDensity: numb… — ⚠ undocumented
-- `composeMassing` (function): function composeMassing(b: MassingSpec): MassingBody[] — ⚠ undocumented
-- `isVillageMassing` (const): const isVillageMassing: (spec: Pick<MassingSpec, "height" | "composition" | "articulation" | "moduleDensity">) => boolean — ⚠ undocumented
-- `massingBase` (const): const massingBase: (spec: Pick<MassingSpec, "height" | "pilotis">, cap?: number) => number — ⚠ undocumented
-- `massingFloorCount` (function): function massingFloorCount(spec: Pick<MassingSpec, "pilotis" | "height" | "floorHeight">): number — ⚠ undocumented
 
 ## @jgengine/core/camera/GameCameraRig.draw
 
@@ -1353,6 +1222,30 @@
 - `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
 - `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
 - `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
+
+## @jgengine/core/data/definedOnly
+
+- `DefinedOnly` (type): type DefinedOnly<T extends object> = { [K in keyof T as undefined extends T[K] ? never : K]: T[K]; } & { [K in keyof T as undefined extends T[K] ? K : never]?: Exclude<T[K], undefined>; } — `T` after dropping its undefined fields: a field that may be `undefined` becomes optional and never `undefined`; a field that is always defined stays required.
+- `definedOnly` (function): function definedOnly<T extends object>(value: T): DefinedOnly<T> — `value` without its undefined fields, so `{ ...defaults, ...definedOnly(overrides) }` never erases a default with an explicit `undefined`, and a record built from optional inputs can be written where an optional field must be absent rather than `undefined`.
+
+## @jgengine/core/data/devProxy
+
+- `DEFAULT_DEV_PROXY_PREFIX` (const): const DEFAULT_DEV_PROXY_PREFIX: "/proxy" — ⚠ undocumented
+- `DevProxyTable` (interface): interface DevProxyTable { readonly [routeName: string]: string } — ⚠ undocumented
+- `ProxiedUrlOptions` (interface): interface ProxiedUrlOptions { dev?: boolean; table?: DevProxyTable; prefix?: string } — ⚠ undocumented
+- `parseDevProxyTable` (function): function parseDevProxyTable(raw: string | undefined): DevProxyTable — ⚠ undocumented
+- `proxiedUrl` (function): function proxiedUrl(target: string, options: ProxiedUrlOptions = {}): string — ⚠ undocumented
+
+## @jgengine/core/data/untyped
+
+- `isFiniteNumber` (function): function isFiniteNumber(value: unknown): value is number — True for a number that is not NaN or infinite.
+- `isRecord` (function): function isRecord(value: unknown): value is Readonly<Record<string, unknown>> — Reading a value whose shape is not known yet: parsed JSON, a save from an older build, a message off the wire. Narrow it with these instead of casting, read its fields with brackets, and build the typed value from the pieces that checked out.
+- `typedRecord` (function): function typedRecord<T>(value: unknown, entry: (item: unknown) => item is T): Record<string, T> | null — `value` as a map whose every entry passes `entry`, or `null` when it is not an object or any entry fails. A saved `{ id: score }` table reads back as `typedRecord(saved, isFiniteNumber)`.
+
+## @jgengine/core/data/withField
+
+- `OptionalKey` (type): type OptionalKey<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : never }[keyof T] — The keys of `T` that may be left out.
+- `withField` (function): function withField<T extends object, K extends OptionalKey<T>>(row: T, key: K, value: T[K] | undefined): T — A copy of `row` with the optional field `key` set to `value`, or left out when `value` is `undefined`. An editor that clears a field this way stores no `key: undefined`, so the saved document reads the same as one that never had the field.
 
 ## @jgengine/core/environment/EnvironmentScene.draw
 
@@ -2257,21 +2150,6 @@
 - `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
 - `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string | undefined; style?: CSSProperties; }): JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
 
-## @jgengine/core/input/lookChannel
-
-- `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number; snap… — ⚠ undocumented
-- `LookChannelOptions` (interface): interface LookChannelOptions { sensitivity: number; maxVerticalOffset?: number } — ⚠ undocumented
-- `LookChannelState` (interface): interface LookChannelState — Plain JSON state of a {@link LookChannel}: the pending pixel deltas and the committed pose.
-- `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
-- `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
-
-## @jgengine/core/input/mouseLook.view
-
-- `MouseLookAim` (interface): interface MouseLookAim { yaw: number; pitch: number } — ⚠ undocumented
-- `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
-- `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `state()` from `onTick`/`useFrame`, dispose on unmount; `setState` puts a saved aim back.
-- `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
-
 ## @jgengine/core/input/pointer
 
 - `DragCapture` (interface): interface DragCapture — Renderer-agnostic drag-capture / pull-vector state machine for slingshot-style aiming, drawback abilities, and similar gestures.
@@ -2754,219 +2632,6 @@
 - `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
 - `variantBand` (function): function variantBand(boundary: number, hysteresis: number, ratio: number): number — The hysteresis band around one switch boundary: the fixed metres plus the boundary's share.
 
-## @jgengine/core/map/LightBeam.draw
-
-- `LightBeam` (function): function LightBeam(props: LightBeamProps): null — UI mount for {@link lightBeamDraw} while parents still render through the Canvas.
-- `LightBeamProps` (interface): interface LightBeamProps — {@link LightBeam} look.
-- `lightBeamDraw` (function): function lightBeamDraw({ height = 80, radius = 0.25, color = "#cfe8ff", opacity = 0.35 }: LightBeamProps): EngineDraw — A glowing column of light rising from where it is placed, for finding something from afar: a fallen body, a supply crate, an objective. Additive and unlit, so it reads by day and glows at night.
-
-## @jgengine/core/map/MapMarkerBeacons.draw
-
-- `MapMarkerBeacons` (function): function MapMarkerBeacons(props: MapMarkerBeaconsProps): null — ⚠ undocumented
-- `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps — Props for `MapMarkerBeacons`: the markers to raise as world beacons, kind styles and beacon height.
-- `mapMarkerBeaconsDraw` (function): function mapMarkerBeaconsDraw({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): EngineDraw — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
-
-## @jgengine/core/map/fastTravel
-
-- `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
-- `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
-- `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
-- `TravelPointDef` (interface): interface TravelPointDef<TMeta = unknown> — A fast-travel destination the game defines. Discovery is tracked separately.
-- `TravelPointView` (interface): interface TravelPointView<TMeta = unknown> extends TravelPointDef<TMeta> — A destination plus its discovery state (and distance from a query origin, when given).
-- `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
-
-## @jgengine/core/map/fastTravel.view
-
-- `FastTravelMenu` (function): function FastTravelMenu<TMeta = unknown>({ network, from, onTravel, currentId, title = "Fast Travel", emptyLabel = "No destinations discovered yet.", onClose, className, style, }: FastTravelMenuProps<TMeta>): ReactNode — Fast-travel menu — the discovered-destinations list players pick from: points grouped by region, distance-sorted from `from`, each showing icon, name, and distance, with a header counting discovered vs. total. Selecting a row calls `onTravel`; the current location is flagged and not travelable. Bind it to a `createFastTravelNetwork`.
-- `FastTravelMenuProps` (interface): interface FastTravelMenuProps<TMeta = unknown> — Props for {@link FastTravelMenu}.
-- `useFastTravel` (function): function useFastTravel<TMeta = unknown>(network: FastTravelNetwork<TMeta>): FastTravelNetwork<TMeta> — Subscribe a component to a fast-travel network's discovery changes. Returns the network unchanged; the hook only forces a re-render when a point is discovered or the network is restored, so callers can read `destinations`/`list` in render.
-
-## @jgengine/core/map/fog
-
-- `FogBounds` (interface): interface FogBounds — World-XZ rectangle a fog field covers.
-- `FogCells` (interface): interface FogCells — A fog field's grid: size, origin, cell size and row-major revealed flags.
-- `FogConfig` (interface): interface FogConfig — Fog field settings: bounds, cell size and the cells revealed at the start.
-- `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
-- `createFogField` (function): function createFogField(config: FogConfig): FogField — Create a fog-of-war field over `bounds`; reveal cells as the player explores. Throws on a non-positive cell size.
-
-## @jgengine/core/map/fogOverlay.view
-
-- `FogCellRect` (interface): interface FogCellRect — A fog cell's rectangle in map pixels.
-- `FogPaintSurface` (interface): interface FogPaintSurface — The canvas-2D calls the fog overlay paints with, so tests can pass a fake.
-
-## @jgengine/core/map/map.view
-
-- `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
-- `CompassProps` (interface): interface CompassProps — Props for `Compass`: the tracked facing yaw, optional centre and markers, strip width and field of view.
-- `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, tool = "pan", onStrokeComplete, drawTone = "info", drawWidth = 3, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Switch `tool` to `"draw"` to freehand-draw strokes committed to `onStrokeComplete` (wire to `createAnnotationLayer`). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
-- `FullscreenMapProps` (interface): interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> — Props for {@link FullscreenMap}.
-- `MapBounds` (interface): interface MapBounds — World-XZ rectangle a world map shows.
-- `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
-- `MapLegendProps` (interface): interface MapLegendProps — Props for {@link MapLegend}.
-- `MapViewport` (interface): interface MapViewport — Pan/zoom transform applied to a {@link WorldMapSurface}'s content group.
-- `MarkerAccess` (interface): interface MarkerAccess<TMarker extends MarkerView> { subscribe: (listener: () => void) => () => void; getSnapshot: () => readonly TMarker[]; getServerSnapshot: () => readonly TMarker[] } — ⚠ undocumented · used by `markerAccess`: Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
-- `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, style, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads static marker views, an external marker source, or a native `MarkerSet`; supply your own `kindStyles` palette to reskin. Does not require `GameProvider`.
-- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers: markerSource = NO_CHROME_MARKERS, markerColor = "#e2e8f0", markerRadius = 5, className, handle, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
-- `MinimapChromeHandle` (interface): interface MinimapChromeHandle — Moves an already-drawn `MinimapChrome`'s markers in place. `place` writes the same positions, rotations and visibility a render with these props would, to markers with the ids the chrome last rendered; markers it has not rendered yet need a render first.
-- `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
-- `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
-- `MinimapPanel` (function): function MinimapPanel({ zoneLabel, clock, showCompass = true, compassProps, headerClassName, zoneLabelClassName, clockClassName, compassClassName, children, ...minimapProps }: MinimapPanelProps): ReactNode — Composed circular-minimap chrome: optional zone-label + clock header above the `Minimap`, optional `Compass` strip below. Purely a wiring layer over the existing primitives — the game supplies the zone name and clock text, this only places them; omit either slot and the header disappears.
-- `MinimapPanelProps` (interface): interface MinimapPanelProps extends MinimapProps — Props for `MinimapPanel` — all `MinimapProps` plus the zone-label/clock header and compass slots.
-- `MinimapProps` (interface): interface MinimapProps — Props for `Minimap`: markers, centre, world radius, fog, size, terrain background and look.
-- `MinimapTrack` (function): function MinimapTrack({ spans = [], pips = [], width = "100%", height = 12, railColor = "rgba(255,255,255,0.10)", className, style, children, }: MinimapTrackProps): ReactNode — Horizontal linear track minimap — a rounded progress rail with colored zone `spans` and gate/exit/player `pips` positioned by 0..1 fraction. The structural counterpart to the radial {@link Minimap} for corridor/route games: fractions are supplied by the caller (via core `trackFraction`), so it reads no store and stays presentation-only, sharing chrome with the radial minimap.
-- `MinimapTrackPip` (interface): interface MinimapTrackPip — A point marker on the {@link MinimapTrack} rail at a 0..1 fraction (e.g. a gate, the exit, or the player).
-- `MinimapTrackProps` (interface): interface MinimapTrackProps — Props for {@link MinimapTrack}.
-- `MinimapTrackSpan` (interface): interface MinimapTrackSpan — A colored span across the {@link MinimapTrack} rail, given by 0..1 `start`/`end` fractions (e.g. from core `trackFraction`).
-- `WaypointArrow` (function): function WaypointArrow({ relative, distance, label, formatDistance = (value) => `${Math.round(value)}m`, size = 44, color = "#f59e0b", className, style, }: WaypointArrowProps): ReactNode — On-screen guide arrow to the tracked waypoint — a HUD compass needle rotated by the facing-relative bearing, with an optional label and distance readout. Pair with `WaypointStore.guidance(playerXZ, facingYaw)`.
-- `WaypointArrowProps` (interface): interface WaypointArrowProps — Props for {@link WaypointArrow}.
-- `WorldMap` (function): function WorldMap({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, className, title = "World Map", onClose, }: WorldMapProps): ReactNode — Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the player. Rectangular linear projection over the supplied world `bounds`. Framed panel wrapper over {@link WorldMapSurface}.
-- `WorldMapProps` (interface): interface WorldMapProps — Props for {@link WorldMap}: markers, world bounds, the player and facing, fog, background and layers.
-- `WorldMapSurface` (function): function WorldMapSurface({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, canvasWidth, canvasHeight, viewport = IDENTITY_VIEWPORT, style, }: WorldMapSurfaceProps): ReactNode — The bare top-down map `<svg>` shared by {@link WorldMap} (framed panel) and {@link FullscreenMap} (pan/zoom overlay): baked terrain background, fog, map layers, markers with labels, and the player arrow, drawn under an optional viewport transform. Rectangular linear projection over the world `bounds`.
-- `WorldMapSurfaceProps` (interface): interface WorldMapSurfaceProps — Props for {@link WorldMapSurface}.
-- `markerAccess` (function): function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView> — Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
-- `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — Re-render a component when a fog field reveals cells; returns its current cells.
-- `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
-
-## @jgengine/core/map/mapAnnotations
-
-- `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
-- `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
-- `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
-- `MapNote` (interface): interface MapNote — A text note pinned at a world point.
-- `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
-- `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
-- `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
-
-## @jgengine/core/map/mapLayers
-
-- `MAP_LAYER_TONE_COLORS` (const): const MAP_LAYER_TONE_COLORS: Record<MapLayerTone, string> — The colour each {@link MapLayerTone} draws with.
-- `MapCellStates` (interface): interface MapCellStates — Sparse per-cell tones drawn on the map over a grid.
-- `MapLayerTone` (type): type MapLayerTone = "danger" | "warning" | "info" | "safe" | "neutral" — Colour role of a map layer: danger, warning, info, safe or neutral.
-- `MapRoute` (interface): interface MapRoute — A polyline drawn on the map, optionally dashed as a forecast.
-- `MapXZ` (type): type MapXZ = readonly [number, number] — A world `[x, z]` point on the map.
-- `MapZone` (interface): interface MapZone — A tinted area drawn on the map, optionally dashed as a preview.
-- `MapZoneShape` (type): type MapZoneShape = | { kind: "circle"; center: MapXZ; radius: number } | { kind: "rect"; center: MapXZ; w: number; d: number; rotate?: number } | { kind: "polygon"; points: readonly MapXZ[] } — A map zone's shape: circle, rotated rectangle or polygon.
-- `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — The colour for a tone; neutral when none is given.
-- `pointInMapZone` (function): function pointInMapZone(zone: MapZoneShape, x: number, z: number): boolean — Renderer-free overlay data for map surfaces (#285.1-2): zones with live + forecast states, route polylines, and per-cell status heatmaps. `@jgengine/core/map/map.view`'s `Minimap`/`WorldMap` take these straight in; `pointInMapZone` answers gameplay queries against the same data, so the HUD and the rules can never disagree about where the storm is.
-
-## @jgengine/core/map/markers
-
-- `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — Built-in marker kinds (player, ally, objective, location, loot, enemy, ...) with colour, glyph and priority.
-- `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
-- `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
-- `MarkerInput` (interface): interface MarkerInput<TMeta = unknown> — A marker to add: kind, position and optional id, label, heading, owner, expiry and metadata.
-- `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
-- `MarkerPosition` (type): type MarkerPosition = readonly [number, number, number] — A marker's world `[x, y, z]` position.
-- `MarkerQuery` (interface): interface MarkerQuery — Filter for {@link MarkerSet} queries: kind, owner, and a radius around a point.
-- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — A live, subscribable set of map markers: add, remove, query and prune expired ones.
-- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching the external-store contract (`useSyncExternalStore`).
-- `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
-- `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
-- `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — Create an empty {@link MarkerSet}; `now` drives marker expiry.
-- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so the UI reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
-- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — The style for a marker kind, falling back to a plain dot for unknown kinds.
-
-## @jgengine/core/map/minimap
-
-- `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — One of the eight compass points.
-- `MinimapPoint` (interface): interface MinimapPoint — A world point projected onto a minimap: pixel position, distance and whether it falls inside.
-- `MinimapView` (interface): interface MinimapView — What a minimap shows: centre, world radius, pixel size and rotation.
-- `WorldXZ` (type): type WorldXZ = readonly [number, number] — A world `[x, z]` point.
-- `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — The nearest compass point to a bearing in radians.
-- `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
-- `compassBearing` (function): function compassBearing(from: WorldXZ, to: WorldXZ): number — Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another. Feeds both the minimap direction and the compass strip.
-- `headingToBearing` (function): function headingToBearing(yaw: number): number — Bearing of an entity facing direction given its `rotationY` (yaw) in radians.
-- `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
-- `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
-- `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
-
-## @jgengine/core/map/minimapBake
-
-- `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
-- `MinimapBake` (interface): interface MinimapBake — A baked minimap image: RGBA pixels plus the world bounds they span.
-- `MinimapBakeBounds` (interface): interface MinimapBakeBounds — Deterministic minimap terrain bake (#1036): rasterize an authored world's terrain (plus optional biome zones and water) into a top-down RGBA image and a matching world-bounds rectangle, then encode it as a PNG data URI. The editor runs this as a bake action and stores the result on the scene document; runtime feeds it straight into the existing `Minimap` / `WorldMap` `background` + `mapBounds` props — no new runtime render path, and the same authored world always bakes the same image (safe for verify/CI). Pure: no canvas, no DOM, `core` still imports nothing external.
-- `MinimapBakeOptions` (interface): interface MinimapBakeOptions — Options for {@link bakeMinimapImage}.
-- `MinimapBakePalette` (interface): interface MinimapBakePalette — The height→color ramp and water color used by the bake.
-- `MinimapBakeSource` (interface): interface MinimapBakeSource — The authored world a bake reads — a height sampler, its bounds, and optional zones/water.
-- `MinimapBakeZone` (interface): interface MinimapBakeZone — One biome/region tint painted over the terrain shade where the ground falls inside its polygon.
-- `bakeMinimapBackground` (function): function bakeMinimapBackground(source: MinimapBakeSource, options: MinimapBakeOptions = {}): { background: string; mapBounds: MinimapBakeBounds } — One-call convenience: rasterize a source and return `{ background, mapBounds }` for a minimap.
-- `bakeMinimapImage` (function): function bakeMinimapImage(source: MinimapBakeSource, options: MinimapBakeOptions = {}): MinimapBake — Rasterizes a top-down terrain image: height maps onto a low→high color ramp (normalized over the sampled height range), slope darkens the shade, water fills below `waterLevel`, and each zone polygon tints the ground it covers. Deterministic for a fixed source. The bounds are preserved so a player-centered minimap pans the image correctly.
-- `encodeBakePng` (function): function encodeBakePng(bake: MinimapBake): Uint8Array — Encodes an RGBA bake to raw PNG bytes (pure; stored DEFLATE, valid for any decoder).
-- `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
-
-## @jgengine/core/map/minimapTrack
-
-- `TrackAxis` (interface): interface TrackAxis — A world-space segment defining a linear "track" minimap — points are projected onto the `from`→`to` axis.
-- `trackFraction` (function): function trackFraction(point: WorldXZ | readonly [number, number, number], axis: TrackAxis): number — Project a world point onto the `from`→`to` segment of `axis` and return the clamped 0..1 fraction of how far along the track it lies (0 at `from`, 1 at `to`). The linear analogue of `projectToMinimap` — feeds a horizontal corridor/route progress rail. Accepts XZ (`[x, z]`) or XYZ (`[x, y, z]`) points (index 0 = x, index 2 when length 3 else index 1 = z). A zero-length axis returns 0.
-
-## @jgengine/core/map/ping
-
-- `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
-- `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — Feed action pings ride to the rest of the party.
-- `PingCategory` (type): type PingCategory = string — A ping category id, such as `enemy`, `loot`, `location` or `danger`.
-- `PingCategoryDef` (interface): interface PingCategoryDef — A ping category: the marker kind it drops, its label and its spoken callout.
-- `PingClassifyDeps` (interface): interface PingClassifyDeps — Lookups `classifyPing` uses: an entity's role and an object's ping category.
-- `PingClassifyOptions` (interface): interface PingClassifyOptions — Which roles count as hostile and which category each kind of hit maps to.
-- `PingFeedSink` (interface): interface PingFeedSink — Where pings are pushed for other players, such as the party feed.
-- `PingParty` (interface): interface PingParty — Who shares a player's pings: their party members.
-- `PingPayload` (interface): interface PingPayload — A ping as broadcast: id, sender, category, position, the pinged entity and recipients.
-- `PingSystem` (interface): interface PingSystem — Classify, build and broadcast pings as map markers shared with the party.
-- `PingSystemDeps` (interface): interface PingSystemDeps — What a {@link PingSystem} needs: the marker set, a feed, the party, categories, clock and classify options.
-- `classifyPing` (function): function classifyPing(hit: PointerHit, deps: PingClassifyDeps = {}, options: PingClassifyOptions = {}): PingCategory — Classify what a pointer/aim ray hit into a ping category. Entity hits resolve by catalog role (hostile → enemy, else location); object hits by an optional catalog category tag; open ground is a location ping.
-- `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
-
-## @jgengine/core/map/pingBeacons.draw
-
-- `WorldPings` (function): function WorldPings({ markers, kindStyles, pingsOnly = true, height = 2.4, showCallout = true, renderCallout, }: WorldPingsProps): ReactNode — World-space pings — the in-scene side of a ping/marker: a bobbing downward arrowhead pointing at the spot, a ground ring, and a billboarded callout, colored by marker kind and fading in/out over the marker's lifetime. Reads a `MarkerSet` (typically the one a `createPingSystem` writes to), a marker source, or a static array; mount through `PlayableGame.WorldOverlay`.
-- `WorldPingsProps` (interface): interface WorldPingsProps — Props for {@link WorldPings}.
-
-## @jgengine/core/map/pingPulse
-
-- `PingOpacityInput` (interface): interface PingOpacityInput — Inputs to {@link pingOpacity}.
-
-## @jgengine/core/map/sharedAnnotations
-
-- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
-- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
-- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
-- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
-- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
-- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
-
-## @jgengine/core/map/terrainMap.view
-
-- `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions — Terrain map bake settings: resolution and land and water colours.
-- `BakedMap` (interface): interface BakedMap — A baked terrain map: an image URL and the world bounds it covers.
-- `MapBakeBounds` (interface): interface MapBakeBounds — World-XZ rectangle a terrain map bake covers.
-- `bakeTerrainMap` (function): function bakeTerrainMap(field: TerrainField, bounds: MapBakeBounds, options: BakeTerrainMapOptions = {}): BakedMap | null — Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background. Runs in the browser via a 2D canvas; renderer-side, so it lives in the shell.
-
-## @jgengine/core/map/waypointMarkers.view
-
-- `WaypointMarkerTheme` (interface): interface WaypointMarkerTheme — Reskin tokens for {@link WaypointMarkers}. Per-`kind` color layers on top via `kindColors`.
-- `WaypointMarkers` (function): function WaypointMarkers({ entries, project, viewport, distanceOf, distanceFormat, theme, kindColors, margin = 28, showPinLabels = true, className, style, }: WaypointMarkersProps): ReactNode — Off-screen objective / waypoint markers: an absolutely-positioned overlay that turns a set of world waypoints into on-screen pins and off-screen directional arrows. For each waypoint it calls the caller's `project` to get a screen point, then {@link layoutScreenMarker} to decide: an in-view target renders a pin (and optional label) at its projected spot; an off-screen or behind-camera target renders an arrow clamped to the viewport edge, rotated to point the way, with an optional distance label from `distanceOf`. Color comes from `theme` plus a per-`kind` `kindColors` map the game owns — the model never interprets `kind`. Presentation only: tracking, projection, and distance are all caller-supplied.
-- `WaypointMarkersProps` (interface): interface WaypointMarkersProps — Props for {@link WaypointMarkers}.
-- `useWaypoints` (function): function useWaypoints(source: WaypointStore | readonly WaypointEntry[]): readonly WaypointEntry[] — Subscribe to a {@link WaypointStore} and re-render on every change, returning its current waypoints. Pass a plain array instead and it is returned as-is (no subscription), so a game can drive the host from a store or from its own derived state.
-
-## @jgengine/core/map/waypoints
-
-- `WaypointEntry` (interface): interface WaypointEntry — A single player-placed waypoint. World-XZ only — serializable and renderer-free.
-- `WaypointGuidance` (interface): interface WaypointGuidance — Direction/range to the tracked waypoint, for an on-screen guide arrow.
-- `WaypointSnapshot` (interface): interface WaypointSnapshot — Whole serializable state of a {@link WaypointStore} — drop into a save blob.
-- `WaypointStore` (interface): interface WaypointStore — Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data.
-- `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
-- `createWaypointStore` (function): function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore — Player-owned waypoint layer: place/track/clear pins, mirror them into a shared `MarkerSet` (so `Minimap`/`WorldMap`/`Compass` render them for free), and read bearing/distance guidance for an on-screen arrow to the tracked one. State is plain data — `snapshot()`/`restore()` round-trip through any save blob.
-- `waypointAnchor` (function): function waypointAnchor(entry: WaypointEntry): readonly [number, number, number] — The world-space `[x, y, z]` anchor of a waypoint, for projecting it to the screen.
-
-## @jgengine/core/material/appearanceSignals
-
-- `MaterialAppearanceBaseline` (interface): interface MaterialAppearanceBaseline — Resolved dry values from one assigned surface, after imported and instance edits. RGB is linear.
-- `MaterialAppearancePolicy` (interface): interface MaterialAppearancePolicy — Local appearance only. Wind is a separate geometry/simulation input, and no field creates motion.
-- `MaterialAppearanceResponse` (interface): interface MaterialAppearanceResponse — Sparse edits for one sample. Unrequested imported parameters, textures, coverage and transmission stay intact.
-- `MaterialAppearanceTarget` (interface): interface MaterialAppearanceTarget — Explicit sample position; callers schedule a bounded set of visible or relevant targets.
-- `MaterialWetnessPolicy` (interface): interface MaterialWetnessPolicy — Opt-in wet endpoints. Color retention multiplies linear albedo; it never replaces the authored hue.
-- `resolveMaterialAppearance` (function): function resolveMaterialAppearance(sample: EnvironmentSample, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Resolve one surface from an immutable dry baseline, avoiding cumulative drift. Wetness already includes field shelter; neither exposure nor sheltered is multiplied into it again. No accumulation or drying simulation.
-- `sampleMaterialAppearance` (function): function sampleMaterialAppearance(field: Pick<EnvironmentField, "sample">, target: MaterialAppearanceTarget, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Exactly one field sample per target; no traversal, subscription, hidden tick, or full-world scan.
-
 ## @jgengine/core/math/cmaEvolutionStrategy
 
 - `CmaEvolutionStrategy` (interface): interface CmaEvolutionStrategy — An ask/tell minimiser: `ask()` a population, evaluate it anywhere (other processes included), `tell()` the costs.
@@ -2991,23 +2656,11 @@
 
 - `Xyz` (interface): interface Xyz — A point or direction as named `x`/`y`/`z` fields, for wire and audio code that reads fields rather than tuple slots.
 
-## @jgengine/core/movement/avatarGait
-
-- `DEFAULT_GAIT_TUNING` (const): const DEFAULT_GAIT_TUNING: GaitTuning — ⚠ undocumented
-- `GaitTuning` (interface): interface GaitTuning { stridesPerUnit: number; bobAmplitude: number; swayAmplitude: number; fullIntensitySpeed: number } — ⚠ undocumented · used by `gaitBobOffset`: Vertical hop per footfall — two peaks per stride cycle.
-- `advanceGaitPhase` (function): function advanceGaitPhase(phase: number, speedUnitsPerSec: number, dtSec: number, tuning: GaitTuning = DEFAULT_GAIT_TUNING): number — ⚠ undocumented
-- `gaitBobOffset` (function): function gaitBobOffset(phase: number, speedUnitsPerSec: number, tuning: GaitTuning = DEFAULT_GAIT_TUNING): number — Vertical hop per footfall — two peaks per stride cycle.
-- `gaitSwayAngle` (function): function gaitSwayAngle(phase: number, speedUnitsPerSec: number, tuning: GaitTuning = DEFAULT_GAIT_TUNING): number — Signed side-to-side lean alternating with each footfall.
-
 ## @jgengine/core/movement/avoidance
 
 - `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
 - `LocalAvoidanceOptions` (interface): interface LocalAvoidanceOptions — Tuning for {@link resolveLocalAvoidance}.
 - `resolveLocalAvoidance` (function): function resolveLocalAvoidance(agents: AvoidanceAgent[], options: LocalAvoidanceOptions = {}): number — Resolve overlaps in `agents` in place and return how many overlapping pairs remained on the final pass (`0` = fully separated). Uses a bounded uniform hash grid sized to the largest agent, so only nearby agents are ever compared. Deterministic: corrections are accumulated then applied per pass, independent of agent order. Pass `weights` to pin or differentially push agents.
-
-## @jgengine/core/movement/cameraRig
-
-- `CAMERA_PITCH_LIMIT` (const): const CAMERA_PITCH_LIMIT: 1.45 — ⚠ undocumented
 
 ## @jgengine/core/movement/characterController
 
@@ -3017,14 +2670,6 @@
 - `CharacterMoveInput` (interface): interface CharacterMoveInput — One step of intent for {@link CharacterController.move}.
 - `CharacterMoveResult` (interface): interface CharacterMoveResult — What one move did.
 - `createCharacterController` (function): function createCharacterController(initial: CharacterControllerConfig): CharacterController — Collide-and-slide capsule controller over any {@link PhysicsBackend}: horizontal slide along walls, step-up over ledges, slope limit, ceiling test, crouch with headroom check, ground snapping, and moving-platform carry read from the ground body's velocity. Pure over the backend's `shapecast`/`overlap`; the caller owns input and gravity policy. Invalid dimensions or control ranges throw before configuration changes.
-
-## @jgengine/core/movement/dash
-
-- `DashBurst` (interface): interface DashBurst { direction: DashDirection; durationMs: number; distance: number } — ⚠ undocumented
-- `DashConfig` (interface): interface DashConfig { distance: number; durationMs: number; iframes: {fromMs: number; toMs: number}; staminaCost: number; staminaMax: number; staminaRegenPerSecond: number; cooldownMs: number } — ⚠ undocumented
-- `DashDirection` (interface): interface DashDirection { x: number; z: number } — ⚠ undocumented
-- `DashRejection` (type): type DashRejection = { reason: "no-stamina" | "cooldown" | "dashing" } — ⚠ undocumented
-- `DashState` (interface): interface DashState { tryDash(direction: DashDirection, nowMs: number): DashRejection | DashBurst; tick(dtSeconds: number, nowMs: number): void; stamina(): number; staminaFraction(): number; isDashing(nowMs: number): boolean; isInvulnerable(nowMs: number): boo… — ⚠ undocumented
 
 ## @jgengine/core/movement/formation
 
@@ -3095,14 +2740,6 @@
 - `MovementProbeSubject` (interface): interface MovementProbeSubject — The walk character {@link measureMovement} drives: the same fields a game passes to `defineGame`.
 - `MovementReport` (interface): interface MovementReport — Deterministic walk-feel metrics. `Infinity` means the target was never reached.
 - `measureMovement` (function): function measureMovement(subject: MovementProbeSubject = {}, options: MovementProbeOptions = {}): MovementReport — Drives a walk character through fixed scenarios (standing start, release to stop, reversal, a standing jump, a tapped jump, a strafed jump) on the same integrator `stepPlayerMovement` uses, and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a feel change shows up as a number moving. Collision, terrain and swimming are out of scope; it measures flat ground.
-
-## @jgengine/core/movement/movementSpeed
-
-- `MovementSpeedConfig` (interface): interface MovementSpeedConfig { baseSpeed: number; multiplierStat?: string; flatBonusStat?: string } — ⚠ undocumented · used by `applyStatDrivenSpeed`: Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`.
-- `MovementSpeedDeps` (interface): interface MovementSpeedDeps { stats: {get(instanceId: string, statId: string): StatValue | null}; entities: {get(id: string): {movement?: {walkSpeed?: number}} | null; update(id: string, patch: {movement: {walkSpeed: number}}): boolean;} } — ⚠ undocumented · used by `applyStatDrivenSpeed`: Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`.
-- `MovementSpeedModifiers` (interface): interface MovementSpeedModifiers { multiplier?: number | undefined; flatBonus?: number | undefined } — ⚠ undocumented · used by `deriveWalkSpeed`: `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative.
-- `applyStatDrivenSpeed` (function): function applyStatDrivenSpeed(deps: MovementSpeedDeps, instanceId: string, config: MovementSpeedConfig): boolean — Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`. Either stat id is optional; an omitted or unresolved stat contributes its neutral value (multiplier 1, flat bonus 0) rather than failing. Returns false only when the entity itself doesn't exist.
-- `deriveWalkSpeed` (function): function deriveWalkSpeed(base: number, modifiers: MovementSpeedModifiers): number — `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative.
 
 ## @jgengine/core/movement/playerMovement
 
@@ -3445,14 +3082,6 @@
 
 - `naturePreviewDraw` (function): function naturePreviewDraw({ definition, variant }: GeneratorPreviewProps): EngineDraw — ⚠ undocumented
 
-## @jgengine/core/nav/corridors
-
-- `CorridorEdge` (interface): interface CorridorEdge { points: readonly CorridorPoint[]; width: number } — ⚠ undocumented
-- `CorridorField` (interface): interface CorridorField — Organic corridor/path collision (#284.9): a distance-to-polyline width clamp over an edge graph — cave tunnels, river channels, winding roads. Grid/navmesh/voxel collision can't express a smooth ribbon; this can. Pure math over authored centerlines.
-- `CorridorPoint` (type): type CorridorPoint = readonly [number, number] — ⚠ undocumented
-- `CorridorSample` (interface): interface CorridorSample { distance: number; closest: CorridorPoint; edgeIndex: number } — ⚠ undocumented
-- `createCorridorField` (function): function createCorridorField(edges: readonly CorridorEdge[]): CorridorField — ⚠ undocumented
-
 ## @jgengine/core/nav/laneGraph
 
 - `LaneEdgeConfig` (interface): interface LaneEdgeConfig — One directed lane span to resolve into the graph.
@@ -3589,33 +3218,12 @@
 - `pathFollowSeek` (function): function pathFollowSeek(config: PathFollowConfig, target: PathProgress): PathFollowState — Place a follower at a semantic {@link PathProgress} without simulating from the start — the seek adapter behavior lifecycles use to seed distributed phases and restore serialized routes. Pure; returns a fresh {@link PathFollowState} whose `heading` gives travel direction. Looping paths wrap the distance; non-looping paths clamp to `[0, followPathLength]` and report `done` at the end.
 - `pathFromNav` (function): function pathFromNav(points: readonly NavPoint[], elevation: number | HeightSource = 0, offset = 0): Waypoint[] — ⚠ undocumented
 
-## @jgengine/core/nav/railGraph
-
-- `RailEdge` (interface): interface RailEdge { id: string; from: string; to: string; via?: readonly Waypoint[] } — ⚠ undocumented
-- `RailGraph` (interface): interface RailGraph — A directed graph of track segments with junction switch-throw semantics — the topological seam `nav/navGrid`'s walkable cells can't express. Each node with several out-edges is a switch whose thrown edge decides where traffic exits; riders (`createRailRider`) run along edge polylines and take the thrown edge at every junction.
-- `RailGraphConfig` (interface): interface RailGraphConfig { nodes: readonly RailNode[]; edges: readonly RailEdge[] } — ⚠ undocumented
-- `RailNode` (interface): interface RailNode { id: string; at: Waypoint } — ⚠ undocumented
-- `RailRider` (interface): interface RailRider { advance(dt: number): RailRiderPose; pose(): RailRiderPose; setSpeed(speed: number): void; place(edgeId: string, s?: number): void } — ⚠ undocumented
-- `RailRiderConfig` (interface): interface RailRiderConfig { edgeId: string; s?: number; speed: number } — ⚠ undocumented
-- `RailRiderPose` (interface): interface RailRiderPose { position: Waypoint; heading: number; edgeId: string; s: number; atDeadEnd: boolean } — ⚠ undocumented
-- `ResolvedRailEdge` (interface): interface ResolvedRailEdge { id: string; from: string; to: string; points: readonly Waypoint[]; length: number } — ⚠ undocumented
-- `createRailGraph` (function): function createRailGraph(config: RailGraphConfig): RailGraph — ⚠ undocumented
-- `createRailRider` (function): function createRailRider(graph: RailGraph, config: RailRiderConfig): RailRider — ⚠ undocumented
-
 ## @jgengine/core/nav/solidRoute
 
 - `SolidRouteOptions` (interface): interface SolidRouteOptions — Caller-owned local collision query and terrain policy; no movement or perception state.
 - `SolidRouteResult` (type): type SolidRouteResult = | { status: "path"; waypoints: Waypoint[]; work: SolidRouteWork } | { status: "no-path" | "budget"; work: SolidRouteWork } — Failures never carry a partial or snapped route.
 - `SolidRouteWork` (interface): interface SolidRouteWork — Work counters exclude the caller's spatial-query implementation.
 - `planSolidRoute` (function): function planSolidRoute(from: Waypoint, to: Waypoint, options: SolidRouteOptions): SolidRouteResult — Plan an exact-endpoint local route over indexed movement boxes using the shared nav grid. Every edge is swept at body width; bounded failure leaves retry/stop policy with the caller.
-
-## @jgengine/core/nav/timetable
-
-- `RouteTimetable` (interface): interface RouteTimetable — A deterministic mover over an authored route: position is a pure function of absolute time, so a forecast preview (`poseAt(t + 30)`) and the live mover can never disagree — the seam `nav/pathFollow`'s dt-incremental state can't offer. Trains, ferries, patrol shuttles, crushers: anything on a timetable.
-- `RouteTimetableConfig` (interface): interface RouteTimetableConfig { waypoints: readonly (Waypoint | TimetableStop)[]; speed: number; loop?: boolean; dwellSeconds?: number; offsetSeconds?: number } — ⚠ undocumented
-- `TimetablePose` (interface): interface TimetablePose { position: Waypoint; heading: number; segment: number; dwelling: boolean } — ⚠ undocumented
-- `TimetableStop` (interface): interface TimetableStop { at: Waypoint; dwellSeconds?: number } — ⚠ undocumented
-- `createRouteTimetable` (function): function createRouteTimetable(config: RouteTimetableConfig): RouteTimetable — ⚠ undocumented
 
 ## @jgengine/core/nav/traffic
 
@@ -3672,17 +3280,6 @@
 - `OrderVec3` (type): type OrderVec3 = readonly [number, number, number] — Composable entity orders: a serializable command queue with lifecycle, preemption, and pluggable order kinds (#912). Player- or AI-issued intent ("move here", "attack that", "patrol this route") becomes reusable data instead of a hard-coded RTS verb kit. The queue owns issue -> activate -> tick -> complete/cancel lifecycle and deterministic preemption policy; each order KIND owns what "running" means, composed over narrow world adapters. Engine code never branches on `move`, `attack`, or any game verb -- kinds are looked up by string in a registry, so a game adds a verb by registering data.
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
-
-## @jgengine/core/physics/InstancedBodies.draw
-
-- `InstancedBodies` (function): function InstancedBodies(props: InstancedBodiesProps): null — Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch. Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch the per-entity UI path). Reusable by any game: hand it a physics world and go.
-- `InstancedBodiesProps` (interface): interface InstancedBodiesProps — Props for InstancedBodies: the physics world to draw and optional state tinting.
-
-## @jgengine/core/physics/InstancedJoints.draw
-
-- `InstancedJoints` (function): function InstancedJoints(props: InstancedJointsProps): null — Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one LineSegments batch. Endpoints are streamed each frame from `world.readJointSegments`; pair with `InstancedBodies` to see the constraint structure over the bodies.
-- `InstancedJointsProps` (interface): interface InstancedJointsProps — Props for InstancedJoints: the physics world whose joints are drawn and the line color.
-- `instancedJointsDraw` (function): function instancedJointsDraw(getProps: () => InstancedJointsProps): EngineDraw — Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one LineSegments batch. Endpoints are streamed each frame from `world.readJointSegments`; pair with `InstancedBodies` to see the constraint structure over the bodies.
 
 ## @jgengine/core/physics/ballisticSweep
 
@@ -3956,13 +3553,6 @@
 - `PhysicsWorldBackendState` (interface): interface PhysicsWorldBackendState — Serializable backend state: every live body and joint, with handles preserved.
 - `createPhysicsWorldBackend` (function): function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): PhysicsBackend — `PhysicsWorld` behind the {@link PhysicsBackend} interface: zero dependencies, translation-only. Capsules, convex hulls, meshes, and heightfields collide as their bounding boxes; rotation, angular velocity, CCD, and hinge limits are accepted and ignored (see {@link PhysicsBackend.capabilities}). Reach for `@jgengine/rapier` when a game needs those for real; the seam is the same.
 
-## @jgengine/core/physics/radialImpulse
-
-- `RadialFalloff` (type): type RadialFalloff = "linear" | "quadratic" | "none" — How a radial impulse fades from the blast center to its edge.
-- `RadialImpulse` (interface): interface RadialImpulse — A radial push: the impulse vector plus the 0..1 falloff sampled at the target.
-- `RadialImpulseOptions` (interface): interface RadialImpulseOptions — Options for {@link radialImpulse}.
-- `radialImpulse` (function): function radialImpulse(source: readonly [number, number], target: readonly [number, number], radius: number, power: number, options: RadialImpulseOptions = {}): RadialImpulse | null — Point-source radial impulse pushing a `target` away from a blast `source`: full `power` at the center fading to zero at `radius`. Returns `null` when the target sits at or beyond the radius (unaffected), so callers can early-out. At the exact center the direction is zero. This is the explosion/knockback/ shockwave push — every arena game hand-rolled the distance, falloff, and normalize.
-
 ## @jgengine/core/physics/ragdoll
 
 - `Ragdoll` (class): class Ragdoll — A jointed multi-body character — floppy by default, or active-ragdoll when a balance motor is configured. Bones are `PhysicsWorld` bodies; links are joints on the joint API. `balance(dt, mx, mz)` drives the root toward its target height (staying upright) and pushes it by the move vector.
@@ -4143,11 +3733,6 @@
 - `PlacementGhost` (function): function PlacementGhost(props: PlacementGhostProps): null — ⚠ undocumented
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
 - `placementGhostDraw` (function): function placementGhostDraw(getProps: () => PlacementGhostProps): EngineDraw — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-
-## @jgengine/core/placement/TerritoryOverlay.view
-
-- `TerritoryOverlay` (function): function TerritoryOverlay({ cells, cost, affordable, formatCost = String, renderCell, className, style }: { cells: readonly TerritoryPreviewCell[]; cost: number; affordable: boolean; formatCost?: (cost: number) => ReactNode; renderCell?: (cell: TerritoryPreviewCell) => ReactNode; className?: string;… — Placement footprint feedback with inline claim cost and affordability.
-- `TerritoryPreviewCell` (type): type TerritoryPreviewCell = { key: string; x: number; z: number; status: "owned" | "claimable" | "blocked" } — A placement footprint cell and its authoritative preview status.
 
 ## @jgengine/core/placement/TransformGizmo.draw
 
@@ -4837,6 +4422,119 @@
 
 - `MAX_GLOSSY_SURFACES` (const): const MAX_GLOSSY_SURFACES: 256 — Most glossy surfaces one frame masks; the nearest scan order keeps the first ones found.
 
+## @jgengine/core/render/TileLayerRenderer.draw
+
+- `TileLayerRenderer` (function): function TileLayerRenderer(props: TileLayerRendererProps): JSX.Element — Thin UI bridge: mounts {@link tileLayerRendererDraw} under the JSX parent.
+- `TileLayerRendererProps` (interface): interface TileLayerRendererProps — Inputs for the instanced textured tile-layer renderer.
+- `tileLayerRendererDraw` (function): function tileLayerRendererDraw({ config, parallax = [1, 1], pixelated = true }: TileLayerRendererProps): EngineDraw — Renders a tilemap as one instanced quad mesh with atlas UV rectangles.
+
+## @jgengine/core/render/ambientLife
+
+- `AmbientLifeConfig` (interface): interface AmbientLifeConfig — Small life the renderer adds around the camera, driven by the weather and the time of day. Birds circle overhead in fair daylight and leave in rain or at night; litter blows along the ground when the wind picks up; steam rises from vents, thicker when it is cold, wet or dark.
+- `SteamVent` (interface): interface SteamVent — A point that breathes steam: a manhole, a vent, a hot spring, a kettle on a stall.
+
+## @jgengine/core/render/colorPipeline
+
+- `AutoExposureConfig` (interface): interface AutoExposureConfig — Bounds and adaptation policy for clamped auto-exposure.
+- `DEFAULT_AUTO_EXPOSURE` (const): const DEFAULT_AUTO_EXPOSURE: Readonly<Required<AutoExposureConfig>> — Default clamped auto-exposure. The range is deliberately asymmetric: a bright street is already readable after AgX's shoulder, while a lamp-lit interior is the case that crushes, so the meter may lift 1.3 stops but only darken 0.7 — an artist's exposure survives.
+- `METERING_HIGHLIGHT_CEILING` (const): const METERING_HIGHLIGHT_CEILING: number — Pixels count toward metering up to this multiple of {@link WHITE_POINT}. A window or a sun disc sits far above it and would otherwise pull the whole frame down to a silhouette.
+- `MID_GREY` (const): const MID_GREY: 0.18 — Linear scene luminance of an 18% grey card — the auto-exposure metering target.
+- `WHITE_POINT` (const): const WHITE_POINT: 1 — Calibration of the output pipeline, in linear scene luminance (1.0 = a white-looking surface at exposure 1).
+- `adaptExposure` (function): function adaptExposure(current: number, target: number, deltaSeconds: number, adaptationSeconds = DEFAULT_AUTO_EXPOSURE.adaptationSeconds): number — Frame-rate independent blend of `current` toward `target`, exponential in time so a hitch does not overshoot and a steady view settles. `deltaSeconds` may be 0..∞; a zero-length step keeps `current`.
+- `exposureForKey` (function): function exposureForKey(keyLuminance: number, config: AutoExposureConfig = {}, daylight = 1): number — Exposure that places a frame whose key luminance is `keyLuminance` on {@link MID_GREY}, bounded by the authored range. A dark interior asks for more than `max` and gets `max`; a blown-out exterior asks for less than `min` and gets `min`, so the frame never runs away at either end. `daylight` (0..1, the sky's share of full day light) scales how far above 1 the meter may lift: a frame dark because it is night keeps its dark, while a dark room by day still opens up.
+- `keyLuminanceFromSamples` (function): function keyLuminanceFromSamples(samples: ArrayLike<number>): number — Key luminance of a metered frame: the median of its samples, each clamped to {@link METERING_HIGHLIGHT_CEILING}. A median rather than a mean because a bright sky, a window or a lamp is a large minority of the frame: averaging those in drags an interior down to a silhouette, where the median still reports the room.
+
+## @jgengine/core/render/flatSceneWalk.draw
+
+- `FlatWalkRenderer` (interface): interface FlatWalkRenderer — The renderer parts the flat walk wraps: three's render lists and shadow pass, and its render counter.
+
+## @jgengine/core/render/lookMood
+
+- `LookMood` (type): type LookMood = MoodPreset | MoodConfig — A mood: a preset name, or a preset with token overrides.
+- `MOOD_PRESETS` (const): const MOOD_PRESETS: readonly MoodPreset[] — Every mood preset name, for pickers and validating a mood read from a URL or file.
+- `MoodConfig` (interface): interface MoodConfig — A mood preset plus the few tokens a game's art direction usually moves. Unset fields keep the preset's value.
+- `MoodPreset` (type): type MoodPreset = "day" | "bright" | "golden" | "dusk" | "overcast" | "night" — Named lighting mood: one art-direction choice that sets the sun, the sky fill, the haze and the colour grade together, so they agree. `"day"` is a clear afternoon, `"bright"` a saturated high-fill cartoon day, `"golden"` a low warm late-afternoon sun with long shadows, `"dusk"` a sunset, `"overcast"` soft diffuse light under cloud, `"night"` moonlight.
+- `MoodSun` (interface): interface MoodSun — Where the key light stands and how strong it is. Angles in degrees: azimuth 0 = -Z, 90 = +X; elevation 90 = overhead.
+- `ResolvedMood` (interface): interface ResolvedMood — Concrete lighting, sky and grade a mood expands to.
+- `resolveMood` (function): function resolveMood(mood: LookMood): ResolvedMood — Expand a mood into the lighting rig, sky and grade it stands for. The key light is the sun (the moon under `"night"`), casts cascaded shadows that follow the camera, and agrees with the dome's sun; a cool bounce opposite it keeps shadowed sides readable; the haze matches the horizon.
+
+## @jgengine/core/render/lookPreset
+
+- `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look. ACES, not the pipeline's AgX: under a sunny sky AgX's flat curve reads as a milky veil over the whole frame, and every shipped game had already switched this preset to ACES by hand.
+- `CINEMATIC_SKY` (const): const CINEMATIC_SKY: SkyEnvironmentConfig — A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill.
+- `COMIC_POST_PROCESSING` (const): const COMIC_POST_PROCESSING: PostProcessingConfig — Ink outlines, four cel bands and a punchy grade — a hand-inked comic look on any model.
+- `GameLookInput` (interface): interface GameLookInput — Explicit graphics knobs a game may set; the preset only fills the ones left undefined.
+- `LOOK_PRESETS` (const): const LOOK_PRESETS: readonly LookPreset[] — Every look preset name, for pickers and validating a preset read from a URL or file.
+- `LOOK_SUN_SIZE` (const): const LOOK_SUN_SIZE: Readonly<Partial<Record<LookPreset, number>>> — The key light's angular size each look gives a sun that leaves `lightSize` unset, so its shadows soften like daylight while the player's soft-shadows setting is on. Looks not named here keep the fixed filter.
+- `LookPreset` (type): type LookPreset = "neutral" | "photoreal" | "toon" | "comic" | "retro" | "cinematic" | "flat" — Named look preset composing the existing lighting/sky/fog/post knobs into one field. `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/contact-shadow/vignette post stack with screen-space reflections on glossy floors and a sun-sized soft shadow, antialiased temporally on high and ultra. `"neutral"` keeps presentation unstyled. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style); `"retro"` pixelates and posterizes the frame. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
+- `NEUTRAL_POST_PROCESSING` (const): const NEUTRAL_POST_PROCESSING: PostProcessingConfig — Unstyled baseline: no bloom or grade; contact AO stays at the graphics-tier default.
+- `PHOTOREAL_POST_PROCESSING` (const): const PHOTOREAL_POST_PROCESSING: PostProcessingConfig — High-contrast physically based presentation for authored HDR environments.
+- `RETRO_POST_PROCESSING` (const): const RETRO_POST_PROCESSING: PostProcessingConfig — Chunky pixels and posterized colour with no smoothing — a low-resolution retro look.
+- `ResolvedGameLook` (interface): interface ResolvedGameLook — Concrete lighting/backdrop/post the shell renders after the preset has filled unset knobs.
+- `TOON_POST_PROCESSING` (const): const TOON_POST_PROCESSING: PostProcessingConfig — Clean graphic presentation; toon materials remain game-owned while this sets the grade.
+- `mergePostProcessing` (function): function mergePostProcessing(preset: PostProcessingConfig, authored: PostProcessingConfig | undefined): PostProcessingConfig — Deep-merge a game's partial post chain over a preset's. Every field the game set wins, including `false` to drop a stage; fields it left unset come from the preset, and stage objects merge field by field (tuples such as `grade.lift` replace whole).
+- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` and `mood` into concrete lighting/backdrop/post. The default look is `"cinematic"`; `"flat"` passes the explicit knobs through untouched.
+
+## @jgengine/core/render/postProcessing
+
+- `AoConfig` (interface): interface AoConfig — Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth.
+- `AtmosphereConfig` (interface): interface AtmosphereConfig — Air over the lit frame: ground haze that thickens toward the ground and with distance, brighter toward the sun, light shafts where the sky shows through gaps, and a glow around every nearby point and spot light as its light scatters in the same haze. Shafts need a shadow-casting sun. With no sun the whole pass is skipped unless `indoor` is set, which keeps the haze and the lamp glow running so a sunless interior gets its air and its lit lamps.
+- `BloomConfig` (interface): interface BloomConfig — UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive).
+- `ContactShadowConfig` (interface): interface ContactShadowConfig — Screen-space contact shadows: a short ray toward the sun from every pixel, against the depth buffer.
+- `DEFAULT_AO` (const): const DEFAULT_AO: Readonly<AoConfig> — Contact shading used when a post chain leaves `ao` unset: soft creases, no dark halos.
+- `DEFAULT_ATMOSPHERE` (const): const DEFAULT_ATMOSPHERE: Readonly<Required<AtmosphereConfig>> — Height haze and light shafts used when a post chain leaves `atmosphere` unset.
+- `DEFAULT_CONTACT_SHADOWS` (const): const DEFAULT_CONTACT_SHADOWS: Readonly<Required<ContactShadowConfig>> — Contact shadows used when a post chain leaves `contactShadows` unset.
+- `DEFAULT_MOTION_BLUR` (const): const DEFAULT_MOTION_BLUR: Readonly<Required<MotionBlurConfig>> — Motion blur used for the fields a `motionBlur` config leaves unset.
+- `DEFAULT_SSR` (const): const DEFAULT_SSR: Readonly<Required<SsrConfig>> — Screen-space reflections used for the fields an `ssr` config leaves unset.
+- `DofConfig` (interface): interface DofConfig — Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance.
+- `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
+- `GradeLut` (type): type GradeLut = { url: string; size?: number } | { cube: LutCube } — A grade's LUT: a strip PNG (one `size`-wide tile per blue slice), a `.cube` file URL or a baked cube.
+- `LutCube` (interface): interface LutCube — A baked display-space LUT cube: `size³` RGB entries with red varying fastest, three bytes per entry in 0..255. Kept as plain data so a scene document can author one and a test can assert on it.
+- `MotionBlurConfig` (interface): interface MotionBlurConfig — Motion blur (#1658): the camera's own movement blurs the whole frame by reprojecting each pixel to where it was last frame, and registered moving bodies (`registerMotionBlurBody`; every model entity is registered) blur along their own screen motion. Each part has its own strength.
+- `OutlineConfig` (interface): interface OutlineConfig — Ink outlines traced from depth and surface-normal edges — silhouettes plus interior creases.
+- `PostAaMode` (type): type PostAaMode = "taa" | "smaa" | "msaa" | false — Edge antialiasing for the post chain. `"taa"` jitters the camera a fraction of a pixel each frame and blends the frames, which also settles shimmering foliage, thin wires and specular sparkle. SMAA runs in linear-sRGB before the output tone-map and cleans alpha-tested foliage/particles that MSAA samples alone leave crawling. `"msaa"` keeps only the render-target multisample resolve; `false` disables AA stages.
+- `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → contact shadows → SSR → atmosphere → Bloom → DOF → motion blur → SMAA or TAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
+- `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
+- `SsrConfig` (interface): interface SsrConfig — Screen-space reflections: each pixel of an upward-facing glossy surface marches its mirrored view ray through the depth buffer and takes the colour of what it hits, weighted by Fresnel. Wet streets, polished floors and still water pick up the scene above them; off-screen hits fall back to the surface's own environment reflection.
+- `StylizeConfig` (interface): interface StylizeConfig — Art-style stage that turns the same models and lighting into a different look without touching materials: ink outlines (comic / Borderlands), cel bands (cartoon), pixelation (retro). Runs after tone mapping, before the grade.
+- `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage. `"agx"` is the pipeline default: it keeps hue in saturated highlights and rolls a sun-lit surface off gradually, where `"aces"` skews bright colours toward white.
+
+## @jgengine/core/render/shaderWarmup.draw
+
+- `HeldDraw` (interface): interface HeldDraw — A draw the hold swallowed: what it would have drawn, from where, into what, with what override.
+- `HoldDrawsOptions` (interface): interface HoldDrawsOptions — Options for {@link holdDraws}.
+- `SHADER_WARMUP_DEFAULTS` (const): const SHADER_WARMUP_DEFAULTS: { readonly quietMs: 250; readonly planBudgetMs: 120000; readonly stallMs: 30000; readonly planFloorMs: 1500; readonly pollMs: 100; readonly backgroundMs: 2000; readonly backgroundEveryMs: 250; readonly programsPerBatch: 12; readonly texturesPerBatch: 4; readonly prepare… — Defaults sized to cover one load: the covered wait is the driver's link time, not a guess.
+- `ShaderWarmup` (interface): interface ShaderWarmup — A warmup in flight: its promise, its latest state, and a way to stop it.
+- `ShaderWarmupOptions` (interface): interface ShaderWarmupOptions — Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests.
+- `ShaderWarmupRenderer` (interface): interface ShaderWarmupRenderer — The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it.
+- `ShaderWarmupState` (interface): interface ShaderWarmupState — Where the load-time shader warmup is: waiting for the scene to stop growing, compiling a round, finished, or skipped because the renderer refused. The loading screen renders it.
+
+## @jgengine/core/render/sprite2d
+
+- `SortingLayers` (const): const SortingLayers: readonly ["background", "world", "actors", "effects", "foreground", "ui"] — Canonical layers used by 2D presentations.
+- `SpriteClipState` (interface): interface SpriteClipState — Serializable playback position for a named sprite animation.
+- `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
+- `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
+
+## @jgengine/core/render/tileLayerInstances
+
+- `TileLayerInstance` (interface): interface TileLayerInstance — One resolved map cell with its world position and atlas UV rectangle.
+
+## @jgengine/core/render/tileLayerPreview.view
+
+- `TileLayerPreview` (function): function TileLayerPreview({ className }: { className?: string }): JSX.Element — Deterministic canvas-backed tile-layer fixture for textured tile presentation evidence.
+
+## @jgengine/core/render/triangleAttribution.draw
+
+- `TriangleAttribution` (interface): interface TriangleAttribution — Where one scene's triangles are, biggest line first.
+- `TriangleLine` (interface): interface TriangleLine — One line of the triangle table: the draws sharing one geometry inside one named model.
+- `attributeTriangles` (function): function attributeTriangles(root: THREE.Object3D, limit = 12): TriangleAttribution — Sum a scene's triangles by model and geometry, which is the attribution a triangle budget needs: a total says a frame is heavy, a table says which authored object made it heavy. Walks the graph once; call it on demand, never per frame.
+
+## @jgengine/core/render/useDisposable.view
+
+- `Disposable` (interface): interface Disposable — Anything exposing dispose() — three.js geometries, materials, textures, render targets.
+- `useDisposable` (function): function useDisposable<T extends Disposable | readonly Disposable[]>(create: () => T, deps: DependencyList): T — Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts. Owns the useMemo + dispose-effect pair that otherwise repeats at every GPU-resource call site. The factory must return objects exposing `dispose()` (geometries, materials, textures, render targets).
+
 ## @jgengine/core/roads/RoadJunctions.draw
 
 - `RoadJunctionsProps` (interface): interface RoadJunctionsProps — Props for {@link RoadJunctions}.
@@ -4851,14 +4549,6 @@
 - `Roads` (function): function Roads({ roads, field }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): null — The engine's one road renderer: `road()` descriptors from an environment and authored editor paths (streets, race tracks, trails, routes) all draw here â€” the UI wrapper over {@link roadsDraw}.
 - `roadRibbonsDraw` (function): function roadRibbonsDraw(getProps: () => RoadRibbonsProps): EngineDraw — Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline sub-paths (cut back at every junction by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a curb/edge strip along each border, an optional dashed centerline, and optional sidewalks. Each layer is one merged draw however many roads share the look, so a city of streets costs a handful of draws. Because the sub-paths already stop at the junction boundary, every layer naturally ends there â€” no ribbon ploughs through the crossing and the dashed line no longer needs exclusion circles to skip intersections. The carriageway, curbs and sidewalks shade with the terrain's procedural surfaces (`road.surface`, default asphalt with tyre wear); `surface: false` keeps them flat.
 - `roadsDraw` (function): function roadsDraw(getProps: () => { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): EngineDraw — The engine's one road renderer: `road()` descriptors from an environment and authored editor paths (streets, race tracks, trails, routes) all draw here â€” the UI wrapper over {@link roadsDraw}.
-
-## @jgengine/core/roads/circuitCourse
-
-- `CIRCUIT_CORNER_TAG` (const): const CIRCUIT_CORNER_TAG: "corner" — Span tags {@link courseFromCircuit} hangs on the lap.
-- `CIRCUIT_SECTOR_TAG` (const): const CIRCUIT_SECTOR_TAG: "sector" — ⚠ undocumented
-- `CircuitCourse` (interface): interface CircuitCourse — A circuit as a closed course, with where its gates fall on it.
-- `CircuitCourseOptions` (interface): interface CircuitCourseOptions — Options for {@link courseFromCircuit}.
-- `courseFromCircuit` (function): function courseFromCircuit(route: CircuitRoute, options: CircuitCourseOptions = {}): CircuitCourse — Turn a lifted lap into a closed {@link RouteCourse} that starts at the circuit's start line. `course.checkpoints({ at: gates.slice(0, -1), finish: 0 })` hands straight to `raceTrack({ checkpoints, laps })`.
 
 ## @jgengine/core/roads/circuitDesigner
 
@@ -4965,11 +4655,6 @@
 - `LapSimOptions` (interface): interface LapSimOptions { readonly mu?: number; readonly gravity?: number; readonly topSpeed?: number; readonly accel?: number; readonly brake?: number } — ⚠ undocumented · used by `simulateLap`: Simulate one flying lap of a closed loop.
 - `LapSimResult` (interface): interface LapSimResult { time: number; length: number; avgSpeed: number; minSpeed: number; maxSpeed: number; fullThrottleShare: number; speeds: number[]; brakingZones: BrakingZone[] } — ⚠ undocumented · used by `simulateLap`: Simulate one flying lap of a closed loop.
 - `simulateLap` (function): function simulateLap(points: readonly PlanPoint[], radii: readonly number[], options: LapSimOptions = {}): LapSimResult — Simulate one flying lap of a closed loop. `radii[i]` is the radius of curvature (m) at `points[i]`; `Infinity` (or any radius whose cornering limit exceeds top speed) is a straight.
-
-## @jgengine/core/roads/liveRoadSurface
-
-- `SurfaceSwappableRoadSource` (interface): interface SurfaceSwappableRoadSource extends LiveRoadSource — A {@link LiveRoadSource} whose carriageway surface can be swapped at runtime.
-- `withSwappableRoadSurface` (function): function withSwappableRoadSurface(base: LiveRoadSource): SurfaceSwappableRoadSource — Wrap a road source so a game can change what its streets are made of while it runs: wet asphalt after dusk, snow over winter, a painted event route. The base source stays the authority on the roads' shape; only the named scan layers are replaced, and a layer left out keeps its own.
 
 ## @jgengine/core/roads/pathRoads
 
@@ -5345,11 +5030,6 @@
 - `placedGeneratorFor` (function): function placedGeneratorFor(meta: Readonly<Record<string, unknown>> | undefined): GeneratorDefinition | undefined — The placeable generator (parts, nature …) a placed marker's `meta.assetId` names, or undefined.
 - `registerPlaceableGeneratorOutput` (function): function registerPlaceableGeneratorOutput(output: string): void — Let markers place generators of an output family by `meta.assetId` (parts always can). The family also needs a draw-side mesh builder (`registerGeneratorMesh`) to render at runtime.
 
-## @jgengine/core/scene/assetPreload
-
-- `SceneAssetFetcher` (type): type SceneAssetFetcher = (url: string) => void — ⚠ undocumented
-- `createSceneAssetPreloader` (function): function createSceneAssetPreloader(fetcher: SceneAssetFetcher): { preloadUrl(url: string): void; preloadUrls(urls: readonly string[]): void; hasPreloaded(url: string): boolean; reset(): void; } — ⚠ undocumented
-
 ## @jgengine/core/scene/assetSpace
 
 - `AssetAnchor` (type): type AssetAnchor = "center" | "corner" | { readonly x: number; readonly z: number } — Where a model's pivot sits within its footprint: `center` (origin at the footprint center), `corner` (origin at the min-X/min-Z corner), or a normalized `{ x, z }` fraction in `[-0.5, 0.5]`.
@@ -5442,12 +5122,6 @@
 - `BodyTeleportHandler` (type): type BodyTeleportHandler = (id: string, placement: BodyPlacement) => boolean — Moves the sim that owns a bound body to `placement`, so its next `sync` poses the body there; returns whether the sim took it.
 - `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
 
-## @jgengine/core/scene/captureCheck
-
-- `CaptureCheckInput` (interface): interface CaptureCheckInput { hpFraction: number; catchPower: number; difficulty?: number } — ⚠ undocumented
-- `captureChance` (function): function captureChance(input: CaptureCheckInput): number — ⚠ undocumented
-- `rollCapture` (function): function rollCapture(input: CaptureCheckInput, rng?: () => number): boolean — ⚠ undocumented
-
 ## @jgengine/core/scene/colliders
 
 - `ColliderDef` (interface): interface ColliderDef { name: string; purpose: ColliderPurpose; shape: ColliderShape; damageEligible?: boolean; blocks?: boolean } — ⚠ undocumented
@@ -5472,21 +5146,6 @@
 - `prepareCollisionMesh` (function): function prepareCollisionMesh(data: CollisionMeshData): PreparedCollisionMesh | null — Decode a stored collision mesh and index it with a BVH. Memoized per data object, so the shell and a headless host preparing the same catalog entry share one build. Returns `null` (also memoized) when the payload is malformed.
 - `prepareCollisionMeshSource` (function): function prepareCollisionMeshSource(source: CollisionMeshSource): PreparedCollisionMesh | null — Build a prepared BVH mesh straight from a runtime triangle soup (float positions + indices) — the renderer-fed counterpart to {@link prepareCollisionMesh}, feeding `ctx.scene.entity.reportCollisionMesh` / `ctx.scene.object.reportCollisionMesh` without a quantize/encode round-trip. Copies and sanitizes the input: triangles referencing out-of-range, non-finite, or repeated vertices are dropped. Returns `null` when no triangle survives.
 - `raycastCollisionMesh` (function): function raycastCollisionMesh(mesh: PreparedCollisionMesh, origin: EntityPosition, direction: EntityPosition, maxDistance: number, position: EntityPosition, rotationY: number, scale: number, translate: EntityPosition): CollisionMeshHit | null — Nearest triangle hit for a world-space ray against a prepared mesh placed like its rendered model: model space scaled uniformly by `scale`, translated by entity-local `translate`, yaw-rotated by `rotationY`, and moved to `position` — the same composition {@link "scene/colliders".ModelBodySource} fitting applies to the AABB. Allocation-free until the returned hit. `distance` is world distance along `direction` (callers pass `direction` normalized); `normal` is the world-space geometric triangle normal facing the ray.
-
-## @jgengine/core/scene/companion
-
-- `CompanionAdoptOptions` (interface): interface CompanionAdoptOptions — Options for {@link CompanionRoster.adopt}.
-- `CompanionCommand` (type): type CompanionCommand = "follow" | "stay" — Where a tamed companion goes: `follow` heels to the owner, `stay` holds at `home`. What it fights is its {@link CompanionStance}, set apart, so a companion left on guard can still defend.
-- `CompanionConfig` (interface): interface CompanionConfig — Per-companion configuration shared by every companion the roster mints.
-- `CompanionIntent` (interface): interface CompanionIntent — The companion's decision for one tick, shaped for `ai/mobBrain`: feed `candidates` into `MobBrainDeps.candidates()`, treat `leashTo` as the brain's `home`, and pass `leashDistance` as `leashDistance`. `kind` summarises the posture for HUD/animation.
-- `CompanionIntentContext` (interface): interface CompanionIntentContext — Per-tick world context the game supplies so a command resolves into a concrete intent.
-- `CompanionRecord` (interface): interface CompanionRecord — Serializable per-companion state: who owns it, its standing order, where it holds, its leash radius, and its levelled stat pool. Plain data — JSON round-trips without loss.
-- `CompanionRoster` (interface): interface CompanionRoster — A set of tamed companions keyed by companion id, scoped to owners. Wraps allegiance/command state, per-companion levelled stats, and intent resolution behind create/command/level/ snapshot/hydrate — the counterpart of `scene/roster` for creatures that fight beside you.
-- `CompanionSpendResult` (type): type CompanionSpendResult = | { status: "ok"; record: CompanionRecord; stat: StatValue } | { status: "rejected"; reason: string } — Outcome of {@link CompanionRoster.spend}: the updated record + stat, or a rejection reason.
-- `CompanionStance` (type): type CompanionStance = "passive" | "neutral" | "aggressive" — What a tamed companion fights, wherever its {@link CompanionCommand} keeps it: - `passive` — never engages, even when struck (a pacifist escort). - `neutral` — fights back whatever threatens it or the owner, and joins the owner's fight. - `aggressive` — all of that, and picks fights with anything `nearby` unprovoked.
-- `CompanionStatUpgrade` (interface): interface CompanionStatUpgrade — Rule for turning one spent level-point into a stat gain. Absent from config ⇒ the stat can't be upgraded.
-- `createCompanionRoster` (function): function createCompanionRoster(config: CompanionConfig = {}): CompanionRoster — Build a {@link CompanionRoster}. Composes `scene/roster` ownership (via `ownerId`/`sourceId`), `scene/entityStats` for the per-companion stat pool, and {@link resolveCompanionIntent} for `ai/mobBrain`-shaped behavior — turning a captured creature into a loyal, levelling ally.
-- `resolveCompanionIntent` (function): function resolveCompanionIntent(record: CompanionRecord, context: CompanionIntentContext): CompanionIntent — Pure command → intent resolver. Maps a companion's standing order plus this tick's owner position, owner target, and nearby threats into the {@link CompanionIntent} a game feeds into `ai/mobBrain` (or executes directly). Deterministic and allocation-light — no import of the `@internal` brain factory; the two interoperate purely by shape.
 
 ## @jgengine/core/scene/decalGeometry.draw
 
@@ -5603,13 +5262,6 @@
 - `PossessionSnapshot` (interface): interface PossessionSnapshot { owned: Record<string, readonly string[]>; active: Record<string, string> } — ⚠ undocumented
 - `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent { userId: string; entityId: string; previousEntityId: string } — ⚠ undocumented
 - `createPossession` (function): function createPossession(deps: PossessionDeps): Possession — ⚠ undocumented
-
-## @jgengine/core/scene/riding
-
-- `RideResult` (type): type RideResult = { ok: true } | { ok: false; reason: string } — Whether a ride started, and why not when it did not.
-- `Riding` (interface): interface Riding — Riding a creature or vehicle: the player's controls and camera move to the mount (through possession), the rider is frozen and carried on the seat every simulation step, and getting off hands control back and sets the rider down beside it. Seat bookkeeping is `scene/mount`'s.
-- `SeatOffset` (type): type SeatOffset = readonly [number, number, number] — Where the rider sits on a mount, in the mount's frame: right, up, forward (metres).
-- `ridingOf` (const): const ridingOf: (ctx: GameContext) => Riding — The context's one riding service; it carries riders after movement on every simulation step.
 
 ## @jgengine/core/scene/roster
 
@@ -5943,12 +5595,6 @@
 - `EditableGroundProps` (interface): interface EditableGroundProps — Props for {@link EditableGround}: the editable terrain, the bounds to mesh, resolution, a rebuild version and surface colours.
 - `editableGroundDraw` (function): function editableGroundDraw(props: EditableGroundProps): EngineDraw — Mesh an editable terrain inside its bounds, coloured by each point's painted surface; bump `version` after an edit.
 
-## @jgengine/core/terrain/ProceduralGround.draw
-
-- `ProceduralGround` (function): function ProceduralGround(props: ProceduralGroundProps): null — ⚠ undocumented
-- `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends DrawAttachProps — Props for {@link ProceduralGround}: noise terrain settings, height colours and material settings.
-- `proceduralGroundDraw` (function): function proceduralGroundDraw({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): EngineDraw — A seeded noise-height ground mesh coloured from low to high ground.
-
 ## @jgengine/core/terrain/TerraformBrushCursor.draw
 
 - `TerraformBrushCursor` (function): function TerraformBrushCursor(props: TerraformBrushCursorProps): null — ⚠ undocumented
@@ -6194,26 +5840,6 @@
 - `Accrual` (interface): interface Accrual — Elapsed duration and the next anchor to persist with accrued effects.
 - `accrueSince` (function): function accrueSince(anchorMs: number, nowMs: number, options: { capMs?: number } = {}): Accrual — Elapsed time since a persisted anchor, capped once; persist anchorMs with the accrued result.
 
-## @jgengine/core/time/beatClock
-
-- `BeatAccuracyTier` (interface): interface BeatAccuracyTier extends ThresholdBoundary — A judgement window, a Ladder step read descending: `at` is the maximum absolute delta (game-seconds) from the beat that still earns this tier.
-- `BeatBufferedAction` (interface): interface BeatBufferedAction<T> — An action queued on a beat buffer, with when it was pressed and the beat it fires on.
-- `BeatClock` (interface): interface BeatClock { advance(gameDt: number): BeatSnapshot; snapshot(): BeatSnapshot; now(): number; beatDurationSec(): number; bpm(): number } — ⚠ undocumented
-- `BeatClockConfig` (interface): interface BeatClockConfig { bpm: number; beatsPerBar?: number } — ⚠ undocumented
-- `BeatInputBuffer` (interface): interface BeatInputBuffer<T> { buffer(action: T, nowSec: number): number; advance(nowSec: number): T[]; pendingCount(): number; clear(): void } — ⚠ undocumented
-- `BeatJudgement` (interface): interface BeatJudgement { tier: string; deltaSec: number } — ⚠ undocumented
-- `BeatSnapshot` (interface): interface BeatSnapshot { beat: number; beatIndex: number; bar: number; beatInBar: number; phase: number } — ⚠ undocumented
-- `DEFAULT_BEAT_TIERS` (const): const DEFAULT_BEAT_TIERS: readonly BeatAccuracyTier[] — ⚠ undocumented
-
-## @jgengine/core/time/calendarClock
-
-- `GameTime` (interface): interface GameTime { year: number; month: number; monthName: string; monthNameFull: string; dayOfMonth: number; hour: number; minute: number; second: number; formattedDate: string; formattedDateFull: string; formattedTime: string; formatted: string } — ⚠ undocumented · used by `useCalendarClock` (@jgengine/core/time/calendarClock.view): The in-world calendar of a world created at `createdAt`, aligned to the server's clock from one `serverNow` reading and re-read every `tickM…
-
-## @jgengine/core/time/calendarClock.view
-
-- `CalendarClockOptions` (interface): interface CalendarClockOptions — Options for {@link useCalendarClock}.
-- `useCalendarClock` (function): function useCalendarClock(createdAt: number | undefined, serverNow: number | undefined, options: CalendarClockOptions = {}): GameTime | null — The in-world calendar of a world created at `createdAt`, aligned to the server's clock from one `serverNow` reading and re-read every `tickMs`. Null until both are known.
-
 ## @jgengine/core/time/cooldown
 
 - `tickCooldown` (function): function tickCooldown(remaining: number, dt: number): number — One step of a plain-number countdown: `remaining` seconds less `dt`, never below 0. Keep the number in serializable state and read `> 0` as "still waiting"; for a clocked or paced wait use the schedule.
@@ -6255,16 +5881,6 @@
 - `RefillSlotsConfig` (interface): interface RefillSlotsConfig — Named slots that each hold one thing and refill a while after it is gone.
 - `RefillSlotsState` (interface): interface RefillSlotsState — Plain JSON state: per slot whether it is filled and, if empty, when it is ready.
 - `createRefillSlots` (function): function createRefillSlots(config: RefillSlotsConfig, rng: () => number): RefillSlots — Slots that each hold one thing: a crate per drop site, a node per node spot, a herd per den. Ask `ready(now)` for those whose thing is gone and whose wait is over, `fill` one that holds again, and `empty(slot, now)` when its thing is taken or expires; the wait is a uniform draw from the injected rng.
-
-## @jgengine/core/time/serverTick
-
-- `PlanServerTickOptions` (type): type PlanServerTickOptions = { /** Cap catch-up runs per system per heartbeat to avoid spiral-of-death. Default 3. */ maxCatchUp?: number; } — ⚠ undocumented · used by `planServerTick`: Decides which systems a heartbeat should run.
-- `ServerTickPlan` (interface): interface ServerTickPlan<TSystemId extends string = string> { due: TickSystemRun<TSystemId>[]; anchors: TickAnchors } — ⚠ undocumented · used by `planServerTick`: Decides which systems a heartbeat should run.
-- `TickAnchors` (type): type TickAnchors = Record<string, number> — Last-run timestamp per system id.
-- `TickSystemDefinition` (interface): interface TickSystemDefinition<TSystemId extends string = string> { id: TSystemId; intervalMs: number; scope?: "onlinePlayers" | "allServers"; batchSize?: number } — ⚠ undocumented · used by `planServerTick`: Decides which systems a heartbeat should run.
-- `TickSystemRun` (interface): interface TickSystemRun<TSystemId extends string = string> — One due system and how many times this heartbeat owes it.
-- `planServerTick` (function): function planServerTick<TSystemId extends string>(systems: readonly TickSystemDefinition<TSystemId>[], anchors: TickAnchors, now: number, options?: PlanServerTickOptions): ServerTickPlan<TSystemId> — Decides which systems a heartbeat should run. A system with no anchor runs immediately. When wall time stalls past multiple intervals the system's `runs` climbs (bounded by maxCatchUp), and the returned anchor moves by that many intervals — so a host that ignores `runs` loses the catch-up work. Excess lag past the bound resyncs the anchor to `now`. Returned anchors carry only systems present in the pipeline, so removed systems clean up.
-- `tickRunCount` (function): function tickRunCount<TSystemId extends string>(plan: ServerTickPlan<TSystemId>, id: TSystemId): number — Times this plan owes `id`, or 0 when it is not due. Saves a host a lookup over {@link ServerTickPlan.due}.
 
 ## @jgengine/core/time/simClock
 
@@ -6443,17 +6059,6 @@
 - `CullingProviderDrawProps` (interface): interface CullingProviderDrawProps { config: VisibilityConfig | undefined; drawDistance?: number | undefined } — ⚠ undocumented
 - `useRenderVisibility` (function): function useRenderVisibility(): MutableRefObject<VisiblePredicate> — Read the current render-visibility predicate. Backward compatible: with no CullingProvider mounted (or culling disabled) it returns an always-visible ref, so a marker that consults it behaves exactly as before this feature existed. The ref holds a new predicate only on a frame the visible set changed, so work that depends on nothing but the set can skip while it is the same one.
 
-## @jgengine/core/visibility/assetStreaming
-
-- `AssetLoadResult` (interface): interface AssetLoadResult { readonly bytes?: number; readonly value?: unknown } — ⚠ undocumented
-- `AssetLoadState` (type): type AssetLoadState = "queued" | "loading" | "loaded" | "unloaded" | "error" — ⚠ undocumented
-- `AssetRecord` (interface): interface AssetRecord { readonly id: string; state: AssetLoadState; bytes: number; priority: number; refCount: number; pinned: boolean; lastActiveMs: number; value: unknown } — ⚠ undocumented
-- `AssetStreamingOptions` (interface): interface AssetStreamingOptions { readonly load: (assetId: string, signal: CancelSignal) => Promise<AssetLoadResult>; readonly unload?: (assetId: string) => void; readonly settings?: Partial<StreamingSettings>; readonly now?: () => number } — ⚠ undocumented · used by `createAssetStreamingSystem`: Stream shared resources with bounded load concurrency, per-tick resident-byte eviction, and explicit inactive-history cleanup.
-- `AssetStreamingSystem` (interface): interface AssetStreamingSystem { request(assetId: string, priority?: number): void; retain(assetId: string): void; release(assetId: string): void; pin(assetId: string): void; unpin(assetId: string): void; markActive(assetId: string): void; tick(dt: number): void; cancel(… — ⚠ undocumented · used by `createAssetStreamingSystem`: Stream shared resources with bounded load concurrency, per-tick resident-byte eviction, and explicit inactive-history cleanup.
-- `CancelSignal` (interface): interface CancelSignal { readonly cancelled: boolean } — ⚠ undocumented
-- `StreamingStats` (interface): interface StreamingStats — Current demand/residency gauges and cumulative unload/cancellation counters; clear resets totals.
-- `createAssetStreamingSystem` (function): function createAssetStreamingSystem(options: AssetStreamingOptions): AssetStreamingSystem — Stream shared resources with bounded load concurrency, per-tick resident-byte eviction, and explicit inactive-history cleanup.
-
 ## @jgengine/core/visibility/bounds
 
 - `BoundsCache` (interface): interface BoundsCache — BoundsSystem: caches resolved bounds per object and recomputes only when the caller's version advances — i.e. when a transform, geometry, or the bounds spec itself changed. The cached `RenderBounds` object is reused across recomputes, so a steady-state frame that touches thousands of objects performs zero bounds allocations.
@@ -6550,14 +6155,6 @@
 - `mergeCullingSettings` (function): function mergeCullingSettings(base: CullingSettings, patch: Partial<CullingSettings>): CullingSettings — ⚠ undocumented
 - `mergeStreamingSettings` (function): function mergeStreamingSettings(base: StreamingSettings, patch: Partial<StreamingSettings>): StreamingSettings — ⚠ undocumented
 - `resolveOverrides` (function): function resolveOverrides(...layers: readonly (ObjectVisibilityOverrides | undefined)[]): ResolvedOverrides — Merge override layers by precedence: earlier arguments win. Pass object, then layer, then scene, then global.
-
-## @jgengine/core/visibility/simulationCulling
-
-- `SimulationCuller` (interface): interface SimulationCuller { enabled(): boolean; setEnabled(value: boolean): void; step(id: string, distance: number, dt: number): SimulationDecision; forget(id: string): void; clear(): void; snapshot(): SimulationCullerState; restore(next: SimulationCullerState): vo… — ⚠ undocumented
-- `SimulationCullerState` (interface): interface SimulationCullerState — Plain JSON state of a {@link SimulationCuller}: the enabled flag and each id's throttle accumulator.
-- `SimulationCullingOptions` (interface): interface SimulationCullingOptions — Simulation culling is a SEPARATE, opt-in system from render culling. Render culling only decides what is drawn; this decides whether a low-priority off-screen entity updates this tick. It is disabled by default and never throttles a protected entity — physics-critical, networking-critical, audio-critical, scripted, or explicitly-active entities always update. Gameplay correctness must never depend on an entity being on-screen, so opt in only where skipping updates is provably safe.
-- `SimulationDecision` (interface): interface SimulationDecision { update: boolean; elapsed: number } — ⚠ undocumented
-- `createSimulationCuller` (function): function createSimulationCuller(options: SimulationCullingOptions = {}): SimulationCuller — ⚠ undocumented
 
 ## @jgengine/core/visibility/streamer
 
@@ -6668,11 +6265,6 @@
 - `DustField` (function): function DustField(props: DustFieldProps): null — ⚠ undocumented
 - `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
 - `dustFieldDraw` (function): function dustFieldDraw(getProps: () => DustFieldProps, uniforms?: WeatherUniformSet): EngineDraw — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers. `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`, already ticked); without it the draw owns a local set and ticks it on the board at weather priority.
-
-## @jgengine/core/weather/LightningStrike.draw
-
-- `LightningStrike` (function): function LightningStrike(props: LightningStrikeProps): JSX.Element — A jagged, briefly flashing lightning bolt from `origin` to `target`.
-- `LightningStrikeProps` (interface): interface LightningStrikeProps — Props for {@link LightningStrike}: bolt start and end, a key that restarts it, a seed for its shape and visibility.
 
 ## @jgengine/core/weather/LivingWorldLayer.draw
 
@@ -7948,13 +7540,6 @@
 - `catenaryCurve` (function): function catenaryCurve(a: Vec3, b: Vec3, slack: number, segments: number): Vec3[] — True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity. `slack` is the extra length beyond the straight-line distance, as a fraction (0.1 = 10% longer than taut); larger slack droops deeper. Falls back to {@link sagCurve} for a near-taut cable. Returns `segments + 1` points. Anchors may differ in height; the curve interpolates the chord.
 - `sagCurve` (function): function sagCurve(a: Vec3, b: Vec3, sag: number, segments: number): Vec3[] — Quadratic-Bézier sag between two anchors: the control point is pulled straight down so the mid-span lowest point droops by exactly `sag` meters below the chord. Cheap and stable; the go-to for cables where exact catenary physics don't matter. Returns `segments + 1` points.
 
-## @jgengine/core/world/cellStates
-
-- `CellRef` (interface): interface CellRef { col: number; row: number } — ⚠ undocumented
-- `CellStateGrid` (interface): interface CellStateGrid<TState extends string> — A uniform world grid whose cells step through a discrete state ladder — pristine → cracked → burning → ruined — driven by whatever world events the game routes in (#284.8). Pure storage plus ladder mechanics; the game decides *when* to escalate, the grid guarantees ordered, clamped steps and cheap queries. `version()` bumps on every change for dirty-checked rendering.
-- `CellStateGridConfig` (interface): interface CellStateGridConfig<TState extends string> { cols: number; rows: number; states: readonly TState[]; origin?: readonly [number, number]; cellSize?: number } — ⚠ undocumented
-- `createCellStateGrid` (function): function createCellStateGrid<TState extends string>(config: CellStateGridConfig<TState>): CellStateGrid<TState> — ⚠ undocumented
-
 ## @jgengine/core/world/decalKind
 
 - `DECAL_DEFAULTS` (const): const DECAL_DEFAULTS: DecalRules — Default decal rules: a small dirt smudge lying on the ground.
@@ -7969,17 +7554,12 @@
 
 - `EnvironmentField` (interface): interface EnvironmentField { sample(x: number, z: number, time: number, y?: number): EnvironmentSample; temperature(x: number, z: number, time: number, y?: number): number; wetness(x: number, z: number, time: number): number; lightExposure(x: number, z: number, time:… — ⚠ undocumented · used by `createEnvironmentField`: A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time.
 - `EnvironmentFieldConfig` (interface): interface EnvironmentFieldConfig { dayLength?: number; baseTemperature?: number; nightDrop?: number; altitudeLapse?: number; seaLevel?: number; terrain?: TerrainField; rain?: ScalarField; occluders?: ShadeProvider; heatSources?: readonly HeatSource[]; ambientFloor?: number… — ⚠ undocumented · used by `createEnvironmentField`: A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time.
-- `EnvironmentSample` (interface): interface EnvironmentSample { temperature: number; wetness: number; lightExposure: number; ambientLight: number; sheltered: boolean } — ⚠ undocumented · used by `resolveMaterialAppearance` (@jgengine/core/material/appearanceSignals): Resolve one surface from an immutable dry baseline, avoiding cumulative drift.
+- `EnvironmentSample` (interface): interface EnvironmentSample { temperature: number; wetness: number; lightExposure: number; ambientLight: number; sheltered: boolean } — ⚠ undocumented
 - `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
 - `OccluderRect` (interface): interface OccluderRect — A sky-occluding footprint — a roof, dense canopy, a cave mouth. `shade` 0..1 = fraction of sky blocked.
 - `ScalarField` (type): type ScalarField = number | ((x: number, z: number, time: number) => number) — ⚠ undocumented
 - `ShadeProvider` (type): type ShadeProvider = readonly OccluderRect[] | ((x: number, z: number) => number) — ⚠ undocumented
 - `createEnvironmentField` (function): function createEnvironmentField(config: EnvironmentFieldConfig = {}): EnvironmentField — A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time. Built on the same renderer-free footing as terrain/wind/water so meters, spawn gating, and damage-in-sunlight read the world the shell renders — no three.js. Instantaneous and pure (no accumulation); stateful build-up belongs to a decay meter reading this field.
-
-## @jgengine/core/world/environmentForces
-
-- `EnvironmentMotionTarget` (interface): interface EnvironmentMotionTarget — The game selects affected players, coupling, target bits and its acceleration limit.
-- `installEnvironmentMotion` (function): function installEnvironmentMotion(ctx: GameContext, options: { targets: () => readonly EnvironmentMotionTarget[]; maxTargets?: number }): () => void — Inject authoritative spatial forces before existing movement consumes its motion intents.
 
 ## @jgengine/core/world/environmentSummary
 
@@ -8027,7 +7607,7 @@
 - `RoadEnvironmentConfig` (interface): interface RoadEnvironmentConfig — Config for {@link road}: a flat asphalt ribbon draped over the terrain along a centerline.
 - `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. `slabs` absent means the 1.5 m default, `kerb` absent the 0.14 m kerb… — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
 - `RoadSurfaceScans` (interface): interface RoadSurfaceScans — Scanned surfaces for each layer of a {@link road}; see {@link RoadEnvironmentConfig.materials}.
-- `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig { preset?: "day" | "dusk" | "night"; timeOfDay?: boolean; horizonColor?: string; zenithColor?: string; dayHold?: number; sunIntensity?: number; ambientIntensity?: number; sunColor?: string; fogColor?: string; moonIntensity?: number; moonCol… — ⚠ undocumented · used by `skyNoonKeyframes` (@jgengine/core/sky/skyOwnedLighting): The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset.
+- `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig { preset?: "day" | "dusk" | "night"; timeOfDay?: boolean; horizonColor?: string; zenithColor?: string; dayHold?: number; sunIntensity?: number; ambientIntensity?: number; sunColor?: string; fogColor?: string; moonIntensity?: number; moonCol… — ⚠ undocumented · used by `CINEMATIC_SKY` (@jgengine/core/render/lookPreset): A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill.
 - `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/core/sky/skyBands): The terrain biome bands a sky cross-fades through.
 - `SkySunConfig` (interface): interface SkySunConfig — Where the sun sits, as a compass bearing and a height above the horizon, both in degrees. `azimuth` 0 points toward -Z (north), 90 toward +X (east); `elevation` 90 is straight overhead.
 - `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig { area?: EnvironmentArea; position?: EnvironmentVec2; density?: number; speed?: number; flakeSize?: number; drift?: number; wind?: EnvironmentVec2; color?: string; opacity?: number } — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
@@ -8123,43 +7703,6 @@
 
 - `grounded` (function): function grounded(ctx: Pick<GameContext, "world">, x: number, z: number): readonly [number, number, number] — Ground an XZ point onto the live world surface as `[x, groundY, z]`.
 
-## @jgengine/core/world/interiorDressing
-
-- `InteriorBox` (interface): interface InteriorBox — A box in world space, rotated about Y. `role` names what it dresses.
-- `InteriorCable` (interface): interface InteriorCable — A cable hung between anchors, already sampled into a sagging polyline.
-- `InteriorClearance` (interface): interface InteriorClearance — A point or circle the dressing must keep clear: a door, lift, pickup or spawn.
-- `InteriorClutterSlot` (interface): interface InteriorClutterSlot — A spot against a wall a game may fill with a prop of at most `depth` × `width`.
-- `InteriorDebrisSlot` (interface): interface InteriorDebrisSlot — A small loose object on the floor: a can, a rag, a tool, a pile of rubble. Debris does not block a walk, so it may sit anywhere but a kept-clear spot; `along` says whether it hugs a wall, gathers in a corner or lies out in the open, and `pick` lets a game choose which model lies there.
-- `InteriorDecal` (interface): interface InteriorDecal — A stain on a wall (standing, facing `normal`) or on the floor (lying flat).
-- `InteriorDecalStyle` (type): type InteriorDecalStyle = Extract<DecalStyle, "grime" | "leak" | "rust" | "dirt" | "wet" | "paper" | "scorch" | "hazard"> — The procedural stains a dressing plan places; each is a {@link DecalStyle} with its own texture in the shell.
-- `InteriorDressingOptions` (interface): interface InteriorDressingOptions — What to place and how densely. Each family is on with its defaults unless set to `false`.
-- `InteriorDressingPlan` (interface): interface InteriorDressingPlan — Everything a dressing pass places.
-- `InteriorFixture` (interface): interface InteriorFixture — A practical lamp mounted on a wall: where its housing sits and where its light comes from.
-- `InteriorFixtureState` (type): type InteriorFixtureState = "lit" | "flicker" | "dead" — Whether a planned lamp burns steadily, stutters or has failed.
-- `InteriorPipe` (interface): interface InteriorPipe — A straight pipe segment between two points.
-- `InteriorRect` (interface): interface InteriorRect — One axis-aligned walkable footprint, centre and full size on the ground plane.
-- `InteriorWallRun` (interface): interface InteriorWallRun — One straight stretch of wall bounding the union of footprints. `inward` is the unit normal that points into the room; a doorway between two footprints is a gap, so a run never crosses one.
-- `interiorWallRuns` (function): function interiorWallRuns(rects: readonly InteriorRect[]): InteriorWallRun[] — The wall runs bounding a union of footprints: every boundary edge of the union, merged into the longest straight runs with one inward normal each. Doorways between footprints leave no wall.
-- `nearestFixtures` (function): function nearestFixtures<T extends { light: Vec3 }>(fixtures: readonly T[], eye: Vec3, budget: number, reach = Infinity): T[] — Fixtures closest to `eye`, nearest first, capped at `budget`: which lamps a fixed light pool lights this frame.
-- `planInteriorDressing` (function): function planInteriorDressing(rects: readonly InteriorRect[], options: InteriorDressingOptions): InteriorDressingPlan — Plan the dressing for one floor: footprints in, every trim, pipe, cable, decal, lamp and clutter slot out. Density is per metre of wall and per square metre of floor, so a bigger floor gets more, and every family can be turned off or retuned in `options`.
-
-## @jgengine/core/world/interiors
-
-- `EntityLocation` (interface): interface EntityLocation { space: SpaceRef; position: Vec2 } — ⚠ undocumented
-- `Exterior` (interface): interface Exterior { bounds?: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
-- `Interior` (interface): interface Interior { id: string; origin: Vec2; rotation?: number; bounds: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
-- `Interiors` (interface): interface Interiors { move(location: EntityLocation, delta: Vec2): EntityLocation; enter(location: EntityLocation, id: string): EntityLocation | null; leave(location: EntityLocation): EntityLocation | null; toInterior(id: string, exterior: Vec2): Vec2 | null; … — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
-- `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
-- `SpaceRef` (type): type SpaceRef = { kind: "exterior" } | { kind: "interior"; id: string } — ⚠ undocumented
-- `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
-
-## @jgengine/core/world/overhead
-
-- `EnclosureOptions` (interface): interface EnclosureOptions extends OverheadOptions — {@link solidEnclosure} knobs, beside {@link solidOverhead}'s for the roof.
-- `OverheadOptions` (interface): interface OverheadOptions — {@link solidOverhead} knobs.
-- `solidEnclosure` (function): function solidEnclosure(solids: Pick<WorldSolids, "inBox">, at: readonly [number, number, number], options: EnclosureOptions = {}): number — How shut in a point is: the share of the ways round it that meet a wall within reach, and 0 under open sky. 1 is a closed room, roof and walls all round; an open door or a missing wall leaves it short of 1. What decides whether a building keeps out the weather and the cold.
-- `solidOverhead` (function): function solidOverhead(solids: Pick<WorldSolids, "inBox">, at: readonly [number, number, number], options: OverheadOptions = {}): boolean — Whether something solid is overhead: a ceiling, a roof, cave rock, anything in the world's solids straight above `at`, between `clearance` and `reach` over it. What keeps the rain off a survivor and lets a roof count as shelter.
-
 ## @jgengine/core/world/poleLineKind
 
 - `Cable` (interface): interface Cable — One resolved cable span: a point string to loft into a tube, plus its radius.
@@ -8249,13 +7792,6 @@
 - `SceneVolumeLike` (interface): interface SceneVolumeLike — The minimal volume shape vegetation/clearance/triggers read; any `EditorVolume` satisfies it.
 - `volumeCenterOnGround` (function): function volumeCenterOnGround(volume: Pick<SceneVolumeLike, "shape" | "radius" | "height" | "halfExtents">, ground: ScenePoint3): ScenePoint3 — The `center` that stands a box or cylinder on `ground`: raised by its half height, so its bottom face is at `ground.y`. A sphere is centred on the point itself.
 - `volumeHalfSize` (function): function volumeHalfSize(volume: Pick<SceneVolumeLike, "shape" | "radius" | "height" | "halfExtents">): ScenePoint3 — Half sizes of a volume's bounds, which are centred on `center` on every axis: a box spans `center ± halfExtents`, a cylinder `center.y ± height / 2` (height defaults to its diameter), a sphere `center ± radius`. Runtime containment and the editor's drawing both read this, so a volume authored to stand on the floor has `center.y` at the floor plus its half height.
-
-## @jgengine/core/world/segment
-
-- `CircleSegmentHit` (interface): interface CircleSegmentHit — A resolved circle-vs-segment contact.
-- `ClosestOnSegment` (interface): interface ClosestOnSegment — Closest point on segment `a`→`b` to `p`, and the clamped parameter `t` in [0,1] where it lies.
-- `circleVsSegment` (function): function circleVsSegment(center: Vec2, radius: number, a: Vec2, b: Vec2, thickness = 0): CircleSegmentHit | null — Circle (center + `radius`) against a capsule segment `a`→`b` of half-thickness `thickness` (0 for a thin wall). Returns the contact — surface normal, penetration depth, contact point, and the separated center — or `null` when they do not overlap. Endpoints are rounded (the segment is a capsule), so a ball never catches on a corner. Reflect the velocity across `normal` for the bounce; the pure geometry every 2D ball game (pinball, breakout, air hockey) reimplemented per wall, bumper, and paddle.
-- `closestPointOnSegment` (function): function closestPointOnSegment(p: Vec2, a: Vec2, b: Vec2): ClosestOnSegment — Closest point on the segment `a`→`b` to point `p`, with the clamped parameter `t` (0 at `a`, 1 at `b`).
 
 ## @jgengine/core/world/soilKind
 
@@ -8402,15 +7938,6 @@
 - `windRoughness` (function): function windRoughness(effects: Pick<WindEffects, "surface" | "roughnessLengthM" | "minHeightM">): WindSurfaceRoughness — The roughness a set of effects resolves to.
 - `windTurbulenceIntensity` (function): function windTurbulenceIntensity(heightM: number, roughness: WindSurfaceRoughness): number — Turbulence intensity I_v(z) = 1 / ln(z/z₀) (EN 1991-1-4 eq. 4.7 with k_I = c₀ = 1).
 - `windTurbulenceScale` (function): function windTurbulenceScale(heightM: number, roughness: WindSurfaceRoughness): number — Turbulence length scale L(z) = 300 (z/200)^α, α = 0.67 + 0.05 ln z₀ (EN 1991-1-4 eq. B.1), metres.
-
-## @jgengine/core/world/windZones
-
-- `WindShiftForecast` (interface): interface WindShiftForecast { zoneId: string; at: number; inSeconds: number; next: WindZoneState } — ⚠ undocumented
-- `WindZoneConfig` (interface): interface WindZoneConfig { id: string; center: readonly [number, number]; radius: number; phases: readonly SchedulePhase<WindZoneState>[]; offsetSeconds?: number } — ⚠ undocumented
-- `WindZoneState` (interface): interface WindZoneState { direction: WindVector; speed: number; label?: string } — ⚠ undocumented
-- `WindZones` (interface): interface WindZones — Named, discrete wind zones over an ambient field — each zone runs a deterministic `StateSchedule` of wind states, so games get scheduled shifts with advance announcement (`forecastShift` drives the "gale in 12s" countdown) instead of one continuous field.
-- `WindZonesConfig` (interface): interface WindZonesConfig { zones: readonly WindZoneConfig[]; ambient?: WindField } — ⚠ undocumented
-- `createWindZones` (function): function createWindZones(config: WindZonesConfig): WindZones — ⚠ undocumented
 
 ## @jgengine/core/world/worldSolids
 

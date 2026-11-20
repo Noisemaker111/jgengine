@@ -31,7 +31,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## agents — a needs, thought, action and mood loop an agent runs on the world clock
 
 - `createAgent` (function) · `import { createAgent } from "@jgengine/core/agents/agent"`
-- `createAgentSystem` (function) · `import { createAgentSystem } from "@jgengine/core/agents/system"`
 
 ## ambient-temperature — air temperature from climate, time of day, weather, altitude, wetness and nearby heat
 
@@ -49,17 +48,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `bodyComfort` (function) · `import { bodyComfort } from "@jgengine/core/gameplay"`
 
-## breeding — pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care
-
-- `createBreedingField` (function) · `import { createBreedingField } from "@jgengine/core/breeding/breeding"`
-
 ## build — a serializable directed/undirected pair key that resists delimiter collisions
 
 - `createPairKeyCodec` (function) · `import { createPairKeyCodec } from "@jgengine/core/gameplay"`
-
-## build-keys — one numbered build command per build piece
-
-- `defineBuildKeys` (function) · `import { defineBuildKeys } from "@jgengine/core/worldModel/buildTool"`
 
 ## cancel-scheduled-rule — remove a scheduled rule and its cursor entirely
 
@@ -170,10 +161,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineSystem` (function) · `import { defineSystem } from "@jgengine/core/gameplay"`
 
-## defined-fields — pass maybe-missing values on as optional fields, leaving out the ones that are undefined
-
-- `DefinedFields` (type) · `import { DefinedFields } from "@jgengine/core/data/definedFields"`
-
 ## detect — fire-once threshold/milestone/tier crossings when a value moves
 
 - `crossThresholds` (function) · `import { crossThresholds } from "@jgengine/core/gameplay"`
@@ -213,10 +200,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## enqueue-work — reserve inputs and add a timed job, honoring capacity and validation policy
 
 - `enqueue` (function) · `import { enqueue } from "@jgengine/core/gameplay"`
-
-## equipment-slot-inventory — wear gear by slot with item-kind rules, two-handed blocking and replace-on-equip
-
-- `createEquipment` (function) · `import { createEquipment } from "@jgengine/core/inventory/equipment"`
 
 ## event-bus — typed publish/subscribe bus for gameplay events
 
@@ -339,37 +322,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createItemInstanceRegistry` (function) · `import { createItemInstanceRegistry } from "@jgengine/core/gameplay"`
 - `proceduralLootEntry` (function) · `import { proceduralLootEntry } from "@jgengine/core/gameplay"`
 
-## item-ledger — track which rolled item instances are still owned, salvaged or sold
-
-- `createItemLedger` (function) · `import { createItemLedger } from "@jgengine/core/loot/salvage"`
-
 ## item-run-haul — carry loot with a weight gate, bank it into a persistent stash, or lose it when the run fails
 
 - `createRunHaul` (function) · `import { createRunHaul } from "@jgengine/core/loot/haul"`
 
-## item-salvage — break an item down for the currency its level and rarity say, once
-
-- `salvageItem` (function) · `import { salvageItem } from "@jgengine/core/loot/salvage"`
-
-## item-salvage-value — compute the currency an item of a level and rarity breaks down into
-
-- `salvageValue` (function) · `import { salvageValue } from "@jgengine/core/loot/salvage"`
-
 ## item-use-composition — compose pluggable, ordered item use-behaviors from serializable references
 
 - `createUseBehaviorRegistry` (function) · `import { createUseBehaviorRegistry } from "@jgengine/core/gameplay"`
-
-## item-vendor — stock a vendor with rolled items priced through the shared economy
-
-- `stockVendor` (function) · `import { stockVendor } from "@jgengine/core/loot/vendor"`
-
-## item-vendor-price — price an item from its level and rarity through the economy's currency
-
-- `itemPrice` (function) · `import { itemPrice } from "@jgengine/core/loot/vendor"`
-
-## item-vendor-rotation — decide when a vendor's shelf is due for a restock
-
-- `createVendorRotation` (function) · `import { createVendorRotation } from "@jgengine/core/loot/vendor"`
 
 ## item-weight — read a rolled item's mass for a carry check
 
@@ -602,10 +561,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `onboardingLock` (function) · `import { onboardingLock } from "@jgengine/core/onboarding/onboardingSystem"`
 
-## onboarding-pointer — on-screen pin or edge arrow with distance to the current onboarding step's target
-
-- `OnboardingPointer` (function) · `import { OnboardingPointer } from "@jgengine/core/onboarding/OnboardingPointer.draw"`
-
 ## param-layers — register parameter layers by stable id and resolve serialized selections
 
 - `createLayerRegistry` (function) · `import { createLayerRegistry } from "@jgengine/core/gameplay"`
@@ -631,10 +586,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## ping-wheel — contextual ping/marker communication between teammates
 
 - `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
-
-## place-piece — place a build piece in a world model with on-screen refusals
-
-- `placePiece` (function) · `import { placePiece } from "@jgengine/core/worldModel/buildTool"`
 
 ## pointer-commands — click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select, Shift/double-click select modifiers, RTS control groups)
 
@@ -683,10 +634,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## quest-catalog-validation — diagnose authored quest ids, prerequisite and reward references, quantities, and blocked dependencies with caller-declared external unlocks
 
 - `validateQuestCatalog` (function) · `import { validateQuestCatalog } from "@jgengine/core/mission/questCatalog"`
-
-## quest-giver — an NPC that hands out its quests one at a time and takes them back when done
-
-- `giverOffer` (function) · `import { giverOffer } from "@jgengine/core/mission/questGivers"`
 
 ## quest-log — track accepted quests and their objective progress from game events
 
@@ -811,14 +758,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSaveSlots` (function) · `import { createSaveSlots } from "@jgengine/core/gameplay"`
 
-## scatter-harvest — strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow
-
-- `createScatterHarvest` (function) · `import { createScatterHarvest } from "@jgengine/core/harvest/scatterHarvest"`
-
-## scatter-points — spread points over fields at random so equal totals differ
-
-- `scatterPoints` (function) · `import { scatterPoints } from "@jgengine/core/inheritance/inheritance"`
-
 ## scoreboard — pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table
 
 - `rankLeaderboard` (function) · `import { rankLeaderboard } from "@jgengine/core/gameplay"`
@@ -826,10 +765,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
 
 - `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/core/leaderboard/scoreboard.view"`
-
-## seed-sweep — test a random system by its odds across many seeds, not one lucky run
-
-- `acrossSeeds` (function) · `import { acrossSeeds } from "@jgengine/core/random/seedSweep"`
 
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 
@@ -876,10 +811,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `shrinkCapture` (function) · `import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view"`
 
-## side-jobs — offer and run repeatable side jobs (fares, deliveries, races) with fare math, deadlines, tips, streaks and wagers
-
-- `createSideJobs` (function) · `import { createSideJobs } from "@jgengine/core/mission/sideJobs"`
-
 ## skill-tree — spend, refuse and refund points over an authored tree with passives, actives and synergies
 
 - `createSkillTree` (function) · `import { createSkillTree } from "@jgengine/core/gameplay"`
@@ -921,10 +852,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## stat-graph-bridge — feed an existing StatModifierSet into a stat-graph source
 
 - `statModifierContributions` (function) · `import { statModifierContributions } from "@jgengine/core/gameplay"`
-
-## stat-points — level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap
-
-- `createStatPoints` (function) · `import { createStatPoints } from "@jgengine/core/progression/statPoints"`
 
 ## suite-content-audit — prove the game suite's data entries (item sources and uses, placeables, ammo, unlock runway) from a game's content
 
@@ -987,24 +914,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createTransactionLedger` (function) · `import { createTransactionLedger } from "@jgengine/core/gameplay"`
 
-## tribe-group — shared-ownership group (tribe/guild/clan) with ranked permissions, group vs personal assets, alliances, and a bounded event log
-
-- `createTribe` (function) · `import { createTribe } from "@jgengine/core/game/tribe"`
-
-## tribe-registry — registry of tribes with mutual alliances and cross-tribe relation lookup
-
-- `createTribeRegistry` (function) · `import { createTribeRegistry } from "@jgengine/core/game/tribe"`
-
 ## triggered-rules — event-conditioned effects with declarative predicates, lifetimes, and stacking
 
 - `createTriggeredRuleEngine` (function) · `import { createTriggeredRuleEngine } from "@jgengine/core/gameplay"`
 - `getRuleEffect` (function) · `import { getRuleEffect } from "@jgengine/core/gameplay"`
 - `listRuleEffects` (function) · `import { listRuleEffects } from "@jgengine/core/gameplay"`
 - `registerRuleEffect` (function) · `import { registerRuleEffect } from "@jgengine/core/gameplay"`
-
-## turf-war — blocks that change hands between any number of sides, with fronts that push on their own clock
-
-- `defineTurfWar` (function) · `import { defineTurfWar } from "@jgengine/core/worldModel/turfWar"`
 
 ## typed-keyed-store — a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative
 
@@ -1022,17 +937,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGateSet` (function) · `import { createGateSet } from "@jgengine/core/progression/gates"`
 
-## unlock-points — spendable point pool earned per level and spent to unlock nodes, with refund and respec
-
-- `createUnlockPoints` (function) · `import { createUnlockPoints } from "@jgengine/core/economy/unlockPoints"`
-
 ## unlockables — gate content behind unlock conditions the player earns
 
 - `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/gameplay"`
-
-## untyped-read — narrow parsed JSON, old saves and other unknown values to records and typed maps without casts
-
-- `isRecord` (function) · `import { isRecord } from "@jgengine/core/data/untyped"`
 
 ## upgrade-options — list the next upgrade steps a placed thing can take, priced and checked by the world
 
@@ -1073,10 +980,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-shop-stock — UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list
 
 - `useShopStock` (function) · `import { useShopStock } from "@jgengine/core/inventory/shopGrid.view"`
-
-## value-inheritance — a child's values from two parents per field, picked or blended, with rare mutations
-
-- `inheritValues` (function) · `import { inheritValues } from "@jgengine/core/inheritance/inheritance"`
 
 ## visitor-population — a crowd whose on-site and daily counts are the bodies the game made
 

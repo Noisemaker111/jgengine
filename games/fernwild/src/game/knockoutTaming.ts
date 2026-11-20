@@ -1,5 +1,5 @@
 import { evalCurve } from "@jgengine/core/progression/leveling";
-import { createDoseTable, type DoseSupply, type DoseTable } from "@jgengine/core/stats/doseTable";
+import { createDoseTable, type DoseSupply, type DoseTable } from "../engine-local/stats/doseTable";
 import { createVitals, type VitalDose, type Vitals, type VitalsState } from "@jgengine/core/stats/vitals";
 
 import { effectivenessOf, HIT_INEFFECTIVENESS, STARVE_LOSS, type TamingDef, tamingBody, TORPOR_DRAIN, WAKES_AT } from "./data/taming";

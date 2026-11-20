@@ -1,4 +1,4 @@
-import { eatWhileRoom } from "@jgengine/core/stats/doseTable";
+import { eatWhileRoom } from "../engine-local/stats/doseTable";
 import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/stats/vitals";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";

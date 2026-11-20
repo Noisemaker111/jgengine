@@ -1,4 +1,4 @@
-import { withSwappableRoadSurface } from "@jgengine/core/roads/liveRoadSurface";
+import { withSwappableRoadSurface } from "../../engine-local/roads/liveRoadSurface";
 import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 import {
   cityRoadSource,

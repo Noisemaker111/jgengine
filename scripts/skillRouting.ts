@@ -40,11 +40,7 @@ export const CORE_MODULE_OVERRIDES: Record<string, string> = {
   "shell/defineGame.draw": MAIN,
   "shell/gameKit.draw": MAIN,
   "shell/GameHost.draw": MAIN,
-  "material/appearanceSignals": "jgengine-world",
   "runtime/worldProjection": "jgengine-multiplayer",
-  // The scene-ownership boundary is how the editor decides whether runtime world
-  // content is authorable — an editor-authoring concern, not world runtime.
-  "scene/sceneOwnership": "jgengine-editor",
 };
 
 /**

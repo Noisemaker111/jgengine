@@ -2,7 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { selectAutoTarget, type AutoTargetPolicy } from "@jgengine/core/scene/autoTarget";
 import { advancePursuit, armPursuit, type PursuitState } from "@jgengine/core/ai/pursuit";
-import { vec3 } from "@jgengine/core/world/vec3";
+import { vec3 } from "../../engine-local/world/vec3";
 
 import { editorLayers } from "../../editorLayers";
 import { councilAdd, councilScale, type CouncilStat } from "../campaign";

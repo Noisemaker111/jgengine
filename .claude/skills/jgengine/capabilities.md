@@ -36,17 +36,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameContextModels` (interface) · `import { GameContextModels } from "@jgengine/core/runtime/gameContext"`
 
-## command-number — validate finite, bounded numbers and integers at command boundaries
-
-- `readInputNumber` (function) · `import { readInputNumber } from "@jgengine/core/commands/commandInput"`
-
 ## command-parse — parse untrusted command input once so every command stage sees typed, bounded values
 
 - `defineCommand` (function) · `import { defineCommand } from "@jgengine/core/commands/commandRunner"`
-
-## command-quantity — validate bounded whole-item counts at command boundaries
-
-- `readQuantity` (function) · `import { readQuantity } from "@jgengine/core/commands/commandInput"`
 
 ## context-map — per-context state keyed by the context a wrapper stands for, so a wrapped context shares its model
 
@@ -201,14 +193,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## runtime — snapshot interpolation
 
 - `createSnapshotBuffer` (function) · `import { createSnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer"`
-
-## scene-ownership — audit a whole ownership manifest for boundary violations
-
-- `auditManifest` (function) · `import { auditManifest } from "@jgengine/core/authoring"`
-- `classifyOwnership` (function) · `import { classifyOwnership } from "@jgengine/core/authoring"`
-- `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/authoring"`
-- `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/authoring"`
-- `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/authoring"`
 
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 

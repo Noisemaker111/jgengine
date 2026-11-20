@@ -35,7 +35,7 @@ const KEY_SYMBOL: Record<string, string> = {
   combat: "createAbilityKit",
   gameplay: "defineSystem",
   multiplayer: "ChatSync",
-  ui: "formatDuration",
+  ui: "createModalStack",
 };
 
 const pkg = JSON.parse(readFileSync(join(root, "packages/core/package.json"), "utf8")) as {

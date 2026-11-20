@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

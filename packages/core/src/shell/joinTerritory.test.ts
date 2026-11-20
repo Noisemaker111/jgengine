@@ -2,7 +2,6 @@ import { createShellKeyHandlers } from "./ShellChrome.draw";
 import { expect, test } from "bun:test";
 
 import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
-import { TerritoryOverlay } from "@jgengine/core/placement/TerritoryOverlay.view";
 
 test("failed join blocks children and renders a retry action", () => {
   const html = JSON.stringify(JoinGate({ status: "failed", failureReason: "full", retry: () => {}, children: "gameplay" }));
@@ -11,12 +10,6 @@ test("failed join blocks children and renders a retry action", () => {
   expect(html).toContain("Retry");
   expect(html).toContain("full");
 });
-test("territory feedback distinguishes blocked land from unaffordable claims", () => {
-  const props = { cells: [{ key: "0,0", x: 0, z: 0, status: "claimable" as const }], cost: 50, affordable: false };
-  expect(JSON.stringify(TerritoryOverlay(props))).toContain("Insufficient funds");
-  expect(JSON.stringify(TerritoryOverlay({ ...props, cells: [{ ...props.cells[0]!, status: "blocked" }] }))).toContain("Land unavailable");
-});
-
 
 test("typing resets held gameplay actions without consuming spaces or devtools hotkeys", () => {
   const actions: string[] = [];

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { normalizeEditorLayers } from "@jgengine/core/editor/document";
-import { auditManifest, isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership";
+import { auditManifest, isSceneOwnershipManifest } from "@llmville/game/engine-local/scene/sceneOwnership";
 import { isStructuralColumnCell } from "@llmville/game/datacenter/layout";
 import { worldToCell } from "@llmville/game/datacenter/grid";
 

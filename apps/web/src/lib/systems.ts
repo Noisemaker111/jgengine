@@ -101,6 +101,6 @@ export const SYSTEMS: readonly EngineSystem[] = [
     name: "Menus & settings",
     line: "Title, pause, save-select and settings screens with keyboard, gamepad and key rebinding.",
     knobs: ["push", "back", "keybind"],
-    ref: "jgengine-ui/menu-router",
+    ref: "jgengine-ui/game-menu",
   },
 ];

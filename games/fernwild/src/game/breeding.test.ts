@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createBreedingField } from "@jgengine/core/breeding/breeding";
-import type { MateCandidate } from "@jgengine/core/breeding/breeding";
+import { createBreedingField } from "../engine-local/breeding/breeding";
+import type { MateCandidate } from "../engine-local/breeding/breeding";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { tierAt } from "@jgengine/core/threshold/thresholds";

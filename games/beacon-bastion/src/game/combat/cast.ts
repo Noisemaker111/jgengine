@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
-import { vec3 } from "@jgengine/core/world/vec3";
+import { vec3 } from "../../engine-local/world/vec3";
 
 import { councilScale } from "../campaign";
 import { keep, runEnded } from "../keep";

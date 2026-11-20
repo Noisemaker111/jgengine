@@ -3,7 +3,7 @@ import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import { useActionBindings } from "@jgengine/core/input/actionBindings.view";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
-import { summarizeWave } from "@jgengine/core/waves/wavePreview";
+import { summarizeWave } from "../../engine-local/waves/wavePreview";
 import { useGameStore } from "@jgengine/core/ui/hooks.view";
 import { useGameContext } from "@jgengine/core/ui/provider.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

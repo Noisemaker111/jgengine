@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import type { TerritoryPreviewCell } from "@jgengine/core/placement/TerritoryOverlay.view";
+import type { TerritoryPreviewCell } from "../../engine-local/placement/TerritoryOverlay.view";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
 import { Button, C, FULL, Icon, Panel, Row, Text } from "../../ui/kit";

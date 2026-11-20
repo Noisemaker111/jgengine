@@ -5,7 +5,7 @@ import { bind } from "@jgengine/core/ui/rune/primitives";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { compassBearing, headingToBearing, relativeBearing } from "@jgengine/core/map/minimap";
-import { formatSpeed } from "@jgengine/core/format/speed";
+import { formatSpeed } from "../../engine-local/format/speed";
 import { useActionBindings } from "@jgengine/core/input/actionBindings.view";
 import { actionGlyph, useInputDevice } from "@jgengine/core/input/inputDevice.view";
 import { useUiCue } from "@jgengine/core/ui/uiCues.view";

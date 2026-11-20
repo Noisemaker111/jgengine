@@ -1,0 +1,116 @@
+Core keeps only what games use; one-game code moves into its game
+
+Engine seam: packages/core/src/ai/buildOrder.ts, packages/core/src/ai/groupAssist.ts, packages/core/src/ai/laneSelect.ts, packages/core/src/ai/mobBrainGraph.ts, packages/core/src/ai/tacticalQueries.ts, packages/core/src/anim/actionLayer.ts, packages/core/src/anim/oscillator.ts, packages/core/src/authoring.ts and 64 more
+
+### Changed
+
+- Core keeps only what games use; one-game code moves into its game
+
+### Removed
+
+- `@jgengine/core/agents/system` no longer exports `Agent`, `AgentAction`, `AgentFallback`, `AgentFrame`, `AgentMemberSpec`, `AgentMemberState`, `AgentMoodConfig`, `AgentScheduleConfig` and 18 more.
+- `@jgengine/core/ai/buildOrder` no longer exports `AttackClock`, `AttackClockConfig`, `AttackClockInput`, `AttackClockState`, `AttackDecision`, `BuildCatalog`, `BuildCatalogEntry`, `BuildDecision` and 15 more.
+- `@jgengine/core/ai/creatureDriver` no longer exports `CreatureBody`, `CreatureDriver`, `CreatureDriverConfig`, `CreatureDriverState`, `CreatureMind`, `CreatureStep`, `createCreatureDriver`.
+- `@jgengine/core/ai/groupAssist` no longer exports `AssistMember`, `AssistNetwork`, `AssistNetworkConfig`, `AssistNetworkState`.
+- `@jgengine/core/ai/laneSelect` no longer exports `LaneCandidate`, `PickLaneOptions`.
+- `@jgengine/core/ai/mobBrain` no longer exports `MobBrain`, `MobBrainConfig`, `MobBrainDeps`, `MobBrainMode`, `MobBrainStep`, `MobVec3`, `MobWanderConfig`.
+- `@jgengine/core/ai/mobBrainGraph` no longer exports `mobBrainGraph`.
+- `@jgengine/core/ai/populationDirector` no longer exports `PopulationCensus`, `PopulationDirector`, `PopulationDirectorConfig`, `PopulationDirectorState`, `PopulationRegionConfig`, `PopulationSpawnRequest`, `PopulationSpeciesEntry`, `PopulationTickContext` and 1 more.
+- `@jgengine/core/ai/searchBeat` no longer exports `SearchBeatArea`, `SearchBeatState`, `SearchBeatTuning`, `createSearchBeat`, `searchBeatStep`.
+- `@jgengine/core/ai/tacticalQueries` no longer exports `ScoredPosition`, `TacticalPositionEvaluators`, `TacticalPositionWeights`, `coverPoints`, `scorePositions`.
+- `@jgengine/core/anim/actionLayer` no longer exports `ACTION_REST_STATE`, `ActionLayerInput`, `actionLayer`, `withActionLayers`.
+- `@jgengine/core/audio/stepCadence` no longer exports `StepCadenceConfig`, `StepCadenceInput`, `StepCadenceResult`, `StepCadenceState`, `advanceStepCadence`, `createStepCadenceState`.
+- `@jgengine/core/authoring` no longer exports `AuthoredProvenance`, `GeneratedProvenance`, `OwnershipDecision`, `OwnershipDiagnostic`, `OwnershipVerdict`, `ProviderCapabilities`, `RuntimeProvenance`, `SCENE_OWNERSHIP_MANIFEST_VERSION` and 10 more.
+- `@jgengine/core/behaviour/behaviour.draw` no longer exports `attachObject3D`.
+- `@jgengine/core/behaviour/behaviourAttach.draw` no longer exports `attachObject3D`.
+- `@jgengine/core/breeding/breeding` no longer exports `BreedingEgg`, `BreedingEggSpec`, `BreedingEvent`, `BreedingField`, `BreedingOffspring`, `BreedingOptions`, `BreedingPregnancy`, `BreedingSnapshot` and 5 more.
+- `@jgengine/core/buildings/InteriorDressing.draw` no longer exports `DEFAULT_INTERIOR_SURFACES`, `InteriorDressing`, `InteriorDressingProps`, `InteriorDressingSurfaces`, `PracticalLights`, `PracticalLightsProps`, `interiorDressingDraw`, `practicalLightsDraw`.
+- `@jgengine/core/buildings/massing` no longer exports `MASSING_COMPOSITIONS`, `MASSING_PROFILES`, `MassingBody`, `MassingBodyRole`, `MassingComposition`, `MassingProfile`, `MassingSpec`, `composeMassing` and 3 more.
+- `@jgengine/core/combat/ProjectileModels.draw` no longer exports `ProjectileModels`, `ProjectileModelsProps`, `ProjectileShaft`.
+- `@jgengine/core/combat/weaponFeedback` no longer exports `WeaponFeedbackSignal`, `WeaponFeedbackSignals`, `WeaponFeedbackState`, `createWeaponFeedbackSignals`.
+- `@jgengine/core/commands/commandInput` no longer exports `QuantityResult`, `isInputRecord`, `readInputArray`, `readInputNumber`, `readInputOneOf`, `readInputPoint2`, `readInputPoint3`, `readInputString` and 1 more.
+- `@jgengine/core/data/DataObjects.draw` no longer exports `DataObjects`, `DataObjectsProps`, `dataObjectsDraw`.
+- `@jgengine/core/data/dataSource` no longer exports `DataSource`, `DataSourceClock`, `DataSourceOptions`, `DataSourceState`, `DataSourceStatus`, `RefreshOptions`, `createDataSource`.
+- `@jgengine/core/data/definedFields` no longer exports `DefinedFields`, `definedFields`.
+- `@jgengine/core/data/fetchJson` no longer exports `FetchImpl`, `FetchJsonOptions`, `HttpStatusError`, `JsonParseError`, `fetchJson`.
+- `@jgengine/core/data/jsonDataSource` no longer exports `JsonDataSourceOptions`, `createJsonDataSource`.
+- `@jgengine/core/economy/sharedWallet` no longer exports `BookChargeResult`, `WalletBook`, `WalletScope`.
+- `@jgengine/core/economy/unlockPoints` no longer exports `SpendOptions`, `SpendRejection`, `SpendResult`, `UnlockPoints`, `UnlockPointsConfig`, `UnlockPointsState`, `createUnlockPoints`.
+- `@jgengine/core/editor/movementCatalog` no longer exports `AuthoredMovementBinding`, `AuthoredMovementConfig`, `AuthoredMovementDefaults`, `AuthoredMovementDiagnostic`, `AuthoredMovementResult`, `AuthoredMovementValues`, `MovementCatalogDocumentLike`, `bindAuthoredMovement` and 3 more.
+- `@jgengine/core/format/duration` no longer exports `DurationFormat`, `formatDelta`, `formatDuration`, `formatOrdinal`, `padNumber`.
+- `@jgengine/core/format/speed` no longer exports `SpeedFormat`, `SpeedUnit`, `formatSpeed`.
+- `@jgengine/core/game/snapshotHistory` no longer exports `HistoryStacks`, `HistoryStep`, `SnapshotHistory`.
+- `@jgengine/core/game/tribe` no longer exports `AssetAction`, `AssetOwnership`, `Tribe`, `TribeAssetRecord`, `TribeAssetRef`, `TribeConfig`, `TribeEvent`, `TribeEventType` and 9 more.
+- `@jgengine/core/harvest/scatterHarvest` no longer exports `HarvestHit`, `HarvestPlacement`, `HarvestStrike`, `HarvestableDef`, `ScatterHarvest`, `ScatterHarvestConfig`, `ScatterHarvestState`, `createScatterHarvest`.
+- `@jgengine/core/inheritance/inheritance` no longer exports `InheritMutation`, `InheritOptions`, `InheritRule`, `Inherited`, `inheritValues`, `scatterPoints`.
+- `@jgengine/core/input/lookChannel` no longer exports `LookChannel`, `LookChannelOptions`, `LookChannelState`, `LookDeltas`, `createLookChannel`.
+- `@jgengine/core/input/mouseLook.view` no longer exports `MouseLookAim`, `MouseLookOptions`, `MouseLookTracker`, `createMouseLookTracker`.
+- `@jgengine/core/inventory/equipment` no longer exports `EquipItemDef`, `EquipItemLookup`, `EquipRejection`, `EquipResult`, `EquipSlotDef`, `Equipment`, `EquipmentOptions`, `EquipmentProbeReading` and 4 more.
+- `@jgengine/core/inventory/spoilage` no longer exports `SpoilRule`, `Spoilage`, `SpoiledUnits`, `SpoilingStack`, `createSpoilage`.
+- `@jgengine/core/loot/salvage` no longer exports `ItemDropLike`, `ItemLedger`, `ItemLedgerState`, `ItemLifecycle`, `SalvageResult`, `SalvageTable`, `SalvageYield`, `createItemLedger` and 2 more.
+- `@jgengine/core/loot/vendor` no longer exports `StockVendorOptions`, `VendorOffer`, `VendorPriceRule`, `VendorRotation`, `VendorRotationState`, `createVendorRotation`, `itemPrice`, `stockVendor`.
+- `@jgengine/core/map/LightBeam.draw` no longer exports `LightBeam`, `LightBeamProps`, `lightBeamDraw`.
+- `@jgengine/core/map/minimapTrack` no longer exports `TrackAxis`, `trackFraction`.
+- `@jgengine/core/material/appearanceSignals` no longer exports `MaterialAppearanceBaseline`, `MaterialAppearancePolicy`, `MaterialAppearanceResponse`, `MaterialAppearanceTarget`, `MaterialWetnessPolicy`, `resolveMaterialAppearance`, `sampleMaterialAppearance`.
+- `@jgengine/core/material/appearanceSignals.draw` no longer exports `RenderMaterialAppearanceBaseline`, `applyMaterialAppearanceSignals`, `captureMaterialAppearanceBaseline`, `restoreMaterialAppearanceBaseline`.
+- `@jgengine/core/menu/menuRouter.view` no longer exports `MenuRouter`, `MenuStackAction`, `menuStackReducer`, `useMenuRouter`.
+- `@jgengine/core/mission/questGivers` no longer exports `GiverOffer`, `GiverOfferOptions`, `giverOffer`.
+- `@jgengine/core/mission/sideJobs` no longer exports `SideJobActive`, `SideJobComfortSample`, `SideJobDeadlineDef`, `SideJobEvent`, `SideJobFailReason`, `SideJobFareDef`, `SideJobGenerateOptions`, `SideJobKindDef` and 20 more.
+- `@jgengine/core/movement/avatarGait` no longer exports `DEFAULT_GAIT_TUNING`, `GaitTuning`, `advanceGaitPhase`, `gaitBobOffset`, `gaitSwayAngle`.
+- `@jgengine/core/movement/cameraRig` no longer exports `CAMERA_PITCH_LIMIT`.
+- `@jgengine/core/movement/dash` no longer exports `DashBurst`, `DashConfig`, `DashDirection`, `DashRejection`, `DashState`.
+- `@jgengine/core/movement/movementSpeed` no longer exports `MovementSpeedConfig`, `MovementSpeedDeps`, `MovementSpeedModifiers`, `applyStatDrivenSpeed`, `deriveWalkSpeed`.
+- `@jgengine/core/multiplayer` no longer exports `BoardSnapshot`.
+- `@jgengine/core/multiplayer/combatSnapshot` no longer exports `BoardSnapshot`, `CombatRules`, `CombatSide`, `ReplayBlow`, `ReplayResult`, `SerializeBoardArgs`, `SnapshotUnit`.
+- `@jgengine/core/multiplayer/simultaneousCommit` no longer exports `CommitPhase`, `CommitRoundConfig`, `SealResult`, `SealedCommit`.
+- `@jgengine/core/nav/corridors` no longer exports `CorridorEdge`, `CorridorField`, `CorridorPoint`, `CorridorSample`, `createCorridorField`.
+- `@jgengine/core/nav/railGraph` no longer exports `RailEdge`, `RailGraph`, `RailGraphConfig`, `RailNode`, `RailRider`, `RailRiderConfig`, `RailRiderPose`, `ResolvedRailEdge` and 2 more.
+- `@jgengine/core/nav/timetable` no longer exports `RouteTimetable`, `RouteTimetableConfig`, `TimetablePose`, `TimetableStop`, `createRouteTimetable`.
+- `@jgengine/core/onboarding/OnboardingPointer.draw` no longer exports `OnboardingPointer`.
+- `@jgengine/core/physics/InstancedBodies.draw` no longer exports `InstancedBodies`, `InstancedBodiesProps`.
+- `@jgengine/core/physics/InstancedJoints.draw` no longer exports `InstancedJoints`, `InstancedJointsProps`, `instancedJointsDraw`.
+- `@jgengine/core/physics/radialImpulse` no longer exports `RadialFalloff`, `RadialImpulse`, `RadialImpulseOptions`, `radialImpulse`.
+- `@jgengine/core/placement/TerritoryOverlay.view` no longer exports `TerritoryOverlay`, `TerritoryPreviewCell`.
+- `@jgengine/core/progression/statPoints` no longer exports `StatPointLine`, `StatPointSheet`, `StatPoints`, `StatPointsConfig`, `createStatPoints`.
+- `@jgengine/core/puzzle/fallingGrid` no longer exports `CLASSIC_LINE_SCORE`, `FallingGrid`, `FallingGridCell`, `FallingGridConfig`, `FallingGridSnapshot`, `FallingPiece`, `GravityIntervalConfig`, `LockState` and 1 more.
+- `@jgengine/core/puzzle/nonogram` no longer exports `NonogramCell`, `NonogramClue`, `NonogramSolution`, `NonogramSolveResult`.
+- `@jgengine/core/random/seedLink` no longer exports `DEFAULT_SEED_PARAM`.
+- `@jgengine/core/random/seedSweep` no longer exports `SeedSweep`, `acrossSeeds`.
+- `@jgengine/core/render/EntityPreview.draw` no longer exports `EntityPreview`, `EntityPreviewProps`.
+- `@jgengine/core/render/projectedOverdraw.draw` no longer exports `ProjectedOverdrawOptions`, `ProjectedOverdrawReport`, `measureProjectedOverdraw`.
+- `@jgengine/core/render/sceneSwap.draw` no longer exports `useSceneSwap`.
+- `@jgengine/core/render/SpriteBatch.draw` no longer exports `SpriteBatch`, `SpriteBatchInstance`, `SpriteBatchProps`, `spriteBatchDraw`.
+- `@jgengine/core/replay/replayLoop` no longer exports `RecordedPoseLike`, `ReplayEntityDeps`, `ReplayLoop`, `ReplayLoopOptions`.
+- `@jgengine/core/replay/replayPlayback` no longer exports `ReplayPlayback`, `playReplayRecording`.
+- `@jgengine/core/roads/circuitCourse` no longer exports `CIRCUIT_CORNER_TAG`, `CIRCUIT_SECTOR_TAG`, `CircuitCourse`, `CircuitCourseOptions`, `courseFromCircuit`.
+- `@jgengine/core/roads/liveRoadSurface` no longer exports `SurfaceSwappableRoadSource`, `withSwappableRoadSurface`.
+- `@jgengine/core/runtime/worldChannel` no longer exports `WorldClientFrame`, `WorldClientLink`, `WorldHost`, `WorldHostConnection`, `WorldServerFrame`.
+- `@jgengine/core/scene/assetPreload` no longer exports `SceneAssetFetcher`, `createSceneAssetPreloader`.
+- `@jgengine/core/scene/captureCheck` no longer exports `CaptureCheckInput`, `captureChance`, `rollCapture`.
+- `@jgengine/core/scene/companion` no longer exports `CompanionAdoptOptions`, `CompanionCommand`, `CompanionConfig`, `CompanionIntent`, `CompanionIntentContext`, `CompanionRecord`, `CompanionRoster`, `CompanionSpendResult` and 4 more.
+- `@jgengine/core/scene/riding` no longer exports `RideResult`, `Riding`, `SeatOffset`, `ridingOf`.
+- `@jgengine/core/scene/sceneOwnership` no longer exports `AuthoredProvenance`, `GeneratedProvenance`, `OwnershipDecision`, `OwnershipDiagnostic`, `OwnershipVerdict`, `ProviderCapabilities`, `RuntimeProvenance`, `SCENE_OWNERSHIP_MANIFEST_VERSION` and 10 more.
+- `@jgengine/core/session/contestedChannel` no longer exports `ContestReaction`, `ContestedChannel`, `ContestedChannelConfig`, `ContestedEvent`, `ContestedEventKind`, `ContestedPhase`, `ContestedSnapshot`.
+- `@jgengine/core/session/extraction` no longer exports `DeathResult`, `ExtractPoint`, `ExtractionAttempt`, `ExtractionResult`, `RaidPlayerSnapshot`, `RaidSession`, `RaidSessionConfig`, `RaidStatus`.
+- `@jgengine/core/stats/doseTable` no longer exports `DoseSupply`, `DoseTable`, `DoseTableOptions`, `DoseTableRows`, `createDoseTable`, `eatWhileRoom`, `hasRoomFor`.
+- `@jgengine/core/stats/spawnLevelStats` no longer exports `CreatureStatInstance`, `SpawnSpeciesDef`, `SpawnStatDef`, `applyCaptureEffectiveness`, `captureBonusLevels`, `resolveSpawnStats`, `restoreSpawnInstance`, `rollSpawnInstance` and 2 more.
+- `@jgengine/core/terrain/ProceduralGround.draw` no longer exports `ProceduralGround`, `ProceduralGroundProps`, `proceduralGroundDraw`.
+- `@jgengine/core/time/beatClock` no longer exports `BeatAccuracyTier`, `BeatBufferedAction`, `BeatClock`, `BeatClockConfig`, `BeatInputBuffer`, `BeatJudgement`, `BeatSnapshot`, `DEFAULT_BEAT_TIERS`.
+- `@jgengine/core/time/calendarClock` no longer exports `GameTime`.
+- `@jgengine/core/time/calendarClock.view` no longer exports `CalendarClockOptions`, `useCalendarClock`.
+- `@jgengine/core/time/serverTick` no longer exports `PlanServerTickOptions`, `ServerTickPlan`, `TickAnchors`, `TickSystemDefinition`, `TickSystemRun`, `planServerTick`, `tickRunCount`.
+- `@jgengine/core/ui` no longer exports `SwingTargetInput`, `formatDelta`, `formatDuration`, `formatOrdinal`, `formatSpeed`, `swingTimerState`.
+- `@jgengine/core/ui/swingTimer` no longer exports `SWING_EDGE_EPSILON`, `SwingLabelKind`, `SwingPlayerInput`, `SwingTargetInput`, `SwingTimerState`, `swingTimerState`.
+- `@jgengine/core/visibility/assetStreaming` no longer exports `AssetLoadResult`, `AssetLoadState`, `AssetRecord`, `AssetStreamingOptions`, `AssetStreamingSystem`, `CancelSignal`, `StreamingStats`, `createAssetStreamingSystem`.
+- `@jgengine/core/visibility/simulationCulling` no longer exports `SimulationCuller`, `SimulationCullerState`, `SimulationCullingOptions`, `SimulationDecision`, `createSimulationCuller`.
+- `@jgengine/core/waves/wavePreview` no longer exports `WavePreview`, `WavePreviewOptions`, `WavePreviewUnit`, `summarizeWave`.
+- `@jgengine/core/weather/LightningStrike.draw` no longer exports `LightningStrike`, `LightningStrikeProps`.
+- `@jgengine/core/world/cellStates` no longer exports `CellRef`, `CellStateGrid`, `CellStateGridConfig`, `createCellStateGrid`.
+- `@jgengine/core/world/environmentForces` no longer exports `EnvironmentMotionTarget`, `installEnvironmentMotion`.
+- `@jgengine/core/world/interiorDressing` no longer exports `InteriorBox`, `InteriorCable`, `InteriorClearance`, `InteriorClutterSlot`, `InteriorDebrisSlot`, `InteriorDecal`, `InteriorDecalStyle`, `InteriorDressingOptions` and 9 more.
+- `@jgengine/core/world/interiors` no longer exports `EntityLocation`, `Exterior`, `Interior`, `Interiors`, `InteriorsConfig`, `SpaceRef`, `createInteriors`.
+- `@jgengine/core/world/overhead` no longer exports `EnclosureOptions`, `OverheadOptions`, `solidEnclosure`, `solidOverhead`.
+- `@jgengine/core/world/segment` no longer exports `CircleSegmentHit`, `ClosestOnSegment`, `circleVsSegment`, `closestPointOnSegment`.
+- `@jgengine/core/world/windZones` no longer exports `WindShiftForecast`, `WindZoneConfig`, `WindZoneState`, `WindZones`, `WindZonesConfig`, `createWindZones`.
+- `@jgengine/core/worldModel/buildTool` no longer exports `BuildPiece`, `PlacePieceOptions`, `defineBuildKeys`, `placePiece`.
+- `@jgengine/core/worldModel/turfWar` no longer exports `TurfBlockDecl`, `TurfBlockView`, `TurfFrontDecl`, `TurfHandover`, `TurfWar`, `TurfWarDecl`, `TurfWorldReader`, `defineTurfWar`.

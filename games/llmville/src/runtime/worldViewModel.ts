@@ -10,7 +10,7 @@ import type {
   TweetNotification,
 } from "./gameEngine";
 import type { GamePositionedPrompt, InteractionTarget } from "@llmville/game/simulation/interaction";
-import type { GameTime } from "@jgengine/core/time/calendarClock";
+import type { GameTime } from "@llmville/game/engine-local/time/calendarClock";
 import type { GameUserModel, GeneratedModelSpec } from "../models/models";
 import type { BaseModelCatalogState, BaseModelLibraryEntry } from "../models/training";
 import type { ResearchUnlocks } from "@llmville/game/research/researchUnlocks";

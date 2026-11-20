@@ -8,8 +8,6 @@ import { runGenerator } from "../generator/generator";
 import { compareToEquipped, itemMass, type ItemDrop } from "./drop";
 import { defineLootGenerator } from "./lootGenerator";
 import { createRunHaul } from "./haul";
-import { createItemLedger, salvageItem, salvageValue } from "./salvage";
-import { createVendorRotation, itemPrice, stockVendor, type VendorPriceRule } from "./vendor";
 
 const pools: AffixPool[] = [
   {
@@ -216,90 +214,5 @@ describe("run haul", () => {
     haul.bank();
     haul.carry("core", 3);
     expect(haul.mass()).toEqual({ run: 3, stash: 4, remaining: 27 });
-  });
-});
-
-describe("salvage", () => {
-  const table = {
-    currency: "cores",
-    perLevel: 3,
-    rarityMultiplier: { rare: 2 },
-  };
-
-  test("yield follows level and rarity", () => {
-    expect(salvageValue({ level: 5, rarity: "common" }, table)).toEqual({ currency: "cores", amount: 15 });
-    expect(salvageValue({ level: 5, rarity: "rare" }, table)).toEqual({ currency: "cores", amount: 30 });
-    expect(salvageValue({ level: 1, rarity: "common" }, { ...table, minimum: 4 })).toEqual({ currency: "cores", amount: 4 });
-  });
-
-  test("a salvaged item cannot be salvaged or sold again", () => {
-    const ledger = createItemLedger();
-    const item = { id: "drop:one", level: 3, rarity: "common" };
-    const first = salvageItem(item, table, ledger);
-    expect(first).toMatchObject({ ok: true, yield: { currency: "cores", amount: 9 } });
-    expect(ledger.canUse(item.id)).toBe(false);
-    expect(salvageItem(item, table, ledger)).toEqual({ ok: false, reason: "already-spent" });
-    expect(ledger.spend(item.id, "sold")).toBe(false);
-    expect(ledger.status(item.id)).toBe("salvaged");
-  });
-
-  test("the ledger round-trips as plain data", () => {
-    const ledger = createItemLedger();
-    ledger.spend("a", "salvaged");
-    ledger.spend("b", "sold");
-    const copy = createItemLedger(ledger.snapshot());
-    expect(copy.status("a")).toBe("salvaged");
-    expect(copy.status("b")).toBe("sold");
-    expect(copy.status("c")).toBe("owned");
-    expect(copy.restore({ a: "lost" as never })).toBe(false);
-  });
-});
-
-describe("vendor stock", () => {
-  const rule: VendorPriceRule = {
-    currency: "credits",
-    base: 10,
-    perLevel: 5,
-    rarityMultiplier: { rare: 1.5 },
-    sellFactor: 0.4,
-  };
-
-  test("stock is rolled, priced and replaced on refresh", () => {
-    const shop = createShopStock();
-    const options = {
-      items: shelf("vendor-1", 2, 3),
-      price: rule,
-      idPrefix: "test.shelf",
-    };
-    const first = stockVendor(shop, options);
-    expect(first).toHaveLength(3);
-    expect(shop.list()).toHaveLength(3);
-    expect(first[0]!.entry.price.amount).toBe(itemPrice(first[0]!.item, rule).buy);
-    expect(first[0]!.entry.sellPrice?.amount).toBe(Math.floor(first[0]!.entry.price.amount * 0.4));
-
-    const second = stockVendor(shop, { ...options, items: shelf("vendor-2", 2, 3) });
-    expect(shop.list()).toHaveLength(3);
-    expect(shop.list().map((entry) => entry.id)).toEqual(second.map((offer) => offer.entry.id));
-  });
-
-  test("a purchase charges the shared wallet", () => {
-    const shop = createShopStock();
-    const offers = stockVendor(shop, {
-      items: shelf("buy", 1, 1), price: rule, idPrefix: "buy",
-    });
-    const wallet = grant(createEmptyWallet(), "credits", 1000);
-    const result = shop.buy(offers[0]!.entry.id, wallet);
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(balance(result.wallet, "credits")).toBe(1000 - offers[0]!.entry.price.amount);
-  });
-
-  test("the restock rule counts runs", () => {
-    const rotation = createVendorRotation(2);
-    expect(rotation.due(1)).toBe(false);
-    expect(rotation.due(2)).toBe(true);
-    rotation.mark(2);
-    expect(rotation.due(3)).toBe(false);
-    expect(rotation.due(4)).toBe(true);
-    expect(rotation.state()).toEqual({ refreshedAt: 2 });
   });
 });

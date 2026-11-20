@@ -73,20 +73,6 @@
 - `DistanceUnit` (type): type DistanceUnit = "m" | "km" | "auto" — Target unit for {@link formatDistance}: meters, kilometers, or `"auto"` (km past 1000m).
 - `formatDistance` (function): function formatDistance(meters: number, options: DistanceFormat = {}): string — Format a distance given in meters as a HUD-ready string, switching to km automatically past 1000m when `unit: "auto"`.
 
-## @jgengine/core/format/duration
-
-- `DurationFormat` (interface): interface DurationFormat — Options for {@link formatDuration}.
-- `formatDelta` (function): function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string — Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
-- `formatDuration` (function): function formatDuration(seconds: number, options: DurationFormat = {}): string — Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
-- `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
-- `padNumber` (function): function padNumber(value: number, width: number): string — Left-pad a non-negative integer to `width` digits with leading zeros.
-
-## @jgengine/core/format/speed
-
-- `SpeedFormat` (interface): interface SpeedFormat — Options for {@link formatSpeed}.
-- `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
-- `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
-
 ## @jgengine/core/health/autoQuality
 
 - `AUTO_QUALITY_MAX_FRAME_MS` (const): const AUTO_QUALITY_MAX_FRAME_MS: 1000 — Longest frame still counted; a longer one is a hidden tab or a debugger pause, not a load signal.
@@ -542,6 +528,198 @@
 - `TextDirectionProvider` (function): function TextDirectionProvider({ direction, children }: { direction: TextDirection; children: ReactNode }): ReactNode — Sets the reading direction `useTextDirection` answers below it.
 - `useTextDirection` (function): function useTextDirection(): TextDirection — The reading direction of the active locale; `ltr` when no locale root is above.
 
+## @jgengine/core/map/MapMarkerBeacons.draw
+
+- `MapMarkerBeacons` (function): function MapMarkerBeacons(props: MapMarkerBeaconsProps): null — ⚠ undocumented
+- `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps — Props for `MapMarkerBeacons`: the markers to raise as world beacons, kind styles and beacon height.
+- `mapMarkerBeaconsDraw` (function): function mapMarkerBeaconsDraw({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): EngineDraw — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
+
+## @jgengine/core/map/fastTravel
+
+- `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
+- `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
+- `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
+- `TravelPointDef` (interface): interface TravelPointDef<TMeta = unknown> — A fast-travel destination the game defines. Discovery is tracked separately.
+- `TravelPointView` (interface): interface TravelPointView<TMeta = unknown> extends TravelPointDef<TMeta> — A destination plus its discovery state (and distance from a query origin, when given).
+- `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
+
+## @jgengine/core/map/fastTravel.view
+
+- `FastTravelMenu` (function): function FastTravelMenu<TMeta = unknown>({ network, from, onTravel, currentId, title = "Fast Travel", emptyLabel = "No destinations discovered yet.", onClose, className, style, }: FastTravelMenuProps<TMeta>): ReactNode — Fast-travel menu — the discovered-destinations list players pick from: points grouped by region, distance-sorted from `from`, each showing icon, name, and distance, with a header counting discovered vs. total. Selecting a row calls `onTravel`; the current location is flagged and not travelable. Bind it to a `createFastTravelNetwork`.
+- `FastTravelMenuProps` (interface): interface FastTravelMenuProps<TMeta = unknown> — Props for {@link FastTravelMenu}.
+- `useFastTravel` (function): function useFastTravel<TMeta = unknown>(network: FastTravelNetwork<TMeta>): FastTravelNetwork<TMeta> — Subscribe a component to a fast-travel network's discovery changes. Returns the network unchanged; the hook only forces a re-render when a point is discovered or the network is restored, so callers can read `destinations`/`list` in render.
+
+## @jgengine/core/map/fog
+
+- `FogBounds` (interface): interface FogBounds — World-XZ rectangle a fog field covers.
+- `FogCells` (interface): interface FogCells — A fog field's grid: size, origin, cell size and row-major revealed flags.
+- `FogConfig` (interface): interface FogConfig — Fog field settings: bounds, cell size and the cells revealed at the start.
+- `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
+- `createFogField` (function): function createFogField(config: FogConfig): FogField — Create a fog-of-war field over `bounds`; reveal cells as the player explores. Throws on a non-positive cell size.
+
+## @jgengine/core/map/fogOverlay.view
+
+- `FogCellRect` (interface): interface FogCellRect — A fog cell's rectangle in map pixels.
+- `FogPaintSurface` (interface): interface FogPaintSurface — The canvas-2D calls the fog overlay paints with, so tests can pass a fake.
+
+## @jgengine/core/map/map.view
+
+- `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
+- `CompassProps` (interface): interface CompassProps — Props for `Compass`: the tracked facing yaw, optional centre and markers, strip width and field of view.
+- `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, tool = "pan", onStrokeComplete, drawTone = "info", drawWidth = 3, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Switch `tool` to `"draw"` to freehand-draw strokes committed to `onStrokeComplete` (wire to `createAnnotationLayer`). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
+- `FullscreenMapProps` (interface): interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> — Props for {@link FullscreenMap}.
+- `MapBounds` (interface): interface MapBounds — World-XZ rectangle a world map shows.
+- `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
+- `MapLegendProps` (interface): interface MapLegendProps — Props for {@link MapLegend}.
+- `MapViewport` (interface): interface MapViewport — Pan/zoom transform applied to a {@link WorldMapSurface}'s content group.
+- `MarkerAccess` (interface): interface MarkerAccess<TMarker extends MarkerView> { subscribe: (listener: () => void) => () => void; getSnapshot: () => readonly TMarker[]; getServerSnapshot: () => readonly TMarker[] } — ⚠ undocumented · used by `markerAccess`: Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
+- `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, style, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads static marker views, an external marker source, or a native `MarkerSet`; supply your own `kindStyles` palette to reskin. Does not require `GameProvider`.
+- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers: markerSource = NO_CHROME_MARKERS, markerColor = "#e2e8f0", markerRadius = 5, className, handle, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
+- `MinimapChromeHandle` (interface): interface MinimapChromeHandle — Moves an already-drawn `MinimapChrome`'s markers in place. `place` writes the same positions, rotations and visibility a render with these props would, to markers with the ids the chrome last rendered; markers it has not rendered yet need a render first.
+- `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
+- `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
+- `MinimapPanel` (function): function MinimapPanel({ zoneLabel, clock, showCompass = true, compassProps, headerClassName, zoneLabelClassName, clockClassName, compassClassName, children, ...minimapProps }: MinimapPanelProps): ReactNode — Composed circular-minimap chrome: optional zone-label + clock header above the `Minimap`, optional `Compass` strip below. Purely a wiring layer over the existing primitives — the game supplies the zone name and clock text, this only places them; omit either slot and the header disappears.
+- `MinimapPanelProps` (interface): interface MinimapPanelProps extends MinimapProps — Props for `MinimapPanel` — all `MinimapProps` plus the zone-label/clock header and compass slots.
+- `MinimapProps` (interface): interface MinimapProps — Props for `Minimap`: markers, centre, world radius, fog, size, terrain background and look.
+- `MinimapTrack` (function): function MinimapTrack({ spans = [], pips = [], width = "100%", height = 12, railColor = "rgba(255,255,255,0.10)", className, style, children, }: MinimapTrackProps): ReactNode — Horizontal linear track minimap — a rounded progress rail with colored zone `spans` and gate/exit/player `pips` positioned by 0..1 fraction. The structural counterpart to the radial {@link Minimap} for corridor/route games: fractions are supplied by the caller (via core `trackFraction`), so it reads no store and stays presentation-only, sharing chrome with the radial minimap.
+- `MinimapTrackPip` (interface): interface MinimapTrackPip — A point marker on the {@link MinimapTrack} rail at a 0..1 fraction (e.g. a gate, the exit, or the player).
+- `MinimapTrackProps` (interface): interface MinimapTrackProps — Props for {@link MinimapTrack}.
+- `MinimapTrackSpan` (interface): interface MinimapTrackSpan — A colored span across the {@link MinimapTrack} rail, given by 0..1 `start`/`end` fractions (e.g. from core `trackFraction`).
+- `WaypointArrow` (function): function WaypointArrow({ relative, distance, label, formatDistance = (value) => `${Math.round(value)}m`, size = 44, color = "#f59e0b", className, style, }: WaypointArrowProps): ReactNode — On-screen guide arrow to the tracked waypoint — a HUD compass needle rotated by the facing-relative bearing, with an optional label and distance readout. Pair with `WaypointStore.guidance(playerXZ, facingYaw)`.
+- `WaypointArrowProps` (interface): interface WaypointArrowProps — Props for {@link WaypointArrow}.
+- `WorldMap` (function): function WorldMap({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, className, title = "World Map", onClose, }: WorldMapProps): ReactNode — Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the player. Rectangular linear projection over the supplied world `bounds`. Framed panel wrapper over {@link WorldMapSurface}.
+- `WorldMapProps` (interface): interface WorldMapProps — Props for {@link WorldMap}: markers, world bounds, the player and facing, fog, background and layers.
+- `WorldMapSurface` (function): function WorldMapSurface({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, canvasWidth, canvasHeight, viewport = IDENTITY_VIEWPORT, style, }: WorldMapSurfaceProps): ReactNode — The bare top-down map `<svg>` shared by {@link WorldMap} (framed panel) and {@link FullscreenMap} (pan/zoom overlay): baked terrain background, fog, map layers, markers with labels, and the player arrow, drawn under an optional viewport transform. Rectangular linear projection over the world `bounds`.
+- `WorldMapSurfaceProps` (interface): interface WorldMapSurfaceProps — Props for {@link WorldMapSurface}.
+- `markerAccess` (function): function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView> — Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
+- `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — Re-render a component when a fog field reveals cells; returns its current cells.
+- `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
+
+## @jgengine/core/map/mapAnnotations
+
+- `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
+- `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
+- `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
+- `MapNote` (interface): interface MapNote — A text note pinned at a world point.
+- `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
+- `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
+- `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
+
+## @jgengine/core/map/mapLayers
+
+- `MAP_LAYER_TONE_COLORS` (const): const MAP_LAYER_TONE_COLORS: Record<MapLayerTone, string> — The colour each {@link MapLayerTone} draws with.
+- `MapCellStates` (interface): interface MapCellStates — Sparse per-cell tones drawn on the map over a grid.
+- `MapLayerTone` (type): type MapLayerTone = "danger" | "warning" | "info" | "safe" | "neutral" — Colour role of a map layer: danger, warning, info, safe or neutral.
+- `MapRoute` (interface): interface MapRoute — A polyline drawn on the map, optionally dashed as a forecast.
+- `MapXZ` (type): type MapXZ = readonly [number, number] — A world `[x, z]` point on the map.
+- `MapZone` (interface): interface MapZone — A tinted area drawn on the map, optionally dashed as a preview.
+- `MapZoneShape` (type): type MapZoneShape = | { kind: "circle"; center: MapXZ; radius: number } | { kind: "rect"; center: MapXZ; w: number; d: number; rotate?: number } | { kind: "polygon"; points: readonly MapXZ[] } — A map zone's shape: circle, rotated rectangle or polygon.
+- `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — The colour for a tone; neutral when none is given.
+- `pointInMapZone` (function): function pointInMapZone(zone: MapZoneShape, x: number, z: number): boolean — Renderer-free overlay data for map surfaces (#285.1-2): zones with live + forecast states, route polylines, and per-cell status heatmaps. `@jgengine/core/map/map.view`'s `Minimap`/`WorldMap` take these straight in; `pointInMapZone` answers gameplay queries against the same data, so the HUD and the rules can never disagree about where the storm is.
+
+## @jgengine/core/map/markers
+
+- `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — Built-in marker kinds (player, ally, objective, location, loot, enemy, ...) with colour, glyph and priority.
+- `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
+- `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
+- `MarkerInput` (interface): interface MarkerInput<TMeta = unknown> — A marker to add: kind, position and optional id, label, heading, owner, expiry and metadata.
+- `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
+- `MarkerPosition` (type): type MarkerPosition = readonly [number, number, number] — A marker's world `[x, y, z]` position.
+- `MarkerQuery` (interface): interface MarkerQuery — Filter for {@link MarkerSet} queries: kind, owner, and a radius around a point.
+- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — A live, subscribable set of map markers: add, remove, query and prune expired ones.
+- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching the external-store contract (`useSyncExternalStore`).
+- `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
+- `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
+- `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — Create an empty {@link MarkerSet}; `now` drives marker expiry.
+- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so the UI reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
+- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — The style for a marker kind, falling back to a plain dot for unknown kinds.
+
+## @jgengine/core/map/minimap
+
+- `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — One of the eight compass points.
+- `MinimapPoint` (interface): interface MinimapPoint — A world point projected onto a minimap: pixel position, distance and whether it falls inside.
+- `MinimapView` (interface): interface MinimapView — What a minimap shows: centre, world radius, pixel size and rotation.
+- `WorldXZ` (type): type WorldXZ = readonly [number, number] — A world `[x, z]` point.
+- `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — The nearest compass point to a bearing in radians.
+- `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
+- `compassBearing` (function): function compassBearing(from: WorldXZ, to: WorldXZ): number — Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another. Feeds both the minimap direction and the compass strip.
+- `headingToBearing` (function): function headingToBearing(yaw: number): number — Bearing of an entity facing direction given its `rotationY` (yaw) in radians.
+- `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
+- `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
+- `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
+
+## @jgengine/core/map/minimapBake
+
+- `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
+- `MinimapBake` (interface): interface MinimapBake — A baked minimap image: RGBA pixels plus the world bounds they span.
+- `MinimapBakeBounds` (interface): interface MinimapBakeBounds — Deterministic minimap terrain bake (#1036): rasterize an authored world's terrain (plus optional biome zones and water) into a top-down RGBA image and a matching world-bounds rectangle, then encode it as a PNG data URI. The editor runs this as a bake action and stores the result on the scene document; runtime feeds it straight into the existing `Minimap` / `WorldMap` `background` + `mapBounds` props — no new runtime render path, and the same authored world always bakes the same image (safe for verify/CI). Pure: no canvas, no DOM, `core` still imports nothing external.
+- `MinimapBakeOptions` (interface): interface MinimapBakeOptions — Options for {@link bakeMinimapImage}.
+- `MinimapBakePalette` (interface): interface MinimapBakePalette — The height→color ramp and water color used by the bake.
+- `MinimapBakeSource` (interface): interface MinimapBakeSource — The authored world a bake reads — a height sampler, its bounds, and optional zones/water.
+- `MinimapBakeZone` (interface): interface MinimapBakeZone — One biome/region tint painted over the terrain shade where the ground falls inside its polygon.
+- `bakeMinimapBackground` (function): function bakeMinimapBackground(source: MinimapBakeSource, options: MinimapBakeOptions = {}): { background: string; mapBounds: MinimapBakeBounds } — One-call convenience: rasterize a source and return `{ background, mapBounds }` for a minimap.
+- `bakeMinimapImage` (function): function bakeMinimapImage(source: MinimapBakeSource, options: MinimapBakeOptions = {}): MinimapBake — Rasterizes a top-down terrain image: height maps onto a low→high color ramp (normalized over the sampled height range), slope darkens the shade, water fills below `waterLevel`, and each zone polygon tints the ground it covers. Deterministic for a fixed source. The bounds are preserved so a player-centered minimap pans the image correctly.
+- `encodeBakePng` (function): function encodeBakePng(bake: MinimapBake): Uint8Array — Encodes an RGBA bake to raw PNG bytes (pure; stored DEFLATE, valid for any decoder).
+- `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
+
+## @jgengine/core/map/ping
+
+- `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
+- `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — Feed action pings ride to the rest of the party.
+- `PingCategory` (type): type PingCategory = string — A ping category id, such as `enemy`, `loot`, `location` or `danger`.
+- `PingCategoryDef` (interface): interface PingCategoryDef — A ping category: the marker kind it drops, its label and its spoken callout.
+- `PingClassifyDeps` (interface): interface PingClassifyDeps — Lookups `classifyPing` uses: an entity's role and an object's ping category.
+- `PingClassifyOptions` (interface): interface PingClassifyOptions — Which roles count as hostile and which category each kind of hit maps to.
+- `PingFeedSink` (interface): interface PingFeedSink — Where pings are pushed for other players, such as the party feed.
+- `PingParty` (interface): interface PingParty — Who shares a player's pings: their party members.
+- `PingPayload` (interface): interface PingPayload — A ping as broadcast: id, sender, category, position, the pinged entity and recipients.
+- `PingSystem` (interface): interface PingSystem — Classify, build and broadcast pings as map markers shared with the party.
+- `PingSystemDeps` (interface): interface PingSystemDeps — What a {@link PingSystem} needs: the marker set, a feed, the party, categories, clock and classify options.
+- `classifyPing` (function): function classifyPing(hit: PointerHit, deps: PingClassifyDeps = {}, options: PingClassifyOptions = {}): PingCategory — Classify what a pointer/aim ray hit into a ping category. Entity hits resolve by catalog role (hostile → enemy, else location); object hits by an optional catalog category tag; open ground is a location ping.
+- `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
+
+## @jgengine/core/map/pingBeacons.draw
+
+- `WorldPings` (function): function WorldPings({ markers, kindStyles, pingsOnly = true, height = 2.4, showCallout = true, renderCallout, }: WorldPingsProps): ReactNode — World-space pings — the in-scene side of a ping/marker: a bobbing downward arrowhead pointing at the spot, a ground ring, and a billboarded callout, colored by marker kind and fading in/out over the marker's lifetime. Reads a `MarkerSet` (typically the one a `createPingSystem` writes to), a marker source, or a static array; mount through `PlayableGame.WorldOverlay`.
+- `WorldPingsProps` (interface): interface WorldPingsProps — Props for {@link WorldPings}.
+
+## @jgengine/core/map/pingPulse
+
+- `PingOpacityInput` (interface): interface PingOpacityInput — Inputs to {@link pingOpacity}.
+
+## @jgengine/core/map/sharedAnnotations
+
+- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
+- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
+- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
+- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
+- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
+- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
+
+## @jgengine/core/map/terrainMap.view
+
+- `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions — Terrain map bake settings: resolution and land and water colours.
+- `BakedMap` (interface): interface BakedMap — A baked terrain map: an image URL and the world bounds it covers.
+- `MapBakeBounds` (interface): interface MapBakeBounds — World-XZ rectangle a terrain map bake covers.
+- `bakeTerrainMap` (function): function bakeTerrainMap(field: TerrainField, bounds: MapBakeBounds, options: BakeTerrainMapOptions = {}): BakedMap | null — Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background. Runs in the browser via a 2D canvas; renderer-side, so it lives in the shell.
+
+## @jgengine/core/map/waypointMarkers.view
+
+- `WaypointMarkerTheme` (interface): interface WaypointMarkerTheme — Reskin tokens for {@link WaypointMarkers}. Per-`kind` color layers on top via `kindColors`.
+- `WaypointMarkers` (function): function WaypointMarkers({ entries, project, viewport, distanceOf, distanceFormat, theme, kindColors, margin = 28, showPinLabels = true, className, style, }: WaypointMarkersProps): ReactNode — Off-screen objective / waypoint markers: an absolutely-positioned overlay that turns a set of world waypoints into on-screen pins and off-screen directional arrows. For each waypoint it calls the caller's `project` to get a screen point, then {@link layoutScreenMarker} to decide: an in-view target renders a pin (and optional label) at its projected spot; an off-screen or behind-camera target renders an arrow clamped to the viewport edge, rotated to point the way, with an optional distance label from `distanceOf`. Color comes from `theme` plus a per-`kind` `kindColors` map the game owns — the model never interprets `kind`. Presentation only: tracking, projection, and distance are all caller-supplied.
+- `WaypointMarkersProps` (interface): interface WaypointMarkersProps — Props for {@link WaypointMarkers}.
+- `useWaypoints` (function): function useWaypoints(source: WaypointStore | readonly WaypointEntry[]): readonly WaypointEntry[] — Subscribe to a {@link WaypointStore} and re-render on every change, returning its current waypoints. Pass a plain array instead and it is returned as-is (no subscription), so a game can drive the host from a store or from its own derived state.
+
+## @jgengine/core/map/waypoints
+
+- `WaypointEntry` (interface): interface WaypointEntry — A single player-placed waypoint. World-XZ only — serializable and renderer-free.
+- `WaypointGuidance` (interface): interface WaypointGuidance — Direction/range to the tracked waypoint, for an on-screen guide arrow.
+- `WaypointSnapshot` (interface): interface WaypointSnapshot — Whole serializable state of a {@link WaypointStore} — drop into a save blob.
+- `WaypointStore` (interface): interface WaypointStore — Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data.
+- `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
+- `createWaypointStore` (function): function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore — Player-owned waypoint layer: place/track/clear pins, mirror them into a shared `MarkerSet` (so `Minimap`/`WorldMap`/`Compass` render them for free), and read bearing/distance guidance for an on-screen arrow to the tracked one. State is plain data — `snapshot()`/`restore()` round-trip through any save blob.
+- `waypointAnchor` (function): function waypointAnchor(entry: WaypointEntry): readonly [number, number, number] — The world-space `[x, y, z]` anchor of a waypoint, for projecting it to the screen.
+
 ## @jgengine/core/menu/credits
 
 - `CreditsDocument` (interface): interface CreditsDocument — Everything a credits screen shows. `notice` is the closing line (a license summary, a thank-you).
@@ -624,13 +802,6 @@
 - `MenuNavRender` (type): type MenuNavRender = (nav: MenuNavController) => ReactNode — Render prop for a menu whose items come from {@link useMenuNav}.
 - `UseMenuNavOptions` (interface): interface UseMenuNavOptions — How {@link useMenuNav} is wired.
 - `useMenuNav` (function): function useMenuNav({ ids, columns = 1, wrap = true, disabled, initialId, enabled = true, onConfirm, onBack, onAdjust, gamepad = true, repeat, }: UseMenuNavOptions): MenuNavController — Bind a menu's focus order to the DOM: arrow keys, WASD, Home/End and a standard gamepad move a roving focus, Enter/Space/A confirm, Escape/Backspace/B/Start go back. Tab is left to the browser, so a menu never traps focus, and typing in a text field is never intercepted. The menu is pure state + listeners — it unmounts with the screen, so it costs nothing during play.
-
-## @jgengine/core/menu/menuRouter.view
-
-- `MenuRouter` (interface): interface MenuRouter<Id extends string> — A menu screen stack: where you are, how you got there, and how to go back.
-- `MenuStackAction` (type): type MenuStackAction<Id extends string> = | { type: "open"; id: Id } | { type: "back" } | { type: "replace"; id: Id } | { type: "reset"; id?: Id | undefined } — A screen-stack transition. `reset` without an id collapses to the router's original root.
-- `menuStackReducer` (function): function menuStackReducer<Id extends string>(path: readonly Id[], action: MenuStackAction<Id>, root: Id): readonly Id[] — The pure screen-stack transition behind {@link useMenuRouter}. Exported so a game can drive the same navigation from its own store or a replayable command log instead of UI state.
-- `useMenuRouter` (function): function useMenuRouter<Id extends string>(root: Id, options: { escapeToBack?: boolean } = {}): MenuRouter<Id> — The screen stack behind a game front-end: title → save select → settings → credits, and Escape back out. Every game menu needs this and none of it is game-specific, so it ships here rather than being re-derived per game. Holds no content and imposes no look — the game decides what each screen id renders.
 
 ## @jgengine/core/menu/menuScreen.view
 
@@ -757,159 +928,12 @@
 - `formatPlayTimelineEntry` (function): function formatPlayTimelineEntry(entry: PlayTimelineEntry): string — One compact timeline line: `t=120 event combat.damage to=bruiser amount=12 remaining=54`.
 - `playTimelineDigest` (function): function playTimelineDigest(timeline: readonly PlayTimelineEntry[]): string — FNV-1a over the timeline's canonical JSON. Cheap, dependency-free and stable across runs and machines, which is all a replay comparison needs.
 
-## @jgengine/core/render/EntityPreview.draw
-
-- `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], cameraTarget, fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested {@link EngineCanvas} (WebGL), the {@link GameContextBridge} that carries the running `GameContext` to the subject's `useEntityRenderCues` / `useGameContext` hooks, a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface (`preserveDrawingBuffer`). The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
-- `EntityPreviewProps` (interface): interface EntityPreviewProps — Props for {@link EntityPreview}.
-
-## @jgengine/core/render/SpriteBatch.draw
-
-- `SpriteBatch` (function): function SpriteBatch(props: SpriteBatchProps): JSX.Element — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Thin UI bridge over {@link spriteBatchDraw}.
-- `SpriteBatchInstance` (interface): interface SpriteBatchInstance — One sprite in a batch: world position, size and atlas frame.
-- `SpriteBatchProps` (interface): interface SpriteBatchProps — Props for SpriteBatch: atlas URL and grid, and the sprites to draw.
-- `spriteBatchDraw` (function): function spriteBatchDraw(getProps: () => SpriteBatchProps): EngineDraw — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Each instance picks its atlas frame via a per-instance UV offset attribute patched into the material's vertex shader, so platformer/puzzle-grid presentation never needs one draw call per sprite. Transforms and UV offsets are written directly into the mesh's typed arrays each frame from a plain instance list (bodies never touch the per-entity UI path).
-
-## @jgengine/core/render/TileLayerRenderer.draw
-
-- `TileLayerRenderer` (function): function TileLayerRenderer(props: TileLayerRendererProps): JSX.Element — Thin UI bridge: mounts {@link tileLayerRendererDraw} under the JSX parent.
-- `TileLayerRendererProps` (interface): interface TileLayerRendererProps — Inputs for the instanced textured tile-layer renderer.
-- `tileLayerRendererDraw` (function): function tileLayerRendererDraw({ config, parallax = [1, 1], pixelated = true }: TileLayerRendererProps): EngineDraw — Renders a tilemap as one instanced quad mesh with atlas UV rectangles.
-
-## @jgengine/core/render/ambientLife
-
-- `AmbientLifeConfig` (interface): interface AmbientLifeConfig — Small life the renderer adds around the camera, driven by the weather and the time of day. Birds circle overhead in fair daylight and leave in rain or at night; litter blows along the ground when the wind picks up; steam rises from vents, thicker when it is cold, wet or dark.
-- `SteamVent` (interface): interface SteamVent — A point that breathes steam: a manhole, a vent, a hot spring, a kettle on a stall.
-
-## @jgengine/core/render/colorPipeline
-
-- `AutoExposureConfig` (interface): interface AutoExposureConfig — Bounds and adaptation policy for clamped auto-exposure.
-- `DEFAULT_AUTO_EXPOSURE` (const): const DEFAULT_AUTO_EXPOSURE: Readonly<Required<AutoExposureConfig>> — Default clamped auto-exposure. The range is deliberately asymmetric: a bright street is already readable after AgX's shoulder, while a lamp-lit interior is the case that crushes, so the meter may lift 1.3 stops but only darken 0.7 — an artist's exposure survives.
-- `METERING_HIGHLIGHT_CEILING` (const): const METERING_HIGHLIGHT_CEILING: number — Pixels count toward metering up to this multiple of {@link WHITE_POINT}. A window or a sun disc sits far above it and would otherwise pull the whole frame down to a silhouette.
-- `MID_GREY` (const): const MID_GREY: 0.18 — Linear scene luminance of an 18% grey card — the auto-exposure metering target.
-- `WHITE_POINT` (const): const WHITE_POINT: 1 — Calibration of the output pipeline, in linear scene luminance (1.0 = a white-looking surface at exposure 1).
-- `adaptExposure` (function): function adaptExposure(current: number, target: number, deltaSeconds: number, adaptationSeconds = DEFAULT_AUTO_EXPOSURE.adaptationSeconds): number — Frame-rate independent blend of `current` toward `target`, exponential in time so a hitch does not overshoot and a steady view settles. `deltaSeconds` may be 0..∞; a zero-length step keeps `current`.
-- `exposureForKey` (function): function exposureForKey(keyLuminance: number, config: AutoExposureConfig = {}, daylight = 1): number — Exposure that places a frame whose key luminance is `keyLuminance` on {@link MID_GREY}, bounded by the authored range. A dark interior asks for more than `max` and gets `max`; a blown-out exterior asks for less than `min` and gets `min`, so the frame never runs away at either end. `daylight` (0..1, the sky's share of full day light) scales how far above 1 the meter may lift: a frame dark because it is night keeps its dark, while a dark room by day still opens up.
-- `keyLuminanceFromSamples` (function): function keyLuminanceFromSamples(samples: ArrayLike<number>): number — Key luminance of a metered frame: the median of its samples, each clamped to {@link METERING_HIGHLIGHT_CEILING}. A median rather than a mean because a bright sky, a window or a lamp is a large minority of the frame: averaging those in drags an interior down to a silhouette, where the median still reports the room.
-
-## @jgengine/core/render/flatSceneWalk.draw
-
-- `FlatWalkRenderer` (interface): interface FlatWalkRenderer — The renderer parts the flat walk wraps: three's render lists and shadow pass, and its render counter.
-
-## @jgengine/core/render/lookMood
-
-- `LookMood` (type): type LookMood = MoodPreset | MoodConfig — A mood: a preset name, or a preset with token overrides.
-- `MOOD_PRESETS` (const): const MOOD_PRESETS: readonly MoodPreset[] — Every mood preset name, for pickers and validating a mood read from a URL or file.
-- `MoodConfig` (interface): interface MoodConfig — A mood preset plus the few tokens a game's art direction usually moves. Unset fields keep the preset's value.
-- `MoodPreset` (type): type MoodPreset = "day" | "bright" | "golden" | "dusk" | "overcast" | "night" — Named lighting mood: one art-direction choice that sets the sun, the sky fill, the haze and the colour grade together, so they agree. `"day"` is a clear afternoon, `"bright"` a saturated high-fill cartoon day, `"golden"` a low warm late-afternoon sun with long shadows, `"dusk"` a sunset, `"overcast"` soft diffuse light under cloud, `"night"` moonlight.
-- `MoodSun` (interface): interface MoodSun — Where the key light stands and how strong it is. Angles in degrees: azimuth 0 = -Z, 90 = +X; elevation 90 = overhead.
-- `ResolvedMood` (interface): interface ResolvedMood — Concrete lighting, sky and grade a mood expands to.
-- `resolveMood` (function): function resolveMood(mood: LookMood): ResolvedMood — Expand a mood into the lighting rig, sky and grade it stands for. The key light is the sun (the moon under `"night"`), casts cascaded shadows that follow the camera, and agrees with the dome's sun; a cool bounce opposite it keeps shadowed sides readable; the haze matches the horizon.
-
-## @jgengine/core/render/lookPreset
-
-- `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look. ACES, not the pipeline's AgX: under a sunny sky AgX's flat curve reads as a milky veil over the whole frame, and every shipped game had already switched this preset to ACES by hand.
-- `CINEMATIC_SKY` (const): const CINEMATIC_SKY: SkyEnvironmentConfig — A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill.
-- `COMIC_POST_PROCESSING` (const): const COMIC_POST_PROCESSING: PostProcessingConfig — Ink outlines, four cel bands and a punchy grade — a hand-inked comic look on any model.
-- `GameLookInput` (interface): interface GameLookInput — Explicit graphics knobs a game may set; the preset only fills the ones left undefined.
-- `LOOK_PRESETS` (const): const LOOK_PRESETS: readonly LookPreset[] — Every look preset name, for pickers and validating a preset read from a URL or file.
-- `LOOK_SUN_SIZE` (const): const LOOK_SUN_SIZE: Readonly<Partial<Record<LookPreset, number>>> — The key light's angular size each look gives a sun that leaves `lightSize` unset, so its shadows soften like daylight while the player's soft-shadows setting is on. Looks not named here keep the fixed filter.
-- `LookPreset` (type): type LookPreset = "neutral" | "photoreal" | "toon" | "comic" | "retro" | "cinematic" | "flat" — Named look preset composing the existing lighting/sky/fog/post knobs into one field. `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/contact-shadow/vignette post stack with screen-space reflections on glossy floors and a sun-sized soft shadow, antialiased temporally on high and ultra. `"neutral"` keeps presentation unstyled. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style); `"retro"` pixelates and posterizes the frame. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
-- `NEUTRAL_POST_PROCESSING` (const): const NEUTRAL_POST_PROCESSING: PostProcessingConfig — Unstyled baseline: no bloom or grade; contact AO stays at the graphics-tier default.
-- `PHOTOREAL_POST_PROCESSING` (const): const PHOTOREAL_POST_PROCESSING: PostProcessingConfig — High-contrast physically based presentation for authored HDR environments.
-- `RETRO_POST_PROCESSING` (const): const RETRO_POST_PROCESSING: PostProcessingConfig — Chunky pixels and posterized colour with no smoothing — a low-resolution retro look.
-- `ResolvedGameLook` (interface): interface ResolvedGameLook — Concrete lighting/backdrop/post the shell renders after the preset has filled unset knobs.
-- `TOON_POST_PROCESSING` (const): const TOON_POST_PROCESSING: PostProcessingConfig — Clean graphic presentation; toon materials remain game-owned while this sets the grade.
-- `mergePostProcessing` (function): function mergePostProcessing(preset: PostProcessingConfig, authored: PostProcessingConfig | undefined): PostProcessingConfig — Deep-merge a game's partial post chain over a preset's. Every field the game set wins, including `false` to drop a stage; fields it left unset come from the preset, and stage objects merge field by field (tuples such as `grade.lift` replace whole).
-- `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` and `mood` into concrete lighting/backdrop/post. The default look is `"cinematic"`; `"flat"` passes the explicit knobs through untouched.
-
-## @jgengine/core/render/postProcessing
-
-- `AoConfig` (interface): interface AoConfig — Ground-truth ambient occlusion stage — darkens contact creases and cavities for depth.
-- `AtmosphereConfig` (interface): interface AtmosphereConfig — Air over the lit frame: ground haze that thickens toward the ground and with distance, brighter toward the sun, light shafts where the sky shows through gaps, and a glow around every nearby point and spot light as its light scatters in the same haze. Shafts need a shadow-casting sun. With no sun the whole pass is skipped unless `indoor` is set, which keeps the haze and the lamp glow running so a sunless interior gets its air and its lit lamps.
-- `BloomConfig` (interface): interface BloomConfig — UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive).
-- `ContactShadowConfig` (interface): interface ContactShadowConfig — Screen-space contact shadows: a short ray toward the sun from every pixel, against the depth buffer.
-- `DEFAULT_AO` (const): const DEFAULT_AO: Readonly<AoConfig> — Contact shading used when a post chain leaves `ao` unset: soft creases, no dark halos.
-- `DEFAULT_ATMOSPHERE` (const): const DEFAULT_ATMOSPHERE: Readonly<Required<AtmosphereConfig>> — Height haze and light shafts used when a post chain leaves `atmosphere` unset.
-- `DEFAULT_CONTACT_SHADOWS` (const): const DEFAULT_CONTACT_SHADOWS: Readonly<Required<ContactShadowConfig>> — Contact shadows used when a post chain leaves `contactShadows` unset.
-- `DEFAULT_MOTION_BLUR` (const): const DEFAULT_MOTION_BLUR: Readonly<Required<MotionBlurConfig>> — Motion blur used for the fields a `motionBlur` config leaves unset.
-- `DEFAULT_SSR` (const): const DEFAULT_SSR: Readonly<Required<SsrConfig>> — Screen-space reflections used for the fields an `ssr` config leaves unset.
-- `DofConfig` (interface): interface DofConfig — Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance.
-- `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
-- `GradeLut` (type): type GradeLut = { url: string; size?: number } | { cube: LutCube } — A grade's LUT: a strip PNG (one `size`-wide tile per blue slice), a `.cube` file URL or a baked cube.
-- `LutCube` (interface): interface LutCube — A baked display-space LUT cube: `size³` RGB entries with red varying fastest, three bytes per entry in 0..255. Kept as plain data so a scene document can author one and a test can assert on it.
-- `MotionBlurConfig` (interface): interface MotionBlurConfig — Motion blur (#1658): the camera's own movement blurs the whole frame by reprojecting each pixel to where it was last frame, and registered moving bodies (`registerMotionBlurBody`; every model entity is registered) blur along their own screen motion. Each part has its own strength.
-- `OutlineConfig` (interface): interface OutlineConfig — Ink outlines traced from depth and surface-normal edges — silhouettes plus interior creases.
-- `PostAaMode` (type): type PostAaMode = "taa" | "smaa" | "msaa" | false — Edge antialiasing for the post chain. `"taa"` jitters the camera a fraction of a pixel each frame and blends the frames, which also settles shimmering foliage, thin wires and specular sparkle. SMAA runs in linear-sRGB before the output tone-map and cleans alpha-tested foliage/particles that MSAA samples alone leave crawling. `"msaa"` keeps only the render-target multisample resolve; `false` disables AA stages.
-- `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → contact shadows → SSR → atmosphere → Bloom → DOF → motion blur → SMAA or TAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
-- `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
-- `SsrConfig` (interface): interface SsrConfig — Screen-space reflections: each pixel of an upward-facing glossy surface marches its mirrored view ray through the depth buffer and takes the colour of what it hits, weighted by Fresnel. Wet streets, polished floors and still water pick up the scene above them; off-screen hits fall back to the surface's own environment reflection.
-- `StylizeConfig` (interface): interface StylizeConfig — Art-style stage that turns the same models and lighting into a different look without touching materials: ink outlines (comic / Borderlands), cel bands (cartoon), pixelation (retro). Runs after tone mapping, before the grade.
-- `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage. `"agx"` is the pipeline default: it keeps hue in saturated highlights and rolls a sun-lit surface off gradually, where `"aces"` skews bright colours toward white.
-
-## @jgengine/core/render/projectedOverdraw.draw
-
-- `ProjectedOverdrawOptions` (interface): interface ProjectedOverdrawOptions — Sampling resolution; lower resolutions change thin geometry and alpha-mask raster coverage.
-- `ProjectedOverdrawReport` (interface): interface ProjectedOverdrawReport — Projected mesh-fragment overlap, with depth rejection disabled; this is not production early-Z overdraw or GPU timing.
-- `measureProjectedOverdraw` (function): function measureProjectedOverdraw(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, options: ProjectedOverdrawOptions = {}): ProjectedOverdrawReport — Opt in to a synchronous offscreen count of projected mesh fragments. Native PBR/unlit vertex transforms and alpha discard remain; depth rejection, shadow/refraction passes and postprocessing do not participate. Blended texels count equally, including zero opacity when native alphaTest/alphaHash does not discard them. Pure shader-modifying onBeforeCompile callbacks are retained; render callbacks, custom shader materials, stencil and alpha-to-coverage are rejected. The float readback stalls the GPU. Temporary materials/target are disposed and renderer draw counters/state restored; borrowed assets may become resident while measured.
-
-## @jgengine/core/render/sceneSwap.draw
-
-- `useSceneSwap` (function): function useSceneSwap<T>(wanted: T): T — Change place (a dive, a lift, a district, a level) without a frozen frame. Returns the place to draw, which trails `wanted` while the UI builds the new place in the background a few milliseconds at a time, instead of mounting it in one long blocking pass; once it is in, the shader warmup compiles what it gained and waits for its models, so its first frame on screen links nothing. The frame loop keeps running throughout (models load and upload on it) and the old place still draws from wherever the camera now is: paint an opaque card over the canvas while `useSceneSwapping()` (`@jgengine/core/ui/sceneSwap.view`) is true.
-
-## @jgengine/core/render/shaderWarmup.draw
-
-- `HeldDraw` (interface): interface HeldDraw — A draw the hold swallowed: what it would have drawn, from where, into what, with what override.
-- `HoldDrawsOptions` (interface): interface HoldDrawsOptions — Options for {@link holdDraws}.
-- `SHADER_WARMUP_DEFAULTS` (const): const SHADER_WARMUP_DEFAULTS: { readonly quietMs: 250; readonly planBudgetMs: 120000; readonly stallMs: 30000; readonly planFloorMs: 1500; readonly pollMs: 100; readonly backgroundMs: 2000; readonly backgroundEveryMs: 250; readonly programsPerBatch: 12; readonly texturesPerBatch: 4; readonly prepare… — Defaults sized to cover one load: the covered wait is the driver's link time, not a guess.
-- `ShaderWarmup` (interface): interface ShaderWarmup — A warmup in flight: its promise, its latest state, and a way to stop it.
-- `ShaderWarmupOptions` (interface): interface ShaderWarmupOptions — Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests.
-- `ShaderWarmupRenderer` (interface): interface ShaderWarmupRenderer — The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it.
-- `ShaderWarmupState` (interface): interface ShaderWarmupState — Where the load-time shader warmup is: waiting for the scene to stop growing, compiling a round, finished, or skipped because the renderer refused. The loading screen renders it.
-
-## @jgengine/core/render/sprite2d
-
-- `SortingLayers` (const): const SortingLayers: readonly ["background", "world", "actors", "effects", "foreground", "ui"] — Canonical layers used by 2D presentations.
-- `SpriteClipState` (interface): interface SpriteClipState — Serializable playback position for a named sprite animation.
-- `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
-- `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
-
-## @jgengine/core/render/tileLayerInstances
-
-- `TileLayerInstance` (interface): interface TileLayerInstance — One resolved map cell with its world position and atlas UV rectangle.
-
-## @jgengine/core/render/tileLayerPreview.view
-
-- `TileLayerPreview` (function): function TileLayerPreview({ className }: { className?: string }): JSX.Element — Deterministic canvas-backed tile-layer fixture for textured tile presentation evidence.
-
-## @jgengine/core/render/triangleAttribution.draw
-
-- `TriangleAttribution` (interface): interface TriangleAttribution — Where one scene's triangles are, biggest line first.
-- `TriangleLine` (interface): interface TriangleLine — One line of the triangle table: the draws sharing one geometry inside one named model.
-- `attributeTriangles` (function): function attributeTriangles(root: THREE.Object3D, limit = 12): TriangleAttribution — Sum a scene's triangles by model and geometry, which is the attribution a triangle budget needs: a total says a frame is heavy, a table says which authored object made it heavy. Walks the graph once; call it on demand, never per frame.
-
-## @jgengine/core/render/useDisposable.view
-
-- `Disposable` (interface): interface Disposable — Anything exposing dispose() — three.js geometries, materials, textures, render targets.
-- `useDisposable` (function): function useDisposable<T extends Disposable | readonly Disposable[]>(create: () => T, deps: DependencyList): T — Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts. Owns the useMemo + dispose-effect pair that otherwise repeats at every GPU-resource call site. The factory must return objects exposing `dispose()` (geometries, materials, textures, render targets).
-
 ## @jgengine/core/replay/recordingBuffer
 
 - `RecordingBuffer` (interface): interface RecordingBuffer<T> { append(t: number, data: T): void; seek(t: number): RecordingFrame<T> | null; seekPair(t: number): RecordingPair<T>; range(fromT: number, toT: number): RecordingFrame<T>[]; clear(): void; duration(): number; frames(): readonly RecordingFra… — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/core/replay/useSessionRecorder.draw): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
 - `RecordingBufferOptions` (interface): interface RecordingBufferOptions { maxDurationSeconds?: number; maxFrames?: number } — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/core/replay/useSessionRecorder.draw): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
 - `RecordingFrame` (interface): interface RecordingFrame<T> { t: number; data: T } — ⚠ undocumented
 - `RecordingPair` (interface): interface RecordingPair<T> { before: RecordingFrame<T> | null; after: RecordingFrame<T> | null } — ⚠ undocumented
-
-## @jgengine/core/replay/replayLoop
-
-- `RecordedPoseLike` (interface): interface RecordedPoseLike { position: readonly [number, number, number]; rotationY?: number } — ⚠ undocumented
-- `ReplayEntityDeps` (interface): interface ReplayEntityDeps { has(id: string): boolean; spawn(id: string): void; setPose(id: string, pose: {position: readonly [number, number, number]; rotationY?: number; dt?: number}): unknown; despawn(id: string): unknown } — ⚠ undocumented
-- `ReplayLoop` (interface): interface ReplayLoop<T> — Replays a finished `RecordingBuffer` on a loop — modulo-time seek, frame interpolation, and spawn grace, the pieces every ghost-lap/echo feature hand-rolled (#286.4). `sample(t)` is a pure function of absolute time; `null` means "the ghost isn't on track right now".
-- `ReplayLoopOptions` (interface): interface ReplayLoopOptions<T> { interpolate?: (before: T, after: T, alpha: number) => T; spawnGraceSeconds?: number } — ⚠ undocumented
-
-## @jgengine/core/replay/replayPlayback
-
-- `ReplayPlayback` (interface): interface ReplayPlayback — What a replay played to.
-- `playReplayRecording` (function): function playReplayRecording(playable: ReplayPlayable, replay: ReplayRecording, options: { boot?: boolean } = {}): ReplayPlayback — Play an {@link ReplayRecording} headless against a new world from the same game and seed: boot a new game (unless `boot: false`), then each frame's commands, look and held actions at the frame's own time. The same replay always reaches the same state, so a recorded session is a repro anyone can run.
 
 ## @jgengine/core/replay/replayRecording
 
@@ -1287,7 +1311,6 @@
 - `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
 - `StoredObjectiveBanner` (interface): interface StoredObjectiveBanner — A persisted banner record — all announcement fields resolved, plus id and schedule.
 - `SummarizeSelectionOptions` (interface): interface SummarizeSelectionOptions — Options for {@link summarizeSelection}.
-- `SwingTargetInput` (interface): interface SwingTargetInput — The current target, or the fields the bar needs from it.
 - `TEXT_SCALE_MAX` (const): const TEXT_SCALE_MAX: 2 — Maximum UI text scale.
 - `TEXT_SCALE_MIN` (const): const TEXT_SCALE_MIN: 0.75 — Minimum UI text scale.
 - `TParams` (type): type TParams = Readonly<Record<string, string | number>> — Interpolation values for a message template.
@@ -1316,11 +1339,7 @@
 - `createPhotoModeStore` (function): function createPhotoModeStore(initial: Partial<PhotoModeState> = {}): PhotoModeStore — Serializable, observable photo-mode state (active + hide-HUD). Genre-agnostic plumbing — a game engages it to free its camera and hide gameplay chrome for a clean capture, and reads `hideHud` to conditionally render its HUD. Pair with UI `PhotoModeControls` and shell `captureCanvas`.
 - `createSettingsStore` (function): function createSettingsStore(storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage()): SettingsStore — Reactive, localStorage-backed settings store shared by the shell wiring and UI hooks.
 - `focusPanel` (function): function focusPanel(state: PanelState, id: string): PanelState — Raise open panel `id` to the top of the focus stack (assign it the highest z). No-op if it is closed or already on top, so a pointer-down that refocuses the top window returns the same state.
-- `formatDelta` (function): function formatDelta(seconds: number, decimals: 0 | 1 | 2 = 2): string — Format a signed time gap as `+m:ss.ff` / `-m:ss.ff`, for race deltas and split times.
 - `formatDistance` (function): function formatDistance(meters: number, options: DistanceFormat = {}): string — Format a distance given in meters as a HUD-ready string, switching to km automatically past 1000m when `unit: "auto"`.
-- `formatDuration` (function): function formatDuration(seconds: number, options: DurationFormat = {}): string — Format a duration in seconds as a clock string (`m:ss`, `m:ss.ff`, or `h:mm:ss`), the shape every timer and racing HUD needs.
-- `formatOrdinal` (function): function formatOrdinal(value: number): string — English ordinal for a placement number: 1 → "1st", 2 → "2nd", 3 → "3rd", 11 → "11th".
-- `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 - `hudScaleForViewport` (function): function hudScaleForViewport(fit: Required<HudFitConfig>, viewport: HudSize): number — The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped. 1 on a viewport at or above design size; smoothly below 1 down to `minScale` on phones.
 - `interpolate` (function): function interpolate(template: string, params?: TParams, locale?: Locale): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. With a `locale`, numbers print with that locale's grouping, decimals and digits.
 - `isOpen` (function): function isOpen(state: PanelState, id: string): boolean — Whether panel `id` is currently open.
@@ -1365,7 +1384,6 @@
 - `selectionWindow` (function): function selectionWindow(members: readonly EntitySummaryDef[], scroll: number, size: number): SelectionWindow — Compute a virtualization window over a large selection: a `size`-length slice starting near `scroll`, clamped so the window never runs past the end. Render only `items`, offsetting by `start * itemSize`, to keep a thousand-unit selection from mounting a thousand portraits.
 - `shouldRepeatMenuNav` (function): function shouldRepeatMenuNav(now: number, hold: MenuNavHold, repeat: MenuNavRepeat = {}): boolean — Whether a held direction should fire a move at `now`: immediately on press, then only after `delayMs`, and no more often than `intervalMs`. Pure timing, so a gamepad poll and a keydown handler share one rule.
 - `summarizeSelection` (function): function summarizeSelection(members: readonly EntitySummaryDef[], options?: SummarizeSelectionOptions): SelectionView — Summarize a selected-entity list into a {@link SelectionView}: resolve the primary focus, keep the ordered members, and bucket them by `kind`. Pure and stable — deterministic group ordering and a clamped focus index, so it is safe to call every render and to assert on in a test.
-- `swingTimerState` (function): function swingTimerState(player: SwingPlayerInput, target: SwingTargetInput | null, prevPeriod: number, prevTimer: number): SwingTimerState — Pure swing-timer bar state — no hidden state, no clock, no DOM. The caller threads `prevPeriod`/`prevTimer` back each frame. The period is recovered on the reset edge (when `swingTimer` jumps up = a new swing began) as `max(swingTimer, weapon.speed)`, so the fill is correct even without knowing the weapon's exact cadence. Hidden unless auto-attacking a live, non-object target.
 - `togglePanel` (function): function togglePanel(state: PanelState, id: string): PanelState — Toggle panel `id` — open it (with group exclusivity) if closed, close it if open. The one-key behavior behind a keybind like `B` for the bag.
 - `withLocaleSetting` (function): function withLocaleSetting(extra: readonly GameSettingDef[] | undefined, i18n: I18n | undefined): readonly GameSettingDef[] — `extra` with the Language row added when the game has a translator with more than one locale.
 
@@ -2904,15 +2922,6 @@
 
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
-
-## @jgengine/core/ui/swingTimer
-
-- `SWING_EDGE_EPSILON` (const): const SWING_EDGE_EPSILON: 0.0001 — Threshold above which a timer jump is treated as a fresh swing (period reset).
-- `SwingLabelKind` (type): type SwingLabelKind = "ready" | "seconds" — Whether the bar shows a "ready" label or the seconds-remaining countdown.
-- `SwingPlayerInput` (interface): interface SwingPlayerInput — The local player's auto-attack state for one frame. `swingTimer` counts DOWN in seconds to 0 (= a swing lands).
-- `SwingTargetInput` (interface): interface SwingTargetInput — The current target, or the fields the bar needs from it.
-- `SwingTimerState` (interface): interface SwingTimerState — One frame of swing-bar state plus the cursor (`nextPeriod`/`nextTimer`) the caller carries back into the next call.
-- `swingTimerState` (function): function swingTimerState(player: SwingPlayerInput, target: SwingTargetInput | null, prevPeriod: number, prevTimer: number): SwingTimerState — Pure swing-timer bar state — no hidden state, no clock, no DOM. The caller threads `prevPeriod`/`prevTimer` back each frame. The period is recovered on the reset edge (when `swingTimer` jumps up = a new swing began) as `max(swingTimer, weapon.speed)`, so the fill is correct even without knowing the weapon's exact cadence. Hidden unless auto-attacking a live, non-object target.
 
 ## @jgengine/core/ui/testFixtures.view
 

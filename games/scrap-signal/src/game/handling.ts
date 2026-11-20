@@ -8,7 +8,7 @@ import {
   type WeaponStance,
 } from "@jgengine/core/combat/weaponHandling";
 import type { WeaponPresentationTuning } from "@jgengine/core/combat/weaponPresentation";
-import { deriveWalkSpeed } from "@jgengine/core/movement/movementSpeed";
+import { deriveWalkSpeed } from "../engine-local/movement/movementSpeed";
 import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";

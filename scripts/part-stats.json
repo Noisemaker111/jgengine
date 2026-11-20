@@ -2,19 +2,19 @@
   "parts": [
     {
       "home": "stats/statPool",
-      "importers": 13
+      "importers": 12
     },
     {
       "home": "threshold/thresholds",
-      "importers": 21
+      "importers": 19
     },
     {
       "home": "time/stateSchedule",
-      "importers": 7
+      "importers": 5
     },
     {
       "home": "time/pacedSchedule",
-      "importers": 3
+      "importers": 2
     },
     {
       "home": "time/refillSlots",
@@ -22,7 +22,7 @@
     },
     {
       "home": "time/cooldown",
-      "importers": 4
+      "importers": 2
     },
     {
       "home": "world/spatialSample",
@@ -34,25 +34,25 @@
     },
     {
       "home": "random/pick",
-      "importers": 28
+      "importers": 26
     },
     {
       "home": "rules/predicate",
-      "importers": 14
+      "importers": 13
     },
     {
       "home": "progression/statGraph",
-      "importers": 9
+      "importers": 8
     },
     {
       "home": "inheritance/inheritance",
-      "importers": 1
+      "importers": 0
     },
     {
       "home": "movement/motionTrack",
       "importers": 2
     }
   ],
-  "creates": 584,
-  "folders": 115
+  "creates": 532,
+  "folders": 112
 }

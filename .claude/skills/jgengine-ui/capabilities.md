@@ -92,11 +92,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StatList` (function) · `import { StatList } from "@jgengine/core/ui.view"`
 
-## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
-
-- `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
-- `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/ui"`
-
 ## codex-gallery — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
 
 - `CodexPanel` (function) · `import { CodexPanel } from "@jgengine/core/ui.view"`
@@ -173,10 +168,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `DialogueView` (function) · `import { DialogueView } from "@jgengine/core/ui.view"`
 
-## disposable-resource — memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs
-
-- `useDisposable` (function) · `import { useDisposable } from "@jgengine/core/render/useDisposable.view"`
-
 ## distance-format — render meters as m or km for HUD stats, telemetry, and range readouts
 
 - `formatDistance` (function) · `import { formatDistance } from "@jgengine/core/ui"`
@@ -205,13 +196,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/core/ui.view"`
 
-## entity-preview — live 3D entity portrait — nested EngineCanvas + context bridge + studio stage, driven by the game's own renderEntity
-
-- `EntityPreview` (function) · `import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw"`
-
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
 - `useEventMeter` (function) · `import { useEventMeter } from "@jgengine/core/ui.view"`
+
+## fast-travel — network of fast-travel destinations with discovery, distance-sorted queries, nearest lookup, a travel gate, and serializable state
+
+- `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/map/fastTravel"`
 
 ## fast-travel-menu — discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback
 
@@ -482,11 +473,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `detectLayoutCollisions` (function) · `import { detectLayoutCollisions } from "@jgengine/core/hud/hudPriority"`
 
-## lighting-mood — one field that lights a 3D game: sun, fill, sky, haze and grade that agree
-
-- `MoodPreset` (type) · `import { MoodPreset } from "@jgengine/core/render/lookMood"`
-- `resolveMood` (function) · `import { resolveMood } from "@jgengine/core/render/lookMood"`
-
 ## live-prop — hand an engine UI part a value that moves every frame (a meter, a distance, a countdown) so only its own node updates
 
 - `live` (function) · `import { live } from "@jgengine/core/ui/liveValue"`
@@ -514,6 +500,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## locale-setting — a Language settings row defaulting from the browser and saved in the settings store
 
 - `localeSettingDef` (function) · `import { localeSettingDef } from "@jgengine/core/ui"`
+
+## map-annotations — player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable
+
+- `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/map/mapAnnotations"`
 
 ## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
 
@@ -543,10 +533,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `menuIntentForPadButton` (function) · `import { menuIntentForPadButton } from "@jgengine/core/ui"`
 
-## menu-router — screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back
-
-- `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/core/menu/menuRouter.view"`
-
 ## menu-screen — animated enter/exit menu screen over a live scene, with translucent scrim, backdrop slot, reduced-motion support and exit unmount
 
 - `MenuScreen` (function) · `import { MenuScreen } from "@jgengine/core/ui.view"`
@@ -554,10 +540,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## menu-sound — generated click for menu move/confirm/back, no audio asset
 
 - `createGameMenuSound` (function) · `import { createGameMenuSound } from "@jgengine/core/ui.view"`
-
-## menu-stack-reducer — pure push/back/replace/reset transitions for a menu screen stack
-
-- `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/core/menu/menuRouter.view"`
 
 ## menu-transition — enter/exit phase timing for an animated menu screen, with reduced-motion collapse and snapshot/restore
 
@@ -567,13 +549,16 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `mergeCredits` (function) · `import { mergeCredits } from "@jgengine/core/menu/credits"`
 
-## merge-post-processing — layer a partial post chain over a look preset without losing its stages
-
-- `mergePostProcessing` (function) · `import { mergePostProcessing } from "@jgengine/core/render/lookPreset"`
-
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
 - `Minimap` (function) · `import { Minimap } from "@jgengine/core/ui.view"`
+
+## minimap-bake — rasterize terrain and zones straight into a minimap background and bounds
+
+- `bakeMinimapBackground` (function) · `import { bakeMinimapBackground } from "@jgengine/core/map/minimapBake"`
+- `bakeMinimapImage` (function) · `import { bakeMinimapImage } from "@jgengine/core/map/minimapBake"`
+- `encodeBakePng` (function) · `import { encodeBakePng } from "@jgengine/core/map/minimapBake"`
+- `minimapBakeToPngDataUri` (function) · `import { minimapBakeToPngDataUri } from "@jgengine/core/map/minimapBake"`
 
 ## minimap-chrome — ring frame plus edge-clamped, heading-aware marker dots to nest inside a game's own `<svg>`
 
@@ -631,10 +616,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `OnboardingCalloutCard` (function) · `import { OnboardingCalloutCard } from "@jgengine/core/ui.view"`
 
-## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
-
-- `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`
-
 ## panel-close — close a window while remembering its last position
 
 - `closePanel` (function) · `import { closePanel } from "@jgengine/core/ui"`
@@ -687,6 +668,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `PhotoModeControls` (function) · `import { PhotoModeControls } from "@jgengine/core/ui.view"`
 
+## ping-classify — sort a pointer hit into a ping category (enemy, loot, location, danger) from roles and object categories
+
+- `classifyPing` (function) · `import { classifyPing } from "@jgengine/core/map/ping"`
+
+## ping-wheel — contextual ping/marker communication between teammates
+
+- `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/map/ping"`
+
 ## play-script — write a game's behaviour as a tick-based script with declarative assertions instead of playing it in a browser
 
 - `createPlayScript` (function) · `import { createPlayScript } from "@jgengine/core/play/script"`
@@ -700,13 +689,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Popover` (function) · `import { Popover } from "@jgengine/core/ui.view"`
 
+## portable-marker-source — project caller-owned arrays or subscribable stores into cached minimap marker snapshots without a MarkerSet
+
+- `createMarkerSource` (function) · `import { createMarkerSource } from "@jgengine/core/map/markers"`
+
 ## presence — keep a closing element mounted through its exit transition
 
 - `useMountPresence` (function) · `import { useMountPresence } from "@jgengine/core/ui/presence.view"`
-
-## projected-overdraw — sample actual mesh/camera fragment overlap with native coverage and explicit depth/blending/transmission limits
-
-- `measureProjectedOverdraw` (function) · `import { measureProjectedOverdraw } from "@jgengine/core/render/projectedOverdraw.draw"`
 
 ## proof-flow — write a game's proof route in TypeScript with typed keys and probe checks; it runs headless or in the browser
 
@@ -732,10 +721,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/core/ui.view"`
 
-## replay-playback — play a recorded input-plus-seed session headless and reach the same state
-
-- `playReplayRecording` (function) · `import { playReplayRecording } from "@jgengine/core/replay/replayPlayback"`
-
 ## replay-recording — record a session as input plus seed, plain JSON, for deterministic playback
 
 - `createReplayRecorder` (function) · `import { createReplayRecorder } from "@jgengine/core/replay/replayRecording"`
@@ -759,10 +744,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scaled-object-model — stretch one placement of a catalog model with visual.scale
 
 - `drawsScaledModel` (function) · `import { drawsScaledModel } from "@jgengine/core/shell/world/WorldScene.draw"`
-
-## scene-swap — change place without a frozen frame: build and compile the new place in the background behind a travel card
-
-- `useSceneSwap` (function) · `import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw"`
 
 ## scene-swap-card — know when to show a travel card while the next place builds behind it
 
@@ -808,27 +789,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SettingsTabs` (function) · `import { SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view"`
 
+## shared-annotations — broadcast local map-drawing edits over the party feed and mirror inbound edits — collaborative annotations over any replicated feed
+
+- `createSharedAnnotations` (function) · `import { createSharedAnnotations } from "@jgengine/core/map/sharedAnnotations"`
+
 ## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
 
 - `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/core/ui.view"`
 
-## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
-
-- `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/ui"`
-
 ## split-screen-hud — Per-seat HUD roots positioned over each split-screen viewport.
 
 - `ViewportHuds` (function) · `import { ViewportHuds } from "@jgengine/core/hud/ViewportHuds.draw"`
-
-## sprite-2d — animate a sprite atlas clip from headless or rendered game code
-
-- `createSpriteClipPlayer` (function) · `import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d"`
-- `sortingOrder` (function) · `import { sortingOrder } from "@jgengine/core/render/sprite2d"`
-
-## sprite-batch — Draw many atlas sprites in one instanced draw
-
-- `SpriteBatch` (function) · `import { SpriteBatch } from "@jgengine/core/render/SpriteBatch.draw"`
-- `spriteBatchDraw` (function) · `import { spriteBatchDraw } from "@jgengine/core/render/SpriteBatch.draw"`
 
 ## sprite-icon — draw a served one-colour icon (game-icons.net SVG) tinted to the HUD theme
 
@@ -865,10 +836,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## trans — inline translated-message component bound to the active locale
 
 - `Trans` (function) · `import { Trans } from "@jgengine/core/ui.view"`
-
-## triangle-attribution — per-model triangle table with instance counts, for perf probes
-
-- `attributeTriangles` (function) · `import { attributeTriangles } from "@jgengine/core/render/triangleAttribution.draw"`
 
 ## ui-kit-arcade — retro 8-bit arcade UI kit: stepped pixel frames, JRPG windows, depth buttons, hearts, score popups, chiptune cues
 
@@ -1031,6 +998,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `WaypointMarkers` (function) · `import { WaypointMarkers } from "@jgengine/core/ui.view"`
 
+## waypoint-store — serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint
+
+- `createWaypointStore` (function) · `import { createWaypointStore } from "@jgengine/core/map/waypoints"`
+
 ## window — standalone draggable, closable window primitive over HudFrame — no manager required
 
 - `Window` (function) · `import { Window } from "@jgengine/core/ui.view"`
@@ -1050,3 +1021,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-object-highlights — ground-ring highlight over every selected placed object
 
 - `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/core/hud/WorldHud.draw"`
+
+## world-pings — in-scene ping markers — a bobbing downward arrowhead, ground ring, and billboarded callout per marker, colored by kind and fading over the marker's lifetime
+
+- `WorldPings` (function) · `import { WorldPings } from "@jgengine/core/map/pingBeacons.draw"`

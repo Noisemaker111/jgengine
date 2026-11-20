@@ -37,7 +37,7 @@ import { getAvatarById, normalizeAvatarId, normalizePlayerProfile } from "../use
 import { useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
-import { useCalendarClock } from "@jgengine/core/time/calendarClock.view";
+import { useCalendarClock } from "../engine-local/time/calendarClock.view";
 import { deriveWorldBootLabel, deriveWorldBootProgress } from "./worldBootPhase";
 
 import type { RuntimeGame, SiteHealth, WorldSpendPulse } from "./worldViewModel";

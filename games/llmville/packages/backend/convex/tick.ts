@@ -1,5 +1,5 @@
 import type { FunctionReference } from "convex/server";
-import { planServerTick, type TickSystemDefinition } from "@jgengine/core/time/serverTick";
+import { planServerTick, type TickSystemDefinition } from "@llmville/game/engine-local/time/serverTick";
 import { internal } from "./_generated/api";
 import { internalMutation } from "./_generated/server";
 

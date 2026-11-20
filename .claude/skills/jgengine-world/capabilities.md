@@ -157,7 +157,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## animation — turn a killed rigged character into a physics ragdoll on death
 
 - `CorpseRagdolls` (function) · `import { CorpseRagdolls } from "@jgengine/core/anim/CorpseRagdolls.draw"`
-- `actionLayer` (function) · `import { actionLayer } from "@jgengine/core/anim/actionLayer"`
 - `inferLegChains` (function) · `import { inferLegChains } from "@jgengine/core/anim/footPlacement"`
 - `lookAt` (function) · `import { lookAt } from "@jgengine/core/anim/ikSolver"`
 - `multiplyQuaternions` (function) · `import { multiplyQuaternions } from "@jgengine/core/anim/ikSolver"`
@@ -170,7 +169,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `solveFabrik` (function) · `import { solveFabrik } from "@jgengine/core/anim/ikSolver"`
 - `solveTwoBone` (function) · `import { solveTwoBone } from "@jgengine/core/anim/ikSolver"`
 - `useRagdoll` (function) · `import { useRagdoll } from "@jgengine/core/anim/useRagdoll.draw"`
-- `withActionLayers` (function) · `import { withActionLayers } from "@jgengine/core/anim/actionLayer"`
 
 ## animation-motion-params — read resolved player movement into reusable animation graph parameters
 
@@ -447,17 +445,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/placement/buildSockets"`
 
-## build-requirements — list the unmet prerequisites of an RTS building, unit or research
-
-- `missingRequirements` (function) · `import { missingRequirements } from "@jgengine/core/ai/buildOrder"`
-
 ## build-socket-catalog — data-driven named-socket snap catalog for modular base building
 
 - `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/placement/buildSockets"`
-
-## build-tech-path — resolve an RTS want into the first missing prerequisite to make instead
-
-- `resolveTechPath` (function) · `import { resolveTechPath } from "@jgengine/core/ai/buildOrder"`
 
 ## building-generator — generate seeded buildings as placed facade parts — bays, floors, roof, decor
 
@@ -473,10 +463,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## building-lots — derive street-facing building lots from road frontage
 
 - `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/buildings/buildingLots"`
-
-## calendar-clock-hook — live in-world date and time for a HUD, aligned to the server clock
-
-- `useCalendarClock` (function) · `import { useCalendarClock } from "@jgengine/core/time/calendarClock.view"`
 
 ## camera-clearance — keep any camera out of world collision with a spring-arm pull-in
 
@@ -553,14 +539,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCmaEvolutionStrategy` (function) · `import { createCmaEvolutionStrategy } from "@jgengine/core/math/cmaEvolutionStrategy"`
 
-## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent
-
-- `resolveCompanionIntent` (function) · `import { resolveCompanionIntent } from "@jgengine/core/scene/companion"`
-
-## companion-roster — manage tamed companions — allegiance, commands, per-companion stats/leveling, and mobBrain-shaped intent
-
-- `createCompanionRoster` (function) · `import { createCompanionRoster } from "@jgengine/core/scene/companion"`
-
 ## contour-interval — readable auto-spacing for elevation contours
 
 - `chooseContourInterval` (function) · `import { chooseContourInterval } from "@jgengine/core/terrain/terrainGuides"`
@@ -588,10 +566,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## course-metrics — measure a vehicle on driven tests — understeer gradient, skidpad g, slalom speed
 
 - `measureCourse` (function) · `import { measureCourse } from "@jgengine/core/physics/handlingProbe"`
-
-## creature-driver — wild creatures that graze, flee, defend and hunt by temperament, and tamed ones that follow, stay and fight on order
-
-- `CreatureDriver` (interface) · `import { CreatureDriver } from "@jgengine/core/ai/creatureDriver"`
 
 ## creature-temperament — passive, territorial and predator creatures that react to what perception senses, including light, noise and scent
 
@@ -640,6 +614,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `DEFAULT_DRIVE_CODES` (const) · `import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings"`
 
+## default-look — one field that lights a scene like a shipped game (opt out with "flat")
+
+- `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/render/lookPreset"`
+
 ## default-walk-codes — stock WASD + jump key codes for the shell walk controller
 
 - `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/core/input/actionBindings"`
@@ -671,6 +649,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## difficulty-reaction-gate-state — fresh serializable reaction-gate state for one observed value
 
 - `createReactionGate` (function) · `import { createReactionGate } from "@jgengine/core/ai/difficulty"`
+
+## disposable-resource — memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs
+
+- `useDisposable` (function) · `import { useDisposable } from "@jgengine/core/render/useDisposable.view"`
 
 ## doppler-pitch — pitch a moving sound up as it approaches and down as it passes, from listener and emitter velocity
 
@@ -716,10 +698,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/core/anim/useEntityRenderCues.draw"`
 
-## environment-motion — apply capped spatial wind and vortex forces to game-selected actors through shared motion intents
-
-- `installEnvironmentMotion` (function) · `import { installEnvironmentMotion } from "@jgengine/core/world/environmentForces"`
-
 ## event-feedback — map announced gameplay events (damage, kill, pickup, objective, wave, refusal) to a sound, gamepad pulse, camera shake and caption through one data mapping
 
 - `createEventFeedback` (function) · `import { createEventFeedback } from "@jgengine/core/audio/eventFeedback"`
@@ -727,10 +705,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fast-travel — network of fast-travel destinations with discovery, distance-sorted queries, nearest lookup, a travel gate, and serializable state
 
 - `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/world"`
-
-## fast-travel-menu — discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback
-
-- `FastTravelMenu` (function) · `import { FastTravelMenu } from "@jgengine/core/map/fastTravel.view"`
 
 ## feedback-cue-sounds — default procedural hit/hurt/kill/pickup/objective/wave/deny reactions on an "sfx" bus, overridable per game
 
@@ -1010,10 +984,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `speedAtFroude` (function) · `import { speedAtFroude } from "@jgengine/core/movement/reference/quadrupedGait"`
 
-## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
-
-- `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/core/map/map.view"`
-
 ## gait-analysis — measure the reference human's steady gait — stride, duty factor, ground-force humps, cost of transport
 
 - `analyzeLocomotion` (function) · `import { analyzeLocomotion } from "@jgengine/core/movement/reference/humanGaitAnalysis"`
@@ -1256,11 +1226,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `interestPhase` (function) · `import { interestPhase } from "@jgengine/core/world"`
 
-## interior-dressing — render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
-
-- `InteriorDressing` (function) · `import { InteriorDressing } from "@jgengine/core/buildings/InteriorDressing.draw"`
-- `interiorDressingDraw` (function) · `import { interiorDressingDraw } from "@jgengine/core/buildings/InteriorDressing.draw"`
-
 ## joint-torque-limits — torque-angle-velocity strength of the human hip, knee and ankle from published dynamometry
 
 - `maxJointTorque` (function) · `import { maxJointTorque } from "@jgengine/core/movement/reference/jointStrength"`
@@ -1342,21 +1307,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `actuateLegMuscles` (function) · `import { actuateLegMuscles } from "@jgengine/core/movement/reference/reflexWalker"`
 
-## light-beam — a tall glowing column marking a spot so it can be found from far away
-
-- `lightBeamDraw` (function) · `import { lightBeamDraw } from "@jgengine/core/map/LightBeam.draw"`
-
 ## light-probes — bake an irradiance volume from authored sky, fill and lamp inputs
 
 - `bakeIrradianceVolume` (function) · `import { bakeIrradianceVolume } from "@jgengine/core/lighting/lightProbes"`
 
+## lighting-mood — one field that lights a 3D game: sun, fill, sky, haze and grade that agree
+
+- `MoodPreset` (type) · `import { MoodPreset } from "@jgengine/core/render/lookMood"`
+- `resolveMood` (function) · `import { resolveMood } from "@jgengine/core/render/lookMood"`
+
 ## linear-solve — dense linear solve with partial pivoting for reference physics plants and constraints
 
 - `solveLinearSystem` (function) · `import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra"`
-
-## live-road-surface — swap a road source's asphalt, sidewalk or kerb scan at runtime (wet at night, snow in winter)
-
-- `withSwappableRoadSurface` (function) · `import { withSwappableRoadSurface } from "@jgengine/core/roads/liveRoadSurface"`
 
 ## local-avoidance — bounded deterministic local collision avoidance for moving agents
 
@@ -1395,15 +1357,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/world"`
 
-## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
-
-- `MapLegend` (function) · `import { MapLegend } from "@jgengine/core/map/map.view"`
-
-## material-appearance-signals — adapt selected surface response to sampled wetness and local card exposure
-
-- `resolveMaterialAppearance` (function) · `import { resolveMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
-- `sampleMaterialAppearance` (function) · `import { sampleMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
-
 ## matrix-eigenvalues — eigenvalues of a real matrix — stability modes of a linearised plant
 
 - `matrixEigenvalues` (function) · `import { matrixEigenvalues } from "@jgengine/core/math/linearAlgebra"`
@@ -1411,6 +1364,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## merge-footprint-regions — pool adjacent compatible footprints with serializable capacity provenance
 
 - `mergeFootprints` (function) · `import { mergeFootprints } from "@jgengine/core/world"`
+
+## merge-post-processing — layer a partial post chain over a look preset without losing its stages
+
+- `mergePostProcessing` (function) · `import { mergePostProcessing } from "@jgengine/core/render/lookPreset"`
 
 ## mergeable-footprint-regions — check compatible adjacent regions within caller work budgets
 
@@ -1424,32 +1381,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ColliderShape` (type) · `import { ColliderShape } from "@jgengine/core/scene/colliders"`
 
-## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
-
-- `Minimap` (function) · `import { Minimap } from "@jgengine/core/map/map.view"`
-
 ## minimap-bake — rasterize terrain and zones straight into a minimap background and bounds
 
 - `bakeMinimapBackground` (function) · `import { bakeMinimapBackground } from "@jgengine/core/world"`
 - `bakeMinimapImage` (function) · `import { bakeMinimapImage } from "@jgengine/core/world"`
 - `encodeBakePng` (function) · `import { encodeBakePng } from "@jgengine/core/world"`
 - `minimapBakeToPngDataUri` (function) · `import { minimapBakeToPngDataUri } from "@jgengine/core/world"`
-
-## minimap-chrome — ring frame plus edge-clamped, heading-aware marker dots to nest inside a game's own `<svg>`
-
-- `MinimapChrome` (function) · `import { MinimapChrome } from "@jgengine/core/map/map.view"`
-
-## minimap-panel — circular minimap with zone label, clock, and compass composed together
-
-- `MinimapPanel` (function) · `import { MinimapPanel } from "@jgengine/core/map/map.view"`
-
-## minimap-track — project a world point to a 0..1 fraction along a linear track axis
-
-- `trackFraction` (function) · `import { trackFraction } from "@jgengine/core/map/minimapTrack"`
-
-## minimap-track-hud — horizontal linear track minimap (corridor/route progress) — colored zone spans and gate/player pips positioned by 0..1 fraction, sharing chrome with the radial Minimap
-
-- `MinimapTrack` (function) · `import { MinimapTrack } from "@jgengine/core/map/map.view"`
 
 ## model-animation-diagnostics — inspect imported clip mappings, layer masks and root-track compatibility
 
@@ -1631,15 +1568,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `runPhysicsBackendConformance` (function) · `import { runPhysicsBackendConformance } from "@jgengine/core/physics/physicsBackendConformance"`
 
-## physics-body-instances — Draw every physics body as one instanced mesh
-
-- `InstancedBodies` (function) · `import { InstancedBodies } from "@jgengine/core/physics/InstancedBodies.draw"`
-
-## physics-joint-lines — Draw a physics world's joints as lines
-
-- `InstancedJoints` (function) · `import { InstancedJoints } from "@jgengine/core/physics/InstancedJoints.draw"`
-- `instancedJointsDraw` (function) · `import { instancedJointsDraw } from "@jgengine/core/physics/InstancedJoints.draw"`
-
 ## physics-world-backend — the zero-dependency PhysicsWorld solver exposed through the PhysicsBackend seam
 
 - `createPhysicsWorldBackend` (function) · `import { createPhysicsWorldBackend } from "@jgengine/core/physics/physicsWorldBackend"`
@@ -1647,14 +1575,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## piece-sockets-from-model — derive build-piece snap sockets from a model's named attach points
 
 - `pieceSocketsFromModel` (function) · `import { pieceSocketsFromModel } from "@jgengine/core/placement/buildSockets"`
-
-## ping-classify — sort a pointer hit into a ping category (enemy, loot, location, danger) from roles and object categories
-
-- `classifyPing` (function) · `import { classifyPing } from "@jgengine/core/map/ping"`
-
-## ping-wheel — contextual ping/marker communication between teammates
-
-- `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/map/ping"`
 
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
@@ -1805,22 +1725,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `POLE_LINE_KIND` (const) · `import { POLE_LINE_KIND } from "@jgengine/core/world/poleLineKind"`
 
-## population-director — ambient per-region creature population manager with timed weighted respawns and caps
-
-- `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`
-
 ## portable-marker-source — project caller-owned arrays or subscribable stores into cached minimap marker snapshots without a MarkerSet
 
 - `createMarkerSource` (function) · `import { createMarkerSource } from "@jgengine/core/world"`
-
-## practical-lights — light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool
-
-- `PracticalLights` (function) · `import { PracticalLights } from "@jgengine/core/buildings/InteriorDressing.draw"`
-- `practicalLightsDraw` (function) · `import { practicalLightsDraw } from "@jgengine/core/buildings/InteriorDressing.draw"`
-
-## procedural-ground — seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes
-
-- `proceduralGroundDraw` (function) · `import { proceduralGroundDraw } from "@jgengine/core/terrain/ProceduralGround.draw"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
@@ -1910,6 +1817,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `requestSceneThumbnail` (function) · `import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCapture.draw"`
 
+## resolve-game-look — expand a look preset and lighting mood into concrete lighting/backdrop/post knobs
+
+- `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/render/lookPreset"`
+
 ## resource-node — depletable, respawning harvest nodes with tool-dependent yields
 
 - `createResourceNodeField` (function) · `import { createResourceNodeField } from "@jgengine/core/world/resourceNode"`
@@ -1925,10 +1836,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## ride-metrics — measure a sprung vehicle's ride — settle time, dive, roll per g, landing bounce
 
 - `measureRide` (function) · `import { measureRide } from "@jgengine/core/physics/handlingProbe"`
-
-## riding — ride a tamed creature or vehicle: controls and camera follow the mount, the rider sits on its seat, dismount sets them down beside it
-
-- `Riding` (interface) · `import { Riding } from "@jgengine/core/scene/riding"`
 
 ## rigid-aircraft — force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls
 
@@ -1981,15 +1888,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## route-course — build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
 
 - `buildRouteCourse` (function) · `import { buildRouteCourse } from "@jgengine/core/roads/routeCourse"`
-- `courseFromCircuit` (function) · `import { courseFromCircuit } from "@jgengine/core/roads/circuitCourse"`
-
-## rts-attack-clock — decide when an RTS AI launches growing attack waves, with a max-wait fallback
-
-- `createAttackClock` (function) · `import { createAttackClock } from "@jgengine/core/ai/buildOrder"`
-
-## rts-build-planner — AI build order, tech path, supply and army composition for an RTS opponent economy
-
-- `createBuildPlanner` (function) · `import { createBuildPlanner } from "@jgengine/core/ai/buildOrder"`
 
 ## rts-control-groups — map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
 
@@ -2049,10 +1947,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `seaSpectrumDensity` (function) · `import { seaSpectrumDensity } from "@jgengine/core/water/seaState"`
 - `waveFieldHeight` (function) · `import { waveFieldHeight } from "@jgengine/core/water/seaState"`
 - `waveFieldSignificantHeight` (function) · `import { waveFieldSignificantHeight } from "@jgengine/core/water/seaState"`
-
-## search-beat — walk waypoints around a search circle so searchers sweep it instead of standing on its centre
-
-- `searchBeatStep` (function) · `import { searchBeatStep } from "@jgengine/core/ai/searchBeat"`
 
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 
@@ -2114,18 +2008,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
 
-## solid-enclosure — measure how enclosed a point is by a roof and walls, from the world's solids
-
-- `solidEnclosure` (function) · `import { solidEnclosure } from "@jgengine/core/world/overhead"`
-
 ## solid-obstacles — the one blocking-geometry query the player resolver and NPC movers share
 
 - `obstacleFromSolid` (function) · `import { obstacleFromSolid } from "@jgengine/core/movement/solidObstacles"`
 - `solidObstaclesNear` (function) · `import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles"`
-
-## solid-overhead — test whether a roof, ceiling or rock overhangs a point, from the world's solids
-
-- `solidOverhead` (function) · `import { solidOverhead } from "@jgengine/core/world/overhead"`
 
 ## solid-route — bounded local planning over indexed collision geometry
 
@@ -2207,6 +2093,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `sprintTopSpeed` (function) · `import { sprintTopSpeed } from "@jgengine/core/movement/reference/humanEnvelope"`
 
+## sprite-2d — animate a sprite atlas clip from headless or rendered game code
+
+- `createSpriteClipPlayer` (function) · `import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d"`
+- `sortingOrder` (function) · `import { sortingOrder } from "@jgengine/core/render/sprite2d"`
+
 ## static-shape-instances — render authored primitive transforms as static material-compatible instance batches
 
 - `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw"`
@@ -2258,14 +2149,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `syncAuthoredObjects` (function) · `import { syncAuthoredObjects } from "@jgengine/core/world/authoredObjects"`
 
-## tactical-cover-points — derive cover candidates from navigation-mesh boundaries
-
-- `coverPoints` (function) · `import { coverPoints } from "@jgengine/core/ai/tacticalQueries"`
-
-## tactical-position-score — rank bounded tactical positions with caller-defined weights
-
-- `scorePositions` (function) · `import { scorePositions } from "@jgengine/core/ai/tacticalQueries"`
-
 ## target-acquirer — stateful held-target wrapper over an acquisition policy with retention
 
 - `createTargetAcquirer` (function) · `import { createTargetAcquirer } from "@jgengine/core/world"`
@@ -2309,10 +2192,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## territory-footprint — Resolve exactly the ownership cells touched by a placement footprint.
 
 - `territoryFootprintCells` (function) · `import { territoryFootprintCells } from "@jgengine/core/world/territory"`
-
-## territory-overlay — show footprint ownership, claim cost, and affordability
-
-- `TerritoryOverlay` (function) · `import { TerritoryOverlay } from "@jgengine/core/placement/TerritoryOverlay.view"`
 
 ## territory-owner-query — Read a loaded land cell owner for authoritative placement checks.
 
@@ -2364,6 +2243,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/core/placement/TransformGizmo.draw"`
 
+## triangle-attribution — per-model triangle table with instance counts, for perf probes
+
+- `attributeTriangles` (function) · `import { attributeTriangles } from "@jgengine/core/render/triangleAttribution.draw"`
+
 ## trot-gallop-speed — the speed a quadruped of a given mass changes from trot to gallop (Heglund & Taylor 1988)
 
 - `trotGallopSpeed` (function) · `import { trotGallopSpeed } from "@jgengine/core/movement/reference/quadrupedGait"`
@@ -2380,6 +2263,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `magicFormulaTrail` (function) · `import { magicFormulaTrail } from "@jgengine/core/physics/tireMagicFormula"`
 
+## untyped-read — narrow parsed JSON, old saves and other unknown values to records and typed maps without casts
+
+- `isRecord` (function) · `import { isRecord } from "@jgengine/core/data/untyped"`
+
 ## uphill-grade-step — constrain sampled heightfield ascent with axis sliding and a configurable terrain-policy sampler
 
 - `resolveTerrainGradeStep` (function) · `import { resolveTerrainGradeStep } from "@jgengine/core/terrain/terrainGrade"`
@@ -2387,14 +2274,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-camera-shake — UI hook reading a camera-shake controller's live trauma and kind
 
 - `useCameraShakeReadout` (function) · `import { useCameraShakeReadout } from "@jgengine/core/camera/shake/cameraShake.view"`
-
-## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
-
-- `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/core/map/fastTravel.view"`
-
-## use-fog — UI binding that returns a fog-of-war field's live cells
-
-- `useFog` (function) · `import { useFog } from "@jgengine/core/map/map.view"`
 
 ## use-interaction-prompt — UI hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
 
@@ -2407,10 +2286,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-timer — UI hook binding one timer to a component with a per-frame re-read
 
 - `useTimerRead` (function) · `import { useTimerRead } from "@jgengine/core/time/timerReadout.view"`
-
-## use-waypoints — UI binding that returns a waypoint store's live list (or a passthrough array)
-
-- `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/core/map/waypointMarkers.view"`
 
 ## utility-brain — pick actions by decaying-need appeal with response curves, hysteresis and interrupts
 
@@ -2485,14 +2360,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createWaveRunner` (function) · `import { createWaveRunner } from "@jgengine/core/world"`
 
-## waypoint-arrow — on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
-
-- `WaypointArrow` (function) · `import { WaypointArrow } from "@jgengine/core/map/map.view"`
-
-## waypoint-markers — overlay rendering world waypoints as on-screen pins and off-screen edge-clamped directional arrows with distance, colored per game-owned kind
-
-- `WaypointMarkers` (function) · `import { WaypointMarkers } from "@jgengine/core/map/waypointMarkers.view"`
-
 ## waypoint-store — serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint
 
 - `createWaypointStore` (function) · `import { createWaypointStore } from "@jgengine/core/world"`
@@ -2534,21 +2401,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `buildIntersectionMarkings` (function) · `import { buildIntersectionMarkings } from "@jgengine/core/roads/roads"`
 - `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
 
-## world-map — framed full-bounds world map panel with terrain background, fog, labelled markers and the player
-
-- `WorldMap` (function) · `import { WorldMap } from "@jgengine/core/map/map.view"`
-
-## world-map-surface — bare top-down map svg with terrain background, fog, layers, labelled markers and player arrow under a viewport transform
-
-- `WorldMapSurface` (function) · `import { WorldMapSurface } from "@jgengine/core/map/map.view"`
-
 ## world-physics-colliders — Synchronize terrain and authored static colliders with a physics backend.
 
 - `syncWorldColliders` (function) · `import { syncWorldColliders } from "@jgengine/core/physics/worldColliders"`
-
-## world-pings — in-scene ping markers — a bobbing downward arrowhead, ground ring, and billboarded callout per marker, colored by kind and fading over the marker's lifetime
-
-- `WorldPings` (function) · `import { WorldPings } from "@jgengine/core/map/pingBeacons.draw"`
 
 ## world-place — declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics
 

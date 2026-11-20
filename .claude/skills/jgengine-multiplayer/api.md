@@ -166,7 +166,6 @@
 ## @jgengine/core/multiplayer
 
 - `AuthSession` (interface): interface AuthSession { userId: string; displayName?: string; avatarUrl?: string; email?: string; isNew?: boolean } — ⚠ undocumented
-- `BoardSnapshot` (interface): interface BoardSnapshot { ownerId: string; units: readonly SnapshotUnit[]; stats: Readonly<Record<string, number>>; seed: number; capturedAt: number } — ⚠ undocumented
 - `ChatSendOutcome` (interface): interface ChatSendOutcome { ok: boolean; reason?: string } — ⚠ undocumented · used by `sendChatMessage` (@jgengine/convex): Write validated chat in a host transaction after the caller resolves its actor and world.
 - `ChatSync` (interface): interface ChatSync — The seam for remote text chat, with no UI hooks so any runtime can hold it: subscribe delivers the channel's recent history now and on every change; send resolves with the host's verdict.
 - `EnsurePresenceResult` (interface): interface EnsurePresenceResult { presenceId: string; position: PresencePosition; rotationY: number } — ⚠ undocumented
@@ -206,16 +205,6 @@
 ## @jgengine/core/multiplayer/authoritativeSync
 
 - `AuthoritativeFrameHandler` (type): type AuthoritativeFrameHandler = (revision: number) => void — Receives the revision of an authoritative world frame after it is applied locally.
-
-## @jgengine/core/multiplayer/combatSnapshot
-
-- `BoardSnapshot` (interface): interface BoardSnapshot { ownerId: string; units: readonly SnapshotUnit[]; stats: Readonly<Record<string, number>>; seed: number; capturedAt: number } — ⚠ undocumented
-- `CombatRules` (interface): interface CombatRules { attackStat: string; healthStat: string; maxRounds?: number; critChance?: number; critMultiplier?: number } — ⚠ undocumented
-- `CombatSide` (type): type CombatSide = "a" | "b" | "draw" — ⚠ undocumented
-- `ReplayBlow` (interface): interface ReplayBlow { round: number; attacker: CombatSide; attackerUnit: string; defenderUnit: string; damage: number; crit: boolean; defenderHealthAfter: number } — ⚠ undocumented
-- `ReplayResult` (interface): interface ReplayResult { winner: CombatSide; rounds: number; blows: readonly ReplayBlow[]; survivorsA: readonly string[]; survivorsB: readonly string[] } — ⚠ undocumented
-- `SerializeBoardArgs` (interface): interface SerializeBoardArgs { ownerId: string; units: readonly SnapshotUnit[]; stats?: Readonly<Record<string, number>>; seed?: number; capturedAt?: number } — ⚠ undocumented
-- `SnapshotUnit` (interface): interface SnapshotUnit { id: string; stats: Readonly<Record<string, number>> } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/feedWriteGate
 
@@ -307,13 +296,6 @@
 - `PoseSyncDecision` (interface): interface PoseSyncDecision { position: {x: number; y: number; z: number}; rotationY: number; rotationPitch: number; appearance?: Record<string, string> | undefined; changed: boolean; refreshKeepAlive: boolean } — ⚠ undocumented
 - `PoseSyncRules` (interface): interface PoseSyncRules { maxSpeed: number; minIntervalMs?: number; maxVerticalOffset: number; floorY?: number; minElapsedSec: number; maxElapsedSec: number; keepAliveRefreshMs: number } — ⚠ undocumented · used by `DEFAULT_POSE_SYNC_RULES`: Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex).
 - `PresencePoseState` (interface): interface PresencePoseState { position: {x: number; y: number; z: number}; rotationY: number; rotationPitch?: number; lastSeenAtMs?: number; appearance?: Record<string, string> | undefined } — ⚠ undocumented
-
-## @jgengine/core/multiplayer/simultaneousCommit
-
-- `CommitPhase` (type): type CommitPhase = "collecting" | "revealed" — ⚠ undocumented
-- `CommitRoundConfig` (interface): interface CommitRoundConfig { participants: readonly string[]; allowReseal?: boolean } — ⚠ undocumented
-- `SealResult` (type): type SealResult = | { ok: true; allSealed: boolean } | { ok: false; reason: "unknown_participant" | "already_sealed" | "already_revealed" } — ⚠ undocumented
-- `SealedCommit` (interface): interface SealedCommit<TAction> { playerId: string; action: TAction; sealedAt: number } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/useShellMultiplayerSync.draw
 

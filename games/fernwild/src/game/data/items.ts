@@ -1,4 +1,4 @@
-import type { SpoilRule } from "@jgengine/core/inventory/spoilage";
+import type { SpoilRule } from "../../engine-local/inventory/spoilage";
 import type { VitalDose } from "@jgengine/core/stats/vitals";
 import type { ToolProfile } from "@jgengine/core/world/resourceNode";
 

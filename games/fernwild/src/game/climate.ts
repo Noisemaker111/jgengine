@@ -1,7 +1,7 @@
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { ambientTemperature } from "@jgengine/core/survival/bodyTemperature";
-import { solidEnclosure } from "@jgengine/core/world/overhead";
+import { solidEnclosure } from "../engine-local/world/overhead";
 
 import { editorLayers } from "../editorLayers";
 import { stations } from "./base";

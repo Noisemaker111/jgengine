@@ -6,7 +6,7 @@ import { FITTER_HEALTH, reserveOf } from "./combat";
 import { openScripBooks, settleEconomy } from "./counter";
 import { bankHaul, canCache, loseHaul } from "./haul";
 import { ITEMS, kindOf, rollItem, type Item, type ItemKind } from "./items";
-import { createItemLedger, type ItemLedgerState } from "@jgengine/core/loot/salvage";
+import { createItemLedger, type ItemLedgerState } from "../engine-local/loot/salvage";
 import type { CareerBankState } from "@jgengine/core/progression/careerBank";
 import type { StandingState } from "@jgengine/core/progression/standing";
 import type { LedgerState } from "@jgengine/core/economy/transactionLedger";

@@ -20,14 +20,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `armorMitigation` (function) · `import { armorMitigation } from "@jgengine/core/combat"`
 
-## capture-bonus-levels — convert wild level and capture effectiveness into bonus levels
-
-- `captureBonusLevels` (function) · `import { captureBonusLevels } from "@jgengine/core/stats/spawnLevelStats"`
-
-## capture-effectiveness-tame — apply capture effectiveness to grant and distribute bonus levels
-
-- `applyCaptureEffectiveness` (function) · `import { applyCaptureEffectiveness } from "@jgengine/core/stats/spawnLevelStats"`
-
 ## cast-bar — run a channeled cast timer that movement or damage can interrupt
 
 - `createCastRunner` (function) · `import { createCastRunner } from "@jgengine/core/combat"`
@@ -139,14 +131,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## dice-check — resolve a pass/fail roll against a target number with modifiers and crits
 
 - `rollCheck` (function) · `import { rollCheck } from "@jgengine/core/combat"`
-
-## domestic-level-spend — spend an earned post-capture level into a chosen stat under a cap
-
-- `spendDomesticLevel` (function) · `import { spendDomesticLevel } from "@jgengine/core/stats/spawnLevelStats"`
-
-## dose-table — per-receiver effects of each source (food, potion, dart, hit) as vital doses, with preference order
-
-- `createDoseTable` (function) · `import { createDoseTable } from "@jgengine/core/stats/doseTable"`
 
 ## dot-field — track stacking damage-over-time effects and drain damage each frame
 
@@ -298,10 +282,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `applyStatPoolDelta` (function) · `import { applyStatPoolDelta } from "@jgengine/core/combat"`
 
-## projectile-models — render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup
-
-- `ProjectileModels` (function) · `import { ProjectileModels } from "@jgengine/core/combat/ProjectileModels.draw"`
-
 ## projectiles — spawn and advance projectiles with travel and hit resolution
 
 - `createProjectileSystem` (function) · `import { createProjectileSystem } from "@jgengine/core/combat"`
@@ -328,25 +308,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveShotSpec` (function) · `import { resolveShotSpec } from "@jgengine/core/combat"`
 
-## spawn-instance-restore — rehydrate a creature stat instance from decoded snapshot data
-
-- `restoreSpawnInstance` (function) · `import { restoreSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
-
-## spawn-instance-snapshot — deep-copy a creature stat instance into a serializable record
-
-- `snapshotSpawnInstance` (function) · `import { snapshotSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
-
-## spawn-level-roll — distribute a wild creature's spawn level into random per-stat points
-
-- `rollSpawnInstance` (function) · `import { rollSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
-
 ## spawn-point-select — select a spawn location by its distance preference from avoided positions
 
 - `selectSpawnPoint` (function) · `import { selectSpawnPoint } from "@jgengine/core/waves/spawnPoint"`
-
-## spawn-stat-values — resolve a creature's per-stat values from its distributed points
-
-- `resolveSpawnStats` (function) · `import { resolveSpawnStats } from "@jgengine/core/stats/spawnLevelStats"`
 
 ## squad-combat — threat-driven cover, flanking, suppression, retreat and role-driven fire discipline
 
@@ -445,10 +409,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createWaveCountdown` (function) · `import { createWaveCountdown } from "@jgengine/core/waves/waveCountdown"`
 
-## wave-preview — summarize an authored wave before it opens: units by first arrival, trait counts and entries used
-
-- `summarizeWave` (function) · `import { summarizeWave } from "@jgengine/core/waves/wavePreview"`
-
 ## wave-runner — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore
 
 - `createWaveRunner` (function) · `import { createWaveRunner } from "@jgengine/core/waves/waveRunner"`
@@ -460,10 +420,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weapon-definition-validate — reject a malformed weapon definition at construction with the field named
 
 - `assertWeaponDefinition` (function) · `import { assertWeaponDefinition } from "@jgengine/core/combat"`
-
-## weapon-feedback — turn weapon shots, recoil kick and impacts into per-tick feedback-mixer signals for camera shake, audio and rumble
-
-- `createWeaponFeedbackSignals` (function) · `import { createWeaponFeedbackSignals } from "@jgengine/core/combat/weaponFeedback"`
 
 ## weapon-handling — recoil patterns with camera kick and recovery, spread bloom, stance multipliers and ADS as serializable state
 

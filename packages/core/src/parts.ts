@@ -23,6 +23,5 @@ export * from "./rules/predicate";
 /** Modifiers: stacked add, multiply, override and clamp on a value: buffs, gear stats, difficulty. */
 export * from "./progression/statGraph";
 /** Inheritance: a child's values from its parents with variation: breeding, crossing plants. */
-export * from "./inheritance/inheritance";
 /** Motion track: a thing follows a path over time and arrives: a supply drop falling, a thrown item, a door. */
 export * from "./movement/motionTrack";

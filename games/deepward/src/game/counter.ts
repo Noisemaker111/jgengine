@@ -3,7 +3,7 @@ import { evalCurve, type Curve } from "@jgengine/core/progression/leveling";
 import { createCareerBank, type CareerBankState } from "@jgengine/core/progression/careerBank";
 import { createGateSet, gateFacts, type GateDef, type GateStatus } from "@jgengine/core/progression/gates";
 import { createStanding, type StandingState } from "@jgengine/core/progression/standing";
-import { createItemLedger, salvageItem } from "@jgengine/core/loot/salvage";
+import { createItemLedger, salvageItem } from "../engine-local/loot/salvage";
 import { createTransactionLedger, type LedgerEntry, type LedgerState, type TransactionLedger } from "@jgengine/core/economy/transactionLedger";
 
 import { BREAKDOWN, itemValue, rollItem, type Item, type ItemKind } from "./items";
