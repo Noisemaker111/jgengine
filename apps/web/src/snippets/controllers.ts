@@ -1,7 +1,7 @@
 import { createFreeFlightController } from "@jgengine/core/flight/freeFlight";
 import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
 import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
-import { DEFAULT_WALK_CODES } from "@jgengine/shell/gameKit";
+import { DEFAULT_WALK_CODES } from "@jgengine/core/shell/gameKit.draw";
 
 // Walk: bind the movement keys and the shell drives a capsule walker
 // with jump, slopes and steps. A new game already does this.

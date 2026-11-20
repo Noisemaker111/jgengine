@@ -23,7 +23,7 @@ import { ClaimedCellOverlay, EndlessDatacenter } from "../../world/components/En
 import Rack from "../../infrastructure/components/Rack";
 import { SceneAxesHelper, useShowSceneAxes } from "./SceneAxesHelper";
 import { useWorldSceneFeed, useWorldSceneProps } from "../../runtime/llmvilleSession";
-import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { useWorldProjection } from "@jgengine/core/shell/world/WorldEntityFrames.draw";
 import { useLocalPlayerBridge } from "../../runtime/localPlayerEntity";
 
 /** What the scene draws, published by the HUD each time the world view model changes. */

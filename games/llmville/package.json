@@ -24,9 +24,7 @@
     "three-stdlib": "catalog:",
     "zod": "catalog:",
     "@jgengine/core": "workspace:*",
-    "@jgengine/convex": "workspace:*",
-    "@jgengine/ui": "workspace:*",
-    "@jgengine/shell": "workspace:*"
+    "@jgengine/convex": "workspace:*"
   },
   "exports": {
     ".": "./src/index.tsx",

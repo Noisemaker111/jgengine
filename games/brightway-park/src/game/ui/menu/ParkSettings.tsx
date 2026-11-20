@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, useState } from "@jgengine/core/ui/jsx";
-import { useGameStore } from "@jgengine/ui/hooks";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
 import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.view";

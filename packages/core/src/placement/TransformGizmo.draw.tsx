@@ -5,7 +5,7 @@ import { TransformControls } from "three/examples/jsm/controls/TransformControls
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { setCameraControlsEnabled } from "../camera/activeControls.draw";
+import { setCameraControlsEnabled } from "../camera/activeControls";
 
 /** Active TransformControls mode for the runtime selection gizmo. */
 export type TransformGizmoMode = "translate" | "rotate" | "scale";

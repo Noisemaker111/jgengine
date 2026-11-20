@@ -10,7 +10,7 @@ import { readGrassLook } from "./grassKind";
 import { GrassPatch } from "./GrassPatch.draw";
 import { pendingModelLoads } from "@jgengine/core/model/modelLoad.draw";
 import { registerGrassFieldRenderer } from "@jgengine/core/grass/GrassFieldRenderer.draw";
-import { getSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
+import { getSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.view";
 
 async function mounted(camera: THREE.PerspectiveCamera, element: ReactElement, run: (scene: THREE.Scene, api: { advance(seconds?: number): Promise<void> }) => Promise<void> | void, frames = 1, drainLoads = false) {
   const mounted = await mountTestDraws(element, { camera, width: 1600, height: 900 });

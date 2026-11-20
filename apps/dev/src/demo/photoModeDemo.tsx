@@ -10,7 +10,7 @@ import { PhotoModeControls, usePhotoMode } from "@jgengine/core/ui/photoMode.vie
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { SceneCaptureBinding, downloadImage, requestSceneCapture } from "@jgengine/core/scene/sceneCapture.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const SCOUT = "scout";
 

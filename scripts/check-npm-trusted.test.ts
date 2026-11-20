@@ -32,6 +32,7 @@ test("one bad package refuses the whole set, and an unreadable registry fails cl
 test("the checked set is the Publish workflow's list, under each package's npm name", () => {
   const names = publishedPackageNames();
   expect(names[0]).toBe("@jgengine/core");
-  expect(names).toContain("@jgengine/ui");
+  expect(names).toContain("@jgengine/editor");
+  expect(names).not.toContain("@jgengine/ui");
   expect(names).toContain("jgengine");
 });

@@ -14,7 +14,9 @@
   "homepage": "https://jgengine.com",
   "license": "Apache-2.0",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "*.css"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Noisemaker111/jgengine.git",
@@ -50,6 +52,7 @@
       "types": "./dist/ui.d.ts",
       "default": "./dist/ui.js"
     },
+    "./ui/styles.css": "./dist/ui/styles.css",
     "./*": {
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
@@ -57,20 +60,17 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build-engine.ts",
-    "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test --preload ../../scripts/test-globals-preload.ts src"
+    "check-types": "tsgo --noEmit -p tsconfig.json && tsgo --noEmit -p tsconfig.view.json && tsgo --noEmit -p tsconfig.draw.json",
+    "test": "bun test --preload ../../scripts/test-globals-preload.ts src",
+    "styles": "bun scripts/styles.ts"
   },
   "peerDependencies": {
-    "@jgengine/ui": "^0.59.0",
-    "@jgengine/shell": "^0.59.0",
+    "@jgengine/ws": "^0.59.0",
     "three": ">=0.187.0",
     "three-stdlib": "^2.0.0"
   },
   "peerDependenciesMeta": {
-    "@jgengine/ui": {
-      "optional": true
-    },
-    "@jgengine/shell": {
+    "@jgengine/ws": {
       "optional": true
     },
     "three": {

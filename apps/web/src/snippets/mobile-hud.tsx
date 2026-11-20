@@ -2,7 +2,7 @@
 import type { RuneTheme } from "@jgengine/core/ui/rune/primitives";
 import { RuneLabel, RuneRoot, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import type { TouchControlsConfig } from "@jgengine/core/input/touchScheme";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 const theme = {
   colors: { panel: "#10202ae6" },

@@ -1,7 +1,7 @@
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
 import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
-import { DEFAULT_DRIVE_CODES, defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { DEFAULT_DRIVE_CODES, defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 // Tire grip, weight transfer and drag come built in. Set the numbers
 // you care about; any effect can be switched off or retuned.

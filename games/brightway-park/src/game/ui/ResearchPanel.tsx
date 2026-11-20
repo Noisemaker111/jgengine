@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useGame, useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGame, useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
 import { BUILDABLES, RIDE_GROUPS, RIDE_GROUP_LABEL, type BuildableDef } from "../objects/catalog";

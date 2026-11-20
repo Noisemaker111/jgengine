@@ -67,8 +67,7 @@ describe("CUTLIST surface diet", () => {
     const block = routing.slice(routing.indexOf("PACKAGE_SKILLS"), routing.indexOf("PACKAGE_DOMAIN_OVERRIDES"));
     expect(block).not.toMatch(/github\s*:/);
     expect(block).not.toMatch(/jgengine\s*:/);
-    expect(block).toMatch(/shell\s*:/);
-    expect(block).toMatch(/ui\s*:/);
+    expect(block).toMatch(/editor\s*:/);
     expect(block).not.toMatch(/react\s*:/);
   });
 

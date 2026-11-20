@@ -1,7 +1,7 @@
 import { useEffect } from "@jgengine/core/ui/jsx";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 /**
  * The first scenario's ring: the hint names its controls in order (`currentHint(ctx).ui`), each

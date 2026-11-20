@@ -9,7 +9,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { DamageDirectionOverlay } from "@jgengine/core/combat/damage/damageDirection.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const TARGET = "target";
 

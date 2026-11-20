@@ -4,7 +4,7 @@ import { useEffect, useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import { createHitMarkers, isLocalSource, type HitMarkerKind, type HitMarkers, type HitMarkerTiming } from "@jgengine/core/combat/hitMarker";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import { RuneGlyph, RuneView, type RuneViewProps } from "@jgengine/core/ui/rune/primitives.view";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 /** Game clock in milliseconds: the marker pauses with the game and slows under hit-stop. */
 function gameMs(ctx: { time: { now(): number } }): number {

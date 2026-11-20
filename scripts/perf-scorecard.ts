@@ -63,7 +63,7 @@ export const CODE_OWNERS: readonly CodeOwner[] = ["react", "ui", "r3f", "drei", 
  */
 export function codeOwner(source: string): CodeOwner {
   const path = source.replaceAll("\\", "/");
-  if (/(?:^|\/)packages\/(?:ui\/|core\/src\/ui\/(?:jsx\/|rune\/|runeUi\.))/.test(path) || /(?:^|\/)(?:jg-ui\/|jg_ui(?:_bg)?\.(?:js|wasm))/.test(path)) return "ui";
+  if (/(?:^|\/)packages\/core\/src\/ui\/(?:jsx\/|rune\/|runeUi\.|(?:hooks|provider|store|engineStore|selectSnapshot)\.view\.)/.test(path) || /(?:^|\/)(?:jg-ui\/|jg_ui(?:_bg)?\.(?:js|wasm))/.test(path)) return "ui";
   // Vite's dev server pre-bundles a dependency into one file named for it, when no source map says more.
   const dep = /\/\.vite\/deps\/([^/?]+?)\.js/.exec(path)?.[1];
   if (dep !== undefined) {
@@ -77,7 +77,7 @@ export function codeOwner(source: string): CodeOwner {
   if (modules >= 0) {
     const rest = path.slice(modules + "/node_modules/".length);
     const name = rest.startsWith("@") ? rest.split("/").slice(0, 2).join("/") : rest.split("/")[0] ?? "";
-    if (name === "@jgengine/ui" || /^@jgengine\/core\/(?:dist\/|src\/)?ui\/(?:jsx\/|rune\/|runeUi\.)/.test(rest)) return "ui";
+    if (/^@jgengine\/core\/(?:dist\/|src\/)?ui\/(?:jsx\/|rune\/|runeUi\.|(?:hooks|provider|store|engineStore|selectSnapshot)\.view\.)/.test(rest)) return "ui";
     if (name === "react" || name === "react-dom" || name === "scheduler") return "react";
     if (name === "@react-three/fiber" || name === "react-reconciler" || name === "its-fine" || name === "suspend-react") return "r3f";
     if (name === "@react-three/drei") return "drei";

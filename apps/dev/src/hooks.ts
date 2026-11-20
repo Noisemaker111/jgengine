@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "@jgengin
 
 import { readUrlParam, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 
-import { deferUnhandledPresentationError } from "@jgengine/shell/presentationRecovery";
+import { deferUnhandledPresentationError } from "@jgengine/core/shell/presentationRecovery.view";
 
 import { formatLoadError } from "./appShared";
 import { publishOnPage } from "@jgengine/core/runtime/pageHandle";

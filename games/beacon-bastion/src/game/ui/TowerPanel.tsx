@@ -3,8 +3,8 @@ import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import { useActionBindings } from "@jgengine/core/input/actionBindings.view";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { editorLayers } from "../../editorLayers";
 import type { DamageType } from "../combat/damage";

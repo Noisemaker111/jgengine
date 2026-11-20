@@ -5,7 +5,7 @@ import { generatorVariants, untypedGenerator, type GeneratorVariant } from "@jge
 import { GeneratorVariantGrid } from "@jgengine/core/generator/GeneratorVariantGrid.draw";
 import { SURFACE_MATERIAL_GENERATOR, SURFACE_MATERIAL_SCHEMA, surfaceMaterialMeta } from "@jgengine/core/material/surfaceMaterialGenerator";
 import { registerSurfaceMaterialDraw } from "@jgengine/core/material/surfaceMaterialPreview.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { demoGame } from "./demoGame";
 

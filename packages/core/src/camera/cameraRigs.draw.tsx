@@ -17,8 +17,8 @@ import { snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";
 import { clamp } from "@jgengine/core/math/scalar";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
-import { usePlayer } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { usePlayer } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import {
@@ -45,7 +45,7 @@ import {
   type CameraPose,
   type ChaseRigState,
 } from "./rigMath";
-import { usePlayerFov } from "./PlayerFov.draw";
+import { usePlayerFov } from "./PlayerFov.view";
 import { applyCameraShake, useCameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
 import {
   applyCameraBlendStep,

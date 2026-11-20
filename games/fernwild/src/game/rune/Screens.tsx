@@ -8,8 +8,8 @@ import { bind, type RuneSource } from "@jgengine/core/ui/rune/primitives";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { inventorySlotKey, parseInventorySlotKey, type InventorySlot } from "@jgengine/core/inventory/inventoryModel";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { storeView } from "../base";
 import { BAG, HOTBAR } from "../bags";

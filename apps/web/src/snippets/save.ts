@@ -1,5 +1,5 @@
 import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
-import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
+import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/core/shell/gameKit.draw";
 
 // The whole world saves to localStorage: player, items, quests,
 // enemies, your own stores. A new system is saved with no extra code.

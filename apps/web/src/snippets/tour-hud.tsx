@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { bind, type RuneTheme } from "@jgengine/core/ui/rune/primitives";
 import { RuneLabel, RuneRoot, RuneView } from "@jgengine/core/ui/rune/primitives.view";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { run } from "./tour-loop";
 import { rankOf } from "./tour-rules";

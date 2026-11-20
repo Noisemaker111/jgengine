@@ -6,7 +6,7 @@ import type { TerrainDetailMaterialConfig } from "@jgengine/core/world/features"
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 import type { SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTextures.draw";
 import { scannedRibbonDraw, type ScannedRibbonSpec, type SurfaceRibbonMaterialOptions } from "./surfaceRibbonMaterial.draw";
 import { mergeRibbonGeometry, type JunctionSurface } from "./RoadRibbons.draw";

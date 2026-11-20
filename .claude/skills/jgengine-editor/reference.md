@@ -386,8 +386,8 @@ The game owns its menu and scene rules. The shared creator owns named durable do
 
 ```tsx
 import { createCreatorDocumentStorage, type CreatorConfig, type CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
-import { GameHost } from "@jgengine/shell/GameHost";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import { GameHost } from "@jgengine/core/shell/GameHost.draw";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const policy: CreatorPolicy = {
   maxDocuments: 8, maxBytes: 128_000, maxObjects: 48,

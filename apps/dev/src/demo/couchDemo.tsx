@@ -8,9 +8,9 @@ import type { ViewportsConfig } from "@jgengine/core/game/viewports";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 import { ViewportHuds } from "@jgengine/core/hud/ViewportHuds.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 const SEAT_COLORS = ["#f97316", "#38bdf8", "#a3e635", "#e879f9"];

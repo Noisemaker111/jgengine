@@ -16,11 +16,11 @@ import type {
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/map/markers";
-import { useFeed } from "@jgengine/ui/hooks";
+import { useFeed } from "@jgengine/core/ui/hooks.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { WorldPings } from "@jgengine/core/map/pingBeacons.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const SCOUT = "scout";
 const RELAY = "relay";

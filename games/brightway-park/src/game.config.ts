@@ -1,7 +1,7 @@
 import { ambientFauna } from "./game/ambientFauna";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
-import { defineGame } from "@jgengine/shell/defineGame";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 
 import { BRIGHTWAY_SOUNDS } from "./game/audio";
 import { assets } from "./game/assets";

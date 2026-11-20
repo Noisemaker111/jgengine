@@ -109,7 +109,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     test(`${variant}: game.config.ts uses defineGame from gameKit and index.tsx re-exports game`, () => {
       const files = render(variant);
       expect(fileOf(files, "src/game.config.ts")).toContain("simulation: { hz: 60 }");
-      expect(/from\s+["']@jgengine\/shell\/gameKit["']/.test(fileOf(files, "src/game.config.ts"))).toBe(true);
+      expect(/from\s+["']@jgengine\/core\/shell\/gameKit\.draw["']/.test(fileOf(files, "src/game.config.ts"))).toBe(true);
       expect(/\bgame\b/.test(fileOf(files, "src/index.tsx").match(/export\s*\{[^}]*\}/g)?.join(" ") ?? "")).toBe(true);
     });
 
@@ -260,8 +260,8 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     expect(pkg.name).toBe("@games/probe-game");
     expect(pkg.dependencies["@jgengine/core"]).toBe("workspace:*");
     const css = fileOf(files, "src/index.css");
-    expect(css).toContain('@import "../../../packages/ui/src/styles.css"');
-    expect(css).toContain('@source "../../../packages/ui/src"');
+    expect(css).toContain('@import "../../../packages/core/src/ui/styles.css"');
+    expect(css).toContain('@source "../../../packages/core/src/ui"');
     // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
     expect(css).toContain('@source "../../../packages/editor/src"');
   });
@@ -275,9 +275,9 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     expect(pkg.dependencies["@jgengine/core"]).toBe("^0.8.0");
     expect(fileOf(files, "tsconfig.json")).not.toContain("../../packages");
     const css = fileOf(files, "src/index.css");
-    expect(css).toContain('@import "@jgengine/ui/styles.css"');
-    expect(css).toContain('@source "../node_modules/@jgengine/ui/dist"');
-    expect(css).toContain('@source "../node_modules/@jgengine/shell/dist"');
+    expect(css).toContain('@import "@jgengine/core/ui/styles.css"');
+    expect(css).toContain('@source "../node_modules/@jgengine/core/dist/ui"');
+    expect(css).toContain('@source "../node_modules/@jgengine/core/dist/shell"');
     // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
     expect(css).toContain('@source "../node_modules/@jgengine/editor/dist"');
   });
@@ -286,7 +286,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     test(`${dimension} standalone pins the exact CLI separately from SDK ranges`, () => {
       const files = gameTemplate({ id: "pin-probe", name: "Pin Probe", variant: "standalone", engineVersion: "1.2.3", cliVersion: "0.16.0-next.2", dimension });
       const pkg = JSON.parse(fileOf(files, "package.json")) as { dependencies: Record<string, string>; devDependencies: Record<string, string> };
-      expect(pkg.dependencies["@jgengine/shell"]).toBe("^1.2.3");
+      expect(pkg.dependencies["@jgengine/core"]).toBe("^1.2.3");
       expect(pkg.devDependencies.jgengine).toBe("0.16.0-next.2");
     });
   }
@@ -331,7 +331,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
         expect(rules).toContain(`@jgengine/core/${part}`);
       }
       const loop = fileOf(files, "src/loop.ts");
-      expect(loop).toContain('from "@jgengine/shell/gameKit"');
+      expect(loop).toContain('from "@jgengine/core/shell/gameKit.draw"');
       expect(loop).toContain("registerTriggerAction");
       expect(loop).not.toMatch(/^let /m);
       const config = fileOf(files, "src/game.config.ts");
@@ -486,7 +486,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     const agents = fileOf(files, "jgengine/AGENTS.md");
     expect(agents).toContain("User-facing first reply is short");
     expect(agents).toContain("dump file trees");
-    expect(agents).toContain("@jgengine/shell/gameKit");
+    expect(agents).toContain("@jgengine/core/shell/gameKit.draw");
     expect(agents).toContain("recipes/minimal-game.md");
     expect(agents).toContain("npx jgengine skills -p");
     expect(agents).toContain("--all");

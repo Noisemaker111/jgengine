@@ -12,7 +12,7 @@ import { resolvedLook } from "./appEnv";
 import { pickStartAction, waitForQuiescentView, type StartCandidate, type ViewActivity } from "./captureSettle";
 import { verifyLookSubject } from "./lookCamera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 export type CaptureStatus = "preparing" | "ready" | "error";
 

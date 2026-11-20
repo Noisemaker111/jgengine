@@ -23,4 +23,4 @@ Engine seam: packages/convex/src/convexChatSync.ts, packages/convex/src/convexCh
 - `@jgengine/core/chat/chatContract` no longer exports `ChatActions`, `ChatTransport`, `createLocalChatTransport`.
 - `@jgengine/core/multiplayer` no longer exports `ChatActions`, `ChatTransport`, `PresenceActions`, `PresenceFeeds`, `PresenceSession`, `PresenceTransport`.
 - `@jgengine/core/multiplayer/presenceContract` no longer exports `PresenceActions`, `PresenceFeeds`, `PresenceSession`, `PresenceTransport`, `createLocalPresenceTransport`.
-- `@jgengine/ui` no longer exports `chatTransportFromSync`.
+- `@jgengine/core/ui.view` no longer exports `chatTransportFromSync`.

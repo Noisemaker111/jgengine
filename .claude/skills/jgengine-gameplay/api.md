@@ -660,7 +660,7 @@
 - `LoopPlayer` (interface): interface LoopPlayer — Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks.
 - `PersistConfig` (interface): interface PersistConfig — Tunes offline whole-world save (`defineGameDefinition({ persist })`). Offline games already autosave to `localStorage` by default — pass this only to tune it (or `persist: false` to opt out). Defaults: continuous `autosave` to `localStorage`, one slot, no version.
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
-- `defineGameDefinition` (function): function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Host-level constructor for a bare `GameDefinition`: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks. Games author through `defineGame` from `@jgengine/shell/defineGame`, which calls this and adds the presentation layer; call this directly only from headless hosts that mount no shell.
+- `defineGameDefinition` (function): function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Host-level constructor for a bare `GameDefinition`: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks. Games author through `defineGame` from `@jgengine/core/shell/defineGame.draw`, which calls this and adds the presentation layer; call this directly only from headless hosts that mount no shell.
 
 ## @jgengine/core/game/defineSystem
 
@@ -1073,7 +1073,7 @@
 - `Auction` (interface): interface Auction — One live timed auction in an {@link AuctionBook}: an item stack under open bidding until it closes.
 - `AuctionSettlement` (type): type AuctionSettlement = | { status: "sold"; auction: Auction; winnerId: string; price: number; houseCut: number; sellerProceeds: number; } | { status: "returned"; auction: Auction } — How one closed auction resolved during {@link AuctionBook.settleExpired}.
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented · used by `DRIVE_AXIS_BINDINGS` (@jgengine/core/input/axisInput): Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`.
-- `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/ui): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
+- `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/core/ui.view): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a `VehicleDynamics` car to a scene entity's pose for one tick — the throttle/steer/handbrake…
 - `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
 - `BehaviorConfig` (type): type BehaviorConfig = Record<string, unknown> — Per-behavior configuration stored on an item as plain data (e.g. charge time, projectile id). Kept opaque here so no game noun leaks into item core.
@@ -1181,7 +1181,7 @@
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; body?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented
 - `FirstPersonCollisionConfig` (interface): interface FirstPersonCollisionConfig — Clearance tuning for the first-person camera's collision pull-in.
 - `ForbidRule` (interface): interface ForbidRule — A rule that forbids a combination — e.g. "an incendiary barrel cannot pair with a cryo core". A forbid rule can never become satisfiable by adding more parts, so it is the check a backtracking generator runs on each candidate.
-- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/ui): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
+- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/core/ui.view): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
 - `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
 - `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
 - `GAME_SAVE_VERSION` (const): const GAME_SAVE_VERSION: 1 — Current save-format version of {@link GameSaveDocument}. Bump it with {@link GameSaveConfig.migrate} when the shape changes.
@@ -1636,7 +1636,7 @@
 - `WorkQueueState` (interface): interface WorkQueueState<TSpec, TReserve = undefined> — Serializable queue state. Holds only non-terminal jobs, so it stays bounded.
 - `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget { id: string; fromUserId: string; toUserId: string; createdAt: number } — ⚠ undocumented
 - `WorldInviteTarget` (interface): interface WorldInviteTarget { serverId: string; joinCode?: string } — ⚠ undocumented
-- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/ui): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
+- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/core/ui.view): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
 - `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig { rarityStyle?: Record<string, RarityStyle>; filter?: readonly LootFilterRule[]; pickupRadius?: number; beamHeight?: number; autoPickup?: boolean | {radius?: number} } — ⚠ undocumented · used by `WorldItems` (@jgengine/core/item/WorldItems.draw): Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 - `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
 - `XpCurve` (interface): interface XpCurve — A resolved, validated {@link XpCurveDef}: thresholds, lifetime totals, a stated rule, and a leveling track bound to the same numbers.
@@ -2302,7 +2302,7 @@
 - `ScatterOptions` (interface): interface ScatterOptions { radius: number; minRadius?: number; height?: number } — ⚠ undocumented
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
 - `WorldItemPresentation` (interface): interface WorldItemPresentation { hidden: boolean; color?: string; beam: boolean; label?: string } — ⚠ undocumented
-- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/ui): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
+- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/core/ui.view): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
 - `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput { itemId: string; position: EntityPosition; rarity?: string; baseType?: string; count?: number; affixTier?: number; source?: string } — ⚠ undocumented
 - `WorldItemStore` (interface): interface WorldItemStore { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
 - `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps { defaultRarity?: string; spawnEntity(position: EntityPosition): string; despawnEntity(instanceId: string): boolean; resolvePosition(instanceId: string): EntityPosition | undefined; now?(): number } — ⚠ undocumented
@@ -2939,7 +2939,7 @@
 - `LINGER_MS` (const): const LINGER_MS: 2000 — How long a resource whose last user left waits before it is freed.
 - `Lingering` (class): class Lingering<K, V> — Resources whose last user left, held a moment before they are freed. A draw that is torn down and built again a frame later (a batch whose members changed, a field whose inputs were rebuilt) takes back the same GPU resource, and so its linked shaders and baked textures, instead of freeing them and paying for the link or bake again mid-play.
 
-## @jgengine/core/run/nextFrame.draw
+## @jgengine/core/run/nextFrame.view
 
 - `nextFrame` (function): function nextFrame(): Promise<void> — Resolves on the next animation frame, or a zero-delay timer in tests and SSR.
 
@@ -3220,7 +3220,7 @@
 - `EmoteSpatialLookup` (interface): interface EmoteSpatialLookup { inRadius(center: readonly [number, number, number], radius: number, filter?: (id: string) => boolean): readonly string[] } — ⚠ undocumented
 - `Emotes` (interface): interface Emotes { play(fromUserId: string, emoteId: string, radius?: number): EmoteBroadcastResult | {reason: string} } — ⚠ undocumented
 - `EmotesDeps` (interface): interface EmotesDeps { entities: EmoteEntityLookup; spatial: EmoteSpatialLookup } — ⚠ undocumented
-- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/ui): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
+- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/core/ui.view): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
 - `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
 - `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
 - `FriendsSnapshot` (interface): interface FriendsSnapshot { friends: string[]; blocked: string[] } — ⚠ undocumented
@@ -3298,7 +3298,7 @@
 - `suiteRegressions` (function): function suiteRegressions(before: GameSuiteScore, after: GameSuiteScore): string[] — Entry ids proven in `before` and not in `after`: regressions the suite test refuses.
 - `suiteScoreLine` (function): function suiteScoreLine(score: GameSuiteScore): string — One line: `12/62 proven · 3 failing · 1 not simulatable · 2 cut · 46 missing`.
 
-## @jgengine/core/suite/runSuiteProof.draw
+## @jgengine/core/suite/runSuiteProof.view
 
 - `LoadedSuiteProof` (interface): interface LoadedSuiteProof — A proof loaded from a game's `proofs/sim/` folder, with the file it came from.
 - `SuiteProofRun` (interface): interface SuiteProofRun — What one proof run produced: the flow report of its steps, and the entries it proved when it passed.

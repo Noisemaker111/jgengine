@@ -1,4 +1,4 @@
-import type { GameContext, GameLoop } from "@jgengine/shell/gameKit";
+import type { GameContext, GameLoop } from "@jgengine/core/shell/gameKit.draw";
 
 import { openKeepTitle } from "./game/menu";
 import { beaconSave, saveToSlot } from "./game/save";

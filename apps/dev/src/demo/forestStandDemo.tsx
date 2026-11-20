@@ -8,7 +8,7 @@ import { ACER_SACCHARUM } from "@jgengine/core/plants/species/data/acerSaccharum
 import { BETULA_PAPYRIFERA } from "@jgengine/core/plants/species/data/betulaPapyrifera";
 import { POPULUS_TREMULOIDES } from "@jgengine/core/plants/species/data/populusTremuloides";
 import { createStand, type StandOptions, type StandTree } from "@jgengine/core/plants/stand/standSim";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { demoGame } from "./demoGame";
 

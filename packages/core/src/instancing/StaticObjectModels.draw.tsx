@@ -8,7 +8,7 @@ import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 import { reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
 import { loadOverrideMapSets, type OverrideMapSetsLease } from "@jgengine/core/material/materialAsset.draw";
@@ -23,7 +23,7 @@ import { useRenderVisibility, useVisibilityChangesSource } from "@jgengine/core/
 import type { VisibilityChanges } from "@jgengine/core/visibility/visibilityChanges";
 import { acquireImpostor, createImpostorMaterials, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorAtlas, type ImpostorEntry, type ImpostorSettings, type ImpostorSource } from "@jgengine/core/lod/impostor.draw";
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
-import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";

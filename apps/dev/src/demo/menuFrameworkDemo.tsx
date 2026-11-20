@@ -20,7 +20,7 @@ import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3.2, frequency: 0.028, seed: "menu-framework" }),

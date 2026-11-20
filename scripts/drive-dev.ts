@@ -61,7 +61,7 @@ import { createBrowserFlow } from "./browserFlow";
 import { runLiveSteps, splitStepFlags } from "./driveStep";
 import { clearOriginStorage, clickText, driveDeps, fillField, focusSurface, holdKey, installFrameCounter, pageFlowDriver, readFrames, readProbe, rpc } from "./drivePage";
 import { createFlowStepper, describeFlowReport, runFlowReport, type FlowRunReport } from "../packages/core/src/play/flowSteps";
-import { runFlowHeadless } from "../packages/core/src/play/headlessFlow.draw";
+import { runFlowHeadless } from "../packages/core/src/play/headlessFlow.view";
 import type { ProofFlow } from "../packages/core/src/play/flow";
 import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
 import { decodePng } from "../packages/assets/src/imageCodec";

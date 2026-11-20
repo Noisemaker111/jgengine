@@ -6,7 +6,7 @@ import { STUDIO_STAGE_POST } from "@jgengine/core/render/postProcessing";
 import { flat } from "@jgengine/core/world/features";
 import { GeneratedAssetInstance } from "@jgengine/core/scene/GeneratedAssetRenderer.draw";
 import { StudioStage } from "@jgengine/core/scene/StudioStage.draw";
-import { defineGame } from "@jgengine/shell/defineGame";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 
 import { registerBookcaseStudio } from "@jgengine-examples/studios";
 

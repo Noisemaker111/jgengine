@@ -21,9 +21,7 @@ const indexHtml = (name: string) => `<!doctype html>
 
 const engineAliases = `[
           { find: /^@jgengine\\/core\\/(.*)$/, replacement: \`\${engineSrc("core")}/$1\` },
-          { find: /^@jgengine\\/ui\\/(.*)$/, replacement: \`\${engineSrc("ui")}/$1\` },
           { find: /^@jgengine\\/ws\\/(.*)$/, replacement: \`\${engineSrc("ws")}/$1\` },
-          { find: /^@jgengine\\/shell\\/(.*)$/, replacement: \`\${engineSrc("shell")}/$1\` },
           { find: /^@jgengine\\/editor$/, replacement: \`\${engineSrc("editor")}/index.ts\` },
           { find: /^@jgengine\\/editor\\/(.*)$/, replacement: \`\${engineSrc("editor")}/$1\` },
           { find: /^@jgengine\\/assets$/, replacement: \`\${engineSrc("assets")}/index.ts\` },
@@ -119,8 +117,6 @@ const standalonePackageJson = (id: string, engineVersion: string, cliVersion: st
       "@jgengine/assets": `^${engineVersion}`,
       "@jgengine/core": `^${engineVersion}`,
       ...(editor ? { "@jgengine/editor": `^${engineVersion}` } : {}),
-      "@jgengine/ui": `^${engineVersion}`,
-      "@jgengine/shell": `^${engineVersion}`,
       three: "^0.187.0",
     },
     devDependencies: {
@@ -158,8 +154,6 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
       "@jgengine/assets": "workspace:*",
       "@jgengine/core": "workspace:*",
       "@jgengine/editor": "workspace:*",
-      "@jgengine/ui": "workspace:*",
-      "@jgengine/shell": "workspace:*",
       three: "^0.187.0",
     },
     devDependencies: {
@@ -214,14 +208,14 @@ const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
 // — omit the editor @source and the summoned editor renders unstyled (all-white, no theme) from day one.
 // `source(".")` keeps the automatic scan in src/: from the Vite root it reads every model in public/.
 const indexCss = (variant: TemplateVariant, editor: boolean) => `@import "tailwindcss" source(".");
-@import "${variant === "in-repo" ? "../../../packages/ui/src/styles.css" : "@jgengine/ui/styles.css"}";
+@import "${variant === "in-repo" ? "../../../packages/core/src/ui/styles.css" : "@jgengine/core/ui/styles.css"}";
 @import "./style.css";
 ${
   variant === "in-repo"
-    ? `@source "../../../packages/ui/src";
-@source "../../../packages/shell/src";${editor ? `\n@source "../../../packages/editor/src";` : ""}`
-    : `@source "../node_modules/@jgengine/ui/dist";
-@source "../node_modules/@jgengine/shell/dist";${editor ? `\n@source "../node_modules/@jgengine/editor/dist";` : ""}`
+    ? `@source "../../../packages/core/src/ui";
+@source "../../../packages/core/src/shell";${editor ? `\n@source "../../../packages/editor/src";` : ""}`
+    : `@source "../node_modules/@jgengine/core/dist/ui";
+@source "../node_modules/@jgengine/core/dist/shell";${editor ? `\n@source "../node_modules/@jgengine/editor/dist";` : ""}`
 }
 `;
 
@@ -253,7 +247,7 @@ const mainTsx = (editor: boolean, variant: TemplateVariant, id: string) => {
     ...(editor ? ['editor={() => import("@jgengine/editor")}'] : []),
   ].join(" ");
   return `import { createRoot } from "@jgengine/core/ui/jsx/client.view";
-import { GameHost } from "@jgengine/shell/GameHost";
+import { GameHost } from "@jgengine/core/shell/GameHost.draw";
 import { game } from "./game.config";
 import "./index.css";
 
@@ -450,7 +444,7 @@ export interface GameConfigOptions {
 const gameConfigTs = (name: string, options: GameConfigOptions) => {
   const imports = [
     ...(options.flow ? ['import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";'] : []),
-    'import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";',
+    'import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/core/shell/gameKit.draw";',
     "",
     ...(options.editor ? ['import { editorLayers } from "./editorLayers";'] : []),
     ...(options.world
@@ -562,7 +556,7 @@ import {
 } from "@jgengine/core/scene/authoredTriggers";
 import { authoredEntitySpawns } from "@jgengine/core/world/authoredEntities";
 import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
-import { defineSystem } from "@jgengine/shell/gameKit";
+import { defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 import { editorLayers } from "./editorLayers";
 
@@ -613,7 +607,7 @@ export function onNewPlayer(ctx: GameContext): void {
 `;
 
 const plainLoopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { defineSystem } from "@jgengine/shell/gameKit";
+import { defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
 
@@ -676,7 +670,7 @@ When a reusable contract is missing, report the upstream gap below. Engine contr
 
 1. Start from \`.claude/skills/jgengine/recipes/minimal-game.md\` — the default end-to-end path, installed with the project skills. Skills missing (your problem, not the user's): \`npx jgengine skills -p\` restores the minimal set; add \`--all\` for the full domain skills when the game outgrows it.
 2. Discovery ladder: a skill's \`capabilities.md\` → its recipes → package source under \`node_modules/@jgengine/<pkg>/\` — never a full api inventory.
-3. Import from \`@jgengine/shell/gameKit\` first — the happy-path surface (\`defineGame\`, \`defineSystem\`, \`GameHost\`, HUD primitives, editor-layer helpers). Reach for deeper module paths only when the kit lacks the seam.
+3. Import from \`@jgengine/core/shell/gameKit.draw\` first — the happy-path surface (\`defineGame\`, \`defineSystem\`, \`GameHost\`, HUD primitives, editor-layer helpers). Reach for deeper module paths only when the kit lacks the seam.
 4. **User-facing first reply is short** — game name, fantasy in 2–4 lines, POV (1st / 3rd / top-down / HUD-only), world kind, scale vibe. Ask a few tight questions. **Do not** dump file trees, catalog ids, keybind tables, or full phase plans to the user. Keep the engineering plan internal.
 5. Setup broken or UI unstyled: \`npx jgengine doctor\`. Dev: \`bun dev\`. Windows installer: \`npx jgengine desktop\`.
 
@@ -721,7 +715,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Plan: \`PLAN.md\` is the build plan. Milestone 1 (the starter loop) plays from a new game; \`proofs/flows/from-zero.flow.ts\` proves it through real keys and \`src/game/probe.ts\` is what it reads. Write the plan's design brief once milestone 1 plays, and tick each milestone in the commit that makes it play.
 - Entry: \`defineGame({...})\` in \`game.config.ts\`; \`editorLayers\` passed to defineGame auto-mounts the authored scene, and the player spawns at the authored \`player_spawn\` marker.
 - Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; systems (\`defineSystem\`) own the rules tick.
-- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/ui\`, \`@jgengine/shell\`, and \`@jgengine/editor\`${
+- Tailwind v4: \`@source\` in \`src/index.css\` must cover the engine's UI and shell (\`@jgengine/core\`'s \`dist/ui\` and \`dist/shell\`), and \`@jgengine/editor\`${
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
 }, or the HUD — and the F2+E editor chrome mounted into this same page — is silently unstyled.
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).

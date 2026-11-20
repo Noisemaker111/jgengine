@@ -13,7 +13,7 @@ Adapts the reconstruction step around
 
 LingBot-Map is a feed-forward 3D reconstruction model: PyTorch 2.8 + CUDA
 12.8, needs an NVIDIA GPU. It has no place running per-frame in a browser
-game or inside `@jgengine/shell`. Treat it as a one-shot batch job: video in,
+game or inside `@jgengine/core/shell`. Treat it as a one-shot batch job: video in,
 point cloud out, done — same category of tool as a photogrammetry rig, not a
 package dependency.
 

@@ -7,7 +7,7 @@ import { WaypointMarkers, type WaypointMarkerTheme } from "@jgengine/core/map/wa
 import { waypointAnchor } from "@jgengine/core/map/waypoints";
 import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { useWorldProjection } from "@jgengine/core/shell/world/WorldEntityFrames.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 

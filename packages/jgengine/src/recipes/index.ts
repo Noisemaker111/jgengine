@@ -20,7 +20,7 @@ export interface Recipe {
   code: string;
 }
 
-const COMBAT_LOOP = `import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+const COMBAT_LOOP = `import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 
 // The joint: damage goes through ctx.scene.entity.effect, never a raw stats.delta.
@@ -56,7 +56,7 @@ export const game = defineGame({ name: "Combat", content, systems: [combat] });
 // then pass its \`impact\` as \`via.amount\`.
 `;
 
-const BOSS_TELEGRAPH = `import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+const BOSS_TELEGRAPH = `import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import { hazardCycleAt, type HazardCycleConfig } from "@jgengine/core/combat/telegraph";
 
 // The joint: one authored hazard config drives BOTH the fairness contract (when it
@@ -83,7 +83,7 @@ export const game = defineGame({ name: "Boss", systems: [boss] });
 // <GameHost playable={game} />  ·  HUD windup fill = hazardCycleAt(slam, nowMs).fraction while phase === "windup"
 `;
 
-const LOOT = `import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+const LOOT = `import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 
 // The joint: register the table on ctx.game.loot (rolled with the world's seeded
@@ -121,7 +121,7 @@ export const game = defineGame({ name: "Loot", content, inventories: { bag: { sl
 // Listen: ctx.game.events.on("loot.granted", ({ userId, drops }) => ...)
 `;
 
-const QUEST = `import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+const QUEST = `import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 // The joint: installing a system with \`feature: "quest"\` turns on \`ctx.game.quest\`
 // (a journal) — no separate features flag. Register quests in \`create\`, then gameplay
@@ -251,7 +251,7 @@ export function onRemotePose(incoming: IncomingPose, nowMs: number): void {
 }
 `;
 
-const THIRD_PERSON_CAMERA = `import { defineGame, type GameCameraConfig } from "@jgengine/shell/gameKit";
+const THIRD_PERSON_CAMERA = `import { defineGame, type GameCameraConfig } from "@jgengine/core/shell/gameKit.draw";
 
 // The joint: the camera is game DATA, not chrome. Hand \`defineGame\` a camera config
 // and the shell mounts the matching rig — "orbit" is the third-person chase camera
@@ -265,7 +265,7 @@ export const game = defineGame({ name: "Explore", camera });
 // <GameHost playable={game} />  — the orbit rig chases the player entity automatically
 `;
 
-const WORLD_DROPS = `import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+const WORLD_DROPS = `import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 
 // The joint: catalog \`onDeath\` with dropMode "world" scatters a kill's drops on the
@@ -331,12 +331,12 @@ export const game = defineGame({
 // Pressing E runs the same-named "loot" command. Bag contents: ctx.player.inventory.count("bag", "sunblade").
 `;
 
-const CLICK_TARGET = `import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+const CLICK_TARGET = `import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 // The joint: \`pointer.moveCommand\` runs on every left-click with the clicked \`entity\`
 // (or null on open ground), so one command turns clicks into ctx.scene.entity.setTarget.
 // Tab cycles hostiles with cycleTarget. The HUD reads the same target:
-//   const target = useTarget(userId)   (@jgengine/ui)
+//   const target = useTarget(userId)   (@jgengine/core/ui.view)
 //   const hp = useEntityStat(target ?? "", "health")   then <KitMeter value={hp.current} max={hp.max} />
 const targeting = defineSystem({
   id: "targeting",
@@ -367,9 +367,9 @@ export const game = defineGame({
 
 const ABILITY_BAR = `/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo } from "@jgengine/core/ui/jsx";
-import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import { createAbilityKit } from "@jgengine/core/combat/abilityKit";
-import { ActionBar, actionFromAbilitySlot, useAbilitySlots, useGameContext } from "@jgengine/ui";
+import { ActionBar, actionFromAbilitySlot, useAbilitySlots, useGameContext } from "@jgengine/core/ui.view";
 
 // The joint: one ability kit is the source of truth for cooldowns. A cooldown group
 // every slot joins is the global cooldown. Keys go through \`input\` actions that run
@@ -432,7 +432,7 @@ export const game = defineGame({
 // Targets come from \`recipe click-target\`; damage lands through the \`receive\` map in \`recipe combat-loop\`.
 `;
 
-const HITSCAN_WEAPON = `import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+const HITSCAN_WEAPON = `import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import { resolveShot } from "@jgengine/core/combat/shotOrigin";
 import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { Aim } from "@jgengine/core/scene/spatial";
@@ -488,7 +488,7 @@ export const game = defineGame({
 // createRegenShield (@jgengine/core/combat/regenShield). Rolled gun stats: \`recipe rolled-gear\`.
 `;
 
-const ROLLED_GEAR = `import { seededRng } from "@jgengine/shell/gameKit";
+const ROLLED_GEAR = `import { seededRng } from "@jgengine/core/shell/gameKit.draw";
 import { createAffixRoller, type ItemBaseDef } from "@jgengine/core/item/affix";
 
 // The joint: one roller turns a base item into a rolled one. A weighted rarity tier
@@ -527,12 +527,12 @@ export function rollGun(seed: string) {
 // Drop it with a rarity beam: \`recipe world-drops\` (item catalog \`rarity\` = the rolled rarity).
 `;
 
-const ENTER_VEHICLE = `import { DEFAULT_WALK_CODES, defineGame, defineSystem } from "@jgengine/shell/gameKit";
+const ENTER_VEHICLE = `import { DEFAULT_WALK_CODES, defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import { boardVehicle, createVehicleSeats, leaveVehicle, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
 import { createVehicleDynamics, type VehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
 import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
-import type { GameContext } from "@jgengine/shell/gameKit";
+import type { GameContext } from "@jgengine/core/shell/gameKit.draw";
 
 const TUNING = vehicleTuning({
   engine: { topSpeed: 28, accel: 9 },

@@ -19,7 +19,7 @@ import { runningCli, staleCliWarnings } from "../staleCli";
 import { runSync } from "../sync";
 import { editorScaffold } from "../templates";
 
-const ENGINE_PACKAGES = ["core", "ui", "shell", "ws", "sql", "convex", "node", "assets", "editor"];
+const ENGINE_PACKAGES = ["core", "ws", "sql", "convex", "node", "assets", "editor"];
 
 const HELP = `jgengine ${cliVersion()} — agent-side CLI for the JGengine TypeScript game SDK
 Packages: ${ENGINE_PACKAGES.map((name) => `@jgengine/${name}`).join(", ")}.

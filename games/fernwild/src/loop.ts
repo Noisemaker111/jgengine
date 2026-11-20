@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
-import { defineSystem } from "@jgengine/shell/gameKit";
+import { defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 import { editorLayers } from "./editorLayers";
 import { baseSave, buildHut, closeStore, demolish, fuelStations, resetBase, rotateBuild, storePut, storeTake, tickBase, useStructure } from "./game/base";

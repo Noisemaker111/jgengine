@@ -864,18 +864,18 @@
 - `SnapshotViewer` (interface): interface SnapshotViewer — Who a host→client snapshot is being projected for — the identity a {@link SnapshotModule.project} filters against.
 - `WorldSnapshot` (type): type WorldSnapshot = Record<string, unknown> — Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem.
 
-## @jgengine/shell/GameHost
+## @jgengine/core/shell/GameHost.draw
 
 - `EditorSummonModule` (interface): interface EditorSummonModule — Structural shape of the module `GameHost`'s `editor` loader resolves — `import("@jgengine/editor")` satisfies it.
 - `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor, creator, creatorOpen = false, onCreatorOpenChange }: GameHostProps): JSX.Element — The one documented mount: resolves multiplayer for the playable and renders the shell. With the `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
 - `GameHostProps` (interface): interface GameHostProps — Props for {@link GameHost}: the playable, optional multiplayer overrides, and the optional editor loader that enables the engine-owned F2+E summon.
 
-## @jgengine/shell/defineGame
+## @jgengine/core/shell/defineGame.draw
 
 - `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TProbe extends ProbeReadings = ProbeReadings> = EngineFields<TAssetRef> & PresentationFields<TProbe> — ⚠ undocumented · used by `defineGame`: The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TProbe extends ProbeReadings = ProbeReadings>(config: GameConfig<TAssetRef, TProbe>): PlayableGame<TProbe> — The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, authored scene) into a `PlayableGame` ready for `GameHost`. Defaults to solo/offline multiplayer; `editorLayers` auto-mounts the authored scene document.
 
-## @jgengine/shell/gameKit
+## @jgengine/core/shell/gameKit.draw
 
 - `Clock` (const): const Clock: NamedExoticComponent<{ format?: "24h" | "12h" | undefined; showDay?: boolean | undefined; controls?: boolean | undefined; style?: CSSProperties | undefined; className?: string | undefined; }> — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
 - `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *

@@ -3,9 +3,7 @@
   "id": "llmville",
   "engine": [
     "convex",
-    "core",
-    "ui",
-    "shell"
+    "core"
   ],
   "suite": {
     "genres": [

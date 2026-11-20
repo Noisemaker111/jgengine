@@ -1,0 +1,197 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "@jgengine/core/ui/jsx";
+
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { GameProvider } from "@jgengine/core/ui/provider.view";
+
+import {
+  DiagnosticOverlay,
+  GameUiErrorBoundary,
+  type RuntimeDiagnostic,
+} from "@jgengine/core/devtools/diagnosticOverlay.view";
+import { DevtoolsRuntime } from "@jgengine/core/devtools/DevtoolsRuntime.draw";
+import { MissingModelsNotice } from "@jgengine/core/devtools/MissingModelsNotice.draw";
+import { FeedbackHost } from "@jgengine/core/audio/FeedbackHost.view";
+import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
+import { GamePhaseStamp } from "./GamePhaseStamp.view";
+import { SettingsPlayControlGate } from "@jgengine/core/settings/SettingsRuntime.draw";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
+import type { PlayableGame } from "./registry.draw";
+
+const DevtoolsOverlay = lazy(() =>
+  import("@jgengine/core/devtools/DevtoolsOverlay.draw").then((module) => ({ default: module.DevtoolsOverlay })),
+);
+
+/** Shared GameUI mount: error boundary → GameProvider → phase stamp → the game's Rune UI. @internal */
+export function ShellGameUiChrome({
+  ctx,
+  GameUI,
+  orientationGate,
+  onRuntimeError,
+  audioEngine,
+}: {
+  ctx: GameContext;
+  GameUI: ComponentType;
+  orientationGate: boolean;
+  onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void;
+  audioEngine: AudioEngine;
+}) {
+  return (
+    <GameUiErrorBoundary onRuntimeError={onRuntimeError}>
+      <GameProvider context={ctx}>
+        <SettingsPlayControlGate ctx={ctx} />
+        <GamePhaseStamp />
+        {orientationGate ? null : <GameUI />}
+        <FeedbackHost ctx={ctx} engine={audioEngine} />
+      </GameProvider>
+    </GameUiErrorBoundary>
+  );
+}
+
+/** Devtools + diagnostic overlays shared by HUD and 3D presentation paths. @internal */
+export function ShellDebugOverlays({
+  ctx,
+  playable,
+  multiplayer,
+  diagnostics,
+  devtoolsEnabled,
+  devtoolsOpen,
+  hideDiagnostics = false,
+}: {
+  ctx: GameContext;
+  playable: PlayableGame;
+  multiplayer: ShellMultiplayer | null;
+  diagnostics: RuntimeDiagnostic[];
+  devtoolsEnabled: boolean;
+  devtoolsOpen: boolean;
+  hideDiagnostics?: boolean;
+}) {
+  const [openedOnce, setOpenedOnce] = useState(false);
+  useEffect(() => { if (devtoolsOpen) setOpenedOnce(true); }, [devtoolsOpen]);
+  return (
+    <>
+      {devtoolsEnabled ? <DevtoolsRuntime ctx={ctx} playable={playable} /> : null}
+      {devtoolsEnabled ? <MissingModelsNotice /> : null}
+      {devtoolsEnabled && (devtoolsOpen || openedOnce) ? (
+        <Suspense fallback={devtoolsOpen ? <div role="status" style={{ position: "absolute", right: 16, top: 16, zIndex: 90, color: "#e2e8f0", background: "#0f172a", padding: "10px 14px", borderRadius: 8 }}>Loading developer tools…</div> : null}>
+          <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
+        </Suspense>
+      ) : null}
+      {hideDiagnostics ? null : (
+        <DiagnosticOverlay diagnostics={diagnostics} gameName={playable.game.name} />
+      )}
+    </>
+  );
+}
+
+/** Key-down fields the shell key handlers read. @internal */
+export type ShellKeyDownEvent = {
+  code: string;
+  target?: EventTarget | null;
+  defaultPrevented?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  shiftKey?: boolean;
+  altKey?: boolean;
+  repeat?: boolean;
+  preventDefault: () => void;
+};
+
+/** Key handler bundle shared by HUD and 3D presentation paths. @internal */
+export type ShellKeyHandlers = {
+  onKeyDown: (event: ShellKeyDownEvent) => void;
+  onKeyUp: (event: { code: string; target?: EventTarget | null }) => void;
+  onBlur: () => void;
+};
+
+/** F2 chord + gameplay action tracker key handlers shared by both presentation paths. @internal */
+export function createShellKeyHandlers({
+  f2HeldRef,
+  tracker,
+  devtoolsEnabled,
+  setDevtoolsOpen,
+  controlsActive,
+  exitPointerLockOnDevtools = false,
+  claimKey,
+  togglePerfOverlay,
+  saveReplay,
+}: {
+  f2HeldRef: { current: boolean };
+  tracker: { handleDown: (code: string) => void; handleUp: (code: string) => void; reset: () => void };
+  devtoolsEnabled: boolean;
+  setDevtoolsOpen: (update: boolean | ((current: boolean) => boolean)) => void;
+  controlsActive: () => boolean;
+  /** 3D path exits pointer lock when opening devtools. */
+  exitPointerLockOnDevtools?: boolean;
+  /** Play-surface key-down hook that runs before action bindings; returning true consumes the key (and its key-up). */
+  claimKey?: ((event: ShellKeyDownEvent) => boolean) | undefined;
+  /** F3 opens and closes the performance overlay, in every phase. */
+  togglePerfOverlay?: (() => void) | undefined;
+  /** F2+R saves the input recording of this session. */
+  saveReplay?: (() => void) | undefined;
+}): ShellKeyHandlers {
+  const claimed = new Set<string>();
+  return {
+    onKeyDown: (event) => {
+      if (event.defaultPrevented) {
+        f2HeldRef.current = false;
+        tracker.reset();
+        return;
+      }
+      const target = event.target as HTMLElement | null | undefined;
+      if (target?.closest?.("input, textarea, select, [contenteditable]:not([contenteditable=false])")) {
+        f2HeldRef.current = false;
+        tracker.reset();
+        return;
+      }
+      if (event.code === "F2") {
+        event.preventDefault();
+        f2HeldRef.current = true;
+        return;
+      }
+      if (event.code === "F3" && togglePerfOverlay !== undefined) {
+        event.preventDefault();
+        if (event.repeat !== true) togglePerfOverlay();
+        return;
+      }
+      if (f2HeldRef.current) {
+        if (event.code === "KeyD" && devtoolsEnabled) {
+          event.preventDefault();
+          if (exitPointerLockOnDevtools) document.exitPointerLock?.();
+          setDevtoolsOpen((current) => !current);
+        }
+        if (event.code === "KeyR" && saveReplay !== undefined) {
+          event.preventDefault();
+          saveReplay();
+        }
+        return;
+      }
+      if (target?.closest?.('button, a[href], [role="button"], [role="link"], [role="dialog"], [role="menu"], [role="listbox"], [role="grid"], [role="gridcell"], [role="toolbar"]')) {
+        tracker.reset();
+        return;
+      }
+      if (controlsActive()) {
+        if (claimKey?.(event) === true) {
+          event.preventDefault();
+          claimed.add(event.code);
+          return;
+        }
+        if (event.code === "Tab" || event.code === "Space") event.preventDefault();
+        tracker.handleDown(event.code);
+      }
+    },
+    onKeyUp: (event) => {
+      if (claimed.delete(event.code)) return;
+      if (event.code === "F2") {
+        f2HeldRef.current = false;
+        return;
+      }
+      if (controlsActive()) tracker.handleUp(event.code);
+    },
+    onBlur: () => {
+      claimed.clear();
+      f2HeldRef.current = false;
+      tracker.reset();
+    },
+  };
+}

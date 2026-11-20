@@ -8,7 +8,7 @@ import { importEditorDocumentJson } from "@jgengine/core/editor/document";
 import type { EditorDocument } from "@jgengine/core/editor/index";
 import { environment, sky, terrain } from "@jgengine/core/world/features";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { demoGame } from "./demoGame";
 import source from "./colorPipeline.scene.json";

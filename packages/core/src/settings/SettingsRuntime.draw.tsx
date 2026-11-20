@@ -13,7 +13,7 @@ import {
   type SettingsController,
 } from "@jgengine/core/settings/settings.view";
 
-import { createPlaySurfaceFocusOwnership } from "@jgengine/shell/presentationRecovery";
+import { createPlaySurfaceFocusOwnership } from "@jgengine/core/shell/presentationRecovery.view";
 
 import { useSettingsCategories, type SettingsControllerInput } from "./settingsController.draw";
 

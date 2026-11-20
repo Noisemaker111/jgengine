@@ -4,7 +4,7 @@ import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerServic
 import { batchHookSignature, compilesBatched, isHookUserData, isLayerDefine, isLayerUserData, ownCacheKey, withoutCompileLayers } from "@jgengine/core/material/compileLayers.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import { Lingering } from "@jgengine/core/run/lingering";
-import { nextFrame } from "@jgengine/core/run/nextFrame.draw";
+import { nextFrame } from "@jgengine/core/run/nextFrame.view";
 import { runSliced, type SlicedRun } from "@jgengine/core/run/slicedWork";
 import type { HlodConfig } from "@jgengine/core/visibility/config";
 import { cellProxyJob, type ProxyPart } from "./cellProxy.draw";

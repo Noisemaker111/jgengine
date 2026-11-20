@@ -8,7 +8,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { QuickMenu, type QuickMenuItem, type QuickMenuLayout } from "@jgengine/core/menu/quickMenu.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const SCOUT = "scout";
 

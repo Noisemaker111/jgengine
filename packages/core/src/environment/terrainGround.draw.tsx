@@ -15,7 +15,7 @@ import { createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetai
 import { createTerrainSurfacesDriver, type TerrainSurfacesSnapshot } from "@jgengine/core/terrain/terrainSurfacesDriver.draw";
 import { createTolerantTerrainMaterialDriver } from "@jgengine/core/terrain/tolerantTerrainMaterial.draw";
 import { createRequiredTerrainMaterialDriver } from "@jgengine/core/terrain/requiredTerrainMaterial.draw";
-import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "@jgengine/core/terrain/terrainSurfaces.draw";
 import type { TerrainEnvironmentDescriptor } from "@jgengine/core/world/features";
 import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

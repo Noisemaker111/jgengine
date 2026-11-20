@@ -7,7 +7,7 @@ import { runToEnd, type SlicedJob } from "@jgengine/core/run/slicedWork";
 import type { SurfaceMaterialMaps } from "@jgengine/core/material/surfaceMaterialGenerator";
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 import { MAX_TERRAIN_PAINT_LAYERS } from "./terrainSurfaces.draw";
-import { terrainScanKey } from "./terrainScanMaps.draw";
+import { terrainScanKey } from "./terrainScanMaps.view";
 
 import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader.draw";
 import type { TerrainPaintTextures } from "./terrainSurfaces.draw";

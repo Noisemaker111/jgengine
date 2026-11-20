@@ -8,12 +8,12 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { Coins, Hotbar } from "@jgengine/core/hud/hudReadouts.view";
-import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/ui/hooks";
+import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/core/ui/hooks.view";
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { LiveText } from "@jgengine/core/ui/liveBind.view";
 
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 const MOB = "gloomSlime";

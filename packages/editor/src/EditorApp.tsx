@@ -13,9 +13,9 @@ import type { GuideRegion } from "@jgengine/core/terrain/terrainGuides";
 import type { EditorUiPanelLayout } from "@jgengine/core/hud/hudDocument";
 import { listActiveHudLayouts, subscribeActiveHudLayouts } from "@jgengine/core/hud/hudLayout";
 import { HudLayoutPersistProvider } from "@jgengine/core/hud/hudLayoutPersist.view";
-import { useGameContext } from "@jgengine/ui/provider";
-import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
+import { GamePlayerShell } from "@jgengine/core/shell/GamePlayerShell.draw";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { assetsFromCatalog, type EditorAssetEntry } from "./AssetBrowser";
 import { EditorCameraDriver } from "./EditorCameraDriver";

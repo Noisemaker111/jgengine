@@ -1,4 +1,4 @@
-import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 // The joint: installing a system with `feature: "quest"` turns on `ctx.game.quest`
 // (a journal) — no separate features flag. Register quests in `create`, then gameplay

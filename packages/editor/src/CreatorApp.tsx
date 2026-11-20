@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import { importCreatorDocument, validateCreatorDocument, type CreatorDocument, type CreatorConfig } from "@jgengine/core/editor/creatorStorage";
 import type { EditorDocument } from "@jgengine/core/editor/types";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { EditorApp, type EditorSaveFn } from "./EditorApp";
 
 /** Production creator catalog and embedded editor, reached through the game's menu.

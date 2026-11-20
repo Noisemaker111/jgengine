@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useAutoScroll } from "@jgengine/ui/hooks";
+import { useAutoScroll } from "@jgengine/core/ui/hooks.view";
 
 import { HudPanel } from "@/components/ui/hud-panel";
 

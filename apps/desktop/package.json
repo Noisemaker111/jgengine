@@ -11,9 +11,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@jgengine/editor": "workspace:*",
-    "@jgengine/ui": "workspace:*",
-    "@jgengine/shell": "workspace:*"
+    "@jgengine/editor": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",

@@ -6,9 +6,9 @@ import { RuneRoot, RuneTransient, RuneView } from "@jgengine/core/ui/rune/primit
 import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.view";
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { useGamePhase } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
-import { useStore } from "@jgengine/ui/store";
+import { useGamePhase } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
+import { useStore } from "@jgengine/core/ui/store.view";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { riftStore } from "../rift/rift";
 import { relayStore } from "../relay";

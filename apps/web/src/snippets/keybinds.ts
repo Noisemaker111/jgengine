@@ -1,5 +1,5 @@
 import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
-import { DEFAULT_WALK_CODES, defineSystem } from "@jgengine/shell/gameKit";
+import { DEFAULT_WALK_CODES, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import { openDoor, shoot, toggleInventory } from "./myGame";
 
 // Keys are data. Players remap them in Settings → Controls.

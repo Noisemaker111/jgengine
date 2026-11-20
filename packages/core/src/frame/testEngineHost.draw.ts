@@ -3,7 +3,7 @@ import { act, createElement, type ReactElement } from "@jgengine/core/ui/jsx";
 import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 import { EngineHostProvider } from "./engineHost.draw";
 
-import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard.draw";
+import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard";
 import type { EngineFrameState, EngineFrameloop } from "./engineLoop.draw";
 import { bindFrameSource, type FrameSource } from "./frameBoard.draw";
 import type { EngineHost } from "./engineHost.draw";

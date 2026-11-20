@@ -221,10 +221,10 @@ describe("parseCheckArgs", () => {
   });
 
   test("several check names run as one plan; one name keeps its own flags", () => {
-    const many = parseCheckArgs(["recipes", "layers"]);
-    expect(many.kind === "plan" ? many.stages.map((stage) => stage.name) : many.kind).toEqual(["ensure-ready", "recipes", "layers"]);
-    const one = parseCheckArgs(["layers", "--base", "origin/beta"]);
-    expect(one.kind === "single" ? [one.check.name, ...one.args] : one.kind).toEqual(["layers", "--base", "origin/beta"]);
+    const many = parseCheckArgs(["recipes", "hud-tokens"]);
+    expect(many.kind === "plan" ? many.stages.map((stage) => stage.name) : many.kind).toEqual(["ensure-ready", "recipes", "hud-tokens"]);
+    const one = parseCheckArgs(["hud-tokens", "--base", "origin/beta"]);
+    expect(one.kind === "single" ? [one.check.name, ...one.args] : one.kind).toEqual(["hud-tokens", "--base", "origin/beta"]);
   });
 
   test("an unknown name, or --sdk with anything else, is refused", () => {
@@ -243,10 +243,10 @@ function row(name: string): (typeof CHECKS)[number] {
 
 describe("which rows a diff reaches", () => {
   test("a row runs for a change to what it reads, to tooling, or always when it names nothing", () => {
-    const layers = row("layers");
+    const layers = row("artifacts");
     expect(reachedBy(layers, ["games/deepward/src/a.ts"])).toBe(false);
     expect(reachedBy(layers, ["packages/core/src/a.ts"])).toBe(true);
-    expect(reachedBy(layers, ["scripts/check-layers.ts"])).toBe(true);
+    expect(reachedBy(layers, ["scripts/check-no-src-artifacts.ts"])).toBe(true);
     expect(reachedBy(layers, ["bun.lock"])).toBe(true);
     expect(reachedBy({}, ["anything.md"])).toBe(true);
     expect(readsPath({ reads: ["packages/core/src/city/cityKind.ts"] }, "packages/core/src/city/cityKind.ts.bak")).toBe(false);
@@ -257,7 +257,7 @@ describe("which rows a diff reaches", () => {
     expect(reachedBy(api, ["packages/core/src/plants/stand/standSim.test.ts"])).toBe(false);
     expect(reachedBy(api, ["scripts/verify-fast.test.ts"])).toBe(false);
     expect(reachedBy(api, ["packages/core/src/plants/stand/standSim.ts"])).toBe(true);
-    expect(reachedBy(row("layers"), ["packages/core/src/plants/stand/standSim.test.ts"])).toBe(true);
+    expect(reachedBy(row("artifacts"), ["packages/core/src/plants/stand/standSim.test.ts"])).toBe(true);
     const regenerated = GEN_TARGETS.filter((target) => reachedBy(target, ["packages/core/src/world/terrain.test.ts"])).map((target) => target.name);
     expect(regenerated).not.toContain("skill-api");
     expect(regenerated).not.toContain("capabilities");

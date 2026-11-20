@@ -11,8 +11,6 @@
   },
   "dependencies": {
     "@jgengine/core": "workspace:*",
-    "@jgengine/ui": "workspace:*",
-    "@jgengine/shell": "workspace:*",
     "@jgengine/sql": "workspace:*",
     "@jgengine/ws": "workspace:*",
     "@tanstack/react-router": "^1.121.0",

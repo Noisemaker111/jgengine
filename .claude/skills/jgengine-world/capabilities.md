@@ -2040,7 +2040,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
 
-- `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/core/postfx/ScreenEffectsOverlay.draw"`
+- `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/core/postfx/ScreenEffectsOverlay.view"`
 
 ## sea-state — seeded wave field from a Pierson–Moskowitz or JONSWAP spectrum, shared by boats and the drawn ocean
 

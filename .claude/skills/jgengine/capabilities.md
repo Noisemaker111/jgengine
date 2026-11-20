@@ -6,11 +6,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## authored-spawn — read spawn points and markers from the editor document
 
-- `authoredSpawnPosition` (function) · `import { authoredSpawnPosition } from "@jgengine/shell/gameKit"`
+- `authoredSpawnPosition` (function) · `import { authoredSpawnPosition } from "@jgengine/core/shell/gameKit.draw"`
 
 ## authored-triggers — schema'd on/action vocabulary on volumes and markers with runtime dispatch
 
-- `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/shell/gameKit"`
+- `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/core/shell/gameKit.draw"`
 
 ## browser-suspension — observe blur, hidden-page and pointer-lock loss while the game owns pause and input policy
 
@@ -54,19 +54,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## default-drive-codes — stock WASD/arrow throttle, brake, steer and handbrake key codes
 
-- `DEFAULT_DRIVE_CODES` (const) · `import { DEFAULT_DRIVE_CODES } from "@jgengine/shell/gameKit"`
+- `DEFAULT_DRIVE_CODES` (const) · `import { DEFAULT_DRIVE_CODES } from "@jgengine/core/shell/gameKit.draw"`
 
 ## default-walk-codes — stock WASD + jump key codes for the shell walk controller
 
-- `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/shell/gameKit"`
+- `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/core/shell/gameKit.draw"`
 
 ## define-game — single public game-authoring path — compose systems, world, presentation, and authored scene in one definition
 
-- `defineGame` (function) · `import { defineGame } from "@jgengine/shell/gameKit"`
+- `defineGame` (function) · `import { defineGame } from "@jgengine/core/shell/gameKit.draw"`
 
 ## define-system — composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`
 
-- `defineSystem` (function) · `import { defineSystem } from "@jgengine/shell/gameKit"`
+- `defineSystem` (function) · `import { defineSystem } from "@jgengine/core/shell/gameKit.draw"`
 
 ## devtools-log-bus — a bounded, per-system-tagged log ring a system writes to and a report reads
 
@@ -74,7 +74,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## editor-catalogs — Export typed gameplay catalogs for in-editor tuning.
 
-- `EditorCatalogDefinition` (interface) · `import { EditorCatalogDefinition } from "@jgengine/shell/gameKit"`
+- `EditorCatalogDefinition` (interface) · `import { EditorCatalogDefinition } from "@jgengine/core/shell/gameKit.draw"`
 
 ## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger
 
@@ -82,11 +82,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## game-system — declare a composable capability with its own schedule and lifecycle
 
-- `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/shell/gameKit"`
+- `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/shell/gameKit.draw"`
 
 ## grounded — ground an XZ point onto the world surface as a pose triple
 
-- `grounded` (function) · `import { grounded } from "@jgengine/shell/gameKit"`
+- `grounded` (function) · `import { grounded } from "@jgengine/core/shell/gameKit.draw"`
 
 ## headless-runner — play a real game loop with no renderer — tick, feed input, read the world snapshot
 
@@ -106,39 +106,39 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hotbar-slot-bindings — number-row key codes for a run of numbered actions (hotbar, build menu, tools)
 
-- `hotbarSlotBindings` (function) · `import { hotbarSlotBindings } from "@jgengine/shell/gameKit"`
+- `hotbarSlotBindings` (function) · `import { hotbarSlotBindings } from "@jgengine/core/shell/gameKit.draw"`
 
 ## hud-canvas — the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
 
-- `HudCanvas` (const) · `import { HudCanvas } from "@jgengine/shell/gameKit"`
+- `HudCanvas` (const) · `import { HudCanvas } from "@jgengine/core/shell/gameKit.draw"`
 
 ## hud-clock — in-game time-of-day readout bound to the sim clock
 
-- `Clock` (const) · `import { Clock } from "@jgengine/shell/gameKit"`
+- `Clock` (const) · `import { Clock } from "@jgengine/core/shell/gameKit.draw"`
 
 ## hud-coins — currency counter widget bound to a currency id
 
-- `Coins` (function) · `import { Coins } from "@jgengine/shell/gameKit"`
+- `Coins` (function) · `import { Coins } from "@jgengine/core/shell/gameKit.draw"`
 
 ## hud-fade — HUD group that fades when idle and returns when its values change
 
-- `HudFade` (const) · `import { HudFade } from "@jgengine/shell/gameKit"`
+- `HudFade` (const) · `import { HudFade } from "@jgengine/core/shell/gameKit.draw"`
 
 ## hud-hotbar — optional inventory hotbar building block — games own slot chrome
 
-- `Hotbar` (const) · `import { Hotbar } from "@jgengine/shell/gameKit"`
+- `Hotbar` (const) · `import { Hotbar } from "@jgengine/core/shell/gameKit.draw"`
 
 ## hud-layout — persistent, live-editable HUD panel layout state for `HudCanvas`
 
-- `useHudLayout` (function) · `import { useHudLayout } from "@jgengine/shell/gameKit"`
+- `useHudLayout` (function) · `import { useHudLayout } from "@jgengine/core/shell/gameKit.draw"`
 
 ## hud-panel — anchored HUD slot — drop any widget in a named, player-movable panel
 
-- `HudPanel` (const) · `import { HudPanel } from "@jgengine/shell/gameKit"`
+- `HudPanel` (const) · `import { HudPanel } from "@jgengine/core/shell/gameKit.draw"`
 
 ## hud-slots — a play HUD of edge-pinned, player-movable panels in one component
 
-- `HudSlots` (function) · `import { HudSlots } from "@jgengine/shell/gameKit"`
+- `HudSlots` (function) · `import { HudSlots } from "@jgengine/core/shell/gameKit.draw"`
 
 ## input-recorder — tick-indexed input log for replay, rollback, and regression tests
 
@@ -154,11 +154,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## mount-game — mount a defined game in the browser — `<GameHost playable={game} editor={() => import("@jgengine/editor")} />`
 
-- `GameHost` (function) · `import { GameHost } from "@jgengine/shell/gameKit"`
+- `GameHost` (function) · `import { GameHost } from "@jgengine/core/shell/gameKit.draw"`
 
 ## multiplayer-offline — explicit solo adapter — omit `multiplayer` instead; offline is the shell default
 
-- `offline` (function) · `import { offline } from "@jgengine/shell/gameKit"`
+- `offline` (function) · `import { offline } from "@jgengine/core/runtime/adapter"`
 
 ## multiplayer-p2p — serverless co-op over WebRTC — `multiplayer: p2p({ room })`
 
@@ -212,7 +212,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 
-- `seededRng` (function) · `import { seededRng } from "@jgengine/shell/gameKit"`
+- `seededRng` (function) · `import { seededRng } from "@jgengine/core/authoring"`
 
 ## sim-loop — fixed-step or variable simulation stepping with tick count, catch-up cap, and interpolation alpha
 
@@ -232,11 +232,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## typed-keyed-store — a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative
 
-- `defineKeyedStore` (function) · `import { defineKeyedStore } from "@jgengine/shell/gameKit"`
+- `defineKeyedStore` (function) · `import { defineKeyedStore } from "@jgengine/core/shell/gameKit.draw"`
 
 ## typed-store — a cast-free typed handle onto one reactive game-store slot, replayable and host-authoritative
 
-- `defineStore` (function) · `import { defineStore } from "@jgengine/shell/gameKit"`
+- `defineStore` (function) · `import { defineStore } from "@jgengine/core/shell/gameKit.draw"`
 
 ## warn-once — emit a dev-only warning a single time per call site
 
@@ -252,11 +252,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## world-convergence — derive environment coordinate content from the scene document
 
-- `environmentContentFromDocument` (function) · `import { environmentContentFromDocument } from "@jgengine/shell/gameKit"`
+- `environmentContentFromDocument` (function) · `import { environmentContentFromDocument } from "@jgengine/core/shell/gameKit.draw"`
 
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 
-- `environment` (function) · `import { environment } from "@jgengine/shell/gameKit"`
+- `environment` (function) · `import { environment } from "@jgengine/core/authoring"`
 
 ## world-item-pickup — pick up dropped items: ctx.scene.worldItem nearestInRadius → pickup into the player's inventory
 

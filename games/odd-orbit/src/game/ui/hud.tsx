@@ -2,9 +2,9 @@
 import { useMemo } from "@jgengine/core/ui/jsx";
 import { RuneFor, RuneGlyph, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind, type RuneSource } from "@jgengine/core/ui/rune/primitives";
-import { useGame, useGameCalendar, useGameClock, useGameStore, useSceneObjects } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
-import { useStore } from "@jgengine/ui/store";
+import { useGame, useGameCalendar, useGameClock, useGameStore, useSceneObjects } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
+import { useStore } from "@jgengine/core/ui/store.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { householdStore } from "../session/store";

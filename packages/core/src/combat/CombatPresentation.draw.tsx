@@ -13,7 +13,7 @@ import { ImpactFeedback } from "@jgengine/core/combat/ImpactFeedback.draw";
 import { CorpseRagdolls } from "@jgengine/core/anim/CorpseRagdolls.draw";
 import { POSTFX_OVERLAY_USERDATA } from "@jgengine/core/postfx/postfxOverlay.draw";
 import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
-import type { ResolvedPresentationEffects } from "@jgengine/shell/presentationResolve";
+import type { ResolvedPresentationEffects } from "@jgengine/core/shell/presentationResolve.draw";
 
 /** Mounts the opt-in combat VFX stack inside the 3D canvas. @internal */
 export function CombatPresentation({ effects }: { effects: ResolvedPresentationEffects }) {

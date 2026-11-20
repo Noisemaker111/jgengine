@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const FILES = [
   "packages/core/src/menu/menuNav.view.test.ts",
   "packages/core/src/settings/settingsSection.view.test.ts",
-  "packages/shell/src/settingsBoundary.test.ts",
+  "packages/core/src/shell/settingsBoundary.test.ts",
 ];
 /** Evidence that a browser was reaped or a test errored, even when the exit code says otherwise. */
 const LOST_BROWSER = /has been closed|dangling process|^error:/m;

@@ -11,9 +11,7 @@
   "engine": [
     "assets",
     "core",
-    "editor",
-    "ui",
-    "shell"
+    "editor"
   ],
   "suite": {
     "genres": [

@@ -6,7 +6,7 @@ import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import { normalizeEditorLayers, type EditorLayersInput } from "@jgengine/core/editor/index";
 import { FLAT_FIELD } from "@jgengine/core/terrain/terrain";
 import { AuthoredScene } from "@jgengine/core/scene/AuthoredScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { demoGame } from "./demoGame";
 import sceneJson from "./decals.scene.json";

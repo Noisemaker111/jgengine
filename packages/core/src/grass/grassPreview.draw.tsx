@@ -2,7 +2,7 @@
 import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
-import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
+import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.view";
 import type { GeneratorVariant } from "@jgengine/core/generator/generator";
 import { GRASS_FIELD_OUTPUT, readGrassLook, type GrassLook } from "@jgengine/core/grass/grassKind";
 import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

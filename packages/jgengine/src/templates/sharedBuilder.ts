@@ -110,7 +110,7 @@ export default crons;
     { path: "src/main.tsx", contents: `import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { resolveConvexMultiplayer } from "@jgengine/convex/resolveConvexMultiplayer";
-import { GameHost } from "@jgengine/shell/GameHost";
+import { GameHost } from "@jgengine/core/shell/GameHost.draw";
 import { game } from "./game.config";
 import "./index.css";
 const root = createRoot(document.getElementById("root")!);

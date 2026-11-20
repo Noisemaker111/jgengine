@@ -18,7 +18,7 @@ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.view";
 
 function buildCableGeometry(cables: readonly Cable[]): THREE.BufferGeometry | null {
   const parts: THREE.TubeGeometry[] = [];

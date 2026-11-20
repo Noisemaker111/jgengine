@@ -29,7 +29,7 @@ import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import { PARTS_OUTPUT, placedGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import { GeneratorMeshInstance } from "@jgengine/core/generator/GeneratorMeshInstance.draw";
 import { isScatterGeneratorItem, type ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
 
@@ -38,7 +38,7 @@ import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
 import { GeneratedAssetInstance } from "./GeneratedAssetRenderer.draw";
 import { loadOnDemandSceneKinds, onDemandSceneKindReady, registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers.draw";
 import { onDemandSceneKindsFor, sceneKindNeeds } from "./onDemandSceneKinds";
-import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
+import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.view";
 
 const noopSubscribe = (): (() => void) => () => undefined;
 

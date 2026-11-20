@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useAbilitySlots } from "@jgengine/ui/hooks";
+import { useAbilitySlots } from "@jgengine/core/ui/hooks.view";
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 
 import { ActionBar, type ActionBarSlot } from "@/components/ui/action-bar";

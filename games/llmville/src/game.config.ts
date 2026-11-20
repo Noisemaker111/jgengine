@@ -1,7 +1,7 @@
 import { normalizeEditorLayers } from "@jgengine/core/editor/index";
 import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
 import { convexPresence } from "@jgengine/core/runtime/adapter";
-import { defineGame } from "@jgengine/shell/defineGame";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 import { DATACENTER_CEILING_HEIGHT } from "@llmville/game/datacenter/layout";
 import { llmvilleContent } from "@llmville/game/game/content";
 import { llmvilleWorld } from "@llmville/game/game/world";

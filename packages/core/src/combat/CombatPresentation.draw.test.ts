@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { ReactElement } from "@jgengine/core/ui/jsx";
 
 import { CombatPresentation } from "./CombatPresentation.draw";
-import { resolvePresentationEffects } from "@jgengine/shell/presentationResolve";
+import { resolvePresentationEffects } from "@jgengine/core/shell/presentationResolve.draw";
 import { HitMarkers, MuzzleFlashes } from "@jgengine/core/combat/ShotFeedback.draw";
 import { CorpseRagdolls } from "@jgengine/core/anim/CorpseRagdolls.draw";
 import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";

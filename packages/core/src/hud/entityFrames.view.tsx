@@ -14,7 +14,7 @@ import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
  * No `GameProvider`, entity store, or Three.js is required or
  * imported here — the same way {@link ./map!Minimap} takes display markers. An
  * game can get `project` for free from `useWorldProjection`/`WorldEntityFrames`
- * in `@jgengine/shell/world/WorldEntityFrames`, which samples the live camera and
+ * in `@jgengine/core/shell/world/WorldEntityFrames.draw`, which samples the live camera and
  * composes this component.
  *
  * @capability entity-frames world-anchored overhead entity frames (nameplate/healthbar), data-first + caller-composed

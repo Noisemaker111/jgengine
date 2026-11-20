@@ -2,7 +2,7 @@
 import { createEditableTerrain } from "@jgengine/core/terrain/terraform";
 import { environment, terrain, type TerrainMaterialMaps } from "@jgengine/core/world/features";
 import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";

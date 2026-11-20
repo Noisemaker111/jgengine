@@ -6,7 +6,7 @@ import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.dra
 import { impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, acquireImpostor, releaseImpostor, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
 import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { ScatterBatch } from "./InstancedScatter.draw";

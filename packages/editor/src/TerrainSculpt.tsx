@@ -25,7 +25,7 @@ import {
   type TerraformSnapshot,
   type TerraformStroke,
 } from "@jgengine/core/terrain/terraform";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 import { displaceHeightfieldGeometry } from "@jgengine/core/terrain/heightfieldGeometry.draw";
 import { normalizeHeightBlend } from "@jgengine/core/terrain/terrainMath.draw";
 import { ALL_TERRAIN_SURFACE_CLASSES, createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
@@ -38,7 +38,7 @@ import {
   type TerrainPaintWeights,
 } from "@jgengine/core/terrain/terrainSurfaces.draw";
 import { TerraformBrushCursor } from "@jgengine/core/terrain/TerraformBrushCursor.draw";
-import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 
 import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";

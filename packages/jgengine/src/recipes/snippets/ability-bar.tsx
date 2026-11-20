@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo } from "@jgengine/core/ui/jsx";
-import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import { createAbilityKit } from "@jgengine/core/combat/abilityKit";
-import { ActionBar, actionFromAbilitySlot, useAbilitySlots, useGameContext } from "@jgengine/ui";
+import { ActionBar, actionFromAbilitySlot, useAbilitySlots, useGameContext } from "@jgengine/core/ui.view";
 
 // The joint: one ability kit is the source of truth for cooldowns. A cooldown group
 // every slot joins is the global cooldown. Keys go through `input` actions that run

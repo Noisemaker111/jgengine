@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import { prepareGenerator, runGenerator } from "@jgengine/core/generator/generator";
 import { registerGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
-import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
+import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.view";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { loadDraw } from "@jgengine/core/frame/loadDraw.draw";

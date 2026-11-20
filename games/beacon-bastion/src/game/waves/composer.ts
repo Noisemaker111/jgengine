@@ -1,5 +1,5 @@
 import type { EncounterGroup, EncounterWave } from "@jgengine/core/waves/encounter";
-import { seededRng } from "@jgengine/shell/gameKit";
+import { seededRng } from "@jgengine/core/shell/gameKit.draw";
 
 import { FLANK_POINT_KEY, SPAWN_POINT_KEY } from "../world/path";
 

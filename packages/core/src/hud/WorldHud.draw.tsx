@@ -6,8 +6,8 @@ import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CombatTelegraphEvent, EntityFloatTextEvent } from "@jgengine/core/game/events";
 import type { TelegraphShape } from "@jgengine/core/combat/telegraph";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { readFirstPersonMuzzle } from "@jgengine/core/camera/GameFirstPersonCamera.draw";
 import { readEntityMuzzle } from "@jgengine/core/anim/entityMuzzle.draw";
@@ -24,7 +24,7 @@ import {
   worldNameplateTargetFilter,
   type NameplateSample,
   type WorldBarSample,
-} from "@jgengine/core/hud/barSamples.draw";
+} from "@jgengine/core/hud/barSamples.view";
 import { telegraphDecalPose, telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
@@ -33,8 +33,8 @@ import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 
-export type { NameplateSample, WorldBarSample } from "@jgengine/core/hud/barSamples.draw";
-export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "@jgengine/core/hud/barSamples.draw";
+export type { NameplateSample, WorldBarSample } from "@jgengine/core/hud/barSamples.view";
+export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "@jgengine/core/hud/barSamples.view";
 export { telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
 
 interface RangeWarnState {

@@ -1,6 +1,6 @@
 Every game's from-zero flow runs headless in its tests (9 of 10; LLMville is browser-only until step 6)
 
-Engine seam: packages/core/src/play/headlessFlow.draw.ts, packages/jgengine/src/find/has.ts
+Engine seam: packages/core/src/play/headlessFlow.view.ts, packages/jgengine/src/find/has.ts
 
 ### Changed
 

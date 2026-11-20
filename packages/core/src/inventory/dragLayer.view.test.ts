@@ -17,12 +17,12 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
 
-  await installPublicPackages(scratch, ["core", "ui"]);
+  await installPublicPackages(scratch, ["core"]);
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React, {useState} from '@jgengine/core/ui/jsx'; import {createRoot} from '@jgengine/core/ui/jsx/client.view'; import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {useDragLayer,DraggableCard,DropZone,DragGhost} from '@jgengine/core/inventory/dragLayer.view';
-    import {InventoryGrid,useInventoryTransfer} from '@jgengine/core/inventory/inventoryGrid.view'; import {GameProvider} from '@jgengine/ui/provider';
+    import {InventoryGrid,useInventoryTransfer} from '@jgengine/core/inventory/inventoryGrid.view'; import {GameProvider} from '@jgengine/core/ui/provider.view';
     import {CardFace} from '@jgengine/core/cards/cards.view';
     import {defineGameDefinition} from '@jgengine/core/game/defineGame';
     import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog'; import {createGameContext} from '@jgengine/core/runtime/gameContext';

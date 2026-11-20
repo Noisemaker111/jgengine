@@ -28,11 +28,11 @@ import {
   type WeatherModifierTable,
   type WeatherState,
 } from "@jgengine/core/weather/weather";
-import { useEngineState, type ReadableEngineStore } from "@jgengine/ui/engineStore";
+import { useEngineState, type ReadableEngineStore } from "@jgengine/core/ui/engineStore.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { FireLandscapeView } from "@jgengine/core/fire/FireLandscape.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "survivor";
 const HOTBAR = "hotbar";

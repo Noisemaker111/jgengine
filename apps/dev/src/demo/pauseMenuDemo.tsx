@@ -10,7 +10,7 @@ import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
 import { ConfirmDialog, ModalHost } from "@jgengine/core/dialog/modals.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 

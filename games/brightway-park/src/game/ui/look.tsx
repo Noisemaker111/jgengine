@@ -6,7 +6,7 @@ import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import type { RuneElementProps } from "@jgengine/core/ui/rune/element";
 import type { Live } from "@jgengine/core/ui/liveValue";
 
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { hintRingOf, useHintTarget } from "./hintRing";
 

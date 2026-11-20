@@ -4,7 +4,7 @@ import { DEFAULT_UI_CUE_SOUNDS } from "@jgengine/core/ui/uiCues";
 import { inkKit } from "@jgengine/core/ui/kit/uiKitInk.view";
 import { paperKit } from "@jgengine/core/ui/kit/uiKitPaper.view";
 
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { kitCueOverrides, resolvePlayableAudio } from "./playableAudio.draw";
 
 function playable(fields: Partial<PlayableGame>): PlayableGame {

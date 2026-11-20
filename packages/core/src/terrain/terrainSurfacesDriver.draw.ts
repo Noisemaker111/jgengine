@@ -6,7 +6,7 @@ import { runSliced, SlicedWorkCancelled, type SlicedRun } from "@jgengine/core/r
 
 import type { ResolvedTerrainSurfaces } from "./terrain";
 import { createTerrainSurfaceTexturesJob, type TerrainSurfaceTextures } from "./terrainDetailMaterial.draw";
-import { loadTerrainScan, TERRAIN_SCAN_SIZE, terrainScanKey, terrainScanRequests } from "./terrainScanMaps.draw";
+import { loadTerrainScan, TERRAIN_SCAN_SIZE, terrainScanKey, terrainScanRequests } from "./terrainScanMaps.view";
 import { MAX_TERRAIN_PAINT_LAYERS, type TerrainPaintSlot } from "./terrainSurfaces.draw";
 
 const NO_SCANS: ReadonlyMap<string, SurfaceMaterialMaps> = new Map();

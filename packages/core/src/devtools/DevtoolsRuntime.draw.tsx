@@ -5,7 +5,7 @@ import { fallbackSeamsSnapshot } from "@jgengine/core/devtools/fallbackSeams";
 import { textureErrorsSnapshot } from "@jgengine/core/devtools/textureErrors";
 import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { collisionDebug } from "./collisionDebug";
 import { readStoredOverrides } from "./devtoolsOverrides.view";
 import { buildLeanReport, buildFullReport } from "./devtoolsReports.draw";

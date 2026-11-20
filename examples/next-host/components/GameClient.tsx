@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-import { mountGamePlayer } from "@jgengine/shell/mountGamePlayer";
-import type { GameRegistry } from "@jgengine/shell/registry";
+import { mountGamePlayer } from "@jgengine/core/shell/mountGamePlayer.draw";
+import type { GameRegistry } from "@jgengine/core/shell/registry.draw";
 
 // The probe games live in this repo's games/. To host a real game here, copy one
 // into this project and point the registry at it:

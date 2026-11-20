@@ -13,7 +13,7 @@ import {
   validateNewGameId,
 } from "../src/project/gameMeta";
 
-const SAMPLE_CONFIG = `import { defineGame } from "@jgengine/shell/defineGame";
+const SAMPLE_CONFIG = `import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 
 export const game = defineGame({
   name: "Tower Guard",

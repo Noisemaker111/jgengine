@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { pathFollowSeek } from "@jgengine/core/nav/pathFollow";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -18,7 +18,7 @@ import { GRID, snapToTile } from "../catalog";
 import { traceNative } from "../evidence";
 import { hoverRefusal, placementHintStore } from "../build/placementHint";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
-import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { useWorldProjection } from "@jgengine/core/shell/world/WorldEntityFrames.draw";
 import { tileAt, cellCentre, groundAt, isLandTool, LEVEL_HEIGHT, lineCells, raisedCells, rectCells } from "../build/terrain";
 import { landCheck, LINE_KINDS } from "../build/commands";
 import { StallWares } from "./StallWares";

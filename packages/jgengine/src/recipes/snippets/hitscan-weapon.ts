@@ -1,4 +1,4 @@
-import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import { resolveShot } from "@jgengine/core/combat/shotOrigin";
 import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { Aim } from "@jgengine/core/scene/spatial";

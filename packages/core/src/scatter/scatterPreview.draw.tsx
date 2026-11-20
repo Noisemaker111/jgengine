@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { runGenerator } from "@jgengine/core/generator/generator";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
+import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.view";
 import { SCATTER_OUTPUT, type ScatterInstance, type ScatterPlot } from "./scatterRegion";
 import { buildScatterProxy } from "./scatterProxies.draw";
 

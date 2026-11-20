@@ -4,7 +4,7 @@
 import { pathToFileURL } from "node:url";
 
 import type { SuiteProofResult } from "@jgengine/core/suite/gameSuite";
-import { runGameSuite } from "@jgengine/core/suite/runSuiteProof.draw";
+import { runGameSuite } from "@jgengine/core/suite/runSuiteProof.view";
 import { isSuiteProof } from "@jgengine/core/suite/suiteProof";
 
 /** What the suite test sends: the game, and one proof file (absolute path and its report name). */

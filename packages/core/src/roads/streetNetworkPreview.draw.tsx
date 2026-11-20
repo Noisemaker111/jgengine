@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { runGenerator } from "@jgengine/core/generator/generator";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
+import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.view";
 import { buildRoadRibbon, type RoadPoint } from "./roads";
 import { mergeRibbonGeometry } from "./RoadRibbons.draw";
 import { RACE_CIRCUIT_OUTPUT, type CircuitRoute, type RaceCircuit } from "./raceCircuit";

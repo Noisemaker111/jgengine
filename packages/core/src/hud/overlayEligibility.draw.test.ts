@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import * as THREE from "three";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
-import { collectNameplateSamples, collectWorldBarSamples, refreshWorldBarSamples, type NameplateSample, type WorldBarSample } from "./barSamples.draw";
+import { collectNameplateSamples, collectWorldBarSamples, refreshWorldBarSamples, type NameplateSample, type WorldBarSample } from "./barSamples.view";
 
 const viewport = { width: 800, height: 600 };
 

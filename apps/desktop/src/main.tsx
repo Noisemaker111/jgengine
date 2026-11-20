@@ -2,10 +2,10 @@
 import { lazy, Suspense, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 
-import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
-import { GameUiPreview } from "@jgengine/shell/GameUiPreview";
+import { GamePlayerShell } from "@jgengine/core/shell/GamePlayerShell.draw";
+import { GameUiPreview } from "@jgengine/core/shell/GameUiPreview.draw";
 import { resolveShellMultiplayer, type ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
-import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
+import type { GameRegistry, PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { Launcher } from "./launcher/Launcher";
 import "./index.css";

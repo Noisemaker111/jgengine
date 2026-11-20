@@ -6,7 +6,7 @@ import { runGenerator } from "@jgengine/core/generator/generator";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { registerGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
-import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
+import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.view";
 import { isNatureMesh, type NatureMesh } from "./natureMesh";
 import { natureDraws } from "./natureMesh.draw";
 import { NATURE_OUTPUT } from "./natureGenerators";

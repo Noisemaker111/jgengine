@@ -324,7 +324,7 @@ function withNewGame(loop: GameLoop<GameContext>, config: GameDefinitionConfig<M
 /**
  * Host-level constructor for a bare `GameDefinition`: fills in `scene` and default `assets`, validates
  * `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic
- * hooks. Games author through `defineGame` from `@jgengine/shell/defineGame`, which calls this and adds
+ * hooks. Games author through `defineGame` from `@jgengine/core/shell/defineGame.draw`, which calls this and adds
  * the presentation layer; call this directly only from headless hosts that mount no shell.
  */
 export function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplayer>(

@@ -6,7 +6,7 @@ import { parseGraphicsQuality } from "@jgengine/core/settings/graphicsSettings";
 import { DEFAULT_GRAPHICS_QUALITY, type GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { EFFECT_LIBRARY, effectNames } from "@jgengine/core/vfx/effectLibrary";
 import { planParticleBudget } from "@jgengine/core/vfx/particleBudget";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { meshDraw, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";

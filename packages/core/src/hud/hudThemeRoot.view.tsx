@@ -4,7 +4,7 @@ import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 
 import type { AccessibilityState } from "@jgengine/core/ui/accessibility";
 
-import { useEngineStyles } from "@jgengine/ui/engineStyles";
+import { useEngineStyles } from "@jgengine/core/ui/engineStyles.view";
 import { defaultHudTheme, hudThemeVars, type HudTheme } from "./hudTheme.view";
 
 /**

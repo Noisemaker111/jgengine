@@ -9,7 +9,7 @@ import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createSettingsStore, type GameSettingsConfig } from "@jgengine/core/settings/settingsModel";
 import { SettingsTrigger, useSettings, useSettingsStore, type SettingsController } from "@jgengine/core/settings/settings.view";
 import { createAudioEngine } from "@jgengine/core/audio/audioEngine.view";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { ShellHudPresentation } from "@jgengine/core/hud/ShellHudPresentation.draw";
 

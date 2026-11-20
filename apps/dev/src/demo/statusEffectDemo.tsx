@@ -10,7 +10,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { StatusEffectBar, type StatusIconResolver } from "@jgengine/core/hud/statusEffectBar.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 

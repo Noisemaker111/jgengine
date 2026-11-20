@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { generatorVariants, runGenerator } from "@jgengine/core/generator/generator";
-import { getGeneratorPreview } from "@jgengine/core/generator/generatorPreview.draw";
+import { getGeneratorPreview } from "@jgengine/core/generator/generatorPreview.view";
 import { RACE_CIRCUIT_GENERATOR } from "@jgengine/core/roads/raceCircuit";
 import { STREET_NETWORK_GENERATOR } from "@jgengine/core/roads/streetGenerator";
 import { streetLayersDraw, streetPreviewLayers } from "@jgengine/core/roads/streetNetworkPreview.draw";

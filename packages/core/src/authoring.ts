@@ -1,10 +1,10 @@
 /**
  * Core-side convenience barrel for pure authored helpers (loot, world features, ownership,
  * spawn selection, RNG). **Not the game entrypoint** — game projects start at
- * `@jgengine/shell/gameKit` (`defineGame`, `GameHost`, stores, systems, HUD). Prefer that
+ * `@jgengine/core/shell/gameKit.draw` (`defineGame`, `GameHost`, stores, systems, HUD). Prefer that
  * surface; import from here only when you need a core helper the kit does not re-export.
  *
- * @deprecated Prefer `@jgengine/shell/gameKit` as the start-here surface for games. This
+ * @deprecated Prefer `@jgengine/core/shell/gameKit.draw` as the start-here surface for games. This
  * module remains for deep core helpers and existing pure-import consumers; it is not removed.
  */
 

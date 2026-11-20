@@ -7,7 +7,7 @@ import { LlmvilleBackend } from "../../app";
 import { createConvexClient } from "../../auth/convexClient";
 import { onContextDispose } from "@jgengine/core/runtime/contextDisposal";
 import { perContext } from "@jgengine/core/runtime/perContext";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 import { usePlayerIdentity } from "../../auth";
 import { RackHardwareDragVisualProvider } from "../../infrastructure/rackHardwareDragVisual";
 import { TabletNavProvider } from "../../tablet/components/tabletNav";

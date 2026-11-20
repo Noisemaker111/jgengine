@@ -406,7 +406,7 @@ describe("attribution fails loudly", () => {
     expect(rerunCommand({ name: "t", command: ["bun", "test", "--timeout", "20000", "--reporter=junit", "--reporter-outfile=.scratch/x/tests-1.xml", "a.test.ts", "b c.test.ts"] })).toBe(
       'bun test --timeout 20000 a.test.ts "b c.test.ts"',
     );
-    expect(rerunCommand({ name: "layers", command: ["bun", "scripts/check-layers.ts"] })).toBe("bun scripts/check-layers.ts");
+    expect(rerunCommand({ name: "hud-tokens", command: ["bun", "scripts/check-hud-tokens.ts"] })).toBe("bun scripts/check-hud-tokens.ts");
     const chunk = { name: "test 3 file(s)", command: ["bun", "test", "--timeout", "20000", "a.test.ts", "b.test.ts", "c.test.ts"] };
     expect(rerunFailing(chunk, "b.test.ts:\n(fail) x\n\n 1 fail")).toBe("bun test b.test.ts");
     expect(rerunFailing(chunk, "bun crashed")).toBe("bun test --timeout 20000 a.test.ts b.test.ts c.test.ts");
@@ -500,7 +500,7 @@ describe("static gates", () => {
   test("a package source change pays the artifact and layer gates", () => {
     const gates = gatesFor(["packages/core/src/world/terrain.ts"]);
     expect(gates).toContain("artifacts");
-    expect(gates).toContain("layers");
+    expect(gates).toContain("artifacts");
     expect(gates).not.toContain("games-sync");
     expect(gatesFor(["packages/jgengine/src/cli/index.ts"])).toContain("games-sync");
   });
@@ -516,7 +516,7 @@ describe("static gates", () => {
       deleted: [],
       typechecks: ["packages/core"],
       tests: ["packages/core/src/a.test.ts"],
-      gates: ["layers"],
+      gates: ["artifacts"],
       unattributed: [],
       fallback: [],
       suites: [],
@@ -524,10 +524,10 @@ describe("static gates", () => {
       webBuild: true,
       inputs: {},
     };
-    expect(fastSteps(plan, { cheap: true }).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
+    expect(fastSteps(plan, { cheap: true }).map((step) => step.name)).toEqual(["typecheck packages/core", "artifacts"]);
     expect(fastSteps(plan).some((step) => step.name.startsWith("test "))).toBe(true);
     // The changed file's own test starts with the type-checks and gates, so the root cause is red first.
-    expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)", "layers"]);
+    expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)", "artifacts"]);
   });
 
   // A landing that ran a hand-picked subset of what CI runs met each missing check one CI run at a time.
@@ -547,7 +547,7 @@ describe("static gates", () => {
     for (const gate of ["games-save-states", "game-determinism", "asset-availability"]) {
       expect(landing).toContain(gate);
     }
-    for (const gate of ["layers", "hud-tokens", "doc-symbols", "release-set", "skill-api", "export-manifest"]) {
+    for (const gate of ["hud-tokens", "doc-symbols", "release-set", "skill-api", "export-manifest"]) {
       expect(landing).not.toContain(gate);
     }
     // A game can commit a `nul` as easily as the engine can.
@@ -555,7 +555,7 @@ describe("static gates", () => {
   });
 
   test("a check script change reaches every gate, since the rule itself moved", () => {
-    expect(landingGates(["scripts/check-layers.ts"])).toContain("layers");
+    expect(landingGates(["scripts/check-hud-tokens.ts"])).toContain("hud-tokens");
   });
 
   test("a docs-only landing pays only the iteration gates", () => {

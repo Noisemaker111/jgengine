@@ -9,7 +9,7 @@ import {
   type FrustumSample,
   type FrustumTarget,
 } from "@jgengine/core/sensor/frustumSensor";
-import { useSceneEntities } from "@jgengine/ui/hooks";
+import { useSceneEntities } from "@jgengine/core/ui/hooks.view";
 import { frustumSampleDisplayEqual } from "@jgengine/core/sensor/frustumSampleEqual";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";

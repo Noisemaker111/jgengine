@@ -214,7 +214,7 @@ export const SHARDS: readonly Shard[] = [
     // 22 s of harness scenarios plus 26 s of shell. The browser file sorts first in this
     // process, which is the order that matters: the editor scene io file took 78 s after 85
     // files and 34 s first in its process.
-    include: ["packages/jgengine/src/harness.unreachableTargets.browser.test.ts", "packages/shell"],
+    include: ["packages/jgengine/src/harness.unreachableTargets.browser.test.ts", "packages/core/src/shell"],
     needs: [],
   },
   {
@@ -247,7 +247,7 @@ export const SHARDS: readonly Shard[] = [
     // 41 s of react plus 3 s of editor tests that are not browser scenarios. React cannot fold
     // into another shard here without clearing 60 s, so this is the one job that is nearly a
     // single package.
-    include: ["packages/ui", "packages/editor"],
+    include: ["packages/core/src/ui", "packages/editor"],
     needs: [],
   },
   {

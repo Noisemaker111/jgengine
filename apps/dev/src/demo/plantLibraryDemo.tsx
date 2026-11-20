@@ -11,7 +11,7 @@ import { PLANT_GROWN_GENERATOR } from "@jgengine/core/plants/grown/plantGrown";
 import { isPlantMesh, type PlantMesh } from "@jgengine/core/plants/mesh/plantMesh";
 import { plantMeshSources } from "@jgengine/core/plants/mesh/plantMesh.draw";
 import { PLANT_LIBRARY } from "@jgengine/core/plants/species/data/plantLibrary";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 import { demoGame } from "./demoGame";
 

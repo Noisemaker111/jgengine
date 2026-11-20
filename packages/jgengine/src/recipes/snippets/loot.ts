@@ -1,4 +1,4 @@
-import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import { defineGame, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 
 // The joint: register the table on ctx.game.loot (rolled with the world's seeded

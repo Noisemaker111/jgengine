@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import type { ProofFlow } from "@jgengine/core/play/flow";
 import { describeFlowReport } from "@jgengine/core/play/flowSteps";
-import { runFlowHeadless } from "@jgengine/core/play/headlessFlow.draw";
+import { runFlowHeadless } from "@jgengine/core/play/headlessFlow.view";
 
 /**
  * Every game, the same check: a new game with no save, played through real input to the end of its

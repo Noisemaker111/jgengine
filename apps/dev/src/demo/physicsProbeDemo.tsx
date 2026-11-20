@@ -7,8 +7,8 @@ import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createRapierBackend } from "@jgengine/rapier";
 import type { BodyHandle, PhysicsBackend } from "@jgengine/core/physics/physicsBackend";
-import { defineGame } from "@jgengine/shell/defineGame";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import { defineGame } from "@jgengine/core/shell/defineGame.draw";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 interface ProbeBody {
   handle: BodyHandle;

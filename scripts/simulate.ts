@@ -7,7 +7,7 @@ import ts from "typescript";
 import type { PlayScriptSpec } from "@jgengine/core/play/script";
 import { runPlayScript } from "@jgengine/core/play/playRunner.draw";
 import { formatPlayTimelineEntry } from "@jgengine/core/play/timeline";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { npmNameOfFolder } from "./packageNames";
 
 /**
@@ -83,7 +83,7 @@ function gameEntry(gameDir: string): string {
 /** `@jgengine/<pkg>` and `@jgengine/<pkg>/<sub>` resolved to this checkout's TypeScript source. */
 function enginePaths(): Record<string, string[]> {
   const packagesDir = join(repoRoot, "packages");
-  const packages = ["assets", "convex", "core", "editor", "navbake", "node", "rapier", "ui", "shell", "sql", "ws"];
+  const packages = ["assets", "convex", "core", "editor", "navbake", "node", "rapier", "sql", "ws"];
   const paths: Record<string, string[]> = {};
   for (const name of packages) {
     const src = join(packagesDir, name, "src");

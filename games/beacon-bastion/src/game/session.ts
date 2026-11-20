@@ -10,7 +10,7 @@ import { createStats, type Stats } from "@jgengine/core/stats/statModifiers";
 import { createEncounter } from "@jgengine/core/waves/encounter";
 import { evaluatePressure } from "@jgengine/core/waves/pressure";
 import { createWaveCountdown, type WaveCountdown } from "@jgengine/core/waves/waveCountdown";
-import { seededRng } from "@jgengine/shell/gameKit";
+import { seededRng } from "@jgengine/core/shell/gameKit.draw";
 
 import { ABILITIES } from "./combat/abilities";
 import { DIRECTOR_SEED, ENCOUNTER } from "./waves/manifest";

@@ -8,11 +8,11 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { HiddenStateSource } from "@jgengine/core/sensor/hiddenStateProbe";
-import { localPlayerEntity, useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { localPlayerEntity, useGameStore } from "@jgengine/core/ui/hooks.view";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { useSessionRecorder } from "@jgengine/core/replay/useSessionRecorder.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { FrustumSensorReadout } from "@jgengine/core/hud/FrustumSensorHud.draw";
 import { SensorReadoutMeter, useHiddenStateProbe } from "@jgengine/core/hud/HiddenStateProbeHud.view";
 import { RevealHighlights, RevealScreenTint } from "@jgengine/core/sensor/RevealVision.draw";

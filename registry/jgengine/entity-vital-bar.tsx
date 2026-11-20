@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useEntityStat } from "@jgengine/ui/hooks";
+import { useEntityStat } from "@jgengine/core/ui/hooks.view";
 
 import { VitalBar, type VitalTone } from "@/components/ui/vital-bar";
 

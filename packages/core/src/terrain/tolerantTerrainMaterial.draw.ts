@@ -4,7 +4,7 @@ import type { ResolvedTerrainDetail } from "./terrain";
 import { createTerrainDetailMaterial, type TerrainDetailMaterialTextures, type TerrainSurfaceTextures } from "./terrainDetailMaterial.draw";
 import type { TerrainPaintTextures } from "./terrainSurfaces.draw";
 import { ImageTextureLoader } from "@jgengine/core/material/imageTexture.draw";
-import { terrainQuality } from "./terrainQuality.draw";
+import { terrainQuality } from "./terrainQuality.view";
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 
 /** The map roles a detail material samples, in the order the loader starts them. */

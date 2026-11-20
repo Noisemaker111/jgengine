@@ -5,9 +5,7 @@
   "engine": [
     "assets",
     "core",
-    "editor",
-    "ui",
-    "shell"
+    "editor"
   ],
   "owns": [
     "src/index.css",

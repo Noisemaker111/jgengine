@@ -14,8 +14,8 @@ import { resolveCommandSink } from "@jgengine/core/commands/commandSink";
 import { inputFramesEqual, resolveInputSink } from "@jgengine/core/input/inputSink";
 import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 
-import { EMPTY_RESERVED, NO_ACTIONS } from "@jgengine/shell/shellConstants";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import { EMPTY_RESERVED, NO_ACTIONS } from "@jgengine/core/shell/shellConstants";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { registerSimStepper } from "@jgengine/core/sim/simStepper";
 
 /**

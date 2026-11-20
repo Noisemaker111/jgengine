@@ -11,7 +11,7 @@ import { TalentTreePanel } from "@jgengine/core/talents/talentTree.view";
 import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 const HERO = "hero";
 

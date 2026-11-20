@@ -86,12 +86,12 @@ worth reading in full; they are clear, self-contained, and beautifully done.
 | JGengine feature | Where it lives | Derived from (MIT) |
 | --- | --- | --- |
 | **Procedural buildings** | [`core/world/buildings.ts`](packages/core/src/buildings/buildings.ts), [`shell/structures/GeneratedBuilding.tsx`](packages/core/src/buildings/GeneratedBuilding.draw.tsx) | [BuildingGeneratorThreeJS](https://github.com/achrefelouafi/BuildingGeneratorThreeJS) — a procedural Hong Kong building generator ported from a Blender geometry-nodes setup. Our seeded facade/roof kit (windows, awnings, AC units, clotheslines, storefronts, shutters, store signs, roof props, guardrails, corners) follows the component vocabulary and placement logic of his generator, as does [`core/world/buildingKit.ts`](packages/core/src/buildings/buildingKit.ts)'s binding of those part slots to instanced models. |
-| **Water** | [`core/water/`](packages/core/src/water), [`shell/water/`](packages/shell/src/water) | [OceanThreejs](https://github.com/achrefelouafi/OceanThreejs) — a cinematic, physically based ocean renderer. Our Gerstner wave surface, crest/foam shading, and Fresnel water color draw directly on his ocean techniques. |
+| **Water** | [`core/water/`](packages/core/src/water), [`shell/water/`](packages/core/src/shell/water) | [OceanThreejs](https://github.com/achrefelouafi/OceanThreejs) — a cinematic, physically based ocean renderer. Our Gerstner wave surface, crest/foam shading, and Fresnel water color draw directly on his ocean techniques. |
 | **Rain** | [`shell/weather/RainField.tsx`](packages/core/src/weather/RainField.draw.tsx) | [RainSystemThreeJS](https://github.com/achrefelouafi/RainSystemThreeJS) — GPU-instanced rain. Our camera-following instanced rain volume is shaped from his system. |
 | **Snow** | [`shell/weather/SnowField.tsx`](packages/core/src/weather/SnowField.draw.tsx) | [SnowSystemThreeJS](https://github.com/achrefelouafi/SnowSystemThreeJS) — a fully procedural snow studio with GPU-instanced snowfall. Our drifting, swaying snow volume is shaped from his system. |
 
 A related nod: JGengine's grass field
-([`shell/terrain/GrassField.tsx`](packages/shell/src/terrain/GrassField.tsx))
+([`shell/terrain/GrassField.tsx`](packages/core/src/shell/terrain/GrassField.tsx))
 took cues from his [GrassSystemThreeJS](https://github.com/achrefelouafi/GrassSystemThreeJS).
 
 The website carries the same debt on its face: the live engine functions on

@@ -17,7 +17,7 @@ export const world = place({
 `;
 
 /** `src/game.config.ts` for a 2D board game. */
-export const boardGameConfigTs = (name: string) => `import { defineGame } from "@jgengine/shell/gameKit";
+export const boardGameConfigTs = (name: string) => `import { defineGame } from "@jgengine/core/shell/gameKit.draw";
 
 import { GameUI } from "./game/ui/GameUI";
 import { systems } from "./loop";
@@ -43,7 +43,7 @@ export const game = defineGame({
 `;
 
 /** `src/loop.ts` for a 2D board game: one store slot, one command per input action. */
-export const boardLoopTs = `import { defineStore, defineSystem } from "@jgengine/shell/gameKit";
+export const boardLoopTs = `import { defineStore, defineSystem } from "@jgengine/core/shell/gameKit.draw";
 
 import { createBoard, moveCursor, toggleCell, type BoardState } from "./game/board";
 import { BOARD_SIZE } from "./world";

@@ -1,0 +1,40 @@
+import { describe, expect, test } from "bun:test";
+
+import { HudThemePreview } from "@jgengine/core/hud/hudThemePreview.view";
+import { IconsPreview } from "@jgengine/core/ui/icons/iconsPreview.view";
+import { StreetGeometryPreview } from "@jgengine/core/roads/streetGeometryPreview.view";
+import {
+  PREVIEW_FIXTURES,
+  previewFixtureNames,
+  resolvePreviewFixture,
+} from "./previewFixtures.view";
+
+describe("previewFixtures registry", () => {
+  test("names list is sorted and covers the registered fixtures", () => {
+    const names = previewFixtureNames();
+    expect(names).toEqual([...names].sort());
+    expect(names).toContain("HudThemePreview");
+    expect(names).toContain("IconsPreview");
+    expect(names).toContain("StreetGeometryPreview");
+    expect(names).toContain("HudSkinPreview");
+  });
+
+  test("each entry's name matches its registry key and carries a description", () => {
+    for (const [key, fixture] of Object.entries(PREVIEW_FIXTURES)) {
+      expect(fixture.name).toBe(key);
+      expect(fixture.description.length).toBeGreaterThan(0);
+      expect(typeof fixture.component).toBe("function");
+    }
+  });
+
+  test("resolvePreviewFixture returns the real exported components by name", () => {
+    expect(resolvePreviewFixture("HudThemePreview")?.component).toBe(HudThemePreview);
+    expect(resolvePreviewFixture("IconsPreview")?.component).toBe(IconsPreview);
+    expect(resolvePreviewFixture("StreetGeometryPreview")?.component).toBe(StreetGeometryPreview);
+  });
+
+  test("resolvePreviewFixture returns undefined for an unknown name", () => {
+    expect(resolvePreviewFixture("NopePreview")).toBeUndefined();
+    expect(resolvePreviewFixture("")).toBeUndefined();
+  });
+});

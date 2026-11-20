@@ -611,12 +611,12 @@ if (args.help) {
 }
 
 // Discovery: `shoot --list` or `shoot --fixture` (no name) prints the registered
-// engine preview fixtures from the @jgengine/ui registry (single source of truth).
+// engine preview fixtures from the @jgengine/core/ui.view registry (single source of truth).
 if (args.listFixtures || (args.fixture !== undefined && args.fixture.length === 0)) {
-  // The @jgengine/ui registry is the single source of truth; scripts resolve it from
+  // The @jgengine/core/ui.view registry is the single source of truth; scripts resolve it from
   // source (bare `@jgengine/*` specifiers only type-resolve through dist, not at bun runtime).
   const { PREVIEW_FIXTURES, previewFixtureNames } = await import(
-    resolve(import.meta.dir, "../packages/ui/src/previewFixtures.ts")
+    resolve(import.meta.dir, "../packages/core/src/ui/previewFixtures.view.ts")
   );
   console.log("engine preview fixtures (bun run shoot --fixture <name>):");
   for (const name of previewFixtureNames()) {

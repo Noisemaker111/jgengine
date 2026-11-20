@@ -1,4 +1,4 @@
-import { defineGame, type GameCameraConfig } from "@jgengine/shell/gameKit";
+import { defineGame, type GameCameraConfig } from "@jgengine/core/shell/gameKit.draw";
 
 // The joint: the camera is game DATA, not chrome. Hand `defineGame` a camera config
 // and the shell mounts the matching rig — "orbit" is the third-person chase camera

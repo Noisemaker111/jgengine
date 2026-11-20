@@ -2,7 +2,7 @@
 import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
-import { nextFrame } from "@jgengine/core/run/nextFrame.draw";
+import { nextFrame } from "@jgengine/core/run/nextFrame.view";
 import { runSliced, SlicedWorkCancelled, type SlicedJob, type SlicedRun } from "@jgengine/core/run/slicedWork";
 
 import type { TerrainField } from "@jgengine/core/terrain/terrain";

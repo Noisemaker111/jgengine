@@ -8,7 +8,7 @@ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import { createSoilPatchMaterial } from "@jgengine/core/terrain/soilPatchMaterial.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.view";
 
 /** Height offset above the sampled terrain so the draped patch never z-fights the ground. */
 const SOIL_LIFT = 0.04;

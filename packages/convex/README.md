@@ -8,8 +8,8 @@ Convex adapters for [JGengine](https://github.com/Noisemaker111/jgengine): a cli
 
 ```tsx
 import { resolveConvexMultiplayer } from "@jgengine/convex/resolveConvexMultiplayer";
-import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import { GamePlayerShell } from "@jgengine/core/shell/GamePlayerShell.draw";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 declare const playable: PlayableGame; // the game's game.config
 declare const convexUrl: string | undefined; // import.meta.env.VITE_CONVEX_URL in a Vite game

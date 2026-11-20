@@ -1,6 +1,6 @@
 import { devtools, type DevtoolsSnapshot, type LongFrameEvent } from "@jgengine/core/devtools/devtools";
 import { toReportLogs } from "@jgengine/core/devtools/report";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { diagnose } from "./perfDiagnose.view";
 
 function roundMs(value: number, digits = 1): number {

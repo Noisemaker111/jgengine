@@ -1,0 +1,1072 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
+import { CharacterMotionContext, noteGameCharacterMotion } from "@jgengine/core/anim/characterMotion.view";
+import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
+import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
+import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
+import { useMemo, useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "@jgengine/core/ui/jsx";
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
+import * as THREE from "three";
+
+import {
+  contextVerbInput,
+  type ContextMenu,
+  type ContextVerb,
+} from "@jgengine/core/interaction/contextMenu";
+import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
+import type { observableShellTracker } from "@jgengine/core/input/shellInputPublication";
+import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
+import type { TouchJoystickVariant, TouchScheme, TouchStyle } from "@jgengine/core/input/touchScheme";
+import type { Aim } from "@jgengine/core/scene/spatial";
+import {
+  isMarquee,
+  screenRect,
+  selectWithinRect,
+  type ScreenRect,
+} from "@jgengine/core/scene/selection";
+import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import { DEFAULT_PICKUP_RADIUS } from "@jgengine/core/loot/groundItem";
+import type { PointerConfig } from "@jgengine/core/game/playableGame";
+import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
+import { pixelPerfectFrustum, snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";
+import type { GameSettingsConfig } from "@jgengine/core/settings/settingsModel";
+import {
+  BUILT_IN_SETTING_CATEGORIES,
+  type SettingsStore,
+} from "@jgengine/core/settings/settingsModel";
+import { playControlsActive } from "@jgengine/core/game/controlGate";
+import { balanceLightingForIbl } from "@jgengine/core/lighting/lightingBalance";
+import { skyNoonKeyframes } from "@jgengine/core/sky/skyOwnedLighting";
+import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { GameViewportProvider } from "@jgengine/core/ui/viewport.view";
+import { GameProvider } from "@jgengine/core/ui/provider.view";
+import { ColorblindFrame, useColorblindMode } from "@jgengine/core/ui/accessibility.view";
+import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
+
+import { resolveWorldSky } from "@jgengine/core/sky/worldSky";
+import { FirstPersonBodyContext, noteFirstPersonBody } from "@jgengine/core/camera/firstPersonBody.draw";
+import { resolveCaptureCameraConfig } from "@jgengine/core/camera/rigResolve";
+import { rtsRotateKeysConflict } from "@jgengine/core/camera/rigMath";
+import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "@jgengine/core/input/shellPointer.draw";
+import { shellPointerInput } from "@jgengine/core/input/shellPointerInput";
+import { createControlGroupKeys, groupCentroid } from "@jgengine/core/input/controlGroupKeys";
+import {
+  isSelectDoubleClick,
+  resolveClickSelection,
+  resolveMarqueeSelection,
+  type SelectClickRecord,
+} from "@jgengine/core/input/selectionGesture";
+import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "@jgengine/core/audio/AudioComponents.draw";
+import { skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
+import { installFlatSceneWalk } from "@jgengine/core/render/flatSceneWalk.draw";
+import { StaticDrawPoolDriver } from "@jgengine/core/instancing/StaticObjectModels.draw";
+import { MeshLodSettings } from "@jgengine/core/lod/builtLods.draw";
+import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
+import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
+import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
+import { worldProbeForQuality } from "@jgengine/core/lighting/reflectionProbe.draw";
+import { LivingWorld } from "@jgengine/core/weather/LivingWorldLayer.draw";
+import { AmbientFauna } from "@jgengine/core/ambientFauna/AmbientFauna.draw";
+import { faunaGroupsFromVolumes } from "@jgengine/core/ambientFauna/ambientFaunaKind";
+import { CollisionDebugWorld } from "@jgengine/core/devtools/CollisionDebugWorld.draw";
+import { DevtoolsRendererProbe } from "@jgengine/core/devtools/DevtoolsOverlay.draw";
+import { FrameTelemetry } from "@jgengine/core/devtools/FrameTelemetry.draw";
+import { CAMERA_TRANSPARENT_USERDATA } from "@jgengine/core/camera/cameraCollision";
+import { GameCameraRig, resolveRigKind } from "@jgengine/core/camera/GameCameraRig.draw";
+import { PlayerFovProvider, PlayerFovSlider } from "@jgengine/core/camera/PlayerFov.view";
+import { rtsPanKeysConflict } from "@jgengine/core/camera/rigMath";
+import { CullingProvider } from "@jgengine/core/visibility/CullingProvider.draw";
+import { BuildingRenderBudget } from "@jgengine/core/buildings/BuildingRenderBudget.draw";
+import { Sky } from "@jgengine/core/sky/Daylight.draw";
+import { bearingFromDirection } from "@jgengine/core/sky/daylightCycle";
+import type { DaylightModulation } from "@jgengine/core/lighting/SceneLighting.draw";
+import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
+import { resolveSkyLightOwnership, skyEmitsLights } from "@jgengine/core/sky/skyLightingPolicy";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+import { PointerProbe } from "@jgengine/core/input/PointerProbe.draw";
+import { MarqueeBox, ContextMenuView } from "@jgengine/core/input/PointerOverlays.view";
+import { createPointerService } from "@jgengine/core/input/pointerService.draw";
+import { isSecondaryDrag, suppressBrowserContextMenu } from "@jgengine/core/input/secondaryPointer";
+import { Reticle, WorldEntityBars, WorldNameplates } from "@jgengine/core/hud/WorldHud.draw";
+import { GridWorldScene } from "./world/GridWorldScene.draw";
+import { PlaceScene } from "./world/PlaceScene.draw";
+import { WorldItems } from "@jgengine/core/item/WorldItems.draw";
+import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
+import { defaultHudTheme, hudThemeVars } from "@jgengine/core/hud/hudTheme.view";
+import type { PlayableGame } from "./registry.draw";
+import type { AuthoritativeFrameHandler } from "@jgengine/core/multiplayer/authoritativeSync";
+import { TouchControlsDock, TouchPlaySurface, useTouchViewport, type TouchCodeSink } from "@jgengine/core/input/TouchControlsOverlay.view";
+import { LocaleScope } from "@jgengine/core/i18n/i18n.view";
+import { withLocaleSetting } from "@jgengine/core/i18n/localeSetting";
+import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
+import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
+import { AudioSettingsBridge, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.view";
+import { TextureFiltering } from "@jgengine/core/material/TextureFiltering.draw";
+import { FrameRateLimiter } from "./drivers/FrameRateLimiter.draw";
+import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop.draw";
+import { FpsCounter, FpsProbe, type FrameTally } from "@jgengine/core/devtools/FpsCounter.draw";
+import { createPerfOverlaySample, PerfOverlay, PerfOverlayProbe } from "@jgengine/core/devtools/perfOverlay.draw";
+import { createReplayRecorder } from "@jgengine/core/replay/replayRecording";
+import { ConfiguredLighting, BackdropFog, ShadowPipeline } from "@jgengine/core/lighting/SceneLighting.draw";
+import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
+import { usePresentationLook } from "@jgengine/core/render/presentationLook.view";
+import type { GameLookInput } from "@jgengine/core/render/lookPreset";
+import { WorldView, RemotePlayers, dispatchWorldEntityPointerDown } from "./world/WorldScene.draw";
+import { FrameDriver } from "./drivers/FrameDriver.draw";
+import { GamepadSource } from "@jgengine/core/input/gamepadSource.draw";
+import { SplitScreenRenderer, useSeatViewports } from "@jgengine/core/camera/Viewports.draw";
+import { localPlayers } from "@jgengine/core/runtime/localPlayers";
+import type { RuntimeDiagnostic } from "@jgengine/core/devtools/diagnosticOverlay.view";
+import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome.draw";
+import { ContextLossScreen } from "./presentationRecovery.view";
+import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
+import { ParticleEmitters } from "@jgengine/core/vfx/ParticleEmitters.draw";
+import { WorldTireMarks } from "@jgengine/core/vfx/tireMarks.draw";
+import { TerrainQualityContext, noteTerrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
+import { detectKtx2Support } from "@jgengine/core/model/modelLoad.draw";
+import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "@jgengine/core/scene/SceneWarmupGate.draw";
+import { BootDirector } from "@jgengine/core/boot/BootDirector.draw";
+import { BootSuspenseGuard } from "@jgengine/core/boot/bootScreen.view";
+import {
+  resolvePresentationEffects,
+  resolveWorldOverlayBars,
+} from "./presentationResolve.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { useEngineDraw, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
+import { publishOnPage } from "@jgengine/core/runtime/pageHandle";
+
+const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
+const DEFAULT_BACKGROUND_COLOR = "#14161b";
+
+function PixelPerfectCamera({ pixelsPerUnit, integerScale }: { pixelsPerUnit: number; integerScale?: boolean }) {
+  const host = useEngineHost();
+  useFrameTask(() => {
+    const camera = host.frame.camera;
+    const { size } = host.frame;
+    if (!(camera instanceof THREE.OrthographicCamera)) return;
+    const frustum = pixelPerfectFrustum(size, pixelsPerUnit, integerScale === true);
+    camera.left = frustum.left;
+    camera.right = frustum.right;
+    camera.top = frustum.top;
+    camera.bottom = frustum.bottom;
+    camera.zoom = 1;
+    const snapped = snapPixelPerfectPosition(camera.position, pixelsPerUnit);
+    camera.position.set(snapped.x, snapped.y, snapped.z);
+    camera.updateProjectionMatrix();
+  }, 1);
+  return null;
+}
+
+/** `<color attach="background">` as a draw: sets scene.background, restores on dispose. */
+function backgroundColorDraw(color: string): EngineDraw {
+  const applied = new THREE.Color(color);
+  let previous: THREE.Scene["background"] = null;
+  return {
+    mount(state: EngineFrameState) {
+      previous = state.scene.background;
+      state.scene.background = applied;
+    },
+    update(state: EngineFrameState) {
+      if (state.scene.background !== applied) state.scene.background = applied;
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.background = previous;
+      previous = null;
+    },
+  };
+}
+
+/** The no-sky lighting fallback (`<ambientLight>` + `<directionalLight>`) as a draw. */
+function fallbackLightsDraw(ambientIntensity: number): EngineDraw {
+  let ambient: THREE.AmbientLight | null = null;
+  let sun: THREE.DirectionalLight | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      ambient = new THREE.AmbientLight(0xffffff, ambientIntensity);
+      sun = new THREE.DirectionalLight(0xffffff, 1.3);
+      sun.position.set(10, 16, 6);
+      state.scene.add(ambient, sun);
+    },
+    update() {
+      if (ambient !== null && ambient.intensity !== ambientIntensity) ambient.intensity = ambientIntensity;
+    },
+    dispose(state: EngineFrameState) {
+      if (ambient !== null) state.scene.remove(ambient);
+      if (sun !== null) state.scene.remove(sun);
+      ambient = null;
+      sun = null;
+    },
+  };
+}
+
+function BackgroundColor({ color }: { color: string }) {
+  useEngineDraw(() => backgroundColorDraw(color), [color]);
+  return null;
+}
+
+function FallbackLights({ ambientIntensity }: { ambientIntensity: number }) {
+  useEngineDraw(() => fallbackLightsDraw(ambientIntensity), [ambientIntensity]);
+  return null;
+}
+
+/**
+ * What the shell's look resolution sees: the look `defineGame` already resolved, the mood that
+ * produced it and the world's sky shape, so resolving again lands on the same light, sky and grade.
+ * @internal
+ */
+export function presentationLookInput(playable: PlayableGame, hasWorldSky: boolean): GameLookInput {
+  const world = playable.game.world;
+  return {
+    look: playable.rendering?.look,
+    mood: playable.rendering?.mood,
+    lighting: playable.rendering?.lighting,
+    backdrop: playable.rendering?.backdrop,
+    postProcessing: playable.rendering?.postProcessing,
+    hasWorldSky,
+    worldSky: world?.kind === "environment" ? world.sky : undefined,
+  };
+}
+
+/** 3D play surface: canvas, world overlays, and shared chrome. @internal */
+export function Shell3dPresentation({
+  playable,
+  ctx,
+  multiplayer,
+  tracker,
+  pointerAxisRef,
+  gateRef,
+  wrapperRef,
+  f2HeldRef,
+  yawRef,
+  pitchRef,
+  primaryClickRef,
+  cameraDraggingRef,
+  serverIdRef,
+  remotePlayers,
+  touchScheme,
+  touchSink,
+  touchStyle,
+  touchJoystickVariant,
+  analogRef,
+  inputBindings,
+  orientationGate,
+  orientationGateEl,
+  coarsePointer,
+  compact,
+  graphics,
+  settingsStore,
+  bindingOverrides,
+  rebindAction,
+  resetActionBinding,
+  diagnostics,
+  devtoolsEnabled,
+  devtoolsOpen,
+  setDevtoolsOpen,
+  reportRuntimeError,
+  onFrameMs,
+  trackPointerAxis,
+  deactivatePointerAxis,
+  audioEngine,
+  poster,
+  posterFrozen,
+  onPosterSettled,
+  authoritativeFrameRef,
+}: {
+  playable: PlayableGame;
+  ctx: GameContext;
+  multiplayer: ShellMultiplayer | null;
+  tracker: ReturnType<typeof observableShellTracker>;
+  pointerAxisRef: MutableRefObject<PointerAxisState | null>;
+  gateRef: MutableRefObject<boolean>;
+  wrapperRef: RefObject<HTMLDivElement | null>;
+  f2HeldRef: MutableRefObject<boolean>;
+  yawRef: MutableRefObject<number>;
+  pitchRef: MutableRefObject<number>;
+  primaryClickRef: MutableRefObject<boolean>;
+  cameraDraggingRef: MutableRefObject<boolean>;
+  serverIdRef: MutableRefObject<string | null>;
+  remotePlayers: PresencePoseRow[];
+  touchScheme: TouchScheme | null;
+  touchSink: TouchCodeSink;
+  touchStyle: TouchStyle;
+  touchJoystickVariant: TouchJoystickVariant;
+  analogRef: MutableRefObject<Readonly<Record<string, number>> | null>;
+  inputBindings: typeof playable.game.input;
+  orientationGate: boolean;
+  orientationGateEl: ReactNode;
+  coarsePointer: boolean;
+  compact: boolean;
+  graphics: AppliedGraphicsSettings;
+  settingsStore: SettingsStore;
+  bindingOverrides: BindingOverrides;
+  rebindAction: (action: string, code: string) => void;
+  resetActionBinding: (action: string) => void;
+  diagnostics: RuntimeDiagnostic[];
+  devtoolsEnabled: boolean;
+  devtoolsOpen: boolean;
+  setDevtoolsOpen: Dispatch<SetStateAction<boolean>>;
+  reportRuntimeError: (error: unknown, phase: string, componentStack?: string) => void;
+  onFrameMs?: ((frameMs: number) => void) | undefined;
+  trackPointerAxis: (event: { clientX: number; clientY: number }) => void;
+  deactivatePointerAxis: () => void;
+  audioEngine: AudioEngine;
+  poster: boolean;
+  posterFrozen: boolean;
+  onPosterSettled: () => void;
+  authoritativeFrameRef: { current: AuthoritativeFrameHandler | null };
+}) {
+  const GameUI = playable.GameUI;
+  const ktx2SupportDetected = useRef(false);
+  const warmup = useMemo(createSceneWarmupStore, []);
+  const frameTally = useRef<FrameTally>({ frames: 0 }).current;
+  // F3: the performance overlay, in every game and every phase.
+  const [perfOpen, setPerfOpen] = useState(false);
+  const perfSample = useMemo(() => createPerfOverlaySample(), []);
+  const faunaZones = useMemo(() => faunaGroupsFromVolumes(playable.scene?.editorLayers?.volumes ?? []), [playable]);
+  // Every session's input is recorded against the world seed; F2+R saves it as a replay.
+  const recorder = useMemo(() => createReplayRecorder({ game: playable.game.name }), [ctx, playable]);
+  const saveReplay = () => {
+    const replay = recorder.snapshot();
+    publishOnPage("replay", replay);
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(replay)], { type: "application/json" }));
+    link.download = `${playable.game.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-replay.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    console.info(`[jgengine] replay saved: ${replay.frames.length} frames; play it with playReplayRecording from @jgengine/core/replay/replayPlayback`);
+  };
+  const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
+  const WorldOverlay = playable.scene?.WorldOverlay;
+  const GameRemotePlayers = playable.scene?.RemotePlayers;
+  const pointerService = useMemo(() => createPointerService(), []);
+  // The player's entity selection lives on ctx so game HUDs can read (and write) it.
+  const selection = ctx.scene.entity.selection;
+  const controlledEntityId = ctx.player.possession.active(ctx.player.userId);
+  const cameraOverride = useSyncExternalStore(ctx.camera.subscribe, ctx.camera.rig, ctx.camera.rig);
+  const configuredCamera =
+    playable.camera?.follow?.followEntityId !== undefined
+      ? playable.camera
+      : { ...playable.camera, followEntityId: controlledEntityId };
+  const cameraConfig = resolveCaptureCameraConfig(configuredCamera, cameraOverride);
+  const rigKind = resolveRigKind(cameraConfig);
+  const firstPerson = rigKind === "first";
+  const firstPersonBody = firstPerson && cameraConfig?.rigs?.firstPerson?.body === true ? controlledEntityId : null;
+  // Draw code reads the same values without UI context; keep the stores in step with the providers below.
+  useEffect(() => {
+    noteFirstPersonBody(firstPersonBody);
+    noteGameCharacterMotion(playable.scene?.characterMotion);
+    noteTerrainQuality(graphics.quality);
+  }, [firstPersonBody, playable.scene?.characterMotion, graphics.quality]);
+  const showReticle =
+    (firstPerson && cameraConfig?.rigs?.firstPerson?.reticle !== false) || rigKind === "shoulder";
+  const rtsPanKeysEnabled = !rtsPanKeysConflict(playable.game.input);
+  const rtsRotateKeysEnabled = !rtsRotateKeysConflict(playable.game.input);
+  const bars = resolveWorldOverlayBars(playable.scene?.worldHealthBars);
+  const nameplates = resolveWorldOverlayBars(playable.scene?.nameplates);
+  const effects = resolvePresentationEffects(playable.scene?.presentationEffects);
+  const resolveEntityRole = (entity: SceneEntity) => playable.content.entityById?.(entity.name)?.role;
+
+  const pointer: PointerConfig | undefined = playable.controls?.pointer;
+  const pointerUsesLeft = pointer !== undefined && (pointer.select === true || pointer.moveCommand !== undefined);
+  const selectFilter = pointer?.selectFilter;
+  const controlGroupConfig = pointer?.select === true ? pointer.controlGroups : undefined;
+  const controlGroupKeys = useMemo(
+    () =>
+      controlGroupConfig === undefined || controlGroupConfig === false
+        ? null
+        : createControlGroupKeys({
+            groups: ctx.scene.entity.controlGroups,
+            selection,
+            isValid: (id) => ctx.scene.entity.get(id) !== null && (selectFilter === undefined || selectFilter(id)),
+            focus: (ids) => {
+              const centroid = groupCentroid(ids, (id) => ctx.scene.entity.get(id)?.position ?? null);
+              if (centroid !== null) ctx.camera.panTo(centroid);
+            },
+            now: () => performance.now(),
+            options: controlGroupConfig === true ? {} : controlGroupConfig,
+          }),
+    [ctx, selection, selectFilter, controlGroupConfig],
+  );
+  const worldSky = resolveWorldSky(playable.game.world);
+  const world = playable.game.world;
+  const biomeBands = world?.kind === "environment" ? world.terrain?.biomeBands : undefined;
+  const AutoEnvironment =
+    (typeof playable.scene?.environment === "function" ? playable.scene?.environment : undefined) ??
+    (world?.kind === "environment"
+      ? () => <EnvironmentScene feature={world} />
+      : world?.kind === "place"
+        ? () => <PlaceScene feature={world} />
+        : world?.kind === "biomes" || world?.kind === "voxel" || world?.kind === "plots" || world?.kind === "tilemap"
+          ? () => <GridWorldScene feature={world} />
+          : undefined);
+  // The post chain and sky rebuild on identity change; a fresh look object per render recompiled every pass each frame.
+  const hasWorldSky = worldSky !== undefined;
+  const authoredGrade = useMemo(
+    () => (playable.scene?.editorLayers === undefined ? undefined : colorGradeFromDocument(playable.scene?.editorLayers)),
+    [playable.scene?.editorLayers],
+  );
+  const { look: resolvedLook, backdropSky } = usePresentationLook(presentationLookInput(playable, hasWorldSky), authoredGrade);
+  const cinematicLook = (playable.rendering?.look ?? "cinematic") !== "flat";
+  const backdrop = resolvedLook.backdrop;
+  const authoredSky = backdropSky ?? worldSky;
+  const lighting = resolvedLook.lighting;
+  const sunFromLighting = lighting?.directional?.[0]?.position;
+  const sceneLighting = useMemo(() => (cinematicLook ? balanceLightingForIbl(lighting) : lighting), [cinematicLook, lighting]);
+  const worldProbe = useMemo(() => worldProbeForQuality(graphics.quality), [graphics.quality]);
+  // Null while the backend is prepared: the canvas mounts once its renderer can be made without awaiting.
+  const rendererFactory = useEngineRendererFactory(graphics.renderer);
+  const effectiveSky = useMemo(() => {
+    if (authoredSky === undefined) return undefined;
+    const bearing =
+      authoredSky.sun ??
+      (!authoredSky.timeOfDay && sunFromLighting !== undefined ? bearingFromDirection(sunFromLighting) : undefined);
+    const sky = bearing === undefined ? authoredSky : { ...authoredSky, sun: bearing };
+    return authoredSky.timeOfDay ? skyNoonKeyframes(sky, sceneLighting, backdrop?.fog?.color) : sky;
+  }, [authoredSky, sunFromLighting, sceneLighting, backdrop?.fog?.color]);
+  /**
+   * Under a day cycle the sky scales the game's authored sun and ambient fill; without this a
+   * time-of-day sky only repaints the dome and the world stays lit like noon after dark.
+   */
+  const skyBands = useMemo(() => biomeBandsForSky(authoredSky, worldSky, biomeBands), [authoredSky, worldSky, biomeBands]);
+  const authoredDaylight = effectiveSky?.timeOfDay === true && sceneLighting?.directional !== undefined;
+  const daylightModulation = useMemo<DaylightModulation>(
+    () => ({ sunFactor: 1, sunColor: effectiveSky?.sunColor ?? "#fff1c9", ambientFactor: 1 }),
+    [effectiveSky?.sunColor],
+  );
+  const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
+  const irradianceVolumes = useMemo(
+    () => (playable.scene?.editorLayers === undefined ? [] : lightProbesFromDocument(playable.scene?.editorLayers)),
+    [playable.scene?.editorLayers],
+  );
+  const orthographic = playable.camera?.lens?.projection === "orthographic";
+
+  const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+  const secondaryDownRef = useRef<{ x: number; y: number } | null>(null);
+  const lastSelectClickRef = useRef<SelectClickRecord | null>(null);
+  const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [marquee, setMarquee] = useState<ScreenRect | null>(null);
+  const selectionKey = useSyncExternalStore(ctx.subscribe, () => selection.list().join("\n"), () => selection.list().join("\n"));
+  const selectedIds = useMemo<ReadonlySet<string>>(() => new Set(selectionKey === "" ? [] : selectionKey.split("\n")), [selectionKey]);
+  const [contextMenu, setContextMenu] = useState<{ menu: ContextMenu; x: number; y: number } | null>(null);
+
+  const localXY = (event: { clientX: number; clientY: number }) => {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    return rect === undefined
+      ? { x: event.clientX, y: event.clientY }
+      : { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  };
+
+  const commitSelection = (ids: string[]) => {
+    selection.replace(ids);
+  };
+
+  const finishMarquee = (rect: ScreenRect, additive: boolean) => {
+    const candidates: { id: string; x: number; y: number }[] = [];
+    for (const entity of ctx.scene.entity.list()) {
+      if (selectFilter !== undefined && !selectFilter(entity.id)) continue;
+      const screen = pointerService.screenOf(entity.position);
+      if (screen !== null) candidates.push({ id: entity.id, x: screen.x, y: screen.y });
+    }
+    commitSelection(resolveMarqueeSelection(selectWithinRect(candidates, rect), selection.list(), additive));
+  };
+
+  const onScreenSelectable = (): string[] => {
+    const bounds = wrapperRef.current?.getBoundingClientRect();
+    if (bounds === undefined) return [];
+    const ids: string[] = [];
+    for (const entity of ctx.scene.entity.list()) {
+      if (selectFilter !== undefined && !selectFilter(entity.id)) continue;
+      const screen = pointerService.screenOf(entity.position);
+      if (screen !== null && screen.x >= 0 && screen.y >= 0 && screen.x <= bounds.width && screen.y <= bounds.height) ids.push(entity.id);
+    }
+    return ids;
+  };
+
+  /** DOM UI sits in the same wrapper as the canvas — only canvas-targeted clicks are world input. */
+  const isWorldPointerTarget = (event: { target: EventTarget | null }) =>
+    event.target instanceof HTMLCanvasElement;
+
+  const pointerInput = useMemo(() => shellPointerInput(tracker, () => playControlsActive(ctx)), [tracker, ctx]);
+  useEffect(() => {
+    const clearGesture = () => { pointerDownRef.current = null; marqueeStartRef.current = null; setMarquee(null); };
+    const up = (event: PointerEvent) => {
+      pointerInput.up(event);
+      if (!(event.target instanceof Node) || !wrapperRef.current?.contains(event.target)) clearGesture();
+    };
+    const cancel = (event: PointerEvent) => { pointerInput.cancel(event.pointerId); clearGesture(); };
+    const retire = () => { pointerInput.cancel(); clearGesture(); };
+    const blur = () => { tracker.reset(); retire(); };
+    const move = (event: PointerEvent) => { pointerInput.move(event, false); };
+    const detachReset = pointerInput.attachReset(tracker, clearGesture);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointercancel", cancel);
+    window.addEventListener("blur", blur);
+    return () => {
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointercancel", cancel);
+      window.removeEventListener("blur", blur);
+      detachReset();
+      pointerInput.cancel();
+    };
+  }, [pointerInput, tracker]);
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    pointerInput.down(event, isWorldPointerTarget(event));
+    if (isWorldPointerTarget(event)) {
+      // Feed the service this event's exact cursor, then dispatch the hit entity.
+      const rect = canvasElement?.getBoundingClientRect();
+      if (rect !== undefined && rect.width > 0 && rect.height > 0) {
+        pointerService.setState({
+          x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+          y: -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+          present: true,
+        });
+      }
+      const hit = pointerService.worldHit();
+      if (hit?.entity != null) dispatchWorldEntityPointerDown(hit.entity);
+    }
+    if (!playControlsActive(ctx)) return;
+    if (isWorldPointerTarget(event)) wrapperRef.current?.focus();
+    trackPointerAxis(event);
+    audioEngine.resume();
+    if (contextMenu !== null) setContextMenu(null);
+    if (event.button === 2) secondaryDownRef.current = isWorldPointerTarget(event) ? localXY(event) : null;
+    if (event.button === 0 && isWorldPointerTarget(event)) {
+      const point = localXY(event);
+      pointerDownRef.current = point;
+      if (pointer?.select === true) marqueeStartRef.current = point;
+    }
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    pointerInput.move(event, isWorldPointerTarget(event));
+    trackPointerAxis(event);
+    if (pointer?.select !== true) return;
+    const start = marqueeStartRef.current;
+    if (start === null || (event.buttons & 1) === 0) return;
+    const point = localXY(event);
+    setMarquee(screenRect(start.x, start.y, point.x, point.y));
+  };
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const boundPointer = pointerInput.up(event);
+    if (!playControlsActive(ctx)) { pointerDownRef.current = null; marqueeStartRef.current = null; setMarquee(null); return; }
+    if (event.button !== 0 || pointerDownRef.current === null) return;
+    const start = pointerDownRef.current;
+    pointerDownRef.current = null;
+    marqueeStartRef.current = null;
+    const end = localXY(event);
+    const rect = screenRect(start.x, start.y, end.x, end.y);
+    const wasMarquee = marquee !== null && isMarquee(rect, PRIMARY_CLICK_MOVE_THRESHOLD_PX);
+    setMarquee(null);
+    if (pointer?.select === true && wasMarquee) {
+      finishMarquee(rect, event.shiftKey);
+      return;
+    }
+    if (cameraDraggingRef.current) return;
+    if (pointer?.grabWorldItems === true) {
+      const hit = pointerService.worldHit();
+      const itemInstanceId = hit?.entity ?? null;
+      const record = itemInstanceId === null ? null : ctx.scene.worldItem.get(itemInstanceId);
+      if (record !== null && itemInstanceId !== null) {
+        const itemEntity = ctx.scene.entity.get(itemInstanceId);
+        const localPlayer = ctx.scene.entity.get(ctx.player.userId);
+        const pickupRadius = playable.scene?.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
+        const withinRadius =
+          itemEntity !== null &&
+          localPlayer !== null &&
+          Math.hypot(
+            localPlayer.position[0] - itemEntity.position[0],
+            localPlayer.position[1] - itemEntity.position[1],
+            localPlayer.position[2] - itemEntity.position[2],
+          ) <= pickupRadius;
+        if (withinRadius) {
+          ctx.scene.worldItem.pickup(itemInstanceId, ctx.player.userId);
+          return;
+        }
+      }
+    }
+    if (pointer?.select === true) {
+      const hit = pointerService.worldHit();
+      const entity = hit !== null && hit.entity !== null && (selectFilter === undefined || selectFilter(hit.entity)) ? hit.entity : null;
+      const click = { entity, at: performance.now(), x: end.x, y: end.y };
+      const doubleClick = isSelectDoubleClick(lastSelectClickRef.current, click);
+      lastSelectClickRef.current = doubleClick ? null : click;
+      commitSelection(resolveClickSelection({
+        hit: entity,
+        current: selection.list(),
+        additive: event.shiftKey,
+        sameKind: doubleClick || event.ctrlKey || event.metaKey,
+        kindOf: pointer.selectKind,
+        onScreen: onScreenSelectable,
+      }));
+      return;
+    }
+    if (pointer?.moveCommand !== undefined) {
+      const hit = pointerService.worldHit();
+      if (hit !== null && ctx.game.commands.has(pointer.moveCommand)) {
+        ctx.game.commands.run(pointer.moveCommand, { point: hit.point, entity: hit.entity, object: hit.object });
+      }
+      return;
+    }
+    const moved = (end.x - start.x) ** 2 + (end.y - start.y) ** 2;
+    if (!boundPointer && moved <= PRIMARY_CLICK_MOVE_THRESHOLD_PX * PRIMARY_CLICK_MOVE_THRESHOLD_PX) primaryClickRef.current = true;
+  };
+
+  const handleContextMenu = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!suppressBrowserContextMenu(event)) return;
+    const secondaryStart = secondaryDownRef.current;
+    secondaryDownRef.current = null;
+    if (pointer === undefined) return;
+    if (!isWorldPointerTarget(event)) return;
+    // A right-drag orbited the camera; releasing it is not also a right-click.
+    if (isSecondaryDrag(secondaryStart, localXY(event), PRIMARY_CLICK_MOVE_THRESHOLD_PX)) return;
+    const hit = pointerService.worldHit();
+    if (hit === null) return;
+    if (pointer.contextMenu === true && (hit.entity !== null || hit.object !== null)) {
+      const menu = pointerContextMenu(ctx, playable, hit);
+      if (menu !== null) {
+        const point = localXY(event);
+        setContextMenu({ menu, x: point.x, y: point.y });
+        return;
+      }
+    }
+    if (pointer.select === true && pointer.orderCommand !== undefined && selection.size() > 0) {
+      if (ctx.game.commands.has(pointer.orderCommand)) {
+        ctx.game.commands.run(pointer.orderCommand, { selection: selection.list(), point: hit.point });
+      }
+      return;
+    }
+    if (pointer.secondaryCommand !== undefined && ctx.game.commands.has(pointer.secondaryCommand)) {
+      const aim: Aim = (resolvePointerAim(pointer.aim, playable.camera?.rig) ? pointerAimFor(ctx, pointerService) : undefined) ?? {
+        yaw: yawRef.current,
+        pitch: pitchRef.current,
+      };
+      ctx.game.commands.run(pointer.secondaryCommand, { point: hit.point, entity: hit.entity, object: hit.object, aim });
+    }
+  };
+
+  const handleVerbPick = (verb: ContextVerb) => {
+    const state = contextMenu;
+    setContextMenu(null);
+    if (state !== null && ctx.game.commands.has(verb.command)) {
+      ctx.game.commands.run(verb.command, contextVerbInput(state.menu, verb));
+    }
+  };
+
+  const controlsActive = playControlsActive(ctx);
+  const seatViewports = useSeatViewports(ctx, playable.controls?.viewports);
+  const splitScreen = playable.controls?.viewports !== undefined && seatViewports.length > 1;
+  const settingsDisabled = playable.chrome?.settings === false;
+  const settingsConfig: GameSettingsConfig =
+    playable.chrome?.settings === false || playable.chrome?.settings === undefined ? {} : playable.chrome?.settings;
+  const settingsSurface = settingsDisabled ? false : settingsConfig.surface ?? false;
+  const settingsVariant = settingsConfig.variant ?? "panel";
+  const hideCategories = settingsDisabled ? BUILT_IN_SETTING_CATEGORIES : settingsConfig.hide ?? [];
+  const fovControlEnabled = !orthographic && playable.camera?.lens?.playerFov?.control !== false;
+  const settingsHostsFov = !settingsDisabled && !hideCategories.includes("gameplay") && fovControlEnabled;
+  const settingsActions: SettingsActionView[] = settingsDisabled
+    ? []
+    : (settingsConfig.actions ?? []).map((action) => ({
+        id: action.id,
+        label: action.label,
+        kind: action.kind ?? "default",
+        description: action.description,
+        run: () => action.run(ctx),
+      }));
+  const touchScale = compact ? 0.88 : 1;
+  // The engine loop paces the frame-rate cap inside `setFpsLimit`.
+  const canvasFrameloop: "always" | "demand" | "never" = poster && posterFrozen ? "demand" : "always";
+  // The frame carries the player's colour-vision mode; the HUD and menu text above it stay unfiltered.
+  const colorblind = useColorblindMode(settingsStore);
+  const dockMounted =
+    !poster &&
+    !orientationGate &&
+    coarsePointer &&
+    controlsActive &&
+    touchScheme !== null &&
+    (touchScheme.joystick !== null || touchScheme.buttons.length > 0 || touchScheme.slots.length > 0);
+  const touchViewport = useTouchViewport();
+  // The dock sits outside the GameUI theme root; carry the game's HudTheme tokens so its default skin matches the HUD.
+  const dockThemeVars = useMemo(
+    () => (playable.hudTheme === false ? undefined : hudThemeVars(playable.hudTheme ?? defaultHudTheme)),
+    [playable.hudTheme],
+  );
+
+  const keys = createShellKeyHandlers({
+    f2HeldRef,
+    tracker,
+    devtoolsEnabled,
+    setDevtoolsOpen,
+    controlsActive: () => playControlsActive(ctx),
+    exitPointerLockOnDevtools: true,
+    claimKey: controlGroupKeys === null ? undefined : (event) => controlGroupKeys.handle(event),
+    togglePerfOverlay: () => setPerfOpen((open) => !open),
+    saveReplay,
+  });
+
+  return (
+    <SettingsProvider store={settingsStore}>
+      <PlayerFovProvider config={playable.camera} orthographic={orthographic}>
+        <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={resolvePlayableAudio(playable).buses} />
+        <LocaleScope i18n={playable.i18n}>
+        <SettingsRuntime
+          variant={settingsVariant}
+          surface={settingsSurface}
+          actions={settingsActions}
+          input={playable.game.input ?? {}}
+          buses={resolvePlayableAudio(playable).buses}
+          extra={withLocaleSetting(settingsConfig.extra, playable.i18n)}
+          categories={settingsConfig.categories ?? []}
+          hide={hideCategories}
+          fovEnabled={fovControlEnabled}
+          graphics={playable.rendering?.graphics}
+          postProcessing={resolvedLook.postProcessing}
+          softShadows={lightingHasSoftShadows(resolvedLook.lighting)}
+          autoQuality={playable.health?.autoQuality !== undefined}
+          hideBindings={settingsConfig.hideBindings ?? []}
+          touchStyle={
+            coarsePointer &&
+            touchScheme !== null &&
+            (touchScheme.joystick !== null || touchScheme.buttons.length > 0)
+          }
+          overrides={bindingOverrides}
+          rebind={rebindAction}
+          resetBinding={resetActionBinding}
+        >
+          {/* The surface's size is inline: a game stylesheet whose Tailwind scan misses the
+              shell's sources must not collapse it to zero, or the canvas never configures and
+              the warmup cover waits forever (#3097). */}
+          <div
+            ref={wrapperRef}
+            tabIndex={0}
+            data-jg-play-surface=""
+            {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
+            style={{ position: "relative", width: "100%", height: "100%", background: "#05090a", outline: "none" }}
+            className="relative h-full w-full bg-neutral-950 outline-none"
+            onKeyDown={keys.onKeyDown}
+            onKeyUp={keys.onKeyUp}
+            onBlur={keys.onBlur}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={deactivatePointerAxis}
+            onPointerCancel={deactivatePointerAxis}
+            onContextMenu={handleContextMenu}
+            onWheel={(event) => {
+              if (!event.shiftKey) return;
+              event.preventDefault();
+              if (event.deltaY < 0 && ctx.game.commands.has("ui.hotbarScrollNext")) {
+                ctx.game.commands.run("ui.hotbarScrollNext", {});
+              } else if (event.deltaY > 0 && ctx.game.commands.has("ui.hotbarScrollPrev")) {
+                ctx.game.commands.run("ui.hotbarScrollPrev", {});
+              }
+            }}
+          >
+            <GameViewportProvider platforms={playable.controls?.platforms}>
+              <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
+                {rendererFactory === null ? null : (
+                <EngineCanvas
+                  rendererFactory={rendererFactory}
+                  onCreated={({ gl, scene }) => {
+                    setCanvasElement(gl.domElement);
+                    skipCulledMatrices(scene);
+                    installFlatSceneWalk(gl, scene);
+                    if (ktx2SupportDetected.current) return;
+                    ktx2SupportDetected.current = true;
+                    detectKtx2Support(gl);
+                  }}
+                  frameloop={canvasFrameloop}
+                  orthographic={orthographic}
+                  camera={
+                    orthographic
+                      ? {
+                          zoom: playable.camera?.lens?.frustum?.zoom ?? CAMERA_FRUSTUM_DEFAULTS.zoom,
+                          near: playable.camera?.lens?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                          far: playable.camera?.lens?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+                        }
+                      : {
+                          fov: playable.camera?.lens?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
+                          near: playable.camera?.lens?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                          far: playable.camera?.lens?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+                        }
+                  }
+                  shadows={graphics.shadows ? true : false}
+                  dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
+                  style={{ touchAction: "none" }}
+                >
+                  <CanvasCoverFrameloop authored={canvasFrameloop} />
+                  <TextureFiltering anisotropy={graphics.profile.anisotropy} />
+                  {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
+                  {graphics.showFps ? <FpsProbe tally={frameTally} /> : null}
+                  {perfOpen ? <PerfOverlayProbe sample={perfSample} /> : null}
+                  {orthographic && playable.camera?.lens?.pixelPerfect !== undefined ? (
+                    <PixelPerfectCamera {...playable.camera.lens?.pixelPerfect} />
+                  ) : null}
+                  {backgroundColor !== undefined ? <BackgroundColor color={backgroundColor} /> : null}
+                  {cinematicLook ? (
+                    <BootSuspenseGuard area="the environment lighting">
+                    <EnvironmentLighting
+                      source={playable.rendering?.environmentSource}
+                      skyColor={sceneLighting?.hemisphere?.skyColor ?? "#87b5e0"}
+                      groundColor={sceneLighting?.hemisphere?.groundColor ?? "#3d4a38"}
+                      horizonTint={sceneLighting?.ambient?.color}
+                      sunDirection={sceneLighting?.directional?.[0]?.position}
+                      sunColor={sceneLighting?.directional?.[0]?.color ?? "#fff2d6"}
+                      worldProbe={worldProbe}
+                      {...(authoredDaylight ? { daylight: daylightModulation } : {})}
+                    />
+                    </BootSuspenseGuard>
+                  ) : null}
+                  <LivingWorld ambientLife={playable.scene?.ambientLife} lowTier={graphics.quality === "low"} outdoor={effectiveSky !== undefined} />
+                  {playable.scene?.ambientLife !== false && playable.scene?.ambientLife?.fauna !== undefined ? (
+                    <AmbientFauna config={playable.scene.ambientLife.fauna} zones={faunaZones} assets={playable.game.assets} groundAt={ctx.world.groundHeightAt} groundRevision={ctx.world.ground.heightRevision} lowTier={graphics.quality === "low"} />
+                  ) : null}
+                  <ShadowPipeline profile={graphics.profile} />
+                  {sceneLighting !== undefined ? (
+                    <ConfiguredLighting
+                      lighting={sceneLighting}
+                      profile={graphics.profile}
+                      {...(authoredDaylight ? { modulation: daylightModulation } : {})}
+                    />
+                  ) : effectiveSky === undefined ? (
+                    <FallbackLights ambientIntensity={cinematicLook ? 0.3 : 0.55} />
+                  ) : null}
+                  {effectiveSky !== undefined ? (
+                    <BootSuspenseGuard area="the sky">
+                    <Sky
+                      sky={effectiveSky}
+                      clock={ctx.time}
+                      {...(skyBands === undefined ? {} : { bands: skyBands })}
+                      lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
+                      {...(authoredDaylight ? { modulation: daylightModulation } : {})}
+                      {...(backdrop?.fog === undefined ? {} : { fogRange: backdrop.fog })}
+                      {...(playable.scene?.editorLayers?.simulation?.weather === undefined ? {} : { weather: ctx.environment })}
+                    />
+                    </BootSuspenseGuard>
+                  ) : null}
+  {irradianceVolumes.length > 0 ? <IrradianceVolumeLighting volumes={irradianceVolumes} /> : null}
+                  {/* One fog owner: a mounted sky always drives scene fog, so a second `<fog>` here would only shadow it. */}
+                  {effectiveSky === undefined ? <BackdropFog fog={backdrop?.fog} /> : null}
+                  <GameProvider context={ctx}>
+                    <TerrainQualityContext.Provider value={graphics.quality}>
+                    <CharacterMotionContext.Provider value={playable.scene?.characterMotion}>
+                    <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.scene?.visibility} cullingDisabled={splitScreen}>
+                    <CullingProvider config={playable.scene?.visibility} drawDistance={graphics.profile.drawDistance}>
+                    <MeshLodSettings config={playable.scene?.visibility?.meshLods}>
+                      <StaticDrawPoolDriver hlod={playable.scene?.visibility?.hlod} />
+                      <BootSuspenseGuard area="the world">
+                      <FirstPersonBodyContext.Provider value={firstPersonBody}>
+                      <WorldView
+                        entitySprites={playable.scene?.entitySprites}
+                        entityModels={playable.scene?.entityModels}
+                        objectModels={playable.scene?.objectModels}
+                        objectStyles={playable.scene?.objectStyles}
+                        environment={AutoEnvironment}
+                        assets={playable.game.assets}
+                        renderEntity={playable.scene?.renderEntity}
+                        renderObject={playable.scene?.renderObject}
+                        selectedIds={selectedIds}
+                        hideLocalActor={firstPerson && firstPersonBody === null}
+                        editorLayers={playable.scene?.editorLayers}
+                      />
+                      </FirstPersonBodyContext.Provider>
+                      </BootSuspenseGuard>
+                      {bars !== null ? (
+                        <WorldEntityBars
+                          statId={bars.statId}
+                          roles={bars.roles}
+                          resolveRole={resolveEntityRole}
+                          {...(bars.maxSamples === undefined ? {} : { maxSamples: bars.maxSamples })}
+                          {...(bars.tickMs === undefined ? {} : { tickMs: bars.tickMs })}
+                          {...(bars.maxDistance === undefined ? {} : { maxDistance: bars.maxDistance })}
+                          {...(bars.occlude === undefined ? {} : { occlude: bars.occlude })}
+                        />
+                      ) : null}
+                      {nameplates !== null ? (
+                        <WorldNameplates
+                          statId={nameplates.statId}
+                          roles={nameplates.roles}
+                          resolveRole={resolveEntityRole}
+                          {...(nameplates.maxSamples === undefined ? {} : { maxSamples: nameplates.maxSamples })}
+                          {...(nameplates.tickMs === undefined ? {} : { tickMs: nameplates.tickMs })}
+                          {...(nameplates.maxDistance === undefined ? {} : { maxDistance: nameplates.maxDistance })}
+                          occlude={nameplates.occlude}
+                          {...(nameplates.resolveName === undefined ? {} : { resolveName: nameplates.resolveName })}
+                          {...(nameplates.showHealth === undefined ? {} : { showHealth: nameplates.showHealth })}
+                        />
+                      ) : null}
+                    {WorldOverlay !== undefined ? (
+                      // Author decor is presentation dressing, not collision geometry — mark it
+                      // camera-transparent so the orbit spring-arm never yanks toward it. A child
+                      // that should block the camera opts back in with userData.jgCameraCollide.
+                      <SceneObjectGroup userData={CAMERA_TRANSPARENT_USERDATA}>
+                        <BootSuspenseGuard area="the game's world overlay"><WorldOverlay ctx={ctx} /></BootSuspenseGuard>
+                      </SceneObjectGroup>
+                    ) : null}
+                    {GameRemotePlayers !== undefined ? (
+                      <BootSuspenseGuard area="the game's remote players"><GameRemotePlayers ctx={ctx} rows={remotePlayers} /></BootSuspenseGuard>
+                    ) : null}
+                    </MeshLodSettings>
+                    </CullingProvider>
+                    <WorldItems config={playable.scene?.worldItem} />
+                    <WorldTireMarks />
+                    <ParticleEmitters quality={graphics.quality} particleCap={graphics.profile.particleCap} particleBudget={graphics.profile.particleBudget} diagnostics={devtoolsEnabled} />
+                    <CombatPresentation effects={effects} />
+                    {devtoolsEnabled ? <CollisionDebugWorld /> : null}
+                    <AudioListener engine={audioEngine} anchor={playable.camera?.rig === "rts" || playable.camera?.rig === "topDown" ? "ground" : "camera"} />
+                    <EntityAudioEmitters engine={audioEngine} entitySounds={playable.audio?.entitySounds} />
+                    <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.audio?.objectSounds} />
+                    <GameCameraRig
+                      yawRef={yawRef}
+                      pitchRef={pitchRef}
+                      config={cameraConfig}
+                      viewmodel={playable.scene?.viewmodel}
+                      pointerControls={pointerUsesLeft}
+                      panKeysEnabled={rtsPanKeysEnabled}
+                      rotateKeysEnabled={rtsRotateKeysEnabled}
+                      director={ctx.camera}
+                      onDragChange={(dragging) => {
+                        cameraDraggingRef.current = dragging;
+                      }}
+                    />
+                    <PointerProbe service={pointerService} {...(ctx.world.ground.bounds === undefined ? {} : { groundHeightAt: ctx.world.groundHeightAt })} />
+                    </BuildingRenderBudget>
+                    </CharacterMotionContext.Provider>
+                    </TerrainQualityContext.Provider>
+                  </GameProvider>
+                  {GameRemotePlayers === undefined ? <RemotePlayers rows={remotePlayers} /> : null}
+                  <FrameDriver
+                    ctx={ctx}
+                    playable={playable}
+                    tracker={tracker}
+                    yawRef={yawRef}
+                    pitchRef={pitchRef}
+                    primaryClickRef={primaryClickRef}
+                    pointerAxisRef={pointerAxisRef}
+                    analogRef={analogRef}
+                    gateRef={gateRef}
+                    onRuntimeError={reportRuntimeError}
+                    multiplayer={multiplayer}
+                    serverIdRef={serverIdRef}
+                    pointerService={pointerService}
+                    pointerAim={resolvePointerAim(pointer?.aim, playable.camera?.rig)}
+                    pingCommand={pointer?.pingCommand}
+                    poster={poster}
+                    onPosterSettled={onPosterSettled}
+                    authoritativeFrameRef={authoritativeFrameRef}
+                    recorder={poster ? undefined : recorder}
+                    onFrameMs={onFrameMs}
+                  />
+                  <GamepadSource
+                    tracker={tracker}
+                    bindings={inputBindings ?? {}}
+                    analogRef={analogRef}
+                    input={ctx.input}
+                    feel={playable.controls?.gamepad}
+                    seats={localPlayers(ctx)}
+                    onSeatJoin={(slot) => {
+                      try {
+                        playable.loop.onNewPlayer(ctx, { userId: slot.userId, isNew: true });
+                      } catch (error) {
+                        reportRuntimeError(error, "tick");
+                      }
+                    }}
+                    seatsActive={() => !gateRef.current && playControlsActive(ctx)}
+                  />
+                  <DevtoolsRendererProbe />
+                  {devtoolsEnabled ? (
+                    <FrameTelemetry game={playable.game.name} quality={graphics.quality === "low" ? "draft" : "full"} />
+                  ) : null}
+                  {splitScreen ? (
+                    <SplitScreenRenderer ctx={ctx} viewports={seatViewports} config={playable.controls?.viewports} mainCamera={playable.camera} />
+                  ) : null}
+                  {!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
+                    <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} immediate={poster} />
+                  ) : null}
+                  {poster ? null : (
+                    <SceneWarmupGate
+                      onState={warmup.set}
+                      sceneDrawsToTarget={!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false}
+                    />
+                  )}
+                </EngineCanvas>
+                )}
+              </ColorblindFrame>
+              <SceneWarmupCoverLive store={warmup} />
+              {poster ? null : <BootDirector ctx={ctx} warmup={warmup} />}
+              {graphics.showFps && !poster ? <FpsCounter tally={frameTally} /> : null}
+              {perfOpen && !poster ? <PerfOverlay sample={perfSample} /> : null}
+              {poster ? null : <ContextLossScreen ctx={ctx} canvas={canvasElement} />}
+              {!poster &&
+              !orientationGate &&
+              coarsePointer &&
+              controlsActive &&
+              touchScheme !== null &&
+              (touchScheme.gestures !== null || touchScheme.look) ? (
+                <TouchPlaySurface
+                  scheme={touchScheme}
+                  sink={touchSink}
+                  yawRef={yawRef}
+                  pitchRef={pitchRef}
+                  maxPitch={playable.camera?.rigs?.firstPerson?.maxPitch ?? 1.45}
+                  onPrimaryTap={() => {
+                    primaryClickRef.current = true;
+                  }}
+                />
+              ) : null}
+              <ShellGameUiChrome
+                ctx={ctx}
+                GameUI={GameUI}
+                orientationGate={orientationGate}
+                onRuntimeError={reportRuntimeError}
+                audioEngine={audioEngine}
+              />
+              {!poster && !orientationGate && showReticle ? <Reticle /> : null}
+              {dockMounted && touchScheme !== null ? (
+                <div className="pointer-events-none absolute inset-0" style={dockThemeVars}>
+                  <TouchControlsDock
+                    scheme={touchScheme}
+                    sink={touchSink}
+                    style={touchStyle}
+                    scale={touchScale}
+                    joystickVariant={touchJoystickVariant}
+                    shortSide={touchViewport.shortSide}
+                  />
+                </div>
+              ) : null}
+              {orientationGateEl}
+              {marquee !== null ? <MarqueeBox rect={marquee} /> : null}
+              {contextMenu !== null ? (
+                <ContextMenuView
+                  menu={contextMenu.menu}
+                  x={contextMenu.x}
+                  y={contextMenu.y}
+                  onPick={handleVerbPick}
+                  onClose={() => setContextMenu(null)}
+                />
+              ) : null}
+              <ShellDebugOverlays
+                ctx={ctx}
+                playable={playable}
+                multiplayer={multiplayer}
+                diagnostics={diagnostics}
+                devtoolsEnabled={devtoolsEnabled}
+                devtoolsOpen={devtoolsOpen}
+                hideDiagnostics={poster}
+              />
+              {poster || orthographic || settingsHostsFov ? null : <PlayerFovSlider />}
+            </GameViewportProvider>
+          </div>
+        </SettingsRuntime>
+        </LocaleScope>
+      </PlayerFovProvider>
+    </SettingsProvider>
+  );
+}

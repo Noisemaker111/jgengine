@@ -9,7 +9,7 @@ import {
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import type { ShellMultiplayer } from "../multiplayer/multiplayer.draw";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { heavyModels } from "@jgengine/core/model/modelLoad.draw";
 import { triangleProbe } from "@jgengine/core/render/triangleAttribution.draw";
 import { webGpuContextOf } from "@jgengine/core/webgpu/engineRenderer.draw";

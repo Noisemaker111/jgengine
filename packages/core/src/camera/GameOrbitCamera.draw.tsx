@@ -4,9 +4,9 @@ import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { isCameraOccluderTransparent } from "./cameraCollision";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/core/ui/provider.view";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
-import { usePlayer } from "@jgengine/ui/hooks";
+import { usePlayer } from "@jgengine/core/ui/hooks.view";
 import {
   cameraLookPitch,
   compensatedFov,
@@ -24,8 +24,8 @@ import {
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { registerCameraControls } from "./activeControls.draw";
-import { usePlayerFov, type PlayerFovState } from "./PlayerFov.draw";
+import { registerCameraControls } from "./activeControls";
+import { usePlayerFov, type PlayerFovState } from "./PlayerFov.view";
 import type { Xyz } from "@jgengine/core/math/xyz";
 import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
 

@@ -1,8 +1,8 @@
 /**
  * The forward-axis convention: a generator or scene kind declares which way its "front" faces (a
  * bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement
- * to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/shell/scene/
- * StudioStage`) reads the declared axis to auto-orient a product shot; a placement tool can read the
+ * to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/core/scene/
+ * StudioStage.draw`) reads the declared axis to auto-orient a product shot; a placement tool can read the
  * same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD`
  * (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
  * @capability forward-axis declared front convention for parametric assets — auto-orient product shots

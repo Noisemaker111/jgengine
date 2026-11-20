@@ -2,7 +2,7 @@ import type { AudioBusDef, SoundDef } from "@jgengine/core/audio/audioFalloff";
 import { withFeedbackCueSounds } from "@jgengine/core/audio/feedbackCues";
 import { withUiCueSounds, type UiCueOverrides } from "@jgengine/core/ui/uiCues";
 
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 /** A playable's sound catalog and buses with the default UI and gameplay feedback cues merged in. @internal */
 export interface ResolvedPlayableAudio {
