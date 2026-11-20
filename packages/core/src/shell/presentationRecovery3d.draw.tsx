@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useLayoutEffect } from "@jgengine/core/ui/jsx";
 
-import { joinAfterRenderTask } from "@jgengine/core/frame/afterRenderBoard.draw";
+import { joinAfterRenderTask } from "@jgengine/core/frame/afterRenderBoard";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { usePresentationRetryScope } from "./presentationRecovery.view";
 

@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { runGenerator } from "@jgengine/core/generator/generator";
 import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
+import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.view";
 import { streetLayersDraw, type StreetPreviewLayer } from "@jgengine/core/roads/streetNetworkPreview.draw";
 import { CITY_OUTPUT, type ResolvedCity } from "./cityKind";
 

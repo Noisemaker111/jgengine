@@ -5,7 +5,7 @@ import { bind, runePulse } from "@jgengine/core/ui/rune/primitives";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { lootDropsOf } from "@jgengine/core/game/events";
 import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
-import { usePlayerFov } from "@jgengine/core/camera/PlayerFov.draw";
+import { usePlayerFov } from "@jgengine/core/camera/PlayerFov.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useEntityStat, useFeed, useGame, useGameStore, useInventory, useQuestJournal } from "@jgengine/core/ui/hooks.view";
 import { useGameContext } from "@jgengine/core/ui/provider.view";

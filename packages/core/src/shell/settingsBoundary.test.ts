@@ -2,12 +2,12 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, setDefaultTimeout, 
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
-import { gotoFixture } from "../../../scripts/browser-test-fixture";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { gotoFixture } from "../../../../scripts/browser-test-fixture";
 
 setDefaultTimeout(30_000);
 
-const root = resolve(import.meta.dir, "../../..");
+const root = resolve(import.meta.dir, "../../../..");
 const scratch = `${root}/.scratch/settings-boundary-test`;
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
@@ -15,7 +15,7 @@ beforeAll(async () => {
   await rm(dir, { recursive: true, force: true });
   await mkdir(`${dir}/node_modules`, { recursive: true });
 
-  for (const peer of ["three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${dir}/node_modules/${peer}`, "junction");
+  for (const peer of ["three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../../node_modules", peer), `${dir}/node_modules/${peer}`, "junction");
   await Bun.write(`${dir}/fixture.tsx`, `
     import React from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {defineGame} from '@jgengine/core/shell/gameKit.draw';import {ShellHudPresentation} from '@jgengine/core/hud/ShellHudPresentation.draw';

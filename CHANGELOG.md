@@ -26,6 +26,19 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+### Migrate
+
+- **`@jgengine/ui` and `@jgengine/shell` are part of `@jgengine/core`**, the way three.js ships `three` and `three/addons/*`. Drop both from your dependencies and change imports:
+  - `@jgengine/ui` → `@jgengine/core/ui.view`; `@jgengine/ui/<file>` → `@jgengine/core/ui/<file>.view` (`hooks`, `provider`, `store`, `engineStore`, `selectSnapshot`, `previewFixtures`, `engineStyles`; `preview` keeps no suffix); `@jgengine/ui/styles.css` → `@jgengine/core/ui/styles.css`.
+  - `@jgengine/shell/<file>` → `@jgengine/core/shell/<file>.draw` (`defineGame`, `gameKit`, `GameHost`, `GamePlayer`, `GamePlayerShell`, `mountGamePlayer`, `registry`, `world/*`, …). `GamePhaseStamp` and `presentationRecovery` are `.view`; `shellConstants` has no suffix.
+  - Tailwind: replace the `@source` lines for `@jgengine/ui/dist` and `@jgengine/shell/dist` with `@jgengine/core/dist/ui` and `@jgengine/core/dist/shell`.
+  - `jgengine.json`: remove `"ui"` and `"shell"` from `engine`.
+- Draw files that never touched three.js take their real layer: `anim/characterMotion`, `camera/PlayerFov`, `generator/generatorPreview`, `hud/barSamples`, `input/mouseLook`, `map/terrainMap`, `material/stableTextureSet`, `play/headlessFlow`, `postfx/ScreenEffectsOverlay`, `render/presentationLook`, `render/useDisposable`, `run/nextFrame`, `scene/sceneKindRenderers`, `settings/appliedSettings`, `suite/runSuiteProof`, `terrain/terrainQuality` and `terrain/terrainScanMaps` end in `.view` instead of `.draw`; `camera/activeControls`, `frame/afterRenderBoard`, `play/headlessKeys`, `play/playSession` and `replay/replayPlayback` lose the suffix.
+
+### Changed
+
+- Core type-checks each layer as its own program: model files with no DOM and no three.js, view files with the DOM and no three.js, draw files with both. A three.js or editor import in the wrong layer is a type error.
+
 ## 0.59.0
 
 ### Migrate

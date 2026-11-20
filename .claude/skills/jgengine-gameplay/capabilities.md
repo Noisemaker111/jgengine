@@ -274,7 +274,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## game-suite-run — run every suite proof and the content check of one game into the report its score is read from
 
-- `runGameSuite` (function) · `import { runGameSuite } from "@jgengine/core/suite/runSuiteProof.draw"`
+- `runGameSuite` (function) · `import { runGameSuite } from "@jgengine/core/suite/runSuiteProof.view"`
 
 ## game-suite-score — score a game against the engine's game suite: proven, failing, not simulatable, missing and cut, by area
 
@@ -936,7 +936,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## suite-proof-run — run a game suite proof headless and refuse a proof whose outcome came from setup or a cheat
 
-- `runSuiteProof` (function) · `import { runSuiteProof } from "@jgengine/core/suite/runSuiteProof.draw"`
+- `runSuiteProof` (function) · `import { runSuiteProof } from "@jgengine/core/suite/runSuiteProof.view"`
 
 ## suite-recipe-content — turn engine recipes into the game suite's content sources and uses
 

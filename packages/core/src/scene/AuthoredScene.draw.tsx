@@ -38,7 +38,7 @@ import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
 import { GeneratedAssetInstance } from "./GeneratedAssetRenderer.draw";
 import { loadOnDemandSceneKinds, onDemandSceneKindReady, registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers.draw";
 import { onDemandSceneKindsFor, sceneKindNeeds } from "./onDemandSceneKinds";
-import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
+import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.view";
 
 const noopSubscribe = (): (() => void) => () => undefined;
 

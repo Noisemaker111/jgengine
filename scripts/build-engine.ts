@@ -50,11 +50,15 @@ function main(): void {
   mkdirSync(dirname(config), { recursive: true });
   writeFileSync(config, `${JSON.stringify({
     extends: relative(dirname(config), join(core, "tsconfig.build.json")).replace(/\\/g, "/"),
-    compilerOptions: { paths: {
+    compilerOptions: {
+      rootDir: relative(dirname(config), join(root, "packages")).replace(/\\/g, "/"),
+      outDir: relative(dirname(config), out).replace(/\\/g, "/"),
+      paths: {
       "@jgengine/core": [relative(dirname(config), join(core, "src", "index.ts")).replace(/\\/g, "/")],
       "@jgengine/core/*": [`${relative(dirname(config), join(core, "src")).replace(/\\/g, "/")}/*`],
       "@jgengine/ws/*": [`${relative(dirname(config), join(root, "packages", "ws", "src")).replace(/\\/g, "/")}/*`],
-    } },
+      },
+    },
   }, null, 2)}\n`);
   run(["bun", "x", "tsgo", "-p", config], root);
   rmSync(config, { force: true });

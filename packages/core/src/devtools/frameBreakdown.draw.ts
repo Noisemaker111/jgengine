@@ -1,7 +1,7 @@
 import type { WebGLRenderer } from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
-import { joinBeforeRenderTask } from "@jgengine/core/frame/afterRenderBoard.draw";
+import { joinBeforeRenderTask } from "@jgengine/core/frame/afterRenderBoard";
 import { observeFrameTasks, type FrameTaskRef } from "@jgengine/core/frame/frameBoard.draw";
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 import { sceneSwapping } from "@jgengine/core/ui/sceneSwap.view";

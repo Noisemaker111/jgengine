@@ -66,7 +66,7 @@ describe("the play surface", () => {
   // canvas never configures and the warmup cover waits forever (#3097). The critical sizing is
   // inline so no stylesheet can take it away.
   test("sizes itself inline, independent of generated utilities", () => {
-    const src = readFileSync(join(import.meta.dir, "Shell3dPresentation.tsx"), "utf8");
+    const src = readFileSync(join(import.meta.dir, "Shell3dPresentation.draw.tsx"), "utf8");
     const surface = src.slice(src.indexOf("data-jg-play-surface"));
     const tag = surface.slice(0, surface.indexOf("onKeyDown"));
     expect(tag).toContain('position: "relative", width: "100%", height: "100%"');

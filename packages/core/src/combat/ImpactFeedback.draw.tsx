@@ -12,7 +12,7 @@ import { useGameContext } from "@jgengine/core/ui/provider.view";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
-import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 import { createImpactDecalPool, impactDecalKindFor, type ImpactDecalPool, type ImpactDecalsConfig } from "@jgengine/core/vfx/impactDecals";
 import { createImpactDecalLayer, type ImpactDecalLayer } from "@jgengine/core/vfx/ImpactDecals.draw";

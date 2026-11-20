@@ -8,7 +8,7 @@ import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import { useGameContext } from "@jgengine/core/ui/provider.view";
 import { registerAllSceneKindRenderers } from "@jgengine/core/scene/allSceneKindRenderers.draw";
-import { getSceneKindRenderer } from "@jgengine/core/scene/sceneKindRenderers.draw";
+import { getSceneKindRenderer } from "@jgengine/core/scene/sceneKindRenderers.view";
 
 import type { EditorHostApi } from "./session";
 import { useStoreSelector } from "./useStoreSelector";

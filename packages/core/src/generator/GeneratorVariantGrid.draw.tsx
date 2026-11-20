@@ -8,7 +8,7 @@ import { EngineSceneProvider, useEngineDraw } from "@jgengine/core/frame/useEngi
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 
 import type { GeneratorDefinition, GeneratorVariant } from "@jgengine/core/generator/generator";
-import { getGeneratorPreview } from "@jgengine/core/generator/generatorPreview.draw";
+import { getGeneratorPreview } from "@jgengine/core/generator/generatorPreview.view";
 import { generatorVariantText, getGeneratorText } from "@jgengine/core/generator/generatorText";
 
 /** Props for {@link GeneratorVariantGrid}. */

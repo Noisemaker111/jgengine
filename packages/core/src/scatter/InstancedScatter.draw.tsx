@@ -20,7 +20,7 @@ import { buildScatterProxy } from "./scatterProxies.draw";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels.draw";
 import { writeScatterVariantLevel } from "./scatterVariants.draw";
 import { detailDrawDistance, IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine/core/lod/impostor.draw";
-import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 import { scatterImpostorFieldDraw } from "./ScatterImpostorField.draw";
 import { cameraFov, currentMeshLodGame, resolveBuiltLodModel } from "@jgengine/core/lod/builtLods.draw";
 import { builtLevelSource, reskinBuiltLevel } from "@jgengine/core/lod/builtLods.draw";

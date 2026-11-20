@@ -3030,7 +3030,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/render/useDisposable.draw",
+      "module": "@jgengine/core/render/useDisposable.view",
       "gameFacing": false,
       "probe": null,
       "intent": "memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs"
@@ -4616,7 +4616,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/suite/runSuiteProof.draw",
+      "module": "@jgengine/core/suite/runSuiteProof.view",
       "gameFacing": false,
       "probe": null,
       "intent": "run every suite proof and the content check of one game into the report its score is read from"
@@ -4896,7 +4896,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/play/headlessFlow.draw",
+      "module": "@jgengine/core/play/headlessFlow.view",
       "gameFacing": false,
       "probe": null,
       "intent": "play a game's TypeScript proof flow headless in seconds, with typed keys and probe checks"
@@ -8853,7 +8853,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/play/playSession.draw",
+      "module": "@jgengine/core/play/playSession",
       "gameFacing": false,
       "probe": null,
       "intent": "tick a real game headless the way the shell does, with held actions, prompts and hotbar"
@@ -9533,7 +9533,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/replay/replayPlayback.draw",
+      "module": "@jgengine/core/replay/replayPlayback",
       "gameFacing": false,
       "probe": null,
       "intent": "play a recorded input-plus-seed session headless and reach the same state"
@@ -10163,7 +10163,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/postfx/ScreenEffectsOverlay.draw",
+      "module": "@jgengine/core/postfx/ScreenEffectsOverlay.view",
       "gameFacing": false,
       "probe": null,
       "intent": "shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers"
@@ -11354,7 +11354,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/suite/runSuiteProof.draw",
+      "module": "@jgengine/core/suite/runSuiteProof.view",
       "gameFacing": false,
       "probe": null,
       "intent": "run a game suite proof headless and refuse a proof whose outcome came from setup or a cheat"

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 
-import { flushAfterRenderTasks, flushBeforeRenderTasks } from "../frame/afterRenderBoard.draw";
+import { flushAfterRenderTasks, flushBeforeRenderTasks } from "../frame/afterRenderBoard";
 import { bindFrameSource, joinFrameTask } from "../frame/frameBoard.draw";
 import { createAmbientFauna } from "../ambientFauna/ambientFauna";
 import { createEditableTerrain } from "../terrain/terraform";

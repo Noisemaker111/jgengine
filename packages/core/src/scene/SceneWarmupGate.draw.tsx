@@ -7,7 +7,7 @@ import { RuneRoot, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import type { BootStep } from "@jgengine/core/boot/bootSequence";
 import { BootLoadingScreen, useBootStep } from "@jgengine/core/boot/bootScreen.view";
 import { devtools } from "@jgengine/core/devtools/devtools";
-import { joinAfterRenderTask, joinBeforeRenderTask } from "@jgengine/core/frame/afterRenderBoard.draw";
+import { joinAfterRenderTask, joinBeforeRenderTask } from "@jgengine/core/frame/afterRenderBoard";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 

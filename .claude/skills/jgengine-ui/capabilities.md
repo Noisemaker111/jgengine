@@ -123,7 +123,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## disposable-resource — memoize a three.js GPU resource (or tuple) with automatic dispose on change/unmount — no hand-rolled useMemo + dispose-effect pairs
 
-- `useDisposable` (function) · `import { useDisposable } from "@jgengine/core/render/useDisposable.draw"`
+- `useDisposable` (function) · `import { useDisposable } from "@jgengine/core/render/useDisposable.view"`
 
 ## distance-format — render meters as m or km for HUD stats, telemetry, and range readouts
 
@@ -565,7 +565,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## play-session — tick a real game headless the way the shell does, with held actions, prompts and hotbar
 
-- `createPlaySession` (function) · `import { createPlaySession } from "@jgengine/core/play/playSession.draw"`
+- `createPlaySession` (function) · `import { createPlaySession } from "@jgengine/core/play/playSession"`
 
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
@@ -601,7 +601,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## replay-playback — play a recorded input-plus-seed session headless and reach the same state
 
-- `playReplayRecording` (function) · `import { playReplayRecording } from "@jgengine/core/replay/replayPlayback.draw"`
+- `playReplayRecording` (function) · `import { playReplayRecording } from "@jgengine/core/replay/replayPlayback"`
 
 ## replay-recording — record a session as input plus seed, plain JSON, for deterministic playback
 

@@ -110,7 +110,7 @@ export function plainText(text: string): string {
 export function lockstepBullet(sdk: string, cli: string): string {
   return (
     `**Bump lockstep SDK packages to \`^${sdk}\`:** ` +
-    `\`@jgengine/{core,rapier,ui,ws,node,sql,convex,shell,editor,assets,navbake}\`. ` +
+    `\`@jgengine/{core,rapier,ws,node,sql,convex,editor,assets,navbake}\`. ` +
     `CLI \`jgengine\` is \`${cli}\`.`
   );
 }

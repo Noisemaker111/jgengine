@@ -12,7 +12,7 @@ import { windField } from "@jgengine/core/world/wind";
 
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import type { GrassExclusion } from "@jgengine/core/grass/grassBake.draw";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.view";
 
 /** Resolves one grass or ground-cover volume, drawn in the scene's world grass style. */
 type GrassResolver = (object: SceneKindObject, worldStyle: GrassStyleSettings | undefined) => ResolvedGrass | null;

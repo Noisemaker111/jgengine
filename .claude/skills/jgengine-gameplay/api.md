@@ -2939,7 +2939,7 @@
 - `LINGER_MS` (const): const LINGER_MS: 2000 — How long a resource whose last user left waits before it is freed.
 - `Lingering` (class): class Lingering<K, V> — Resources whose last user left, held a moment before they are freed. A draw that is torn down and built again a frame later (a batch whose members changed, a field whose inputs were rebuilt) takes back the same GPU resource, and so its linked shaders and baked textures, instead of freeing them and paying for the link or bake again mid-play.
 
-## @jgengine/core/run/nextFrame.draw
+## @jgengine/core/run/nextFrame.view
 
 - `nextFrame` (function): function nextFrame(): Promise<void> — Resolves on the next animation frame, or a zero-delay timer in tests and SSR.
 
@@ -3298,7 +3298,7 @@
 - `suiteRegressions` (function): function suiteRegressions(before: GameSuiteScore, after: GameSuiteScore): string[] — Entry ids proven in `before` and not in `after`: regressions the suite test refuses.
 - `suiteScoreLine` (function): function suiteScoreLine(score: GameSuiteScore): string — One line: `12/62 proven · 3 failing · 1 not simulatable · 2 cut · 46 missing`.
 
-## @jgengine/core/suite/runSuiteProof.draw
+## @jgengine/core/suite/runSuiteProof.view
 
 - `LoadedSuiteProof` (interface): interface LoadedSuiteProof — A proof loaded from a game's `proofs/sim/` folder, with the file it came from.
 - `SuiteProofRun` (interface): interface SuiteProofRun — What one proof run produced: the flow report of its steps, and the entries it proved when it passed.

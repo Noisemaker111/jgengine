@@ -38,7 +38,7 @@ describe("source path map", () => {
     expect(sourcePathEntries(join(root, "apps", "dev"), root)).toEqual({
       "@jgengine/core": ["../../packages/core/src/index.ts"],
       "@jgengine/core/*": ["../../packages/core/src/*"],
-      "@jgengine/shell/*": ["../../packages/core/src/shell/*"],
+      "@jgengine/shell/*": ["../../packages/shell/src/*"],
     });
   });
 

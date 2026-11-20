@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { disposeAll, type Disposable } from "./useDisposable.draw";
+import { disposeAll, type Disposable } from "./useDisposable.view";
 
 function tracked(): Disposable & { disposed: number } {
   const item = {

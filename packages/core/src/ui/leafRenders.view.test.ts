@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, setDefaultTimeout, test } from "
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
 
 /*
  * Jon's rule for every HUD (AGENTS.md): a changing value updates only its own leaf, never the whole
@@ -14,7 +14,7 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/brow
 
 setDefaultTimeout(30_000);
 
-const scratch = resolve(import.meta.dir, "../../../.scratch/leaf-renders-test");
+const scratch = resolve(import.meta.dir, "../../../../.scratch/leaf-renders-test");
 let browser: Browser;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
@@ -25,7 +25,7 @@ beforeAll(async () => {
   // A run killed mid-test (a timeout) leaves its links here; the next run must not fail on EEXIST.
   await rm(scratch, { recursive: true, force: true });
   await mkdir(scratch, { recursive: true });
-  await symlink(resolve(import.meta.dir, "../node_modules"), `${scratch}/node_modules`, "junction");
+  await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "junction");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React from '@jgengine/core/ui/jsx';
@@ -36,8 +36,8 @@ beforeAll(async () => {
     import { createGameContext } from '../../packages/core/src/runtime/gameContext';
     import { defineStore } from '../../packages/core/src/store/defineStore';
     import { LiveText, flushFrameBinds } from '../../packages/core/src/ui/liveBind.view';
-    import { GameProvider, useGameContext } from '../../packages/core/src/ui/provider';
-    import { useStore } from '../../packages/core/src/ui/store';
+    import { GameProvider, useGameContext } from '../../packages/core/src/ui/provider.view';
+    import { useStore } from '../../packages/core/src/ui/store.view';
 
     const hud = defineStore('leaf.hud', () => ({ air: 100, mode: 'dive', hint: 'Go', elapsed: 0 }));
     const counts = { panel: 0, air: 0, sibling: 0, hint: 0 };

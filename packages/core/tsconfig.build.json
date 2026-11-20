@@ -3,8 +3,8 @@
   "compilerOptions": {
     "noEmit": false,
     "declaration": true,
-    "outDir": "../../.scratch/core-build",
-    "rootDir": "..",
+    "outDir": "dist",
+    "rootDir": "src",
     "lib": [
       "ES2022",
       "DOM",

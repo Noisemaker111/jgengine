@@ -3,8 +3,8 @@ import { teleportPlayer } from "@jgengine/core/movement/teleport";
 
 import { FLOW_PRESS_MS, FLOW_WAIT_MS, flowKeyList, type Flow, type FlowCommandResult, type FlowKeys, type HeadlessProofFlow, type ProbeCheck } from "./flow";
 import { createFlowStepper, runFlowReport, type FlowRunReport } from "./flowSteps";
-import { createHeadlessKeys } from "./headlessKeys.draw";
-import { createPlaySession, type PlaySession } from "./playSession.draw";
+import { createHeadlessKeys } from "./headlessKeys";
+import { createPlaySession, type PlaySession } from "./playSession";
 
 /** Options for {@link runFlowHeadless}. */
 export interface HeadlessFlowOptions {

@@ -6,7 +6,7 @@ import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 import { createTerrainDetailMaterial, createTerrainSurfaceTextures } from "./terrainDetailMaterial.draw";
 import { setAssetBase, setGameAssetFiles } from "@jgengine/core/assets/assetBase";
 
-import { fetchTerrainScanMap, packTerrainScan, terrainScanKey, terrainScanRequests } from "./terrainScanMaps.draw";
+import { fetchTerrainScanMap, packTerrainScan, terrainScanKey, terrainScanRequests } from "./terrainScanMaps.view";
 import { createTerrainPaintTextures, packTerrainPaintWeights } from "./terrainSurfaces.draw";
 import { createEditableTerrain } from "./terraform";
 

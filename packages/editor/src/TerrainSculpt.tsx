@@ -38,7 +38,7 @@ import {
   type TerrainPaintWeights,
 } from "@jgengine/core/terrain/terrainSurfaces.draw";
 import { TerraformBrushCursor } from "@jgengine/core/terrain/TerraformBrushCursor.draw";
-import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 
 import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";

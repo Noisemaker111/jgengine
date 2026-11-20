@@ -16,7 +16,7 @@ import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { usePlayer } from "@jgengine/core/ui/hooks.view";
 import { useEntityRenderCues } from "@jgengine/core/anim/useEntityRenderCues.draw";
 import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
-import { usePlayerFov, type PlayerFovState } from "./PlayerFov.draw";
+import { usePlayerFov, type PlayerFovState } from "./PlayerFov.view";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { SceneObjectPortal, useEngineDraw, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";

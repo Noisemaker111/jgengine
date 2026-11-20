@@ -166,7 +166,7 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 | second wind | `@jgengine/core/combat/downed` | covered |
 | onboarding hints | `@jgengine/core/onboarding/onboardingSystem` (blended style) and `OnboardingHud` | covered |
 | quest marker | `@jgengine/core/map/waypointMarkers.view` | covered: the game picks the point, the engine draws the pin and edge arrow |
-| from-zero proof | `@jgengine/core/play/headlessFlow.draw` | covered |
+| from-zero proof | `@jgengine/core/play/headlessFlow.view` | covered |
 
 ## Milestones
 

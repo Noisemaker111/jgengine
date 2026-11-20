@@ -16,7 +16,7 @@
 import * as THREE from "three";
 
 import { paceFrame } from "../settings/frameRateLimit";
-import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard.draw";
+import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard";
 import { bindFrameOwner, isPrimaryFrameOwner, joinFrameTask, withFrameOwner, type FrameOwner, type FrameSource } from "./frameBoard.draw";
 
 /** Frameloop modes the shell's Canvas accepted. */

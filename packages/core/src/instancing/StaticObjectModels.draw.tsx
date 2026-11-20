@@ -23,7 +23,7 @@ import { useRenderVisibility, useVisibilityChangesSource } from "@jgengine/core/
 import type { VisibilityChanges } from "@jgengine/core/visibility/visibilityChanges";
 import { acquireImpostor, createImpostorMaterials, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorAtlas, type ImpostorEntry, type ImpostorSettings, type ImpostorSource } from "@jgengine/core/lod/impostor.draw";
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
-import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";

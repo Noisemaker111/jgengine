@@ -137,7 +137,7 @@ describe("games in this repo", () => {
 
   test("an engine package change checks every game that declares it", () => {
     expect(gameScope(["packages/convex/src/index.ts"], workspace).gameChecks).toEqual(["llmville"]);
-    expect(gameScope(["packages/core/src/shell/Shell3dPresentation.draw.tsx"], workspace).gameChecks).toEqual(["fernwild", "harbor-heat"]);
+    expect(gameScope(["packages/shell/src/Shell3dPresentation.tsx"], workspace).gameChecks).toEqual(["fernwild", "harbor-heat"]);
     expect(gameScope(["packages/core/src/combat/damage.test.ts"], workspace).gameChecks).toEqual([]);
   });
 

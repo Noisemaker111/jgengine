@@ -20,7 +20,7 @@ import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
 import type { SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTextures.draw";
 import { roadJunctionsDraw } from "./RoadJunctions.draw";
-import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";

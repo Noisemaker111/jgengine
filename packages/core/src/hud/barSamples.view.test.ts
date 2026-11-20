@@ -7,7 +7,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createPossession } from "@jgengine/core/scene/possession";
 import { building, environment } from "@jgengine/core/world/features";
-import { collectNameplateSamples, collectWorldBarSamples, createOverlayRangeWarn, deriveWorldBarRange, nearestOverlayTargetDistance, paintWorldBarSamples, worldBarOccluded, worldBarSize, refreshWorldBarSamples, worldBarTargetFilter, type NameplateSample, type WorldBarSample, type WorldOverlaySampleOptions } from "./barSamples.draw";
+import { collectNameplateSamples, collectWorldBarSamples, createOverlayRangeWarn, deriveWorldBarRange, nearestOverlayTargetDistance, paintWorldBarSamples, worldBarOccluded, worldBarSize, refreshWorldBarSamples, worldBarTargetFilter, type NameplateSample, type WorldBarSample, type WorldOverlaySampleOptions } from "./barSamples.view";
 
 function setup(deps: SceneRaycastDeps = {}) {
   const store = createEntityStore();

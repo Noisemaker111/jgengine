@@ -2,7 +2,7 @@ import type { GameCaptureConfig, ProbeReadings } from "@jgengine/core/game/playa
 import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
 import type { ReplayRecording } from "@jgengine/core/replay/replayRecording";
 
-import { createPlaySession, type PlaySession } from "@jgengine/core/play/playSession.draw";
+import { createPlaySession, type PlaySession } from "@jgengine/core/play/playSession";
 
 /** What a replay played to. */
 export interface ReplayPlayback {

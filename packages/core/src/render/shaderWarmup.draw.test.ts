@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { BoxGeometry, DataTexture, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, MeshStandardMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Scene, ShaderMaterial, SkinnedMesh, WebGLRenderTarget, type Material } from "three";
 import { installFrameBreakdown, measureComposerPasses } from "../devtools/frameBreakdown.draw";
-import { flushBeforeRenderTasks } from "../frame/afterRenderBoard.draw";
+import { flushBeforeRenderTasks } from "../frame/afterRenderBoard";
 import { bindFrameSource, joinFrameTask } from "../frame/frameBoard.draw";
 
 import {

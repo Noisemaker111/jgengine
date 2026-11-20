@@ -2,12 +2,12 @@ import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
-import { installPublicPackages } from "../../../scripts/browser-test-fixture";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { installPublicPackages } from "../../../../scripts/browser-test-fixture";
 
 setDefaultTimeout(30_000);
 
-const scratch = resolve(import.meta.dir, "../../../.scratch/shell-lifecycle-test");
+const scratch = resolve(import.meta.dir, "../../../../.scratch/shell-lifecycle-test");
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
 const errors: string[] = [];
 
@@ -15,8 +15,8 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
 
-  for (const peer of ["three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${scratch}/node_modules/${peer}`, "junction");
-  await installPublicPackages(scratch, ["core", "ui", "shell"]);
+  for (const peer of ["three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../../node_modules", peer), `${scratch}/node_modules/${peer}`, "junction");
+  await installPublicPackages(scratch, ["core"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState} from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {GamePlayerShell} from '@jgengine/core/shell/GamePlayerShell.draw';import {defineGame} from '@jgengine/core/shell/defineGame.draw';

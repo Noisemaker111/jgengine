@@ -4,7 +4,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, terrain } from "@jgengine/core/world/features";
 import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 
-import { runGameSuite, runSuiteProof } from "./runSuiteProof.draw";
+import { runGameSuite, runSuiteProof } from "./runSuiteProof.view";
 import { defineProof } from "./suiteProof";
 
 /** What a game helper kept from the last context it saw; the fixture's `tally` command writes through it. */

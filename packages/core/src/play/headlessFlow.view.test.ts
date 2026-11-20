@@ -4,7 +4,7 @@ import { environment, terrain } from "@jgengine/core/world/features";
 import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 import { defineFlow } from "./flow";
 import { describeFlowReport } from "./flowSteps";
-import { runFlowHeadless } from "./headlessFlow.draw";
+import { runFlowHeadless } from "./headlessFlow.view";
 
 function fixture(initialYaw?: number) {
   return defineGame({

@@ -3,7 +3,7 @@ import { createActionStateTracker, toActionStateBindingMap } from "@jgengine/cor
 import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
 
 import { flowKeyList, type FlowKeys } from "./flow";
-import type { PlaySession } from "./playSession.draw";
+import type { PlaySession } from "./playSession";
 
 /** Keys held against a headless {@link PlaySession}, mapped through the game's own bindings. */
 export interface HeadlessKeys {

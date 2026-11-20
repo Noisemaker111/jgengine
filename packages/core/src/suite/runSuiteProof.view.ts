@@ -2,9 +2,9 @@ import type { ProbeReadings } from "@jgengine/core/game/playableGame";
 import { teleportPlayer } from "@jgengine/core/movement/teleport";
 import { FLOW_PRESS_MS, FLOW_WAIT_MS, flowKeyList, type FlowCommandResult, type FlowHold, type FlowKeys, type ProbeCheck } from "@jgengine/core/play/flow";
 import { createFlowStepper, runFlowReport, type FlowRunReport } from "@jgengine/core/play/flowSteps";
-import { bootCaptureState } from "@jgengine/core/play/headlessFlow.draw";
-import { createHeadlessKeys } from "@jgengine/core/play/headlessKeys.draw";
-import { createPlaySession } from "@jgengine/core/play/playSession.draw";
+import { bootCaptureState } from "@jgengine/core/play/headlessFlow.view";
+import { createHeadlessKeys } from "@jgengine/core/play/headlessKeys";
+import { createPlaySession } from "@jgengine/core/play/playSession";
 import { aliasContext } from "@jgengine/core/runtime/contextIdentity";
 import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 

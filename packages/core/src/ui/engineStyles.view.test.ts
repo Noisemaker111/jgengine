@@ -10,7 +10,7 @@ import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
 import { HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
 import { defaultHudTheme, hudTheme } from "@jgengine/core/hud/hudTheme.view";
 
-const root = join(import.meta.dir, "../../..");
+const root = join(import.meta.dir, "../../../..");
 const keyframes = new Set([...ENGINE_STYLESHEET.matchAll(/@keyframes\s+([\w-]+)/g)].map((match) => match[1]));
 
 function sourceFiles(dir: string): string[] {

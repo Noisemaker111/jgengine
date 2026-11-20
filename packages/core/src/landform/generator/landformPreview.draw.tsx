@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { runGenerator, type GeneratorDefinition, type GeneratorVariant } from "@jgengine/core/generator/generator";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
+import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.view";
 import { LANDFORM_OUTPUT } from "./landformGenerator";
 import type { LandformSurfaceKind } from "../materials/landformSurface";
 import type { LandformTerrain } from "./landformTerrain";

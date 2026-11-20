@@ -19,7 +19,7 @@ import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "@jgengine/core/shell/ShellChrome.draw";
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
-import { AudioSettingsBridge } from "@jgengine/core/settings/appliedSettings.draw";
+import { AudioSettingsBridge } from "@jgengine/core/settings/appliedSettings.view";
 import { LocaleScope } from "@jgengine/core/i18n/i18n.view";
 import { withLocaleSetting } from "@jgengine/core/i18n/localeSetting";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";

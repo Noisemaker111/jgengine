@@ -305,7 +305,7 @@ One game on its own: `bun run games:provision <id>` (links its asset packs), the
 | [`@jgengine/navbake`](packages/navbake) | Deterministic navigation-mesh baking. |
 | [`@jgengine/assets`](packages/assets) | A license-checked index of CC0 3D models with a pull CLI. |
 
-`@jgengine/{core,rapier,ui,ws,node,sql,convex,shell,assets,editor,navbake}` are versioned together.
+`@jgengine/{core,rapier,ws,node,sql,convex,assets,editor,navbake}` are versioned together.
 
 ## Work on the engine
 

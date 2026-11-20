@@ -433,7 +433,7 @@
 - `planCharacterMotion` (function): function planCharacterMotion(input: { live: boolean; lowTier: boolean; dead: boolean; ik: "auto" | "none" | ModelIkConfig | undefined; authoredAnimation: boolean; motion: CharacterMotionParts; }): CharacterMotionPlan — Decide the default motion for one model. A live rigged entity whose model leaves `ik` unset gets foot IK and the glance (not on the low tier, not after death); one that leaves `animation` unset gets the velocity-driven locomotion graph. Each part follows its `motion` switch; `ik: "none"` turns IK and glance off, and an authored `ik` or `animation` is played as authored.
 - `resolveCharacterMotion` (function): function resolveCharacterMotion(...layers: readonly (CharacterMotionConfig | false | undefined)[]): CharacterMotionParts — Resolve the parts from layers, most general first (game, then model, then entity): a later layer wins for each part it names, and `false` turns every part off at that layer.
 
-## @jgengine/core/anim/characterMotion.draw
+## @jgengine/core/anim/characterMotion.view
 
 - `CharacterMotionContext` (const): const CharacterMotionContext: ContextType<false | CharacterMotionConfig | undefined> — The game's own character-motion layer (`scene.characterMotion`); the shell provides it.
 - `drawCharacterMotion` (function): function drawCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotionParts — The resolved parts of the default character motion for draw code.
@@ -1058,7 +1058,7 @@
 - `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — Props for GameOrbitCamera: yaw/pitch refs, orbit config patch, followed entity and follow-target overrides.
 - `seedOrbitCameraTarget` (function): function seedOrbitCameraTarget(camera: Camera, target: Vector3, distance: number, height: number): void — Seed orbit target before controls mount (demo spawn at origin).
 
-## @jgengine/core/camera/PlayerFov.draw
+## @jgengine/core/camera/PlayerFov.view
 
 - `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig | undefined; orthographic: boolean; children: ReactNode; }): JSX.Element — Provides the player's saved FOV preference to the camera rigs and settings UI below it.
 - `PlayerFovSlider` (function): function PlayerFovSlider(): JSX.Element | null — Settings slider that changes and saves the player's FOV preference; renders nothing when FOV is disabled.
@@ -1734,7 +1734,7 @@
 - `fragmentMesh` (function): function fragmentMesh(fragment: Pick<RockFragment, "cell" | "centre">, color: NatureRgb, fractureColor: NatureRgb, offset: CellVec = [0, 0, 0]): NatureMesh — A fragment's mesh, positions relative to its centre: one flat-shaded polygon per face, fracture faces in `fractureColor`.
 - `rockCell` (function): function rockCell(radii: CellVec, facets: number, roughness: number, rng: SeededRng): ConvexCell — A convex stone centred at the origin: an ellipsoid of half-axes `radii` cut by `facets` random tangent planes, each set in by up to `roughness` of its reach.
 
-## @jgengine/core/frame/afterRenderBoard.draw
+## @jgengine/core/frame/afterRenderBoard
 
 - `flushAfterRenderTasks` (function): function flushAfterRenderTasks(): void — Run every task joined with {@link joinAfterRenderTask}, in join order.
 - `flushBeforeRenderTasks` (function): function flushBeforeRenderTasks(): void — Run every task joined with {@link joinBeforeRenderTask}, in join order.
@@ -1829,7 +1829,7 @@
 - `getGeneratorMesh` (function): function getGeneratorMesh(output: string): GeneratorMeshBuilder | undefined — The mesh builder registered for an output family, or undefined.
 - `registerGeneratorMesh` (function): function registerGeneratorMesh(output: string, build: GeneratorMeshBuilder): void — Register how an output family (`"nature-mesh"`, …) draws as instanced meshes. Replaces an earlier one.
 
-## @jgengine/core/generator/generatorPreview.draw
+## @jgengine/core/generator/generatorPreview.view
 
 - `GeneratorPreview` (interface): interface GeneratorPreview — How one generator output family draws in a variant tile: an EngineDraw for the variant and the camera frame that fits it. One preview serves every generator of that output.
 - `GeneratorPreviewFrame` (interface): interface GeneratorPreviewFrame — Where a preview camera looks and how far back it sits, in the preview's own metres.
@@ -2265,7 +2265,7 @@
 - `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
 - `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
 
-## @jgengine/core/input/mouseLook.draw
+## @jgengine/core/input/mouseLook.view
 
 - `MouseLookAim` (interface): interface MouseLookAim { yaw: number; pitch: number } — ⚠ undocumented
 - `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
@@ -2933,7 +2933,7 @@
 - `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
 - `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
 
-## @jgengine/core/map/terrainMap.draw
+## @jgengine/core/map/terrainMap.view
 
 - `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions — Terrain map bake settings: resolution and land and water colours.
 - `BakedMap` (interface): interface BakedMap — A baked terrain map: an image URL and the world bounds it covers.
@@ -4803,7 +4803,7 @@
 - `PostProcessingProps` (interface): interface PostProcessingProps { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: Partial<GraphicsPostStages>; immediate?: boolean } — ⚠ undocumented · used by `PostProcessing`: Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 frame, which disables auto-render) to run the config…
 - `postProcessingDraw` (function): function postProcessingDraw(getProps: () => PostProcessingProps): EngineDraw — Draw form of the old `PostProcessing` component: owns the EffectComposer graph, the devtools audit probe, tone-mapping override and the cover-gated effect reveal. The composer renders at frame priority 1, taking over the frame like the old priority-1 `useFrame` did.
 
-## @jgengine/core/postfx/ScreenEffectsOverlay.draw
+## @jgengine/core/postfx/ScreenEffectsOverlay.view
 
 - `ScreenEffectsOverlay` (function): function ScreenEffectsOverlay({ controller, blendMode = "normal", zIndex = 40, animate = true, }: ScreenEffectsOverlayProps): ReactNode — A DOM overlay that renders a {@link ScreenEffectsController} as full-screen color-grade layers over the game canvas — damage vignettes, heal flashes, a sustained low-health pulse — through the shell's postfx overlay layer, so a game gets screen feedback without hand-rolling shader or overlay timing. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and paints one absolutely-positioned, pointer-transparent layer per active effect at its eased opacity. Presentation only: all timing and state live in the core model, and `kind` is never interpreted here.
 - `ScreenEffectsOverlayProps` (interface): interface ScreenEffectsOverlayProps — Reskin tokens for {@link ScreenEffectsOverlay}.
@@ -5531,7 +5531,7 @@
 
 ## @jgengine/core/scene/facing
 
-- `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/shell/scene/ StudioStage`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
+- `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/core/scene/ StudioStage.draw`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
 
 ## @jgengine/core/scene/form
 
@@ -5646,7 +5646,7 @@
 - `requestSceneCapture` (function): function requestSceneCapture(options: SceneCaptureRequestOptions = {}): Promise<SceneCaptureResult> — Request the current scene frame. Resolves once a binding exists and the canvas has painted, or with the reason no frame could be read; it never polls and never rejects.
 - `requestSceneThumbnail` (function): function requestSceneThumbnail(options: SceneCaptureRequestOptions & SaveThumbnailOptions = {}): Promise<SceneThumbnailResult> — Request a save-card thumbnail from the live scene: the shared capture request, then `shrinkCapture`. Pass what the slot card stores; omit everything for a 320x180 JPEG.
 
-## @jgengine/core/scene/sceneKindRenderers.draw
+## @jgengine/core/scene/sceneKindRenderers.view
 
 - `SceneKindRenderContext` (interface): interface SceneKindRenderContext — Context a scene-kind renderer receives alongside the matching document objects.
 - `SceneKindRenderer` (type): type SceneKindRenderer = (props: { objects: readonly SceneKindObject[]; context: SceneKindRenderContext }) => ReactElement | null — A registered renderer: given every document object of its kind, returns the render tree for them.
@@ -6140,14 +6140,14 @@
 - `TerrainPaintSource` (type): type TerrainPaintSource = Pick<EditableTerrain, "layers" | "weightsAt" | "surfaceAt"> & Partial<Pick<EditableTerrain, "gridBounds" | "cols" | "rows">> — Live authored paint channels needed to sample a terrain's material stack without its heightfield. With the grid fields present, paint is filtered across neighbouring cells instead of snapping to each cell.
 - `createTerrainPaintColorSampler` (function): function createTerrainPaintColorSampler(terrain: TerrainPaintSource): TerrainPaintColorSampler — Shares layer tint, opacity and linear weighted-color blending between editor and runtime ground. Paint lives on a coarse cell grid; when the source exposes that grid, each sample smoothly blends the four surrounding cell centres (unpainted cells contribute the caller's base color in `out`), so painted paths and clearings get soft edges instead of grid-aligned stair steps.
 
-## @jgengine/core/terrain/terrainQuality.draw
+## @jgengine/core/terrain/terrainQuality.view
 
 - `TerrainQualityContext` (const): const TerrainQualityContext: ContextType<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
 - `noteTerrainQuality` (function): function noteTerrainQuality(quality: GraphicsQuality): void — The graphics tier for draw code, which has no UI context.
 - `terrainQuality` (function): function terrainQuality(): GraphicsQuality — The player's graphics tier for draw code (`high` outside a shell).
 - `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
 
-## @jgengine/core/terrain/terrainScanMaps.draw
+## @jgengine/core/terrain/terrainScanMaps.view
 
 - `TERRAIN_SCAN_SIZE` (const): const TERRAIN_SCAN_SIZE: 1024 — Largest edge a scan is packed at; ambientCG 1K archives are 1024 square.
 - `TerrainScanPixels` (interface): interface TerrainScanPixels — Decoded RGBA bytes of each map of one scan, all `size` square with row 0 at the top (image order).
@@ -6957,7 +6957,7 @@
 - `ControlGroupOptions` (interface): interface ControlGroupOptions — Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace.
 - `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
 - `CurvePoint` (interface): interface CurvePoint — One control point of a `curve` param: `x` in 0..1 along the curve, `y` its value.
-- `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/shell/scene/ StudioStage`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
+- `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/core/scene/ StudioStage.draw`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
 - `DEFAULT_GRIP_CURVE` (const): const DEFAULT_GRIP_CURVE: GripCurve — A street tire: full grip to slip `0.2`, then it lets go to 55% fully sideways.
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — Built-in marker kinds (player, ally, objective, location, loot, enemy, ...) with colour, glyph and priority.
 - `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { nextFrame } from "./nextFrame.draw";
+import { nextFrame } from "./nextFrame.view";
 import { runSliced, type SlicedJob } from "./slicedWork";
 
 /** Put `requestAnimationFrame` back exactly: absent under bun stays absent, never an own key holding undefined (#3194). */

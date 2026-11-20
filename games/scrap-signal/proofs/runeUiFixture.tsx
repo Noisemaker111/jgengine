@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { writeFile } from "node:fs/promises";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
-import { createPlaySession } from "@jgengine/core/play/playSession.draw";
+import { createPlaySession } from "@jgengine/core/play/playSession";
 import { flushSync, Root } from "@jgengine/core/ui/jsx/reconciler";
 import { RuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { RuneNode, nativeSpec, nativeTreeHost, type RuneTreeSink } from "@jgengine/core/ui/rune/nativeTree";

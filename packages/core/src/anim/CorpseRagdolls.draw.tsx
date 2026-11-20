@@ -14,7 +14,7 @@ import { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { useGameContext } from "@jgengine/core/ui/provider.view";
-import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 
 import { ragdollDraw, type RagdollOptions } from "./useRagdoll.draw";
 

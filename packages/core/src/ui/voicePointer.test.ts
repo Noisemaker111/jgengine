@@ -2,18 +2,18 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, setDefaultTimeout, 
 import { mkdir, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type CDPSession, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
-import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../../scripts/browser-test-fixture";
 
 setDefaultTimeout(30_000);
 
-const root = resolve(import.meta.dir, "../../..");
+const root = resolve(import.meta.dir, "../../../..");
 const scratch = `${root}/.scratch/voice-pointer-test`;
 let browser: Browser, page: Page, input: CDPSession, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
-  await installPublicPackages(scratch, ["core", "ui"]);
+  await installPublicPackages(scratch, ["core"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useEffect,useState} from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {useVoice,PushToTalkButton} from '@jgengine/core/multiplayer/voice.view';

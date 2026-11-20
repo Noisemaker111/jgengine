@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
-import { CharacterMotionContext, noteGameCharacterMotion } from "@jgengine/core/anim/characterMotion.draw";
+import { CharacterMotionContext, noteGameCharacterMotion } from "@jgengine/core/anim/characterMotion.view";
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
@@ -74,7 +74,7 @@ import { DevtoolsRendererProbe } from "@jgengine/core/devtools/DevtoolsOverlay.d
 import { FrameTelemetry } from "@jgengine/core/devtools/FrameTelemetry.draw";
 import { CAMERA_TRANSPARENT_USERDATA } from "@jgengine/core/camera/cameraCollision";
 import { GameCameraRig, resolveRigKind } from "@jgengine/core/camera/GameCameraRig.draw";
-import { PlayerFovProvider, PlayerFovSlider } from "@jgengine/core/camera/PlayerFov.draw";
+import { PlayerFovProvider, PlayerFovSlider } from "@jgengine/core/camera/PlayerFov.view";
 import { rtsPanKeysConflict } from "@jgengine/core/camera/rigMath";
 import { CullingProvider } from "@jgengine/core/visibility/CullingProvider.draw";
 import { BuildingRenderBudget } from "@jgengine/core/buildings/BuildingRenderBudget.draw";
@@ -101,7 +101,7 @@ import { LocaleScope } from "@jgengine/core/i18n/i18n.view";
 import { withLocaleSetting } from "@jgengine/core/i18n/localeSetting";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
 import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
-import { AudioSettingsBridge, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
+import { AudioSettingsBridge, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.view";
 import { TextureFiltering } from "@jgengine/core/material/TextureFiltering.draw";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter.draw";
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop.draw";
@@ -110,7 +110,7 @@ import { createPerfOverlaySample, PerfOverlay, PerfOverlayProbe } from "@jgengin
 import { createReplayRecorder } from "@jgengine/core/replay/replayRecording";
 import { ConfiguredLighting, BackdropFog, ShadowPipeline } from "@jgengine/core/lighting/SceneLighting.draw";
 import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
-import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw";
+import { usePresentationLook } from "@jgengine/core/render/presentationLook.view";
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
 import { WorldView, RemotePlayers, dispatchWorldEntityPointerDown } from "./world/WorldScene.draw";
 import { FrameDriver } from "./drivers/FrameDriver.draw";
@@ -123,7 +123,7 @@ import { ContextLossScreen } from "./presentationRecovery.view";
 import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
 import { ParticleEmitters } from "@jgengine/core/vfx/ParticleEmitters.draw";
 import { WorldTireMarks } from "@jgengine/core/vfx/tireMarks.draw";
-import { TerrainQualityContext, noteTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { TerrainQualityContext, noteTerrainQuality } from "@jgengine/core/terrain/terrainQuality.view";
 import { detectKtx2Support } from "@jgengine/core/model/modelLoad.draw";
 import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "@jgengine/core/scene/SceneWarmupGate.draw";
 import { BootDirector } from "@jgengine/core/boot/BootDirector.draw";
@@ -337,7 +337,7 @@ export function Shell3dPresentation({
     link.download = `${playable.game.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-replay.json`;
     link.click();
     URL.revokeObjectURL(link.href);
-    console.info(`[jgengine] replay saved: ${replay.frames.length} frames; play it with playReplayRecording from @jgengine/core/replay/replayPlayback.draw`);
+    console.info(`[jgengine] replay saved: ${replay.frames.length} frames; play it with playReplayRecording from @jgengine/core/replay/replayPlayback`);
   };
   const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
   const WorldOverlay = playable.scene?.WorldOverlay;

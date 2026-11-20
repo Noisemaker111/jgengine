@@ -12,7 +12,7 @@ import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.dr
 
 import { createDecalDrapeGeometry } from "@jgengine/core/scene/decalGeometry.draw";
 import { createDecalTexture } from "@jgengine/core/scene/decalTexture";
-import { registerSceneKindRenderer } from "./sceneKindRenderers.draw";
+import { registerSceneKindRenderer } from "./sceneKindRenderers.view";
 
 /** Tilts at or above this stand the decal up on a wall instead of draping it on the ground. */
 const WALL_TILT = 45;

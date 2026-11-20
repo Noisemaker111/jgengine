@@ -33,8 +33,8 @@ async function loadVite(root: string): Promise<typeof import("vite")> {
 describe("every game Vite config resolves the engine from source", () => {
   test("the helper maps each engine package to its src and dedupes the peers a game declares", () => {
     const resolved = engineSource(join(repo, "harbor-heat"));
-    const shell = resolved.alias.find((alias) => String(alias.find) === String(/^@jgengine\/shell\/(.*)$/));
-    expect(shell?.replacement).toBe(`${join(packagesDir, "shell", "src").replaceAll("\\", "/")}/$1`);
+    const core = resolved.alias.find((alias) => String(alias.find) === String(/^@jgengine\/core\/(.*)$/));
+    expect(core?.replacement).toBe(`${join(packagesDir, "core", "src").replaceAll("\\", "/")}/$1`);
     expect(resolved.dedupe).toEqual(["three"]);
   });
 
@@ -68,7 +68,7 @@ describe("a live dev server runs engine source with one copy of each peer", () =
         const shell = await server.pluginContainer.resolveId("@jgengine/core/index", gameEntry, { ssr: false });
         expect(shell?.id.replaceAll("\\", "/")).toStartWith(join(packagesDir, "core", "src").replaceAll("\\", "/"));
 
-        const importer = join(packagesDir, "shell", "src", "index.ts");
+        const importer = join(packagesDir, "core", "src", "shell", "GamePlayer.draw.tsx");
         const escapes: string[] = [];
         for (const pkg of ["three"]) {
           const own = realpathSync(join(root, "node_modules", pkg));

@@ -19,7 +19,7 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
 
-  await installPublicPackages(scratch, ["core", "ui"]);
+  await installPublicPackages(scratch, ["core"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {HudCanvas,HudPanel,useHudLayout} from '@jgengine/core/hud/hudLayout.view';

@@ -30,7 +30,7 @@ export function cleanupHarness(): void {
 /** A scratch project that declares the dependency the harness CLI resolves against. */
 export function harnessProject(prefix: string): { dir: string; dispose: () => void } {
   const dir = mkdtempSync(join(tmpdir(), prefix));
-  writeFileSync(join(dir, "package.json"), JSON.stringify({ dependencies: { "@jgengine/shell": "*" } }));
+  writeFileSync(join(dir, "package.json"), JSON.stringify({ dependencies: { "@jgengine/core": "*" } }));
   // A drive's browser can still hold a file here for a moment after the drive is stopped.
   return { dir, dispose: () => removeDirSync(dir) };
 }

@@ -24,8 +24,8 @@ import {
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { registerCameraControls } from "./activeControls.draw";
-import { usePlayerFov, type PlayerFovState } from "./PlayerFov.draw";
+import { registerCameraControls } from "./activeControls";
+import { usePlayerFov, type PlayerFovState } from "./PlayerFov.view";
 import type { Xyz } from "@jgengine/core/math/xyz";
 import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
 

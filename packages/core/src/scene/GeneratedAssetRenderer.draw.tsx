@@ -3,7 +3,7 @@ import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { runGenerator } from "@jgengine/core/generator/generator";
-import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
+import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.view";
 import { PARTS_OUTPUT, isGeneratedAsset, resolveGeneratorAsset, type GeneratedAsset } from "@jgengine/core/scene/assetGenerator";
 import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";

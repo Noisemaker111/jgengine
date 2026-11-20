@@ -39,7 +39,7 @@ The paired runtime renderer registers with the shell seam — `AuthoredScene` mo
 matching path automatically:
 
 ```ts
-import { registerSceneKindRenderer } from "@jgengine/core/scene/sceneKindRenderers.draw";
+import { registerSceneKindRenderer } from "@jgengine/core/scene/sceneKindRenderers.view";
 registerSceneKindRenderer("zipline", ({ objects, context }) => /* three.js render tree */);
 ```
 

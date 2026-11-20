@@ -13,12 +13,12 @@ import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing";
 import type { SettingsStore } from "@jgengine/core/settings/settingsModel";
 
-import { useGraphicsSettings, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
+import { useGraphicsSettings, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.view";
 import { createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
 import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
-import { usePresentationLook } from "./presentationLook.draw";
-import { useStableTextureSet } from "@jgengine/core/material/stableTextureSet.draw";
-import { useDisposable } from "./useDisposable.draw";
+import { usePresentationLook } from "./presentationLook.view";
+import { useStableTextureSet } from "@jgengine/core/material/stableTextureSet.view";
+import { useDisposable } from "./useDisposable.view";
 
 /**
  * Renders the shell's presentation seams twice with unchanged authored values and fails when the

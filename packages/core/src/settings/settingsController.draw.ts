@@ -50,7 +50,7 @@ import {
   TOUCH_JOYSTICK_VARIANT_OPTIONS,
   TOUCH_STYLE_OPTIONS,
 } from "@jgengine/core/input/touchScheme";
-import { TOUCH_STYLE_AUTO, useSettingsRevision } from "./appliedSettings.draw";
+import { TOUCH_STYLE_AUTO, useSettingsRevision } from "./appliedSettings.view";
 import {
   useSettingsStore,
   type SettingsActionView,
@@ -60,7 +60,7 @@ import {
   type SettingsRow,
 } from "@jgengine/core/settings/settings.view";
 
-import { usePlayerFov } from "@jgengine/core/camera/PlayerFov.draw";
+import { usePlayerFov } from "@jgengine/core/camera/PlayerFov.view";
 
 export type { SettingsActionView, SettingsKeybindRow, SettingsCategoryView, SettingsController, SettingsRow };
 

@@ -185,7 +185,7 @@ export function diagnoseProject(dir: string): Finding[] {
   const configPath = join(dir, "src", "game.config.ts");
   const configOk =
     existsSync(configPath) &&
-    /from\s+["']@jgengine\/shell\/(defineGame|gameKit)["']/.test(readFileSync(configPath, "utf8"));
+    /from\s+["']@jgengine\/core\/shell\/(defineGame|gameKit)\.draw["']/.test(readFileSync(configPath, "utf8"));
   findings.push({
     ok: configOk,
     label: 'src/game.config.ts defines the game via defineGame from "@jgengine/core/shell/gameKit.draw"',

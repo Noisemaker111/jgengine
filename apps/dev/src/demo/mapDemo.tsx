@@ -26,7 +26,7 @@ import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgen
 import { usePlayer, useRafLoop, useSceneEntities, useFeed } from "@jgengine/core/ui/hooks.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import { bakeTerrainMap, type BakedMap } from "@jgengine/core/map/terrainMap.draw";
+import { bakeTerrainMap, type BakedMap } from "@jgengine/core/map/terrainMap.view";
 import { MapMarkerBeacons } from "@jgengine/core/map/MapMarkerBeacons.draw";
 import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 

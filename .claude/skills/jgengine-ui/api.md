@@ -184,7 +184,7 @@
 - `actionFromAbilitySlot` (function): function actionFromAbilitySlot(slot: AbilitySlotSnapshot, extra?: Partial<ActionDef> & { resourceId?: string }): ActionDef — Composable UI renderers over the headless action view model (`@jgengine/core/ui/actionModel`) — the data/renderer/chrome split for an RTS command card, an ability action bar, a build menu, or a radial. `useActionBar` is the DATA/HOOK layer (resolution + focus/hover/keyboard/hotkey), `ActionBarChrome` is the composable RENDERER (swap `renderItem` for custom chrome, or ignore it and consume the model directly for a radial), and `ActionBar` is the batteries-included default. A game swaps renderer or chrome without forking the logic. Layout, dimensions, hotkeys, and catalog-id mapping stay caller-owned.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
 
-## @jgengine/core/hud/barSamples.draw
+## @jgengine/core/hud/barSamples.view
 
 - `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
 - `Projectable` (interface): interface Projectable — A vector that can be set and projected through a camera, such as THREE.Vector3.
@@ -711,12 +711,12 @@
 - `FlowStepRecord` (interface): interface FlowStepRecord — One step a flow ran, for the failure report.
 - `FlowStepper` (interface): interface FlowStepper — Numbers and names each step a flow driver runs, so a failure says which step, what it expected and what the probe read, while a passing run prints nothing.
 
-## @jgengine/core/play/headlessFlow.draw
+## @jgengine/core/play/headlessFlow.view
 
 - `HeadlessFlowOptions` (interface): interface HeadlessFlowOptions — Options for {@link runFlowHeadless}.
 - `runFlowHeadless` (function): function runFlowHeadless<TProbe extends ProbeReadings>(flow: HeadlessProofFlow<TProbe>, options: HeadlessFlowOptions = {}): Promise<FlowRunReport> — ⚠ undocumented
 
-## @jgengine/core/play/headlessKeys.draw
+## @jgengine/core/play/headlessKeys
 
 - `HeadlessKeys` (interface): interface HeadlessKeys — Keys held against a headless {@link PlaySession}, mapped through the game's own bindings.
 
@@ -725,7 +725,7 @@
 - `PlayRunOptions` (interface): interface PlayRunOptions — Options for one scripted play run.
 - `runPlayScript` (function): function runPlayScript(playable: PlayableGame, spec: PlayScript | PlayScriptSpec, options: PlayRunOptions = {}): PlayRunResult — Play a real game without a browser: boot its `PlayableGame` through the headless runner, apply a tick-based {@link PlayScript}, and return what happened plus whether the script's assertions held.
 
-## @jgengine/core/play/playSession.draw
+## @jgengine/core/play/playSession
 
 - `PlaySession` (interface): interface PlaySession — A live headless play of one game, ticked by its caller.
 - `PlaySessionOptions` (interface): interface PlaySessionOptions — Options for {@link createPlaySession}.
@@ -887,7 +887,7 @@
 - `TriangleLine` (interface): interface TriangleLine — One line of the triangle table: the draws sharing one geometry inside one named model.
 - `attributeTriangles` (function): function attributeTriangles(root: THREE.Object3D, limit = 12): TriangleAttribution — Sum a scene's triangles by model and geometry, which is the attribution a triangle budget needs: a total says a frame is heavy, a table says which authored object made it heavy. Walks the graph once; call it on demand, never per frame.
 
-## @jgengine/core/render/useDisposable.draw
+## @jgengine/core/render/useDisposable.view
 
 - `Disposable` (interface): interface Disposable — Anything exposing dispose() — three.js geometries, materials, textures, render targets.
 - `useDisposable` (function): function useDisposable<T extends Disposable | readonly Disposable[]>(create: () => T, deps: DependencyList): T — Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts. Owns the useMemo + dispose-effect pair that otherwise repeats at every GPU-resource call site. The factory must return objects exposing `dispose()` (geometries, materials, textures, render targets).
@@ -906,7 +906,7 @@
 - `ReplayLoop` (interface): interface ReplayLoop<T> — Replays a finished `RecordingBuffer` on a loop — modulo-time seek, frame interpolation, and spawn grace, the pieces every ghost-lap/echo feature hand-rolled (#286.4). `sample(t)` is a pure function of absolute time; `null` means "the ghost isn't on track right now".
 - `ReplayLoopOptions` (interface): interface ReplayLoopOptions<T> { interpolate?: (before: T, after: T, alpha: number) => T; spawnGraceSeconds?: number } — ⚠ undocumented
 
-## @jgengine/core/replay/replayPlayback.draw
+## @jgengine/core/replay/replayPlayback
 
 - `ReplayPlayback` (interface): interface ReplayPlayback — What a replay played to.
 - `playReplayRecording` (function): function playReplayRecording(playable: ReplayPlayable, replay: ReplayRecording, options: { boot?: boolean } = {}): ReplayPlayback — Play an {@link ReplayRecording} headless against a new world from the same game and seed: boot a new game (unless `boot: false`), then each frame's commands, look and held actions at the frame's own time. The same replay always reaches the same state, so a recorded session is a repro anyone can run.
@@ -954,7 +954,7 @@
 - `useAccessibilitySettings` (function): function useAccessibilitySettings(): AccessibilityState — The live accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) from the shared settings store. Re-renders whenever any setting changes, so a root that spreads them onto the HUD updates the moment the player picks a value.
 - `useHoldVsToggle` (function): function useHoldVsToggle(): HoldVsToggle — The live hold-versus-toggle preference for actions that support both (aim, sprint, crouch). Pair it with `holdToggleActive` (`@jgengine/core/settings/accessibilitySettings`) per frame.
 
-## @jgengine/core/settings/appliedSettings.draw
+## @jgengine/core/settings/appliedSettings.view
 
 - `AppliedGraphicsSettings` (interface): interface AppliedGraphicsSettings — The player's graphics choices as the shell applies them.
 - `AudioSettingsBridge` (function): function AudioSettingsBridge({ store, engine, buses, }: { store: SettingsStore; engine: AudioEngine; buses: Record<string, AudioBusDef> | undefined; }): null — ⚠ undocumented
@@ -1562,7 +1562,7 @@
 - `ComponentClass` (interface): interface ComponentClass<P = object> { new (props: P): {render(): UiNode}; displayName?: string | undefined; getDerivedStateFromError?(error: unknown): object | null } — ⚠ undocumented · used by `lazy`: A component whose code loads on first render; a `Suspense` above shows its fallback meanwhile.
 - `ComponentType` (type): type ComponentType<P = object> = FunctionComponent<P> | ComponentClass<P> — ⚠ undocumented
 - `Context` (type): type Context<T> = ContextType<T> — ⚠ undocumented · used by `createDecisionGraphRuntime` (@jgengine/core/ai/decisionGraph): Creates a deterministic runtime for a serializable decision graph.
-- `DependencyList` (type): type DependencyList = readonly unknown[] — ⚠ undocumented · used by `useDisposable` (@jgengine/core/render/useDisposable.draw): Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts.
+- `DependencyList` (type): type DependencyList = readonly unknown[] — ⚠ undocumented · used by `useDisposable` (@jgengine/core/render/useDisposable.view): Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts.
 - `Dispatch` (type): type Dispatch<A> = (action: A) => void — ⚠ undocumented · used by `useShellMultiplayerSync` (@jgengine/core/multiplayer/useShellMultiplayerSync.draw): Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 - `EffectCallback` (type): type EffectCallback = () => void | (() => void) — ⚠ undocumented
 - `ElementType` (type): type ElementType<P = any> = string | FunctionComponent<P> | ComponentClass<P> — A component type as code names it: a tag, a function component or a class.
@@ -1625,7 +1625,7 @@
 - `ComponentClass` (interface): interface ComponentClass<P = object> { new (props: P): {render(): UiNode}; displayName?: string | undefined; getDerivedStateFromError?(error: unknown): object | null } — ⚠ undocumented · used by `lazy`: A component whose code loads on first render; a `Suspense` above shows its fallback meanwhile.
 - `ComponentType` (type): type ComponentType<P = object> = FunctionComponent<P> | ComponentClass<P> — ⚠ undocumented
 - `Context` (type): type Context<T> = ContextType<T> — ⚠ undocumented · used by `createDecisionGraphRuntime` (@jgengine/core/ai/decisionGraph): Creates a deterministic runtime for a serializable decision graph.
-- `DependencyList` (type): type DependencyList = readonly unknown[] — ⚠ undocumented · used by `useDisposable` (@jgengine/core/render/useDisposable.draw): Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts.
+- `DependencyList` (type): type DependencyList = readonly unknown[] — ⚠ undocumented · used by `useDisposable` (@jgengine/core/render/useDisposable.view): Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts.
 - `Dispatch` (type): type Dispatch<A> = (action: A) => void — ⚠ undocumented · used by `useShellMultiplayerSync` (@jgengine/core/multiplayer/useShellMultiplayerSync.draw): Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 - `EffectCallback` (type): type EffectCallback = () => void | (() => void) — ⚠ undocumented
 - `ElementType` (type): type ElementType<P = any> = string | FunctionComponent<P> | ComponentClass<P> — A component type as code names it: a tag, a function component or a class.
@@ -1852,7 +1852,7 @@
 - `ComponentClass` (interface): interface ComponentClass<P = object> { new (props: P): {render(): UiNode}; displayName?: string | undefined; getDerivedStateFromError?(error: unknown): object | null } — ⚠ undocumented · used by `lazy` (@jgengine/core/ui/jsx): A component whose code loads on first render; a `Suspense` above shows its fallback meanwhile.
 - `ComponentType` (type): type ComponentType<P = object> = FunctionComponent<P> | ComponentClass<P> — ⚠ undocumented
 - `Context` (type): type Context<T> = ContextType<T> — ⚠ undocumented · used by `createDecisionGraphRuntime` (@jgengine/core/ai/decisionGraph): Creates a deterministic runtime for a serializable decision graph.
-- `DependencyList` (type): type DependencyList = readonly unknown[] — ⚠ undocumented · used by `useDisposable` (@jgengine/core/render/useDisposable.draw): Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts.
+- `DependencyList` (type): type DependencyList = readonly unknown[] — ⚠ undocumented · used by `useDisposable` (@jgengine/core/render/useDisposable.view): Memoize a three.js resource (or tuple of resources) and dispose it when `deps` change or the component unmounts.
 - `Dispatch` (type): type Dispatch<A> = (action: A) => void — ⚠ undocumented · used by `useShellMultiplayerSync` (@jgengine/core/multiplayer/useShellMultiplayerSync.draw): Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 - `EffectCallback` (type): type EffectCallback = () => void | (() => void) — ⚠ undocumented
 - `ElementType` (type): type ElementType<P = any> = string | FunctionComponent<P> | ComponentClass<P> — A component type as code names it: a tag, a function component or a class.

@@ -4,8 +4,8 @@ import { createReplayRecorder, replayRecordingProblem } from "@jgengine/core/rep
 import { environment, terrain } from "@jgengine/core/world/features";
 import { defineGame } from "@jgengine/core/shell/defineGame.draw";
 
-import { playReplayRecording } from "./replayPlayback.draw";
-import { createPlaySession } from "@jgengine/core/play/playSession.draw";
+import { playReplayRecording } from "./replayPlayback";
+import { createPlaySession } from "@jgengine/core/play/playSession";
 
 function fixture() {
   return defineGame({

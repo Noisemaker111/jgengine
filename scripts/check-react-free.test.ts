@@ -5,9 +5,9 @@ import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { reactImports, scanReactFree } from "./check-react-free";
 
-test("React imports are detected and the engine's @jgengine/core/ui.view UI package is not", () => {
-  expect(reactImports('import type { ReactNode } from "react"; export { Provider } from "@jgengine/core/ui/provider.view";')).toEqual(["import of react"]);
-  expect(reactImports('import { useState } from "@jgengine/core/ui/jsx"; import { GameProvider } from "@jgengine/core/ui.view";')).toEqual([]);
+test("React imports are detected and the engine's @jgengine/ui UI package is not", () => {
+  expect(reactImports('import type { ReactNode } from "react"; export { Provider } from "@jgengine/ui/provider";')).toEqual(["import of react"]);
+  expect(reactImports('import { useState } from "@jgengine/core/ui/jsx"; import { GameProvider } from "@jgengine/ui";')).toEqual([]);
 });
 
 test("only the example hosts may use React; convex's manifest may name it for convex/react", () => {
@@ -16,14 +16,14 @@ test("only the example hosts may use React; convex's manifest may name it for co
     const init = spawnSync("git", ["init", "--quiet", root], { encoding: "utf8" });
     expect(init.status).toBe(0);
     const files = {
-      "packages/core/src/ui/provider.ts": 'import React from "react";',
+      "packages/ui/src/provider.ts": 'import React from "react";',
       "packages/ui/package.json": '{"dependencies":{"react-dom":"19"}}',
       "packages/convex/src/adapter.ts": 'import { useState } from "react";',
       "packages/convex/package.json": '{"peerDependencies":{"react":"19"}}',
       "games/llmville/src/app.tsx": 'import { useEffect } from "react";',
       "games/llmville/package.json": '{"dependencies":{"react":"19"}}',
-      "apps/web/src/app.tsx": 'import React from "react"; import { GameProvider } from "@jgengine/core/ui.view";',
-      "apps/web/package.json": '{"dependencies":{"react":"19","@jgengine/core/ui.view":"0.55"}}',
+      "apps/web/src/app.tsx": 'import React from "react"; import { GameProvider } from "@jgengine/ui";',
+      "apps/web/package.json": '{"dependencies":{"react":"19","@jgengine/ui":"0.55"}}',
     };
     for (const [name, contents] of Object.entries(files)) {
       const path = join(root, name);
@@ -34,7 +34,7 @@ test("only the example hosts may use React; convex's manifest may name it for co
     expect(report.violations.map((violation) => violation.file).sort()).toEqual([
       "apps/web/package.json", "apps/web/src/app.tsx",
       "games/llmville/package.json", "games/llmville/src/app.tsx",
-      "packages/convex/src/adapter.ts", "packages/ui/package.json", "packages/core/src/ui/provider.ts",
+      "packages/convex/src/adapter.ts", "packages/ui/package.json", "packages/ui/src/provider.ts",
     ]);
     const host = join(root, "examples/next-host/src/page.tsx");
     mkdirSync(dirname(host), { recursive: true });

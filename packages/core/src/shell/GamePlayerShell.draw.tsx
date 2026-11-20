@@ -53,7 +53,7 @@ import { configureModelSurface } from "@jgengine/core/model/modelSurface.draw";
 import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "./registry.draw";
 import { OrientationHint } from "@jgengine/core/input/OrientationHint.view";
-import { useTouchStyle, useTouchJoystickVariant, useGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
+import { useTouchStyle, useTouchJoystickVariant, useGraphicsSettings } from "@jgengine/core/settings/appliedSettings.view";
 import {
   logRuntimeError,
   type RuntimeDiagnostic,
