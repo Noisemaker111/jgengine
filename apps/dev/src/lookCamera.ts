@@ -11,7 +11,7 @@ import type { WorldBounds } from "@jgengine/core/world/features";
 
 /** Default least clearance between the camera and the ground beneath it; a fourth `lookFrom` number sets another (a grass close-up sits centimetres up). */
 export const LOOK_GROUND_CLEARANCE = 1.5;
-export const LOOK_DEFAULTS = { distance: 12, height: 5, angle: 0 } as const;
+const LOOK_DEFAULTS = { distance: 12, height: 5, angle: 0 } as const;
 
 export interface LookAppliedAim {
   target: { x: number; y: number; z: number };

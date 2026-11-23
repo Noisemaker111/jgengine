@@ -2,8 +2,6 @@ import { describe, expect, test } from "bun:test";
 import type { AffixPool, RarityTier } from "../item/affix";
 import type { LootBaseDef, LootCatalog, LootManufacturerDef } from "./lootGen";
 import { createInventorySet } from "../inventory/inventoryModel";
-import { createShopStock } from "../economy/shopStock";
-import { createEmptyWallet, balance, grant } from "../economy/wallet";
 import { runGenerator } from "../generator/generator";
 import { compareToEquipped, itemMass, type ItemDrop } from "./drop";
 import { defineLootGenerator } from "./lootGenerator";
@@ -49,11 +47,6 @@ const LOOT = defineLootGenerator({ id: "test.items", label: "Test items", catalo
 function seededDrop(seed: string, options: { level: number; base?: string; rarity?: string }): ItemDrop {
   const [item] = runGenerator(LOOT, { seed, count: 1, level: options.level, base: options.base ?? "", rarity: options.rarity ?? "" });
   return { ...item!, id: `drop:${seed}` };
-}
-
-/** `count` seeded items for a vendor shelf. */
-function shelf(seed: string, level: number, count: number) {
-  return runGenerator(LOOT, { seed, level, count });
 }
 
 function traits() {

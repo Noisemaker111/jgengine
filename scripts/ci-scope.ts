@@ -10,7 +10,7 @@ import { join } from "node:path";
 
 import { printHelpIfAsked, type Usage } from "./script-help";
 
-export type GameScope = "full" | "surface" | "none";
+type GameScope = "full" | "surface" | "none";
 
 /**
  * Every playable game: each folder under `games/` with a web entry (`src/index.tsx`). The frame
@@ -118,7 +118,7 @@ const PROSE_ONLY = [/^changes\//, /^examples\//];
 
 const TEST_FILE = /\.(?:test|spec)\.(?:ts|tsx|mts|cts)$|^(?:scripts|packages)\/.*\/(?:__snapshots__|fixtures)\//;
 
-export function isTestPath(path: string): boolean {
+function isTestPath(path: string): boolean {
   return TEST_FILE.test(path);
 }
 
@@ -188,7 +188,7 @@ export interface GameWorkspace {
   games: readonly { id: string; engine: readonly string[] }[];
 }
 
-export function readGameWorkspace(root: string = process.cwd()): GameWorkspace {
+function readGameWorkspace(root: string = process.cwd()): GameWorkspace {
   const dir = join(root, "games");
   if (!existsSync(dir)) return { games: [] };
   const games: { id: string; engine: string[] }[] = [];
@@ -223,7 +223,7 @@ const EVERY_GAME = [
  * The games the `games` job type-checks and tests: each game a changed file sits in, each game
  * that declares a changed engine package, and every game for a change they all resolve.
  */
-export function gameChecks(paths: readonly string[], workspace: GameWorkspace): string[] {
+function gameChecks(paths: readonly string[], workspace: GameWorkspace): string[] {
   const all = workspace.games.map((game) => game.id).sort();
   if (paths.some((path) => EVERY_GAME.some((pattern) => pattern.test(path)))) return all;
   const reached = new Set<string>();
@@ -261,7 +261,7 @@ const USAGE: Usage = {
   exits: ["0  always: the verdict is printed, not an exit code"],
 };
 
-export function renderVerdict(verdict: Verdict): string {
+function renderVerdict(verdict: Verdict): string {
   const runs =
     verdict.scope === "full"
       ? `perf-game on ${verdict.games.length} games`

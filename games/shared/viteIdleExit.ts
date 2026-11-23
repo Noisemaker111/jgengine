@@ -6,7 +6,7 @@ import { existsSync } from "node:fs";
  * its folder is deleted. Agents and captures start `bun run dev` and never stop it, and
  * dozens of stale servers piled up holding memory.
  */
-export const DEFAULT_IDLE_EXIT_MINUTES = 20;
+const DEFAULT_IDLE_EXIT_MINUTES = 20;
 
 export function resolveIdleExitMs(env: Record<string, string | undefined> = process.env): number {
   const raw = env.JG_DEV_IDLE_MINUTES;

@@ -18,7 +18,7 @@ export interface AtmosphereSample {
 export type AtmosphereModel = (altitude: number) => AtmosphereSample;
 
 /** Effective Earth radius the 1976 standard uses for geopotential altitude and gravity, m. */
-export const STANDARD_EARTH_RADIUS = 6356766;
+const STANDARD_EARTH_RADIUS = 6356766;
 /** Standard sea-level gravity, m/s². */
 export const STANDARD_GRAVITY = 9.80665;
 /** Sea-level standard pressure, Pa. */
@@ -26,7 +26,7 @@ export const SEA_LEVEL_PRESSURE = 101325;
 /** Sea-level standard density, kg/m³. */
 export const SEA_LEVEL_DENSITY = 1.225;
 /** Sea-level standard speed of sound, m/s. */
-export const SEA_LEVEL_SPEED_OF_SOUND = 340.294;
+const SEA_LEVEL_SPEED_OF_SOUND = 340.294;
 
 const GAS_CONSTANT = 8314.32;
 const MOLAR_MASS = 28.9644;

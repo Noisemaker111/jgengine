@@ -9,7 +9,7 @@ import { removeDirSync } from "./removeDir";
 
 const repoRoot = resolve(import.meta.dir, "..");
 
-export const harnessDir = materializeHarness("drive");
+const harnessDir = materializeHarness("drive");
 export const harnessBrowser = await import(join(harnessDir, "browser.mjs"));
 export const harnessCli = resolve(import.meta.dir, "../packages/jgengine/src/cli/index.ts");
 export const driveDevCli = resolve(repoRoot, "scripts/drive-dev.ts");
@@ -111,7 +111,7 @@ const TARGET_STYLES: Record<TargetScenario, string> = {
 };
 
 /** Scenarios where the harness must refuse the click; the rest must land it. */
-export const BLOCKED_SCENARIOS: readonly TargetScenario[] = ["occluded", "disabled", "aria-disabled", "inert", "hidden"];
+const BLOCKED_SCENARIOS: readonly TargetScenario[] = ["occluded", "disabled", "aria-disabled", "inert", "hidden"];
 
 /** A target the page draws but another layer covers or disables. */
 export const POINTER_BLOCKED: readonly TargetScenario[] = ["occluded", "disabled", "aria-disabled"];

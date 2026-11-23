@@ -15,20 +15,6 @@ function memoryStorage(initial: Record<string, string> = {}): KeyValueStorage & 
   };
 }
 
-function throwingStorage(): KeyValueStorage {
-  return {
-    getItem: () => {
-      throw new Error("read blocked");
-    },
-    setItem: () => {
-      throw new Error("write blocked");
-    },
-    removeItem: () => {
-      throw new Error("remove blocked");
-    },
-  };
-}
-
 describe("createKeyValueStore", () => {
   test("returns the initial value when storage is empty", () => {
     const bank = createKeyValueStore({ key: "credits", initial: 100, storage: memoryStorage() });

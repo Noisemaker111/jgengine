@@ -19,20 +19,6 @@ export function box(
   return mesh;
 }
 
-export function mesh(
-  parent: THREE.Object3D,
-  geometry: THREE.BufferGeometry,
-  material: THREE.Material,
-  position?: readonly [number, number, number],
-  rotation?: readonly [number, number, number],
-): THREE.Mesh {
-  const next = new THREE.Mesh(geometry, material);
-  if (position !== undefined) next.position.set(position[0], position[1], position[2]);
-  if (rotation !== undefined) next.rotation.set(rotation[0], rotation[1], rotation[2]);
-  parent.add(next);
-  return next;
-}
-
 import { createElement, useEffect, type ReactNode } from "@jgengine/core/ui/jsx";
 import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 

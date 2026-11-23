@@ -42,7 +42,7 @@ const USAGE: Usage = {
   example: "bun run gen-audit --generator circuit --seeds 4 --out .scratch/gen-audit-before",
 };
 
-export type AuditGenerator = "streets" | "city" | "circuit" | "race";
+type AuditGenerator = "streets" | "city" | "circuit" | "race";
 const ALL_GENERATORS: readonly AuditGenerator[] = ["streets", "city", "circuit", "race"];
 
 export interface AuditArgs {
@@ -148,7 +148,7 @@ export function auditCases(args: Pick<AuditArgs, "generators" | "presets" | "hal
 }
 
 /** One seed's result. */
-export interface AuditRun {
+interface AuditRun {
   generator: AuditGenerator;
   preset: string;
   profile: string | undefined;
@@ -420,7 +420,7 @@ function pick(metrics: unknown, path: string): unknown {
   return cur;
 }
 
-export function reportMarkdown(cases: readonly { c: AuditCase; runs: AuditRun[] }[], header: string): string {
+function reportMarkdown(cases: readonly { c: AuditCase; runs: AuditRun[] }[], header: string): string {
   const lines: string[] = [header, ""];
   const libm = cases.some(({ runs }) => runs.some((r) => r.libmStable !== undefined));
   lines.push(`| generator / preset | profile | bands in | ms (median) |${libm ? " other libm |" : ""}`, `| --- | --- | --- | --- |${libm ? " --- |" : ""}`);

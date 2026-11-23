@@ -13,12 +13,9 @@ import {
   type KitToastProps,
   type UiKit,
 } from "./uiKit.view";
+import { cx } from "./kitParts.view";
 
 const P = "jgk-plain";
-
-function cx(...names: (string | false | undefined)[]): string {
-  return names.filter(Boolean).join(" ");
-}
 
 function Button({ variant = "secondary", size = "md", tone, icon, glyph, pressed, type = "button", className, children, ...rest }: KitButtonProps): ReactNode {
   return (

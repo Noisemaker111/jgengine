@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "
 import { dirname, isAbsolute, join } from "node:path";
 
 /** At most this many passes are kept; the oldest go first. */
-export const MAX_ENTRIES = 20_000;
+const MAX_ENTRIES = 20_000;
 
 /** The input that stands for every file in the tree. */
 export const WHOLE_TREE = "*";
@@ -85,7 +85,7 @@ function readRecord(file: string): Record<string, number> {
 }
 
 /** Write through a temporary file and a rename, so a reader in another lane never sees half a file. */
-export function writeAtomically(file: string, text: string): void {
+function writeAtomically(file: string, text: string): void {
   mkdirSync(dirname(file), { recursive: true });
   const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
   writeFileSync(temporary, text, "utf8");

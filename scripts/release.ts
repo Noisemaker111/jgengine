@@ -103,7 +103,7 @@ export function parseSections(lines: string[]): ChangelogSections {
 }
 
 /** Bold markers and wrapped whitespace do not survive into the typed mirror. */
-export function plainText(text: string): string {
+function plainText(text: string): string {
   return text.replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
 }
 
@@ -180,7 +180,7 @@ export function mirrorEntry(source: string, version: string, sections: Changelog
   return `${source.slice(0, cut)}\n${entry}${source.slice(cut)}`;
 }
 
-export interface GitResult {
+interface GitResult {
   status: number;
   stdout: string;
   stderr: string;
@@ -188,7 +188,7 @@ export interface GitResult {
 
 export type GitRunner = (args: string[], cwd: string) => GitResult;
 
-export const runGit: GitRunner = (args, cwd) => {
+const runGit: GitRunner = (args, cwd) => {
   const result = spawnSync("git", args, { cwd, encoding: "utf8" });
   return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
 };

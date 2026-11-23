@@ -132,7 +132,6 @@ async function startingHabitRecord(traits: HabitTraits): Promise<PlantSpecies> {
   const prior = await loadRecord(traits.prior);
   if (prior === undefined) throw new Error(`prior ${traits.prior} has no record`);
   const own = await loadRecord(traits.id);
-  const source = own ?? prior;
   const growth = own === undefined ? startingHabitGrowth(traits, prior.growth) : own.growth;
   const carbon = own === undefined ? startingHabitCarbon(traits, prior.carbon) : own.carbon;
   return buildHabitRecord(traits, growth, carbon, { score: 0, against: "" }, prior, (own?.version ?? 0) + 1);
@@ -255,7 +254,7 @@ interface TrialSetup {
  * `size` workers that grow trials, shared by every species of one fit run: each worker loads the
  * growth model once, not once per species.
  */
-export function workerPool(size: number): { evaluator: (setup: TrialSetup) => Evaluate; close: () => void } {
+function workerPool(size: number): { evaluator: (setup: TrialSetup) => Evaluate; close: () => void } {
   const workers = Array.from({ length: size }, () => new Worker(new URL("./fitWorker.ts", import.meta.url).href));
   const idle = [...workers];
   const queue: (() => void)[] = [];
@@ -593,7 +592,7 @@ async function runReport(ids: readonly string[], argv: readonly string[]): Promi
   }
 }
 
-export async function runPlants(argv: readonly string[]): Promise<number> {
+async function runPlants(argv: readonly string[]): Promise<number> {
   const [verb, ...rest] = argv;
   const ids = rest.includes("--all") ? SPECIES_TRAITS.map((t) => t.id) : rest.filter((arg, i) => !arg.startsWith("--") && !(rest[i - 1] ?? "").startsWith("--"));
   switch (verb) {

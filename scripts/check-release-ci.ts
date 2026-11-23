@@ -58,7 +58,7 @@ export function decideCiRuns(runs: readonly CiRun[], sha: string): CiVerdict {
 }
 
 /** The `ci.yml` runs the Actions API reports for `sha`, newest first. */
-export function readCiRuns(repo: string, sha: string): CiRun[] {
+function readCiRuns(repo: string, sha: string): CiRun[] {
   return parseCiRuns(
     execFileSync("gh", ["api", `repos/${repo}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=50`], {
       encoding: "utf8",

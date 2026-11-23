@@ -50,7 +50,7 @@ export function flowsDirOf(projectDir: string): string {
 }
 
 /** The file extension of a TypeScript proof flow. */
-export const FLOW_EXTENSION = ".flow.ts";
+const FLOW_EXTENSION = ".flow.ts";
 
 /** Flow names in a folder, sorted; empty when there is no folder (a game with no flows yet). */
 export function listFlowNames(dir: string, readdir: (dir: string) => string[]): string[] {

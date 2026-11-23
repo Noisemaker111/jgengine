@@ -23,7 +23,7 @@ import {
   type Rarity,
 } from "../handroll";
 import { registerRift, riftShieldRegen, riftStore, startRift, tickRift } from "./rift";
-import { RIFT_TIER_COUNT, riftEventId } from "./tiers";
+import { riftEventId } from "./tiers";
 
 afterEach(resetCharacterState);
 

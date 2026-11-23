@@ -192,7 +192,7 @@ export function desktopOutFor(args: Pick<LaunchArgs, "out" | "renderers">, backe
 const LAUNCH_URL = "index.html?telemetry=local&frameMembers=1&quality=high";
 
 /** What one launched run measured; `rafP50Ms`/`rafP99Ms` are the requestAnimationFrame intervals. */
-export interface DesktopRecord {
+interface DesktopRecord {
   at: number;
   exe: string;
   clock: "uncapped" | "vsync";
@@ -296,7 +296,7 @@ export function unmeasuredSceneReason(drawsAvg: number | undefined, covered: boo
 }
 
 /** Launch a diagnostic desktop build, walk at the frame gate's conditions, and print and return the frame rate it reaches. */
-export async function launchAndMeasure(args: LaunchArgs, backend: RendererBackend): Promise<DesktopRecord> {
+async function launchAndMeasure(args: LaunchArgs, backend: RendererBackend): Promise<DesktopRecord> {
   return withLaunchedScene(args, backend, null, async (session, { tier, start }) => {
     const release = await startPath(session, "walk");
     await Bun.sleep(2_000);
@@ -350,7 +350,7 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
  * has these from the last session, so a stall that only a first session pays is told apart.
  * @internal
  */
-export const SHADER_CACHE_DIRS = ["EBWebView/GrShaderCache", "EBWebView/ShaderCache", "EBWebView/GPUPersistentCache", "EBWebView/GraphiteDawnCache", "EBWebView/Default/GPUCache", "EBWebView/Default/DawnGraphiteCache", "EBWebView/Default/DawnWebGPUCache", "EBWebView/Default/Code Cache"];
+const SHADER_CACHE_DIRS = ["EBWebView/GrShaderCache", "EBWebView/ShaderCache", "EBWebView/GPUPersistentCache", "EBWebView/GraphiteDawnCache", "EBWebView/Default/GPUCache", "EBWebView/Default/DawnGraphiteCache", "EBWebView/Default/DawnWebGPUCache", "EBWebView/Default/Code Cache"];
 
 /** Copy the shader caches of one profile into a new one; how many folders it found. @internal */
 export function carryShaderCaches(from: string, to: string): number {
@@ -370,7 +370,7 @@ export function carryShaderCaches(from: string, to: string): number {
  * With `--returning` the flow plays once unmeasured first, and the measured play starts from a new
  * profile holding only that session's shader caches: the stalls a player sees on a second launch.
  */
-export async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; name: string }, backend: RendererBackend): Promise<boolean> {
+async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; name: string }, backend: RendererBackend): Promise<boolean> {
   const proof = await loadFlow(flowsDirOf(resolve(import.meta.dir, "..", "games", flow.game)), flow.name);
   const profile = mkdtempSync(join(tmpdir(), "jg-desktop-flow-"));
   try {
@@ -550,7 +550,7 @@ function buildDesktopApp(game: string, records: string): string {
  * Build every game's production desktop app and measure it in turn (one at a time: each run
  * owns the GPU), then print each against 360 fps. A failed game is a row saying why, not a stop.
  */
-export async function measureAll(args: AllArgs): Promise<AllRow[]> {
+async function measureAll(args: AllArgs): Promise<AllRow[]> {
   const rows: AllRow[] = [];
   for (const game of args.games) {
     const clock = args.uncapped ? "uncapped" : "vsync";

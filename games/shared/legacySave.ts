@@ -1,7 +1,7 @@
 import type { LoadResult, PeekResult, SaveResult } from "@jgengine/core/save/saveStore";
 
 /** Translate historical persisted identifiers without mutating the saved source record. */
-export function migrateLegacySnapshot<T>(snapshot: T, ids: Readonly<Record<string, string>>): T {
+function migrateLegacySnapshot<T>(snapshot: T, ids: Readonly<Record<string, string>>): T {
   const rename = (value: string): string => ids[value] ?? value;
   const visit = (value: unknown): unknown => {
     if (typeof value === "string") return rename(value);

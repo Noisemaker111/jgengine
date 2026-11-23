@@ -5,6 +5,7 @@ import { toCreasedNormals } from "three-stdlib";
 
 import { computeRackThermalStateV3, getRackSlotCapacity } from "@llmville/game/infrastructure/infrastructure";
 import { SmallGpuRackProcedural } from "./SmallGpuRackProcedural";
+import { addBox, addCylinder } from "./rackParts";
 import { useRackHardwareDragVisualOptional } from "../rackHardwareDragVisual";
 import { GPU_SPLOT_WORKLOAD, workloadForRackSlot, type GpuSlotWorkload } from "../computeUnits";
 import type { RackInstalledHardwareSlot } from "@llmville/game/infrastructure/infrastructure";
@@ -221,36 +222,6 @@ function addRoundedBox(
   mesh.position.set(position[0], position[1], position[2]);
   mesh.castShadow = !opts.ghost;
   mesh.receiveShadow = true;
-  parent.add(mesh);
-  return mesh;
-}
-
-function addBox(
-  parent: Object3D,
-  size: readonly [number, number, number],
-  material: Material,
-  transform?: { position?: readonly [number, number, number]; rotation?: readonly [number, number, number]; castShadow?: boolean; receiveShadow?: boolean },
-): Mesh {
-  const mesh = new Mesh(new BoxGeometry(size[0], size[1], size[2]), material);
-  if (transform?.position !== undefined) mesh.position.set(transform.position[0], transform.position[1], transform.position[2]);
-  if (transform?.rotation !== undefined) mesh.rotation.set(transform.rotation[0], transform.rotation[1], transform.rotation[2]);
-  if (transform?.castShadow !== undefined) mesh.castShadow = transform.castShadow;
-  if (transform?.receiveShadow !== undefined) mesh.receiveShadow = transform.receiveShadow;
-  parent.add(mesh);
-  return mesh;
-}
-
-function addCylinder(
-  parent: Object3D,
-  args: readonly [number, number, number, number?],
-  material: Material,
-  transform?: { position?: readonly [number, number, number]; rotation?: readonly [number, number, number]; castShadow?: boolean; receiveShadow?: boolean },
-): Mesh {
-  const mesh = new Mesh(new CylinderGeometry(args[0], args[1], args[2], args[3] ?? 12), material);
-  if (transform?.position !== undefined) mesh.position.set(transform.position[0], transform.position[1], transform.position[2]);
-  if (transform?.rotation !== undefined) mesh.rotation.set(transform.rotation[0], transform.rotation[1], transform.rotation[2]);
-  if (transform?.castShadow !== undefined) mesh.castShadow = transform.castShadow;
-  if (transform?.receiveShadow !== undefined) mesh.receiveShadow = transform.receiveShadow;
   parent.add(mesh);
   return mesh;
 }

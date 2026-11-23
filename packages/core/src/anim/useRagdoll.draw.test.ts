@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createElement } from "@jgengine/core/ui/jsx";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";

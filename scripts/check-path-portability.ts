@@ -170,7 +170,7 @@ export function findSeparatorAssertions(source: string): PathHit[] {
   return hits.sort((left, right) => left.line - right.line);
 }
 
-export interface AllowEntry {
+interface AllowEntry {
   file: string;
   /** A substring of the offending line, so the entry survives line drift. */
   match: string;
@@ -206,7 +206,7 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-export function readAllowlist(root: string): AllowEntry[] {
+function readAllowlist(root: string): AllowEntry[] {
   const path = join(root, ALLOW_REL);
   if (!existsSync(path)) return [];
   const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
@@ -239,7 +239,7 @@ export function scanPathPortability(root: string): PortabilityFinding[] {
 }
 
 /** An allowlist entry that no longer matches is stale: it must be removed rather than kept as a blanket. */
-export function staleAllowlist(root: string, findings: readonly PortabilityFinding[]): AllowEntry[] {
+function staleAllowlist(root: string, findings: readonly PortabilityFinding[]): AllowEntry[] {
   return readAllowlist(root).filter(
     (entry) => !findings.some((finding) => finding.file === entry.file && finding.text.includes(entry.match)),
   );
@@ -269,7 +269,7 @@ export function scanReservedNames(root: string): string[] {
   return windowsReservedPaths(candidatePaths(root));
 }
 
-export const GUIDANCE =
+const GUIDANCE =
   "Build the expected path the way the code builds it: `join(\"proofs\", \"flows\")`, `sep`, or the same value\n" +
   "the implementation returns. A test that is genuinely one platform's is named in\n" +
   "scripts/path-portability-allow.json with a reason (a git path is always `/`; a Windows command line\n" +

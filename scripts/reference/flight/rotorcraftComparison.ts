@@ -19,7 +19,7 @@ export interface RotorcraftComparisonAircraft {
 }
 
 /** One metric: the game rotor, the Bo-105 reference and the NASA wind-tunnel figure; `real` is absent where none exists. */
-export interface RotorcraftComparisonRow {
+interface RotorcraftComparisonRow {
   label: string;
   unit: string;
   game: number;

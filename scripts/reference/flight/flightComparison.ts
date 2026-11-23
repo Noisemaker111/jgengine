@@ -21,7 +21,7 @@ export interface FlightComparisonAircraft {
 export type PublishedFlightFigures = Partial<Record<keyof FlightTestReport, number>>;
 
 /** One metric of one comparison, SI units; `real` is absent where nothing is published. */
-export interface FlightComparisonRow {
+interface FlightComparisonRow {
   metric: keyof FlightTestReport;
   label: string;
   unit: string;
@@ -113,7 +113,7 @@ export function withTolerance<Row extends { game: number; reference: number }>(r
 }
 
 /** How close a runtime reference build must fly to its reference sim: 10% on every flight test. */
-export const REFERENCE_BUILD_TOLERANCE: Readonly<Record<keyof FlightTestReport, number>> = {
+const REFERENCE_BUILD_TOLERANCE: Readonly<Record<keyof FlightTestReport, number>> = {
   stallSpeed: 0.1,
   maxLevelSpeed: 0.1,
   maxClimbRate: 0.1,

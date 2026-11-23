@@ -5,15 +5,12 @@ import {
   kitCueSound,
   meterFraction,
   meterSegmentsLit,
-  type KitButtonProps,
-  type KitMenuProps,
   type KitMeterProps,
   type KitMinimapFrameProps,
-  type KitPanelProps,
   type KitPromptProps,
-  type KitToastProps,
   type UiKit,
 } from "./uiKit.view";
+import { cx, kitButton, kitMenu, kitPanel, kitPromptShell, kitToast } from "./kitParts.view";
 import { clamp01 } from "../../math/scalar";
 
 const P = "jgk-arcade";
@@ -42,45 +39,9 @@ function frame(w: number): string {
   return `0 -${w}px 0 0 var(--kit-line), 0 ${w}px 0 0 var(--kit-line), -${w}px 0 0 0 var(--kit-line), ${w}px 0 0 0 var(--kit-line)`;
 }
 
-function cx(...names: (string | false | undefined)[]): string {
-  return names.filter(Boolean).join(" ");
-}
+const Button = kitButton(P);
 
-function Button({ variant = "secondary", size = "md", tone, icon, glyph, pressed, type = "button", className, children, ...rest }: KitButtonProps): ReactNode {
-  return (
-    <button
-      {...rest}
-      type={type}
-      aria-pressed={pressed}
-      className={cx(`${P}-btn`, className)}
-      data-variant={variant}
-      data-size={size}
-      data-tone={tone}
-      data-pressed={pressed === true ? "" : undefined}
-    >
-      {icon === undefined ? null : <span className={`${P}-btn-icon`}>{icon}</span>}
-      <span className={`${P}-btn-label`}>{children}</span>
-      {glyph === undefined ? null : <span className={`${P}-glyph`}>{glyph}</span>}
-    </button>
-  );
-}
-
-function Panel({ eyebrow, title, aside, footer, tone, variant = "hud", as: Tag = "section", leaving, className, children, ...rest }: KitPanelProps): ReactNode {
-  const head = title !== undefined || eyebrow !== undefined || aside !== undefined;
-  return (
-    <Tag {...rest} className={cx(`${P}-panel`, className)} data-variant={variant} data-tone={tone} data-state={leaving === true ? "closed" : "open"}>
-      {head ? (
-        <header className={`${P}-panel-head`}>
-          {eyebrow === undefined ? null : <span className={`${P}-eyebrow`}>{eyebrow}</span>}
-          {title === undefined ? null : <span className={`${P}-title`}>{title}</span>}
-          {aside === undefined ? null : <span className={`${P}-aside`}>{aside}</span>}
-        </header>
-      ) : null}
-      {children === undefined ? null : <div className={`${P}-panel-body`}>{children}</div>}
-      {footer === undefined ? null : <footer className={`${P}-panel-foot`}>{footer}</footer>}
-    </Tag>
-  );
-}
+const Panel = kitPanel(P);
 
 function Meter({ value, max = 1, label, readout, tone = "accent", variant = "bar", segments = 10, size = "md", className, style }: KitMeterProps): ReactNode {
   const fraction = meterFraction(value, max);
@@ -162,60 +123,12 @@ function Prompt({ glyph, label, device, progress, tone = "accent", onActivate, c
       </span>
     </>
   );
-  if (onActivate !== undefined) {
-    return (
-      <button type="button" className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style} onClick={onActivate}>
-        {body}
-      </button>
-    );
-  }
-  return (
-    <div className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style}>
-      {body}
-    </div>
-  );
+  return kitPromptShell(P, { onActivate, className, tone, device, style }, body);
 }
 
-function Toast({ tone, title, icon, count, leaving, className, style, children }: KitToastProps): ReactNode {
-  return (
-    <div className={cx(`${P}-toast`, className)} data-tone={tone} data-state={leaving === true ? "closed" : "open"} style={style} role="status">
-      {icon === undefined ? null : <span className={`${P}-toast-icon`}>{icon}</span>}
-      <span className={`${P}-toast-text`}>
-        {title === undefined ? null : <span className={`${P}-toast-title`}>{title}</span>}
-        <span className={`${P}-toast-body`}>{children}</span>
-      </span>
-      {count === undefined || count < 2 ? null : <span className={`${P}-toast-count`}>x{count}</span>}
-    </div>
-  );
-}
+const Toast = kitToast(P, "x");
 
-function Menu({ items, activeId, itemProps, onSelect, variant = "list", className, style }: KitMenuProps): ReactNode {
-  const primary = items.filter((item) => item.secondary !== true);
-  const secondary = items.filter((item) => item.secondary === true);
-  const row = (item: KitMenuProps["items"][number]) => (
-    <button
-      key={item.id}
-      type="button"
-      disabled={item.disabled}
-      onClick={() => onSelect(item.id)}
-      {...itemProps(item.id)}
-      className={`${P}-menu-item`}
-      data-active={item.id === activeId ? "" : undefined}
-      data-secondary={item.secondary === true ? "" : undefined}
-    >
-      <span className={`${P}-menu-label`}>{item.label}</span>
-      {item.badge === undefined ? null : <span className={`${P}-menu-badge`}>{item.badge}</span>}
-      {item.hint === undefined ? null : <span className={`${P}-menu-hint`}>{item.hint}</span>}
-    </button>
-  );
-  return (
-    <div className={cx(`${P}-menu`, className)} data-variant={variant} style={style} role="menu">
-      {primary.map(row)}
-      {secondary.length === 0 ? null : <span className={`${P}-menu-rule`} aria-hidden="true" />}
-      {secondary.map(row)}
-    </div>
-  );
-}
+const Menu = kitMenu(P);
 
 function MinimapFrame({ children, size, shape = "square", label, heading = 0, className, style }: KitMinimapFrameProps): ReactNode {
   return (

@@ -3,7 +3,7 @@ import type { EncounterDefinition, EncounterWave } from "@jgengine/core/waves/en
 import type { PressureRule } from "@jgengine/core/waves/pressure";
 
 import { FLANK_POINT_KEY, SPAWN_POINT_KEY } from "../world/path";
-import { COMPOSE_FROM_WAVE, composeWaves } from "./composer";
+import { composeWaves } from "./composer";
 
 export { COMPOSE_FROM_WAVE } from "./composer";
 

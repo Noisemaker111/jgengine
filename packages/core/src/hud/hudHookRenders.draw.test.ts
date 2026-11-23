@@ -45,21 +45,21 @@ let renders = 0;
 
 /** Stands where `ToastStack` (`packages/core/src/notifications/toastStack.view.tsx`) reads the feed. */
 function ToastRows() {
-  const entries = useFeed({ action: "entity.died", limit: 5 });
+  useFeed({ action: "entity.died", limit: 5 });
   renders += 1;
   return null;
 }
 
 /** Stands where `JournalQuestTracker` (`registry/jgengine/journal-quest-tracker.tsx`) reads the journal. */
 function JournalRows() {
-  const journal = useQuestJournal();
+  useQuestJournal();
   renders += 1;
   return null;
 }
 
 /** Stands where `FriendsList` (`packages/core/src/social/social.view.tsx`) reads friends. */
 function FriendRows() {
-  const friends = useFriends();
+  useFriends();
   renders += 1;
   return null;
 }

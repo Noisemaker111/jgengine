@@ -52,11 +52,6 @@ export async function fetchGames(): Promise<GameListEntry[]> {
   return body.games;
 }
 
-export async function fetchGame(id: string): Promise<GameListEntry> {
-  const body = await jsonFetch<{ game: GameListEntry }>(`/games/${encodeURIComponent(id)}`);
-  return body.game;
-}
-
 export async function saveGameSettings(id: string, patch: GameSettingsPatch): Promise<void> {
   await jsonFetch(`/games/${encodeURIComponent(id)}/settings`, {
     method: "POST",
@@ -129,4 +124,4 @@ export function streamProcess(
   return () => source.close();
 }
 
-export type { GameCredit, GameMount };
+export type {  GameMount };

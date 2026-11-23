@@ -1,14 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { AffixPool, RarityTier } from "@jgengine/core/item/affix";
 import type { LootBaseDef, LootCatalog, LootManufacturerDef } from "@jgengine/core/loot/lootGen";
-import { createInventorySet } from "@jgengine/core/inventory/inventoryModel";
 import { createShopStock } from "@jgengine/core/economy/shopStock";
 import { createEmptyWallet, balance, grant } from "@jgengine/core/economy/wallet";
 import { runGenerator } from "@jgengine/core/generator/generator";
-import { compareToEquipped, itemMass, type ItemDrop } from "@jgengine/core/loot/drop";
 import { defineLootGenerator } from "@jgengine/core/loot/lootGenerator";
-import { createRunHaul } from "@jgengine/core/loot/haul";
-import { createItemLedger, salvageItem, salvageValue } from "../../../../deepward/src/engine-local/loot/salvage";
 import { createVendorRotation, itemPrice, stockVendor, type VendorPriceRule } from "./vendor";
 
 const pools: AffixPool[] = [
@@ -47,28 +43,9 @@ const catalog: LootCatalog = {
 
 const LOOT = defineLootGenerator({ id: "test.items", label: "Test items", catalog });
 
-/** One seeded drop through the loot generator, with the id a stash names it by. */
-function seededDrop(seed: string, options: { level: number; base?: string; rarity?: string }): ItemDrop {
-  const [item] = runGenerator(LOOT, { seed, count: 1, level: options.level, base: options.base ?? "", rarity: options.rarity ?? "" });
-  return { ...item!, id: `drop:${seed}` };
-}
-
 /** `count` seeded items for a vendor shelf. */
 function shelf(seed: string, level: number, count: number) {
   return runGenerator(LOOT, { seed, level, count });
-}
-
-function traits() {
-  return { stackLimit: () => 99 };
-}
-
-function memoryStorage() {
-  const values = new Map<string, string>();
-  return {
-    getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => void values.set(key, value),
-    removeItem: (key: string) => void values.delete(key),
-  };
 }
 
 describe("vendor stock", () => {

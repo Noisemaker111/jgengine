@@ -9,7 +9,7 @@ import {
 import type { PerfReport, ReportLogLine } from "../../packages/core/src/devtools/report";
 
 /** One report as the dev server holds it: which game, the record, and when it arrived. */
-export interface StoredReport {
+interface StoredReport {
   gameId: string;
   at: number;
   report: PerfReport;
@@ -36,7 +36,7 @@ export interface ReportStore {
  * reloads starts an empty log ring, so without this the line explaining the crash
  * would be overwritten about a second later by a clean report.
  */
-export function mergeSevere(
+function mergeSevere(
   previous: readonly ReportLogLine[],
   incoming: readonly ReportLogLine[],
   now: number,

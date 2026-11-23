@@ -46,7 +46,7 @@ export function spectralMoment(spectrum: SeaSpectrum, order: number, steps = 400
 }
 
 /** One regular wave component: `η = a·cos(k(x cos θ + y sin θ) − ωt + φ)`. */
-export interface WaveComponent {
+interface WaveComponent {
   amplitude: number;
   /** Circular frequency, rad/s. */
   frequency: number;

@@ -27,11 +27,8 @@ import {
  */
 export const DEM_SAND: DemMaterial = { id: "quartz-sand", density: 2650, youngsModulus: 5e6, poissonRatio: 0.3, restitution: 0.55, friction: 0.5, rollingFriction: 0.7 };
 
-/** Soda-lime glass beads: restitution 0.97 and friction 0.092 measured by Foerster, Louge, Chang & Allia (1994). */
-export const DEM_GLASS_BEADS: DemMaterial = { id: "glass-beads", density: 2500, youngsModulus: 5e6, poissonRatio: 0.22, restitution: 0.97, friction: 0.092, rollingFriction: 0 };
-
 /** A rigid steel container wall (same simulation stiffness as the grains). */
-export const DEM_STEEL: DemMaterial = { id: "steel", density: 7800, youngsModulus: 5e6, poissonRatio: 0.3, restitution: 0.6, friction: 0.4, rollingFriction: 0.1 };
+const DEM_STEEL: DemMaterial = { id: "steel", density: 7800, youngsModulus: 5e6, poissonRatio: 0.3, restitution: 0.6, friction: 0.4, rollingFriction: 0.1 };
 
 /**
  * Capillary bridges of water on clean silica (surface tension 0.072 N/m, contact angle 0) at gravimetric `moisture`.
@@ -71,7 +68,7 @@ function lattice(dem: DiscreteElements, options: { center: Vec3; radius: number;
  * Run until the mean grain speed falls under `speed` m/s or `limit` seconds pass. Returns the time spent.
  * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
  */
-export function settleGrains(dem: DiscreteElements, speed = 0.005, limit = 1): number {
+function settleGrains(dem: DiscreteElements, speed = 0.005, limit = 1): number {
   let spent = 0;
   while (spent < limit) {
     dem.run(0.02);
@@ -460,7 +457,7 @@ export function janssenLoad(fill: number, fit: JanssenFit): number {
 }
 
 /** Least-squares {@link JanssenFit} for (fill, apparent) pairs. @internal */
-export function fitJanssen(fill: readonly number[], apparent: readonly number[]): JanssenFit {
+function fitJanssen(fill: readonly number[], apparent: readonly number[]): JanssenFit {
   const error = (fit: JanssenFit): number => {
     let sum = 0;
     for (let i = 0; i < fill.length; i += 1) sum += (janssenLoad(fill[i] ?? 0, fit) - (apparent[i] ?? 0)) ** 2;
@@ -574,20 +571,6 @@ export function beverlooHopper(options: HopperOptions): HopperResult {
     halves.push([first / (window / 2), second / (window / 2)]);
   }
   return { orifices: [...options.orifices], rates, halves, bulkDensity, grainDiameter: 2 * r };
-}
-
-/**
- * Fit Beverloo's C and k to measured rates by least squares on W^{2/5} = (C ρ_b √g)^{2/5} (D − k d), which is linear in D.
- * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
- */
-export function fitBeverloo(result: HopperResult, gravity = 9.81): { c: number; k: number } {
-  const d = result.grainDiameter;
-  const xs = result.orifices.map((n) => n * d);
-  const ys = result.rates.map((rate) => Math.max(rate, 0) ** 0.4);
-  const { slope, intercept } = linearFit(xs, ys);
-  const c = slope ** 2.5 / (result.bulkDensity * Math.sqrt(gravity));
-  const k = -intercept / slope / d;
-  return { c, k };
 }
 
 /**

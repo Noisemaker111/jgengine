@@ -12,7 +12,7 @@ import { chromeGraphicsArgs, ensureDevServer, findChromeExecutable } from "../..
 
 const REPO = resolve(import.meta.dir, "../..");
 
-export interface PageLeftovers {
+interface PageLeftovers {
   listeners: string[];
   listenerSources: string[];
   frames: number;
@@ -22,7 +22,7 @@ export interface PageLeftovers {
   contexts: number;
 }
 
-export interface ReopenResult {
+interface ReopenResult {
   game: string;
   baseline: PageLeftovers;
   afterClose: PageLeftovers;
@@ -117,7 +117,7 @@ async function closeGame(page: Page, baseline: PageLeftovers): Promise<void> {
     .catch(() => undefined);
 }
 
-export async function reopenGame(browser: Browser, base: string, game: string): Promise<ReopenResult> {
+async function reopenGame(browser: Browser, base: string, game: string): Promise<ReopenResult> {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -144,7 +144,7 @@ export async function reopenGame(browser: Browser, base: string, game: string): 
 }
 
 /** What a closed game left on the page, compared with the page before it opened; empty when nothing. */
-export function leftBehind(result: ReopenResult): string[] {
+function leftBehind(result: ReopenResult): string[] {
   const { baseline, afterReopen } = result;
   const problems: string[] = [];
   const counts = (list: string[]) => list.reduce((map, key) => map.set(key, (map.get(key) ?? 0) + 1), new Map<string, number>());
@@ -156,7 +156,7 @@ export function leftBehind(result: ReopenResult): string[] {
   return problems;
 }
 
-export function allGames(): string[] {
+function allGames(): string[] {
   const dir = resolve(import.meta.dir, "..");
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(dir, entry.name, "src", "game.config.ts")))
@@ -164,7 +164,7 @@ export function allGames(): string[] {
     .sort();
 }
 
-export async function withRunner<T>(run: (browser: Browser, base: string) => Promise<T>): Promise<T> {
+async function withRunner<T>(run: (browser: Browser, base: string) => Promise<T>): Promise<T> {
   const server = await ensureDevServer(REPO);
   const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: ["--headless=new", ...chromeGraphicsArgs()] });
   try {

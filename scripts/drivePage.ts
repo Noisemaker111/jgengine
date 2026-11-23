@@ -165,7 +165,7 @@ export async function rpc(session: CdpSession, json: string): Promise<void> {
 }
 
 /** Call the page's agent bridge and return its answer; a page with no bridge answers `ok: false`. */
-export async function bridge(session: CdpSession, request: { method: string } & Record<string, unknown>): Promise<BridgeAnswer> {
+async function bridge(session: CdpSession, request: { method: string } & Record<string, unknown>): Promise<BridgeAnswer> {
   const raw = await session.evaluate<string>(
     `(async () => {
       const host = globalThis.__jg?.agent;
@@ -223,7 +223,7 @@ export async function clearOriginStorage(session: CdpSession, origin: string): P
 }
 
 /** A lockstep recording's clock: game time moves only when the run advances it. */
-export interface DriveClock {
+interface DriveClock {
   advance(ms: number): Promise<void>;
   readonly virtualNow: number;
 }

@@ -86,7 +86,7 @@ export const bark = (kind: Bark["kind"], smoothUntilYears: number, furrowDepth: 
 export const spring = (forcingSum: number, senescencePhotoperiodH = 11): SpeciesTraits["phenology"] => ({ forcingBaseC: 5, forcingSum, chillingDays: 60, senescencePhotoperiodH });
 
 const OAK_ARCH = { model: "rauh", phyllotaxis: "spiral", divergence: 144 } as const;
-export const OPPOSITE = { model: "rauh", phyllotaxis: "opposite", divergence: 90 } as const;
+const OPPOSITE = { model: "rauh", phyllotaxis: "opposite", divergence: 90 } as const;
 export const ALTERNATE = { model: "rauh", phyllotaxis: "spiral", divergence: 144 } as const;
 const DISTICHOUS = { model: "troll", phyllotaxis: "alternate", divergence: 180 } as const;
 const WHORLED = { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 } as const;

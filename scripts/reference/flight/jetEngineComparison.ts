@@ -19,7 +19,7 @@ export interface JetComparisonAircraft {
 }
 
 /** One metric: the game jet, the F100 cycle engine and the published or NASA-table figure; `real` is absent where none exists. */
-export interface JetComparisonRow {
+interface JetComparisonRow {
   label: string;
   unit: string;
   game: number;

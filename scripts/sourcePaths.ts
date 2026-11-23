@@ -28,7 +28,7 @@ interface TsconfigJson {
 }
 
 /** Workspace package dirs under packages/ that have a src tree, keyed by package name. */
-export function sourcePackages(root = repoRoot): Map<string, string> {
+function sourcePackages(root = repoRoot): Map<string, string> {
   const out = new Map<string, string>();
   const base = join(root, "packages");
   for (const entry of readdirSync(base, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
@@ -74,7 +74,7 @@ function isJgengineKey(key: string): boolean {
 }
 
 /** Every workspace tsconfig the source map governs (relative to root). */
-export function workspaceTsconfigs(root = repoRoot): string[] {
+function workspaceTsconfigs(root = repoRoot): string[] {
   const out = ["tsconfig.base.json", ...(existsSync(join(root, "tsconfig.json")) ? ["tsconfig.json"] : [])];
   for (const group of ["packages", "apps", "examples", "games", "games/llmville/packages"]) {
     const base = join(root, group);

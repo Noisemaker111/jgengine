@@ -13,7 +13,6 @@ import { INTERACTION_GAUGE } from "@llmville/game/simulation/interaction";
 
 import type { BuildViewModel } from "../../build/buildSession";
 import TweetNotification from "../../economy/components/TweetNotification";
-import { BankruptOverlay } from "../../economy/components/BankruptOverlay";
 import { useTweetFeed } from "../../economy/tweetFeed";
 import type { RackHardwareViewModel } from "../../infrastructure/rackHardwareSession";
 import { WorldChat } from "../../chat/components/WorldChat";
@@ -116,5 +115,3 @@ export function GameOverlay(props: GameOverlayProps) {
     </LlmRoot>
   </>;
 }
-
-export default GameOverlay;

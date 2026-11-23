@@ -1,5 +1,5 @@
 // Water rides: blue surfaces with a lighter rim.
-import { T, P, V, Y, box, cyl, ball, ring, beam, group, mesh, segBox, deckRect, bulbLine, pennant, bunting, railing, signBoard, stairs, strip, tube, ribbon, flat, slab, ellipse, scalePts, pool, spline, frames, pathLengths, onPath, lampPost, shrub, tree } from './core.mjs';
+import { T, P, V, Y, box, cyl, ball, ring, beam, group, mesh, segBox, deckRect, bulbLine, pennant, bunting, railing, signBoard, strip, tube, ribbon, flat, slab, ellipse, scalePts, pool, spline, frames, pathLengths, onPath, lampPost, shrub, tree } from './core.mjs';
 
 // Hull: open lower half-ellipsoid, double sided.
 function hull(g, pos, rx, ry, rz, color, rotY = 0) {
@@ -47,7 +47,7 @@ export function boats() {
 // U-trough along a path; returns frames for placing boats.
 function trough(g, pts, w, o = {}) {
   const F = frames(pts, null, true), n = pts.length, hw = w / 2, wall = o.wall ?? .55;
-  const L0 = [], L1 = [], R0 = [], R1 = [], W = [];
+  const L0 = [], L1 = [], R0 = [], R1 = [];
   for (const f of F) { const s = V(f.t.z, 0, -f.t.x).normalize(); L0.push(f.p.clone().addScaledVector(s, hw).add(V(0, -.08, 0))); L1.push(f.p.clone().addScaledVector(s, hw).add(V(0, wall, 0))); R0.push(f.p.clone().addScaledVector(s, -hw).add(V(0, -.08, 0))); R1.push(f.p.clone().addScaledVector(s, -hw).add(V(0, wall, 0))); }
   strip(g, L0, R0, o.bottom ?? P.wood, { closed: true }); strip(g, L0, L1, o.side ?? P.wood, { closed: true }); strip(g, R0, R1, o.side ?? P.wood, { closed: true });
   tube(g, L1, .06, o.trim ?? P.cream, true, 4); tube(g, R1, .06, o.trim ?? P.cream, true, 4);

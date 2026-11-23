@@ -5,14 +5,14 @@ import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { PLOT } from "../world";
 import { householdBook } from "./agents";
 import {
-  careerById, careerOf, careerSplitBlocker, careerView, coverageOf, postOpen, postRows, promote,
-  rungProgress, rungIn, stationPay, stationCovers, STATION_LABEL, STATION_NAME, YIELD_SHIFT_SECONDS,
+  careerById, careerOf, careerSplitBlocker, careerView, coverageOf, postOpen, promote,
+  stationPay, stationCovers, STATION_LABEL, STATION_NAME, 
   postForLifestyle, RUNG_NAMES,
 } from "./careers";
 import { FURNITURE, FURNITURE_BY_ID, type FurnitureRole } from "./objects/catalog";
 import { noteEvent } from "./session/types";
 import { householdStore } from "./session/store";
-import { shiftLoop, shiftRan } from "./session/shiftSessions";
+import { shiftRan } from "./session/shiftSessions";
 import { creditAmount, PANTRY_CAP, RATION_BUNDLE, RELIEF } from "./sim/economy";
 import { canChangeLifestyle, scheduleLabel, shiftIsOpen } from "./sim/schedule";
 import { stationShortfall } from "./sim/goal";

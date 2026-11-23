@@ -1,7 +1,6 @@
 import { loadSavedProgress } from "./game/saveCompatibility";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
-import { defineStore } from "@jgengine/core/store/defineStore";
 import {
   bestRaceStore,
   continueStore,
@@ -15,7 +14,7 @@ import {
 } from "./game/commands";
 import { enemyById } from "./game/entities/enemies/catalog";
 import { landHit } from "./game/combat/hitModel";
-import { earn, openBooks, recordWalletChange, spend } from "./game/cash";
+import { earn, openBooks, spend } from "./game/cash";
 import { lootTables } from "./game/entities/enemies/loot-tables";
 import { drivingStore, raceStore, streetPlayOf } from "./game/streetPlay";
 import { vehicleById } from "./game/entities/vehicles/catalog";
@@ -30,12 +29,7 @@ import { grantCred, RACE_WIN_CRED } from "./game/progression/cred";
 import { crewHostile, gangOf } from "./game/city/street";
 import { cityEvent, gangAggroRadius, failActiveJob, fearAt, PANIC_FEAR, registerCity, startCareer, tickCity } from "./game/cityRuntime";
 import {
-  CICADA_STAGE_POS,
-  DOCK_FIGHT_CENTER,
-  GARAGE_POS,
   OCEAN_LOOP_ID,
-  KINGPIN_POS,
-  MARCO_POS,
   PLAYER_SPAWN,
   PLAYER_SPAWN_YAW,
   SAFEHOUSE_POS,
@@ -47,7 +41,7 @@ import { tickNightLook } from "./game/world/nightLook";
 import { disposeTraffic, setupTraffic, tickTraffic } from "./game/world/traffic";
 import { disposeResidents, setupResidents, tickResidents } from "./game/world/residents";
 import { disposeStreaming, restartStreaming, setupStreaming, tickStreaming } from "./game/world/streaming";
-import { courierLoop, courierStore, finishCourier, registerCourier, restoreCourier, setupCourierLandmarks, tickCourier } from "./game/jobs/courier";
+import { courierLoop, courierStore, finishCourier, restoreCourier, setupCourierLandmarks, tickCourier } from "./game/jobs/courier";
 import { failGigs, tickGigs } from "./game/jobs/gigs";
 import { sessionStore, startedThisBoot, syncSession } from "./game/session";
 import {
@@ -56,15 +50,13 @@ import {
   patchMission,
   resetMissionState,
 } from "./game/runState";
-import { harborSave, holdSavesUntil, loadHarborSave, saveHarborState } from "./game/save";
-import { createWaveRunner } from "@jgengine/core/waves/waveRunner";
+import { harborSave, holdSavesUntil, loadHarborSave } from "./game/save";
 import { attachWaveFeedback } from "@jgengine/core/audio/eventFeedback";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { registerRadio, tickRadio } from "./game/radio/runtime";
 
 const AGGRO_RADIUS = 18;
 const GANGER_SHOT_RANGE = 14;
-const CICADA_STAGE_ID = "cicada_stage_car";
 const RACE_BANNER_SEC = 6;
 
 const convoyFeedback = perContext((ctx: GameContext) => ({

@@ -29,7 +29,6 @@ import {
   rerunFailing,
   timedOutFiles,
   timedOutNote,
-  splitByCost,
   TESTS_PER_LANE,
   workspaceOf,
   workspaces,

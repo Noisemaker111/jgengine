@@ -1,85 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { ambienceWeights } from "@jgengine/core/audio/ambience";
-import { createAudioEngine } from "@jgengine/core/audio/audioEngine.view";
 
-import { ZONES } from "../world/zones";
 import { ambienceZones, audio, occlusion } from "./catalog";
 
-const forward = { x: 0, y: 0, z: -1 };
-const up = { x: 0, y: 1, z: 0 };
-
-function param(value = 1) {
-  const result = {
-    value,
-    ramps: [] as number[],
-    setValueAtTime: (next: number) => { result.value = next; },
-    setTargetAtTime: (next: number) => { result.value = next; result.ramps.push(next); },
-    linearRampToValueAtTime: (next: number) => { result.value = next; },
-    exponentialRampToValueAtTime: () => undefined,
-  };
-  return result;
-}
-
-function audioContext() {
-  const nodes: any[] = [];
-  const node = (kind: string) => {
-    const result = {
-      kind,
-      connect: (target: any) => target,
-      disconnect: () => undefined,
-      gain: param(1),
-      frequency: param(22050),
-      playbackRate: param(1),
-      start: () => undefined,
-      stop: () => undefined,
-      onended: null,
-      type: "sine",
-      buffer: null,
-      loop: false,
-      positionX: param(), positionY: param(), positionZ: param(),
-      panningModel: "equalpower",
-      distanceModel: "inverse",
-      refDistance: 1,
-      maxDistance: 10000,
-      rolloffFactor: 1,
-      coneInnerAngle: 360,
-      coneOuterAngle: 360,
-      coneOuterGain: 0,
-    } as any;
-    nodes.push(result);
-    return result;
-  };
-  const context: any = {
-    currentTime: 0,
-    sampleRate: 8000,
-    destination: node("destination"),
-    listener: {
-      positionX: param(), positionY: param(), positionZ: param(),
-      forwardX: param(), forwardY: param(), forwardZ: param(),
-      upX: param(), upY: param(), upZ: param(),
-    },
-    createGain: () => node("gain"),
-    createPanner: () => node("panner"),
-    createOscillator: () => node("oscillator"),
-    createBufferSource: () => node("bufferSource"),
-    createBiquadFilter: () => node("filter"),
-    createBuffer: (_channels: number, length: number) => ({ getChannelData: () => new Float32Array(length) }),
-    decodeAudioData: async () => ({ duration: 2 }),
-    resume: async () => undefined,
-    close: async () => undefined,
-  };
-  return { context, nodes };
-}
-
-function install(mock: ReturnType<typeof audioContext>) {
-  class MockAudioContext { constructor() { return mock.context; } }
-  (globalThis as any).window = { AudioContext: MockAudioContext };
-  (globalThis as any).fetch = async () => ({ arrayBuffer: async () => new ArrayBuffer(8) });
-}
-
-async function flush(): Promise<void> {
-  for (let index = 0; index < 4; index += 1) await new Promise((resolve) => setTimeout(resolve, 0));
-}
 
 // Every test file shares one process: deleting `fetch` here broke the next file that fetched.
 const realFetch = globalThis.fetch;

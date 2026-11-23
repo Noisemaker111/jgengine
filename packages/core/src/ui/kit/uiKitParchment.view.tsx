@@ -14,12 +14,9 @@ import {
   type KitToastProps,
   type UiKit,
 } from "./uiKit.view";
+import { cx, kitMeterCaption, kitPromptShell, readoutText } from "./kitParts.view";
 
 const P = "jgk-parchment";
-
-function cx(...names: (string | false | undefined)[]): string {
-  return names.filter(Boolean).join(" ");
-}
 
 /** Tick marks around the ring bezel, in a 48 x 48 box centred on 24, 24. */
 const RING_TICKS = Array.from({ length: 36 }, (_, index) => {
@@ -97,22 +94,11 @@ function Panel({ eyebrow, title, aside, footer, tone, variant = "hud", as: Tag =
   );
 }
 
-function readoutText(value: number, max: number, readout: KitMeterProps["readout"]): ReactNode {
-  if (readout === true) return `${Math.round(value)} / ${Math.round(max)}`;
-  return readout === false || readout === undefined ? null : readout;
-}
-
 function Meter({ value, max = 1, label, readout, tone = "accent", variant = "bar", segments = 10, size = "md", className, style }: KitMeterProps): ReactNode {
   const fraction = meterFraction(value, max);
   const text = readoutText(value, max, readout);
   const lit = meterSegmentsLit(value, max, segments);
-  const caption =
-    label === undefined && text === null ? null : (
-      <span className={`${P}-meter-text`}>
-        {label === undefined ? null : <span className={`${P}-meter-label`}>{label}</span>}
-        {text === null ? null : <span className={`${P}-meter-readout`}>{text}</span>}
-      </span>
-    );
+  const caption = kitMeterCaption(P, label, text);
   if (variant === "ring") {
     const length = 2 * Math.PI * 13;
     return (
@@ -159,18 +145,7 @@ function Prompt({ glyph, label, device, progress, tone = "accent", onActivate, c
       </span>
     </>
   );
-  if (onActivate !== undefined) {
-    return (
-      <button type="button" className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style} onClick={onActivate}>
-        {body}
-      </button>
-    );
-  }
-  return (
-    <div className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style}>
-      {body}
-    </div>
-  );
+  return kitPromptShell(P, { onActivate, className, tone, device, style }, body);
 }
 
 function Toast({ tone, title, icon, count, leaving, className, style, children }: KitToastProps): ReactNode {

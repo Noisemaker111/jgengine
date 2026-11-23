@@ -21,7 +21,7 @@ export interface StandardManeuverOptions {
 }
 
 /** One of the standard tests {@link measureStandardManeuvers} can run. */
-export type StandardManeuver = "circle" | "stepSteer" | "laneChange";
+type StandardManeuver = "circle" | "stepSteer" | "laneChange";
 
 /** Results of the standard handling tests, as the standards define them. `NaN` means the test could not be run. */
 export interface StandardManeuverReport {

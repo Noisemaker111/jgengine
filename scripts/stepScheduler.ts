@@ -17,9 +17,6 @@ export interface ScheduledStep {
   first?: boolean | undefined;
 }
 
-/** Exit code of a timing tool that could not decide on this machine right now (other work kept it busy). */
-export const EXIT_UNJUDGED = 3;
-
 export interface StepResult {
   name: string;
   ok: boolean;

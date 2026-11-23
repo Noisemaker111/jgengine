@@ -14,7 +14,6 @@
     "@jgengine/core": "workspace:*"
   },
   "exports": {
-    "./world/tierMaps": "./src/world/tierMaps/index.ts",
     "./*": "./src/*.ts"
   }
 }

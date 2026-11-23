@@ -54,7 +54,7 @@ export interface Io {
   exists(path: string): boolean;
 }
 
-export const realIo: Io = {
+const realIo: Io = {
   readGlbJson(path) {
     const bytes = readFileSync(path);
     if (bytes.readUInt32LE(0) !== 0x46546c67) throw new Error(`${path}: not a GLB`);
@@ -83,7 +83,7 @@ export function resolveTexture(glb: string, uri: string): { target: string } | {
 }
 
 /** Every tracked GLB a game ships, as game-relative forward-slash paths. */
-export function glbsIn(root: string, game: string): string[] {
+function glbsIn(root: string, game: string): string[] {
   const found: string[] = [];
   for (const sub of ["src", "public"]) {
     const dir = join(root, game, sub);
@@ -162,7 +162,7 @@ export function checkGlbTextures(root: string, games: string[], io: Io = realIo)
   return { problems, glbs, textures, lines };
 }
 
-export function runCli(argv: string[], root: string, log: (line: string) => void): number {
+function runCli(argv: string[], root: string, log: (line: string) => void): number {
   const at = argv.indexOf("--root");
   const target = at >= 0 ? (argv[at + 1] ?? root) : root;
   const result = checkGlbTextures(target, gameDirs(target), realIo);

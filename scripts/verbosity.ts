@@ -5,7 +5,7 @@
  * `JG_VERBOSE=1`, so every script and library under it, child processes included, reads one switch.
  */
 
-export const VERBOSE_FLAG = "--verbose";
+const VERBOSE_FLAG = "--verbose";
 export const VERBOSE_ENV = "JG_VERBOSE";
 
 /** Whether this run prints its detail lines. */

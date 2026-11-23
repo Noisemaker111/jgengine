@@ -21,7 +21,7 @@ import type { ApngFrame } from "./apng";
  * yuv420p requires.
  */
 /** PNG or JPEG, by magic bytes — lockstep recording captures JPEG frames. */
-export function sniffImageExt(bytes: Buffer | Uint8Array): "png" | "jpg" {
+function sniffImageExt(bytes: Buffer | Uint8Array): "png" | "jpg" {
   return bytes[0] === 0xff && bytes[1] === 0xd8 ? "jpg" : "png";
 }
 

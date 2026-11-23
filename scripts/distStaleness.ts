@@ -22,7 +22,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
-export type StaleKind = "missing-dist" | "missing-emit" | "stale-emit";
+type StaleKind = "missing-dist" | "missing-emit" | "stale-emit";
 
 export interface DistStaleness {
   kind: StaleKind;

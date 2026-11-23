@@ -208,7 +208,7 @@ export function lockVerdict(worktree: string, parentLock: string | null): "match
 }
 
 /** An install older than its lockfile predates a dependency change. */
-export function installStale(worktree: string): boolean {
+function installStale(worktree: string): boolean {
   try {
     const lock = statSync(join(worktree, "bun.lock")).mtimeMs;
     const modules = statSync(join(worktree, "node_modules")).mtimeMs;
@@ -313,7 +313,7 @@ function git(cwd: string, args: string[], timeoutMs = 120_000): { ok: boolean; o
   }
 }
 
-export function buildReport(input: {
+function buildReport(input: {
   repo: string;
   mainRoot: string;
   ref: WorktreeRef;
@@ -437,7 +437,7 @@ function installOnce(worktree: string): number {
 }
 
 /** Free gigabytes on the volume holding `path`, or null when the runtime cannot say. */
-export function freeGigabytes(path: string): number | null {
+function freeGigabytes(path: string): number | null {
   try {
     const stats = statfsSync(path);
     return (Number(stats.bavail) * Number(stats.bsize)) / 1e9;

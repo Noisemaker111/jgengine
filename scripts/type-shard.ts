@@ -39,7 +39,7 @@ export const CONCURRENCY = 2;
  * overlapping it with one generator stretched that generator from 9.7 s to 43.7 s while the
  * fan-out went from 21 s to 31.5 s - so these run alone, after the shared lanes are done.
  */
-export const EXCLUSIVE = new Set(["types"]);
+const EXCLUSIVE = new Set(["types"]);
 
 /**
  * Stages the `quick` job already proves on the same commit, so this job does not pay them a

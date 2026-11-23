@@ -36,7 +36,7 @@ export const relayStore = defineStore<RelayState>("scrap.deadAir", () => ({ phas
  * boundary settles that signal. The loop owns which wave is live, how many have closed and what the
  * wave carries; the relay store republishes all three for the HUD and the save.
  */
-const relaySessions = perContext((ctx: GameContext) => {
+const relaySessions = perContext(() => {
   const loop: SessionLoop<never, void, { signal: number }> = createSessionLoop<never, void, { signal: number }>({
     kind: "wave",
     settle: ({ carried }) => ({ signal: carried }),

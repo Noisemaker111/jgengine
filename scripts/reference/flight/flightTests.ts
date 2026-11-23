@@ -4,7 +4,7 @@ import { trimReferenceAircraft } from "./aircraftTrim";
 import { createReferenceAircraft, type ReferenceAircraftModel, type ReferenceAircraftOptions, type ReferenceActuator } from "./referenceAircraft";
 
 /** Stick, throttle and brakes, the `RigidAircraftInput` shape. */
-export interface FlightTestControls {
+interface FlightTestControls {
   throttle: number;
   pitch: number;
   roll: number;
@@ -13,7 +13,7 @@ export interface FlightTestControls {
 }
 
 /** What a flight test reads each tick, in the same units and signs for every subject. */
-export interface FlightTestSample {
+interface FlightTestSample {
   time: number;
   /** Height above the start, m. */
   altitude: number;
@@ -93,7 +93,6 @@ const G = 9.80665;
 const TURN_ENTRY = 8;
 const TURN_WINDOW = 6;
 const MAX_TURN_BANK = (85 * Math.PI) / 180;
-const KNOT = 0.514444;
 
 function clamp(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(high, value));
@@ -451,4 +450,3 @@ export function runFlightTests(subject: FlightTestSubject, options: FlightTestOp
 }
 
 /** Knots in one m/s. */
-export const KNOTS_PER_MPS = 1 / KNOT;

@@ -144,7 +144,7 @@ export const GRASS_GAMES = ["harbor-heat", "fernwild", "beacon-bastion", "bright
 /** Side of one reference patch, metres: deep enough that a standing view reaches its horizon over grass. */
 export const GRASS_REFERENCE_PATCH = 360;
 /** Spacing between reference patches along x, metres. */
-export const GRASS_REFERENCE_SPACING = 420;
+const GRASS_REFERENCE_SPACING = 420;
 
 /** Centre of reference patch `index`. */
 export function grassReferenceCentre(index: number): [number, number] {

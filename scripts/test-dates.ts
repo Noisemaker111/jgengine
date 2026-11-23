@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 
 /** Three days far apart: a leap day, a year-end in another year, and a mid-year date across a DST change. */
-export const DEFAULT_DATES = ["2028-02-29T23:30:00Z", "2031-12-31T12:00:00Z", "2026-07-04T03:00:00Z"] as const;
+const DEFAULT_DATES = ["2028-02-29T23:30:00Z", "2031-12-31T12:00:00Z", "2026-07-04T03:00:00Z"] as const;
 
 /** The failing tests a `bun test` run printed, one name per `(fail)` line. */
 export function failedTests(output: string): Set<string> {

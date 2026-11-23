@@ -14,12 +14,9 @@ import {
   type KitToastProps,
   type UiKit,
 } from "./uiKit.view";
+import { cx, readoutText } from "./kitParts.view";
 
 const P = "jgk-broadcast";
-
-function cx(...names: (string | false | undefined)[]): string {
-  return names.filter(Boolean).join(" ");
-}
 
 /**
  * Skew discipline: the outer slab carries the skew, text inside it is counter-skewed with `${P}-up`,
@@ -82,11 +79,6 @@ function Panel({ eyebrow, title, aside, footer, tone, variant = "hud", as: Tag =
       ) : null}
     </Tag>
   );
-}
-
-function readoutText(value: number, max: number, readout: KitMeterProps["readout"]): ReactNode {
-  if (readout === true) return `${Math.round(value)} / ${Math.round(max)}`;
-  return readout === false || readout === undefined ? null : readout;
 }
 
 function Meter({ value, max = 1, label, readout, tone = "accent", variant = "bar", segments = 10, size = "md", className, style }: KitMeterProps): ReactNode {

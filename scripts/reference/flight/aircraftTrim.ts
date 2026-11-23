@@ -48,7 +48,7 @@ export function referenceStateFromWindAxes(flight: WindAxisState, surfaces: Refe
  * Wind-axis flight variables of a reference state, still air.
  * @capability wind-axis-state read airspeed, alpha, beta and Euler angles from a reference aircraft state
  */
-export function windAxesOf(state: ReferenceAircraftState): WindAxisState {
+function windAxesOf(state: ReferenceAircraftState): WindAxisState {
   const [u, v, w] = state.velocity;
   const airspeed = Math.hypot(u, v, w);
   const euler = referenceEuler(state.attitude);
@@ -227,7 +227,7 @@ export function trimReferenceAircraft(aircraft: ReferenceAircraft, condition: Tr
 }
 
 /** One dynamic mode read from eigenvalues. */
-export interface FlightMode {
+interface FlightMode {
   name: "short period" | "phugoid" | "dutch roll" | "roll subsidence" | "spiral";
   eigenvalue: Eigenvalue;
   /** Natural frequency, rad/s. */

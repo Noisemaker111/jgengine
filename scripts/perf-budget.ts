@@ -70,7 +70,7 @@ export interface BudgetViolation {
   message: string;
 }
 
-export const fmtCount = (value: number): string => value.toLocaleString("en-US");
+const fmtCount = (value: number): string => value.toLocaleString("en-US");
 
 const FIELDS = new Set(["programsLinked", "drawsFrame", "bundleKb", "bundleBaseline", "baseline"]);
 

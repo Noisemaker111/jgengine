@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { checkLiveRelease, unservedLockstep } from "./check-release-artifacts";
 import { decideCiRuns, parseCiRuns } from "./check-release-ci";
 
-export interface ProcResult {
+interface ProcResult {
   status: number;
   stdout: string;
   stderr: string;
@@ -36,22 +36,22 @@ export interface PublishJob {
   htmlUrl: string;
 }
 
-export interface JobStep {
+interface JobStep {
   name: string;
   conclusion: string | null;
 }
 
-export const PUBLISH_WORKFLOW = "publish.yml";
+const PUBLISH_WORKFLOW = "publish.yml";
 /** The workflow whose verdict on the release commit gates the tag. */
-export const CI_WORKFLOW = "ci.yml";
+const CI_WORKFLOW = "ci.yml";
 /** A publish run is build + pack/install/compile + 13 publishes + verify: ~11 min measured. */
-export const PUBLISH_TIMEOUT_MS = 45 * 60_000;
+const PUBLISH_TIMEOUT_MS = 45 * 60_000;
 /** Beta's CI on one commit: ~8 min measured, longer when runners queue. */
-export const CI_TIMEOUT_MS = 60 * 60_000;
+const CI_TIMEOUT_MS = 60 * 60_000;
 /** Long enough not to hammer the API, short enough that a lane never wonders if it is alive. */
-export const POLL_INTERVAL_MS = 10_000;
+const POLL_INTERVAL_MS = 10_000;
 /** How long a run may take to appear after the push that starts it. */
-export const START_GRACE_MS = 3 * 60_000;
+const START_GRACE_MS = 3 * 60_000;
 
 /** The run for `sha`: the newest by id, so a re-run replaces the attempt it retried. */
 export function pickRun(runs: readonly PublishRun[], sha: string): PublishRun | null {
@@ -135,7 +135,7 @@ export const VERIFY_STEP = "Verify every published package installs";
  * publish with 202 and processes it afterwards: 0.49.0's core appeared 7m12s after its upload, 24 s
  * after the run's own 5-minute check gave up, and that false failure led to a second release.
  */
-export const REGISTRY_TIMEOUT_MS = 20 * 60_000;
+const REGISTRY_TIMEOUT_MS = 20 * 60_000;
 
 /** What the registry serves for a version. */
 export interface RegistryCheck {
@@ -145,7 +145,7 @@ export interface RegistryCheck {
   defects(version: string): Promise<string[]>;
 }
 
-export const liveRegistryCheck: RegistryCheck = {
+const liveRegistryCheck: RegistryCheck = {
   unserved: (version) => unservedLockstep(version),
   defects: async (version) => (await checkLiveRelease(version)).flatMap((verdict) => verdict.failures),
 };

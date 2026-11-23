@@ -9,7 +9,7 @@
 //   bun scripts/bends.ts [--base origin/beta]     print the section for this branch
 import { spawnSync } from "node:child_process";
 
-export type BendKind = "assertion removed" | "test skipped" | "check disabled";
+type BendKind = "assertion removed" | "test skipped" | "check disabled";
 
 export interface Bend {
   kind: BendKind;
@@ -32,7 +32,7 @@ interface FileDiff {
 }
 
 /** Split a unified diff into per-file removed and added lines. */
-export function parseDiff(diff: string): FileDiff[] {
+function parseDiff(diff: string): FileDiff[] {
   const files: FileDiff[] = [];
   let current: FileDiff | null = null;
   for (const line of diff.split("\n")) {
@@ -120,7 +120,7 @@ export function findBends(diff: string): Bend[] {
   return bends;
 }
 
-export const BENDS_HEADING = "## Bends";
+const BENDS_HEADING = "## Bends";
 
 /** The PR body section: one bullet per bend, or "" when the diff shows none. */
 export function bendsSection(bends: readonly Bend[], limit = 25): string {
@@ -148,7 +148,7 @@ export function withBends(body: string, section: string): string {
 }
 
 /** The diff `land` reads: everything this branch changed against `base`. */
-export function branchDiff(root: string, base: string): string {
+function branchDiff(root: string, base: string): string {
   const run = spawnSync("git", ["diff", "--no-color", "-M", "-U0", `${base}...HEAD`], {
     cwd: root,
     encoding: "utf8",

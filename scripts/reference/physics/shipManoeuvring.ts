@@ -3,7 +3,7 @@ import { schoenherrFriction } from "./shipResistance";
 const DEG = Math.PI / 180;
 
 /** Hull force derivatives of the MMG standard method, non-dimensionalised by ½ρ·L·d·U² (forces) and ½ρ·L²·d·U² (moment). */
-export interface MmgHullDerivatives {
+interface MmgHullDerivatives {
   Xvv: number;
   Xvr: number;
   Xrr: number;
@@ -23,7 +23,7 @@ export interface MmgHullDerivatives {
 }
 
 /** Propeller of an MMG ship: open-water thrust `KT = k0 + k1·J + k2·J²` and its wake and thrust deduction. */
-export interface MmgPropeller {
+interface MmgPropeller {
   diameter: number;
   /** `[k0, k1, k2]`. */
   thrust: readonly [number, number, number];
@@ -38,7 +38,7 @@ export interface MmgPropeller {
 }
 
 /** Rudder of an MMG ship and its interaction with hull and propeller. */
-export interface MmgRudder {
+interface MmgRudder {
   /** Movable area, m². */
   area: number;
   /** Span, m. */

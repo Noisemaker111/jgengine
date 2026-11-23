@@ -1,6 +1,6 @@
 import type { ContributionsWire } from "./wire";
 
-export type { ContributionsWire } from "./wire";
+;
 
 const USERNAME_PATTERN = /^[A-Za-z0-9-]{1,39}$/;
 
@@ -13,7 +13,7 @@ const RESPONSE_HEADERS = {
 };
 
 /** Thrown by resolveContributions when the user does not exist (→ 404). */
-export class GitHubUserNotFoundError extends Error {}
+class GitHubUserNotFoundError extends Error {}
 
 interface GraphQLDay {
   date: string;
@@ -126,7 +126,7 @@ async function fetchViaScrape(user: string): Promise<ContributionsWire> {
 }
 
 /** Server-side: fetch a user's contribution calendar via GraphQL (with token) or HTML scrape. */
-export function resolveContributions(user: string, options: { token?: string | undefined } = {}): Promise<ContributionsWire> {
+function resolveContributions(user: string, options: { token?: string | undefined } = {}): Promise<ContributionsWire> {
   return options.token ? fetchViaGraphQL(user, options.token) : fetchViaScrape(user);
 }
 

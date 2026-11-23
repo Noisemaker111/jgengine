@@ -27,7 +27,7 @@ const USAGE = {
 };
 
 /** The games the runner can load: a `games/<id>` with a `src/index.tsx`. */
-export function runnerGames(gamesDir: string): string[] {
+function runnerGames(gamesDir: string): string[] {
   return readdirSync(gamesDir, { withFileTypes: true })
     .filter((entry) => (entry.isDirectory() || entry.isSymbolicLink()) && existsSync(join(gamesDir, entry.name, "src", "index.tsx")))
     .map((entry) => entry.name)
@@ -65,13 +65,13 @@ export function missingGameAssets(game: string, text: string, playDir: string, c
 }
 
 /** Bytes of JS and CSS and how many files they span. */
-export interface BundlePart {
+interface BundlePart {
   bytes: number;
   files: number;
 }
 
 /** What one game downloads past the runner shell: all of it, and the part beyond the shared engine. */
-export interface GameBundle {
+interface GameBundle {
   total: BundlePart;
   own: BundlePart;
 }
@@ -133,7 +133,7 @@ export function runnerBundles(playDir: string): RunnerBundles {
 const kib = (bytes: number): number => Math.round((bytes / 1024) * 10) / 10;
 
 /** The shared engine's budget, in KiB: `engineKb` in the runner's `apps/dev/bundle-budget.json`. */
-export function loadEngineBudgetKb(root: string): number | undefined {
+function loadEngineBudgetKb(root: string): number | undefined {
   const file = join(root, "apps", "dev", "bundle-budget.json");
   if (!existsSync(file)) return undefined;
   const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
@@ -170,7 +170,7 @@ export function bundleBudgetReport(
 }
 
 /** Every game's missing assets, keyed by game; an empty map passes. */
-export async function checkSiteAssets(playDir: string, gamesDir: string): Promise<Map<string, string[]>> {
+async function checkSiteAssets(playDir: string, gamesDir: string): Promise<Map<string, string[]>> {
   const catalogs = await loadCatalogs();
   const failures = new Map<string, string[]>();
   for (const game of runnerGames(gamesDir)) {

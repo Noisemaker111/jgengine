@@ -98,7 +98,7 @@ export async function isUp(url: string): Promise<boolean> {
  * hang until it times out. The marker's recorded host is tried first; the report route
  * is probed before `/` because it answers in milliseconds while an SSR page compiles.
  */
-export async function reachableBase(port: number, preferredHost?: string): Promise<string | null> {
+async function reachableBase(port: number, preferredHost?: string): Promise<string | null> {
   const hosts = [...(preferredHost === undefined ? [] : [preferredHost]), "127.0.0.1", "localhost"];
   for (const host of new Set(hosts)) {
     const base = `http://${host}:${port}`;
@@ -281,15 +281,6 @@ async function servesWebsite(base: string): Promise<boolean> {
   return localOk(`${base}/games`, 1_000);
 }
 
-/**
- * The dev server already serving this checkout, or null — website dev first, then the
- * runner. Kept for callers that only need one.
- */
-export async function findRunningDevServer(cwd = process.cwd(), dir = tmpdir()): Promise<RunningDevServer | null> {
-  const servers = await listRunningDevServers(cwd, dir);
-  return servers[0] ?? null;
-}
-
 type SocketLike = { once(event: "close", listener: () => void): void };
 
 type ViteServerLike = {
@@ -308,7 +299,7 @@ type ViteServerLike = {
 type IdentityResponse = { statusCode: number; setHeader(name: string, value: string): void; end(body: string): void };
 
 /** Minutes a dev server may sit with no open connection before it exits. */
-export const DEFAULT_IDLE_EXIT_MINUTES = 20;
+const DEFAULT_IDLE_EXIT_MINUTES = 20;
 
 /** `JG_DEV_IDLE_MINUTES`, else 20; `0` keeps the server up forever. */
 export function resolveIdleExitMs(env: NodeJS.ProcessEnv = process.env): number {

@@ -283,7 +283,6 @@ function runSoak(seed = 2038): {
         .sort((a, b) => Math.hypot(a.position[0] - position[0], a.position[2] - position[2]) - Math.hypot(b.position[0] - position[0], b.position[2] - position[2]))[0];
       if (target !== undefined) {
         const distance = Math.hypot(target.position[0] - position[0], target.position[2] - position[2]);
-        const lineOfFire = !blocked(position, target.position);
         // Raiders hold a shooting distance on the nearest warden. They never walk onto a warden:
         // staying at range is what makes cover mean anything.
         const bearing = Math.atan2(position[0] - target.position[0], position[2] - target.position[2]);

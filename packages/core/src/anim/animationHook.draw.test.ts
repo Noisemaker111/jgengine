@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
-import { chromium, type Browser } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { type Browser } from "playwright-core";
+import { buildBrowserFixture } from "../../../../scripts/browser-lib";
 import { sharedChromium } from "../../../../scripts/sharedChromium";
 
 setDefaultTimeout(30_000);

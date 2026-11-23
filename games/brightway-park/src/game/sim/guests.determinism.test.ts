@@ -1,10 +1,9 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { game } from "../../game.config";
 import { content } from "../content";
-import { clearAgents } from "../agents";
-import { resetSession, sessionOf } from "../session";
+import { sessionOf } from "../session";
 import { seedGuests } from "./guests";
 
 const USER = "user_a";

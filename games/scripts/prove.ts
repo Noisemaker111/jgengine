@@ -31,7 +31,7 @@ import { parseGraphicsTier } from "../../packages/jgengine/src/templates/capture
 
 import { repoCommit, repoRoot, root as gamesRoot } from "./repo";
 
-export interface SizeSpec {
+interface SizeSpec {
   width: number;
   height: number;
   label: string;
@@ -45,11 +45,11 @@ export interface DiffNumbers {
   pixels: number;
 }
 
-export type StateDiff =
+type StateDiff =
   | ({ taken: true; baseline: string; baselineKey: string; aboveNoise: number } & DiffNumbers)
   | { taken: false; reason: string };
 
-export interface Artefact {
+interface Artefact {
   view: string;
   size: string;
   tier: string;
@@ -67,7 +67,7 @@ export interface Artefact {
   seconds: number;
 }
 
-export interface FlowProof {
+interface FlowProof {
   name: string;
   state: string | null;
   size: string;
@@ -123,7 +123,7 @@ export interface ProveArgs {
   keepGoing: boolean;
 }
 
-export function parseSizes(value: string): SizeSpec[] {
+function parseSizes(value: string): SizeSpec[] {
   const sizes = value.split(",").map((entry) => entry.trim()).filter((entry) => entry !== "");
   if (sizes.length === 0) throw new Error("--sizes needs at least one WxH, such as 1600x900");
   return sizes.map((entry) => {
@@ -189,7 +189,7 @@ export function parseProveArgs(argv: string[]): ProveArgs {
   };
 }
 
-export class HelpRequested extends Error {}
+class HelpRequested extends Error {}
 
 function git(cwd: string, args: string[]): { ok: boolean; out: string } {
   const result = spawnSync("git", args, { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
@@ -232,7 +232,7 @@ export function gameTreeHash(repo: string, game: string): { hash: string; head: 
 }
 
 /** The capture tools' own bytes, so a change to shoot/drive cannot reuse an older proof. */
-export function toolsHash(engine: string): string {
+function toolsHash(engine: string): string {
   const hash = createHash("sha256");
   for (const name of ["scripts/shoot-dev.ts", "scripts/drive-dev.ts", "packages/assets/src/imageCodec.ts", "scripts/servedGame.ts"]) {
     const path = join(engine, name);
@@ -306,7 +306,7 @@ function round(value: number, digits: number): number {
   return Math.round(value * factor) / factor;
 }
 
-export function formatPercent(share: number, digits = 2): string {
+function formatPercent(share: number, digits = 2): string {
   return `${(share * 100).toFixed(digits)}%`;
 }
 
@@ -349,16 +349,16 @@ function spawnCapture(command: string[], cwd: string, timeoutMs: number): { stat
   };
 }
 
-export interface CacheLookup {
+interface CacheLookup {
   hit: boolean;
   dir: string;
 }
 
-export function cacheDirFor(bundleRoot: string, key: string): string {
+function cacheDirFor(bundleRoot: string, key: string): string {
   return join(bundleRoot, "cache", key);
 }
 
-export function cacheLookup(bundleRoot: string, key: string): CacheLookup {
+function cacheLookup(bundleRoot: string, key: string): CacheLookup {
   const dir = cacheDirFor(bundleRoot, key);
   const hit = ["after.png", "control.png", "numbers.json"].every((name) => existsSync(join(dir, name)));
   return { hit, dir };

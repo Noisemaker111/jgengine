@@ -3,7 +3,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import {
-  EXIT_COULD_NOT_MERGE,
   EXIT_LANDED,
   EXIT_VERIFY_FAILED,
   LOCK_STALE_MS,
@@ -14,7 +13,6 @@ import {
   ensurePr,
   forcePushArgs,
   formatTiming,
-  handOffLines,
   landBody,
   landBranch,
   landLocked,

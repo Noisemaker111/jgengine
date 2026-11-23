@@ -280,7 +280,7 @@ export function compareBikeTuning(tuning: VehicleDynamicsTuning, bike: RealMotor
  * How close the reference motorcycle must land to each published number: braking within 5%, 0-100 and 0-200 km/h
  * within 12% (the torque curve between the engine's published peaks and its inertia are estimates).
  */
-export const MOTORCYCLE_PUBLISHED_TOLERANCES = { zeroTo100: 0.12, zeroTo200: 0.12, brake100: 0.05 } as const;
+const MOTORCYCLE_PUBLISHED_TOLERANCES = { zeroTo100: 0.12, zeroTo200: 0.12, brake100: 0.05 } as const;
 
 /** One published number checked against the reference motorcycle. */
 export interface MotorcyclePublishedCheck {

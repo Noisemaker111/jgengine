@@ -1,5 +1,5 @@
 // Thrill rides.
-import { T, P, V, Y, box, cyl, ball, ring, beam, group, mesh, segBox, deckRound, deckRect, bulbs, bulbLine, pennant, bunting, railing, ringRail, signBoard, stripedCone, stairs, tube, ribbon, flat, spline, lampPost, shrub, wheel, humanoid } from './core.mjs';
+import { T, P, V, box, cyl, ball, ring, beam, group, mesh, segBox, deckRound, deckRect, bulbs, bulbLine, pennant, railing, ringRail, signBoard, stripedCone, stairs, ribbon, spline, lampPost, shrub, wheel } from './core.mjs';
 
 function bumperCar(g, x, z, rot, color) {
   const c = group(g, [x, .32, z], rot);
@@ -179,7 +179,6 @@ export function gokarts() {
     }
   }
   // start/finish chequers and gantry
-  const p0 = V(0, .1, 3.8);
   for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) box(g, [.3, .02, .36], (i + j) % 2 ? P.white : P.ink, [-.6 + j * .3, .155, 2.85 + i * .38]);
   for (const z of [2.45, 5.15]) beam(g, [0, 0, z], [0, 3.2, z], .1, P.teal);
   box(g, [.3, .7, 2.9], P.ink, [0, 3.2, 3.8]); for (let i = 0; i < 6; i++) box(g, [.32, .3, .45], i % 2 ? P.white : P.ink, [0, 3.2 + (i % 2 ? .18 : -.18), 2.7 + i * .45]);

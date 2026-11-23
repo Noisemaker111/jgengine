@@ -24,7 +24,7 @@
  * message. Deliberately narrow: a genuine config error (unknown state, missing
  * command) never matches, so it surfaces immediately instead of paying a retry.
  */
-export const STALE_FAILURE_MARKERS: readonly string[] = [
+const STALE_FAILURE_MARKERS: readonly string[] = [
   // assertNoMenuOnScreen(): shell mounted but play never took over the menu.
   "start menu still on screen",
   // waitCaptureReady() deadline: the fresh frame never arrived (rebuild in flight).

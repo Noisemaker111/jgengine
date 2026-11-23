@@ -11,7 +11,7 @@ export interface CookbookEntry {
 }
 
 /** Splits the generated cookbook (`## name`, a sentence, one ts block) into recipes. */
-export function parseCookbook(markdown: string): CookbookEntry[] {
+function parseCookbook(markdown: string): CookbookEntry[] {
   return markdown
     .split(/^## /m)
     .slice(1)

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { ENCOUNTER } from "./manifest";
-import { bossLine, nextWaveIndex, tierLabel, waveCompositionLine, wavePreviewLine, waveStatusLine } from "./status";
+import { bossLine, nextWaveIndex, wavePreviewLine, waveStatusLine } from "./status";
 
 describe("waveStatusLine", () => {
   test("before the first release the widget says the wave is ready", () => {

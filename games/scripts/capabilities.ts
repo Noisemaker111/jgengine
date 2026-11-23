@@ -14,9 +14,9 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 export const LEDGER_FILE = "capabilities.json";
-export const DECLARATION_FILE = "jgengine.json";
+const DECLARATION_FILE = "jgengine.json";
 
-export interface CapabilityProbe {
+interface CapabilityProbe {
   kind: "devtools" | "window";
   /** The `window.__jg` field to read for a `window` probe, such as `audio`. */
   global?: string;
@@ -46,7 +46,7 @@ export interface Declaration {
   probes?: Record<string, string[]>;
 }
 
-export interface ModuleInfo {
+interface ModuleInfo {
   specifier: string;
   packageName: string;
   slugs: string[];
@@ -86,7 +86,7 @@ function engineSourceFiles(dir: string): string[] {
 let installedCache: { root: string; installed: Installed } | null = null;
 
 /** The engine packages beside the games: `<repo>/packages`. */
-export function enginePackagesRoot(root: string): string {
+function enginePackagesRoot(root: string): string {
   return join(root, "..", "packages");
 }
 
@@ -218,7 +218,7 @@ export function readDeclaration(root: string, game: string): Declaration | null 
 }
 
 /** Source files a declaration is seeded from. */
-export function sourceFiles(root: string, game: string): string[] {
+function sourceFiles(root: string, game: string): string[] {
   const out: string[] = [];
   const walk = (dir: string): void => {
     if (!existsSync(dir)) return;
@@ -235,7 +235,7 @@ export function sourceFiles(root: string, game: string): string[] {
   return out;
 }
 
-export interface ImportEvidence {
+interface ImportEvidence {
   specifiers: Set<string>;
   names: Set<string>;
   /** `devtoolsName` values keyed by the module whose API call owns them. */
@@ -243,12 +243,12 @@ export interface ImportEvidence {
 }
 
 /** Module specifier -> API names, cached for one checkout. */
-export function moduleIndex(root: string): Map<string, ModuleInfo> {
+function moduleIndex(root: string): Map<string, ModuleInfo> {
   return new Map(readInstalled(root).modules.map((module) => [module.specifier, module]));
 }
 
 /** Read imports and `devtoolsName` probes from one game's source. */
-export function collectEvidence(root: string, game: string, ledger: Ledger): ImportEvidence {
+function collectEvidence(root: string, game: string, ledger: Ledger): ImportEvidence {
   const modules = moduleIndex(root);
   const evidence: ImportEvidence = { specifiers: new Set(), names: new Set(), probeNames: new Map() };
   for (const entry of ledger.capabilities) {
@@ -306,7 +306,7 @@ export function collectEvidence(root: string, game: string, ledger: Ledger): Imp
 }
 
 /** API names of the module that owns a capability, for barrel imports. */
-export function moduleApiNames(root: string, entry: CapabilityEntry): string[] {
+function moduleApiNames(root: string, entry: CapabilityEntry): string[] {
   return [...(moduleIndex(root).get(entry.module)?.api ?? [])];
 }
 
@@ -315,7 +315,7 @@ export function moduleApiNames(root: string, entry: CapabilityEntry): string[] {
  * names through a barrel) is adoption whether or not that capability ships a probe: a probe proves a
  * claim, it is not a condition for making one (#2267).
  */
-export function adoptedFromEvidence(
+function adoptedFromEvidence(
   ledger: Ledger,
   evidence: ImportEvidence,
   apiNames: (entry: CapabilityEntry) => string[],
@@ -399,9 +399,9 @@ export function probeMatches(pattern: string, keys: string[]): boolean {
  * counters fail the claim rather than passing it as "imported".
  */
 /** Frames the game draws after the player starts play (its `capture.play`, or mount when it has none) before a readout it has not published counts as absent. */
-export const PROBE_SETTLE_FRAMES = 300;
+const PROBE_SETTLE_FRAMES = 300;
 /** The most a boot may take to mount at all, however busy the machine; past it the game never mounted. */
-export const PROBE_MOUNT_MS = 300_000;
+const PROBE_MOUNT_MS = 300_000;
 
 /**
  * Whether the boot probe stops waiting for a page's readouts. The wait counts frames drawn since the

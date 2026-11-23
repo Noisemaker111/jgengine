@@ -14,7 +14,7 @@ function bankRifle() {
 }
 
 /** A real game context on a storage stub, booted from whatever bytes the stub holds. */
-function world2(storage: { getItem(key: string): string | null; setItem(key: string, value: string): void; removeItem(key: string): void }) {
+function world2(_storage: { getItem(key: string): string | null; setItem(key: string, value: string): void; removeItem(key: string): void }) {
   const ctx = createGameContext({ definition: defineGameDefinition({ name: "Prepared departure", world, physics, input: keybinds, persist: false, lifecycle: "always-live" }), player: { userId: "diver", isNew: true }, content: {} });
   initialize(ctx); seatPlayer(ctx);
   return ctx;

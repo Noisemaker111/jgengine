@@ -21,9 +21,9 @@ import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** The file at the top of an unpacked copy of beta's landing code. */
-export const LANDING_MARKER = ".jg-landing-code";
+const LANDING_MARKER = ".jg-landing-code";
 /** The folder in the git common dir that holds one unpacked copy per beta commit. */
-export const LANDING_CACHE = "jg-landing";
+const LANDING_CACHE = "jg-landing";
 /**
  * An unpacked copy no run has started from for this long is removed. A run loads every module it
  * imports when it starts, so a long queue wait does not need its copy kept.
@@ -36,7 +36,7 @@ function codeDir(metaUrl: string): string {
 }
 
 /** Whether the module at `metaUrl` runs from an unpacked copy of beta's landing code. */
-export function isLandingCopy(metaUrl: string): boolean {
+function isLandingCopy(metaUrl: string): boolean {
   return existsSync(join(codeDir(metaUrl), LANDING_MARKER));
 }
 
@@ -63,7 +63,7 @@ export function landingScript(metaUrl: string, name: string): string {
   return isLandingCopy(metaUrl) ? join(codeDir(metaUrl), "scripts", name).replace(/\\/g, "/") : `scripts/${name}`;
 }
 
-export interface GitRun {
+interface GitRun {
   status: number;
   stdout: string;
   stderr: string;
@@ -71,7 +71,7 @@ export interface GitRun {
 export type LandingGit = (args: string[], env?: Record<string, string>) => GitRun;
 
 /** Beta's landing code unpacked, or why it could not be. `note` says what was unusual but not fatal. */
-export type BetaLanding = { dir: string; sha: string; note?: string } | { problem: string };
+type BetaLanding = { dir: string; sha: string; note?: string } | { problem: string };
 
 /**
  * Fetch beta and unpack the files at the top of its `scripts/` (every landing module lives there) into
@@ -79,7 +79,7 @@ export type BetaLanding = { dir: string; sha: string; note?: string } | { proble
  * A failed fetch falls back to the last fetched `origin/beta` with a note: that is still beta's code,
  * and a landing that cannot reach GitHub fails at its push anyway.
  */
-export function unpackBetaLanding(checkout: string, git: LandingGit, now = Date.now()): BetaLanding {
+function unpackBetaLanding(checkout: string, git: LandingGit, now = Date.now()): BetaLanding {
   const fetched = git(["fetch", "--no-tags", "--quiet", "origin", "beta"]);
   const note = fetched.status === 0 ? undefined : `could not fetch beta (${(fetched.stderr || fetched.stdout).trim()}); using the last fetched origin/beta`;
   const tip = git(["rev-parse", "--verify", "--quiet", "origin/beta:scripts"]);
@@ -164,10 +164,10 @@ function prune(cache: string, keep: string, now: number): void {
 }
 
 /** What a verify:fast receipt records and how lane:close finds the one that covers a tree (`ReuseKey`). */
-export const RECEIPT_MODULE = "scripts/verify-receipt.ts";
+const RECEIPT_MODULE = "scripts/verify-receipt.ts";
 
 /** The modules that decide how a lane lands; a lane that changes one lands with its own copy. */
-export const LANDING_MODULES = ["scripts/lane-close.ts", "scripts/land.ts", "scripts/landing-code.ts", "scripts/github.ts", RECEIPT_MODULE] as const;
+const LANDING_MODULES = ["scripts/lane-close.ts", "scripts/land.ts", "scripts/landing-code.ts", "scripts/github.ts", RECEIPT_MODULE] as const;
 
 /**
  * Why the lane at `laneRoot` cannot merge through the landing code at `metaUrl` yet, or null. Only beta's

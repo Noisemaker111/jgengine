@@ -30,12 +30,12 @@ export interface CmaEsState {
 }
 
 /** xorshift32 in [0, 1); `state` reads or sets the word the next draw uses. */
-export interface Random {
+interface Random {
   (): number;
   state: number;
 }
 
-export function createRandom(seed: number): Random {
+function createRandom(seed: number): Random {
   const random = (() => {
     let s = random.state;
     s ^= s << 13;

@@ -66,7 +66,7 @@ export function forgetBrokerUnavailable(): void {
  * is off or cannot be had; callers then launch their own server as before.
  */
 /** The broker's pid from its state file while that process runs, else null. */
-export function runningBrokerPid(port: number, alive: (pid: number) => boolean = pidAlive): number | null {
+function runningBrokerPid(port: number, alive: (pid: number) => boolean = pidAlive): number | null {
   try {
     const state = JSON.parse(readFileSync(brokerStatePath(port), "utf8")) as { pid?: number };
     return typeof state.pid === "number" && alive(state.pid) ? state.pid : null;
@@ -156,7 +156,7 @@ function rememberLease(leaseId: string, what: string, brokerPid: number | null):
   process.once("beforeExit", () => void releaseAll());
 }
 
-export async function releaseLease(leaseId: string): Promise<void> {
+async function releaseLease(leaseId: string): Promise<void> {
   leases.delete(leaseId);
   if (leases.size === 0) stopWatchingBroker();
   await localPostJson(`${brokerBase()}/v1/release`, { leaseId }, 3_000).catch(() => null);
@@ -206,7 +206,7 @@ export function watchBroker(
 }
 
 /** Stop watching the broker (every lease released, or it died). */
-export function stopWatchingBroker(): void {
+function stopWatchingBroker(): void {
   if (watching === null) return;
   clearInterval(watching.timer);
   watching = null;
@@ -218,7 +218,7 @@ export function forgetLeases(): void {
   stopWatchingBroker();
 }
 
-export async function releaseAll(): Promise<void> {
+async function releaseAll(): Promise<void> {
   await Promise.all([...leases.keys()].map((leaseId) => releaseLease(leaseId)));
 }
 

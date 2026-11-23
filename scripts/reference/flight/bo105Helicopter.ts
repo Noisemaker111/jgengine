@@ -24,7 +24,7 @@ export const BO105_MAIN_ROTOR: RotorDesign = {
 };
 
 /** Bo-105 tail rotor: two blades, 0.95 m radius, 0.179 m chord, 233 rad/s, untwisted (Padfield's Bo-105 data). */
-export const BO105_TAIL_ROTOR: RotorDesign = {
+const BO105_TAIL_ROTOR: RotorDesign = {
   radius: 0.95,
   blades: 2,
   chord: 0.179,

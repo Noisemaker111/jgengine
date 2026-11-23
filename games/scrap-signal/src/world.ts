@@ -13,7 +13,7 @@ import {
   type TerrainMaterialRegion,
   type WorldFeature,
 } from "@jgengine/core/world/features";
-import { CLIFF_MAPS, GROUND_MAPS } from "./game/assets";
+import { GROUND_MAPS } from "./game/assets";
 import { FERRALON } from "./game/palette";
 import { SETTLEMENT_KITS } from "./game/world/buildingKit";
 import { ROUTES, SPUR_ROUTES, SIDE_POIS, poiFlattenMasks, roadPathProfiles } from "./game/world/level";

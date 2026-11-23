@@ -222,7 +222,7 @@ export function affectedGames(paths: readonly string[], games: readonly string[]
   return games.filter((game) => hit.has(game));
 }
 
-export type AbCall = "slower" | "faster" | "same" | "unclear";
+type AbCall = "slower" | "faster" | "same" | "unclear";
 
 export interface AbVerdict {
   call: AbCall;

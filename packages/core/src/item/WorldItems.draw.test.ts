@@ -42,7 +42,7 @@ let renders = 0;
 
 /** Stands where `WorldItems` reads the list: one row per record. */
 function MarkerList() {
-  const items = useWorldItems();
+  useWorldItems();
   renders += 1;
   return null;
 }

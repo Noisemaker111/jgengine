@@ -20,7 +20,7 @@ import { siteGames } from "./siteGames";
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const webRoot = join(repoRoot, "apps", "web");
 
-export const LOAD_USAGE = {
+const LOAD_USAGE = {
   summary: "cold-cache load times per game on a production build of the site (local only, real GPU)",
   usage: "bun run shoot --load <game|all> [--runs n] [--no-build] [--headed] [--trace] [--compare <json>]",
   flags: [
@@ -123,7 +123,7 @@ export interface LoadSample {
 }
 
 /** Runs in every frame before any page script; only the /play frame records. */
-export const PAGE_PROBE = `(() => {
+const PAGE_PROBE = `(() => {
   if (!location.pathname.startsWith("/play")) return;
   const epoch = () => performance.timeOrigin + performance.now();
   const s = (window.__jgLoad = { tasks: [], fcpAt: null, menuAt: null, menuBox: null, menuLabel: null, menuStall: 0, sceneReadyAt: null, sceneColors: null, sceneSampled: false, revealAt: null, revealFrames: [], revealDone: false, revealCovered: false, effectsAfterReveal: null, pressAt: null, respondedAt: null, playableAt: null });
@@ -316,9 +316,9 @@ export function renderTable(rows: readonly LoadSample[], before: readonly LoadSa
 }
 
 /** The measured load numbers the site quotes, per game, on the GPU they were taken on. */
-export const RECORD_FILE = join(repoRoot, "scripts", "load-baseline.json");
+const RECORD_FILE = join(repoRoot, "scripts", "load-baseline.json");
 
-export interface LoadRecord {
+interface LoadRecord {
   gpu: string;
   games: Record<string, { worstClick: number | null; sceneReady: number | null }>;
 }
@@ -351,7 +351,7 @@ function buildSite(): void {
  * `<path>/index.html` and the `_headers` cache rules. Every game page is prerendered, so no worker
  * code runs on the path this check measures.
  */
-export function serveSite(clientDir = join(webRoot, "dist", "client"), entry = "index.html"): { base: string; stop: () => void } {
+function serveSite(clientDir = join(webRoot, "dist", "client"), entry = "index.html"): { base: string; stop: () => void } {
   if (!existsSync(join(clientDir, entry))) throw new Error(`load: no production build at ${join(clientDir, entry)}; drop --no-build`);
   const resolve = (pathname: string): string | null => {
     const clean = decodeURIComponent(pathname).replace(/\.\.+/g, "");

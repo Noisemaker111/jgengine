@@ -28,7 +28,7 @@ const SPECIFIERS: Record<string, string> = {
  * the engine inside a React host app.
  */
 const REACT_HOSTS = ["examples/next-host/", "examples/tanstack-host/"];
-const SKIP = ["node_modules/", "native/", "packages/core/src/ui/jsx/", "packages/core/src/meta/changelog.ts", "scripts/port-react-ui.ts", "scripts/port-react-ui.test.ts", "scripts/check-react-free.test.ts", "scripts/creator-app-fixture.ts", "games/llmville/packages/backend/"];
+const SKIP = ["node_modules/", "native/", "packages/core/src/ui/jsx/", "packages/core/src/meta/changelog.ts", "scripts/port-react-ui.ts", "scripts/port-react-ui.test.ts", "scripts/creator-app-fixture.ts", "games/llmville/packages/backend/"];
 
 interface FileResult {
   path: string;
@@ -219,14 +219,14 @@ export function portSource(path: string, text: string): { text: string; notes: s
 }
 
 /** `"jsx": "react-jsx"` gains the engine runtime as its import source. */
-export function portTsconfig(text: string): string {
+function portTsconfig(text: string): string {
   if (!/"jsx"\s*:/.test(text)) return text;
   if (/"jsxImportSource"\s*:/.test(text)) return text.replace(/"jsxImportSource"\s*:\s*"[^"]*"/, `"jsxImportSource": "${RUNTIME}"`);
   return text.replace(/^(\s*)"jsx"\s*:\s*"[^"]*"(,?)\s*$/m, (_line, indent: string, comma: string) => `${indent}"jsx": "react-jsx",\n${indent}"jsxImportSource": "${RUNTIME}"${comma}`);
 }
 
 /** A Vite config stops loading the React plugin; JSX compiles from the tsconfig's import source. */
-export function portViteConfig(text: string): string {
+function portViteConfig(text: string): string {
   if (!text.includes("@vitejs/plugin-react")) return text;
   return text
     .replace(/^import\s+\w+\s+from\s+["']@vitejs\/plugin-react["'];?\r?\n/m, "")

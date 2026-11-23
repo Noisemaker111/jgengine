@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 
 /** Everything `bun run build` reads: the packages, the registry source, and the build's own scripts and config. */
-export const BUILD_INPUTS = [
+const BUILD_INPUTS = [
   "packages",
   "registry",
   "package.json",

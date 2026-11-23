@@ -1334,6 +1334,7 @@
     "./ui/kit/kitFlow.view",
     "./ui/kit/kitFrame.view",
     "./ui/kit/kitFramesPreview.view",
+    "./ui/kit/kitParts.view",
     "./ui/kit/uiKit.view",
     "./ui/kit/uiKitArcade.view",
     "./ui/kit/uiKitBroadcast.view",

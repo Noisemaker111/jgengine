@@ -13,7 +13,7 @@ import {
 } from "./cityKind";
 import { generatorVariants, getGenerator, runGenerator } from "../generator/generator";
 import { parseParams } from "../generator/paramSchema";
-import { distanceToRing, pointInPolygon, polygonArea, polygonsOverlap, ringSelfIntersects } from "../world/polygon";
+import { distanceToRing, pointInPolygon, polygonsOverlap, ringSelfIntersects } from "../world/polygon";
 import { seededRng } from "../random/rng";
 import { getSceneKind, type SceneKindObject } from "../scene/sceneKinds";
 

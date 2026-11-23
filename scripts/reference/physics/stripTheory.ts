@@ -33,7 +33,7 @@ export interface HeavePitchResponse {
 }
 
 /** Heave–pitch hydrodynamic coefficients about G: `[33, 35, 53, 55]` for added mass, damping and restoring, and the rigid-body mass. */
-export interface HeavePitchCoefficients {
+interface HeavePitchCoefficients {
   mass: number;
   pitchInertia: number;
   addedMass: readonly [number, number, number, number];

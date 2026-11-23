@@ -18,7 +18,7 @@ import { basename, dirname, join, parse, resolve } from "node:path";
 import { BUSY_PC_PERCENT, cpuBusyPercent, readinessTimeoutLine, retrySettleMs, shouldRetryCapture, type CpuSample } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
 import { brokerServer } from "./devBrokerClient";
-import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
+import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
 import { currentStep, describeHang, markStep, pausableDeadline, pausedTotal } from "./hangReport";
 import { localGet } from "./localhostHttp";
 import { currentPriority, lowerToBelowNormal, type PriorityLabel, priorityLabel, restoreNormalPriority } from "./machine-priority";
@@ -32,19 +32,7 @@ import { takeRenderSlot } from "./renderSlots";
 
 export { checkoutIdentity, devServerIdentity, isUp };
 
-/**
- * Default port when no worktree key is needed — kept for docs/bench that still
- * want a predictable single-session port. Prefer {@link resolveDevPort}.
- */
-export const DEV_PORT = 4517;
 /** @deprecated Prefer {@link resolveDevBase} — fixed URL collides across worktrees. */
-export const DEV_BASE = `http://127.0.0.1:${DEV_PORT}`;
-
-/**
- * Default warm Chrome debug port. Prefer {@link resolveWarmChromePort} so
- * parallel worktrees do not share one CDP endpoint.
- */
-export const WARM_CHROME_PORT = 9223;
 
 export type Device = "desktop" | "mobile" | "mobile-landscape";
 export type DeviceProfile = { width: number; height: number; deviceScaleFactor: number; mobile: boolean };
@@ -56,7 +44,7 @@ export const DEVICES: Record<Device, DeviceProfile> = {
   "mobile-landscape": { width: 844, height: 390, deviceScaleFactor: 2, mobile: true },
 };
 
-export const MOBILE_UA =
+const MOBILE_UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
 
 /**
@@ -211,7 +199,7 @@ export function softwareGlBackend(
  * Where a `--headed` capture window sits: far outside every monitor, so a real window can never
  * cover Jon's desktop. A headed run is a deliberate act for debugging, not a way to watch a shot.
  */
-export const HEADED_WINDOW_POSITION = "-32000,-32000";
+const HEADED_WINDOW_POSITION = "-32000,-32000";
 
 /**
  * Chrome flags for a rasterizer choice: llvmpipe runs headful on the Xvfb display, the rest headless.
@@ -254,7 +242,7 @@ function xvfbExecutable(): string | null {
  * Start (or reuse) the shared capture X display and return its name, or null when it cannot run.
  * One display serves every capture on the machine; it costs a few MB idle, so it is left running.
  */
-export function ensureXvfbDisplay(): string | null {
+function ensureXvfbDisplay(): string | null {
   const xvfb = xvfbExecutable();
   if (xvfb === null) return null;
   const display = Number(process.env["JG_XVFB_DISPLAY"] ?? 93);
@@ -314,10 +302,6 @@ export function resolveDevPort(cwd = process.cwd()): number {
 }
 
 
-export function resolveDevBase(cwd = process.cwd()): string {
-  return `http://127.0.0.1:${resolveDevPort(cwd)}`;
-}
-
 /** Per-checkout website port used by managed `shoot --site` captures. */
 export function resolveWebPort(cwd = process.cwd()): number {
   const override = process.env["JG_WEB_PORT"];
@@ -327,10 +311,6 @@ export function resolveWebPort(cwd = process.cwd()): number {
   }
   // Stay clear of Chrome's blocked-port list (notably 5060/5061 SIP and 6000 X11).
   return 5517 + hashPortOffset(checkoutIdentity(cwd), 400);
-}
-
-export function resolveWebBase(cwd = process.cwd()): string {
-  return `http://127.0.0.1:${resolveWebPort(cwd)}`;
 }
 
 /**
@@ -350,7 +330,7 @@ export function resolveWarmChromePort(cwd = process.cwd()): number {
  * True when the server on `port` itself reports `identity`. The marker only says where to look:
  * a stale marker over another checkout's Vite on a reused port used to read as ours.
  */
-export async function isOurDevServer(port: number, identity: string): Promise<boolean> {
+async function isOurDevServer(port: number, identity: string): Promise<boolean> {
   const marker = readMarker(port);
   if (marker === null) return false;
   return (await checkMarkedServer(marker, identity)).status === "ours";
@@ -363,7 +343,7 @@ export async function isOurDevServer(port: number, identity: string): Promise<bo
  * Killing it here means the caller's normal boot path starts a clean one. Only a
  * server that reports this checkout's identity is killed, by the pid it reports.
  */
-export async function retireDriftedDevServer(port: number, cwd = process.cwd()): Promise<boolean> {
+async function retireDriftedDevServer(port: number, cwd = process.cwd()): Promise<boolean> {
   const marker = readMarker(port);
   if (marker === null) return false;
   const checked = await checkMarkedServer(marker, marker.identity);
@@ -641,7 +621,7 @@ export function killProcessTree(child: ChildProcess | null): void {
 }
 
 /** Default wait for a launched browser to answer on its debugger endpoint. */
-export const DEFAULT_CHROME_READY_MS = 30_000;
+const DEFAULT_CHROME_READY_MS = 30_000;
 
 /**
  * How long one launch attempt waits for the debugger endpoint: `JG_CHROME_READY_MS`,
@@ -987,9 +967,9 @@ export const PROFILE_OWNER_FILE = "jg-owner-pid";
  */
 export const PROFILE_RUN_FILE = "jg-owner-run";
 /** Age past which a visible browser with no recorded run counts as leaked. */
-export const STRAY_BROWSER_MS = 20 * 60 * 1000;
+const STRAY_BROWSER_MS = 20 * 60 * 1000;
 /** Free space a capture needs on the temp drive before it starts; one Chrome profile is ~150 MB. */
-export const MIN_CAPTURE_FREE_BYTES = 2 * 1024 * 1024 * 1024;
+const MIN_CAPTURE_FREE_BYTES = 2 * 1024 * 1024 * 1024;
 
 export type ChromeProcess = ChildProcess & { userDataDir: string };
 
@@ -1042,13 +1022,13 @@ function ownProfileDir(dir: string): string {
 }
 
 /** Record the browser that owns a profile, so an exit kills it before deleting its files. */
-export function trackProfileBrowser(dir: string, pid: number | undefined): void {
+function trackProfileBrowser(dir: string, pid: number | undefined): void {
   const owned = ownedProfiles.get(dir);
   if (owned !== undefined) owned.pid = pid;
 }
 
 /** Hand a profile to a longer-lived owner (a warm daemon): this process must not delete it. */
-export function detachProfileDir(dir: string): void {
+function detachProfileDir(dir: string): void {
   ownedProfiles.delete(dir);
 }
 
@@ -1112,7 +1092,7 @@ function readRunPid(dir: string): number | undefined {
 }
 
 /** One running process as the stray-browser sweep sees it. */
-export interface BrowserProcess {
+interface BrowserProcess {
   pid: number;
   parentPid?: number;
   /** Epoch ms the process started, when the platform reports it. */
@@ -1121,7 +1101,7 @@ export interface BrowserProcess {
 }
 
 /** The `--user-data-dir` a command line carries, as written. */
-export function profileDirFromCommandLine(commandLine: string): string | undefined {
+function profileDirFromCommandLine(commandLine: string): string | undefined {
   const match = /--user-data-dir=(?:"([^"]+)"|(\S+))/.exec(commandLine);
   return match?.[1] ?? match?.[2];
 }
@@ -1133,7 +1113,7 @@ function samePath(a: string, b: string): boolean {
 }
 
 /** The `jg-*` profile directory a process owns under `root`, if any. */
-export function profileDirUnderRoot(commandLine: string, root: string): string | undefined {
+function profileDirUnderRoot(commandLine: string, root: string): string | undefined {
   const dir = profileDirFromCommandLine(commandLine);
   if (dir === undefined) return undefined;
   const normalized = dir.replace(/[\\/]+$/, "");
@@ -1154,7 +1134,7 @@ const WINDOWS_PROCESS_QUERY = [
  * Every process that carries a `--user-data-dir`, which is what a browser command line does. Cheap
  * enough (about 200 ms) to run at a capture's start, and name-agnostic so Edge and Chromium count.
  */
-export function listBrowserProcesses(): BrowserProcess[] {
+function listBrowserProcesses(): BrowserProcess[] {
   const parseRows = (text: string): BrowserProcess[] => {
     const trimmed = text.trim();
     if (trimmed.length === 0) return [];
@@ -1243,7 +1223,7 @@ function profileMtimeMs(dir: string): number | undefined {
 }
 
 /** Profile directories some warm shoot daemon's state file still records. */
-export function daemonProfiles(root = tmpdir()): Set<string> {
+function daemonProfiles(root = tmpdir()): Set<string> {
   const profiles = new Set<string>();
   let names: string[] = [];
   try {
@@ -1412,7 +1392,7 @@ function formatBytes(bytes: number): string {
 }
 
 /** Free bytes on the drive holding `root`, or null where the platform cannot report it. */
-export function freeBytesAt(root: string = tmpdir()): number | null {
+function freeBytesAt(root: string = tmpdir()): number | null {
   try {
     const stats = statfsSync(root);
     return stats.bsize * stats.bavail;
@@ -1577,7 +1557,7 @@ const launchedPriorities = new Map<number, PriorityLabel>();
  * without running its exit handlers (`taskkill /F`, a stopped job): `scripts/chrome-watchdog.ts`.
  * Tests that fake the launch never reach here.
  */
-export function startChromeWatchdog(chromePid: number, userDataDir: string, launcherPid = process.pid): number | undefined {
+function startChromeWatchdog(chromePid: number, userDataDir: string, launcherPid = process.pid): number | undefined {
   try {
     const watchdog = spawn(process.execPath, [join(import.meta.dir, "chrome-watchdog.ts"), String(launcherPid), String(chromePid), userDataDir], {
       stdio: "ignore",
@@ -1826,7 +1806,7 @@ export function isRetryableLaunchFailure(step: BrowserLaunchStep, message: strin
   return isTransientPageFailure(message);
 }
 
-export type CaptureVia = "screencast" | "screenshot";
+type CaptureVia = "screencast" | "screenshot";
 export interface ViewportPng {
   bytes: Buffer;
   /** Which CDP path produced the pixels — recorded in the shot's timing line. */
@@ -1834,7 +1814,7 @@ export interface ViewportPng {
 }
 
 /** Screencast wait before falling back; below the ~20s a software-GL captureScreenshot costs. */
-export const SCREENCAST_CAPTURE_TIMEOUT_MS = 15_000;
+const SCREENCAST_CAPTURE_TIMEOUT_MS = 15_000;
 
 /**
  * Whether the screencast pump reproduces this profile's pixels exactly. It emits CSS-pixel
@@ -2007,30 +1987,6 @@ export async function captureViewportPng(
   return { bytes: Buffer.from(data, "base64"), via: "screenshot" };
 }
 
-/**
- * Poll `data-jg-capture` until the page reports an honest frame (`ready`) or
- * surfaces an error, shared by shoot and drive. Throws with the page-reported
- * detail on error, or on timeout.
- */
-export async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
-  const wait = readinessWait(timeoutMs);
-  let last: { status: string | null; error: string | null; href: string | null; stage: string | null } | undefined;
-  for (;;) {
-    last = (await session.evaluate<{ status: string | null; error: string | null; href: string | null; stage: string | null }>(`({
-      status: document.documentElement.dataset.jgCapture ?? null,
-      error: document.documentElement.dataset.jgCaptureError ?? null,
-      href: location.href,
-      stage: document.documentElement.dataset.jgCaptureStage ?? null
-    })`)) ?? undefined;
-    const status = last?.status;
-    if (status === "ready") return;
-    if (status === "error") throw new Error(`capture error: ${last?.error ?? "unknown"}`);
-    if (typeof last?.href === "string" && last.href.startsWith("chrome-error://")) throw new Error(wait.failure(last.status, last.href, ""));
-    if (!wait.goOn(last?.status ?? null)) throw new Error(wait.failure(last?.status ?? null, last?.href ?? null, "", last?.stage));
-    await new Promise((r) => setTimeout(r, 100));
-  }
-}
-
 function cpuSample(): CpuSample {
   let idle = 0;
   let total = 0;
@@ -2135,7 +2091,7 @@ export function watchPageExceptions(session: CdpSession): { exceptions: string[]
   return { exceptions, stop: off };
 }
 
-export interface CaptureRegions {
+interface CaptureRegions {
   /** The WebGL canvas in device pixels — the 3D viewport, not the whole frame. */
   region?: { x: number; y: number; width: number; height: number };
   /** HUD rectangles drawn over it, in the same space. */
@@ -2535,13 +2491,6 @@ export function parseSizeArg(value: string | undefined): SizeMode {
   }
   return value;
 }
-
-/**
- * `draft` is the iteration profile: half-size viewport and the low graphics tier (`?quality=low`,
- * pinned for the page only, never persisted). The tier itself is `--quality <low|medium|high|ultra>`
- * and is independent of the viewport, so a perf or capture run can pin a real tier.
- */
-export type CaptureQuality = GraphicsTier;
 
 /** Add the shell's graphics-tier pin to a capture URL; no tier leaves the URL untouched. */
 export function applyCaptureQuality(url: URL, tier: GraphicsTier | undefined): URL {

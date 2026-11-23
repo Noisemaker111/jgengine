@@ -3,7 +3,7 @@ import { createPhaseClock } from "@jgengine/core/ai/phaseLadder";
 import { expandWave } from "@jgengine/core/waves/encounter";
 import type { FighterState } from "@jgengine/core/ai/director/roles";
 
-import { assignFrontDuties, frontPressure, stageFrontBoss, stepForeman } from "./front";
+import { assignFrontDuties, frontPressure, stepForeman } from "./front";
 import { createShotHunt } from "./noise";
 import { roleFor } from "./roles";
 import {

@@ -69,7 +69,7 @@ export function checkoutProblem(root: string): CheckoutProblem | null {
   return null;
 }
 
-export function checkoutFixText(script: string, root: string, problem: CheckoutProblem): string {
+function checkoutFixText(script: string, root: string, problem: CheckoutProblem): string {
   return [
     `${script}: this checkout cannot run that yet - ${problem.detail}.`,
     `Fix: ${problem.fix}`,

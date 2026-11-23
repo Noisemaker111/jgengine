@@ -18,7 +18,7 @@ export function savitskyLiftCoefficient(trimDeg: number, meanWettedLengthRatio: 
  * The mean wetted length–beam ratio `λ` at which the surface carries `liftCoefficient` (bisection on Savitsky's lift).
  * @capability planing-hull Savitsky wetted length for a lift coefficient
  */
-export function savitskyWettedLength(trimDeg: number, liftCoefficient: number, speedCoefficient: number, deadriseDeg: number): number {
+function savitskyWettedLength(trimDeg: number, liftCoefficient: number, speedCoefficient: number, deadriseDeg: number): number {
   let low = 1e-4;
   let high = 1;
   while (savitskyLiftCoefficient(trimDeg, high, speedCoefficient, deadriseDeg) < liftCoefficient && high < 1e3) high *= 2;

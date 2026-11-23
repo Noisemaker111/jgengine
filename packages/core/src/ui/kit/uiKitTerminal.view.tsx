@@ -5,16 +5,15 @@ import {
   kitCueSound,
   meterFraction,
   meterSegmentsLit,
-  type KitButtonProps,
   type KitMenuProps,
   type KitMeterProps,
   type KitMinimapFrameProps,
-  type KitPanelProps,
   type KitPromptProps,
   type KitToastProps,
   type KitTone,
   type UiKit,
 } from "./uiKit.view";
+import { cx, kitButton, kitPanel, kitPromptShell } from "./kitParts.view";
 
 const P = "jgk-terminal";
 
@@ -27,10 +26,6 @@ const RING_R = 17;
 
 const TOAST_TAG: Record<KitTone, string> = { good: "[ OK ]", warn: "[WARN]", bad: "[ERR!]", neutral: "[INFO]", accent: "[INFO]" };
 
-function cx(...names: (string | false | undefined)[]): string {
-  return names.filter(Boolean).join(" ");
-}
-
 /** Zero-padded `value/max` readout, like `072/100`. */
 function readoutFor(value: number, max: number): string {
   const width = String(Math.round(max)).length;
@@ -38,41 +33,9 @@ function readoutFor(value: number, max: number): string {
   return `${shown}/${String(Math.round(max)).padStart(width, "0")}`;
 }
 
-function Button({ variant = "secondary", size = "md", tone, icon, glyph, pressed, type = "button", className, children, ...rest }: KitButtonProps): ReactNode {
-  return (
-    <button
-      {...rest}
-      type={type}
-      aria-pressed={pressed}
-      className={cx(`${P}-btn`, className)}
-      data-variant={variant}
-      data-size={size}
-      data-tone={tone}
-      data-pressed={pressed === true ? "" : undefined}
-    >
-      {icon === undefined ? null : <span className={`${P}-btn-icon`}>{icon}</span>}
-      <span className={`${P}-btn-label`}>{children}</span>
-      {glyph === undefined ? null : <span className={`${P}-glyph`}>{glyph}</span>}
-    </button>
-  );
-}
+const Button = kitButton(P);
 
-function Panel({ eyebrow, title, aside, footer, tone, variant = "hud", as: Tag = "section", leaving, className, children, ...rest }: KitPanelProps): ReactNode {
-  const head = title !== undefined || eyebrow !== undefined || aside !== undefined;
-  return (
-    <Tag {...rest} className={cx(`${P}-panel`, className)} data-variant={variant} data-tone={tone} data-state={leaving === true ? "closed" : "open"}>
-      {head ? (
-        <header className={`${P}-panel-head`}>
-          {eyebrow === undefined ? null : <span className={`${P}-eyebrow`}>{eyebrow}</span>}
-          {title === undefined ? null : <span className={`${P}-title`}>{title}</span>}
-          {aside === undefined ? null : <span className={`${P}-aside`}>{aside}</span>}
-        </header>
-      ) : null}
-      {children === undefined ? null : <div className={`${P}-panel-body`}>{children}</div>}
-      {footer === undefined ? null : <footer className={`${P}-panel-foot`}>{footer}</footer>}
-    </Tag>
-  );
-}
+const Panel = kitPanel(P);
 
 function Meter({ value, max = 1, label, readout, tone = "accent", variant = "bar", segments = 10, size = "md", className, style }: KitMeterProps): ReactNode {
   const fraction = meterFraction(value, max);
@@ -154,18 +117,7 @@ function Prompt({ glyph, label, device, progress, tone = "accent", onActivate, c
       )}
     </>
   );
-  if (onActivate !== undefined) {
-    return (
-      <button type="button" className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style} onClick={onActivate}>
-        {body}
-      </button>
-    );
-  }
-  return (
-    <div className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style}>
-      {body}
-    </div>
-  );
+  return kitPromptShell(P, { onActivate, className, tone, device, style }, body);
 }
 
 function Toast({ tone, title, icon, count, leaving, className, style, children }: KitToastProps): ReactNode {

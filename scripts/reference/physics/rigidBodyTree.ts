@@ -2,7 +2,7 @@ import type { Vec3 } from "@jgengine/core/world/geometry";
 import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra";
 
 /** How a body moves relative to its parent. */
-export type RigidJoint =
+type RigidJoint =
   /** Six degrees of freedom; only the root (body 0) may use it. */
   | { kind: "free" }
   /** Rotation about `axis` (unit, parent axes) through the body's origin. */
@@ -83,7 +83,7 @@ export interface RigidBodyTree {
 }
 
 /** A {@link RigidBodyTree}'s state: coordinates from the last update and the forces applied since the last clear. */
-export interface RigidBodyTreeState {
+interface RigidBodyTreeState {
   /** Position coordinates, length `positions`. */
   readonly q: readonly number[];
   /** Velocity coordinates, length `dofs`. */

@@ -17,7 +17,7 @@ function readmes(): string[] {
 }
 
 /** The TypeScript fences of a Markdown file, with the line each starts on. */
-export function codeSamples(markdown: string): { line: number; lang: "ts" | "tsx"; code: string }[] {
+function codeSamples(markdown: string): { line: number; lang: "ts" | "tsx"; code: string }[] {
   const samples: { line: number; lang: "ts" | "tsx"; code: string }[] = [];
   const lines = markdown.split(/\r?\n/);
   for (let index = 0; index < lines.length; index += 1) {

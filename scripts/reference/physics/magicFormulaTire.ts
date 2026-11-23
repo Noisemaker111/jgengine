@@ -655,7 +655,7 @@ export interface MagicFormulaTireStep extends MagicFormulaOutput {
 }
 
 /** Serializable transient state of a {@link MagicFormulaTire}: contact deflections and the last slip velocities. */
-export interface MagicFormulaTireState {
+interface MagicFormulaTireState {
   /** Longitudinal and lateral contact deflection, m, and the lagged spin slip φ′, 1/m. */
   u: number;
   v: number;

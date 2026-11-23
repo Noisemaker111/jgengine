@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { Box3, Matrix4, Mesh, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-import { WORLD_MODEL_CATALOG } from "../llmville/src/scene/worldModelCatalog.ts";
+import { WORLD_MODEL_CATALOG } from "../packages/game/src/world/worldModelCatalog.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");

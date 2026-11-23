@@ -1,13 +1,13 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 
 import { content } from "./content";
 import { agentOf } from "./agents";
-import { resetSession, sessionOf } from "./session";
+import { sessionOf } from "./session";
 import { tickRidePark, tickGuests, seedGuests } from "./sim/guests";
-import { fixRide, joinRide, resetRides, rideBoard, rideDefinition, coasterCircuit, rideSystem, rideView, serviceRide, syncRidePark } from "./rides";
+import { fixRide, joinRide, rideBoard, rideDefinition, coasterCircuit, rideSystem, rideView, serviceRide, syncRidePark } from "./rides";
 import { cellFor, freshWorld, park, parkObject, placeFree } from "./park";
 
 function context() {

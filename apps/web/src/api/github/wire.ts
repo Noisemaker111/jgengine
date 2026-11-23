@@ -1,5 +1,5 @@
 /** The normalized JSON the proxy handler returns and the client consumes. */
-export interface GitHubProfile {
+interface GitHubProfile {
   login: string;
   name: string | null;
   avatarUrl: string | null;

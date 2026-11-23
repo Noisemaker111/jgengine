@@ -1,6 +1,6 @@
 export type Theme = "light" | "dark";
 
-export const THEME_STORAGE_KEY = "jg-theme";
+const THEME_STORAGE_KEY = "jg-theme";
 
 /**
  * Runs inline in <head> before first paint: applies the stored choice, else the

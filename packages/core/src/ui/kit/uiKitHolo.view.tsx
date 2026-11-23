@@ -14,12 +14,9 @@ import {
   type KitToastProps,
   type UiKit,
 } from "./uiKit.view";
+import { cx, kitMeterAttributes, kitMeterCaption, kitPromptShell, readoutText } from "./kitParts.view";
 
 const P = "jgk-holo";
-
-function cx(...names: (string | false | undefined)[]): string {
-  return names.filter(Boolean).join(" ");
-}
 
 /** A data tag from a label, like `0x3F`: the same label always gets the same tag. */
 function hexTag(text: string): string {
@@ -31,11 +28,6 @@ function hexTag(text: string): string {
 /** A menu row index as hex: the first row is `0x01`. */
 function hexIndex(n: number): string {
   return `0x${n.toString(16).toUpperCase().padStart(2, "0")}`;
-}
-
-function readoutText(value: number, max: number, readout: KitMeterProps["readout"]): ReactNode {
-  if (readout === true) return `${Math.round(value)} / ${Math.round(max)}`;
-  return readout === false || readout === undefined ? null : readout;
 }
 
 /** A chamfered outline: the edge colour, with the glass fill one pixel inside it. Both cut at `--jgk-holo-cut`. */
@@ -110,24 +102,8 @@ function Panel({ eyebrow, title, aside, footer, tone, variant = "hud", as: Tag =
 function Meter({ value, max = 1, label, readout, tone = "accent", variant = "bar", segments = 10, size = "md", className, style }: KitMeterProps): ReactNode {
   const fraction = meterFraction(value, max);
   const text = readoutText(value, max, readout);
-  const caption =
-    label === undefined && text === null ? null : (
-      <span className={`${P}-meter-text`}>
-        {label === undefined ? null : <span className={`${P}-meter-label`}>{label}</span>}
-        {text === null ? null : <span className={`${P}-meter-readout`}>{text}</span>}
-      </span>
-    );
-  const common = {
-    className: cx(`${P}-meter`, className),
-    "data-variant": variant,
-    "data-size": size,
-    "data-tone": tone,
-    style,
-    role: "meter",
-    "aria-valuenow": value,
-    "aria-valuemin": 0,
-    "aria-valuemax": max,
-  };
+  const caption = kitMeterCaption(P, label, text);
+  const common = kitMeterAttributes(P, { className, variant, size, tone, style, value, max });
   if (variant === "ring") {
     const ticks = 48;
     const arc = 2 * Math.PI * 10;
@@ -193,18 +169,7 @@ function Prompt({ glyph, label, device, progress, tone = "accent", onActivate, c
       </span>
     </>
   );
-  if (onActivate !== undefined) {
-    return (
-      <button type="button" className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style} onClick={onActivate}>
-        {body}
-      </button>
-    );
-  }
-  return (
-    <div className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style}>
-      {body}
-    </div>
-  );
+  return kitPromptShell(P, { onActivate, className, tone, device, style }, body);
 }
 
 function Toast({ tone, title, icon, count, leaving, className, style, children }: KitToastProps): ReactNode {

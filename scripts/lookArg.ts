@@ -9,7 +9,7 @@
  */
 
 /** A named thing to aim at, resolved by the runner against the live scene. */
-export interface LookSubject {
+interface LookSubject {
   kind: "marker" | "entity";
   id: string;
 }

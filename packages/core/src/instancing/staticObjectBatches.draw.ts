@@ -6,7 +6,7 @@ import { buildScatterModelSources, type ScatterModelSource } from "@jgengine/cor
 import type { MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
 import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { submitInstanceCount, submitsDraw } from "@jgengine/core/render/submittedDraws.draw";
-import { shownPooledIds, STATIC_POOL_MESH_KEY, type StaticDrawPool } from "./staticDrawPool.draw";
+import { shownPooledIds, STATIC_POOL_MESH_KEY } from "./staticDrawPool.draw";
 
 /** @internal */
 export interface StaticObjectCandidate {

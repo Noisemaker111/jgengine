@@ -1,6 +1,6 @@
 import type { ReputationTier } from "@jgengine/core/faction/reputation";
 import { predicateFloor } from "@jgengine/core/rules/predicate";
-import { createGateSet, gateFacts, type GateDef, type GateStatus } from "@jgengine/core/progression/gates";
+import { createGateSet, gateFacts, type GateStatus } from "@jgengine/core/progression/gates";
 import { createStanding, type Standing, type StandingState } from "@jgengine/core/progression/standing";
 import { createUpgradeTree, type UpgradeNodeDef, type UpgradeState } from "@jgengine/core/progression/upgrades";
 

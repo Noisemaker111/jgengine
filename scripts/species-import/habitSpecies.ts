@@ -219,7 +219,7 @@ const POLYSTICHUM_MUNITUM: HabitTraits = {
 export const HABIT_TRAITS: readonly HabitTraits[] = [VACCINIUM_CORYMBOSUM, COCOS_NUCIFERA, SABAL_PALMETTO, CIBOTIUM_GLAUCUM, PTERIDIUM_AQUILINUM, POLYSTICHUM_MUNITUM];
 
 /** Growth and carbon a shrub fit searches: the tree parameters plus how long a stem lives. */
-export const HABIT_FIT_PARAMETERS: readonly FitParameter[] = [...FIT_PARAMETERS, { path: "growth.stemLifespanYears", lo: 4, hi: 30 }];
+const HABIT_FIT_PARAMETERS: readonly FitParameter[] = [...FIT_PARAMETERS, { path: "growth.stemLifespanYears", lo: 4, hi: 30 }];
 
 /**
  * Growth and carbon a palm or fern fit searches: one unbranched stem, so only how fast it lays down

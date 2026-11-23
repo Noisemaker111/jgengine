@@ -12,7 +12,6 @@ import { eventById, eventCompactor, MEDAL_BOARD, YARD_EVENTS, YARD_TIERS } from 
 import { COMPACTOR_PLAN, compactorZAt } from "../compactor/schedule";
 import { driveCourse, type CourseDriveOptions } from "../testing/courseDriver";
 
-const DT = 1 / 60;
 
 /** A yard save in memory, its career seeded. */
 function memory(seed?: (career: ReturnType<typeof newCareer>) => void): FoundrySave {

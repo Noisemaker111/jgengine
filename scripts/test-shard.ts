@@ -112,7 +112,7 @@ export const SPLIT_TESTS: Readonly<Record<string, { match: string; seconds: read
 const UNIT_PATTERN = " -t ";
 
 /** A bun test name pattern matching names that contain `text`, or (negated) every other name. */
-export function namePattern(text: string, negated: boolean): string {
+function namePattern(text: string, negated: boolean): string {
   const literal = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return negated ? `^(?!.*${literal})` : literal;
 }
@@ -152,7 +152,7 @@ export function unitCommands(units: readonly string[]): string[][] {
  * measured beside three other `bun test` processes reads their work as its own: the stand
  * simulation's 10 s budget took 12.4 s in a lane. Such files run after the lanes, alone.
  */
-export function readsWallClock(source: string): boolean {
+function readsWallClock(source: string): boolean {
   return source.includes("performance.now(");
 }
 
@@ -460,7 +460,7 @@ export function failureReport(shard: string, failed: readonly FailedTest[]): { a
 }
 
 /** Bun's own crash banner: printed by the runtime, never by a test. */
-export const BUN_CRASH = /oh no: Bun has crashed|panic: abort\(\) called|Bun has crashed\. This indicates a bug in Bun/;
+const BUN_CRASH = /oh no: Bun has crashed|panic: abort\(\) called|Bun has crashed\. This indicates a bug in Bun/;
 
 /**
  * Whether a run's output shows Bun aborting rather than a test failing. A `(fail)` line means a test

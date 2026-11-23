@@ -35,7 +35,7 @@ const DT = 0.25;
 const WINDOW = 10;
 
 /** Sample the field at one height and return mean, gust σ and the 10 s-window variance share. */
-export function measureWind(field: WindField, heightM: number): { mean: number; sigma: number; windowed: number } {
+function measureWind(field: WindField, heightM: number): { mean: number; sigma: number; windowed: number } {
   const n = Math.floor(DURATION / DT);
   const u = new Float64Array(n);
   let sum = 0;
@@ -88,7 +88,7 @@ export function compareWind(options: WindComparisonOptions = {}): WindComparison
 }
 
 /** The comparison as a printable table. */
-export function formatWindComparison(rows: readonly WindComparisonRow[]): string {
+function formatWindComparison(rows: readonly WindComparisonRow[]): string {
   return rows.map((r) => `${r.pass ? "ok  " : "FAIL"} ${r.label.padEnd(48)} field ${r.field.toFixed(3).padStart(8)}  ref ${r.reference.toFixed(3).padStart(8)}  gap ${(100 * r.gap).toFixed(1)}%`).join("\n");
 }
 

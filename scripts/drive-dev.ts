@@ -17,8 +17,8 @@
  * cheaper one (960x540, one settled frame in a 2s window, no video, no perf pass).
  */
 import { provisionCapturedGame } from "./provisionCapture";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, appendFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync, appendFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import {
   CdpSession,
   applyCaptureQuality,
@@ -83,8 +83,6 @@ import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRe
 import { aggregateAllocations, type HeapSampleNode } from "./perf-play";
 import { describeFirstPaints, endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
 import { profileHitches, renderProfiledHitches, startCpuProfile, stopCpuProfile } from "./perf-cpu";
-
-type Step = CaptureStep;
 
 /** What this run served, set once the engine gate passes and stamped into every saved record. */
 let engineForRecord: EngineRecord | null = null;

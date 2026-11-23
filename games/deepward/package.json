@@ -22,9 +22,9 @@
     "three": "catalog:"
   },
   "devDependencies": {
+    "@gltf-transform/core": "4.2.1",
     "@tailwindcss/vite": "catalog:",
     "@types/three": "catalog:",
-    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
   }

@@ -1,5 +1,5 @@
 // Transport rides.
-import { T, P, V, Y, box, cyl, ball, ring, beam, group, mesh, segBox, deckRect, bulbLine, pennant, bunting, railing, signBoard, stairs, tube, ribbon, spline, frames, pathLengths, onPath, lampPost, shrub, tree, wheel } from './core.mjs';
+import { T, P, V, Y, box, cyl, ball, ring, beam, group, mesh, segBox, deckRect, pennant, railing, signBoard, stairs, tube, ribbon, spline, frames, pathLengths, onPath, shrub, tree, wheel } from './core.mjs';
 
 const rect = (x0, x1, z0, z1, r) => [[x1 - r, z1], [x0 + r, z1], [x0, z1 - r], [x0, z0 + r], [x0 + r, z0], [x1 - r, z0], [x1, z0 + r], [x1, z1 - r]];
 
@@ -37,7 +37,7 @@ export function train() {
   box(g, [1.4, .14, .4], P.wood, [-1.6, .85, 7.2]); box(g, [1.4, .4, .08], P.wood, [-1.6, 1.1, 7.4]);
   signBoard(g, [1.6, 2.2, 7.15], 2.2, .5, P.teal, { stripe: P.cream }); ball(g, .25, P.cream, [0, 2.5, 7.08], 1);
   // tunnel on the back straight
-  const tun = mesh(g, new T.CylinderGeometry(1.5, 1.5, 3.4, 12, 1, true, 0, Math.PI), P.stone, [0, .1, -6.0], [0, 0, Math.PI / 2], { double: true });
+  mesh(g, new T.CylinderGeometry(1.5, 1.5, 3.4, 12, 1, true, 0, Math.PI), P.stone, [0, .1, -6.0], [0, 0, Math.PI / 2], { double: true });
   for (const x of [-1.75, 1.75]) mesh(g, new T.TorusGeometry(1.55, .18, 4, 12, Math.PI), P.rock, [x, .1, -6.0], [0, Math.PI / 2, 0]);
   const hill = mesh(g, new T.SphereGeometry(2.0, 12, 5, 0, Math.PI * 2, 0, Math.PI / 2), P.leaf, [0, 0, -6.0]); hill.scale.set(1.0, 1.15, .85); tree(g, .6, -6.2, .6);
   // signal and scenery

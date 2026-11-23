@@ -11,9 +11,9 @@ import { pidIsAlive } from "./land";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
-export const EXIT_RUNNING = 0;
-export const EXIT_NO_TASK = 4;
-export const EXIT_LOST = 5;
+const EXIT_RUNNING = 0;
+const EXIT_NO_TASK = 4;
+const EXIT_LOST = 5;
 
 export interface TaskStatus {
   id: string;
@@ -29,7 +29,7 @@ export interface TaskStatus {
 }
 
 /** The last `lines` non-empty lines of `text`. */
-export function tailLines(text: string, lines: number): string[] {
+function tailLines(text: string, lines: number): string[] {
   return text
     .split(/\r?\n/)
     .filter((line) => line.trim().length > 0)

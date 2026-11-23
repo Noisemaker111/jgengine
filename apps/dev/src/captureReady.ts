@@ -16,7 +16,7 @@ import type { PlayableGame } from "@jgengine/core/shell/registry.draw";
 
 export type CaptureStatus = "preparing" | "ready" | "error";
 
-export interface CaptureMeta {
+interface CaptureMeta {
   v: 1;
   status: CaptureStatus;
   game: string;

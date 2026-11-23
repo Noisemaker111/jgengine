@@ -72,7 +72,7 @@ export function applyCaptureView(overrides: CaptureViewOverrides): void {
 
 export const resolvedLook = (): string | null => viewOverrides.look ?? LOOK;
 export const resolvedLookFrom = (): string | null => viewOverrides.lookFrom ?? LOOK_FROM;
-export const resolvedSpawn = (): string | null => viewOverrides.spawn ?? SPAWN;
+const resolvedSpawn = (): string | null => viewOverrides.spawn ?? SPAWN;
 export const resolvedState = (): string | null => viewOverrides.state ?? STATE_PARAM;
 export const resolvedRun = (): readonly string[] => viewOverrides.run ?? RUN;
 export const resolvedSettleMs = (): number | undefined => viewOverrides.settleMs;

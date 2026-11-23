@@ -61,7 +61,7 @@ describe("ember-command sound cues", () => {
   });
 
   test("one-shot cues stay under 0.6 s and moderate gain; the drone stays quiet", () => {
-    for (const [key, def] of Object.entries(EMBER_SOUNDS)) {
+    for (const def of Object.values(EMBER_SOUNDS)) {
       if (def.loop === true) {
         expect(def.gain ?? 1).toBeLessThanOrEqual(0.35);
         continue;

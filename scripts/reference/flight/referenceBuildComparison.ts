@@ -6,11 +6,11 @@ import { compareRocketAscent } from "./rocketComparison";
 import { compareRotorcraft } from "./rotorcraftComparison";
 
 /** Rotor ratios may drift 15% from the blade-element reference; every other metric 10%. */
-export const ROTOR_BUILD_TOLERANCE = 0.15;
+const ROTOR_BUILD_TOLERANCE = 0.15;
 /** Jet thrust, lapse, afterburner and spool may drift 10% from the F100 cycle. */
-export const JET_BUILD_TOLERANCE = 0.1;
+const JET_BUILD_TOLERANCE = 0.1;
 /** Rocket altitude, velocity and max q at the reference event times may drift 10%. */
-export const ROCKET_BUILD_TOLERANCE = 0.1;
+const ROCKET_BUILD_TOLERANCE = 0.1;
 
 /**
  * Flies the runtime's own reference airframes (`aircraftFromReference` with every effect at 1) against the reference

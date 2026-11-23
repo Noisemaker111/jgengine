@@ -1,16 +1,29 @@
 import * as THREE from "three";
 
-/** Side of the square of texels one comparison fragment counts, so the readback is 1/256 of the texture. */
-const COMPARE_BLOCK = 16;
-
 /**
- * Bit-exact comparison of two textures of the same size on the GPU, for audits that prove a faster
- * path draws what the plain one would. Every channel's bits count, so a colour target differs on any
- * changed channel and a depth texture on its depth. It draws with its own GL program rather than
- * `renderer.render`, so a loading-time draw hold cannot swallow the comparison.
+ * Side of the square of texels one comparison fragment counts, so the readback is 1/256 of the texture.
  * @internal
  */
-export class TextureComparer {
+export const COMPARE_BLOCK = 16;
+
+/** One triangle that covers the viewport, with no vertex buffer. */
+const COVER_VERTEX = [
+  "#version 300 es",
+  "void main() {",
+  "  vec2 corner = vec2(gl_VertexID == 1 ? 3.0 : -1.0, gl_VertexID == 2 ? 3.0 : -1.0);",
+  "  gl_Position = vec4(corner, 0.0, 1.0);",
+  "}",
+].join("\n");
+
+/**
+ * The draw every GPU texture comparison shares: two textures read raw, one fragment per
+ * {@link COMPARE_BLOCK}-texel block writing how many of its texels differ (red low byte, blue high
+ * byte, green on every block it wrote). It draws with its own GL program rather than
+ * `renderer.render`, so a loading-time draw hold cannot swallow the comparison. The caller's
+ * fragment body decides what "differs" means and its `read` takes the result off the block target.
+ * @internal
+ */
+export class ComparePass {
   private gl: WebGL2RenderingContext | null = null;
   private program: WebGLProgram | null = null;
   private vao: WebGLVertexArrayObject | null = null;
@@ -18,20 +31,43 @@ export class TextureComparer {
   private color: WebGLTexture | null = null;
   private width = 0;
   private height = 0;
-  private pixels = new Uint8Array(0);
 
   /**
-   * Texels whose bits differ between `a` and `b`, or -1 when the comparison could not run. With a
-   * `tolerance`, only texels where some channel differs by more than it count (for 8-bit targets,
-   * one level is 1 / 255).
+   * `samplers` names the two textures in `fragment`, which also declares `uniform ivec2 size` and
+   * `out vec4 outColor`. `dropped` runs when the GL objects go (disposal or a restored context), so
+   * the owner can drop what it holds on the same context.
    */
-  count(renderer: THREE.WebGLRenderer, a: THREE.Texture, b: THREE.Texture, width: number, height: number, tolerance = 0): number {
+  constructor(
+    private readonly samplers: readonly [string, string],
+    private readonly fragment: string,
+    private readonly dropped: (gl: WebGL2RenderingContext) => void = () => {},
+  ) {}
+
+  /** The context the pass last drew on, for an owner that reads its result back later. */
+  context(): WebGL2RenderingContext | null {
+    return this.gl;
+  }
+
+  /**
+   * Draw the comparison of `a` and `b` and hand the block target (`blocksX` by `blocksY`, RGBA8,
+   * bound for reading) to `read`. False when it could not run.
+   */
+  draw(
+    renderer: THREE.WebGLRenderer,
+    a: THREE.Texture,
+    b: THREE.Texture,
+    width: number,
+    height: number,
+    read: (gl: WebGL2RenderingContext, blocksX: number, blocksY: number) => void,
+    uniforms?: (gl: WebGL2RenderingContext, program: WebGLProgram) => void,
+  ): boolean {
     const gl = renderer.getContext() as WebGL2RenderingContext;
     const textures = [a, b];
     const handles = textures.map((texture) => (renderer.properties.get(texture) as { __webglTexture?: WebGLTexture }).__webglTexture);
     const blocksX = Math.ceil(width / COMPARE_BLOCK);
     const blocksY = Math.ceil(height / COMPARE_BLOCK);
-    if (handles[0] === undefined || handles[1] === undefined || !this.prepare(gl, blocksX, blocksY)) return -1;
+    if (handles[0] === undefined || handles[1] === undefined || !this.prepare(gl, blocksX, blocksY)) return false;
+    const program = this.program!;
     const previous = renderer.getRenderTarget();
     // texelFetch reads raw depth only with comparison off, and a depth texture read that way is
     // incomplete (reads zero) unless it filters NEAREST; three's PCF maps compare and filter LINEAR.
@@ -54,30 +90,23 @@ export class TextureComparer {
       gl.colorMask(true, true, true, true);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.useProgram(this.program);
-      gl.uniform1i(gl.getUniformLocation(this.program!, "a"), 0);
-      gl.uniform1i(gl.getUniformLocation(this.program!, "b"), 1);
-      gl.uniform2i(gl.getUniformLocation(this.program!, "size"), width, height);
-      gl.uniform1f(gl.getUniformLocation(this.program!, "tolerance"), tolerance);
+      gl.useProgram(program);
+      gl.uniform1i(gl.getUniformLocation(program, this.samplers[0]), 0);
+      gl.uniform1i(gl.getUniformLocation(program, this.samplers[1]), 1);
+      gl.uniform2i(gl.getUniformLocation(program, "size"), width, height);
+      uniforms?.(gl, program);
       gl.bindVertexArray(this.vao);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.bindVertexArray(null);
       gl.pixelStorei(gl.PACK_ALIGNMENT, 4);
-      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
-      gl.readPixels(0, 0, blocksX, blocksY, gl.RGBA, gl.UNSIGNED_BYTE, this.pixels);
+      read(gl, blocksX, blocksY);
       setRaw(false);
     } finally {
       // three caches GL state; after raw calls it must forget it all, then rebind the pass's target.
       renderer.resetState();
       renderer.setRenderTarget(previous);
     }
-    let differing = 0;
-    for (let index = 0; index < this.pixels.length; index += 4) {
-      // A texel the comparison never wrote means it did not run: no verdict rather than a false one.
-      if (this.pixels[index + 1] !== 255) return -1;
-      differing += this.pixels[index]! + 256 * this.pixels[index + 2]!;
-    }
-    return differing;
+    return true;
   }
 
   private prepare(gl: WebGL2RenderingContext, width: number, height: number): boolean {
@@ -85,36 +114,7 @@ export class TextureComparer {
     if (this.gl !== gl || this.program === null || !gl.isProgram(this.program)) {
       this.release();
       this.gl = gl;
-      const program = linkProgram(gl, [
-        "#version 300 es",
-        "void main() {",
-        // One triangle that covers the viewport, with no vertex buffer.
-        "  vec2 corner = vec2(gl_VertexID == 1 ? 3.0 : -1.0, gl_VertexID == 2 ? 3.0 : -1.0);",
-        "  gl_Position = vec4(corner, 0.0, 1.0);",
-        "}",
-      ].join("\n"), [
-        "#version 300 es",
-        "precision highp float;",
-        "precision highp sampler2D;",
-        "uniform sampler2D a;",
-        "uniform sampler2D b;",
-        "uniform ivec2 size;",
-        "uniform float tolerance;",
-        "out vec4 outColor;",
-        "void main() {",
-        `  ivec2 block = ivec2(gl_FragCoord.xy) * ${COMPARE_BLOCK};`,
-        "  int count = 0;",
-        `  for (int y = 0; y < ${COMPARE_BLOCK}; y++) for (int x = 0; x < ${COMPARE_BLOCK}; x++) {`,
-        "    ivec2 texel = block + ivec2(x, y);",
-        "    if (texel.x >= size.x || texel.y >= size.y) continue;",
-        "    vec4 ta = texelFetch(a, texel, 0), tb = texelFetch(b, texel, 0);",
-        "    bool differs = tolerance > 0.0 ? any(greaterThan(abs(ta - tb), vec4(tolerance))) : any(notEqual(floatBitsToUint(ta), floatBitsToUint(tb)));",
-        "    if (differs) count++;",
-        "  }",
-        // Differing texels in red (low byte) and blue (high byte); green marks every block the comparison wrote.
-        "  outColor = vec4(float(count % 256) / 255.0, 1.0, float(count / 256) / 255.0, 1.0);",
-        "}",
-      ].join("\n"));
+      const program = linkProgram(gl, COVER_VERTEX, this.fragment);
       if (program === null) return false;
       this.program = program;
       this.vao = gl.createVertexArray();
@@ -130,7 +130,6 @@ export class TextureComparer {
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.color, 0);
       this.width = width;
       this.height = height;
-      this.pixels = new Uint8Array(width * height * 4);
     }
     return true;
   }
@@ -138,6 +137,7 @@ export class TextureComparer {
   private release(): void {
     const gl = this.gl;
     if (gl === null) return;
+    this.dropped(gl);
     if (this.program !== null) gl.deleteProgram(this.program);
     if (this.vao !== null) gl.deleteVertexArray(this.vao);
     if (this.framebuffer !== null) gl.deleteFramebuffer(this.framebuffer);
@@ -148,6 +148,80 @@ export class TextureComparer {
   dispose(): void {
     this.release();
     this.gl = null;
+  }
+}
+
+/**
+ * The comparison's readback summed: red and blue hold each block's differing texels (low and high
+ * byte), green marks a block the comparison wrote. -1 when a block was never written: the comparison
+ * did not run, so there is no verdict rather than a false one.
+ * @internal
+ */
+export function countDiffering(pixels: Uint8Array): number {
+  let differing = 0;
+  for (let index = 0; index < pixels.length; index += 4) {
+    if (pixels[index + 1] !== 255) return -1;
+    differing += pixels[index]! + 256 * pixels[index + 2]!;
+  }
+  return differing;
+}
+
+/**
+ * Bit-exact comparison of two textures of the same size on the GPU, for audits that prove a faster
+ * path draws what the plain one would. Every channel's bits count, so a colour target differs on any
+ * changed channel and a depth texture on its depth.
+ * @internal
+ */
+export class TextureComparer {
+  private readonly pass = new ComparePass(["a", "b"], [
+    "#version 300 es",
+    "precision highp float;",
+    "precision highp sampler2D;",
+    "uniform sampler2D a;",
+    "uniform sampler2D b;",
+    "uniform ivec2 size;",
+    "uniform float tolerance;",
+    "out vec4 outColor;",
+    "void main() {",
+    `  ivec2 block = ivec2(gl_FragCoord.xy) * ${COMPARE_BLOCK};`,
+    "  int count = 0;",
+    `  for (int y = 0; y < ${COMPARE_BLOCK}; y++) for (int x = 0; x < ${COMPARE_BLOCK}; x++) {`,
+    "    ivec2 texel = block + ivec2(x, y);",
+    "    if (texel.x >= size.x || texel.y >= size.y) continue;",
+    "    vec4 ta = texelFetch(a, texel, 0), tb = texelFetch(b, texel, 0);",
+    "    bool differs = tolerance > 0.0 ? any(greaterThan(abs(ta - tb), vec4(tolerance))) : any(notEqual(floatBitsToUint(ta), floatBitsToUint(tb)));",
+    "    if (differs) count++;",
+    "  }",
+    "  outColor = vec4(float(count % 256) / 255.0, 1.0, float(count / 256) / 255.0, 1.0);",
+    "}",
+  ].join("\n"));
+  private pixels = new Uint8Array(0);
+
+  /**
+   * Texels whose bits differ between `a` and `b`, or -1 when the comparison could not run. With a
+   * `tolerance`, only texels where some channel differs by more than it count (for 8-bit targets,
+   * one level is 1 / 255).
+   */
+  count(renderer: THREE.WebGLRenderer, a: THREE.Texture, b: THREE.Texture, width: number, height: number, tolerance = 0): number {
+    const ran = this.pass.draw(
+      renderer,
+      a,
+      b,
+      width,
+      height,
+      (gl, blocksX, blocksY) => {
+        const bytes = blocksX * blocksY * 4;
+        if (this.pixels.length !== bytes) this.pixels = new Uint8Array(bytes);
+        gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+        gl.readPixels(0, 0, blocksX, blocksY, gl.RGBA, gl.UNSIGNED_BYTE, this.pixels);
+      },
+      (gl, program) => gl.uniform1f(gl.getUniformLocation(program, "tolerance"), tolerance),
+    );
+    return ran ? countDiffering(this.pixels) : -1;
+  }
+
+  dispose(): void {
+    this.pass.dispose();
   }
 }
 

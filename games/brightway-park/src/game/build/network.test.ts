@@ -8,7 +8,6 @@ import { cellFor, park } from "../park";
 import { sessionOf } from "../session";
 import { accessOf } from "./links";
 import { cellCentre, levelAt, LAND_COST } from "./terrain";
-import { clearUndo } from "./undo";
 import { resetPark } from "../parkReset";
 
 /** Park days are fast-forwarded a second per step, not at the 60 Hz the game plays at. */

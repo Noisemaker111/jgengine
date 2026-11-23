@@ -1,5 +1,5 @@
 /** A point or direction in body axes: x forward, y left, z up, metres. */
-export type SuspensionPoint = readonly [number, number, number];
+type SuspensionPoint = readonly [number, number, number];
 
 /**
  * Short-long-arm double wishbone (also a fair stand-in for a five-link rear): two A-arms on the body, an upright

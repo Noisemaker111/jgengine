@@ -7,7 +7,6 @@ import {
   bucketBuildingParts,
   buildingKitFitScale,
   buildingKitQuarterTurn,
-  buildingKitQuarterTurn,
   composeBuildingKitMatrix,
   measureBuildingKitModel,
   type BuildingKitInstance,

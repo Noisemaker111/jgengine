@@ -8,7 +8,7 @@ import { activeCharacter, pickCharacter, resetCharacterState, talentTree } from 
 import { resumeBuild } from "./commands";
 import { characterIdStore, talentRanksStore } from "./stores";
 import { loadSavedProgress } from "./saveCompatibility";
-import { createScrapSave, scrapSave } from "./save";
+import { createScrapSave } from "./save";
 import { combatState, restoreCombat } from "./combat/hitModel";
 import { reserveSave, restoreReserve } from "./handroll/reserve";
 import { quests } from "./quests/catalog";

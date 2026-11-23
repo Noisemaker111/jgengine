@@ -36,7 +36,7 @@ const TYPES: Readonly<Record<string, string>> = {
 export const GAME_PUBLIC_FOLDER = "games";
 
 /** The module the runner imports for a game's file list: `gamePublicFiles[id]()` resolves to its paths. */
-export const GAME_PUBLIC_MODULE = "virtual:jgengine-game-public";
+const GAME_PUBLIC_MODULE = "virtual:jgengine-game-public";
 
 /**
  * Every game's own `public/` folder by game id: each `games/<id>` the runner can load, with the

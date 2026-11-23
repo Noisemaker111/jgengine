@@ -34,10 +34,10 @@ export interface GameAssetBuildPlan {
 }
 
 /** Most worker threads the pipeline runs at once; the PC is shared. */
-export const MAX_ASSET_WORKERS = 4;
+const MAX_ASSET_WORKERS = 4;
 
 /** Read `assetBuild` from a game's `jgengine.json`; null when it has none. */
-export function readAssetBuildPlan(gameDir: string): GameAssetBuildPlan | null {
+function readAssetBuildPlan(gameDir: string): GameAssetBuildPlan | null {
   const path = join(gameDir, "jgengine.json");
   if (!existsSync(path)) return null;
   const json: unknown = JSON.parse(readFileSync(path, "utf8"));

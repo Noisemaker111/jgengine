@@ -21,7 +21,7 @@ import { pathToFileURL } from "node:url";
 import { packageDir, publishedPackages, readManifest, repoRoot, separateCadencePackages } from "./exportManifest";
 import { extractArgs, tarExecutable } from "./tar";
 
-export interface TarballResponse {
+interface TarballResponse {
   status: number;
   bytes: Uint8Array | null;
 }
@@ -40,7 +40,7 @@ export interface UnpackedPackage {
   cleanup?: () => void;
 }
 
-export type Unpack = (name: string, version: string, bytes: Uint8Array) => UnpackedPackage;
+type Unpack = (name: string, version: string, bytes: Uint8Array) => UnpackedPackage;
 
 export interface PackageCheck {
   name: string;
@@ -243,7 +243,7 @@ function message(error: unknown): string {
 }
 
 /** Registry metadata for a name, or null when the registry does not know it. */
-export async function fetchMetadata(name: string): Promise<Record<string, unknown> | null> {
+async function fetchMetadata(name: string): Promise<Record<string, unknown> | null> {
   const response = await fetch(`https://registry.npmjs.org/${name.replace("/", "%2f")}`, {
     headers: { accept: "application/vnd.npm.install-v1+json" },
   });
@@ -252,13 +252,13 @@ export async function fetchMetadata(name: string): Promise<Record<string, unknow
   return (await response.json()) as Record<string, unknown>;
 }
 
-export async function fetchTarball(url: string): Promise<TarballResponse> {
+async function fetchTarball(url: string): Promise<TarballResponse> {
   const response = await fetch(url);
   if (!response.ok) return { status: response.status, bytes: null };
   return { status: response.status, bytes: new Uint8Array(await response.arrayBuffer()) };
 }
 
-export const liveRegistry: Registry = { metadata: fetchMetadata, tarball: fetchTarball };
+const liveRegistry: Registry = { metadata: fetchMetadata, tarball: fetchTarball };
 
 /**
  * A freshly published version is served across npm's CDN minutes after the registry answers 202, so a
@@ -308,7 +308,7 @@ export async function awaitPublished(options: AwaitOptions): Promise<AwaitResult
 }
 
 /** Unpack a tarball with the system `tar`, using paths relative to its own directory so Windows drive letters never reach it. */
-export function unpackWithTar(name: string, version: string, bytes: Uint8Array): UnpackedPackage {
+function unpackWithTar(name: string, version: string, bytes: Uint8Array): UnpackedPackage {
   // Inside the checkout, so `import()` resolves peer dependencies through the repository's
   // node_modules the way a consumer's install would.
   const scratch = join(repoRoot, ".scratch", "release-artifacts");
@@ -327,7 +327,7 @@ export function unpackWithTar(name: string, version: string, bytes: Uint8Array):
   return { dir, files: new Set(files), manifest, cleanup: () => rmSync(work, { recursive: true, force: true }) };
 }
 
-export interface LocalPackage {
+interface LocalPackage {
   dir: string;
   name: string;
   version: string;
@@ -350,7 +350,7 @@ function localPackages(only: ReadonlySet<string>): LocalPackage[] {
  * (the `jgengine` CLI releases on its own cadence) is checked at the
  * version the checkout actually ships, so the result is always "what a consumer can install".
  */
-export async function checkReleaseArtifacts(options: {
+async function checkReleaseArtifacts(options: {
   version: string;
   packages: readonly LocalPackage[];
   manifest: Record<string, readonly string[]>;

@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
-import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import { resolveGraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 

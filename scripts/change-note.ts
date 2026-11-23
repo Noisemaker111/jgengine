@@ -10,7 +10,7 @@
  */
 
 /** The Keep a Changelog headings a note may carry, in the order a reader needs them. */
-export const NOTE_SECTIONS = ["Migrate", "Added", "Changed", "Fixed", "Removed"] as const;
+const NOTE_SECTIONS = ["Migrate", "Added", "Changed", "Fixed", "Removed"] as const;
 export type NoteSection = (typeof NOTE_SECTIONS)[number];
 
 const SECTION_PREFIX = new RegExp(`^(${NOTE_SECTIONS.join("|")})\\s*:\\s*(.+)$`, "is");
@@ -18,13 +18,13 @@ const SECTION_PREFIX = new RegExp(`^(${NOTE_SECTIONS.join("|")})\\s*:\\s*(.+)$`,
 const PR_ONLY = /^(?:(?:closes|fixes|refs)\s+#\d+|prevention:|root cause:)/i;
 
 /** One exported name in an api.md: its kind and the description after the signature. */
-export interface ApiExport {
+interface ApiExport {
   kind: string;
   description: string;
 }
 
 /** `api.md` text to module -> exported name -> what it is. */
-export function parseApiSurface(text: string): Map<string, Map<string, ApiExport>> {
+function parseApiSurface(text: string): Map<string, Map<string, ApiExport>> {
   const modules = new Map<string, Map<string, ApiExport>>();
   let current: Map<string, ApiExport> | null = null;
   for (const line of text.split("\n")) {

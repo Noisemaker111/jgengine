@@ -4,7 +4,7 @@ import type { CdpSession } from "./browser-lib";
 import { installRenderCounter, type RenderCounts } from "../packages/core/src/devtools/renderCounter";
 
 /** The counter as a page script; it must run before the page's own scripts load the UI runtime. */
-export const RENDER_COUNTER_SCRIPT = `(${installRenderCounter.toString()})(globalThis);`;
+const RENDER_COUNTER_SCRIPT = `(${installRenderCounter.toString()})(globalThis);`;
 
 /** Install the counter for every document this session opens from now on. */
 export async function installPageRenderCounter(session: CdpSession): Promise<void> {

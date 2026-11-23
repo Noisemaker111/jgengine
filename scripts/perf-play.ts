@@ -131,7 +131,7 @@ const KNOWN_SETTING_KEYS = [...SETTING_IDS_BY_KEY.keys()].filter((key) => !key.i
  */
 const HARNESS_PARAMS: ReadonlySet<string> = new Set(["game", "capture", "device", "telemetry", "quality", "state"]);
 
-export interface PerfArgs {
+interface PerfArgs {
   /** The games to measure, in order, one after another in one browser. */
   games: string[];
   /** The tier `--quality` pinned; undefined measures the game's own tier, which the record still names. */
@@ -1062,7 +1062,7 @@ export function machineClause(machine: RunMachine | undefined): string {
 }
 
 /** Which backend drew the page: `webgpu` only when the engine's WebGPU context is live. */
-export interface BackendReading {
+interface BackendReading {
   drawing: "webgl" | "webgpu";
   /** The WebGPU context's distinct warnings (what it could not draw as WebGL would), first 20. */
   warnings: string[];
@@ -1140,7 +1140,7 @@ export function baselineLogProblem(logs: ReportLogs | null): string | null {
   if (logs.severe.some((entry) => /missing file|texture\/sub-resource loads failed|environment illumination failed/i.test(entry.message))) return "game reported missing assets";
   return null;
 }
-export type { PerfReport };
+;
 
 export interface RawProfile {
   nodes: ProfileNode[];
@@ -1263,7 +1263,7 @@ export function gameSessionDeadlineMs(warmupMs: number, windowSeconds: number): 
  * Time every draw for a window and read it back, then return the page to pass timers. Null when the
  * page has no breakdown or the window resolved no GPU timer.
  */
-export async function measureGpuWork(session: CdpSession, top: number, seconds = GPU_WORK_SECONDS): Promise<FrameBreakdownSummary | null> {
+async function measureGpuWork(session: CdpSession, top: number, seconds = GPU_WORK_SECONDS): Promise<FrameBreakdownSummary | null> {
   const switched = await session.evaluate<boolean>(`(() => { const b = globalThis.__jg?.frames; if (!b || typeof b.gpuTiming !== "function") return false; b.gpuTiming("draws"); return true; })()`);
   if (switched !== true) return null;
   try {
@@ -1836,7 +1836,7 @@ export function perfBatchTable(rows: readonly PerfBatchRow[]): string {
 }
 
 /** The text a person reads after a run: the breakdown, the run's conditions, and the diff when asked. */
-export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null): string {
+function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null): string {
   const conditions = `${record.viewport}, ${record.quality} tier, ${record.frameClock} clock, path ${record.path ?? "still"}, ${record.gpu}${machineClause(record.machine)}`;
   const lines: string[] = [];
   if (record.scorecard !== undefined) {

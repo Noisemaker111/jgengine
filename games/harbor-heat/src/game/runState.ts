@@ -50,7 +50,7 @@ const CONVOY_WAVES = Array.from({ length: CONVOY_TOTAL }, () => ({
  * the sink places each request on the dock ring, and `attachWaveFeedback` announces the wave. The
  * runner is built on first use, so a world that has not reached the convoy can still snapshot "none".
  */
-const convoySlot = perContext((ctx: GameContext): { runner: WaveRunner | null } =>
+const convoySlot = perContext((): { runner: WaveRunner | null } =>
   ({ runner: null as WaveRunner | null }),
 );
 

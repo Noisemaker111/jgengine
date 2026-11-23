@@ -43,7 +43,7 @@ export function GameUI() {
     command={{ name: phase === "playing" ? "match.pause" : "match.resume" }}><WaxSeal size={58} emblem="pause" /></RuneAction> : null;
 
   return <RuneRoot context={ctx} theme={theme}>
-    {phase === "ready" ? null : <RtsHud ctx={ctx} width={width} height={height} pause={pause} mapOpen={mapOpen} toggleMap={() => setMapOpen(!mapOpen)} />}
+    {phase === "ready" ? null : <RtsHud ctx={ctx} width={width} pause={pause} mapOpen={mapOpen} toggleMap={() => setMapOpen(!mapOpen)} />}
     <CommandMenu ctx={ctx} width={width} height={height} />
     {settings.isOpen ? <RuneView anchor="fill" fill="#1a120ae0" modal onBack={settings.close}>
       <RuneView anchor="center" gap={8} items="end" maxHeight={height - 24} scroll>

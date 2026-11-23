@@ -14,13 +14,13 @@ export interface GhRun {
 /** Runs `gh <args>`; tests pass a fake that serves `gh api` paths from memory. */
 export type GhRunner = (args: string[]) => GhRun;
 
-export type GhResult<T> = { ok: true; value: T } | { ok: false; error: string };
+type GhResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 /**
  * GitHub's own outage answers (a 500, 502 or 503, or no connection): the same request a few seconds
  * later goes through. On 4 Nov they ended a landing three times in a row, on a read, a push and a merge.
  */
-export const GITHUB_OUTAGE = /HTTP 5\d\d|Internal Server Error|Server Error|Bad Gateway|Service Unavailable|error: 5\d\d|error connecting to/i;
+const GITHUB_OUTAGE = /HTTP 5\d\d|Internal Server Error|Server Error|Bad Gateway|Service Unavailable|error: 5\d\d|error connecting to/i;
 /** Tries of one request GitHub answered with {@link GITHUB_OUTAGE} before its error is returned. */
 export const OUTAGE_ATTEMPTS = 3;
 

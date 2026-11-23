@@ -4,7 +4,6 @@ import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-import { earn } from "./cash";
 import { resetCharacterState } from "./characters";
 import { inventories } from "./inventories";
 import {

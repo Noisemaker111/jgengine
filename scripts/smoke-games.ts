@@ -1,19 +1,3 @@
-/**
- * Boot a curated set of games headless (mode=play) and fail if any throws at
- * runtime. Reuses shoot-dev's capture handshake: shoot exits nonzero when the
- * page sets data-jg-capture=error, which is exactly what an uncaught throw in
- * the shared runner/shell path produces. One clean boot proves the shared
- * GamePlayerShell + <Canvas> world path — where the prod render-loop lived.
- *
- * The play-mode capture handshake (apps/dev/src/captureReady.ts) resolves on a
- * <canvas> OR a shape-agnostic `data-jg-frame-ready` marker the shell stamps for
- * hud-presentation games.
- *
- *   bun scripts/smoke-games.ts                      boot every smoke game in one process
- *   bun scripts/smoke-games.ts --games deepward     boot one game (CI gives each its own job)
- */
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 

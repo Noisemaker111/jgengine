@@ -41,7 +41,7 @@ export function surgeAddedMass(massKg: number, length: number, density = RHO): n
 }
 
 /** A real hull the game model is measured against: its calm-water resistance and surge inertia, SI units. */
-export interface ReferenceBoat {
+interface ReferenceBoat {
   name: string;
   massKg: number;
   /** Surge added mass, kg. */
@@ -55,7 +55,7 @@ export interface ReferenceBoat {
 }
 
 /** Net thrust along the hull at a forward speed and throttle, N. */
-export type PropulsionLaw = (speed: number, throttle: number) => number;
+type PropulsionLaw = (speed: number, throttle: number) => number;
 
 /**
  * The game boat's own straight-line thrust: its `propeller` effect (wake, thrust deduction, engine) when on, else the
@@ -189,7 +189,7 @@ export interface BoatComparisonSubject {
 type ComparisonRow = { label: string; unit: string; game: number; reference: number; real: number | undefined };
 
 /** Turning and zig-zag trials for a subject: its MMG ship, approach speed and the free-running results, if any. */
-export interface ManoeuvringSubject {
+interface ManoeuvringSubject {
   ship: MmgShip;
   speed: number;
   /** Measured advance and tactical diameter over `L` at full rudder to starboard and to port. */
@@ -234,7 +234,7 @@ function manoeuvringRows(tuning: BoatTuning, subject: ManoeuvringSubject): Compa
  * seakeeping stand-in for a boat whose real lines are unknown.
  * @capability boat-comparison Wigley seakeeping stand-in for any game boat tuning
  */
-export function wigleyStandIn(tuning: BoatTuning): StripHull {
+function wigleyStandIn(tuning: BoatTuning): StripHull {
   const draft = tuning.massKg / (RHO * (4 / 9) * tuning.length * tuning.beam);
   const offsets = wigleyHull({ length: tuning.length, beam: tuning.beam, draft, freeboard: 0.5 * draft, stations: 21, waterlines: 12 });
   return { offsets, draft, centreOfGravity: [tuning.length / 2, draft], pitchRadius: 0.25 * tuning.length, density: RHO };
@@ -314,7 +314,7 @@ function gameTrialBoat(tuning: BoatTuning, speed: number, maxAngle: number): Man
 }
 
 /** How far a metric may sit from its reference before the comparison fails, as a share of the reference. */
-export const BOAT_TOLERANCES: readonly { prefix: string; allowed: number }[] = [
+const BOAT_TOLERANCES: readonly { prefix: string; allowed: number }[] = [
   { prefix: "resistance at", allowed: 0.1 },
   { prefix: "top speed", allowed: 0.1 },
   { prefix: "running trim", allowed: 0.1 },
@@ -327,7 +327,7 @@ export const BOAT_TOLERANCES: readonly { prefix: string; allowed: number }[] = [
 ];
 
 /** One toleranced metric: the game against the reference, the gap, what is allowed and whether it holds. */
-export interface BoatMetricCheck {
+interface BoatMetricCheck {
   label: string;
   game: number;
   reference: number;

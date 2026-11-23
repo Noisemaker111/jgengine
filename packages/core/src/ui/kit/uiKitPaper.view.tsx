@@ -14,12 +14,9 @@ import {
   type KitToastProps,
   type UiKit,
 } from "./uiKit.view";
+import { cx, kitPromptShell, readoutText } from "./kitParts.view";
 
 const P = "jgk-paper";
-
-function cx(...names: (string | false | undefined)[]): string {
-  return names.filter(Boolean).join(" ");
-}
 
 function Button({ variant = "secondary", size = "md", tone, icon, glyph, pressed, type = "button", className, children, ...rest }: KitButtonProps): ReactNode {
   return (
@@ -58,11 +55,6 @@ function Panel({ eyebrow, title, aside, footer, tone, variant = "hud", as: Tag =
       {footer === undefined ? null : <footer className={`${P}-panel-foot`}>{footer}</footer>}
     </Tag>
   );
-}
-
-function readoutText(value: number, max: number, readout: KitMeterProps["readout"]): ReactNode {
-  if (readout === true) return `${Math.round(value)} / ${Math.round(max)}`;
-  return readout === false || readout === undefined ? null : readout;
 }
 
 function MeterText({ label, text }: { label: ReactNode; text: ReactNode }): ReactNode {
@@ -116,18 +108,7 @@ function Prompt({ glyph, label, device, progress, tone = "accent", onActivate, c
       <span className={`${P}-prompt-label`}>{label}</span>
     </>
   );
-  if (onActivate !== undefined) {
-    return (
-      <button type="button" className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style} onClick={onActivate}>
-        {body}
-      </button>
-    );
-  }
-  return (
-    <div className={cx(`${P}-prompt`, className)} data-tone={tone} data-device={device} style={style}>
-      {body}
-    </div>
-  );
+  return kitPromptShell(P, { onActivate, className, tone, device, style }, body);
 }
 
 function Toast({ tone, title, icon, count, leaving, className, style, children }: KitToastProps): ReactNode {

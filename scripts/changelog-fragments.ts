@@ -3,7 +3,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-export const FRAGMENT_DIR = "changes";
+const FRAGMENT_DIR = "changes";
 export const FRAGMENT_PATTERN = /^changes\/(?!README\.md$)[^/]+\.md$/;
 
 const ORDER = ["Migrate", "Added", "Changed", "Fixed", "Removed"];
@@ -16,7 +16,7 @@ const DROPPED_HEADINGS = new Set(["Bends"]);
  * any level closes the group before it, and a `Bends` section (land writes one into PR bodies) is
  * dropped whole.
  */
-export function groupByHeading(lines: string[]): Map<string, string[]> {
+function groupByHeading(lines: string[]): Map<string, string[]> {
   const groups = new Map<string, string[]>();
   let heading: string | null = null;
   for (const line of lines) {

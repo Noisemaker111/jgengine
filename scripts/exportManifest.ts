@@ -81,15 +81,6 @@ export function exposedSubpathsForPackageDir(
   return [...subpaths].sort();
 }
 
-/** Whether a package has been built; only tarball/pack checks need dist. */
-export function distExists(pkg: PublishedPackage): boolean {
-  try {
-    return statSync(join(packageDir(pkg), "dist")).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
 export function computeExposedSubpaths(pkg: PublishedPackage): string[] {
   return exposedSubpathsForPackageDir(packageDir(pkg), readPublishedManifest(pkg).exports ?? {});
 }
@@ -102,7 +93,7 @@ interface BuildTsconfig {
   rootDir: string;
 }
 
-export function readBuildTsconfig(pkgDir: string): BuildTsconfig | undefined {
+function readBuildTsconfig(pkgDir: string): BuildTsconfig | undefined {
   let parsed: { compilerOptions?: { rootDir?: string }; include?: string[]; exclude?: string[] };
   try {
     parsed = JSON.parse(readFileSync(join(pkgDir, "tsconfig.build.json"), "utf8")) as typeof parsed;

@@ -11,7 +11,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const ENGINE_PACKAGE = "@jgengine/core";
+const ENGINE_PACKAGE = "@jgengine/core";
 
 /** The checkout whose source the dev runner serves. */
 export interface ServedEngine {
@@ -33,7 +33,7 @@ export interface EngineIdentity {
 /** What a saved record carries, so a sidecar can be audited without re-reading the checkout. */
 export type EngineRecord = ServedEngine;
 
-export const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 function git(args: string[], cwd: string): string | null {
   try {

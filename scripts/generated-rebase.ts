@@ -27,33 +27,33 @@ import { GEN_TARGETS, type GeneratedBlock } from "./run-stages";
  * hand-kept copy here missed skill-routing.json and the type-escape baseline, so those conflicted
  * on every rebase two lanes shared.
  */
-export const GENERATED_PATHS: readonly RegExp[] = GEN_TARGETS.flatMap((target) => target.outputs ?? []);
+const GENERATED_PATHS: readonly RegExp[] = GEN_TARGETS.flatMap((target) => target.outputs ?? []);
 
 /** Files only the lane writes, so a conflict there keeps the lane's side. */
-export const LANE_OWNED_PATHS: readonly RegExp[] = [/^changes\/[^/]+\.md$/];
+const LANE_OWNED_PATHS: readonly RegExp[] = [/^changes\/[^/]+\.md$/];
 
 /** The commands that rewrite `GENERATED_PATHS` from source, in order. */
-export const REGENERATE: readonly (readonly string[])[] = [["bun", "run", "gen"]];
+const REGENERATE: readonly (readonly string[])[] = [["bun", "run", "gen"]];
 
-export const REGENERATED_SUBJECT = "Regenerate generated files after rebasing";
+const REGENERATED_SUBJECT = "Regenerate generated files after rebasing";
 
 export function isGenerated(path: string): boolean {
   return GENERATED_PATHS.some((pattern) => pattern.test(path));
 }
 
-export function isLaneOwned(path: string): boolean {
+function isLaneOwned(path: string): boolean {
   return LANE_OWNED_PATHS.some((pattern) => pattern.test(path));
 }
 
 /** Generated blocks inside hand-written files, from the gen table. */
-export const GENERATED_BLOCKS: readonly GeneratedBlock[] = GEN_TARGETS.flatMap((target) => target.blocks ?? []);
+const GENERATED_BLOCKS: readonly GeneratedBlock[] = GEN_TARGETS.flatMap((target) => target.blocks ?? []);
 
 function blocksOf(path: string): GeneratedBlock[] {
   return GENERATED_BLOCKS.filter((block) => block.paths.test(path));
 }
 
 /** Whether a generator writes this file, whole or in a marked block. */
-export function isRegenerated(path: string): boolean {
+function isRegenerated(path: string): boolean {
   return isGenerated(path) || blocksOf(path).length > 0;
 }
 
@@ -123,7 +123,7 @@ export function mergeSuiteReports({ base, ours, theirs }: ConflictStages): strin
 }
 
 /** Files a rebase merges by what they hold rather than by line; a resolved one is followed by `bun run gen`. */
-export const MEANING_MERGES: readonly { readonly paths: RegExp; readonly merge: (stages: ConflictStages) => string | null }[] = [
+const MEANING_MERGES: readonly { readonly paths: RegExp; readonly merge: (stages: ConflictStages) => string | null }[] = [
   { paths: /^games\/[^/]+\/proofs\/suite-report\.json$/, merge: mergeSuiteReports },
 ];
 
@@ -216,7 +216,7 @@ function replaceBlocks(text: string, blocks: readonly GeneratedBlock[], fill: (b
  * three ways with every block emptied, then the base's blocks put back for the regeneration to rewrite. Null when
  * the hand-written text itself conflicts (`merge` returns null), or the sides hold different numbers of blocks.
  */
-export function resolveBlockConflict(
+function resolveBlockConflict(
   path: string,
   stages: ConflictStages,
   merge: (ours: string, base: string, theirs: string) => string | null,

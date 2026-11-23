@@ -6,13 +6,10 @@ import { content } from "../content";
 import { registerCommands } from "../commands";
 import {
   courierLoop,
-  courierRuntime,
   courierStore,
-  courierDeadline,
   DELIVERY_ROUTES,
   DISPATCH,
   finishCourier,
-  setupCourierLandmarks,
   tickCourier,
 } from "./courier";
 

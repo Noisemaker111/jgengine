@@ -305,7 +305,7 @@ describe("createOffScreenWorld", () => {
     const first = build({ residents });
     const a = advance(first, 0, 200, viewer);
     const saved = first.world.snapshot();
-    const b = advance(first, a, 400, viewer);
+    advance(first, a, 400, viewer);
     const expected = first.world.snapshot();
 
     const second = build({ residents });

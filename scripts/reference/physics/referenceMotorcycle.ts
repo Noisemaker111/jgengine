@@ -4,10 +4,10 @@ import { createRigidBodyTree, type RigidBodyDefinition, type RigidBodyTree } fro
 import { createRungeKutta4 } from "./rungeKutta";
 
 /** A side-view point `[x, z]` as tabulated by Sharp et al.: x forward from the rear contact, z down (negative above ground), m. */
-export type SidePoint = readonly [number, number];
+type SidePoint = readonly [number, number];
 
 /** A rigid body of the motorcycle: mass, centre and inertia tensor about the centre (SAE axes, z down, tensor elements), kg·m². */
-export interface MotorcycleBody {
+interface MotorcycleBody {
   mass: number;
   com: SidePoint;
   ixx: number;
@@ -19,7 +19,7 @@ export interface MotorcycleBody {
 }
 
 /** A wheel and its tyre. */
-export interface MotorcycleWheel {
+interface MotorcycleWheel {
   mass: number;
   /** Wheel centre in the reference pose (static, nominal load). */
   center: SidePoint;
@@ -36,7 +36,7 @@ export interface MotorcycleWheel {
 }
 
 /** Monoshock rear suspension: a rocker on the frame, a pull rod to the swing arm and the spring-damper unit. */
-export interface MotorcycleRearLinkage {
+interface MotorcycleRearLinkage {
   /** Shock top on the frame (p13), rocker pivot on the frame (p19), rocker to pull rod (p20), rocker to shock (p21), pull rod to swing arm (p22). */
   shockTop: SidePoint;
   rockerPivot: SidePoint;
@@ -56,7 +56,7 @@ export interface MotorcycleRearLinkage {
 }
 
 /** Engine, primary drive, gearbox and chain. */
-export interface MotorcyclePowertrain {
+interface MotorcyclePowertrain {
   /** Wide-open-throttle crank torque `[rpm, N·m]`, rising rpm. */
   torqueCurve: readonly (readonly [number, number])[];
   idleRpm: number;
@@ -125,7 +125,7 @@ export interface ReferenceMotorcycleSpec {
 }
 
 /** Controls for one {@link ReferenceMotorcycle.step}. */
-export interface MotorcycleControls {
+interface MotorcycleControls {
   /** Steering torque from the rider's hands, N·m, positive steering right. */
   steerTorque?: number;
   /** Rider upper-body lean torque, N·m, positive leaning the body right. */

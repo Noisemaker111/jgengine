@@ -40,7 +40,7 @@ export function importedFolders(source: string, depth: number): string[] {
 }
 
 /** Lower-case words of three letters or more, with camelCase split: `lootTable` -> `loot`, `table`. */
-export function words(text: string): string[] {
+function words(text: string): string[] {
   return text.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase().match(/[a-z]{3,}/g) ?? [];
 }
 
@@ -144,7 +144,7 @@ const DOCS_WEIGHT = 3;
  * leave-one-out against the tagged folders, this picks the tagged skill about 7 times in 10; the tag it
  * writes is reviewed in the diff.
  */
-export function guessSkill(
+function guessSkill(
   folder: FolderProfile,
   routed: ReadonlyMap<string, { profile: FolderProfile; skill: string }>,
   skillDocs: ReadonlyMap<string, string[]>,
@@ -174,7 +174,7 @@ export function guessSkill(
 }
 
 /** The words of each skill's own docs: its SKILL.md and recipes. */
-export function readSkillDocs(skillsDir: string, skills: readonly string[]): Map<string, string[]> {
+function readSkillDocs(skillsDir: string, skills: readonly string[]): Map<string, string[]> {
   const docs = new Map<string, string[]>();
   for (const skill of skills) {
     const dir = join(skillsDir, skill);
