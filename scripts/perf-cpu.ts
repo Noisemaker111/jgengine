@@ -5,7 +5,7 @@ import type { CdpSession } from "./browser-lib";
  * frame ran (a keydown, a frame callback); the profile says which functions inside it took the time.
  */
 
-export interface CpuProfileNode {
+interface CpuProfileNode {
   id: number;
   callFrame: { functionName: string; url: string; lineNumber: number; columnNumber: number };
   children?: number[];

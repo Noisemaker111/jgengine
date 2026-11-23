@@ -24,7 +24,6 @@ import {
   buildRoadRibbon,
   buildTrimmedIntersections,
   dashSegments,
-  GROUND_DECAL_LAYERS,
   type IntersectionStreet,
   type RoadJunctionInput,
   type RoadPoint,

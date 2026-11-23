@@ -31,7 +31,7 @@ export interface RocketEngine {
 }
 
 /** Axial-force coefficient by Mach number and the normal-force slope, for one stack configuration. */
-export interface RocketAero {
+interface RocketAero {
   /** Reference area, m². */
   area: number;
   /** `[Mach, C_A]` points, linear between, held flat past the ends: the drag rise through Mach 1 lives here. */
@@ -92,7 +92,7 @@ export interface RocketControl {
 }
 
 /** Serializable integrator state: position and velocity in Earth-centred inertial axes (z north, x through the launch meridian at `t = 0`). */
-export interface RocketState {
+interface RocketState {
   time: number;
   stage: number;
   /** Mission time each stage ignited, s; `NaN` before. */
@@ -205,7 +205,7 @@ function rotateInverse(q: readonly number[], v: readonly number[], out: Vec3): V
  * Earth-centred Earth-fixed position of a geodetic point, m.
  * @capability rocket-6dof geodetic latitude, longitude and height to Earth-fixed coordinates
  */
-export function geodeticToEarthFixed(earth: EarthModel, latitude: number, longitude: number, altitude: number): Vec3 {
+function geodeticToEarthFixed(earth: EarthModel, latitude: number, longitude: number, altitude: number): Vec3 {
   const e2 = earth.flattening * (2 - earth.flattening);
   const n = earth.equatorialRadius / Math.sqrt(1 - e2 * Math.sin(latitude) ** 2);
   return [(n + altitude) * Math.cos(latitude) * Math.cos(longitude), (n + altitude) * Math.cos(latitude) * Math.sin(longitude), (n * (1 - e2) + altitude) * Math.sin(latitude)];
@@ -215,7 +215,7 @@ export function geodeticToEarthFixed(earth: EarthModel, latitude: number, longit
  * Geodetic latitude, longitude and height of an Earth-fixed point by Bowring's method (millimetre accurate near the surface).
  * @capability rocket-6dof Earth-fixed coordinates to geodetic latitude, longitude and height
  */
-export function earthFixedToGeodetic(earth: EarthModel, point: readonly number[]): { latitude: number; longitude: number; altitude: number } {
+function earthFixedToGeodetic(earth: EarthModel, point: readonly number[]): { latitude: number; longitude: number; altitude: number } {
   const x = point[0] ?? 0;
   const y = point[1] ?? 0;
   const z = point[2] ?? 0;
@@ -235,7 +235,7 @@ export function earthFixedToGeodetic(earth: EarthModel, point: readonly number[]
  * Gravitational acceleration with the J2 term, m/s², inertial axes with z along the rotation axis.
  * @capability rocket-6dof Earth gravity with J2 oblateness
  */
-export function earthGravity(earth: EarthModel, position: readonly number[], out: Vec3 = [0, 0, 0]): Vec3 {
+function earthGravity(earth: EarthModel, position: readonly number[], out: Vec3 = [0, 0, 0]): Vec3 {
   const x = position[0] ?? 0;
   const y = position[1] ?? 0;
   const z = position[2] ?? 0;

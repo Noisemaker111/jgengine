@@ -6,14 +6,13 @@ import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
 import { reportRain, reportWind } from "@jgengine/core/weather/livingWorld.draw";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
+import { anchorWeatherField, createWeatherQuadGeometry, mountWeatherMesh } from "./weatherGeometry.draw";
 import { DEFAULT_RAIN_COUNT, DEFAULT_RAIN_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";
 import {
   createWeatherUniformSet,
-  updateWeatherUniformSet,
+  tickWeatherUniforms,
   useWeatherUniformSet,
   type WeatherUniformOptions,
   type WeatherUniformSet,
@@ -43,7 +42,6 @@ export interface RainFieldProps {
 }
 
 const DEFAULT_VOLUME: WeatherVector = [56, 42, 56];
-const DEFAULT_ORIGIN: WeatherVector = [0, 0, 0];
 const DEFAULT_RAIN_COLOR = "#b8c4d8";
 
 /** How much rain a field reports to the living world, 0..1: the default density is a steady shower. @internal */
@@ -169,17 +167,8 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
         }
       `,
       });
-      mesh = new THREE.Mesh(geometry, material);
-      mesh.frustumCulled = props.frustumCulled ?? !(props.followCamera ?? true);
-      mesh.renderOrder = props.renderOrder ?? 10;
-      state.scene.add(mesh);
-      if (uniforms === undefined) {
-        leaveTicker = joinFrameTask(-1, (frameState, delta) => {
-          const p = getProps();
-          const position = frameState.camera.position;
-          updateWeatherUniformSet(set, uniformOptions(p), delta, position.x, position.z, position.y);
-        });
-      }
+      mesh = mountWeatherMesh(state.scene, geometry, material, props, 10);
+      if (uniforms === undefined) leaveTicker = tickWeatherUniforms(set, () => uniformOptions(getProps()));
     },
     frame(state: EngineFrameState) {
       const props = getProps();
@@ -188,13 +177,7 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
       reportRain(source, rainAmount(props.density ?? DEFAULT_RAIN_DENSITY, set.rain.value));
       reportWind(source, [set.wind.value.x, set.wind.value.z]);
       const uniforms = material.uniforms;
-      const followCamera = props.followCamera ?? true;
-      const origin = props.origin ?? DEFAULT_ORIGIN;
-      const target = uniforms.uAnchor.value as THREE.Vector3;
-      if (followCamera) target.copy(state.camera.position);
-      else target.set(origin[0], origin[1], origin[2]);
-      const volume = props.volume ?? DEFAULT_VOLUME;
-      uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
+      anchorWeatherField(uniforms, state.camera, props, DEFAULT_VOLUME);
       uniforms.uSpeed.value = props.speed ?? 22;
       uniforms.uLength.value = props.length ?? 1.35;
       uniforms.uWidth.value = props.width ?? 0.018;
@@ -210,7 +193,7 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
         metrics.count = geometry.instanceCount;
         metrics.capacity = geometry.getAttribute("aSpawn").count;
       }
-      mesh.frustumCulled = props.frustumCulled ?? !followCamera;
+      mesh.frustumCulled = props.frustumCulled ?? !(props.followCamera ?? true);
       mesh.renderOrder = props.renderOrder ?? 10;
     },
     dispose(state: EngineFrameState) {

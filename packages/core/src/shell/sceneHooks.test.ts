@@ -32,13 +32,13 @@ async function write(change: () => void): Promise<void> {
 let renders = 0;
 
 function EntityRows() {
-  const entities = useSceneEntities();
+  useSceneEntities();
   renders += 1;
   return null;
 }
 
 function ObjectRows() {
-  const objects = useSceneObjects();
+  useSceneObjects();
   renders += 1;
   return null;
 }

@@ -26,12 +26,12 @@ const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 /** One frame at 360 Hz, in ms: the budget every cost here is held against. */
 export const FPS_GAP_BUDGET_MS = 1000 / 360;
 /** A cost at or above this share of the budget (0.28 ms) counts as blocking that game. */
-export const BLOCKING_SHARE = 0.1;
+const BLOCKING_SHARE = 0.1;
 const DEFAULT_SECONDS = 8;
 const WARMUP_MS = 5_000;
 /** CPU rows kept per game, so the groups add up to the measured work rather than its top 15. */
 const BREAKDOWN_TOP = 80;
-export const DEFAULT_RECORDS = join(repoRoot, ".scratch", "perf-fps-gap");
+const DEFAULT_RECORDS = join(repoRoot, ".scratch", "perf-fps-gap");
 
 /** Where sampled main-thread time went by layer, as a share of the profiled wall clock. */
 export interface ProfileLayer {
@@ -175,7 +175,7 @@ export function cpuGroupOf(name: string): string {
 }
 
 /** The engine-level work a GPU pass belongs to. */
-export function gpuGroupOf(pass: string): string {
+function gpuGroupOf(pass: string): string {
   if (pass === "main" || pass === "post:BeautyPass" || pass === "post:RenderPass") return "scene raster (GPU)";
   if (pass === "shadow") return "shadow map raster (GPU)";
   return "post-processing GPU";
@@ -398,7 +398,7 @@ export function renderBackendComparison(byBackend: ReadonlyMap<RendererBackend, 
 }
 
 /** Saved entries in `dir`, one per game asked for; a missing one is named rather than skipped. */
-export function readEntries(dir: string, games: readonly string[]): { entries: FpsGapEntry[]; missing: string[] } {
+function readEntries(dir: string, games: readonly string[]): { entries: FpsGapEntry[]; missing: string[] } {
   const entries: FpsGapEntry[] = [];
   const missing: string[] = [];
   const available = existsSync(dir) ? new Set(readdirSync(dir).filter((name) => name.endsWith(".json")).map((name) => name.slice(0, -5))) : new Set<string>();

@@ -4,7 +4,6 @@ import {
   HARNESS_TEST_TIMEOUT_MS,
   UNREACHABLE,
   cleanupHarness,
-  harnessBrowser as browser,
   harnessCli as cli,
   harnessProject,
   hasChrome,
@@ -30,7 +29,7 @@ describe.skipIf(!hasChrome)("portable harness unreachable targets in Chromium", 
       } });
       const project = harnessProject("jg-browser-unreachable-");
       try {
-        const { exit, stdout, stderr } = await runHarnessCli([cli, "drive", "--url", server.url.toString(), "--device", "mobile", "--click", "bAcK", "--wait", "100", "--shot", "result"], { cwd: project.dir });
+        const { exit, stderr } = await runHarnessCli([cli, "drive", "--url", server.url.toString(), "--device", "mobile", "--click", "bAcK", "--wait", "100", "--shot", "result"], { cwd: project.dir });
         expect(stderr).toContain("using the bundled drive harness");
         expect(reports).toEqual([{ coarse: true, fine: false, touchPoints: 5, width: 390, height: 844 }]);
         expect(exit).toBe(1);

@@ -1,5 +1,4 @@
 import type { MobVec3 } from "../ai/mobBrain";
-import type { RosterEntry } from "@jgengine/core/scene/roster";
 import { seedStatValues, setStatValue } from "@jgengine/core/scene/entityStats";
 import type { StatCatalog, StatValue, StatValueMap } from "@jgengine/core/scene/entityStats";
 

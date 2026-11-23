@@ -405,7 +405,7 @@ const FRAGMENT = "### Changed\n\n- The lane closes itself in one command.\n";
 
 test("land --commit commits with the branch fragment, then hands the PR over in the same run", () => {
   const { git, calls } = scriptedGit({ status: " M scripts/land.ts\n", diff: "changes/agent-lane-x.md\n" });
-  const { github: gh, calls: ghCalls, opened } = scriptedGh();
+  const { github: gh, opened } = scriptedGh();
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
@@ -447,7 +447,7 @@ test("land --commit with nothing to commit lands what the branch already has", (
 
 test("a failed commit stops the landing before anything is pushed", () => {
   const { git, calls } = scriptedGit({ status: " M shared.txt\n" });
-  const { github: gh, calls: ghCalls, opened } = scriptedGh();
+  const { github: gh, calls: ghCalls } = scriptedGh();
   const { io } = handOffIo(git, gh);
   const failing = (args: string[]): Run =>
     args[0] === "commit" ? { status: 1, stdout: "", stderr: "nothing added to commit" } : git(args);
@@ -522,7 +522,7 @@ test("--commit prints every path it will commit, and refuses the whole set with 
     staged: ["scripts/land.ts", "changes/agent-lane-x.md"],
     added: ["changes/agent-lane-x.md"],
   });
-  const { github: gh, calls: ghCalls, opened } = scriptedGh();
+  const { github: gh, calls: ghCalls } = scriptedGh();
   const { io, logs, errors } = handOffIo(git, gh);
 
   const code = landBranch({
@@ -552,7 +552,7 @@ test("--allow keeps one refused file on purpose", () => {
     added: ["changes/agent-lane-x.md"],
     diff: "changes/agent-lane-x.md\n",
   });
-  const { github: gh, calls: ghCalls, opened } = scriptedGh();
+  const { github: gh, opened } = scriptedGh();
   const { io } = handOffIo(git, gh);
 
   const code = landBranch({

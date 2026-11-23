@@ -9,7 +9,7 @@ import {
   fallbackSeamsSnapshot,
 } from "@jgengine/core/devtools/fallbackSeams";
 
-import { IsolatedEntityModel, IsolatedModelPart, ModelFallbackBoundary } from "./SceneModels.draw";
+import { IsolatedModelPart, ModelFallbackBoundary } from "./SceneModels.draw";
 import { isolatedEntityModelDraw } from "./entityModelDraw.draw";
 import { modelForLook } from "./modelLook";
 

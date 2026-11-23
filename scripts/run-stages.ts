@@ -93,8 +93,14 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "source-paths", script: "scripts/sourcePaths.ts", args: ["--check"], jobs: ["types"], generated: true, reads: ["packages/", "apps/", "examples/", "registry/", "games/llmville/packages/"] },
   // Reads the whole tree: a file named `nul` anywhere breaks every Windows checkout.
   { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"] },
+  // Three real tools; docs/architecture.md says what each one holds and where a finding's fix lives.
+  // lint: imports point down the package order, UI imports the engine runtime (not React), no unused code.
+  { name: "lint", script: "node_modules/oxlint/bin/oxlint", jobs: ["types"], reads: [".oxlintrc.json", "packages/", "games/", "apps/", "registry/", "examples/"] },
+  // unused: files nothing imports, exports nothing uses, dependencies nothing loads.
+  { name: "unused", script: "node_modules/knip/bin/knip.js", args: ["--no-progress", "--no-config-hints", "--cache"], jobs: ["types"], reads: ["knip.json", "packages/", "games/", "apps/", "registry/", "examples/", ".claude/hooks/"] },
+  // copies: the same 200 tokens in two places.
+  { name: "copies", script: "node_modules/jscpd/run-jscpd.js", jobs: ["types"], reads: [".jscpd.json", "packages/", "games/", "apps/", "examples/"], skipsTests: true },
   { name: "types", script: "scripts/check-types-all.ts", jobs: ["types"] },
-  { name: "react-free", script: "scripts/check-react-free.ts", jobs: ["quick"], reads: ["packages/", "games/", "apps/", "registry/", "examples/", "package.json"] },
   { name: "export-manifest", script: "scripts/gen-export-manifest.ts", args: ["--check"], jobs: ["quick"], needsBuild: true, generated: true, reads: ["packages/"], skipsTests: true },
   { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"], skipsTests: true },
@@ -112,7 +118,7 @@ export const CHECKS: readonly CheckDef[] = [
  * Paths every row reads: the toolchain, the compiler settings and the check scripts themselves. A
  * change here can move any verdict, so it runs every check and generator.
  */
-export const TOOLING_PATHS: readonly string[] = [
+const TOOLING_PATHS: readonly string[] = [
   "package.json",
   "bun.lock",
   "bunfig.toml",
@@ -167,7 +173,7 @@ const ENSURE_READY: Stage = {
 // core's build deletes and recompiles dist, and every `bun run check` paid it on an unchanged tree.
 const BUILD: Stage = { name: "build", command: "bun", args: ["scripts/build-fingerprint.ts"], needs: ["ensure-ready"], rerun: "bun run build" };
 
-export function checkStage(check: CheckDef, withBuild: boolean): Stage {
+function checkStage(check: CheckDef, withBuild: boolean): Stage {
   const [command, ...args] = checkCommand(check);
   return {
     name: check.name,
@@ -276,7 +282,7 @@ export function genPlan(targets: readonly GenTarget[]): Stage[] {
   ];
 }
 
-export type StageState = "passed" | "failed" | "skipped";
+type StageState = "passed" | "failed" | "skipped";
 
 export interface StageOutcome {
   readonly name: string;
@@ -397,7 +403,7 @@ export function parseCheckArgs(argv: readonly string[]): CheckRequest {
  * Generators write separate files, so independent targets run side by side (after `barrels`, which
  * they all read); checks run one at a time in table order, as they always have.
  */
-export const GEN_JOBS = Math.max(2, Math.min(4, Math.floor(availableParallelism() / 2)));
+const GEN_JOBS = Math.max(2, Math.min(4, Math.floor(availableParallelism() / 2)));
 
 async function runStages(label: string, stages: readonly Stage[], root: string, jobs: number): Promise<number> {
   const digests: string[] = [];

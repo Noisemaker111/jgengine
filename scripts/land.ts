@@ -73,7 +73,7 @@ const root = landingRoot(import.meta.url);
 
 export const EXIT_LANDED = 0;
 export const EXIT_VERIFY_FAILED = 1;
-export const EXIT_COULD_NOT_MERGE = 3;
+const EXIT_COULD_NOT_MERGE = 3;
 
 export interface LandArgs {
   title?: string;
@@ -135,7 +135,7 @@ export interface FragmentFile {
 }
 
 /** Every `changes/` fragment in this checkout, including other lanes' notes that share the directory. */
-export function fragmentFiles(dir = join(root, "changes")): FragmentFile[] {
+function fragmentFiles(dir = join(root, "changes")): FragmentFile[] {
   let names: string[];
   try {
     names = readdirSync(dir);
@@ -183,7 +183,7 @@ export function commitsBody(messages: readonly string[]): string {
 }
 
 /** Paths this branch adds or changes against `origin/<base>`, as git reports them. */
-export function diffPaths(base: string, git: Git = (args) => run("git", args)): string[] {
+function diffPaths(base: string, git: Git = (args) => run("git", args)): string[] {
   const result = git(["diff", "--name-only", `origin/${base}...HEAD`]);
   return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
 }
@@ -219,7 +219,7 @@ export function noteLines(messages: readonly string[]): string[] {
 const MESSAGE_END = "\u001e";
 
 /** This branch's commit messages against `origin/<base>`, subject and body, newest first. */
-export function branchCommits(base: string, git: Git = (args) => run("git", args)): string[] {
+function branchCommits(base: string, git: Git = (args) => run("git", args)): string[] {
   const result = git(["log", "--format=%B%x1e", `origin/${base}..HEAD`]);
   if (result.status !== 0) return [];
   return result.stdout
@@ -322,7 +322,7 @@ const API_SURFACE = /^\.claude\/skills\/[^/]+\/api\.md$/;
  * "Before" is the branch point, not the base's tip: against the tip, every export another PR added
  * to beta since read as removed here, and every one it dropped as added (#2708).
  */
-export function apiChangesIn(
+function apiChangesIn(
   changed: readonly string[],
   base: string,
   runGit: Git,
@@ -591,7 +591,7 @@ export interface LockWait {
   waitedMs: number;
 }
 
-export function totalWait(waits: readonly LockWait[]): number {
+function totalWait(waits: readonly LockWait[]): number {
   return waits.reduce((sum, wait) => sum + wait.waitedMs, 0);
 }
 
@@ -623,10 +623,10 @@ export interface LandLock {
 /** A lock nobody refreshed for this long is broken even if its pid still answers. */
 export const LOCK_STALE_MS = 30 * 60_000;
 /** How often a waiting landing looks again once it has been queueing a while. */
-export const LOCK_POLL_MS = 500;
+const LOCK_POLL_MS = 500;
 /** The first seconds of a wait poll this fast, so a short hold costs a short wait, not a whole poll. */
-export const LOCK_POLL_FAST_MS = 50;
-export const LOCK_FAST_WINDOW_MS = 5_000;
+const LOCK_POLL_FAST_MS = 50;
+const LOCK_FAST_WINDOW_MS = 5_000;
 const LOCK_UNREADABLE_GRACE_MS = 5_000;
 
 /** The one lock file for a repo, in its git directory so every worktree shares it. */
@@ -969,7 +969,7 @@ export interface PrRef {
  * Replace a PR's body (or rewrite it from the current one) and, when given, its title, leaving each
  * alone when it already reads the same.
  */
-export function updatePr(
+function updatePr(
   number: number,
   next: { body: string | ((current: string) => string); title?: string },
   github: GitHub,
@@ -1085,7 +1085,7 @@ export function mergeVerified(
  * Branches no landing deletes, whatever merged from them: the bases, releases, the backup and rescue
  * copies people keep on purpose, and the branch the PR screenshots live on.
  */
-export const KEPT_BRANCH = /^(?:beta|pr-shots|(?:backup|rescue)\/.+)$/;
+const KEPT_BRANCH = /^(?:beta|pr-shots|(?:backup|rescue)\/.+)$/;
 
 /**
  * Why a landed branch stays on origin, or null when it may go: a {@link KEPT_BRANCH}, or a branch an
@@ -1155,7 +1155,7 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
 }
 
 /** What an author reads when land is done: the PR, and who merges it. */
-export function handOffLines(pr: PrRef): string[] {
+function handOffLines(pr: PrRef): string[] {
   return [pr.url, "lane:close merges it once its verify:fast receipt covers this head"];
 }
 

@@ -65,9 +65,9 @@ const VERIFY_FAST_USAGE = {
   ],
 } as const;
 
-export const BASE = "origin/beta";
-export const EXIT_VERIFIED = 0;
-export const EXIT_FAILED = 1;
+const BASE = "origin/beta";
+const EXIT_VERIFIED = 0;
+const EXIT_FAILED = 1;
 
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 const SOURCE_FILE = /\.[cm]?[jt]sx?$/;
@@ -112,7 +112,7 @@ export interface Step extends ScheduledStep {
 }
 
 /** One test file, type-check, gate or boot, and the changed paths that can decide its result. */
-export interface Unit {
+interface Unit {
   id: string;
   inputs: readonly string[];
 }
@@ -123,7 +123,7 @@ export interface Unit {
  * scenario hit its own 30 s give-up), and twelve made the frame gate's browser launches
  * fail; six is the widest that ran every step green here. `--jobs` overrides it.
  */
-export const DEFAULT_JOBS = Math.max(2, Math.min(4, Math.floor(availableParallelism() / 2)));
+const DEFAULT_JOBS = Math.max(2, Math.min(4, Math.floor(availableParallelism() / 2)));
 
 export interface Workspace {
   dir: string;
@@ -230,7 +230,7 @@ export function changedFiles(root: string, base: string = BASE): string[] {
 }
 
 /** Paths this branch deleted against `base`, committed, staged or not. */
-export function deletedFiles(root: string, base: string = BASE): string[] {
+function deletedFiles(root: string, base: string = BASE): string[] {
   const out = new Set<string>();
   for (const args of [["diff", "--name-only", "--diff-filter=D", `${base}...HEAD`], ["diff", "--name-only", "--diff-filter=D", "--cached"], ["diff", "--name-only", "--diff-filter=D"]]) {
     for (const path of names(git(root, args))) out.add(path);
@@ -239,7 +239,7 @@ export function deletedFiles(root: string, base: string = BASE): string[] {
 }
 
 /** `test:a`, `test:b`, `gate:c` -> `2 test(s), 1 gate(s)`. */
-export function summarizeUnits(units: readonly string[]): string {
+function summarizeUnits(units: readonly string[]): string {
   const counts = new Map<string, number>();
   for (const unit of units) {
     const kind = unit.split(":")[0]!;
@@ -310,7 +310,7 @@ export function workspaceOf(path: string, all: readonly Workspace[]): Workspace 
   return found;
 }
 
-export function isTestFile(path: string): boolean {
+function isTestFile(path: string): boolean {
   return TEST_FILE.test(path);
 }
 
@@ -356,7 +356,7 @@ export function gatesFor(changed: readonly string[]): string[] {
  * The checks that only compare a committed file with its generator. `bun run gen` rewrites those
  * files when lane:close lands, so a lane never fails on one going stale while it works.
  */
-export const GENERATED_GATES: ReadonlySet<string> = new Set(GEN_TARGETS.map((target) => target.name).filter((name) => findCheck(name)?.generated === true));
+const GENERATED_GATES: ReadonlySet<string> = new Set(GEN_TARGETS.map((target) => target.name).filter((name) => findCheck(name)?.generated === true));
 
 /** A gate runs when the diff reaches what it reads and it is not a generated-file comparison. */
 function keepGate(name: string, changed: readonly string[]): boolean {
@@ -411,7 +411,7 @@ export function opaqueScopes(file: string, unresolved: readonly string[], all: r
 }
 
 /** Root files every unit's result can depend on: the toolchain and the compiler settings. */
-export const ROOT_INPUTS = ["package.json", "bun.lock", "bunfig.toml", "tsconfig.base.json", "tsconfig.json"];
+const ROOT_INPUTS = ["package.json", "bun.lock", "bunfig.toml", "tsconfig.base.json", "tsconfig.json"];
 
 /** Workspaces whose tests stay inside their own directory and imports; repo tooling tests read the whole tree. */
 const CONTAINED = /^(packages\/(?!jgengine$)[^/]+|games\/(?!scripts$|shared$)[^/]+)$/;
@@ -427,7 +427,7 @@ function sourcesUnder(graph: ImportGraph, dir: string): string[] {
  * Nothing here names the base commit, so a rebase that only brings in other work leaves a unit
  * these files do not cover still fresh.
  */
-export function unitInputs(graph: ImportGraph, entries: readonly string[], workspace: string | null, extraDirs: readonly string[] = []): string[] {
+function unitInputs(graph: ImportGraph, entries: readonly string[], workspace: string | null, extraDirs: readonly string[] = []): string[] {
   if (workspace === null || !CONTAINED.test(workspace)) return [WHOLE_TREE];
   const found = closure(graph, entries);
   for (const dir of [workspace, ...extraDirs]) {
@@ -596,7 +596,7 @@ export function verifyPlan(input: {
 }
 
 /** Whether a change can alter the built site: a source or asset under apps/, packages/ or games/, not a note. */
-export function reachesSite(paths: readonly string[]): boolean {
+function reachesSite(paths: readonly string[]): boolean {
   const check = findCheck("site-bundles");
   return check !== undefined && paths.some((path) => !path.endsWith(".md") && !isTestFile(path) && reachedBy(check, [path]));
 }
@@ -607,7 +607,7 @@ export function reachesSite(paths: readonly string[]): boolean {
  * in dependency order, so a lane that added an export fixes the manifest, `api.md` and the
  * baselines in one go instead of discovering the next stale file in CI.
  */
-export const GATE_FIX: Readonly<Record<string, string>> = {
+const GATE_FIX: Readonly<Record<string, string>> = {
   "export-manifest":
     "bun run gen  (rewrites scripts/export-manifest.json from the public subpaths the build will emit)",
   "skill-api":
@@ -615,7 +615,7 @@ export const GATE_FIX: Readonly<Record<string, string>> = {
 };
 
 /** The files whose bytes decide a gate: what its row reads. A row that names no paths reads the whole tree. */
-export function gateInputs(check: CheckDef, files: readonly string[]): string[] {
+function gateInputs(check: CheckDef, files: readonly string[]): string[] {
   if (check.reads === undefined) return [WHOLE_TREE];
   return files.filter((file) => readsPath(check, file)).sort();
 }
@@ -632,7 +632,7 @@ export const TESTS_PER_LANE = 10;
  * Measured seconds of tests per process. The lanes run the heaviest step first, so chunks this
  * size pack around the type-checks instead of one long process holding the run's tail.
  */
-export const TEST_CHUNK_SECONDS = 30;
+const TEST_CHUNK_SECONDS = 30;
 
 /** Rough seconds a test file costs when nothing better is known; a browser scenario costs far more. */
 function guessedTestCost(file: string): number {
@@ -813,7 +813,7 @@ export function heavyPaths(_root: string): RegExp {
  * `bun scripts/test-shard.ts <name>` alone (2026-10-23); shard i is split, so its halves
  * carry the same total between them.
  */
-export const SHARD_COST: Readonly<Record<string, number>> = {
+const SHARD_COST: Readonly<Record<string, number>> = {
   a: 30,
   b: 40,
   c: 80,
@@ -837,13 +837,13 @@ export const SHARD_COST: Readonly<Record<string, number>> = {
  * three are git and subprocess bound, so the halves are split by that cost rather than
  * by count, which would put two of them side by side.
  */
-export const SHARD_I_MEASURED_COST: Readonly<Record<string, number>> = {
+const SHARD_I_MEASURED_COST: Readonly<Record<string, number>> = {
   "scripts/land.test.ts": 30,
   "scripts/tarballInstall.test.ts": 22,
   "scripts/changelog-fragments.test.ts": 21,
 };
 
-export function shardISteps(root: string): Step[] {
+function shardISteps(root: string): Step[] {
   const printed = spawnSync("bun", ["scripts/test-shard.ts", "--print", "i"], { cwd: root, encoding: "utf8", timeout: 60_000 });
   const files = (printed.stdout ?? "")
     .split("\n")
@@ -864,7 +864,7 @@ export function shardISteps(root: string): Step[] {
 }
 
 /** Two groups of files with roughly equal measured cost, heaviest files first. */
-export function splitByCost(files: readonly string[], cost: Readonly<Record<string, number>>, parts = 2): string[][] {
+function splitByCost(files: readonly string[], cost: Readonly<Record<string, number>>, parts = 2): string[][] {
   const groups = Array.from({ length: parts }, () => ({ files: [] as string[], total: 0 }));
   const ordered = [...files].sort((a, b) => (cost[b] ?? 1) - (cost[a] ?? 1) || a.localeCompare(b));
   for (const file of ordered) {
@@ -929,20 +929,20 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
   return steps;
 }
 
-export interface Check {
+interface Check {
   name: string;
   ok: boolean;
   ms: number;
 }
 
-export interface JsonReport {
+interface JsonReport {
   ok: boolean;
   ms: number;
   checks: Check[];
 }
 
 /** The document `--json` prints: `ok` is every check, `ms` the whole run. */
-export function jsonReport(checks: readonly Check[], ms: number): JsonReport {
+function jsonReport(checks: readonly Check[], ms: number): JsonReport {
   return {
     ok: checks.every((check) => check.ok),
     ms,

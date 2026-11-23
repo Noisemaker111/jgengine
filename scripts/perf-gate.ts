@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
@@ -51,8 +51,8 @@ const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const DEFAULT_SECONDS = 6;
 const WARMUP_MS = 5_000;
 /** Games measured at once by default: one, since games sharing a GPU measure each other's frames. */
-export const DEFAULT_JOBS = 1;
-export { checkBudget, loadBudget, type BudgetViolation, type LoadedBudget, type PerfBudget } from "./perf-budget";
+const DEFAULT_JOBS = 1;
+export { checkBudget, loadBudget,   type PerfBudget } from "./perf-budget";
 
 /** The viewport the gate measures at: the reference one, so a frame time is comparable with the budget. */
 export const GATE_SIZE = { width: 1600, height: 900 } as const;

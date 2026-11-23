@@ -30,7 +30,7 @@ export interface AssetCatalogs {
 }
 
 /** A pull for one shared-library key, with the URL the game loads once it is served. */
-export interface LibraryPullJob extends PullJob {
+interface LibraryPullJob extends PullJob {
   url: string;
 }
 
@@ -84,7 +84,7 @@ export function missingPulls(text: string, publicDir: string, catalogs: AssetCat
 }
 
 /** The scan behind `DEFAULT_ROAD_SCAN` (`@jgengine/core/world/features`), the library's `asphalt/dry`. */
-export const DEFAULT_ROAD_SCAN_SOURCE = "ambientcg-asphalt003";
+const DEFAULT_ROAD_SCAN_SOURCE = "ambientcg-asphalt003";
 const PAVED_PATH = /"kind":\s*"(road|street|track|avenue|highway)"/;
 
 /**

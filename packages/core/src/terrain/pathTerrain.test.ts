@@ -162,7 +162,6 @@ describe("withPathProfiles", () => {
       let lateral = Number.POSITIVE_INFINITY;
       let along = 0;
       let travelled = 0;
-      let point: readonly [number, number] = curve[0]!;
       let total = 0;
       for (let i = 0; i < curve.length - 1; i += 1) total += Math.hypot(curve[i + 1]![0] - curve[i]![0], curve[i + 1]![1] - curve[i]![1]);
       for (let i = 0; i < curve.length - 1; i += 1) {
@@ -179,7 +178,6 @@ describe("withPathProfiles", () => {
         if (distance < lateral) {
           lateral = distance;
           along = travelled + t * segment;
-          point = [px, pz];
         }
         travelled += Math.hypot(abx, abz);
       }

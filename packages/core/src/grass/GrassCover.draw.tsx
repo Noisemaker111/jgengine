@@ -5,7 +5,7 @@ import * as THREE from "three";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { createGrassCoverGeometry, GRASS_COVER_MAX_SEGMENTS } from "./grassCoverGeometry.draw";
+import { createGrassCoverGeometry } from "./grassCoverGeometry.draw";
 import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
 interface CoverGrain {

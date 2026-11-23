@@ -20,7 +20,7 @@ const DEPLOY_SITE_USAGE = {
   flags: [],
 };
 
-export interface StepResult {
+interface StepResult {
   status: number;
   /** The last output lines, kept for the failure reason. */
   tail: string;

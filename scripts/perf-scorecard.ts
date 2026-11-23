@@ -14,7 +14,7 @@ import type { PerfBuild } from "./prodServer";
  */
 
 /** Frame budgets a hitch is counted against: one 60 Hz frame, and two. */
-export const HITCH_MS = [16.7, 33.3] as const;
+const HITCH_MS = [16.7, 33.3] as const;
 /** The slowdown of the slow-CPU window, the stand-in for a laptop or phone (Chrome's CPU throttling); `--cpu` changes it. */
 export const SLOW_CPU_RATE = 4;
 
@@ -55,7 +55,7 @@ export function frameScore(deltas: readonly number[]): FrameScore {
 
 /** Whose code a profile frame is. `browser` is everything with no script: natives, GC, the compositor. */
 export type CodeOwner = "react" | "ui" | "r3f" | "drei" | "three" | "engine" | "game" | "library" | "browser";
-export const CODE_OWNERS: readonly CodeOwner[] = ["react", "ui", "r3f", "drei", "three", "engine", "game", "library", "browser"];
+const CODE_OWNERS: readonly CodeOwner[] = ["react", "ui", "r3f", "drei", "three", "engine", "game", "library", "browser"];
 
 /**
  * Whose code a source path is. react-three-fiber bundles its own reconciler, so `react-reconciler`,
@@ -316,7 +316,7 @@ export const LOAD_RESOURCES_SCRIPT = `(() => {
 })()`;
 
 /** Bundled chunks and the four generated wasm-bindgen modules shipped with Rune. */
-export function productionScript(path: string): boolean {
+function productionScript(path: string): boolean {
   return /\/assets\/[^/]+-[A-Za-z0-9_-]{6,}\.js$/.test(path)
     || /^\/jg-ui\/(?:jg_ui\.js|snippets\/jg-ui-[a-f0-9]+\/inline0\.js|snippets\/rune-[a-f0-9]+\/src\/platform\/web\/(?:bridge|platform)\.js)$/.test(path);
 }
@@ -437,7 +437,7 @@ export interface ScorecardColumn {
 }
 
 /** The scorecard's rows, one value per column: the table `perf` and `perf ab` both lead with. */
-export function scorecardRows(columns: readonly ScorecardColumn[]): string[][] {
+function scorecardRows(columns: readonly ScorecardColumn[]): string[][] {
   const row = (name: string, value: (card: Scorecard) => string): string[] => [name, ...columns.map(({ card }) => (card === null ? "failed" : value(card)))];
   const main = (value: (main: NonNullable<Scorecard["main"]>) => string) => (card: Scorecard) => (card.main === null ? "-" : value(card.main));
   const load = (value: (load: LoadScore) => string) => (card: Scorecard) => (card.load === null ? "-" : value(card.load));
@@ -490,7 +490,7 @@ export function scorecardLabel(card: Pick<Scorecard, "build">): string {
 }
 
 /** The scorecard as tally rows: `[metric, value, unit]`, a row left out where the run did not measure it. */
-export function scorecardMetrics(card: Scorecard): Array<[string, number, string]> {
+function scorecardMetrics(card: Scorecard): Array<[string, number, string]> {
   const rows: Array<[string, number, string]> = [
     ["frame.p50", card.frame.p50Ms, "ms"],
     ["frame.p95", card.frame.p95Ms, "ms"],

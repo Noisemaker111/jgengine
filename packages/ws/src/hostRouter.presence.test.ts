@@ -36,7 +36,7 @@ async function room(options: { players: number; codecs?: WsCodecName[]; poseRule
     ...(options.poseRules === undefined ? {} : { poseRules: options.poseRules }),
   });
   stops.push(async () => { router.close(); await host.stop(); });
-  const connect = (userId: string, codec: WsCodecName): Player => {
+  const connect = (userId: string): Player => {
     const frames: WsFrame[] = [];
     const connection = router.connect({ send: (frame) => frames.push(frame), close: () => {} });
     return {
@@ -51,7 +51,7 @@ async function room(options: { players: number; codecs?: WsCodecName[]; poseRule
       clear: () => { frames.length = 0; },
     };
   };
-  const players = Array.from({ length: options.players }, (_, i) => connect(`p${i}`, options.codecs?.[i] ?? "json"));
+  const players = Array.from({ length: options.players }, (_, i) => connect(`p${i}`));
   for (const player of players) player.send({ t: "hello", id: 1, userId: player.userId, codec: options.codecs?.[players.indexOf(player)] ?? "json" });
   await router.drain();
   const [first] = players;
@@ -136,7 +136,7 @@ test("presence: a joining player and a leaving one reach subscribers without wai
   expect(timers.pending()).toHaveLength(1);
   c.clear();
 
-  const late = connect("late", "json");
+  const late = connect("late");
   late.send({ t: "hello", id: 1, userId: "late" });
   late.send({ t: "join", id: 2, gameId: "presence-test", serverId });
   await router.drain();

@@ -53,7 +53,7 @@ function minutesEnv(env: NodeJS.ProcessEnv, name: string, fallback: number): num
   return (Number.isFinite(n) && n > 0 ? n : fallback) * 60_000;
 }
 
-export function brokerIdleMs(env: NodeJS.ProcessEnv = process.env): number {
+function brokerIdleMs(env: NodeJS.ProcessEnv = process.env): number {
   return minutesEnv(env, "JG_BROKER_IDLE_MINUTES", 10);
 }
 
@@ -62,7 +62,7 @@ export function brokerStatePath(port = brokerPort(), dir = tmpdir()): string {
 }
 
 /** Every broker whose state file names a running process, whatever port it took. */
-export function liveBrokers(dir = tmpdir()): { pid: number; port: number }[] {
+function liveBrokers(dir = tmpdir()): { pid: number; port: number }[] {
   const found: { pid: number; port: number }[] = [];
   for (const name of readdirSync(dir).filter((entry) => /^jgengine-broker-\d+\.json$/.test(entry))) {
     try {
@@ -82,7 +82,7 @@ export function brokerLogPath(dir = tmpdir()): string {
 }
 
 /** What a broker's state file holds while it runs; it is removed when the broker ends announced. */
-export interface BrokerState {
+interface BrokerState {
   pid: number;
   port: number;
   protocol: number;
@@ -92,7 +92,7 @@ export interface BrokerState {
 }
 
 /** How often a running broker refreshes `aliveAt` in its state file. */
-export const BROKER_ALIVE_EVERY_MS = 10_000;
+const BROKER_ALIVE_EVERY_MS = 10_000;
 
 /**
  * The line a starting broker logs for the one before it on its port when that one ended without a
@@ -115,7 +115,7 @@ export function unannouncedDeath(statePath: string, isAlive: (pid: number) => bo
 }
 
 /** The identity the dev server's own `/__jgengine/server` route reports for this root and game dir. */
-export function servedIdentity(root: string, gameDir: string | null): string {
+function servedIdentity(root: string, gameDir: string | null): string {
   return gameDir === null ? root : `${root}|game-dir:${gameDir}`;
 }
 
@@ -150,7 +150,7 @@ export interface CaptureGrant {
   waitedMs: number;
 }
 
-export interface LaunchedProcess {
+interface LaunchedProcess {
   pid: number;
   /** Resolves when the process exits, for whatever reason. */
   exited: Promise<void>;
@@ -226,11 +226,11 @@ export interface BrokerStatus {
 }
 
 /** A capture turn is revoked after 20 minutes unless `JG_CAPTURE_MAX_MINUTES` says otherwise. */
-export function captureMaxMs(env: NodeJS.ProcessEnv = process.env): number {
+function captureMaxMs(env: NodeJS.ProcessEnv = process.env): number {
   return minutesEnv(env, "JG_CAPTURE_MAX_MINUTES", 20);
 }
 
-export function captureSlots(env: NodeJS.ProcessEnv = process.env): number {
+function captureSlots(env: NodeJS.ProcessEnv = process.env): number {
   const n = Number(env["JG_CAPTURE_SLOTS"]);
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
 }
@@ -650,7 +650,7 @@ async function killTree(pid: number): Promise<void> {
   }
 }
 
-export function portFree(port: number): Promise<boolean> {
+function portFree(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const probe = createNetServer();
     probe.once("error", () => resolve(false));
@@ -889,7 +889,7 @@ function writeLog(line: string): void {
 }
 
 /** Run the broker in this process until it goes idle or is stopped. Exits 0 when another broker owns the port. */
-export async function serveBroker(env: NodeJS.ProcessEnv = process.env): Promise<void> {
+async function serveBroker(env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const idleMs = brokerIdleMs(env);
   const core = new BrokerCore({
     now: Date.now,

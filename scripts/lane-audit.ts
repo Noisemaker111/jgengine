@@ -42,7 +42,7 @@ const LANE_AUDIT_USAGE = {
 } as const;
 
 /** A call this long is where a lane's wall time went, so it is counted on its own. */
-export const OVER_MINUTE_MS = 60_000;
+const OVER_MINUTE_MS = 60_000;
 
 const LONGEST_KEPT = 3;
 
@@ -167,7 +167,7 @@ function scan(command: string): { segments: string[]; quoteSpans: { start: numbe
 }
 
 /** The same text with every balanced quoted argument dropped: a pattern is not a command. */
-export function stripQuoted(command: string): string {
+function stripQuoted(command: string): string {
   const { segments } = scan(command);
   return segments
     .map((segment) => {
@@ -226,7 +226,7 @@ function executedText(segment: string, depth = 0): string {
  * The parts of a command that actually run: each segment whose executable is not a read-only tool,
  * its quoted arguments removed, with a shell wrapper or an `-e` body followed into.
  */
-export function runnableText(command: string): string {
+function runnableText(command: string): string {
   return scan(command)
     .segments.map((segment) => executedText(segment))
     .filter((text) => text.trim().length > 0)
@@ -266,7 +266,7 @@ export interface SessionIdentity {
   readonly timeUpdated: number;
 }
 
-export interface WaitCall {
+interface WaitCall {
   readonly kind: WaitKind;
   readonly ms: number;
   readonly command: string;
@@ -288,13 +288,13 @@ export interface SessionAudit {
   readonly waits: readonly WaitCall[];
 }
 
-export interface RankedAudit extends SessionAudit {
+interface RankedAudit extends SessionAudit {
   /** Share of the window's sessions whose waiting minutes are lower; 100 means the worst lane. */
   readonly percentile: number;
 }
 
 /** One candidate lane and the evidence for and against calling it this worktree's lane. */
-export interface AuditedLane {
+interface AuditedLane {
   readonly id: string;
   readonly title: string;
   readonly directory: string;
@@ -414,17 +414,17 @@ export function auditSession(session: SessionIdentity, calls: readonly ToolCall[
   };
 }
 
-export function waitingMs(audit: SessionAudit): number {
+function waitingMs(audit: SessionAudit): number {
   return audit.sleepMs + audit.ciWatchMs;
 }
 
-export interface AuditTotals {
+interface AuditTotals {
   readonly spanMs: number;
   readonly sleepMs: number;
   readonly ciWatchMs: number;
 }
 
-export interface AuditReport {
+interface AuditReport {
   readonly sessions: readonly RankedAudit[];
   readonly totals: AuditTotals;
   /** Every child session in the window, before `--cwd` narrowed the rows. */
@@ -434,7 +434,7 @@ export interface AuditReport {
 }
 
 /** Waiting minutes first: the lane that waits most is the one to fix first. */
-export function rankSessions(sessions: readonly SessionAudit[]): RankedAudit[] {
+function rankSessions(sessions: readonly SessionAudit[]): RankedAudit[] {
   const ranked = [...sessions].sort((a, b) => waitingMs(b) - waitingMs(a) || b.spanMs - a.spanMs);
   const count = ranked.length;
   return ranked.map((audit) => {
@@ -443,7 +443,7 @@ export function rankSessions(sessions: readonly SessionAudit[]): RankedAudit[] {
   });
 }
 
-export function totals(sessions: readonly SessionAudit[]): AuditTotals {
+function totals(sessions: readonly SessionAudit[]): AuditTotals {
   const total = (pick: (audit: SessionAudit) => number) => sessions.reduce((sum, audit) => sum + pick(audit), 0);
   return {
     spanMs: total((audit) => audit.spanMs),
@@ -452,7 +452,7 @@ export function totals(sessions: readonly SessionAudit[]): AuditTotals {
   };
 }
 
-export function buildReport(sessions: readonly SessionAudit[]): AuditReport {
+function buildReport(sessions: readonly SessionAudit[]): AuditReport {
   const ranked = rankSessions(sessions);
   return { sessions: ranked, totals: totals(ranked), population: ranked.length };
 }
@@ -616,7 +616,7 @@ export function attributeLane(target: string, sessions: readonly LaneSession[]):
 
 /** The path a lane hands in, which may be a Windows path recorded on another machine. */
 
-export function formatTable(report: AuditReport, window: { readonly hours: number; readonly database: string }): string {
+function formatTable(report: AuditReport, window: { readonly hours: number; readonly database: string }): string {
   const rows = report.sessions.map((audit) => [
     audit.waits.length > 0 ? "*" : " ",
     shorten(audit.title, 34),
@@ -652,7 +652,7 @@ export function formatTable(report: AuditReport, window: { readonly hours: numbe
   return out.join("\n");
 }
 
-export interface AuditOptions {
+interface AuditOptions {
   readonly hours: number;
   readonly database: string;
   readonly cwd?: string | undefined;
@@ -664,7 +664,7 @@ interface SessionRecord extends SessionIdentity {
 }
 
 /** Child sessions that were still alive in the window, newest first. */
-export function loadSessions(database: Database, options: AuditOptions): SessionRecord[] {
+function loadSessions(database: Database, options: AuditOptions): SessionRecord[] {
   const since = options.now - options.hours * 3_600_000;
   const rows = database
     .query(
@@ -689,7 +689,7 @@ export function loadSessions(database: Database, options: AuditOptions): Session
   }));
 }
 
-export function readSessionCalls(database: Database, sessionIds: readonly string[]): Map<string, ToolCall[]> {
+function readSessionCalls(database: Database, sessionIds: readonly string[]): Map<string, ToolCall[]> {
   const bySession = new Map<string, ToolCall[]>();
   if (sessionIds.length === 0) return bySession;
   const placeholders = sessionIds.map(() => "?").join(", ");
@@ -708,14 +708,8 @@ export function readSessionCalls(database: Database, sessionIds: readonly string
   return bySession;
 }
 
-export function auditDatabase(database: Database, options: AuditOptions): AuditReport {
-  const sessions = loadSessions(database, options);
-  const calls = readSessionCalls(database, sessions.map((session) => session.id));
-  return auditRecords(sessions, calls, options);
-}
-
 /** The report for sessions already read from any source: an OpenCode database, Claude Code transcripts, or both. */
-export function auditRecords(
+function auditRecords(
   sessions: readonly SessionIdentity[],
   calls: ReadonlyMap<string, readonly ToolCall[]>,
   options: Pick<AuditOptions, "cwd">,
@@ -736,7 +730,7 @@ export function auditRecords(
   return { sessions: selected, totals: totals(selected), population: report.population, attribution };
 }
 
-export function toJson(report: AuditReport): string {
+function toJson(report: AuditReport): string {
   return JSON.stringify(
     {
       sessions: report.sessions.map((audit) => ({
@@ -779,7 +773,7 @@ export function toJson(report: AuditReport): string {
  * `~/.claude/projects/<project>/`. A lane run by Claude Code is only visible there, so without this
  * source `lane:close` answered "no session found" for every Claude lane.
  */
-export function claudeProjectsDir(env: NodeJS.ProcessEnv = process.env): string {
+function claudeProjectsDir(env: NodeJS.ProcessEnv = process.env): string {
   if (env["CLAUDE_PROJECTS_DIR"] !== undefined && env["CLAUDE_PROJECTS_DIR"] !== "") return env["CLAUDE_PROJECTS_DIR"];
   return join(env["CLAUDE_CONFIG_DIR"] ?? join(homedir(), ".claude"), "projects");
 }
@@ -788,7 +782,7 @@ export function claudeProjectsDir(env: NodeJS.ProcessEnv = process.env): string 
  * Transcripts touched since `since`: `<project>/<session>.jsonl` and
  * `<project>/<session>/subagents/*.jsonl`, three fixed levels, never a recursive walk.
  */
-export function claudeTranscripts(dir: string, since: number): string[] {
+function claudeTranscripts(dir: string, since: number): string[] {
   const found: string[] = [];
   const list = (path: string): string[] => {
     try {
@@ -876,7 +870,7 @@ export function claudeSession(text: string, fallbackId: string): { session: Sess
 }
 
 /** Every Claude Code session alive in the window, with its calls. */
-export function loadClaudeSessions(dir: string, options: { hours: number; now: number }): { sessions: SessionIdentity[]; calls: Map<string, ToolCall[]> } {
+function loadClaudeSessions(dir: string, options: { hours: number; now: number }): { sessions: SessionIdentity[]; calls: Map<string, ToolCall[]> } {
   const since = options.now - options.hours * 3_600_000;
   const sessions: SessionIdentity[] = [];
   const calls = new Map<string, ToolCall[]>();
@@ -896,7 +890,7 @@ export function loadClaudeSessions(dir: string, options: { hours: number; now: n
 }
 
 /** The OpenCode user-data database, most specific first. `OPENCODE_DB` overrides every guess. */
-export function candidateDatabases(env: NodeJS.ProcessEnv = process.env): string[] {
+function candidateDatabases(env: NodeJS.ProcessEnv = process.env): string[] {
   const home = homedir();
   const candidates = [
     env["OPENCODE_DB"],
@@ -909,7 +903,7 @@ export function candidateDatabases(env: NodeJS.ProcessEnv = process.env): string
 }
 
 /** The first candidate that exists and holds session rows, plus why every candidate was skipped. */
-export function resolveDatabase(env: NodeJS.ProcessEnv = process.env): { path?: string; tried: string[] } {
+function resolveDatabase(env: NodeJS.ProcessEnv = process.env): { path?: string; tried: string[] } {
   const tried: string[] = [];
   for (const candidate of candidateDatabases(env)) {
     if (!existsSync(candidate) || !statSync(candidate).isFile()) {
@@ -933,7 +927,7 @@ export function resolveDatabase(env: NodeJS.ProcessEnv = process.env): { path?: 
  * One line per offending call for the gate mode, with its duration and command: the lane cannot act on
  * "you waited" without knowing which command to replace.
  */
-export function describeWaits(sessions: readonly RankedAudit[]): string[] {
+function describeWaits(sessions: readonly RankedAudit[]): string[] {
   const lines: string[] = [];
   for (const audit of sessions) {
     for (const wait of audit.waits) {

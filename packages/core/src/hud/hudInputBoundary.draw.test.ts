@@ -2,8 +2,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, setDefaultTimeout, 
 import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { type Browser, type BrowserContext, type Page } from "playwright-core";
+import { buildBrowserFixture } from "../../../../scripts/browser-lib";
 import { sharedChromium } from "../../../../scripts/sharedChromium";
 import { cleanupBrowserFixture } from "../../../../scripts/browser-fixture-cleanup";
 import { gotoFixture } from "../../../../scripts/browser-test-fixture";

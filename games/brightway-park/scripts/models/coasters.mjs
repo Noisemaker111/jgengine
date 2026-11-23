@@ -1,5 +1,5 @@
 // Coasters and coaster-builder track pieces.
-import { T, P, V, Y, loopShift, box, cyl, ball, ring, beam, group, mesh, segBox, deckRect, bulbLine, pennant, bunting, railing, signBoard, stairs, tube, frames, pathLengths, onPath, buildTrack, Turtle, lampPost, shrub, tree } from './core.mjs';
+import { T, P, V, loopShift, box, cyl, ball, beam, mesh, segBox, deckRect, bulbLine, pennant, railing, signBoard, tube, frames, pathLengths, onPath, buildTrack, Turtle, tree } from './core.mjs';
 
 const PI = Math.PI;
 function steelCar(c, color, front) {
@@ -49,7 +49,7 @@ export function junior() {
   const { F, lens } = buildTrack(g, pts, ups, { gauge: .8, railR: .055, railColor: P.cream, spineColor: P.coral, spineR: .1, spineOff: .22, tieColor: P.coral, supportEvery: 5, supportColor: P.gold, supportR: .09, minSupportY: .6 });
   station(g, -1, 3, 5.5, .7, { sign: P.coral, roof: P.teal });
   // a cheerful tunnel over the back straight
-  for (const x of [-1.6, -.4, .8]) { const a = mesh(g, new T.TorusGeometry(1.25, .2, 5, 10, PI), x === -.4 ? P.gold : P.coral, [x, .6, -6.5], [0, PI / 2, 0]); }
+  for (const x of [-1.6, -.4, .8]) { mesh(g, new T.TorusGeometry(1.25, .2, 5, 10, PI), x === -.4 ? P.gold : P.coral, [x, .6, -6.5], [0, PI / 2, 0]); }
   tube(g, [V(-1.6, 1.85, -6.5), V(.8, 1.85, -6.5)], .12, P.cream, false, 5);
   for (const [x, z] of [[-3, 0], [1.5, -1], [-1.2, 2], [2.8, 1.8]]) tree(g, x, z, .8);
   const cols = [P.leaf, P.mint, P.leaf, P.mint];
@@ -116,7 +116,7 @@ function piece(g, pts, ups, supportAt = []) {
   const F = frames(pts, ups, false), half = .65;
   const L = F.map(f => f.p.clone().addScaledVector(f.side, half)), R = F.map(f => f.p.clone().addScaledVector(f.side, -half));
   for (let i = 0; i < F.length - 1; i++) for (const A of [L, R]) segBox(g, A[i].clone().addScaledVector(F[i].up, .05), A[i + 1].clone().addScaledVector(F[i + 1].up, .05), .1, .13, P.coral, F[i].up.clone().lerp(F[i + 1].up, .5).normalize(), 0);
-  const { L: len, total } = pathLengths(F, false); let next = .2;
+  const { L: len } = pathLengths(F, false); let next = .2;
   for (let i = 0; i < F.length; i++) if (len[i] >= next) { next += .4; segBox(g, L[i].clone().addScaledVector(F[i].up, -.08).addScaledVector(F[i].side, .15), R[i].clone().addScaledVector(F[i].up, -.08).addScaledVector(F[i].side, -.15), .12, .12, P.wood, F[i].up); }
   for (const i of supportAt) for (const A of [L, R]) { const p = A[i].clone().addScaledVector(F[i].up, -.15); beam(g, [p.x, 0, p.z], p, .07, P.teal, 6); }
   return F;
@@ -142,7 +142,7 @@ export function trackLoop() {
     pts.push(V(4.4 * loopShift(th), 1.1 + R * (1 - Math.cos(th)), -2 + c * th + a * Math.sin(th)));
     ups.push(V(0, c + a * Math.cos(th), -R * Math.sin(th)).normalize());
   }
-  const F = piece(g, pts, ups, [1, n - 1]);
+  piece(g, pts, ups, [1, n - 1]);
   for (const s of [-1, 1]) { const p = pts[s > 0 ? n / 4 : 3 * n / 4]; beam(g, [s * 1.75, 0, p.z], [s * 1.7, p.y - .2, p.z], .1, P.teal, 6); beam(g, [s * 1.7, p.y - .2, p.z], [p.x + s * .62, p.y, p.z], .07, P.teal, 6); box(g, [.5, .14, .5], P.stone, [s * 1.5, .07, p.z]); }
   return g;
 }

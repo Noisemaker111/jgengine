@@ -13,12 +13,12 @@ import { installRefit, REFITS, type RefitId } from "./progression";
 import { buySupply, dismantle } from "./counter";
 import { canCache, loadOf } from "./haul";
 import { itemValue, kindOf, rollItem } from "./items";
-import { createDeepwardDamage, createDeepwardWeapon, MAGAZINE, weaponDefinition, weaponReadout } from "./combat";
+import { createDeepwardDamage, createDeepwardWeapon, MAGAZINE, weaponDefinition } from "./combat";
 import { openRecord, recordProfile, type RecordSession, type RunSnapshot } from "./save";
 import { advanceRoute, createNavigator, warmRoutes } from "./navigation";
 import { decayMeters, refillMeter } from "@jgengine/core/survival/decayMeter";
 import { BODY, GALLEY_FEEDS_BELOW, HOME_DRAIN, hungriest, MEAL, STARVE_DAMAGE } from "./survival";
-import { airBonus, deepestCharted, has, liftLock, newDeep, sealMark, type Deep } from "./deep";
+import { airBonus, has, liftLock, newDeep, sealMark, type Deep } from "./deep";
 import { CODEX_ENTRIES, createDeepCodex, GEAR, spendRecipe, type Gear } from "./fabricator";
 import { MODULES, marrowOf, marrowState, restoreMarrow, setMarrowLive, type Module } from "./marrow";
 import { crushDamage, isStratum, STRATA, type Stratum } from "./strata";
@@ -271,7 +271,7 @@ function syncPlayer(ctx: GameContext, dive: Dive | null): void {
   ctx.scene.entity.stats.set(ctx.player.userId, "ammo", { current: dive === null || weapon === null ? MAGAZINE : ammoOf(weapon).loaded });
 }
 /** The authored depth behind a carried source: a salvage locker keeps its room, a stopped Fitter its own floor. */
-function sourceDepth(ctx: GameContext, dive: Dive, source: string, kind: ItemKind): number {
+function sourceDepth(dive: Dive, source: string): number {
   if (source === "fitter") return depthAt(dive.print.drop ?? dive.print.at, "vault");
   const locker = SALVAGE.find(entry => entry.id === source);
   return locker === undefined ? 1 : depthAt(locker.at, "vault");
@@ -506,7 +506,7 @@ function interact(ctx: GameContext): void {
   }
   if ((act.type === "loot" || act.type === "node") && target.kind !== undefined) {
     const source = act.type === "node" ? harvestSource(dive, act.node) : target.id;
-    const level = act.type === "node" ? harvestLevel(dive.stratum) : sourceDepth(ctx, dive, target.id, target.kind);
+    const level = act.type === "node" ? harvestLevel(dive.stratum) : sourceDepth(dive, target.id);
     const pending = peekLoot(dive, source, target.kind, level);
     const weight = canCache(dive.cache, pending);
     if (!weight.ok) { ctx.game.notices.push({ text: weight.message, tone: "deny" }); viewStore.update(ctx, s => ({ ...s, hint: weight.message, error: "" })); return; }
@@ -1199,7 +1199,7 @@ function completeChannel(ctx: GameContext, dive: Dive, deep: Deep, id: string, k
   if (kind === "search") {
     const target = id === "fitter" ? { kind: "service-rifle" as const } : SALVAGE.find(entry => entry.id === id);
     if (target === undefined) return deny("Nothing left there.");
-    const looted = takeLoot(dive, id, target.kind, sourceDepth(ctx, dive, id, target.kind));
+    const looted = takeLoot(dive, id, target.kind, sourceDepth(dive, id));
     const instanceId = runtime(ctx).worldItems.get(id);
     if (!looted.ok) return deny(looted.message);
     if (instanceId === undefined || ctx.scene.worldItem.consume(instanceId) === null) return deny("The cache grid has no space for that footprint.");

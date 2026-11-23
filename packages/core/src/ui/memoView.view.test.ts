@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, setDefaultTimeout, test } from "
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createElement } from "@jgengine/core/ui/jsx";
-import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { type Browser, type Page } from "playwright-core";
+import { buildBrowserFixture } from "../../../../scripts/browser-lib";
 import { sharedChromium } from "../../../../scripts/sharedChromium";
 import { live } from "./liveValue";
 import { sameNode, samePartProps } from "./memoView.view";

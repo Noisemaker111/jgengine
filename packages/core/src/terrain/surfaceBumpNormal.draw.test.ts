@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
-import { chromium, type Browser } from "playwright-core";
-import { chromeGraphicsArgs, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { type Browser } from "playwright-core";
+import { chromeGraphicsArgs } from "../../../../scripts/browser-lib";
 import { sharedChromium } from "../../../../scripts/sharedChromium";
 import { SURFACE_BUMP_NORMAL_GLSL } from "./terrainSurfaceShader.draw";
 

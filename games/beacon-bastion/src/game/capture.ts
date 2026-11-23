@@ -4,7 +4,7 @@ import { tickTowers } from "./combat/towerAI";
 import { keep, runEnded } from "./keep";
 import { session } from "./session";
 import { sendWave, tickWaves } from "./waves/director";
-import { AUTHORED_WAVES, TOTAL_WAVES } from "./waves/manifest";
+import { AUTHORED_WAVES } from "./waves/manifest";
 
 /** What a staged defense should look like when the capture takes it. */
 export type StageMode = "midwave" | "boss" | "result" | "breached";

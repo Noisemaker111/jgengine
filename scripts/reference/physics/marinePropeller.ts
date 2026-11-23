@@ -205,28 +205,6 @@ export function propellerForThrust(propeller: BSeriesPropeller, thrust: number, 
   return { ...point, revolutions, power: 2 * Math.PI * revolutions * point.torque * density * revolutions * revolutions * D ** 5 };
 }
 
-/**
- * The pitch ratio that delivers `thrust` at `advanceSpeed` with the best open-water efficiency, searched over
- * `P/D` 0.5–1.4 (golden section on the efficiency of {@link propellerForThrust}).
- * @capability marine-propeller optimum-pitch propeller for a required thrust and diameter
- */
-export function optimumPitchPropeller(propeller: Omit<BSeriesPropeller, "pitchRatio">, thrust: number, advanceSpeed: number, density = 1025): { propeller: BSeriesPropeller; point: PropellerOperatingPoint } {
-  const efficiency = (pitchRatio: number) => propellerForThrust({ ...propeller, pitchRatio }, thrust, advanceSpeed, density).efficiency;
-  let a = 0.5;
-  let b = 1.4;
-  const ratio = (Math.sqrt(5) - 1) / 2;
-  let c = b - ratio * (b - a);
-  let d = a + ratio * (b - a);
-  for (let i = 0; i < 80; i += 1) {
-    if (efficiency(c) > efficiency(d)) b = d;
-    else a = c;
-    c = b - ratio * (b - a);
-    d = a + ratio * (b - a);
-  }
-  const best = { ...propeller, pitchRatio: 0.5 * (a + b) };
-  return { propeller: best, point: propellerForThrust(best, thrust, advanceSpeed, density) };
-}
-
 /** A waterjet: an inlet in the hull bottom, a pump, and a nozzle. */
 export interface Waterjet {
   /** Nozzle exit area, m². */

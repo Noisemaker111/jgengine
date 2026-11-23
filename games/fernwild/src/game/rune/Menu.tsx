@@ -12,7 +12,7 @@ import { useGameContext } from "@jgengine/core/ui/provider.view";
 
 import { BRIEFING, CONTROLS, CREDITS } from "../controls";
 import { Creator } from "./Creator";
-import { Button, CYAN, DIM, DISPLAY, FULL, GOLD, Heading, INK, Panel, Row, Small, Tag, Text, TEAL } from "./kit";
+import { Button, CYAN, DIM, DISPLAY, GOLD, Heading, INK, Panel, Row, Small, Tag, Text, TEAL } from "./kit";
 
 /** Session key that reopens the creator after the page restarts for a second New game. */
 const SETUP_AFTER_RESTART = "jgengine:new-game-setup";

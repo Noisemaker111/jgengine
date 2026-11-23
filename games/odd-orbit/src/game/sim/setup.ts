@@ -7,7 +7,7 @@ import { type CareerId } from "../careers";
 import { householdStore } from "../session/store";
 import { createHousehold, pairKey, type HouseholdState, type Lifestyle, type MemberState } from "../session/types";
 import { emptyNeeds } from "../needs/needs";
-import { householdBook, resetAgents, resetBook, syncBook } from "../agents";
+import { householdBook, resetAgents, resetBook } from "../agents";
 import { rollTraits } from "../traits";
 import { createHouseholdEconomy } from "./economy";
 import { SCENE_PLACEMENTS } from "../../editorLayers";

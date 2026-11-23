@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
-import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { type Browser, type Page } from "playwright-core";
+import { buildBrowserFixture } from "../../../../scripts/browser-lib";
 import { sharedChromium } from "../../../../scripts/sharedChromium";
 
 setDefaultTimeout(30_000);
@@ -155,10 +155,6 @@ afterAll(async () => {
   server?.stop(true);
   await rm(scratch, { recursive: true, force: true });
 });
-
-async function focused(): Promise<string | null> {
-  return page.evaluate(() => document.activeElement?.getAttribute("data-jg-menu-item") ?? null);
-}
 
 describe("SettingsSection rebinding", () => {
   test("click-to-capture writes the pressed key into the rebind session", async () => {

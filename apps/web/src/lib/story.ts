@@ -5,7 +5,7 @@
  * results table as measured on 2026-11-07. Change a number only by changing its source first.
  */
 
-export type DecisionKind =
+type DecisionKind =
   /** Shipped and still true. */
   | "ship"
   /** Something taken out of the engine. */

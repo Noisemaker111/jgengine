@@ -21,7 +21,7 @@
 
 export const TIMING_GATE_ENV = "JG_TIMING_GATE";
 
-export const timingGateOn = (): boolean => process.env[TIMING_GATE_ENV] === "1";
+const timingGateOn = (): boolean => process.env[TIMING_GATE_ENV] === "1";
 
 /**
  * Fastest of seven runs of a fixed numeric loop on the machine that recorded
@@ -40,7 +40,7 @@ function referenceRun(): number {
 }
 
 /** This machine's current speed relative to the recording machine, clamped. */
-export function machineFactor(): number {
+function machineFactor(): number {
   let fastest = Number.POSITIVE_INFINITY;
   for (let run = 0; run < 7; run += 1) fastest = Math.min(fastest, referenceRun());
   const factor = fastest / REFERENCE_MS;

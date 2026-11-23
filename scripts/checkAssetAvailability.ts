@@ -24,7 +24,7 @@ import { sources } from "../packages/assets/src/sources";
  */
 
 /** The editor's asset-import sink — always allow-listed, never a pack dependency. */
-export const SENTINEL_PACKS: ReadonlySet<string> = new Set(["imported"]);
+const SENTINEL_PACKS: ReadonlySet<string> = new Set(["imported"]);
 
 /** A single model-pack reference discovered in a game's source. */
 export interface PackReference {
@@ -130,7 +130,7 @@ export function referencedPacks(gamesDir: string): PackReference[] {
 }
 
 /** Pack folders with git-tracked bytes under `apps/dev/public/models/` — available on a clean clone. */
-export function committedPacks(root: string): Set<string> {
+function committedPacks(root: string): Set<string> {
   const out = new Set<string>();
   const tracked = execFileSync("git", ["ls-files", "apps/dev/public/models"], {
     cwd: root,
@@ -145,7 +145,7 @@ export function committedPacks(root: string): Set<string> {
 }
 
 /** Pack folders with git-tracked bytes under each game's own `games/<id>/public/models/`, by game id. */
-export function gameCommittedPacks(root: string): Map<string, Set<string>> {
+function gameCommittedPacks(root: string): Map<string, Set<string>> {
   const out = new Map<string, Set<string>>();
   const tracked = execFileSync("git", ["ls-files", "games/*/public/models/*"], {
     cwd: root,
@@ -170,7 +170,7 @@ export function gameCommittedPacks(root: string): Map<string, Set<string>> {
  * commit — but wiring a pull into cloud-setup.sh would satisfy the gate with no
  * gate edit.
  */
-export function provisionedPacks(root: string): Set<string> {
+function provisionedPacks(root: string): Set<string> {
   const out = new Set<string>();
   const scripts = ["scripts/cloud-setup.sh", "scripts/agent-bootstrap.ts"];
   const pull = /(?:assets|run)\s+pull\s+([a-zA-Z0-9_-]+)/g;

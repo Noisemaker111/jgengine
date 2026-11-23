@@ -1,11 +1,11 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useState, type ReactNode } from "@jgengine/core/ui/jsx";
-import { RuneAction, RuneFor, RuneLabel, RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { RuneAction, RuneLabel, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { foldStatContributions } from "@jgengine/core/progression/statGraph";
 
-import { hudStore, type ArmyUnit, type HudSnapshot } from "../hudStore";
+import { type ArmyUnit, type HudSnapshot } from "../hudStore";
 import { campaignOrdinal } from "../campaign";
 import { BARRACKS_UNITS, BUILDINGS, COMBATANTS, TRAINABLE, type BuildingId, type TrainableId } from "../catalog";
 import { FORMATIONS } from "../formations";
@@ -355,7 +355,7 @@ function ModeBanner() {
  * command board along the bottom, and the wax seal top right. Order reports and refusals come from
  * the engine notice feed, drawn by GameUI.
  */
-export function RtsHud({ ctx, width, height, pause, mapOpen, toggleMap }: { ctx: GameContext; width: number; height: number; pause: ReactNode; mapOpen: boolean; toggleMap: () => void }): ReactNode {
+export function RtsHud({ ctx, width, pause, mapOpen, toggleMap }: { ctx: GameContext; width: number; pause: ReactNode; mapOpen: boolean; toggleMap: () => void }): ReactNode {
   const phone = width < 700;
   if (phone) {
     const board = Math.floor((width - 16 - 18 - 5 * 4) / 6);

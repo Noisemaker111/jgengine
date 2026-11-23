@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import type { ReactElement } from "@jgengine/core/ui/jsx";
 
 import { SCENE_WARMUP_PENDING, SceneWarmupCover, createSceneWarmupStore, warmupBarShare } from "./SceneWarmupGate.draw";
 

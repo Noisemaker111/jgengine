@@ -1,0 +1,32 @@
+{
+  "minTokens": 200,
+  "threshold": 0,
+  "format": [
+    "typescript",
+    "tsx",
+    "javascript"
+  ],
+  "path": [
+    "packages",
+    "games",
+    "apps",
+    "scripts",
+    "examples"
+  ],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/_generated/**",
+    "**/generated/**",
+    "**/*.d.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/proofs/**",
+    "scripts/reference/**",
+    "**/meta/changelog.ts"
+  ],
+  "reporters": [
+    "consoleFull"
+  ],
+  "gitignore": true
+}

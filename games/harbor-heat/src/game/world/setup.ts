@@ -1,13 +1,11 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 import { perContext } from "@jgengine/core/runtime/perContext";
-import { patrol } from "@jgengine/core/scene/behaviors";
-import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 import type { EntityColliderSet } from "@jgengine/core/scene/colliders";
 import { cityLots, cityRoadWidth, tuneCityLayout, type CityLayout, type CityZone } from "../../engine-local/city/cityLayout";
 import { placeAuthoredObjectsFromDocument } from "@jgengine/core/world/authoredObjects";
 import { nearestOnPath } from "@jgengine/core/roads/roads";
-import { furnitureSpots, parkingSpots, sidewalkPoint } from "@jgengine/core/roads/streets";
+import { furnitureSpots, parkingSpots } from "@jgengine/core/roads/streets";
 import { streets } from "../../world";
 import { editorLayers } from "../../editorLayers";
 import { buildingsForZone } from "./buildings";
@@ -79,18 +77,6 @@ export function curbPoseNear(
   }
   return line !== null ? { x: line.x, z: line.z, heading: line.heading } : { x, z, heading: fallbackHeading };
 }
-
-const PED_KIND_BY_ROAD: readonly string[] = [
-  "ped_beach",
-  "ped_city",
-  "ped_city",
-  "ped_docks",
-  "ped_city",
-  "ped_city",
-  "ped_city",
-  "ped_docks",
-  "ped_beach",
-];
 
 const STREET_BLOCKERS: readonly (readonly [number, number])[] = [
   [MARCO_POS[0], MARCO_POS[2]],

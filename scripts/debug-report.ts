@@ -61,7 +61,7 @@ export function parseDebugArgs(argv: readonly string[]): DebugArgs | "help" {
 }
 
 /** Fetch the newest in-page report for `game` from a running dev server. */
-export async function fetchReport(base: string, game: string, waitMs: number): Promise<PerfReport | { error: string }> {
+async function fetchReport(base: string, game: string, waitMs: number): Promise<PerfReport | { error: string }> {
   const url = new URL(REPORT_ENDPOINT_PATH, base);
   url.searchParams.set("game", game);
   if (waitMs > 0) url.searchParams.set("wait", String(waitMs));

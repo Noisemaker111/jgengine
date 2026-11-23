@@ -33,7 +33,7 @@ function collectFiles(path: string, out: string[]): void {
   }
 }
 
-export function computeInputHash(): string {
+function computeInputHash(): string {
   const files: string[] = [];
   for (const rel of HASH_ROOTS) {
     const abs = join(root, rel);

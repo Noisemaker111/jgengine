@@ -3,7 +3,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { content } from "./content";
-import { keep, towerLevel, towersStanding } from "./keep";
+import { keep, towerLevel } from "./keep";
 import { resetSession, session } from "./session";
 import { setupWorld } from "./world/setup";
 import { stageRun, type StageMode } from "./capture";

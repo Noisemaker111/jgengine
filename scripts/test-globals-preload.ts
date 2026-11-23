@@ -16,7 +16,7 @@ import { afterEach, beforeEach } from "bun:test";
 // bunfig.toml preloads this for `bun test` at the root; each package's `test` script passes it too.
 
 /** Browser globals tests stub; bun itself defines only `navigator` and `fetch` among them. */
-export const GUARDED_GLOBALS = [
+const GUARDED_GLOBALS = [
   "window",
   "document",
   "navigator",
@@ -44,7 +44,7 @@ function snapshot(): Snapshot {
 }
 
 /** Two descriptors name the same global state: both absent, or the same value and accessors. */
-export function sameGlobal(a: PropertyDescriptor | undefined, b: PropertyDescriptor | undefined): boolean {
+function sameGlobal(a: PropertyDescriptor | undefined, b: PropertyDescriptor | undefined): boolean {
   if (a === undefined || b === undefined) return a === b;
   return a.value === b.value && a.get === b.get && a.set === b.set;
 }

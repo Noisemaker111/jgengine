@@ -11,7 +11,7 @@
 import { existsSync, statSync } from "node:fs";
 import { basename, resolve } from "node:path";
 
-export const GAME_DIR_FLAG = "--game-dir";
+const GAME_DIR_FLAG = "--game-dir";
 
 /** The game directory this run serves, or null when the dev runner serves `games/<game>`. */
 export function servedGameDir(): string | null {

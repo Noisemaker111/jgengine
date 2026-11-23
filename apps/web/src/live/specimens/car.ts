@@ -59,7 +59,7 @@ export function isCarStyle(value: unknown): value is CarStyle {
   return typeof value === "string" && Object.hasOwn(CAR_AIDS, value);
 }
 
-export interface CarDials {
+interface CarDials {
   style: CarStyle;
   topSpeed: number;
   accel: number;

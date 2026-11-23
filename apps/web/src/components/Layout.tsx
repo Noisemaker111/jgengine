@@ -14,7 +14,7 @@ export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 /** The jgengine mark: four blocks, one of them lit. */
-export function LogoMark({ className = "h-6 w-6" }: { className?: string }) {
+function LogoMark({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden>
       <rect x="2" y="2" width="9" height="9" rx="1.5" className="fill-fg" />
@@ -110,7 +110,7 @@ const NAV_LINKS = [
   { to: "/why", label: "Why" },
 ] as const;
 
-export function Header({ sticky = true }: { sticky?: boolean }) {
+function Header({ sticky = true }: { sticky?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
 
@@ -253,7 +253,7 @@ const FOOTER_COLUMNS: { title: string; links: { label: string; to?: string; href
   },
 ];
 
-export function Footer() {
+function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-line">
       <div className="relative mx-auto max-w-6xl px-4 pb-10 pt-16 sm:px-6">

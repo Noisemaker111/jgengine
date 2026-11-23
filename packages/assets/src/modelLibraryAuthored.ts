@@ -123,24 +123,7 @@ class Builder {
       const a = i * 2;
       indices.push(a, a + 1, a + 3, a, a + 3, a + 2);
     }
-    for (const [y, ny] of [[half, 1], [-half, -1]] as const) {
-      const centre = positions.length / 3;
-      positions.push(0, y, 0);
-      normals.push(0, ny, 0);
-      for (let i = 0; i <= segments; i += 1) {
-        const a = (i / segments) * Math.PI * 2;
-        positions.push(Math.cos(a) * radius, y, Math.sin(a) * radius);
-        normals.push(0, ny, 0);
-      }
-      for (let i = 0; i < segments; i += 1) {
-        if (ny > 0) indices.push(centre, centre + i + 2, centre + i + 1);
-        else indices.push(centre, centre + i + 1, centre + i + 2);
-      }
-    }
-    const node = this.document.createNode(name).setTranslation([...at]).setMesh(this.mesh(name, positions, normals, indices, material));
-    if (rotation !== undefined) node.setRotation(eulerQuat(rotation));
-    parent.addChild(node);
-    return node;
+    return this.capped(parent, name, at, material, rotation, segments, positions, normals, indices, [[half, 1, radius], [-half, -1, radius]]);
   }
 
   /** A capped cone frustum along its local Y axis, `radiusBottom` below and `radiusTop` above, centred on `at`. */
@@ -164,7 +147,12 @@ class Builder {
       const a = i * 2;
       indices.push(a, a + 1, a + 3, a, a + 3, a + 2);
     }
-    for (const [y, ny, radius] of [[half, 1, radiusTop], [-half, -1, radiusBottom]] as const) {
+    return this.capped(parent, name, at, material, rotation, segments, positions, normals, indices, [[half, 1, radiusTop], [-half, -1, radiusBottom]]);
+  }
+
+  /** Close a round side wall with a fan at each end that has a radius, then hang the mesh on `parent`. */
+  private capped(parent: Node, name: string, at: Vec3, material: Material, rotation: Vec3 | undefined, segments: number, positions: number[], normals: number[], indices: number[], ends: readonly (readonly [y: number, ny: number, radius: number])[]): Node {
+    for (const [y, ny, radius] of ends) {
       if (radius <= 0) continue;
       const centre = positions.length / 3;
       positions.push(0, y, 0);

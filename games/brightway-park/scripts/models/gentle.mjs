@@ -1,10 +1,10 @@
 // Gentle rides.
-import { T, P, V, box, cyl, ball, ring, beam, group, mesh, deckRound, deckRect, bulbs, bulbLine, pennant, bunting, railing, ringRail, signBoard, stripedCone, stairs, strip, tube, ribbon, flat, slab, ellipse, lampPost, shrub, tree, wheel, smooth } from './core.mjs';
+import { T, P, V, box, cyl, ball, ring, beam, group, mesh, deckRound, deckRect, bulbs, pennant, bunting, railing, ringRail, signBoard, stripedCone, stairs, strip, tube, ribbon, flat, ellipse, lampPost, shrub, wheel } from './core.mjs';
 
 function teacup(g, x, z, color, rot) {
   const c = group(g, [x, 0, z], rot);
   cyl(c, .95, .12, P.cream, [0, .45, 0], 1.05, 16); ring(c, 1.0, .04, P.gold, [0, .52, 0], [Math.PI / 2, 0, 0], 20, 4);
-  const cup = mesh(c, new T.CylinderGeometry(.9, .55, .85, 16, 1, true), color, [0, .95, 0], [0, 0, 0], { double: true });
+  mesh(c, new T.CylinderGeometry(.9, .55, .85, 16, 1, true), color, [0, .95, 0], [0, 0, 0], { double: true });
   cyl(c, .55, .06, P.cream, [0, .55, 0], .55, 16); ring(c, .9, .06, P.gold, [0, 1.38, 0], [Math.PI / 2, 0, 0], 20, 4);
   ring(c, .62, .045, P.cream, [0, 1.0, 0], [Math.PI / 2, 0, 0], 16, 4);
   ring(c, .26, .07, color, [.95, 1.0, 0], [0, 0, 0], 10, 4);
@@ -77,7 +77,7 @@ export function haunted() {
   }
   // tower with crooked spire
   cyl(H, 1.1, 6.8, P.purple, [-3.6, 3.4, -1.4], 1.0, 8); ring(H, 1.05, .07, P.gold, [-3.6, 6.8, -1.4], [Math.PI / 2, 0, 0], 16, 4);
-  const sp = mesh(H, new T.ConeGeometry(1.35, 3.0, 8), P.plum, [-3.5, 8.3, -1.4], [0, 0, .12]); ball(H, .14, P.gold, [-3.32, 9.8, -1.4], 0);
+  mesh(H, new T.ConeGeometry(1.35, 3.0, 8), P.plum, [-3.5, 8.3, -1.4], [0, 0, .12]); ball(H, .14, P.gold, [-3.32, 9.8, -1.4], 0);
   box(H, [.5, .7, .1], P.glow, [-3.6, 5.2, -.35]);
   // chimney
   box(H, [.7, 2.2, .7], P.ink, [2.4, 6.2, -1.2], [0, 0, -.12]); box(H, [.9, .2, .9], P.gold, [2.25, 7.3, -1.2], [0, 0, -.12]);
@@ -175,13 +175,12 @@ export function maze() {
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const vis = Array.from({ length: N }, () => Array(N).fill(false));
   const wallsV = Array.from({ length: N }, () => Array(N + 1).fill(true)), wallsH = Array.from({ length: N + 1 }, () => Array(N).fill(true));
-  const centre = (i, j) => Math.abs(i - 3) <= 1 && Math.abs(j - 3) <= 1;
   for (let i = 2; i <= 4; i++) for (let j = 2; j <= 4; j++) { vis[i][j] = true; if (i < 4) wallsH[i + 1][j] = false; if (j < 4) wallsV[i][j + 1] = false; }
   const stack = [[0, 0]]; vis[0][0] = true;
   while (stack.length) {
     const [i, j] = stack.at(-1), opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([di, dj]) => [i + di, j + dj, di, dj]).filter(([a, b]) => a >= 0 && b >= 0 && a < N && b < N && !vis[a][b]);
     if (!opts.length) { stack.pop(); continue; }
-    const [a, b, di, dj] = opts[Math.floor(rnd() * opts.length)];
+    const [a, b, di] = opts[Math.floor(rnd() * opts.length)];
     if (di) wallsH[Math.max(i, a)][j] = false; else wallsV[i][Math.max(j, b)] = false;
     vis[a][b] = true; stack.push([a, b]);
   }

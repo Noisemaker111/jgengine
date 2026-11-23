@@ -6,7 +6,7 @@ import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra";
 import { createSuspensionSample, createSuspensionTable, solveSuspension, type SuspensionGeometry, type SuspensionSample, type SuspensionTable } from "./suspensionKinematics";
 
 /** One axle's suspension: linkage geometry plus springs, dampers, bar, stops and bushings, rated at the wheel. */
-export interface ReferenceAxle {
+interface ReferenceAxle {
   /** Left-corner linkage; z above the ground and x from the axle line at design ride height. */
   geometry: SuspensionGeometry;
   /** Spring wheel rate per corner at design ride height, N/m (the coil rate follows from the linkage's motion ratio). */
@@ -26,7 +26,7 @@ export interface ReferenceAxle {
 }
 
 /** Rack-and-pinion steering. */
-export interface ReferenceSteering {
+interface ReferenceSteering {
   /** Overall ratio, handwheel angle over road-wheel angle at centre. */
   ratio: number;
   /** Handwheel angle at full lock, rad. */
@@ -38,7 +38,7 @@ export interface ReferenceSteering {
 }
 
 /** Engine: full-throttle torque by rpm, inertia and closed-throttle drag. */
-export interface ReferenceEngine {
+interface ReferenceEngine {
   /** Wide-open-throttle crank torque, `[rpm, N·m]` points in rising rpm. */
   torqueCurve: readonly (readonly [number, number])[];
   idleRpm: number;
@@ -51,7 +51,7 @@ export interface ReferenceEngine {
 }
 
 /** Gearbox and final drive with a test driver's shifts. */
-export interface ReferenceGearbox {
+interface ReferenceGearbox {
   /** Forward ratios, first to top. */
   ratios: readonly number[];
   finalDrive: number;
@@ -68,7 +68,7 @@ export interface ReferenceGearbox {
 }
 
 /** Clutch and the driver's launch. */
-export interface ReferenceClutch {
+interface ReferenceClutch {
   /** Torque the fully engaged clutch can hold, N·m (default 1.6 × peak engine torque). */
   maxTorque?: number;
   /** Engine speed the driver holds while letting the clutch out from rest, rpm. */
@@ -78,7 +78,7 @@ export interface ReferenceClutch {
 }
 
 /** Differential on the driven axle. */
-export type ReferenceDifferential =
+type ReferenceDifferential =
   | { kind: "open" }
   | {
       /** Plate-type limited slip: locking torque = preload + ramp share of the axle torque. */
@@ -94,7 +94,7 @@ export type ReferenceDifferential =
     };
 
 /** Service brake, ABS and handbrake. */
-export interface ReferenceBrakes {
+interface ReferenceBrakes {
   /** Total brake torque at full pedal across four wheels, N·m. */
   maxTorque: number;
   /** Share of brake torque on the front axle, `0..1`. */
@@ -108,7 +108,7 @@ export interface ReferenceBrakes {
 }
 
 /** Aero, air density 1.225 kg/m³. */
-export interface ReferenceAero {
+interface ReferenceAero {
   /** Drag coefficient × frontal area, m². */
   dragArea: number;
   /** Lift coefficient × area at each axle, m²; negative is downforce (default `0`). */
@@ -117,7 +117,7 @@ export interface ReferenceAero {
 }
 
 /** The tyre fitted to all four corners. */
-export interface ReferenceTire {
+interface ReferenceTire {
   coefficients: Readonly<MagicFormulaCoefficients>;
   /** Override the file's unloaded radius for a different size, m. */
   unloadedRadius?: number;
@@ -167,7 +167,7 @@ export interface ReferenceCarOptions {
 }
 
 /** Serializable state of a {@link ReferenceCar}: the integrator's plant vector plus the driver and controller state. */
-export interface ReferenceCarState {
+interface ReferenceCarState {
   /** Plant state (see {@link createReferenceCar} for the layout). */
   plant: number[];
   gear: number;
@@ -186,7 +186,7 @@ export interface ReferenceCarState {
 }
 
 /** What one {@link ReferenceCar.tick} reports; the groups shared with `VehicleDynamicsStep` use its shapes so the probes read either. */
-export interface ReferenceCarStep {
+interface ReferenceCarStep {
   /**
    * Pose and planar motion. `yawRate` is the heading rate, rad/s (positive turns left, like `VehicleDynamics`);
    * `lateralAccel` is positive toward the right.

@@ -21,7 +21,7 @@ export interface HullWater {
  * Still water with its surface at `level`.
  * @capability hull-hydrostatics still-water pressure field for hull integration
  */
-export function stillWater(density = SEA_WATER_DENSITY, gravity = MARINE_GRAVITY, level = 0): HullWater {
+function stillWater(density = SEA_WATER_DENSITY, gravity = MARINE_GRAVITY, level = 0): HullWater {
   return {
     submergence: (_x, _y, z) => level - z,
     pressure: (_x, _y, z) => density * gravity * Math.max(0, level - z),
@@ -261,7 +261,7 @@ export function createHullIntegrator(mesh: HullMesh): HullIntegrator {
  * Row-major rotation for heel `phi` (about +x, positive heels to starboard) then trim `theta` (about +y, positive bow down).
  * @capability hull-hydrostatics heel-then-trim rotation matrix in hull axes
  */
-export function heelTrimRotation(phi: number, theta: number, out: Float64Array = new Float64Array(9)): Float64Array {
+function heelTrimRotation(phi: number, theta: number, out: Float64Array = new Float64Array(9)): Float64Array {
   const cp = Math.cos(phi), sp = Math.sin(phi), ct = Math.cos(theta), st = Math.sin(theta);
   // R = Ry(theta) · Rx(phi)
   out[0] = ct;

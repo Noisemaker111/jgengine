@@ -9,7 +9,7 @@ const LBF = 4.4482216152605;
  * Component technology level 3 (about 1965–1985) of Mattingly, *Elements of Propulsion* (2006), table 4.4: polytropic
  * fan 0.86, compressor 0.88, cooled turbine 0.87, uncooled 0.89; burner 0.99 efficiency, 0.94 pressure ratio.
  */
-export const MATTINGLY_LEVEL_3: GasTurbineComponents = {
+const MATTINGLY_LEVEL_3: GasTurbineComponents = {
   fan: 0.86,
   compressor: 0.88,
   highTurbine: 0.87,
@@ -28,7 +28,7 @@ export const MATTINGLY_LEVEL_3: GasTurbineComponents = {
 };
 
 /** Component technology level 4 (about 1985–2005) of Mattingly's table 4.4: fan 0.89, compressor 0.90, turbines 0.89/0.90. */
-export const MATTINGLY_LEVEL_4: GasTurbineComponents = {
+const MATTINGLY_LEVEL_4: GasTurbineComponents = {
   ...MATTINGLY_LEVEL_3,
   fan: 0.89,
   compressor: 0.9,

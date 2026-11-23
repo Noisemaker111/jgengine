@@ -18,7 +18,7 @@
 // random, when the `bun run` that started it exited (2026-11-03). So on Windows the supervisor is
 // created by the WMI service instead (scripts/outsideCaller.ts): it has no parent here and no job to share.
 import { spawn } from "node:child_process";
-import { closeSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { closeSync, mkdirSync, openSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -54,7 +54,7 @@ export function startTask(options: StartOptions): string {
 }
 
 /** The detached side: run the command, keep its output and its exit code, and outlive the caller. */
-export function supervise(dir: string): void {
+function supervise(dir: string): void {
   // Opened for writing, not append-only: MSYS programs (Git Bash, its grep and echo) write nothing,
   // not even their errors, to a handle opened with append access alone, so a bash job's log came
   // back empty. Nothing writes the log before this point.
@@ -94,7 +94,7 @@ export function supervise(dir: string): void {
  * One argument as the shell that runs the stored line reads it back: cmd.exe on Windows, bash
  * elsewhere. Joined bare, `-m "two words"` came back as `-m two words` and lane:close refused it.
  */
-export function shellWord(word: string, platform: NodeJS.Platform = process.platform): string {
+function shellWord(word: string, platform: NodeJS.Platform = process.platform): string {
   if (/^[\w@%+=:,./\-]+$/.test(word)) return word;
   if (platform === "win32") return `"${word.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, "$1$1")}"`;
   return `'${word.replaceAll("'", "'\\''")}'`;

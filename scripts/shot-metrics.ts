@@ -7,7 +7,7 @@
  * murky/foggy frames before anyone opens the image. See jgengine#788.
  */
 
-export type LuminanceStats = { mean: number; p5: number; p95: number; contrast: number };
+type LuminanceStats = { mean: number; p5: number; p95: number; contrast: number };
 
 export type ShotMetrics = {
   colorEntropyBits: number;
@@ -24,7 +24,7 @@ export type ShotMetrics = {
 export type ThresholdWarning = { metric: string; message: string };
 
 /** Pixel rectangle in image space. */
-export type ShotRect = { x: number; y: number; width: number; height: number };
+type ShotRect = { x: number; y: number; width: number; height: number };
 
 export interface ShotRegion {
   /** Restrict sampling to this rectangle — the 3D viewport, not the whole frame. */
@@ -47,20 +47,20 @@ export const DEAD_VIEW_DOMINANT_SHARE = 0.97;
  * like that: a loading cover, a canvas that never committed and a failed WebGL context all
  * photograph as the same field of pixels.
  */
-export const FLAT_FRAME_DOMINANT_SHARE = 0.97;
+const FLAT_FRAME_DOMINANT_SHARE = 0.97;
 
 function inside(rect: ShotRect, x: number, y: number): boolean {
   return x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height;
 }
 
-export const GRID_COLUMNS = 160;
-export const GRID_ROWS = 90;
-export const COLOR_BUCKET_BITS = 4;
-export const EDGE_LUMINANCE_DELTA = 12;
+const GRID_COLUMNS = 160;
+const GRID_ROWS = 90;
+const COLOR_BUCKET_BITS = 4;
+const EDGE_LUMINANCE_DELTA = 12;
 
-export const NONBLANK_MIN_ALPHA_PIXELS = 256;
-export const NONBLANK_MIN_VARIANCE = 8;
-export const NONBLANK_MIN_COLOR_BUCKETS = 3;
+const NONBLANK_MIN_ALPHA_PIXELS = 256;
+const NONBLANK_MIN_VARIANCE = 8;
+const NONBLANK_MIN_COLOR_BUCKETS = 3;
 
 export const ENTROPY_SPARSE_THRESHOLD = 3.0;
 export const DOMINANT_SHARE_SPARSE_THRESHOLD = 0.6;
@@ -72,7 +72,7 @@ export const CONTRAST_MURK_THRESHOLD = 60;
  * {@link EDGE_LUMINANCE_DELTA}: a night scene's silhouettes are steps of a few levels, while a
  * smooth sky or backdrop gradient moves by a fraction of a level between grid samples.
  */
-export const STRUCTURE_LUMINANCE_DELTA = 3;
+const STRUCTURE_LUMINANCE_DELTA = 3;
 
 /**
  * Share of the sampled region that must carry a luminance step for the region to be a picture.
@@ -198,12 +198,12 @@ export function computeShotMetrics(
 }
 
 /** Signature grid size — small enough to store in a sidecar, dense enough to see a real change. */
-export const SIGNATURE_COLUMNS = 32;
-export const SIGNATURE_ROWS = 18;
+const SIGNATURE_COLUMNS = 32;
+const SIGNATURE_ROWS = 18;
 /** Per-cell luminance delta (0-255) below which a cell counts as unchanged. */
-export const SIGNATURE_CELL_DELTA = 3;
+const SIGNATURE_CELL_DELTA = 3;
 /** Share of changed cells below which two shots are the same picture. */
-export const SIGNATURE_CHANGED_SHARE = 0.005;
+const SIGNATURE_CHANGED_SHARE = 0.005;
 
 /**
  * Coarse luminance fingerprint of a frame. Byte equality is useless for this: two captures

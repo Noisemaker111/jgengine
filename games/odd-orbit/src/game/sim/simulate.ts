@@ -9,7 +9,7 @@ import { FURNITURE_BY_ID, type FurnitureRole } from "../objects/catalog";
 import { clampNeed, lowestNeed, type NeedId } from "../needs/needs";
 import { householdStore } from "../session/store";
 import { closeShift, openShift, probeShift, shiftLoop, shiftRan } from "../session/shiftSessions";
-import { noteEvent, pairKey, type HouseholdState, type MemberState } from "../session/types";
+import { noteEvent, type HouseholdState, type MemberState } from "../session/types";
 import { chooseDesire, isIdleish, SOCIAL_RANGE, SOCIAL_SECONDS, USE_FULL, type RoleAvailability } from "./ai";
 import { advanceIncidents, consolesOffline, dusty, isObjectBroken, isIll, restFactor } from "./events";
 import { charterOf, reviewCharter } from "./charter";

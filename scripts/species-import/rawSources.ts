@@ -37,12 +37,12 @@ export const BAAD: RawSource = {
 };
 
 /** The raw store folder: `plant-sources/` in the shared asset store. */
-export function rawStore(repoRoot: string): string {
+function rawStore(repoRoot: string): string {
   return join(assetStoreRoot(repoRoot), "plant-sources");
 }
 
 /** Download `source` into the store unless it is there; returns its path. */
-export function ensureRaw(repoRoot: string, source: RawSource): string {
+function ensureRaw(repoRoot: string, source: RawSource): string {
   const path = join(rawStore(repoRoot), source.file);
   if (existsSync(path)) return path;
   mkdirSync(dirname(path), { recursive: true });

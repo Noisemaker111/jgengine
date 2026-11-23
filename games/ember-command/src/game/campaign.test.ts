@@ -154,9 +154,9 @@ describe("the missions run on the machine", () => {
     const def = mission(CAMPAIGN[2]!.mission.id);
     const seam = markers["goldmine_mid"]!;
     runtime.start(def.id);
-    let events = runtime.tick(0.1, { actors: { [HERO_ID]: { alive: true, position: { x: 0, y: 0, z: 28 } } } });
+    runtime.tick(0.1, { actors: { [HERO_ID]: { alive: true, position: { x: 0, y: 0, z: 28 } } } });
     expect(runtime.state()?.status).toBe("active");
-    events = runtime.tick(0.1, { actors: { [HERO_ID]: { alive: true, position: { x: seam.x, y: 0, z: seam.z } } } });
+    runtime.tick(0.1, { actors: { [HERO_ID]: { alive: true, position: { x: seam.x, y: 0, z: seam.z } } } });
     expect(runtime.state()?.status).toBe("completed");
 
     const second = machine();

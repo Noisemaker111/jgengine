@@ -1,14 +1,14 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 
 import { content } from "../content";
-import { agentOf, clearAgents, guestTargets, liveAgent } from "../agents";
-import { resetSession, sessionOf } from "../session";
+import { agentOf, guestTargets, liveAgent } from "../agents";
+import { sessionOf } from "../session";
 import { cellFor, freshWorld, park, placeFree } from "../park";
 import { tickStaff } from "../staff";
-import { joinRide, resetRides, syncRidePark } from "../rides";
+import { joinRide, syncRidePark } from "../rides";
 import { seedGuests, tickGuests } from "./guests";
 import { BUILDABLES } from "../objects/catalog";
 import { staffCover } from "../staff";

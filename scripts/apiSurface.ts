@@ -4,7 +4,7 @@ import { Node, Project, ts, type JSDocableNode, type SourceFile } from "ts-morph
 
 import { repoRoot, sourcePathEntries } from "./sourcePaths";
 
-export interface ApiCapability {
+interface ApiCapability {
   slug: string;
   intent: string;
 }
@@ -17,7 +17,7 @@ export interface ApiExport {
   capabilities?: ApiCapability[] | undefined;
 }
 
-export interface ApiModule {
+interface ApiModule {
   path: string;
   exports: ApiExport[];
 }

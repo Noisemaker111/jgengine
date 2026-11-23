@@ -157,7 +157,7 @@ export const MAZDA_MX5_ND: RealCar = {
 };
 
 /** 2013 Scion FR-S (Toyota 86 / Subaru BRZ, 2.0 L flat-four, six-speed manual, Torsen differential). */
-export const SCION_FRS_2013: RealCar = {
+const SCION_FRS_2013: RealCar = {
   id: "scion-frs-2013",
   name: "Scion FR-S (Toyota 86) 2013 manual",
   spec: {

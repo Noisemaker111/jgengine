@@ -84,7 +84,7 @@ export interface BondedRockModel {
 }
 
 /** A packed specimen: grain centres and radii, and the pairs to bond. */
-export interface GrainPacking {
+interface GrainPacking {
   centres: [number, number, number][];
   radii: number[];
   bonds: [number, number][];
@@ -95,7 +95,7 @@ export interface GrainPacking {
 }
 
 /** Shape of a specimen centred at the origin. */
-export type SpecimenShape =
+type SpecimenShape =
   | { kind: "sphere"; diameter: number }
   /** A disc or cylinder, axis along `axis`. */
   | { kind: "cylinder"; diameter: number; length: number; axis: "y" | "z" };
@@ -107,7 +107,7 @@ export type SpecimenShape =
  * grains near them move until they touch the plane, shrinking where that would overlap a neighbour.
  * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
  */
-export function packSpecimen(shape: SpecimenShape, options: { grainsAcross: number; density: number; seed: string; jitter?: number; flattenY?: boolean }): GrainPacking {
+function packSpecimen(shape: SpecimenShape, options: { grainsAcross: number; density: number; seed: string; jitter?: number; flattenY?: boolean }): GrainPacking {
   const { grainsAcross, density } = options;
   const jitter = options.jitter ?? 0.1;
   const rng = seededRng(options.seed);
@@ -238,7 +238,7 @@ function gaussian(rng: SeededRng): number {
 const STEEL: DemMaterial = { id: "steel", density: 7800, youngsModulus: 200e9, poissonRatio: 0.3, restitution: 0.5, friction: 0.3, rollingFriction: 0 };
 
 /** A bonded specimen ready to load. */
-export interface BondedSpecimen {
+interface BondedSpecimen {
   dem: DiscreteElements;
   packing: GrainPacking;
   /** Specimen mass, kg. */
@@ -250,7 +250,7 @@ export interface BondedSpecimen {
  * distribution (truncated at a fifth of the mean); `strength` Infinity makes unbreakable bonds.
  * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
  */
-export function bondedSpecimen(model: BondedRockModel, packing: GrainPacking, options: { walls?: readonly DemWallShape[]; offset?: Vec3; velocity?: Vec3; seed?: string; gravity?: Vec3; domain?: number } = {}): BondedSpecimen {
+function bondedSpecimen(model: BondedRockModel, packing: GrainPacking, options: { walls?: readonly DemWallShape[]; offset?: Vec3; velocity?: Vec3; seed?: string; gravity?: Vec3; domain?: number } = {}): BondedSpecimen {
   const rock = model.rock;
   const grain: DemMaterial = { id: rock.id, density: packing.grainDensity, youngsModulus: model.bondModulus, poissonRatio: rock.poissonRatio, restitution: 0.5, friction: model.friction ?? 0.5, rollingFriction: 0 };
   const reach = options.domain ?? 1;
@@ -286,7 +286,7 @@ export function bondedSpecimen(model: BondedRockModel, packing: GrainPacking, op
  * diameter scaled so the intact specimen measures `parentSize`: x = D (m/M)^(1/3).
  * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
  */
-export function bondedFragments(dem: DiscreteElements, parentSize: number): FragmentSizes & { grains: number[] } {
+function bondedFragments(dem: DiscreteElements, parentSize: number): FragmentSizes & { grains: number[] } {
   const parent = new Int32Array(dem.bodyCount);
   for (let i = 0; i < parent.length; i += 1) parent[i] = i;
   const find = (i: number): number => {
@@ -342,7 +342,7 @@ export interface SpecimenTestOptions {
 }
 
 /** Result of {@link uniaxialModulus}. */
-export interface ModulusResult {
+interface ModulusResult {
   /** Young's modulus from the axial stress–strain slope, Pa. */
   modulus: number;
   grains: number;
@@ -356,7 +356,7 @@ export interface ModulusResult {
  * bonds: the secant slope of axial stress against platen strain between 40% and 100% of 10⁻⁴ strain.
  * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
  */
-export function uniaxialModulus(model: BondedRockModel, options: SpecimenTestOptions = {}): ModulusResult {
+function uniaxialModulus(model: BondedRockModel, options: SpecimenTestOptions = {}): ModulusResult {
   const diameter = options.diameter ?? 0.05;
   const across = options.grainsAcross ?? 10;
   const length = 2 * diameter;

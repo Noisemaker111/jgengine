@@ -1,0 +1,135 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "ignore": [
+    "**/testFixtures/**",
+    "scripts/fixtures/**",
+    "apps/web/src/snippets/**",
+    "packages/jgengine/src/recipes/snippets/**"
+  ],
+  "exclude": [
+    "subpaths",
+    "duplicates"
+  ],
+  "ignoreBinaries": [
+    "jgengine",
+    "rg"
+  ],
+  "ignoreDependencies": [
+    "oxlint",
+    "jscpd"
+  ],
+  "ignoreUnresolved": [
+    "^scripts/.+\\.ts$",
+    "^\\./_generated/.+$"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/*.{ts,mjs}",
+        "scripts/**/*.test.ts",
+        "scripts/species-import/{plantsCommand,fitWorker}.ts",
+        "games/scripts/*.ts",
+        "games/shared/*.test.ts",
+        ".claude/hooks/*.mjs"
+      ],
+      "project": [
+        "scripts/**/*.{ts,tsx,mjs}",
+        "games/scripts/**/*.ts",
+        "games/shared/**/*.ts",
+        ".claude/hooks/**/*.mjs"
+      ],
+      "includeEntryExports": true
+    },
+    "packages/*": {
+      "entry": [
+        "src/**/*.{ts,tsx}",
+        "scripts/**/*.ts"
+      ],
+      "project": [
+        "**/*.{ts,tsx,mjs}"
+      ]
+    },
+    "packages/jgengine": {
+      "entry": [
+        "src/**/*.{ts,tsx}"
+      ],
+      "project": [
+        "**/*.{ts,tsx,mjs}"
+      ],
+      "ignoreDependencies": [
+        "@jgengine/core"
+      ]
+    },
+    "registry": {
+      "entry": [
+        "jgengine/*.{ts,tsx}"
+      ],
+      "project": [
+        "**/*.{ts,tsx}"
+      ]
+    },
+    "games/*": {
+      "entry": [
+        "src/{main,index,preview}.tsx",
+        "proofs/**/*.{ts,tsx}",
+        "scripts/**/*.{ts,mjs}",
+        "**/*.test.{ts,tsx}"
+      ],
+      "project": [
+        "**/*.{ts,tsx,mjs}"
+      ],
+      "includeSubpathExports": true
+    },
+    "games/llmville/packages/*": {
+      "entry": [
+        "src/**/*.{ts,tsx}",
+        "convex/**/*.ts",
+        "**/*.test.ts"
+      ],
+      "project": [
+        "**/*.{ts,tsx,mjs}"
+      ]
+    },
+    "apps/*": {
+      "entry": [
+        "**/*.test.{ts,tsx}"
+      ],
+      "project": [
+        "**/*.{ts,tsx,mjs,css}"
+      ]
+    },
+    "apps/web": {
+      "entry": [
+        "src/client.tsx",
+        "src/styles.css",
+        "src/site/render.tsx",
+        "**/*.test.{ts,tsx}",
+        "scripts/*.ts"
+      ],
+      "project": [
+        "**/*.{ts,tsx,mjs,css}"
+      ]
+    },
+    "examples/*": {
+      "project": [
+        "**/*.{ts,tsx,mjs}"
+      ]
+    },
+    "packages/core": {
+      "entry": [
+        "src/**/*.{ts,tsx}"
+      ],
+      "project": [
+        "**/*.{ts,tsx,mjs}"
+      ],
+      "ignoreDependencies": [
+        "@jgengine/ws"
+      ]
+    },
+    "examples/next-host": {
+      "project": [
+        "**/*.{ts,tsx,mjs,css}"
+      ]
+    }
+  }
+}

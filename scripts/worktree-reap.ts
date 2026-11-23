@@ -137,7 +137,7 @@ export function reap(selection: ReapSelection, io: ReapIo): { removed: ReapCandi
 }
 
 /** Where a tree goes while it is deleted; a leftover one is finished by the next reap. */
-export const REAPING_SUFFIX = ".reaping";
+const REAPING_SUFFIX = ".reaping";
 
 export interface TreeRemoval {
   rename: (from: string, to: string) => void;

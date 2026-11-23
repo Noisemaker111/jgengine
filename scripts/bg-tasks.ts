@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-export const BG_DIR = join(".scratch", "bg");
+const BG_DIR = join(".scratch", "bg");
 
 /** A task id is a folder name and nothing else: no separators, no dots, no traversal. */
 export const TASK_ID = /^[a-z0-9][a-z0-9-]{5,40}$/;

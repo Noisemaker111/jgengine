@@ -210,14 +210,6 @@ function lastLine(text: string): string {
   );
 }
 
-function parseJson<T>(text: string): { value: T } | { error: string } {
-  try {
-    return { value: JSON.parse(text) as T };
-  } catch (error) {
-    return { error: `unreadable JSON: ${String(error)}` };
-  }
-}
-
 export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   const branchRun = io.sh(["git", "rev-parse", "--abbrev-ref", "HEAD"], false);
   const branch = branchRun.stdout.trim();
@@ -421,7 +413,7 @@ function changedBetween(from: string, to: string, io: LaneIo): string[] {
  * after that run (the suite scores, and the change note land renders, which no test or gate reads). Any
  * other difference - a rebase, an edit made while verify ran - is verified again here.
  */
-export function proveHead(verifiedTree: string, scoredPaths: ReadonlySet<string>, io: LaneIo): string | null {
+function proveHead(verifiedTree: string, scoredPaths: ReadonlySet<string>, io: LaneIo): string | null {
   const headTree = io.sh(["git", "rev-parse", "HEAD^{tree}"], false).stdout.trim();
   if (io.passedOn(headTree) !== null) return null;
   const differs = changedBetween(verifiedTree, headTree, io);
@@ -440,7 +432,7 @@ export function proveHead(verifiedTree: string, scoredPaths: ReadonlySet<string>
  * lane owns (its head is this branch, in this repository) is marked ready here; a PR into another
  * base, or a draft from a fork, is named instead. No open PR yet is fine: land opens it ready.
  */
-export function readyThisPull(branch: string, pr: number | undefined, io: LaneIo): string | null {
+function readyThisPull(branch: string, pr: number | undefined, io: LaneIo): string | null {
   const remote = io.sh(["git", "remote", "get-url", "origin"], false);
   const repo = remote.status === 0 ? repoFromRemote(remote.stdout) : null;
   if (repo === null) return null;
@@ -509,11 +501,11 @@ function main(rawArgv: readonly string[]): void {
   }
 }
 
-export const LANE_CLOSE_DURATION =
+const LANE_CLOSE_DURATION =
   "this takes several minutes (gen, every gate, the tests and the site build, then the merge). Run it as a harness background command (Bash run_in_background) and wait for its exit before ending the turn; its last line names the merge commit. A passing verify:fast --landing of the same tree is reused, not run again.";
 
 /** `.scratch/lane-close.json` while a close runs: the repo's Stop hook reads it, so a turn cannot end mid-landing. */
-export const RUNNING_MARKER = join(".scratch", "lane-close.json");
+const RUNNING_MARKER = join(".scratch", "lane-close.json");
 
 function markRunning(checkout: string): void {
   const marker = join(checkout, RUNNING_MARKER);
@@ -567,7 +559,7 @@ function realIo(): LaneIo {
 }
 
 /** Exit of `boat-host.sh gate` when the host cannot run the gate (it printed `degraded:` and why). */
-export const BOAT_GATE_UNAVAILABLE = 69;
+const BOAT_GATE_UNAVAILABLE = 69;
 
 /**
  * The `boat-host.sh gate` arguments for this tree: the snapshot commit of the working tree, run with

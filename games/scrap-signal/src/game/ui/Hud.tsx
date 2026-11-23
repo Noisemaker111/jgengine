@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useRef } from "@jgengine/core/ui/jsx";
-import { RuneGlyph, RuneLabel, RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { RuneLabel, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind, runePulse } from "@jgengine/core/ui/rune/primitives";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { lootDropsOf } from "@jgengine/core/game/events";

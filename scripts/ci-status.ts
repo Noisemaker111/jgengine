@@ -60,7 +60,7 @@ export interface Run {
   stderr: string;
 }
 
-export type Git = (args: string[]) => Run;
+type Git = (args: string[]) => Run;
 
 /** One row of `statusCheckRollup`: a check run or a legacy commit status. */
 export interface RollupEntry {
@@ -270,13 +270,13 @@ export function summarizeChecks(input: {
 }
 
 /** `1.2s`, `340ms`: the whole point is that this number stays small. */
-export function seconds(ms: number): string {
+function seconds(ms: number): string {
   if (ms < 1000) return `${Math.round(ms)}ms`;
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
 /** The last line's verdict: one of pass, fail naming each failing check, or still running. */
-export function verdictLine(status: CiStatus): string {
+function verdictLine(status: CiStatus): string {
   const { pass, fail, pending } = status.counts;
   const counts = `${status.checks.length} check(s): ${pass} pass, ${fail} fail, ${pending} pending`;
   if (status.verdict === "fail") {
@@ -326,13 +326,13 @@ function firstLine(text: string): string {
 }
 
 /** `owner/name` from `--repo` or this checkout's origin. */
-export function repoName(args: CiStatusArgs, git: Git): string | null {
+function repoName(args: CiStatusArgs, git: Git): string | null {
   if (args.repo !== undefined) return args.repo;
   return repoFromRemote(git(["remote", "get-url", "origin"]).stdout);
 }
 
 /** Resolve the one PR this question is about, with its head commit's checks, without watching anything. */
-export function resolvePr(args: CiStatusArgs, io: CiIo): { pr: PrView } | Refusal {
+function resolvePr(args: CiStatusArgs, io: CiIo): { pr: PrView } | Refusal {
   const repo = repoName(args, io.git);
   if (repo === null) return { reason: "bad-args", message: "no GitHub repository in the origin remote; pass --repo <owner/name>" };
   const github = gitHub(io.gh, repo);

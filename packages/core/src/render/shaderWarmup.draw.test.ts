@@ -785,7 +785,6 @@ describe("createShaderWarmup links what the first frame draws outside the scene'
     scene.add(meshAt(0, 0, -5));
     const camera = new PerspectiveCamera();
     const { renderer, compiled } = linkingRenderer();
-    const quadCamera = new OrthographicCamera();
     const tone = new MeshBasicMaterial();
     const quad = new Mesh(new BoxGeometry(), tone);
     const reached: unknown[] = [];

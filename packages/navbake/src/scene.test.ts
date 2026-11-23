@@ -108,7 +108,6 @@ describe("authored scene to moving agents", () => {
     const runtime = createNavRuntime({ mesh: bake([FLOOR, DECK]) });
     const before = runtime.plan([2, 0, 5], [9.5, 0, 5])!;
     expect(before.partial).toBeUndefined();
-    const region = { min: [6.8, 3.4] as const, max: [9.2, 6.6] as const };
     const stats = runtime.applyMesh(bake([FLOOR, DECK, WALL]));
     expect(stats.kept).toBeGreaterThan(5);
     expect(stats.added + stats.removed).toBeGreaterThan(0);

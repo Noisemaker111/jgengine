@@ -1,13 +1,3 @@
-/**
- * Reference wind over flat terrain, written straight from EN 1991-1-4:2005 (Eurocode 1, Actions on structures — Wind
- * actions), independent of the runtime field: the roughness factor and logarithmic profile (§4.3.2), the turbulence
- * intensity (§4.4), and the along-wind turbulence length scale and spectrum (Annex B). The published values it must
- * reproduce are in {@link EN1991_TERRAIN} and {@link EN1991_PUBLISHED}.
- */
-
-/** Von Kármán's constant. */
-export const VON_KARMAN = 0.41;
-
 /** One EN 1991-1-4 Table 4.1 terrain category. */
 export interface TerrainCategory {
   label: string;
@@ -26,7 +16,7 @@ export const EN1991_TERRAIN = {
 } as const satisfies Record<string, TerrainCategory>;
 
 /** z₀,II, the reference roughness of category II. */
-export const Z0_II = 0.05;
+const Z0_II = 0.05;
 
 /**
  * Values printed in, or read directly off, EN 1991-1-4 and its commentaries that this module must reproduce:
@@ -52,18 +42,13 @@ export function terrainFactor(category: TerrainCategory): number {
 }
 
 /** Roughness factor c_r(z) = k_r ln(z/z₀) (eq. 4.4). */
-export function roughnessFactor(category: TerrainCategory, z: number): number {
+function roughnessFactor(category: TerrainCategory, z: number): number {
   return terrainFactor(category) * Math.log(zEff(category, z) / category.z0);
 }
 
 /** Mean speed at `z` over the mean at `zRef`, same terrain: the log law (eq. 4.3 with c₀ = 1). */
 export function logLawRatio(category: TerrainCategory, z: number, zRef = 10): number {
   return roughnessFactor(category, z) / roughnessFactor(category, zRef);
-}
-
-/** Friction velocity u_star from the mean speed at `zRef`: U = (u_star / κ) ln(z / z₀). */
-export function frictionVelocity(category: TerrainCategory, meanAtRef: number, zRef = 10): number {
-  return (VON_KARMAN * meanAtRef) / Math.log(zEff(category, zRef) / category.z0);
 }
 
 /** Turbulence intensity I_v(z) = k_I / (c₀ ln(z/z₀)), k_I = c₀ = 1 (eq. 4.7). */

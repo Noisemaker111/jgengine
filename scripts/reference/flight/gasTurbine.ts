@@ -54,7 +54,7 @@ const PRODUCTS_H0 = integratedPolynomial(PRODUCTS_CP, REFERENCE_X);
  * Fletcher, *Gas Turbine Performance* (2nd ed., 2004). R = 287.05 J/(kg·K) for both, as they take it.
  * @capability gas-turbine real-gas air and combustion product properties
  */
-export const WALSH_FLETCHER_GAS: GasModel = {
+const WALSH_FLETCHER_GAS: GasModel = {
   gasConstant: 287.05,
   cp(temperature, fuelAirRatio) {
     const x = temperature / 1000;
@@ -198,7 +198,7 @@ export interface GasStream {
 }
 
 /** One steady operating point. Forces in N, flows in kg/s, temperatures in K, pressures in Pa, powers in W. */
-export interface GasTurbinePoint {
+interface GasTurbinePoint {
   flight: GasTurbineFlight;
   converged: boolean;
   /** Uninstalled net thrust. */

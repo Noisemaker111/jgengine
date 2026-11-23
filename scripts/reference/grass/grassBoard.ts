@@ -325,7 +325,7 @@ function shotKey(shot: BoardShot, args: Pick<BoardArgs, "shoot">): string {
   return [...shot.argv, ...depicts].join(" ");
 }
 
-export function manifestPath(out: string): string {
+function manifestPath(out: string): string {
   return join(out, "board.json");
 }
 
@@ -372,7 +372,7 @@ export function boardSource(cwd: string = root): string {
 }
 
 /** What a run starts from: the folder's manifest when it was taken with this code (or `--resume` keeps any shot file), else a fresh one. @internal */
-export function startManifest(args: Pick<BoardArgs, "out" | "resume" | "shoot">, shots: readonly BoardShot[], source: string, exists: (path: string) => boolean = existsSync): { manifest: BoardManifest; note?: string } {
+function startManifest(args: Pick<BoardArgs, "out" | "resume" | "shoot">, shots: readonly BoardShot[], source: string, exists: (path: string) => boolean = existsSync): { manifest: BoardManifest; note?: string } {
   const previous = readManifest(args.out);
   const manifest: BoardManifest = { version: 1, source, done: {}, failed: {} };
   if (args.resume) {

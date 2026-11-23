@@ -55,7 +55,7 @@ describe("createWorldStreamer", () => {
     const streamer = createWorldStreamer({ shards, loadRadius: 100, keepRadius: 10 });
     streamer.update({ x: 100, z: 100 });
     // 40m past the edge: within loadRadius(=keepRadius clamped to 100), stays.
-    const near = streamer.update({ x: 296, z: 100 });
+    streamer.update({ x: 296, z: 100 });
     expect(streamer.resident()).toContain("cell_0_0");
   });
 

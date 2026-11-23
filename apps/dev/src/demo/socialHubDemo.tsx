@@ -81,7 +81,7 @@ function joinParty(ctx: GameContext, memberUserId: string): void {
   if ("inviteId" in result) social.party.accept(memberUserId, result.inviteId);
 }
 
-export function stageSocialHub(ctx: GameContext): void {
+function stageSocialHub(ctx: GameContext): void {
   const me = ctx.player.userId;
   const social = ctx.game.social!;
   const chat = ctx.game.chat!;

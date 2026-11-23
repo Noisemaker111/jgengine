@@ -17,7 +17,7 @@ import { basename, extname, join } from "node:path";
 /** Bumped whenever the encoder's settings change, so stale twins are never served. */
 export const TEXTURE_VARIANT_VERSION = 1;
 /** The query parameter a client adds to ask for an image's KTX2 twin. */
-export const KTX2_PARAM = "ktx2";
+const KTX2_PARAM = "ktx2";
 
 export type TextureRole = "color" | "data" | "normal";
 export type TextureOrient = "top" | "flip";

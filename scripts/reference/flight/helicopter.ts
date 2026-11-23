@@ -18,7 +18,7 @@ import {
 } from "./referenceAircraft";
 
 /** A small lifting surface on the airframe (tailplane or fin), sized and placed in body axes. */
-export interface HelicopterSurface {
+interface HelicopterSurface {
   /** m². */
   area: number;
   /** Aerodynamic centre, body axes m from the centre of gravity. */
@@ -91,7 +91,7 @@ export interface HelicopterModel extends ReferenceAircraftModel {
 }
 
 /** What the rotors did at the last evaluation. */
-export interface HelicopterRotorTelemetry {
+interface HelicopterRotorTelemetry {
   /** Main rotor thrust along the shaft, N. */
   mainThrust: number;
   /** Main rotor aerodynamic power, W. */

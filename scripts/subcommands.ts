@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { renderUsage, type Usage } from "./script-help";
 
-export interface Verb {
+interface Verb {
   /** The script the verb runs, repo-relative. */
   readonly script: string;
   /** Arguments put before the caller's own. */

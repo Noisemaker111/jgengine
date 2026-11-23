@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { browseSessions, quickMatch } from "@jgengine/core/multiplayer/matchmaking";
 
-import { DEMO_WORLD_LISTINGS, socialHubGame, stageSocialHub } from "./socialHubDemo";
+import { DEMO_WORLD_LISTINGS, socialHubGame } from "./socialHubDemo";
 
 const ME = "user_local";
 

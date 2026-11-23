@@ -131,9 +131,3 @@ export interface SaveStateGap {
   instead: string;
 }
 
-/** What the whole set proves: how many games, fields and values, and what is still uncovered. */
-export interface SaveStateReport {
-  games: { game: string; fields: number; values: number }[];
-  failures: SaveStateFailure[];
-  gaps: SaveStateGap[];
-}

@@ -20,7 +20,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import { hasInstall, missingDependencies } from "./checkout-ready";
 
-export const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
+const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
 /** Workspace roots whose per-package node_modules hold the isolated linker's symlinks. */
 const WORKSPACE_GROUPS = ["packages", "apps", "examples", "games", "games/llmville/packages"];
@@ -39,7 +39,7 @@ export function worktreeTarget(mainRoot: string, name: string): { path: string }
 }
 
 /** Workspace-relative dirs (plus the root) whose node_modules a linked worktree needs. */
-export function workspaceDirs(root: string): string[] {
+function workspaceDirs(root: string): string[] {
   const dirs = [""];
   for (const group of WORKSPACE_GROUPS) {
     const base = join(root, group);
@@ -70,7 +70,7 @@ function locksMatch(mainRoot: string, target: string): boolean {
  * install that follows writes this worktree's own node_modules and never the main checkout's.
  * Only the root junction and the copied workspace folders go; the store behind them is untouched.
  */
-export function unlinkDeps(target: string): void {
+function unlinkDeps(target: string): void {
   unlinkSync(join(target, "node_modules"));
   for (const rel of workspaceDirs(target)) {
     if (rel !== "") rmSync(join(target, rel, "node_modules"), { recursive: true, force: true });
@@ -289,7 +289,7 @@ export function ensureWorktreeReady(cwd: string, options: WorktreeReadyOptions =
  * Nothing is downloaded: a pack no checkout has pulled yet is fetched once, into the store, the first
  * time a dev server or `games:provision` needs it.
  */
-export async function linkGameAssets(target: string): Promise<{ linked: number; absent: number; store: string }> {
+async function linkGameAssets(target: string): Promise<{ linked: number; absent: number; store: string }> {
   const { provisionGame } = await import("../games/shared/provisionAssets");
   const { assetStoreRoot } = await import("../packages/assets/src/assetStore");
   const games = join(target, "games");

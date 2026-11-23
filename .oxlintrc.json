@@ -1,0 +1,281 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "off"
+  },
+  "plugins": [],
+  "ignorePatterns": [
+    "native/**",
+    "**/dist/**",
+    "**/_generated/**",
+    "apps/web/public/**",
+    "games/*/public/**"
+  ],
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      {
+        "ignoreRestSiblings": true,
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_"
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "regex": "^react(-dom)?(/|$)",
+            "message": "UI is JSX on the engine's own runtime, not React. Import hooks and types from @jgengine/core/ui/jsx (bun scripts/port-react-ui.ts rewrites a file)."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "packages/core/src/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^react(-dom)?(/|$)",
+                "message": "UI is JSX on the engine's own runtime, not React. Import hooks and types from @jgengine/core/ui/jsx (bun scripts/port-react-ui.ts rewrites a file)."
+              },
+              {
+                "regex": "^(@jgengine/(assets|convex|editor|navbake|node|rapier|simulations|sql|ws)|jgengine)(/|$)",
+                "message": "@jgengine/core is the bottom package: every other package imports it, so it imports none of them. Move what both need into core, or put this file in the package it depends on. Only core's *.draw files may load @jgengine/ws (the player's transport). See docs/architecture.md."
+              },
+              {
+                "regex": "^(\\.\\./){3,}(apps|games|registry|examples)/",
+                "message": "A published package imports only @jgengine packages below it, never apps/, games/, registry/ or examples/. See docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/core/src/**/*.draw.ts",
+        "packages/core/src/**/*.draw.tsx",
+        "packages/core/src/**/*.draw.test.ts",
+        "packages/core/src/**/*.draw.test.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^react(-dom)?(/|$)",
+                "message": "UI is JSX on the engine's own runtime, not React. Import hooks and types from @jgengine/core/ui/jsx (bun scripts/port-react-ui.ts rewrites a file)."
+              },
+              {
+                "regex": "^(@jgengine/(assets|convex|editor|navbake|node|rapier|simulations|sql)|jgengine)(/|$)",
+                "message": "@jgengine/core is the bottom package: every other package imports it, so it imports none of them. Move what both need into core, or put this file in the package it depends on. Only core's *.draw files may load @jgengine/ws (the player's transport). See docs/architecture.md."
+              },
+              {
+                "regex": "^(\\.\\./){3,}(apps|games|registry|examples)/",
+                "message": "A published package imports only @jgengine packages below it, never apps/, games/, registry/ or examples/. See docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/assets/src/**",
+        "packages/convex/src/**",
+        "packages/navbake/src/**",
+        "packages/rapier/src/**",
+        "packages/simulations/src/**",
+        "packages/sql/src/**",
+        "packages/ws/src/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^react(-dom)?(/|$)",
+                "message": "UI is JSX on the engine's own runtime, not React. Import hooks and types from @jgengine/core/ui/jsx (bun scripts/port-react-ui.ts rewrites a file)."
+              },
+              {
+                "regex": "^(@jgengine/(assets|convex|editor|navbake|node|rapier|simulations|sql|ws)|jgengine)/",
+                "message": "This package sits one step above @jgengine/core and imports only core (and itself, by relative path). What two of these packages share lives in core. See docs/architecture.md."
+              },
+              {
+                "regex": "^(\\.\\./){3,}(apps|games|registry|examples)/",
+                "message": "A published package imports only @jgengine packages below it, never apps/, games/, registry/ or examples/. See docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/node/src/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^(@jgengine/(convex|editor|navbake|rapier|simulations)|jgengine)(/|$)",
+                "message": "@jgengine/node is the Node host: it imports core, ws, sql and assets, nothing above them. See docs/architecture.md."
+              },
+              {
+                "regex": "^(\\.\\./){3,}(apps|games|registry|examples)/",
+                "message": "A published package imports only @jgengine packages below it, never apps/, games/, registry/ or examples/. See docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/editor/src/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^react(-dom)?(/|$)",
+                "message": "UI is JSX on the engine's own runtime, not React. Import hooks and types from @jgengine/core/ui/jsx (bun scripts/port-react-ui.ts rewrites a file)."
+              },
+              {
+                "regex": "^(@jgengine/(convex|node|rapier|simulations|sql|ws)|jgengine)(/|$)",
+                "message": "@jgengine/editor imports core, assets and navbake, nothing above them. See docs/architecture.md."
+              },
+              {
+                "regex": "^(\\.\\./){3,}(apps|games|registry|examples)/",
+                "message": "A published package imports only @jgengine packages below it, never apps/, games/, registry/ or examples/. See docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/jgengine/src/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^react(-dom)?(/|$)",
+                "message": "UI is JSX on the engine's own runtime, not React. Import hooks and types from @jgengine/core/ui/jsx (bun scripts/port-react-ui.ts rewrites a file)."
+              },
+              {
+                "regex": "^(\\.\\./){3,}(apps|games|registry|examples)/",
+                "message": "A published package imports only @jgengine packages below it, never apps/, games/, registry/ or examples/. See docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "registry/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^react(-dom)?(/|$)",
+                "message": "UI is JSX on the engine's own runtime, not React. Import hooks and types from @jgengine/core/ui/jsx (bun scripts/port-react-ui.ts rewrites a file)."
+              },
+              {
+                "regex": "^(@jgengine/(assets|convex|editor|navbake|node|rapier|simulations|sql|ws)|jgengine)(/|$)",
+                "message": "A registry component is copied into a game by `jgengine add`, so it imports only @jgengine/core and its sibling components (@/components/ui/*). See docs/architecture.md."
+              },
+              {
+                "regex": "^(\\.\\./)+(apps|games|packages|scripts|examples)/",
+                "message": "A registry component is copied into a game by `jgengine add`, so it imports only @jgengine/core and its sibling components (@/components/ui/*). See docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "games/*/src/**",
+        "games/*/proofs/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^react(-dom)?(/|$)",
+                "message": "UI is JSX on the engine's own runtime, not React. Import hooks and types from @jgengine/core/ui/jsx (bun scripts/port-react-ui.ts rewrites a file)."
+              },
+              {
+                "regex": "^(\\.\\./){2,}[a-z0-9-]+/(src|proofs)/",
+                "message": "A game never imports another game. A mechanic two games need moves into packages/core and both import it from there (check `bun run find <words>` first). See docs/architecture.md."
+              },
+              {
+                "regex": "^@games/",
+                "message": "A game never imports another game. A mechanic two games need moves into packages/core and both import it from there (check `bun run find <words>` first). See docs/architecture.md."
+              },
+              {
+                "regex": "^(\\.\\./){3,}(apps|scripts|examples)/",
+                "message": "A game imports @jgengine packages, registry components (@/components/ui/*) and games/shared, never apps/, scripts/ or examples/. See docs/architecture.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^react(-dom)?(/|$)",
+                "message": "UI is JSX on the engine's own runtime, not React. Import hooks and types from @jgengine/core/ui/jsx (bun scripts/port-react-ui.ts rewrites a file)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "examples/next-host/**",
+        "examples/tanstack-host/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
+}

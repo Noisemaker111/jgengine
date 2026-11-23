@@ -8,7 +8,6 @@ import { createStreetPlay, streetPlayOf } from "./streetPlay";
 import { CRUISER_TAIL } from "./hhpd/pursuit";
 import { paceBandFactor, tailGoal } from "@jgengine/core/ai/driver";
 import { RESIDENTS, residentAt, residentStats, tickResidents } from "./world/residents";
-import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
 
 const HERO = "hero-test";
 const STEP = 1 / 60;

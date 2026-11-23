@@ -76,7 +76,7 @@ function fromUnit(p: FitParameter, u: number): number {
 }
 
 /** `base` with the fitted parameters set from a point of the unit cube. */
-export function speciesAt(base: PlantSpecies, point: readonly number[], parameters: readonly FitParameter[] = FIT_PARAMETERS): PlantSpecies {
+function speciesAt(base: PlantSpecies, point: readonly number[], parameters: readonly FitParameter[] = FIT_PARAMETERS): PlantSpecies {
   const species = structuredClone(base);
   parameters.forEach((p, i) => writePath(species, p.path, fromUnit(p, point[i] ?? 0.5)));
   return species;

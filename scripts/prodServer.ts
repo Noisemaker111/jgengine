@@ -56,7 +56,7 @@ const TYPES: Readonly<Record<string, string>> = {
   ".ttf": "font/ttf",
 };
 
-export interface ProdBuild {
+interface ProdBuild {
   /** The folder the build was written to; chunks under `assets/`, each with its `.map`. */
   outDir: string;
   fingerprint: string;
@@ -91,7 +91,7 @@ function publicFilesHash(root: string): string {
  * Build (or reuse) the production runner for the files `cwd` serves now. Link the asset packs of the
  * games to be measured first (`provisionCapturedGame`). Throws with the build's log path when it fails.
  */
-export function buildProdRunner(cwd: string): ProdBuild {
+function buildProdRunner(cwd: string): ProdBuild {
   const root = resolve(cwd);
   const registries = join(root, "apps", "dev", "src", "registries.tsx");
   if (existsSync(registries) && readFileSync(registries, "utf8").includes('"!**/main.tsx"')) {

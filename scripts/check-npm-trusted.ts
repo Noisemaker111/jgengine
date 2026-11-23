@@ -71,13 +71,13 @@ export function publishedPackageNames(): string[] {
   return lists[0]!.map((folder) => (JSON.parse(readFileSync(`${root}packages/${folder}/package.json`, "utf8")) as { name: string }).name);
 }
 
-export const registryLookup: RegistryLookup = async (name) => {
+const registryLookup: RegistryLookup = async (name) => {
   const response = await fetch(`https://registry.npmjs.org/${name.replace("/", "%2f")}`, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(20_000) });
   return response.status === 200 ? { status: 200, body: await response.json() } : { status: response.status };
 };
 
 /** Logs the result; resolves true when every package can be published. */
-export async function checkNpmTrusted(lookup: RegistryLookup = registryLookup): Promise<boolean> {
+async function checkNpmTrusted(lookup: RegistryLookup = registryLookup): Promise<boolean> {
   const names = publishedPackageNames();
   const problems = await trustedPublishProblems(names, lookup);
   if (problems.length === 0) {

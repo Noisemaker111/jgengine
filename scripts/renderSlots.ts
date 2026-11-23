@@ -22,13 +22,13 @@ import { existsSync, linkSync, mkdirSync, readFileSync, readdirSync, renameSync,
 import { availableParallelism, tmpdir, totalmem } from "node:os";
 import { join } from "node:path";
 
-export const RENDER_SLOTS_ENV = "JG_RENDER_SLOTS";
-export const RENDER_WAIT_ENV = "JG_RENDER_WAIT_MINUTES";
-export const RENDER_DIR_ENV = "JG_RENDER_DIR";
+const RENDER_SLOTS_ENV = "JG_RENDER_SLOTS";
+const RENDER_WAIT_ENV = "JG_RENDER_WAIT_MINUTES";
+const RENDER_DIR_ENV = "JG_RENDER_DIR";
 
 /** What one rendering browser costs the machine, for the default count and fairshare's room check. */
-export const RENDER_CORES = 4;
-export const RENDER_MEM_GB = 4;
+const RENDER_CORES = 4;
+const RENDER_MEM_GB = 4;
 
 /**
  * Slots on this machine: `JG_RENDER_SLOTS`, else one per four threads and four GB of memory, at least
@@ -41,12 +41,12 @@ export function renderSlotCount(env: NodeJS.ProcessEnv = process.env, threads = 
   return Math.max(1, Math.min(Math.floor(threads / RENDER_CORES), Math.floor(memBytes / 2 ** 30 / RENDER_MEM_GB)));
 }
 
-export function renderWaitMs(env: NodeJS.ProcessEnv = process.env): number {
+function renderWaitMs(env: NodeJS.ProcessEnv = process.env): number {
   const minutes = Number(env[RENDER_WAIT_ENV]);
   return (Number.isFinite(minutes) && minutes > 0 ? minutes : 10) * 60_000;
 }
 
-export function renderSlotDir(env: NodeJS.ProcessEnv = process.env): string {
+function renderSlotDir(env: NodeJS.ProcessEnv = process.env): string {
   return env[RENDER_DIR_ENV] ?? join(tmpdir(), "jgengine-render");
 }
 
@@ -94,7 +94,7 @@ export function pidAlive(pid: number): boolean {
  * fairshare's answer for one more browser, when it is installed: `fairshare room` exits 0 for room,
  * 1 for none and 2 when it cannot tell. Null when there is no fairshare or it could not answer.
  */
-export function fairshareRoom(env: NodeJS.ProcessEnv = process.env): boolean | null {
+function fairshareRoom(env: NodeJS.ProcessEnv = process.env): boolean | null {
   const exe = env["FAIRSHARE_EXE"] ?? Bun.which("fairshare");
   if (exe === null || exe === undefined || exe === "") return null;
   const run = spawnSync(exe, ["room", "--cores", String(RENDER_CORES / 2), "--mem-gb", String(RENDER_MEM_GB / 2)], { stdio: "ignore", timeout: 10_000, windowsHide: true });
@@ -180,8 +180,8 @@ function stale(path: string, record: SlotRecord | null, alive: (pid: number) => 
   }
 }
 
-export const RENDER_UNDER_TEST_ENV = "JG_RENDER_UNDER_TEST";
-export const RENDER_SLOTS_IN_TESTS_ENV = "JG_RENDER_SLOTS_IN_TESTS";
+const RENDER_UNDER_TEST_ENV = "JG_RENDER_UNDER_TEST";
+const RENDER_SLOTS_IN_TESTS_ENV = "JG_RENDER_SLOTS_IN_TESTS";
 
 /**
  * A browser a test starts (in `bun test`, or in a process a test spawned) takes no slot: its runner's

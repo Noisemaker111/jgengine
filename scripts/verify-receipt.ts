@@ -65,7 +65,7 @@ export function createVerifyReceipt(root: string, data: Record<string, unknown>,
  * How much a run proves: `--cheap` the type-checks and gates, a plain run those and the tests and
  * boots, `--landing` also the site build, `--full` what CI runs.
  */
-export type VerifyScope = "cheap" | "fast" | "landing" | "full";
+type VerifyScope = "cheap" | "fast" | "landing" | "full";
 const SCOPE_RANK: Readonly<Record<VerifyScope, number>> = { cheap: 0, fast: 1, landing: 2, full: 3 };
 
 /** What a passing receipt must match for its pass to stand for a new run. */

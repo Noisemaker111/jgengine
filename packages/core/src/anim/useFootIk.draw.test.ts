@@ -298,7 +298,7 @@ function rigWithHead() {
 
 describe("applyFootIk look-at", () => {
   test("a target turns the head bone onto it and leaves the rest of the rig alone", () => {
-    const { scene, rig, head } = rigWithHead();
+    const { rig, head } = rigWithHead();
     const target = [3, 1.7, 0] as const;
     const { probe } = ground(() => 0);
     const state = settle((s) => applyFootIk(rig, 0, probe, s, 1 / 60, target));

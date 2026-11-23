@@ -7,9 +7,9 @@ import type { RenderBounds } from "../packages/core/src/visibility/bounds";
 import { printHelpIfAsked } from "./script-help";
 
 /** Agents per square metre; the square world grows with the count so density stays fixed. */
-export const CROWD_DENSITY = 0.5;
+const CROWD_DENSITY = 0.5;
 /** Neighbours closer than this push each other apart. */
-export const CROWD_RADIUS = 1.5;
+const CROWD_RADIUS = 1.5;
 const BODY_RADIUS = 0.3;
 const MAX_SPEED = 1.5;
 const PUSH = 4;
@@ -246,7 +246,7 @@ export function createFlatCrowd(count: number, seed = "crowd"): Crowd {
   };
 }
 
-export interface CrowdTiming {
+interface CrowdTiming {
   readonly ticks: number;
   readonly medianMs: number;
   readonly minMs: number;
@@ -261,7 +261,7 @@ function summarize(samples: number[]): CrowdTiming {
  * Warm every crowd up, then take turns ticking them until `budgetMs` of stepping has run (at least
  * `minTicks` each), so a busy machine slows every side alike and the ratios stay meaningful.
  */
-export function timeCrowds(crowds: readonly Crowd[], budgetMs: number, minTicks = 3, warmup = 3): CrowdTiming[] {
+function timeCrowds(crowds: readonly Crowd[], budgetMs: number, minTicks = 3, warmup = 3): CrowdTiming[] {
   for (let i = 0; i < warmup; i += 1) for (const crowd of crowds) crowd.step();
   const samples = crowds.map(() => [] as number[]);
   let spent = 0;

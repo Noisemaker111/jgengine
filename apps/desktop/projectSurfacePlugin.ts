@@ -7,7 +7,7 @@ import type { GameMount } from "./src/project/commands";
 import type { GameSettingsPatch } from "./src/project/gameMeta";
 import { createProjectSurfaceHost, type ProjectSurfaceHost } from "./project/processManager";
 
-export const PROJECT_SURFACE_PREFIX = "/__jgengine/project";
+const PROJECT_SURFACE_PREFIX = "/__jgengine/project";
 
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {

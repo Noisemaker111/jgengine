@@ -26,7 +26,7 @@ export interface MotorcycleRiderOptions extends ReferenceMotorcycleOptions {
 }
 
 /** Serializable state of a {@link RiddenMotorcycle}. */
-export interface RiddenMotorcycleState {
+interface RiddenMotorcycleState {
   bike: ReferenceMotorcycleState;
   integral: number;
   lastLean: number;
@@ -34,7 +34,7 @@ export interface RiddenMotorcycleState {
 }
 
 /** One ridden-bike tick in the grouped shape the handling probes read, plus the full reference sample. */
-export interface RiddenMotorcycleStep {
+interface RiddenMotorcycleStep {
   motion: Pick<VehicleStepMotion, "position" | "heading" | "forwardSpeed" | "lateralSpeed" | "yawRate" | "lateralAccel" | "longitudinalAccel">;
   steering: Pick<VehicleStepSteering, "steerAngle">;
   body: Pick<VehicleStepBody, "lean">;

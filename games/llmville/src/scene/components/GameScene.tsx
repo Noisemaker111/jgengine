@@ -114,11 +114,9 @@ export function LlmvilleWorld() {
 }
 
 function GameWorldContent({
-  engine,
   gameId,
   racks,
   rackSlotWorkloadMap,
-  placedBuildItems,
   worldRacks,
   worldPlacedBuildItems,
   claims,
@@ -127,8 +125,6 @@ function GameWorldContent({
   placementDraftDirection,
   placementPreview,
   playerPosition,
-  tutorialRack,
-  showTutorialRackArrow,
 }: {
   engine: GameEngine;
   gameId: string;

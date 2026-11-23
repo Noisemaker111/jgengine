@@ -3,7 +3,6 @@ import { describe, expect, test } from "bun:test";
 import {
   resolveWeather,
   type WeatherModifierTable,
-  type WeatherState,
 } from "./weather";
 
 const table: WeatherModifierTable = {

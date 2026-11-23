@@ -34,7 +34,7 @@ const USAGE: Usage = {
 };
 
 /** The router's minimum pose interval: one pose per player per step. */
-export const STEP_MS = 100;
+const STEP_MS = 100;
 /** Metres a player moves per step: 4 m/s, under the default 12 m/s speed cap. */
 const STEP_METRES = 0.4;
 const WARMUP_STEPS = 3;
@@ -50,7 +50,7 @@ export const MEASURE_MS = 5000;
  */
 export const MAX_PLAYERS = 256;
 /** Wall ms per game second above which the host falls behind real time. */
-export const REAL_TIME_MS = 1000;
+const REAL_TIME_MS = 1000;
 
 export interface ServerBenchArgs {
   players: number[];

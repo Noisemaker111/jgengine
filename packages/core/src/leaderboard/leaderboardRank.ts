@@ -1,5 +1,3 @@
-import type { LeaderboardRow } from "./leaderboard";
-
 /**
  * A single input score to rank. Accepts the raw shape produced by
  * {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a

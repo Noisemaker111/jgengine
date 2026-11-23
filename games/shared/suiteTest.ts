@@ -13,7 +13,7 @@ import type { SuiteProofAnswer, SuiteProofJob } from "./suiteProofWorker";
 export const SUITE_WORKERS_ENV = "JG_SUITE_WORKERS";
 
 /** The most workers one job takes on a shared machine unless JG_SUITE_WORKERS asks for more. */
-export const MAX_SUITE_WORKERS = 4;
+const MAX_SUITE_WORKERS = 4;
 
 /**
  * Proofs played at once: half the machine's threads, at least one and at most four (the shared
@@ -36,7 +36,7 @@ function proofFiles(gameDir: string): string[] {
 }
 
 /** Play every proof across `workers` threads, each proof once, and return the report in file order. */
-export async function runSuiteInWorkers(game: string, gameDir: string, content: SuiteContent | null, workers = suiteWorkers(proofFiles(gameDir).length)): Promise<SuiteReport> {
+async function runSuiteInWorkers(game: string, gameDir: string, content: SuiteContent | null, workers = suiteWorkers(proofFiles(gameDir).length)): Promise<SuiteReport> {
   const jobs: SuiteProofJob[] = proofFiles(gameDir).map((name) => ({ game, path: join(gameDir, SUITE_PROOFS_DIR, name), file: `${SUITE_PROOFS_DIR}/${name}` }));
   const results = new Map<string, SuiteProofResult>();
   let next = 0;

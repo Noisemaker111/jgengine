@@ -114,7 +114,7 @@ export function batchBranches(args: BatchArgs, read: (path: string) => string = 
 }
 
 /** One branch that reached the base, and the merge commit that carried it. */
-export interface BatchLanded {
+interface BatchLanded {
   branch: string;
   commit: string;
   subject: string;
@@ -126,7 +126,7 @@ export interface BatchLanded {
 }
 
 /** One branch that did not reach the base, and why, so nothing is dropped silently. */
-export interface BatchSkipped {
+interface BatchSkipped {
   branch: string;
   why: string;
 }
@@ -166,12 +166,12 @@ function firstLine(text: string): string {
   return text.split("\n").map((line) => line.trim()).find((line) => line.length > 0) ?? text.trim();
 }
 
-export function short(sha: string): string {
+function short(sha: string): string {
   return sha.slice(0, 8);
 }
 
 /** Open PRs into the base, by head branch, so a merge commit can name its PR the way GitHub does. */
-export function openPrs(io: BatchIo, base: string): Map<string, BatchPr> {
+function openPrs(io: BatchIo, base: string): Map<string, BatchPr> {
   const listed = io.github.listPulls({ base, state: "open", limit: 100 });
   const byBranch = new Map<string, BatchPr>();
   if (!listed.ok) return byBranch;

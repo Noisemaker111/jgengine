@@ -198,7 +198,7 @@ export function whippleCriticalSpeeds(
 }
 
 /** One {@link WhippleBicycle} sample. ISO world axes (x forward at spawn, y left, z up). */
-export interface WhippleBicycleState {
+interface WhippleBicycleState {
   /** Lean φ, rad, positive leaning right (the benchmark's sign). */
   lean: number;
   /** Steer δ, rad, positive steering right (the benchmark's sign). */
@@ -218,7 +218,7 @@ export interface WhippleBicycleState {
 }
 
 /** Inputs to {@link WhippleBicycle.step}. */
-export interface WhippleBicycleInput {
+interface WhippleBicycleInput {
   /** Steer torque between rear frame and front frame, N·m, positive steering right. */
   steerTorque?: number;
   /** Driving torque on the rear wheel against the rear frame, N·m. */
@@ -226,7 +226,7 @@ export interface WhippleBicycleInput {
 }
 
 /** Serializable state of a {@link WhippleBicycle}: tree positions and velocities. */
-export interface WhippleBicycleSnapshot {
+interface WhippleBicycleSnapshot {
   q: number[];
   u: number[];
 }
@@ -605,7 +605,7 @@ function leanSteerAccelerations(model: WhippleModel, q: Float64Array, u: Float64
  * for `[φ, δ, φ̇, δ̇]` (row-major); its eigenvalues should equal {@link whippleEigenvalues}.
  * @capability whipple-nonlinear-linearisation linearise the full nonlinear bicycle multibody model to check it against the benchmark
  */
-export function linearizeWhippleBicycle(v: number, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE, h = 1e-6): Float64Array {
+function linearizeWhippleBicycle(v: number, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE, h = 1e-6): Float64Array {
   const model = buildModel(p);
   const A = new Float64Array(16);
   A[2] = 1;

@@ -30,7 +30,7 @@ export interface SeakeepingHull {
 }
 
 /** One strip of the hull for the station forces. */
-export interface SeakeepingStation {
+interface SeakeepingStation {
   /** Station position along the hull, m, and its share of the length, m. */
   x: number;
   width: number;

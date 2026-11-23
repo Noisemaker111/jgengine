@@ -10,7 +10,7 @@ import {
 import { buildShellCommand, processKey, type GameMount } from "../src/project/commands";
 import { listGames, readGameSettings, type GameListEntry } from "./listGames";
 
-export interface ProcessSnapshot {
+interface ProcessSnapshot {
   key: string;
   label: string;
   running: boolean;
@@ -19,7 +19,7 @@ export interface ProcessSnapshot {
   lines: string[];
 }
 
-export interface ThumbnailFile {
+interface ThumbnailFile {
   data: Buffer;
   contentType: string;
 }

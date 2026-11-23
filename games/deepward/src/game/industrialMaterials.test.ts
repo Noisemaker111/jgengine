@@ -3,7 +3,6 @@ import { BoxGeometry, Color, ExtrudeGeometry, Mesh, MeshBasicMaterial, PlaneGeom
 import { casingGeometryParameters, SALVAGE_PLACARD } from "./art";
 import { INDUSTRIAL } from "./industrialMaterials";
 import { serviceWeaponPose, WEAPON_MUZZLE } from "./weaponArt";
-import { newDive } from "./state";
 
 test("industrial coatings and exposed metals have finite, distinct physical responses", () => {
   for (const material of Object.values(INDUSTRIAL)) {

@@ -45,7 +45,7 @@ function insideWall(x: number, z: number, pad: number): boolean {
 }
 
 /** A 1 m quad grid over the yard with the wall's footprint, padded by the guard's radius, left out. */
-export function yardNavMesh(): NavMeshData {
+function yardNavMesh(): NavMeshData {
   const cells = YARD * 2;
   const verts: number[] = [];
   for (let r = 0; r <= cells; r += 1) for (let c = 0; c <= cells; c += 1) verts.push(c - YARD, 0, r - YARD);

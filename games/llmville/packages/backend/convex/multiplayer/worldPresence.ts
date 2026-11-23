@@ -38,8 +38,6 @@ const presenceStore = createWorldPresenceStore({ rules: WORLD_POSE_RULES, idleTi
 
 const presencePositionValidator = v.object({ x: v.number(), y: v.number(), z: v.number() });
 
-type PresencePositionWire = Infer<typeof presencePositionValidator>;
-
 const worldPresenceValidator = v.object({
   presenceId: v.string(),
   kind: v.union(v.literal("human"), v.literal("bot")),

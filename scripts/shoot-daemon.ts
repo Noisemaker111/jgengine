@@ -44,7 +44,6 @@ import {
   launchPersistentChrome,
   pidAlive,
   removeProfileDir,
-  resolveDevPort,
   resolveWarmChromePort,
   startBrowser,
   waitForPidExit,
@@ -202,7 +201,7 @@ async function withDaemonFileLock<T>(lockPath: string, fn: () => T | Promise<T>,
 }
 
 /** True when the recorded daemon's persistent Chrome is reachable. Vite starts lazily per target. */
-export async function isDaemonLive(cwd = process.cwd()): Promise<boolean> {
+async function isDaemonLive(cwd = process.cwd()): Promise<boolean> {
   const state = readDaemonState(cwd);
   if (state === null) return false;
   if (state.identity !== checkoutIdentity(cwd)) return false;
@@ -218,7 +217,7 @@ export async function isDaemonLive(cwd = process.cwd()): Promise<boolean> {
  * When a daemon is live for this checkout, return its chrome/dev endpoints so
  * shoot can attach without launching anything. Otherwise null.
  */
-export async function attachDaemon(cwd = process.cwd()): Promise<ShootDaemonState | null> {
+async function attachDaemon(cwd = process.cwd()): Promise<ShootDaemonState | null> {
   if (!(await isDaemonLive(cwd))) return null;
   const state = readDaemonState(cwd);
   if (state !== null) await touchDaemonState(cwd);
@@ -239,7 +238,7 @@ async function touchDaemonState(cwd: string): Promise<void> {
 export type ShootDaemonTarget = "dev" | "web";
 
 /** The prefix of every line that reports a warm daemon failing a run: grep it in any run's output. */
-export const DAEMON_FAILURE = "daemon failure:";
+const DAEMON_FAILURE = "daemon failure:";
 
 /** A warm daemon that could not be had even after one restart. The lane exits nonzero with this message. */
 export class DaemonUnavailable extends Error {
@@ -408,7 +407,7 @@ async function daemonAnswers(daemon: ShootDaemonState, cwd: string): Promise<boo
 }
 
 /** Which part of a dead daemon went, as precisely as this machine can tell. */
-export async function describeDaemonDeath(daemon: ShootDaemonState): Promise<string> {
+async function describeDaemonDeath(daemon: ShootDaemonState): Promise<string> {
   if (daemon.broker !== true) {
     return `this checkout's daemon Chrome :${daemon.chromePort}${daemon.chromePid === undefined ? "" : ` (pid ${daemon.chromePid})`} stopped answering`;
   }
@@ -590,7 +589,7 @@ export async function reapStaleDaemonState(cwd = process.cwd()): Promise<boolean
 }
 
 /** Idle window after which a warm daemon is retired: one hour unless `JG_SHOOT_IDLE_MINUTES` says otherwise. */
-export function idleDaemonMs(env: NodeJS.ProcessEnv = process.env): number {
+function idleDaemonMs(env: NodeJS.ProcessEnv = process.env): number {
   const minutes = Number(env["JG_SHOOT_IDLE_MINUTES"] ?? "");
   return (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60_000;
 }
@@ -835,7 +834,7 @@ export async function stopDaemon(options: {
   return false;
 }
 
-export async function statusDaemon(cwd = process.cwd()): Promise<number> {
+async function statusDaemon(cwd = process.cwd()): Promise<number> {
   const state = readDaemonState(cwd);
   if (state === null) {
     console.log("shoot daemon: not running");

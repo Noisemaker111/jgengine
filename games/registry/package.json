@@ -1,7 +1,0 @@
-{
-  "name": "@games/hud-components",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-  }
-}

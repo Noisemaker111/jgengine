@@ -49,7 +49,7 @@ export interface DemLiquid {
 }
 
 /** How a wall moves: steady velocity plus a sinusoidal shake, both from the moment the motion is set. */
-export interface DemWallMotion {
+interface DemWallMotion {
   velocity?: Vec3;
   amplitude?: Vec3;
   /** Shake frequency, Hz. */
@@ -72,7 +72,7 @@ export interface DemSphereSpec {
 }
 
 /** A body to add: one sphere (`radius`) or a rigid clump (`spheres`). */
-export interface DemBodySpec {
+interface DemBodySpec {
   position: Vec3;
   velocity?: Vec3;
   angularVelocity?: Vec3;
@@ -136,7 +136,7 @@ export interface DemBondSpec {
 }
 
 /** What one step did. */
-export interface DemStepReport {
+interface DemStepReport {
   /** Body indices deactivated this step because they left the domain. */
   exited: readonly number[];
   contacts: number;
@@ -147,7 +147,7 @@ export interface DemStepReport {
 }
 
 /** What a parallel bond carries now. Tension and tensile stress are positive pulling apart. */
-export interface DemBondLoad {
+interface DemBondLoad {
   tension: number;
   shear: number;
   twist: number;
@@ -250,7 +250,7 @@ const SKIN = 0.4;
  * Damping ratio β of the restitution-matched Hertzian dashpot, ln e / √(ln² e + π²) (negative).
  * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
  */
-export function restitutionDamping(restitution: number): number {
+function restitutionDamping(restitution: number): number {
   const e = Math.min(Math.max(restitution, 1e-6), 1);
   const ln = Math.log(e);
   return ln / Math.sqrt(ln * ln + Math.PI * Math.PI);

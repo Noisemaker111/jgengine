@@ -148,7 +148,7 @@ test("disposing and reinstalling the recorder restores live callbacks", () => {
   Reflect.set(globalThis, "window", { location: { search: "" } });
   const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
   const callback = () => renderer.render();
-  const leave = loop.join(0, callback);
+  loop.join(0, callback);
   const frame = () => { loop.frame(); };
   const first = installFrameBreakdown(renderer as never);
   try {

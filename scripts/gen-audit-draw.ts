@@ -4,7 +4,7 @@
 import type { CircuitAnalysis, DetectedCorner } from "../packages/core/src/roads/circuitMetrics";
 import type { PlanPoint } from "../packages/core/src/roads/streetMetrics";
 
-export const LEVEL_COLOR: Record<string, string> = { boulevard: "#c0392b", avenue: "#e67e22", street: "#6c7a89", lane: "#b9a37a" };
+const LEVEL_COLOR: Record<string, string> = { boulevard: "#c0392b", avenue: "#e67e22", street: "#6c7a89", lane: "#b9a37a" };
 const CORNER_COLOR: Record<DetectedCorner["kind"], string> = {
   hairpin: "#c0392b",
   "right-angle": "#e67e22",
@@ -27,7 +27,7 @@ const CLASS_COLOR: Record<string, string> = {
 const BLOCK_FILL: Record<string, string> = { buildable: "#ece6da", park: "#a9d18e", plaza: "#d9c9a3", field: "#d4e09b", buffer: "#c8e0b4" };
 
 /** Viridis-like ramp, t in 0..1. */
-export function ramp(t: number): string {
+function ramp(t: number): string {
   const stops = [
     [68, 1, 84],
     [59, 82, 139],
@@ -43,7 +43,7 @@ export function ramp(t: number): string {
   return `rgb(${a.map((v, k) => Math.round(v + (b[k]! - v) * f)).join(",")})`;
 }
 
-export function esc(text: string): string {
+function esc(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 

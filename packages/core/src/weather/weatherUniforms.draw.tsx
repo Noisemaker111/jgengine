@@ -7,6 +7,7 @@ import { createWeatherShelterUniforms, updateWeatherShelters, type WeatherShelte
 import type { AuthoredWeatherSample } from "@jgengine/core/weather/authoredWeather";
 import type { WindField } from "@jgengine/core/world/wind";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 
 /** An `[x, y, z]` world vector, such as the wind. */
 export type WeatherVector = readonly [number, number, number];
@@ -120,4 +121,15 @@ export function useWeatherUniformSet(options: WeatherUniformOptions = {}): Weath
   useUniformTicker(local, options, shared === null || (!shared.controlsWind && options.wind !== undefined));
   const inherited = useMemo(() => shared === null ? local : { ...shared, wind: local.wind }, [shared, local]);
   return shared === null ? local : !shared.controlsWind && options.wind !== undefined ? inherited : shared;
+}
+
+/**
+ * Advance a uniform set every frame at the camera, for a field that owns its set; returns the leave.
+ * @internal
+ */
+export function tickWeatherUniforms(uniforms: WeatherUniformSet, options: () => WeatherUniformOptions): () => void {
+  return joinFrameTask(-1, (frameState, delta) => {
+    const position = frameState.camera.position;
+    updateWeatherUniformSet(uniforms, options(), delta, position.x, position.z, position.y);
+  });
 }

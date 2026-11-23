@@ -24,12 +24,12 @@ const USAGE: Usage = {
  * The committed record of the core counts, rewritten by `bun run gen`, so a branch shows how far the engine moved.
  * It holds core only: the gen row reads core, and a games-only diff must not leave it stale.
  */
-export const RECORD = "scripts/part-stats.json";
+const RECORD = "scripts/part-stats.json";
 const CORE_SRC = "packages/core/src/";
 const CORE_PACKAGE = "@jgengine/core/";
 
 /** Part homes, relative to `packages/core/src`, without the extension. */
-export const PART_HOMES: readonly string[] = [
+const PART_HOMES: readonly string[] = [
   "stats/statPool",
   "threshold/thresholds",
   "time/stateSchedule",
@@ -51,7 +51,7 @@ export interface Source {
   text: string;
 }
 
-export type Layer = "core" | "game";
+type Layer = "core" | "game";
 
 const COUNTED = /\.tsx?$/;
 const NOT_COUNTED = /\.(test|spec)\.tsx?$|\.d\.ts$/;
@@ -59,7 +59,7 @@ const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)["']([^"'\n]+)["'
 const CREATE = /\bexport function create/g;
 
 /** Which count a source file belongs to, or null when it is neither core source nor game source. */
-export function sourceLayer(path: string): Layer | null {
+function sourceLayer(path: string): Layer | null {
   if (!COUNTED.test(path) || NOT_COUNTED.test(path)) return null;
   if (path.startsWith(CORE_SRC)) return "core";
   if (/^games\/[^/]+\/src\//.test(path)) return "game";
@@ -77,7 +77,7 @@ export function homeOf(specifier: string, from: string): string | null {
 }
 
 /** Every part home a source file imports, each once. */
-export function importedHomes(source: Source): Set<string> {
+function importedHomes(source: Source): Set<string> {
   const homes = new Set<string>();
   for (const match of source.text.matchAll(SPECIFIER)) {
     const home = homeOf(match[1] ?? "", source.path);
@@ -138,7 +138,7 @@ export function renderTable(counts: readonly PartCount[], creates: number, folde
 }
 
 /** Repository paths `git` knows about (tracked, or untracked and not ignored) that the counts read. */
-export function trackedSourcePaths(root: string): string[] {
+function trackedSourcePaths(root: string): string[] {
   const result = spawnSync("git", ["ls-files", "-co", "--exclude-standard", "--", "packages/core/src", "games"], {
     cwd: root,
     encoding: "utf8",
@@ -151,7 +151,7 @@ export function trackedSourcePaths(root: string): string[] {
     .filter((line) => sourceLayer(line) !== null);
 }
 
-export function readSources(root: string, paths: readonly string[]): Source[] {
+function readSources(root: string, paths: readonly string[]): Source[] {
   return paths.filter((path) => sourceLayer(path) !== null).map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
 }
 
@@ -220,7 +220,7 @@ export function renderWorklist(copies: readonly PrivateCopy[]): string {
   return lines.join("\n").trimEnd();
 }
 
-export function main(argv: readonly string[], root = repoRoot()): number {
+function main(argv: readonly string[], root = repoRoot()): number {
   if (printHelpIfAsked("part-stats", USAGE, argv)) return 0;
   const sources = readSources(root, trackedSourcePaths(root));
   if (argv.includes("--worklist")) {

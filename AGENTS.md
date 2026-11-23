@@ -49,5 +49,5 @@ once CI is green; the tag publishes. No release branch or PR.
   `packages/core` and both games use that copy. Check `bun run find` first so you don't write a
   second copy of something core already has. Keep game numbers in the game, fix every adopter
   together, no compatibility shims.
-- Feature model, view and draw live in `packages/core/src/<feature>/`; model code has no rendering,
-  browser or backend dependencies.
+- `docs/architecture.md` says where each kind of thing lives and which way imports point;
+  `bun run check` holds it.

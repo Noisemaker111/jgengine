@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { API_SKILL_DIRS, MINIMAL_GAME_SKILLS } from "../packages/jgengine/src/skills";
+import { API_SKILL_DIRS } from "../packages/jgengine/src/skills";
 
 /** The enforced external default: what `jgengine create` actually installs (see packages/jgengine/src/skills.ts). Full domains are opt-in via `jgengine skills --all`. */
-export { MINIMAL_GAME_SKILLS };
+;
 
 export const MAIN = "jgengine";
 
@@ -31,10 +31,10 @@ export const PACKAGE_SKILLS: Record<string, string> = {
   // leave generated game-authoring API docs (still published; agents use CLI help).
 };
 
-export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {};
+const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = {};
 
 /** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
-export const CORE_MODULE_OVERRIDES: Record<string, string> = {
+const CORE_MODULE_OVERRIDES: Record<string, string> = {
   // The public authoring trio lives with the router skill so the minimal install
   // (jgengine + editor + verify) already carries defineGame/gameKit/GameHost.
   "shell/defineGame.draw": MAIN,
@@ -47,7 +47,7 @@ export const CORE_MODULE_OVERRIDES: Record<string, string> = {
  * Curated top-level domain barrels (`@jgengine/core/world`, `gameplay`, …) have no `/` segment,
  * so they would otherwise land on MAIN instead of their discovery domain.
  */
-export const CORE_BARREL_SKILLS: Record<string, string> = {
+const CORE_BARREL_SKILLS: Record<string, string> = {
   world: "jgengine-world",
   combat: "jgengine-combat",
   gameplay: "jgengine-gameplay",

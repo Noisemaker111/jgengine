@@ -50,7 +50,6 @@ import {
   trimFeedEntries,
 } from "@jgengine/core/runtime/hostPersistence";
 import {
-  JG_MAX_MEMBERS_PER_SERVER,
   isListablePublicly,
   isPrivateJoinBlocked,
   isServerFull,

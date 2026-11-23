@@ -183,7 +183,7 @@ export interface ReferenceAircraftState {
 }
 
 /** Telemetry for the current state. */
-export interface ReferenceAircraftSample {
+interface ReferenceAircraftSample {
   time: number;
   position: ReferenceVector;
   altitude: number;
@@ -222,7 +222,7 @@ export interface ReferenceAircraftSample {
 }
 
 /** Wind at a point and time: mean wind plus any turbulence, north-east-down m/s. */
-export type ReferenceWind = (position: ReferenceVector, time: number) => ReferenceVector;
+type ReferenceWind = (position: ReferenceVector, time: number) => ReferenceVector;
 
 /** World hooks for a reference aircraft. */
 export interface ReferenceAircraftOptions {
@@ -238,7 +238,7 @@ export interface ReferenceAircraftOptions {
 }
 
 /** Where and how a reference aircraft starts. */
-export interface ReferenceInitialCondition {
+interface ReferenceInitialCondition {
   north?: number;
   east?: number;
   /** Geometric altitude of the centre of gravity, m. */

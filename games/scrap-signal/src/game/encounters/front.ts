@@ -6,7 +6,7 @@ import {
   type FighterState,
 } from "@jgengine/core/ai/director/roles";
 import { advancePhase, createPhaseClock, type PhaseClockState, type PhaseStep } from "@jgengine/core/ai/phaseLadder";
-import { createEncounter, type Encounter, type EncounterOrder } from "@jgengine/core/waves/encounter";
+import { createEncounter, type EncounterOrder } from "@jgengine/core/waves/encounter";
 import { evaluatePressure } from "@jgengine/core/waves/pressure";
 import {
   coverPointsFromSolids,

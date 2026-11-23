@@ -17,7 +17,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 /** One capture may take this long before the guard ends it. */
 export const SHOOT_GUARD_SECONDS = 420;
 /** A capture at another commit checks out, reinstalls when needed and restarts servers first. */
-export const AT_COMMIT_GUARD_SECONDS = 1200;
+const AT_COMMIT_GUARD_SECONDS = 1200;
 
 /** A load run builds the site once and opens every game cold; the guard covers all of it. */
 export const LOAD_GUARD_SECONDS = 3600;

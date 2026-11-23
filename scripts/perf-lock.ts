@@ -32,7 +32,7 @@ import { beginPause, endPause, markStep } from "./hangReport";
 
 /** Overrides the lock file's path; tests point it at a scratch file so they never queue behind a real run. */
 export const PERF_LOCK_ENV = "JG_PERF_LOCK";
-export const HEARTBEAT_MS = 5_000;
+const HEARTBEAT_MS = 5_000;
 /** A live holder touches the file every {@link HEARTBEAT_MS}; one silent this long is a reused pid or a frozen run. */
 export const STALE_HEARTBEAT_MS = 120_000;
 const POLL_MS = 250;
@@ -55,13 +55,13 @@ export interface PerfLockOptions {
   branch?: string;
 }
 
-export function perfLockPath(env: NodeJS.ProcessEnv = process.env): string {
+function perfLockPath(env: NodeJS.ProcessEnv = process.env): string {
   const override = env[PERF_LOCK_ENV];
   if (override !== undefined && override !== "") return override;
   return join(env["LOCALAPPDATA"] ?? join(homedir(), ".cache"), "jgengine", "perf.lock");
 }
 
-export function processAlive(pid: number): boolean {
+function processAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;

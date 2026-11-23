@@ -190,7 +190,7 @@ const LOCK_TO_SERVER_LINES = 20;
  * as `line N`. A fetch guarded that way runs after the wait, whatever the file's shape (one batch,
  * a per-game loop, a shared audit loop).
  */
-export function serversBeforeLock(source: string): string[] {
+function serversBeforeLock(source: string): string[] {
   const lines = source.split(/\r?\n/);
   // A `perfLockTurn` above the fetch means the fetch runs inside the session, after the wait.
   const lockTake = /\b(?:acquirePerfLock|withPerfLock|perfLockTurn)\(/;

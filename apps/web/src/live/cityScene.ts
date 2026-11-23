@@ -52,7 +52,7 @@ export interface CityPalette {
   accent?: number;
 }
 
-export interface CityStats {
+interface CityStats {
   streets: number;
   lots: number;
   loops: number;
@@ -1272,7 +1272,7 @@ export function buildGround(radius: number, gridColor: number, sampleHeight?: (x
 // --- circuit dressing + shared terrain field ------------------------------------------------------
 
 /** One detected corner along a closed track loop: its apex point, fitted radius, and turn direction. */
-export interface TrackCorner {
+interface TrackCorner {
   /** Index of the apex (tightest) point in the loop's `points` array. */
   apexIndex: number;
   /** First/last point index of the high-curvature run. */
@@ -1291,7 +1291,7 @@ export interface TrackCorner {
  * Deterministic, bounded by the point count. `points` may be the closed street points (first === last);
  * indices returned are into that array's unique-point prefix. Corners come back in travel order.
  */
-export function analyzeTrackCorners(
+function analyzeTrackCorners(
   points: readonly (readonly [number, number])[],
   options: { maxRadius?: number; mergeGap?: number } = {},
 ): TrackCorner[] {

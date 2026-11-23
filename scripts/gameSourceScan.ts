@@ -43,18 +43,3 @@ export function eachGameSource(root: string, games?: readonly string[]): { rel: 
   return files;
 }
 
-/** Scans every game source line by line, collecting whatever `match` returns. */
-export function scanGameLines<T>(
-  root: string,
-  match: (line: string, rel: string, lineNumber: number) => T | null,
-  games?: readonly string[],
-): T[] {
-  const found: T[] = [];
-  for (const { rel, source } of eachGameSource(root, games)) {
-    for (const [index, line] of source.split("\n").entries()) {
-      const hit = match(line, rel, index + 1);
-      if (hit !== null) found.push(hit);
-    }
-  }
-  return found;
-}

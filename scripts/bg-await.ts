@@ -24,21 +24,21 @@ export const EXIT_LOST = 5;
 export const EXIT_TIMEOUT = 6;
 
 /** How often a waiting `background await` asks whether the runner is still alive; the exit itself is an event. */
-export const BEAT_MS = 2_000;
+const BEAT_MS = 2_000;
 
 /**
  * How often the wait reads the exit file whether or not the folder watch spoke: the bound on how
  * late a lost watch event can make it. Reading one small file four times a second costs nothing.
  */
-export const EXIT_CHECK_MS = 250;
+const EXIT_CHECK_MS = 250;
 
 /** The part of a folder watch the wait uses. */
-export interface FolderWatch {
+interface FolderWatch {
   close(): void;
 }
 
 /** Watch `dir`, calling `onChange` on any event and `onError` if the watch fails later; throws if it cannot start. */
-export type WatchFolder = (dir: string, onChange: () => void, onError: (error: unknown) => void) => FolderWatch;
+type WatchFolder = (dir: string, onChange: () => void, onError: (error: unknown) => void) => FolderWatch;
 
 const watchFolder: WatchFolder = (dir, onChange, onError) => {
   const watcher = watch(dir, () => onChange());

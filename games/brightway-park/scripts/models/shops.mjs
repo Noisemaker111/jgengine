@@ -1,5 +1,5 @@
 // Shops, facilities, scenery, path pieces and staff figures (4 m cells unless noted).
-import { T, P, V, Y, box, cyl, ball, ring, beam, group, mesh, segBox, deckRect, bulbLine, pennant, bunting, railing, signBoard, stripedCone, stairs, tube, lampPost, shrub, wheel, humanoid } from './core.mjs';
+import { T, P, V, box, cyl, ball, ring, beam, group, mesh, deckRect, bulbLine, pennant, railing, signBoard, stripedCone, tube, shrub, wheel, humanoid } from './core.mjs';
 const PI = Math.PI;
 
 // Kiosk with striped awning; `top` draws the roof emblem at y≈3.2.
@@ -178,7 +178,6 @@ function gateway(color, exit) {
   if (!exit) {
     box(g, [1.0, 1.9, 1.0], P.coral, [-1.0, 1.1, -1.2]); box(g, [.6, .5, .06], P.glass, [-1.0, 1.4, -.68]); cyl(g, .75, .4, P.gold, [-1.0, 2.25, -1.2], .1, 4);
     for (const z of [-.2]) { cyl(g, .12, .9, P.chrome, [.4, .6, z], .12, 8, { metal: .5 }); for (let i = 0; i < 3; i++) { const a = i / 3 * PI * 2; beam(g, [.4, .95, z], [.4 + Math.cos(a) * .45, .95, z + Math.sin(a) * .45], .03, P.chrome, 4); } }
-    for (const z of [-1.9, 1.9]) { /* queue rails leading in */ }
     railing(g, [[-.4, -1.9], [-.4, 1.9]], .14, P.chrome, .9, 1.3, P.chrome);
   } else {
     for (const x of [-.55, .55]) { box(g, [.95, .9, .06], P.chrome, [x, .65, -.5], [0, x * .6, 0], { metal: .5 }); }

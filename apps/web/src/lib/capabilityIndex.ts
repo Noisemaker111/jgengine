@@ -1,5 +1,5 @@
 /** One primitive listed under an intent in a skill's generated `capabilities.md`. */
-export interface CapabilityExport {
+interface CapabilityExport {
   readonly symbol: string;
   readonly kind: string;
   readonly importLine: string;

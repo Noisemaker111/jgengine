@@ -44,7 +44,7 @@ const PREFLIGHT_USAGE = {
 const root = fileURLToPath(new URL("..", import.meta.url));
 
 /** Common conflict-marker lines; the full 7-character delimiters, so markdown rules do not match. */
-export const CONFLICT_MARKERS = /^(<<<<<<< |>>>>>>> |=======\s*$)/m;
+const CONFLICT_MARKERS = /^(<<<<<<< |>>>>>>> |=======\s*$)/m;
 const TEXTISH = /\.(?:ts|tsx|js|jsx|mjs|cjs|json|md|mdx|css|scss|html|yml|yaml|toml|txt|svg|sh|ps1)$/i;
 
 function workspacePatterns(): string[] {
@@ -181,7 +181,7 @@ function genCache(): { fresh: (target: GenTarget) => boolean; record: (targets: 
  * The generators this diff needs: each one whose inputs it reaches, less each one that already
  * ran on these exact inputs. A diff that reaches none (a doc, a game's own data) runs none.
  */
-export function genTargetsFor(changed: readonly string[], fresh: (target: GenTarget) => boolean = () => false): GenTarget[] {
+function genTargetsFor(changed: readonly string[], fresh: (target: GenTarget) => boolean = () => false): GenTarget[] {
   return GEN_TARGETS.filter((target) => reachedBy(target, changed) && !fresh(target));
 }
 
