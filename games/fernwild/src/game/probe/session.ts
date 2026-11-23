@@ -1,10 +1,22 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { menuPane } from "@jgengine/core/game/gameFlow";
-import { gamePhase } from "@jgengine/core/game/gamePhase";
-import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
-import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
-import { editorLayers } from "../../editorLayers";
-import { openScreen } from "../screens";
+import {
+  menuPane,
+} from "@jgengine/core/game/gameFlow";
+import {
+  gamePhase,
+} from "@jgengine/core/game/gamePhase";
+import {
+  onboardingOf,
+} from "@jgengine/core/onboarding/onboardingSystem";
+import {
+  authoredSpawnPosition,
+} from "@jgengine/core/world/authoredSpawn";
+import {
+  editorLayers,
+} from "../../editorLayers";
+import {
+  openScreen,
+} from "../screens";
 import type { ProbeFrame } from "./frame";
 import { acrossSpawn } from "../spawn";
 

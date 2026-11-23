@@ -1,8 +1,31 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { breedingView } from "../breeding";
-import { airliftView, awakeTamingProgress, creatureCard, creaturesView, lastTame, lineageStrays, mountSwim, nearestCarcass, nearestTame, nearestTameStance, nearestThreat, nearestWild, speciesNear, wildCountNear, wildHurtNear, wildLevelNear } from "../creatures";
-import { PREY } from "../onboarding";
-import { tameFood } from "../tameHunger";
+import {
+  breedingView,
+} from "../breeding";
+import {
+  airliftView,
+  awakeTamingProgress,
+  creatureCard,
+  creaturesView,
+  lastTame,
+  lineageStrays,
+  mountSwim,
+  nearestCarcass,
+  nearestTame,
+  nearestTameStance,
+  nearestThreat,
+  nearestWild,
+  speciesNear,
+  wildCountNear,
+  wildHurtNear,
+  wildLevelNear,
+} from "../creatures";
+import {
+  PREY,
+} from "../onboarding";
+import {
+  tameFood,
+} from "../tameHunger";
 import type { ProbeFrame } from "./frame";
 
 /** Animals only the northern snow keeps, and only the south-coast beach keeps: what the biome probes count. */

@@ -1,5 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { bodyPrompts, bodyView } from "../deathBody";
+import {
+  bodyPrompts,
+  bodyView,
+} from "../deathBody";
 
 /** What proofs and flows read about deathBody: its part of the capture probe. */
 export function deathBodyProbe(ctx: GameContext) {

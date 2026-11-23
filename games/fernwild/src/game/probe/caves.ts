@@ -1,5 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { cavePrompts, cavesView } from "../caves";
+import {
+  cavePrompts,
+  cavesView,
+} from "../caves";
 
 /** What proofs and flows read about caves: its part of the capture probe. */
 export function cavesProbe(ctx: GameContext) {

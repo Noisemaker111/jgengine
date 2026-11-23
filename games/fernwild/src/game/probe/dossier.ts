@@ -1,5 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { dossierView, nearestUnreadNote } from "../dossier";
+import {
+  dossierView,
+  nearestUnreadNote,
+} from "../dossier";
 import type { ProbeFrame } from "./frame";
 
 /** What proofs and flows read about dossier: its part of the capture probe. */

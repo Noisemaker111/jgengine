@@ -1,5 +1,9 @@
-import { authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
-import { editorLayers } from "../editorLayers";
+import {
+  authoredSpawnRotation,
+} from "@jgengine/core/world/authoredSpawn";
+import {
+  editorLayers,
+} from "../editorLayers";
 
 export const SPAWN_YAW = authoredSpawnRotation(editorLayers);
 

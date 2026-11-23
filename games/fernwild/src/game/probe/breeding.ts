@@ -1,6 +1,11 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { breedingPrompts, breedingView } from "../breeding";
-import { eggsOnGround } from "../eggs";
+import {
+  breedingPrompts,
+  breedingView,
+} from "../breeding";
+import {
+  eggsOnGround,
+} from "../eggs";
 import type { ProbeFrame } from "./frame";
 
 /** The closest egg to `here` within `within` metres, or null. */

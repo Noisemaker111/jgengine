@@ -1,5 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { nearestHarvestable, survivorView } from "../survivor";
+import {
+  nearestHarvestable,
+  survivorView,
+} from "../survivor";
 import type { ProbeFrame } from "./frame";
 
 /** What proofs and flows read about survivor: its part of the capture probe. */

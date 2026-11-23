@@ -1,10 +1,26 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { BAG, HOTBAR } from "../bags";
-import { cavesOf } from "../caves";
-import { creaturesView } from "../creatures";
-import { BROOD_TIERS } from "../data/bosses";
-import { EGG_SIZES, KIBBLE_TIERS, eggItem, kibbleItem } from "../data/kibble";
-import { STRUCTURES } from "../data/structures";
+import {
+  BAG,
+  HOTBAR,
+} from "../bags";
+import {
+  cavesOf,
+} from "../caves";
+import {
+  creaturesView,
+} from "../creatures";
+import {
+  BROOD_TIERS,
+} from "../data/bosses";
+import {
+  EGG_SIZES,
+  KIBBLE_TIERS,
+  eggItem,
+  kibbleItem,
+} from "../data/kibble";
+import {
+  STRUCTURES,
+} from "../data/structures";
 
 const PIECES: ReadonlySet<string> = new Set(STRUCTURES.map((entry) => entry.id));
 

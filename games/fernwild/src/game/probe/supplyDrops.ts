@@ -1,5 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { nearestSupplyDrop, supplyDropPrompts } from "../supplyDrops";
+import {
+  nearestSupplyDrop,
+  supplyDropPrompts,
+} from "../supplyDrops";
 
 /** What proofs and flows read about supplyDrops: its part of the capture probe. */
 export function supplyDropsProbe(ctx: GameContext) {

@@ -1,5 +1,13 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { baseGhost, baseView, fuelNear, lastPiece, piecesBuilt, stations, storeView } from "../base";
+import {
+  baseGhost,
+  baseView,
+  fuelNear,
+  lastPiece,
+  piecesBuilt,
+  stations,
+  storeView,
+} from "../base";
 import type { ProbeFrame } from "./frame";
 import { SPAWN_YAW, acrossSpawn } from "../spawn";
 

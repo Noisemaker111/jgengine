@@ -500,9 +500,9 @@ test("a conflict in source is still the lane's, named, and the branch is left as
 test("two Fernwild lanes from one old beta, each adding a proof, a probe field, a PLAN tick and a rescore, land back to back with no hand rebase", () => {
   const { bare, work, partner } = originWithBeta();
   const real = (file: string): string => readFileSync(join(import.meta.dir, "..", "games/fernwild", file), "utf8");
-  const files = ["proofs/suite-report.json", "PLAN.md", "README.md", "src/game.config.ts"];
+  const files = ["proofs/suite-report.json", "PLAN.md", "README.md", "src/game/probe/bags.ts"];
   mkdirSync(join(work, "games/fernwild/proofs"), { recursive: true });
-  mkdirSync(join(work, "games/fernwild/src"), { recursive: true });
+  mkdirSync(join(work, "games/fernwild/src/game/probe"), { recursive: true });
   for (const file of files) writeFileSync(join(work, "games/fernwild", file), real(file));
   gitOk(work, ["add", "-A"]);
   gitOk(work, ["commit", "-q", "-m", "fernwild as beta has it"]);
@@ -511,7 +511,7 @@ test("two Fernwild lanes from one old beta, each adding a proof, a probe field, 
   gitOk(partner, ["fetch", "-q", "origin"]);
 
   // What one real Fernwild lane changes: a proof row (and a content row) in the report, the generated score in
-  // README and PLAN, a ticked milestone at the end of PLAN, and a probe field and its import in game.config.ts.
+  // README and PLAN, a ticked milestone at the end of PLAN, and a probe field and its import in the probe piece both lanes add to.
   const lane = (dir: string, name: string): void => {
     gitOk(dir, ["checkout", "-q", "-b", `agent/${name}`, oldBeta]);
     const at = (file: string) => join(dir, "games/fernwild", file);
@@ -522,10 +522,10 @@ test("two Fernwild lanes from one old beta, each adding a proof, a probe field, 
     const rescore = (text: string) => text.replace(/(<!-- suite-score[^\n]*-->\n)[\s\S]*?(<!-- \/suite-score -->)/, `$1Rescored by ${name}.\n$2`);
     writeFileSync(at("README.md"), rescore(readFileSync(at("README.md"), "utf8")));
     writeFileSync(at("PLAN.md"), `${rescore(readFileSync(at("PLAN.md"), "utf8")).trimEnd()}\n- [x] ${name}: a milestone this lane ticked\n`);
-    const config = readFileSync(at("src/game.config.ts"), "utf8")
-      .replace('} from "./world";\n', `} from "./world";\nimport {\n  ${name}Probe,\n} from "./game/${name}";\n`)
-      .replace(/(\n\s*stones: ctx[^\n]*\n)/, `$1        ${name}: ${name}Probe(ctx),\n`);
-    writeFileSync(at("src/game.config.ts"), config);
+    const piece = readFileSync(at("src/game/probe/bags.ts"), "utf8")
+      .replace('} from "../bags";\n', `} from "../bags";\nimport {\n  ${name}Probe,\n} from "../${name}";\n`)
+      .replace(/(\n\s*stones: ctx[^\n]*\n)/, `$1    ${name}: ${name}Probe(ctx),\n`);
+    writeFileSync(at("src/game/probe/bags.ts"), piece);
     gitOk(dir, ["add", "-A"]);
     gitOk(dir, ["commit", "-q", "-m", `Fernwild: ${name}`]);
   };
@@ -548,14 +548,20 @@ test("two Fernwild lanes from one old beta, each adding a proof, a probe field, 
   expect(report.proofs.map((proof) => proof.file).slice(-2)).toEqual(["proofs/sim/zz-dossier.proof.ts", "proofs/sim/zz-tranqs.proof.ts"]);
   expect(report.data.map((row) => row.id).slice(-2)).toEqual(["content.dossier", "content.tranqs"]);
   expect(landed("PLAN.md")).toMatch(/- \[x\] dossier: [^\n]*\n- \[x\] tranqs: /);
-  expect(landed("src/game.config.ts")).toMatch(/import \{\n  dossierProbe,\n\} from "\.\/game\/dossier";\nimport \{\n  tranqsProbe,\n\}/);
-  expect(landed("src/game.config.ts")).toMatch(/dossier: dossierProbe\(ctx\),\n\s*tranqs: tranqsProbe\(ctx\),/);
+  expect(landed("src/game/probe/bags.ts")).toMatch(/import \{\n  dossierProbe,\n\} from "\.\.\/dossier";\nimport \{\n  tranqsProbe,\n\}/);
+  expect(landed("src/game/probe/bags.ts")).toMatch(/dossier: dossierProbe\(ctx\),\n\s*tranqs: tranqsProbe\(ctx\),/);
 }, 120_000);
 
 test("two lanes from one old beta, each adding a game-flow command and a Fernwild feature through game.config.ts, land back to back with no hand rebase", () => {
   const { bare, work, partner } = originWithBeta();
   const repo = join(import.meta.dir, "..");
-  const files = ["packages/core/src/game/gameFlow.ts", "packages/core/src/game/gameFlow.test.ts", "games/fernwild/src/game.config.ts"];
+  const files = [
+    "packages/core/src/game/gameFlow.ts",
+    "packages/core/src/game/gameFlow.test.ts",
+    "games/fernwild/src/game.config.ts",
+    "games/fernwild/src/game/probe/bags.ts",
+    "games/fernwild/src/game/probe/creatures.ts",
+  ];
   for (const file of files) {
     mkdirSync(dirname(join(work, file)), { recursive: true });
     writeFileSync(join(work, file), readFileSync(join(repo, file), "utf8"));
@@ -572,9 +578,9 @@ test("two lanes from one old beta, each adding a game-flow command and a Fernwil
     return text.replace(anchor, before ? `${added}${anchor}` : `${anchor}${added}`);
   };
   // What the lanes that stopped on Nov 7-8 changed, each at the same spot as the other lane: a game-flow command
-  // and its name in the test's list (#3064's replay: save/continue against settings.rebind), and in game.config.ts
-  // a name added to an existing import (BROOD_TIERS beside BROOD_PHASES; wildLevelNear beside speciesNear), a new
-  // import, a prompt source, a system and a probe field.
+  // and its name in the test's list (#3064's replay: save/continue against settings.rebind), in game.config.ts a new
+  // import, a prompt source and a system, and in the probe pieces a name added to an existing import (beside
+  // BROOD_TIERS; beside speciesNear) and a probe field.
   const lane = (dir: string, name: string): void => {
     gitOk(dir, ["checkout", "-q", "-b", `agent/${name}`, oldBeta]);
     const edit = (file: string, change: (text: string) => string) => writeFileSync(join(dir, file), change(readFileSync(join(dir, file), "utf8")));
@@ -588,13 +594,15 @@ test("two lanes from one old beta, each adding a game-flow command and a Fernwil
     );
     edit(files[1]!, (text) => insert(text, '      "start",\n', `      "${name}",\n`));
     edit(files[2]!, (text) => {
-      let config = insert(text, "  BROOD_TIERS,\n", `  ${name.toUpperCase()}_TIERS,\n`);
-      config = insert(config, "  speciesNear,\n", `  ${name}Near,\n`);
-      config = insert(config, '} from "./world";\n', `import {\n  ${name}Prompts,\n  ${name}System,\n} from "./game/${name}";\n`);
+      let config = insert(text, '} from "./world";\n', `import {\n  ${name}Prompts,\n  ${name}System,\n} from "./game/${name}";\n`);
       config = insert(config, "      ...notePrompts(ctx),\n", `      ...${name}Prompts(ctx),\n`);
-      config = insert(config, "    firstDay,\n", `    ${name}System,\n`);
-      return insert(config, /\n(\s*stones: ctx[^\n]*\n)/.exec(config)?.[1] ?? "stones: ctx", `        ${name}: ${name}Near(ctx),\n`);
+      return insert(config, "    firstDay,\n", `    ${name}System,\n`);
     });
+    edit(files[3]!, (text) => {
+      const piece = insert(text, "  BROOD_TIERS,\n", `  ${name.toUpperCase()}_TIERS,\n`);
+      return insert(piece, /\n(\s*stones: ctx[^\n]*\n)/.exec(piece)?.[1] ?? "stones: ctx", `    ${name}: ${name}Near(ctx),\n`);
+    });
+    edit(files[4]!, (text) => insert(text, "  speciesNear,\n", `  ${name}Near,\n`));
     gitOk(dir, ["add", "-A"]);
     gitOk(dir, ["commit", "-q", "-m", `Feature: ${name}`]);
   };
@@ -620,9 +628,9 @@ test("two lanes from one old beta, each adding a game-flow command and a Fernwil
     expect(landed(files[0]!)).toContain(`ctx.game.commands.define("${name}", {`);
     expect(landed(files[1]!)).toContain(`      "${name}",\n`);
     const config = landed(files[2]!);
-    for (const line of [`  ${name.toUpperCase()}_TIERS,`, `  ${name}Near,`, `} from "./game/${name}";`, `      ...${name}Prompts(ctx),`, `    ${name}System,`, `        ${name}: ${name}Near(ctx),`]) {
-      expect(config).toContain(`${line}\n`);
-    }
+    for (const line of [`} from "./game/${name}";`, `      ...${name}Prompts(ctx),`, `    ${name}System,`]) expect(config).toContain(`${line}\n`);
+    for (const line of [`  ${name.toUpperCase()}_TIERS,`, `    ${name}: ${name}Near(ctx),`]) expect(landed(files[3]!)).toContain(`${line}\n`);
+    expect(landed(files[4]!)).toContain(`  ${name}Near,\n`);
   }
 }, 120_000);
 

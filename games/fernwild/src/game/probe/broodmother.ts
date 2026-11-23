@@ -1,6 +1,11 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { broodView, obeliskPrompts } from "../broodmother";
-import { BROOD_PHASES } from "../data/bosses";
+import {
+  broodView,
+  obeliskPrompts,
+} from "../broodmother";
+import {
+  BROOD_PHASES,
+} from "../data/bosses";
 import type { ProbeFrame } from "./frame";
 
 /** What proofs and flows read about broodmother: its part of the capture probe. */
