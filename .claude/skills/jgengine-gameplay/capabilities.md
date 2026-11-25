@@ -1039,6 +1039,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `queuedJobs` (function) · `import { queuedJobs } from "@jgengine/core/gameplay"`
 
+## worker-pool — run jobs on a few on-demand module workers that stop when the queue drains
+
+- `createWorkerPool` (function) · `import { createWorkerPool } from "@jgengine/core/run/workerPool"`
+
 ## world-model — one declarative world of people, places, factions, things, jobs and ripples
 
 - `createWorldModel` (function) · `import { createWorldModel } from "@jgengine/core/worldModel/worldModel"`

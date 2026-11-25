@@ -83,7 +83,11 @@
     "save": "jgengine-gameplay",
     "scatter": "jgengine-world",
     "scene": "jgengine-world",
+<<<<<<< HEAD
     "sceneView": "jgengine-world",
+=======
+    "sceneImport": "jgengine-world",
+>>>>>>> a0bce5466 (Load a folder of OBJ meshes, PNG textures and a placement file as instanced batches (#3261))
     "sensor": "jgengine-world",
     "session": "jgengine-gameplay",
     "settings": "jgengine-ui",

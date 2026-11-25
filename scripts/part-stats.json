@@ -53,6 +53,10 @@
       "importers": 2
     }
   ],
+<<<<<<< HEAD
   "creates": 530,
+=======
+  "creates": 531,
+>>>>>>> a0bce5466 (Load a folder of OBJ meshes, PNG textures and a placement file as instanced batches (#3261))
   "folders": 112
 }

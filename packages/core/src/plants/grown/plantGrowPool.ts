@@ -5,6 +5,7 @@ import type { PlantEnvironment } from "../growth/plantEnvironment";
 import { hasPlantLeafAtlas, keepPlantLeafAtlas, plantLeafAtlasKey, type PlantLeafAtlas } from "../mesh/plantLeafAtlas";
 import type { PlantMesh, PlantStyle } from "../mesh/plantMesh";
 import type { PlantSpecies } from "../species/plantSpecies";
+import { createWorkerPool, defaultWorkerCount, type WorkerPoolState } from "../../run/workerPool";
 
 /**
  * Everything that decides what grows: species, site, seed, age and the day it is seen. Plain data,
@@ -41,11 +42,7 @@ export interface PlantGrower {
 }
 
 /** What a worker pool is doing: jobs waiting, jobs running and workers alive. */
-export interface WorkerPlantGrowerState {
-  queued: number;
-  running: number;
-  workers: number;
-}
+export type WorkerPlantGrowerState = WorkerPoolState;
 
 /** A {@link PlantGrower} backed by workers. */
 export interface WorkerPlantGrower extends PlantGrower {
@@ -57,24 +54,26 @@ export interface WorkerPlantGrower extends PlantGrower {
 
 /** @internal A request on its way to a worker. */
 export interface PlantGrowJob {
-  id: number;
   request: PlantGrowRequest;
   mesh: PlantMeshOrder | null;
   /** Also bake the leaf atlas of the plant's leaf shape, the first time this pool meets that shape. */
   atlas: boolean;
 }
 
-/** @internal A worker's answer: the grown structure (and mesh) as codec bytes, or why it failed. */
-export type PlantGrowReply = { id: number; bytes: Uint8Array; meshBytes: Uint8Array | null; atlas: PlantLeafAtlas | null } | { id: number; error: string };
+/** @internal A worker's answer: the grown structure (and mesh) as codec bytes. */
+export interface PlantGrowReply {
+  bytes: Uint8Array;
+  meshBytes: Uint8Array | null;
+  atlas: PlantLeafAtlas | null;
+}
 
 /** @internal */
 export function isPlantGrowJob(value: unknown): value is PlantGrowJob {
-  return typeof value === "object" && value !== null && "id" in value && typeof value.id === "number" && "request" in value && typeof value.request === "object";
+  return typeof value === "object" && value !== null && "request" in value && typeof value.request === "object";
 }
 
 function isPlantGrowReply(value: unknown): value is PlantGrowReply {
-  if (typeof value !== "object" || value === null || !("id" in value) || typeof value.id !== "number") return false;
-  if ("error" in value) return typeof value.error === "string";
+  if (typeof value !== "object" || value === null) return false;
   return "bytes" in value && value.bytes instanceof Uint8Array && "meshBytes" in value && (value.meshBytes === null || value.meshBytes instanceof Uint8Array) && "atlas" in value;
 }
 
@@ -84,17 +83,6 @@ export interface WorkerPlantGrowerOptions {
   workers?: number;
   /** Start one worker; default spawns `plantGrowWorker.ts` as a module worker. */
   spawn?: () => Worker;
-}
-
-interface Pending {
-  job: PlantGrowJob;
-  resolve: (result: PlantGrowResult) => void;
-  reject: (error: Error) => void;
-}
-
-function defaultWorkerCount(): number {
-  const cores = typeof navigator === "object" && typeof navigator.hardwareConcurrency === "number" ? navigator.hardwareConcurrency : 4;
-  return Math.max(1, Math.min(6, cores - 1));
 }
 
 function spawnDefault(): Worker {
@@ -108,76 +96,20 @@ function spawnDefault(): Worker {
  * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
  */
 export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}): WorkerPlantGrower | null {
-  if (typeof Worker === "undefined") return null;
-  const most = Math.max(1, options.workers ?? defaultWorkerCount());
-  const spawn = options.spawn ?? spawnDefault;
-  const queue: Pending[] = [];
-  const busy = new Map<Worker, Pending>();
-  const idle: Worker[] = [];
-  let nextId = 1;
+  const pool = createWorkerPool<PlantGrowJob, PlantGrowReply>({
+    workers: options.workers ?? defaultWorkerCount(6),
+    spawn: options.spawn ?? spawnDefault,
+    name: "plant grow worker",
+    isResult: isPlantGrowReply,
+  });
+  if (pool === null) return null;
   // Leaf shapes some job is baking an atlas for: each shape is baked once, and every other leafy
   // mesh of that shape is handed back only once its atlas is here, so the main thread never bakes it.
   const atlasesOrdered = new Map<string, Promise<unknown>>();
 
-  function fail(worker: Worker, error: Error): void {
-    const pending = busy.get(worker);
-    busy.delete(worker);
-    worker.terminate();
-    pending?.reject(error);
-    pump();
-  }
-
-  function start(): Worker {
-    const worker = spawn();
-    worker.addEventListener("message", (event: MessageEvent<unknown>) => {
-      const reply = event.data;
-      const pending = busy.get(worker);
-      if (pending === undefined || !isPlantGrowReply(reply) || reply.id !== pending.job.id) return;
-      busy.delete(worker);
-      if ("error" in reply) pending.reject(new Error(`plant grow worker: ${reply.error}`));
-      else {
-        try {
-          const grown = decodePlantStructure(reply.bytes);
-          if (reply.atlas !== null) keepPlantLeafAtlas(grown.structure.leafShape, reply.atlas);
-          pending.resolve({ grown, mesh: reply.meshBytes === null ? null : decodePlantMesh(reply.meshBytes) });
-        } catch (error) {
-          pending.reject(error instanceof Error ? error : new Error(String(error)));
-        }
-      }
-      idle.push(worker);
-      pump();
-    });
-    worker.addEventListener("error", (event: ErrorEvent) => {
-      event.preventDefault();
-      fail(worker, new Error(`plant grow worker failed: ${event.message}`));
-    });
-    return worker;
-  }
-
   function reset(): void {
-    for (const pending of queue.splice(0)) pending.reject(new Error("plant grower reset"));
-    for (const [worker, pending] of busy) {
-      worker.terminate();
-      pending.reject(new Error("plant grower reset"));
-    }
-    busy.clear();
-    for (const worker of idle.splice(0)) worker.terminate();
+    pool!.reset();
     atlasesOrdered.clear();
-  }
-
-  function pump(): void {
-    while (queue.length > 0) {
-      const worker = idle.pop() ?? (busy.size < most ? start() : undefined);
-      if (worker === undefined) return;
-      const pending = queue.shift();
-      if (pending === undefined) {
-        idle.push(worker);
-        return;
-      }
-      busy.set(worker, pending);
-      worker.postMessage(pending.job);
-    }
-    if (busy.size === 0) for (const worker of idle.splice(0)) worker.terminate();
   }
 
   return {
@@ -186,10 +118,10 @@ export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}):
       const leafy = mesh?.style.foliage === "leaves" && !hasPlantLeafAtlas(shape);
       const key = plantLeafAtlasKey(shape);
       const ordered = leafy ? atlasesOrdered.get(key) : undefined;
-      const result = new Promise<PlantGrowResult>((resolve, reject) => {
-        queue.push({ job: { id: nextId, request, mesh: mesh ?? null, atlas: leafy && ordered === undefined }, resolve, reject });
-        nextId += 1;
-        pump();
+      const result = pool.run({ request, mesh: mesh ?? null, atlas: leafy && ordered === undefined }).then((reply): PlantGrowResult => {
+        const grown = decodePlantStructure(reply.bytes);
+        if (reply.atlas !== null) keepPlantLeafAtlas(grown.structure.leafShape, reply.atlas);
+        return { grown, mesh: reply.meshBytes === null ? null : decodePlantMesh(reply.meshBytes) };
       });
       if (!leafy) return result;
       if (ordered === undefined) {
@@ -199,9 +131,7 @@ export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}):
       }
       return Promise.all([result, ordered]).then(([grown]) => grown);
     },
-    state() {
-      return { queued: queue.length, running: busy.size, workers: busy.size + idle.length };
-    },
+    state: () => pool.state(),
     reset,
     dispose: reset,
   };

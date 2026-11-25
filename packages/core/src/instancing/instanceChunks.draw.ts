@@ -18,6 +18,8 @@ export interface PartitionInstancesOptions {
   localMatrix?: THREE.Matrix4;
   /** Cell edge in meters. Default 256. */
   cellSize?: number;
+  /** XZ corner of cell `0:0`. Default the world origin. */
+  gridOrigin?: readonly [number, number];
 }
 
 /**
@@ -33,6 +35,7 @@ export function partitionInstances(
   options: PartitionInstancesOptions = {},
 ): InstanceChunk[] {
   const cellSize = options.cellSize ?? 256;
+  const [originX, originZ] = options.gridOrigin ?? [0, 0];
   if (!Number.isFinite(cellSize) || cellSize <= 0) throw new RangeError("Instance cell size must be positive and finite");
   if (geometry.boundingBox === null) geometry.computeBoundingBox();
   const geometryBounds = geometry.boundingBox;
@@ -41,7 +44,7 @@ export function partitionInstances(
     const final = options.localMatrix === undefined ? matrix : new THREE.Matrix4().multiplyMatrices(matrix, options.localMatrix);
     const bounds = geometryBounds.clone().applyMatrix4(final);
     const center = bounds.getCenter(new THREE.Vector3());
-    return { source, final, bounds, center: [center.x, center.z] as const };
+    return { source, final, bounds, center: [center.x - originX, center.z - originZ] as const };
   });
   const aggregate = placed.reduce((box, entry) => box.union(entry.bounds), new THREE.Box3());
   if (aggregate.max.x - aggregate.min.x <= cellSize && aggregate.max.z - aggregate.min.z <= cellSize) {

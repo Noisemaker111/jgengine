@@ -9598,6 +9598,16 @@
       "intent": "expose the live renderer to outside-canvas HUD (photo mode, save thumbnails)"
     },
     {
+      "id": "scene-import",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/sceneImport/importedScene.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "load a folder of OBJ meshes, PNG textures and a placement file as instanced, culled batches"
+    },
+    {
       "id": "scene-swap-card",
       "packages": [
         "@jgengine/core"
@@ -12353,6 +12363,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "list jobs waiting for a slot, in selection order"
+    },
+    {
+      "id": "worker-pool",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/run/workerPool",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "run jobs on a few on-demand module workers that stop when the queue drains"
     },
     {
       "id": "world-chunk-key",
