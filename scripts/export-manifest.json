@@ -1158,6 +1158,8 @@
     "./scene/stationClaim",
     "./scene/targeting",
     "./scene/vehicleSeat",
+    "./sceneView/mount.draw",
+    "./sceneView/sceneView",
     "./sensor/RevealVision.draw",
     "./sensor/concealment",
     "./sensor/freezeMonitor",

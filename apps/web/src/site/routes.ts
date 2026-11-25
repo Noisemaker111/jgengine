@@ -43,6 +43,7 @@ export const PAGE_ROUTES: readonly SiteRoute[] = [
   { path: "/docs", source: "src/routes/docs.tsx", load: () => import("../routes/docs") },
   { path: "/adopt", source: "src/routes/adopt.tsx", load: () => import("../routes/adopt") },
   { path: "/cookbook", source: "src/routes/cookbook.tsx", load: () => import("../routes/cookbook") },
+  { path: "/scene-view", source: "src/routes/scene-view.tsx", load: () => import("../routes/scene-view") },
 ];
 
 /** `/games/` and `/games` are one page; the root stays `/`. */

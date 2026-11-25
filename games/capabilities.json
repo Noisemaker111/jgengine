@@ -9608,6 +9608,16 @@
       "intent": "know when to show a travel card while the next place builds behind it"
     },
     {
+      "id": "scene-view",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/sceneView/mount.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw and update a small scene document on any canvas without a UI framework or frame loop"
+    },
+    {
       "id": "scoreboard",
       "packages": [
         "@jgengine/core"

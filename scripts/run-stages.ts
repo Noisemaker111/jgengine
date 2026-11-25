@@ -101,6 +101,8 @@ export const CHECKS: readonly CheckDef[] = [
   // copies: the same 200 tokens in two places.
   { name: "copies", script: "node_modules/jscpd/run-jscpd.js", jobs: ["types"], reads: [".jscpd.json", "packages/", "games/", "apps/", "examples/"], skipsTests: true },
   { name: "types", script: "scripts/check-types-all.ts", jobs: ["types"] },
+  // bundle-budget: each app-facing entry (scene view, scene document) stays under its gzip budget.
+  { name: "bundle-budget", script: "scripts/check-bundle-budget.ts", jobs: ["quick"], reads: ["packages/core/src/"], skipsTests: true },
   { name: "export-manifest", script: "scripts/gen-export-manifest.ts", args: ["--check"], jobs: ["quick"], needsBuild: true, generated: true, reads: ["packages/"], skipsTests: true },
   { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"], skipsTests: true },
