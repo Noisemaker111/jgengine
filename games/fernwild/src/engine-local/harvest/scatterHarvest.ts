@@ -88,11 +88,6 @@ export interface ScatterHarvest {
   reset(): void;
 }
 
-function angleBetween(a: number, b: number): number {
-  const diff = Math.atan2(Math.sin(a - b), Math.cos(a - b));
-  return Math.abs(diff);
-}
-
 /** Metres of slack around a strike's reach the query covers before the trunk radii are added. */
 const REACH_SLACK = 4;
 
@@ -138,28 +133,36 @@ export function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarve
 
   const target = (strike: Omit<HarvestStrike, "tool" | "multiplier">): HarvestPlacement | null => {
     const cone = strike.cone ?? 0.9;
-    let best: HarvestPlacement | null = null;
-    let bestDistance = Number.POSITIVE_INFINITY;
-    const ids = index.querySphere(strike.x, 0, strike.z, strike.reach + REACH_SLACK + widestRadius, candidates);
-    for (const id of ids) {
-      const placement = byId.get(id);
-      if (placement === undefined) continue;
-      const kind = kinds[placement.item];
-      if (kind === undefined) continue;
-      // Geometry first: most of the query is out of reach, and that test is cheaper than the filters.
-      const dx = placement.x - strike.x;
-      const dz = placement.z - strike.z;
-      const distance = length2(dx, dz);
-      const radius = (kind.radius ?? 0.5) * (placement.scale ?? 1);
-      if (distance - radius > strike.reach) continue;
-      if (distance > radius && angleBetween(Math.atan2(dx, dz), strike.yaw) > cone) continue;
-      if ((strike.accepts !== undefined && !strike.accepts(placement.item)) || field.isDepleted(placement.id)) continue;
-      if (distance < bestDistance) {
+    // The cone as a cosine: a placement is outside it when its direction's dot with the facing is below.
+    // A cone of half a turn or more takes every direction, so no placement pays for the test.
+    const coneCos = cone >= Math.PI ? Number.NEGATIVE_INFINITY : Math.cos(cone);
+    const facingX = Math.sin(strike.yaw);
+    const facingZ = Math.cos(strike.yaw);
+    const full = strike.reach + REACH_SLACK + widestRadius;
+    // Nearest first, so look near first: a ring that holds a hit no farther than its own radius holds the
+    // nearest one, and a lookout over 80 m (the probe, onboarding's hints) stops reading thousands of trees.
+    for (let searched = Math.min(full, cellSize); ; searched = Math.min(full, searched * 2)) {
+      let best: HarvestPlacement | null = null;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      for (const id of index.querySphere(strike.x, 0, strike.z, searched, candidates)) {
+        const placement = byId.get(id);
+        if (placement === undefined) continue;
+        const kind = kinds[placement.item];
+        if (kind === undefined) continue;
+        // Geometry first: most of the query is out of reach, and that test is cheaper than the filters.
+        const dx = placement.x - strike.x;
+        const dz = placement.z - strike.z;
+        const distance = length2(dx, dz);
+        if (distance >= bestDistance) continue;
+        const radius = (kind.radius ?? 0.5) * (placement.scale ?? 1);
+        if (distance - radius > strike.reach) continue;
+        if (distance > radius && dx * facingX + dz * facingZ < coneCos * distance) continue;
+        if ((strike.accepts !== undefined && !strike.accepts(placement.item)) || field.isDepleted(placement.id)) continue;
         best = placement;
         bestDistance = distance;
       }
+      if (searched >= full || (best !== null && bestDistance <= searched)) return best;
     }
-    return best;
   };
 
   return {

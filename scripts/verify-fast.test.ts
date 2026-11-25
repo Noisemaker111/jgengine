@@ -298,9 +298,36 @@ describe("reach no import shows (each a PR CI catch from the 7 Nov audit)", () =
   ];
   const plan = (changed: string[], landing = false) => verifyPlan({ changed, testFiles, workspaces: [...fakeWorkspaces, { dir: "games/fernwild", checkTypes: true }], graph: emptyGraph, landing });
 
-  test("a script change runs every scripts test, since they reach scripts by spawning them", () => {
-    expect(plan(["scripts/capture.ts"]).tests).toEqual(expect.arrayContaining(["scripts/capture.test.ts", "scripts/captureCliParity.test.ts"]));
+  test("a script change runs the scripts tests that start a process, and a script named in a string reaches its test", () => {
+    const graph = fixtureGraph({
+      "scripts/captureCliParity.test.ts": 'const script = join(import.meta.dir, `${tool}-dev.ts`);\nspawnSync(process.execPath, [script]);',
+      "scripts/land.test.ts": 'spawnSync("bun", ["scripts/land.ts"]);',
+      "scripts/reference/rock.test.ts": 'import { rock } from "./rock";',
+      "scripts/shoot-dev.ts": "export {};",
+      "scripts/land.ts": "export {};",
+      "scripts/reference/rock.ts": "export const rock = 1;",
+      "scripts/bench.ts": "export {};",
+    });
+    const files = ["scripts/captureCliParity.test.ts", "scripts/land.test.ts", "scripts/reference/rock.test.ts"];
+    const planned = (changed: string[]) => verifyPlan({ changed, testFiles: files, workspaces: fakeWorkspaces, graph }).tests;
+    // Both tests start a process, so any script could be what they run.
+    expect(planned(["scripts/bench.ts"])).toEqual(["scripts/captureCliParity.test.ts", "scripts/land.test.ts"]);
+    // The template names shoot-dev.ts; the reference test starts nothing and imports neither.
+    expect(graph.imports.get("scripts/captureCliParity.test.ts")).toEqual(["scripts/shoot-dev.ts"]);
+    expect(graph.imports.get("scripts/land.test.ts")).toEqual(["scripts/land.ts"]);
+    expect(planned(["scripts/reference/rock.ts"])).toContain("scripts/reference/rock.test.ts");
     expect(plan(["scripts/capture.ts"]).tests).not.toContain("packages/core/src/world/city.test.ts");
+  });
+
+  test("a worker named beside its owner is an edge, so a change to it reaches the owner's tests", () => {
+    const graph = fixtureGraph({
+      "packages/core/src/plants/pool.ts": 'new Worker(new URL("./growWorker.ts", import.meta.url), { type: "module" });',
+      "packages/core/src/plants/pool.test.ts": 'import { pool } from "./pool";',
+      "packages/core/src/plants/growWorker.ts": "export {};",
+    });
+    const planned = verifyPlan({ changed: ["packages/core/src/plants/growWorker.ts"], testFiles: ["packages/core/src/plants/pool.test.ts", "packages/core/src/other.test.ts"], workspaces: fakeWorkspaces, graph });
+    expect(planned.tests).toEqual(["packages/core/src/plants/pool.test.ts"]);
+    expect(planned.suites).toEqual([]);
   });
 
   test("prose a test reads by its quoted path runs that test; a same-named file elsewhere does not", () => {
@@ -342,28 +369,28 @@ describe("reach no import shows (each a PR CI catch from the 7 Nov audit)", () =
 });
 
 describe("attribution fails loudly", () => {
-  test("a package file no test names is covered by running its package's suite", () => {
+  test("a package file no test names runs its package's tests that start a process or worker, the only ones that could load it unseen", () => {
+    const graph = fixtureGraph({ "packages/core/src/spawner.test.ts": "const worker = new Worker(entry);" });
     const plan = verifyPlan({
       changed: ["packages/core/src/world/terrain.ts", "packages/core/src/world/unreachable.ts"],
-      testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/other.test.ts", "packages/ui/src/a.test.ts"],
+      testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/other.test.ts", "packages/core/src/spawner.test.ts", "packages/ui/src/a.test.ts"],
       workspaces: fakeWorkspaces,
-      graph: emptyGraph,
+      graph,
     });
     expect(plan.unattributed).toEqual([]);
-    expect(plan.suites).toEqual(["packages/core"]);
-    expect(plan.tests).toContain("packages/core/src/other.test.ts");
-    expect(plan.tests).not.toContain("packages/ui/src/a.test.ts");
+    expect(plan.suites).toEqual(["packages/core tests that start a process"]);
+    expect(plan.tests).toEqual(["packages/core/src/spawner.test.ts", "packages/core/src/world/terrain.test.ts"]);
   });
 
-  test("a root script no test imports runs every scripts test, as CI does", () => {
+  test("a root script no test imports runs the scripts tests that start a process", () => {
+    const graph = fixtureGraph({ "scripts/spawns.test.ts": 'spawnSync("bun", [script]);', "scripts/other.test.ts": "regex.exec(text);" });
     const plan = verifyPlan({
       changed: ["scripts/species-import/unreachable.ts"],
-      testFiles: ["scripts/other.test.ts", "packages/core/src/a.test.ts"],
+      testFiles: ["scripts/other.test.ts", "scripts/spawns.test.ts", "packages/core/src/a.test.ts"],
       workspaces: fakeWorkspaces,
-      graph: emptyGraph,
+      graph,
     });
-    expect(plan.suites).toEqual(["scripts"]);
-    expect(plan.tests).toEqual(["scripts/other.test.ts"]);
+    expect(plan.tests).toEqual(["scripts/spawns.test.ts"]);
     expect(plan.fallback).toEqual([]);
   });
 

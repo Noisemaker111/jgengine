@@ -23,19 +23,33 @@ type MathFn = (...args: number[]) => number;
 const buffer = new DataView(new ArrayBuffer(8));
 
 function nextUlp(value: number, up: boolean): number {
-  buffer.setFloat64(0, value);
-  const bits = buffer.getBigUint64(0);
-  // Moving away from zero increments the magnitude bits; toward zero decrements them.
-  const away = up === value > 0;
-  buffer.setBigUint64(0, away ? bits + 1n : bits - 1n);
-  return buffer.getFloat64(0);
+  word[0] = value;
+  // Moving away from zero increments the magnitude bits; toward zero decrements them, carrying
+  // between the two 32-bit halves.
+  if (up === value > 0) {
+    wordHalves[LOW] = (wordHalves[LOW]! + 1) >>> 0;
+    if (wordHalves[LOW] === 0) wordHalves[HIGH] = (wordHalves[HIGH]! + 1) >>> 0;
+  } else {
+    if (wordHalves[LOW] === 0) wordHalves[HIGH] = (wordHalves[HIGH]! - 1) >>> 0;
+    wordHalves[LOW] = (wordHalves[LOW]! - 1) >>> 0;
+  }
+  return word[0];
 }
+
+// The same eight bytes a big-endian DataView gives, read through typed arrays: a generator under the
+// wrapper makes millions of these calls, and the DataView reads were most of the libm test's minute.
+const word = new Float64Array(1);
+const wordBytes = new Uint8Array(word.buffer);
+const LITTLE_ENDIAN = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
+const wordHalves = new Uint32Array(word.buffer);
+const [LOW, HIGH] = LITTLE_ENDIAN ? [0, 1] : [1, 0];
 
 function argsHash(args: readonly number[], salt: number): number {
   let h = (0x811c9dc5 ^ salt) >>> 0;
   for (const arg of args) {
-    buffer.setFloat64(0, arg);
-    for (let i = 0; i < 8; i += 1) h = Math.imul(h ^ buffer.getUint8(i), 0x01000193) >>> 0;
+    word[0] = arg;
+    if (LITTLE_ENDIAN) for (let i = 7; i >= 0; i -= 1) h = Math.imul(h ^ wordBytes[i]!, 0x01000193) >>> 0;
+    else for (let i = 0; i < 8; i += 1) h = Math.imul(h ^ wordBytes[i]!, 0x01000193) >>> 0;
   }
   return h;
 }
@@ -64,11 +78,69 @@ function dyadicPow(value: { mantissa: bigint; exponent: bigint }, n: bigint): { 
   return { mantissa: value.mantissa ** n, exponent: value.exponent * n };
 }
 
+
+/** Bits in the odd part of a finite double's significand: 1 for a power of two, up to 53. */
+function oddBits(value: number): number {
+  word[0] = value;
+  const low = wordHalves[LOW]!;
+  const exponent = (wordHalves[HIGH]! >>> 20) & 0x7ff;
+  const high = (wordHalves[HIGH]! & 0xfffff) | (exponent === 0 ? 0 : 0x100000);
+  if (low === 0 && high === 0) return 0;
+  const top = high !== 0 ? 64 - Math.clz32(high) : 32 - Math.clz32(low);
+  const trailing = low !== 0 ? 31 - Math.clz32(low & -low) : 32 + 31 - Math.clz32(high & -high);
+  return top - trailing;
+}
+
+/** `a * b` as `[product, error]` with `product + error` exact (Dekker): no FMA in JavaScript. */
+function twoProduct(a: number, b: number): [number, number] {
+  const p = a * b;
+  const ca = 134217729 * a, ah = ca - (ca - a), al = a - ah;
+  const cb = 134217729 * b, bh = cb - (cb - b), bl = b - bh;
+  return [p, ah * bh - p + ah * bl + al * bh + al * bl];
+}
+
+/** `a + b` as `[sum, error]` with `sum + error` exact (Knuth). */
+function twoSum(a: number, b: number): [number, number] {
+  const s = a + b;
+  const v = s - a;
+  return [s, a - (s - v) + (b - v)];
+}
+
+/**
+ * False when `name(args)` certainly is not a double, settled in floating point: only what this cannot
+ * rule out goes on to the exact big-integer test. A correctly rounded result misses the exact one by up to
+ * half an ulp, about 2^-53 of it; the checks here resolve far finer than that or count significand bits.
+ */
+function maybeExact(name: string, args: readonly number[], result: number): boolean {
+  if (name === "cbrt") return 3 * (oddBits(result) - 1) + 1 <= 53;
+  if (name === "pow") {
+    const [x, y] = args as [number, number];
+    const bits = oddBits(x);
+    return y < 0 ? bits === 1 : y * (bits - 1) + 1 <= 53;
+  }
+  // hypot: is r² - x² - y² zero? Each square and the sums carried exactly to about 2^-104 of r².
+  const [x, y] = args as [number, number];
+  const scale = Math.max(Math.abs(x), Math.abs(y), Math.abs(result));
+  if (!(scale > 2 ** -400 && scale < 2 ** 400)) return true;
+  const [r2, re] = twoProduct(result, result);
+  const [x2, xe] = twoProduct(x, x);
+  const [y2, ye] = twoProduct(y, y);
+  const [s1, t1] = twoSum(r2, -x2);
+  const [s2, t2] = twoSum(s1, -y2);
+  const rest = t1 + t2 + re - xe - ye;
+  return Math.abs(s2 + rest) <= r2 * 2 ** -90;
+}
+
 /** True when the mathematically exact result is a double, which every libm returns as is. */
 function exactlyRepresented(name: string, args: readonly number[], result: number): boolean {
   if (!Number.isFinite(result) || Number.isInteger(result) || EXACT.has(result)) return true;
   // Tiny arguments: sin, tan, atan, sinh, expm1, log1p... return the argument itself everywhere.
   if (args.length === 1 && result === args[0]) return true;
+  // Only these three can land exactly on a non-integer double; the rest skip the exact arithmetic.
+  if (name !== "cbrt" && name !== "hypot" && name !== "pow") return false;
+  if (name === "pow" && (!Number.isInteger(args[1]) || Math.abs(args[1]!) > 64 || !Number.isFinite(args[0]) || args[0] === 0)) return false;
+  if (name === "hypot" && (args.length !== 2 || !args.every(Number.isFinite))) return false;
+  if (!maybeExact(name, args, result)) return false;
   const r = dyadic(result);
   if (name === "cbrt") return dyadicEqual(dyadicPow(r, 3n), dyadic(args[0]!));
   if (name === "hypot" && args.length === 2 && args.every(Number.isFinite)) {

@@ -515,9 +515,9 @@ export function verifyPlan(input: {
     if (touched && GAME_DIR.test(workspace.dir)) for (const test of input.testFiles) if (test.startsWith(prefix)) tests.add(test);
   }
 
-  // A file no test reaches is still covered when its package's whole suite runs: that is the suite
-  // CI runs for it. Only a file under no tested root at all stays unattributed, and the run says so
-  // rather than passing it.
+  // A file no test reaches runs its package's tests that start a process or worker, the only ones that
+  // could load it unseen. Only a file under no tested root at all stays unattributed, and the run says
+  // so rather than passing it.
   const unattributed: string[] = [];
   const suites: string[] = [];
   const addSuite = (dir: string, match: (test: string) => boolean = (test) => test.startsWith(`${dir}/`)): void => {
@@ -525,13 +525,18 @@ export function verifyPlan(input: {
     if (!suites.includes(dir)) suites.push(dir);
   };
   // Reach the graph cannot see, each found by PR CI after this command had passed (7 Nov audit):
-  // - a root script's tests reach other scripts by spawning them, so any script change runs every
-  //   `scripts/` test (CI's shard i): a capture flag change broke captureCliParity's spawned run;
+  // - a root script's tests reach other scripts by spawning them (CI's shard i): a capture flag change
+  //   broke captureCliParity's spawned run. The graph follows a script named in a string; one that
+  //   starts a process by a name it builds may run any script, so a script change runs those tests.
+  //   Running every `scripts/` test instead cost 600 s, 380 of them the physics references, which
+  //   start nothing;
   // - a package's tests read its data files from disk, so a changed non-source file in a package
   //   runs that package's suite: a material manifest edit broke assets' verifyData;
   // - the games' own scripts and the `*.games.test.ts` checks read every game from disk, so a game
   //   change runs them, as CI's games job does: a game's PLAN broke the suite score check.
-  if (touchedPaths.some((path) => path.startsWith("scripts/") && SOURCE_FILE.test(path) && !DECLARATION.test(path))) addSuite("scripts");
+  if (touchedPaths.some((path) => path.startsWith("scripts/") && SOURCE_FILE.test(path) && !DECLARATION.test(path))) {
+    addSuite("scripts tests that start a process", (test) => test.startsWith("scripts/") && input.graph.starters.has(test));
+  }
   for (const path of touchedPaths) {
     const workspace = workspaceOf(path, input.workspaces);
     if (workspace === null || !CONTAINED.test(workspace.dir) || GAME_DIR.test(workspace.dir)) continue;
@@ -549,8 +554,9 @@ export function verifyPlan(input: {
       unattributed.push(path);
       continue;
     }
-    for (const test of suite) tests.add(test);
-    if (!suites.includes(suiteDir)) suites.push(suiteDir);
+    // Only the tests that start a process or worker can reach a file no import or string names: the
+    // rest of the suite never loads it, so running it proved nothing about this file.
+    addSuite(`${suiteDir} tests that start a process`, (test) => test.startsWith(`${suiteDir}/`) && input.graph.starters.has(test));
   }
   // A workspace's own package.json or tsconfig changes how every file in it resolves and compiles,
   // which no import shows: its whole suite runs.
