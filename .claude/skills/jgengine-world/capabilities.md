@@ -1858,6 +1858,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw"`
 - `sceneCaptureBindingDraw` (function) · `import { sceneCaptureBindingDraw } from "@jgengine/core/scene/sceneCapture.draw"`
 
+## scene-import — load a folder of OBJ meshes, PNG textures and a placement file as instanced, culled batches
+
+- `loadImportedScene` (function) · `import { loadImportedScene } from "@jgengine/core/sceneImport/importedScene.draw"`
+
 ## scene-view — draw and update a small scene document on any canvas without a UI framework or frame loop
 
 - `mountSceneView` (function) · `import { mountSceneView } from "@jgengine/core/sceneView/mount.draw"`

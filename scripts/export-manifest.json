@@ -1159,16 +1159,13 @@
     "./scene/stationClaim",
     "./scene/targeting",
     "./scene/vehicleSeat",
-<<<<<<< HEAD
-    "./sceneView/mount.draw",
-    "./sceneView/sceneView",
-=======
     "./sceneImport/importedScene",
     "./sceneImport/importedScene.draw",
     "./sceneImport/objFile",
     "./sceneImport/objMesh",
     "./sceneImport/objMeshWorker",
->>>>>>> a0bce5466 (Load a folder of OBJ meshes, PNG textures and a placement file as instanced batches (#3261))
+    "./sceneView/mount.draw",
+    "./sceneView/sceneView",
     "./sensor/RevealVision.draw",
     "./sensor/concealment",
     "./sensor/freezeMonitor",
