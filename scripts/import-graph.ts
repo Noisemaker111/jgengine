@@ -6,7 +6,8 @@
 // Every edge errs wide. Type-only imports count (a type change can break a type-check, and
 // with `verbatimModuleSyntax` an inline `type` specifier still loads the module), and an
 // in-repo specifier this cannot resolve marks its importer `opaque`: a caller treats an
-// opaque file as reaching everything, so a missed edge costs time, never a silent pass.
+// opaque file as reaching everything, so a missed edge costs time, never a silent pass. A source
+// file named in a string (a script a test starts, a worker's entry) is an edge too (`namedFiles`).
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix as posixPath } from "node:path";
@@ -14,6 +15,8 @@ import { join, posix as posixPath } from "node:path";
 import { effectivePaths } from "./sourcePaths";
 
 const PARSED = /\.[cm]?[jt]sx?$/;
+/** A call that runs code in another process or worker. */
+const STARTS_CODE = /(?<![.\w$])(?:spawnSync|spawn|execSync|execFileSync|execFile|exec)\s*\(|\bBun\.spawn(?:Sync)?\s*\(|\bnew\s+Worker\s*\(/;
 const EXTENSIONS = ["", ".ts", ".tsx", ".mts", ".cts", ".d.ts", ".js", ".jsx", ".mjs", "/index.ts", "/index.tsx", "/index.js"];
 
 export interface ImportGraph {
@@ -25,6 +28,8 @@ export interface ImportGraph {
   importers: ReadonlyMap<string, readonly string[]>;
   /** Source file -> its in-repo specifiers that resolved to no file; see the header. */
   opaque: ReadonlyMap<string, readonly string[]>;
+  /** Source files that start a process or a worker: what they run may be a name no string here spells. */
+  starters: ReadonlySet<string>;
 }
 
 /** Import specifiers in a source file: static, type-only, dynamic, re-export and require forms. */
@@ -36,6 +41,38 @@ export function specifiers(text: string): string[] {
     if (specifier !== undefined) found.push(specifier);
   }
   return found;
+}
+
+/**
+ * Source files a file names in a string rather than imports: a script a test starts
+ * (`spawnSync("bun", ["scripts/land.ts"])`, `join(import.meta.dir, `${tool}-dev.ts`)`) or a worker
+ * (`new Worker(new URL("./plantGrowWorker.ts", import.meta.url))`). Each is a pattern: a template's
+ * `${...}` matches any run of characters within one path segment.
+ */
+function namedFiles(text: string): string[] {
+  const found = new Set<string>();
+  for (const match of text.matchAll(/["'`]((?:[\w@.\/-]|\$\{[^}`]*\})+\.(?:[cm]?[jt]sx?))["'`]/g)) {
+    const name = match[1]!;
+    if (!name.startsWith("@") && !name.startsWith("/")) found.add(name);
+  }
+  return [...found];
+}
+
+/** The files in `all` a {@link namedFiles} name stands for, read beside `from` and from the repository root. */
+function resolveNamed(name: string, from: string, all: ReadonlySet<string>, byDir: () => ReadonlyMap<string, readonly string[]>): string[] {
+  const hits: string[] = [];
+  for (const path of new Set([posixPath.normalize(posixPath.join(posixPath.dirname(from), name)), posixPath.normalize(name)])) {
+    if (path.startsWith("..")) continue;
+    const hole = path.indexOf("${");
+    if (hole < 0) {
+      if (all.has(path)) hits.push(path);
+      continue;
+    }
+    const dir = path.slice(0, path.lastIndexOf("/", hole) + 1);
+    const pattern = new RegExp(`^${path.slice(dir.length).split(/\$\{[^}]*\}/).map((part) => part.replace(/[.*+?^()|[\]\\]/g, "\\$&")).join("[^/]*")}$`);
+    for (const file of byDir().get(dir) ?? []) if (pattern.test(file.slice(dir.length))) hits.push(file);
+  }
+  return hits;
 }
 
 /** Tracked and untracked (not ignored) files: the tree a lane is about to push. */
@@ -164,9 +201,23 @@ export function buildImportGraph(
     return { inRepo: own === null || any === null || inRepoBare(bare, packages, aliases) };
   };
 
+  let filesByDir: Map<string, string[]> | undefined;
+  const byDir = (): ReadonlyMap<string, readonly string[]> => {
+    if (filesByDir !== undefined) return filesByDir;
+    filesByDir = new Map();
+    for (const file of all) {
+      const dir = file.slice(0, file.lastIndexOf("/") + 1);
+      const into = filesByDir.get(dir);
+      if (into === undefined) filesByDir.set(dir, [file]);
+      else into.push(file);
+    }
+    return filesByDir;
+  };
+
   const imports = new Map<string, string[]>();
   const importers = new Map<string, string[]>();
   const opaque = new Map<string, string[]>();
+  const starters = new Set<string>();
   for (const file of files) {
     if (!PARSED.test(file)) continue;
     let text: string;
@@ -183,6 +234,8 @@ export function buildImportGraph(
         opaque.set(file, [...(opaque.get(file) ?? []), specifier]);
       }
     }
+    for (const name of namedFiles(text)) for (const named of resolveNamed(name, file, all, byDir)) if (named !== file) targets.add(named);
+    if (STARTS_CODE.test(text)) starters.add(file);
     const list = [...targets].sort();
     imports.set(file, list);
     for (const target of list) {
@@ -191,7 +244,7 @@ export function buildImportGraph(
       else into.push(file);
     }
   }
-  return { files: all, imports, importers, opaque };
+  return { files: all, imports, importers, opaque, starters };
 }
 
 /** Every file whose import closure contains one of `seeds`, the seeds included. */

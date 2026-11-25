@@ -35,9 +35,8 @@ export function survivorProbe(ctx: GameContext, { here, sight }: ProbeFrame) {
     // the nearest easy prey or the grounds it grazes, as a camera yaw and metres (-1 with none).
     ...sight("tree", nearestHarvestable(ctx, here, 80, "strike", "thatch")),
     ...sight("rock", nearestHarvestable(ctx, here, 80, "strike", "flint")),
-    ...sight("bush", nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
     // Where the nearest berry bush stands, to the decimetre, so a proof can tell it from the next one.
-    ...((at) => ({ bushX: at === null ? 0 : Math.round(at[0] * 10) / 10, bushZ: at === null ? 0 : Math.round(at[2] * 10) / 10 }))(nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
+    ...((at) => ({ ...sight("bush", at), bushX: at === null ? 0 : Math.round(at[0] * 10) / 10, bushZ: at === null ? 0 : Math.round(at[2] * 10) / 10 }))(nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
     crafting: view.queue.length,
     // The first queued craft's progress in percent (-1 with none), and the fuel left in the nearest burning station within 6 m (-1 with none).
     craftProgress: view.queue[0] === undefined ? -1 : Math.round(view.queue[0].progress * 100),
