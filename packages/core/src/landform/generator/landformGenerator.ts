@@ -13,6 +13,7 @@ import { defineParamSchema, type ParamsOf } from "../../generator/paramSchema";
 import type { WindMode } from "../dunes/duneField";
 import { LANDFORM_GENERATOR_ID } from "./landformDocument";
 import { growLandform, LANDFORM_TERRAIN_MAX_SIDE, type LandformRecipe, type LandformTerrain } from "./landformTerrain";
+import { createWorkerPool } from "../../run/workerPool";
 
 /** The output family of landform generators. */
 export const LANDFORM_OUTPUT = "landform";
@@ -182,22 +183,17 @@ export interface LandformGrower {
 
 /** @internal A job on its way to a landform worker. */
 export interface LandformJob {
-  id: number;
   recipe: LandformRecipe;
   seed: string;
 }
 
-/** @internal A landform worker's answer. */
-export type LandformReply = { id: number; terrain: LandformTerrain } | { id: number; error: string };
-
 /** @internal */
 export function isLandformJob(value: unknown): value is LandformJob {
-  return typeof value === "object" && value !== null && "id" in value && typeof value.id === "number" && "recipe" in value && typeof value.recipe === "object" && "seed" in value && typeof value.seed === "string";
+  return typeof value === "object" && value !== null && "recipe" in value && typeof value.recipe === "object" && "seed" in value && typeof value.seed === "string";
 }
 
-function isLandformReply(value: unknown): value is LandformReply {
-  if (typeof value !== "object" || value === null || !("id" in value) || typeof value.id !== "number") return false;
-  return ("error" in value && typeof value.error === "string") || ("terrain" in value && typeof value.terrain === "object");
+function isLandformTerrain(value: unknown): value is LandformTerrain {
+  return typeof value === "object" && value !== null && "heights" in value;
 }
 
 /** Options for {@link createWorkerLandformGrower}. */
@@ -215,71 +211,16 @@ export interface WorkerLandformGrowerOptions {
  * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
  */
 export function createWorkerLandformGrower(options: WorkerLandformGrowerOptions = {}): LandformGrower | null {
-  if (typeof Worker === "undefined") return null;
-  const most = Math.max(1, options.workers ?? 2);
-  const spawn = options.spawn ?? ((): Worker => new Worker(new URL("./landformWorker.ts", import.meta.url), { type: "module" }));
-  interface Pending {
-    job: LandformJob;
-    resolve: (terrain: LandformTerrain) => void;
-    reject: (error: Error) => void;
-  }
-  const queue: Pending[] = [];
-  const busy = new Map<Worker, Pending>();
-  const idle: Worker[] = [];
-  let nextId = 1;
-  function start(): Worker {
-    const worker = spawn();
-    worker.addEventListener("message", (event: MessageEvent<unknown>) => {
-      const reply = event.data;
-      const pending = busy.get(worker);
-      if (pending === undefined || !isLandformReply(reply) || reply.id !== pending.job.id) return;
-      busy.delete(worker);
-      if ("error" in reply) pending.reject(new Error(`landform worker: ${reply.error}`));
-      else pending.resolve(reply.terrain);
-      idle.push(worker);
-      pump();
-    });
-    worker.addEventListener("error", (event: ErrorEvent) => {
-      event.preventDefault();
-      const pending = busy.get(worker);
-      busy.delete(worker);
-      worker.terminate();
-      pending?.reject(new Error(`landform worker failed: ${event.message}`));
-      pump();
-    });
-    return worker;
-  }
-  function pump(): void {
-    while (queue.length > 0) {
-      const worker = idle.pop() ?? (busy.size < most ? start() : undefined);
-      if (worker === undefined) return;
-      const pending = queue.shift();
-      if (pending === undefined) {
-        idle.push(worker);
-        return;
-      }
-      busy.set(worker, pending);
-      worker.postMessage(pending.job);
-    }
-    if (busy.size === 0) for (const worker of idle.splice(0)) worker.terminate();
-  }
+  const pool = createWorkerPool<LandformJob, LandformTerrain>({
+    workers: options.workers ?? 2,
+    spawn: options.spawn ?? ((): Worker => new Worker(new URL("./landformWorker.ts", import.meta.url), { type: "module" })),
+    name: "landform worker",
+    isResult: isLandformTerrain,
+  });
+  if (pool === null) return null;
   return {
-    grow(recipe, seed) {
-      return new Promise<LandformTerrain>((resolve, reject) => {
-        queue.push({ job: { id: nextId, recipe, seed }, resolve, reject });
-        nextId += 1;
-        pump();
-      });
-    },
-    dispose() {
-      for (const pending of queue.splice(0)) pending.reject(new Error("landform grower disposed"));
-      for (const [worker, pending] of busy) {
-        worker.terminate();
-        pending.reject(new Error("landform grower disposed"));
-      }
-      busy.clear();
-      for (const worker of idle.splice(0)) worker.terminate();
-    },
+    grow: (recipe, seed) => pool.run({ recipe, seed }),
+    dispose: () => pool.reset(),
   };
 }
 

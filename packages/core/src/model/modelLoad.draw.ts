@@ -66,6 +66,16 @@ modelLoadingManager.itemEnd = (url) => {
 // resolves). Feeds the `textureErrors` probe so a texture-404'd scene is visible in debug_snapshot.
 modelLoadingManager.onError = recordManagerLoadError;
 
+/**
+ * The model loader's manager, for loaders that fetch a model's parts outside a GLB (an imported
+ * scene's OBJ textures): their URLs resolve under the asset base, a failed image lands in the
+ * texture-error probe, and capture settle waits count them like a model.
+ * @internal
+ */
+export function sharedModelLoadingManager(): THREE.LoadingManager {
+  return modelLoadingManager;
+}
+
 /** How many leading bytes to read when probing a failed model URL for its signature. @internal */
 const PROBE_BYTE_LIMIT = 64;
 

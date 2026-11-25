@@ -83,6 +83,7 @@
     "save": "jgengine-gameplay",
     "scatter": "jgengine-world",
     "scene": "jgengine-world",
+    "sceneImport": "jgengine-world",
     "sceneView": "jgengine-world",
     "sensor": "jgengine-world",
     "session": "jgengine-gameplay",

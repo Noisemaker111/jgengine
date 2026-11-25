@@ -2665,11 +2665,21 @@
 
 ## @jgengine/core/run/slicedWork
 
+- `SLICE_BUDGET_MS` (const): const SLICE_BUDGET_MS: 8 — Work per slice before the thread is handed back, in ms: half a 60 Hz frame.
 - `SlicedJob` (type): type SlicedJob<T> = Generator<void, T, void> — A long build split into slices, so the thread that runs it can answer input between them. The job is a generator that `yield`s wherever it is safe to pause; the runner keeps calling it until a slice has used its budget, then hands the thread back before the next slice.
 - `SlicedRun` (interface): interface SlicedRun<T> — A sliced job in flight.
 - `SlicedWorkCancelled` (class): class SlicedWorkCancelled extends Error — What a cancelled run rejects with, so a caller can tell it from a failure.
 - `SlicedWorkOptions` (interface): interface SlicedWorkOptions — Options for {@link runSliced}; the clock and the yield are injectable for tests.
 - `runToEnd` (function): function runToEnd<T>(job: SlicedJob<T>): T — Run a job to the end on the spot, for callers that need the value now (tests, tools, SSR).
+
+## @jgengine/core/run/workerPool
+
+- `WorkerPool` (interface): interface WorkerPool<Job, Result> — A pool of workers that each answer one job at a time.
+- `WorkerPoolOptions` (interface): interface WorkerPoolOptions<Result> — Options for {@link createWorkerPool}.
+- `WorkerPoolState` (interface): interface WorkerPoolState — Jobs run on a few module workers so a long build (a forest, a landform, a folder of meshes) never spends the caller's frame. Workers start on demand, the queue runs first in, first out, and every worker stops when the queue drains.
+- `createWorkerPool` (function): function createWorkerPool<Job, Result>(options: WorkerPoolOptions<Result>): WorkerPool<Job, Result> | null — A pool of module workers answering jobs posted by {@link serveWorkerJobs}. Null where the platform has no workers, so the caller runs the job on its own thread.
+- `defaultWorkerCount` (function): function defaultWorkerCount(most: number): number — The default worker count: one less than the machine's cores, at most `most`.
+- `serveWorkerJobs` (function): function serveWorkerJobs<Job, Result>(isJob: (value: unknown) => value is Job, handle: (job: Job) => Promise<{ result: Result; transfer?: Transferable[] }> | { result: Result; transfer?: Transferable[] }): void — The worker side of {@link createWorkerPool}: answer each job with `handle`'s result, moving the buffers it lists. A thrown error goes back as the job's rejection.
 
 ## @jgengine/core/save/hostedWorldStore
 

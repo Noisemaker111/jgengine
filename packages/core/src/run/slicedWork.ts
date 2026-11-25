@@ -34,7 +34,8 @@ export class SlicedWorkCancelled extends Error {
   }
 }
 
-const DEFAULT_BUDGET_MS = 8;
+/** Work per slice before the thread is handed back, in ms: half a 60 Hz frame. */
+export const SLICE_BUDGET_MS = 8;
 
 const defaultNow = (): number => (typeof performance === "undefined" ? Date.now() : performance.now());
 const defaultYield = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
@@ -45,7 +46,7 @@ const defaultYield = (): Promise<void> => new Promise((resolve) => setTimeout(re
  * @internal
  */
 export function runSliced<T>(job: SlicedJob<T>, options: SlicedWorkOptions = {}): SlicedRun<T> {
-  const budgetMs = options.budgetMs ?? DEFAULT_BUDGET_MS;
+  const budgetMs = options.budgetMs ?? SLICE_BUDGET_MS;
   const now = options.now ?? defaultNow;
   const yieldThread = options.yieldThread ?? defaultYield;
   let cancelled = false;

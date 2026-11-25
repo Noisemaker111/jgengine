@@ -3754,7 +3754,7 @@
 - `PlantMeshOrder` (interface): interface PlantMeshOrder — A mesh to build where the plant grows: the style and generator detail it is drawn at.
 - `WorkerPlantGrower` (interface): interface WorkerPlantGrower extends PlantGrower — A {@link PlantGrower} backed by workers.
 - `WorkerPlantGrowerOptions` (interface): interface WorkerPlantGrowerOptions — Options for {@link createWorkerPlantGrower}.
-- `WorkerPlantGrowerState` (interface): interface WorkerPlantGrowerState — What a worker pool is doing: jobs waiting, jobs running and workers alive.
+- `WorkerPlantGrowerState` (type): type WorkerPlantGrowerState = WorkerPoolState — What a worker pool is doing: jobs waiting, jobs running and workers alive.
 - `createWorkerPlantGrower` (function): function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}): WorkerPlantGrower | null — A pool of workers that grow plants with the same simulation as the main thread, so a first visit grows a forest without spending frame time. Workers start on demand and stop when the queue drains. Null where the platform has no workers.
 
 ## @jgengine/core/plants/grown/plantGrown
@@ -5243,6 +5243,44 @@
 - `boardVehicle` (function): function boardVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, vehicleId: string, options: BoardVehicleOptions = {}): EnterVehicleResult — Apply an existing seat transition to the explicitly named rider. Motor/input policy stays caller-owned.
 - `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
 - `leaveVehicle` (function): function leaveVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, options: LeaveVehicleOptions = {}): ExitVehicleResult | { ok: false; reason: "unknown_rider" | "unknown_vehicle" } — Apply dismount placement, restore rider movement/visibility and the configured camera rig.
+
+## @jgengine/core/sceneImport/importedScene
+
+- `ImportedBatchPlan` (interface): interface ImportedBatchPlan — Every instance of one distinct mesh drawn with one material list, ready to upload.
+- `ImportedSceneFile` (interface): interface ImportedSceneFile — `scene.json`, checked.
+- `ImportedSceneHandedness` (type): type ImportedSceneHandedness = "left" | "right" — Which way the source scene's axes turn. `"left"` (the default) is a Unity-style export: matrices are left-handed and the OBJ files already carry the exporter's X flip, so each matrix is mirrored across X on the way in (`S·M·S`) and the meshes are used as written. `"right"` applies every matrix untouched.
+- `ImportedSceneInstance` (interface): interface ImportedSceneInstance — One placed mesh.
+- `ImportedSceneMaterial` (interface): interface ImportedSceneMaterial — The placement half of an interchange scene folder: `scene.json` beside `meshes/*.obj` and `textures/*.png`, as an outside tool exports it. This file reads and checks `scene.json` and groups its instances into the batches the draw side builds, one per distinct mesh. No three.js here.
+- `ImportedScenePlan` (interface): interface ImportedScenePlan — What a scene folder will draw.
+- `mirrorMatrixX` (function): function mirrorMatrixX(matrix: readonly number[], into: Float64Array | number[], offset = 0): void — Mirror a column-major matrix across X on both sides (`S·M·S`, `S = diag(-1, 1, 1, 1)`): a left-handed placement becomes the right-handed one with the same determinant, so a mesh's winding survives.
+- `parseImportedSceneFile` (function): function parseImportedSceneFile(value: unknown): ImportedSceneFile — Check a parsed `scene.json`; the error names the first field that is wrong.
+- `planImportedScene` (function): function planImportedScene(file: ImportedSceneFile): ImportedScenePlan — Group a scene's instances into one batch per distinct mesh, material list and winding, convert each matrix to the engine's right-handed frame, and drop instances outside the radius. Matrices stay in 64-bit floats until the upload, relative to the scene centre.
+
+## @jgengine/core/sceneImport/importedScene.draw
+
+- `ImportedScene` (interface): interface ImportedScene — A loaded scene folder.
+- `ImportedSceneProgress` (interface): interface ImportedSceneProgress — How far a load has got; every count only grows.
+- `ImportedSceneStats` (interface): interface ImportedSceneStats — What a finished import holds.
+- `LoadImportedSceneOptions` (interface): interface LoadImportedSceneOptions — Options for {@link loadImportedScene}.
+- `loadImportedScene` (function): function loadImportedScene(sceneUrl: string, options: LoadImportedSceneOptions = {}): Promise<ImportedScene> — Load an interchange scene folder (`scene.json`, `meshes/*.obj`, `textures/*.png`) as instanced batches: one batch per distinct mesh, split into spatial cells that cull as units, drawn through the engine's shared static batches so a cell's meshes that share a texture take one multi-draw. OBJ files are fetched and parsed on workers and textures decode off the main thread; the main thread only places what arrived, a few milliseconds a frame, so the renderer keeps drawing while it loads.
+
+## @jgengine/core/sceneImport/objMesh
+
+- `ObjObject` (interface): interface ObjObject — One object (`o`, or `g` in a file with no `o`) and its submeshes in file order.
+- `ObjSubmesh` (interface): interface ObjSubmesh — A Wavefront OBJ reader for scene import: bytes in, indexed typed arrays out, one submesh per material run of each object. It reads the bytes directly (no text decode, no per-line strings) so a folder of a gigabyte of OBJ text parses in seconds on a few workers. Plain data, so it crosses to and from a worker by transfer.
+- `findObjObject` (function): function findObjObject(objects: readonly ObjObject[], name: string): ObjObject | null — The object an instance names: by name, or the only one when the file holds a single object.
+- `objBuffers` (function): function objBuffers(objects: readonly ObjObject[]): ArrayBuffer[] — Every buffer of parsed objects, to transfer them across threads.
+- `parseObj` (function): function parseObj(bytes: Uint8Array): ObjObject[] — Read an OBJ file's objects. Polygons are fanned into triangles; negative (relative) indices are resolved; `mtllib`, smoothing groups and free-form geometry are ignored.
+
+## @jgengine/core/sceneImport/testFixtures/syntheticScene
+
+- `SyntheticInstance` (interface): interface SyntheticInstance — One generated instance as the source tool wrote it.
+- `SyntheticScene` (interface): interface SyntheticScene — The scene file and how to make each of its other files.
+- `SyntheticSceneOptions` (interface): interface SyntheticSceneOptions — Size of a generated scene.
+- `syntheticMeshParts` (function): function syntheticMeshParts(mesh: number): 1 | 2 — Every third mesh has two material runs.
+- `syntheticObj` (function): function syntheticObj(mesh: number, rings = 2, segments = 3): string — One mesh as an exporter writes it: a closed lathe whose profile depends on the mesh number, with normals and texture coordinates, X negated, faces wound for the flipped frame. A two-part mesh puts its lower half under one `usemtl` and its upper half under another.
+- `syntheticPng` (function): function syntheticPng(texture: number, size = 4): Uint8Array — A small PNG whose colour comes from the texture number.
+- `syntheticScene` (function): function syntheticScene(options: SyntheticSceneOptions): SyntheticScene — Lay out a scene: every mesh placed at least once, the rest spread at random; 1% mirrored. Each matrix is a left-handed TRS (rotation about Y, uniform scale), column-major.
 
 ## @jgengine/core/sceneView/mount.draw
 
