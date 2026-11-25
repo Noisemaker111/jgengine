@@ -1858,6 +1858,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw"`
 - `sceneCaptureBindingDraw` (function) · `import { sceneCaptureBindingDraw } from "@jgengine/core/scene/sceneCapture.draw"`
 
+## scene-view — draw and update a small scene document on any canvas without a UI framework or frame loop
+
+- `mountSceneView` (function) · `import { mountSceneView } from "@jgengine/core/sceneView/mount.draw"`
+
 ## screen-effects — serializable, pooled screen-feedback controller — transient flash/vignette and sustained low-health-style pulses with eased opacities, free-string kinds the game styles, and snapshot/restore
 
 - `createScreenEffects` (function) · `import { createScreenEffects } from "@jgengine/core/world"`

@@ -1,0 +1,33 @@
+{
+  "measured": "2026-11-25",
+  "runs": 9,
+  "device": "377x700 @2x, CPU 4x slower",
+  "pages": [
+    {
+      "page": "jgengine scene view",
+      "gzipKB": 138.7,
+      "files": [
+        "viewerEntry.js 4.0 KB",
+        "chunk-bz5nr9d3.js 134.2 KB",
+        "chunk-hejgxje7.js 0.4 KB"
+      ],
+      "firstFrameMs": 278,
+      "drawMsMedian": 3,
+      "drawMsP95": 5.7,
+      "drawsWhileTurning": 60,
+      "drawsWhileStill": 0
+    },
+    {
+      "page": "plain three.js",
+      "gzipKB": 138.7,
+      "files": [
+        "plainEntry.js 138.7 KB"
+      ],
+      "firstFrameMs": 232,
+      "drawMsMedian": 3.4,
+      "drawMsP95": 5.7,
+      "drawsWhileTurning": 60,
+      "drawsWhileStill": 0
+    }
+  ]
+}
