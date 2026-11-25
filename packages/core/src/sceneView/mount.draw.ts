@@ -23,6 +23,7 @@ import {
 import {
   diffSceneView,
   frameSceneView,
+  MARKER_SIZE,
   orbitSceneView,
   panSceneView,
   sceneViewBounds,
@@ -113,7 +114,7 @@ function drawByShape(object: SceneViewObject, context: SceneViewKindContext): Ob
   }
   if (object.type === "marker") {
     const size = object.value.meta?.["size"];
-    const mesh = new Mesh(new OctahedronGeometry(typeof size === "number" ? size : 0.15), context.surface(color));
+    const mesh = new Mesh(new OctahedronGeometry(typeof size === "number" ? size : MARKER_SIZE), context.surface(color));
     mesh.position.set(object.value.position.x, object.value.position.y, object.value.position.z);
     mesh.rotation.y = object.value.rotationY ?? 0;
     return mesh;
@@ -155,6 +156,13 @@ function disposeObject(root: Object3D, shared: ReadonlySet<Material>): void {
  */
 export function mountSceneView(canvas: HTMLCanvasElement, document: SceneViewDocument, options: SceneViewOptions = {}): SceneView {
   const fov = options.fov ?? 45;
+  // A canvas no stylesheet sizes takes its layout size from its drawing buffer, so a 2x buffer
+  // would double its layout, and the next resize would double it again. Pin its size in CSS once.
+  if (canvas.style.width === "" && canvas.style.height === "" && canvas.clientWidth === canvas.width && canvas.clientHeight === canvas.height) {
+    canvas.style.width = `${canvas.clientWidth}px`;
+    canvas.style.height = `${canvas.clientHeight}px`;
+  }
+
   const renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: "low-power" });
   renderer.setPixelRatio(options.pixelRatio ?? Math.min(globalThis.devicePixelRatio || 1, 2));
   const scene = new Scene();
@@ -214,6 +222,14 @@ export function mountSceneView(canvas: HTMLCanvasElement, document: SceneViewDoc
   let disposed = false;
   let version = 0;
 
+  /** The framing camera until the first document draws; a still-empty scene never fixes it. */
+  function currentCamera(): SceneViewCamera {
+    if (camera !== undefined) return camera;
+    const framed = frameSceneView(sceneViewBounds(objects.values()), fov, width / Math.max(1, height));
+    if (objects.size > 0) camera = framed;
+    return framed;
+  }
+
   function resize(): boolean {
     const nextWidth = Math.max(1, canvas.clientWidth || canvas.width);
     const nextHeight = Math.max(1, canvas.clientHeight || canvas.height);
@@ -230,10 +246,10 @@ export function mountSceneView(canvas: HTMLCanvasElement, document: SceneViewDoc
     frameRequest = 0;
     if (disposed) return;
     resize();
-    camera ??= frameSceneView(sceneViewBounds(objects.values()), fov, width / height);
-    const eye = sceneViewEye(camera);
+    const shown = currentCamera();
+    const eye = sceneViewEye(shown);
     view3.position.set(eye.x, eye.y, eye.z);
-    view3.lookAt(camera.target.x, camera.target.y, camera.target.z);
+    view3.lookAt(shown.target.x, shown.target.y, shown.target.z);
     renderer.render(scene, view3);
     frames += 1;
     options.onDraw?.(frames);
@@ -278,7 +294,7 @@ export function mountSceneView(canvas: HTMLCanvasElement, document: SceneViewDoc
   }
 
   const stopControls = options.controls === false ? () => undefined : attachControls(canvas, {
-    get: () => camera ?? frameSceneView(sceneViewBounds(objects.values()), fov, width / Math.max(1, height)),
+    get: currentCamera,
     set: (next) => { camera = next; invalidate(); },
     height: () => Math.max(1, height),
     fov,
@@ -289,7 +305,7 @@ export function mountSceneView(canvas: HTMLCanvasElement, document: SceneViewDoc
   const ready = update(document);
   return {
     update,
-    camera: () => camera ?? frameSceneView(sceneViewBounds(objects.values()), fov, width / Math.max(1, height)),
+    camera: currentCamera,
     setCamera(next) { camera = next; invalidate(); },
     objectOf: (id) => drawn.get(id),
     invalidate,
@@ -307,6 +323,8 @@ export function mountSceneView(canvas: HTMLCanvasElement, document: SceneViewDoc
       drawn.clear();
       for (const material of shared) material.dispose();
       renderer.dispose();
+      // Browsers cap live WebGL contexts; let this one go now rather than at garbage collection.
+      renderer.forceContextLoss();
     },
   };
 }

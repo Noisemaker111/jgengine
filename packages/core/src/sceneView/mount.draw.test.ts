@@ -58,13 +58,39 @@ beforeAll(async () => {
       view.dispose();
       return out;
     };
+    window.unstyled = async () => {
+      const canvas = document.createElement('canvas');
+      document.body.append(canvas);
+      const before = [canvas.clientWidth, canvas.clientHeight];
+      const view = mountSceneView(canvas, { volumes: [{ id: 'b', kind: 'box', shape: 'box', center: { x: 0, y: 0, z: 0 } }] });
+      await view.ready;
+      await frames(10);
+      const after = [canvas.clientWidth, canvas.clientHeight];
+      view.dispose();
+      return { before, after, contextLost: view.renderer.getContext().isContextLost() };
+    };
+    window.slowKind = async () => {
+      const canvas = document.querySelector('canvas');
+      let release;
+      const gate = new Promise((done) => { release = done; });
+      const doc = { volumes: [{ id: 'far', kind: 'slow', shape: 'box', center: { x: 50, y: 0, z: 50 } }] };
+      const view = mountSceneView(canvas, doc, { kinds: { slow: async () => { await gate; return roof; } } });
+      // A resize while the kind loads draws a frame of the still-empty scene.
+      canvas.style.width = '310px';
+      await frames(5);
+      release();
+      await view.ready;
+      const target = view.camera().target;
+      view.dispose();
+      return target;
+    };
   `);
   const bundle = buildBrowserFixture(`${scratch}/fixture.ts`);
   server = Bun.serve({
     port: 0,
     fetch: (request) => new URL(request.url).pathname === "/fixture.js"
       ? new Response(bundle, { headers: { "content-type": "text/javascript" } })
-      : new Response(`<!doctype html><style>canvas{width:300px;height:200px}</style><canvas></canvas><script type=module src="/fixture.js"></script>`, { headers: { "content-type": "text/html" } }),
+      : new Response(`<!doctype html><style>#stage{width:300px;height:200px}</style><canvas id=stage></canvas><script type=module src="/fixture.js"></script>`, { headers: { "content-type": "text/html" } }),
   });
   browser = await sharedChromium();
 });
@@ -91,4 +117,22 @@ test("draws once per change, keeps unchanged objects, and loads only the kinds a
   expect(result["removed"]).toBe(true);
   expect(result["framesAfterTwoCameraMoves"]).toBe(1);
   expect(result["loadsAtEnd"]).toEqual(["roof"]);
+});
+
+test("a canvas no stylesheet sizes keeps its size on a 2x screen, and dispose frees its GL context", async () => {
+  const page = await browser.newPage({ deviceScaleFactor: 2 });
+  await page.goto(`http://localhost:${server.port}/`);
+  await page.waitForFunction(() => "unstyled" in window);
+  const result = await page.evaluate(() => (window as unknown as { unstyled(): Promise<{ before: number[]; after: number[]; contextLost: boolean }> }).unstyled());
+  expect(result.after).toEqual(result.before);
+  expect(result.contextLost).toBe(true);
+});
+
+test("a frame drawn while a kind loads does not fix the camera on the empty scene", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://localhost:${server.port}/`);
+  await page.waitForFunction(() => "slowKind" in window);
+  const target = await page.evaluate(() => (window as unknown as { slowKind(): Promise<{ x: number; z: number }> }).slowKind());
+  expect(target.x).toBeCloseTo(50);
+  expect(target.z).toBeCloseTo(50);
 });

@@ -64,6 +64,9 @@ export interface SceneViewBounds {
   max: { x: number; y: number; z: number };
 }
 
+/** The radius a marker draws at when its `meta.size` is unset. */
+export const MARKER_SIZE = 0.15;
+
 /** The box around every object's extent, used to frame the camera on first draw. */
 export function sceneViewBounds(objects: Iterable<SceneViewObject>): SceneViewBounds {
   const bounds: SceneViewBounds = { min: { x: Infinity, y: Infinity, z: Infinity }, max: { x: -Infinity, y: -Infinity, z: -Infinity } };
@@ -72,7 +75,10 @@ export function sceneViewBounds(objects: Iterable<SceneViewObject>): SceneViewBo
     bounds.max.x = Math.max(bounds.max.x, x + r); bounds.max.y = Math.max(bounds.max.y, y + r); bounds.max.z = Math.max(bounds.max.z, z + r);
   };
   for (const { type, value } of objects) {
-    if (type === "marker") grow(value.position.x, value.position.y, value.position.z);
+    if (type === "marker") {
+      const size = value.meta?.["size"];
+      grow(value.position.x, value.position.y, value.position.z, typeof size === "number" ? size : MARKER_SIZE);
+    }
     else if (type === "path") for (const point of value.points) grow(point.x, point.y, point.z);
     else {
       const half = value.halfExtents;

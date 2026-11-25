@@ -5255,6 +5255,7 @@
 
 ## @jgengine/core/sceneView/sceneView
 
+- `MARKER_SIZE` (const): const MARKER_SIZE: 0.15 — The radius a marker draws at when its `meta.size` is unset.
 - `SceneViewBounds` (interface): interface SceneViewBounds — An axis-aligned box around points. Empty when `min.x > max.x`.
 - `SceneViewCamera` (interface): interface SceneViewCamera — An orbit camera: it looks at `target` from `distance` meters away, turned `yaw` radians around the vertical axis and tilted `pitch` radians above the horizon.
 - `SceneViewDiff` (interface): interface SceneViewDiff — What changed between two documents, by object: an object is unchanged when its value is the same reference, which is what an immutable edit (an editor session, a reducer, a spread) produces.

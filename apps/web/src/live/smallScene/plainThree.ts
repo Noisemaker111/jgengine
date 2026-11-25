@@ -71,6 +71,7 @@ export function drawPlainHouse(canvas: HTMLCanvasElement, house: House, onDraw?:
       (drawn.material as MeshStandardMaterial | undefined)?.dispose();
     });
     renderer.dispose();
+    renderer.forceContextLoss();
   };
   return { renderer, dispose };
 }
