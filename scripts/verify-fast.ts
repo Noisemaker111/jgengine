@@ -33,7 +33,7 @@ import { assertCheckoutReady } from "./checkout-ready";
 import { digestLines, failureDigest, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
-import { openPassCache, saveTestCosts, sharedVerifyDir, treeDigests, WHOLE_TREE } from "./verify-cache";
+import { openPassCache, sharedVerifyDir, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { checkCommand, findCheck, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
@@ -52,7 +52,7 @@ const VERIFY_FAST_USAGE = {
     { flag: "--plan", detail: "print the steps and their commands, run nothing" },
     { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
     { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
-    { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
+    { flag: "--jobs <n>", detail: "steps to run at once, and the `bun test --parallel` workers each test step uses (default: half the cores, at most 4)" },
     { flag: "--skill-api", detail: "also run `check skill-api`, the 21 s generated api.md check (`bun run gen` regenerates it before a landing)" },
     { flag: "--no-cache", detail: "run every unit, including those that passed before with the same inputs, and never reuse a passing run of the same tree" },
     { flag: "--verbose", detail: "also print the plan, each PASS line and the cache notes (by default only failures and the total)" },
@@ -649,32 +649,25 @@ const GATE_COST: Readonly<Record<string, number>> = {
   "skill-api": 21,
 };
 
-/** Test files above this many per process split across lanes: one `bun test` runs its files one after another. */
-export const TESTS_PER_LANE = 10;
-
 /**
- * Measured seconds of tests per process. The lanes run the heaviest step first, so chunks this
- * size pack around the type-checks instead of one long process holding the run's tail.
+ * Characters of file paths one `bun test` command carries. Windows refuses a command line past
+ * 32,767 characters; an engine change reaches about 1,200 test files, 56,000 characters of paths.
  */
-const TEST_CHUNK_SECONDS = 30;
+const COMMAND_PATH_CHARS = 24_000;
 
-/** Rough seconds a test file costs when nothing better is known; a browser scenario costs far more. */
-function guessedTestCost(file: string): number {
-  return SHARD_I_MEASURED_COST[file] ?? (/\.browser\.test\./.test(file) ? 15 : 1);
-}
-
-/** Seconds each test file took when it last ran here, read from `bun test`'s junit report. */
-export function junitCosts(xml: string): Record<string, number> {
-  const costs: Record<string, number> = {};
-  // A file's own suite carries `file=` and no `line=`; its describe blocks carry both.
-  for (const match of xml.matchAll(/<testsuite\s[^>]*>/g)) {
-    const tag = match[0];
-    if (/\sline="/.test(tag)) continue;
-    const file = /\sfile="([^"]+)"/.exec(tag)?.[1];
-    const time = Number(/\stime="([^"]+)"/.exec(tag)?.[1]);
-    if (file !== undefined && Number.isFinite(time)) costs[file.replaceAll("\\", "/")] = time;
+/** The files in as few commands as the command line allows, each run in turn by the runner's own workers. */
+export function commandLineGroups(files: readonly string[]): string[][] {
+  const groups: string[][] = [];
+  let length = Number.POSITIVE_INFINITY;
+  for (const file of files) {
+    if (length + file.length + 1 > COMMAND_PATH_CHARS) {
+      groups.push([]);
+      length = 0;
+    }
+    groups.at(-1)!.push(file);
+    length += file.length + 1;
   }
-  return costs;
+  return groups;
 }
 
 /**
@@ -697,13 +690,13 @@ export interface FastOptions {
   skillApi?: boolean;
   /** Only the type-checks and gates: no tests or boots. */
   cheap?: boolean;
-  /** Lanes the steps share; the tests split into at most this many processes. */
+  /** Lanes the steps share; each test step runs its files in this many `bun test --parallel` workers. */
   lanes?: number;
   /** True when this unit passed before with the same `inputs`; it is not run again. */
   fresh?: (unit: string, inputs: readonly string[]) => boolean;
-  /** Measured seconds per test file, so the processes split by time rather than by count. */
-  testCosts?: Readonly<Record<string, number>>;
-  /** Where each test process writes its junit report (`<dir>/tests-<n>.xml`), for `testCosts`. */
+  /** `bun test --timings`: per-file durations the runner reads to start the slowest files first, and updates. */
+  timingsFile?: string;
+  /** Where each test step writes its junit report (`<dir>/tests-<n>.xml`), for the per-file passes. */
   reportDir?: string;
   /** Every file in the checkout, so a gate's pass is keyed on the files its row reads; absent, on the whole tree. */
   tree?: readonly string[];
@@ -730,8 +723,6 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
   const tests = plan.tests.map((file) => unit(`test:${file}`)).filter((settles) => !fresh(settles.id, settles.inputs));
   if (tests.length > 0) {
     const files = tests.map((settles) => settles.id.slice("test:".length));
-    // Each file also pays its imports, which the junit time leaves out.
-    const cost = Object.fromEntries(files.map((file) => [file, options.testCosts?.[file] !== undefined ? options.testCosts[file]! + 0.5 : guessedTestCost(file)]));
     // The tests named after the changed files, and the changed tests themselves, run first in a step
     // of their own: a break in `pick.ts` reaches a thousand files, the run stops at the first red,
     // and without this `pick.test.ts` sat in a chunk that never ran while the red named a loot table.
@@ -739,17 +730,21 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     const plain = files.filter((file) => options.modelTests?.has(file) !== true);
     const own = new Set(plan.changed.flatMap((file) => ownTests(file, plain)));
     const rest = plain.filter((file) => !own.has(file));
-    const testStep = (group: readonly string[], name: string, index: number, first: boolean): Step => ({
+    // The runner spreads a step's files over its own workers, slowest first by the timings it keeps.
+    const testStep = (group: readonly string[], name: string, index: number, first: boolean, updateTimings = false): Step => ({
       name,
       command: [
         "bun",
         "test",
+        `--parallel=${lanes}`,
         "--timeout",
         "20000",
+        ...(options.timingsFile === undefined ? [] : [`--timings=${options.timingsFile}`, ...(updateTimings ? ["--update-timings"] : [])]),
         ...(options.reportDir === undefined ? [] : ["--reporter=junit", `--reporter-outfile=${options.reportDir}/tests-${index}.xml`]),
         ...[...group].sort(),
       ],
-      cost: group.reduce((sum, file) => sum + (cost[file] ?? 1), 0),
+      cost: group.length,
+      exclusive: true,
       ...(first ? { first: true } : {}),
       units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
     });
@@ -766,14 +761,10 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       steps.push({ ...testStep(readers, `test ${readers.length} file(s) that read downloaded models`, 999, isOwn), needs: [provisionStep] });
     }
     if (rest.length > 0) {
-      const total = rest.reduce((sum, file) => sum + cost[file]!, 0);
-      const byCount = Math.min(lanes, Math.ceil(rest.length / TESTS_PER_LANE));
-      const byTime = Math.min(lanes * 3, Math.ceil(total / TEST_CHUNK_SECONDS));
-      const parts = Math.min(rest.length, Math.max(1, byCount, byTime));
-      const groups = splitByCost(rest, cost, parts).filter((group) => group.length > 0);
+      const groups = commandLineGroups(rest);
       groups.forEach((group, index) => {
         const label = groups.length === 1 ? `test ${group.length} file(s)` : `test ${group.length} file(s) (${index + 1}/${groups.length})`;
-        steps.push(testStep(group, label, index + 1, false));
+        steps.push(testStep(group, label, index + 1, false, true));
       });
     }
   }
@@ -1316,20 +1307,13 @@ async function main(argv: readonly string[]): Promise<number> {
         tree: () => tree,
       });
   const skipped: string[] = [];
-  const costFile = join(shared, "test-costs.json");
   // The plan uses a placeholder and never creates or clears evidence.
   const reportDir = `${runDir}/junit`;
-  let testCosts: Record<string, number> = {};
-  try {
-    testCosts = JSON.parse(readFileSync(costFile, "utf8")) as Record<string, number>;
-  } catch {
-    testCosts = {};
-  }
   const steps = fastSteps(plan, {
     skillApi,
     cheap,
     lanes: jobs,
-    testCosts,
+    timingsFile: join(shared, "test-timings.json"),
     reportDir,
     tree,
     modelTests: modelTestFiles(root, planned.tests),
@@ -1343,10 +1327,8 @@ async function main(argv: readonly string[]): Promise<number> {
     const passedFiles = new Set<string>();
     for (const report of existsSync(join(root, reportDir)) ? readdirSync(join(root, reportDir)) : []) {
       const xml = readFileSync(join(root, reportDir, report), "utf8");
-      Object.assign(testCosts, junitCosts(xml));
       for (const file of junitPassedFiles(xml)) passedFiles.add(file);
     }
-    saveTestCosts(costFile, testCosts);
     if (cache === null) return;
     for (const result of results) {
       for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) {

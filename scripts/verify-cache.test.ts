@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { blobId, openPassCache, saveTestCosts, sharedVerifyDir, treeDigests, WHOLE_TREE } from "./verify-cache";
+import { blobId, openPassCache, sharedVerifyDir, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { spawnSync } from "node:child_process";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -79,15 +79,6 @@ describe("shared store", () => {
   test("every worktree of a clone shares one store inside git's common directory", () => {
     const common = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: root, encoding: "utf8" }).stdout.trim();
     expect(sharedVerifyDir(root)).toBe(join(common, "jgengine-verify"));
-  });
-
-  test("measured test costs from two lanes are merged, not overwritten", () => {
-    const dir = join(root, ".scratch", `verify-costs-${process.pid}-${(made += 1)}`);
-    dirs.push(dir);
-    const file = join(dir, "test-costs.json");
-    saveTestCosts(file, { "a.test.ts": 1 });
-    saveTestCosts(file, { "b.test.ts": 2 });
-    expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({ "a.test.ts": 1, "b.test.ts": 2 });
   });
 
   test("a dirty file digests to the blob id git gives it once committed", () => {
