@@ -14,7 +14,7 @@ import { join, relative } from "node:path";
 import { writeAtomically } from "./verify-cache";
 
 /** What one test file loaded: each repository file and its digest then, and whether it started something the recorder cannot see into. */
-export interface LoadRecord {
+interface LoadRecord {
   loads: Record<string, string>;
   opaque?: true;
 }
