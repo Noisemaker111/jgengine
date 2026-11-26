@@ -214,7 +214,7 @@ export const SHARDS: readonly Shard[] = [
     // 22 s of harness scenarios plus 26 s of shell. The browser file sorts first in this
     // process, which is the order that matters: the editor scene io file took 78 s after 85
     // files and 34 s first in its process.
-    include: ["packages/jgengine/src/harness.unreachableTargets.browser.test.ts", "packages/core/src/shell"],
+    include: ["packages/core/src/shell"],
     needs: [],
   },
   {

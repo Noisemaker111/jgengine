@@ -19,11 +19,15 @@ import { parseParams } from "./paramSchema";
 // differ in the last bit between libms (glibc releases, browsers). Each salt is a different
 // consistent "other libm"; the output, rounded far above an ulp, must not notice. A failure here
 // is a discrete decision (a tie, a boundary test, a wrap) that hangs on rounding noise.
-const OTHER_LIBMS = [1, 5, 7];
 
+/**
+ * Every seeded generator against the "other libms" `salts` name. This file runs one salt; the measurement
+ * beside it imports this file and adds two more, which each move a different set of last bits.
+ */
+export function libmCases(salts: readonly number[]): void {
 function expectLibmIndependent(produce: () => unknown): void {
   const here = roundedFingerprint(produce());
-  for (const salt of OTHER_LIBMS) expect(roundedFingerprint(withOtherLibm(salt, produce))).toBe(here);
+  for (const salt of salts) expect(roundedFingerprint(withOtherLibm(salt, produce))).toBe(here);
 }
 
 function presetBags(definition: GeneratorDefinition): [string, Record<string, unknown>][] {
@@ -114,3 +118,6 @@ describe("seeded generators do not depend on the platform's libm", () => {
     }
   }, 60_000);
 });
+}
+
+libmCases([1]);
