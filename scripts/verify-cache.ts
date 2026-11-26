@@ -104,11 +104,6 @@ export function sharedVerifyDir(root: string): string {
   return join(isAbsolute(common) ? common : join(root, common), "jgengine-verify");
 }
 
-/** Measured seconds per test file, merged into what other lanes measured since this run read them. */
-export function saveTestCosts(file: string, costs: Readonly<Record<string, number>>): void {
-  writeAtomically(file, `${JSON.stringify({ ...readRecord(file), ...costs })}\n`);
-}
-
 /**
  * Content digests for a checkout without reading every file: git's own blob ids for tracked files
  * the working tree has not changed, and for the `dirty` ones (changed, staged or untracked) the blob

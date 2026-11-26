@@ -10,6 +10,7 @@ import {
   CI_ONLY_GATES,
   landingGates,
   verifyPlan,
+  commandLineGroups,
   featureRoot,
   MAX_BOOTS,
   changedFiles,
@@ -20,7 +21,6 @@ import {
   heavyPaths,
   isRuntimeSource,
   jsonRun,
-  junitCosts,
   junitPassedFiles,
   modelTestFiles,
   opaqueScopes,
@@ -30,7 +30,6 @@ import {
   rerunFailing,
   timedOutFiles,
   timedOutNote,
-  TESTS_PER_LANE,
   workspaceOf,
   workspaces,
   type Plan,
@@ -656,16 +655,21 @@ describe("commands", () => {
     });
     const steps = fastSteps(plan);
     expect(steps[0]?.command).toEqual(["bun", "--cwd=packages/shell", "run", "check-types"]);
-    expect(steps[1]?.command).toEqual(["bun", "test", "--timeout", "20000", "packages/shell/src/world/WorldScene.test.ts"]);
+    expect(steps[1]?.command).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "packages/shell/src/world/WorldScene.test.ts"]);
     expect(steps.some((step) => step.command.includes("packages/core"))).toBe(false);
   });
 
-  test("many test files split across the lanes, each file in exactly one process", () => {
+  test("the runner spreads the files over its own workers: one command until the command line is full", () => {
     const files = Array.from({ length: 45 }, (_, index) => `packages/core/src/t${String(index).padStart(2, "0")}.test.ts`);
-    const steps = fastSteps({ ...emptyPlan, tests: files }, { lanes: 4 }).filter((step) => step.command[1] === "test");
-    expect(steps).toHaveLength(Math.min(4, Math.ceil(files.length / TESTS_PER_LANE)));
-    expect(steps.flatMap((step) => step.command.slice(4)).sort()).toEqual(files);
+    const steps = fastSteps({ ...emptyPlan, tests: files }, { lanes: 4, timingsFile: ".scratch/t.json" }).filter((step) => step.command[1] === "test");
+    expect(steps).toHaveLength(1);
+    expect(steps[0]?.command.slice(0, 7)).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--timings=.scratch/t.json", "--update-timings"]);
     expect(steps.flatMap((step) => step.units ?? []).map((unit) => unit.id).sort()).toEqual(files.map((file) => `test:${file}`));
+    const many = Array.from({ length: 1200 }, (_, index) => `packages/core/src/some/feature/folder/file${String(index).padStart(4, "0")}.test.ts`);
+    const groups = commandLineGroups(many);
+    expect(groups.length).toBe(3);
+    expect(groups.flat()).toEqual(many);
+    for (const group of groups) expect(group.join(" ").length).toBeLessThan(24_000);
   });
 
   test("a junit report names the files whose own tests all passed, and leaves out the failing ones", () => {
@@ -677,30 +681,6 @@ describe("commands", () => {
       '<testsuite name="ok" file="packages/core/src/b.test.ts" line="9" tests="1" failures="0" skipped="0" time="0">',
     ].join("\n");
     expect(junitPassedFiles(xml)).toEqual(["packages/core/src/a.test.ts"]);
-  });
-
-  test("measured test times split the processes by time, and the junit report supplies them", () => {
-    const xml = [
-      String.raw`<testsuite name="packages\core\src\slow.test.ts" file="packages\core\src\slow.test.ts" tests="3" time="40.5">`,
-      String.raw`<testsuite name="slow" file="packages\core\src\slow.test.ts" line="4" tests="3" time="40.4">`,
-      '<testsuite name="packages/core/src/fast.test.ts" file="packages/core/src/fast.test.ts" tests="1" time="0.01">',
-    ].join("\n");
-    expect(junitCosts(xml)).toEqual({ "packages/core/src/slow.test.ts": 40.5, "packages/core/src/fast.test.ts": 0.01 });
-    const files = Array.from({ length: 20 }, (_, index) => `packages/core/src/t${String(index).padStart(2, "0")}.test.ts`);
-    const steps = fastSteps({ ...emptyPlan, tests: files }, { lanes: 2, testCosts: { [files[0]!]: 60 }, reportDir: ".scratch/r" }).filter((step) => step.command[1] === "test");
-    // 80 measured seconds make three ~30 s processes: the 60 s file alone, the other nineteen split.
-    const sizes = steps.map((step) => step.command.filter((arg) => arg.endsWith(".test.ts")).length);
-    expect(sizes.sort((a, b) => a - b)).toEqual([1, 9, 10]);
-    expect(steps[0]?.command).toContain("--reporter-outfile=.scratch/r/tests-1.xml");
-  });
-
-  test("a long measured suite splits past the lane count so its chunks pack around other steps", () => {
-    const files = Array.from({ length: 24 }, (_, index) => `packages/core/src/t${String(index).padStart(2, "0")}.test.ts`);
-    const testCosts = Object.fromEntries(files.map((file) => [file, 10]));
-    const steps = fastSteps({ ...emptyPlan, tests: files }, { lanes: 2, testCosts }).filter((step) => step.command[1] === "test");
-    // 252 s at 30 s a process wants 9, held to three per lane.
-    expect(steps).toHaveLength(6);
-    expect(steps.flatMap((step) => step.command.filter((arg) => arg.endsWith(".test.ts"))).sort()).toEqual(files);
   });
 
   test("a unit that passed with the same inputs is left out; one whose inputs changed runs", () => {
@@ -716,7 +696,7 @@ describe("commands", () => {
     const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat", "reopen:harbor-heat", "load:harbor-heat"]);
     const steps = fastSteps(plan, { fresh: (unit) => passed.has(unit) });
     expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)"]);
-    expect(steps[1]?.command.slice(4)).toEqual(["packages/core/src/a.test.ts"]);
+    expect(steps[1]?.command.slice(5)).toEqual(["packages/core/src/a.test.ts"]);
     expect(steps[1]?.units).toEqual([{ id: "test:packages/core/src/a.test.ts", inputs: ["packages/core/src/a.ts"] }]);
   });
 
