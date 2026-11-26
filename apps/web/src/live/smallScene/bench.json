@@ -1,19 +1,18 @@
 {
-  "measured": "2026-11-25",
+  "measured": "2026-11-26",
   "runs": 9,
   "device": "377x700 @2x, CPU 4x slower",
   "pages": [
     {
       "page": "jgengine scene view",
-      "gzipKB": 138.7,
+      "gzipKB": 7.9,
       "files": [
-        "viewerEntry.js 4.0 KB",
-        "chunk-bz5nr9d3.js 134.2 KB",
-        "chunk-hejgxje7.js 0.4 KB"
+        "viewerEntry.js 7.6 KB",
+        "chunk-rq9jdfs3.js 0.3 KB"
       ],
-      "firstFrameMs": 278,
-      "drawMsMedian": 3,
-      "drawMsP95": 5.7,
+      "firstFrameMs": 167,
+      "drawMsMedian": 1.8,
+      "drawMsP95": 3.9,
       "drawsWhileTurning": 60,
       "drawsWhileStill": 0
     },
@@ -23,9 +22,9 @@
       "files": [
         "plainEntry.js 138.7 KB"
       ],
-      "firstFrameMs": 232,
-      "drawMsMedian": 3.4,
-      "drawMsP95": 5.7,
+      "firstFrameMs": 292,
+      "drawMsMedian": 3.7,
+      "drawMsP95": 6.9,
       "drawsWhileTurning": 60,
       "drawsWhileStill": 0
     }

@@ -5247,11 +5247,12 @@
 ## @jgengine/core/sceneView/mount.draw
 
 - `SceneView` (interface): interface SceneView — A mounted viewer. It draws only when something changes, and never between changes.
-- `SceneViewKind` (interface): interface SceneViewKind — How one kind draws: the three.js object for one document object of that kind.
-- `SceneViewKindContext` (interface): interface SceneViewKindContext — What a kind's draw module gets besides the object: shared materials, so equal colors share one.
+- `SceneViewKind` (interface): interface SceneViewKind — How one kind draws: the node of mesh and line parts for one document object of that kind.
+- `SceneViewKindContext` (interface): interface SceneViewKindContext — Helpers a kind's draw function uses to build lit meshes and unlit lines without three.js.
 - `SceneViewKindLoader` (type): type SceneViewKindLoader = () => Promise<SceneViewKind | { default: SceneViewKind }> — Loads a kind's draw module. Write it as `() => import("./roof.draw")`, so the module is its own chunk and a document that never uses the kind never downloads it.
 - `SceneViewOptions` (interface): interface SceneViewOptions — Options for {@link mountSceneView}.
-- `mountSceneView` (function): function mountSceneView(canvas: HTMLCanvasElement, document: SceneViewDocument, options: SceneViewOptions = {}): SceneView — Draws a scene document on `canvas` with plain three.js and no UI framework: no JSX runtime, no frame loop. It draws once when the document, the camera or the canvas size changes and sits idle otherwise, so a still scene costs a phone nothing. Each kind's drawing loads only when the document uses it (`options.kinds`); every other object draws by its shape.
+- `SceneViewRenderer` (interface): interface SceneViewRenderer — Minimal WebGL2 renderer handle exposed by {@link SceneView} for instrumentation and context access.
+- `mountSceneView` (function): function mountSceneView(canvas: HTMLCanvasElement, document: SceneViewDocument, options: SceneViewOptions = {}): SceneView — Draws a scene document on `canvas` with a tiny WebGL2 backend and no three.js or UI framework: no JSX runtime, no frame loop. It draws once when the document, the camera or the canvas size changes and sits idle otherwise, so a still scene costs a phone nothing. Each kind's drawing loads only when the document uses it (`options.kinds`); every other object draws by its shape.
 
 ## @jgengine/core/sceneView/sceneView
 
@@ -5260,11 +5261,25 @@
 - `SceneViewCamera` (interface): interface SceneViewCamera — An orbit camera: it looks at `target` from `distance` meters away, turned `yaw` radians around the vertical axis and tilted `pitch` radians above the horizon.
 - `SceneViewDiff` (interface): interface SceneViewDiff — What changed between two documents, by object: an object is unchanged when its value is the same reference, which is what an immutable edit (an editor session, a reducer, a spread) produces.
 - `SceneViewDocument` (interface): interface SceneViewDocument — The part of a scene document the small viewer draws: markers, volumes and paths. An `EditorDocument` is one, and so is a plain object an app builds itself, so drawing needs no decoder and no editor session.
+- `SceneViewLinePart` (interface): interface SceneViewLinePart — An unlit line or polyline part drawn by the small WebGL2 viewer.
+- `SceneViewMeshPart` (interface): interface SceneViewMeshPart — A lit triangle mesh part drawn by the small WebGL2 viewer, with no three.js dependency.
+- `SceneViewNode` (interface): interface SceneViewNode — The drawn output for one document object: an optional group offset and one or more GPU parts.
 - `SceneViewObject` (type): type SceneViewObject = | { readonly type: "marker"; readonly value: EditorMarker } | { readonly type: "volume"; readonly value: EditorVolume } | { readonly type: "path"; readonly value: EditorPath } — One drawable object of a document, tagged with the collection it came from.
+- `SceneViewPart` (type): type SceneViewPart = SceneViewMeshPart | SceneViewLinePart — One drawable GPU part inside a {@link SceneViewNode}.
+- `SceneViewVec3` (interface): interface SceneViewVec3 — A 3D point or offset.
+- `buildBoxMesh` (function): function buildBoxMesh(width: number, height: number, depth: number, color: string): SceneViewMeshPart — Indexed box mesh centered at the origin with outward face normals.
+- `buildCylinderMesh` (function): function buildCylinderMesh(radius: number, height: number, color: string, radialSegments = 24): SceneViewMeshPart — Indexed cylinder mesh centered at the origin with smooth sides and flat caps.
+- `buildOctahedronMesh` (function): function buildOctahedronMesh(radius: number, color: string): SceneViewMeshPart — Octahedron mesh centered at the origin with flat face normals.
+- `buildSphereMesh` (function): function buildSphereMesh(radius: number, color: string, widthSegments = 24, heightSegments = 16): SceneViewMeshPart — Indexed UV sphere mesh centered at the origin with smooth unit normals.
+- `buildViewProjMatrix` (function): function buildViewProjMatrix(eye: SceneViewVec3, target: SceneViewVec3, fovDegrees: number, aspect: number, near: number, far: number): Float32Array — Column-major perspective * lookAt matrix for a right-handed Y-up scene (OpenGL clip space).
+- `computeFlatNormals` (function): function computeFlatNormals(positions: ArrayLike<number>): Float32Array — Computes flat per-triangle unit normals for an unindexed triangle list (`9` floats per triangle).
+- `computeMeshEdges` (function): function computeMeshEdges(positions: ArrayLike<number>, thresholdDegrees = 1): Float32Array — Extracts boundary and sharp crease line segments from an unindexed triangle list, matching `EdgesGeometry` for crisp architectural wireframes.
 - `diffSceneView` (function): function diffSceneView(previous: ReadonlyMap<string, SceneViewObject>, next: ReadonlyMap<string, SceneViewObject>): SceneViewDiff — The objects to draw, redraw and drop going from `previous` to `next`.
 - `frameSceneView` (function): function frameSceneView(bounds: SceneViewBounds, fovDegrees = 45, aspect = 1, yaw = Math.PI / 4, pitch = 0.55): SceneViewCamera — A camera that frames `bounds` for a view `fovDegrees` tall at `aspect` (width / height), seen from `yaw`, `pitch`.
 - `orbitSceneView` (function): function orbitSceneView(camera: SceneViewCamera, dx: number, dy: number, height: number): SceneViewCamera — Turns the camera by a drag of `dx`, `dy` pixels on a view `height` pixels tall.
 - `panSceneView` (function): function panSceneView(camera: SceneViewCamera, dx: number, dy: number, height: number, fovDegrees = 45): SceneViewCamera — Slides the camera and its target by a drag of `dx`, `dy` pixels, keeping the dragged point under the finger.
+- `parseHexLinear` (function): function parseHexLinear(hex: string): [number, number, number] — Parses `#rgb` or `#rrggbb` into linear RGB `[0..1]` for lit shading.
+- `parseHexSrgb` (function): function parseHexSrgb(hex: string): [number, number, number] — Parses `#rgb` or `#rrggbb` into sRGB `[0..1]` channels, falling back to neutral grey.
 - `sceneViewBounds` (function): function sceneViewBounds(objects: Iterable<SceneViewObject>): SceneViewBounds — The box around every object's extent, used to frame the camera on first draw.
 - `sceneViewEye` (function): function sceneViewEye(camera: SceneViewCamera): { x: number; y: number; z: number } — The camera's eye position.
 - `sceneViewKinds` (function): function sceneViewKinds(objects: Iterable<SceneViewObject>): Set<string> — The kinds a document uses, so a viewer loads only those kinds' drawing.

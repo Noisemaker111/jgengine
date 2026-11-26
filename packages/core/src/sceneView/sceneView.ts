@@ -159,3 +159,290 @@ export function panSceneView(camera: SceneViewCamera, dx: number, dy: number, he
     },
   };
 }
+
+/** A 3D point or offset. */
+export interface SceneViewVec3 {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+}
+
+/** A lit triangle mesh part drawn by the small WebGL2 viewer, with no three.js dependency. */
+export interface SceneViewMeshPart {
+  readonly type: "mesh";
+  readonly positions: Float32Array;
+  readonly normals: Float32Array;
+  readonly indices?: Uint16Array | Uint32Array;
+  readonly color: string;
+  readonly position?: SceneViewVec3;
+  readonly rotationY?: number;
+}
+
+/** An unlit line or polyline part drawn by the small WebGL2 viewer. */
+export interface SceneViewLinePart {
+  readonly type: "lines" | "line-strip";
+  readonly positions: Float32Array;
+  readonly color: string;
+  readonly position?: SceneViewVec3;
+  readonly rotationY?: number;
+}
+
+/** One drawable GPU part inside a {@link SceneViewNode}. */
+export type SceneViewPart = SceneViewMeshPart | SceneViewLinePart;
+
+/** The drawn output for one document object: an optional group offset and one or more GPU parts. */
+export interface SceneViewNode {
+  readonly name?: string;
+  readonly position?: SceneViewVec3;
+  readonly rotationY?: number;
+  readonly parts: readonly SceneViewPart[];
+}
+
+function srgbChannelToLinear(value: number): number {
+  return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+}
+
+/** Parses `#rgb` or `#rrggbb` into sRGB `[0..1]` channels, falling back to neutral grey. */
+export function parseHexSrgb(hex: string): [number, number, number] {
+  const clean = hex.startsWith("#") ? hex.slice(1) : hex;
+  if (clean.length === 3) {
+    const r = parseInt(clean[0]! + clean[0]!, 16);
+    const g = parseInt(clean[1]! + clean[1]!, 16);
+    const b = parseInt(clean[2]! + clean[2]!, 16);
+    if (!Number.isNaN(r) && !Number.isNaN(g) && !Number.isNaN(b)) return [r / 255, g / 255, b / 255];
+  } else if (clean.length >= 6) {
+    const r = parseInt(clean.slice(0, 2), 16);
+    const g = parseInt(clean.slice(2, 4), 16);
+    const b = parseInt(clean.slice(4, 6), 16);
+    if (!Number.isNaN(r) && !Number.isNaN(g) && !Number.isNaN(b)) return [r / 255, g / 255, b / 255];
+  }
+  return [0.725, 0.706, 0.667];
+}
+
+/** Parses `#rgb` or `#rrggbb` into linear RGB `[0..1]` for lit shading. */
+export function parseHexLinear(hex: string): [number, number, number] {
+  const [r, g, b] = parseHexSrgb(hex);
+  return [srgbChannelToLinear(r), srgbChannelToLinear(g), srgbChannelToLinear(b)];
+}
+
+/** Computes flat per-triangle unit normals for an unindexed triangle list (`9` floats per triangle). */
+export function computeFlatNormals(positions: ArrayLike<number>): Float32Array {
+  const normals = new Float32Array(positions.length);
+  for (let i = 0; i + 8 < positions.length; i += 9) {
+    const ax = positions[i]!, ay = positions[i + 1]!, az = positions[i + 2]!;
+    const ux = positions[i + 3]! - ax, uy = positions[i + 4]! - ay, uz = positions[i + 5]! - az;
+    const vx = positions[i + 6]! - ax, vy = positions[i + 7]! - ay, vz = positions[i + 8]! - az;
+    let nx = uy * vz - uz * vy;
+    let ny = uz * vx - ux * vz;
+    let nz = ux * vy - uy * vx;
+    const length = Math.hypot(nx, ny, nz) || 1;
+    nx /= length; ny /= length; nz /= length;
+    normals[i] = nx; normals[i + 1] = ny; normals[i + 2] = nz;
+    normals[i + 3] = nx; normals[i + 4] = ny; normals[i + 5] = nz;
+    normals[i + 6] = nx; normals[i + 7] = ny; normals[i + 8] = nz;
+  }
+  return normals;
+}
+
+/**
+ * Extracts boundary and sharp crease line segments from an unindexed triangle list, matching
+ * `EdgesGeometry` for crisp architectural wireframes.
+ */
+export function computeMeshEdges(positions: ArrayLike<number>, thresholdDegrees = 1): Float32Array {
+  const thresholdDot = Math.cos((thresholdDegrees * Math.PI) / 180);
+  const quant = (v: number) => Math.round(v * 1e4);
+  const vKey = (x: number, y: number, z: number) => `${quant(x)},${quant(y)},${quant(z)}`;
+  interface Edge { ax: number; ay: number; az: number; bx: number; by: number; bz: number; nx: number; ny: number; nz: number; count: number; sharp: boolean }
+  const edges = new Map<string, Edge>();
+  for (let i = 0; i + 8 < positions.length; i += 9) {
+    const pts: [number, number, number][] = [
+      [positions[i]!, positions[i + 1]!, positions[i + 2]!],
+      [positions[i + 3]!, positions[i + 4]!, positions[i + 5]!],
+      [positions[i + 6]!, positions[i + 7]!, positions[i + 8]!],
+    ];
+    const [p0, p1, p2] = pts as [[number, number, number], [number, number, number], [number, number, number]];
+    const ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2];
+    const vx = p2[0] - p0[0], vy = p2[1] - p0[1], vz = p2[2] - p0[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const len = Math.hypot(nx, ny, nz);
+    if (len === 0) continue;
+    nx /= len; ny /= len; nz /= len;
+    for (let e = 0; e < 3; e++) {
+      const a = pts[e]!;
+      const b = pts[(e + 1) % 3]!;
+      const ka = vKey(a[0], a[1], a[2]);
+      const kb = vKey(b[0], b[1], b[2]);
+      const key = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+      const existing = edges.get(key);
+      if (existing === undefined) {
+        edges.set(key, { ax: a[0], ay: a[1], az: a[2], bx: b[0], by: b[1], bz: b[2], nx, ny, nz, count: 1, sharp: false });
+      } else {
+        existing.count += 1;
+        if (existing.nx * nx + existing.ny * ny + existing.nz * nz <= thresholdDot) existing.sharp = true;
+      }
+    }
+  }
+  const out: number[] = [];
+  for (const edge of edges.values()) {
+    if (edge.count === 1 || edge.sharp) out.push(edge.ax, edge.ay, edge.az, edge.bx, edge.by, edge.bz);
+  }
+  return new Float32Array(out);
+}
+
+/** Indexed box mesh centered at the origin with outward face normals. */
+export function buildBoxMesh(width: number, height: number, depth: number, color: string): SceneViewMeshPart {
+  const x = width / 2, y = height / 2, z = depth / 2;
+  const positions = new Float32Array([
+    // +Z
+    -x, -y, z, x, -y, z, x, y, z, -x, y, z,
+    // -Z
+    x, -y, -z, -x, -y, -z, -x, y, -z, x, y, -z,
+    // +Y
+    -x, y, z, x, y, z, x, y, -z, -x, y, -z,
+    // -Y
+    -x, -y, -z, x, -y, -z, x, -y, z, -x, -y, z,
+    // +X
+    x, -y, z, x, -y, -z, x, y, -z, x, y, z,
+    // -X
+    -x, -y, -z, -x, -y, z, -x, y, z, -x, y, -z,
+  ]);
+  const normals = new Float32Array([
+    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+    0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1,
+    0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+    0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0,
+    1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+    -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0,
+  ]);
+  const indices = new Uint16Array([
+    0, 1, 2, 0, 2, 3,
+    4, 5, 6, 4, 6, 7,
+    8, 9, 10, 8, 10, 11,
+    12, 13, 14, 12, 14, 15,
+    16, 17, 18, 16, 18, 19,
+    20, 21, 22, 20, 22, 23,
+  ]);
+  return { type: "mesh", positions, normals, indices, color };
+}
+
+/** Indexed UV sphere mesh centered at the origin with smooth unit normals. */
+export function buildSphereMesh(radius: number, color: string, widthSegments = 24, heightSegments = 16): SceneViewMeshPart {
+  const cols = widthSegments + 1;
+  const rows = heightSegments + 1;
+  const positions = new Float32Array(cols * rows * 3);
+  const normals = new Float32Array(cols * rows * 3);
+  let p = 0;
+  for (let iy = 0; iy < rows; iy++) {
+    const phi = (iy / heightSegments) * Math.PI;
+    const sinPhi = Math.sin(phi), cosPhi = Math.cos(phi);
+    for (let ix = 0; ix < cols; ix++) {
+      const theta = (ix / widthSegments) * Math.PI * 2;
+      const nx = -Math.cos(theta) * sinPhi;
+      const ny = cosPhi;
+      const nz = Math.sin(theta) * sinPhi;
+      positions[p] = nx * radius; positions[p + 1] = ny * radius; positions[p + 2] = nz * radius;
+      normals[p] = nx; normals[p + 1] = ny; normals[p + 2] = nz;
+      p += 3;
+    }
+  }
+  const indices: number[] = [];
+  for (let iy = 0; iy < heightSegments; iy++) {
+    for (let ix = 0; ix < widthSegments; ix++) {
+      const a = iy * cols + ix;
+      const b = a + 1;
+      const c = a + cols;
+      const d = c + 1;
+      if (iy !== 0) indices.push(a, c, b);
+      if (iy !== heightSegments - 1) indices.push(b, c, d);
+    }
+  }
+  return { type: "mesh", positions, normals, indices: new Uint16Array(indices), color };
+}
+
+/** Indexed cylinder mesh centered at the origin with smooth sides and flat caps. */
+export function buildCylinderMesh(radius: number, height: number, color: string, radialSegments = 24): SceneViewMeshPart {
+  const half = height / 2;
+  const positions: number[] = [];
+  const normals: number[] = [];
+  const indices: number[] = [];
+  // Side ring
+  for (let i = 0; i <= radialSegments; i++) {
+    const theta = (i / radialSegments) * Math.PI * 2;
+    const nx = Math.sin(theta), nz = Math.cos(theta);
+    positions.push(nx * radius, half, nz * radius, nx * radius, -half, nz * radius);
+    normals.push(nx, 0, nz, nx, 0, nz);
+  }
+  for (let i = 0; i < radialSegments; i++) {
+    const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+    indices.push(a, b, c, b, d, c);
+  }
+  // Caps (+Y and -Y)
+  for (const sign of [1, -1] as const) {
+    const center = positions.length / 3;
+    const y = sign * half;
+    positions.push(0, y, 0);
+    normals.push(0, sign, 0);
+    for (let i = 0; i <= radialSegments; i++) {
+      const theta = (i / radialSegments) * Math.PI * 2;
+      positions.push(Math.sin(theta) * radius, y, Math.cos(theta) * radius);
+      normals.push(0, sign, 0);
+    }
+    for (let i = 0; i < radialSegments; i++) {
+      if (sign > 0) indices.push(center, center + 1 + i, center + 2 + i);
+      else indices.push(center, center + 2 + i, center + 1 + i);
+    }
+  }
+  return { type: "mesh", positions: new Float32Array(positions), normals: new Float32Array(normals), indices: new Uint16Array(indices), color };
+}
+
+/** Octahedron mesh centered at the origin with flat face normals. */
+export function buildOctahedronMesh(radius: number, color: string): SceneViewMeshPart {
+  const r = radius;
+  const v: [number, number, number][] = [[r, 0, 0], [-r, 0, 0], [0, r, 0], [0, -r, 0], [0, 0, r], [0, 0, -r]];
+  const faces = [0, 2, 4, 4, 2, 1, 1, 2, 5, 5, 2, 0, 4, 3, 0, 1, 3, 4, 5, 3, 1, 0, 3, 5];
+  const positions = new Float32Array(faces.length * 3);
+  for (let i = 0; i < faces.length; i++) {
+    const pt = v[faces[i]!]!;
+    positions[i * 3] = pt[0]; positions[i * 3 + 1] = pt[1]; positions[i * 3 + 2] = pt[2];
+  }
+  return { type: "mesh", positions, normals: computeFlatNormals(positions), color };
+}
+
+/** Column-major perspective * lookAt matrix for a right-handed Y-up scene (OpenGL clip space). */
+export function buildViewProjMatrix(
+  eye: SceneViewVec3,
+  target: SceneViewVec3,
+  fovDegrees: number,
+  aspect: number,
+  near: number,
+  far: number,
+): Float32Array {
+  let zx = eye.x - target.x, zy = eye.y - target.y, zz = eye.z - target.z;
+  const zLen = Math.hypot(zx, zy, zz) || 1;
+  zx /= zLen; zy /= zLen; zz /= zLen;
+  // up = (0, 1, 0), right = normalize(cross(up, z))
+  let xx = zz, xy = 0, xz = -zx;
+  let xLen = Math.hypot(xx, xy, xz);
+  if (xLen < 1e-6) { xx = 1; xy = 0; xz = 0; xLen = 1; }
+  xx /= xLen; xz /= xLen;
+  // true up = cross(z, right)
+  const yx = zy * xz - zz * xy;
+  const yy = zz * xx - zx * xz;
+  const yz = zx * xy - zy * xx;
+  const tx = -(xx * eye.x + xy * eye.y + xz * eye.z);
+  const ty = -(yx * eye.x + yy * eye.y + yz * eye.z);
+  const tz = -(zx * eye.x + zy * eye.y + zz * eye.z);
+
+  const f = 1 / Math.tan((fovDegrees * Math.PI) / 360);
+  const sx = f / Math.max(1e-6, aspect);
+  const nf = 1 / (near - far);
+  const a = (far + near) * nf;
+  const b = 2 * far * near * nf;
+
+  return new Float32Array([
+    sx * xx, f * yx, a * zx, -zx,
+    sx * xy, f * yy, a * zy, -zy,
+    sx * xz, f * yz, a * zz, -zz,
+    sx * tx, f * ty, a * tz + b, -tz,
+  ]);
+}

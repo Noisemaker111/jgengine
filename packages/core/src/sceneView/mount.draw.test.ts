@@ -19,9 +19,8 @@ beforeAll(async () => {
   await Bun.write(`${scratch}/tsconfig.json`, JSON.stringify({ extends: resolve(import.meta.dir, "../../../../tsconfig.base.json") }));
   await Bun.write(`${scratch}/fixture.ts`, `
     import { mountSceneView } from '@jgengine/core/sceneView/mount.draw';
-    import { Mesh, BoxGeometry } from 'three';
     const loads = [];
-    const roof = { draw: (object, context) => { const m = new Mesh(new BoxGeometry(1, 1, 1), context.surface('#ff0000')); m.position.set(object.value.center.x, object.value.center.y, object.value.center.z); m.name = 'roof'; return m; } };
+    const roof = { draw: (object, context) => ({ name: 'roof', position: object.value.center, parts: [context.box(1, 1, 1, '#ff0000')] }) };
     const kinds = {
       roof: async () => { loads.push('roof'); return { default: roof }; },
       tree: async () => { loads.push('tree'); return roof; },
