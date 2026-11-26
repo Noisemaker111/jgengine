@@ -7,7 +7,7 @@
  *
  *   bun scripts/balance.ts [minutes=60]
  *
- * The first scenario is three months (60 minutes); `steadyPlayer.test.ts` holds that this player wins it.
+ * The first scenario is three months (60 minutes); `steadyPlayer.measure.test.ts` holds that this player wins it.
  */
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { game } from "../src/game.config";

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { FIXTURES, runeUiFixture } from "../../../proofs/runeUiFixture";
+import { FIXTURES, runeUiFixtureSizes } from "../../../proofs/runeUiFixture";
 
 const EXPECT: Partial<Record<(typeof FIXTURES)[number], string>> = {
   title: "New game",
@@ -19,9 +19,11 @@ const EXPECT: Partial<Record<(typeof FIXTURES)[number], string>> = {
 };
 
 test("every Fernwild UI state serializes native elements at desktop and phone widths", async () => {
-  for (const [width, height] of [[1280, 720], [390, 844]] as const) {
-    for (const state of FIXTURES) {
-      const spec = await runeUiFixture(state, width, height);
+  const sizes = [[1280, 720], [390, 844]] as const;
+  for (const state of FIXTURES) {
+    const specs = await runeUiFixtureSizes(state, sizes);
+    for (const [index, [width]] of sizes.entries()) {
+      const spec = specs[index]!;
       const json = JSON.stringify(spec);
       expect(spec.children.length, `${state} at ${width}`).toBeGreaterThan(0);
       expect(json, `${state} at ${width}`).not.toMatch(/"k":"x"|className|cssText|getComputedStyle|"style":/);
