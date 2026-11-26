@@ -47,7 +47,7 @@ if (dir !== undefined && dir !== "") {
     }
     return !inRepo(cwd) && !args.some((arg) => !arg.startsWith("-") && (isAbsolute(arg) || /[\\/]/.test(arg)) && inRepo(resolve(cwd, arg)));
   };
-  // A child whose environment the caller replaced still records: the variables are put back.
+  // A child whose environment the caller replaced still records: the variables it left out are put back.
   const recorderEnv = {
     JG_TEST_LOADS: dir,
     JG_TEST_LOADS_ROOT: root,
@@ -61,7 +61,7 @@ if (dir !== undefined && dir !== "") {
       if (!transparent(argv, options?.cwd ?? process.cwd())) write(`O\t${argv.join(" ")}`);
       const start = original as unknown as (a: unknown, b?: unknown) => unknown;
       if (options?.env === undefined) return start(first, second);
-      const kept = { ...options, env: { ...options.env, ...recorderEnv } };
+      const kept = { ...options, env: { ...recorderEnv, ...options.env } };
       return Array.isArray(first) ? start(first, kept) : start(kept);
     }) as unknown as T;
   // node:child_process starts its processes through these too.
