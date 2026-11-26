@@ -39,9 +39,14 @@ function brokenNumbers(structure: PlantStructure): string[] {
 }
 
 describe("plant species library", () => {
-  for (const species of PLANT_LIBRARY) {
-    test(`${species.id}: a valid record that grows finite, non-negative sizes and builds a mesh, open and in a stand`, () => {
-      expect(validatePlantSpecies(species)).toEqual([]);
+  test("every record is valid", () => {
+    for (const species of PLANT_LIBRARY) expect(validatePlantSpecies(species), species.id).toEqual([]);
+  });
+
+  // One species of each habit grows and meshes in both sites; every species does in the measurement beside this file.
+  const firstOfEachHabit = [...new Map(PLANT_LIBRARY.map((species) => [species.habit, species] as const)).values()];
+  for (const species of firstOfEachHabit) {
+    test(`${species.habit} (${species.id}): grows finite, non-negative sizes and builds a mesh, open and in a stand`, () => {
       for (const [site, env] of SITES) {
         const plant = createPlantGrowth(species, env, "a");
         for (const age of AGES) {

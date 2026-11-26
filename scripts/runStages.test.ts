@@ -254,10 +254,10 @@ describe("which rows a diff reaches", () => {
 
   test("a row that never reads tests is not reached by a test edit, even one under tooling", () => {
     const api = row("skill-api");
-    expect(reachedBy(api, ["packages/core/src/plants/stand/standSim.test.ts"])).toBe(false);
+    expect(reachedBy(api, ["packages/core/src/plants/stand/standSim.measure.test.ts"])).toBe(false);
     expect(reachedBy(api, ["scripts/verify-fast.test.ts"])).toBe(false);
     expect(reachedBy(api, ["packages/core/src/plants/stand/standSim.ts"])).toBe(true);
-    expect(reachedBy(row("artifacts"), ["packages/core/src/plants/stand/standSim.test.ts"])).toBe(true);
+    expect(reachedBy(row("artifacts"), ["packages/core/src/plants/stand/standSim.measure.test.ts"])).toBe(true);
     const regenerated = GEN_TARGETS.filter((target) => reachedBy(target, ["packages/core/src/world/terrain.test.ts"])).map((target) => target.name);
     expect(regenerated).not.toContain("skill-api");
     expect(regenerated).not.toContain("capabilities");

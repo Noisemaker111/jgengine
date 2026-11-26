@@ -10,6 +10,7 @@ import {
   CI_ONLY_GATES,
   landingGates,
   verifyPlan,
+  featureRoot,
   MAX_BOOTS,
   changedFiles,
   docReaderTests,
@@ -365,6 +366,29 @@ describe("reach no import shows (each a PR CI catch from the 7 Nov audit)", () =
     expect(plan(["packages/core/README.md", "packages/core/src/world/terrain.test.ts"], true).webBuild).toBe(false);
     const steps = fastSteps({ ...emptyPlan, webBuild: true }).map((step) => [step.name, step.needs ?? []]);
     expect(steps).toEqual([["web-build", []], ["site-bundles", ["web-build"]]]);
+  });
+});
+
+describe("measurements", () => {
+  const graph = fixtureGraph({
+    "packages/core/src/plants/treeEnvelope.measure.test.ts": 'import { grow } from "./growth/grow";\nimport { rng } from "../random/rng";',
+    "packages/core/src/plants/growth/grow.test.ts": 'import { grow } from "./grow";',
+    "packages/core/src/plants/growth/grow.ts": 'import { rng } from "../../random/rng";',
+    "packages/core/src/random/rng.ts": "export const rng = 1;",
+  });
+  const testFiles = ["packages/core/src/plants/treeEnvelope.measure.test.ts", "packages/core/src/plants/growth/grow.test.ts"];
+  const planned = (changed: string[]) => verifyPlan({ changed, testFiles, workspaces: fakeWorkspaces, graph }).tests;
+
+  test("a measurement runs when its own feature changes, and a change elsewhere it imports is held by the feature's small tests", () => {
+    expect(planned(["packages/core/src/plants/growth/grow.ts"])).toEqual(testFiles.slice().sort());
+    expect(planned(["packages/core/src/random/rng.ts"])).toEqual(["packages/core/src/plants/growth/grow.test.ts"]);
+    expect(planned(["tsconfig.base.json"])).toEqual(expect.arrayContaining(testFiles));
+  });
+
+  test("a feature is a package's top folder under src, a game, or a reference folder", () => {
+    expect(featureRoot("packages/core/src/plants/species/data/treeEnvelope.measure.test.ts")).toBe("packages/core/src/plants/");
+    expect(featureRoot("games/brightway-park/src/game/steadyPlayer.measure.test.ts")).toBe("games/brightway-park/");
+    expect(featureRoot("scripts/reference/physics/bondedRock.measure.test.ts")).toBe("scripts/reference/physics/");
   });
 });
 

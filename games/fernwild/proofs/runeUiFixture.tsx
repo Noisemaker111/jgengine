@@ -77,7 +77,21 @@ function settingsFixture(sets: [string, unknown][] = []): SettingsController {
 
 /** The real GameUI over a real headless Fernwild run, with deterministic viewport and settings, serialized as native elements. */
 export async function runeUiFixture(state: NativeFixture, width = 1280, height = 720) {
+  return (await runeUiFixtureSizes(state, [[width, height]]))[0]!;
+}
+
+/** {@link runeUiFixture} at several viewport sizes over one staged run: staging boots the island, the render does not. */
+export async function runeUiFixtureSizes(state: NativeFixture, sizes: readonly (readonly [number, number])[]) {
   const { ctx } = stageFixture(state);
+  const specs = [];
+  for (const [width, height] of sizes) {
+    titleRoute.first = state === "creator" ? "creator" : null;
+    specs.push(renderFixture(ctx, width, height));
+  }
+  return specs;
+}
+
+function renderFixture(ctx: ReturnType<typeof stageFixture>["ctx"], width: number, height: number) {
   const settings = settingsFixture();
   const container = new RuneNode("container");
   const tree = new Root(nativeTreeHost(() => {}), container, "fixture", false);

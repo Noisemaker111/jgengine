@@ -437,6 +437,19 @@ function unitInputs(graph: ImportGraph, entries: readonly string[], workspace: s
   return [...found].sort();
 }
 
+/** A test that measures a whole model against published data; see `verifyPlan`. */
+const MEASURE_TEST = /\.measure\.test\.[cm]?[jt]sx?$/;
+
+/** The feature a test belongs to: its package's top folder under `src/`, its game, or its folder. */
+export function featureRoot(test: string): string {
+  const parts = test.split("/");
+  const src = parts.indexOf("src");
+  if (parts[0] === "games" && parts.length > 2) return `games/${parts[1]}/`;
+  if (src >= 0 && src + 2 < parts.length) return `${parts.slice(0, src + 2).join("/")}/`;
+  if (parts[0] === "scripts" && parts[1] === "reference" && parts.length > 3) return `${parts.slice(0, 3).join("/")}/`;
+  return `${parts.slice(0, -1).join("/")}/`;
+}
+
 /** What `bun run verify:fast` runs for this change. */
 export function verifyPlan(input: {
   changed: readonly string[];
@@ -586,11 +599,16 @@ export function verifyPlan(input: {
   for (const dir of typechecks) inputs[`typecheck:${dir}`] = unitInputs(input.graph, sourcesUnder(input.graph, dir), dir);
   for (const game of boots) inputs[`boot:${game}`] = unitInputs(input.graph, sourcesUnder(input.graph, `games/${game}`), `games/${game}`, ["games/shared"]);
 
+  // A measurement runs a whole model against published data (a century of tree growth, a rock's lab
+  // tests, a scenario played to its end): its own feature's change runs it, and so does every full run
+  // (`--full`, CI on beta, the release). A change elsewhere is held by the feature's own small tests.
+  const measured = fallback.length > 0 ? [...tests] : [...tests].filter((test) => !MEASURE_TEST.test(test) || touchedPaths.some((path) => path.startsWith(featureRoot(test))));
+
   return {
     changed,
     deleted,
     typechecks: typechecks.sort(),
-    tests: [...tests].sort(),
+    tests: measured.sort(),
     gates: gatesFor(changed),
     unattributed,
     fallback,

@@ -65,10 +65,10 @@ export interface Shard {
  * swings up to 40% between runs; a lane's wall time is its tests plus 15-25 s of loading.
  */
 export const SLOW_TEST_SECONDS: Readonly<Record<string, number>> = {
-  "packages/core/src/landform/glacial/glacialLandscape.test.ts": 21,
-  "packages/core/src/landform/evolution/landscapeEvolution.browser.test.ts": 21,
-  "packages/core/src/landform/evolution/landscapeEvolution.test.ts": 11,
-  "packages/core/src/landform/dunes/duneField.test.ts": 7,
+  "packages/core/src/landform/glacial/glacialLandscape.measure.test.ts": 21,
+  "packages/core/src/landform/evolution/landscapeEvolution.browser.measure.test.ts": 21,
+  "packages/core/src/landform/evolution/landscapeEvolution.measure.test.ts": 11,
+  "packages/core/src/landform/dunes/duneField.measure.test.ts": 7,
   "packages/core/src/plants/species/data/plantLibrary.test.ts": 25,
   "packages/core/src/anim/animationHook.draw.test.ts": 21,
   "packages/core/src/city/cityKind.test.ts": 19,
@@ -85,11 +85,11 @@ export const SLOW_TEST_SECONDS: Readonly<Record<string, number>> = {
   "packages/core/src/hud/hudPanelLayout.view.test.ts": 4,
   "packages/core/src/map/mapPointer.view.test.ts": 4,
   "packages/core/src/physics/carStrength.test.ts": 4,
-  "scripts/reference/physics/referenceCar.test.ts": 20,
+  "scripts/reference/physics/referenceCar.measure.test.ts": 20,
   "scripts/tarballInstall.test.ts": 19,
   "scripts/captureCliParity.test.ts": 17,
-  "scripts/reference/physics/granularExperiments.test.ts": 11,
-  "scripts/reference/physics/seakeepingHull.test.ts": 8,
+  "scripts/reference/physics/granularExperiments.measure.test.ts": 11,
+  "scripts/reference/physics/seakeepingHull.measure.test.ts": 8,
 };
 
 /** A file with no measured time: about 0.03 s of tests and its share of the loading. */
@@ -101,12 +101,12 @@ export const UNMEASURED_FILE_SECONDS = 0.1;
  * added later always lands in one of the two. Seconds are those two parts on a runner (run 41588206348).
  */
 export const SPLIT_TESTS: Readonly<Record<string, { match: string; seconds: readonly [number, number] }>> = {
-  "packages/core/src/landform/glacial/glacialErosion.test.ts": { match: "the fast path", seconds: [51, 46] },
-  "scripts/reference/physics/bondedRock.test.ts": { match: "calibrates to its Young's modulus", seconds: [86, 28] },
-  "scripts/reference/physics/discreteElementExperiments.test.ts": { match: "pours a cone", seconds: [56, 16] },
+  "packages/core/src/landform/glacial/glacialErosion.measure.test.ts": { match: "the fast path", seconds: [51, 46] },
+  "scripts/reference/physics/bondedRock.measure.test.ts": { match: "calibrates to its Young's modulus", seconds: [86, 28] },
+  "scripts/reference/physics/discreteElementExperiments.measure.test.ts": { match: "pours a cone", seconds: [56, 16] },
   // Estimated, not yet measured on a runner: 67 s and 55 s on a developer PC, where the library's finite-mesh
   // tests take 51 s against the 25 s a runner measured, so about half.
-  "packages/core/src/plants/species/data/treeEnvelope.test.ts": { match: "a stand-grown tree", seconds: [33, 28] },
+  "packages/core/src/plants/species/data/treeEnvelope.measure.test.ts": { match: "a stand-grown tree", seconds: [33, 28] },
 };
 
 const UNIT_PATTERN = " -t ";
