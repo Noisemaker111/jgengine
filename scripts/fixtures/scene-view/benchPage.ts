@@ -1,6 +1,6 @@
-/** The part of a three.js `WebGLRenderer` the bench wraps. */
+/** The part of a renderer (`WebGLRenderer` or `SceneViewRenderer`) the bench wraps. */
 interface Renderer {
-  render(scene: never, camera: never): void;
+  render(...args: never[]): void;
   getContext(): WebGLRenderingContext | WebGL2RenderingContext;
 }
 
@@ -18,9 +18,9 @@ export function exposeBench(renderer: Renderer, ready: Promise<void>): void {
   const pixel = new Uint8Array(4);
   const render = renderer.render.bind(renderer);
   let count = 0;
-  renderer.render = (scene, camera) => {
+  renderer.render = (...args: never[]) => {
     const start = performance.now();
-    render(scene, camera);
+    render(...args);
     gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
     renders.push(performance.now() - start);
     count += 1;

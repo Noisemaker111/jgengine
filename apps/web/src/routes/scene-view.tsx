@@ -14,7 +14,7 @@ export const Route = definePage({
     seo({
       title: "Scene view — a small 3D document on any page",
       description:
-        "Draw a small scene document (a house, a product, a floor plan) on any canvas with one call: no UI framework, no frame loop, the size of plain three.js.",
+        "Draw a small scene document (a house, a product, a floor plan) on any canvas with one call: no UI framework, no frame loop, no three.js — under 8 KB gzip.",
       path: "/scene-view",
     }),
   component: SceneViewPage,

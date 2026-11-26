@@ -41,7 +41,7 @@ if (decoded.ok) createEditorSession(decoded.document).undo();`,
     name: "scene view",
     code: `import { mountSceneView } from "@jgengine/core/sceneView/mount.draw";
 mountSceneView(document.querySelector("canvas"), JSON.parse(localStorage.scene)).dispose();`,
-    budget: { kb: 5, overThree: true },
+    budget: { kb: 8 },
   },
 ];
 
