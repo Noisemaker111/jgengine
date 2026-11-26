@@ -688,15 +688,21 @@ describe("commands", () => {
     });
     const steps = fastSteps(plan, { lanes: 4 });
     expect(steps[0]?.command).toEqual(["bun", "--cwd=packages/shell", "run", "check-types"]);
-    expect(steps[1]?.command).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--preload", "./scripts/test-loads-preload.ts", "packages/shell/src/world/WorldScene.test.ts"]);
+    expect(steps[1]?.command).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "packages/shell/src/world/WorldScene.test.ts"]);
     expect(steps.some((step) => step.command.includes("packages/core"))).toBe(false);
+  });
+
+  test("a run that records loads preloads the recorder and hands each test process the folder", () => {
+    const [step] = fastSteps({ ...emptyPlan, tests: ["packages/core/src/a.test.ts"] }, { lanes: 4, loadsDir: "/run/loads" });
+    expect(step?.command.slice(0, 7)).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--preload", "./scripts/test-loads-preload.ts"]);
+    expect(step?.env).toEqual({ JG_TEST_LOADS: "/run/loads" });
   });
 
   test("the runner spreads the files over its own workers: one command until the command line is full", () => {
     const files = Array.from({ length: 45 }, (_, index) => `packages/core/src/t${String(index).padStart(2, "0")}.test.ts`);
     const steps = fastSteps({ ...emptyPlan, tests: files }, { lanes: 4, timingsFile: ".scratch/t.json" }).filter((step) => step.command[1] === "test");
     expect(steps).toHaveLength(1);
-    expect(steps[0]?.command.slice(0, 9)).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--preload", "./scripts/test-loads-preload.ts", "--timings=.scratch/t.json", "--update-timings"]);
+    expect(steps[0]?.command.slice(0, 7)).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--timings=.scratch/t.json", "--update-timings"]);
     expect(steps.flatMap((step) => step.units ?? []).map((unit) => unit.id).sort()).toEqual(files.map((file) => `test:${file}`));
     const many = Array.from({ length: 1200 }, (_, index) => `packages/core/src/some/feature/folder/file${String(index).padStart(4, "0")}.test.ts`);
     const groups = commandLineGroups(many);
@@ -729,7 +735,7 @@ describe("commands", () => {
     const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat", "reopen:harbor-heat", "load:harbor-heat"]);
     const steps = fastSteps(plan, { fresh: (unit) => passed.has(unit) });
     expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)"]);
-    expect(steps[1]?.command.slice(7)).toEqual(["packages/core/src/a.test.ts"]);
+    expect(steps[1]?.command.slice(5)).toEqual(["packages/core/src/a.test.ts"]);
     expect(steps[1]?.units).toEqual([{ id: "test:packages/core/src/a.test.ts", inputs: ["packages/core/src/a.ts"] }]);
   });
 

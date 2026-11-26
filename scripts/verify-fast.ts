@@ -86,6 +86,8 @@ const DEMO = /(^|\/)demos?\//;
 
 export interface Step extends ScheduledStep {
   command: string[];
+  /** Variables added to this process's environment for the command. */
+  env?: Record<string, string>;
   /** Starts a browser against the shared dev server, which `--full` boots once for every one of these. */
   browser?: boolean;
   /**
@@ -725,6 +727,8 @@ export interface FastOptions {
   fresh?: (unit: string, inputs: readonly string[]) => boolean;
   /** `bun test --timings`: per-file durations the runner reads to start the slowest files first, and updates. */
   timingsFile?: string;
+  /** Where each test process logs the files its tests load (`test-loads.ts`); unset records nothing. */
+  loadsDir?: string;
   /** Where each test step writes its junit report (`<dir>/tests-<n>.xml`), for the per-file passes. */
   reportDir?: string;
   /** Every file in the checkout, so a gate's pass is keyed on the files its row reads; absent, on the whole tree. */
@@ -768,13 +772,12 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
         `--parallel=${lanes}`,
         "--timeout",
         "20000",
-        // Records what each test file loads; inert unless JG_TEST_LOADS names a folder.
-        "--preload",
-        `./${LOADS_PRELOAD}`,
+        ...(options.loadsDir === undefined ? [] : ["--preload", `./${LOADS_PRELOAD}`]),
         ...(options.timingsFile === undefined ? [] : [`--timings=${options.timingsFile}`, ...(updateTimings ? ["--update-timings"] : [])]),
         ...(options.reportDir === undefined ? [] : ["--reporter=junit", `--reporter-outfile=${options.reportDir}/tests-${index}.xml`]),
         ...[...group].sort(),
       ],
+      ...(options.loadsDir === undefined ? {} : { env: { JG_TEST_LOADS: options.loadsDir } }),
       cost: group.length,
       exclusive: true,
       ...(first ? { first: true } : {}),
@@ -1023,8 +1026,9 @@ export async function jsonRun(
   return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
 }
 
-async function spawnStep(command: readonly string[], root: string): Promise<{ ok: boolean; output: string }> {
-  const proc = Bun.spawn([...command], { cwd: root, stdout: "pipe", stderr: "pipe" });
+async function spawnStep(command: readonly string[], root: string, env?: Record<string, string>): Promise<{ ok: boolean; output: string }> {
+  // Bun.spawn's default environment is the one this process started with, not later writes to process.env.
+  const proc = Bun.spawn([...command], { cwd: root, stdout: "pipe", stderr: "pipe", ...(env === undefined ? {} : { env: { ...process.env, ...env } }) });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -1058,7 +1062,7 @@ export function timedOutFiles(output: string): string[] | null {
 
 async function run(step: Step, root: string): Promise<StepResult> {
   const started = Date.now();
-  const first = await spawnStep(step.command, root);
+  const first = await spawnStep(step.command, root, step.env);
   const timedOut = !first.ok && step.command[1] === "test" ? timedOutFiles(first.output) : null;
   const output = timedOut === null ? first.output : `${first.output}\n${timedOutNote(step.name, timedOut)}`;
   return { name: step.name, ok: first.ok, ms: Date.now() - started, output };
@@ -1345,6 +1349,7 @@ async function main(argv: readonly string[]): Promise<number> {
     cheap,
     lanes: jobs,
     timingsFile: join(shared, "test-timings.json"),
+    loadsDir: join(root, loadsDir),
     reportDir,
     tree,
     modelTests: modelTestFiles(root, planned.tests),
@@ -1390,7 +1395,6 @@ async function main(argv: readonly string[]): Promise<number> {
     return EXIT_VERIFIED;
   }
   mkdirSync(join(root, reportDir), { recursive: true });
-  process.env["JG_TEST_LOADS"] = join(root, loadsDir);
   if (receipt === null) throw new Error("missing run receipt");
   receipt.plan(receiptPlan(root, base, argv, changed, steps, skipped, jobs, started, reportDir), steps);
   if (json) {
