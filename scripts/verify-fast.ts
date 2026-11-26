@@ -34,7 +34,7 @@ import { digestLines, failureDigest, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
 import { openPassCache, sharedVerifyDir, treeDigests, WHOLE_TREE } from "./verify-cache";
-import { currentLoads, parseLoadLogs, readTestLoads, recordLoads, saveTestLoads } from "./test-loads";
+import { currentLoads, parseLoadLogs, readTestLoads, recordLoads, saveTestLoads, type CurrentLoads } from "./test-loads";
 import { checkCommand, findCheck, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
@@ -414,7 +414,7 @@ export function opaqueScopes(file: string, unresolved: readonly string[], all: r
 }
 
 /** The preload that records each test file's loads (`test-loads.ts`). */
-const LOADS_PRELOAD = "scripts/test-loads-preload.ts";
+const LOADS_PRELOAD = join(import.meta.dir, "test-loads-preload.ts");
 
 /** Root files every unit's result can depend on: the toolchain and the compiler settings. */
 const ROOT_INPUTS = ["package.json", "bun.lock", "bunfig.toml", "tsconfig.base.json", "tsconfig.json"];
@@ -444,19 +444,30 @@ function unitInputs(graph: ImportGraph, entries: readonly string[], workspace: s
 }
 
 /**
- * What a test that loaded `loaded` can run: those files; when one of them starts a process or worker,
- * everything that starter and the files any loaded file names (the script a test hands a spawn helper)
- * reach, since the recorder sees only its own process; and the data files (JSON, text) the loaded
- * files import, which it does not record.
+ * What a test that loaded `loaded` can run: those files, its own Bun processes' included; when it
+ * started something the recorder cannot see into (`opaque`: a browser, a compiler, a Worker), everything
+ * the loaded starters and the files any loaded file names (the script a test hands a spawn helper)
+ * reach; and the data files (JSON, text) the loaded files import, which it does not record.
  */
-export function runtimeReach(graph: ImportGraph, loaded: readonly string[]): Set<string> {
+export function runtimeReach(graph: ImportGraph, loaded: readonly string[], opaque: boolean): Set<string> {
   const reach = new Set(loaded);
-  if (loaded.some((file) => graph.starters.has(file))) {
+  if (opaque) {
     const others = [...loaded.filter((file) => graph.starters.has(file)), ...loaded.flatMap((file) => graph.named.get(file) ?? [])];
     for (const file of closure(graph, others)) reach.add(file);
   }
   for (const file of [...reach]) for (const target of graph.imports.get(file) ?? []) if (!SOURCE_FILE.test(target)) reach.add(target);
   return reach;
+}
+
+/**
+ * The environment that records a test step's loads: every Bun process under it, the tests' own and
+ * the ones they start, preloads the recorder (`--preload=` in one word: `--preload <path>` in
+ * BUN_OPTIONS made `bun build` run the package's build script instead).
+ */
+export function recorderEnv(dir: string): Record<string, string> {
+  const preload = `--preload=${LOADS_PRELOAD}`;
+  const options = process.env["BUN_OPTIONS"];
+  return { JG_TEST_LOADS: dir, JG_TEST_LOADS_ROOT: dirname(import.meta.dir), BUN_OPTIONS: options === undefined || options === "" ? preload : `${options} ${preload}` };
 }
 
 /** A test that measures a whole model against published data; see `verifyPlan`. */
@@ -486,8 +497,8 @@ export function verifyPlan(input: {
   landing?: boolean;
   /** Changed prose file -> the tests that read it from disk by name (`docReaderTests`). */
   docReaders?: ReadonlyMap<string, readonly string[]>;
-  /** Test file -> the files it loaded when it last passed, for the tests whose record is current (`currentLoads`). */
-  loads?: ReadonlyMap<string, readonly string[]>;
+  /** Test file -> what it loaded when it last passed, for the tests whose record is current (`currentLoads`). */
+  loads?: ReadonlyMap<string, CurrentLoads>;
 }): Plan {
   const changed = [...new Set(input.changed)].sort();
   const deleted = [...new Set(input.deleted ?? [])].sort();
@@ -523,12 +534,15 @@ export function verifyPlan(input: {
   // loads: the rules below and `docReaders` cover those either way.
   const touchedSet = new Set(touchedPaths);
   const runsChange = (test: string): boolean => {
-    const loaded = input.loads?.get(test);
-    if (loaded === undefined) return true;
-    for (const file of runtimeReach(input.graph, loaded)) if (touchedSet.has(file)) return true;
+    const record = input.loads?.get(test);
+    if (record === undefined) return true;
+    for (const file of runtimeReach(input.graph, record.files, record.opaque)) if (touchedSet.has(file)) return true;
     return false;
   };
   for (const test of input.testFiles) if (reachedBy.has(test) && runsChange(test)) tests.add(test);
+  // A process a test starts may run a file no string names; only a record that followed every process
+  // the test started can rule the change out.
+  const mayStartChange = (test: string): boolean => input.loads?.get(test)?.opaque !== false || runsChange(test);
   // Prose a test reads from disk by name: the graph cannot see a readFileSync, and a README rewrite
   // that dropped a line the surface test requires passed here and failed CI's shard i (#3211).
   for (const file of touchedPaths) for (const test of input.docReaders?.get(file) ?? []) tests.add(test);
@@ -582,7 +596,7 @@ export function verifyPlan(input: {
   // - the games' own scripts and the `*.games.test.ts` checks read every game from disk, so a game
   //   change runs them, as CI's games job does: a game's PLAN broke the suite score check.
   if (touchedPaths.some((path) => path.startsWith("scripts/") && SOURCE_FILE.test(path) && !DECLARATION.test(path))) {
-    addSuite("scripts tests that start a process", (test) => test.startsWith("scripts/") && input.graph.starters.has(test));
+    addSuite("scripts tests that start a process", (test) => test.startsWith("scripts/") && input.graph.starters.has(test) && mayStartChange(test));
   }
   for (const path of touchedPaths) {
     const workspace = workspaceOf(path, input.workspaces);
@@ -603,7 +617,7 @@ export function verifyPlan(input: {
     }
     // Only the tests that start a process or worker can reach a file no import or string names: the
     // rest of the suite never loads it, so running it proved nothing about this file.
-    addSuite(`${suiteDir} tests that start a process`, (test) => test.startsWith(`${suiteDir}/`) && input.graph.starters.has(test));
+    addSuite(`${suiteDir} tests that start a process`, (test) => test.startsWith(`${suiteDir}/`) && input.graph.starters.has(test) && mayStartChange(test));
   }
   // A workspace's own package.json or tsconfig changes how every file in it resolves and compiles,
   // which no import shows: its whole suite runs.
@@ -775,12 +789,11 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
         `--parallel=${lanes}`,
         "--timeout",
         "20000",
-        ...(options.loadsDir === undefined ? [] : ["--preload", `./${LOADS_PRELOAD}`]),
         ...(options.timingsFile === undefined ? [] : [`--timings=${options.timingsFile}`, ...(updateTimings ? ["--update-timings"] : [])]),
         ...(options.reportDir === undefined ? [] : ["--reporter=junit", `--reporter-outfile=${options.reportDir}/tests-${index}.xml`]),
         ...[...group].sort(),
       ],
-      ...(options.loadsDir === undefined ? {} : { env: { JG_TEST_LOADS: options.loadsDir } }),
+      ...(options.loadsDir === undefined ? {} : { env: recorderEnv(options.loadsDir) }),
       cost: group.length,
       exclusive: true,
       ...(first ? { first: true } : {}),

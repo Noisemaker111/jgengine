@@ -406,10 +406,11 @@ describe("what a test loads when it runs", () => {
   }, ["packages/core/src/ui/data.json"]);
   const testFiles = ["packages/core/src/ui/view.test.ts", "packages/core/src/run/user.test.ts", "packages/core/src/run/unrecorded.test.ts", "packages/core/src/run/spawner.test.ts", "scripts/tool.test.ts"];
   const loads = new Map([
-    ["packages/core/src/ui/view.test.ts", ["packages/core/src/ui/view.test.ts", "packages/core/src/ui/view.ts"]],
-    ["packages/core/src/run/user.test.ts", ["packages/core/src/run/user.test.ts", "packages/core/src/run/sliced.ts"]],
-    ["packages/core/src/run/spawner.test.ts", ["packages/core/src/run/spawner.test.ts", "packages/core/src/run/spawner.ts"]],
-    ["scripts/tool.test.ts", ["scripts/tool.test.ts"]],
+    ["packages/core/src/ui/view.test.ts", { files: ["packages/core/src/ui/view.test.ts", "packages/core/src/ui/view.ts"], opaque: false }],
+    ["packages/core/src/run/user.test.ts", { files: ["packages/core/src/run/user.test.ts", "packages/core/src/run/sliced.ts"], opaque: false }],
+    // It starts a Worker, which the recorder cannot see into.
+    ["packages/core/src/run/spawner.test.ts", { files: ["packages/core/src/run/spawner.test.ts", "packages/core/src/run/spawner.ts"], opaque: true }],
+    ["scripts/tool.test.ts", { files: ["scripts/tool.test.ts"], opaque: false }],
   ]);
 
   test("a test whose recorded loads miss every changed file is left out; one with no record keeps its import reach", () => {
@@ -427,12 +428,34 @@ describe("what a test loads when it runs", () => {
       "packages/core/src/tools/step.ts": "export {};",
     });
     expect([...spawns.starters]).toEqual(["packages/core/src/tools/run.ts"]);
-    expect([...runtimeReach(spawns, ["packages/core/src/tools/run.test.ts", "packages/core/src/tools/run.ts"])]).toContain("packages/core/src/tools/step.ts");
+    expect([...runtimeReach(spawns, ["packages/core/src/tools/run.test.ts", "packages/core/src/tools/run.ts"], true)]).toContain("packages/core/src/tools/step.ts");
+    // A record that followed every process the test started already holds what they loaded.
+    expect([...runtimeReach(spawns, ["packages/core/src/tools/run.test.ts", "packages/core/src/tools/run.ts"], false)]).not.toContain("packages/core/src/tools/step.ts");
   });
 
-  test("a loaded file reaches what the worker it starts imports, and the data files it imports", () => {
-    expect([...runtimeReach(graph, ["packages/core/src/run/spawner.ts"])]).toContain("packages/core/src/run/sliced.ts");
-    expect([...runtimeReach(graph, ["packages/core/src/ui/view.ts"])].sort()).toEqual(["packages/core/src/ui/data.json", "packages/core/src/ui/view.ts"]);
+  test("a script change runs a test that starts processes unless its record followed them all and they loaded none of the change", () => {
+    const scripts = fixtureGraph({
+      "scripts/helper.ts": "export {};",
+      "scripts/followed.test.ts": 'import { spawnSync } from "node:child_process"; spawnSync("bun", [script]);',
+      "scripts/opaque.test.ts": 'import { spawnSync } from "node:child_process"; spawnSync("bun", [script]);',
+      "scripts/unrecorded.test.ts": 'import { spawnSync } from "node:child_process"; spawnSync("bun", [script]);',
+    });
+    const plan = verifyPlan({
+      changed: ["scripts/helper.ts"],
+      testFiles: ["scripts/followed.test.ts", "scripts/opaque.test.ts", "scripts/unrecorded.test.ts"],
+      workspaces: fakeWorkspaces,
+      graph: scripts,
+      loads: new Map([
+        ["scripts/followed.test.ts", { files: ["scripts/followed.test.ts"], opaque: false }],
+        ["scripts/opaque.test.ts", { files: ["scripts/opaque.test.ts"], opaque: true }],
+      ]),
+    });
+    expect(plan.tests).toEqual(["scripts/opaque.test.ts", "scripts/unrecorded.test.ts"]);
+  });
+
+  test("an opaque start reaches what the worker it starts imports, and the data files it imports", () => {
+    expect([...runtimeReach(graph, ["packages/core/src/run/spawner.ts"], true)]).toContain("packages/core/src/run/sliced.ts");
+    expect([...runtimeReach(graph, ["packages/core/src/ui/view.ts"], false)].sort()).toEqual(["packages/core/src/ui/data.json", "packages/core/src/ui/view.ts"]);
   });
 });
 
@@ -704,10 +727,10 @@ describe("commands", () => {
     expect(steps.some((step) => step.command.includes("packages/core"))).toBe(false);
   });
 
-  test("a run that records loads preloads the recorder and hands each test process the folder", () => {
+  test("a run that records loads hands every Bun process under the test step the recorder and the folder", () => {
     const [step] = fastSteps({ ...emptyPlan, tests: ["packages/core/src/a.test.ts"] }, { lanes: 4, loadsDir: "/run/loads" });
-    expect(step?.command.slice(0, 7)).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--preload", "./scripts/test-loads-preload.ts"]);
-    expect(step?.env).toEqual({ JG_TEST_LOADS: "/run/loads" });
+    expect(step?.env?.["JG_TEST_LOADS"]).toBe("/run/loads");
+    expect(step?.env?.["BUN_OPTIONS"]).toEndWith(`--preload=${join(root, "scripts", "test-loads-preload.ts")}`);
   });
 
   test("the runner spreads the files over its own workers: one command until the command line is full", () => {
