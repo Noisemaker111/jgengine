@@ -653,7 +653,7 @@ describe("commands", () => {
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
-    const steps = fastSteps(plan);
+    const steps = fastSteps(plan, { lanes: 4 });
     expect(steps[0]?.command).toEqual(["bun", "--cwd=packages/shell", "run", "check-types"]);
     expect(steps[1]?.command).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "packages/shell/src/world/WorldScene.test.ts"]);
     expect(steps.some((step) => step.command.includes("packages/core"))).toBe(false);
