@@ -111,7 +111,10 @@ function browserLostDevice(text: string): boolean {
 }
 
 async function draws(disableWebGpu: boolean, noAdapter = false): Promise<{ errors: string[]; frames: number }> {
-  const browser = await chromium.launch({ executablePath: findChromeExecutable(), args: browserArgs(disableWebGpu) });
+  // With no adapter only WebGL2 draws, so that case gets the software GL the no-WebGPU case uses:
+  // on hardware ANGLE its first frame waited ~20 s on D3D compiling Rune's shaders.
+  const args = noAdapter ? [...browserArgs(true), "--enable-unsafe-webgpu"] : browserArgs(disableWebGpu);
+  const browser = await chromium.launch({ executablePath: findChromeExecutable(), args });
   try {
     const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
     // No WebGPU is what older Safari, Firefox and blocklisted GPUs give a visitor.
