@@ -444,13 +444,17 @@ function unitInputs(graph: ImportGraph, entries: readonly string[], workspace: s
 }
 
 /**
- * What a test that loaded `loaded` can run: those files; everything a loaded file that starts a
- * process or worker reaches by import or by name, since the recorder sees only its own process; and
- * the data files (JSON, text) the loaded files import, which it does not record.
+ * What a test that loaded `loaded` can run: those files; when one of them starts a process or worker,
+ * everything that starter and the files any loaded file names (the script a test hands a spawn helper)
+ * reach, since the recorder sees only its own process; and the data files (JSON, text) the loaded
+ * files import, which it does not record.
  */
 export function runtimeReach(graph: ImportGraph, loaded: readonly string[]): Set<string> {
   const reach = new Set(loaded);
-  for (const file of closure(graph, loaded.filter((file) => graph.starters.has(file)))) reach.add(file);
+  if (loaded.some((file) => graph.starters.has(file))) {
+    const others = [...loaded.filter((file) => graph.starters.has(file)), ...loaded.flatMap((file) => graph.named.get(file) ?? [])];
+    for (const file of closure(graph, others)) reach.add(file);
+  }
   for (const file of [...reach]) for (const target of graph.imports.get(file) ?? []) if (!SOURCE_FILE.test(target)) reach.add(target);
   return reach;
 }
@@ -515,13 +519,12 @@ export function verifyPlan(input: {
   const tests = new Set<string>();
   for (const file of changed) for (const test of ownTests(file, input.testFiles)) tests.add(test);
   // The graph names every file a test could load; a test whose recorded loads show it runs none of the
-  // changed files is left out (`test-loads.ts`). A repo tooling test reads the whole tree, so it keeps
-  // its reach.
+  // changed files is left out (`test-loads.ts`). Files a test reads from disk are neither imports nor
+  // loads: the rules below and `docReaders` cover those either way.
   const touchedSet = new Set(touchedPaths);
   const runsChange = (test: string): boolean => {
     const loaded = input.loads?.get(test);
-    const workspace = workspaceOf(test, input.workspaces)?.dir;
-    if (loaded === undefined || workspace === undefined || !CONTAINED.test(workspace)) return true;
+    if (loaded === undefined) return true;
     for (const file of runtimeReach(input.graph, loaded)) if (touchedSet.has(file)) return true;
     return false;
   };

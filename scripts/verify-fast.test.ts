@@ -301,8 +301,8 @@ describe("reach no import shows (each a PR CI catch from the 7 Nov audit)", () =
 
   test("a script change runs the scripts tests that start a process, and a script named in a string reaches its test", () => {
     const graph = fixtureGraph({
-      "scripts/captureCliParity.test.ts": 'const script = join(import.meta.dir, `${tool}-dev.ts`);\nspawnSync(process.execPath, [script]);',
-      "scripts/land.test.ts": 'spawnSync("bun", ["scripts/land.ts"]);',
+      "scripts/captureCliParity.test.ts": 'import { spawnSync } from "node:child_process";\nconst script = join(import.meta.dir, `${tool}-dev.ts`);\nspawnSync(process.execPath, [script]);',
+      "scripts/land.test.ts": 'import { spawnSync } from "node:child_process";\nspawnSync("bun", ["scripts/land.ts"]);',
       "scripts/reference/rock.test.ts": 'import { rock } from "./rock";',
       "scripts/shoot-dev.ts": "export {};",
       "scripts/land.ts": "export {};",
@@ -412,10 +412,22 @@ describe("what a test loads when it runs", () => {
     ["scripts/tool.test.ts", ["scripts/tool.test.ts"]],
   ]);
 
-  test("a test whose recorded loads miss every changed file is left out; one with no record, or a tooling test, keeps its import reach", () => {
+  test("a test whose recorded loads miss every changed file is left out; one with no record keeps its import reach", () => {
     const plan = verifyPlan({ changed: ["packages/core/src/run/sliced.ts"], testFiles, workspaces: fakeWorkspaces, graph, loads });
-    expect(plan.tests).toEqual(["packages/core/src/run/spawner.test.ts", "packages/core/src/run/unrecorded.test.ts", "packages/core/src/run/user.test.ts", "scripts/tool.test.ts"]);
+    expect(plan.tests).toEqual(["packages/core/src/run/spawner.test.ts", "packages/core/src/run/unrecorded.test.ts", "packages/core/src/run/user.test.ts"]);
     expect(verifyPlan({ changed: ["packages/core/src/run/sliced.ts"], testFiles, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/core/src/ui/view.test.ts");
+  });
+
+  test("an entity spawn is not a process start; a child_process spawn is, and reaches the script its caller names", () => {
+    const spawns = fixtureGraph({
+      "packages/core/src/scene/store.ts": "export const store = { spawn(name) {} }; store.spawn('crate'); spawn('crate');",
+      "packages/core/src/tools/run.ts": 'import { spawnSync } from "node:child_process"; export const run = (script) => spawnSync("bun", [script]);',
+      "packages/core/src/tools/run.test.ts": 'import { run } from "./run"; run("packages/core/src/tools/job.ts");',
+      "packages/core/src/tools/job.ts": 'import "./step";',
+      "packages/core/src/tools/step.ts": "export {};",
+    });
+    expect([...spawns.starters]).toEqual(["packages/core/src/tools/run.ts"]);
+    expect([...runtimeReach(spawns, ["packages/core/src/tools/run.test.ts", "packages/core/src/tools/run.ts"])]).toContain("packages/core/src/tools/step.ts");
   });
 
   test("a loaded file reaches what the worker it starts imports, and the data files it imports", () => {
@@ -439,7 +451,7 @@ describe("attribution fails loudly", () => {
   });
 
   test("a root script no test imports runs the scripts tests that start a process", () => {
-    const graph = fixtureGraph({ "scripts/spawns.test.ts": 'spawnSync("bun", [script]);', "scripts/other.test.ts": "regex.exec(text);" });
+    const graph = fixtureGraph({ "scripts/spawns.test.ts": 'import { spawnSync } from "node:child_process";\nspawnSync("bun", [script]);', "scripts/other.test.ts": "regex.exec(text);" });
     const plan = verifyPlan({
       changed: ["scripts/species-import/unreachable.ts"],
       testFiles: ["scripts/other.test.ts", "scripts/spawns.test.ts", "packages/core/src/a.test.ts"],
