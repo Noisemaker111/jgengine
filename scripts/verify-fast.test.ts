@@ -28,6 +28,7 @@ import {
   pureRenames,
   rerunCommand,
   rerunFailing,
+  runtimeReach,
   timedOutFiles,
   timedOutNote,
   workspaceOf,
@@ -391,6 +392,38 @@ describe("measurements", () => {
   });
 });
 
+describe("what a test loads when it runs", () => {
+  const graph = fixtureGraph({
+    "packages/core/src/run/sliced.ts": "export const run = 1;",
+    "packages/core/src/ui/view.ts": 'import type { Run } from "../run/sliced"; import data from "./data.json";',
+    "packages/core/src/ui/view.test.ts": 'import "./view";',
+    "packages/core/src/run/user.test.ts": 'import "./sliced";',
+    "packages/core/src/run/unrecorded.test.ts": 'import "./sliced";',
+    "packages/core/src/run/spawner.ts": 'const worker = new Worker(new URL("./worker.ts", import.meta.url));',
+    "packages/core/src/run/worker.ts": 'import "./sliced";',
+    "packages/core/src/run/spawner.test.ts": 'import "./spawner";',
+    "scripts/tool.test.ts": 'import "../packages/core/src/run/sliced";',
+  }, ["packages/core/src/ui/data.json"]);
+  const testFiles = ["packages/core/src/ui/view.test.ts", "packages/core/src/run/user.test.ts", "packages/core/src/run/unrecorded.test.ts", "packages/core/src/run/spawner.test.ts", "scripts/tool.test.ts"];
+  const loads = new Map([
+    ["packages/core/src/ui/view.test.ts", ["packages/core/src/ui/view.test.ts", "packages/core/src/ui/view.ts"]],
+    ["packages/core/src/run/user.test.ts", ["packages/core/src/run/user.test.ts", "packages/core/src/run/sliced.ts"]],
+    ["packages/core/src/run/spawner.test.ts", ["packages/core/src/run/spawner.test.ts", "packages/core/src/run/spawner.ts"]],
+    ["scripts/tool.test.ts", ["scripts/tool.test.ts"]],
+  ]);
+
+  test("a test whose recorded loads miss every changed file is left out; one with no record, or a tooling test, keeps its import reach", () => {
+    const plan = verifyPlan({ changed: ["packages/core/src/run/sliced.ts"], testFiles, workspaces: fakeWorkspaces, graph, loads });
+    expect(plan.tests).toEqual(["packages/core/src/run/spawner.test.ts", "packages/core/src/run/unrecorded.test.ts", "packages/core/src/run/user.test.ts", "scripts/tool.test.ts"]);
+    expect(verifyPlan({ changed: ["packages/core/src/run/sliced.ts"], testFiles, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/core/src/ui/view.test.ts");
+  });
+
+  test("a loaded file reaches what the worker it starts imports, and the data files it imports", () => {
+    expect([...runtimeReach(graph, ["packages/core/src/run/spawner.ts"])]).toContain("packages/core/src/run/sliced.ts");
+    expect([...runtimeReach(graph, ["packages/core/src/ui/view.ts"])].sort()).toEqual(["packages/core/src/ui/data.json", "packages/core/src/ui/view.ts"]);
+  });
+});
+
 describe("attribution fails loudly", () => {
   test("a package file no test names runs its package's tests that start a process or worker, the only ones that could load it unseen", () => {
     const graph = fixtureGraph({ "packages/core/src/spawner.test.ts": "const worker = new Worker(entry);" });
@@ -655,7 +688,7 @@ describe("commands", () => {
     });
     const steps = fastSteps(plan, { lanes: 4 });
     expect(steps[0]?.command).toEqual(["bun", "--cwd=packages/shell", "run", "check-types"]);
-    expect(steps[1]?.command).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "packages/shell/src/world/WorldScene.test.ts"]);
+    expect(steps[1]?.command).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--preload", "./scripts/test-loads-preload.ts", "packages/shell/src/world/WorldScene.test.ts"]);
     expect(steps.some((step) => step.command.includes("packages/core"))).toBe(false);
   });
 
@@ -663,7 +696,7 @@ describe("commands", () => {
     const files = Array.from({ length: 45 }, (_, index) => `packages/core/src/t${String(index).padStart(2, "0")}.test.ts`);
     const steps = fastSteps({ ...emptyPlan, tests: files }, { lanes: 4, timingsFile: ".scratch/t.json" }).filter((step) => step.command[1] === "test");
     expect(steps).toHaveLength(1);
-    expect(steps[0]?.command.slice(0, 7)).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--timings=.scratch/t.json", "--update-timings"]);
+    expect(steps[0]?.command.slice(0, 9)).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--preload", "./scripts/test-loads-preload.ts", "--timings=.scratch/t.json", "--update-timings"]);
     expect(steps.flatMap((step) => step.units ?? []).map((unit) => unit.id).sort()).toEqual(files.map((file) => `test:${file}`));
     const many = Array.from({ length: 1200 }, (_, index) => `packages/core/src/some/feature/folder/file${String(index).padStart(4, "0")}.test.ts`);
     const groups = commandLineGroups(many);
@@ -696,7 +729,7 @@ describe("commands", () => {
     const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat", "reopen:harbor-heat", "load:harbor-heat"]);
     const steps = fastSteps(plan, { fresh: (unit) => passed.has(unit) });
     expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)"]);
-    expect(steps[1]?.command.slice(5)).toEqual(["packages/core/src/a.test.ts"]);
+    expect(steps[1]?.command.slice(7)).toEqual(["packages/core/src/a.test.ts"]);
     expect(steps[1]?.units).toEqual([{ id: "test:packages/core/src/a.test.ts", inputs: ["packages/core/src/a.ts"] }]);
   });
 
