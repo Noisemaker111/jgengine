@@ -16,7 +16,13 @@ import { effectivePaths } from "./sourcePaths";
 
 const PARSED = /\.[cm]?[jt]sx?$/;
 /** A call that runs code in another process or worker. */
-const STARTS_CODE = /(?<![.\w$])(?:spawnSync|spawn|execSync|execFileSync|execFile|exec)\s*\(|\bBun\.spawn(?:Sync)?\s*\(|\bnew\s+Worker\s*\(/;
+const STARTS_CODE = /\bBun\.spawn(?:Sync)?\s*\(|\bnew\s+Worker\s*\(/;
+/**
+ * The child_process calls, which start a process only in a file that imports that module: a game's
+ * `spawn(` places an entity, and counting it made every test that loads the entity store a starter.
+ */
+const CHILD_PROCESS_CALL = /\b(?:spawnSync|spawn|execSync|execFileSync|execFile|exec|fork)\s*\(/;
+const CHILD_PROCESS = new Set(["node:child_process", "child_process"]);
 const EXTENSIONS = ["", ".ts", ".tsx", ".mts", ".cts", ".d.ts", ".js", ".jsx", ".mjs", "/index.ts", "/index.tsx", "/index.js"];
 
 export interface ImportGraph {
@@ -30,6 +36,8 @@ export interface ImportGraph {
   opaque: ReadonlyMap<string, readonly string[]>;
   /** Source files that start a process or a worker: what they run may be a name no string here spells. */
   starters: ReadonlySet<string>;
+  /** Source file -> the in-repo files a string in it names (a script to spawn, a worker entry); also in `imports`. */
+  named: ReadonlyMap<string, readonly string[]>;
 }
 
 /** Import specifiers in a source file: static, type-only, dynamic, re-export and require forms. */
@@ -218,6 +226,7 @@ export function buildImportGraph(
   const importers = new Map<string, string[]>();
   const opaque = new Map<string, string[]>();
   const starters = new Set<string>();
+  const namedBy = new Map<string, string[]>();
   for (const file of files) {
     if (!PARSED.test(file)) continue;
     let text: string;
@@ -227,15 +236,19 @@ export function buildImportGraph(
       continue;
     }
     const targets = new Set<string>();
-    for (const specifier of specifiers(text)) {
+    const named = specifiers(text);
+    for (const specifier of named) {
       const resolved = resolveOne(specifier, file);
       if (resolved.file !== undefined) targets.add(resolved.file);
       else if (resolved.inRepo && !/\.(css|svg|png|jpe?g|webp|gif|glb|gltf|bin|hdr|exr|ktx2|wasm|mp3|ogg|wav|ttf|otf|woff2?|txt|md)$/i.test(specifier.replace(/[?#].*$/, ""))) {
         opaque.set(file, [...(opaque.get(file) ?? []), specifier]);
       }
     }
-    for (const name of namedFiles(text)) for (const named of resolveNamed(name, file, all, byDir)) if (named !== file) targets.add(named);
-    if (STARTS_CODE.test(text)) starters.add(file);
+    const spelled = new Set<string>();
+    for (const name of namedFiles(text)) for (const target of resolveNamed(name, file, all, byDir)) if (target !== file) spelled.add(target);
+    if (spelled.size > 0) namedBy.set(file, [...spelled].sort());
+    for (const target of spelled) targets.add(target);
+    if (STARTS_CODE.test(text) || (named.some((specifier) => CHILD_PROCESS.has(specifier)) && CHILD_PROCESS_CALL.test(text))) starters.add(file);
     const list = [...targets].sort();
     imports.set(file, list);
     for (const target of list) {
@@ -244,7 +257,7 @@ export function buildImportGraph(
       else into.push(file);
     }
   }
-  return { files: all, imports, importers, opaque, starters };
+  return { files: all, imports, importers, opaque, starters, named: namedBy };
 }
 
 /** Every file whose import closure contains one of `seeds`, the seeds included. */

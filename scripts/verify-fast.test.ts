@@ -28,6 +28,7 @@ import {
   pureRenames,
   rerunCommand,
   rerunFailing,
+  runtimeReach,
   timedOutFiles,
   timedOutNote,
   workspaceOf,
@@ -300,8 +301,8 @@ describe("reach no import shows (each a PR CI catch from the 7 Nov audit)", () =
 
   test("a script change runs the scripts tests that start a process, and a script named in a string reaches its test", () => {
     const graph = fixtureGraph({
-      "scripts/captureCliParity.test.ts": 'const script = join(import.meta.dir, `${tool}-dev.ts`);\nspawnSync(process.execPath, [script]);',
-      "scripts/land.test.ts": 'spawnSync("bun", ["scripts/land.ts"]);',
+      "scripts/captureCliParity.test.ts": 'import { spawnSync } from "node:child_process";\nconst script = join(import.meta.dir, `${tool}-dev.ts`);\nspawnSync(process.execPath, [script]);',
+      "scripts/land.test.ts": 'import { spawnSync } from "node:child_process";\nspawnSync("bun", ["scripts/land.ts"]);',
       "scripts/reference/rock.test.ts": 'import { rock } from "./rock";',
       "scripts/shoot-dev.ts": "export {};",
       "scripts/land.ts": "export {};",
@@ -391,6 +392,50 @@ describe("measurements", () => {
   });
 });
 
+describe("what a test loads when it runs", () => {
+  const graph = fixtureGraph({
+    "packages/core/src/run/sliced.ts": "export const run = 1;",
+    "packages/core/src/ui/view.ts": 'import type { Run } from "../run/sliced"; import data from "./data.json";',
+    "packages/core/src/ui/view.test.ts": 'import "./view";',
+    "packages/core/src/run/user.test.ts": 'import "./sliced";',
+    "packages/core/src/run/unrecorded.test.ts": 'import "./sliced";',
+    "packages/core/src/run/spawner.ts": 'const worker = new Worker(new URL("./worker.ts", import.meta.url));',
+    "packages/core/src/run/worker.ts": 'import "./sliced";',
+    "packages/core/src/run/spawner.test.ts": 'import "./spawner";',
+    "scripts/tool.test.ts": 'import "../packages/core/src/run/sliced";',
+  }, ["packages/core/src/ui/data.json"]);
+  const testFiles = ["packages/core/src/ui/view.test.ts", "packages/core/src/run/user.test.ts", "packages/core/src/run/unrecorded.test.ts", "packages/core/src/run/spawner.test.ts", "scripts/tool.test.ts"];
+  const loads = new Map([
+    ["packages/core/src/ui/view.test.ts", ["packages/core/src/ui/view.test.ts", "packages/core/src/ui/view.ts"]],
+    ["packages/core/src/run/user.test.ts", ["packages/core/src/run/user.test.ts", "packages/core/src/run/sliced.ts"]],
+    ["packages/core/src/run/spawner.test.ts", ["packages/core/src/run/spawner.test.ts", "packages/core/src/run/spawner.ts"]],
+    ["scripts/tool.test.ts", ["scripts/tool.test.ts"]],
+  ]);
+
+  test("a test whose recorded loads miss every changed file is left out; one with no record keeps its import reach", () => {
+    const plan = verifyPlan({ changed: ["packages/core/src/run/sliced.ts"], testFiles, workspaces: fakeWorkspaces, graph, loads });
+    expect(plan.tests).toEqual(["packages/core/src/run/spawner.test.ts", "packages/core/src/run/unrecorded.test.ts", "packages/core/src/run/user.test.ts"]);
+    expect(verifyPlan({ changed: ["packages/core/src/run/sliced.ts"], testFiles, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/core/src/ui/view.test.ts");
+  });
+
+  test("an entity spawn is not a process start; a child_process spawn is, and reaches the script its caller names", () => {
+    const spawns = fixtureGraph({
+      "packages/core/src/scene/store.ts": "export const store = { spawn(name) {} }; store.spawn('crate'); spawn('crate');",
+      "packages/core/src/tools/run.ts": 'import { spawnSync } from "node:child_process"; export const run = (script) => spawnSync("bun", [script]);',
+      "packages/core/src/tools/run.test.ts": 'import { run } from "./run"; run("packages/core/src/tools/job.ts");',
+      "packages/core/src/tools/job.ts": 'import "./step";',
+      "packages/core/src/tools/step.ts": "export {};",
+    });
+    expect([...spawns.starters]).toEqual(["packages/core/src/tools/run.ts"]);
+    expect([...runtimeReach(spawns, ["packages/core/src/tools/run.test.ts", "packages/core/src/tools/run.ts"])]).toContain("packages/core/src/tools/step.ts");
+  });
+
+  test("a loaded file reaches what the worker it starts imports, and the data files it imports", () => {
+    expect([...runtimeReach(graph, ["packages/core/src/run/spawner.ts"])]).toContain("packages/core/src/run/sliced.ts");
+    expect([...runtimeReach(graph, ["packages/core/src/ui/view.ts"])].sort()).toEqual(["packages/core/src/ui/data.json", "packages/core/src/ui/view.ts"]);
+  });
+});
+
 describe("attribution fails loudly", () => {
   test("a package file no test names runs its package's tests that start a process or worker, the only ones that could load it unseen", () => {
     const graph = fixtureGraph({ "packages/core/src/spawner.test.ts": "const worker = new Worker(entry);" });
@@ -406,7 +451,7 @@ describe("attribution fails loudly", () => {
   });
 
   test("a root script no test imports runs the scripts tests that start a process", () => {
-    const graph = fixtureGraph({ "scripts/spawns.test.ts": 'spawnSync("bun", [script]);', "scripts/other.test.ts": "regex.exec(text);" });
+    const graph = fixtureGraph({ "scripts/spawns.test.ts": 'import { spawnSync } from "node:child_process";\nspawnSync("bun", [script]);', "scripts/other.test.ts": "regex.exec(text);" });
     const plan = verifyPlan({
       changed: ["scripts/species-import/unreachable.ts"],
       testFiles: ["scripts/other.test.ts", "scripts/spawns.test.ts", "packages/core/src/a.test.ts"],
@@ -657,6 +702,12 @@ describe("commands", () => {
     expect(steps[0]?.command).toEqual(["bun", "--cwd=packages/shell", "run", "check-types"]);
     expect(steps[1]?.command).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "packages/shell/src/world/WorldScene.test.ts"]);
     expect(steps.some((step) => step.command.includes("packages/core"))).toBe(false);
+  });
+
+  test("a run that records loads preloads the recorder and hands each test process the folder", () => {
+    const [step] = fastSteps({ ...emptyPlan, tests: ["packages/core/src/a.test.ts"] }, { lanes: 4, loadsDir: "/run/loads" });
+    expect(step?.command.slice(0, 7)).toEqual(["bun", "test", "--parallel=4", "--timeout", "20000", "--preload", "./scripts/test-loads-preload.ts"]);
+    expect(step?.env).toEqual({ JG_TEST_LOADS: "/run/loads" });
   });
 
   test("the runner spreads the files over its own workers: one command until the command line is full", () => {

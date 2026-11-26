@@ -34,6 +34,7 @@ import { digestLines, failureDigest, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
 import { openPassCache, sharedVerifyDir, treeDigests, WHOLE_TREE } from "./verify-cache";
+import { currentLoads, parseLoadLogs, readTestLoads, recordLoads, saveTestLoads } from "./test-loads";
 import { checkCommand, findCheck, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
@@ -85,6 +86,8 @@ const DEMO = /(^|\/)demos?\//;
 
 export interface Step extends ScheduledStep {
   command: string[];
+  /** Variables added to this process's environment for the command. */
+  env?: Record<string, string>;
   /** Starts a browser against the shared dev server, which `--full` boots once for every one of these. */
   browser?: boolean;
   /**
@@ -410,6 +413,9 @@ export function opaqueScopes(file: string, unresolved: readonly string[], all: r
   return [...scopes].sort();
 }
 
+/** The preload that records each test file's loads (`test-loads.ts`). */
+const LOADS_PRELOAD = "scripts/test-loads-preload.ts";
+
 /** Root files every unit's result can depend on: the toolchain and the compiler settings. */
 const ROOT_INPUTS = ["package.json", "bun.lock", "bunfig.toml", "tsconfig.base.json", "tsconfig.json"];
 
@@ -435,6 +441,22 @@ function unitInputs(graph: ImportGraph, entries: readonly string[], workspace: s
   }
   for (const file of ROOT_INPUTS) if (graph.files.has(file)) found.add(file);
   return [...found].sort();
+}
+
+/**
+ * What a test that loaded `loaded` can run: those files; when one of them starts a process or worker,
+ * everything that starter and the files any loaded file names (the script a test hands a spawn helper)
+ * reach, since the recorder sees only its own process; and the data files (JSON, text) the loaded
+ * files import, which it does not record.
+ */
+export function runtimeReach(graph: ImportGraph, loaded: readonly string[]): Set<string> {
+  const reach = new Set(loaded);
+  if (loaded.some((file) => graph.starters.has(file))) {
+    const others = [...loaded.filter((file) => graph.starters.has(file)), ...loaded.flatMap((file) => graph.named.get(file) ?? [])];
+    for (const file of closure(graph, others)) reach.add(file);
+  }
+  for (const file of [...reach]) for (const target of graph.imports.get(file) ?? []) if (!SOURCE_FILE.test(target)) reach.add(target);
+  return reach;
 }
 
 /** A test that measures a whole model against published data; see `verifyPlan`. */
@@ -464,6 +486,8 @@ export function verifyPlan(input: {
   landing?: boolean;
   /** Changed prose file -> the tests that read it from disk by name (`docReaderTests`). */
   docReaders?: ReadonlyMap<string, readonly string[]>;
+  /** Test file -> the files it loaded when it last passed, for the tests whose record is current (`currentLoads`). */
+  loads?: ReadonlyMap<string, readonly string[]>;
 }): Plan {
   const changed = [...new Set(input.changed)].sort();
   const deleted = [...new Set(input.deleted ?? [])].sort();
@@ -494,7 +518,17 @@ export function verifyPlan(input: {
 
   const tests = new Set<string>();
   for (const file of changed) for (const test of ownTests(file, input.testFiles)) tests.add(test);
-  for (const test of input.testFiles) if (reachedBy.has(test)) tests.add(test);
+  // The graph names every file a test could load; a test whose recorded loads show it runs none of the
+  // changed files is left out (`test-loads.ts`). Files a test reads from disk are neither imports nor
+  // loads: the rules below and `docReaders` cover those either way.
+  const touchedSet = new Set(touchedPaths);
+  const runsChange = (test: string): boolean => {
+    const loaded = input.loads?.get(test);
+    if (loaded === undefined) return true;
+    for (const file of runtimeReach(input.graph, loaded)) if (touchedSet.has(file)) return true;
+    return false;
+  };
+  for (const test of input.testFiles) if (reachedBy.has(test) && runsChange(test)) tests.add(test);
   // Prose a test reads from disk by name: the graph cannot see a readFileSync, and a README rewrite
   // that dropped a line the surface test requires passed here and failed CI's shard i (#3211).
   for (const file of touchedPaths) for (const test of input.docReaders?.get(file) ?? []) tests.add(test);
@@ -696,6 +730,8 @@ export interface FastOptions {
   fresh?: (unit: string, inputs: readonly string[]) => boolean;
   /** `bun test --timings`: per-file durations the runner reads to start the slowest files first, and updates. */
   timingsFile?: string;
+  /** Where each test process logs the files its tests load (`test-loads.ts`); unset records nothing. */
+  loadsDir?: string;
   /** Where each test step writes its junit report (`<dir>/tests-<n>.xml`), for the per-file passes. */
   reportDir?: string;
   /** Every file in the checkout, so a gate's pass is keyed on the files its row reads; absent, on the whole tree. */
@@ -739,10 +775,12 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
         `--parallel=${lanes}`,
         "--timeout",
         "20000",
+        ...(options.loadsDir === undefined ? [] : ["--preload", `./${LOADS_PRELOAD}`]),
         ...(options.timingsFile === undefined ? [] : [`--timings=${options.timingsFile}`, ...(updateTimings ? ["--update-timings"] : [])]),
         ...(options.reportDir === undefined ? [] : ["--reporter=junit", `--reporter-outfile=${options.reportDir}/tests-${index}.xml`]),
         ...[...group].sort(),
       ],
+      ...(options.loadsDir === undefined ? {} : { env: { JG_TEST_LOADS: options.loadsDir } }),
       cost: group.length,
       exclusive: true,
       ...(first ? { first: true } : {}),
@@ -991,8 +1029,9 @@ export async function jsonRun(
   return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
 }
 
-async function spawnStep(command: readonly string[], root: string): Promise<{ ok: boolean; output: string }> {
-  const proc = Bun.spawn([...command], { cwd: root, stdout: "pipe", stderr: "pipe" });
+async function spawnStep(command: readonly string[], root: string, env?: Record<string, string>): Promise<{ ok: boolean; output: string }> {
+  // Bun.spawn's default environment is the one this process started with, not later writes to process.env.
+  const proc = Bun.spawn([...command], { cwd: root, stdout: "pipe", stderr: "pipe", ...(env === undefined ? {} : { env: { ...process.env, ...env } }) });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -1026,7 +1065,7 @@ export function timedOutFiles(output: string): string[] | null {
 
 async function run(step: Step, root: string): Promise<StepResult> {
   const started = Date.now();
-  const first = await spawnStep(step.command, root);
+  const first = await spawnStep(step.command, root, step.env);
   const timedOut = !first.ok && step.command[1] === "test" ? timedOutFiles(first.output) : null;
   const output = timedOut === null ? first.output : `${first.output}\n${timedOutNote(step.name, timedOut)}`;
   return { name: step.name, ok: first.ok, ms: Date.now() - started, output };
@@ -1283,9 +1322,16 @@ async function main(argv: readonly string[]): Promise<number> {
     packages: allWorkspaces.flatMap((workspace) => (workspace.name === undefined ? [] : [{ name: workspace.name, dir: workspace.dir }])),
   });
   const testFiles = walkTestFiles(root, [...TEST_ROOTS, "games"]);
+  // Unstaged and untracked files are hashed; everything else is the index's own blob id.
+  const digest = treeDigests(root, [...names(git(root, ["diff", "--name-only"])), ...names(git(root, ["ls-files", "--others", "--exclude-standard"]))]);
+  // Shared by every worktree of this clone: a unit another lane proved on the same bytes is proven.
+  const shared = sharedVerifyDir(root);
+  const loadsFile = join(shared, "test-loads.json");
+  const deleted = deletedFiles(root, base);
   const planned = verifyPlan({
     changed,
-    deleted: deletedFiles(root, base),
+    deleted,
+    loads: currentLoads(readTestLoads(loadsFile), digest, new Set([...changed, ...deleted])),
     testFiles,
     workspaces: allWorkspaces,
     graph,
@@ -1296,24 +1342,17 @@ async function main(argv: readonly string[]): Promise<number> {
   // Every CI gate the change reaches, not the iteration subset: a passing hand run is then all a landing
   // needs, and lane:close reuses it instead of running it again.
   const plan = { ...planned, gates: landingGates(planned.changed) };
-  // Shared by every worktree of this clone: a unit another lane proved on the same bytes is proven.
-  const shared = sharedVerifyDir(root);
-  const cache = argv.includes("--no-cache")
-    ? null
-    : openPassCache({
-        file: join(shared, "passed.json"),
-        // Unstaged and untracked files are hashed; everything else is the index's own blob id.
-        digest: treeDigests(root, [...names(git(root, ["diff", "--name-only"])), ...names(git(root, ["ls-files", "--others", "--exclude-standard"]))]),
-        tree: () => tree,
-      });
+  const cache = argv.includes("--no-cache") ? null : openPassCache({ file: join(shared, "passed.json"), digest, tree: () => tree });
   const skipped: string[] = [];
   // The plan uses a placeholder and never creates or clears evidence.
   const reportDir = `${runDir}/junit`;
+  const loadsDir = `${runDir}/loads`;
   const steps = fastSteps(plan, {
     skillApi,
     cheap,
     lanes: jobs,
     timingsFile: join(shared, "test-timings.json"),
+    loadsDir: join(root, loadsDir),
     reportDir,
     tree,
     modelTests: modelTestFiles(root, planned.tests),
@@ -1329,6 +1368,7 @@ async function main(argv: readonly string[]): Promise<number> {
       const xml = readFileSync(join(root, reportDir, report), "utf8");
       for (const file of junitPassedFiles(xml)) passedFiles.add(file);
     }
+    saveTestLoads(loadsFile, recordLoads(parseLoadLogs(root, join(root, loadsDir), graph.files), passedFiles, digest));
     if (cache === null) return;
     for (const result of results) {
       for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) {

@@ -85,7 +85,7 @@ function readRecord(file: string): Record<string, number> {
 }
 
 /** Write through a temporary file and a rename, so a reader in another lane never sees half a file. */
-function writeAtomically(file: string, text: string): void {
+export function writeAtomically(file: string, text: string): void {
   mkdirSync(dirname(file), { recursive: true });
   const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
   writeFileSync(temporary, text, "utf8");
